@@ -1,3 +1,4 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
@@ -8,16 +9,20 @@ type Ctx = { workspaceId: string; isAdmin: boolean };
 
 async function ctxFor(supabase: SupabaseClient, userId: string): Promise<Ctx> {
   const workspaceId = await resolveActiveWorkspace(userId);
-  const { data } = await supabase.rpc("is_workspace_admin_v2", {
-    _workspace: workspaceId,
-    _user: userId,
+  const access = await workRpc(supabase, "shared_area_authorize", {
+    r: "system.ai_settings",
+    a: "view",
   });
-  return { workspaceId, isAdmin: Boolean(data) };
+  const keys = access as { keys?: Record<string, boolean>; read_only?: boolean };
+  return {
+    workspaceId,
+    isAdmin: !keys.read_only && !!keys.keys?.["system.ai_settings.manage.workspace"],
+  };
 }
 
 async function requireAdmin(supabase: SupabaseClient, userId: string) {
   const c = await ctxFor(supabase, userId);
-  if (!c.isAdmin) throw new Error("Apenas administradores do workspace podem alterar a IA.");
+  await workRpc(supabase, "shared_area_authorize", { r: "system.ai_settings", a: "manage" });
   return c;
 }
 

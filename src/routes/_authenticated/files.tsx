@@ -1,3 +1,5 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { readViewAs } from "@/lib/view-as-client";
 import { getPublicAppUrl } from "@/lib/app-url";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useRef, useState } from "react";
@@ -104,6 +106,13 @@ function FilesPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const permissions = usePermissions();
+  const readOnly = !!readViewAs();
+  const canCreate =
+    !readOnly &&
+    !permissions.isLoading &&
+    !permissions.isError &&
+    permissions.canAny(["own", "team", "workspace"].map((scope) => `system.files.create.${scope}`));
   const listFn = useServerFn(listFiles);
   const trailFn = useServerFn(getFolderPath);
   const createFolderFn = useServerFn(createFolder);
@@ -113,7 +122,7 @@ function FilesPage() {
   const toggleLinkFn = useServerFn(togglePublicLink);
   const downloadFn = useServerFn(getDownloadUrl);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["user-files", folderId],
     queryFn: () => listFn({ data: { folderId } }),
   });
@@ -172,7 +181,7 @@ function FilesPage() {
   }, [data]);
 
   async function handleFiles(fileList: FileList | null) {
-    if (!fileList || !user) return;
+    if (!fileList || !user || !canCreate) return;
     const files = Array.from(fileList);
     const totalNew = files.reduce((s, f) => s + f.size, 0);
     if (data && data.usedBytes + totalNew > QUOTA) {
@@ -253,10 +262,10 @@ function FilesPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button variant="outline" onClick={() => setNewFolderOpen(true)}>
+          <Button variant="outline" disabled={!canCreate} onClick={() => setNewFolderOpen(true)}>
             <Plus className="h-4 w-4 mr-2" /> Nova pasta
           </Button>
-          <Button onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+          <Button onClick={() => fileInputRef.current?.click()} disabled={uploading || !canCreate}>
             <Upload className="h-4 w-4 mr-2" /> {uploading ? "Enviando…" : "Enviar arquivos"}
           </Button>
           <input
@@ -313,7 +322,14 @@ function FilesPage() {
           void handleFiles(e.dataTransfer.files);
         }}
       >
-        {isLoading ? (
+        {isError ? (
+          <div role="alert" className="p-8 space-y-3">
+            <p>Não foi possível carregar os arquivos. Verifique seu acesso e tente novamente.</p>
+            <Button variant="outline" onClick={() => void refetch()}>
+              Tentar novamente
+            </Button>
+          </div>
+        ) : isLoading ? (
           <div className="p-8 text-sm text-muted-foreground">Carregando…</div>
         ) : (data?.folders.length ?? 0) === 0 && (data?.files.length ?? 0) === 0 ? (
           <div className="p-12 text-center">
@@ -334,11 +350,19 @@ function FilesPage() {
                   {f.name}
                 </button>
                 <NodeMenu
-                  onRename={() => {
-                    setRenameTarget({ id: f.id, kind: "folder", name: f.name });
-                    setRenameValue(f.name);
-                  }}
-                  onDelete={() => setDeleteTarget({ id: f.id, kind: "folder", name: f.name })}
+                  onRename={
+                    !readOnly && f.can_update
+                      ? () => {
+                          setRenameTarget({ id: f.id, kind: "folder", name: f.name });
+                          setRenameValue(f.name);
+                        }
+                      : undefined
+                  }
+                  onDelete={
+                    !readOnly && f.can_delete
+                      ? () => setDeleteTarget({ id: f.id, kind: "folder", name: f.name })
+                      : undefined
+                  }
                 />
               </li>
             ))}
@@ -367,14 +391,26 @@ function FilesPage() {
                   </Button>
                 )}
                 <NodeMenu
-                  onDownload={() => void download(f.id)}
-                  onTogglePublic={() => void togglePublic(f.id, f.is_public)}
+                  onDownload={f.can_export ? () => void download(f.id) : undefined}
+                  onTogglePublic={
+                    !readOnly && f.can_share
+                      ? () => void togglePublic(f.id, f.is_public)
+                      : undefined
+                  }
                   publicEnabled={f.is_public}
-                  onRename={() => {
-                    setRenameTarget({ id: f.id, kind: "file", name: f.name });
-                    setRenameValue(f.name);
-                  }}
-                  onDelete={() => setDeleteTarget({ id: f.id, kind: "file", name: f.name })}
+                  onRename={
+                    !readOnly && f.can_update
+                      ? () => {
+                          setRenameTarget({ id: f.id, kind: "file", name: f.name });
+                          setRenameValue(f.name);
+                        }
+                      : undefined
+                  }
+                  onDelete={
+                    !readOnly && f.can_delete
+                      ? () => setDeleteTarget({ id: f.id, kind: "file", name: f.name })
+                      : undefined
+                  }
                 />
               </li>
             ))}
@@ -463,9 +499,10 @@ function NodeMenu({
   onDownload?: () => void;
   onTogglePublic?: () => void;
   publicEnabled?: boolean;
-  onRename: () => void;
-  onDelete: () => void;
+  onRename?: () => void;
+  onDelete?: () => void;
 }) {
+  if (!onDownload && !onTogglePublic && !onRename && !onDelete) return null;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -492,13 +529,19 @@ function NodeMenu({
             )}
           </DropdownMenuItem>
         )}
-        <DropdownMenuItem onClick={onRename}>
-          <Pencil className="h-4 w-4 mr-2" /> Renomear
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem className="text-destructive" onClick={onDelete}>
-          <Trash2 className="h-4 w-4 mr-2" /> Excluir
-        </DropdownMenuItem>
+        {onRename && (
+          <DropdownMenuItem onClick={onRename}>
+            <Pencil className="h-4 w-4 mr-2" /> Renomear
+          </DropdownMenuItem>
+        )}
+        {onDelete && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive" onClick={onDelete}>
+              <Trash2 className="h-4 w-4 mr-2" /> Excluir
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

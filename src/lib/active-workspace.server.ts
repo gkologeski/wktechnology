@@ -8,7 +8,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
  *  1. Se `profiles.active_workspace_id` está setado:
  *     - Platform admins podem usar qualquer workspace (mesmo sem serem membros).
  *     - Usuários comuns precisam ser membros do workspace para usá-lo.
- *  2. Caso contrário, retorna o workspace mais antigo do qual é membro.
+ *  2. Sem seleção persistida, exige a escolha explícita no seletor de workspace.
  *  3. Se não houver nenhum, lança erro.
  */
 export async function resolveActiveWorkspace(userId: string): Promise<string> {
@@ -46,17 +46,5 @@ export async function resolveActiveWorkspace(userId: string): Promise<string> {
     throw new Error("Acesso ao workspace ativo indisponível.");
   }
 
-  const { data: first, error } = await supabaseAdmin
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .eq("status", "active")
-    .order("joined_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  const fallback = (first as { workspace_id?: string | null } | null)?.workspace_id ?? null;
-  if (fallback) return fallback;
-
-  throw new Error("Nenhum workspace ativo encontrado para o usuário.");
+  throw new Error("Selecione um workspace ativo para continuar.");
 }

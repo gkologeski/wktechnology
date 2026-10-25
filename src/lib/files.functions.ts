@@ -1,19 +1,14 @@
+import { requireSharedPermission } from "@/lib/access-control/shared-permission.middleware";
+import { workRpc } from "@/lib/access-control/work-core.server";
 import { STORAGE_QUOTA_BYTES } from "@/lib/limits";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 const QUOTA_BYTES = STORAGE_QUOTA_BYTES;
 
-function randomToken() {
-  const bytes = new Uint8Array(24);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 export const listFiles = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.files", "view")])
   .inputValidator((d) => z.object({ folderId: z.string().uuid().nullable() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -34,13 +29,13 @@ export const listFiles = createServerFn({ method: "GET" })
     const filesQ = await (data.folderId === null
       ? supabase
           .from("user_files")
-          .select("id, name, size_bytes, mime_type, is_public, public_token, created_at, folder_id")
+          .select("id, name, size_bytes, mime_type, is_public, created_at, folder_id")
           .eq("workspace_id", workspaceId)
           .is("folder_id", null)
           .order("created_at", { ascending: false })
       : supabase
           .from("user_files")
-          .select("id, name, size_bytes, mime_type, is_public, public_token, created_at, folder_id")
+          .select("id, name, size_bytes, mime_type, is_public, created_at, folder_id")
           .eq("workspace_id", workspaceId)
           .eq("folder_id", data.folderId)
           .order("created_at", { ascending: false }));
@@ -48,16 +43,38 @@ export const listFiles = createServerFn({ method: "GET" })
 
     if (foldersQ.error) throw new Error(foldersQ.error.message);
     if (filesQ.error) throw new Error(filesQ.error.message);
+    if (usedQ.error) throw new Error(usedQ.error.message);
+    const caps = await workRpc<
+      Array<{
+        id: string;
+        can_update: boolean;
+        can_delete: boolean;
+        can_export: boolean;
+        can_share: boolean;
+        public_token: string | null;
+      }>
+    >(supabase, "shared_file_capabilities", {
+      t: "user_files",
+      ids: (filesQ.data ?? []).map((f) => f.id),
+    });
+    const folderCaps = await workRpc<
+      Array<{ id: string; can_update: boolean; can_delete: boolean }>
+    >(supabase, "shared_file_capabilities", {
+      t: "user_file_folders",
+      ids: (foldersQ.data ?? []).map((f) => f.id),
+    });
+    const byId = new Map(caps.map((c) => [c.id, c]));
+    const foldersById = new Map(folderCaps.map((c) => [c.id, c]));
     return {
-      folders: foldersQ.data ?? [],
-      files: filesQ.data ?? [],
+      folders: (foldersQ.data ?? []).map((f) => ({ ...f, ...foldersById.get(f.id) })),
+      files: (filesQ.data ?? []).map((f) => ({ ...f, ...byId.get(f.id) })),
       usedBytes: Number(usedQ.data ?? 0),
       quotaBytes: QUOTA_BYTES,
     };
   });
 
 export const getFolderPath = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.files", "view")])
   .inputValidator((d) => z.object({ folderId: z.string().uuid().nullable() }).parse(d))
   .handler(async ({ data, context }) => {
     if (!data.folderId) return [] as { id: string; name: string }[];
@@ -73,7 +90,8 @@ export const getFolderPath = createServerFn({ method: "GET" })
         .eq("workspace_id", workspaceId)
         .maybeSingle();
       const row = res.data as { id: string; name: string; parent_id: string | null } | null;
-      if (res.error || !row) break;
+      if (res.error) throw new Error(res.error.message);
+      if (!row) break;
       trail.unshift({ id: row.id, name: row.name });
       current = row.parent_id;
     }
@@ -81,7 +99,7 @@ export const getFolderPath = createServerFn({ method: "GET" })
   });
 
 export const createFolder = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.files", "create")])
   .inputValidator((d) =>
     z
       .object({ name: z.string().trim().min(1).max(200), parentId: z.string().uuid().nullable() })
@@ -104,7 +122,7 @@ export const createFolder = createServerFn({ method: "POST" })
   });
 
 export const renameNode = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.files", "update")])
   .inputValidator((d) =>
     z
       .object({
@@ -116,6 +134,11 @@ export const renameNode = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    await workRpc(context.supabase, "shared_file_authorize", {
+      t: data.kind === "file" ? "user_files" : "user_file_folders",
+      i: data.id,
+      a: "update",
+    });
     const table = data.kind === "file" ? "user_files" : "user_file_folders";
     const { error } = await context.supabase
       .from(table)
@@ -127,11 +150,16 @@ export const renameNode = createServerFn({ method: "POST" })
   });
 
 export const deleteFile = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.files", "delete")])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await workRpc(context.supabase, "shared_file_authorize", {
+      t: "user_files",
+      i: data.id,
+      a: "delete",
+    });
     const { data: row } = await supabase
       .from("user_files")
       .select("storage_path")
@@ -139,7 +167,9 @@ export const deleteFile = createServerFn({ method: "POST" })
       .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (row?.storage_path) {
-      await supabase.storage.from("user-files").remove([row.storage_path]);
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const removal = await supabaseAdmin.storage.from("user-files").remove([row.storage_path]);
+      if (removal.error) throw new Error(removal.error.message);
     }
     const { error } = await supabase
       .from("user_files")
@@ -151,17 +181,22 @@ export const deleteFile = createServerFn({ method: "POST" })
   });
 
 export const deleteFolder = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.files", "delete")])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await workRpc(context.supabase, "shared_file_authorize", {
+      t: "user_file_folders",
+      i: data.id,
+      a: "delete",
+    });
     // Recursively collect all descendant files, remove storage, then delete folder (cascade DB).
     const stack: string[] = [data.id];
     const paths: string[] = [];
     while (stack.length) {
       const cur = stack.pop()!;
-      const [{ data: children }, { data: files }] = await Promise.all([
+      const [childrenResult, filesResult] = await Promise.all([
         supabase
           .from("user_file_folders")
           .select("id")
@@ -173,10 +208,16 @@ export const deleteFolder = createServerFn({ method: "POST" })
           .eq("workspace_id", workspaceId)
           .eq("folder_id", cur),
       ]);
-      (children ?? []).forEach((c: { id: string }) => stack.push(c.id));
-      (files ?? []).forEach((f: { storage_path: string }) => paths.push(f.storage_path));
+      if (childrenResult.error) throw new Error(childrenResult.error.message);
+      if (filesResult.error) throw new Error(filesResult.error.message);
+      (childrenResult.data ?? []).forEach((c: { id: string }) => stack.push(c.id));
+      (filesResult.data ?? []).forEach((f: { storage_path: string }) => paths.push(f.storage_path));
     }
-    if (paths.length) await supabase.storage.from("user-files").remove(paths);
+    if (paths.length) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const removal = await supabaseAdmin.storage.from("user-files").remove(paths);
+      if (removal.error) throw new Error(removal.error.message);
+    }
     const { error } = await supabase
       .from("user_file_folders")
       .delete()
@@ -187,29 +228,26 @@ export const deleteFolder = createServerFn({ method: "POST" })
   });
 
 export const togglePublicLink = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.files", "view")])
   .inputValidator((d) => z.object({ id: z.string().uuid(), enable: z.boolean() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const workspaceId = await resolveActiveWorkspace(context.userId);
-    const patch = data.enable
-      ? { is_public: true, public_token: randomToken() }
-      : { is_public: false, public_token: null };
-    const { data: row, error } = await context.supabase
-      .from("user_files")
-      .update(patch)
-      .eq("id", data.id)
-      .eq("workspace_id", workspaceId)
-      .select("public_token, is_public")
-      .single();
-    if (error) throw new Error(error.message);
-    return row;
-  });
+  .handler(async ({ data, context }) =>
+    workRpc<{ public_token: string | null; is_public: boolean }>(
+      context.supabase,
+      "shared_file_share",
+      { i: data.id, enabled: data.enable },
+    ),
+  );
 
 export const getDownloadUrl = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.files", "export")])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    await workRpc(context.supabase, "shared_file_authorize", {
+      t: "user_files",
+      i: data.id,
+      a: "export",
+    });
     const { data: row } = await context.supabase
       .from("user_files")
       .select("storage_path, name")
@@ -217,7 +255,8 @@ export const getDownloadUrl = createServerFn({ method: "POST" })
       .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (!row) throw new Error("Arquivo não encontrado");
-    const { data: signed, error } = await context.supabase.storage
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: signed, error } = await supabaseAdmin.storage
       .from("user-files")
       .createSignedUrl(row.storage_path, 120, { download: row.name });
     if (error) throw new Error(error.message);
@@ -226,7 +265,7 @@ export const getDownloadUrl = createServerFn({ method: "POST" })
 
 /** Registra no banco um arquivo já enviado ao storage, com o workspace ativo. */
 export const registerUploadedFile = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.files", "create")])
   .inputValidator((d) =>
     z
       .object({

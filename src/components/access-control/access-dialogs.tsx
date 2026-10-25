@@ -1,3 +1,4 @@
+import { SHARED_FIELD_OPTIONS } from "@/lib/access-control/shared-field-catalog";
 // Dialogs for TechERP Access Control (Phase 2 CRUD).
 import { DEFAULT_RECORD_COLOR } from "@/lib/ui/default-colors";
 import { useEffect, useMemo, useState } from "react";
@@ -49,7 +50,12 @@ import {
 
 function useInvalidate() {
   const qc = useQueryClient();
-  return () => qc.invalidateQueries({ queryKey: ["access-bundle"] });
+  return () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: ["access-bundle"] }),
+      qc.invalidateQueries({ queryKey: ["access"] }),
+      qc.invalidateQueries({ queryKey: ["my-field-rules"] }),
+    ]);
 }
 
 // ---------------- Role Editor ----------------
@@ -467,7 +473,8 @@ export function FieldRuleEditorDialog({
         <DialogHeader>
           <DialogTitle>{rule ? "Editar regra de campo" : "Nova regra de campo"}</DialogTitle>
           <DialogDescription>
-            Restringe a exibição de campos sensíveis (ex.: <code>candidates.salary</code>).
+            Aplica a proteção no banco, na interface e nas APIs. Valores mascarados não são enviados
+            em texto aberto.
           </DialogDescription>
         </DialogHeader>
         {isSystem ? (
@@ -478,9 +485,20 @@ export function FieldRuleEditorDialog({
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
+              <datalist id="shared-field-resources">
+                {[...new Set(SHARED_FIELD_OPTIONS.map((o) => o.resource))].map((v) => (
+                  <option key={v} value={v} />
+                ))}
+              </datalist>
+              <datalist id="shared-field-columns">
+                {SHARED_FIELD_OPTIONS.filter((o) => o.resource === resource).map((o) => (
+                  <option key={o.field} value={o.field} />
+                ))}
+              </datalist>
               <Label>Recurso</Label>
               <Input
-                placeholder="ex: candidates"
+                list="shared-field-resources"
+                placeholder="Selecione um recurso disponível"
                 value={resource}
                 onChange={(e) => setResource(e.target.value)}
                 disabled={isSystem}
@@ -489,7 +507,8 @@ export function FieldRuleEditorDialog({
             <div>
               <Label>Campo</Label>
               <Input
-                placeholder="ex: salary"
+                list="shared-field-columns"
+                placeholder="Selecione um campo protegido"
                 value={field}
                 onChange={(e) => setField(e.target.value)}
                 disabled={isSystem}

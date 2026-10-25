@@ -1,3 +1,4 @@
+import { workRpc } from "./work-core.server";
 // Diagnóstico de RBAC — leitura das permissões efetivas do usuário atual
 // (ou de outro membro do workspace, quando o solicitante é admin/owner).
 import { createServerFn } from "@tanstack/react-start";
@@ -70,38 +71,25 @@ function computeWarnings(permissions: string[], roles: RbacRoleInfo[]): RbacWarn
 
 export type WorkspaceMemberOption = { user_id: string; full_name: string | null };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function resolveWorkspace(supabase: any, userId: string) {
-  const m = await supabase
-    .from("workspace_members")
-    .select("workspace_id, role")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  if (m.data?.workspace_id) {
-    const w = await supabase
-      .from("workspaces")
-      .select("id, name, created_by")
-      .eq("id", m.data.workspace_id)
-      .maybeSingle();
-    return {
-      workspaceId: m.data.workspace_id as string,
-      name: (w.data?.name as string) ?? null,
-      createdBy: (w.data?.created_by as string) ?? null,
-      role: (m.data.role as string) ?? null,
-    };
-  }
-  const w = await supabase
-    .from("workspaces")
-    .select("id, name, created_by")
-    .eq("created_by", userId)
-    .limit(1)
-    .maybeSingle();
+async function resolveWorkspace(supabase: Parameters<typeof workRpc>[0], userId: string) {
+  const c = await workRpc<{ workspace?: string }>(supabase, "work_access_context", {});
+  if (!c.workspace) return { workspaceId: null, name: null, createdBy: null, role: null };
+  const [w, m] = await Promise.all([
+    supabase.from("workspaces").select("name,created_by").eq("id", c.workspace).single(),
+    supabase
+      .from("workspace_members")
+      .select("role")
+      .eq("workspace_id", c.workspace)
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .single(),
+  ]);
+  if (w.error || m.error) throw new Error("Contexto de permissões indisponível.");
   return {
-    workspaceId: (w.data?.id as string) ?? null,
-    name: (w.data?.name as string) ?? null,
-    createdBy: (w.data?.created_by as string) ?? null,
-    role: w.data ? "owner" : null,
+    workspaceId: c.workspace,
+    name: w.data.name,
+    createdBy: w.data.created_by,
+    role: m.data.role,
   };
 }
 
@@ -168,6 +156,14 @@ export const getRbacDiagnostics = createServerFn({ method: "GET" })
           "Permissão negada: apenas administradores do workspace podem inspecionar outros usuários.",
         );
       }
+      const target = await supabase
+        .from("workspace_members")
+        .select("user_id")
+        .eq("workspace_id", ws.workspaceId!)
+        .eq("user_id", data.userId)
+        .maybeSingle();
+      if (target.error || !target.data)
+        throw new Error("Membro não pertence ao workspace selecionado.");
       targetId = data.userId;
     }
 

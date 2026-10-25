@@ -1,31 +1,15 @@
+import { workRpc } from "./work-core.server";
 // Fase 3 — Enforcement de permissões.
 // Server functions para consultar/afirmar permissões do usuário atual.
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string | null> {
-  // 1) workspace ativo escolhido pelo usuário (mesma fonte usada pelo seletor de workspace)
-  const p = await supabase
-    .from("profiles")
-    .select("active_workspace_id")
-    .eq("id", userId)
-    .maybeSingle();
-  if (p.data?.active_workspace_id) return p.data.active_workspace_id as string;
-  const m = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  if (m.data?.workspace_id) return m.data.workspace_id as string;
-  const w = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("created_by", userId)
-    .limit(1)
-    .maybeSingle();
-  return (w.data?.id as string) ?? null;
+async function resolveActiveWorkspace(
+  supabase: Parameters<typeof workRpc>[0],
+  _userId: string,
+): Promise<string | null> {
+  const c = await workRpc<{ workspace?: string }>(supabase, "work_access_context", {});
+  return c?.workspace ?? null;
 }
 
 /**

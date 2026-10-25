@@ -1,3 +1,4 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
 import { DB_PAGE_MAX_ROWS } from "@/lib/limits";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -7,11 +8,8 @@ import type { AiUsageFilters } from "./ai-usage.functions";
 
 async function ctxFor(supabase: SupabaseClient, userId: string) {
   const workspaceId = await resolveActiveWorkspace(userId);
-  const { data } = await supabase.rpc("is_workspace_admin_v2", {
-    _workspace: workspaceId,
-    _user: userId,
-  });
-  return { workspaceId, isAdmin: Boolean(data) };
+  await workRpc(supabase, "shared_area_authorize", { r: "system.ai_settings", a: "view" });
+  return { workspaceId, isAdmin: true };
 }
 
 export async function loadUsageSummary(

@@ -25,13 +25,9 @@ async function assertWorkspaceAdmin(
   userId: string,
   workspaceId: string,
 ): Promise<void> {
-  const { data, error } = await supabase.rpc("is_workspace_admin_v2", {
-    _workspace: workspaceId,
-    _user: userId,
-  });
-  if (error) throw new Error(`Falha ao verificar administrador do workspace: ${error.message}`);
-  if (!data) {
-    throw new Error("Você não tem permissão para alterar cargos e permissões deste workspace.");
+  const { assertActiveWorkspaceAdmin } = await import("./access-admin-guard.server");
+  if ((await assertActiveWorkspaceAdmin(supabase, userId)) !== workspaceId) {
+    throw new Error("Workspace ativo alterado; recarregue a matriz.");
   }
 }
 
@@ -571,6 +567,8 @@ export const getMatrixState = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    const { assertAccessManagementPermission } = await import("./access-admin-guard.server");
+    await assertAccessManagementPermission(supabase, "view", workspaceId);
 
     // Lido em lotes e cruzado no servidor: `permission_set_items` passa de
     // 8.000 linhas e embeds/consultas sem paginação eram truncados em 1.000,

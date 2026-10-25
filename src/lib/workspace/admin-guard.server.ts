@@ -16,11 +16,12 @@ export async function isWorkspaceAdmin(userId: string, workspaceId: string): Pro
 
   const { data: member } = await supabaseAdmin
     .from("workspace_members")
-    .select("role")
+    .select("role, status")
     .eq("workspace_id", workspaceId)
     .eq("user_id", userId)
     .maybeSingle();
   const role = (member as { role?: string | null } | null)?.role ?? null;
+  if (member?.status !== "active") return false;
   if (role && ADMIN_ROLES.has(role)) return true;
 
   const { data: ws } = await supabaseAdmin

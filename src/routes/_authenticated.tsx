@@ -48,7 +48,6 @@ const ADMIN_ONLY = [
   "/settings/api-keys",
   "/settings/webhooks",
   "/settings/audit-log",
-  "/settings/security",
   "/settings/hubspot-sync",
   "/settings/branding",
   "/settings/custom-objects",

@@ -1,3 +1,4 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
 import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/api/public/files/$token")({
@@ -9,10 +10,14 @@ export const Route = createFileRoute("/api/public/files/$token")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data: row } = await supabaseAdmin
           .from("user_files")
-          .select("storage_path, name, is_public, mime_type")
+          .select("id, storage_path, name, is_public, mime_type")
           .eq("public_token", token)
           .maybeSingle();
         if (!row || !row.is_public) return new Response("Not found", { status: 404 });
+        const proof = await workRpc<boolean>(supabaseAdmin, "shared_public_file_available", {
+          i: row.id,
+        }).catch(() => false);
+        if (!proof) return new Response("Not found", { status: 404 });
         const { data: signed, error } = await supabaseAdmin.storage
           .from("user-files")
           .createSignedUrl(row.storage_path, 60);

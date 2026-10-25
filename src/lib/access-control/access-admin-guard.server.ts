@@ -36,5 +36,29 @@ export async function assertActiveWorkspaceAdmin(supabase: SB, userId: string): 
   if (!data || !activeAdmin) {
     throw new Error("Apenas administradores do workspace ativo podem editar o controle de acesso.");
   }
+  await assertAccessManagementPermission(supabase, "manage", workspaceId);
   return workspaceId;
+}
+
+/** Current actor, active workspace, effective matrix and read-only mode. */
+export async function assertAccessManagementPermission(
+  supabase: SB,
+  action: "view" | "manage",
+  expectedWorkspace?: string,
+): Promise<string> {
+  const { workRpc } = await import("./work-core.server");
+  const context = await workRpc<{
+    workspace: string | null;
+    keys: Record<string, boolean>;
+    read_only: boolean;
+  }>(supabase, "work_access_context", {});
+  if (
+    !context.workspace ||
+    (expectedWorkspace && expectedWorkspace !== context.workspace) ||
+    context.keys?.[`system.roles.${action}.workspace`] !== true ||
+    (action !== "view" && context.read_only !== false)
+  ) {
+    throw new Error("Sem permissão para gerenciar o controle de acesso neste workspace.");
+  }
+  return context.workspace;
 }

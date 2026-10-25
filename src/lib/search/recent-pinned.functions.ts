@@ -3,30 +3,44 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const ItemSchema = z.object({
-  entity_type: z.string().min(1).max(32),
-  entity_id: z.string().min(1).max(64),
+  entity_type: z.enum(["contact", "company", "deal", "ticket", "activity", "candidate", "job"]),
+  entity_id: z.string().uuid(),
   title: z.string().min(1).max(200),
   url: z.string().min(1).max(500),
 });
 
 export type RecentPinnedItem = z.infer<typeof ItemSchema>;
+function itemUrl(item: RecentPinnedItem) {
+  const paths = {
+    contact: "contacts",
+    company: "companies",
+    deal: "deals",
+    ticket: "tickets",
+    candidate: "candidates",
+    job: "jobs",
+  };
+  return item.entity_type === "activity"
+    ? `/activities?highlight=${item.entity_id}`
+    : `/${paths[item.entity_type]}/${item.entity_id}`;
+}
 
 export const recordRecent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => ItemSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await supabase.from("search_recent").upsert(
+    const write = await supabase.from("search_recent").upsert(
       {
         user_id: userId,
         entity_type: data.entity_type,
         entity_id: data.entity_id,
         title: data.title,
-        url: data.url,
+        url: itemUrl(data),
         opened_at: new Date().toISOString(),
       },
       { onConflict: "user_id,entity_type,entity_id" },
     );
+    if (write.error) throw new Error(write.error.message);
     // Prune to last 20
     const { data: rows } = await supabase
       .from("search_recent")
@@ -99,12 +113,13 @@ export const togglePin = createServerFn({ method: "POST" })
     if ((count ?? 0) >= 10) {
       throw new Error("Limite de 10 itens fixados atingido.");
     }
-    await supabase.from("search_pinned").insert({
+    const write = await supabase.from("search_pinned").insert({
       user_id: userId,
       entity_type: data.entity_type,
       entity_id: data.entity_id,
       title: data.title,
-      url: data.url,
+      url: itemUrl(data),
     });
+    if (write.error) throw new Error(write.error.message);
     return { pinned: true };
   });

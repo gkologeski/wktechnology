@@ -1,3 +1,4 @@
+import { requireSharedPermission } from "@/lib/access-control/shared-permission.middleware";
 // Server functions para gerenciar ativação e plano dos módulos por workspace.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -60,23 +61,22 @@ export const listWorkspaceModules = createServerFn({ method: "GET" })
 
 /** Ativa/desativa um módulo no workspace ativo. */
 export const setWorkspaceModuleEnabled = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.modules", "update")])
   .inputValidator((i) => z.object({ module_id: z.string().min(1), enabled: z.boolean() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const { assertWorkspaceAdmin } = await import("@/lib/workspace/admin-guard.server");
     await assertWorkspaceAdmin(context.userId, workspaceId);
 
-    const { error } = await supabaseAdmin.from("workspace_modules").upsert(
-      {
-        workspace_id: workspaceId,
-        module_id: data.module_id,
-        enabled: data.enabled,
-      } as never,
-      { onConflict: "workspace_id,module_id" },
-    );
-    if (error) throw new Error(error.message);
+    const result = await context.supabase
+      .from("workspace_modules")
+      .update({ enabled: data.enabled })
+      .eq("workspace_id", workspaceId)
+      .eq("module_id", data.module_id)
+      .select("id")
+      .single();
+    if (result.error || !result.data)
+      throw new Error(result.error?.message ?? "Módulo não contratado neste workspace.");
     return { ok: true };
   });
 
@@ -94,8 +94,16 @@ export const setWorkspaceModulePlan = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { assertWorkspaceAdmin } = await import("@/lib/workspace/admin-guard.server");
-    await assertWorkspaceAdmin(context.userId, workspaceId);
+    const proof = await supabaseAdmin
+      .from("platform_admins")
+      .select("user_id")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (proof.error || !proof.data)
+      throw new Error("A alteração do plano contratado exige administração da plataforma.");
+    const { data: readOnly, error: viewError } = await context.supabase.rpc("is_read_only_view");
+    if (viewError || readOnly)
+      throw new Error("Sessão de visualização não altera o plano contratado.");
 
     const { error } = await supabaseAdmin.from("workspace_modules").upsert(
       {

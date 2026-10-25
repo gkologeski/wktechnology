@@ -21,7 +21,7 @@ function decodeExpMs(token: string | null): number | null {
 }
 
 /** Retorna a URL renovada, ou null se não precisa (ou não é possível) renovar. */
-async function renewOne(url: string): Promise<string | null> {
+async function renewOne(url: string, workspaceId: string): Promise<string | null> {
   if (!url || !url.includes(SIGN_MARKER)) return null;
   let parsed: URL;
   try {
@@ -32,7 +32,15 @@ async function renewOne(url: string): Promise<string | null> {
   const idx = parsed.pathname.indexOf(SIGN_MARKER);
   if (idx < 0) return null;
   const path = decodeURIComponent(parsed.pathname.slice(idx + SIGN_MARKER.length));
-  if (!path) return null;
+  if (!path || !path.startsWith(`${workspaceId}/`) || path.split("/").includes("..")) return null;
+  const source = await supabaseAdmin
+    .from("media_assets")
+    .select("id")
+    .eq("workspace_id", workspaceId)
+    .eq("path", path)
+    .eq("bucket", BUCKET)
+    .maybeSingle();
+  if (source.error || !source.data) return null;
 
   const expMs = decodeExpMs(parsed.searchParams.get("token"));
   if (expMs !== null && expMs - Date.now() > RENEW_WINDOW_MS) return null;
@@ -54,6 +62,7 @@ function asThemeObject(value: unknown): { assets?: Record<string, string> | null
  */
 export async function refreshBrandingAssets<T extends object>(
   row: T | null,
+  workspaceId: string,
 ): Promise<{ row: T | null; patch: Record<string, unknown> | null }> {
   if (!row) return { row, patch: null };
 
@@ -63,7 +72,7 @@ export async function refreshBrandingAssets<T extends object>(
   for (const key of ["logo_url", "favicon_url"] as const) {
     const current = (row as Record<string, unknown>)[key];
     if (typeof current === "string" && current) {
-      const renewed = await renewOne(current);
+      const renewed = await renewOne(current, workspaceId);
       if (renewed) {
         (next as Record<string, unknown>)[key] = renewed;
         patch[key] = renewed;
@@ -78,7 +87,7 @@ export async function refreshBrandingAssets<T extends object>(
     let changed = false;
     for (const [k, v] of Object.entries(assets)) {
       if (typeof v !== "string" || !v) continue;
-      const renewed = await renewOne(v);
+      const renewed = await renewOne(v, workspaceId);
       if (renewed) {
         nextAssets[k] = renewed;
         changed = true;

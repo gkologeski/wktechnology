@@ -1,31 +1,12 @@
+import { requireSharedPermission } from "@/lib/access-control/shared-permission.middleware";
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { resolveActiveWorkspace as getActiveWorkspaceId } from "@/lib/active-workspace.server";
 // Server fns para a biblioteca de mídia (uploads de imagens/arquivos).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const BUCKET = "media";
 const SIGNED_TTL = 60 * 60 * 24 * 365 * 5; // 5 years
-
-async function getActiveWorkspaceId(userId: string): Promise<string> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: profile } = await supabaseAdmin
-    .from("profiles")
-    .select("active_workspace_id")
-    .eq("id", userId)
-    .maybeSingle();
-  const activeId =
-    (profile as { active_workspace_id?: string | null } | null)?.active_workspace_id ?? null;
-  if (activeId) return activeId;
-  const { data: m } = await supabaseAdmin
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  const id = (m as { workspace_id?: string } | null)?.workspace_id;
-  if (!id) throw new Error("Nenhum workspace ativo.");
-  return id;
-}
 
 function slugifyFilename(name: string) {
   const dot = name.lastIndexOf(".");
@@ -64,7 +45,7 @@ const ALLOWED_MIMES = [
 ];
 
 export const createMediaUploadUrl = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.media", "create")])
   .inputValidator(
     (d: { filename: string; mime?: string; size_bytes?: number; folder?: "branding" }) =>
       z
@@ -89,12 +70,10 @@ export const createMediaUploadUrl = createServerFn({ method: "POST" })
     }
     const workspaceId = await getActiveWorkspaceId(userId);
     const safeName = slugifyFilename(data.filename);
-    const now = new Date();
-    const yyyy = now.getUTCFullYear();
-    const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
-    const uid = crypto.randomUUID();
-    const prefix = data.folder ? `${workspaceId}/${data.folder}` : workspaceId;
-    const path = `${prefix}/${yyyy}/${mm}/${uid}-${safeName}`;
+    const path = await workRpc<string>(context.supabase, "shared_media_begin", {
+      filename: safeName,
+      folder: data.folder ?? null,
+    });
 
     const { data: signed, error } = await supabaseAdmin.storage
       .from(BUCKET)
@@ -110,7 +89,7 @@ export const createMediaUploadUrl = createServerFn({ method: "POST" })
   });
 
 export const registerMediaAsset = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.media", "create")])
   .inputValidator(
     (d: {
       path: string;
@@ -147,24 +126,9 @@ export const registerMediaAsset = createServerFn({ method: "POST" })
     const url = signed.signedUrl;
     const expires = new Date(Date.now() + SIGNED_TTL * 1000).toISOString();
 
-    const { data: row, error } = await supabaseAdmin
-      .from("media_assets")
-      .insert({
-        workspace_id: workspaceId,
-        owner_user_id: userId,
-        bucket: BUCKET,
-        path: data.path,
-        filename: data.filename,
-        mime: data.mime ?? null,
-        size_bytes: data.size_bytes ?? null,
-        width: data.width ?? null,
-        height: data.height ?? null,
-        url,
-        url_expires_at: expires,
-      } as never)
-      .select("id, url, path, filename, mime, size_bytes, width, height, created_at")
-      .single();
-    if (error || !row) throw new Error(error?.message || "Falha ao registrar arquivo.");
+    const row = await workRpc(context.supabase, "shared_media_register", {
+      p: { ...data, url, url_expires_at: expires },
+    });
     return row as {
       id: string;
       url: string;
@@ -179,7 +143,7 @@ export const registerMediaAsset = createServerFn({ method: "POST" })
   });
 
 export const listMediaAssets = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.media", "view")])
   .inputValidator(
     (d: { q?: string; kind?: "image" | "doc" | "all"; limit?: number; offset?: number }) =>
       z
@@ -198,7 +162,7 @@ export const listMediaAssets = createServerFn({ method: "POST" })
     const limit = data.limit ?? 48;
     const offset = data.offset ?? 0;
 
-    let q = supabaseAdmin
+    let q = context.supabase
       .from("media_assets")
       .select(
         "id, url, url_expires_at, path, filename, mime, size_bytes, width, height, created_at",
@@ -236,7 +200,10 @@ export const listMediaAssets = createServerFn({ method: "POST" })
     const refreshed: Row[] = await Promise.all(
       list.map(async (r) => {
         const exp = r.url_expires_at ? new Date(r.url_expires_at).getTime() : 0;
+        if (!r.path.startsWith(`${workspaceId}/`) || r.path.split("/").includes(".."))
+          throw new Error("Mídia de outro workspace.");
         if (exp - Date.now() < 60 * 60 * 24 * 30 * 1000) {
+          await workRpc(context.supabase, "shared_media_authorize", { i: r.id, a: "view" });
           const { data: s } = await supabaseAdmin.storage
             .from(BUCKET)
             .createSignedUrl(r.path, SIGNED_TTL);
@@ -257,12 +224,13 @@ export const listMediaAssets = createServerFn({ method: "POST" })
   });
 
 export const deleteMediaAsset = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.media", "delete")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const userId = context.userId;
     const workspaceId = await getActiveWorkspaceId(userId);
+    await workRpc(context.supabase, "shared_media_authorize", { i: data.id, a: "delete" });
     const { data: row, error: selErr } = await supabaseAdmin
       .from("media_assets")
       .select("id, path, owner_user_id, workspace_id")
@@ -272,7 +240,10 @@ export const deleteMediaAsset = createServerFn({ method: "POST" })
     if ((row as { workspace_id: string }).workspace_id !== workspaceId) {
       throw new Error("Sem permissão para este workspace.");
     }
-    await supabaseAdmin.storage.from(BUCKET).remove([(row as { path: string }).path]);
+    if (!row.path.startsWith(`${workspaceId}/`) || row.path.split("/").includes(".."))
+      throw new Error("Caminho inválido.");
+    const removal = await supabaseAdmin.storage.from(BUCKET).remove([row.path]);
+    if (removal.error) throw new Error(removal.error.message);
     const { error } = await supabaseAdmin.from("media_assets").delete().eq("id", data.id);
     if (error) throw new Error(error.message);
     return { ok: true };

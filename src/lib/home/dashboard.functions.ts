@@ -1,8 +1,9 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { requireSharedPermission } from "@/lib/access-control/shared-permission.middleware";
 // Home dashboard: KPIs agregados por módulo, filtrados por intervalo de datas.
 // Consulta é feita pelo cliente supabase autenticado (RLS aplicada como o usuário).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const RangeSchema = z.object({
   from: z.string().min(1),
@@ -23,10 +24,10 @@ async function safeCount(sb: any, table: string, build: (q: any) => any): Promis
   try {
     const q = sb.from(table).select("id", { count: "exact", head: true });
     const { count, error } = await build(q);
-    if (error) return 0;
+    if (error) throw new Error(error.message);
     return count ?? 0;
   } catch {
-    return 0;
+    throw new Error("Não foi possível consultar os indicadores autorizados.");
   }
 }
 
@@ -39,13 +40,14 @@ async function safeSum(
   try {
     const q = sb.from(table).select(column);
     const { data, error } = await build(q);
-    if (error || !data) return 0;
+    if (error) throw new Error(error.message);
+    if (!data) return 0;
     return (data as Array<Record<string, number | null>>).reduce(
       (acc, r) => acc + (Number(r[column]) || 0),
       0,
     );
   } catch {
-    return 0;
+    throw new Error("Não foi possível consultar os indicadores autorizados.");
   }
 }
 
@@ -58,20 +60,13 @@ function fmtBRL(n: number): string {
 }
 
 export const getHomeDashboard = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.home")])
   .inputValidator((d: unknown) => RangeSchema.parse(d))
   .handler(async ({ context, data }): Promise<HomeDashboardResponse> => {
-    const { supabase, userId } = context;
+    const { supabase } = context;
     const { from, to } = data;
 
-    // Resolve workspace ativo
-    const wm = await supabase
-      .from("workspace_members")
-      .select("workspace_id")
-      .eq("user_id", userId)
-      .limit(1)
-      .maybeSingle();
-    const workspaceId = wm.data?.workspace_id as string | undefined;
+    const workspaceId = context.sharedWorkspaceId;
 
     let enabledModules: string[] = [];
     if (workspaceId) {
@@ -83,6 +78,11 @@ export const getHomeDashboard = createServerFn({ method: "POST" })
       enabledModules = (rows ?? []).map((r) => r.module_id as string);
     }
 
+    const fieldContext = await workRpc<{ rules?: Record<string, Record<string, string>> }>(
+      supabase,
+      "shared_field_context",
+      {},
+    );
     const sections: ModuleSection[] = [];
 
     if (enabledModules.includes("crm")) {
@@ -228,5 +228,14 @@ export const getHomeDashboard = createServerFn({ method: "POST" })
       });
     }
 
+    const valueMode = fieldContext.rules?.["techsales.deals"]?.value;
+    if (valueMode === "hidden" || valueMode === "masked")
+      for (const section of sections)
+        if (section.moduleId === "crm")
+          for (const kpi of section.kpis) {
+            if (kpi.label === "Pipeline aberto") kpi.value = "Restrito";
+            if (kpi.label === "Negócios ganhos" || kpi.label === "Negócios perdidos")
+              kpi.hint = "Valor restrito";
+          }
     return { from, to, enabledModules, sections };
   });

@@ -1,3 +1,5 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { requireSharedPermission } from "@/lib/access-control/shared-permission.middleware";
 // Custom Objects: definições dinâmicas + registros.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -18,7 +20,7 @@ const FieldSchema = z.object({
 export type CustomObjectField = z.infer<typeof FieldSchema>;
 
 export const listCustomObjects = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.custom_objects", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -57,6 +59,10 @@ export const upsertCustomObject = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await workRpc(supabase, "shared_area_authorize", {
+      r: "system.custom_objects",
+      a: data.id ? "update" : "create",
+    });
     if (data.id) {
       const { error } = await supabase
         .from("custom_objects")
@@ -84,7 +90,7 @@ export const upsertCustomObject = createServerFn({ method: "POST" })
   });
 
 export const deleteCustomObject = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.custom_objects", "delete")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -98,7 +104,7 @@ export const deleteCustomObject = createServerFn({ method: "POST" })
   });
 
 export const listCustomRecords = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.custom_objects", "view")])
   .inputValidator((d: { object_id: string }) => z.object({ object_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -127,6 +133,10 @@ export const upsertCustomRecord = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await workRpc(supabase, "shared_area_authorize", {
+      r: "system.custom_objects",
+      a: data.id ? "update" : "create",
+    });
     if (data.id) {
       const { error } = await supabase
         .from("custom_object_records")
@@ -147,7 +157,7 @@ export const upsertCustomRecord = createServerFn({ method: "POST" })
   });
 
 export const deleteCustomRecord = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.custom_objects", "delete")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;

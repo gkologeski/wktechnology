@@ -17,7 +17,7 @@ export type UseFieldRulesResult = {
 };
 
 function maskString(value: unknown, maskChar = "•"): string {
-  if (value == null) return "";
+  if (value == null) return "••••••";
   const s = String(value);
   if (s.length <= 2) return maskChar.repeat(s.length || 3);
   return s.slice(0, 1) + maskChar.repeat(Math.max(3, s.length - 2)) + s.slice(-1);
@@ -32,7 +32,9 @@ export function useFieldRules(resource: string): UseFieldRulesResult {
   const query = useQuery({
     queryKey: ["my-field-rules"],
     queryFn: () => fetchRules(),
-    staleTime: 5 * 60_000,
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+    refetchOnWindowFocus: "always",
   });
 
   const bucket = useMemo(() => query.data?.rules?.[resource] ?? {}, [query.data?.rules, resource]);
@@ -61,7 +63,7 @@ export function useFieldRules(resource: string): UseFieldRulesResult {
   );
 
   return {
-    isLoading: query.isLoading,
+    isLoading: query.isLoading || query.isError,
     isPrivileged,
     modeFor,
     isHidden,

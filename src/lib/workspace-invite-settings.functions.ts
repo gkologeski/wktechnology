@@ -1,28 +1,14 @@
+import { requireSharedPermission } from "@/lib/access-control/shared-permission.middleware";
 // Server fns para configurar textos do e-mail de convite por workspace.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string> {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("active_workspace_id")
-    .eq("id", userId)
-    .maybeSingle();
-  if (profile?.active_workspace_id) return profile.active_workspace_id as string;
-  const { data: member } = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  if (!member?.workspace_id) throw new Error("Usuário não pertence a nenhum workspace.");
-  return member.workspace_id as string;
-}
+import { resolveActiveWorkspace as resolveWorkspace } from "@/lib/active-workspace.server";
+const resolveActiveWorkspace = (_client: unknown, userId: string) => resolveWorkspace(userId);
 
 export const getInviteSettings = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.members", "view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
@@ -45,7 +31,7 @@ const settingsSchema = z.object({
 });
 
 export const saveInviteSettings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.members", "update")])
   .inputValidator((d: unknown) => settingsSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;

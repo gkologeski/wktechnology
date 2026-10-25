@@ -50,12 +50,12 @@ export function WorkspaceSwitcher() {
   });
 
   const workspaces = data?.workspaces ?? [];
-  const active = workspaces.find((w) => w.id === data?.active_workspace_id) ?? workspaces[0];
+  const active = workspaces.find((w) => w.id === data?.active_workspace_id);
 
   if (isLoading || workspaces.length === 0) return null;
 
   // Único workspace: só mostra o nome, sem dropdown.
-  if (workspaces.length === 1) {
+  if (workspaces.length === 1 && active) {
     return (
       <SidebarMenu>
         <SidebarMenuItem>
@@ -84,7 +84,7 @@ export function WorkspaceSwitcher() {
                 <Building2 className="h-4 w-4" />
               )}
               <span className="truncate font-medium flex-1 text-left">
-                {active?.name ?? "Workspace"}
+                {active?.name ?? "Selecionar workspace"}
               </span>
               <ChevronsUpDown className="h-3.5 w-3.5 opacity-60" />
             </SidebarMenuButton>

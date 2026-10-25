@@ -150,6 +150,8 @@ export function PermissionsMatrix() {
     queryFn: () => getMatrixFn(),
   });
 
+  const canManage = bundleQ.data?.can_manage === true;
+
   const [activeModule, setActiveModule] = useState<string>("techsales");
   const [search, setSearch] = useState("");
 
@@ -386,7 +388,12 @@ export function PermissionsMatrix() {
             ))}
           </TabsList>
         </Tabs>
-        <Button size="sm" onClick={() => setCreateOpen(true)} className="shrink-0">
+        <Button
+          size="sm"
+          disabled={!canManage}
+          onClick={() => setCreateOpen(true)}
+          className="shrink-0"
+        >
           <Plus className="h-4 w-4 mr-1" />
           Novo cargo
         </Button>
@@ -434,6 +441,7 @@ export function PermissionsMatrix() {
                           variant="ghost"
                           size="icon"
                           className="h-6 w-6"
+                          disabled={!canManage}
                           aria-label={`Ações para ${r.name}`}
                         >
                           <MoreVertical className="h-3.5 w-3.5" />
@@ -555,7 +563,7 @@ export function PermissionsMatrix() {
                   const granted = grantedByRole(r.id);
                   const value = selectValue(row, granted);
                   const locked = row.lockedScope !== null;
-                  const disabled = r.is_system || scopeMut.isPending;
+                  const disabled = !canManage || r.is_system || scopeMut.isPending;
                   return (
                     <td key={r.id} className="p-2 border-b align-middle text-center">
                       <Select
@@ -607,7 +615,7 @@ export function PermissionsMatrix() {
                 size="sm"
                 variant="outline"
                 className="h-7 px-2 text-xs"
-                disabled={r.is_system || bulkMut.isPending}
+                disabled={!canManage || r.is_system || bulkMut.isPending}
                 onClick={() =>
                   bulkMut.mutate({
                     role_id: r.id,
@@ -624,7 +632,7 @@ export function PermissionsMatrix() {
                 size="sm"
                 variant="outline"
                 className="h-7 px-2 text-xs"
-                disabled={r.is_system || bulkMut.isPending}
+                disabled={!canManage || r.is_system || bulkMut.isPending}
                 onClick={() =>
                   bulkMut.mutate({
                     role_id: r.id,

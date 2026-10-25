@@ -1,3 +1,6 @@
+import { assertSalesArea, assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { requireSharedPermission } from "@/lib/access-control/shared-permission.middleware";
 import { normalizeEmailAddress } from "@/lib/email-address";
 // Server functions para Custom Properties (definições).
 import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
@@ -90,6 +93,10 @@ export const upsertCustomProperty = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await workRpc(supabase, "shared_area_authorize", {
+      r: "system.custom_properties",
+      a: data.id ? "update" : "create",
+    });
     const payload = {
       owner_id: userId,
       workspace_id: workspaceId,
@@ -107,7 +114,11 @@ export const upsertCustomProperty = createServerFn({ method: "POST" })
     if (data.id) {
       const { error } = await supabase
         .from("custom_properties")
-        .update(payload as never)
+        .update(
+          Object.fromEntries(
+            Object.entries(payload).filter(([key]) => !["owner_id", "workspace_id"].includes(key)),
+          ) as never,
+        )
         .eq("id", data.id)
         .eq("workspace_id", workspaceId);
       if (error) throw new Error(error.message);
@@ -124,7 +135,7 @@ export const upsertCustomProperty = createServerFn({ method: "POST" })
   });
 
 export const deleteCustomProperty = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.custom_properties", "delete")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -154,6 +165,7 @@ export const setCustomFieldValue = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertSalesRecord(supabase, data.entity, data.entity_id, "update");
     // ler atual e mesclar
     const { data: row, error: selErr } = await supabase
       .from(data.entity)
@@ -210,6 +222,8 @@ export const computeAiProperty = createServerFn({ method: "POST" })
       .eq("workspace_id", workspaceId)
       .single();
     if (pErr || !prop) throw new Error("Propriedade não encontrada");
+    await assertSalesArea(context.supabase, "techsales.ai_assist", "create");
+    await assertSalesRecord(context.supabase, prop.entity, data.entity_id, "update");
     if (!prop.ai_prompt) throw new Error("Esta propriedade não tem prompt de IA");
     const { data: row, error: rErr } = await sb
       .from(prop.entity)

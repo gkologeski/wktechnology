@@ -1,27 +1,12 @@
+import { requireSharedPermission } from "@/lib/access-control/shared-permission.middleware";
 import { emailSchema } from "@/lib/email-schema";
 // Server fns para branding (white-label) — por workspace ativo.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string> {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("active_workspace_id")
-    .eq("id", userId)
-    .maybeSingle();
-  if (profile?.active_workspace_id) return profile.active_workspace_id as string;
-
-  const { data: member } = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  if (!member?.workspace_id) throw new Error("Usuário não pertence a nenhum workspace.");
-  return member.workspace_id as string;
-}
+import { resolveActiveWorkspace as resolveWorkspace } from "@/lib/active-workspace.server";
+const resolveActiveWorkspace = (_client: unknown, userId: string) => resolveWorkspace(userId);
 
 export const getBranding = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -36,7 +21,7 @@ export const getBranding = createServerFn({ method: "GET" })
 
     // Renova URLs assinadas de assets próximas do vencimento.
     const { refreshBrandingAssets } = await import("@/lib/branding/assets.server");
-    const { row, patch } = await refreshBrandingAssets(data);
+    const { row, patch } = await refreshBrandingAssets(data, workspaceId);
     if (patch) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       await supabaseAdmin
@@ -64,7 +49,7 @@ const themeSchema = z
   .optional();
 
 export const saveBranding = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.branding", "update")])
   .inputValidator(
     (d: {
       brand_name?: string | null;

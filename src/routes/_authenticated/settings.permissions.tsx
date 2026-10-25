@@ -1,3 +1,4 @@
+import { FieldRulesPanel } from "@/components/access-control/field-rules-panel";
 // /settings/permissions — Área unificada de Gestão de Permissões.
 // Matriz Cargo × Recurso × Ação × Escopo aplicada a todos os módulos PSA.
 import { createFileRoute } from "@tanstack/react-router";
@@ -30,6 +31,7 @@ function PermissionsPage() {
       />
       <PermissionsMatrix />
       <EffectivePermissionsPanel />
+      <FieldRulesPanel />
     </div>
   );
 }

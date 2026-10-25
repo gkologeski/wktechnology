@@ -1,3 +1,5 @@
+import { requireSharedPermission } from "@/lib/access-control/shared-permission.middleware";
+import { resolveActiveWorkspace as canonicalWorkspace } from "@/lib/active-workspace.server";
 // Server fns para branding de cada módulo do ERP (TechSales CRM, TechHire ATS).
 // Espelha o padrão de `branding.functions.ts` mas opera na tabela
 // `module_branding`, que tem chave composta (workspace_id, module_id).
@@ -6,24 +8,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string> {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("active_workspace_id")
-    .eq("id", userId)
-    .maybeSingle();
-  if (profile?.active_workspace_id) return profile.active_workspace_id as string;
-
-  const { data: member } = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  if (!member?.workspace_id) throw new Error("Usuário não pertence a nenhum workspace.");
-  return member.workspace_id as string;
-}
+const resolveActiveWorkspace = (_client: unknown, userId: string) => canonicalWorkspace(userId);
 
 const MODULE_IDS = ["crm", "ats", "contracts", "projects", "finance", "people"] as const;
 
@@ -42,7 +27,7 @@ export const getModuleBranding = createServerFn({ method: "GET" })
 
     // Renova URLs assinadas de assets próximas do vencimento.
     const { refreshBrandingAssets } = await import("@/lib/branding/assets.server");
-    const { row: fresh, patch } = await refreshBrandingAssets(row);
+    const { row: fresh, patch } = await refreshBrandingAssets(row, workspaceId);
     if (patch) {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
       await supabaseAdmin
@@ -71,7 +56,7 @@ const moduleThemeSchema = z
   .optional();
 
 export const saveModuleBranding = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.branding", "update")])
   .inputValidator(
     (d: {
       moduleId: string;

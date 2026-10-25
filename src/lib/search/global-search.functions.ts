@@ -30,27 +30,34 @@ export const globalSearch = createServerFn({ method: "POST" })
     const allow = (t: string) => !data.types || data.types.length === 0 || data.types.includes(t);
     const t0 = Date.now();
 
-    const run = async <T>(builder: PromiseLike<{ data: T | null }> | null) => {
+    const run = async <T>(
+      builder: PromiseLike<{ data: T | null; error?: { message: string } | null }> | null,
+    ) => {
       if (!builder) return { data: null as T | null };
-      return await builder;
+      const result = await builder;
+      if (result.error) throw new Error(result.error.message);
+      return result;
     };
 
     // Tabelas grandes: IDs candidatos via índice (função restrita aos workspaces
     // do usuário) e depois leitura normal com RLS, que decide o que ele vê.
     const candidateIds = async (entity: "contact" | "company" | "activity") => {
-      const { data: ids } = await supabase.rpc("global_search_candidate_ids", {
+      const { data: ids, error } = await supabase.rpc("global_search_candidate_ids", {
         _entity: entity,
         _q: data.q,
       });
+      if (error) throw new Error(error.message);
       return ((ids ?? []) as string[]).slice(0, 200);
     };
     const viaIds = async <T>(
       entity: "contact" | "company" | "activity",
-      read: (ids: string[]) => PromiseLike<{ data: T | null }>,
+      read: (ids: string[]) => PromiseLike<{ data: T | null; error?: { message: string } | null }>,
     ) => {
       const ids = await candidateIds(entity);
       if (ids.length === 0) return { data: [] as unknown as T };
-      return await read(ids);
+      const result = await read(ids);
+      if (result.error) throw new Error(result.error.message);
+      return result;
     };
 
     const [contacts, companies, deals, tickets, activities, candidates, jobs] = await Promise.all([
@@ -102,10 +109,11 @@ export const globalSearch = createServerFn({ method: "POST" })
             for (const h of bodyHits ?? []) if (h.snippet) snippets.set(h.id, h.snippet);
             const order = [...new Set([...subjectIds, ...(bodyHits ?? []).map((h) => h.id)])];
             if (order.length === 0) return { data: [], bodyPartial: bodyHits === null };
-            const { data: rows } = await supabase
+            const { data: rows, error } = await supabase
               .from("activities")
               .select("id, subject, type, due_date")
               .in("id", order.slice(0, 200));
+            if (error) throw new Error(error.message);
             const byId = new Map(
               ((rows ?? []) as Array<Record<string, unknown>>).map((r) => [String(r.id), r]),
             );

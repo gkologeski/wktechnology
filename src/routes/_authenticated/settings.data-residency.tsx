@@ -1,3 +1,4 @@
+import { useSharedAction } from "@/lib/access-control/use-shared-action";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -17,13 +18,24 @@ const REGIONS = [
     code: "BR",
     label: "Brasil (São Paulo)",
     flag: "🇧🇷",
-    note: "Dados não replicam fora do território nacional.",
+    note: "Preferência de localização no Brasil.",
   },
-  { code: "US", label: "Estados Unidos", flag: "🇺🇸", note: "Compatível com SOC2 e HIPAA." },
-  { code: "EU", label: "União Europeia", flag: "🇪🇺", note: "Compatível com GDPR (Frankfurt)." },
+  {
+    code: "US",
+    label: "Estados Unidos",
+    flag: "🇺🇸",
+    note: "Preferência de localização nos Estados Unidos.",
+  },
+  {
+    code: "EU",
+    label: "União Europeia",
+    flag: "🇪🇺",
+    note: "Preferência de localização na União Europeia.",
+  },
 ] as const;
 
 function DataResidencyPage() {
+  const canManage = useSharedAction("system.settings", "manage");
   const get = useServerFn(getWorkspaceSecurity);
   const update = useServerFn(updateDataRegion);
   const [region, setRegion] = useState<"BR" | "US" | "EU">("BR");
@@ -37,8 +49,9 @@ function DataResidencyPage() {
   }, []);
 
   const choose = async (code: "BR" | "US" | "EU") => {
-    setRegion(code);
+    if (!canManage) return;
     await update({ data: { region: code } });
+    setRegion(code);
     toast.success(`Região atualizada para ${code}`);
   };
 
@@ -68,13 +81,13 @@ function DataResidencyPage() {
             </CardHeader>
             <CardContent className="flex justify-between items-center">
               {region === r.code ? (
-                <Badge>Ativa</Badge>
+                <Badge>Selecionada</Badge>
               ) : (
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => choose(r.code)}
-                  disabled={!loaded}
+                  disabled={!loaded || !canManage}
                 >
                   Selecionar
                 </Button>

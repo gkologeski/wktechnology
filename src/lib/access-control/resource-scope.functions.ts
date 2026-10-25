@@ -1,3 +1,4 @@
+import { workRpc } from "./work-core.server";
 // TechERP Access Control — escopo efetivo de leitura por recurso.
 // Resolve, para o usuário autenticado, se ele enxerga todos os registros do
 // workspace, apenas os da sua equipe (grupos de usuários) ou somente os seus,
@@ -15,39 +16,20 @@ export type ResourceScopeResult = {
   workspace_id: string | null;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function resolveWorkspace(supabase: any, userId: string): Promise<string | null> {
-  const m = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  if (m.data?.workspace_id) return m.data.workspace_id as string;
-  const w = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("created_by", userId)
-    .limit(1)
-    .maybeSingle();
-  return (w.data?.id as string) ?? null;
+async function resolveWorkspace(
+  supabase: Parameters<typeof workRpc>[0],
+  _userId: string,
+): Promise<string | null> {
+  const c = await workRpc<{ workspace?: string }>(supabase, "work_access_context", {});
+  return c?.workspace ?? null;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function teamPeerIds(supabase: any, userId: string): Promise<string[]> {
-  const { data: myGroups } = await supabase
-    .from("user_group_members")
-    .select("group_id")
-    .eq("user_id", userId);
-  const groupIds = ((myGroups ?? []) as Array<{ group_id: string }>).map((g) => g.group_id);
-  const ids = new Set<string>([userId]);
-  if (groupIds.length === 0) return Array.from(ids);
-  const { data: peers } = await supabase
-    .from("user_group_members")
-    .select("user_id")
-    .in("group_id", groupIds);
-  for (const p of (peers ?? []) as Array<{ user_id: string }>) ids.add(p.user_id);
-  return Array.from(ids);
+async function teamPeerIds(
+  supabase: Parameters<typeof workRpc>[0],
+  userId: string,
+): Promise<string[]> {
+  const c = await workRpc<{ team?: Record<string, boolean> }>(supabase, "work_access_context", {});
+  return [...new Set([userId, ...Object.keys(c?.team ?? {})])];
 }
 
 const INPUT = z.object({
@@ -62,7 +44,7 @@ export const getResourceScope = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<ResourceScopeResult> => {
     const { supabase, userId } = context;
     const workspaceId = await resolveWorkspace(supabase, userId);
-    if (!workspaceId) return { scope: "own", owner_ids: [userId], workspace_id: null };
+    if (!workspaceId) return { scope: "none", owner_ids: [], workspace_id: null };
 
     const base = `${data.resource}.${data.action}`;
     const check = async (key: string): Promise<boolean> => {
@@ -74,11 +56,7 @@ export const getResourceScope = createServerFn({ method: "POST" })
       return !error && Boolean(ok);
     };
 
-    const { data: isAdmin } = await supabase.rpc("is_workspace_admin_of", {
-      _owner: workspaceId,
-      _user: userId,
-    });
-    if (isAdmin || (await check(`${base}.workspace`))) {
+    if (await check(`${base}.workspace`)) {
       return { scope: "workspace", owner_ids: null, workspace_id: workspaceId };
     }
     if (await check(`${base}.team`)) {

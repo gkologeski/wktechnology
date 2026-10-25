@@ -1,48 +1,22 @@
 // Server fns do mensageiro interno do workspace.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const UuidArr = z.array(z.string().uuid()).max(50);
 
-async function resolveActiveWorkspace(userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data: profile } = await supabaseAdmin
-    .from("profiles")
-    .select("active_workspace_id")
-    .eq("id", userId)
-    .maybeSingle();
-  let ws = (profile as { active_workspace_id: string | null } | null)?.active_workspace_id ?? null;
-  if (!ws) {
-    const { data: m } = await supabaseAdmin
-      .from("workspace_members")
-      .select("workspace_id")
-      .eq("user_id", userId)
-      .order("joined_at", { ascending: true, nullsFirst: false })
-      .limit(1)
-      .maybeSingle();
-    ws = (m as { workspace_id: string | null } | null)?.workspace_id ?? null;
-  }
-  if (!ws) throw new Error("Nenhum workspace ativo para o usuário.");
-  return ws;
-}
-
-async function assertMembership(workspaceId: string, userId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("workspace_id", workspaceId)
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (!data) throw new Error("Usuário não é membro deste workspace.");
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { requireSharedPermission } from "@/lib/access-control/shared-permission.middleware";
+import { workRpc } from "@/lib/access-control/work-core.server";
+async function assertConversation(client: Parameters<typeof workRpc>[0], id: string) {
+  if ((await workRpc(client, "shared_chat_access", { i: id, a: "view" })) !== true)
+    throw new Error("Conversa indisponível.");
 }
 
 export const listConversations = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.messenger", "view")])
   .handler(async ({ context }) => {
     const { userId } = context;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = context.supabase;
     const ws = await resolveActiveWorkspace(userId);
 
     // Conversas em que o usuário é membro
@@ -129,57 +103,17 @@ export const listConversations = createServerFn({ method: "GET" })
   });
 
 export const getOrCreateDM = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.messenger", "create")])
   .inputValidator((i) => z.object({ other_user_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
-    const { userId } = context;
-    if (data.other_user_id === userId) throw new Error("Selecione outro usuário.");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const ws = await resolveActiveWorkspace(userId);
-    await assertMembership(ws, data.other_user_id);
-
-    // Procura DM existente entre os dois neste workspace
-    const { data: mine } = await supabaseAdmin
-      .from("chat_conversation_members")
-      .select("conversation_id")
-      .eq("user_id", userId);
-    const mineIds = (mine ?? []).map((m) => m.conversation_id as string);
-
-    if (mineIds.length > 0) {
-      const { data: existing } = await supabaseAdmin
-        .from("chat_conversations")
-        .select("id, kind, workspace_owner_id, chat_conversation_members!inner(user_id)")
-        .in("id", mineIds)
-        .eq("kind", "dm")
-        .eq("workspace_owner_id", ws);
-      const found = (existing ?? []).find((c) => {
-        const members = (c as unknown as { chat_conversation_members: { user_id: string }[] })
-          .chat_conversation_members;
-        const ids = members.map((m) => m.user_id);
-        return ids.length === 2 && ids.includes(userId) && ids.includes(data.other_user_id);
-      });
-      if (found) return { conversation_id: found.id as string };
-    }
-
-    const { data: conv, error: cErr } = await supabaseAdmin
-      .from("chat_conversations")
-      .insert({ workspace_owner_id: ws, kind: "dm", created_by: userId } as never)
-      .select("id")
-      .single();
-    if (cErr) throw new Error(cErr.message);
-    const convId = (conv as { id: string }).id;
-
-    const { error: mErr } = await supabaseAdmin.from("chat_conversation_members").insert([
-      { conversation_id: convId, user_id: userId },
-      { conversation_id: convId, user_id: data.other_user_id },
-    ] as never);
-    if (mErr) throw new Error(mErr.message);
-
-    return { conversation_id: convId };
+    return workRpc<{ conversation_id: string }>(context.supabase, "shared_chat_write", {
+      a: "dm",
+      p: { members: [data.other_user_id] },
+    });
   });
 
 export const createGroup = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.messenger", "create")])
   .inputValidator((i) =>
     z
       .object({
@@ -189,43 +123,14 @@ export const createGroup = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { userId } = context;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const ws = await resolveActiveWorkspace(userId);
-
-    // Todos os convidados devem ser membros do workspace
-    const ids = Array.from(new Set(data.member_user_ids.filter((id) => id !== userId)));
-    const { data: validMembers } = await supabaseAdmin
-      .from("workspace_members")
-      .select("user_id")
-      .eq("workspace_id", ws)
-      .in("user_id", ids);
-    const validIds = new Set((validMembers ?? []).map((m) => m.user_id as string));
-    const finalIds = [userId, ...ids.filter((id) => validIds.has(id))];
-
-    const { data: conv, error: cErr } = await supabaseAdmin
-      .from("chat_conversations")
-      .insert({
-        workspace_owner_id: ws,
-        kind: "group",
-        title: data.title,
-        created_by: userId,
-      } as never)
-      .select("id")
-      .single();
-    if (cErr) throw new Error(cErr.message);
-    const convId = (conv as { id: string }).id;
-
-    const { error: mErr } = await supabaseAdmin
-      .from("chat_conversation_members")
-      .insert(finalIds.map((uid) => ({ conversation_id: convId, user_id: uid })) as never);
-    if (mErr) throw new Error(mErr.message);
-
-    return { conversation_id: convId };
+    return workRpc<{ conversation_id: string }>(context.supabase, "shared_chat_write", {
+      a: "group",
+      p: { members: data.member_user_ids, title: data.title },
+    });
   });
 
 export const addGroupMembers = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.messenger", "manage")])
   .inputValidator((i) =>
     z
       .object({
@@ -235,48 +140,14 @@ export const addGroupMembers = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { userId } = context;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // Caller precisa ser membro
-    const { data: meMember } = await supabaseAdmin
-      .from("chat_conversation_members")
-      .select("conversation_id")
-      .eq("conversation_id", data.conversation_id)
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (!meMember) throw new Error("Você não participa desta conversa.");
-
-    const { data: conv } = await supabaseAdmin
-      .from("chat_conversations")
-      .select("workspace_owner_id, kind")
-      .eq("id", data.conversation_id)
-      .maybeSingle();
-    if (!conv) throw new Error("Conversa não encontrada.");
-    if ((conv as { kind: string }).kind !== "group")
-      throw new Error("Apenas grupos aceitam novos membros.");
-
-    const ws = (conv as { workspace_owner_id: string }).workspace_owner_id;
-    const { data: valid } = await supabaseAdmin
-      .from("workspace_members")
-      .select("user_id")
-      .eq("workspace_id", ws)
-      .in("user_id", data.user_ids);
-    const validIds = (valid ?? []).map((m) => m.user_id as string);
-
-    if (validIds.length === 0) return { ok: true, added: 0 };
-
-    await supabaseAdmin
-      .from("chat_conversation_members")
-      .upsert(
-        validIds.map((uid) => ({ conversation_id: data.conversation_id, user_id: uid })) as never,
-        { onConflict: "conversation_id,user_id" },
-      );
-    return { ok: true, added: validIds.length };
+    return workRpc<{ ok: boolean; added: number }>(context.supabase, "shared_chat_write", {
+      a: "invite",
+      p: { conversation_id: data.conversation_id, members: data.user_ids },
+    });
   });
 
 export const listMessages = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.messenger", "view")])
   .inputValidator((i) =>
     z
       .object({
@@ -287,8 +158,9 @@ export const listMessages = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    await assertConversation(context.supabase, data.conversation_id);
     const { userId } = context;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = context.supabase;
 
     const { data: meMember } = await supabaseAdmin
       .from("chat_conversation_members")
@@ -314,7 +186,7 @@ export const listMessages = createServerFn({ method: "POST" })
   });
 
 export const sendMessage = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.messenger", "create")])
   .inputValidator((i) =>
     z
       .object({
@@ -342,65 +214,19 @@ export const sendMessage = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
-    const { userId } = context;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    const { data: conv } = await supabaseAdmin
-      .from("chat_conversations")
-      .select("id, workspace_owner_id")
-      .eq("id", data.conversation_id)
-      .maybeSingle();
-    if (!conv) throw new Error("Conversa não encontrada.");
-
-    const { data: meMember } = await supabaseAdmin
-      .from("chat_conversation_members")
-      .select("conversation_id")
-      .eq("conversation_id", data.conversation_id)
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (!meMember) throw new Error("Você não participa desta conversa.");
-
-    const body = (data.body ?? "").trim();
-    if (!body && data.attachments.length === 0) throw new Error("Mensagem vazia.");
-
-    const { error: msgErr } = await supabaseAdmin.from("chat_messages").insert({
-      id: data.message_id,
-      conversation_id: data.conversation_id,
-      workspace_owner_id: (conv as { workspace_owner_id: string }).workspace_owner_id,
-      sender_user_id: userId,
-      body: body || null,
-    } as never);
-    if (msgErr) throw new Error(msgErr.message);
-
-    if (data.attachments.length > 0) {
-      const { error: attErr } = await supabaseAdmin.from("chat_message_attachments").insert(
-        data.attachments.map((a) => ({
-          message_id: data.message_id,
-          storage_path: a.storage_path,
-          file_name: a.file_name,
-          mime_type: a.mime_type ?? null,
-          size_bytes: a.size_bytes ?? null,
-        })) as never,
-      );
-      if (attErr) throw new Error(attErr.message);
-    }
-
-    // Marca o próprio remetente como tendo lido sua mensagem
-    await supabaseAdmin
-      .from("chat_conversation_members")
-      .update({ last_read_at: new Date().toISOString() } as never)
-      .eq("conversation_id", data.conversation_id)
-      .eq("user_id", userId);
-
-    return { message_id: data.message_id };
+    return workRpc<{ message_id: string }>(context.supabase, "shared_chat_write", {
+      a: "send",
+      p: data,
+    });
   });
 
 export const markRead = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.messenger", "view")])
   .inputValidator((i) => z.object({ conversation_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertConversation(context.supabase, data.conversation_id);
     const { userId } = context;
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = context.supabase;
     const { error } = await supabaseAdmin
       .from("chat_conversation_members")
       .update({ last_read_at: new Date().toISOString() } as never)

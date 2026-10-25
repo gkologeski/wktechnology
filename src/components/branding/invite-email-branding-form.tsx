@@ -1,3 +1,4 @@
+import { useSharedAction } from "@/lib/access-control/use-shared-action";
 // Editor de branding do e-mail de convite (textos, assunto, botão, notas).
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -32,6 +33,7 @@ const DEFAULTS: Settings = {
 };
 
 export function InviteEmailBrandingForm() {
+  const canEdit = useSharedAction("system.members", "update");
   const qc = useQueryClient();
   const getFn = useServerFn(getInviteSettings);
   const saveFn = useServerFn(saveInviteSettings);
@@ -161,10 +163,10 @@ export function InviteEmailBrandingForm() {
             </div>
 
             <div className="flex gap-2 justify-end">
-              <Button variant="ghost" onClick={resetDefaults} disabled={saving}>
+              <Button variant="ghost" onClick={resetDefaults} disabled={saving || !canEdit}>
                 Restaurar padrão
               </Button>
-              <Button onClick={submit} disabled={saving}>
+              <Button onClick={submit} disabled={saving || !canEdit}>
                 {saving ? "Salvando…" : "Salvar"}
               </Button>
             </div>

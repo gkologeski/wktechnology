@@ -1,3 +1,5 @@
+import { resolveActiveWorkspace as canonicalWorkspace } from "@/lib/active-workspace.server";
+import { requireSharedPermission } from "@/lib/access-control/shared-permission.middleware";
 // Workspace modules: leitura do catálogo de módulos e do estado de ativação
 // para o workspace ativo do usuário.
 import { createServerFn } from "@tanstack/react-start";
@@ -16,24 +18,7 @@ export type WorkspaceModuleRow = {
   is_contracted: boolean;
 };
 
-/** Resolve o workspace "ativo" do usuário (1º membership, ou criado por ele). */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string | null> {
-  const m = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  if (m.data?.workspace_id) return m.data.workspace_id as string;
-  const w = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("created_by", userId)
-    .limit(1)
-    .maybeSingle();
-  return (w.data?.id as string) ?? null;
-}
+const resolveActiveWorkspace = (_client: unknown, userId: string) => canonicalWorkspace(userId);
 
 export const listWorkspaceModules = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -86,7 +71,7 @@ export const listWorkspaceModules = createServerFn({ method: "POST" })
   });
 
 export const toggleWorkspaceModule = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSharedPermission("system.modules", "update")])
   .inputValidator((d: unknown) =>
     z.object({ moduleId: z.string().min(1).max(40), enabled: z.boolean() }).parse(d),
   )
@@ -106,13 +91,7 @@ export const toggleWorkspaceModule = createServerFn({ method: "POST" })
       .maybeSingle();
     if (existing.error) throw new Error(existing.error.message);
     if (!existing.data) {
-      // Contrata e já aplica o estado pedido
-      const ins = await supabase.from("workspace_modules").insert({
-        workspace_id: workspaceId,
-        module_id: data.moduleId,
-        enabled: data.enabled,
-      });
-      if (ins.error) throw new Error(ins.error.message);
+      throw new Error("A contratação de um módulo exige administração da plataforma.");
     } else {
       const upd = await supabase
         .from("workspace_modules")

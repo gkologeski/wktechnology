@@ -62,7 +62,6 @@ export const listMyWorkspaces = createServerFn({ method: "GET" })
     let active =
       (profile as { active_workspace_id: string | null } | null)?.active_workspace_id ?? null;
     if (active && !workspaces.some((w) => w.id === active)) active = null;
-    if (!active && workspaces.length > 0) active = workspaces[0].id;
 
     return { workspaces, active_workspace_id: active };
   });
@@ -72,6 +71,8 @@ export const setActiveWorkspace = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ workspace_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    const { assertNotReadOnlyView } = await import("@/lib/view-as-guard.server");
+    await assertNotReadOnlyView(context.supabase);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     // Platform admins podem alternar para qualquer workspace.
     const { data: pa } = await supabaseAdmin

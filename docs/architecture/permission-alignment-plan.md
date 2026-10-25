@@ -1280,3 +1280,50 @@ contatos: de timeout acima de 8 s para 564 ms no ensaio isolado; em produção,
 cache de permissões controlável pelo chamador. Matriz e escopos foram
 revalidados nas sete suítes reais, incluindo a entrega realtime autorizada e
 bloqueio após revogação.
+
+## Ordem 5 — revisão transversal em validação (25/10/2026)
+
+Estado: preparada e parcialmente aceita no ambiente isolado. **Não aplicada nem
+publicada em produção.** A Ordem 4 permanece a versão publicada.
+
+O lote cobre Arquivos/compartilhamento, mensageiro interno, objetos e propriedades
+personalizados, branding, biblioteca de mídia, IA, configurações de segurança,
+ativação de módulos, pesquisa/pins e proteção de campos estruturados. A seleção
+de workspace passa a ser explícita, sem assumir a primeira membership. Segurança
+pessoal/2FA permanece disponível ao titular. A matriz recebe uma área de regras
+de campo e controles somente leitura para quem pode consultar sem administrar.
+
+A autorização exige workspace selecionado, membership ativa, ação efetiva,
+deny prevalecendo, escopo e vínculo reais. O serviço de requisições autenticadas
+não recupera valores brutos de tabelas protegidas pelo cliente administrativo.
+As APIs finitas consultam views com RLS e máscaras; índices telefônicos, JSON de
+importação e valores de itens comerciais acompanham a restrição do campo fonte.
+Regras antigas para campos inexistentes são sinalizadas; nenhuma regra, cargo,
+default, override ou membership real foi alterada.
+
+Migrações em preparação, ordenadas para liberação compatível:
+0227 shared_prepare; 0228 fields_prepare; publicar a fonte validada; 0229
+shared_activate; 0230 fields_activate; 0231 storage_activate pelo proprietário
+oficial do Storage. O journal deve acompanhar cada aplicação confirmada. Não
+ativar ACLs de colunas enquanto a aplicação publicada ainda usa consultas brutas.
+
+Evidências atuais: 62 cenários compartilhados e 30 de campos com GoTrue,
+PostgREST e Storage reais no ambiente isolado, sem envios externos. Ensaio SQL
+com postgres sem superusuário passou com rollback; REFERENCES auth.users espelha
+privilégio já existente em produção. A interface foi aceita para consulta sem
+controles de gestão; alterações de permissão sintéticas restauradas ao final.
+Gates finais no mesmo hash, teste administrativo, publicação e aceite produtivo
+continuam necessários. Não usar contagem de testes como prova de cobertura total.
+
+Dependência externa identificada: postgres não é proprietário de storage.objects.
+O diagnóstico oficial falhou com erro interno no conector e no editor; o painel
+Storage/Policies acessível é somente leitura. Não conceder storage_admin nem
+mudar a propriedade para contornar. Políticas de 0231 exigem sessão ativa e modo de escrita em todos os buckets,
+além de controles específicos em quatro buckets. Os demais conservam seus
+predicados de domínio e exigem revisão explícita no aceite transversal. URLs assinadas emitidas anteriormente continuam válidas até vencer;
+assets de branding/material publicado têm exceção de duração longa, não promessa
+de revogação instantânea. Essa limitação deve constar do aceite.
+
+Estimativa inicial 4–7h, revista para 8–12h de execução total após encontrar
+lacunas reais de campo e Storage. Espera por recuperação do provedor é separada;
+nenhum prazo externo pode ser garantido.

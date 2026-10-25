@@ -1,3 +1,4 @@
+import { useSharedAction } from "@/lib/access-control/use-shared-action";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -40,6 +41,7 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
   const load = useServerFn(getModuleBranding);
   const loadWorkspace = useServerFn(getBranding);
   const save = useServerFn(saveModuleBranding);
+  const canEdit = useSharedAction("system.branding", "update");
   const def = MODULES[moduleId];
   const [form, setForm] = useState<Form>(EMPTY);
   const [theme, setTheme] = useState<BrandTheme>(EMPTY_THEME);
@@ -268,7 +270,7 @@ export function ModuleBrandingForm({ moduleId }: { moduleId: ModuleId }) {
         </Tabs>
 
         <div className="flex justify-end pt-4">
-          <Button onClick={submit} disabled={busy}>
+          <Button onClick={submit} disabled={busy || !canEdit}>
             {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Salvar branding do {def.name}
           </Button>

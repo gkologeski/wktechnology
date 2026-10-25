@@ -1,3 +1,4 @@
+import { workRpc } from "./work-core.server";
 // TechERP Access Control — Fase 6: Auditoria, Simulação e Governança.
 // Read-only server functions used by /home/access → abas "Auditoria",
 // "Simular usuário" e "Relatórios".
@@ -8,21 +9,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SB = any;
 
-async function resolveWorkspace(supabase: SB, userId: string): Promise<string | null> {
-  const m = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  if (m.data?.workspace_id) return m.data.workspace_id as string;
-  const w = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("created_by", userId)
-    .limit(1)
-    .maybeSingle();
-  return (w.data?.id as string) ?? null;
+async function resolveWorkspace(
+  supabase: Parameters<typeof workRpc>[0],
+  _userId: string,
+): Promise<string | null> {
+  const c = await workRpc<{ workspace?: string }>(supabase, "work_access_context", {});
+  return c?.workspace ?? null;
 }
 
 async function assertOwnerOrAdmin(
@@ -30,20 +22,13 @@ async function assertOwnerOrAdmin(
   userId: string,
   workspaceId: string,
 ): Promise<void> {
-  const { data: w } = await supabase
-    .from("workspaces")
-    .select("created_by")
-    .eq("id", workspaceId)
-    .maybeSingle();
-  if (w?.created_by === userId) return;
-  const { data: m } = await supabase
-    .from("workspace_members")
-    .select("role")
-    .eq("workspace_id", workspaceId)
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (m?.role === "owner" || m?.role === "admin") return;
-  throw new Error("Apenas owner e administradores podem acessar governança.");
+  const active = await workRpc<{ workspace?: string }>(supabase, "work_access_context", {});
+  if (active.workspace !== workspaceId) throw new Error("Workspace indisponível.");
+  const { data, error } = await supabase.rpc("is_workspace_admin_v2", {
+    _workspace: workspaceId,
+    _user: userId,
+  });
+  if (error || !data) throw new Error("Apenas administradores ativos podem acessar governança.");
 }
 
 // -------------------- Audit log --------------------
@@ -112,6 +97,14 @@ export const simulateUser = createServerFn({ method: "POST" })
     if (!workspaceId) throw new Error("Workspace não encontrado.");
     await assertOwnerOrAdmin(supabase, userId, workspaceId);
 
+    const target = await supabase
+      .from("workspace_members")
+      .select("user_id")
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", data.user_id)
+      .maybeSingle();
+    if (target.error || !target.data)
+      throw new Error("Usuário não pertence ao workspace selecionado.");
     const [permsRes, scopeRes] = await Promise.all([
       supabase.rpc("user_effective_permissions", {
         _user_id: data.user_id,

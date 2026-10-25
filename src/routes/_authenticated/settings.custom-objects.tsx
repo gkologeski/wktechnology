@@ -1,3 +1,4 @@
+import { useSharedAction } from "@/lib/access-control/use-shared-action";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -51,6 +52,9 @@ type Rec = { id: string; data: Record<string, unknown>; created_at: string; upda
 const FIELD_TYPES = ["text", "number", "date", "boolean", "select", "url", "email"] as const;
 
 function CustomObjectsPage() {
+  const canCreate = useSharedAction("system.custom_objects", "create");
+  const canUpdate = useSharedAction("system.custom_objects", "update");
+  const canDelete = useSharedAction("system.custom_objects", "delete");
   const listObj = useServerFn(listCustomObjects);
   const saveObj = useServerFn(upsertCustomObject);
   const delObj = useServerFn(deleteCustomObject);
@@ -139,7 +143,7 @@ function CustomObjectsPage() {
             Crie entidades próprias com schema dinâmico.
           </p>
         </div>
-        <Button onClick={openNew}>
+        <Button disabled={!canCreate} onClick={openNew}>
           <Plus className="h-4 w-4 mr-2" /> Novo objeto
         </Button>
       </div>
@@ -161,13 +165,15 @@ function CustomObjectsPage() {
                 <Button variant="outline" size="sm" onClick={() => openRecords(o)}>
                   <Eye className="h-4 w-4 mr-1" /> Registros
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => openEdit(o)}>
+                <Button disabled={!canUpdate} variant="ghost" size="sm" onClick={() => openEdit(o)}>
                   Editar
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
+                  disabled={!canDelete}
                   onClick={async () => {
+                    if (!canDelete) return;
                     await delObj({ data: { id: o.id } });
                     load();
                   }}
@@ -270,7 +276,10 @@ function CustomObjectsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={submit} disabled={!form.name || !form.slug}>
+            <Button
+              onClick={submit}
+              disabled={!form.name || !form.slug || !(edit ? canUpdate : canCreate)}
+            >
               Salvar
             </Button>
           </DialogFooter>
@@ -285,6 +294,7 @@ function CustomObjectsPage() {
           <div className="mt-4 space-y-3">
             <Button
               size="sm"
+              disabled={!canCreate}
               onClick={() => {
                 setRecEdit(null);
                 setRecForm({});
@@ -311,6 +321,7 @@ function CustomObjectsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      disabled={!canUpdate}
                       onClick={() => {
                         setRecEdit(r);
                         setRecForm(r.data);
@@ -322,7 +333,9 @@ function CustomObjectsPage() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      disabled={!canDelete}
                       onClick={async () => {
+                        if (!canDelete) return;
                         await delRec({ data: { id: r.id } });
                         if (active) {
                           const x = await listRec({ data: { object_id: active.id } });
@@ -396,7 +409,9 @@ function CustomObjectsPage() {
                 ))}
               </div>
               <DialogFooter>
-                <Button onClick={saveRecord}>Salvar</Button>
+                <Button disabled={!(recEdit ? canUpdate : canCreate)} onClick={saveRecord}>
+                  Salvar
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

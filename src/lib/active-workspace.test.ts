@@ -33,13 +33,11 @@ describe("workspace ativo no servidor", () => {
     await expect(resolveActiveWorkspace("user")).resolves.toBe("A");
     expect(db.eq).toHaveBeenCalledWith("status", "active");
   });
-  it("sem preferência, considera somente vínculos ativos", async () => {
-    db.maybeSingle
-      .mockResolvedValueOnce(ok(null))
-      .mockResolvedValueOnce(ok(null))
-      .mockResolvedValueOnce(ok({ workspace_id: "B" }));
-    await expect(resolveActiveWorkspace("user")).resolves.toBe("B");
-    expect(db.eq).toHaveBeenCalledWith("status", "active");
+  it("sem preferência, exige seleção explícita e não assume o primeiro vínculo", async () => {
+    db.maybeSingle.mockResolvedValueOnce(ok(null)).mockResolvedValueOnce(ok(null));
+    await expect(resolveActiveWorkspace("user")).rejects.toThrow("Selecione um workspace");
+    expect(db.from).not.toHaveBeenCalledWith("workspace_members");
+    expect(db.maybeSingle).toHaveBeenCalledTimes(2);
   });
   it("preserva a exceção explícita de administrador da plataforma", async () => {
     db.maybeSingle

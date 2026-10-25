@@ -1,5 +1,16 @@
 /** Actual route gate, shared with navigation. Longest prefix wins. */
 const routes: Record<string, readonly string[]> = {
+  "/settings/permissions": ["system.roles"],
+  "/settings/media": ["system.media"],
+  "/settings/modules": ["system.modules"],
+  "/files": ["system.files"],
+  "/settings/branding": ["system.branding"],
+  "/settings/custom-objects": ["system.custom_objects"],
+  "/settings/custom-properties": ["system.custom_properties"],
+  "/settings/access-policy": ["system.settings"],
+  "/settings/data-residency": ["system.settings"],
+  "/settings/integrations/ai": ["system.ai_settings"],
+  "/settings/ai-panel": ["system.ai_settings"],
   "/dashboard": ["techsales.dashboard"],
   "/leads/import-hubspot": ["system.hubspot_sync"],
   "/leads": ["techsales.leads"],
@@ -77,6 +88,15 @@ const routes: Record<string, readonly string[]> = {
   "/settings/exports": ["system.analytics.reports"],
   "/settings/enrichment": ["techsales.prospecting_enrichment"],
 };
+const SHARED_CONFIG_RESOURCES = new Set([
+  "system.roles",
+  "system.branding",
+  "system.custom_objects",
+  "system.custom_properties",
+  "system.settings",
+  "system.ai_settings",
+  "system.modules",
+]);
 const prefixes = Object.keys(routes).sort((a, b) => b.length - a.length);
 export function salesRouteResources(url: string): readonly string[] | undefined {
   const path = url.split(/[?#]/, 1)[0].replace(/\/$/, "");
@@ -89,7 +109,9 @@ export function canViewSalesRoute(url: string, permissions: ReadonlySet<string>,
     !resources ||
     (ready &&
       resources.some((r) =>
-        ["own", "team", "workspace"].some((s) => permissions.has(`${r}.view.${s}`)),
+        (SHARED_CONFIG_RESOURCES.has(r) ? ["workspace"] : ["own", "team", "workspace"]).some((s) =>
+          permissions.has(`${r}.view.${s}`),
+        ),
       ))
   );
 }

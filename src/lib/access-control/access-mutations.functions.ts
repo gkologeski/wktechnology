@@ -1,3 +1,4 @@
+import { SHARED_FIELD_OPTIONS } from "./shared-field-catalog";
 // Server functions for CRUD on the TechERP access control model (Phase 2).
 // RLS already restricts writes to `workspace_id = auth.uid()` (owner-only),
 // so these functions rely on the authenticated user's Supabase client.
@@ -285,9 +286,20 @@ export const upsertFieldRule = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await assertActiveWorkspaceAdmin(supabase, userId);
+    const canonical =
+      data.resource === "techhire.offers" && data.field === "amount"
+        ? "salary_amount"
+        : data.resource === "techhire.interviews" && data.field === "private_notes"
+          ? "notes"
+          : data.field;
+    if (!SHARED_FIELD_OPTIONS.some((o) => o.resource === data.resource && o.field === canonical))
+      throw new Error("Escolha um campo com proteção disponível no catálogo.");
     if (!data.role_id && !data.set_id) {
       throw new Error("Selecione um cargo ou pacote para aplicar a regra.");
     }
+    if (data.role_id && data.set_id) throw new Error("Escolha apenas um cargo ou pacote.");
+    if (data.role_id) await assertRolesUsable(workspaceId, [data.role_id]);
+    if (data.set_id) await assertSetsUsable(workspaceId, [data.set_id]);
     const payload = {
       owner_id: userId,
       workspace_id: workspaceId,
@@ -300,10 +312,14 @@ export const upsertFieldRule = createServerFn({ method: "POST" })
     };
     if (data.id) {
       await assertNotSystemRow(supabase, "field_permission_rules", data.id);
+      const { owner_id: _author, ...updatePayload } = payload;
       const { error } = await supabase
         .from("field_permission_rules")
-        .update(payload)
-        .eq("id", data.id);
+        .update(updatePayload)
+        .eq("workspace_id", workspaceId)
+        .eq("id", data.id)
+        .select("id")
+        .single();
       if (error) throw new Error(error.message);
       await logAudit(
         supabase,

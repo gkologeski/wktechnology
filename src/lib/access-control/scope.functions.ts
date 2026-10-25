@@ -1,3 +1,4 @@
+import { workRpc } from "./work-core.server";
 // TechERP Access Control — Fase 5: escopo de dados.
 // Server functions para leitura do escopo efetivo do usuário e checagem de dono.
 import { createServerFn } from "@tanstack/react-start";
@@ -6,22 +7,12 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type DataScope = "own" | "team" | "workspace" | "custom";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function resolveWorkspace(supabase: any, userId: string): Promise<string | null> {
-  const m = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId)
-    .limit(1)
-    .maybeSingle();
-  if (m.data?.workspace_id) return m.data.workspace_id as string;
-  const w = await supabase
-    .from("workspaces")
-    .select("id")
-    .eq("created_by", userId)
-    .limit(1)
-    .maybeSingle();
-  return (w.data?.id as string) ?? null;
+async function resolveWorkspace(
+  supabase: Parameters<typeof workRpc>[0],
+  _userId: string,
+): Promise<string | null> {
+  const c = await workRpc<{ workspace?: string }>(supabase, "work_access_context", {});
+  return c?.workspace ?? null;
 }
 
 export const getMyDataScope = createServerFn({ method: "GET" })
@@ -44,7 +35,7 @@ export const canViewOwner = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ allowed: boolean }> => {
     const { supabase, userId } = context;
     const workspaceId = await resolveWorkspace(supabase, userId);
-    if (!workspaceId) return { allowed: userId === data.owner_id };
+    if (!workspaceId) return { allowed: false };
     const { data: ok, error } = await supabase.rpc("user_can_view_owner", {
       _user_id: userId,
       _workspace_id: workspaceId,

@@ -1,3 +1,4 @@
+import { useSharedAction } from "@/lib/access-control/use-shared-action";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2, Palette } from "lucide-react";
@@ -38,6 +39,7 @@ const DEFAULT_FORM: BuilderForm = {
 type State = { form: BuilderForm; theme: BrandTheme };
 
 export function BrandingBuilder() {
+  const canEdit = useSharedAction("system.branding", "update");
   const load = useServerFn(getBranding);
   const save = useServerFn(saveBranding);
   const [state, setState] = useState<State>({ form: DEFAULT_FORM, theme: EMPTY_THEME });
@@ -287,10 +289,10 @@ export function BrandingBuilder() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" disabled={!dirty || busy} onClick={discard}>
+          <Button variant="ghost" disabled={!dirty || busy || !canEdit} onClick={discard}>
             Descartar
           </Button>
-          <Button disabled={!dirty || busy} onClick={submit}>
+          <Button disabled={!dirty || busy || !canEdit} onClick={submit}>
             {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Salvar alterações
           </Button>

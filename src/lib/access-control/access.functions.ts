@@ -59,6 +59,7 @@ export type MemberAssignmentRow = {
 };
 
 export type AccessBundle = {
+  can_manage?: boolean;
   permissions: PermissionRow[];
   permission_sets: PermissionSetRow[];
   job_roles: JobRoleRow[];
@@ -81,6 +82,17 @@ export const getAccessBundle = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<AccessBundle> => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspaceOrNull(userId);
+    const { assertAccessManagementPermission } = await import("./access-admin-guard.server");
+    await assertAccessManagementPermission(supabase, "view", workspaceId ?? undefined);
+
+    let canManage = false;
+    try {
+      const { assertActiveWorkspaceAdmin } = await import("./access-admin-guard.server");
+      await assertActiveWorkspaceAdmin(supabase, userId);
+      canManage = true;
+    } catch {
+      /* A read-only administrator can still inspect the catalog. */
+    }
 
     // Todas as leituras de catálogo são paginadas: `permissions` e
     // `permission_set_items` já passam de 1.000 linhas e eram truncadas pelo
@@ -200,6 +212,7 @@ export const getAccessBundle = createServerFn({ method: "GET" })
     }
 
     return {
+      can_manage: canManage,
       permissions: permRows,
       permission_sets: setRows.map((s) => ({
         ...s,

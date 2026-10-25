@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // Botão flutuante que abre o mensageiro (drawer).
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -14,6 +15,9 @@ import { ChatDrawer } from "./chat-drawer";
 
 export function ChatTrigger() {
   const { user } = useAuth();
+  const permissions = usePermissions();
+  const allowed =
+    !permissions.isLoading && !permissions.isError && permissions.can("system.messenger.view.own");
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const listFn = useServerFn(listConversations);
@@ -28,7 +32,7 @@ export function ChatTrigger() {
       if (!s.session) return [];
       return listFn();
     },
-    enabled: !!user?.id,
+    enabled: !!user?.id && allowed,
     staleTime: 15_000,
     retry: false,
   });
@@ -40,6 +44,7 @@ export function ChatTrigger() {
 
   const unread = (data ?? []).reduce((acc, c) => acc + (c.unread_count || 0), 0);
 
+  if (!allowed) return null;
   return (
     <>
       <div className="fixed bottom-5 right-20 z-50">

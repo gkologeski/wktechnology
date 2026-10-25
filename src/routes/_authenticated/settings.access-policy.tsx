@@ -1,3 +1,4 @@
+import { useSharedAction } from "@/lib/access-control/use-shared-action";
 import { formatDateTime } from "@/lib/crm";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/_authenticated/settings/access-policy")({
 });
 
 function AccessPolicyPage() {
+  const canManage = useSharedAction("system.settings", "manage");
   const get = useServerFn(getWorkspaceSecurity);
   const update = useServerFn(updateWorkspaceSecurity);
   const logs = useServerFn(listIpAccessLog);
@@ -77,6 +79,7 @@ function AccessPolicyPage() {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-2">
             <Switch
+              disabled={!canManage}
               checked={!!sec.ip_allowlist_enabled}
               onCheckedChange={(v) => save({ ip_allowlist_enabled: v })}
             />
