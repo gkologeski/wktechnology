@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { FileCenterPickerDialog } from "@/components/files/file-center-picker";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { requestStorageUploadPath } from "@/lib/storage-upload-path";
 
 type Props = {
   onExtracted: (args: { text: string; cvUrl: string | null }) => void;
@@ -51,7 +52,7 @@ export function CvPdfUploadButton({ onExtracted, disabled }: Props) {
         const { data: u } = await supabase.auth.getUser();
         const uid = u.user?.id;
         if (!uid) throw new Error("Não autenticado");
-        const path = `${uid}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
+        const path = await requestStorageUploadPath("ats-cvs", file.name);
         const { error: upErr } = await supabase.storage
           .from("ats-cvs")
           .upload(path, file, { contentType: file.type || "application/pdf", upsert: false });

@@ -109,6 +109,14 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       if (!a.path.startsWith(`${context.userId}/`)) {
         throw new Error("Anexo inválido: caminho fora da pasta do usuário");
       }
+      if (
+        !(await workRpc<boolean>(context.supabase, "shared_storage_object_access", {
+          b: "email-attachments",
+          p: a.path,
+          a: "view",
+        }))
+      )
+        throw new Error("Anexo indisponível ou sem permissão atual.");
       const { data: file, error: dErr } = await supabaseAdmin.storage
         .from("email-attachments")
         .download(a.path);

@@ -1,3 +1,4 @@
+import { requestStorageUploadPath } from "@/lib/storage-upload-path";
 // Consultas auxiliares da linha do tempo: contato-alvo das ações, associações
 // automáticas ao criar atividade, membros do workspace e upload de anexos.
 // Extraído de `src/components/activity-timeline.tsx` sem mudança de comportamento.
@@ -195,23 +196,12 @@ export async function fetchTimelineTeam(user: { id: string; email?: string | nul
   };
 }
 
-function safeFileName(name: string) {
-  return (
-    name
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-zA-Z0-9._-]+/g, "_")
-      .replace(/_+/g, "_")
-      .replace(/^_+|_+$/g, "")
-      .slice(-120) || "file"
-  );
-}
-
 /** Envia anexos para o bucket de notas e devolve os metadados gravados. */
 export async function uploadTimelineFiles(userId: string, files: File[]): Promise<Attachment[]> {
   const out: Attachment[] = [];
   for (const file of files) {
-    const path = `${userId}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+    if (!userId) throw new Error("Não autenticado.");
+    const path = await requestStorageUploadPath("notes-attachments", file.name);
     const { error } = await supabase.storage
       .from("notes-attachments")
       .upload(path, file, { contentType: file.type });

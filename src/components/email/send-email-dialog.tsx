@@ -26,6 +26,7 @@ import { isEmail } from "@/lib/validators";
 import { RichHtmlEditor, htmlToPlain } from "@/components/rich-html-editor";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { requestStorageUploadPath } from "@/lib/storage-upload-path";
 import {
   Dialog,
   DialogContent,
@@ -154,8 +155,7 @@ export function SendEmailDialog({
     try {
       const uploaded: Attachment[] = [];
       for (const f of newFiles) {
-        const safeName = f.name.replace(/[^\w.-]+/g, "_");
-        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+        const path = await requestStorageUploadPath("email-attachments", f.name);
         const { error } = await supabase.storage
           .from("email-attachments")
           .upload(path, f, { contentType: f.type || "application/octet-stream", upsert: false });

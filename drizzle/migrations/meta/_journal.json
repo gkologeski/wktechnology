@@ -1639,6 +1639,20 @@
       "when": 1792873273613,
       "tag": "0233_order5_whatsapp_media_references",
       "breakpoints": true
+    },
+    {
+      "idx": 234,
+      "version": "7",
+      "when": 1792873273614,
+      "tag": "0234_order5_legacy_storage_prepare",
+      "breakpoints": true
+    },
+    {
+      "idx": 235,
+      "version": "7",
+      "when": 1792873273615,
+      "tag": "0235_order5_legacy_storage_activate",
+      "breakpoints": true
     }
   ]
 }

@@ -1331,3 +1331,42 @@ verificar a interface e repetir os hashes de defaults/overrides/cargos/membershi
 foi dada pelo usuário; a sincronização usa sua autenticação SSH já existente.
 Estimativa inicial 4–7h, recalibrada para 8–12h totais; fechamento após autorização
 estimado em 1–2h, com 30–45min previstos para a correção encontrada no aceite.
+
+### Fechamento da auditoria de Storage (25/10/2026)
+
+A revisão dos quinze buckets identificou acesso direto legado por proprietário
+em currículos, notas e e-mails. As migrações aditivas 0234/0235 vinculam arquivos
+registrados às permissões canônicas atuais do candidato, atividade, mensagem,
+documento/pessoa e entrevista. A referência é literal, inclusive quando o
+currículo foi salvo como URL assinada. A existência de referência impede fallback
+para upload pendente após revogação, exclusão lógica ou troca de responsável.
+
+Uploads novos de CV (cadastro de candidato), notas e e-mails pedem ao banco um
+caminho ator/workspace/UUID, após a autorização da área. Pendentes só permitem
+leitura/limpeza pelo autor real durante uma hora; caminhos históricos sem vínculo
+não são reutilizados como pendentes. Anexos já registrados continuam pelo vínculo
+real. A operação de envio de e-mail revalida acesso ao anexo antes do download
+privilegiado; nenhum e-mail real é enviado no aceite. A política antiga de INSERT
+de notas esperava workspace/... mas a interface usava ator/...; uma política
+permissiva adicional aceita o novo formato sob o gate restritivo. Uma segunda
+permite reprodução de vídeo por recrutador autorizado pela entrevista, mesmo
+quando o upload foi feito sob a pasta de outro responsável. As 46 políticas
+originais são preservadas. Não se alteram grants de cargos ou presets.
+
+Exceções: gravações de chamados próprios são pessoais (autor atual, sessão ativa,
+workspace selecionado, escrita fora de modo somente leitura); contract-imports
+mantém os predicados restritivos da Ordem 3. contact-photos, role-profile-files e
+sdr-materials usam capacidades do servidor com autorização de entidade. O bucket
+exports não tem leitor/gravador na aplicação atual e seu acesso bruto legado é
+retirado; nenhum objeto é apagado. Bucket desconhecido é negado por padrão.
+URLs assinadas já emitidas conservam seu prazo de validade; não há promessa de
+revogação retroativa dessas capacidades.
+
+52 cenários adicionais passaram com JWT, PostgREST e Storage reais: upload,
+leitura, negação, transferência, inativo, outro workspace, tentativa de sobrescrita,
+parentes de People/ATS e exceções. Com os 127 anteriores são 179 cenários isolados.
+O verify integral passou em 232 arquivos / 1.767 testes. Aplicar preparação,
+publicar o cliente que pede os caminhos e só então ativar as políticas; conferir
+journal, hash publicado, invariantes e aceite autenticado. A disponibilidade do
+backend de produção oscilou entre resposta, HTTP 504 e conexão recusada; isso
+continua sendo um bloqueio externo até o aceite final, não uma validação verde.
