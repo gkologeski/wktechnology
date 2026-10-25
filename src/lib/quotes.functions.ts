@@ -113,6 +113,28 @@ export const listDealQuotes = createServerFn({ method: "POST" })
     return rows ?? [];
   });
 
+/** Internal preview: caller RLS, no token lookup and no public view counter mutation. */
+export const getQuotePreview = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.quotes", "view")])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertSalesRecord(context.supabase, "quotes", data.id, "view");
+    const { data: quote, error } = await context.supabase
+      .from("quotes")
+      .select("*")
+      .eq("id", data.id)
+      .single();
+    if (error) throw error;
+    const { data: items, error: itemsError } = await context.supabase
+      .from("quote_line_items")
+      .select("*")
+      .eq("quote_id", quote.id)
+      .eq("workspace_id", quote.workspace_id)
+      .order("position");
+    if (itemsError) throw itemsError;
+    return { quote, items: items ?? [] };
+  });
+
 export const createQuoteFromDeal = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.quotes", "create")])
   .inputValidator((input) =>

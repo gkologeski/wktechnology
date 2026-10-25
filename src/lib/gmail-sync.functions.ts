@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { workRpc } from "@/lib/access-control/work-core.server";
 import { syncAccount, type SyncResult } from "@/lib/gmail-sync.server";
 import type { EmailAccountRow } from "@/lib/gmail.server";
 
@@ -9,18 +11,37 @@ const ACCOUNT_COLUMNS =
 
 // Manual "sync now" trigger from /settings/email.
 export const syncMyEmailAccounts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("techsales.email_accounts", "update")])
   .inputValidator((input) =>
     z.object({ account_id: z.string().uuid().optional() }).parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const scope = await workRpc<{ workspace: string }>(
+      context.supabase,
+      "sales_access_context",
+      {},
+    );
+    const { data: visible, error: visibleError } = await context.supabase
+      .from("email_accounts")
+      .select("id")
+      .eq("workspace_id", scope.workspace)
+      .eq("owner_id", context.userId);
+    if (visibleError) throw new Error(visibleError.message);
+    if (!visible?.length) return { results: [] as SyncResult[] };
+    if (data.account_id)
+      await assertSalesRecord(context.supabase, "email_accounts", data.account_id, "update");
     // Inclui contas em "error" para permitir auto-recuperação manual
     // (ex.: historyId expirado → FAILED_PRECONDITION). syncAccount restaura
     // status="connected" ao concluir com sucesso.
     let q = supabaseAdmin
       .from("email_accounts")
       .select(ACCOUNT_COLUMNS)
+      .eq("workspace_id", scope.workspace)
+      .in(
+        "id",
+        visible.map((row) => row.id),
+      )
       .eq("owner_id", context.userId)
       .eq("provider", "gmail")
       .in("status", ["connected", "error"]);

@@ -1,6 +1,8 @@
 // Blocos de prospecção do motor de workflows: ligar/desligar o agente SDR,
 // transferir para pessoa e consulta de resposta real (usada por "Aguardar resposta").
 // Sempre filtrados pelo workspace do fluxo; nada envia mensagem.
+import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
+import { workflowRecord } from "./record-write.server";
 import { buildDeliveryMeta } from "../delivery-meta";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LogStep } from "../engine-shared.server";
@@ -41,7 +43,13 @@ export async function hasReplySince(
         .in("from_number", brPhoneVariants(phone))
         .gt("created_at", sinceIso)
         .limit(1);
-      if ((data ?? []).length > 0) return { replied: true, channel: "whatsapp" };
+      if ((data ?? []).length > 0) {
+        if (!ctx.workflowId) throw new Error("Workflow sem origem de autorização.");
+        await assertSalesWorker(supabase, "workflows", ctx.workflowId, [
+          { table: "whatsapp_messages", id: data![0].id },
+        ]);
+        return { replied: true, channel: "whatsapp" };
+      }
     }
   }
   if (channels.includes("email")) {
@@ -55,7 +63,13 @@ export async function hasReplySince(
         .ilike("from_email", email)
         .gt("created_at", sinceIso)
         .limit(1);
-      if ((data ?? []).length > 0) return { replied: true, channel: "email" };
+      if ((data ?? []).length > 0) {
+        if (!ctx.workflowId) throw new Error("Workflow sem origem de autorização.");
+        await assertSalesWorker(supabase, "workflows", ctx.workflowId, [
+          { table: "email_messages", id: data![0].id },
+        ]);
+        return { replied: true, channel: "email" };
+      }
     }
   }
   return { replied: false };
@@ -85,6 +99,10 @@ export async function handleSdrAction(
     case "sdr_agent": {
       const conv = await latestConversation(supabase, ctx);
       if (!conv) throw new Error("Registro sem conversa de WhatsApp: o agente não foi alterado.");
+      if (!ctx.workflowId) throw new Error("Workflow sem origem de autorização.");
+      await assertSalesWorker(supabase, "workflows", ctx.workflowId, [
+        { table: "whatsapp_conversations", id: conv.id, action: "update" },
+      ]);
       if (action.mode === "off") {
         const { data, error } = await supabase
           .from("sdr_enrollments")
@@ -188,8 +206,16 @@ export async function handleSdrAction(
       const target = action.user_id?.trim() || null;
       const conv = await latestConversation(supabase, ctx);
       let paused = 0;
+      if (!ctx.workflowId) throw new Error("Workflow sem origem de autorização.");
+      const notify = target ?? (ctx.after?.["assigned_to"] as string | null) ?? ctx.ownerId;
+      await assertSalesWorker(supabase, "workflows", ctx.workflowId, [
+        { member_id: notify },
+        ...(conv
+          ? [{ table: "whatsapp_conversations", id: conv.id, action: "update" as const }]
+          : []),
+      ]);
       if (conv) {
-        const { data } = await supabase
+        const { data, error } = await supabase
           .from("sdr_enrollments")
           .update({
             status: "handoff",
@@ -202,19 +228,16 @@ export async function handleSdrAction(
           .eq("conversation_id", conv.id)
           .eq("status", "active")
           .select("id");
+        if (error) throw new Error(error.message);
         paused = (data ?? []).length;
       }
       const assignable = ["leads", "contacts", "companies", "deals"];
       if (target && assignable.includes(ctx.entity)) {
-        const { error } = await supabase
-          .from(ctx.entity)
-          .update({ assigned_to: target } as never)
-          .eq("id", ctx.entityId)
-          .eq("workspace_id", ctx.workspaceId);
-        if (error) throw new Error(error.message);
+        await workflowRecord(supabase, ctx, ctx.entity, "update", ctx.entityId, {
+          assigned_to: target,
+        });
       }
-      const notify = target ?? (ctx.after?.["assigned_to"] as string | null) ?? ctx.ownerId;
-      await supabase.from("notifications").insert({
+      const { error: notifyError } = await supabase.from("notifications").insert({
         owner_id: ctx.ownerId,
         user_id: notify,
         type: "workflow",
@@ -223,6 +246,7 @@ export async function handleSdrAction(
         entity: ctx.entity,
         entity_id: ctx.entityId,
       } as never);
+      if (notifyError) throw new Error(notifyError.message);
       return {
         at,
         ok: true,
@@ -247,6 +271,10 @@ export async function handleSdrAction(
       if (!page || page.workspace_id !== ctx.workspaceId)
         throw new Error("Página de agendamento fora da empresa ou removida.");
       if (!page.active) throw new Error("Página de agendamento desativada.");
+      if (!ctx.workflowId) throw new Error("Workflow sem origem de autorização.");
+      await assertSalesWorker(supabase, "workflows", ctx.workflowId, [
+        { table: "booking_pages", id: page.id },
+      ]);
       const { getPublicAppUrl } = await import("@/lib/app-url");
       const url = `${getPublicAppUrl().replace(/\/$/, "")}/book/${page.slug as string}`;
       const vars = (ctx.vars = ctx.vars ?? {});

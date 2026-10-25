@@ -1,3 +1,4 @@
+import { assertSalesRecord, assertSalesArea } from "@/lib/access-control/sales-core.server";
 // Engine de enriquecimento (Apollo / Lusha) — provê:
 // - Provedores normalizados (apolloMatch, lushaMatch) → EnrichedPerson
 // - runEnrichmentBatch(): aplica em massa com modes (fill_empty | overwrite),
@@ -272,6 +273,8 @@ export async function runEnrichmentBatch(opts: RunBatchOpts): Promise<RunBatchRe
 
     for (const provider of providers) {
       try {
+        await assertSalesArea(supabase, "techsales.prospecting_enrichment", "manage");
+        await assertSalesRecord(supabase, table, row.id, dryRun ? "view" : "update");
         const fn = PROVIDER_FN[provider];
         const enriched = await fn({
           email: currentBefore.email as string | null,

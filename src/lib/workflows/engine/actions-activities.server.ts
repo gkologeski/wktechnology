@@ -1,3 +1,4 @@
+import { workflowRecord } from "./record-write.server";
 import { buildDeliveryMeta } from "../delivery-meta";
 import { withWorkflowWorkspace } from "./workspace-payload";
 // Ações de atividades: criar atividade, pesquisa, tarefa e intenção de negócio.
@@ -35,10 +36,14 @@ export async function handleActivityAction(
       else if (ctx.entity === "contacts") baseRow.related_contact_id = ctx.entityId;
       else if (ctx.entity === "companies") baseRow.related_company_id = ctx.entityId;
       else if (ctx.entity === "deals") baseRow.related_deal_id = ctx.entityId;
-      const { error } = await supabase
-        .from("activities")
-        .insert(withWorkflowWorkspace(ctx, baseRow) as never);
-      if (error) throw new Error(error.message);
+      await workflowRecord(
+        supabase,
+        ctx,
+        "activities",
+        "create",
+        null,
+        withWorkflowWorkspace(ctx, baseRow),
+      );
       return { at, ok: true, action: "create_activity", detail: { subject } };
     }
     case "create_survey_activity": {
@@ -83,12 +88,14 @@ export async function handleActivityAction(
       else if (ctx.entity === "deals") row.related_deal_id = ctx.entityId;
       else if (ctx.entity === "tickets") row.related_ticket_id = ctx.entityId;
       else throw new Error("create_survey_activity não suporta esta entidade");
-      const { data: created, error } = await supabase
-        .from("activities")
-        .insert(withWorkflowWorkspace(ctx, row) as never)
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
+      const created = await workflowRecord(
+        supabase,
+        ctx,
+        "activities",
+        "create",
+        null,
+        withWorkflowWorkspace(ctx, row),
+      );
       return {
         at,
         ok: true,
@@ -103,26 +110,26 @@ export async function handleActivityAction(
       const subject = action.subject
         ? (renderTokens(action.subject, ctx.after, ctx.vars) as string)
         : "Criar oportunidade";
-      const { data: created, error } = await supabase
-        .from("activities")
-        .insert(
-          withWorkflowWorkspace(ctx, {
-            owner_id: ctx.ownerId,
-            type: "task",
-            subject,
-            completed: false,
-            related_lead_id: ctx.entityId,
-            custom_fields: {
-              ui_action: "create_deal",
-              pipeline_id: action.pipeline_id ?? null,
-              stage_value: action.stage_value ?? null,
-              due_rule: action.due_rule ?? "last_business_day_of_month",
-            },
-          }) as never,
-        )
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
+      const created = await workflowRecord(
+        supabase,
+        ctx,
+        "activities",
+        "create",
+        null,
+        withWorkflowWorkspace(ctx, {
+          owner_id: ctx.ownerId,
+          type: "task",
+          subject,
+          completed: false,
+          related_lead_id: ctx.entityId,
+          custom_fields: {
+            ui_action: "create_deal",
+            pipeline_id: action.pipeline_id ?? null,
+            stage_value: action.stage_value ?? null,
+            due_rule: action.due_rule ?? "last_business_day_of_month",
+          },
+        }),
+      );
       return {
         at,
         ok: true,
@@ -141,7 +148,8 @@ export async function handleActivityAction(
         ? new Date(Date.now() + action.due_in_days * 86_400_000).toISOString()
         : null;
       const base: Record<string, unknown> = {
-        owner_id: action.assignee_id?.trim() || ctx.ownerId,
+        owner_id: ctx.ownerId,
+        assigned_to: action.assignee_id?.trim() || ctx.ownerId,
         type: "task",
         subject,
         body,
@@ -152,10 +160,14 @@ export async function handleActivityAction(
       else if (ctx.entity === "companies") base.related_company_id = ctx.entityId;
       else if (ctx.entity === "deals") base.related_deal_id = ctx.entityId;
       const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
-      const { error } = await supabase
-        .from("activities")
-        .insert(withWorkflowWorkspace(ctx, row) as never);
-      if (error) throw new Error(error.message);
+      await workflowRecord(
+        supabase,
+        ctx,
+        "activities",
+        "create",
+        null,
+        withWorkflowWorkspace(ctx, row),
+      );
       return { at, ok: true, action: "create_task", detail: { subject } };
     }
     case "linkedin_task": {
@@ -173,10 +185,14 @@ export async function handleActivityAction(
       else if (ctx.entity === "contacts") row.related_contact_id = ctx.entityId;
       else if (ctx.entity === "companies") row.related_company_id = ctx.entityId;
       else if (ctx.entity === "deals") row.related_deal_id = ctx.entityId;
-      const { error } = await supabase
-        .from("activities")
-        .insert(withWorkflowWorkspace(ctx, row) as never);
-      if (error) throw new Error(error.message);
+      await workflowRecord(
+        supabase,
+        ctx,
+        "activities",
+        "create",
+        null,
+        withWorkflowWorkspace(ctx, row),
+      );
       return {
         at,
         ok: true,

@@ -1,3 +1,4 @@
+import { assertSalesAccountJob } from "@/lib/access-control/sales-account-job.server";
 // Server-only Gmail sync helpers (History API + messages.get + MIME parsing).
 // Never import from client code.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -178,6 +179,7 @@ export type SyncResult = {
 
 export async function syncAccount(account: EmailAccountRow): Promise<SyncResult> {
   if (!account.workspace_id) throw new Error("Conta Gmail sem workspace de origem.");
+  await assertSalesAccountJob(supabaseAdmin, "email_accounts", account.id);
   const token = await ensureAccessToken(account);
 
   // Decide which IDs to pull this tick.

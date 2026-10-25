@@ -1,3 +1,5 @@
+import { assertSalesRecord, assertSalesReferences } from "@/lib/access-control/sales-core.server";
+import { workRpc } from "@/lib/access-control/work-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { parseEmailList } from "@/lib/email-address";
 import { emailSchema } from "@/lib/email-schema";
@@ -58,12 +60,24 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await (await import("@/lib/view-as-guard.server")).assertNotReadOnlyView(context.supabase);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const scope = await workRpc<{ workspace: string }>(
+      context.supabase,
+      "sales_access_context",
+      {},
+    );
+    await assertSalesReferences(context.supabase, {
+      contacts: data.contact_id,
+      leads: data.lead_id,
+      deals: data.deal_id,
+      companies: data.company_id,
+    });
     // Resolve account (use specified or first connected for this user)
     let q = supabaseAdmin
       .from("email_accounts")
       .select(
         "id, workspace_id, owner_id, email, access_token, refresh_token, expires_at, status, history_id",
       )
+      .eq("workspace_id", scope.workspace)
       .eq("owner_id", context.userId)
       .eq("provider", "gmail");
     if (data.account_id) q = q.eq("id", data.account_id);
@@ -75,6 +89,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
     if (!account) throw new Error("Nenhuma conta Gmail conectada");
     if (!account.workspace_id) throw new Error("Conta Gmail sem workspace de origem.");
 
+    await assertSalesRecord(context.supabase, "email_accounts", account.id, "view");
     const accessToken = await ensureAccessToken(account);
 
     const messageDbId = randomUUID();

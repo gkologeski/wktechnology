@@ -1,3 +1,5 @@
+import { useSalesCapabilities } from "@/lib/access-control/use-sales-capabilities";
+import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -81,6 +83,8 @@ export const Route = createFileRoute("/_authenticated/deals/$id")({
 function DealDetail() {
   const { id } = Route.useParams();
   const search = Route.useSearch();
+  const capabilities = useSalesCapabilities("deals", [id]);
+  const canUpdate = capabilities.for(id).can_update;
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { pipelines } = usePipelines("deal");
@@ -186,29 +190,40 @@ function DealDetail() {
   const currentStage = deal.stage_id || (deal.stage as string);
 
   const setStage = async (v: string) => {
+    if (!canUpdate) return;
     const legacyEnum = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
     const payload: Record<string, unknown> = { stage_id: v };
     if (legacyEnum.includes(v)) payload.stage = v;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any).from("deals").update(payload).eq("id", deal.id);
+    const { data: affected, error } = await (supabase as any)
+      .from("deals")
+      .update(payload)
+      .eq("id", deal.id)
+      .select("id");
+    if (error) return void toast.error(error.message);
+    if (deniedIfUnaffected(affected)) return;
     void load();
   };
 
   /** O substatus precisa pertencer à etapa atual (validado por gatilho no banco). */
   const setSubstatus = async (substatusId: string | null) => {
-    const { error } = await supabase
+    if (!canUpdate) return;
+    const { data: affected, error } = await supabase
       .from("deals")
       .update({ stage_substatus_id: substatusId } as never)
-      .eq("id", deal.id);
+      .eq("id", deal.id)
+      .select("id");
     if (error) {
       toast.error(error.message);
       return;
     }
+    if (deniedIfUnaffected(affected)) return;
     window.dispatchEvent(new CustomEvent("timeline:refresh"));
     void load();
   };
 
   const setPipeline = async (pipelineId: string) => {
+    if (!canUpdate) return;
     const next = pipelines.find((p) => p.id === pipelineId);
     const firstStage = next?.stages[0]?.value ?? "new";
     const legacyEnum = ["new", "qualified", "proposal", "negotiation", "won", "lost"];
@@ -222,11 +237,16 @@ function DealDetail() {
       payload.stage = type === "won" ? "won" : type === "lost" ? "lost" : "new";
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from("deals").update(payload).eq("id", deal.id);
+    const { data: affected, error } = await (supabase as any)
+      .from("deals")
+      .update(payload)
+      .eq("id", deal.id)
+      .select("id");
     if (error) {
       toast.error(error.message);
       return;
     }
+    if (deniedIfUnaffected(affected)) return;
     toast.success("Funil atualizado");
     void load();
   };
@@ -321,6 +341,7 @@ function DealDetail() {
             <Select
               value={(deal as unknown as { pipeline_id?: string | null }).pipeline_id ?? ""}
               onValueChange={setPipeline}
+              disabled={!canUpdate}
             >
               <SelectTrigger className="h-9 w-[200px]">
                 <SelectValue placeholder="Selecione o funil" />
@@ -359,7 +380,12 @@ function DealDetail() {
       </div>
       <div className="mt-2 flex flex-col gap-2 border-t border-product-divider pt-2 lg:flex-row lg:items-center">
         <div className="min-w-0 flex-1">
-          <StageTracker stages={stages} current={currentStage} onChange={setStage} />
+          <StageTracker
+            stages={stages}
+            current={currentStage}
+            onChange={setStage}
+            disabled={!canUpdate}
+          />
         </div>
         <div className="w-full shrink-0 lg:w-56 [&_button]:h-8">
           <SubstatusSelect
@@ -367,6 +393,7 @@ function DealDetail() {
             stageValue={currentStage}
             value={(deal as unknown as { stage_substatus_id?: string | null }).stage_substatus_id}
             onChange={setSubstatus}
+            disabled={!canUpdate}
             label={null}
           />
         </div>

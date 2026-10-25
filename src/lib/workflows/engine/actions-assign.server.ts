@@ -1,3 +1,6 @@
+import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
+import { SALES_TABLE_RESOURCES } from "@/lib/access-control/sales-resources";
+import { workflowRecord } from "./record-write.server";
 // Ações de responsável: atribuir, rodízio e atribuir recrutador.
 // Extraído de engine-actions.server.ts sem mudança de comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -14,11 +17,9 @@ export async function handleAssignAction(
   switch (action.type) {
     case "assign_to": {
       const assignField = assignFieldFor(ctx.entity);
-      const { error } = await supabase
-        .from(ctx.entity)
-        .update({ [assignField]: action.user_id })
-        .eq("id", ctx.entityId);
-      if (error) throw new Error(error.message);
+      await workflowRecord(supabase, ctx, ctx.entity, "update", ctx.entityId, {
+        [assignField]: action.user_id,
+      });
       return {
         at,
         ok: true,
@@ -30,7 +31,27 @@ export async function handleAssignAction(
       if (ctx.entity !== "leads" && ctx.entity !== "deals" && ctx.entity !== "tickets") {
         throw new Error("rotate_assign suporta apenas leads/deals/tickets");
       }
-      const r = await applyRotation(supabase, action.rule_id, ctx.entity, ctx.entityId);
+      const r = await applyRotation(
+        supabase,
+        action.rule_id,
+        ctx.entity,
+        ctx.entityId,
+        async (table, id, payload) => {
+          if (table === ctx.entity) {
+            if (!ctx.workflowId) throw new Error("Workflow sem origem de autorização.");
+            const subject = String(payload[assignFieldFor(ctx.entity)] ?? "");
+            await assertSalesWorker(supabase, "workflows", ctx.workflowId, [
+              { table, id, action: "assign" },
+              {
+                resource: (SALES_TABLE_RESOURCES as Record<string, string>)[table],
+                action: "assign",
+                subject_id: subject,
+              },
+            ]);
+          }
+          await workflowRecord(supabase, ctx, table, "update", id, payload);
+        },
+      );
       return {
         at,
         ok: true,

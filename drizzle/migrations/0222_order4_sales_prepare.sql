@@ -2509,18 +2509,35 @@ ALTER TABLE public.outbound_webhooks ALTER COLUMN secret SET DEFAULT ('whsec_'||
 GRANT CREATE ON SCHEMA techerp_api TO techerp_api_subject;
 CREATE OR REPLACE FUNCTION techerp_api.sales_worker_check(p_source text,p_id uuid,p_user uuid,p_ws uuid,p_refs jsonb)
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
-DECLARE prev text:=current_setting('request.jwt.claims',true);c jsonb;ref jsonb;allowed boolean:=false;r text;BEGIN
+DECLARE prev text:=current_setting('request.jwt.claims',true);c jsonb;ref jsonb;allowed boolean:=false;r text;action text;subject uuid;visible boolean;BEGIN
  IF current_setting('app.api_subject',true)='on' OR jsonb_typeof(p_refs)<>'array' OR jsonb_array_length(p_refs)>100 THEN RAISE EXCEPTION 'Contexto de execução inválido.' USING ERRCODE='42501';END IF;
  INSERT INTO techerp_api.subject_sessions(txid,user_id,workspace_id,api_key_id,prev_claims) VALUES(txid_current(),p_user,p_ws,p_id,prev);
  PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',p_user,'role','authenticated','aud','authenticated')::text,true);
  PERFORM set_config('request.jwt.claim.sub',p_user::text,true);PERFORM set_config('request.jwt.claim.role','authenticated',true);PERFORM set_config('app.api_subject','on',true);
  c:=sales_access_context();
- allowed:=c->>'actor'=p_user::text AND c->>'workspace'=p_ws::text AND sales_record_access(p_source,p_id,'view') AND sales_record_access(p_source,p_id,'update');
+ allowed:=c->>'actor'=p_user::text AND c->>'workspace'=p_ws::text AND sales_record_access(p_source,p_id,'view') AND sales_record_access(p_source,p_id,CASE WHEN p_source='workflows' THEN 'manage' ELSE 'update' END);
  IF p_source IN('whatsapp_campaigns','email_broadcasts') THEN
   allowed:=allowed AND sales_context_access(c,p_ws,'techsales.campaign_dispatch','manage',ARRAY[p_user]);
  END IF;
  FOR ref IN SELECT * FROM jsonb_array_elements(p_refs) LOOP
-  IF ref->>'table' NOT IN('leads','contacts','companies','deals','whatsapp_conversations','email_threads','email_accounts','calendar_accounts','sdr_playbooks','segments','activities') OR NOT sales_record_access(ref->>'table',(ref->>'id')::uuid,'view') THEN allowed:=false;EXIT;END IF;
+  action:=coalesce(ref->>'action','view');
+  IF action NOT IN('view','create','update','delete','assign','approve','export','manage') THEN allowed:=false;EXIT;END IF;
+  IF ref->>'member_id' IS NOT NULL THEN
+   IF NOT EXISTS(SELECT 1 FROM workspace_members WHERE workspace_id=p_ws AND user_id=(ref->>'member_id')::uuid AND status='active') THEN allowed:=false;EXIT;END IF;
+  ELSIF ref->>'record_table' IS NOT NULL THEN
+   -- Read-only cross-module references execute with the source owner's actual RLS.
+   r:=ref->>'record_table';
+   IF r NOT IN('ats_jobs','ats_candidates','ats_applications','ats_interviews','projects','project_tasks','project_milestones','contracts','financial_entries','bank_payments','services','recurring_plans','subscription_invoices','customer_invoices','people','legal_entities','financial_cost_centers','financial_categories','financial_bank_accounts','subscriptions','profiles') OR ref->>'id' IS NULL THEN allowed:=false;EXIT;END IF;
+   IF r='profiles' THEN
+    IF NOT EXISTS(SELECT 1 FROM workspace_members WHERE workspace_id=p_ws AND user_id=(ref->>'id')::uuid AND status='active') THEN allowed:=false;EXIT;END IF;
+    SELECT EXISTS(SELECT 1 FROM profiles WHERE id=(ref->>'id')::uuid) INTO visible;
+   ELSE EXECUTE format('SELECT EXISTS(SELECT 1 FROM public.%I WHERE id=$1 AND workspace_id=$2)',r) INTO visible USING (ref->>'id')::uuid,p_ws;END IF;
+   IF NOT coalesce(visible,false) THEN allowed:=false;EXIT;END IF;
+  ELSIF ref->>'resource' IS NOT NULL THEN
+   subject:=coalesce(nullif(ref->>'subject_id','')::uuid,p_user);
+   IF NOT EXISTS(SELECT 1 FROM workspace_members WHERE workspace_id=p_ws AND user_id=subject AND status='active') OR NOT sales_context_access(c,p_ws,ref->>'resource',action,ARRAY[subject]) THEN allowed:=false;EXIT;END IF;
+  ELSIF ref->>'table' IS NULL OR ref->>'id' IS NULL OR NOT sales_record_access(ref->>'table',(ref->>'id')::uuid,action) THEN allowed:=false;EXIT;
+  END IF;
  END LOOP;
  PERFORM techerp_api.leave();RETURN coalesce(allowed,false);
 END $$;
@@ -2530,6 +2547,7 @@ CREATE OR REPLACE FUNCTION public.sales_worker_authorize(p_source text,p_id uuid
 RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
 DECLARE w uuid;u uuid;BEGIN
  IF p_source NOT IN('whatsapp_campaigns','email_broadcasts','sequence_enrollments','prospecting_enrollments','sdr_enrollments','enrichment_jobs','workflows') THEN RETURN false;END IF;
+ IF p_source='workflows' AND NOT EXISTS(SELECT 1 FROM workflows WHERE id=p_id AND enabled AND status='published') THEN RETURN false;END IF;
  EXECUTE format('SELECT workspace_id,owner_id FROM public.%I WHERE id=$1',p_source) INTO w,u USING p_id;
  IF w IS NULL OR u IS NULL THEN RETURN false;END IF;
  RETURN techerp_api.sales_worker_check(p_source,p_id,u,w,p_refs);
@@ -2574,3 +2592,63 @@ DECLARE target uuid;email_address text:=p_payload->>'email';r text;act text;BEGI
 END $$;
 REVOKE ALL ON FUNCTION public.sales_source_authorize(uuid,uuid,text,text[]),public.sales_save_google_account(uuid,uuid,text,jsonb) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.sales_source_authorize(uuid,uuid,text,text[]),public.sales_save_google_account(uuid,uuid,text,jsonb) TO service_role;
+
+-- Background synchronization is authorized against the account's current owner
+-- and its captured workspace, independent of the owner's selected workspace.
+CREATE OR REPLACE FUNCTION public.sales_account_job_authorize(p_table text,p_id uuid)
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
+DECLARE w uuid;u uuid;r text;c jsonb;BEGIN
+ IF p_table='email_accounts' THEN SELECT workspace_id,owner_id INTO w,u FROM email_accounts WHERE id=p_id;r:='techsales.email_accounts';
+ ELSIF p_table='calendar_accounts' THEN SELECT workspace_id,owner_id INTO w,u FROM calendar_accounts WHERE id=p_id;r:='system.calendars';
+ ELSE RETURN false;END IF;
+ IF w IS NULL OR u IS NULL THEN RETURN false;END IF;
+ c:=work_subject_context(w,u);
+ RETURN sales_context_access(c,w,r,'view',ARRAY[u]) AND (sales_context_access(c,w,r,'update',ARRAY[u]) OR sales_context_access(c,w,r,'manage',ARRAY[u]));
+END $$;
+REVOKE ALL ON FUNCTION public.sales_account_job_authorize(text,uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.sales_account_job_authorize(text,uuid) TO service_role;
+
+-- Generic workflow DML executes with the immutable workflow owner's actual RLS,
+-- column ACLs and process triggers, never with service_role table privileges.
+CREATE OR REPLACE FUNCTION techerp_api.sales_workflow_record(p_workflow uuid,p_actor uuid,p_ws uuid,p_table text,p_action text,p_id uuid,p_payload jsonb)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+DECLARE prev text:=current_setting('request.jwt.claims',true);j jsonb:=coalesce(p_payload,'{}');k text;cols text[];vals text[];out_id uuid;BEGIN
+ IF p_table NOT IN('leads','contacts','companies','deals','tickets','ats_jobs','ats_candidates','ats_applications','ats_interviews','activities','projects','project_tasks','project_milestones','contracts','financial_entries','bank_payments','quotes','proposals','services','recurring_plans','subscription_invoices','customer_invoices','people','rotation_rules') OR p_action NOT IN('create','update','delete') OR current_setting('app.api_subject',true)='on' THEN RAISE EXCEPTION 'Operação de workflow indisponível.' USING ERRCODE='42501';END IF;
+ INSERT INTO techerp_api.subject_sessions(txid,user_id,workspace_id,api_key_id,prev_claims) VALUES(txid_current(),p_actor,p_ws,p_workflow,prev);
+ PERFORM set_config('request.jwt.claims',jsonb_build_object('sub',p_actor,'role','authenticated','aud','authenticated')::text,true);
+ PERFORM set_config('request.jwt.claim.sub',p_actor::text,true);PERFORM set_config('request.jwt.claim.role','authenticated',true);PERFORM set_config('app.api_subject','on',true);
+ IF NOT sales_record_access('workflows',p_workflow,'manage') OR coalesce((sales_access_context()->>'read_only')::boolean,true) THEN RAISE EXCEPTION 'Workflow sem autorização atual.' USING ERRCODE='42501';END IF;
+ IF jsonb_typeof(j)<>'object' OR (SELECT count(*) FROM jsonb_object_keys(j))>100 THEN RAISE EXCEPTION 'Dados do registro inválidos.';END IF;
+ IF j?'workspace_id' AND j->>'workspace_id' IS DISTINCT FROM p_ws::text THEN RAISE EXCEPTION 'Workspace de destino inválido.' USING ERRCODE='42501';END IF;
+ IF p_action='create' THEN
+  IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=p_table AND column_name='workspace_id') THEN j:=j||jsonb_build_object('workspace_id',p_ws);END IF;
+  IF EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=p_table AND column_name='owner_id') THEN j:=j||jsonb_build_object('owner_id',p_actor);END IF;
+ ELSIF j ?| ARRAY['id','workspace_id','owner_id'] THEN RAISE EXCEPTION 'Identidade e autoria são imutáveis.' USING ERRCODE='42501';END IF;
+ IF p_action='delete' THEN
+  EXECUTE format('DELETE FROM public.%I WHERE id=$1 AND workspace_id=$2 RETURNING id',p_table) INTO out_id USING p_id,p_ws;
+ ELSE
+  FOR k IN SELECT jsonb_object_keys(j) LOOP
+   IF NOT EXISTS(SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name=p_table AND column_name=k AND is_generated='NEVER') OR NOT has_column_privilege(current_user,'public.'||quote_ident(p_table),k,CASE WHEN p_action='create' THEN 'INSERT' ELSE 'UPDATE' END) THEN RAISE EXCEPTION 'Campo indisponível para esta operação.' USING ERRCODE='42501';END IF;
+   cols:=array_append(cols,quote_ident(k));vals:=array_append(vals,'v.'||quote_ident(k));
+  END LOOP;
+  IF cardinality(cols) IS NULL THEN RAISE EXCEPTION 'Nenhum campo informado.';END IF;
+  IF p_action='create' THEN
+   EXECUTE format('INSERT INTO public.%I(%s) SELECT %s FROM jsonb_populate_record(NULL::public.%I,$1)v RETURNING id',p_table,array_to_string(cols,','),array_to_string(vals,','),p_table) INTO out_id USING j;
+  ELSE
+   EXECUTE format('UPDATE public.%I SET (%s)=(SELECT %s FROM jsonb_populate_record(NULL::public.%I,$1)v) WHERE id=$2 AND workspace_id=$3 RETURNING id',p_table,array_to_string(cols,','),array_to_string(vals,','),p_table) INTO out_id USING j,p_id,p_ws;
+  END IF;
+ END IF;
+ IF out_id IS NULL THEN RAISE EXCEPTION 'Registro indisponível ou sem permissão para a ação.' USING ERRCODE='42501';END IF;
+ PERFORM techerp_api.leave();RETURN jsonb_build_object('id',out_id);
+END $$;
+ALTER FUNCTION techerp_api.sales_workflow_record(uuid,uuid,uuid,text,text,uuid,jsonb) OWNER TO techerp_api_subject;
+REVOKE ALL ON FUNCTION techerp_api.sales_workflow_record(uuid,uuid,uuid,text,text,uuid,jsonb) FROM PUBLIC,anon,authenticated,service_role;
+CREATE OR REPLACE FUNCTION public.sales_workflow_record(p_workflow uuid,p_table text,p_action text,p_id uuid DEFAULT NULL,p_payload jsonb DEFAULT '{}')
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+DECLARE w uuid;u uuid;BEGIN
+ SELECT workspace_id,owner_id INTO w,u FROM workflows WHERE id=p_workflow AND enabled AND status='published' FOR SHARE;
+ IF w IS NULL OR u IS NULL THEN RAISE EXCEPTION 'Workflow indisponível.' USING ERRCODE='42501';END IF;
+ RETURN techerp_api.sales_workflow_record(p_workflow,u,w,p_table,p_action,p_id,p_payload);
+END $$;
+REVOKE ALL ON FUNCTION public.sales_workflow_record(uuid,text,text,uuid,jsonb) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.sales_workflow_record(uuid,text,text,uuid,jsonb) TO service_role;

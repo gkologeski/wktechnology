@@ -1,3 +1,4 @@
+import { authorizeWorkflowStep, sanitizeWorkflowSnapshot } from "./engine/authorization.server";
 import { workflowEventWorkspace } from "./engine/workspace-payload";
 // Ciclo de execução do motor: enfileiramento, runs, ticks de fila e de tempo.
 // Extraído de engine.server.ts sem mudança de comportamento.
@@ -53,6 +54,46 @@ async function alreadyEnrolled(
   return (data ?? []).length > 0;
 }
 
+async function workflowSourceAllowed(
+  supabase: SupabaseClient,
+  wf: WorkflowRow,
+  event: EventRow,
+): Promise<boolean> {
+  try {
+    await authorizeWorkflowStep(
+      supabase,
+      {
+        entity: event.entity,
+        entityId: event.entity_id,
+        ownerId: wf.owner_id,
+        workspaceId: wf.workspace_id,
+        after: event.after,
+        before: event.before,
+        workflowId: wf.id,
+      },
+      undefined,
+      JSON.stringify({ t: wf.trigger, a: wf.actions, g: wf.goal_filters }),
+    );
+    return true;
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "Execução não autorizada.";
+    await supabase.from("workflow_runs").insert({
+      workspace_id: wf.workspace_id,
+      owner_id: wf.owner_id,
+      workflow_id: wf.id,
+      event_id: event.id,
+      entity: event.entity,
+      entity_id: event.entity_id,
+      status: "failed",
+      error: reason,
+      log: [{ at: new Date().toISOString(), ok: false, action: "permission_check", error: reason }],
+      started_at: new Date().toISOString(),
+      finished_at: new Date().toISOString(),
+    } as never);
+    return false;
+  }
+}
+
 export async function processEvent(supabase: SupabaseClient, event: EventRow) {
   const sourceWorkspace = workflowEventWorkspace(event);
   // Caso 1: retomada (delay) → executa apenas o workflow indicado a partir do cursor.
@@ -60,16 +101,21 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     const { data: wf } = await supabase
       .from("workflows")
       .select("id, owner_id, workspace_id, entity, trigger, actions, goal_filters")
+      .eq("enabled", true)
+      .eq("status", "published")
       .eq("id", event.resume_workflow_id)
       .eq("workspace_id", sourceWorkspace)
       .maybeSingle();
     if (wf) {
       const wfr = wf as WorkflowRow;
+      if (!(await workflowSourceAllowed(supabase, wfr, event))) return;
       const wfJson = JSON.stringify({ t: wfr.trigger, a: wfr.actions });
       const hydratedAfter = await hydrateDealLineItems(
         supabase,
         event.entity,
-        await hydrateTriggerAssociations(supabase, event.entity, event.after, wfJson),
+        sanitizeWorkflowSnapshot(
+          await hydrateTriggerAssociations(supabase, event.entity, event.after, wfJson),
+        ),
         wfJson,
       );
 
@@ -95,7 +141,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
           {
             entity: event.entity,
             entityId: event.entity_id,
-            ownerId: WORKSPACE_SCOPED_ENTITIES.has(event.entity) ? wfr.owner_id : event.owner_id,
+            ownerId: wfr.owner_id,
             workspaceId: wfr.workspace_id,
             after: cleanAfter,
             before: event.before,
@@ -131,6 +177,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
   const { data: workflows } = await wfQuery;
 
   for (const wf of (workflows ?? []) as WorkflowRow[]) {
+    if (!(await workflowSourceAllowed(supabase, wf, event))) continue;
     const trig = wf.trigger ?? ({} as WorkflowTrigger);
     if (trig.event && trig.event !== event.event_type) continue;
 
@@ -140,7 +187,9 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
     const hydratedAfter = await hydrateDealLineItems(
       supabase,
       event.entity,
-      await hydrateTriggerAssociations(supabase, event.entity, event.after, wfJson),
+      sanitizeWorkflowSnapshot(
+        await hydrateTriggerAssociations(supabase, event.entity, event.after, wfJson),
+      ),
       wfJson,
     );
 
@@ -196,7 +245,7 @@ export async function processEvent(supabase: SupabaseClient, event: EventRow) {
       entity: event.entity,
       entityId: event.entity_id,
       // Passos rodam com o dono do workflow (permissões do admin que o publicou).
-      ownerId: byWorkspace ? wf.owner_id : event.owner_id,
+      ownerId: wf.owner_id,
       workspaceId: wf.workspace_id,
       after: hydratedAfter,
       before: event.before,

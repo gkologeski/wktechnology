@@ -7,17 +7,17 @@ describe("workspace dos jobs de workflow", () => {
   it("grava atividade no workspace da entidade, independentemente do proprietário", async () => {
     let inserted: unknown;
     const client = {
-      from: () => ({
-        insert: async (row: unknown) => {
-          inserted = row;
-          return { error: null };
-        },
-      }),
+      rpc: async (name: string, args: { p_payload: unknown }) => {
+        expect(name).toBe("sales_workflow_record");
+        inserted = args.p_payload;
+        return { data: { id: "activity" }, error: null };
+      },
     };
     await handleActivityAction(
       client as never,
       { type: "create_activity", subject: "Teste", activity_type: "note" },
       {
+        workflowId: "workflow-B",
         workspaceId: "tenant-B",
         ownerId: "responsavel-A",
         entity: "leads",

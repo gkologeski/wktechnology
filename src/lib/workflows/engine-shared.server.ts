@@ -28,6 +28,11 @@ export type LogStep = {
 
 export function assignFieldFor(entity: WorkflowEntity): string {
   switch (entity) {
+    case "leads":
+    case "contacts":
+    case "companies":
+    case "deals":
+      return "assigned_to";
     case "tickets":
       return "assignee_id";
     case "ats_jobs":

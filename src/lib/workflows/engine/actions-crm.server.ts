@@ -1,3 +1,4 @@
+import { workflowRecord } from "./record-write.server";
 import { normalizeEmailAddress } from "@/lib/email-address";
 import { withWorkflowWorkspace } from "./workspace-payload";
 // Ações de criação de registros do CRM: lead, contato, empresa, negócio e chamado.
@@ -25,7 +26,8 @@ export async function handleCrmAction(
       if (!first) throw new Error("first_name obrigatório");
       const owner = action.owner_id?.trim() || ctx.ownerId;
       const base: Record<string, unknown> = {
-        owner_id: owner,
+        owner_id: ctx.ownerId,
+        assigned_to: owner,
         status: "new",
         job_title: action.job_title
           ? (renderTokens(action.job_title, ctx.after) as string) || null
@@ -62,26 +64,33 @@ export async function handleCrmAction(
         };
       }
       const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
-      const { data, error } = await supabase
-        .from("leads")
-        .insert(withWorkflowWorkspace(ctx, row) as never)
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
-      // Garante empresa e contato vinculados ao lead
-      const { ensureLeadRelationsSafe } = await import("@/lib/leads/lead-relations");
-      await ensureLeadRelationsSafe(
-        supabase as unknown as Parameters<typeof ensureLeadRelationsSafe>[0],
-        data.id as string,
+      const data = await workflowRecord(
+        supabase,
+        ctx,
+        "leads",
+        "create",
+        null,
+        withWorkflowWorkspace(ctx, row),
       );
-      return { at, ok: true, action: "create_lead", detail: { id: data.id, first_name: first } };
+      return {
+        at,
+        ok: true,
+        action: "create_lead",
+        detail: {
+          id: data.id,
+          first_name: first,
+          related_records:
+            "Use ações explícitas para criar e vincular empresa/contato com as respectivas permissões.",
+        },
+      };
     }
     case "create_contact": {
       const first = (renderTokens(action.first_name, ctx.after) as string).trim();
       if (!first) throw new Error("first_name obrigatório");
       const owner = action.owner_id?.trim() || ctx.ownerId;
       const base: Record<string, unknown> = {
-        owner_id: owner,
+        owner_id: ctx.ownerId,
+        assigned_to: owner,
         first_name: first,
         last_name: action.last_name
           ? (renderTokens(action.last_name, ctx.after) as string) || null
@@ -100,17 +109,24 @@ export async function handleCrmAction(
           : null,
       };
       const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
-      const { data, error } = await supabase
-        .from("contacts")
-        .insert(withWorkflowWorkspace(ctx, row) as never)
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
+      const data = await workflowRecord(
+        supabase,
+        ctx,
+        "contacts",
+        "create",
+        null,
+        withWorkflowWorkspace(ctx, row),
+      );
       return {
         at,
         ok: true,
         action: "create_contact",
-        detail: { id: data.id, first_name: first },
+        detail: {
+          id: data.id,
+          first_name: first,
+          related_records:
+            "Use ações explícitas para criar e vincular empresa/contato com as respectivas permissões.",
+        },
       };
     }
     case "create_company": {
@@ -118,7 +134,8 @@ export async function handleCrmAction(
       if (!name) throw new Error("name obrigatório");
       const owner = action.owner_id?.trim() || ctx.ownerId;
       const base: Record<string, unknown> = {
-        owner_id: owner,
+        owner_id: ctx.ownerId,
+        assigned_to: owner,
         name,
         domain: action.domain ? (renderTokens(action.domain, ctx.after) as string) || null : null,
         industry: action.industry
@@ -126,12 +143,14 @@ export async function handleCrmAction(
           : null,
       };
       const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
-      const { data, error } = await supabase
-        .from("companies")
-        .insert(withWorkflowWorkspace(ctx, row) as never)
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
+      const data = await workflowRecord(
+        supabase,
+        ctx,
+        "companies",
+        "create",
+        null,
+        withWorkflowWorkspace(ctx, row),
+      );
       return { at, ok: true, action: "create_company", detail: { id: data.id, name } };
     }
     case "create_deal": {
@@ -153,7 +172,8 @@ export async function handleCrmAction(
         if (pipe) pipelineId = pipe.id as string;
       }
       const base: Record<string, unknown> = {
-        owner_id: owner,
+        owner_id: ctx.ownerId,
+        assigned_to: owner,
         name,
         value: typeof action.value === "number" ? action.value : null,
         currency: action.currency ?? "BRL",
@@ -164,12 +184,14 @@ export async function handleCrmAction(
       if (ctx.entity === "contacts") base.contact_id = ctx.entityId;
       else if (ctx.entity === "companies") base.company_id = ctx.entityId;
       const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
-      const { data, error } = await supabase
-        .from("deals")
-        .insert(withWorkflowWorkspace(ctx, row) as never)
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
+      const data = await workflowRecord(
+        supabase,
+        ctx,
+        "deals",
+        "create",
+        null,
+        withWorkflowWorkspace(ctx, row),
+      );
       return { at, ok: true, action: "create_deal", detail: { id: data.id, name } };
     }
     case "create_ticket": {
@@ -202,12 +224,14 @@ export async function handleCrmAction(
       else if (ctx.entity === "companies") base.company_id = ctx.entityId;
       else if (ctx.entity === "deals") base.deal_id = ctx.entityId;
       const row = mergeExtra(base, resolveExtraFields(action.extra_fields, ctx.after, ctx.vars));
-      const { data, error } = await supabase
-        .from("tickets")
-        .insert(withWorkflowWorkspace(ctx, row) as never)
-        .select("id")
-        .single();
-      if (error) throw new Error(error.message);
+      const data = await workflowRecord(
+        supabase,
+        ctx,
+        "tickets",
+        "create",
+        null,
+        withWorkflowWorkspace(ctx, row),
+      );
       return { at, ok: true, action: "create_ticket", detail: { id: data.id, subject } };
     }
     default:

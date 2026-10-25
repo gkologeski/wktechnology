@@ -1,3 +1,5 @@
+import { workflowRecord } from "./record-write.server";
+import { workRpc } from "@/lib/access-control/work-core.server";
 // Ações de registros genéricos e associações: associar, desassociar, criar,
 // atualizar e excluir registro. Extraído sem mudança de comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -47,11 +49,9 @@ export async function handleRecordAction(
       if (!assoc) throw new Error(`associação desconhecida: ${action.association}`);
       const targetId = (renderTokens(action.target_id, ctx.after) as string).trim();
       if (!targetId) throw new Error("target_id vazio");
-      const { error } = await supabase
-        .from(ctx.entity)
-        .update({ [assoc.fk_column]: targetId })
-        .eq("id", ctx.entityId);
-      if (error) throw new Error(error.message);
+      await workflowRecord(supabase, ctx, ctx.entity, "update", ctx.entityId, {
+        [assoc.fk_column]: targetId,
+      });
       return {
         at,
         ok: true,
@@ -63,11 +63,9 @@ export async function handleRecordAction(
       const { findAssociation } = await import("../associations");
       const assoc = findAssociation(ctx.entity, action.association);
       if (!assoc) throw new Error(`associação desconhecida: ${action.association}`);
-      const { error } = await supabase
-        .from(ctx.entity)
-        .update({ [assoc.fk_column]: null })
-        .eq("id", ctx.entityId);
-      if (error) throw new Error(error.message);
+      await workflowRecord(supabase, ctx, ctx.entity, "update", ctx.entityId, {
+        [assoc.fk_column]: null,
+      });
       return {
         at,
         ok: true,
@@ -88,30 +86,29 @@ export async function handleRecordAction(
           rendered.parent_contract_id = ctx.entityId;
         }
       }
-      const ownerId = action.owner_id?.trim() || ctx.ownerId;
-      const withOwner: Record<string, unknown> = { ...rendered, owner_id: ownerId };
-      if (!withOwner.workspace_id && ctx.workspaceId) withOwner.workspace_id = ctx.workspaceId;
-      // Tenta com owner_id/workspace_id; se a tabela não tiver essas colunas, refaz sem.
-      let insertRes = await supabase
-        .from(action.table)
-        .insert(withOwner as never)
-        .select("id")
-        .maybeSingle();
-      if (insertRes.error && /owner_id|workspace_id/.test(insertRes.error.message)) {
-        insertRes = await supabase
-          .from(action.table)
-          .insert(rendered as never)
-          .select("id")
-          .maybeSingle();
+      if (!ctx.workflowId) throw new Error("Workflow sem origem de autorização.");
+      const payload: Record<string, unknown> = { ...rendered };
+      if (action.owner_id && action.owner_id !== ctx.ownerId) {
+        if (
+          ["leads", "contacts", "companies", "deals", "quotes", "proposals"].includes(action.table)
+        )
+          payload.assigned_to = action.owner_id;
+        else throw new Error("Use a ação específica de atribuição para outro responsável.");
       }
-      if (insertRes.error) throw new Error(insertRes.error.message);
+      const inserted = await workRpc<{ id: string }>(supabase, "sales_workflow_record", {
+        p_workflow: ctx.workflowId,
+        p_table: action.table,
+        p_action: "create",
+        p_id: null,
+        p_payload: payload,
+      });
       return {
         at,
         ok: true,
         action: "create_record",
         detail: {
           table: action.table,
-          id: (insertRes.data as { id?: string } | null)?.id ?? null,
+          id: inserted.id,
           ...(skipped.length > 0
             ? {
                 campos_ignorados: skipped,
@@ -125,11 +122,14 @@ export async function handleRecordAction(
       const targetId = renderTokens(action.target_id, ctx.after, ctx.vars) as string;
       if (!targetId) throw new Error("target_id vazio");
       const { rendered } = renderActionValues(action.values, ctx);
-      const { error } = await supabase
-        .from(action.table)
-        .update(rendered as never)
-        .eq("id", targetId);
-      if (error) throw new Error(error.message);
+      if (!ctx.workflowId) throw new Error("Workflow sem origem de autorização.");
+      await workRpc(supabase, "sales_workflow_record", {
+        p_workflow: ctx.workflowId,
+        p_table: action.table,
+        p_action: "update",
+        p_id: targetId,
+        p_payload: rendered,
+      });
       return {
         at,
         ok: true,
@@ -140,8 +140,14 @@ export async function handleRecordAction(
     case "delete_record": {
       const targetId = renderTokens(action.target_id, ctx.after, ctx.vars) as string;
       if (!targetId) throw new Error("target_id vazio");
-      const { error } = await supabase.from(action.table).delete().eq("id", targetId);
-      if (error) throw new Error(error.message);
+      if (!ctx.workflowId) throw new Error("Workflow sem origem de autorização.");
+      await workRpc(supabase, "sales_workflow_record", {
+        p_workflow: ctx.workflowId,
+        p_table: action.table,
+        p_action: "delete",
+        p_id: targetId,
+        p_payload: {},
+      });
       return {
         at,
         ok: true,

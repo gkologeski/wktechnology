@@ -1,3 +1,4 @@
+import { assertSalesAccountJob } from "@/lib/access-control/sales-account-job.server";
 import { workspaceOfSource } from "@/lib/workspace-source.server";
 // Server-only Google Calendar sync engine.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -724,6 +725,7 @@ const RECORDING_MAX_ATTEMPTS = 300;
 export async function syncPastRecordings(
   account: CalendarAccountRow & { meet_index_cursor?: string | null },
 ): Promise<{ scanned: number; found: number; missing: number; errors: number }> {
+  await assertSalesAccountJob(supabaseAdmin, "calendar_accounts", account.id);
   try {
     await reconcileCalendarActivityLinks(account.owner_id, { accountId: account.id });
   } catch (e) {
@@ -1066,6 +1068,7 @@ export async function syncCalendarAccount(accountId: string): Promise<{
     .eq("id", accountId)
     .maybeSingle();
   if (error || !account) throw new Error(error?.message || "Conta não encontrada");
+  await assertSalesAccountJob(supabaseAdmin, "calendar_accounts", account.id);
   const emptyRec = { scanned: 0, found: 0, missing: 0, errors: 0 };
   if (!account.sync_enabled)
     return {

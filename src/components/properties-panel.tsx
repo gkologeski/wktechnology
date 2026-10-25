@@ -1,3 +1,5 @@
+import { useSalesCapabilities } from "@/lib/access-control/use-sales-capabilities";
+import { SALES_TABLE_RESOURCES, type SalesTable } from "@/lib/access-control/sales-resources";
 import { validateEmailAddress, isEmailColumn } from "@/lib/email-address";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -253,8 +255,11 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
   const [pendingCompanyName, setPendingCompanyName] = useState("");
   const [pendingCompanyField, setPendingCompanyField] = useState<string | null>(null);
-  const [readOnly, setReadOnly] = useState(false);
-  useEffect(() => setReadOnly(readViewAs()?.readOnly === true), []);
+  const [viewReadOnly, setViewReadOnly] = useState(false);
+  useEffect(() => setViewReadOnly(readViewAs()?.readOnly === true), []);
+  const salesTable = Object.hasOwn(SALES_TABLE_RESOURCES, table) ? (table as SalesTable) : null;
+  const salesAccess = useSalesCapabilities(salesTable ?? "leads", salesTable ? [row.id] : []);
+  const readOnly = viewReadOnly || (salesTable !== null && !salesAccess.for(row.id).can_update);
   const listCustomFn = useServerFn(listCustomProperties);
   const setCustomFn = useServerFn(setCustomFieldValue);
   const getLayoutFn = useServerFn(getRecordLayout);
@@ -317,6 +322,7 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
   }, [customEntity, isCustomEntity, getLayoutFn]);
 
   const saveCustom = async (key: string, val: unknown) => {
+    if (readOnly) return;
     try {
       await setCustomFn({
         data: { entity: customEntity, entity_id: row.id, key, value: val as never },
@@ -643,6 +649,11 @@ export function PropertiesPanel<T extends Record<string, unknown> & { id: string
               table={table}
               rowId={row.id}
               assignedTo={responsible}
+              disabled={
+                viewReadOnly ||
+                (salesTable !== null &&
+                  (!salesAccess.for(row.id).can_update || !salesAccess.for(row.id).can_assign))
+              }
               onChanged={() => onSaved?.()}
             />
           ) : (

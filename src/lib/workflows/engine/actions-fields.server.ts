@@ -1,3 +1,4 @@
+import { workflowRecord } from "./record-write.server";
 import { isEmailColumn, normalizeEmailAddress } from "@/lib/email-address";
 // Ações de campo: definir, sub-status, limpar, incrementar, copiar de associação
 // e formatar dados. Extraído de engine-actions.server.ts sem mudança de comportamento.
@@ -27,11 +28,9 @@ export async function handleFieldAction(
         );
       }
       if (isEmailColumn(action.field)) value = normalizeEmailAddress(value);
-      const { error } = await supabase
-        .from(ctx.entity)
-        .update({ [action.field]: value })
-        .eq("id", ctx.entityId);
-      if (error) throw new Error(error.message);
+      await workflowRecord(supabase, ctx, ctx.entity, "update", ctx.entityId, {
+        [action.field]: value,
+      });
       return { at, ok: true, action: "set_field", detail: { field: action.field, value } };
     }
     case "set_substatus": {
@@ -61,8 +60,7 @@ export async function handleFieldAction(
           movedStage = target.stage_value;
         }
       }
-      const { error } = await supabase.from(ctx.entity).update(patch).eq("id", ctx.entityId);
-      if (error) throw new Error(error.message);
+      await workflowRecord(supabase, ctx, ctx.entity, "update", ctx.entityId, patch);
       return {
         at,
         ok: true,
@@ -74,21 +72,17 @@ export async function handleFieldAction(
       };
     }
     case "clear_field": {
-      const { error } = await supabase
-        .from(ctx.entity)
-        .update({ [action.field]: null })
-        .eq("id", ctx.entityId);
-      if (error) throw new Error(error.message);
+      await workflowRecord(supabase, ctx, ctx.entity, "update", ctx.entityId, {
+        [action.field]: null,
+      });
       return { at, ok: true, action: "clear_field", detail: { field: action.field } };
     }
     case "increment_field": {
       const current = Number(ctx.after?.[action.field] ?? 0) || 0;
       const next = current + (Number(action.amount) || 0);
-      const { error } = await supabase
-        .from(ctx.entity)
-        .update({ [action.field]: next })
-        .eq("id", ctx.entityId);
-      if (error) throw new Error(error.message);
+      await workflowRecord(supabase, ctx, ctx.entity, "update", ctx.entityId, {
+        [action.field]: next,
+      });
       return {
         at,
         ok: true,
@@ -110,11 +104,9 @@ export async function handleFieldAction(
       if (readErr) throw new Error(readErr.message);
       let value = (assocRow as AnyRow | null)?.[action.source_field] ?? null;
       if (isEmailColumn(action.target_field)) value = normalizeEmailAddress(value);
-      const { error } = await supabase
-        .from(ctx.entity)
-        .update({ [action.target_field]: value })
-        .eq("id", ctx.entityId);
-      if (error) throw new Error(error.message);
+      await workflowRecord(supabase, ctx, ctx.entity, "update", ctx.entityId, {
+        [action.target_field]: value,
+      });
       return {
         at,
         ok: true,

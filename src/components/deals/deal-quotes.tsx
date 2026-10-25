@@ -1,3 +1,4 @@
+import { WorkAction } from "@/components/work-action";
 import { useSalesSharing } from "@/lib/access-control/use-sales-sharing";
 import { SalesAction, SalesCapabilityScope } from "@/components/sales-access";
 import { useMemo, useState } from "react";
@@ -25,6 +26,7 @@ import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { supabase } from "@/integrations/supabase/client";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { QuoteInternalPreview } from "@/components/deals/quote-internal-preview";
 import { QuoteWizard } from "@/components/deals/quote-wizard";
 import { useActivityWindows } from "@/components/activity/activity-window-context";
 import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
@@ -68,6 +70,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
     setProposalQuoteId(id);
   }
 
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingQuote, setEditingQuote] = useState<QuoteListItem | null>(null);
 
@@ -211,7 +214,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                   <div className="flex items-start justify-between gap-2">
                     <button
                       type="button"
-                      onClick={() => void sharing.open(q.id)}
+                      onClick={() => setPreviewId(q.id)}
                       className="min-w-0 text-left flex items-center gap-1 text-primary hover:underline"
                     >
                       <span className="font-semibold truncate">{q.title || q.number}</span>
@@ -229,23 +232,19 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuItem onSelect={() => setPreviewId(q.id)}>
+                          Detalhes
+                        </DropdownMenuItem>
                         <SalesAction
                           table="quotes"
                           action="manage"
                           id={q.id}
                           resource="techsales.quote_share"
                         >
-                          <DropdownMenuItem onSelect={() => void sharing.open(q.id)}>
-                            Detalhes
-                          </DropdownMenuItem>
-                        </SalesAction>
-                        <SalesAction
-                          table="quotes"
-                          action="manage"
-                          id={q.id}
-                          resource="techsales.quote_share"
-                        >
-                          <DropdownMenuItem onSelect={() => void sharing.copy(q.id)}>
+                          <DropdownMenuItem
+                            disabled={status === "draft"}
+                            onSelect={() => void sharing.copy(q.id)}
+                          >
                             Copiar link
                           </DropdownMenuItem>
                         </SalesAction>
@@ -255,7 +254,10 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                           id={q.id}
                           resource="techsales.quote_share"
                         >
-                          <DropdownMenuItem onSelect={() => void sharing.open(q.id, true)}>
+                          <DropdownMenuItem
+                            disabled={status === "draft"}
+                            onSelect={() => void sharing.open(q.id, true)}
+                          >
                             Baixar PDF
                           </DropdownMenuItem>
                         </SalesAction>
@@ -265,48 +267,95 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                             <DropdownMenuItem onSelect={() => openEdit(q)}>Editar</DropdownMenuItem>
                           </SalesAction>
                         )}
-                        {(status === "draft" || status === "published") && contactHasEmail && (
-                          <DropdownMenuItem
-                            onSelect={async () => {
-                              if (!primaryContact?.email) return;
-                              const name = [primaryContact.first_name, primaryContact.last_name]
-                                .filter(Boolean)
-                                .join(" ")
-                                .trim();
-                              const title = q.title || deal?.name || "Cotação";
-                              const link = await sharing.url(q.id);
-                              openActivity?.({
-                                action: ACTIONS_BY_KEY["create:email"],
-                                to: primaryContact.email,
-                                subject: `Cotação ${q.number ? `${q.number} · ` : ""}${title}`,
-                                body: `<p>${name ? `Olá ${name.split(" ")[0]},` : "Olá,"}</p><p>Segue nossa cotação <strong>${title}</strong>${q.number ? ` (${q.number})` : ""}.</p><p>Acesse pelo link: <a href="${link}">${link}</a></p><p>Qualquer dúvida, estou à disposição.</p>`,
-                                contactId: primaryContact.id,
-                                dealId,
-                                companyId: deal?.company_id ?? undefined,
-                                contactName: name || undefined,
-                                onSent: async () => {
-                                  try {
-                                    await update({
-                                      data: {
-                                        id: q.id,
-                                        patch: {
-                                          status: "sent",
-                                          sent_at: new Date().toISOString(),
-                                        },
+                        {status === "published" && contactHasEmail && (
+                          <SalesAction
+                            table="quotes"
+                            action="manage"
+                            id={q.id}
+                            resource="techsales.quote_send"
+                          >
+                            <SalesAction
+                              table="quotes"
+                              action="manage"
+                              id={q.id}
+                              resource="techsales.quote_share"
+                            >
+                              <SalesAction table="email_messages" action="create">
+                                <DropdownMenuItem
+                                  onSelect={async () => {
+                                    if (!primaryContact?.email) return;
+                                    const name = [
+                                      primaryContact.first_name,
+                                      primaryContact.last_name,
+                                    ]
+                                      .filter(Boolean)
+                                      .join(" ")
+                                      .trim();
+                                    const title = q.title || deal?.name || "Cotação";
+                                    const link = await sharing.url(q.id);
+                                    openActivity?.({
+                                      action: ACTIONS_BY_KEY["create:email"],
+                                      to: primaryContact.email,
+                                      subject: `Cotação ${q.number ? `${q.number} · ` : ""}${title}`,
+                                      body: `<p>${name ? `Olá ${name.split(" ")[0]},` : "Olá,"}</p><p>Segue nossa cotação <strong>${title}</strong>${q.number ? ` (${q.number})` : ""}.</p><p>Acesse pelo link: <a href="${link}">${link}</a></p><p>Qualquer dúvida, estou à disposição.</p>`,
+                                      contactId: primaryContact.id,
+                                      dealId,
+                                      companyId: deal?.company_id ?? undefined,
+                                      contactName: name || undefined,
+                                      onSent: async () => {
+                                        try {
+                                          await update({
+                                            data: {
+                                              id: q.id,
+                                              patch: {
+                                                status: "sent",
+                                                sent_at: new Date().toISOString(),
+                                              },
+                                            },
+                                          });
+                                          void qc.invalidateQueries({
+                                            queryKey: ["deal-quotes", dealId],
+                                          });
+                                        } catch (e) {
+                                          toast.error((e as Error).message);
+                                        }
                                       },
                                     });
-                                    void qc.invalidateQueries({
+                                  }}
+                                >
+                                  Enviar por e-mail
+                                </DropdownMenuItem>
+                              </SalesAction>
+                            </SalesAction>
+                          </SalesAction>
+                        )}
+                        {status === "draft" && (
+                          <SalesAction table="quotes" action="update" id={q.id}>
+                            <SalesAction
+                              table="quotes"
+                              action="manage"
+                              id={q.id}
+                              resource="techsales.quote_send"
+                            >
+                              <DropdownMenuItem
+                                onSelect={async () => {
+                                  try {
+                                    await update({
+                                      data: { id: q.id, patch: { status: "published" } },
+                                    });
+                                    await qc.invalidateQueries({
                                       queryKey: ["deal-quotes", dealId],
                                     });
+                                    toast.success("Cotação publicada para compartilhamento.");
                                   } catch (e) {
                                     toast.error((e as Error).message);
                                   }
-                                },
-                              });
-                            }}
-                          >
-                            Enviar por e-mail
-                          </DropdownMenuItem>
+                                }}
+                              >
+                                Publicar para compartilhar
+                              </DropdownMenuItem>
+                            </SalesAction>
+                          </SalesAction>
                         )}
                         {(status === "draft" || status === "published") && (
                           <SalesAction
@@ -315,16 +364,20 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                             id={q.id}
                             resource="techsales.quote_send"
                           >
-                            <DropdownMenuItem onSelect={() => markSent(q.id)}>
-                              Marcar como enviada
-                            </DropdownMenuItem>
+                            <SalesAction table="quotes" action="update" id={q.id}>
+                              <DropdownMenuItem onSelect={() => markSent(q.id)}>
+                                Marcar como enviada
+                              </DropdownMenuItem>
+                            </SalesAction>
                           </SalesAction>
                         )}
                         {status !== "accepted" && (
                           <SalesAction table="quotes" action="approve" id={q.id}>
-                            <DropdownMenuItem onSelect={() => markAccepted(q.id)}>
-                              Marcar como aceita
-                            </DropdownMenuItem>
+                            <SalesAction table="quotes" action="update" id={q.id}>
+                              <DropdownMenuItem onSelect={() => markAccepted(q.id)}>
+                                Marcar como aceita
+                              </DropdownMenuItem>
+                            </SalesAction>
                           </SalesAction>
                         )}
                         {!q.paid_at && (
@@ -334,21 +387,27 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                             id={q.id}
                             resource="techsales.quote_send"
                           >
-                            <DropdownMenuItem onSelect={() => genPayLink(q.id)}>
-                              {q.payment_link_url
-                                ? "Regerar link de pagamento"
-                                : "Gerar link de pagamento"}
-                            </DropdownMenuItem>
+                            <SalesAction table="quotes" action="update" id={q.id}>
+                              <DropdownMenuItem onSelect={() => genPayLink(q.id)}>
+                                {q.payment_link_url
+                                  ? "Regerar link de pagamento"
+                                  : "Gerar link de pagamento"}
+                              </DropdownMenuItem>
+                            </SalesAction>
                           </SalesAction>
                         )}
-                        <DropdownMenuItem onSelect={() => genProposal(q.id)}>
-                          Gerar proposta
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onSelect={() => setContractWizard({ quoteId: q.id, dealId })}
-                        >
-                          Gerar contrato
-                        </DropdownMenuItem>
+                        <SalesAction table="proposals" action="create">
+                          <DropdownMenuItem onSelect={() => genProposal(q.id)}>
+                            Gerar proposta
+                          </DropdownMenuItem>
+                        </SalesAction>
+                        <WorkAction resource="techcontracts.contracts" action="create">
+                          <DropdownMenuItem
+                            onSelect={() => setContractWizard({ quoteId: q.id, dealId })}
+                          >
+                            Gerar contrato
+                          </DropdownMenuItem>
+                        </WorkAction>
                         <SalesAction
                           table="quotes"
                           action="manage"
@@ -393,6 +452,7 @@ export function DealQuotes({ dealId }: { dealId: string }) {
         </SalesCapabilityScope>
       )}
 
+      <QuoteInternalPreview id={previewId} onClose={() => setPreviewId(null)} />
       <ContractWizard source={contractWizard} onOpenChange={(o) => !o && setContractWizard(null)} />
       <ProposalWizard
         source={proposalQuoteId ? { quoteId: proposalQuoteId } : null}

@@ -1,3 +1,8 @@
+import { SalesAction } from "@/components/sales-access";
+import { useSalesCapabilities } from "@/lib/access-control/use-sales-capabilities";
+import { useSalesSharing } from "@/lib/access-control/use-sales-sharing";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { readViewAs } from "@/lib/view-as-client";
 // Quadro "Propostas" do negócio: cabeçalho com "+ Adicionar", cartões com menu
 // de ações e assistente passo a passo para criar/editar.
 import { useState } from "react";
@@ -7,9 +12,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/crm";
-import { getPublicAppUrl } from "@/lib/app-url";
 import { deleteRowGuarded } from "@/lib/delete-guard";
-import { requestProposalApproval, sendProposal } from "@/lib/proposals.functions";
+import { sendProposal } from "@/lib/proposals.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { ProposalWizard, type ProposalSource } from "@/components/proposals/proposal-wizard";
 import { ContractWizard, type ContractWizardSource } from "@/components/contracts/contract-wizard";
@@ -35,7 +39,6 @@ export function DealProposals({
 }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
-  const reqApproval = useServerFn(requestProposalApproval);
   const send = useServerFn(sendProposal);
   const [wizard, setWizard] = useState<ProposalSource | null>(null);
   const [contractWizard, setContractWizard] = useState<ContractWizardSource | null>(null);
@@ -45,7 +48,7 @@ export function DealProposals({
     queryFn: async () => {
       const { data, error } = await supabase
         .from("proposals")
-        .select("id, title, status, total_amount, currency, version, locked, public_token")
+        .select("id, title, status, total_amount, currency, version, locked")
         .eq("deal_id", dealId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -53,6 +56,23 @@ export function DealProposals({
     },
   });
   const rows = data ?? [];
+  const capabilities = useSalesCapabilities(
+    "proposals",
+    rows.map((p) => p.id),
+  );
+  const sharing = useSalesSharing("proposals");
+  const permissions = usePermissions();
+  const canCreateContract =
+    !permissions.isLoading &&
+    !permissions.isError &&
+    !readViewAs()?.readOnly &&
+    readViewAs()?.mode !== "role" &&
+    permissions.canAny(
+      ["own", "team", "workspace"].map((scope) => `techcontracts.contracts.create.${scope}`),
+    ) &&
+    permissions.canAny(
+      ["own", "team", "workspace"].map((scope) => `techcontracts.contracts.view.${scope}`),
+    );
   const refresh = () => void qc.invalidateQueries({ queryKey: ["deal-proposals", dealId] });
 
   async function run(fn: () => Promise<unknown>, ok: string) {
@@ -87,49 +107,39 @@ export function DealProposals({
         onSelect: () => void navigate({ to: "/proposals/$id", params: { id: p.id } }),
       },
     ];
-    if (!p.locked)
+    const cap = capabilities.for(p.id);
+    if (!p.locked && cap.can_update)
       a.push({ kind: "item", label: "Editar", onSelect: () => setWizard({ proposalId: p.id }) });
-    if (p.status === "draft" && !p.locked)
+    if (p.status === "draft" && !p.locked && cap.can_update)
       a.push({
         kind: "item",
         label: "Enviar para aprovação",
-        onSelect: () =>
-          void run(() => reqApproval({ data: { proposalId: p.id } }), "Aprovação solicitada."),
+        onSelect: () => void navigate({ to: "/proposals/$id", params: { id: p.id } }),
       });
-    if (p.status === "draft" || p.status === "approved")
+    if ((p.status === "draft" || p.status === "approved") && cap.can_send)
       a.push({
         kind: "item",
         label: "Enviar ao cliente",
         onSelect: () => void run(() => send({ data: { id: p.id } }), "Proposta enviada."),
       });
-    if (p.public_token) {
-      const token = p.public_token;
-      a.push({
-        kind: "item",
-        label: "Copiar link",
-        onSelect: () => {
-          void navigator.clipboard.writeText(`${getPublicAppUrl()}/proposal/${token}`);
-          toast.success("Link copiado.");
-        },
-      });
-      a.push({
-        kind: "item",
-        label: "Baixar PDF",
-        onSelect: () => window.location.assign(`/api/public/proposals/${token}/pdf`),
-      });
+    if (cap.can_share && ["sent", "accepted", "rejected", "expired"].includes(p.status)) {
+      a.push({ kind: "item", label: "Copiar link", onSelect: () => void sharing.copy(p.id) });
+      a.push({ kind: "item", label: "Baixar PDF", onSelect: () => void sharing.open(p.id, true) });
     }
-    a.push({
-      kind: "item",
-      label: "Gerar contrato",
-      onSelect: () => setContractWizard({ proposalId: p.id, dealId, companyId }),
-    });
-    a.push({ kind: "separator" });
-    a.push({
-      kind: "item",
-      label: "Excluir",
-      destructive: true,
-      onSelect: () => void remove(p.id),
-    });
+    if (canCreateContract)
+      a.push({
+        kind: "item",
+        label: "Gerar contrato",
+        onSelect: () => setContractWizard({ proposalId: p.id, dealId, companyId }),
+      });
+    if (cap.can_delete) a.push({ kind: "separator" });
+    if (cap.can_delete)
+      a.push({
+        kind: "item",
+        label: "Excluir",
+        destructive: true,
+        onSelect: () => void remove(p.id),
+      });
     return a;
   }
 
@@ -140,6 +150,11 @@ export function DealProposals({
         singular="proposta"
         plural="propostas"
         onAdd={() => setWizard({ dealId })}
+        addControl={(button) => (
+          <SalesAction table="proposals" action="create">
+            {button}
+          </SalesAction>
+        )}
       />
       {isLoading ? (
         <div className="h-16 animate-pulse rounded-md bg-muted" aria-busy="true" />

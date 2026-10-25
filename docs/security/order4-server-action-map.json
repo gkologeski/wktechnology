@@ -3299,5 +3299,13 @@
     "action": "create/update",
     "control": "Signed state + active source membership/current action before exchange and atomic persistence; no credentials returned.",
     "review_status": "prepared; see isolated acceptance evidence and remaining tasks"
+  },
+  {
+    "file": "src/lib/quotes.functions.ts",
+    "operation": "getQuotePreview",
+    "resource": "techsales.quotes",
+    "action": "view",
+    "control": "Actual record view and user RLS for quote/line items; no public token retrieval, view-count mutation or implicit publication.",
+    "review_status": "isolated browser view-only acceptance passed; full Order 4 acceptance pending"
   }
 ]

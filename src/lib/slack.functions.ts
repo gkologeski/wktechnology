@@ -141,9 +141,17 @@ export const sendSlackTest = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    const { data: visible, error: visibleError } = await context.supabase
+      .from("slack_integrations")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .maybeSingle();
+    if (visibleError || !visible) throw new Error("Integração indisponível.");
+    await assertSalesRecord(context.supabase, "slack_integrations", visible.id, "manage");
     const { data: si } = await supabaseAdmin
       .from("slack_integrations")
       .select("access_token")
+      .eq("id", visible.id)
       .eq("workspace_id", workspaceId)
       .maybeSingle();
     if (!si?.access_token) throw new Error("Webhook URL não configurado");

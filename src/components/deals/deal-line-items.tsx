@@ -1,3 +1,4 @@
+import { SalesAction } from "@/components/sales-access";
 // Itens de linha do negócio: resumo, contador e editor completo (autosave por
 // campo, botão de salvar e desfazer da última ação).
 import { useState } from "react";
@@ -81,7 +82,9 @@ export function DealLineItemsEditor({
         if (!next) void qc.invalidateQueries({ queryKey: lineItemsQueryKey(dealId) });
       }}
     >
-      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      <SalesAction table="deals" id={dealId} action="update">
+        <DialogTrigger asChild>{trigger}</DialogTrigger>
+      </SalesAction>
       <DialogContent className="max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Itens de linha</DialogTitle>

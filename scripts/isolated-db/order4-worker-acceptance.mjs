@@ -316,6 +316,277 @@ try {
       }),
     ),
   );
+  await check("account synchronization requires current manage permission", async () =>
+    assert(
+      must(
+        await admin.rpc("sales_account_job_authorize", {
+          p_table: "email_accounts",
+          p_id: emailAccount,
+        }),
+      ) === false,
+      "sync without manage",
+    ),
+  );
+  await grant(["techsales.email_accounts.manage.own"]);
+  await check("account owner can synchronize with explicit permission", async () =>
+    assert(
+      must(
+        await admin.rpc("sales_account_job_authorize", {
+          p_table: "email_accounts",
+          p_id: emailAccount,
+        }),
+      ) === true,
+      "authorized sync blocked",
+    ),
+  );
+  await check("account job uses source workspace after workspace selection changes", async () => {
+    const before = must(
+      await admin.from("profiles").select("active_workspace_id").eq("id", u).single(),
+    );
+    try {
+      must(await admin.from("profiles").update({ active_workspace_id: B }).eq("id", u));
+      assert(
+        must(
+          await admin.rpc("sales_account_job_authorize", {
+            p_table: "email_accounts",
+            p_id: emailAccount,
+          }),
+        ) === true,
+        "selected workspace replaced source",
+      );
+    } finally {
+      must(await admin.from("profiles").update(before).eq("id", u));
+    }
+  });
+  await grant(["techsales.email_accounts.manage.own"], "deny");
+  await check("revoked account permission immediately blocks cron synchronization", async () =>
+    assert(
+      must(
+        await admin.rpc("sales_account_job_authorize", {
+          p_table: "email_accounts",
+          p_id: emailAccount,
+        }),
+      ) === false,
+      "revoked sync allowed",
+    ),
+  );
+  await check("browser cannot invoke background account permission port", async () =>
+    blocked(
+      await h.rpc("sales_account_job_authorize", { p_table: "email_accounts", p_id: emailAccount }),
+    ),
+  );
+  await check("account permission port rejects arbitrary tables", async () =>
+    assert(
+      must(await admin.rpc("sales_account_job_authorize", { p_table: "profiles", p_id: u })) ===
+        false,
+      "arbitrary source",
+    ),
+  );
+  const inactiveAccount = await seed("email_accounts", {
+    workspace_id: W,
+    owner_id: accounts[2].id,
+    provider: "gmail",
+    email: "inactive-order4@oauth.example",
+    status: "connected",
+  });
+  await check("inactive owner cannot run account synchronization", async () =>
+    assert(
+      must(
+        await admin.rpc("sales_account_job_authorize", {
+          p_table: "email_accounts",
+          p_id: inactiveAccount,
+        }),
+      ) === false,
+      "inactive sync allowed",
+    ),
+  );
+
+  await grant(["techsales.email_accounts.update.own"]);
+  await check(
+    "account synchronization preserves existing update permission without a new manage grant",
+    async () =>
+      assert(
+        must(
+          await admin.rpc("sales_account_job_authorize", {
+            p_table: "email_accounts",
+            p_id: emailAccount,
+          }),
+        ) === true,
+        "existing account rights regressed",
+      ),
+  );
+  const workflow = await seed("workflows", {
+    workspace_id: W,
+    owner_id: u,
+    name: "[ISO workflow rights]",
+    entity: "leads",
+    trigger: { event: "created" },
+    actions: [],
+    enabled: true,
+    status: "published",
+  });
+  const workflowRun = (refs) =>
+    admin.rpc("sales_worker_authorize", {
+      p_source: "workflows",
+      p_id: workflow,
+      p_refs: refs ?? [],
+    });
+  await check("workflow cannot execute for membership alone", async () =>
+    assert(must(await workflowRun()) === false, "workflow membership bypass"),
+  );
+  await grant(["system.workflows.view.own", "system.workflows.manage.own"]);
+  await check("workflow management authority permits evaluating its own flow", async () =>
+    assert(
+      must(await workflowRun([{ table: "leads", id: own }])) === true,
+      "authorized workflow blocked",
+    ),
+  );
+  await check("workflow management does not grant editing CRM records", async () =>
+    assert(
+      must(await workflowRun([{ table: "leads", id: own, action: "update" }])) === false,
+      "workflow update escalation",
+    ),
+  );
+  await grant(["techsales.leads.update.own"]);
+  await check("workflow may update a record within current own scope", async () =>
+    assert(
+      must(await workflowRun([{ table: "leads", id: own, action: "update" }])) === true,
+      "authorized workflow update blocked",
+    ),
+  );
+  await check("workflow update cannot use historical author after reassignment", async () =>
+    assert(
+      must(await workflowRun([{ table: "leads", id: away, action: "update" }])) === false,
+      "workflow own scope bypass",
+    ),
+  );
+  await check("workflow creation effect requires the destination resource permission", async () =>
+    assert(
+      must(await workflowRun([{ resource: "techsales.tasks", action: "create" }])) === false,
+      "task create escalation",
+    ),
+  );
+  await grant(["techsales.tasks.view.own", "techsales.tasks.create.own"]);
+  await check("workflow permits an explicitly authorized task creation effect", async () =>
+    assert(
+      must(await workflowRun([{ resource: "techsales.tasks", action: "create" }])) === true,
+      "authorized task create blocked",
+    ),
+  );
+  await check("workflow effects cannot select an inactive assignee", async () =>
+    assert(
+      must(
+        await workflowRun([
+          { resource: "techsales.leads", action: "assign", subject_id: accounts[2].id },
+        ]),
+      ) === false,
+      "inactive destination",
+    ),
+  );
+
+  await check(
+    "workflow notification accepts an active recipient without giving them workflow manage",
+    async () =>
+      assert(must(await workflowRun([{ member_id: peer }])) === true, "active recipient denied"),
+  );
+  for (const [name, recipient] of [
+    ["inactive", "10000000-0000-4000-8000-000000000005"],
+    ["foreign", "10000000-0000-4000-8000-000000000006"],
+  ])
+    await check(`workflow notification blocks ${name} recipient`, async () =>
+      assert(
+        must(await workflowRun([{ member_id: recipient }])) === false,
+        "recipient escaped workspace",
+      ),
+    );
+
+  await check("cross-module reader cannot resolve an identity in another workspace", async () =>
+    assert(
+      must(
+        await workflowRun([
+          { record_table: "profiles", id: "10000000-0000-4000-8000-000000000006" },
+        ]),
+      ) === false,
+      "foreign profile resolved",
+    ),
+  );
+  await check("cross-module reader accepts a visible active member", async () =>
+    assert(
+      must(await workflowRun([{ record_table: "profiles", id: peer }])) === true,
+      "visible member denied",
+    ),
+  );
+  await check("cross-module reader rejects tables outside its finite read catalog", async () =>
+    assert(
+      must(await workflowRun([{ record_table: "api_keys", id: own }])) === false,
+      "private table resolved",
+    ),
+  );
+
+  const recordOp = (table, action, id, payload = {}) =>
+    admin.rpc("sales_workflow_record", {
+      p_workflow: workflow,
+      p_table: table,
+      p_action: action,
+      p_id: id,
+      p_payload: payload,
+    });
+  await check("generic workflow cannot create without destination create permission", async () =>
+    blocked(await recordOp("leads", "create", null, { first_name: "[ISO blocked generic]" })),
+  );
+  await grant(["techsales.leads.create.own"]);
+  let generatedLead;
+  await check("generic workflow creates through actual actor RLS and forces author", async () => {
+    generatedLead = must(
+      await recordOp("leads", "create", null, {
+        first_name: "[ISO generic actor]",
+        owner_id: peer,
+      }),
+    ).id;
+    fixtures.push(["leads", generatedLead]);
+    const created = must(
+      await admin.from("leads").select("owner_id,workspace_id").eq("id", generatedLead).single(),
+    );
+    assert(created.owner_id === u && created.workspace_id === W, "source forged");
+  });
+  await check("generic workflow cannot force another tenant on insert", async () =>
+    blocked(
+      await recordOp("leads", "create", null, {
+        first_name: "[ISO cross workspace]",
+        workspace_id: B,
+      }),
+    ),
+  );
+  await check("generic workflow update works within actor's current own scope", async () =>
+    must(await recordOp("leads", "update", generatedLead, { notes: "[ISO allowed update]" })),
+  );
+  await check("generic workflow cannot edit a record assigned to another person", async () =>
+    blocked(await recordOp("leads", "update", away, { notes: "[ISO forbidden]" })),
+  );
+  await check("generic workflow cannot forge ownership by updating author", async () =>
+    blocked(await recordOp("leads", "update", generatedLead, { owner_id: peer })),
+  );
+  await check("generic workflow cannot delete without explicit delete permission", async () =>
+    blocked(await recordOp("leads", "delete", generatedLead)),
+  );
+  await check("browser cannot call the delegated workflow record port", async () =>
+    blocked(
+      await h.rpc("sales_workflow_record", {
+        p_workflow: workflow,
+        p_table: "leads",
+        p_action: "update",
+        p_id: generatedLead,
+        p_payload: { notes: "forbidden" },
+      }),
+    ),
+  );
+  await check("generic workflow rejects tables outside its finite catalog", async () =>
+    blocked(await recordOp("profiles", "update", u, { full_name: "forged" })),
+  );
+  must(await admin.from("workflows").update({ enabled: false }).eq("id", workflow));
+  await check("disabled workflow cannot resume or execute its next effect", async () =>
+    assert(must(await workflowRun()) === false, "disabled workflow ran"),
+  );
 } finally {
   for (const [t, id] of fixtures.reverse()) must(await admin.from(t).delete().eq("id", id));
   if (group) {

@@ -13,7 +13,16 @@ export async function assertSalesWorker(
   client: SupabaseClient,
   source: SalesWorkerSource,
   id: string,
-  references: Array<{ table: string; id: string }> = [],
+  references: Array<
+    | { member_id: string }
+    | { record_table: string; id: string }
+    | { table: string; id: string; action?: "view" | "update" | "delete" | "assign" | "manage" }
+    | {
+        resource: string;
+        action: "view" | "create" | "update" | "delete" | "assign" | "manage";
+        subject_id?: string;
+      }
+  > = [],
 ) {
   if (
     !(await workRpc<boolean>(client, "sales_worker_authorize", {

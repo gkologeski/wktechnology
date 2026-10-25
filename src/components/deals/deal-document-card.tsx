@@ -75,20 +75,30 @@ export function DealDocsHeader({
   singular,
   plural,
   onAdd,
+  addControl,
 }: {
   count: number;
   singular: string;
   plural: string;
   onAdd: () => void;
+  addControl?: (button: ReactNode) => ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between">
       <span className="text-sm text-muted-foreground">
         {count === 0 ? `Nenhum(a) ${singular}` : `${count} ${count === 1 ? singular : plural}`}
       </span>
-      <Button size="sm" variant="link" className="h-auto p-0" onClick={onAdd}>
-        + Adicionar
-      </Button>
+      {addControl ? (
+        addControl(
+          <Button size="sm" variant="link" className="h-auto p-0" onClick={onAdd}>
+            + Adicionar
+          </Button>,
+        )
+      ) : (
+        <Button size="sm" variant="link" className="h-auto p-0" onClick={onAdd}>
+          + Adicionar
+        </Button>
+      )}
     </div>
   );
 }

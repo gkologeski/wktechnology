@@ -312,6 +312,7 @@ export const syncAccountRecordings = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("system.calendars", "manage")])
   .inputValidator((input) => z.object({ account_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await assertSalesRecord(context.supabase, "calendar_accounts", data.account_id, "manage");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: row, error } = await supabaseAdmin
@@ -339,6 +340,8 @@ export const pushActivityToCalendar = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    await assertSalesRecord(context.supabase, "calendar_accounts", data.account_id, "manage");
+    await assertSalesRecord(context.supabase, "activities", data.activity_id, "update");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: acct, error: aErr } = await supabaseAdmin

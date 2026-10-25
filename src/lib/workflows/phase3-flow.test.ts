@@ -1,6 +1,36 @@
 // Fase 3 do construtor: espera dentro de caminhos, caminhos em paralelo com
 // junção, link de agendamento e material — banco falso, nada é enviado.
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+// Business-flow unit tests inject authorization; real RLS is exercised by the isolated worker suite.
+vi.mock("@/lib/access-control/sales-worker.server", () => ({
+  assertSalesWorker: async () => undefined,
+}));
+vi.mock("./engine/authorization.server", () => ({
+  authorizeWorkflowStep: async () => undefined,
+  sanitizeWorkflowSnapshot: (value: unknown) => value,
+}));
+vi.mock("./engine/record-write.server", () => ({
+  workflowRecord: async (
+    db: any,
+    _ctx: unknown,
+    table: string,
+    operation: string,
+    id: string | null,
+    payload: Record<string, unknown>,
+  ) => {
+    const query =
+      operation === "create"
+        ? db.from(table).insert(payload).select("id").single()
+        : operation === "update"
+          ? db.from(table).update(payload).eq("id", id)
+          : db.from(table).delete().eq("id", id);
+    const result = await query;
+    if (result.error) throw new Error(result.error.message);
+    return result.data ?? { id };
+  },
+}));
+
 import { runActions } from "./engine.server";
 import { decideJoin, initialParallelState } from "./engine/actions-parallel.server";
 import { splitResumeData } from "./engine-runtime.server";

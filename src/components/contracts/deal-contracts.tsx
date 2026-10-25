@@ -1,3 +1,7 @@
+import { WorkAction } from "@/components/work-action";
+import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { readViewAs } from "@/lib/view-as-client";
 // Quadro "Contratos" do negócio: cabeçalho com "+ Adicionar", cartões com menu
 // de ações e assistente passo a passo para criar.
 import { useState } from "react";
@@ -50,6 +54,18 @@ export function DealContracts({
     queryFn: () => list({ data: { dealId } }),
   });
 
+  const capabilities = useWorkCapabilities(
+    "techcontracts.contracts",
+    rows.map((c) => c.id),
+  );
+  const p = usePermissions();
+  const canCreate =
+    !p.isLoading &&
+    !p.isError &&
+    !readViewAs()?.readOnly &&
+    readViewAs()?.mode !== "role" &&
+    p.canAny(["own", "team", "workspace"].map((s) => `techcontracts.contracts.create.${s}`)) &&
+    p.canAny(["own", "team", "workspace"].map((s) => `techcontracts.contracts.view.${s}`));
   const open = (id: string) => void navigate({ to: "/contracts/$id", params: { id } });
 
   async function remove(id: string) {
@@ -71,6 +87,7 @@ export function DealContracts({
   }
 
   function actionsFor(c: (typeof rows)[number]): DocAction[] {
+    const cap = capabilities.for(c.id);
     const a: DocAction[] = [
       { kind: "item", label: "Abrir", onSelect: () => open(c.id) },
       {
@@ -78,22 +95,32 @@ export function DealContracts({
         label: "Ver fluxo do contrato",
         onSelect: () => void navigate({ to: "/contracts/$id/flow", params: { id: c.id } }),
       },
-      { kind: "item", label: "Editar", onSelect: () => open(c.id) },
-      {
-        kind: "item",
-        label: "Adicionar aditivo",
-        onSelect: () => setWizard({ dealId, companyId, mainContractId: c.id }),
-      },
+      ...(cap.can_update
+        ? [{ kind: "item" as const, label: "Editar", onSelect: () => open(c.id) }]
+        : []),
+      ...(canCreate
+        ? [
+            {
+              kind: "item" as const,
+              label: "Adicionar aditivo",
+              onSelect: () => setWizard({ dealId, companyId, mainContractId: c.id }),
+            },
+          ]
+        : []),
     ];
-    if (c.status === "draft" || c.status === "in_review" || c.status === "in_negotiation")
+    if (
+      cap.can_send &&
+      (c.status === "draft" || c.status === "in_review" || c.status === "in_negotiation")
+    )
       a.push({ kind: "item", label: "Enviar para assinatura", onSelect: () => open(c.id) });
-    a.push({ kind: "separator" });
-    a.push({
-      kind: "item",
-      label: "Excluir",
-      destructive: true,
-      onSelect: () => void remove(c.id),
-    });
+    if (cap.can_delete) a.push({ kind: "separator" });
+    if (cap.can_delete)
+      a.push({
+        kind: "item",
+        label: "Excluir",
+        destructive: true,
+        onSelect: () => void remove(c.id),
+      });
     return a;
   }
 
@@ -104,6 +131,11 @@ export function DealContracts({
         singular="contrato"
         plural="contratos"
         onAdd={() => setWizard({ dealId, companyId })}
+        addControl={(button) => (
+          <WorkAction resource="techcontracts.contracts" action="create">
+            {button}
+          </WorkAction>
+        )}
       />
       {isLoading ? (
         <div className="h-16 animate-pulse rounded-md bg-muted" aria-busy="true" />

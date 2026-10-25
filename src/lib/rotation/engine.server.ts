@@ -34,13 +34,14 @@ export function pickNextAssignee(
 
 /**
  * Carrega a regra, escolhe próximo responsável, atualiza o registro alvo
- * (owner_id) e persiste o checkpoint na própria regra.
+ * (responsável atual, preservando o autor) e persiste o checkpoint na própria regra.
  */
 export async function applyRotation(
   supabase: SupabaseClient,
   ruleId: string,
   entity: RotationEntity,
   entityId: string,
+  write?: (table: string, id: string, payload: Record<string, unknown>) => Promise<void>,
 ): Promise<{ user_id: string }> {
   const { data: rule, error } = await supabase
     .from("rotation_rules")
@@ -63,23 +64,38 @@ export async function applyRotation(
   const assignField =
     entity === "tickets" || entity === "live_chat_sessions"
       ? "assignee_id"
-      : entity === "whatsapp_conversations" || entity === "email_threads"
+      : entity === "leads" ||
+          entity === "deals" ||
+          entity === "whatsapp_conversations" ||
+          entity === "email_threads"
         ? "assigned_to"
         : "owner_id";
-  const { error: upErr } = await supabase
-    .from(entity)
-    .update({ [assignField]: pick.user_id })
-    .eq("id", entityId);
-  if (upErr) throw new Error(`Falha ao atribuir: ${upErr.message}`);
-
-  await supabase
-    .from("rotation_rules")
-    .update({
-      last_index: pick.index,
-      last_assigned_user_id: pick.user_id,
-      last_assigned_at: new Date().toISOString(),
-    })
-    .eq("id", ruleId);
+  const target = { [assignField]: pick.user_id };
+  const checkpoint = {
+    last_index: pick.index,
+    last_assigned_user_id: pick.user_id,
+    last_assigned_at: new Date().toISOString(),
+  };
+  if (write) {
+    // A delegated worker must use the actor's RLS for both effects.
+    await write(entity, entityId, target);
+    await write("rotation_rules", ruleId, checkpoint);
+  } else {
+    const { data, error: upErr } = await supabase
+      .from(entity)
+      .update(target)
+      .eq("id", entityId)
+      .select("id");
+    if (upErr || !data?.length)
+      throw new Error(`Falha ao atribuir: ${upErr?.message ?? "registro sem acesso"}`);
+    const { data: saved, error: checkpointError } = await supabase
+      .from("rotation_rules")
+      .update(checkpoint)
+      .eq("id", ruleId)
+      .select("id");
+    if (checkpointError || !saved?.length)
+      throw new Error(`Falha ao salvar rodízio: ${checkpointError?.message ?? "regra sem acesso"}`);
+  }
 
   return { user_id: pick.user_id };
 }

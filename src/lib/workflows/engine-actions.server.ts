@@ -1,3 +1,4 @@
+import { authorizeWorkflowStep, sanitizeWorkflowSnapshot } from "./engine/authorization.server";
 // Execução das ações de workflow (runActions).
 // O controle de fluxo vive em engine/actions-control.server.ts e cada grupo de
 // ações em engine/actions-*.server.ts. Comportamento e logs inalterados.
@@ -45,6 +46,9 @@ export async function runActions(
   startIndex = 0,
   pathPrefix = "",
 ): Promise<RunResult> {
+  ctx.after = sanitizeWorkflowSnapshot(ctx.after);
+  ctx.before = sanitizeWorkflowSnapshot(ctx.before);
+  if (ctx.vars) ctx.vars = sanitizeWorkflowSnapshot(ctx.vars);
   const rawLog: LogStep[] = [];
   let currentStep = -1;
   // Registra a saída de cada passo em `ctx.vars.steps.N`, permitindo que
@@ -78,6 +82,20 @@ export async function runActions(
         step.action,
       step_path: step.step_path ?? stepPath,
     });
+
+    try {
+      await authorizeWorkflowStep(supabase, ctx, action);
+    } catch (e) {
+      rawLog.push(
+        annotate({
+          at: new Date().toISOString(),
+          ok: false,
+          action: action.type,
+          error: e instanceof Error ? e.message : "Ação não autorizada.",
+        }),
+      );
+      return { log: rawLog, hadError: true };
+    }
 
     if (isControlAction(action)) {
       // Quadro de retomada vale só para o passo onde a execução foi pausada.
