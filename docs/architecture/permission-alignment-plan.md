@@ -4,7 +4,23 @@ Iniciado por autorização do usuário em 23/10/2026. Abrange TechSales, TechHir
 TechPeople, TechContracts, TechProjects, TechFinance e áreas compartilhadas.
 `techservice` é namespace legado, não um sétimo módulo.
 
-## Status consolidado e recalibração — 24/10/2026
+## Leitura do plano após os fechamentos de 25/10/2026
+
+As tabelas percentuais abaixo são o retrato histórico de 24/10, não o status
+atual. Os fechamentos das Ordens 1–5 estão nas seções posteriores e nos aceites
+operacionais. A Ordem 5 foi finalmente publicada e aceita com 215 cenários JWT
+isolados e 1.767 testes; a Home foi validada no administrador e em Priscila,
+com restrições preservadas e sessão original restaurada. Migrações até 0238.
+As observações antigas do JSON normativo não substituem esses aceites, nem
+podem ser somadas como percentual atual de telas protegidas.
+
+A Ordem 6 implementa prevenção automática, documentada em
+`permission-prevention.md`: inventário imutável, contratos de impacto por fonte,
+catálogo, controles executáveis, evidência de negação e integração obrigatória
+na CI. O estado remoto da proteção de branch é comprovado separadamente no
+relatório operacional; um arquivo YAML sozinho não impede merges.
+
+## Status histórico e recalibração — 24/10/2026
 
 Percentuais gerenciais estimados, arredondados; não medem cobertura de telas,
 rotas ou testes. Nenhuma das seis etapas está integralmente concluída.
@@ -1424,3 +1440,16 @@ resolve as chaves/equipe uma vez. Dezesseis cenários JWT comparam os números
 com SELECTs sujeitos à RLS, incluindo escopos independentes, deny, transferência,
 workspace estrangeiro e sessão inativa. O ensaio postgres passou com rollback.
 Publicação e aceite final ainda dependem da execução da versão atual.
+
+## Ordem 6 — gate de prevenção (25/10/2026)
+
+Inventário inicial imutável de 2.823 arquivos; catálogo conferido com produção
+de 2.741 chaves, sem grants. Novo/alterado/removido exige contrato de impacto,
+recurso/ação/escopo, fronteira de servidor e banco, e cinco testes executáveis
+distintos. Exceções técnicas possuem limite, revogação e revisão com validade.
+Comentários/imports não contam como guarda e migrações antigas não são editadas.
+O gate roda antes de verify/build na CI; 38 testes novos verificam recusas e a
+barreira compartilhada de servidor. Ver o contrato permanente em AGENTS.md e
+`docs/architecture/permission-prevention.md`. As evidências de CI remota,
+proteção de branch, publicação e limitações ficam no relatório operacional da
+Ordem 6. Não inferir certificação dos 2.823 arquivos a partir deste inventário.

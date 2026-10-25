@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "contracts": [
+    {
+      "id": "home-dashboard-authorization",
+      "kind": "business",
+      "files": {
+        "src/lib/home/dashboard.functions.ts": "d61bb8a39343d4e34844e827e7d3f05f83b582112e00897c2c27e331b8e00a67"
+      },
+      "resources": [
+        "system.home",
+        "techprojects.tasks",
+        "techprojects.projects",
+        "techfinance.entries",
+        "techfinance.payments"
+      ],
+      "actions": [
+        "view",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.home.view.workspace",
+        "system.home.export.workspace"
+      ],
+      "rationale": "Home view/export use the authenticated shared boundary. Each finite aggregate independently rechecks its own current module and record permissions; field rules are resolved by the protected database views.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/shared-permission.middleware.ts",
+          "symbol": "requireSharedPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0236_order5_home_financial_totals.sql",
+          "symbol": "shared_home_financial_totals"
+        },
+        {
+          "file": "drizzle/migrations/0238_order5_home_project_totals.sql",
+          "symbol": "shared_home_project_totals"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
+          "name": "shared boundary allows an authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
+          "name": "shared boundary rejects missing permission before the handler"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
+          "name": "shared boundary rejects explicit deny before the handler"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
+          "name": "shared boundary rejects foreign workspace before the handler"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
+          "name": "shared boundary rejects inactive membership before the handler"
+        }
+      }
+    }
+  ],
+  "retired": {}
+}

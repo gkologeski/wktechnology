@@ -9,6 +9,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import getTsgoExe from "../node_modules/@typescript/native-preview/lib/getExePath.js";
 
 const STEPS = [
+  { name: "permissions", cmd: "bun", args: ["scripts/check-permissions.ts"] },
   { name: "typecheck", cmd: getTsgoExe(), args: ["--noEmit", "--incremental", "false"] },
   {
     name: "lint",

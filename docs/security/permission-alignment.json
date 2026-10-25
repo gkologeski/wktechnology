@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-24",
+  "updated_at": "2026-10-25",
   "modules": [
     "TechSales",
     "TechHire",
@@ -2618,5 +2618,14 @@
     "Banking 0212–0213: all bank actions require banking.view.workspace plus a specific action. Legacy banking own/team/create/delete/export catalog keys do not grant these operations; no automatic role grants. Inter sandbox/production, TED and bank-side payment reversal remain unavailable. This lot does not finish fiscal, bank-account catalogs or reporting permissions.",
     "0214–0215 preparation: permission alignment does not implement real charge/NFS-e providers, TED, bank reversals or new accounting period-closing features. Unsupported fake issuance is replaced with an explicit unavailable result; no fabricated links/QR codes or fake fiscal success.",
     "Order 2 permission alignment closed in 0210–0215: 26 actual JWT cases, 20 banking regression cases, 5 local browser/HTTP flows and rollback SQL acceptance in production. Does not certify all financial roles visually in production or real gateway/fiscal integrations. No automatic role/default/override grants."
-  ]
+  ],
+  "rules_status_semantics": "Historical audit observations, not current acceptance or machine-readable coverage. See order closure sections and operational evidence.",
+  "prevention_gate": {
+    "contract": "docs/architecture/permission-prevention.md",
+    "command": "bun run permissions:check",
+    "baseline": "docs/security/permission-baseline.json",
+    "manifest": "docs/security/permission-contracts.json",
+    "catalog": "docs/security/permission-key-catalog.json",
+    "historical_inventory_is_not_certification": true
+  }
 }
