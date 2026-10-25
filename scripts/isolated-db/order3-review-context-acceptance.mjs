@@ -143,17 +143,13 @@ try {
     /^(techprojects\.(time_entries|timesheet)|techpeople\.timesheet)\.view\.workspace$/.test(k),
   );
   await set(aliases);
-  await check("workspace time reader can inspect operational issues", async () => {
+  await check("time visibility alone cannot bypass administrative source gate", async () => {
     assert(must(await context()) === W, "time context");
-    const r = must(await visible());
-    assert(
-      r.length === 1 && String(r[0].id) === String(issue.id),
-      "issue visibility: " + JSON.stringify({ expected: issue.id, rows: r }),
-    );
+    assert(must(await visible()).length === 0, "administrative issue gate");
     assert(
       must(await h.from("project_reconciliation_refreshes").select("id").eq("id", refresh.id))
-        .length === 1,
-      "refresh visibility",
+        .length === 0,
+      "administrative refresh gate",
     );
   });
   await set(["techprojects.time_entries.view.workspace"], "deny");
@@ -172,9 +168,11 @@ try {
     assert(must(await context()) === null, "admin bypass"),
   );
   await set(["techprojects.reconciliation.view.workspace"]);
-  await check("authorized administrator can inspect selected workspace", async () =>
-    assert(must(await context()) === W, "admin grant"),
-  );
+  await check("authorized administrator can inspect selected workspace", async () => {
+    assert(must(await context()) === W, "admin grant");
+    const rows = must(await visible());
+    assert(rows.length === 1 && rows[0].id === issue.id, "admin selected workspace");
+  });
   await check("inactive and foreign sessions cannot read source issues", async () => {
     for (const i of [2, 3])
       assert(

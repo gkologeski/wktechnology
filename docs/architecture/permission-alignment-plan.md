@@ -1224,7 +1224,7 @@ tarifas, além da edição do registro. Exportar rentabilidade exige ação pró
 revalidada no servidor. O catálogo recebe chaves, sem concedê-las a cargos.
 
 Validação da versão: 1.729 testes de código, verificação de tipos e lint;
-115 cenários GoTrue/JWT/PostgREST; 13 cenários Chrome; ensaio integral das duas
+122 cenários GoTrue/JWT/PostgREST; 13 cenários Chrome; ensaio integral das duas
 migrações com rollback; regressão de configuração → medição → aprovação por
 outro usuário → Financeiro, sem cobrança duplicada; regressões financeiras e de
 contexto de API. Com 10 mil apontamentos, dashboard e RLS retornam os mesmos IDs
@@ -1235,11 +1235,14 @@ restritiva → aceite de produção. O fechamento operacional é comprovado pelo
 relatório e pelas evidências em `outputs/permission-order3-completion-2026-10-25`
 no workspace desta tarefa; sucesso local não substitui essa comprovação.
 
-Complemento de aceite: `0220_order3_reconciliation_read_context.sql` calcula a
-visibilidade operacional da conciliação uma vez por consulta, em um initplan.
-Preserva o dashboard como SECURITY INVOKER e sob RLS. A leitura de referências
-exige visualização de horas no workspace (aliases normalizados, deny prevalece)
-ou administrador ativo com visualização da conciliação. Não usa cache de
-credenciais em GUC. O teste com 10 mil tarefas, 10 mil apontamentos e 10 mil
-ocorrências levou 2,9 s e confirmou os mesmos totais da RLS. Sete cenários JWT
-adicionais verificam essa porta; total de aceites JWT: 122.
+Complemento de aceite: as migrações 0220 e 0221 resolvem o contexto de leitura
+uma vez por consulta, em initplans. A porta administrativa restritiva de 0219
+continua exigindo administrador ativo e visualização da conciliação, com deny
+prevalecendo. Ter acesso às horas não libera as tabelas de configuração e de
+ocorrências. O dashboard continua SECURITY INVOKER e sob RLS; não há cache de
+credenciais em GUC. A reprodução local agora inclui essa política restritiva,
+que estava ausente de duas tabelas no baseline isolado. Os sete testes JWT
+adicionais verificam também essa diferença e o isolamento por workspace.
+Com 10 mil tarefas, apontamentos e ocorrências, o resumo levou 3,05 s; em
+produção, 2,46 s, com 172 projetos e 162 apontamentos / 2.183.591 segundos.
+Nenhum dado real foi inserido ou removido nesses testes de produção.
