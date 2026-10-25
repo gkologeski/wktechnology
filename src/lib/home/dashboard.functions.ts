@@ -193,17 +193,16 @@ async function loadHomeDashboard(
   }
 
   if (enabledModules.includes("projects")) {
-    const [tasksDone, activeProjects] = await Promise.all([
-      safeCount(supabase, workspaceId, "project_tasks", (q) =>
-        q.eq("status", "done").gte("updated_at", from).lte("updated_at", to),
-      ),
-      safeCount(supabase, workspaceId, "projects", (q) => q.eq("status", "active")),
-    ]);
+    const totals = await workRpc<{ tasks_done: number; active_projects: number }>(
+      supabase,
+      "shared_home_project_totals",
+      { p_from: from, p_to: to },
+    );
     sections.push({
       moduleId: "projects",
       kpis: [
-        { label: "Tarefas concluídas", value: String(tasksDone) },
-        { label: "Projetos ativos", value: String(activeProjects) },
+        { label: "Tarefas concluídas", value: String(totals.tasks_done) },
+        { label: "Projetos ativos", value: String(totals.active_projects) },
       ],
     });
   }

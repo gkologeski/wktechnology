@@ -1399,3 +1399,28 @@ responsável transferido, pai em outro workspace e volume acima de 1.000 linhas.
 Foi criado e removido um administrador descartável apenas no harness isolado;
 overrides temporários foram restaurados. São 199 cenários isolados no fechamento.
 0236 aplicada no journal id432, hash 1d8ea5b6950e5dc667232e8ffd6a53565aa8adc121a892ebe6ae4ba6a8bbff57. O novo agregado respondeu em 79ms no diagnóstico SQL com o contexto administrador; esse diagnóstico não é um aceite JWT. Verify e build integrais passaram no mesmo fingerprint dd689f668334d428115cbe2b396b31800a3eff19ba34d6954f4b146ff25d95e4. Publicação e novo aceite na interface em andamento no momento deste registro.
+
+### Ordem 5 — contexto de campos por consulta (25/10/2026)
+
+A migração 0237 substitui o subselect lateral sem correlação das sete views
+`shared_fields_*` por um CTE MATERIALIZED. O plano anterior podia executar
+`shared_field_context` uma vez por linha (observado com duas linhas); o novo
+plano calcula a mesma política uma vez por statement. Expressões de coluna,
+proprietário sem bypass, ACLs, security_barrier e RLS permanecem preservados.
+Os 31 cenários JWT de campos passaram novamente. A regressão SQL isolada usa
+mil negócios sintéticos, verifica soma, execução única e as sete barreiras,
+e reverte os fixtures. Não equivale a aceite autenticado em produção.
+Aplicada via executor oficial: journal id433, timestamp1792873273617.
+Consulta SQL do pipeline após a migração: 163 ms; o aceite completo da Home
+continua em validação. Nenhuma concessão a cargos ou dados reais foi alterada.
+
+O diagnóstico limitado por etapa identificou o próximo timeout em project_tasks;
+CRM, ATS e contratos passaram antes dele. A migração 0238 prepara um agregado
+finito de tarefas concluídas e projetos ativos: mesmas chaves work_view, mesma
+responsabilidade por assignee_ids/assignee_id nas tarefas e coalesce de
+assigned_to/owner_id no projeto. Não acrescenta acesso de owner a tarefas.
+Exige Home view e contexto atual ativo, nega anônimo, valida intervalo e
+resolve as chaves/equipe uma vez. Dezesseis cenários JWT comparam os números
+com SELECTs sujeitos à RLS, incluindo escopos independentes, deny, transferência,
+workspace estrangeiro e sessão inativa. O ensaio postgres passou com rollback.
+Publicação e aceite final ainda dependem da execução da versão atual.
