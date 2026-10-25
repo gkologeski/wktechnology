@@ -209,23 +209,18 @@ async function loadHomeDashboard(
   }
 
   if (enabledModules.includes("finance")) {
-    const [recvOpen, payOpen, paymentsIn] = await Promise.all([
-      safeSum(supabase, workspaceId, "financial_entries", "amount", (q) =>
-        q.eq("direction", "receivable").in("status", ["open", "partial", "overdue"]),
-      ),
-      safeSum(supabase, workspaceId, "financial_entries", "amount", (q) =>
-        q.eq("direction", "payable").in("status", ["open", "partial", "overdue"]),
-      ),
-      safeSum(supabase, workspaceId, "financial_payments", "amount", (q) =>
-        q.gte("paid_at", from).lte("paid_at", to),
-      ),
-    ]);
+    const totals = await workRpc<{
+      receivable_open: number | null;
+      payable_open: number | null;
+      payments_in_period: number | null;
+    }>(supabase, "shared_home_financial_totals", { p_from: from, p_to: to });
+    const financeValue = (value: number | null) => (value === null ? "Restrito" : fmtBRL(value));
     sections.push({
       moduleId: "finance",
       kpis: [
-        { label: "A receber (aberto)", value: fmtBRL(recvOpen) },
-        { label: "A pagar (aberto)", value: fmtBRL(payOpen) },
-        { label: "Pagamentos no período", value: fmtBRL(paymentsIn) },
+        { label: "A receber (aberto)", value: financeValue(totals.receivable_open) },
+        { label: "A pagar (aberto)", value: financeValue(totals.payable_open) },
+        { label: "Pagamentos no período", value: financeValue(totals.payments_in_period) },
       ],
     });
   }

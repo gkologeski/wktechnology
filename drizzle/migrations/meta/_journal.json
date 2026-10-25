@@ -1653,6 +1653,13 @@
       "when": 1792873273615,
       "tag": "0235_order5_legacy_storage_activate",
       "breakpoints": true
+    },
+    {
+      "idx": 236,
+      "version": "7",
+      "when": 1792873273616,
+      "tag": "0236_order5_home_financial_totals",
+      "breakpoints": true
     }
   ]
 }

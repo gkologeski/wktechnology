@@ -1370,3 +1370,32 @@ publicar o cliente que pede os caminhos e só então ativar as políticas; confe
 journal, hash publicado, invariantes e aceite autenticado. A disponibilidade do
 backend de produção oscilou entre resposta, HTTP 504 e conexão recusada; isso
 continua sendo um bloqueio externo até o aceite final, não uma validação verde.
+
+### Aceite administrador — totais financeiros da Home
+
+Após a operação autorizada de pausa, o painel voltou a indicar instância ativa;
+o PostgreSQL confirmou inicialização em 25/10/2026 às 21:58:46 UTC. O Auth
+respondeu HTTP 200. Ainda ocorreram timeouts; suporte acionado com autorização,
+recebimento automático e encaminhamento para equipe informado. Nenhuma ação
+adicional de reativação foi clicada pelo agente quando o painel voltou a ativo.
+
+O diagnóstico SQL restrito ao ator administrador atingiu o limite de 20s ao
+avaliar finance_context_access na consulta de lançamentos. A migração 0236
+adiciona shared_home_financial_totals(date,date), sem alterar a RLS ordinária.
+Home exige sua chave de leitura; o contexto financeiro canônico fornece ator,
+workspace, chaves efetivas e equipe. Os bits de próprio/equipe/workspace são
+resolvidos uma vez, e os totais aplicam esse mesmo predicado ao responsável real
+(coalesce assigned_to/owner_id). Baixas exigem a interseção do escopo da baixa
+com o de seu lançamento pai, no mesmo workspace. Ausência de leitura mostra
+Restrito; zero permanece o resultado legítimo de um escopo autorizado sem linhas.
+O período mantém o tipo date de paid_at e a inclusão das datas limite usada
+antes pelo PostgREST. As somas abrangem todas as linhas autorizadas, sem o limite
+de página do REST. Dois índices cobrem lançamentos abertos e baixas no período.
+
+20 cenários adicionais com JWT real passaram no ambiente isolado, comparando
+os resultados com a RLS canônica em escopos próprios, equipe, workspace e
+interseções distintas, negações, inativo, anônimo, somente leitura, datas,
+responsável transferido, pai em outro workspace e volume acima de 1.000 linhas.
+Foi criado e removido um administrador descartável apenas no harness isolado;
+overrides temporários foram restaurados. São 199 cenários isolados no fechamento.
+0236 aplicada no journal id432, hash 1d8ea5b6950e5dc667232e8ffd6a53565aa8adc121a892ebe6ae4ba6a8bbff57. O novo agregado respondeu em 79ms no diagnóstico SQL com o contexto administrador; esse diagnóstico não é um aceite JWT. Verify e build integrais passaram no mesmo fingerprint dd689f668334d428115cbe2b396b31800a3eff19ba34d6954f4b146ff25d95e4. Publicação e novo aceite na interface em andamento no momento deste registro.
