@@ -1,3 +1,6 @@
+import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { WorkScreenAccess } from "@/components/work-access";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { formatCompactDateTime } from "@/lib/format/compact-date";
@@ -62,7 +65,6 @@ import {
   type ContractRow,
 } from "@/components/contracts/contracts-grouped-list";
 import { ContractsBulkBar } from "@/components/contracts/contracts-bulk-bar";
-import { useCanDelete } from "@/lib/access-control/use-can-delete";
 import { Checkbox } from "@/components/ui/checkbox";
 import { FiltersSidebar, ViewsTabs } from "@/components/crm/hubspot-shell";
 import { useGridColumns, type GridColumnDef } from "@/hooks/use-grid-columns";
@@ -166,7 +168,11 @@ export const Route = createFileRoute("/_authenticated/contracts/")({
       { name: "description", content: "Gestão do ciclo de vida de contratos." },
     ],
   }),
-  component: ContractsPage,
+  component: () => (
+    <WorkScreenAccess resources={["techcontracts.contracts"]}>
+      <ContractsPage />
+    </WorkScreenAccess>
+  ),
 });
 
 const STATUS_LABEL: Record<string, string> = {
@@ -210,7 +216,6 @@ function ContractsPage() {
   const groupings = useServerFn(listContractGroupings);
   const countPending = useServerFn(countContractsPendingLink);
   const legalEntitiesFn = useServerFn(listLegalEntities);
-  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techcontracts.contracts");
 
   const [searchDraft, setSearchDraft] = useState(sp.q);
   const [openNew, setOpenNew] = useState(false);
@@ -314,6 +319,15 @@ function ContractsPage() {
   });
 
   const rows = (data?.rows ?? []) as ContractRow[];
+  const access = useWorkCapabilities(
+    "techcontracts.contracts",
+    rows.map((x) => x.id),
+  );
+  const { canAny } = usePermissions();
+  const canCreate = canAny([
+    "techcontracts.contracts.create.own",
+    "techcontracts.contracts.create.workspace",
+  ]);
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / sp.pageSize));
 
@@ -789,8 +803,8 @@ function ContractsPage() {
             onSelectAll={() => void selectAllMatching()}
             isSelectingAll={selectingAll}
             onClear={() => setSelectedMap(new Map())}
-            canDelete={(row) => canDeleteRecord(row)}
-            canDeleteLoading={deletePermLoading}
+            canDelete={(row) => access.for(row.id).can_delete}
+            canDeleteLoading={access.isLoading}
           />
         ) : null}
 

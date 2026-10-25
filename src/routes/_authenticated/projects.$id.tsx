@@ -1,3 +1,6 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { WorkScreenAccess, WorkRecordAccess } from "@/components/work-access";
+import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -65,7 +68,7 @@ import { ProjectOriginCard } from "@/components/projects/project-origin-card";
 import { IsoDatePicker } from "@/components/iso-date-picker";
 import { formatIsoDate } from "@/lib/iso-date";
 export const Route = createFileRoute("/_authenticated/projects/$id")({
-  component: ProjectDetailPage,
+  component: WorkDetailAccess,
 });
 
 const STATUS_LABEL: Record<string, string> = {
@@ -89,6 +92,7 @@ function ProjectDetailPage() {
   const get = useServerFn(getProject);
   const update = useServerFn(updateProject);
   const fin = useServerFn(getProjectFinancials);
+  const access = useWorkCapabilities("techprojects.projects", [id]);
 
   const { data: project, isLoading } = useQuery({
     queryKey: ["project", id],
@@ -129,6 +133,7 @@ function ProjectDetailPage() {
               </Link>
             </Button>
             <Select
+              disabled={!access.for(id).can_update}
               value={p.status}
               onValueChange={async (v) => {
                 await update({ data: { id, patch: { status: v as any } } });
@@ -264,6 +269,11 @@ function TasksKanban({ projectId }: { projectId: string }) {
     queryFn: () => list({ data: { projectId } }),
   });
 
+  const taskAccess = useWorkCapabilities(
+    "techprojects.tasks",
+    tasks.map((t) => t.id),
+  );
+  const { canAny: canTask } = usePermissions();
   const grouped = useMemo(() => {
     const m = new Map<string, any[]>();
     for (const c of TASK_COLUMNS) m.set(c.key, []);
@@ -272,6 +282,7 @@ function TasksKanban({ projectId }: { projectId: string }) {
   }, [tasks]);
 
   const move = async (taskId: string, status: string) => {
+    if (!taskAccess.for(taskId).can_update) return;
     await upd({ data: { id: taskId, patch: { status: status as any } } });
     qc.invalidateQueries({ queryKey: ["project-tasks", projectId] });
   };
@@ -279,7 +290,13 @@ function TasksKanban({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
-        <Button size="sm" onClick={() => setOpenCreate(true)}>
+        <Button
+          size="sm"
+          disabled={
+            !canTask(["techprojects.tasks.create.own", "techprojects.tasks.create.workspace"])
+          }
+          onClick={() => setOpenCreate(true)}
+        >
           <Plus className="h-4 w-4 mr-2" /> Nova tarefa
         </Button>
       </div>
@@ -302,7 +319,7 @@ function TasksKanban({ projectId }: { projectId: string }) {
               {(grouped.get(col.key) ?? []).map((t) => (
                 <div
                   key={t.id}
-                  draggable
+                  draggable={taskAccess.for(t.id).can_update}
                   onDragStart={(e) => e.dataTransfer.setData("text/plain", t.id)}
                   className="rounded-md border bg-card p-2 text-sm shadow-sm cursor-grab active:cursor-grabbing"
                 >
@@ -310,6 +327,7 @@ function TasksKanban({ projectId }: { projectId: string }) {
                     <div className="font-medium flex-1">{t.title}</div>
                     <button
                       className="text-muted-foreground hover:text-destructive"
+                      disabled={!taskAccess.for(t.id).can_delete}
                       onClick={async () => {
                         if (!(await confirmDialog("Remover tarefa?"))) return;
                         await del({ data: { id: t.id } });
@@ -917,5 +935,16 @@ function ProjectProfitabilityTiles({
         }
       />
     </>
+  );
+}
+
+function WorkDetailAccess() {
+  const { id } = Route.useParams();
+  return (
+    <WorkScreenAccess resources={["techprojects.projects"]}>
+      <WorkRecordAccess resource="techprojects.projects" id={id}>
+        <ProjectDetailPage />
+      </WorkRecordAccess>
+    </WorkScreenAccess>
   );
 }

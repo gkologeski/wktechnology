@@ -1513,6 +1513,20 @@
       "when": 1792873273595,
       "tag": "0215_finance_business_activate",
       "breakpoints": true
+    },
+    {
+      "idx": 216,
+      "version": "7",
+      "when": 1792873273596,
+      "tag": "0216_work_core_prepare",
+      "breakpoints": true
+    },
+    {
+      "idx": 217,
+      "version": "7",
+      "when": 1792873273597,
+      "tag": "0217_work_core_activate",
+      "breakpoints": true
     }
   ]
 }

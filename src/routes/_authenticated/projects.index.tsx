@@ -1,3 +1,5 @@
+import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
+import { WorkScreenAccess } from "@/components/work-access";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useGridFilters } from "@/hooks/use-grid-filters";
 import type { GridFilterField } from "@/lib/grid-filters";
@@ -62,7 +64,11 @@ export const Route = createFileRoute("/_authenticated/projects/")({
       },
     ],
   }),
-  component: ProjectsPage,
+  component: () => (
+    <WorkScreenAccess resources={["techprojects.projects"]}>
+      <ProjectsPage />
+    </WorkScreenAccess>
+  ),
 });
 
 const STATUS_LABEL: Record<string, string> = {
@@ -184,6 +190,10 @@ function ProjectsPage() {
       }),
   });
 
+  const workAccess = useWorkCapabilities(
+    "techprojects.projects",
+    rows.map((row) => row.id),
+  );
   return (
     <div className="p-6 space-y-5">
       <PageHeader
@@ -192,7 +202,16 @@ function ProjectsPage() {
         count={rows.length}
         countLabel={rows.length === 1 ? "projeto" : "projetos"}
         actions={
-          <Button onClick={() => setOpenCreate(true)} size="sm">
+          <Button
+            disabled={
+              !canAny([
+                "techprojects.projects.create.own",
+                "techprojects.projects.create.workspace",
+              ])
+            }
+            onClick={() => setOpenCreate(true)}
+            size="sm"
+          >
             <Plus className="h-4 w-4 mr-2" /> Novo projeto
           </Button>
         }
@@ -238,15 +257,18 @@ function ProjectsPage() {
           }}
           onSelectAll={selection.selectAllMatching}
           isSelectingAll={selection.isSelectingAll}
-          canUpdate={canAny([
-            "techprojects.projects.update.workspace",
-            "techprojects.projects.update.team",
-            "techprojects.projects.update.own",
-          ])}
-          canDelete={canAny([
-            "techprojects.projects.delete.workspace",
-            "techprojects.projects.delete.own",
-          ])}
+          canUpdate={
+            selection.ids.every((id) => workAccess.for(id).can_update) &&
+            canAny([
+              "techprojects.projects.update.workspace",
+              "techprojects.projects.update.team",
+              "techprojects.projects.update.own",
+            ])
+          }
+          canDelete={
+            selection.ids.every((id) => workAccess.for(id).can_delete) &&
+            canAny(["techprojects.projects.delete.workspace", "techprojects.projects.delete.own"])
+          }
           bulkEditFields={[
             {
               name: "status",
@@ -262,6 +284,8 @@ function ProjectsPage() {
       {view === "kanban" ? (
         <KanbanBoard
           rows={rows as Array<{ id: string }>}
+          canUpdateRecord={(id) => workAccess.for(id).can_update}
+          canDeleteRecord={(id) => workAccess.for(id).can_delete}
           table="projects"
           stageField="status"
           selectable

@@ -1,3 +1,4 @@
+import { assertWorkRecord } from "@/lib/access-control/work-core.server";
 // Server functions for Contracts (Sprint 2 MVP).
 // CRUD, número gerado, criação a partir de deal, transições de status.
 import { createServerFn } from "@tanstack/react-start";
@@ -376,6 +377,7 @@ export const linkContractParent = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techcontracts.contracts.update.own",
       "techcontracts.contracts.update.workspace",
+      "techcontracts.contracts.update.team",
     ]);
 
     if (data.parentId === data.childId) {
@@ -613,6 +615,7 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techcontracts.contracts.update.own",
       "techcontracts.contracts.update.workspace",
+      "techcontracts.contracts.update.team",
     ]);
 
     if (data.mainContractId === data.amendmentId) {
@@ -733,6 +736,7 @@ export const standardizeContractTitles = createServerFn({ method: "POST" })
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techcontracts.contracts.update.own",
       "techcontracts.contracts.update.workspace",
+      "techcontracts.contracts.update.team",
     ]);
 
     const { previewContractTitles, applyContractTitles } =
@@ -778,6 +782,7 @@ export const standardizeContractTitlesByStatus = createServerFn({ method: "POST"
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techcontracts.contracts.update.own",
       "techcontracts.contracts.update.workspace",
+      "techcontracts.contracts.update.team",
     ]);
 
     let targetIds = data.ids ?? [];
@@ -941,9 +946,11 @@ export const updateContract = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertWorkRecord(supabase, "techcontracts.contracts", data.id, "update");
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techcontracts.contracts.update.own",
       "techcontracts.contracts.update.workspace",
+      "techcontracts.contracts.update.team",
     ]);
 
     // Um aditivo precisa, obrigatoriamente, estar vinculado a um contrato principal.
@@ -1000,8 +1007,10 @@ export const deleteContract = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertWorkRecord(supabase, "techcontracts.contracts", data.id, "delete");
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techcontracts.contracts.delete.workspace",
+      "techcontracts.contracts.delete.own",
     ]);
     const { data: deleted, error } = await supabase
       .from("contracts")

@@ -1,3 +1,5 @@
+import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
+import { WorkScreenAccess } from "@/components/work-access";
 // TechProjects — listagem cross-project de `project_tasks`.
 // Desacopla o menu de "Tarefas" do domínio de Sales (`activities` em /tasks).
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -55,7 +57,11 @@ export const Route = createFileRoute("/_authenticated/projects/tasks")({
       },
     ],
   }),
-  component: ProjectTasksPage,
+  component: () => (
+    <WorkScreenAccess resources={["techprojects.tasks"]}>
+      <ProjectTasksPage />
+    </WorkScreenAccess>
+  ),
 });
 
 const STATUS_LABEL: Record<string, string> = {
@@ -184,6 +190,10 @@ function ProjectTasksPage() {
     due: (t) => t.due_at,
   });
 
+  const workAccess = useWorkCapabilities(
+    "techprojects.tasks",
+    rows.map((row) => row.id),
+  );
   return (
     <div className="p-6 space-y-5">
       <PageHeader
@@ -226,8 +236,8 @@ function ProjectTasksPage() {
           onSelectAll={selection.selectAllMatching}
           isSelectingAll={selection.isSelectingAll}
           assignColumn={canUpdate ? "assignee_id" : null}
-          canUpdate={canUpdate}
-          canDelete={canDelete}
+          canUpdate={canUpdate && selection.ids.every((id) => workAccess.for(id).can_update)}
+          canDelete={canDelete && selection.ids.every((id) => workAccess.for(id).can_delete)}
           bulkEditFields={[
             {
               name: "status",
@@ -254,6 +264,8 @@ function ProjectTasksPage() {
       {view === "kanban" ? (
         <KanbanBoard
           rows={gridFilters.filtered as Array<(typeof rows)[number] & { id: string }>}
+          canUpdateRecord={(id) => workAccess.for(id).can_update}
+          canDeleteRecord={(id) => workAccess.for(id).can_delete}
           table="project_tasks"
           stageField="status"
           selectable

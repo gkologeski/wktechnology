@@ -1,3 +1,4 @@
+import { assertWorkRecord } from "@/lib/access-control/work-core.server";
 // Server functions for Projects (Sprint 5 - PSA MVP).
 // CRUD de projetos, tarefas, marcos, apontamento de horas e membros.
 // Marco billable concluído → gera financial_entry.
@@ -103,7 +104,10 @@ export const createProject = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, ["techprojects.projects.create.own"]);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techprojects.projects.create.own",
+      "techprojects.projects.create.workspace",
+    ]);
 
     // Se veio service, herda contract_id e role dele
     let contractId = data.contractId ?? null;
@@ -147,14 +151,7 @@ export const createProject = createServerFn({ method: "POST" })
       .single();
     if (error) throw error;
 
-    // Adiciona o criador como manager
-    await supabase.from("project_members").insert({
-      workspace_id: workspaceId,
-      project_id: (row as any).id,
-      user_id: userId,
-      role_in_project: "manager",
-    });
-
+    // Creator membership is inserted atomically by work_creator_member.
     return row;
   });
 
@@ -182,9 +179,11 @@ export const updateProject = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertWorkRecord(supabase, "techprojects.projects", data.id, "update");
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techprojects.projects.update.own",
       "techprojects.projects.update.workspace",
+      "techprojects.projects.update.team",
     ]);
     const { data: row, error } = await supabase
       .from("projects")
@@ -202,8 +201,10 @@ export const deleteProject = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertWorkRecord(supabase, "techprojects.projects", data.id, "delete");
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techprojects.projects.delete.workspace",
+      "techprojects.projects.delete.own",
     ]);
     await deleteByIdGuarded(supabase, "projects", data.id);
     return { ok: true };
@@ -245,7 +246,10 @@ export const createTask = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    await assertAnyPermission(supabase, userId, workspaceId, ["techprojects.tasks.create.own"]);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techprojects.tasks.create.own",
+      "techprojects.tasks.create.workspace",
+    ]);
     const { data: row, error } = await supabase
       .from("project_tasks")
       .insert({
@@ -254,7 +258,7 @@ export const createTask = createServerFn({ method: "POST" })
         title: data.title,
         description: data.description ?? null,
         milestone_id: data.milestoneId ?? null,
-        assignee_id: data.assigneeId ?? null,
+        assignee_id: data.assigneeId === undefined ? userId : data.assigneeId,
         due_at: data.dueAt ?? null,
         estimated_hours: data.estimatedHours ?? null,
         status: data.status ?? "todo",
@@ -289,9 +293,11 @@ export const updateTask = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertWorkRecord(supabase, "techprojects.tasks", data.id, "update");
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techprojects.tasks.update.own",
       "techprojects.tasks.update.workspace",
+      "techprojects.tasks.update.team",
     ]);
     const { data: row, error } = await supabase
       .from("project_tasks")
@@ -309,8 +315,10 @@ export const deleteTask = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
+    await assertWorkRecord(supabase, "techprojects.tasks", data.id, "delete");
     await assertAnyPermission(supabase, userId, workspaceId, [
       "techprojects.tasks.delete.workspace",
+      "techprojects.tasks.delete.own",
     ]);
     await deleteByIdGuarded(supabase, "project_tasks", data.id);
     return { ok: true };

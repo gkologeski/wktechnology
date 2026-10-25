@@ -61,7 +61,11 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
         url: "/projects",
         need: "manager",
         icon: Kanban,
-        permissionAny: ["techprojects.projects.view.team", "techprojects.projects.view.workspace"],
+        permissionAny: [
+          "techprojects.projects.view.own",
+          "techprojects.projects.view.team",
+          "techprojects.projects.view.workspace",
+        ],
       },
       {
         title: "Tarefas",

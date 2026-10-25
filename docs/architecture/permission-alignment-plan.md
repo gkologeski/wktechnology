@@ -1116,3 +1116,48 @@ reais de cobrança/NFS-e, TED, estorno bancário e fechamento contábil novo
 continuam fora do escopo. Emissão fictícia foi removida e substituída por
 indisponibilidade explícita. As outras ordens e seis etapas globais continuam
 com seus próprios critérios: concluir Ordem 2 não encerra o plano inteiro.
+
+
+### Ordem 3 — núcleo de Contratos e Projetos (primeiro lote)
+
+Escopo deste lote: `contracts`, `projects` e `project_tasks`, seus acessos por URL,
+menus, ações básicas e conjuntos de projetos/tarefas do dashboard. Não confundir
+com o encerramento de toda a Ordem 3 ou das seis etapas globais.
+
+A RLS passa a exigir membership ativo no workspace selecionado, chave efetiva
+com deny e escopo próprio/equipe/workspace. O responsável de contrato/projeto é
+`coalesce(assigned_to, owner_id)`; tarefa considera responsável principal e
+`assignee_ids`. Autoria isolada, papel administrativo legado e mero pertencimento
+ao workspace não substituem a chave. As antigas políticas restritivas de CRUD
+que impediam equipe/colaboradores adicionais são substituídas com as permissivas;
+as políticas `view_as_ro_*` permanecem. O contexto resolve também o tenant de uma
+sessão API protegida, sem aceitar workspace do navegador como autorização.
+
+Identidade e autoria são imutáveis; reatribuição exige chave específica e pessoa
+ativa do mesmo workspace. Vínculos novos/alterados usam a RLS do chamador e não
+podem cruzar tenants. Duas chaves novas (`techcontracts.contracts.assign.workspace`
+e `techprojects.projects.assign.workspace`) entram apenas no catálogo, sem
+concessão a cargos. A chave de tarefas existente é reutilizada. Gestor criador
+é incluído atomicamente ao criar projeto, em vez de uma segunda gravação com
+erro ignorado.
+
+O dashboard usa o mesmo predicado puro e contexto materializado de RLS, inclusive
+nos vínculos de negócios e na previsão. Referências mínimas para apontamento são
+exceção explícita: usuário autorizado a apontar consulta apenas id/título/status
+de tarefas de projeto realmente apontável. Permissão de criar tarefa continua
+obrigatória para criar uma atividade a partir do apontamento. Rótulos mínimos
+projeto/atividade são retornados apenas para apontamentos visíveis, sem conceder
+leitura integral das fichas ou de seus valores financeiros. Horas, aprovação,
+fechamento, medição e entrega de negócios mantêm suas portas e flags existentes.
+
+Aceite isolado: 26 casos com GoTrue/JWT/PostgREST, seis fluxos Chrome, zero erros
+de página e nenhum envio externo. Fixtures e overrides de teste são restaurados.
+Migrações 0216 (aditiva) e 0217 (ativação após publicação); nenhuma alteração em
+cargo padrão, pacote ou concessão de produção. Publicação e aceite de produção
+serão registrados no fechamento deste lote.
+
+Próximos lotes da Ordem 3: aprovações/assinatura e transições contratuais;
+serviços, modelos, documentos e configurações; espaços/listas/marcos/membros e
+filhos de tarefas; ações de configuração/importação/conciliação; exposição de
+campos financeiros e exportação; revisão das delegações de automações e
+integrações. Estes itens continuam pendentes e não são certificados por este lote.

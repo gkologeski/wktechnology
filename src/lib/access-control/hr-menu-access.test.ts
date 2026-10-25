@@ -23,3 +23,19 @@ it("permission load failure hides even a previously allowed menu", () => {
 it("does not change menus outside this batch", () => {
   expect(canSeeHrMenu("/deals", new Set(), false)).toBe(true);
 });
+
+it.each([
+  "/contracts",
+  "/contracts/dashboard",
+  "/projects",
+  "/projects/tasks",
+  "/projects/dashboard",
+])("work menus require keys even for a legacy privileged role: %s", (path) => {
+  expect(canSeeHrMenu(path, new Set(), true)).toBe(false);
+  expect(canSeeHrMenu(path, new Set(["techprojects.projects.view.workspace"]), false)).toBe(false);
+});
+it("project dashboard accepts task view while project list remains independent", () => {
+  const keys = new Set(["techprojects.tasks.view.own"]);
+  expect(canSeeHrMenu("/projects/dashboard", keys, true)).toBe(true);
+  expect(canSeeHrMenu("/projects", keys, true)).toBe(false);
+});

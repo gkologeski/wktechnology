@@ -45,15 +45,12 @@ export const listTrackableTasks = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    let q = supabase
-      .from("project_tasks")
-      .select("id, title, status")
-      .eq("project_id", data.projectId)
-      .order("updated_at", { ascending: false })
-      .limit(50);
-    if (data.search?.trim()) q = q.ilike("title", `%${data.search.trim()}%`);
-    const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    const rows = await workRpc<Array<{ id: string; title: string; status: string }>>(
+      supabase,
+      "project_time_task_references",
+      { p_project: data.projectId, p_search: data.search ?? null },
+    );
     return { tasks: rows ?? [] };
   });
 
@@ -86,7 +83,32 @@ export const listTimeEntries = createServerFn({ method: "POST" })
     if (data.status) q = q.eq("status", data.status);
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
-    return { entries: rows ?? [] };
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    const labels = rows?.length
+      ? await workRpc<
+          Array<{
+            id: string;
+            project_id: string;
+            project_name: string;
+            task_id: string | null;
+            task_title: string | null;
+          }>
+        >(supabase, "project_time_entry_labels", { p_ids: rows.map((x) => x.id) })
+      : [];
+    const byId = new Map(labels.map((x) => [x.id, x]));
+    return {
+      entries: (rows ?? []).map((row) => {
+        const label = byId.get(row.id);
+        return {
+          ...row,
+          projects:
+            row.projects ?? (label ? { id: label.project_id, name: label.project_name } : null),
+          project_tasks:
+            row.project_tasks ??
+            (label?.task_id ? { id: label.task_id, title: label.task_title } : null),
+        };
+      }),
+    };
   });
 
 const saveInput = z

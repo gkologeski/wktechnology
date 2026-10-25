@@ -1,3 +1,4 @@
+import { WorkScreenAccess } from "@/components/work-access";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -75,7 +76,11 @@ export const Route = createFileRoute("/_authenticated/projects/dashboard")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ProjectsDashboard,
+  component: () => (
+    <WorkScreenAccess resources={["techprojects.projects", "techprojects.tasks"]}>
+      <ProjectsDashboard />
+    </WorkScreenAccess>
+  ),
 });
 
 function useTimeZone() {

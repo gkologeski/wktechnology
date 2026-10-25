@@ -1,3 +1,5 @@
+import { WorkScreenAccess, WorkRecordAccess } from "@/components/work-access";
+import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -37,15 +39,14 @@ import { AiLinkSuggestionsHistoryCard } from "@/components/contracts/ai-link-sug
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
-import { usePermissions } from "@/lib/access-control/use-permissions";
+import { DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 import { DEFAULT_CONTRACTS_SEARCH } from "@/lib/contracts/list-search";
 import { LinkedProjectsCard } from "@/components/projects/linked-projects-card";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
 export const Route = createFileRoute("/_authenticated/contracts/$id")({
   head: () => ({ meta: [{ title: "Contrato" }] }),
-  component: ContractDetail,
+  component: WorkDetailAccess,
 });
 
 const STATUS_LABEL: Record<string, string> = {
@@ -85,14 +86,9 @@ function ContractDetail() {
     queryFn: () => get({ data: { id } }),
   });
 
-  const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techcontracts.contracts");
-  const { canAny } = usePermissions();
-  const canUpdateContract = canAny([
-    "techcontracts.contracts.update.own",
-    "techcontracts.contracts.update.workspace",
-  ]);
-  const canDelete =
-    !deletePermLoading && canDeleteRecord(contract as Parameters<typeof canDeleteRecord>[0]);
+  const access = useWorkCapabilities("techcontracts.contracts", [id]);
+  const canUpdateContract = access.for(id).can_update;
+  const canDelete = access.for(id).can_delete;
 
   const [title, setTitle] = useState("");
   const [role, setRole] = useState<"provider" | "client">("provider");
@@ -264,7 +260,7 @@ function ContractDetail() {
             ) : null}
             <Button
               onClick={save}
-              disabled={saving || amendmentMissingParent}
+              disabled={!canUpdateContract || saving || amendmentMissingParent}
               title={
                 amendmentMissingParent
                   ? "Selecione o contrato principal do aditivo para salvar"
@@ -636,5 +632,16 @@ function ImportedFieldsCard({ contract }: { contract: ImportedFields }) {
         </dl>
       </CardContent>
     </Card>
+  );
+}
+
+function WorkDetailAccess() {
+  const { id } = Route.useParams();
+  return (
+    <WorkScreenAccess resources={["techcontracts.contracts"]}>
+      <WorkRecordAccess resource="techcontracts.contracts" id={id}>
+        <ContractDetail />
+      </WorkRecordAccess>
+    </WorkScreenAccess>
   );
 }

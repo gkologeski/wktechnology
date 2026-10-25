@@ -1,3 +1,4 @@
+import { WorkScreenAccess } from "@/components/work-access";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -64,7 +65,11 @@ export const Route = createFileRoute("/_authenticated/contracts/dashboard")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ContractsDashboard,
+  component: () => (
+    <WorkScreenAccess resources={["techcontracts.contracts"]}>
+      <ContractsDashboard />
+    </WorkScreenAccess>
+  ),
 });
 
 function ContractsDashboard() {
