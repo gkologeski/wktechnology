@@ -1,6 +1,6 @@
 # Ordem 4 — TechSales e integrações
 
-Status: implementação e aceite isolado concluídos; aguardando build final, implantação e aceite de produção. NÃO aplicada nem publicada em produção.
+Status: CONCLUÍDA. Código principal publicado, políticas e atribuições aplicadas e aceites de produção realizados em 25/10/2026. O complemento 0225 corrige a identificação das chaves compostas sem mudar as permissões dos registros relacionados.
 
 ## Escopo entregue no código
 
@@ -19,21 +19,26 @@ Status: implementação e aceite isolado concluídos; aguardando build final, im
 
 ## Responsável das automações legadas WK
 
-O usuário indicou Guilherme Kologeski (guilherme@wktechnology.com.br) para as quatro subscriptions ativas de admissão/desligamento sem responsável. A migração 0224 altera somente execution_user_id desses quatro IDs no workspace WK, após confirmar membership ativo. Mantém created_by histórico nulo e não concede permissões. A atribuição ainda não foi aplicada em produção.
+O usuário indicou Guilherme Kologeski (guilherme@wktechnology.com.br) para as quatro subscriptions ativas de admissão/desligamento sem responsável. A migração 0224 altera somente execution_user_id desses quatro IDs no workspace WK, após confirmar membership ativo. Mantém created_by histórico nulo e não concede permissões. A atribuição foi aplicada em produção e as quatro autorizações de execução foram verificadas, preservando created_by nulo.
 
 ## Evidência local atual
 
-- 276 verificações reais com GoTrue/PostgREST/HTTP/realtime: CRM 51, API 21, propostas 26, workers/OAuth 53, periféricos 66, execução/aprovações/exportação/pontuação/SLA 48, HTTP/realtime 11. Somente dados fictícios, sem envios reais.
-- 1.761 testes de código; TypeScript e lint aprovados. verify completo: source_hash b15b7466fdc5b2de64d9a0b62619e393ff6abe57a23e22c37e6aa9ffb91319a3, 97.6 segundos.
-- Migrações 0222–0224 ensaiadas integralmente em banco descartável, inclusive com papel postgres sem superusuário e privilégios equivalentes aos hospedados, com ROLLBACK; nunca replay do histórico.
+- 279 verificações reais com GoTrue/PostgREST/HTTP/realtime: CRM 51, API 21, propostas 26, workers/OAuth 53, periféricos 66, execução/aprovações/exportação/pontuação/SLA 51, HTTP/realtime 11. Somente dados fictícios, sem envios reais.
+- 1.761 testes de código; TypeScript e lint aprovados. verify completo: source_hash bf7038ca1d410a2e619e25461c8f635396e1f7e8f1d208992b6d114c65c5d43d, 78.1 segundos.
+- Migrações 0222–0225 ensaiadas integralmente em banco descartável, inclusive com papel postgres sem superusuário e privilégios equivalentes aos hospedados, com ROLLBACK; nunca replay do histórico.
 - Aceite visual local: bloqueio de URL sem permissão, propostas/cotações de leitura, negócio sem edição, marketplace negado, workflow de leitura e decisão de aprovação sem administração. Fixtures e overrides restaurados.
-- Última produção confirmada: 225c0533537bb186ed22b07715241eb36c5ec602, journal 0221. Publicação desta Ordem ainda NÃO confirmada.
+- Rollout principal confirmado nos dois domínios com código fa04eb7c9444be341b8ba133a4b23b3404c36347. Journal: 0222/id354, 0223/id355, 0224/id388 e 0225/id389. O identificador final do pacote é o mesmo registrado no gate local e no build-info dos domínios após sincronização final.
 
-## Passos restantes de implantação
+## Aceite de produção
 
-1. Build e perf:check APROVADOS no mesmo source_hash do verify (build 118,5 s).
-2. Snapshot e confirmação de preservação de defaults/overrides e dados; conferir journal e revisão remota.
-3. Commit e sincronização; aplicar somente 0222, publicar código compatível, ativar 0223 e a atribuição WK 0224.
-4. Validar journal, ambos os domínios e UI de produção; só então registrar a Ordem 4 como concluída/publicada.
+- Migrações 0222–0225 aplicadas e registradas com os hashes dos arquivos. A tentativa 0224 que retornou indisponibilidade foi conferida no journal e em pg_stat_activity antes de nova tentativa; não foi repetida às cegas.
+- Mesmas contagens nas 120 tabelas acompanhadas; hashes de defaults, overrides, cargos e memberships preservados. A alteração operacional é somente execution_user_id das quatro assinaturas WK aprovadas.
+- 116 tabelas com RLS habilitada. Leituras anônimas bloqueadas nas 116, tanto no teste SQL como no teste HTTP com chave publicável e sem sessão; nenhum dado exposto.
+- Tokens de contato/cotação e credenciais de e-mail/agenda inacessíveis ao papel autenticado comum; dispatcher de worker indisponível a anônimos e sessões comuns; escrita direta em fila e auditoria de pontos bloqueada.
+- Os quatro responsáveis das assinaturas estão ativos e autorizados pelos direitos atuais. Lia publicada tem publicador ativo; os cinco workflows ativos mantêm autores humanos válidos.
+- Interface de produção conferida com Guilherme no workspace WK: quatro assinaturas e cinco workflows carregam com controles correspondentes. Nenhuma automação real, campanha, e-mail, WhatsApp, convite ou pagamento foi disparado como teste.
+- Tabelas de vínculo sem UUID próprio (deal_contacts, proposal_template_services e segment_members) usam os registros pais para autorização e negam consultas de capacidade por UUID sem erro de coluna inexistente.
+
+A documentação e o relatório local preservam os resultados dos gates, das consultas de reconciliação e do aceite visual. A identificação de build dos dois domínios é a prova de publicação; o botão Publicar por si só não é evidência.
 
 Exceções: links públicos usam token de capacidade validado, prazo/status e operações finitas; APIs pessoais usam proprietário e workspace ativo; observabilidade de plataforma requer platform_admins; schedulers exigem segredo técnico e autorização atual dos responsáveis. Testes locais não exercitam comunicações reais ou credenciais de provedores.

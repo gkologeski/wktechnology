@@ -101,6 +101,23 @@ const ids = async (table, list) =>
     .sort();
 try {
   await grant(keys, "deny");
+  for (const table of ["deal_contacts", "proposal_template_services", "segment_members"]) {
+    await check(
+      `composite association ${table} denies UUID capabilities without a database error`,
+      async () => {
+        const id = crypto.randomUUID();
+        assert(
+          must(await h.rpc("sales_record_access", { t: table, i: id, a: "view" })) === false,
+          "composite UUID access allowed",
+        );
+        assert(
+          must(await h.rpc("sales_capabilities", { t: table, ids: [id] })).length === 0,
+          "composite capability exposed",
+        );
+      },
+    );
+  }
+
   const lead = await seed("leads", {
     workspace_id: W,
     owner_id: u,

@@ -657,7 +657,7 @@
     "parent": "deals",
     "parent_column": "deal_id",
     "worker": false,
-    "id_column": "id"
+    "id_column": null
   },
   {
     "table": "quote_line_items",
@@ -681,7 +681,7 @@
     "parent": "proposal_templates",
     "parent_column": "template_id",
     "worker": false,
-    "id_column": "id"
+    "id_column": null
   },
   {
     "table": "prospecting_cadence_steps",
@@ -753,7 +753,7 @@
     "parent": "segments",
     "parent_column": "segment_id",
     "worker": false,
-    "id_column": "id"
+    "id_column": null
   },
   {
     "table": "sequence_enrollments",
