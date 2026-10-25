@@ -1234,3 +1234,12 @@ A liberação segue preparação aditiva → publicação da fonte validada → 
 restritiva → aceite de produção. O fechamento operacional é comprovado pelo
 relatório e pelas evidências em `outputs/permission-order3-completion-2026-10-25`
 no workspace desta tarefa; sucesso local não substitui essa comprovação.
+
+Complemento de aceite: `0220_order3_reconciliation_read_context.sql` calcula a
+visibilidade operacional da conciliação uma vez por consulta, em um initplan.
+Preserva o dashboard como SECURITY INVOKER e sob RLS. A leitura de referências
+exige visualização de horas no workspace (aliases normalizados, deny prevalece)
+ou administrador ativo com visualização da conciliação. Não usa cache de
+credenciais em GUC. O teste com 10 mil tarefas, 10 mil apontamentos e 10 mil
+ocorrências levou 2,9 s e confirmou os mesmos totais da RLS. Sete cenários JWT
+adicionais verificam essa porta; total de aceites JWT: 122.
