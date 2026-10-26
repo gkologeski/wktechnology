@@ -13,7 +13,8 @@ CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT (auth.j
 CREATE TABLE workspaces(id uuid PRIMARY KEY,created_by uuid,status text DEFAULT 'active');
 CREATE TABLE profiles(id uuid PRIMARY KEY,active_workspace_id uuid);
 CREATE TABLE workspace_members(workspace_id uuid,user_id uuid,role text DEFAULT 'member',status text DEFAULT 'active',PRIMARY KEY(workspace_id,user_id));
-CREATE TABLE permissions(key text PRIMARY KEY,module text,resource text,action text,scope text,label_pt text,description text,is_system boolean);
+CREATE TYPE public.perm_action AS ENUM('view','create','update','delete','manage','export','assign','approve');
+CREATE TABLE permissions(key text PRIMARY KEY,module text,resource text,action public.perm_action,scope text,label_pt text,description text,is_system boolean);
 CREATE TABLE job_roles(id uuid PRIMARY KEY,workspace_id uuid);
 CREATE TABLE user_job_roles(role_id uuid,user_id uuid,workspace_id uuid,owner_id uuid);
 CREATE TABLE permission_sets(id uuid PRIMARY KEY,workspace_id uuid,module text);
@@ -25,7 +26,7 @@ CREATE TABLE job_role_permission_overrides(workspace_id uuid,role_id uuid,permis
 CREATE TABLE user_groups(id uuid PRIMARY KEY,workspace_id uuid);
 CREATE TABLE user_group_members(group_id uuid,user_id uuid);
 CREATE TABLE view_as_sessions(session_id uuid,mode text,ended_at timestamptz);
-CREATE TABLE techerp_api.subject_sessions(txid bigint,user_id uuid,workspace_id uuid,api_key_id uuid);
+CREATE TABLE techerp_api.subject_sessions(txid bigint,user_id uuid,workspace_id uuid,api_key_id uuid,prev_claims text);
 CREATE TABLE macros(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,owner_id uuid,name text,body text);
 CREATE TABLE subscription_types(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,owner_id uuid,name text,description text);
 CREATE TABLE api_keys(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,owner_id uuid,name text,prefix text,key_hash text,scopes text[],last_used_at timestamptz,expires_at timestamptz,revoked_at timestamptz,created_at timestamptz DEFAULT now(),updated_at timestamptz DEFAULT now());
@@ -56,3 +57,11 @@ GRANT SELECT ON shared_field_catalog TO authenticated;
 CREATE TABLE audit_logs(id uuid PRIMARY KEY,workspace_owner_id uuid,actor_user_id uuid,entity text,entity_id uuid,action text,before jsonb,after jsonb,metadata jsonb,module_id text,created_at timestamptz DEFAULT now(),session_id uuid);
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 GRANT SELECT ON audit_logs TO authenticated;
+
+CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $$ SELECT auth.jwt()->>'role' $$;
+GRANT USAGE,CREATE ON SCHEMA techerp_api TO techerp_api_subject;
+GRANT SELECT,INSERT,DELETE ON techerp_api.subject_sessions TO techerp_api_subject;
+CREATE TABLE audit_exports(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),owner_id uuid,workspace_id uuid,name text,destination text,config jsonb DEFAULT '{}',format text DEFAULT 'json',schedule_cron text DEFAULT '0 2 * * *',hmac_secret text,enabled boolean DEFAULT true,last_run_at timestamptz,last_status text,created_at timestamptz DEFAULT now(),updated_at timestamptz DEFAULT now());
+CREATE TABLE audit_export_runs(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),owner_id uuid,workspace_id uuid,export_id uuid,started_at timestamptz DEFAULT now(),finished_at timestamptz,status text,records_count integer,error_message text,output_url text,created_at timestamptz DEFAULT now());
+GRANT SELECT,INSERT,UPDATE,DELETE ON audit_exports,audit_export_runs TO authenticated;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
