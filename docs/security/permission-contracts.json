@@ -301,7 +301,7 @@
       "id": "configuration-navigation-compatibility",
       "kind": "internal",
       "files": {
-        "src/lib/access-control/sales-route-map.ts": "fe7b0dafbcd0a62a7eda74dd8a7a10dd42e2c578e62b5e150fda94ca6961e829",
+        "src/lib/access-control/sales-route-map.ts": "900aa638af6edaad38f79c08e711af8274d92639caf1ee7e5b72cce626c3fdc8",
         "src/routes/_authenticated/settings.tsx": "a4f951fe15ac2c7de40486935dabe323cc57935a567137ef3012fa0bfb6b743b",
         "src/routes/_authenticated.tsx": "87d55568a91b7383341c70503544d8108db2993dc06d3e61465b940e9b0f20e5"
       },
@@ -1312,6 +1312,289 @@
         "mechanism": "EXECUTE of an immutable JSON-to-UUID function for existing service writes.",
         "boundary": "service_role only; no table access, business grants or new credentials.",
         "revocation": "REVOKE EXECUTE ON FUNCTION shared_audit_workspace(jsonb,jsonb) FROM service_role; this stops service inserts using the index.",
+        "review_by": "2026-12-01"
+      }
+    },
+    {
+      "resources": [
+        "system.phone_normalization",
+        "system.rbac_diagnostics",
+        "system.roles"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.phone_normalization.view.workspace",
+        "system.phone_normalization.manage.workspace",
+        "system.rbac_diagnostics.view.workspace",
+        "system.roles.view.workspace"
+      ],
+      "rationale": "Global phone maintenance retains existing platform-admin authority AND adds current matrix keys, readonly and selected-workspace enforcement. Phone input defaults remain technical member metadata; ordinary entity phone entry is unchanged. Other-user diagnostics/governance require active admin and their exact IAM key; self diagnostics and permission labels are personal/technical metadata behind the separate active-context boundary. No roles, grants or data rows are rewritten.",
+      "database": [
+        {
+          "file": "drizzle/migrations/0248_admin_settings_matrix.sql",
+          "symbol": "admin_setting_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0249_permission_introspection_boundary.sql",
+          "symbol": "permission_metadata_access"
+        },
+        {
+          "file": "drizzle/migrations/0249_permission_introspection_boundary.sql",
+          "symbol": "permission_field_context"
+        }
+      ],
+      "id": "administrative-settings-runtime-matrix",
+      "kind": "business",
+      "files": {
+        "src/lib/access-control/admin-setting.middleware.ts": "ea319c8089c6b34624202ea8867124c158a8671df13a199eb474478f7c05dedc",
+        "src/lib/access-control/rbac-diagnostics.functions.ts": "f06679fb71c135a57b6936515e81fcf2f68b7b8b4e61edf5e9943c5d8c1e67b8",
+        "src/lib/access-control/governance.functions.ts": "25f642eb44b2904cb921f8059360d21121100660b1941f095a71fc238aafdd7b",
+        "src/lib/phone/phone-settings.functions.ts": "dd2c983421297fe4803a355b3fe4a12c6769e6530718f662d066084832d0346e",
+        "src/components/phone/phone-legacy-review-dialog.tsx": "029c960a6f94110a823e6ac89f3e2f58800f55e30050584889da06dccb976ebe",
+        "src/routes/_authenticated/settings.phones.tsx": "ef12099b92f4ffa37aa2ab92742fa6ee7155785eba5dc5acddcb0598118e1729",
+        "src/components/access-control/governance-tabs.tsx": "fbe07fb865c2dba6523ef0dd25908002d4997f922e79cdc65ffc9620e237714e"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/admin-setting.middleware.ts",
+          "symbol": "requireAdminSetting"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/admin-setting-boundary-ci.test.ts",
+          "name": "admin setting boundary allows an authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/admin-setting-boundary-ci.test.ts",
+          "name": "admin setting boundary rejects missing permission before the handler"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/admin-setting-boundary-ci.test.ts",
+          "name": "admin setting boundary rejects explicit deny before the handler"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/admin-setting-boundary-ci.test.ts",
+          "name": "admin setting boundary rejects foreign workspace before the handler"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/admin-setting-boundary-ci.test.ts",
+          "name": "admin setting boundary rejects inactive membership before the handler"
+        }
+      }
+    },
+    {
+      "resources": [
+        "system.phone_normalization",
+        "system.rbac_diagnostics",
+        "system.roles"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.phone_normalization.view.workspace",
+        "system.phone_normalization.manage.workspace",
+        "system.rbac_diagnostics.view.workspace",
+        "system.roles.view.workspace"
+      ],
+      "rationale": "Global phone maintenance retains existing platform-admin authority AND adds current matrix keys, readonly and selected-workspace enforcement. Phone input defaults remain technical member metadata; ordinary entity phone entry is unchanged. Other-user diagnostics/governance require active admin and their exact IAM key; self diagnostics and permission labels are personal/technical metadata behind the separate active-context boundary. No roles, grants or data rows are rewritten.",
+      "database": [
+        {
+          "file": "drizzle/migrations/0248_admin_settings_matrix.sql",
+          "symbol": "admin_setting_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0248_admin_settings_matrix.sql",
+          "symbol": "phone_settings_workspace_guard"
+        },
+        {
+          "file": "drizzle/migrations/0248_admin_settings_matrix.sql",
+          "symbol": "phone_review_resolve"
+        }
+      ],
+      "id": "administrative-settings-database-matrix",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0248_admin_settings_matrix.sql": "575e817b1c52f003e8407a46f648b7ac86d255c8aa24ca8eba6895905d4c385f"
+      },
+      "controls": [
+        {
+          "file": "drizzle/migrations/0248_admin_settings_matrix.sql",
+          "symbol": "admin_setting_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL admin settings allow explicitly authorized platform maintenance"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL admin settings reject missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL admin settings preserve explicit deny for administrators"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL admin settings reject a different selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL admin settings reject inactive membership"
+        }
+      }
+    },
+    {
+      "id": "active-self-context-metadata",
+      "kind": "personal",
+      "files": {
+        "src/lib/access-control/active-workspace.middleware.ts": "213027912349a608132c954a0dfdf3156a9d352d0600e687942fb568520c64d9"
+      },
+      "resources": [
+        "system.profile"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own"
+      ],
+      "permission_keys": [],
+      "rationale": "Authenticated metadata callers bind the current actor to the actual active selected workspace. This personal context is not a grant to read or change any business record. Other-user inspection has the independent admin/IAM boundary.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0216_work_core_prepare.sql",
+          "symbol": "work_access_context"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/active-workspace-boundary-ci.test.ts",
+          "name": "workspace context allows current active subject without business grants"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/active-workspace-boundary-ci.test.ts",
+          "name": "workspace context rejects missing selected workspace"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/active-workspace-boundary-ci.test.ts",
+          "name": "workspace context rejects explicit database denial"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/active-workspace-boundary-ci.test.ts",
+          "name": "workspace context rejects foreign actor"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/active-workspace-boundary-ci.test.ts",
+          "name": "workspace context rejects inactive or unavailable actor"
+        }
+      },
+      "exception": {
+        "mechanism": "Personal/technical metadata only, authenticated actor equality plus authoritative active context.",
+        "boundary": "No client-selected actor or tenant; no business records, role mutation or credentials.",
+        "revocation": "Inactive membership or loss of selected context denies before handler.",
+        "review_by": "2026-12-01"
+      }
+    },
+    {
+      "id": "permission-introspection-subject-boundary",
+      "kind": "personal",
+      "files": {
+        "drizzle/migrations/0249_permission_introspection_boundary.sql": "7bf00e5f105cecfba1aa4bbf139f881f7346754e5fe54a12773cdd1d728439ba"
+      },
+      "resources": [
+        "system.rbac_diagnostics",
+        "system.roles"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.rbac_diagnostics.view.workspace",
+        "system.roles.view.workspace"
+      ],
+      "rationale": "Own effective permission metadata is personal and membership-bound. Another-user inspection additionally requires selected tenant, active platform admin and the diagnostics OR IAM key. Trusted service execution remains allowed. Unchecked resolver stays private. Canonical data scope excludes foreign creator-owned bindings; denied scope is neutral own, never a grant. Field simulation executes the real target shared_field_context in the established private transaction context and restores actor identity. No role grants or stored scope values change.",
+      "controls": [
+        {
+          "file": "drizzle/migrations/0249_permission_introspection_boundary.sql",
+          "symbol": "permission_metadata_access"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0249_permission_introspection_boundary.sql",
+          "symbol": "user_effective_permissions"
+        },
+        {
+          "file": "drizzle/migrations/0249_permission_introspection_boundary.sql",
+          "symbol": "user_data_scope"
+        },
+        {
+          "file": "drizzle/migrations/0249_permission_introspection_boundary.sql",
+          "symbol": "permission_field_context"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL permission metadata allows the current subject"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL permission metadata rejects inspection without authority"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL permission metadata honors explicit admin inspection denies"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL permission metadata rejects foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL permission metadata rejects inactive inspecting member"
+        }
+      },
+      "exception": {
+        "mechanism": "Own active-membership metadata and trusted service inspection, without business record content.",
+        "boundary": "Cross-user inspection requires current platform authority and explicit IAM key; unchecked function has no browser/service EXECUTE.",
+        "revocation": "Current active membership, IAM deny, selected tenant and target field rules are read for each call.",
         "review_by": "2026-12-01"
       }
     }
