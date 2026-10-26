@@ -42,3 +42,17 @@ GRANT SELECT,INSERT,UPDATE,DELETE ON macros,subscription_types,api_keys,recurrin
 -- The original API-key table already has RLS enabled (also verified in the
 -- production metadata). Preserve that baseline before applying its new policies.
 ALTER TABLE api_keys ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE leads(id uuid PRIMARY KEY,workspace_id uuid,owner_id uuid,assigned_to uuid);
+CREATE TABLE companies(id uuid PRIMARY KEY,workspace_id uuid,owner_id uuid,assigned_to uuid);
+ALTER TABLE contacts ADD COLUMN owner_id uuid,ADD COLUMN assigned_to uuid;
+ALTER TABLE deals ADD COLUMN owner_id uuid,ADD COLUMN assigned_to uuid;
+CREATE TABLE sales_resource_catalog(table_name name PRIMARY KEY,resource text,responsibles text[],shared boolean,parent_table name,parent_column name,id_column name);
+INSERT INTO sales_resource_catalog SELECT x::name,'techsales.'||x,ARRAY['assigned_to','owner_id'],false,NULL,NULL,'id' FROM unnest(ARRAY['leads','contacts','companies','deals'])x;
+CREATE TABLE field_permission_rules(resource text,field text,mode text,workspace_id uuid,role_id uuid,set_id uuid);
+CREATE TABLE shared_field_catalog(resource text,table_name name,field name,configurable boolean,guard_fields text[]);
+INSERT INTO shared_field_catalog VALUES('techsales.leads','leads','score',true,ARRAY['score']);
+GRANT SELECT ON shared_field_catalog TO authenticated;
+CREATE TABLE audit_logs(id uuid PRIMARY KEY,workspace_owner_id uuid,actor_user_id uuid,entity text,entity_id uuid,action text,before jsonb,after jsonb,metadata jsonb,module_id text,created_at timestamptz DEFAULT now(),session_id uuid);
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+GRANT SELECT ON audit_logs TO authenticated;
