@@ -36,6 +36,7 @@ test-results/
 playwright-report/
 playwright/.cache/
 .eslintcache
+.tscache/
 
 # Resultado do gate local (scripts/verify.mjs)
 .verification/
