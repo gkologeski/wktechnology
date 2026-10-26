@@ -257,7 +257,7 @@
       "files": {
         "src/lib/access-control/sales-route-map.ts": "900aa638af6edaad38f79c08e711af8274d92639caf1ee7e5b72cce626c3fdc8",
         "src/routes/_authenticated/settings.tsx": "a4f951fe15ac2c7de40486935dabe323cc57935a567137ef3012fa0bfb6b743b",
-        "src/routes/_authenticated.tsx": "87d55568a91b7383341c70503544d8108db2993dc06d3e61465b940e9b0f20e5"
+        "src/routes/_authenticated.tsx": "18faf2eba2b27b297cac5039fdc0913b7b661631c9e578c23e3d9f21dae5c27f"
       },
       "controls": [
         {
