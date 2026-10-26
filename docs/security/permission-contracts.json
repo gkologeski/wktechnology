@@ -137,8 +137,7 @@
       "files": {
         "src/routes/_authenticated/settings.macros.tsx": "cfe83f1acde1bc7daed13b27049ffed0840c7a23596d36ac1772ad876f4cdb80",
         "src/routes/_authenticated/settings.subscriptions.tsx": "ca1ae965fd1680b277aef0be3c23b15806ea9aecac525521584dd8f1f3e885aa",
-        "src/components/crud-settings.tsx": "05f4bea425ed0b05b0a1ee3fbffbdf965d0fc8291e8a8f9200cb0cb76bb46568",
-        "drizzle/migrations/0239_shared_configuration_permissions.sql": "6f933e074f4d7cf9db5995a47e7c8cc0c1dfc9daff318537cd5d0976b0fecd80"
+        "src/components/crud-settings.tsx": "05f4bea425ed0b05b0a1ee3fbffbdf965d0fc8291e8a8f9200cb0cb76bb46568"
       },
       "controls": [
         {
@@ -407,8 +406,7 @@
       "kind": "business",
       "files": {
         "src/lib/recurring.functions.ts": "5d04e271cc0b2cccfd91a81212f58ad7a394a066e1a7c52f623ce13ad6b34cff",
-        "src/lib/access-control/recurring-permission.middleware.ts": "2abfe06f8b87b116494f9b92f3544aeb99bd4d66f845fedeb8c2f62110e06fc4",
-        "drizzle/migrations/0240_recurring_authorization.sql": "4fcc2e93e8b23cbfbd3c7d88206dc1879496b40fe56682f17f071ad1679b845d"
+        "src/lib/access-control/recurring-permission.middleware.ts": "2abfe06f8b87b116494f9b92f3544aeb99bd4d66f845fedeb8c2f62110e06fc4"
       },
       "resources": [
         "techfinance.recurrences",
@@ -584,11 +582,11 @@
         "techpeople.people.view.workspace",
         "techpeople.documents.view.workspace"
       ],
-      "rationale": "Resolve workspace-wide person AND document read once and retain canonical parent RLS in a hashed subplan. Own/team/mixed scopes and every write policy remain unchanged. Real JWT acceptance compares canonical document counts including 1000 synthetic records, revocation, inactive and foreign workspace.",
+      "rationale": "Resolve workspace-wide person AND document read once and retain canonical parent RLS in a hashed subplan. Own/team/mixed scopes and every write policy remain unchanged. Real JWT acceptance compares canonical document counts including 1000 synthetic records, revocation, inactive and foreign workspace. Mandatory CI executes the actual PostgreSQL resolvers and RLS using synthetic SQL claims; this does not replace separate GoTrue JWT or browser acceptance.",
       "controls": [
         {
-          "file": "src/lib/access-control/shared-permission.middleware.ts",
-          "symbol": "requireSharedPermission"
+          "file": "drizzle/migrations/0242_document_read_policy.sql",
+          "symbol": "shared_document_workspace_read"
         }
       ],
       "database": [
@@ -599,24 +597,24 @@
       ],
       "tests": {
         "allowed": {
-          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
-          "name": "shared boundary allows an authorized active workspace"
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS allows authorized active workspace"
         },
         "missing_permission": {
-          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
-          "name": "shared boundary rejects missing permission before the handler"
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects missing permission"
         },
         "explicit_deny": {
-          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
-          "name": "shared boundary rejects explicit deny before the handler"
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS preserves explicit deny across macro aliases"
         },
         "foreign_workspace": {
-          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
-          "name": "shared boundary rejects foreign workspace before the handler"
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects a foreign selected workspace"
         },
         "inactive_member": {
-          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
-          "name": "shared boundary rejects inactive membership before the handler"
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects inactive membership"
         }
       }
     },
@@ -626,8 +624,7 @@
       "files": {
         "src/lib/api-keys.functions.ts": "74a233384c0d4dee14ae088a9b339e0cd2e0705f30f1778ef882baf65d0d1b95",
         "src/lib/access-control/api-key-permission.middleware.ts": "f7e36059f0b3ae5eb73503d0acf62465b57efcab481fb271f057853e865cda30",
-        "src/routes/_authenticated/settings.api-keys.tsx": "b9f28df213b7193b2d3f3a7a6728d7f562dab9483b7fb71f1fe45b72fb9caeea",
-        "drizzle/migrations/0243_api_key_matrix.sql": "58cf7da3199acc4ab996b8f196ceb11879edf0cd3a6c389dd4581313fa5d8b47"
+        "src/routes/_authenticated/settings.api-keys.tsx": "b9f28df213b7193b2d3f3a7a6728d7f562dab9483b7fb71f1fe45b72fb9caeea"
       },
       "resources": [
         "system.api_keys"
@@ -688,6 +685,287 @@
         "inactive_member": {
           "file": "src/lib/access-control/api-key-boundary-ci.test.ts",
           "name": "API key boundary rejects inactive membership before the handler"
+        }
+      }
+    },
+    {
+      "resources": [
+        "system.automation.macros",
+        "system.communication.subscription_types"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.macros.create.own",
+        "system.automation.macros.create.workspace",
+        "system.automation.macros.delete.own",
+        "system.automation.macros.delete.workspace",
+        "system.automation.macros.export.workspace",
+        "system.automation.macros.manage.workspace",
+        "system.automation.macros.update.own",
+        "system.automation.macros.update.team",
+        "system.automation.macros.update.workspace",
+        "system.automation.macros.view.own",
+        "system.automation.macros.view.team",
+        "system.automation.macros.view.workspace",
+        "system.communication.subscription_types.create.workspace",
+        "system.communication.subscription_types.delete.workspace",
+        "system.communication.subscription_types.update.workspace",
+        "system.communication.subscription_types.view.workspace"
+      ],
+      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. Mandatory CI executes the actual PostgreSQL resolvers and RLS using synthetic SQL claims; this does not replace separate GoTrue JWT or browser acceptance.",
+      "database": [
+        {
+          "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
+          "symbol": "shared_configuration_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS allows authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS preserves explicit deny across macro aliases"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects inactive membership"
+        }
+      },
+      "id": "configuration-ui-rls-database",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0239_shared_configuration_permissions.sql": "6f933e074f4d7cf9db5995a47e7c8cc0c1dfc9daff318537cd5d0976b0fecd80"
+      },
+      "controls": [
+        {
+          "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
+          "symbol": "shared_configuration_access"
+        }
+      ]
+    },
+    {
+      "id": "legacy-recurring-billing-authorization-database",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0240_recurring_authorization.sql": "4fcc2e93e8b23cbfbd3c7d88206dc1879496b40fe56682f17f071ad1679b845d"
+      },
+      "resources": [
+        "techfinance.recurrences",
+        "techfinance.invoices"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techfinance.invoices.create.own",
+        "techfinance.invoices.create.workspace",
+        "techfinance.invoices.delete.own",
+        "techfinance.invoices.delete.workspace",
+        "techfinance.invoices.export.workspace",
+        "techfinance.invoices.update.own",
+        "techfinance.invoices.update.team",
+        "techfinance.invoices.update.workspace",
+        "techfinance.invoices.view.own",
+        "techfinance.invoices.view.team",
+        "techfinance.invoices.view.workspace",
+        "techfinance.recurrences.create.own",
+        "techfinance.recurrences.create.workspace",
+        "techfinance.recurrences.delete.own",
+        "techfinance.recurrences.delete.workspace",
+        "techfinance.recurrences.export.workspace",
+        "techfinance.recurrences.update.own",
+        "techfinance.recurrences.update.team",
+        "techfinance.recurrences.update.workspace",
+        "techfinance.recurrences.view.own",
+        "techfinance.recurrences.view.team",
+        "techfinance.recurrences.view.workspace"
+      ],
+      "rationale": "Legacy recurring plans/subscriptions/invoices require the existing Finance matrix. Area middleware fails closed; per-row RLS enforces scopes and invoice parent visibility; triggers prevent tenant reassignment and cross-workspace references. No grants are added. Mandatory CI executes the actual PostgreSQL resolvers and RLS using synthetic SQL claims; this does not replace separate GoTrue JWT or browser acceptance.",
+      "controls": [
+        {
+          "file": "drizzle/migrations/0240_recurring_authorization.sql",
+          "symbol": "recurring_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0240_recurring_authorization.sql",
+          "symbol": "recurring_area_authorize"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0240_recurring_authorization.sql",
+          "symbol": "recurring_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0240_recurring_authorization.sql",
+          "symbol": "recurring_area_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS allows authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS preserves explicit deny across macro aliases"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects inactive membership"
+        }
+      }
+    },
+    {
+      "id": "own-api-credential-management-database",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0243_api_key_matrix.sql": "58cf7da3199acc4ab996b8f196ceb11879edf0cd3a6c389dd4581313fa5d8b47"
+      },
+      "resources": [
+        "system.api_keys"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "manage",
+        "delete"
+      ],
+      "scopes": [
+        "own"
+      ],
+      "permission_keys": [
+        "system.api_keys.view.own",
+        "system.api_keys.create.own",
+        "system.api_keys.manage.own",
+        "system.api_keys.delete.own"
+      ],
+      "rationale": "Own API credential actions require explicit matrix keys, active selected workspace and ownership. Revocation is a separate manage action. Browser cannot read credential hashes or change stored scopes/identity; service credential verification and last-used writes remain available. No role grants are changed. Mandatory CI executes the actual PostgreSQL resolvers and RLS using synthetic SQL claims; this does not replace separate GoTrue JWT or browser acceptance.",
+      "controls": [
+        {
+          "file": "drizzle/migrations/0243_api_key_matrix.sql",
+          "symbol": "shared_api_key_access"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0243_api_key_matrix.sql",
+          "symbol": "shared_api_key_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS allows authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS preserves explicit deny across macro aliases"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects inactive membership"
+        }
+      }
+    },
+    {
+      "id": "api-subject-existing-key-identity",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0244_api_subject_credential_read.sql": "fc0e6f6b27d71fe4d88f48d814fa4091fb402d9b31189b4fd391b0ca142de630"
+      },
+      "resources": [
+        "system.api_keys"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own"
+      ],
+      "permission_keys": [
+        "system.api_keys.view.own"
+      ],
+      "rationale": "Private API role validates only the exact credential in its private transaction session, independently of browser credential-management permissions. Browser helper execution and private session writes are prohibited. API actions still require the current owner module permissions and immutable tenant/owner. Three additional actual SQL tests and eleven real-JWT HTTP/realtime acceptance checks cover this boundary. No role assignments or module grants are added.",
+      "controls": [
+        {
+          "file": "drizzle/migrations/0244_api_subject_credential_read.sql",
+          "symbol": "shared_api_subject_key_read"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0244_api_subject_credential_read.sql",
+          "symbol": "shared_api_subject_key_read"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS allows authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS preserves explicit deny across macro aliases"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL RLS rejects inactive membership"
         }
       }
     }
