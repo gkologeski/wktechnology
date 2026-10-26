@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // TechERP Access Control — Fase 6 UI: Auditoria, Simulação e Relatórios.
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -44,11 +45,24 @@ import {
 import type { AccessBundle } from "@/lib/access-control/access.functions";
 
 // -------------------- Audit tab --------------------
+function useGovernanceAccess() {
+  const p = usePermissions();
+  return {
+    workspaceId: p.workspaceId,
+    allowed:
+      !p.isLoading &&
+      !p.isError &&
+      !!p.workspaceId &&
+      p.permissions.has("system.roles.view.workspace"),
+  };
+}
 export function AuditTab() {
+  const gate = useGovernanceAccess();
   const list = useServerFn(listAuditLog);
   const [action, setAction] = useState<string>("all");
   const { data, isLoading } = useQuery({
-    queryKey: ["access-audit", action],
+    queryKey: ["access-audit", action, gate.workspaceId],
+    enabled: gate.allowed,
     queryFn: () =>
       list({
         data: {
@@ -65,6 +79,12 @@ export function AuditTab() {
     return Array.from(s).sort();
   }, [rows]);
 
+  if (!gate.allowed)
+    return (
+      <p className="text-sm text-muted-foreground">
+        Sem permissão para consultar auditoria de acesso.
+      </p>
+    );
   return (
     <Card>
       <CardHeader className="flex flex-row items-start justify-between gap-4">
@@ -147,6 +167,7 @@ export function AuditTab() {
 
 // -------------------- Simulation tab --------------------
 export function SimulationTab({ data }: { data: AccessBundle }) {
+  const gate = useGovernanceAccess();
   const simulate = useServerFn(simulateUser);
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
@@ -158,6 +179,7 @@ export function SimulationTab({ data }: { data: AccessBundle }) {
   );
 
   async function run(userId: string) {
+    if (!gate.allowed) return;
     setSelected(userId);
     setLoading(true);
     try {
@@ -168,6 +190,10 @@ export function SimulationTab({ data }: { data: AccessBundle }) {
     }
   }
 
+  if (!gate.allowed)
+    return (
+      <p className="text-sm text-muted-foreground">Sem permissão para simular outros usuários.</p>
+    );
   return (
     <div className="grid gap-4 lg:grid-cols-[minmax(0,280px)_1fr]">
       <Card>
@@ -221,7 +247,7 @@ export function SimulationTab({ data }: { data: AccessBundle }) {
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Calculando…
             </div>
-          ) : !result ? (
+          ) : !result || result.workspace_id !== gate.workspaceId ? (
             <p className="text-sm text-muted-foreground">
               Selecione um membro à esquerda para simular.
             </p>
@@ -229,17 +255,26 @@ export function SimulationTab({ data }: { data: AccessBundle }) {
             <div className="space-y-6">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="gap-1">
-                  <ShieldCheck className="h-3 w-3" /> Escopo: {result.data_scope}
+                  <ShieldCheck className="h-3 w-3" />{" "}
+                  {result.active_membership
+                    ? `Escopo: ${result.data_scope}`
+                    : "Sem acesso ativo ao workspace"}
                 </Badge>
                 <Badge variant="outline">{result.permissions.length} permissões</Badge>
                 <Badge variant="outline">{result.field_rules.length} regras de campo</Badge>
               </div>
 
+              {(result.invalid_field_rules?.length ?? 0) > 0 && (
+                <p className="rounded-md border p-3 text-sm text-muted-foreground">
+                  {result.invalid_field_rules?.length ?? 0} regra(s) de campo precisam de revisão
+                  porque não pertencem ao catálogo protegido.
+                </p>
+              )}
               <div>
                 <h4 className="mb-2 text-sm font-medium">Permissões efetivas</h4>
                 {result.permissions.length === 0 ? (
                   <p className="text-xs text-muted-foreground">
-                    Nenhuma permissão explícita. Usuário só terá acesso público.
+                    Nenhuma permissão efetiva para operações deste workspace.
                   </p>
                 ) : (
                   <div className="flex flex-wrap gap-1.5">
@@ -256,7 +291,11 @@ export function SimulationTab({ data }: { data: AccessBundle }) {
                 <h4 className="mb-2 text-sm font-medium">Campos sensíveis</h4>
                 {result.field_rules.length === 0 ? (
                   <p className="text-xs text-muted-foreground">
-                    Nenhuma restrição de campo aplicada.
+                    {!result.active_membership
+                      ? "Membro sem acesso ativo a este workspace."
+                      : result.is_privileged
+                        ? "Administradores do workspace possuem a exceção de campos prevista na plataforma."
+                        : "Nenhuma restrição de campo aplicada pelo catálogo atual."}
                   </p>
                 ) : (
                   <div className="space-y-1">
@@ -293,12 +332,18 @@ export function SimulationTab({ data }: { data: AccessBundle }) {
 
 // -------------------- Reports tab --------------------
 export function ReportsTab() {
+  const gate = useGovernanceAccess();
   const report = useServerFn(getGovernanceReport);
   const { data, isLoading } = useQuery({
-    queryKey: ["access-governance-report"],
+    queryKey: ["access-governance-report", gate.workspaceId],
+    enabled: gate.allowed,
     queryFn: () => report({}),
   });
   const r = data as GovernanceReport | null;
+  if (!gate.allowed)
+    return (
+      <p className="text-sm text-muted-foreground">Sem permissão para consultar governança.</p>
+    );
 
   if (isLoading) {
     return (
