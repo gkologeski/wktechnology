@@ -59,7 +59,7 @@ Fluxo repetível:
 1. Estabilizar o pacote e executar o gate final; comitar.
 2. `bun run delivery:prepare`: exige árvore limpa, verificação/build completos, limites de performance aprovados e correspondência com o código; testa o transporte por dry-run. O relatório marca `mode=prepared` e `published=false`.
 3. `git push -u origin <branch>`, abrir PR, esperar CI, integrar e confirmar o SHA sincronizado no projeto WK do Lovable.
-4. Publicar somente quando necessário e executar `bun run delivery:check --expected-commit <SHA-main>`. O comando verifica main, a mesma árvore Git validada e o hash servido nos dois domínios. Divergência, erro HTTP, relatório parcial ou código alterado fazem o comando falhar.
+4. Publicar somente quando necessário e executar `bun run delivery:check --expected-commit <SHA-main>`. O comando verifica main, a mesma árvore Git validada e o hash servido nos dois domínios. O alias Lovable pode redirecionar para o domínio oficial: somente os dois endpoints HTTPS exatos são aceitos, com detecção de loop e limite de redirecionamentos; URLs externas, credenciais, outros caminhos e parâmetros são recusados. Divergência, erro HTTP, relatório parcial ou código alterado fazem o comando falhar.
 
 `.verification/delivery.json` registra preparação ou comprovação de versão pública; não guarda tokens nem substitui o consentimento/autenticação do provedor. O SHA sincronizado no Lovable deve ser conferido pela integração autenticada. Não há requisição automática de nova publicação em `delivery:check`.
 
