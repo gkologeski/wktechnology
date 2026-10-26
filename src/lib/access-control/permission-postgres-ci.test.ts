@@ -39,7 +39,7 @@ let endpoint = "",
   started = false;
 let db: ReturnType<typeof postgres>;
 const accepted: string[] = [];
-const expected = 48;
+const expected = 61;
 let cleaned = false;
 function report() {
   mkdirSync(".verification", { recursive: true });
@@ -248,6 +248,44 @@ beforeAll(async () => {
     "0249_permission_introspection_boundary",
   ])
     await db.unsafe(readFileSync("drizzle/migrations/" + migration + ".sql", "utf8"));
+  await db.unsafe(`
+    ALTER TABLE deals ADD COLUMN primary_contact_id uuid, ADD COLUMN company_id uuid, ADD COLUMN value numeric, ADD COLUMN stage text, ADD COLUMN stage_id text,
+      ADD COLUMN pipeline_id uuid, ADD COLUMN deleted_at timestamptz, ADD COLUMN expected_close_date timestamptz, ADD COLUMN closed_at timestamptz;
+    INSERT INTO deals(id,workspace_id,owner_id,assigned_to,value,stage)
+      SELECT id,workspace_id,owner_id,assigned_to,10,'open' FROM leads;
+    INSERT INTO shared_field_catalog VALUES('techsales.deals','deals','value',true,ARRAY['value']);
+    REVOKE ALL ON deals FROM authenticated;
+    GRANT SELECT(id,workspace_id,owner_id,assigned_to,stage,stage_id,pipeline_id,deleted_at,expected_close_date,closed_at) ON deals TO authenticated;
+    CREATE VIEW shared_fields_deals WITH(security_barrier=true) AS
+      SELECT d.id,d.workspace_id,d.owner_id,d.assigned_to,d.primary_contact_id,d.company_id,d.stage,d.stage_id,d.pipeline_id,d.deleted_at,d.expected_close_date,d.closed_at,
+        CASE WHEN public.shared_field_mode_for(public.shared_field_context()->'rules','deals','value') IN('hidden','masked') THEN NULL ELSE d.value END value
+      FROM deals d WHERE public.sales_record_access('deals',d.id,'view');
+    GRANT SELECT ON shared_fields_deals TO authenticated;
+  `);
+  await db.unsafe(
+    sourceFunction(
+      "drizzle/migrations/0250_sales_dashboard_protected_reads.sql",
+      "get_sales_dashboard_deal_aggregates",
+    ),
+  );
+  await db.unsafe(readFileSync("tests/fixtures/sales-timeline-ci.sql", "utf8"));
+  await db.unsafe(`
+    CREATE TABLE deal_contacts(deal_id uuid,contact_id uuid);
+    GRANT SELECT ON deal_contacts,email_messages,activities TO authenticated;
+    ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
+    CREATE POLICY activity_ci_read ON activities FOR SELECT TO authenticated USING(public.sales_context_access(public.sales_access_context(),workspace_id,CASE WHEN type='note' THEN 'techsales.notes' WHEN type='task' THEN 'techsales.tasks' ELSE 'techsales.activities' END,'view',ARRAY[coalesce(assigned_to,owner_id)]));
+    UPDATE deals SET primary_contact_id='60000000-0000-4000-8000-000000000001',company_id='70000000-0000-4000-8000-000000000001' WHERE id='50000000-0000-4000-8000-000000000001';
+    INSERT INTO activities(id,workspace_id,owner_id,type,subject,created_at,related_deal_id,related_contact_id,related_company_id,deleted_at) VALUES
+    ('80000000-0000-4000-8000-000000000001','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','email','direct','2026-01-03','50000000-0000-4000-8000-000000000001','60000000-0000-4000-8000-000000000001','70000000-0000-4000-8000-000000000001',NULL),
+    ('80000000-0000-4000-8000-000000000002','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','email','related contact','2026-01-02','50000000-0000-4000-8000-000000000002','60000000-0000-4000-8000-000000000001',NULL,NULL),
+    ('80000000-0000-4000-8000-000000000003','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','email','related company','2026-01-01',NULL,NULL,'70000000-0000-4000-8000-000000000001',NULL),
+    ('80000000-0000-4000-8000-000000000004','aaaaaaaa-0000-4000-8000-00000000000b','10000000-0000-4000-8000-000000000002','email','foreign','2026-01-04',NULL,'60000000-0000-4000-8000-000000000001',NULL,NULL),
+    ('80000000-0000-4000-8000-000000000005','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','email','unrelated','2026-01-04',NULL,NULL,NULL,NULL),
+    ('80000000-0000-4000-8000-000000000006','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','email','deleted','2026-01-04',NULL,'60000000-0000-4000-8000-000000000001',NULL,now());
+  `);
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0251_deal_related_activity_history.sql", "utf8"),
+  );
   await db.unsafe(
     "CREATE FUNCTION public.ci_delegated_probe() RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$ SELECT coalesce((public.work_subject_context('aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000003')->'keys')?'techsales.leads.view.own',false) $$;GRANT EXECUTE ON FUNCTION public.ci_delegated_probe() TO authenticated;",
   );
@@ -307,6 +345,7 @@ async function subject(
     hiddenPeerScore?: boolean;
     service?: boolean;
     hiddenScore?: boolean;
+    hiddenDealValue?: boolean;
     boundKey?: string;
   } = {},
 ) {
@@ -328,6 +367,8 @@ async function subject(
         await tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${R},${key},'grant')`;
       for (const key of options.denies ?? [])
         await tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${R},${key},'deny') on conflict(workspace_id,role_id,permission_key) do update set effect='deny'`;
+      if (options.hiddenDealValue)
+        await tx`insert into field_permission_rules(resource,field,mode,workspace_id,role_id) values('techsales.deals','value','hidden',${W},${R})`;
       if (options.hiddenScore)
         await tx`insert into field_permission_rules(resource,field,mode,workspace_id,role_id) values('techsales.leads','score','hidden',${W},${R})`;
       const session = randomUUID();
@@ -1001,4 +1042,149 @@ it("SQL trusted delegated capabilities remain private and usable without IAM rig
     ),
   ).rejects.toMatchObject({ code: "42501" });
   accepted.push("private_delegated_capability");
+});
+
+async function dashboardAggregate(tx: postgres.TransactionSql) {
+  const rows =
+    await tx`select get_sales_dashboard_deal_aggregates(${W},null,'all',null,array['open'],array['won'],array['lost'],'{}',now()-interval '1 year',now(),now()-interval '2 year',now()-interval '1 year',now()-interval '1 month',now()) result`;
+  return rows[0].result;
+}
+it("dashboard SQL allows authorized protected-value reads", async () => {
+  await subject(
+    async (tx) => {
+      const r = await dashboardAggregate(tx);
+      expect(r.open_count).toBe(2);
+      expect(r.pipeline_value).toBe(20);
+    },
+    { keys: ["techsales.deals.view.workspace"] },
+  );
+  accepted.push("dashboard-allowed");
+});
+it("dashboard SQL denies missing permission", async () => {
+  await subject(
+    async (tx) => {
+      expect((await dashboardAggregate(tx)).open_count).toBe(0);
+    },
+    { keys: [] },
+  );
+  accepted.push("dashboard-missing");
+});
+it("dashboard SQL respects explicit deny", async () => {
+  await subject(
+    async (tx) => {
+      expect((await dashboardAggregate(tx)).open_count).toBe(0);
+    },
+    { keys: ["techsales.deals.view.workspace"], denies: ["techsales.deals.view.workspace"] },
+  );
+  accepted.push("dashboard-deny");
+});
+it("dashboard SQL isolates other selected workspace", async () => {
+  await subject(
+    async (tx) => {
+      expect((await dashboardAggregate(tx)).open_count).toBe(0);
+    },
+    { keys: ["techsales.deals.view.workspace"], workspace: B },
+  );
+  accepted.push("dashboard-workspace");
+});
+it("dashboard SQL rejects inactive membership", async () => {
+  await subject(
+    async (tx) => {
+      expect((await dashboardAggregate(tx)).open_count).toBe(0);
+    },
+    { keys: ["techsales.deals.view.workspace"], inactive: true },
+  );
+  accepted.push("dashboard-inactive");
+});
+it("dashboard SQL preserves hidden monetary field", async () => {
+  await subject(
+    async (tx) => {
+      const r = await dashboardAggregate(tx);
+      expect(r.open_count).toBe(2);
+      expect(r.pipeline_value).toBe(0);
+    },
+    { keys: ["techsales.deals.view.workspace"], hiddenDealValue: true },
+  );
+  accepted.push("dashboard-hidden-value");
+});
+
+const timelineKeys = ["techsales.deals.view.workspace", "techsales.activities.view.workspace"];
+async function relatedTimeline(tx: postgres.TransactionSql) {
+  return (await tx`select get_timeline_activity_page('deal',${IDs[0]}) result`)[0].result;
+}
+it("related timeline SQL allows authorized history with original links", async () => {
+  await subject(
+    async (tx) => {
+      const r = await relatedTimeline(tx);
+      expect(r.total).toBe(3);
+      expect(
+        r.items.map((x: { timeline_related_via: string | null }) => x.timeline_related_via),
+      ).toEqual([null, "contact", "company"]);
+      expect(r.items[1].related_deal_id).toBe(IDs[1]);
+    },
+    { keys: timelineKeys },
+  );
+  accepted.push("related-allowed");
+});
+it("related timeline SQL paginates without duplicates", async () => {
+  await subject(
+    async (tx) => {
+      const first = (
+        await tx`select get_timeline_activity_page('deal',${IDs[0]},p_page_size=>1) result`
+      )[0].result;
+      const second = (
+        await tx`select get_timeline_activity_page('deal',${IDs[0]},p_cursor_at=>${first.next_at}::timestamptz,p_cursor_id=>${first.next_id}::uuid,p_page_size=>1) result`
+      )[0].result;
+      expect(first.total).toBe(3);
+      expect(first.items[0].id).not.toBe(second.items[0].id);
+      expect(second.items[0].timeline_related_via).toBe("contact");
+    },
+    { keys: timelineKeys },
+  );
+  accepted.push("related-pagination");
+});
+it("related timeline SQL denies missing activity permission", async () => {
+  await subject(
+    async (tx) => {
+      expect((await relatedTimeline(tx)).total).toBe(0);
+    },
+    { keys: ["techsales.deals.view.workspace"] },
+  );
+  accepted.push("related-missing");
+});
+it("related timeline SQL respects explicit activity deny", async () => {
+  await subject(
+    async (tx) => {
+      expect((await relatedTimeline(tx)).total).toBe(0);
+    },
+    { keys: timelineKeys, denies: ["techsales.activities.view.workspace"] },
+  );
+  accepted.push("related-deny");
+});
+it("related timeline SQL isolates foreign workspace", async () => {
+  await subject(
+    async (tx) => {
+      expect((await relatedTimeline(tx)).total).toBe(0);
+    },
+    { keys: timelineKeys, workspace: B },
+  );
+  accepted.push("related-workspace");
+});
+it("related timeline SQL rejects inactive member", async () => {
+  await subject(
+    async (tx) => {
+      expect((await relatedTimeline(tx)).total).toBe(0);
+    },
+    { keys: timelineKeys, inactive: true },
+  );
+  accepted.push("related-inactive");
+});
+it("related timeline SQL requires access to parent deal", async () => {
+  await subject(
+    async (tx) => {
+      expect((await relatedTimeline(tx)).total).toBe(0);
+    },
+    { keys: timelineKeys, denies: ["techsales.deals.view.workspace"] },
+  );
+  accepted.push("related-parent-deny");
 });
