@@ -39,7 +39,7 @@ let endpoint = "",
   started = false;
 let db: ReturnType<typeof postgres>;
 const accepted: string[] = [];
-const expected = 20;
+const expected = 30;
 let cleaned = false;
 function report() {
   mkdirSync(".verification", { recursive: true });
@@ -70,7 +70,9 @@ const dockerRun = (...args: string[]) =>
   }).trim();
 function sourceFunction(file: string, name: string) {
   const source = readFileSync(file, "utf8"),
-    start = source.indexOf("CREATE OR REPLACE FUNCTION public." + name + "(");
+    start = source.indexOf(
+      "CREATE OR REPLACE FUNCTION " + (name.includes(".") ? name : "public." + name) + "(",
+    );
   if (start < 0) throw Error("Missing production function: " + name);
   const tail = source.slice(start),
     opening = /\bAS\s+(\$[a-z_]*\$)/i.exec(tail);
@@ -167,6 +169,7 @@ beforeAll(async () => {
       owner = i === 0 ? U : P,
       id = IDs[i];
     await db`insert into leads(id,workspace_id,owner_id,assigned_to) values(${id},${w},${owner},${owner})`;
+    await db`insert into audit_exports(id,owner_id,workspace_id,name,destination,hmac_secret) values(${id},${owner},${w},'CI export','webhook','not-a-secret-fixture')`;
     const payload = {
       workspace_id: w,
       owner_id: owner,
@@ -193,6 +196,7 @@ beforeAll(async () => {
     ["0228_order5_fields_prepare", "shared_field_context"],
     ["0228_order5_fields_prepare", "shared_field_mode_for"],
     ["0228_order5_fields_prepare", "shared_field_mask_row"],
+    ["0179_techprojects_cycle6_api_offline_ops", "techerp_api.leave"],
   ];
   // The immutable original wrapper delegates to the actual current resolver.
   await db.unsafe(
@@ -219,6 +223,8 @@ beforeAll(async () => {
     "0243_api_key_matrix",
     "0244_api_subject_credential_read",
     "0245_audit_read_boundary",
+    "0246_audit_index_service_expression",
+    "0247_audit_export_authorization",
   ])
     await db.unsafe(readFileSync("drizzle/migrations/" + migration + ".sql", "utf8"));
 }, 180000);
@@ -271,6 +277,8 @@ async function subject(
     inactive?: boolean;
     readonly?: boolean;
     apiSubject?: boolean;
+    service?: boolean;
+    hiddenScore?: boolean;
     boundKey?: string;
   } = {},
 ) {
@@ -284,17 +292,27 @@ async function subject(
         await tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${R},${key},'grant')`;
       for (const key of options.denies ?? [])
         await tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${R},${key},'deny') on conflict(workspace_id,role_id,permission_key) do update set effect='deny'`;
+      if (options.hiddenScore)
+        await tx`insert into field_permission_rules(resource,field,mode,workspace_id,role_id) values('techsales.leads','score','hidden',${W},${R})`;
       const session = randomUUID();
       if (options.readonly)
         await tx`insert into view_as_sessions(session_id,mode) values(${session},'role')`;
-      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: U, role: "authenticated", session_id: session })},true)`;
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: U, role: options.service ? "service_role" : "authenticated", session_id: session })},true)`;
       if (options.boundKey)
         await tx`insert into techerp_api.subject_sessions(txid,user_id,workspace_id,api_key_id) values(txid_current(),${U},${W},${options.boundKey})`;
       await tx.unsafe(
-        options.apiSubject ? "SET LOCAL ROLE techerp_api_subject" : "SET LOCAL ROLE authenticated",
+        options.service
+          ? "SET LOCAL ROLE service_role"
+          : options.apiSubject
+            ? "SET LOCAL ROLE techerp_api_subject"
+            : "SET LOCAL ROLE authenticated",
       );
       expect((await tx`select current_user`)[0].current_user).toBe(
-        options.apiSubject ? "techerp_api_subject" : "authenticated",
+        options.service
+          ? "service_role"
+          : options.apiSubject
+            ? "techerp_api_subject"
+            : "authenticated",
       );
       await fn(tx);
       throw rollback;
@@ -544,3 +562,166 @@ it("SQL audit raw payload columns remain inaccessible", async () => {
   ).rejects.toMatchObject({ code: "42501" });
   accepted.push("audit_raw_acl");
 });
+
+const exportKeys = [
+  ...auditKeys,
+  "system.audit.export.workspace",
+  ...["view", "create", "update", "delete", "manage"].map(
+    (a) => "system.audit_exports." + a + ".workspace",
+  ),
+];
+it("SQL export configuration allows authorized workspace", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from audit_exports`).toHaveLength(2);
+      expect(
+        await tx`update audit_exports set name='authorized' where id=${IDs[0]} returning id`,
+      ).toHaveLength(1);
+    },
+    { keys: exportKeys },
+  );
+  accepted.push("export_allowed");
+});
+it("SQL export configuration denies missing permission", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from audit_exports`).toHaveLength(0);
+    },
+    { keys: [] },
+  );
+  accepted.push("export_missing");
+});
+it("SQL export configuration denies explicit deny", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from audit_exports`).toHaveLength(0);
+    },
+    { keys: exportKeys, denies: ["system.audit_exports.view.workspace"] },
+  );
+  accepted.push("export_deny");
+});
+it("SQL export configuration denies foreign workspace", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from audit_exports`).toHaveLength(0);
+    },
+    { keys: exportKeys, workspace: B },
+  );
+  accepted.push("export_foreign");
+});
+it("SQL export configuration denies inactive membership", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from audit_exports`).toHaveLength(0);
+    },
+    { keys: exportKeys, inactive: true },
+  );
+  accepted.push("export_inactive");
+});
+it("SQL audit exporter rechecks owner record access and hidden fields", async () => {
+  await subject(
+    async (tx) => {
+      const rows = (await tx`select shared_audit_export_rows(${IDs[0]},${W},'2000-01-01') data`)[0]
+        .data.rows;
+      expect(rows).toHaveLength(2);
+      expect(rows[0].before.score).toBeNull();
+      expect(rows[0].before).not.toHaveProperty("portal_token");
+    },
+    { keys: exportKeys, service: true, hiddenScore: true },
+  );
+  await subject(
+    async (tx) => {
+      expect(
+        (await tx`select shared_audit_export_rows(${IDs[0]},${W},'2000-01-01') data`)[0].data.rows,
+      ).toHaveLength(0);
+    },
+    { keys: exportKeys.filter((k) => k !== "techsales.leads.view.workspace"), service: true },
+  );
+  accepted.push("export_subject_fields");
+});
+it("SQL audit exporter rejects revoked execution authority", async () => {
+  for (const key of ["system.audit.export.workspace", "system.audit_exports.manage.workspace"])
+    await expect(
+      subject(
+        async (tx) => {
+          await tx`select shared_audit_export_rows(${IDs[0]},${W},'2000-01-01')`;
+        },
+        { keys: exportKeys, denies: [key], service: true },
+      ),
+    ).rejects.toMatchObject({ code: "42501" });
+  accepted.push("export_execution_revoked");
+});
+it("SQL audit exporter rejects foreign bindings and inactive owners", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select shared_audit_export_rows(${IDs[0]},${B},'2000-01-01')`;
+      },
+      { keys: exportKeys, service: true },
+    ),
+  ).rejects.toMatchObject({ code: "42501" });
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select shared_audit_export_rows(${IDs[0]},${W},'2000-01-01')`;
+      },
+      { keys: exportKeys, service: true, inactive: true },
+    ),
+  ).rejects.toMatchObject({ code: "42501" });
+  accepted.push("export_worker_binding");
+});
+it("SQL audit export secret and identities are protected", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select hmac_secret from audit_exports`;
+      },
+      { keys: exportKeys },
+    ),
+  ).rejects.toMatchObject({ code: "42501" });
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`update audit_exports set owner_id=${P} where id=${IDs[0]}`;
+      },
+      { keys: exportKeys },
+    ),
+  ).rejects.toMatchObject({ code: "42501" });
+  await subject(
+    async (tx) => {
+      expect(
+        await tx`update audit_exports set name='forbidden' where id=${IDs[0]} returning id`,
+      ).toHaveLength(0);
+    },
+    { keys: exportKeys, readonly: true },
+  );
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select shared_audit_export_rows(${IDs[0]},${W},'2000-01-01')`;
+      },
+      { keys: exportKeys },
+    ),
+  ).rejects.toMatchObject({ code: "42501" });
+  accepted.push("export_secret_identity_readonly");
+});
+
+it("SQL audit export pagination preserves rows sharing a timestamp", async () => {
+  await subject(
+    async (tx) => {
+      await tx`insert into audit_logs(id,workspace_owner_id,actor_user_id,entity,entity_id,action,before,after,created_at) select md5('audit-page-'||g)::uuid,${U},${U},'leads',${IDs[0]},'updated',jsonb_build_object('workspace_id',${W}::text,'owner_id',${U}::text),jsonb_build_object('workspace_id',${W}::text,'owner_id',${U}::text),'2001-01-01' from generate_series(1,501)g`;
+      const first = (await tx`select shared_audit_export_rows(${IDs[0]},${W},'2000-01-01') data`)[0]
+        .data;
+      expect(first.rows).toHaveLength(500);
+      expect(first.has_more).toBe(true);
+      const second = (
+        await tx`select shared_audit_export_rows(${IDs[0]},${W},${first.cursor_at},${first.cursor_id}::uuid) data`
+      )[0].data;
+      expect(second.rows).toHaveLength(3);
+      expect(second.has_more).toBe(false);
+      expect(new Set([...first.rows, ...second.rows].map((x) => x.id)).size).toBe(503);
+    },
+    { keys: exportKeys, service: true },
+  );
+  accepted.push("export_timestamp_pagination");
+}, 30000);

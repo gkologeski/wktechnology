@@ -1723,6 +1723,20 @@
       "when": 1792873273625,
       "tag": "0245_audit_read_boundary",
       "breakpoints": true
+    },
+    {
+      "idx": 246,
+      "version": "7",
+      "when": 1792873273626,
+      "tag": "0246_audit_index_service_expression",
+      "breakpoints": true
+    },
+    {
+      "idx": 247,
+      "version": "7",
+      "when": 1792873273627,
+      "tag": "0247_audit_export_authorization",
+      "breakpoints": true
     }
   ]
 }

@@ -79,6 +79,11 @@
     "system.audit.view.own",
     "system.audit.view.team",
     "system.audit.view.workspace",
+    "system.audit_exports.create.workspace",
+    "system.audit_exports.delete.workspace",
+    "system.audit_exports.manage.workspace",
+    "system.audit_exports.update.workspace",
+    "system.audit_exports.view.workspace",
     "system.automation.email_templates.create.own",
     "system.automation.email_templates.create.team",
     "system.automation.email_templates.create.workspace",
@@ -2776,6 +2781,21 @@
     },
     "system.api_keys.delete.own": {
       "migration": "drizzle/migrations/0243_api_key_matrix.sql"
+    },
+    "system.audit_exports.view.workspace": {
+      "migration": "drizzle/migrations/0247_audit_export_authorization.sql"
+    },
+    "system.audit_exports.create.workspace": {
+      "migration": "drizzle/migrations/0247_audit_export_authorization.sql"
+    },
+    "system.audit_exports.update.workspace": {
+      "migration": "drizzle/migrations/0247_audit_export_authorization.sql"
+    },
+    "system.audit_exports.delete.workspace": {
+      "migration": "drizzle/migrations/0247_audit_export_authorization.sql"
+    },
+    "system.audit_exports.manage.workspace": {
+      "migration": "drizzle/migrations/0247_audit_export_authorization.sql"
     }
   }
 }
