@@ -37,6 +37,37 @@ export function validatePublishedVersions(expectedHash, versions) {
   return true;
 }
 
+export async function readPublishedVersion(url, fetcher = fetch) {
+  if (!publishedUrls.includes(url)) throw new Error("Unknown published endpoint");
+  let current = url;
+  const visited = new Set();
+  for (let redirects = 0; redirects <= 3; redirects++) {
+    if (visited.has(current)) throw new Error("Published endpoint redirect loop");
+    visited.add(current);
+    const response = await fetcher(current, {
+      signal: AbortSignal.timeout(20_000),
+      redirect: "manual",
+      cache: "no-store",
+    });
+    if ([301, 302, 303, 307, 308].includes(response.status)) {
+      const location = response.headers.get("location");
+      if (!location || redirects === 3) throw new Error("Invalid published endpoint redirect");
+      const next = new URL(location, current).href;
+      if (!publishedUrls.includes(next))
+        throw new Error("Published redirect outside known endpoints");
+      await response.body?.cancel();
+      current = next;
+      continue;
+    }
+    if (!response.ok) throw new Error(`HTTP ${response.status} at ${current}`);
+    const body = await response.text();
+    if (body.length > 4096) throw new Error("Unexpected build metadata size");
+    const data = JSON.parse(body);
+    return { url, resolved_url: current, source_hash: data.source_hash, built_at: data.built_at };
+  }
+  throw new Error("Too many published endpoint redirects");
+}
+
 export function parseDeliveryArgs(args) {
   let prepare = false;
   let expectedCommit;
@@ -85,18 +116,7 @@ async function main() {
       if (git("rev-parse", `${result.commit}^{tree}`) !== git("rev-parse", "HEAD^{tree}"))
         throw new Error("Expected commit has a different tree from the verified source");
       result.domains = [];
-      for (const url of publishedUrls) {
-        const response = await fetch(url, {
-          signal: AbortSignal.timeout(20_000),
-          redirect: "error",
-          cache: "no-store",
-        });
-        if (!response.ok) throw new Error(`HTTP ${response.status} at ${url}`);
-        const body = await response.text();
-        if (body.length > 4096) throw new Error("Unexpected build metadata size");
-        const data = JSON.parse(body);
-        result.domains.push({ url, source_hash: data.source_hash, built_at: data.built_at });
-      }
+      for (const url of publishedUrls) result.domains.push(await readPublishedVersion(url));
       validatePublishedVersions(result.source_hash, result.domains);
     }
     result.complete = true;

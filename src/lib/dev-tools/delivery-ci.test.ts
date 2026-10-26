@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import {
   parseDeliveryArgs,
+  readPublishedVersion,
   publishedUrls,
   validateLocalEvidence,
   validatePublishedVersions,
@@ -83,5 +84,62 @@ describe("delivery evidence fails closed", () => {
     expect(() => parseDeliveryArgs(["--expected-commit"])).toThrow();
     expect(() => parseDeliveryArgs(["--skip-checks"])).toThrow();
     expect(parseDeliveryArgs(["--prepare"])).toEqual({ prepare: true, expectedCommit: undefined });
+  });
+});
+
+describe("published endpoint canonical redirects", () => {
+  const canonical = publishedUrls[0];
+  const alias = publishedUrls[1];
+  it("follows the Lovable redirect only to the known HTTPS metadata endpoint", async () => {
+    const fetcher = vi.fn(async (url: string, _init?: RequestInit) =>
+      url === alias
+        ? new Response(null, { status: 302, headers: { location: canonical } })
+        : new Response(JSON.stringify({ source_hash: hash, built_at: "2026-10-26T17:00:00Z" })),
+    );
+    expect(await readPublishedVersion(alias, fetcher)).toMatchObject({
+      url: alias,
+      resolved_url: canonical,
+      source_hash: hash,
+    });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[0][1]).toMatchObject({ redirect: "manual" });
+  });
+  it.each([
+    "http://app.wktechnology.com.br/build-info.json",
+    "https://untrusted.example/build-info.json",
+    "https://user:password@app.wktechnology.com.br/build-info.json",
+    "https://app.wktechnology.com.br/private",
+    "https://app.wktechnology.com.br/build-info.json?extra=value",
+    "https://app.wktechnology.com.br/build-info.json#fragment",
+  ])("blocks a redirect to %s before requesting it", async (location) => {
+    const fetcher = vi.fn(async () => new Response(null, { status: 302, headers: { location } }));
+    await expect(readPublishedVersion(alias, fetcher)).rejects.toThrow("outside known endpoints");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+  it("rejects redirect loops", async () => {
+    const fetcher = vi.fn(
+      async () => new Response(null, { status: 302, headers: { location: alias } }),
+    );
+    await expect(readPublishedVersion(alias, fetcher)).rejects.toThrow("redirect loop");
+  });
+  it("rejects HTTP errors", async () => {
+    await expect(
+      readPublishedVersion(canonical, async () => new Response(null, { status: 500 })),
+    ).rejects.toThrow("HTTP 500");
+  });
+  it("rejects malformed metadata", async () => {
+    await expect(
+      readPublishedVersion(canonical, async () => new Response("not json")),
+    ).rejects.toThrow();
+  });
+  it("rejects oversized metadata", async () => {
+    await expect(
+      readPublishedVersion(canonical, async () => new Response("x".repeat(4097))),
+    ).rejects.toThrow("metadata size");
+  });
+  it("rejects redirects without a location", async () => {
+    await expect(
+      readPublishedVersion(alias, async () => new Response(null, { status: 302 })),
+    ).rejects.toThrow("Invalid published endpoint redirect");
   });
 });
