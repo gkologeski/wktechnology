@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -35,6 +36,7 @@ type Row = {
 };
 
 function ApiKeysPage() {
+  const access = usePermissions();
   const list = useServerFn(listApiKeys);
   const create = useServerFn(createApiKey);
   const revoke = useServerFn(revokeApiKey);
@@ -92,7 +94,7 @@ function ApiKeysPage() {
             <code className="text-xs">/api/public/v1/*</code>
           </p>
         </div>
-        <Button onClick={() => setOpen(true)}>
+        <Button disabled={!access.can("system.api_keys.create.own")} onClick={() => setOpen(true)}>
           <KeyRound className="h-4 w-4 mr-2" /> Nova chave
         </Button>
       </div>
@@ -155,7 +157,9 @@ function ApiKeysPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        disabled={!access.can("system.api_keys.manage.own")}
                         onClick={async () => {
+                          if (!access.can("system.api_keys.manage.own")) return;
                           await revoke({ data: { id: r.id } });
                           load();
                         }}
@@ -166,7 +170,9 @@ function ApiKeysPage() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      disabled={!access.can("system.api_keys.delete.own")}
                       onClick={async () => {
+                        if (!access.can("system.api_keys.delete.own")) return;
                         await remove({ data: { id: r.id } });
                         load();
                       }}
@@ -244,7 +250,10 @@ function ApiKeysPage() {
                 Fechar
               </Button>
             ) : (
-              <Button onClick={onCreate} disabled={!name.trim()}>
+              <Button
+                onClick={onCreate}
+                disabled={!name.trim() || !access.can("system.api_keys.create.own")}
+              >
                 Criar
               </Button>
             )}

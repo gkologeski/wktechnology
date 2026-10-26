@@ -64,6 +64,10 @@
     "system.analytics.reports.view.own",
     "system.analytics.reports.view.team",
     "system.analytics.reports.view.workspace",
+    "system.api_keys.create.own",
+    "system.api_keys.delete.own",
+    "system.api_keys.manage.own",
+    "system.api_keys.view.own",
     "system.audit.create.own",
     "system.audit.create.workspace",
     "system.audit.delete.own",
@@ -2760,6 +2764,18 @@
     },
     "system.communication.subscription_types.delete.workspace": {
       "migration": "drizzle/migrations/0239_shared_configuration_permissions.sql"
+    },
+    "system.api_keys.view.own": {
+      "migration": "drizzle/migrations/0243_api_key_matrix.sql"
+    },
+    "system.api_keys.create.own": {
+      "migration": "drizzle/migrations/0243_api_key_matrix.sql"
+    },
+    "system.api_keys.manage.own": {
+      "migration": "drizzle/migrations/0243_api_key_matrix.sql"
+    },
+    "system.api_keys.delete.own": {
+      "migration": "drizzle/migrations/0243_api_key_matrix.sql"
     }
   }
 }

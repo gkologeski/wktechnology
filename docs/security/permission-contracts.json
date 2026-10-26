@@ -302,7 +302,7 @@
       "id": "configuration-navigation-compatibility",
       "kind": "internal",
       "files": {
-        "src/lib/access-control/sales-route-map.ts": "efae961b81b1ea6cf9cec8ba0c42bff5feff7d61a0f411775109e3d3b3a01dc3",
+        "src/lib/access-control/sales-route-map.ts": "474d5d74bf0c6ed48b7d15be6cf8cf3cd806b7ee5c54e0bb34fcde27b451528d",
         "src/routes/_authenticated/settings.tsx": "dc1c4eacdef5e888881f7b8579f55443fd32a82887022b0772c83acb926af0c7",
         "src/routes/_authenticated.tsx": "87d55568a91b7383341c70503544d8108db2993dc06d3e61465b940e9b0f20e5"
       },
@@ -491,6 +491,203 @@
         "inactive_member": {
           "file": "src/lib/access-control/recurring-boundary-ci.test.ts",
           "name": "recurring boundary rejects inactive membership before the handler"
+        }
+      }
+    },
+    {
+      "id": "protected-field-authorized-consumers",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0241_protected_field_compatibility.sql": "8fcf613655ff26078bfc2196c272f0478f47e356d55902fdfb835104fc0730b1"
+      },
+      "resources": [
+        "techsales.contacts",
+        "techsales.companies",
+        "techsales.leads",
+        "techsales.prospecting_scoring"
+      ],
+      "actions": [
+        "view",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.contacts.update.workspace",
+        "techsales.companies.view.workspace",
+        "techsales.leads.update.own",
+        "techsales.prospecting_scoring.manage.own"
+      ],
+      "rationale": "Repair existing authorized domain matching and automated scoring without reopening protected columns. Domain matching reads the masked view; scoring retains the scoped execution subject, locks only an allowed identifier, reads projected score and rejects protected score modes. Real JWT regressions also test hidden email, readonly score and atomic concurrency.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesAnyArea"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0241_protected_field_compatibility.sql",
+          "symbol": "link_contacts_by_email_domain"
+        },
+        {
+          "file": "drizzle/migrations/0241_protected_field_compatibility.sql",
+          "symbol": "techerp_api.sales_scoring_apply"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      }
+    },
+    {
+      "id": "document-read-equivalent-wide-path",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0242_document_read_policy.sql": "0939eaad9e3822c41aee77005a93789ce24a4b5b80c155c62654b08b56b21a71"
+      },
+      "resources": [
+        "techpeople.people",
+        "techpeople.documents"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techpeople.people.view.workspace",
+        "techpeople.documents.view.workspace"
+      ],
+      "rationale": "Resolve workspace-wide person AND document read once and retain canonical parent RLS in a hashed subplan. Own/team/mixed scopes and every write policy remain unchanged. Real JWT acceptance compares canonical document counts including 1000 synthetic records, revocation, inactive and foreign workspace.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/shared-permission.middleware.ts",
+          "symbol": "requireSharedPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0242_document_read_policy.sql",
+          "symbol": "shared_document_workspace_read"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
+          "name": "shared boundary allows an authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
+          "name": "shared boundary rejects missing permission before the handler"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
+          "name": "shared boundary rejects explicit deny before the handler"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
+          "name": "shared boundary rejects foreign workspace before the handler"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/shared-boundary-ci.test.ts",
+          "name": "shared boundary rejects inactive membership before the handler"
+        }
+      }
+    },
+    {
+      "id": "own-api-credential-management",
+      "kind": "business",
+      "files": {
+        "src/lib/api-keys.functions.ts": "74a233384c0d4dee14ae088a9b339e0cd2e0705f30f1778ef882baf65d0d1b95",
+        "src/lib/access-control/api-key-permission.middleware.ts": "f7e36059f0b3ae5eb73503d0acf62465b57efcab481fb271f057853e865cda30",
+        "src/routes/_authenticated/settings.api-keys.tsx": "b9f28df213b7193b2d3f3a7a6728d7f562dab9483b7fb71f1fe45b72fb9caeea",
+        "drizzle/migrations/0243_api_key_matrix.sql": "58cf7da3199acc4ab996b8f196ceb11879edf0cd3a6c389dd4581313fa5d8b47"
+      },
+      "resources": [
+        "system.api_keys"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "manage",
+        "delete"
+      ],
+      "scopes": [
+        "own"
+      ],
+      "permission_keys": [
+        "system.api_keys.view.own",
+        "system.api_keys.create.own",
+        "system.api_keys.manage.own",
+        "system.api_keys.delete.own"
+      ],
+      "rationale": "Own API credential actions require explicit matrix keys, active selected workspace and ownership. Revocation is a separate manage action. Browser cannot read credential hashes or change stored scopes/identity; service credential verification and last-used writes remain available. No role grants are changed.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/api-key-permission.middleware.ts",
+          "symbol": "requireApiKeyPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0243_api_key_matrix.sql",
+          "symbol": "shared_api_key_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/api-key-boundary-ci.test.ts",
+          "name": "API key boundary allows an authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/api-key-boundary-ci.test.ts",
+          "name": "API key boundary rejects missing permission before the handler"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/api-key-boundary-ci.test.ts",
+          "name": "API key boundary rejects explicit deny before the handler"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/api-key-boundary-ci.test.ts",
+          "name": "API key boundary rejects foreign workspace before the handler"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/api-key-boundary-ci.test.ts",
+          "name": "API key boundary rejects inactive membership before the handler"
         }
       }
     }

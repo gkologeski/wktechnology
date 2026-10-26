@@ -490,6 +490,19 @@ try {
     for (const x of audit) fixtures.push(["score_events", x.id]);
     assert(audit.length === 1, "duplicate audit");
   });
+  const scoreFieldRule = await seed("field_permission_rules", {
+    workspace_id: W,
+    owner_id: O,
+    role_id: R,
+    resource: "techsales.leads",
+    field: "score",
+    mode: "readonly",
+    is_system: false,
+  });
+  await check("automated scoring respects a readonly score field", async () =>
+    blocked(await score()),
+  );
+  await admin.from("field_permission_rules").delete().eq("id", scoreFieldRule).then(must);
   const away = await seed("leads", {
     workspace_id: W,
     owner_id: u,
