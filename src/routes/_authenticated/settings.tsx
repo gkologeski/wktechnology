@@ -1,3 +1,4 @@
+import { salesRouteResources, canViewSalesRoute } from "@/lib/access-control/sales-route-map";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
@@ -114,9 +115,9 @@ const sections: Section[] = [
     label: "Workspace",
     tabs: [
       { to: "/settings/branding", label: "White-label", icon: Sparkles, need: "admin" },
-      { to: "/settings/language", label: "Idioma", icon: Languages, need: "admin" },
+      { to: "/settings/language", label: "Idioma", icon: Languages },
       { to: "/settings/phones", label: "Telefones", icon: Phone, need: "admin" },
-      { to: "/settings/mobile", label: "Mobile / PWA", icon: Smartphone, need: "admin" },
+      { to: "/settings/mobile", label: "Mobile / PWA", icon: Smartphone },
       { to: "/settings/calendars", label: "Calendários", icon: Calendar },
       { to: "/settings/booking", label: "Agendamentos", icon: CalendarCheck, need: "manager" },
       { to: "/settings/billing", label: "Planos e cobrança", icon: CreditCard, need: "admin" },
@@ -323,6 +324,12 @@ function SettingsLayout() {
   const permissions = usePermissions();
 
   const canSee = (t: Tab) => {
+    if (salesRouteResources(t.to))
+      return canViewSalesRoute(
+        t.to,
+        permissions.permissions,
+        !permissions.isLoading && !permissions.isError && !!permissions.workspaceId,
+      );
     if (t.permission)
       return (
         !permissions.isLoading &&

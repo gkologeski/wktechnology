@@ -1,3 +1,5 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { canConfigurationAction } from "@/lib/access-control/configuration-actions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -42,31 +44,49 @@ type Draft = Partial<Macro>;
 function MacrosPage() {
   const { user } = useAuth();
   const qc = useQueryClient();
+  const access = usePermissions();
+  const can = (action: "view" | "create" | "update" | "delete", owner = user?.id) =>
+    canConfigurationAction(
+      access.permissions,
+      access.workspaceId,
+      !access.isLoading && !access.isError,
+      "system.automation.macros",
+      action,
+      user?.id,
+      owner,
+    );
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Macro | null>(null);
   const [draft, setDraft] = useState<Draft>({});
 
   const { data: macros = [], isLoading } = useQuery({
-    queryKey: ["macros"],
+    queryKey: ["macros", access.workspaceId],
+    enabled: can("view"),
     queryFn: async () => {
-      const { data, error } = await supabase.from("macros").select("*").order("name");
+      const { data, error } = await supabase
+        .from("macros")
+        .select("*")
+        .eq("workspace_id", access.workspaceId!)
+        .order("name");
       if (error) throw error;
       return (data ?? []) as Macro[];
     },
   });
 
   function openNew() {
+    if (!can("create")) return;
     setEditing(null);
     setDraft({ enabled: true });
     setOpen(true);
   }
   function openEdit(m: Macro) {
+    if (!can("update", m.owner_id)) return;
     setEditing(m);
     setDraft({ ...m });
     setOpen(true);
   }
   async function save() {
-    if (!user) return;
+    if (!user || !can(editing ? "update" : "create", editing?.owner_id ?? user.id)) return;
     if (!draft.name?.trim() || !htmlToPlain(draft.body ?? "").trim()) {
       toast.error("Informe nome e corpo.");
       return;
@@ -79,8 +99,10 @@ function MacrosPage() {
       enabled: draft.enabled ?? true,
     };
     const { error } = editing
-      ? await supabase.from("macros").update(payload).eq("id", editing.id)
-      : await supabase.from("macros").insert({ ...payload, owner_id: user.id });
+      ? await supabase.from("macros").update(payload).eq("id", editing.id).select("id").single()
+      : await supabase
+          .from("macros")
+          .insert({ ...payload, owner_id: user.id, workspace_id: access.workspaceId! });
     if (error) {
       toast.error(error.message);
       return;
@@ -90,8 +112,10 @@ function MacrosPage() {
     qc.invalidateQueries({ queryKey: ["macros"] });
   }
   async function remove(id: string) {
+    const macro = macros.find((m) => m.id === id);
+    if (!macro || !can("delete", macro.owner_id)) return;
     if (!(await confirmDialog("Excluir esta macro?"))) return;
-    const { error } = await supabase.from("macros").delete().eq("id", id);
+    const { error } = await supabase.from("macros").delete().eq("id", id).select("id").single();
     if (error) {
       toast.error(error.message);
       return;
@@ -99,7 +123,13 @@ function MacrosPage() {
     qc.invalidateQueries({ queryKey: ["macros"] });
   }
   async function toggle(m: Macro, enabled: boolean) {
-    const { error } = await supabase.from("macros").update({ enabled }).eq("id", m.id);
+    if (!can("update", m.owner_id)) return;
+    const { error } = await supabase
+      .from("macros")
+      .update({ enabled })
+      .eq("id", m.id)
+      .select("id")
+      .single();
     if (error) {
       toast.error(error.message);
       return;
@@ -121,7 +151,7 @@ function MacrosPage() {
             <code className="text-xs">{"{{agent_name}}"}</code>.
           </p>
         </div>
-        <Button size="sm" onClick={openNew}>
+        <Button size="sm" disabled={!can("create")} onClick={openNew}>
           <Plus className="h-4 w-4 mr-1" /> Nova macro
         </Button>
       </CardHeader>
@@ -156,11 +186,25 @@ function MacrosPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
-                  <Switch checked={m.enabled} onCheckedChange={(v) => toggle(m, v)} />
-                  <Button variant="ghost" size="icon" onClick={() => openEdit(m)}>
+                  <Switch
+                    disabled={!can("update", m.owner_id)}
+                    checked={m.enabled}
+                    onCheckedChange={(v) => toggle(m, v)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={!can("update", m.owner_id)}
+                    onClick={() => openEdit(m)}
+                  >
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => remove(m.id)}>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled={!can("delete", m.owner_id)}
+                    onClick={() => remove(m.id)}
+                  >
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
