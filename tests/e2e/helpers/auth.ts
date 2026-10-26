@@ -1,9 +1,7 @@
 import { test as base, expect, type Page } from "@playwright/test";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL = "https://czrmhtzaeonzjmbgbabz.supabase.co";
-const SUPABASE_ANON =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN6cm1odHphZW9uemptYmdiYWJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4MTM4ODcsImV4cCI6MjA5NDM4OTg4N30.NZt1xBOm8e8Bcl6LKDRsfBBCY2sg_JXtMBjx8hb7sBg";
+import { resolveE2EEnvironment } from "../../../scripts/e2e-environment.mjs";
 
 export const EMAIL = process.env.E2E_USER_EMAIL ?? process.env.E2E_EMAIL ?? "";
 export const PASSWORD = process.env.E2E_USER_PASSWORD ?? process.env.E2E_PASSWORD ?? "";
@@ -18,7 +16,8 @@ export const hasE2ECredentials = Boolean((EMAIL && PASSWORD) || INJECTED_SESSION
 
 /** Cria um cliente supabase admin "como usuário" para seed/cleanup. */
 export function makeUserClient(): SupabaseClient {
-  return createClient(SUPABASE_URL, SUPABASE_ANON, {
+  const config = resolveE2EEnvironment(process.env);
+  return createClient(config.apiURL, config.anonKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }
@@ -41,6 +40,7 @@ export async function authenticateTestClient(supa: SupabaseClient) {
     if (error || !data.session) {
       throw new Error("Falha ao restaurar sessão injetada: " + error?.message);
     }
+    await assertIsolatedDatabase(supa);
     return data.session;
   }
   const { data, error } = await supa.auth.signInWithPassword({
@@ -48,10 +48,16 @@ export async function authenticateTestClient(supa: SupabaseClient) {
     password: PASSWORD,
   });
   if (error || !data.session) throw new Error("Falha login Supabase: " + error?.message);
+  await assertIsolatedDatabase(supa);
   return data.session;
 }
 
-const STORAGE_KEY = "sb-czrmhtzaeonzjmbgbabz-auth-token";
+async function assertIsolatedDatabase(supa: SupabaseClient) {
+  const marker = await supa.from("__isolated_marker").select("label");
+  if (marker.error || !marker.data?.some((r) => r.label === "techerp-isolated-harness")) {
+    throw new Error("Missing isolated database marker; refusing E2E writes.");
+  }
+}
 
 /**
  * Autentica via Supabase (sessão injetada ou password grant) e injeta a sessão
@@ -59,11 +65,13 @@ const STORAGE_KEY = "sb-czrmhtzaeonzjmbgbabz-auth-token";
  */
 export async function loginViaUI(page: Page) {
   const supa = makeUserClient();
+  const config = resolveE2EEnvironment(process.env);
   const session = await authenticateTestClient(supa);
-  // Precisa estabelecer origin localhost/prod antes do localStorage.setItem
-  await page.goto("/login");
+  // Establish the explicitly configured local origin before storing the session.
+  await page.goto(config.baseURL + "/login");
+  if (new URL(page.url()).origin !== config.baseURL) throw new Error("Unexpected E2E redirect");
   await page.evaluate(([key, value]) => window.localStorage.setItem(key, value), [
-    STORAGE_KEY,
+    config.storageKey,
     JSON.stringify(session),
   ] as const);
   await page.goto("/home");

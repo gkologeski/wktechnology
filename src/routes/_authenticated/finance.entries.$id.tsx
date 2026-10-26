@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { formatCurrency, formatDateOnly } from "@/lib/crm";
 import {
   cancelFinancialEntry,
   deletePayment,
@@ -191,8 +191,8 @@ function EntryDetailsPage() {
         <CardContent className="grid gap-3 sm:grid-cols-2 text-sm">
           <Row label="Contraparte" value={entry.companies?.name ?? "—"} />
           <Row label="Categoria" value={entry.financial_categories?.name ?? "—"} />
-          <Row label="Competência" value={formatDateTime(entry.competence_date).split(" ")[0]} />
-          <Row label="Vencimento" value={formatDateTime(entry.due_date).split(" ")[0]} />
+          <Row label="Competência" value={formatDateOnly(entry.competence_date)} />
+          <Row label="Vencimento" value={formatDateOnly(entry.due_date)} />
           <Row
             label="Origem"
             value={ORIGIN_LABEL[entry.origin_type as string] ?? entry.origin_type}
@@ -287,9 +287,7 @@ function EntryDetailsPage() {
                     <TableCell className="text-sm tabular-nums">
                       {s.installment_number}/{s.installment_total}
                     </TableCell>
-                    <TableCell className="text-sm">
-                      {formatDateTime(s.due_date).split(" ")[0]}
-                    </TableCell>
+                    <TableCell className="text-sm">{formatDateOnly(s.due_date)}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className="text-xs">
                         {STATUS_LABEL[s.status] ?? s.status}
@@ -331,9 +329,7 @@ function EntryDetailsPage() {
               <TableBody>
                 {entry.payments.map((p) => (
                   <TableRow key={p.id}>
-                    <TableCell className="text-sm">
-                      {formatDateTime(p.paid_at).split(" ")[0]}
-                    </TableCell>
+                    <TableCell className="text-sm">{formatDateOnly(p.paid_at)}</TableCell>
                     <TableCell className="text-sm">{p.method ?? "—"}</TableCell>
                     <TableCell className="text-sm">
                       {p.financial_bank_accounts?.name ?? "—"}

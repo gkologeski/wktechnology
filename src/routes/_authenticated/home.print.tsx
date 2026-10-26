@@ -1,19 +1,23 @@
 // /home/print — Versão de impressão do dashboard (usada para exportar em PDF via window.print).
 // Recebe from/to via search params.
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { z } from "zod";
 import { exportHomeDashboard, type HomeDashboardResponse } from "@/lib/home/dashboard.functions";
+import { useSharedAction } from "@/lib/access-control/use-shared-action";
 import { MODULES } from "@/lib/modules/registry";
 
 const Search = z.object({
   from: z.string().optional(),
   to: z.string().optional(),
-  autoprint: z.union([z.literal("1"), z.literal("0")]).optional(),
+  autoprint: z.preprocess(
+    (value) => (value === 1 || value === 0 ? String(value) : value),
+    z.enum(["1", "0"]).optional(),
+  ),
 });
 
 export const Route = createFileRoute("/_authenticated/home/print")({
@@ -32,24 +36,28 @@ const MODULE_TITLES: Record<string, string> = {
 
 function HomePrintPage() {
   const search = Route.useSearch();
+  const canExport = useSharedAction("system.home", "export");
   const fetchDashboard = useServerFn(exportHomeDashboard);
-  const now = new Date();
+  const [now] = useState(() => new Date());
   const from = search.from ?? new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
   const to = search.to ?? now.toISOString();
 
   const query = useQuery<HomeDashboardResponse>({
     queryKey: ["home-dashboard-print", from, to],
+    enabled: canExport,
     queryFn: () => fetchDashboard({ data: { from, to } }),
   });
 
   useEffect(() => {
-    if (query.data && search.autoprint !== "0") {
+    if (canExport && query.data && search.autoprint !== "0") {
       const t = setTimeout(() => window.print(), 400);
       return () => clearTimeout(t);
     }
-  }, [query.data, search.autoprint]);
+  }, [canExport, query.data, search.autoprint]);
 
   const periodLabel = `${format(new Date(from), "dd/MM/yyyy", { locale: ptBR })} – ${format(new Date(to), "dd/MM/yyyy", { locale: ptBR })}`;
+
+  if (!canExport) return <p role="alert">Exportação indisponível ou sem permissão.</p>;
 
   return (
     <div className="print-root p-8 max-w-4xl mx-auto text-foreground">

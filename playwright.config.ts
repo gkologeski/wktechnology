@@ -1,3 +1,4 @@
+import { resolveE2EEnvironment } from "./scripts/e2e-environment.mjs";
 import { defineConfig, devices } from "@playwright/test";
 import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
@@ -25,6 +26,12 @@ for (const file of [".env.test.local", ".env.local"]) {
  *
  * Install browsers once:  bunx playwright install chromium
  */
+const authenticated = Boolean(
+  (process.env.E2E_USER_EMAIL ?? process.env.E2E_EMAIL) ||
+  process.env.LOVABLE_BROWSER_SUPABASE_SESSION_JSON,
+);
+if (authenticated) resolveE2EEnvironment(process.env);
+
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 60_000,
@@ -34,11 +41,11 @@ export default defineConfig({
   workers: 1,
   reporter: [["list"]],
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? "https://crm.wktechnology.com.br",
+    baseURL: process.env.E2E_BASE_URL ?? "http://127.0.0.1:5175",
     trace: "retain-on-failure",
     video: "retain-on-failure",
     screenshot: "only-on-failure",
-    ignoreHTTPSErrors: true,
+    ignoreHTTPSErrors: false,
   },
   projects: [
     {
