@@ -419,6 +419,39 @@ try {
       "unique visible company not linked",
     );
   });
+  const emailRule = await seed("field_permission_rules", {
+    workspace_id: W,
+    owner_id: O,
+    role_id: R,
+    resource: "techsales.contacts",
+    field: "email",
+    mode: "hidden",
+    is_system: false,
+  });
+  // Keep the existing automatic association trigger from immediately relinking
+  // the fixture while its company_id is reset; remove ambiguity before the RPC.
+  const resetDuplicate = await seed("companies", {
+    workspace_id: W,
+    owner_id: u,
+    name: "[ISO reset ambiguity]",
+    domain: "iso4.example",
+  });
+  await admin.from("contacts").update({ company_id: null }).eq("id", contact).then(must);
+  await admin.from("companies").delete().eq("id", resetDuplicate).then(must);
+  assert(
+    must(await admin.from("contacts").select("company_id").eq("id", contact).single())
+      .company_id === null,
+    "Fixture was already linked before protected RPC",
+  );
+  await check("domain matching cannot consume a hidden email", async () => {
+    must(await h.rpc("link_contacts_by_email_domain", { p_workspace: W }));
+    assert(
+      must(await admin.from("contacts").select("company_id").eq("id", contact).single())
+        .company_id === null,
+      "Hidden email was consumed",
+    );
+  });
+  await admin.from("field_permission_rules").delete().eq("id", emailRule).then(must);
   await check("domain matching cannot choose another workspace", async () =>
     blocked(await h.rpc("link_contacts_by_email_domain", { p_workspace: B })),
   );

@@ -64,6 +64,7 @@ const previous = must(
     .eq("workspace_id", W)
     .eq("role_id", R),
 ).filter((r) => keys.includes(r.permission_key));
+writeFileSync(root + "/work-core-overrides-before.json", JSON.stringify(previous));
 const set = async (list, effect = "grant") =>
   must(
     await admin.from("job_role_permission_overrides").upsert(
@@ -282,7 +283,7 @@ try {
     "time recorder receives only minimal task references without project/task read",
     async () => {
       await set(keys, "deny");
-      await set(["techprojects.time_entries.create.own"]);
+      await set(["techprojects.time_entries.create.own", "techprojects.timesheet.create.own"]);
       must(
         await admin.from("project_members").insert({
           workspace_id: W,
@@ -318,7 +319,7 @@ try {
     },
   );
   await check("time entry retains project/activity labels without full project read", async () => {
-    await set(["techprojects.time_entries.view.own"]);
+    await set(["techprojects.time_entries.view.own", "techprojects.timesheet.view.own"]);
     const e = must(
       await h
         .from("project_time_entries")
@@ -399,14 +400,15 @@ try {
       must(await admin.from("user_group_members").delete().eq("group_id", id));
     must(await admin.from(table).delete().eq("id", id));
   }
-  must(
-    await admin
-      .from("job_role_permission_overrides")
-      .delete()
-      .eq("workspace_id", W)
-      .eq("role_id", R)
-      .in("permission_key", keys),
-  );
+  for (let offset = 0; offset < keys.length; offset += 100)
+    must(
+      await admin
+        .from("job_role_permission_overrides")
+        .delete()
+        .eq("workspace_id", W)
+        .eq("role_id", R)
+        .in("permission_key", keys.slice(offset, offset + 100)),
+    );
   if (previous.length) must(await admin.from("job_role_permission_overrides").insert(previous));
   for (const c of clients) await c.auth.signOut();
   writeFileSync(
