@@ -1716,6 +1716,13 @@
       "when": 1792873273624,
       "tag": "0244_api_subject_credential_read",
       "breakpoints": true
+    },
+    {
+      "idx": 245,
+      "version": "7",
+      "when": 1792873273625,
+      "tag": "0245_audit_read_boundary",
+      "breakpoints": true
     }
   ]
 }
