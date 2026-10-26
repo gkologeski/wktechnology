@@ -2,7 +2,8 @@
 /**
  * Feedback incremental de desenvolvimento — NÃO substitui `bun run verify`.
  *
- * - Typecheck: sempre completo (tsgo). Não há project references válidas, então
+ * - Typecheck: projeto inteiro com binário nativo, sem cache incremental (medido após edições).
+ *   Não há project references válidas, então
  *   checagem parcial de tipos não seria segura.
  * - Lint: só os arquivos alterados (ESLint com cache por conteúdo).
  * - Testes: `vitest related`, que segue o grafo real de imports dos testes até os
@@ -48,7 +49,7 @@ if (plan.modules.length)
   console.log(`[verify-changed] módulos tocados: ${plan.modules.join(", ")}`);
 
 const steps: { name: string; cmd: string[] }[] = [
-  { name: "typecheck (completo)", cmd: ["bunx", "tsgo", "--noEmit"] },
+  { name: "typecheck (projeto completo, nativo)", cmd: ["bun", "run", "typecheck:dev"] },
 ];
 if (plan.mode === "full") {
   steps.push({ name: "lint (completo)", cmd: ["bun", "run", "lint"] });
