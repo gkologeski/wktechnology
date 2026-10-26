@@ -110,3 +110,7 @@ Esses dois atores podem sincronizar diretamente; a CI ainda registra o resultado
 normalmente, mas a regra não impede seu push por falha do check. Isso é uma
 exceção escolhida, não garantia de bloqueio absoluto de toda publicação.
 O relatório operacional registra o ID e a leitura efetiva do ruleset após salvar.
+
+## PostgreSQL descartável obrigatório na CI
+
+`permission-postgres-ci.test.ts` executa as funções reais de autorização e as políticas das migrações 0239, 0240, 0242, 0243 e 0244 em PostgreSQL oficial fixado por digest, com registros sintéticos. Os doze cenários cobrem autorização, ausência de chave, deny, workspace estrangeiro, membro inativo, escopo próprio/equipe, colunas de credenciais e modo somente leitura. Faz parte do job obrigatório existente; Docker local precisa estar em execução. Ausência do Docker falha o teste, nunca gera skip verde. Nenhuma URL de banco configurada é usada. As claims são fixtures SQL, sem autenticação GoTrue; os aceites com JWT real e navegador continuam separados. `.verification/sql-rls.json` só fica completo após todos os cenários e a limpeza do contêiner. O fingerprint inclui `tests/fixtures`.
