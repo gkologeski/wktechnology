@@ -1815,7 +1815,8 @@
       "id": "financial-entry-detail-date-display",
       "kind": "business",
       "files": {
-        "src/routes/_authenticated/finance.entries.$id.tsx": "823a1140fd1ca95543b65c48f249fe1d7d98a895a6549fc6bacdd36dd836e8ae"
+        "src/routes/_authenticated/finance.entries.$id.tsx": "823a1140fd1ca95543b65c48f249fe1d7d98a895a6549fc6bacdd36dd836e8ae",
+        "src/components/finance/entries-list-page.tsx": "a5e9627394e0c82a734693dd006e234003753f74ee106c9b582ad60eaf1eddd1"
       },
       "resources": [
         "techfinance.entries",
@@ -1827,7 +1828,9 @@
         "update",
         "delete",
         "create",
-        "manage"
+        "manage",
+        "export",
+        "assign"
       ],
       "scopes": [
         "own",
@@ -1841,9 +1844,12 @@
         "techfinance.payments.view.workspace",
         "techfinance.payments.create.workspace",
         "techfinance.payments.delete.workspace",
-        "techfinance.entry_cancellation.manage.workspace"
+        "techfinance.entry_cancellation.manage.workspace",
+        "techfinance.entries.create.workspace",
+        "techfinance.entries.export.workspace",
+        "techfinance.entries.assign.workspace"
       ],
-      "rationale": "Civil date formatting only. Existing screen guard and record capabilities remain; every server mutation checks current entry/payment authorization and SQL enforces tenant, active membership and explicit denies.",
+      "rationale": "Civil date formatting only. Existing screen guard and record capabilities remain; every server mutation checks current entry/payment authorization and SQL enforces tenant, active membership and explicit denies. The shared payable/receivable list uses the same date-only formatter; create/export/assign remain gated by their own permissions and existing server/RLS boundaries.",
       "controls": [
         {
           "file": "src/lib/access-control/finance-records.server.ts",
