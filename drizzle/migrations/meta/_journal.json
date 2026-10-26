@@ -1709,6 +1709,13 @@
       "when": 1792873273623,
       "tag": "0243_api_key_matrix",
       "breakpoints": true
+    },
+    {
+      "idx": 244,
+      "version": "7",
+      "when": 1792873273624,
+      "tag": "0244_api_subject_credential_read",
+      "breakpoints": true
     }
   ]
 }

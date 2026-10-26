@@ -13,6 +13,7 @@ export function sourceFingerprint(root = process.cwd()) {
   for (const name of [
     "src",
     "scripts",
+    "tests/fixtures",
     "drizzle",
     ".github/workflows",
     "package.json",

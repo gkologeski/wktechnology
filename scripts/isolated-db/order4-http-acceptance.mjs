@@ -192,12 +192,36 @@ try {
       );
     channels.push(channel);
     await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => reject(Error("realtime subscription timeout")), 8000);
-      channel.subscribe((status) => {
-        if (status === "SUBSCRIBED") {
+      let joined = false,
+        postgresReady = false;
+      const timer = setTimeout(
+        () => reject(Error("realtime database subscription timeout")),
+        20000,
+      );
+      const ready = () => {
+        if (joined && postgresReady) {
           clearTimeout(timer);
           resolve();
-        } else if (status === "CHANNEL_ERROR") {
+        }
+      };
+      // A websocket join is not yet a confirmed Postgres Changes subscription.
+      // Match the production hook: wait for the server's database acknowledgement.
+      channel.on("system", {}, (p) => {
+        if (p.extension !== "postgres_changes") return;
+        if (p.status === "error") {
+          clearTimeout(timer);
+          reject(Error("realtime database subscription rejected"));
+        }
+        if (p.status === "ok") {
+          postgresReady = true;
+          ready();
+        }
+      });
+      channel.subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          joined = true;
+          ready();
+        } else if (["CHANNEL_ERROR", "TIMED_OUT"].includes(status)) {
           clearTimeout(timer);
           reject(Error("realtime unavailable"));
         }
