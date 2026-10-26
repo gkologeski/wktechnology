@@ -4,8 +4,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Can } from "@/lib/access-control/use-permissions";
-import { AUDIT_EXPORT } from "@/lib/access-control/admin-permission-keys";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -44,6 +43,12 @@ type Row = {
 };
 
 function AuditExportPage() {
+  const permissions = usePermissions();
+  const can = (action: string) =>
+    !permissions.isLoading &&
+    !permissions.isError &&
+    !!permissions.workspaceId &&
+    permissions.permissions.has("system.audit_exports." + action + ".workspace");
   const list = useServerFn(listAuditExports);
   const upsert = useServerFn(upsertAuditExport);
   const del = useServerFn(deleteAuditExport);
@@ -81,10 +86,11 @@ function AuditExportPage() {
         <div>
           <h1 className="text-2xl font-semibold">Exportação de Audit Logs</h1>
           <p className="text-sm text-muted-foreground">
-            Envie logs para S3, webhook ou email em intervalos regulares.
+            Exporte registros autorizados para S3 ou webhook. A entrega por e-mail ainda não está
+            disponível.
           </p>
         </div>
-        <Can any={AUDIT_EXPORT}>
+        {can("create") && (
           <Button
             onClick={() =>
               setEditing({
@@ -98,7 +104,7 @@ function AuditExportPage() {
           >
             <Plus className="h-4 w-4 mr-1" /> Nova exportação
           </Button>
-        </Can>
+        )}
       </div>
 
       <div className="space-y-3">
@@ -124,6 +130,7 @@ function AuditExportPage() {
               </div>
               <div className="flex gap-1">
                 <Button
+                  disabled={!can("manage")}
                   variant="ghost"
                   size="sm"
                   onClick={async () => {
@@ -138,12 +145,18 @@ function AuditExportPage() {
                 >
                   <Play className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => setEditing(r)}>
+                <Button
+                  disabled={!can("update")}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setEditing(r)}
+                >
                   <Pencil className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
+                  disabled={!can("delete")}
                   onClick={async () => {
                     await del({ data: { id: r.id } });
                     load();
@@ -184,7 +197,9 @@ function AuditExportPage() {
                   <SelectContent>
                     <SelectItem value="webhook">Webhook (POST)</SelectItem>
                     <SelectItem value="s3">S3 (PUT presigned URL)</SelectItem>
-                    <SelectItem value="email">Email (manual)</SelectItem>
+                    <SelectItem value="email" disabled>
+                      Email (indisponível)
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
@@ -261,7 +276,9 @@ function AuditExportPage() {
               <Button variant="ghost" onClick={() => setEditing(null)}>
                 Cancelar
               </Button>
-              <Button onClick={save}>Salvar</Button>
+              <Button disabled={!can(editing?.id ? "update" : "create")} onClick={save}>
+                Salvar
+              </Button>
             </div>
           </CardContent>
         </Card>
