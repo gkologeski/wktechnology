@@ -13,28 +13,32 @@
  * Uso: bun scripts/verify-changed.ts [--base <ref>] [--dry-run] [arquivos...]
  */
 import { spawnSync } from "node:child_process";
-import { existsSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { classifyChanges } from "./verify-changed/select";
 
 const args = process.argv.slice(2);
 const dry = args.includes("--dry-run");
 const baseIdx = args.indexOf("--base");
+if (
+  args.some((a) => a.startsWith("--") && a !== "--base" && a !== "--dry-run") ||
+  (baseIdx >= 0 && (!args[baseIdx + 1] || args[baseIdx + 1].startsWith("--")))
+) {
+  console.error("Uso: bun run verify:changed [--base <ref>] [--dry-run] [arquivos...]");
+  process.exit(2);
+}
 const base = baseIdx >= 0 ? args[baseIdx + 1] : "HEAD";
 const explicit = args.filter((a, i) => !a.startsWith("--") && (baseIdx < 0 || i !== baseIdx + 1));
 
 function git(cmd: string[]): string[] | null {
   const r = spawnSync("git", cmd, { encoding: "utf8" });
   if (r.status !== 0) return null;
-  return r.stdout
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  return r.stdout.split("\0").filter(Boolean);
 }
 
 let changed: string[] | null = explicit.length ? explicit : null;
 if (!changed) {
-  const diff = git(["diff", "--name-only", base]);
-  const untracked = git(["ls-files", "--others", "--exclude-standard"]);
+  const diff = git(["diff", "--name-only", "-z", base, "--"]);
+  const untracked = git(["ls-files", "-z", "--others", "--exclude-standard"]);
   changed = diff && untracked ? [...new Set([...diff, ...untracked])] : null;
 }
 
@@ -76,15 +80,41 @@ if (dry) {
   process.exit(0);
 }
 let failed = 0;
+const started = Date.now();
+const results: { name: string; duration_ms: number; exit_code: number; ok: boolean }[] = [];
+mkdirSync(".verification", { recursive: true });
+const report = (finished: boolean) =>
+  writeFileSync(
+    ".verification/changed.json",
+    JSON.stringify(
+      {
+        kind: "development-feedback",
+        release_eligible: false,
+        finished,
+        ok: finished && failed === 0,
+        started_at: new Date(started).toISOString(),
+        duration_ms: Date.now() - started,
+        base,
+        plan,
+        steps: results,
+      },
+      null,
+      2,
+    ),
+  );
+report(false);
 for (const s of steps) {
   const t = Date.now();
   const r = spawnSync(s.cmd[0], s.cmd.slice(1), { stdio: "inherit" });
   const ok = r.status === 0;
+  results.push({ name: s.name, duration_ms: Date.now() - t, exit_code: r.status ?? 1, ok });
   console.log(
     `[verify-changed] ${ok ? "OK" : "FALHOU"} ${s.name} em ${((Date.now() - t) / 1000).toFixed(1)}s`,
   );
   if (!ok) failed = r.status ?? 1;
+  report(false);
 }
+report(true);
 console.log(
   "[verify-changed] Lembrete: antes de entregar/publicar rode `bun run verify` e `bun run build`.",
 );
