@@ -2,7 +2,7 @@ import { workspaceOfSource } from "@/lib/workspace-source.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireRecurringPermission } from "@/lib/access-control/recurring-permission.middleware";
 
 const billingInterval = z.enum(["week", "month", "quarter", "year"]);
 const subStatus = z.enum(["trialing", "active", "paused", "canceled", "past_due", "completed"]);
@@ -10,7 +10,7 @@ const invStatus = z.enum(["pending", "paid", "failed", "void"]);
 
 // ---------------- Plans ----------------
 export const listPlans = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRecurringPermission("recurrences", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("recurring_plans")
@@ -21,7 +21,7 @@ export const listPlans = createServerFn({ method: "GET" })
   });
 
 export const upsertPlan = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRecurringPermission("recurrences", "view")])
   .inputValidator((d) =>
     z
       .object({
@@ -59,7 +59,7 @@ export const upsertPlan = createServerFn({ method: "POST" })
   });
 
 export const deletePlan = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRecurringPermission("recurrences", "delete")])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("recurring_plans").delete().eq("id", data.id);
@@ -69,7 +69,7 @@ export const deletePlan = createServerFn({ method: "POST" })
 
 // ---------------- Subscriptions ----------------
 export const listSubscriptions = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRecurringPermission("recurrences", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("subscriptions")
@@ -80,7 +80,7 @@ export const listSubscriptions = createServerFn({ method: "GET" })
   });
 
 export const getSubscription = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRecurringPermission("recurrences", "view")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const [{ data: sub, error: e1 }, { data: invs, error: e2 }] = await Promise.all([
@@ -101,7 +101,7 @@ export const getSubscription = createServerFn({ method: "GET" })
   });
 
 export const createSubscription = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRecurringPermission("recurrences", "create")])
   .inputValidator((d) =>
     z
       .object({
@@ -163,7 +163,7 @@ export const createSubscription = createServerFn({ method: "POST" })
   });
 
 export const updateSubscriptionStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRecurringPermission("recurrences", "update")])
   .inputValidator((d) =>
     z
       .object({
@@ -189,7 +189,7 @@ export const updateSubscriptionStatus = createServerFn({ method: "POST" })
   });
 
 export const deleteSubscription = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRecurringPermission("recurrences", "delete")])
   .inputValidator((d) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("subscriptions").delete().eq("id", data.id);
@@ -199,7 +199,7 @@ export const deleteSubscription = createServerFn({ method: "POST" })
 
 // ---------------- Invoices ----------------
 export const setInvoiceStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRecurringPermission("invoices", "update")])
   .inputValidator((d) =>
     z
       .object({
@@ -222,7 +222,7 @@ export const setInvoiceStatus = createServerFn({ method: "POST" })
   });
 
 export const listAllInvoices = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireRecurringPermission("invoices", "view")])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("subscription_invoices")
