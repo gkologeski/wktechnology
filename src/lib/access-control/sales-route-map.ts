@@ -1,5 +1,9 @@
 /** Actual route gate, shared with navigation. Longest prefix wins. */
 const routes: Record<string, readonly string[]> = {
+  "/home/access": ["system.roles"],
+  "/settings/phones": ["system.phone_normalization"],
+  "/settings/rbac-diagnostics": ["system.rbac_diagnostics"],
+  "/settings/import": ["system.import"],
   "/settings/audit-export": ["system.audit_exports"],
   "/settings/audit-log": ["system.audit"],
   "/settings/api-keys": ["system.api_keys"],
