@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { formatCurrency, formatDateOnly } from "@/lib/crm";
 import { formatCompactDateTime } from "@/lib/format/compact-date";
 import { listFinancialEntries, authorizeFinancialExport } from "@/lib/finance.functions";
 import { QuickCreateEntryDialog } from "@/components/finance/quick-create-entry-dialog";
@@ -216,7 +216,7 @@ function EntriesListContent({
         key: "due",
         label: "Vencimento",
         className: "text-xs text-muted-foreground",
-        render: (entry) => formatDateTime(entry.due_date).split(" ")[0],
+        render: (entry) => formatDateOnly(entry.due_date),
       },
       {
         key: "assignee",
