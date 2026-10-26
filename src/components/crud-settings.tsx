@@ -1,3 +1,5 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { canConfigurationAction } from "@/lib/access-control/configuration-actions";
 import { isEmailColumn, normalizeEmailFields } from "@/lib/email-address";
 import { useState, type ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,6 +28,7 @@ export type CrudField = {
 
 export function CrudSettings<T extends { id: string }>({
   table,
+  permissionResource,
   title,
   description,
   fields,
@@ -36,6 +39,8 @@ export function CrudSettings<T extends { id: string }>({
   filter,
 }: {
   table: string;
+  /** Workspace configuration actions; existing callers retain their own boundaries. */
+  permissionResource?: string;
   title: string;
   description?: string;
   fields: CrudField[];
@@ -48,16 +53,32 @@ export function CrudSettings<T extends { id: string }>({
   filter?: Record<string, string | number | boolean>;
 }) {
   const qc = useQueryClient();
+  const access = usePermissions();
+  const can = (action: "view" | "create" | "update" | "delete") =>
+    !permissionResource ||
+    canConfigurationAction(
+      access.permissions,
+      access.workspaceId,
+      !access.isLoading && !access.isError,
+      permissionResource,
+      action,
+    );
   const [editing, setEditing] = useState<T | "new" | null>(null);
   const [form, setForm] = useState<Record<string, unknown>>({});
 
   const filterKey = JSON.stringify(filter ?? {});
 
   const { data: rows = [] } = useQuery<T[]>({
-    queryKey: [...qk.crudList(table), filterKey],
+    queryKey: [
+      ...qk.crudList(table),
+      filterKey,
+      ...(permissionResource ? [access.workspaceId] : []),
+    ],
+    enabled: can("view"),
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let q = (supabase as any).from(table).select("*");
+      if (permissionResource) q = q.eq("workspace_id", access.workspaceId);
       for (const [k, v] of Object.entries(filter ?? {})) q = q.eq(k, v);
       const { data, error } = await q.order("created_at", { ascending: false });
       if (error) throw error;
@@ -68,6 +89,7 @@ export function CrudSettings<T extends { id: string }>({
   const invalidate = () => qc.invalidateQueries({ queryKey: qk.crudList(table) });
 
   const startNew = () => {
+    if (!can("create")) return;
     const init: Record<string, unknown> = { ...(defaults ?? {}) };
     fields.forEach((f) => {
       if (init[f.name] === undefined)
@@ -77,6 +99,7 @@ export function CrudSettings<T extends { id: string }>({
     setEditing("new");
   };
   const startEdit = (r: T) => {
+    if (!can("update")) return;
     const init: Record<string, unknown> = {};
     fields.forEach((f) => {
       const v = (r as Record<string, unknown>)[f.name];
@@ -88,6 +111,7 @@ export function CrudSettings<T extends { id: string }>({
   };
 
   const save = async () => {
+    if (!can(editing === "new" ? "create" : "update")) return;
     const payload: Record<string, unknown> = { ...(extraInsert ?? {}), ...(filter ?? {}) };
     for (const f of fields) {
       let v = form[f.name];
@@ -110,10 +134,17 @@ export function CrudSettings<T extends { id: string }>({
     let error;
     if (editing === "new") {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ({ error } = await (supabase as any).from(table).insert(payload));
+      ({ error } = await (supabase as any)
+        .from(table)
+        .insert(permissionResource ? { ...payload, workspace_id: access.workspaceId } : payload));
     } else if (editing) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ({ error } = await (supabase as any).from(table).update(payload).eq("id", editing.id));
+      ({ error } = await (supabase as any)
+        .from(table)
+        .update(payload)
+        .eq("id", editing.id)
+        .select("id")
+        .single());
     }
     if (error) return toast.error(error.message);
     toast.success("Salvo");
@@ -122,9 +153,15 @@ export function CrudSettings<T extends { id: string }>({
   };
 
   const remove = async (id: string) => {
+    if (!can("delete")) return;
     if (!(await confirmDialog("Excluir?"))) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any).from(table).delete().eq("id", id);
+    const { error } = await (supabase as any)
+      .from(table)
+      .delete()
+      .eq("id", id)
+      .select("id")
+      .single();
     if (error) return toast.error(error.message);
     void invalidate();
   };
@@ -136,7 +173,7 @@ export function CrudSettings<T extends { id: string }>({
           <h2 className="font-semibold">{title}</h2>
           {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
-        <Button size="sm" onClick={startNew}>
+        <Button size="sm" disabled={!can("create")} onClick={startNew}>
           <Plus className="h-4 w-4 mr-1" /> Novo
         </Button>
       </div>
@@ -170,6 +207,7 @@ export function CrudSettings<T extends { id: string }>({
               variant="ghost"
               size="icon"
               aria-label="Excluir"
+              disabled={!can("delete")}
               onClick={(e) => {
                 e.stopPropagation();
                 remove(r.id);

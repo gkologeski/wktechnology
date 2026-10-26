@@ -1674,6 +1674,20 @@
       "when": 1792873273618,
       "tag": "0238_order5_home_project_totals",
       "breakpoints": true
+    },
+    {
+      "idx": 239,
+      "version": "7",
+      "when": 1792873273619,
+      "tag": "0239_shared_configuration_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 240,
+      "version": "7",
+      "when": 1792873273620,
+      "tag": "0240_recurring_authorization",
+      "breakpoints": true
     }
   ]
 }

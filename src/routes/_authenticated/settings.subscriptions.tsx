@@ -5,6 +5,7 @@ export const Route = createFileRoute("/_authenticated/settings/subscriptions")({
   component: () => (
     <CrudSettings
       table="subscription_types"
+      permissionResource="system.communication.subscription_types"
       title="Tipos de Assinatura"
       description="Categorias de comunicação para conformidade LGPD/GDPR."
       fields={[

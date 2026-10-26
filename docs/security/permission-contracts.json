@@ -66,6 +66,433 @@
           "name": "shared boundary rejects inactive membership before the handler"
         }
       }
+    },
+    {
+      "resources": [
+        "system.automation.macros",
+        "system.communication.subscription_types"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.macros.create.own",
+        "system.automation.macros.create.workspace",
+        "system.automation.macros.delete.own",
+        "system.automation.macros.delete.workspace",
+        "system.automation.macros.export.workspace",
+        "system.automation.macros.manage.workspace",
+        "system.automation.macros.update.own",
+        "system.automation.macros.update.team",
+        "system.automation.macros.update.workspace",
+        "system.automation.macros.view.own",
+        "system.automation.macros.view.team",
+        "system.automation.macros.view.workspace",
+        "system.communication.subscription_types.create.workspace",
+        "system.communication.subscription_types.delete.workspace",
+        "system.communication.subscription_types.update.workspace",
+        "system.communication.subscription_types.view.workspace"
+      ],
+      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed.",
+      "database": [
+        {
+          "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
+          "symbol": "shared_configuration_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration allows authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration denies missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration denies explicit deny removed from effective keys"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration denies foreign workspace without active context"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration denies inactive membership while context unavailable"
+        }
+      },
+      "id": "configuration-ui-rls",
+      "kind": "business",
+      "files": {
+        "src/routes/_authenticated/settings.macros.tsx": "cfe83f1acde1bc7daed13b27049ffed0840c7a23596d36ac1772ad876f4cdb80",
+        "src/routes/_authenticated/settings.subscriptions.tsx": "ca1ae965fd1680b277aef0be3c23b15806ea9aecac525521584dd8f1f3e885aa",
+        "src/components/crud-settings.tsx": "05f4bea425ed0b05b0a1ee3fbffbdf965d0fc8291e8a8f9200cb0cb76bb46568",
+        "drizzle/migrations/0239_shared_configuration_permissions.sql": "6f933e074f4d7cf9db5995a47e7c8cc0c1dfc9daff318537cd5d0976b0fecd80"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/configuration-actions.ts",
+          "symbol": "canConfigurationAction"
+        },
+        {
+          "file": "src/components/crud-settings.tsx",
+          "symbol": "CrudSettings"
+        }
+      ]
+    },
+    {
+      "resources": [
+        "system.automation.macros",
+        "system.communication.subscription_types"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.macros.create.own",
+        "system.automation.macros.create.workspace",
+        "system.automation.macros.delete.own",
+        "system.automation.macros.delete.workspace",
+        "system.automation.macros.export.workspace",
+        "system.automation.macros.manage.workspace",
+        "system.automation.macros.update.own",
+        "system.automation.macros.update.team",
+        "system.automation.macros.update.workspace",
+        "system.automation.macros.view.own",
+        "system.automation.macros.view.team",
+        "system.automation.macros.view.workspace",
+        "system.communication.subscription_types.create.workspace",
+        "system.communication.subscription_types.delete.workspace",
+        "system.communication.subscription_types.update.workspace",
+        "system.communication.subscription_types.view.workspace"
+      ],
+      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed.",
+      "database": [
+        {
+          "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
+          "symbol": "shared_configuration_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration allows authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration denies missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration denies explicit deny removed from effective keys"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration denies foreign workspace without active context"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration denies inactive membership while context unavailable"
+        }
+      },
+      "id": "configuration-ui-action-predicate",
+      "kind": "internal",
+      "files": {
+        "src/lib/access-control/configuration-actions.ts": "35712bb00b224f91f8ffde0322f295f07d13b0b08d2f8b3b27c5ba83de76c4ff"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/configuration-actions.ts",
+          "symbol": "scoped"
+        }
+      ],
+      "exception": {
+        "mechanism": "Authenticated session, selected active workspace and effective permissions. Internal helpers do not confer grants.",
+        "boundary": "Self permission metadata / route mapping only; all data changes rechecked by RLS. Language preference is local to the current browser. Existing privileged route fallbacks preserved.",
+        "revocation": "Inactive membership invalidates work_access_context; current denies remove aliases in database; permission cache revalidates.",
+        "review_by": "2027-01-25"
+      }
+    },
+    {
+      "resources": [
+        "system.automation.macros",
+        "system.communication.subscription_types"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.macros.create.own",
+        "system.automation.macros.create.workspace",
+        "system.automation.macros.delete.own",
+        "system.automation.macros.delete.workspace",
+        "system.automation.macros.export.workspace",
+        "system.automation.macros.manage.workspace",
+        "system.automation.macros.update.own",
+        "system.automation.macros.update.team",
+        "system.automation.macros.update.workspace",
+        "system.automation.macros.view.own",
+        "system.automation.macros.view.team",
+        "system.automation.macros.view.workspace",
+        "system.communication.subscription_types.create.workspace",
+        "system.communication.subscription_types.delete.workspace",
+        "system.communication.subscription_types.update.workspace",
+        "system.communication.subscription_types.view.workspace"
+      ],
+      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed.",
+      "database": [
+        {
+          "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
+          "symbol": "shared_configuration_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration allows authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration denies missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration denies explicit deny removed from effective keys"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration denies foreign workspace without active context"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/configuration-actions.test.ts",
+          "name": "configuration denies inactive membership while context unavailable"
+        }
+      },
+      "id": "configuration-navigation-compatibility",
+      "kind": "internal",
+      "files": {
+        "src/lib/access-control/sales-route-map.ts": "efae961b81b1ea6cf9cec8ba0c42bff5feff7d61a0f411775109e3d3b3a01dc3",
+        "src/routes/_authenticated/settings.tsx": "dc1c4eacdef5e888881f7b8579f55443fd32a82887022b0772c83acb926af0c7",
+        "src/routes/_authenticated.tsx": "87d55568a91b7383341c70503544d8108db2993dc06d3e61465b940e9b0f20e5"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-route-map.ts",
+          "symbol": "salesRouteResources"
+        }
+      ],
+      "exception": {
+        "mechanism": "Authenticated session, selected active workspace and effective permissions. Internal helpers do not confer grants.",
+        "boundary": "Self permission metadata / route mapping only; all data changes rechecked by RLS. Language preference is local to the current browser. Existing privileged route fallbacks preserved.",
+        "revocation": "Inactive membership invalidates work_access_context; current denies remove aliases in database; permission cache revalidates.",
+        "review_by": "2027-01-25"
+      }
+    },
+    {
+      "resources": [
+        "system.automation.macros",
+        "system.communication.subscription_types"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.macros.create.own",
+        "system.automation.macros.create.workspace",
+        "system.automation.macros.delete.own",
+        "system.automation.macros.delete.workspace",
+        "system.automation.macros.export.workspace",
+        "system.automation.macros.manage.workspace",
+        "system.automation.macros.update.own",
+        "system.automation.macros.update.team",
+        "system.automation.macros.update.workspace",
+        "system.automation.macros.view.own",
+        "system.automation.macros.view.team",
+        "system.automation.macros.view.workspace",
+        "system.communication.subscription_types.create.workspace",
+        "system.communication.subscription_types.delete.workspace",
+        "system.communication.subscription_types.update.workspace",
+        "system.communication.subscription_types.view.workspace"
+      ],
+      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed.",
+      "database": [
+        {
+          "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
+          "symbol": "shared_configuration_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/configuration-permissions.server.test.ts",
+          "name": "configuration server allows authorized active context"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/configuration-permissions.server.test.ts",
+          "name": "configuration server rejects unavailable permissions without legacy fallback"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/configuration-permissions.server.test.ts",
+          "name": "configuration server propagates alias deny rather than fallback grants"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/configuration-permissions.server.test.ts",
+          "name": "configuration server rejects foreign workspace at authoritative RPC"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/configuration-permissions.server.test.ts",
+          "name": "configuration server returns no permissions for inactive context"
+        }
+      },
+      "id": "configuration-self-permission-query",
+      "kind": "personal",
+      "files": {
+        "src/lib/access-control/permissions.functions.ts": "49ebf65622ef86cc158d7074cbe7a5b915f4d22dc49989e1c3c2e111fbe0523f"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/permissions.functions.ts",
+          "symbol": "resolveActiveWorkspace"
+        }
+      ],
+      "exception": {
+        "mechanism": "Authenticated session, selected active workspace and effective permissions. Internal helpers do not confer grants.",
+        "boundary": "Self permission metadata / route mapping only; all data changes rechecked by RLS. Language preference is local to the current browser. Existing privileged route fallbacks preserved.",
+        "revocation": "Inactive membership invalidates work_access_context; current denies remove aliases in database; permission cache revalidates.",
+        "review_by": "2027-01-25"
+      }
+    },
+    {
+      "id": "legacy-recurring-billing-authorization",
+      "kind": "business",
+      "files": {
+        "src/lib/recurring.functions.ts": "5d04e271cc0b2cccfd91a81212f58ad7a394a066e1a7c52f623ce13ad6b34cff",
+        "src/lib/access-control/recurring-permission.middleware.ts": "2abfe06f8b87b116494f9b92f3544aeb99bd4d66f845fedeb8c2f62110e06fc4",
+        "drizzle/migrations/0240_recurring_authorization.sql": "4fcc2e93e8b23cbfbd3c7d88206dc1879496b40fe56682f17f071ad1679b845d"
+      },
+      "resources": [
+        "techfinance.recurrences",
+        "techfinance.invoices"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techfinance.invoices.create.own",
+        "techfinance.invoices.create.workspace",
+        "techfinance.invoices.delete.own",
+        "techfinance.invoices.delete.workspace",
+        "techfinance.invoices.export.workspace",
+        "techfinance.invoices.update.own",
+        "techfinance.invoices.update.team",
+        "techfinance.invoices.update.workspace",
+        "techfinance.invoices.view.own",
+        "techfinance.invoices.view.team",
+        "techfinance.invoices.view.workspace",
+        "techfinance.recurrences.create.own",
+        "techfinance.recurrences.create.workspace",
+        "techfinance.recurrences.delete.own",
+        "techfinance.recurrences.delete.workspace",
+        "techfinance.recurrences.export.workspace",
+        "techfinance.recurrences.update.own",
+        "techfinance.recurrences.update.team",
+        "techfinance.recurrences.update.workspace",
+        "techfinance.recurrences.view.own",
+        "techfinance.recurrences.view.team",
+        "techfinance.recurrences.view.workspace"
+      ],
+      "rationale": "Legacy recurring plans/subscriptions/invoices require the existing Finance matrix. Area middleware fails closed; per-row RLS enforces scopes and invoice parent visibility; triggers prevent tenant reassignment and cross-workspace references. No grants are added.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/recurring-permission.middleware.ts",
+          "symbol": "requireRecurringPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0240_recurring_authorization.sql",
+          "symbol": "recurring_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0240_recurring_authorization.sql",
+          "symbol": "recurring_area_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/recurring-boundary-ci.test.ts",
+          "name": "recurring boundary allows an authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/recurring-boundary-ci.test.ts",
+          "name": "recurring boundary rejects missing permission before the handler"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/recurring-boundary-ci.test.ts",
+          "name": "recurring boundary rejects explicit deny before the handler"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/recurring-boundary-ci.test.ts",
+          "name": "recurring boundary rejects foreign workspace before the handler"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/recurring-boundary-ci.test.ts",
+          "name": "recurring boundary rejects inactive membership before the handler"
+        }
+      }
     }
   ],
   "retired": {}

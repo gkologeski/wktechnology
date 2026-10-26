@@ -224,6 +224,10 @@
     "system.calendars.view.own",
     "system.calendars.view.team",
     "system.calendars.view.workspace",
+    "system.communication.subscription_types.create.workspace",
+    "system.communication.subscription_types.delete.workspace",
+    "system.communication.subscription_types.update.workspace",
+    "system.communication.subscription_types.view.workspace",
     "system.custom_objects.create.own",
     "system.custom_objects.create.workspace",
     "system.custom_objects.delete.own",
@@ -2744,5 +2748,18 @@
     "techservice.tickets.view.own",
     "techservice.tickets.view.workspace"
   ],
-  "additions": {}
+  "additions": {
+    "system.communication.subscription_types.view.workspace": {
+      "migration": "drizzle/migrations/0239_shared_configuration_permissions.sql"
+    },
+    "system.communication.subscription_types.create.workspace": {
+      "migration": "drizzle/migrations/0239_shared_configuration_permissions.sql"
+    },
+    "system.communication.subscription_types.update.workspace": {
+      "migration": "drizzle/migrations/0239_shared_configuration_permissions.sql"
+    },
+    "system.communication.subscription_types.delete.workspace": {
+      "migration": "drizzle/migrations/0239_shared_configuration_permissions.sql"
+    }
+  }
 }
