@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminSetting } from "@/lib/access-control/admin-setting.middleware";
 import { asCountry, formatPhoneDisplay } from "@/lib/phone/e164";
 import {
   PHONE_REVIEW_CLASSES,
@@ -46,11 +46,10 @@ export type PhoneReviewItem = {
 };
 
 export const getPhoneSettings = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminSetting("system.phone_normalization")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data: ws } = await supabase.rpc("default_workspace_for_user", { _user: userId });
-    const workspaceId = typeof ws === "string" ? ws : null;
+    const workspaceId = context.settingWorkspaceId;
     if (!workspaceId) throw new Error("Workspace ativo não encontrado.");
     const [{ data: w }, { data: isAdmin }, { data: runs }] = await Promise.all([
       supabase
@@ -101,6 +100,7 @@ export const getPhoneSettings = createServerFn({ method: "GET" })
       country: (w?.default_phone_country as string | undefined) ?? "BR",
       strict: !!w?.phone_strict_e164,
       isAdmin: !!isAdmin,
+      canManage: context.settingCanManage,
       run:
         run && rec
           ? ({
@@ -119,15 +119,14 @@ export const getPhoneSettings = createServerFn({ method: "GET" })
   });
 
 export const updatePhoneCountry = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminSetting("system.phone_normalization", "manage")])
   .inputValidator((i) => z.object({ country: z.string().length(2) }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     await (await import("@/lib/view-as-guard.server")).assertNotReadOnlyView(supabase);
     const country = asCountry(data.country);
     if (!country) throw new Error("País inválido.");
-    const { data: ws } = await supabase.rpc("default_workspace_for_user", { _user: userId });
-    if (typeof ws !== "string") throw new Error("Workspace ativo não encontrado.");
+    const ws = context.settingWorkspaceId;
     // RLS: só owner/admin do workspace atualiza (ws_update_admin).
     const { data: rows, error } = await supabase
       .from("workspaces")
@@ -140,7 +139,7 @@ export const updatePhoneCountry = createServerFn({ method: "POST" })
   });
 
 export const listPhoneReview = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminSetting("system.phone_normalization")])
   .inputValidator((i) =>
     z
       .object({
@@ -178,12 +177,18 @@ export const listPhoneReview = createServerFn({ method: "GET" })
     const sb = context.supabase;
     const fetchers: Record<string, (ids: string[]) => PromiseLike<{ data: NameRow[] | null }>> = {
       contacts: (ids) =>
-        sb.from("contacts").select("id, first_name, last_name, email").in("id", ids),
+        sb
+          .from("shared_fields_contacts" as "contacts")
+          .select("id, first_name, last_name, email")
+          .in("id", ids),
       leads: (ids) => sb.from("leads").select("id, first_name, last_name, email").in("id", ids),
       companies: (ids) => sb.from("companies").select("id, name").in("id", ids),
       people: (ids) => sb.from("people").select("id, full_name, email").in("id", ids),
       ats_candidates: (ids) =>
-        sb.from("ats_candidates").select("id, full_name, email").in("id", ids),
+        sb
+          .from("shared_fields_ats_candidates" as "ats_candidates")
+          .select("id, full_name, email")
+          .in("id", ids),
       profiles: (ids) => sb.from("profiles").select("id, full_name").in("id", ids),
     };
     const names = new Map<string, string>();
@@ -231,7 +236,7 @@ export const listPhoneReview = createServerFn({ method: "GET" })
  * nunca recebida do navegador.
  */
 export const getPhoneReviewItem = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminSetting("system.phone_normalization")])
   .inputValidator((i) => z.object({ itemId: z.number().int().positive() }).parse(i))
   .handler(async ({ data, context }) => {
     const { data: it, error } = await context.supabase
@@ -260,7 +265,7 @@ export const getPhoneReviewItem = createServerFn({ method: "GET" })
  * número gravado; guarda backup e quem decidiu.
  */
 export const resolvePhoneReview = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminSetting("system.phone_normalization", "manage")])
   .inputValidator((i) =>
     z
       .object({
