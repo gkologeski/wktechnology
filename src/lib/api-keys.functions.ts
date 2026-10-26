@@ -3,7 +3,7 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createHash, randomBytes } from "crypto";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireApiKeyPermission } from "@/lib/access-control/api-key-permission.middleware";
 
 const SCOPES = ["read", "write"] as const;
 export const API_SCOPES = SCOPES;
@@ -13,19 +13,20 @@ function hashKey(raw: string) {
 }
 
 export const listApiKeys = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireApiKeyPermission("view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("api_keys")
       .select("id, name, prefix, scopes, last_used_at, expires_at, revoked_at, created_at")
       .eq("owner_id", userId)
       .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
     return { keys: data ?? [] };
   });
 
 export const createApiKey = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireApiKeyPermission("create")])
   .inputValidator((d: { name: string; scopes?: string[]; expires_at?: string | null }) =>
     z
       .object({
@@ -58,7 +59,7 @@ export const createApiKey = createServerFn({ method: "POST" })
   });
 
 export const revokeApiKey = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireApiKeyPermission("manage")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -71,7 +72,7 @@ export const revokeApiKey = createServerFn({ method: "POST" })
   });
 
 export const deleteApiKey = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireApiKeyPermission("delete")])
   .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
