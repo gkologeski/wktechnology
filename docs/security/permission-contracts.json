@@ -301,7 +301,7 @@
       "id": "configuration-navigation-compatibility",
       "kind": "internal",
       "files": {
-        "src/lib/access-control/sales-route-map.ts": "b23d3a151255b454ac4a91f951b264e3370cfdd0055dfdd55d0d670731247232",
+        "src/lib/access-control/sales-route-map.ts": "fe7b0dafbcd0a62a7eda74dd8a7a10dd42e2c578e62b5e150fda94ca6961e829",
         "src/routes/_authenticated/settings.tsx": "a4f951fe15ac2c7de40486935dabe323cc57935a567137ef3012fa0bfb6b743b",
         "src/routes/_authenticated.tsx": "87d55568a91b7383341c70503544d8108db2993dc06d3e61465b940e9b0f20e5"
       },
@@ -1096,6 +1096,223 @@
           "file": "src/lib/access-control/permission-postgres-ci.test.ts",
           "name": "SQL audit denies inactive membership"
         }
+      }
+    },
+    {
+      "resources": [
+        "system.audit_exports",
+        "system.audit"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.audit.view.workspace",
+        "system.audit.export.workspace",
+        "system.audit_exports.view.workspace",
+        "system.audit_exports.create.workspace",
+        "system.audit_exports.update.workspace",
+        "system.audit_exports.delete.workspace",
+        "system.audit_exports.manage.workspace"
+      ],
+      "rationale": "Export configuration has explicit matrix CRUD/manage actions, immutable human owner/tenant and no readable HMAC secret. A service-only wrapper derives the owner from the stored export and executes as that subject with current membership, audit export/view, module record and field permissions. Bounded timestamp/id pagination advances only after successful delivery; no outbound test sends. Unsupported email delivery fails explicitly.",
+      "database": [
+        {
+          "file": "drizzle/migrations/0247_audit_export_authorization.sql",
+          "symbol": "shared_audit_export_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0247_audit_export_authorization.sql",
+          "symbol": "techerp_api.audit_export_rows"
+        },
+        {
+          "file": "drizzle/migrations/0247_audit_export_authorization.sql",
+          "symbol": "shared_audit_export_rows"
+        }
+      ],
+      "id": "audit-export-runtime-authorization",
+      "kind": "business",
+      "files": {
+        "src/lib/audit-export.functions.ts": "3b0c6dcc97971fa2db260f6808e9d4872fb09bc27382f24171fb6c0896d31e34",
+        "src/lib/audit-export.server.ts": "c09fe104b94ca275ea7d6cc16eba91684cd16d560316c22c264e54583e78b559",
+        "src/lib/access-control/audit-export-permission.middleware.ts": "c307ea779837bce6b8bba478057d9299712b5b042bed6df765b265978b6b58c0",
+        "src/routes/_authenticated/settings.audit-export.tsx": "50efac68dbfd9941d8b749f6a21a631af2516bb5cfe301cd068e65c7093b268a"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/audit-export-permission.middleware.ts",
+          "symbol": "requireAuditExportPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/audit-export-boundary-ci.test.ts",
+          "name": "audit export boundary allows an authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/audit-export-boundary-ci.test.ts",
+          "name": "audit export boundary rejects missing permission before the handler"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/audit-export-boundary-ci.test.ts",
+          "name": "audit export boundary rejects explicit deny before the handler"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/audit-export-boundary-ci.test.ts",
+          "name": "audit export boundary rejects foreign workspace before the handler"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/audit-export-boundary-ci.test.ts",
+          "name": "audit export boundary rejects inactive membership before the handler"
+        }
+      }
+    },
+    {
+      "resources": [
+        "system.audit_exports",
+        "system.audit"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.audit.view.workspace",
+        "system.audit.export.workspace",
+        "system.audit_exports.view.workspace",
+        "system.audit_exports.create.workspace",
+        "system.audit_exports.update.workspace",
+        "system.audit_exports.delete.workspace",
+        "system.audit_exports.manage.workspace"
+      ],
+      "rationale": "Export configuration has explicit matrix CRUD/manage actions, immutable human owner/tenant and no readable HMAC secret. A service-only wrapper derives the owner from the stored export and executes as that subject with current membership, audit export/view, module record and field permissions. Bounded timestamp/id pagination advances only after successful delivery; no outbound test sends. Unsupported email delivery fails explicitly.",
+      "database": [
+        {
+          "file": "drizzle/migrations/0247_audit_export_authorization.sql",
+          "symbol": "shared_audit_export_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0247_audit_export_authorization.sql",
+          "symbol": "techerp_api.audit_export_rows"
+        },
+        {
+          "file": "drizzle/migrations/0247_audit_export_authorization.sql",
+          "symbol": "shared_audit_export_rows"
+        }
+      ],
+      "id": "audit-export-database-authorization",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0247_audit_export_authorization.sql": "16b43623c478cdfd1393b7353580ad9d8b7854ed5ffcfb22b9b50345b62b5191"
+      },
+      "controls": [
+        {
+          "file": "drizzle/migrations/0247_audit_export_authorization.sql",
+          "symbol": "shared_audit_export_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL export configuration allows authorized workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL export configuration denies missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL export configuration denies explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL export configuration denies foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL export configuration denies inactive membership"
+        }
+      }
+    },
+    {
+      "id": "audit-index-service-expression",
+      "kind": "service",
+      "files": {
+        "drizzle/migrations/0246_audit_index_service_expression.sql": "0bd8c51e9ff82a5affcd91a4d40a728e585a5383c44d90dbcee3aa121bf3a19c"
+      },
+      "resources": [
+        "system.audit"
+      ],
+      "actions": [
+        "normalize_index_expression"
+      ],
+      "scopes": [
+        "service"
+      ],
+      "permission_keys": [],
+      "rationale": "An existing service audit writer must evaluate the pure IMMUTABLE input-only tenant expression used by the audit index. The normalizer reads no table and grants no business row access. The mandatory pagination test inserts as service_role; browser raw payload ACL and the five SQL audit denials remain enforced.",
+      "controls": [
+        {
+          "file": "drizzle/migrations/0246_audit_index_service_expression.sql",
+          "symbol": "shared_audit_workspace"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0246_audit_index_service_expression.sql",
+          "symbol": "shared_audit_workspace"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit allows authorized tenant and record"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit denies missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit denies explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit denies foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit denies inactive membership"
+        }
+      },
+      "exception": {
+        "mechanism": "EXECUTE of an immutable JSON-to-UUID function for existing service writes.",
+        "boundary": "service_role only; no table access, business grants or new credentials.",
+        "revocation": "REVOKE EXECUTE ON FUNCTION shared_audit_workspace(jsonb,jsonb) FROM service_role; this stops service inserts using the index.",
+        "review_by": "2026-12-01"
       }
     }
   ],
