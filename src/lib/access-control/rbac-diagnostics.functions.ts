@@ -35,17 +35,17 @@ export type RbacDiagnostics = {
 
 /**
  * Permissões "amplas": ações que alcançam registros de outros usuários.
- * `manage` engloba todas as ações do recurso; escopos workspace/org/all
- * ignoram o vínculo de responsável.
+ * Sinaliza ações de gestão/edição/exclusão com escopo workspace/org/all.
+ * Não presume que manage conceda outras ações nem ignora as restrições efetivas.
  */
-function computeWarnings(permissions: string[], roles: RbacRoleInfo[]): RbacWarning[] {
+export function computeWarnings(permissions: string[], roles: RbacRoleInfo[]): RbacWarning[] {
   const warnings: RbacWarning[] = [];
   const broad = permissions.filter((key) => {
     const parts = key.split(".");
     const action = parts[parts.length - 2];
     const scope = parts[parts.length - 1];
     const wide = scope === "workspace" || scope === "org" || scope === "all";
-    return action === "manage" || (wide && (action === "delete" || action === "update"));
+    return wide && ["manage", "delete", "update"].includes(action);
   });
   if (broad.length > 0) {
     warnings.push({
@@ -53,7 +53,7 @@ function computeWarnings(permissions: string[], roles: RbacRoleInfo[]): RbacWarn
       severity: "high",
       title: `${broad.length} permissão(ões) ampla(s) detectada(s)`,
       detail:
-        "Estas permissões permitem editar/excluir registros de outros usuários, ignorando o escopo de responsável. Revise em Configurações › Permissões.",
+        "Estas chaves indicam gestão, edição ou exclusão em escopo amplo. O acesso efetivo continua sujeito às permissões específicas, negativas explícitas e demais regras do recurso. Revise em Configurações › Permissões.",
       keys: broad.sort(),
     });
   }
@@ -63,7 +63,7 @@ function computeWarnings(permissions: string[], roles: RbacRoleInfo[]): RbacWarn
       severity: "medium",
       title: `Usuário acumula ${roles.length} cargos`,
       detail:
-        "As permissões são somadas entre os cargos: o escopo mais amplo prevalece. Mantenha apenas o cargo necessário para que restrições de escopo próprio tenham efeito.",
+        "Cargos podem combinar concessões. Negativas explícitas, escopos e regras de campo continuam sendo aplicados. Revise se todos os cargos atribuídos são necessários.",
       keys: roles.map((r) => r.name),
     });
   }

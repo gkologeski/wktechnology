@@ -9,7 +9,11 @@ vi.mock("@tanstack/react-start", () => {
 });
 vi.mock("./admin-setting.middleware", () => ({ requireAdminSetting: () => ({}) }));
 vi.mock("./active-workspace.middleware", () => ({ requireWorkspaceContext: () => ({}) }));
-import { listPermissionCatalog, getRbacDiagnostics } from "./rbac-diagnostics.functions";
+import {
+  listPermissionCatalog,
+  getRbacDiagnostics,
+  computeWarnings,
+} from "./rbac-diagnostics.functions";
 
 type Handler = (input: {
   context: { supabase: unknown; userId: string };
@@ -101,5 +105,36 @@ describe("complete permission metadata", () => {
     await expect(
       diagnostics({ context: { supabase: c.supabase, userId: "me" }, data: {} }),
     ).rejects.toThrow("denied");
+  });
+});
+
+describe("scope warning precision", () => {
+  it("does not classify own or team management as workspace-wide access", () => {
+    expect(
+      computeWarnings(["system.api_keys.manage.own", "system.workflows.manage.team"], []),
+    ).toEqual([]);
+  });
+  it("flags broad mutations without treating manage as a wildcard", () => {
+    const warnings = computeWarnings(
+      [
+        "system.roles.manage.workspace",
+        "techsales.leads.view.workspace",
+        "techsales.leads.delete.own",
+      ],
+      [],
+    );
+    expect(warnings[0].keys).toEqual(["system.roles.manage.workspace"]);
+    expect(warnings[0].detail).toContain("negativas explícitas");
+  });
+  it("does not advise that extra roles override explicit denials", () => {
+    const warnings = computeWarnings(
+      [],
+      [
+        { id: "1", name: "A", is_primary: true },
+        { id: "2", name: "B", is_primary: false },
+      ],
+    );
+    expect(warnings[0].detail).toContain("Negativas explícitas");
+    expect(warnings[0].detail).not.toContain("prevalece");
   });
 });
