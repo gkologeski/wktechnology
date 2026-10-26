@@ -16,19 +16,9 @@
         "techfinance.entries",
         "techfinance.payments"
       ],
-      "actions": [
-        "view",
-        "export"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
-      "permission_keys": [
-        "system.home.view.workspace",
-        "system.home.export.workspace"
-      ],
+      "actions": ["view", "export"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": ["system.home.view.workspace", "system.home.export.workspace"],
       "rationale": "Home view/export use the authenticated shared boundary. Each finite aggregate independently rechecks its own current module and record permissions; field rules are resolved by the protected database views.",
       "controls": [
         {
@@ -74,23 +64,9 @@
       }
     },
     {
-      "resources": [
-        "system.automation.macros",
-        "system.communication.subscription_types"
-      ],
-      "actions": [
-        "view",
-        "create",
-        "update",
-        "delete",
-        "manage",
-        "export"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "resources": ["system.automation.macros", "system.communication.subscription_types"],
+      "actions": ["view", "create", "update", "delete", "manage", "export"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "system.automation.macros.create.own",
         "system.automation.macros.create.workspace",
@@ -157,23 +133,9 @@
       ]
     },
     {
-      "resources": [
-        "system.automation.macros",
-        "system.communication.subscription_types"
-      ],
-      "actions": [
-        "view",
-        "create",
-        "update",
-        "delete",
-        "manage",
-        "export"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "resources": ["system.automation.macros", "system.communication.subscription_types"],
+      "actions": ["view", "create", "update", "delete", "manage", "export"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "system.automation.macros.create.own",
         "system.automation.macros.create.workspace",
@@ -240,23 +202,9 @@
       }
     },
     {
-      "resources": [
-        "system.automation.macros",
-        "system.communication.subscription_types"
-      ],
-      "actions": [
-        "view",
-        "create",
-        "update",
-        "delete",
-        "manage",
-        "export"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "resources": ["system.automation.macros", "system.communication.subscription_types"],
+      "actions": ["view", "create", "update", "delete", "manage", "export"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "system.automation.macros.create.own",
         "system.automation.macros.create.workspace",
@@ -325,23 +273,9 @@
       }
     },
     {
-      "resources": [
-        "system.automation.macros",
-        "system.communication.subscription_types"
-      ],
-      "actions": [
-        "view",
-        "create",
-        "update",
-        "delete",
-        "manage",
-        "export"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "resources": ["system.automation.macros", "system.communication.subscription_types"],
+      "actions": ["view", "create", "update", "delete", "manage", "export"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "system.automation.macros.create.own",
         "system.automation.macros.create.workspace",
@@ -414,22 +348,9 @@
         "src/lib/recurring.functions.ts": "5d04e271cc0b2cccfd91a81212f58ad7a394a066e1a7c52f623ce13ad6b34cff",
         "src/lib/access-control/recurring-permission.middleware.ts": "2abfe06f8b87b116494f9b92f3544aeb99bd4d66f845fedeb8c2f62110e06fc4"
       },
-      "resources": [
-        "techfinance.recurrences",
-        "techfinance.invoices"
-      ],
-      "actions": [
-        "view",
-        "create",
-        "update",
-        "delete",
-        "export"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "resources": ["techfinance.recurrences", "techfinance.invoices"],
+      "actions": ["view", "create", "update", "delete", "export"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "techfinance.invoices.create.own",
         "techfinance.invoices.create.workspace",
@@ -510,16 +431,8 @@
         "techsales.leads",
         "techsales.prospecting_scoring"
       ],
-      "actions": [
-        "view",
-        "update",
-        "manage"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "actions": ["view", "update", "manage"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "techsales.contacts.update.workspace",
         "techsales.companies.view.workspace",
@@ -572,18 +485,9 @@
       "files": {
         "drizzle/migrations/0242_document_read_policy.sql": "0939eaad9e3822c41aee77005a93789ce24a4b5b80c155c62654b08b56b21a71"
       },
-      "resources": [
-        "techpeople.people",
-        "techpeople.documents"
-      ],
-      "actions": [
-        "view"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "resources": ["techpeople.people", "techpeople.documents"],
+      "actions": ["view"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "techpeople.people.view.workspace",
         "techpeople.documents.view.workspace"
@@ -632,18 +536,9 @@
         "src/lib/access-control/api-key-permission.middleware.ts": "f7e36059f0b3ae5eb73503d0acf62465b57efcab481fb271f057853e865cda30",
         "src/routes/_authenticated/settings.api-keys.tsx": "b9f28df213b7193b2d3f3a7a6728d7f562dab9483b7fb71f1fe45b72fb9caeea"
       },
-      "resources": [
-        "system.api_keys"
-      ],
-      "actions": [
-        "view",
-        "create",
-        "manage",
-        "delete"
-      ],
-      "scopes": [
-        "own"
-      ],
+      "resources": ["system.api_keys"],
+      "actions": ["view", "create", "manage", "delete"],
+      "scopes": ["own"],
       "permission_keys": [
         "system.api_keys.view.own",
         "system.api_keys.create.own",
@@ -695,23 +590,9 @@
       }
     },
     {
-      "resources": [
-        "system.automation.macros",
-        "system.communication.subscription_types"
-      ],
-      "actions": [
-        "view",
-        "create",
-        "update",
-        "delete",
-        "manage",
-        "export"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "resources": ["system.automation.macros", "system.communication.subscription_types"],
+      "actions": ["view", "create", "update", "delete", "manage", "export"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "system.automation.macros.create.own",
         "system.automation.macros.create.workspace",
@@ -777,22 +658,9 @@
       "files": {
         "drizzle/migrations/0240_recurring_authorization.sql": "4fcc2e93e8b23cbfbd3c7d88206dc1879496b40fe56682f17f071ad1679b845d"
       },
-      "resources": [
-        "techfinance.recurrences",
-        "techfinance.invoices"
-      ],
-      "actions": [
-        "view",
-        "create",
-        "update",
-        "delete",
-        "export"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "resources": ["techfinance.recurrences", "techfinance.invoices"],
+      "actions": ["view", "create", "update", "delete", "export"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "techfinance.invoices.create.own",
         "techfinance.invoices.create.workspace",
@@ -867,18 +735,9 @@
       "files": {
         "drizzle/migrations/0243_api_key_matrix.sql": "58cf7da3199acc4ab996b8f196ceb11879edf0cd3a6c389dd4581313fa5d8b47"
       },
-      "resources": [
-        "system.api_keys"
-      ],
-      "actions": [
-        "view",
-        "create",
-        "manage",
-        "delete"
-      ],
-      "scopes": [
-        "own"
-      ],
+      "resources": ["system.api_keys"],
+      "actions": ["view", "create", "manage", "delete"],
+      "scopes": ["own"],
       "permission_keys": [
         "system.api_keys.view.own",
         "system.api_keys.create.own",
@@ -927,18 +786,10 @@
       "files": {
         "drizzle/migrations/0244_api_subject_credential_read.sql": "fc0e6f6b27d71fe4d88f48d814fa4091fb402d9b31189b4fd391b0ca142de630"
       },
-      "resources": [
-        "system.api_keys"
-      ],
-      "actions": [
-        "view"
-      ],
-      "scopes": [
-        "own"
-      ],
-      "permission_keys": [
-        "system.api_keys.view.own"
-      ],
+      "resources": ["system.api_keys"],
+      "actions": ["view"],
+      "scopes": ["own"],
+      "permission_keys": ["system.api_keys.view.own"],
       "rationale": "Private API role validates only the exact credential in its private transaction session, independently of browser credential-management permissions. Browser helper execution and private session writes are prohibited. API actions still require the current owner module permissions and immutable tenant/owner. Three additional actual SQL tests and eleven real-JWT HTTP/realtime acceptance checks cover this boundary. No role assignments or module grants are added.",
       "controls": [
         {
@@ -983,14 +834,8 @@
         "techsales.companies",
         "techsales.deals"
       ],
-      "actions": [
-        "view"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "actions": ["view"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "system.audit.view.own",
         "system.audit.view.team",
@@ -1054,14 +899,8 @@
         "techsales.companies",
         "techsales.deals"
       ],
-      "actions": [
-        "view"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "actions": ["view"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "system.audit.view.own",
         "system.audit.view.team",
@@ -1109,21 +948,9 @@
       }
     },
     {
-      "resources": [
-        "system.audit_exports",
-        "system.audit"
-      ],
-      "actions": [
-        "view",
-        "create",
-        "update",
-        "delete",
-        "manage",
-        "export"
-      ],
-      "scopes": [
-        "workspace"
-      ],
+      "resources": ["system.audit_exports", "system.audit"],
+      "actions": ["view", "create", "update", "delete", "manage", "export"],
+      "scopes": ["workspace"],
       "permission_keys": [
         "system.audit.view.workspace",
         "system.audit.export.workspace",
@@ -1194,21 +1021,9 @@
       }
     },
     {
-      "resources": [
-        "system.audit_exports",
-        "system.audit"
-      ],
-      "actions": [
-        "view",
-        "create",
-        "update",
-        "delete",
-        "manage",
-        "export"
-      ],
-      "scopes": [
-        "workspace"
-      ],
+      "resources": ["system.audit_exports", "system.audit"],
+      "actions": ["view", "create", "update", "delete", "manage", "export"],
+      "scopes": ["workspace"],
       "permission_keys": [
         "system.audit.view.workspace",
         "system.audit.export.workspace",
@@ -1273,15 +1088,9 @@
       "files": {
         "drizzle/migrations/0246_audit_index_service_expression.sql": "0bd8c51e9ff82a5affcd91a4d40a728e585a5383c44d90dbcee3aa121bf3a19c"
       },
-      "resources": [
-        "system.audit"
-      ],
-      "actions": [
-        "normalize_index_expression"
-      ],
-      "scopes": [
-        "service"
-      ],
+      "resources": ["system.audit"],
+      "actions": ["normalize_index_expression"],
+      "scopes": ["service"],
       "permission_keys": [],
       "rationale": "An existing service audit writer must evaluate the pure IMMUTABLE input-only tenant expression used by the audit index. The normalizer reads no table and grants no business row access. The mandatory pagination test inserts as service_role; browser raw payload ACL and the five SQL audit denials remain enforced.",
       "controls": [
@@ -1326,18 +1135,9 @@
       }
     },
     {
-      "resources": [
-        "system.phone_normalization",
-        "system.rbac_diagnostics",
-        "system.roles"
-      ],
-      "actions": [
-        "view",
-        "manage"
-      ],
-      "scopes": [
-        "workspace"
-      ],
+      "resources": ["system.phone_normalization", "system.rbac_diagnostics", "system.roles"],
+      "actions": ["view", "manage"],
+      "scopes": ["workspace"],
       "permission_keys": [
         "system.phone_normalization.view.workspace",
         "system.phone_normalization.manage.workspace",
@@ -1412,18 +1212,9 @@
       }
     },
     {
-      "resources": [
-        "system.phone_normalization",
-        "system.rbac_diagnostics",
-        "system.roles"
-      ],
-      "actions": [
-        "view",
-        "manage"
-      ],
-      "scopes": [
-        "workspace"
-      ],
+      "resources": ["system.phone_normalization", "system.rbac_diagnostics", "system.roles"],
+      "actions": ["view", "manage"],
+      "scopes": ["workspace"],
       "permission_keys": [
         "system.phone_normalization.view.workspace",
         "system.phone_normalization.manage.workspace",
@@ -1485,15 +1276,9 @@
       "files": {
         "src/lib/access-control/active-workspace.middleware.ts": "213027912349a608132c954a0dfdf3156a9d352d0600e687942fb568520c64d9"
       },
-      "resources": [
-        "system.profile"
-      ],
-      "actions": [
-        "view"
-      ],
-      "scopes": [
-        "own"
-      ],
+      "resources": ["system.profile"],
+      "actions": ["view"],
+      "scopes": ["own"],
       "permission_keys": [],
       "rationale": "Authenticated metadata callers bind the current actor to the actual active selected workspace. This personal context is not a grant to read or change any business record. Other-user inspection has the independent admin/IAM boundary.",
       "controls": [
@@ -1543,21 +1328,10 @@
       "files": {
         "drizzle/migrations/0249_permission_introspection_boundary.sql": "7bf00e5f105cecfba1aa4bbf139f881f7346754e5fe54a12773cdd1d728439ba"
       },
-      "resources": [
-        "system.rbac_diagnostics",
-        "system.roles"
-      ],
-      "actions": [
-        "view"
-      ],
-      "scopes": [
-        "own",
-        "workspace"
-      ],
-      "permission_keys": [
-        "system.rbac_diagnostics.view.workspace",
-        "system.roles.view.workspace"
-      ],
+      "resources": ["system.rbac_diagnostics", "system.roles"],
+      "actions": ["view"],
+      "scopes": ["own", "workspace"],
+      "permission_keys": ["system.rbac_diagnostics.view.workspace", "system.roles.view.workspace"],
       "rationale": "Own effective permission metadata is personal and membership-bound. Another-user inspection additionally requires selected tenant, active platform admin and the diagnostics OR IAM key. Trusted service execution remains allowed. Unchecked resolver stays private. Canonical data scope excludes foreign creator-owned bindings; denied scope is neutral own, never a grant. Field simulation executes the real target shared_field_context in the established private transaction context and restores actor identity. No role grants or stored scope values change.",
       "controls": [
         {
@@ -1614,17 +1388,9 @@
       "files": {
         "drizzle/migrations/0250_sales_dashboard_protected_reads.sql": "60783d5ed5d0c573dc9a754cc4edabc0134239c46fff82b9ad12c6558f3c1754"
       },
-      "resources": [
-        "techsales.deals"
-      ],
-      "actions": [
-        "view"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "resources": ["techsales.deals"],
+      "actions": ["view"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "techsales.deals.view.own",
         "techsales.deals.view.team",
@@ -1691,14 +1457,8 @@
         "techsales.notes",
         "techsales.tasks"
       ],
-      "actions": [
-        "view"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "actions": ["view"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "techsales.deals.view.workspace",
         "techsales.activities.view.workspace",
@@ -1753,14 +1513,8 @@
         "techsales.companies",
         "techsales.deals"
       ],
-      "actions": [
-        "view"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "actions": ["view"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "system.audit.view.own",
         "system.audit.view.team",
@@ -1823,20 +1577,8 @@
         "techfinance.payments",
         "techfinance.entry_cancellation"
       ],
-      "actions": [
-        "view",
-        "update",
-        "delete",
-        "create",
-        "manage",
-        "export",
-        "assign"
-      ],
-      "scopes": [
-        "own",
-        "team",
-        "workspace"
-      ],
+      "actions": ["view", "update", "delete", "create", "manage", "export", "assign"],
+      "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "techfinance.entries.view.workspace",
         "techfinance.entries.update.workspace",
@@ -1894,6 +1636,76 @@
         "inactive_member": {
           "file": "src/lib/access-control/permission-postgres-ci.test.ts",
           "name": "SQL financial detail denies inactive member"
+        }
+      }
+    },
+    {
+      "id": "inbox-protected-identity-reads",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0253_inbox_protected_identity.sql": "bc2a6d04c876718a08cb28aac86236453f21aec1fc00f3d1f234893a5dd6a797"
+      },
+      "resources": [
+        "techsales.inbox.email",
+        "techsales.inbox.whatsapp",
+        "techsales.inbox.chat",
+        "techsales.contacts",
+        "techsales.leads"
+      ],
+      "actions": ["view"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techsales.inbox.email.view.own",
+        "techsales.inbox.email.view.team",
+        "techsales.inbox.email.view.workspace",
+        "techsales.inbox.whatsapp.view.own",
+        "techsales.inbox.whatsapp.view.team",
+        "techsales.inbox.whatsapp.view.workspace",
+        "techsales.inbox.chat.view.own",
+        "techsales.inbox.chat.view.team",
+        "techsales.inbox.chat.view.workspace"
+      ],
+      "rationale": "Invoker RPCs retain channel RLS and use existing protected identity views instead of revoked raw fields. No new grants, roles or bypass. Hidden identity fields cannot influence search; pagination/counts remain permission filtered.",
+      "controls": [
+        {
+          "file": "drizzle/migrations/0253_inbox_protected_identity.sql",
+          "symbol": "get_inbox_unified_page"
+        },
+        {
+          "file": "drizzle/migrations/0253_inbox_protected_identity.sql",
+          "symbol": "get_inbox_channel_page"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0253_inbox_protected_identity.sql",
+          "symbol": "get_inbox_unified_page"
+        },
+        {
+          "file": "drizzle/migrations/0253_inbox_protected_identity.sql",
+          "symbol": "get_inbox_channel_page"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "inbox SQL permits authorized member with protected identity grants"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "inbox SQL denies missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "inbox SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "inbox SQL isolates foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "inbox SQL rejects inactive member"
         }
       }
     }

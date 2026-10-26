@@ -39,7 +39,7 @@ let endpoint = "",
   started = false;
 let db: ReturnType<typeof postgres>;
 const accepted: string[] = [];
-const expected = 66;
+const expected = 73;
 let cleaned = false;
 function report() {
   mkdirSync(".verification", { recursive: true });
@@ -297,6 +297,43 @@ beforeAll(async () => {
   await db.unsafe(
     readFileSync("drizzle/migrations/0251_deal_related_activity_history.sql", "utf8"),
   );
+  await db.unsafe(readFileSync("tests/fixtures/inbox-ci.sql", "utf8"));
+  // Use the production protected views and policies verbatim. Scaffold only the
+  // unused identity columns as text; identifiers/workspace columns retain UUIDs.
+  const viewSource = readFileSync("drizzle/migrations/0228_order5_fields_prepare.sql", "utf8");
+  const policySource = readFileSync("drizzle/migrations/0223_order4_sales_activate.sql", "utf8");
+  for (const table of ["contacts", "leads"]) {
+    const start = viewSource.indexOf(`CREATE VIEW public.shared_fields_${table} `);
+    const end = viewSource.indexOf(
+      `GRANT SELECT ON public.shared_fields_${table} TO authenticated;`,
+      start,
+    );
+    const view =
+      viewSource.slice(start, end) +
+      `GRANT SELECT ON public.shared_fields_${table} TO authenticated;`;
+    const columns = [...new Set([...view.matchAll(/b\."?([a-z_0-9]+)"?/g)].map((m) => m[1]))];
+    for (const column of columns)
+      await db.unsafe(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS "${column}" text`);
+    await db.unsafe(
+      `GRANT SELECT (${columns.map((c) => '"' + c + '"').join(",")}) ON ${table} TO techerp_shared_fields`,
+    );
+    await db.unsafe(view);
+  }
+  for (const table of [
+    "contacts",
+    "leads",
+    "email_threads",
+    "whatsapp_conversations",
+    "live_chat_sessions",
+  ]) {
+    await db.unsafe(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
+    const line = policySource
+      .split("\n")
+      .find((line) => line.startsWith(`CREATE POLICY sales_view ON public."${table}" FOR SELECT`));
+    if (!line) throw Error("Missing production inbox policy: " + table);
+    await db.unsafe(line);
+  }
+  await db.unsafe(readFileSync("drizzle/migrations/0253_inbox_protected_identity.sql", "utf8"));
   await db.unsafe(
     "CREATE FUNCTION public.ci_delegated_probe() RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$ SELECT coalesce((public.work_subject_context('aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000003')->'keys')?'techsales.leads.view.own',false) $$;GRANT EXECUTE ON FUNCTION public.ci_delegated_probe() TO authenticated;",
   );
@@ -357,6 +394,7 @@ async function subject(
     service?: boolean;
     hiddenScore?: boolean;
     hiddenDealValue?: boolean;
+    hiddenContactEmail?: boolean;
     boundKey?: string;
   } = {},
 ) {
@@ -380,6 +418,8 @@ async function subject(
         await tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${R},${key},'deny') on conflict(workspace_id,role_id,permission_key) do update set effect='deny'`;
       if (options.hiddenDealValue)
         await tx`insert into field_permission_rules(resource,field,mode,workspace_id,role_id) values('techsales.deals','value','hidden',${W},${R})`;
+      if (options.hiddenContactEmail)
+        await tx`insert into field_permission_rules(resource,field,mode,workspace_id,role_id) values('techsales.contacts','email','hidden',${W},${R})`;
       if (options.hiddenScore)
         await tx`insert into field_permission_rules(resource,field,mode,workspace_id,role_id) values('techsales.leads','score','hidden',${W},${R})`;
       const session = randomUUID();
@@ -1287,4 +1327,108 @@ it("SQL financial detail denies inactive member", async () => {
     { keys: financeKeys, inactive: true },
   );
   accepted.push("finance_denies_inactive_member");
+});
+
+const inboxKeys = [
+  "techsales.contacts.view.workspace",
+  "techsales.leads.view.workspace",
+  ...["email", "whatsapp", "chat"].map((channel) => `techsales.inbox.${channel}.view.workspace`),
+];
+async function inboxPages(tx: postgres.TransactionSql, search: string | null = null) {
+  const [unified] = await tx`select get_inbox_unified_page(p_search=>${search}) as page`;
+  const pages = [unified.page];
+  for (const channel of ["email", "whatsapp", "chat"])
+    pages.push(
+      (
+        await tx`select get_inbox_channel_page(p_channel=>${channel},p_search=>${search}) as page`
+      )[0].page,
+    );
+  return pages;
+}
+it("inbox SQL permits authorized member with protected identity grants", async () => {
+  await subject(
+    async (tx) => {
+      const pages = await inboxPages(tx);
+      expect(pages.map((p) => p.total)).toEqual([6, 2, 2, 2]);
+      expect(
+        (
+          await tx`select has_column_privilege(current_user,'contacts','email','SELECT') as allowed`
+        )[0].allowed,
+      ).toBe(false);
+      expect(
+        pages[0].items.some((i: { contact_name: string }) => i.contact_name === "CI Contact"),
+      ).toBe(true);
+    },
+    { keys: inboxKeys },
+  );
+  accepted.push("inbox-permitted");
+});
+it("inbox SQL denies missing permission", async () => {
+  await subject(
+    async (tx) => {
+      expect((await inboxPages(tx)).map((p) => p.total)).toEqual([0, 0, 0, 0]);
+    },
+    { keys: [] },
+  );
+  accepted.push("inbox-missing");
+});
+it("inbox SQL respects explicit deny", async () => {
+  await subject(
+    async (tx) => {
+      expect((await inboxPages(tx)).map((p) => p.total)).toEqual([0, 0, 0, 0]);
+    },
+    { keys: inboxKeys, denies: inboxKeys.filter((k) => k.includes(".inbox.")) },
+  );
+  accepted.push("inbox-deny");
+});
+it("inbox SQL isolates foreign workspace", async () => {
+  await subject(
+    async (tx) => {
+      expect((await inboxPages(tx)).map((p) => p.total)).toEqual([0, 0, 0, 0]);
+    },
+    { keys: inboxKeys, workspace: B },
+  );
+  accepted.push("inbox-workspace");
+});
+it("inbox SQL rejects inactive member", async () => {
+  await subject(
+    async (tx) => {
+      expect((await inboxPages(tx)).map((p) => p.total)).toEqual([0, 0, 0, 0]);
+    },
+    { keys: inboxKeys, inactive: true },
+  );
+  accepted.push("inbox-inactive");
+});
+it("inbox SQL cannot search hidden contact email", async () => {
+  await subject(
+    async (tx) => {
+      expect((await inboxPages(tx, "private-identity")).map((p) => p.total)).toEqual([3, 1, 1, 1]);
+    },
+    { keys: inboxKeys },
+  );
+  await subject(
+    async (tx) => {
+      expect((await inboxPages(tx, "private-identity")).map((p) => p.total)).toEqual([0, 0, 0, 0]);
+    },
+    { keys: inboxKeys, hiddenContactEmail: true },
+  );
+  accepted.push("inbox-hidden-field");
+});
+it("inbox SQL preserves cursor pagination and identity search", async () => {
+  await subject(
+    async (tx) => {
+      expect((await inboxPages(tx, "CI Contact")).map((p) => p.total)).toEqual([3, 1, 1, 1]);
+      const [first] = await tx`select get_inbox_unified_page(p_page_size=>1) as page`;
+      expect(first.page.has_more).toBe(true);
+      const c = first.page.next_cursor;
+      const [next] =
+        await tx`select get_inbox_unified_page(p_page_size=>1,p_cursor_at=>${c.at}::timestamptz,p_cursor_src=>${c.src}::smallint,p_cursor_id=>${c.id}::uuid) as page`;
+      expect(next.page.items[0].id + next.page.items[0].channel).not.toBe(
+        first.page.items[0].id + first.page.items[0].channel,
+      );
+      expect(next.page.total).toBe(6);
+    },
+    { keys: inboxKeys },
+  );
+  accepted.push("inbox-pagination");
 });
