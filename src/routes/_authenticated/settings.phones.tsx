@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -71,6 +72,7 @@ export const Route = createFileRoute("/_authenticated/settings/phones")({
 const nf = new Intl.NumberFormat("pt-BR");
 
 function PhonesSettingsPage() {
+  const access = usePermissions();
   const qc = useQueryClient();
   const getFn = useServerFn(getPhoneSettings);
   const saveFn = useServerFn(updatePhoneCountry);
@@ -84,7 +86,16 @@ function PhonesSettingsPage() {
   const [page, setPage] = useState(0);
   const [draftCountry, setDraftCountry] = useState<string | null>(null);
 
-  const settingsQ = useQuery({ queryKey: ["phone-settings"], queryFn: () => getFn() });
+  const settingsQ = useQuery({
+    queryKey: ["phone-settings", access.workspaceId],
+    queryFn: () => getFn(),
+    enabled: !access.isLoading && !access.isError && !!access.workspaceId,
+  });
+  const canManage =
+    !!settingsQ.data?.canManage &&
+    !access.isLoading &&
+    !access.isError &&
+    access.permissions.has("system.phone_normalization.manage.workspace");
   const runId = settingsQ.data?.run?.id ?? null;
   const reviewQ = useQuery({
     queryKey: ["phone-review", runId, filter, page],
@@ -199,7 +210,7 @@ function PhonesSettingsPage() {
             <Select
               value={country}
               onValueChange={setDraftCountry}
-              disabled={!s.isAdmin || saveMut.isPending}
+              disabled={!canManage || saveMut.isPending}
             >
               <SelectTrigger id="phone-country">
                 <SelectValue />
@@ -215,7 +226,7 @@ function PhonesSettingsPage() {
           </div>
           <Button
             disabled={
-              !s.isAdmin || !draftCountry || draftCountry === s.country || saveMut.isPending
+              !canManage || !draftCountry || draftCountry === s.country || saveMut.isPending
             }
             onClick={() => draftCountry && saveMut.mutate(draftCountry)}
           >
@@ -449,7 +460,8 @@ function PhonesSettingsPage() {
         error={detailQ.isError ? (detailQ.error as Error).message : null}
         pending={resolveMut.isPending ? (resolveMut.variables ?? null) : null}
         position={reviewPos >= 0 ? `${reviewPos + 1} de ${legacyOnPage.length} nesta página` : null}
-        onAction={(a) => resolveMut.mutate(a)}
+        canManage={canManage}
+        onAction={(a) => canManage && resolveMut.mutate(a)}
       />
     </div>
   );
