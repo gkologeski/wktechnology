@@ -109,7 +109,7 @@ export const simulateUser = createServerFn({ method: "POST" })
     if (target.error || !target.data)
       throw new Error("Usuário não pertence ao workspace selecionado.");
     const [permsRes, scopeRes] = await Promise.all([
-      supabase.rpc("user_effective_permissions", {
+      supabase.rpc("effective_permissions_array", {
         _user_id: data.user_id,
         _workspace_id: workspaceId,
       }),
@@ -118,9 +118,9 @@ export const simulateUser = createServerFn({ method: "POST" })
         _workspace_id: workspaceId,
       }),
     ]);
-    const permissions = ((permsRes.data ?? []) as Array<{ permission_key: string } | string>)
-      .map((r) => (typeof r === "string" ? r : r.permission_key))
-      .filter(Boolean);
+    if (permsRes.error) throw new Error(permsRes.error.message);
+    if (scopeRes.error) throw new Error(scopeRes.error.message);
+    const permissions = permsRes.data ?? [];
 
     const fields = await workRpc<{
       workspace_id: string | null;

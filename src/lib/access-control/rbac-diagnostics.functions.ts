@@ -127,10 +127,17 @@ export const listWorkspaceMembersForDiagnostics = createServerFn({ method: "GET"
 export const listPermissionCatalog = createServerFn({ method: "GET" })
   .middleware([requireWorkspaceContext()])
   .handler(async ({ context }): Promise<PermissionCatalogRow[]> => {
-    const { data } = await context.supabase
-      .from("permissions")
-      .select("key, module, resource, action, scope, label_pt");
-    return (data ?? []) as PermissionCatalogRow[];
+    const rows: PermissionCatalogRow[] = [];
+    for (let offset = 0; ; offset += 500) {
+      const { data, error } = await context.supabase
+        .from("permissions")
+        .select("key, module, resource, action, scope, label_pt")
+        .order("key")
+        .range(offset, offset + 499);
+      if (error) throw new Error(error.message);
+      rows.push(...(data ?? []));
+      if ((data ?? []).length < 500) return rows;
+    }
   });
 
 export const getRbacDiagnostics = createServerFn({ method: "GET" })
@@ -200,7 +207,7 @@ export const getRbacDiagnostics = createServerFn({ method: "GET" })
           .maybeSingle(),
         supabase.rpc("is_workspace_admin_v2", { _workspace: ws.workspaceId, _user: targetId }),
         supabase.rpc("is_platform_admin", { _user: targetId }),
-        supabase.rpc("user_effective_permissions", {
+        supabase.rpc("effective_permissions_array", {
           _user_id: targetId,
           _workspace_id: ws.workspaceId,
         }),
@@ -217,19 +224,16 @@ export const getRbacDiagnostics = createServerFn({ method: "GET" })
       ],
     );
 
-    const permissions = ((permsRes.data ?? []) as Array<string | Record<string, string>>).map(
-      (r) => (typeof r === "string" ? r : (Object.values(r)[0] as string)),
-    );
-
+    if (permsRes.error) throw new Error(permsRes.error.message);
+    const permissions = permsRes.data ?? [];
     const labels: Record<string, string> = {};
-    if (permissions.length > 0) {
-      const { data: meta } = await supabase
+    for (let offset = 0; offset < permissions.length; offset += 100) {
+      const { data: meta, error } = await supabase
         .from("permissions")
         .select("key, label_pt")
-        .in("key", permissions);
-      for (const row of (meta ?? []) as Array<{ key: string; label_pt: string }>) {
-        labels[row.key] = row.label_pt;
-      }
+        .in("key", permissions.slice(offset, offset + 100));
+      if (error) throw new Error(error.message);
+      for (const row of meta ?? []) labels[row.key] = row.label_pt;
     }
 
     type UjrRow = {
