@@ -485,6 +485,8 @@
     "system.onboarding_templates.view.own",
     "system.onboarding_templates.view.team",
     "system.onboarding_templates.view.workspace",
+    "system.phone_normalization.manage.workspace",
+    "system.phone_normalization.view.workspace",
     "system.pipelines.create.own",
     "system.pipelines.create.team",
     "system.pipelines.create.workspace",
@@ -2796,6 +2798,12 @@
     },
     "system.audit_exports.manage.workspace": {
       "migration": "drizzle/migrations/0247_audit_export_authorization.sql"
+    },
+    "system.phone_normalization.view.workspace": {
+      "migration": "drizzle/migrations/0248_admin_settings_matrix.sql"
+    },
+    "system.phone_normalization.manage.workspace": {
+      "migration": "drizzle/migrations/0248_admin_settings_matrix.sql"
     }
   }
 }

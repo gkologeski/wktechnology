@@ -2,7 +2,8 @@ import { workRpc } from "./work-core.server";
 // Diagnóstico de RBAC — leitura das permissões efetivas do usuário atual
 // (ou de outro membro do workspace, quando o solicitante é admin/owner).
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminSetting } from "./admin-setting.middleware";
+import { requireWorkspaceContext } from "./active-workspace.middleware";
 import type { PermissionCatalogRow } from "@/lib/access-control/action-matrix";
 
 export type RbacRoleInfo = { id: string; name: string; is_primary: boolean };
@@ -95,7 +96,7 @@ async function resolveWorkspace(supabase: Parameters<typeof workRpc>[0], userId:
 
 /** Membros do workspace ativo — usado pelo seletor "inspecionar outro usuário". */
 export const listWorkspaceMembersForDiagnostics = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminSetting("system.rbac_diagnostics")])
   .handler(async ({ context }): Promise<WorkspaceMemberOption[]> => {
     const { supabase, userId } = context;
     const ws = await resolveWorkspace(supabase, userId);
@@ -124,7 +125,7 @@ export const listWorkspaceMembersForDiagnostics = createServerFn({ method: "GET"
 
 /** Catálogo global de permissões (sem dados sensíveis) para montar a matriz de ações. */
 export const listPermissionCatalog = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .handler(async ({ context }): Promise<PermissionCatalogRow[]> => {
     const { data } = await context.supabase
       .from("permissions")
@@ -134,7 +135,7 @@ export const listPermissionCatalog = createServerFn({ method: "GET" })
 
 export const getRbacDiagnostics = createServerFn({ method: "GET" })
   .inputValidator((input: { userId?: string } | undefined) => input ?? {})
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .handler(async ({ data, context }): Promise<RbacDiagnostics> => {
     const { supabase, userId } = context;
     const ws = await resolveWorkspace(supabase, userId);
@@ -142,6 +143,10 @@ export const getRbacDiagnostics = createServerFn({ method: "GET" })
     // Somente admin/owner pode inspecionar outro usuário.
     let targetId = userId;
     if (data.userId && data.userId !== userId) {
+      await workRpc(supabase, "admin_setting_authorize", {
+        r: "system.rbac_diagnostics",
+        a: "view",
+      });
       const isOwner = ws.createdBy === userId;
       let isAdmin = isOwner;
       if (!isAdmin && ws.workspaceId) {
@@ -202,11 +207,13 @@ export const getRbacDiagnostics = createServerFn({ method: "GET" })
         supabase
           .from("user_job_roles")
           .select("role_id, is_primary, job_roles(id, name)")
-          .eq("user_id", targetId),
+          .eq("user_id", targetId)
+          .or(`workspace_id.eq.${ws.workspaceId},owner_id.eq.${ws.workspaceId}`),
         supabase
           .from("user_permission_sets")
           .select("set_id, permission_sets(id, name, module)")
-          .eq("user_id", targetId),
+          .eq("user_id", targetId)
+          .or(`workspace_id.eq.${ws.workspaceId},owner_id.eq.${ws.workspaceId}`),
       ],
     );
 

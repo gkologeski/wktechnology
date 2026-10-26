@@ -39,7 +39,7 @@ let endpoint = "",
   started = false;
 let db: ReturnType<typeof postgres>;
 const accepted: string[] = [];
-const expected = 30;
+const expected = 48;
 let cleaned = false;
 function report() {
   mkdirSync(".verification", { recursive: true });
@@ -149,6 +149,13 @@ beforeAll(async () => {
   await db`insert into user_group_members(group_id,user_id) values(${R},${U}),(${R},${P})`;
   await db`insert into job_roles(id,workspace_id) values(${R},${W})`;
   await db`insert into user_job_roles(role_id,user_id,workspace_id,owner_id) values(${R},${U},${W},${W})`;
+  const peerRole = "30000000-0000-4000-8000-0000000000a9";
+  await db`insert into job_roles(id,workspace_id) values(${peerRole},${W})`;
+  await db`insert into user_job_roles(role_id,user_id,workspace_id,owner_id) values(${peerRole},${P},${W},${W})`;
+  await db`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${peerRole},'techsales.leads.view.own','grant')`;
+  const foreignScopeRole = "30000000-0000-4000-8000-0000000000aa";
+  await db`insert into job_roles(id,workspace_id,data_scope) values(${foreignScopeRole},${B},'workspace')`;
+  await db`insert into user_job_roles(role_id,user_id,workspace_id,owner_id) values(${foreignScopeRole},${P},${B},${O})`;
   for (let i = 0; i < 3; i++) {
     const w = i === 2 ? B : W,
       owner = i === 0 ? U : P,
@@ -169,6 +176,9 @@ beforeAll(async () => {
       owner = i === 0 ? U : P,
       id = IDs[i];
     await db`insert into leads(id,workspace_id,owner_id,assigned_to) values(${id},${w},${owner},${owner})`;
+    await db`insert into access_audit_log(id,workspace_id,actor_id,details) values(${id},${w},${owner},'{}')`;
+    await db`insert into phone_normalization_runs(id,workspace_id,normalizer_version,mode,status,criteria) values(${id},${w},'CI','dry_run','done','fixture')`;
+    await db`insert into phone_normalization_items(run_id,workspace_id,table_name,row_id,column_name,original_value,classification) values(${id},${w},'leads',${id},'phone','+12025550123','review')`;
     await db`insert into audit_exports(id,owner_id,workspace_id,name,destination,hmac_secret) values(${id},${owner},${w},'CI export','webhook','not-a-secret-fixture')`;
     const payload = {
       workspace_id: w,
@@ -211,8 +221,17 @@ beforeAll(async () => {
       "user_has_permission",
     ),
   );
+  await db.unsafe(
+    sourceFunction(
+      "supabase/migrations/20260719232609_7f93d46f-e789-4bee-8545-3070c21bb549.sql",
+      "is_workspace_admin_v2",
+    ),
+  );
   for (const [file, name] of functions)
     await db.unsafe(sourceFunction("drizzle/migrations/" + file + ".sql", name));
+  await db.unsafe(
+    "CREATE POLICY access_audit_admin_baseline ON access_audit_log FOR SELECT TO authenticated USING(is_workspace_member(workspace_id,auth.uid()) AND is_workspace_admin_v2(workspace_id,auth.uid()));CREATE POLICY phone_admin_baseline ON phone_normalization_runs FOR SELECT TO authenticated USING(is_workspace_member(workspace_id,auth.uid()) AND is_workspace_admin_v2(workspace_id,auth.uid()));CREATE POLICY phone_admin_baseline ON phone_normalization_items FOR SELECT TO authenticated USING(is_workspace_member(workspace_id,auth.uid()) AND is_workspace_admin_v2(workspace_id,auth.uid()));ALTER TABLE workspaces ENABLE ROW LEVEL SECURITY;CREATE POLICY ws_ci_read ON workspaces FOR SELECT TO authenticated USING(is_workspace_member(id,auth.uid()));CREATE POLICY ws_ci_update ON workspaces FOR UPDATE TO authenticated USING(is_workspace_member(id,auth.uid()) AND is_workspace_admin_v2(id,auth.uid())) WITH CHECK(is_workspace_member(id,auth.uid()) AND is_workspace_admin_v2(id,auth.uid()));",
+  );
   await db.unsafe(
     "ALTER TABLE people ENABLE ROW LEVEL SECURITY;CREATE POLICY people_read ON people FOR SELECT TO authenticated USING(hr_people_access(workspace_id,'view',profile_id,manager_id,coalesce(assigned_to,created_by,owner_id)));ALTER TABLE people_documents ENABLE ROW LEVEL SECURITY;CREATE POLICY hr_child_view ON people_documents FOR SELECT TO authenticated USING(hr_person_resource_access(workspace_id,person_id,'techpeople.documents','view',created_by,assigned_to));",
   );
@@ -225,8 +244,13 @@ beforeAll(async () => {
     "0245_audit_read_boundary",
     "0246_audit_index_service_expression",
     "0247_audit_export_authorization",
+    "0248_admin_settings_matrix",
+    "0249_permission_introspection_boundary",
   ])
     await db.unsafe(readFileSync("drizzle/migrations/" + migration + ".sql", "utf8"));
+  await db.unsafe(
+    "CREATE FUNCTION public.ci_delegated_probe() RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$ SELECT coalesce((public.work_subject_context('aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000003')->'keys')?'techsales.leads.view.own',false) $$;GRANT EXECUTE ON FUNCTION public.ci_delegated_probe() TO authenticated;",
+  );
 }, 180000);
 afterAll(async () => {
   try {
@@ -277,6 +301,10 @@ async function subject(
     inactive?: boolean;
     readonly?: boolean;
     apiSubject?: boolean;
+    admin?: boolean;
+    adminOther?: boolean;
+    peerScope?: "own" | "team" | "workspace" | "custom";
+    hiddenPeerScore?: boolean;
     service?: boolean;
     hiddenScore?: boolean;
     boundKey?: string;
@@ -286,6 +314,14 @@ async function subject(
   try {
     await db.begin(async (tx) => {
       await tx`update profiles set active_workspace_id=${options.workspace ?? W} where id=${U}`;
+      if (options.peerScope)
+        await tx`update job_roles set data_scope=${options.peerScope} where id='30000000-0000-4000-8000-0000000000a9'`;
+      if (options.hiddenPeerScore)
+        await tx`insert into field_permission_rules(resource,field,mode,workspace_id,role_id) values('techsales.leads','score','hidden',${W},'30000000-0000-4000-8000-0000000000a9')`;
+      if (options.admin)
+        await tx`update workspace_members set role='admin' where user_id=${U} and workspace_id=${W}`;
+      if (options.adminOther)
+        await tx`update workspace_members set role='admin' where user_id=${U} and workspace_id=${B}`;
       if (options.inactive)
         await tx`update workspace_members set status='inactive' where workspace_id=${W} and user_id=${U}`;
       for (const key of options.keys ?? grants)
@@ -725,3 +761,244 @@ it("SQL audit export pagination preserves rows sharing a timestamp", async () =>
   );
   accepted.push("export_timestamp_pagination");
 }, 30000);
+
+const phoneKeys = [
+  "system.phone_normalization.view.workspace",
+  "system.phone_normalization.manage.workspace",
+];
+it("SQL admin settings allow explicitly authorized platform maintenance", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from phone_normalization_runs where id=${IDs[0]}`).toHaveLength(1);
+      expect(
+        (await tx`select admin_setting_authorize('system.phone_normalization','manage') c`)[0].c
+          .can_manage,
+      ).toBe(true);
+      expect(
+        await tx`update workspaces set default_phone_country='PT' where id=${W} returning id`,
+      ).toHaveLength(1);
+    },
+    { keys: phoneKeys, admin: true },
+  );
+  accepted.push("admin_setting_allowed");
+});
+it("SQL admin settings reject missing permission", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from phone_normalization_runs`).toHaveLength(0);
+    },
+    { keys: [] },
+  );
+  accepted.push("admin_setting_missing");
+});
+it("SQL admin settings preserve explicit deny for administrators", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from phone_normalization_runs`).toHaveLength(0);
+    },
+    { keys: phoneKeys, admin: true, denies: [phoneKeys[0]] },
+  );
+  accepted.push("admin_setting_deny");
+});
+it("SQL admin settings reject a different selected workspace", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from phone_normalization_runs where id=${IDs[0]}`).toHaveLength(0);
+    },
+    { keys: phoneKeys, admin: true, adminOther: true, workspace: B },
+  );
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`update workspaces set default_phone_country='PT' where id=${W}`;
+      },
+      { keys: phoneKeys, admin: true, adminOther: true, workspace: B },
+    ),
+  ).rejects.toMatchObject({ code: "42501" });
+  accepted.push("admin_setting_foreign");
+});
+it("SQL admin settings reject inactive membership", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from phone_normalization_runs`).toHaveLength(0);
+    },
+    { keys: phoneKeys, admin: true, inactive: true },
+  );
+  accepted.push("admin_setting_inactive");
+});
+it("SQL maintenance keys never replace platform administrator authority", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select admin_setting_authorize('system.phone_normalization','manage')`;
+      },
+      { keys: phoneKeys },
+    ),
+  ).rejects.toMatchObject({ code: "42501" });
+  accepted.push("admin_setting_role_boundary");
+});
+it("SQL phone maintenance blocks revoked or readonly writes", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`update workspaces set default_phone_country='PT' where id=${W}`;
+      },
+      { keys: phoneKeys, admin: true, denies: [phoneKeys[1]] },
+    ),
+  ).rejects.toMatchObject({ code: "42501" });
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select phone_review_resolve(0,'clear')`;
+      },
+      { keys: phoneKeys, admin: true, readonly: true },
+    ),
+  ).rejects.toMatchObject({ code: "42501" });
+  accepted.push("admin_setting_readonly");
+});
+
+it("SQL permission metadata allows the current subject", async () => {
+  await subject(
+    async (tx) => {
+      expect(
+        (await tx`select user_effective_permissions(${U},${W}) key`).map((x) => x.key),
+      ).toContain("techsales.leads.view.own");
+    },
+    { keys: ["techsales.leads.view.own"] },
+  );
+  accepted.push("permission_metadata_self");
+});
+it("SQL permission metadata rejects inspection without authority", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select user_effective_permissions(${P},${W}) key`).toHaveLength(0);
+      expect((await tx`select user_data_scope(${P},${W}) scope`)[0].scope).toBe("own");
+    },
+    { keys: ["system.rbac_diagnostics.view.workspace"] },
+  );
+  accepted.push("permission_metadata_missing");
+});
+it("SQL permission metadata honors explicit admin inspection denies", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select user_effective_permissions(${P},${W}) key`).toHaveLength(0);
+      expect((await tx`select user_data_scope(${P},${W}) scope`)[0].scope).toBe("own");
+    },
+    {
+      keys: [],
+      admin: true,
+      denies: ["system.rbac_diagnostics.view.workspace", "system.roles.view.workspace"],
+    },
+  );
+  accepted.push("permission_metadata_deny");
+});
+it("SQL permission metadata rejects foreign selected workspace", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select user_effective_permissions(${P},${W}) key`).toHaveLength(0);
+      expect((await tx`select user_data_scope(${P},${W}) scope`)[0].scope).toBe("own");
+    },
+    { keys: [], admin: true, adminOther: true, workspace: B },
+  );
+  accepted.push("permission_metadata_foreign");
+});
+it("SQL permission metadata rejects inactive inspecting member", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select user_effective_permissions(${P},${W}) key`).toHaveLength(0);
+      expect((await tx`select user_data_scope(${P},${W}) scope`)[0].scope).toBe("own");
+    },
+    { keys: [], admin: true, inactive: true },
+  );
+  accepted.push("permission_metadata_inactive");
+});
+it("SQL permission metadata permits authorized IAM and trusted service inspection", async () => {
+  for (const options of [
+    { keys: [], admin: true },
+    { keys: [], service: true },
+  ])
+    await subject(async (tx) => {
+      expect(
+        (await tx`select user_effective_permissions(${P},${W}) key`).map((x) => x.key),
+      ).toContain("techsales.leads.view.own");
+    }, options);
+  await subject(
+    async (tx) => {
+      expect((await tx`select user_data_scope(${P},${W}) scope`)[0].scope).toBe("own");
+    },
+    { keys: [], admin: true },
+  );
+  accepted.push("permission_metadata_authorized_inspection");
+});
+it("SQL permission metadata unchecked resolver is private", async () => {
+  await expect(
+    subject(async (tx) => {
+      await tx`select techerp_api.effective_permissions_unchecked(${P},${W})`;
+    }),
+  ).rejects.toMatchObject({ code: "42501" });
+  accepted.push("permission_metadata_private_resolver");
+});
+
+it("SQL IAM audit requires its key and selected workspace", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from access_audit_log`).toHaveLength(2);
+    },
+    { keys: [], admin: true },
+  );
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from access_audit_log`).toHaveLength(0);
+    },
+    { keys: [], admin: true, denies: ["system.roles.view.workspace"] },
+  );
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from access_audit_log where id=${IDs[0]}`).toHaveLength(0);
+    },
+    { keys: [], admin: true, adminOther: true, workspace: B },
+  );
+  accepted.push("iam_audit_scope");
+});
+it("SQL field simulation resolves target rules without inspector privilege leakage", async () => {
+  await subject(
+    async (tx) => {
+      const c = (await tx`select permission_field_context(${P},${W}) c`)[0].c;
+      expect(c.is_privileged).toBe(false);
+      expect(c.rules["techsales.leads"].score).toBe("hidden");
+      expect((await tx`select auth.uid() id`)[0].id).toBe(U);
+    },
+    { keys: [], admin: true, hiddenPeerScore: true },
+  );
+  accepted.push("field_simulation_subject");
+});
+it("SQL field simulation denies unauthorized inspection", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select permission_field_context(${P},${W})`;
+      },
+      { keys: [] },
+    ),
+  ).rejects.toMatchObject({ code: "42501" });
+  accepted.push("field_simulation_missing");
+});
+
+it("SQL trusted delegated capabilities remain private and usable without IAM rights", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select user_effective_permissions(${P},${W}) key`).toHaveLength(0);
+      expect((await tx`select ci_delegated_probe() allowed`)[0].allowed).toBe(true);
+    },
+    { keys: [] },
+  );
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select work_subject_context(${W},${P})`;
+      },
+      { keys: [] },
+    ),
+  ).rejects.toMatchObject({ code: "42501" });
+  accepted.push("private_delegated_capability");
+});

@@ -10,12 +10,13 @@ CREATE SCHEMA techerp_api;
 GRANT USAGE ON SCHEMA public,auth TO authenticated,anon,service_role;
 CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $$ SELECT coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb,'{}'::jsonb) $$;
 CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT (auth.jwt()->>'sub')::uuid $$;
-CREATE TABLE workspaces(id uuid PRIMARY KEY,created_by uuid,status text DEFAULT 'active');
+CREATE TABLE workspaces(id uuid PRIMARY KEY,created_by uuid,status text DEFAULT 'active',default_phone_country text DEFAULT 'BR',phone_strict_e164 boolean DEFAULT true);
 CREATE TABLE profiles(id uuid PRIMARY KEY,active_workspace_id uuid);
 CREATE TABLE workspace_members(workspace_id uuid,user_id uuid,role text DEFAULT 'member',status text DEFAULT 'active',PRIMARY KEY(workspace_id,user_id));
 CREATE TYPE public.perm_action AS ENUM('view','create','update','delete','manage','export','assign','approve');
 CREATE TABLE permissions(key text PRIMARY KEY,module text,resource text,action public.perm_action,scope text,label_pt text,description text,is_system boolean);
-CREATE TABLE job_roles(id uuid PRIMARY KEY,workspace_id uuid);
+CREATE TYPE public.data_scope AS ENUM('own','team','workspace','custom');
+CREATE TABLE job_roles(id uuid PRIMARY KEY,workspace_id uuid,data_scope public.data_scope DEFAULT 'own');
 CREATE TABLE user_job_roles(role_id uuid,user_id uuid,workspace_id uuid,owner_id uuid);
 CREATE TABLE permission_sets(id uuid PRIMARY KEY,workspace_id uuid,module text);
 CREATE TABLE user_permission_sets(user_id uuid,set_id uuid,workspace_id uuid,owner_id uuid);
@@ -65,3 +66,14 @@ CREATE TABLE audit_exports(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),owner_i
 CREATE TABLE audit_export_runs(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),owner_id uuid,workspace_id uuid,export_id uuid,started_at timestamptz DEFAULT now(),finished_at timestamptz,status text,records_count integer,error_message text,output_url text,created_at timestamptz DEFAULT now());
 GRANT SELECT,INSERT,UPDATE,DELETE ON audit_exports,audit_export_runs TO authenticated;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO service_role;
+
+CREATE TABLE phone_normalization_runs(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,normalizer_version text,mode text,status text,criteria text,counts jsonb DEFAULT '{}',notes text,created_at timestamptz DEFAULT now(),finished_at timestamptz,parent_run_id uuid);
+CREATE TABLE phone_normalization_items(id bigserial PRIMARY KEY,run_id uuid,workspace_id uuid,table_name text,row_id uuid,column_name text,original_value text,proposed_value text,proposed_ext text,classification text,reason text,applied_at timestamptz,rolled_back_at timestamptz,review_kind text,reviewed_by uuid,resolved_at timestamptz,correction_run_id uuid);
+ALTER TABLE phone_normalization_runs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE phone_normalization_items ENABLE ROW LEVEL SECURITY;
+GRANT SELECT ON phone_normalization_runs,phone_normalization_items TO authenticated;
+GRANT SELECT,UPDATE ON workspaces TO authenticated;
+
+CREATE TABLE access_audit_log(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,actor_id uuid,details jsonb);
+ALTER TABLE access_audit_log ENABLE ROW LEVEL SECURITY;
+GRANT SELECT ON access_audit_log TO authenticated;

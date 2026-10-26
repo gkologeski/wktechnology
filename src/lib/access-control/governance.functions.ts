@@ -4,7 +4,7 @@ import { workRpc } from "./work-core.server";
 // "Simular usuário" e "Relatórios".
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAdminSetting } from "./admin-setting.middleware";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SB = any;
@@ -45,7 +45,7 @@ export type AuditRow = {
 };
 
 export const listAuditLog = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminSetting("system.roles")])
   .inputValidator((i: unknown) =>
     z
       .object({
@@ -81,6 +81,9 @@ export type SimulationResult = {
   workspace_id: string;
   permissions: string[];
   data_scope: "own" | "team" | "workspace" | "custom";
+  active_membership: boolean;
+  invalid_field_rules: Array<{ resource: string; field: string; reason: string }>;
+  is_privileged: boolean;
   field_rules: Array<{
     resource: string;
     field: string;
@@ -89,7 +92,7 @@ export type SimulationResult = {
 };
 
 export const simulateUser = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminSetting("system.roles")])
   .inputValidator((i: unknown) => z.object({ user_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }): Promise<SimulationResult> => {
     const { supabase, userId } = context;
@@ -119,35 +122,17 @@ export const simulateUser = createServerFn({ method: "POST" })
       .map((r) => (typeof r === "string" ? r : r.permission_key))
       .filter(Boolean);
 
-    // Collect field rules matching the user's roles/sets
-    const [rolesRes, setsRes] = await Promise.all([
-      // Namespace canônico das atribuições é workspace_id (0128); sem fallback por usuário.
-      supabase
-        .from("user_job_roles")
-        .select("role_id")
-        .eq("workspace_id", workspaceId)
-        .eq("user_id", data.user_id),
-      supabase
-        .from("user_permission_sets")
-        .select("set_id")
-        .eq("workspace_id", workspaceId)
-        .eq("user_id", data.user_id),
-    ]);
-    const roleIds = ((rolesRes.data ?? []) as Array<{ role_id: string }>).map((r) => r.role_id);
-    const setIds = ((setsRes.data ?? []) as Array<{ set_id: string }>).map((r) => r.set_id);
-    const { data: rules } = await supabase
-      .from("field_permission_rules")
-      .select("resource, field, mode, role_id, set_id");
-    const applicable = (
-      (rules ?? []) as Array<{
-        resource: string;
-        field: string;
-        mode: "hidden" | "masked" | "readonly";
-        role_id: string | null;
-        set_id: string | null;
-      }>
-    ).filter(
-      (r) => (r.role_id && roleIds.includes(r.role_id)) || (r.set_id && setIds.includes(r.set_id)),
+    const fields = await workRpc<{
+      workspace_id: string | null;
+      rules: Record<string, Record<string, "hidden" | "masked" | "readonly">>;
+      invalid_rules: Array<{ resource: string; field: string; reason: string }>;
+      is_privileged: boolean;
+    }>(supabase, "permission_field_context", {
+      _user_id: data.user_id,
+      _workspace_id: workspaceId,
+    });
+    const applicable = Object.entries(fields.rules ?? {}).flatMap(([resource, items]) =>
+      Object.entries(items).map(([field, mode]) => ({ resource, field, mode })),
     );
 
     return {
@@ -155,6 +140,9 @@ export const simulateUser = createServerFn({ method: "POST" })
       workspace_id: workspaceId,
       permissions,
       data_scope: (scopeRes.data as SimulationResult["data_scope"]) ?? "own",
+      active_membership: fields.workspace_id === workspaceId,
+      invalid_field_rules: fields.invalid_rules ?? [],
+      is_privileged: fields.is_privileged,
       field_rules: applicable.map(({ resource, field, mode }) => ({ resource, field, mode })),
     };
   });
@@ -174,7 +162,7 @@ export type GovernanceReport = {
 };
 
 export const getGovernanceReport = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAdminSetting("system.roles")])
   .handler(async ({ context }): Promise<GovernanceReport | null> => {
     const { supabase, userId } = context;
     const workspaceId = await resolveWorkspace(supabase, userId);
@@ -183,9 +171,18 @@ export const getGovernanceReport = createServerFn({ method: "GET" })
 
     const [membersRes, rolesRes, setsRes, rulesRes, ujrRes] = await Promise.all([
       supabase.from("workspace_members").select("user_id").eq("workspace_id", workspaceId),
-      supabase.from("job_roles").select("id, name, is_system, data_scope"),
-      supabase.from("permission_sets").select("id, is_system"),
-      supabase.from("field_permission_rules").select("id"),
+      supabase
+        .from("job_roles")
+        .select("id, name, is_system, data_scope")
+        .or(`workspace_id.is.null,workspace_id.eq.${workspaceId}`),
+      supabase
+        .from("permission_sets")
+        .select("id, is_system")
+        .or(`workspace_id.is.null,workspace_id.eq.${workspaceId}`),
+      supabase
+        .from("field_permission_rules")
+        .select("id")
+        .or(`workspace_id.is.null,workspace_id.eq.${workspaceId}`),
       supabase.from("user_job_roles").select("user_id, role_id").eq("workspace_id", workspaceId),
     ]);
 

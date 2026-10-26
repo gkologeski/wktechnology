@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useEffect, useState } from "react";
 import { AlertTriangle, Check, Loader2, Trash2, Undo2 } from "lucide-react";
 import {
@@ -37,6 +38,7 @@ export function PhoneLegacyReviewDialog({
   pending,
   position,
   onAction,
+  canManage = false,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -48,11 +50,21 @@ export function PhoneLegacyReviewDialog({
   pending: PhoneReviewAction | null;
   position: string | null;
   onAction: (a: PhoneReviewAction) => void;
+  canManage?: boolean;
 }) {
+  const access = usePermissions();
   const [confirmClear, setConfirmClear] = useState(false);
   useEffect(() => setConfirmClear(false), [item?.id]);
   const busy = pending !== null;
-  const canAct = !!detail && !detail.resolved && !loading && !error;
+  const canAct =
+    !access.isLoading &&
+    !access.isError &&
+    access.permissions.has("system.phone_normalization.manage.workspace") &&
+    canManage &&
+    !!detail &&
+    !detail.resolved &&
+    !loading &&
+    !error;
 
   return (
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
