@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 // Card de uma atividade na timeline: cabeçalho, blocos por tipo (pesquisa,
 // reunião, e-mail, chamada), edição inline, anexos, ações e comentários.
 // Extraído de `activity-timeline.tsx` sem mudança de comportamento.
@@ -95,6 +96,7 @@ export function ActivityTimelineItem({
   onPatch: (a: Activity, patch: Record<string, unknown>) => void;
   onFollowUp: (a: Activity) => void;
 }) {
+  const permissions = usePermissions();
   const atts = (a as unknown as { attachments?: Attachment[] }).attachments ?? [];
   const icon = ICONS[a.type as ActivityType] ?? <Send className="h-4 w-4" />;
   const notice = externalNotice(a);
@@ -116,6 +118,21 @@ export function ActivityTimelineItem({
     tickets: one((a as { related_ticket_id?: string | null }).related_ticket_id),
   };
 
+  const relatedVia = (a as Activity & { timeline_related_via?: string | null })
+    .timeline_related_via;
+  const readResource =
+    a.type === "note"
+      ? "techsales.notes"
+      : a.type === "task"
+        ? "techsales.tasks"
+        : "techsales.activities";
+  if (
+    relatedVia &&
+    !permissions.canAny(
+      ["own", "team", "workspace"].map((scope) => `${readResource}.view.${scope}`),
+    )
+  )
+    return null;
   return (
     <li className="relative pl-10" id={`activity-${a.id}`}>
       <div className="absolute left-[11px] top-8 bottom-[-1.25rem] w-[2px] bg-border/60 last:hidden" />
@@ -123,6 +140,14 @@ export function ActivityTimelineItem({
         {icon}
       </div>
       <div className="bg-card rounded-2xl p-5 border border-border/60 shadow-sm">
+        {(relatedVia === "contact" || relatedVia === "company") && (
+          <p className="mb-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            Histórico relacionado ·{" "}
+            {relatedVia === "contact" ? "contato vinculado" : "empresa vinculada"}
+            {a.related_deal_id ? " · atividade de outro negócio" : ""}. Vínculos originais
+            preservados.
+          </p>
+        )}
         <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
           <div className="flex items-center gap-1.5 min-w-0 text-sm text-muted-foreground">
             <PinnedMark activity={a} />

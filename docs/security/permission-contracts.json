@@ -1597,6 +1597,143 @@
         "revocation": "Current active membership, IAM deny, selected tenant and target field rules are read for each call.",
         "review_by": "2026-12-01"
       }
+    },
+    {
+      "id": "sales-dashboard-protected-read-compatibility",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0250_sales_dashboard_protected_reads.sql": "60783d5ed5d0c573dc9a754cc4edabc0134239c46fff82b9ad12c6558f3c1754"
+      },
+      "resources": [
+        "techsales.deals"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.deals.view.own",
+        "techsales.deals.view.team",
+        "techsales.deals.view.workspace"
+      ],
+      "rationale": "Existing invoker dashboard RPCs now read the field-protected deals view. No grants or role assignments change; row permissions and hidden monetary fields continue to apply. Server dashboard entry retains its existing dashboard permission. SQL CI tests exercise the real aggregate with protected-value fixture plus actual production resolvers; both RPCs are separately tested using real JWT and complete isolated schema.",
+      "controls": [
+        {
+          "file": "drizzle/migrations/0250_sales_dashboard_protected_reads.sql",
+          "symbol": "get_sales_dashboard_deal_aggregates"
+        },
+        {
+          "file": "drizzle/migrations/0250_sales_dashboard_protected_reads.sql",
+          "symbol": "get_sales_dashboard_secondary_v2"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0228_order5_fields_prepare.sql",
+          "symbol": "shared_fields_deals"
+        },
+        {
+          "file": "drizzle/migrations/0250_sales_dashboard_protected_reads.sql",
+          "symbol": "get_sales_dashboard_deal_aggregates"
+        },
+        {
+          "file": "drizzle/migrations/0250_sales_dashboard_protected_reads.sql",
+          "symbol": "get_sales_dashboard_secondary_v2"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "dashboard SQL allows authorized protected-value reads"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "dashboard SQL denies missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "dashboard SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "dashboard SQL isolates other selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "dashboard SQL rejects inactive membership"
+        }
+      }
+    },
+    {
+      "id": "deal-related-timeline-history",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0251_deal_related_activity_history.sql": "074748f2edde9e44c7e3a76e998e93223c0766f01dd1d43735e0cff118ae654a",
+        "src/components/activity/activity-timeline-item.tsx": "5c3cedab5405785448c15dcd6d564c5e822e028937eb80f0af0c49713149a305"
+      },
+      "resources": [
+        "techsales.deals",
+        "techsales.activities",
+        "techsales.notes",
+        "techsales.tasks"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.deals.view.workspace",
+        "techsales.activities.view.workspace",
+        "techsales.notes.view.workspace",
+        "techsales.tasks.view.workspace"
+      ],
+      "rationale": "User explicitly requested related contact/company history, identified as such, without moving source activity links. Invoker RPC requires a visible parent deal and keeps the existing per-activity RLS including note/task classification; same-workspace filter precedes pagination. No record mutation or permission grant. UI labels related history and other-deal provenance. Fixtures exercise production resolver with the activity resource CASE, plus separate full-schema real-JWT acceptance.",
+      "controls": [
+        {
+          "file": "drizzle/migrations/0251_deal_related_activity_history.sql",
+          "symbol": "get_timeline_activity_page"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0251_deal_related_activity_history.sql",
+          "symbol": "get_timeline_activity_page"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "related timeline SQL allows authorized history with original links"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "related timeline SQL denies missing activity permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "related timeline SQL respects explicit activity deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "related timeline SQL isolates foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "related timeline SQL rejects inactive member"
+        }
+      }
     }
   ],
   "retired": {}

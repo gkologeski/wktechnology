@@ -1751,6 +1751,20 @@
       "when": 1792873273629,
       "tag": "0249_permission_introspection_boundary",
       "breakpoints": true
+    },
+    {
+      "idx": 250,
+      "version": "7",
+      "when": 1792873273630,
+      "tag": "0250_sales_dashboard_protected_reads",
+      "breakpoints": true
+    },
+    {
+      "idx": 251,
+      "version": "7",
+      "when": 1792873273631,
+      "tag": "0251_deal_related_activity_history",
+      "breakpoints": true
     }
   ]
 }
