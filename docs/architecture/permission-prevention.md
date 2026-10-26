@@ -37,6 +37,8 @@ não converte observações históricas em conclusões de segurança.
 3. Cite o símbolo real do controle e a origem. Import, comentário ou string
    contendo o nome não contam. Cada `createServerFn` do arquivo precisa usar
    um controle declarado, inclusive quando já havia outro handler protegido.
+   Métodos HTTP em `server.handlers` também são verificados individualmente;
+   middleware comum precisa estar ligado ao objeto server real.
    Controles delegados devem ser funções reais e ter testes de negação.
 4. Declare a fronteira de banco: RLS/RPC/view/policy existente ou nova. SQL novo
    identifica sua própria superfície. Uma declaração simulada em comentário,

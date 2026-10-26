@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { existsSync, lstatSync, readFileSync, readdirSync } from "node:fs";
-import { join, relative, resolve } from "node:path";
+import { join, relative, resolve, posix } from "node:path";
 import ts from "typescript";
 import { createRequire } from "node:module";
 
@@ -203,6 +203,72 @@ export function baselineMatches(
     ? hash(previous.trim()) === hash(current.trim())
     : base === bootstrap;
 }
+function bindsControl(
+  sf: ts.SourceFile,
+  file: string,
+  ref: Ref,
+  expression: ts.Expression,
+): boolean {
+  if (ts.isIdentifier(expression) && ref.file === file && expression.text === ref.symbol)
+    return true;
+  const moduleMatches = (specifier: string) => {
+    const base = specifier.startsWith("@/")
+      ? "src/" + specifier.slice(2)
+      : specifier.startsWith(".")
+        ? posix.normalize(posix.join(posix.dirname(file), specifier))
+        : "";
+    return (
+      !!base &&
+      [
+        base,
+        base + ".ts",
+        base + ".tsx",
+        base + ".js",
+        base + "/index.ts",
+        base + "/index.tsx",
+      ].includes(ref.file)
+    );
+  };
+  for (const n of sf.statements) {
+    if (
+      !ts.isImportDeclaration(n) ||
+      !ts.isStringLiteral(n.moduleSpecifier) ||
+      !moduleMatches(n.moduleSpecifier.text)
+    )
+      continue;
+    const bindings = n.importClause?.namedBindings;
+    if (
+      bindings &&
+      ts.isNamedImports(bindings) &&
+      ts.isIdentifier(expression) &&
+      bindings.elements.some(
+        (e) => e.name.text === expression.text && (e.propertyName ?? e.name).text === ref.symbol,
+      )
+    )
+      return true;
+    if (
+      bindings &&
+      ts.isNamespaceImport(bindings) &&
+      ts.isPropertyAccessExpression(expression) &&
+      ts.isIdentifier(expression.expression) &&
+      expression.expression.text === bindings.name.text &&
+      expression.name.text === ref.symbol
+    )
+      return true;
+  }
+  return false;
+}
+function usesControl(root: string, file: string, ref: Ref): boolean {
+  const sf = tree(file, readSource(root, file));
+  return nodes(sf).some((n) =>
+    ts.isCallExpression(n)
+      ? bindsControl(sf, file, ref, n.expression)
+      : (ts.isJsxOpeningElement(n) || ts.isJsxSelfClosingElement(n)) &&
+          (ts.isIdentifier(n.tagName) || ts.isPropertyAccessExpression(n.tagName))
+        ? bindsControl(sf, file, ref, n.tagName)
+        : false,
+  );
+}
 function serverBoundaries(root: string, file: string, controls: Ref[]): string[] {
   const sf = tree(file, readSource(root, file)),
     names = aliases(sf),
@@ -210,11 +276,7 @@ function serverBoundaries(root: string, file: string, controls: Ref[]): string[]
   const callsControl = (node: ts.Node) =>
     nodes(node).some(
       (n) =>
-        ts.isCallExpression(n) &&
-        controls.some((ref) => {
-          const name = callName(n.expression);
-          return name === ref.symbol || names.get(name ?? "") === ref.symbol;
-        }),
+        ts.isCallExpression(n) && controls.some((ref) => bindsControl(sf, file, ref, n.expression)),
     );
   for (const n of nodes(sf)) {
     if (!ts.isVariableDeclaration(n) || !n.initializer) continue;
@@ -227,6 +289,40 @@ function serverBoundaries(root: string, file: string, controls: Ref[]): string[]
       !callsControl(n.initializer)
     )
       missing.push(n.name.getText(sf));
+  }
+  const referenced = (n: ts.Node) =>
+    nodes(n).some(
+      (x) =>
+        (ts.isIdentifier(x) || ts.isPropertyAccessExpression(x)) &&
+        controls.some((ref) => bindsControl(sf, file, ref, x)),
+    );
+  const pipeline = (n: ts.Node) =>
+    nodes(n).some(
+      (x) =>
+        ts.isPropertyAssignment(x) &&
+        x.name.getText(sf) === "middleware" &&
+        referenced(x.initializer),
+    );
+  for (const n of nodes(sf)) {
+    if (
+      !ts.isPropertyAssignment(n) ||
+      !/^(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)$/.test(n.name.getText(sf).replace(/["']/g, ""))
+    )
+      continue;
+    const handlers = n.parent.parent;
+    if (!ts.isPropertyAssignment(handlers) || handlers.name.getText(sf) !== "handlers") continue;
+    const server = handlers.parent;
+    const inherited =
+      ts.isObjectLiteralExpression(server) &&
+      server.properties.some(
+        (x) =>
+          ts.isPropertyAssignment(x) &&
+          x.name.getText(sf) === "middleware" &&
+          referenced(x.initializer),
+      );
+    const direct = ts.isIdentifier(n.initializer) && referenced(n.initializer);
+    if (!inherited && !direct && !callsControl(n.initializer) && !pipeline(n.initializer))
+      missing.push(`HTTP ${n.name.getText(sf)}`);
   }
   return missing;
 }
@@ -419,7 +515,7 @@ export function checkCoverage(
             `${c.id}: new SQL must identify its own protected database surface`,
             file,
           );
-      } else if (!c.controls?.some((ref) => invokes(root, file, ref.symbol)))
+      } else if (!c.controls?.some((ref) => usesControl(root, file, ref)))
         add("control_binding", `${c.id}: source does not call/render a declared control`, file);
     }
     if (!c.database?.length)

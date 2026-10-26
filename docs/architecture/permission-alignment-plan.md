@@ -1448,7 +1448,7 @@ de 2.741 chaves, sem grants. Novo/alterado/removido exige contrato de impacto,
 recurso/ação/escopo, fronteira de servidor e banco, e cinco testes executáveis
 distintos. Exceções técnicas possuem limite, revogação e revisão com validade.
 Comentários/imports não contam como guarda e migrações antigas não são editadas.
-O gate roda antes de verify/build na CI; 38 testes novos verificam recusas e a
+O gate roda antes de verify/build na CI; 42 testes novos verificam recusas e a
 barreira compartilhada de servidor. Ver o contrato permanente em AGENTS.md e
 `docs/architecture/permission-prevention.md`. As evidências de CI remota,
 proteção de branch, publicação e limitações ficam no relatório operacional da

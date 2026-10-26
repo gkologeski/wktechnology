@@ -320,4 +320,39 @@ describe("mandatory permission impact gate", () => {
     f.write("vitest.config.ts", 'const config={test:{include:["src/**/*.test.ts"]}};');
     expect(assertCiWiring(f.root).some((x) => x.message.includes("ignore failures"))).toBe(true);
   });
+  it("a guarded HTTP GET cannot cover an unguarded POST in the same route", () => {
+    const f = fixture(),
+      s =
+        'import { requireBoundary } from "../../guard"; export const Route=createFileRoute("/api/example")({server:{handlers:{GET:()=>requireBoundary("demo.records"),POST:()=>true}}});';
+    f.write(f.file, s);
+    f.c.files[f.file] = hash(s);
+    expect(
+      f.run().findings.some((x) => x.code === "server_boundary" && x.message.includes("HTTP POST")),
+    ).toBe(true);
+  });
+  it("accepts a declared route-server middleware shared by HTTP handlers", () => {
+    const f = fixture(),
+      s =
+        'import { requireBoundary } from "../../guard"; export const Route=createFileRoute("/api/example")({server:{middleware:[requireBoundary("demo.records")],handlers:{GET:()=>true,POST:()=>true}}});';
+    f.write(f.file, s);
+    f.c.files[f.file] = hash(s);
+    expect(f.run().findings).toEqual([]);
+  });
+  it("cannot substitute another module with a same-name guard", () => {
+    const f = fixture(),
+      s =
+        'import {requireBoundary} from "../../fake"; export function Page(){return requireBoundary("demo.records");}';
+    f.write(f.file, s);
+    f.c.files[f.file] = hash(s);
+    f.write("src/fake.ts", "export function requireBoundary(){return true;}");
+    expect(f.run().findings.some((x) => x.code === "control_binding")).toBe(true);
+  });
+  it("resolves a namespace guard to its actual declared source", () => {
+    const f = fixture(),
+      s =
+        'import * as permissions from "../../guard"; export function Page(){return permissions.requireBoundary("demo.records");}';
+    f.write(f.file, s);
+    f.c.files[f.file] = hash(s);
+    expect(f.run().findings).toEqual([]);
+  });
 });
