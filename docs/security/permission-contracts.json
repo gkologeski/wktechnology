@@ -301,8 +301,8 @@
       "id": "configuration-navigation-compatibility",
       "kind": "internal",
       "files": {
-        "src/lib/access-control/sales-route-map.ts": "474d5d74bf0c6ed48b7d15be6cf8cf3cd806b7ee5c54e0bb34fcde27b451528d",
-        "src/routes/_authenticated/settings.tsx": "dc1c4eacdef5e888881f7b8579f55443fd32a82887022b0772c83acb926af0c7",
+        "src/lib/access-control/sales-route-map.ts": "b23d3a151255b454ac4a91f951b264e3370cfdd0055dfdd55d0d670731247232",
+        "src/routes/_authenticated/settings.tsx": "a4f951fe15ac2c7de40486935dabe323cc57935a567137ef3012fa0bfb6b743b",
         "src/routes/_authenticated.tsx": "87d55568a91b7383341c70503544d8108db2993dc06d3e61465b940e9b0f20e5"
       },
       "controls": [
@@ -966,6 +966,135 @@
         "inactive_member": {
           "file": "src/lib/access-control/permission-postgres-ci.test.ts",
           "name": "SQL RLS rejects inactive membership"
+        }
+      }
+    },
+    {
+      "resources": [
+        "system.audit",
+        "techsales.leads",
+        "techsales.contacts",
+        "techsales.companies",
+        "techsales.deals"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.audit.view.own",
+        "system.audit.view.team",
+        "system.audit.view.workspace"
+      ],
+      "rationale": "Audit view requires active selected tenant, explicit audit read and current entity record read. Snapshot tenant must be unambiguous; historical owner ids never infer a tenant. Raw payload SELECT is revoked; safe projection applies current field masks and removes credential columns/free-form metadata. No role assignments or historical rows are changed.",
+      "database": [
+        {
+          "file": "drizzle/migrations/0245_audit_read_boundary.sql",
+          "symbol": "shared_audit_read_access"
+        }
+      ],
+      "id": "audit-server-safe-projection",
+      "kind": "business",
+      "files": {
+        "src/lib/audit.functions.ts": "dd2e6f8223a9a2a81ea411d5c6c99619e3f7f5d9b713517c675a90fde6e523eb",
+        "src/lib/access-control/audit-permission.middleware.ts": "9ce0b3aac1ddb2f27cc8584d5c6fcd244cdfd29d861a84fb9e9e6baa481ce350"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/audit-permission.middleware.ts",
+          "symbol": "requireAuditPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/audit-boundary-ci.test.ts",
+          "name": "audit boundary allows an authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/audit-boundary-ci.test.ts",
+          "name": "audit boundary rejects missing permission before the handler"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/audit-boundary-ci.test.ts",
+          "name": "audit boundary rejects explicit deny before the handler"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/audit-boundary-ci.test.ts",
+          "name": "audit boundary rejects foreign workspace before the handler"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/audit-boundary-ci.test.ts",
+          "name": "audit boundary rejects inactive membership before the handler"
+        }
+      }
+    },
+    {
+      "resources": [
+        "system.audit",
+        "techsales.leads",
+        "techsales.contacts",
+        "techsales.companies",
+        "techsales.deals"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.audit.view.own",
+        "system.audit.view.team",
+        "system.audit.view.workspace"
+      ],
+      "rationale": "Audit view requires active selected tenant, explicit audit read and current entity record read. Snapshot tenant must be unambiguous; historical owner ids never infer a tenant. Raw payload SELECT is revoked; safe projection applies current field masks and removes credential columns/free-form metadata. No role assignments or historical rows are changed.",
+      "database": [
+        {
+          "file": "drizzle/migrations/0245_audit_read_boundary.sql",
+          "symbol": "shared_audit_read_access"
+        }
+      ],
+      "id": "audit-database-safe-projection",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0245_audit_read_boundary.sql": "3354147138525470936a2a174d238fade44d27b2844b3ed5c5b68b67991bf36a"
+      },
+      "controls": [
+        {
+          "file": "drizzle/migrations/0245_audit_read_boundary.sql",
+          "symbol": "shared_audit_read_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit allows authorized tenant and record"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit denies missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit denies explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit denies foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit denies inactive membership"
         }
       }
     }

@@ -1,12 +1,12 @@
 // Server functions para Audit log.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuditPermission } from "@/lib/access-control/audit-permission.middleware";
 
 const ENTITIES = ["leads", "contacts", "companies", "deals"] as const;
 
 export const listAuditLogs = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuditPermission()])
   .inputValidator((i) =>
     z
       .object({
@@ -21,15 +21,13 @@ export const listAuditLogs = createServerFn({ method: "POST" })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { supabase, userId } = context;
+    const { supabase } = context;
 
     let q = supabase
-      .from("audit_logs")
+      .from("shared_audit_logs" as "audit_logs")
       .select(
         "id, actor_user_id, entity, entity_id, action, before, after, metadata, module_id, created_at",
       )
-      .eq("workspace_owner_id", userId)
       .order("created_at", { ascending: false })
       .limit(data.limit);
 
@@ -58,16 +56,6 @@ export const listAuditLogs = createServerFn({ method: "POST" })
         .in("id", actorIds);
       for (const p of profs ?? [])
         nameById.set(p.id as string, (p.full_name as string | null) ?? "");
-      await Promise.all(
-        actorIds.map(async (id) => {
-          try {
-            const { data } = await supabaseAdmin.auth.admin.getUserById(id);
-            if (data.user?.email) emailById.set(id, data.user.email);
-          } catch {
-            /* ignore */
-          }
-        }),
-      );
     }
 
     // Diff resumido (chaves alteradas)

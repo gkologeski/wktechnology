@@ -39,7 +39,7 @@ let endpoint = "",
   started = false;
 let db: ReturnType<typeof postgres>;
 const accepted: string[] = [];
-const expected = 12;
+const expected = 20;
 let cleaned = false;
 function report() {
   mkdirSync(".verification", { recursive: true });
@@ -162,6 +162,19 @@ beforeAll(async () => {
     await db`insert into subscriptions(id,workspace_id,owner_id,name) values(${id},${w},${owner},'CI fixture')`;
     await db`insert into subscription_invoices(id,workspace_id,owner_id,subscription_id) values(${id},${w},${owner},${id})`;
   }
+  for (let i = 0; i < 3; i++) {
+    const w = i === 2 ? B : W,
+      owner = i === 0 ? U : P,
+      id = IDs[i];
+    await db`insert into leads(id,workspace_id,owner_id,assigned_to) values(${id},${w},${owner},${owner})`;
+    const payload = {
+      workspace_id: w,
+      owner_id: owner,
+      score: 42,
+      portal_token: "not-a-secret-fixture",
+    };
+    await db`insert into audit_logs(id,workspace_owner_id,actor_user_id,entity,entity_id,action,before,after,metadata) values(${id},${owner},${owner},'leads',${id},'updated',${db.json(payload)},${db.json(payload)},'{"private":"fixture"}')`;
+  }
   const functions: [string, string][] = [
     ["0031_workspace_members_status_inactive", "is_workspace_member"],
     ["0031_workspace_members_status_inactive", "current_user_workspaces"],
@@ -173,6 +186,13 @@ beforeAll(async () => {
     ["0201_pipeline_action_scope", "hr_scope_permission"],
     ["0193_hr_action_scope_alignment", "hr_people_access"],
     ["0195_people_resource_actions", "hr_person_resource_access"],
+    ["0222_order4_sales_prepare", "sales_access_context"],
+    ["0222_order4_sales_prepare", "sales_context_access"],
+    ["0222_order4_sales_prepare", "sales_record_context_access"],
+    ["0222_order4_sales_prepare", "sales_record_access"],
+    ["0228_order5_fields_prepare", "shared_field_context"],
+    ["0228_order5_fields_prepare", "shared_field_mode_for"],
+    ["0228_order5_fields_prepare", "shared_field_mask_row"],
   ];
   // The immutable original wrapper delegates to the actual current resolver.
   await db.unsafe(
@@ -198,6 +218,7 @@ beforeAll(async () => {
     "0242_document_read_policy",
     "0243_api_key_matrix",
     "0244_api_subject_credential_read",
+    "0245_audit_read_boundary",
   ])
     await db.unsafe(readFileSync("drizzle/migrations/" + migration + ".sql", "utf8"));
 }, 180000);
@@ -435,4 +456,91 @@ it("SQL API subject respects inactive membership and browser cannot use its help
     }),
   ).rejects.toMatchObject({ code: "42501" });
   accepted.push("api_subject_inactive_browser_denied");
+});
+
+const auditKeys = ["system.audit.view.workspace", "techsales.leads.view.workspace"];
+it("SQL audit allows authorized tenant and record", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from shared_audit_logs`).toHaveLength(2);
+    },
+    { keys: auditKeys },
+  );
+  accepted.push("audit_allowed");
+});
+it("SQL audit denies missing permission", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from shared_audit_logs`).toHaveLength(0);
+    },
+    { keys: ["techsales.leads.view.workspace"] },
+  );
+  accepted.push("audit_missing");
+});
+it("SQL audit denies explicit deny", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from shared_audit_logs`).toHaveLength(0);
+    },
+    { keys: auditKeys, denies: ["system.audit.view.workspace"] },
+  );
+  accepted.push("audit_deny");
+});
+it("SQL audit denies foreign selected workspace", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from shared_audit_logs`).toHaveLength(0);
+    },
+    { keys: auditKeys, workspace: B },
+  );
+  accepted.push("audit_foreign");
+});
+it("SQL audit denies inactive membership", async () => {
+  await subject(
+    async (tx) => {
+      expect(await tx`select id from shared_audit_logs`).toHaveLength(0);
+    },
+    { keys: auditKeys, inactive: true },
+  );
+  accepted.push("audit_inactive");
+});
+it("SQL audit respects own records and current assignment", async () => {
+  await subject(
+    async (tx) => {
+      expect((await tx`select id from shared_audit_logs`).map((x) => x.id)).toEqual([IDs[0]]);
+    },
+    { keys: ["system.audit.view.workspace", "techsales.leads.view.own"] },
+  );
+  accepted.push("audit_own");
+});
+it("SQL audit hides fields and never emits credential or free-form metadata", async () => {
+  await db.begin(async (tx) => {
+    await tx`insert into field_permission_rules(resource,field,mode,workspace_id,role_id) values('techsales.leads','score','hidden',${W},${R})`;
+    // subject runs on the single client; use a committed fixture and clean it below.
+  });
+  try {
+    await subject(
+      async (tx) => {
+        const row = (await tx`select * from shared_audit_logs where id=${IDs[0]}`)[0];
+        expect(row.before.score).toBeNull();
+        expect(row.before).not.toHaveProperty("portal_token");
+        expect(row.metadata).toEqual({});
+      },
+      { keys: auditKeys },
+    );
+  } finally {
+    await db`delete from field_permission_rules`;
+  }
+  accepted.push("audit_fields");
+});
+it("SQL audit raw payload columns remain inaccessible", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select before from audit_logs`;
+      },
+      { keys: auditKeys },
+    ),
+  ).rejects.toMatchObject({ code: "42501" });
+  accepted.push("audit_raw_acl");
 });

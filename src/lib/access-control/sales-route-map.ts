@@ -1,5 +1,6 @@
 /** Actual route gate, shared with navigation. Longest prefix wins. */
 const routes: Record<string, readonly string[]> = {
+  "/settings/audit-log": ["system.audit"],
   "/settings/api-keys": ["system.api_keys"],
   "/settings/recurring": ["techfinance.recurrences", "techfinance.invoices"],
   "/settings/playbooks": ["techsales.prospecting_playbooks"],
