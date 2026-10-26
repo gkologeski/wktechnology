@@ -15,21 +15,16 @@ async function resolveActiveWorkspace(
 /**
  * Lê as permissões efetivas em um único payload agregado (jsonb).
  * Evita truncamento da API quando o catálogo tem milhares de chaves.
- * Mantém fallback para o RPC antigo (linha por permissão).
+ * Normaliza aliases de macros no banco, respeitando denies em ambos os nomes.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function fetchEffectivePermissions(supabase: any, workspaceId: string): Promise<string[]> {
-  const agg = await supabase.rpc("current_user_permissions_json", {
-    _workspace_id: workspaceId,
-  });
-  if (!agg.error && Array.isArray(agg.data)) return agg.data as string[];
-  const { data, error } = await supabase.rpc("current_user_permissions", {
-    _workspace_id: workspaceId,
+  const { data, error } = await supabase.rpc("shared_configuration_permission_keys", {
+    p_workspace: workspaceId,
   });
   if (error) throw new Error(error.message);
-  return ((data ?? []) as Array<string | { current_user_permissions: string }>).map((r) =>
-    typeof r === "string" ? r : r.current_user_permissions,
-  );
+  if (!Array.isArray(data)) throw new Error("Permissões indisponíveis.");
+  return data as string[];
 }
 
 export type MyPermissionsResult = {

@@ -1,5 +1,11 @@
 /** Actual route gate, shared with navigation. Longest prefix wins. */
 const routes: Record<string, readonly string[]> = {
+  "/settings/recurring": ["techfinance.recurrences", "techfinance.invoices"],
+  "/settings/playbooks": ["techsales.prospecting_playbooks"],
+  "/settings/roles": ["system.roles"],
+  "/settings/teams": ["system.members"],
+  "/settings/macros": ["system.automation.macros"],
+  "/settings/subscriptions": ["system.communication.subscription_types"],
   "/settings/permissions": ["system.roles"],
   "/settings/media": ["system.media"],
   "/settings/modules": ["system.modules"],
@@ -89,7 +95,9 @@ const routes: Record<string, readonly string[]> = {
   "/settings/enrichment": ["techsales.prospecting_enrichment"],
 };
 const SHARED_CONFIG_RESOURCES = new Set([
+  "system.communication.subscription_types",
   "system.roles",
+  "system.members",
   "system.branding",
   "system.custom_objects",
   "system.custom_properties",
