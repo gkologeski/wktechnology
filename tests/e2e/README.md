@@ -16,11 +16,15 @@ Cobertura: smoke test público automático da tela de login. Com credenciais de 
    export E2E_USER_EMAIL="seu-teste@exemplo.com"
    export E2E_USER_PASSWORD="..."
    # ou use E2E_EMAIL / E2E_PASSWORD
-   # opcional — por padrão usa a URL de preview do projeto
-   export E2E_BASE_URL="https://id-preview--68dcfa85-b6da-4030-a825-b896ca621e0c.lovable.app"
+   # Obrigatório para testes autenticados: ambiente local isolado
+   export E2E_BASE_URL="http://127.0.0.1:5175"
+   export E2E_SUPABASE_URL="http://127.0.0.1:54521"
+   export E2E_SUPABASE_ANON_KEY="<chave pública do ambiente LOCAL>"
    ```
 
    > Sem essas variáveis, `bun run test:e2e` roda apenas os testes públicos automáticos e pula os testes autenticados.
+
+O aplicativo e o banco precisam ser locais, sem redirects externos, e o banco deve conter o marcador `__isolated_marker` com label `techerp-isolated-harness`, legível pela conta de teste. O harness isolado cria esse marcador. Não configure produção: URLs remotas e configuração incompleta são recusadas antes do seed. O helper não herda a conexão Supabase do aplicativo. Testes pulados por falta de credenciais não representam aceite funcional.
 
 ## Rodar
 

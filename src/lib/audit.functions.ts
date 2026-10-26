@@ -3,6 +3,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuditPermission } from "@/lib/access-control/audit-permission.middleware";
 
+import type { Database } from "@/integrations/supabase/types";
+
 const ENTITIES = ["leads", "contacts", "companies", "deals"] as const;
 
 export const listAuditLogs = createServerFn({ method: "POST" })
@@ -23,22 +25,33 @@ export const listAuditLogs = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase } = context;
 
-    let q = supabase
-      .from("shared_audit_logs" as "audit_logs")
-      .select(
-        "id, actor_user_id, entity, entity_id, action, before, after, metadata, module_id, created_at",
-      )
-      .order("created_at", { ascending: false })
-      .limit(data.limit);
-
-    if (data.entity) q = q.eq("entity", data.entity);
-    if (data.entity_id) q = q.eq("entity_id", data.entity_id);
-    if (data.actor_user_id) q = q.eq("actor_user_id", data.actor_user_id);
-    if (data.action) q = q.eq("action", data.action);
-    if (data.module_id) q = q.eq("module_id", data.module_id);
-    if (data.since) q = q.gte("created_at", data.since);
-
-    const { data: rows, error } = await q;
+    type AuditRow = Pick<
+      Database["public"]["Tables"]["audit_logs"]["Row"],
+      | "id"
+      | "actor_user_id"
+      | "entity"
+      | "entity_id"
+      | "action"
+      | "before"
+      | "after"
+      | "metadata"
+      | "module_id"
+      | "created_at"
+    >;
+    const { data: rows, error } = await (
+      supabase.rpc as unknown as (
+        name: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: AuditRow[] | null; error: { message: string } | null }>
+    )("shared_audit_list", {
+      _entity: data.entity ?? null,
+      _entity_id: data.entity_id ?? null,
+      _actor: data.actor_user_id ?? null,
+      _action: data.action ?? null,
+      _module: data.module_id ?? null,
+      _since: data.since ?? null,
+      _limit: data.limit,
+    });
     if (error) throw new Error(error.message);
 
     // Resolver nomes/emails dos atores

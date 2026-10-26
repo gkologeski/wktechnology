@@ -67,7 +67,8 @@ const MODULE_TITLES: Record<
   people: { title: "Pessoas", product: MODULES.people.productName, icon: MODULES.people.icon },
 };
 
-// Mapeia (módulo, indicador) → rota de drill-down.
+// Only expose links to existing views. Applications, interviews and payments
+// remain metrics until a dedicated detail listing exists.
 function drillDownFor(moduleId: string, label: string): string | null {
   const m: Record<string, Record<string, string>> = {
     crm: {
@@ -78,9 +79,7 @@ function drillDownFor(moduleId: string, label: string): string | null {
     },
     ats: {
       Candidatos: "/ats/candidates",
-      Aplicações: "/ats/applications",
-      Entrevistas: "/ats/interviews",
-      Ofertas: "/ats/offers",
+      Ofertas: "/offers",
     },
     contracts: {
       "Contratos criados": "/contracts",
@@ -91,9 +90,8 @@ function drillDownFor(moduleId: string, label: string): string | null {
       "Projetos ativos": "/projects",
     },
     finance: {
-      "A receber (aberto)": "/finance/entries",
-      "A pagar (aberto)": "/finance/entries",
-      "Pagamentos no período": "/finance/entries",
+      "A receber (aberto)": "/finance/receivable",
+      "A pagar (aberto)": "/finance/payable",
     },
     people: {
       "Pessoas ativas": "/people",

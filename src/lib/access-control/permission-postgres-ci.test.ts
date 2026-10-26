@@ -39,7 +39,7 @@ let endpoint = "",
   started = false;
 let db: ReturnType<typeof postgres>;
 const accepted: string[] = [];
-const expected = 61;
+const expected = 66;
 let cleaned = false;
 function report() {
   mkdirSync(".verification", { recursive: true });
@@ -188,7 +188,17 @@ beforeAll(async () => {
     };
     await db`insert into audit_logs(id,workspace_owner_id,actor_user_id,entity,entity_id,action,before,after,metadata) values(${id},${owner},${owner},'leads',${id},'updated',${db.json(payload)},${db.json(payload)},'{"private":"fixture"}')`;
   }
+  await db.unsafe(`CREATE TABLE financial_entries(id uuid primary key,workspace_id uuid,owner_id uuid,assigned_to uuid);
+    INSERT INTO financial_entries SELECT id,workspace_id,owner_id,assigned_to FROM leads;`);
   const functions: [string, string][] = [
+    ...[
+      "finance_access_context",
+      "finance_context_access",
+      "finance_context_entry_access",
+      "finance_entry_access",
+      "finance_context_payment_access",
+      "finance_payment_access",
+    ].map((name): [string, string] => ["0210_finance_core_actions", name]),
     ["0031_workspace_members_status_inactive", "is_workspace_member"],
     ["0031_workspace_members_status_inactive", "current_user_workspaces"],
     ["0127_rbac_wk_vis_local_per_role", "user_effective_permissions"],
@@ -246,6 +256,7 @@ beforeAll(async () => {
     "0247_audit_export_authorization",
     "0248_admin_settings_matrix",
     "0249_permission_introspection_boundary",
+    "0252_audit_query_context",
   ])
     await db.unsafe(readFileSync("drizzle/migrations/" + migration + ".sql", "utf8"));
   await db.unsafe(`
@@ -558,6 +569,9 @@ it("SQL audit allows authorized tenant and record", async () => {
   await subject(
     async (tx) => {
       expect(await tx`select id from shared_audit_logs`).toHaveLength(2);
+      expect(await tx`select id from shared_audit_list()`).toHaveLength(2);
+      expect(await tx`select id from shared_audit_list(_limit=>1)`).toHaveLength(1);
+      expect(await tx`select id from shared_audit_list(_entity=>'contacts')`).toHaveLength(0);
     },
     { keys: auditKeys },
   );
@@ -567,6 +581,7 @@ it("SQL audit denies missing permission", async () => {
   await subject(
     async (tx) => {
       expect(await tx`select id from shared_audit_logs`).toHaveLength(0);
+      expect(await tx`select id from shared_audit_list()`).toHaveLength(0);
     },
     { keys: ["techsales.leads.view.workspace"] },
   );
@@ -576,6 +591,7 @@ it("SQL audit denies explicit deny", async () => {
   await subject(
     async (tx) => {
       expect(await tx`select id from shared_audit_logs`).toHaveLength(0);
+      expect(await tx`select id from shared_audit_list()`).toHaveLength(0);
     },
     { keys: auditKeys, denies: ["system.audit.view.workspace"] },
   );
@@ -585,6 +601,7 @@ it("SQL audit denies foreign selected workspace", async () => {
   await subject(
     async (tx) => {
       expect(await tx`select id from shared_audit_logs`).toHaveLength(0);
+      expect(await tx`select id from shared_audit_list()`).toHaveLength(0);
     },
     { keys: auditKeys, workspace: B },
   );
@@ -594,6 +611,7 @@ it("SQL audit denies inactive membership", async () => {
   await subject(
     async (tx) => {
       expect(await tx`select id from shared_audit_logs`).toHaveLength(0);
+      expect(await tx`select id from shared_audit_list()`).toHaveLength(0);
     },
     { keys: auditKeys, inactive: true },
   );
@@ -620,6 +638,10 @@ it("SQL audit hides fields and never emits credential or free-form metadata", as
         expect(row.before.score).toBeNull();
         expect(row.before).not.toHaveProperty("portal_token");
         expect(row.metadata).toEqual({});
+        const page = (await tx`select * from shared_audit_list(_entity_id=>${IDs[0]})`)[0];
+        expect(page.before.score).toBeNull();
+        expect(page.before).not.toHaveProperty("portal_token");
+        expect(page.metadata).toEqual({});
       },
       { keys: auditKeys },
     );
@@ -638,6 +660,22 @@ it("SQL audit raw payload columns remain inaccessible", async () => {
     ),
   ).rejects.toMatchObject({ code: "42501" });
   accepted.push("audit_raw_acl");
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select shared_audit_page_read_access('{}'::jsonb,'leads',${IDs[0]},'{}'::jsonb,'{}'::jsonb,${U})`;
+      },
+      { keys: auditKeys },
+    ),
+  ).rejects.toMatchObject({ code: "42501" });
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select * from shared_audit_list(_limit=>501)`;
+      },
+      { keys: auditKeys },
+    ),
+  ).rejects.toMatchObject({ code: "22023" });
 });
 
 const exportKeys = [
@@ -1187,4 +1225,66 @@ it("related timeline SQL requires access to parent deal", async () => {
     { keys: timelineKeys, denies: ["techsales.deals.view.workspace"] },
   );
   accepted.push("related-parent-deny");
+});
+
+const financeKeys = [
+  "techfinance.entries.view.workspace",
+  "techfinance.entries.update.workspace",
+  "techfinance.payments.view.workspace",
+  "techfinance.payments.create.workspace",
+];
+it("SQL financial detail allows active authorized member", async () => {
+  await subject(
+    async (tx) => {
+      const [result] =
+        await tx`select finance_entry_access(${IDs[0]},'view') as readable, finance_entry_access(${IDs[0]},'update') as editable, finance_payment_access(${IDs[0]},'create') as payable`;
+      expect(result).toEqual({ readable: true, editable: true, payable: true });
+    },
+    { keys: financeKeys },
+  );
+  accepted.push("finance_allows_active_authorized_member");
+});
+it("SQL financial detail denies missing permission", async () => {
+  await subject(
+    async (tx) => {
+      const [result] =
+        await tx`select finance_entry_access(${IDs[0]},'view') as readable, finance_entry_access(${IDs[0]},'update') as editable, finance_payment_access(${IDs[0]},'create') as payable`;
+      expect(result).toEqual({ readable: false, editable: false, payable: false });
+    },
+    { keys: [] },
+  );
+  accepted.push("finance_denies_missing_permission");
+});
+it("SQL financial detail denies explicit deny", async () => {
+  await subject(
+    async (tx) => {
+      const [result] =
+        await tx`select finance_entry_access(${IDs[0]},'view') as readable, finance_entry_access(${IDs[0]},'update') as editable, finance_payment_access(${IDs[0]},'create') as payable`;
+      expect(result).toEqual({ readable: false, editable: false, payable: false });
+    },
+    { keys: financeKeys, denies: ["techfinance.entries.view.workspace"] },
+  );
+  accepted.push("finance_denies_explicit_deny");
+});
+it("SQL financial detail denies foreign workspace", async () => {
+  await subject(
+    async (tx) => {
+      const [result] =
+        await tx`select finance_entry_access(${IDs[0]},'view') as readable, finance_entry_access(${IDs[0]},'update') as editable, finance_payment_access(${IDs[0]},'create') as payable`;
+      expect(result).toEqual({ readable: false, editable: false, payable: false });
+    },
+    { keys: financeKeys, workspace: B },
+  );
+  accepted.push("finance_denies_foreign_workspace");
+});
+it("SQL financial detail denies inactive member", async () => {
+  await subject(
+    async (tx) => {
+      const [result] =
+        await tx`select finance_entry_access(${IDs[0]},'view') as readable, finance_entry_access(${IDs[0]},'update') as editable, finance_payment_access(${IDs[0]},'create') as payable`;
+      expect(result).toEqual({ readable: false, editable: false, payable: false });
+    },
+    { keys: financeKeys, inactive: true },
+  );
+  accepted.push("finance_denies_inactive_member");
 });

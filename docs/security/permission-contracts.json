@@ -5,7 +5,9 @@
       "id": "home-dashboard-authorization",
       "kind": "business",
       "files": {
-        "src/lib/home/dashboard.functions.ts": "d61bb8a39343d4e34844e827e7d3f05f83b582112e00897c2c27e331b8e00a67"
+        "src/lib/home/dashboard.functions.ts": "d61bb8a39343d4e34844e827e7d3f05f83b582112e00897c2c27e331b8e00a67",
+        "src/routes/_authenticated/home.index.tsx": "85ec3f13f03e4ecf11f2e1c7881e472ec6fc36d9a1b8337ded2f4b010a5bf4da",
+        "src/routes/_authenticated/home.print.tsx": "b864596de3b93a06a8faaa339ea15116d6851ff24327bdfb389fb0c32149c185"
       },
       "resources": [
         "system.home",
@@ -32,6 +34,10 @@
         {
           "file": "src/lib/access-control/shared-permission.middleware.ts",
           "symbol": "requireSharedPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-shared-action.ts",
+          "symbol": "useSharedAction"
         }
       ],
       "database": [
@@ -995,12 +1001,16 @@
         {
           "file": "drizzle/migrations/0245_audit_read_boundary.sql",
           "symbol": "shared_audit_read_access"
+        },
+        {
+          "file": "drizzle/migrations/0252_audit_query_context.sql",
+          "symbol": "shared_audit_list"
         }
       ],
       "id": "audit-server-safe-projection",
       "kind": "business",
       "files": {
-        "src/lib/audit.functions.ts": "dd2e6f8223a9a2a81ea411d5c6c99619e3f7f5d9b713517c675a90fde6e523eb",
+        "src/lib/audit.functions.ts": "3cc222cd371c5d9d770cfb5b48eac374de7675982c3d1ed429bf8a509ce3ace8",
         "src/lib/access-control/audit-permission.middleware.ts": "9ce0b3aac1ddb2f27cc8584d5c6fcd244cdfd29d861a84fb9e9e6baa481ce350"
       },
       "controls": [
@@ -1732,6 +1742,152 @@
         "inactive_member": {
           "file": "src/lib/access-control/permission-postgres-ci.test.ts",
           "name": "related timeline SQL rejects inactive member"
+        }
+      }
+    },
+    {
+      "resources": [
+        "system.audit",
+        "techsales.leads",
+        "techsales.contacts",
+        "techsales.companies",
+        "techsales.deals"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.audit.view.own",
+        "system.audit.view.team",
+        "system.audit.view.workspace"
+      ],
+      "rationale": "Audit view requires active selected tenant, explicit audit read and current entity record read. Snapshot tenant must be unambiguous; historical owner ids never infer a tenant. Raw payload SELECT is revoked; safe projection applies current field masks and removes credential columns/free-form metadata. No role assignments or historical rows are changed.",
+      "database": [
+        {
+          "file": "drizzle/migrations/0252_audit_query_context.sql",
+          "symbol": "shared_audit_list"
+        },
+        {
+          "file": "drizzle/migrations/0252_audit_query_context.sql",
+          "symbol": "shared_audit_page_read_access"
+        }
+      ],
+      "id": "audit-query-context-reuse",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0252_audit_query_context.sql": "0e3f7490f3204807f77471dc057c10cffc3cc32177d7482022e20e1fed6accd7"
+      },
+      "controls": [
+        {
+          "file": "drizzle/migrations/0252_audit_query_context.sql",
+          "symbol": "shared_audit_list"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit allows authorized tenant and record"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit denies missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit denies explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit denies foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL audit denies inactive membership"
+        }
+      }
+    },
+    {
+      "id": "financial-entry-detail-date-display",
+      "kind": "business",
+      "files": {
+        "src/routes/_authenticated/finance.entries.$id.tsx": "823a1140fd1ca95543b65c48f249fe1d7d98a895a6549fc6bacdd36dd836e8ae"
+      },
+      "resources": [
+        "techfinance.entries",
+        "techfinance.payments",
+        "techfinance.entry_cancellation"
+      ],
+      "actions": [
+        "view",
+        "update",
+        "delete",
+        "create",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techfinance.entries.view.workspace",
+        "techfinance.entries.update.workspace",
+        "techfinance.entries.delete.workspace",
+        "techfinance.payments.view.workspace",
+        "techfinance.payments.create.workspace",
+        "techfinance.payments.delete.workspace",
+        "techfinance.entry_cancellation.manage.workspace"
+      ],
+      "rationale": "Civil date formatting only. Existing screen guard and record capabilities remain; every server mutation checks current entry/payment authorization and SQL enforces tenant, active membership and explicit denies.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/finance-records.server.ts",
+          "symbol": "assertFinanceEntry"
+        },
+        {
+          "file": "src/lib/access-control/finance-records.server.ts",
+          "symbol": "assertFinancePayment"
+        },
+        {
+          "file": "src/components/hr-access.tsx",
+          "symbol": "HrScreenAccess"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0210_finance_core_actions.sql",
+          "symbol": "finance_entry_access"
+        },
+        {
+          "file": "drizzle/migrations/0211_finance_core_activation.sql",
+          "symbol": "finance_core_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL financial detail allows active authorized member"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL financial detail denies missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL financial detail denies explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL financial detail denies foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "SQL financial detail denies inactive member"
         }
       }
     }
