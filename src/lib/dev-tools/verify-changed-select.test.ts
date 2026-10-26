@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { classifyChanges } from "../../../scripts/verify-changed/select";
+import { spawnSync } from "node:child_process";
 
 const all = () => true;
 
@@ -38,5 +39,20 @@ describe("verify-changed: seleção conservadora", () => {
   });
   it("só documentação → nada além do typecheck", () => {
     expect(classifyChanges(["docs/architecture/x.md"], all).mode).toBe("none");
+  });
+});
+
+describe("verify-changed: interface de desenvolvimento", () => {
+  it.each([["--base"], ["--base", "--dry-run"], ["--unknown"]])(
+    "rejeita argumentos incompletos ou desconhecidos: %s",
+    (...args) => {
+      const r = spawnSync("bun", ["scripts/verify-changed.ts", ...args], { encoding: "utf8" });
+      expect(r.status).toBe(2);
+      expect(r.stderr).toContain("Uso:");
+    },
+  );
+  it("cache TypeScript não entra na descoberta de arquivos alterados", () => {
+    const r = spawnSync("git", ["check-ignore", ".tscache/app.tsbuildinfo"], { encoding: "utf8" });
+    expect(r.status).toBe(0);
   });
 });
