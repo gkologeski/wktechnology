@@ -3814,7 +3814,7 @@
         "src/components/prospecting/sdr-operation-display.ts": "bcae4be88c5d7746dd7f1554636d2d12a216e48ea7a8faaf6d8a6e0d47948aab",
         "src/components/prospecting/sdr-opt-out-text.ts": "cfac91c6c394fde831b4466996c4e85563ab411b4bd25f9f423e6e85824f3b3f"
       },
-      "rationale": "Static labels and grouping of existing Agente SDR sections into three areas, rendered as same-page links and tab triggers. No event handlers, I/O, server functions, permissions or data access; each section keeps its own existing controls. Also pure helpers to parse the agent UUID from the address, decide which sections show the test chat column and pick the open agent among the already authorized list; no I/O or permissions. Pure Portuguese labels, filter parsing and counters for the Operação area; no I/O or permissions. Also pure funnel, meeting status, decision and meeting time labels for Resultados."
+      "rationale": "Static labels and grouping of existing Agente SDR sections into three areas, rendered as same-page links and tab triggers. No event handlers, I/O, server functions, permissions or data access; each section keeps its own existing controls. Also pure helpers to parse the agent UUID from the address, decide which sections show the test chat column and pick the open agent among the already authorized list; no I/O or permissions. Pure Portuguese labels, filter parsing and counters for the Operação area; no I/O or permissions. Also pure funnel, meeting status, decision and meeting time labels for Resultados. Also a pure parser that turns the typed opt-out phrases into a list; detection and saving stay on the server."
     },
     {
       "id": "sdr-agent-duplicate-rules",
