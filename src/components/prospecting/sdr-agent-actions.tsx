@@ -189,7 +189,8 @@ export function SdrAgentActions({
         <DialogContent>
           <DialogTitle>Editar agente</DialogTitle>
           <DialogDescription>
-            Persona e tom ficam em "Persona e teste"; situação, roteiro, número de WhatsApp e regras ficam em "Configuração do agente".
+            Persona e tom ficam em "Persona e teste"; situação, roteiro, número de WhatsApp e regras
+            ficam em "Configuração do agente".
           </DialogDescription>
           <div className="space-y-1.5">
             <Label htmlFor="sdr-agent-name">Nome do agente</Label>
@@ -233,7 +234,9 @@ export function SdrNewAgentButton({ onCreated }: { onCreated: (id: string) => vo
 
   const createM = useMutation({
     mutationFn: () =>
-      create({ data: { name: name.trim(), enabled: true, qualification_prompt: NEW_AGENT_PROMPT } }),
+      create({
+        data: { name: name.trim(), enabled: true, qualification_prompt: NEW_AGENT_PROMPT },
+      }),
     onSuccess: async (r) => {
       const id = (r.item as { id: string }).id;
       toast.success("Agente criado", {
