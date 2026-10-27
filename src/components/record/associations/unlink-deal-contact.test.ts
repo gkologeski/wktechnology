@@ -66,3 +66,39 @@ describe("unlinkDealContact", () => {
     expect(error?.code).toBe("42501");
   });
 });
+
+/**
+ * Authorization scenarios: database RLS (`sales_context_access`) decides how many
+ * rows a write touches; the checked writer must surface every refusal instead of
+ * reporting the unlink as done.
+ */
+describe("deal contact unlink authorization", () => {
+  it("deal contact unlink permits an authorized active member", async () => {
+    const db = fakeDb({ linked: true, primary: "c1" }, 1);
+    const { error } = await unlinkDealContact(db.reader, db.writer, "d1", "c1");
+    expect(error).toBeNull();
+    expect(db.writes).toHaveLength(2);
+  });
+  it("deal contact unlink refuses missing permission", async () => {
+    const db = fakeDb({ linked: true, primary: "other" }, 0);
+    const { error } = await unlinkDealContact(db.reader, db.writer, "d1", "c1");
+    expect(error?.code).toBe("42501");
+  });
+  it("deal contact unlink refuses an explicit deny", async () => {
+    const db = fakeDb({ linked: true, primary: "c1" }, 0);
+    const { error } = await unlinkDealContact(db.reader, db.writer, "d1", "c1");
+    expect(error?.code).toBe("42501");
+    expect(db.writes).toEqual([{ table: "deal_contacts", op: "delete" }]);
+  });
+  it("deal contact unlink refuses a foreign workspace deal", async () => {
+    const db = fakeDb({ linked: false, primary: "c1" }, 0);
+    const { error } = await unlinkDealContact(db.reader, db.writer, "d1", "c1");
+    expect(error?.code).toBe("42501");
+  });
+  it("deal contact unlink refuses an inactive member", async () => {
+    const db = fakeDb({ linked: false, primary: "c1" }, 0);
+    const { error } = await unlinkDealContact(db.reader, db.writer, "d1", "c1");
+    expect(error?.code).toBe("42501");
+    expect(db.writes).toEqual([{ table: "deals", op: "update" }]);
+  });
+});
