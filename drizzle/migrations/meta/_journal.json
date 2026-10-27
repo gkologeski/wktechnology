@@ -1779,6 +1779,13 @@
       "when": 1792873273633,
       "tag": "0253_inbox_protected_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 254,
+      "version": "7",
+      "when": 1792873273634,
+      "tag": "0254_whatsapp_cloud_connections",
+      "breakpoints": true
     }
   ]
 }

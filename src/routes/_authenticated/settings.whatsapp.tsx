@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { CloudConnectionsPanel } from "@/components/whatsapp/cloud-connections-panel";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -92,6 +93,7 @@ function WhatsAppSettings() {
 
   return (
     <div className="container mx-auto max-w-4xl space-y-6 py-8">
+      <CloudConnectionsPanel />
       <PageHeader
         eyebrow="Configurações"
         title="WhatsApp"

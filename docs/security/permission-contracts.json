@@ -1708,6 +1708,132 @@
           "name": "inbox SQL rejects inactive member"
         }
       }
+    },
+    {
+      "id": "whatsapp-cloud-connection-center",
+      "kind": "business",
+      "files": {
+        "src/lib/whatsapp/cloud-connections.server.ts": "b5f5c15e109a7c269666c29b81a4aecf16f95ecdd72028edded8c6e841374289",
+        "src/lib/whatsapp/cloud-connections.functions.ts": "6b658b31d75c7659dc7651b766ca6470c40b2e5b75d32eefab2951166b8151f0",
+        "src/components/whatsapp/cloud-connections-panel.tsx": "e25a38f0506bdbf7e5b6d466665948b3b1f957c5558e113000c1da98bb29b4ff",
+        "src/routes/_authenticated/settings.whatsapp.tsx": "3b5b07439aa9ca3ad243bff9ba78612cd7cf0482bd79a0195b8d5552a6252f60",
+        "drizzle/migrations/0254_whatsapp_cloud_connections.sql": "60e6d9ebb0c44cc12e2b4ad4e3594cb1f5674ce77f5a1e247610c9eb174ed3f2"
+      },
+      "resources": ["system.whatsapp"],
+      "actions": ["view", "manage"],
+      "scopes": ["workspace"],
+      "permission_keys": ["system.whatsapp.view.workspace", "system.whatsapp.manage.workspace"],
+      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-connections.server.ts",
+          "symbol": "authorizeCloudConnection"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesArea"
+        },
+        {
+          "file": "src/components/whatsapp/cloud-connections-panel.tsx",
+          "symbol": "CloudConnectionsPanel"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0254_whatsapp_cloud_connections.sql",
+          "symbol": "wa_cloud_connections"
+        },
+        {
+          "file": "drizzle/migrations/0254_whatsapp_cloud_connections.sql",
+          "symbol": "wa_cloud_sync_numbers"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "allows active authorized cloud administrator"
+        },
+        "missing_permission": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud explicit deny even after role grant"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud inactive member before privilege access"
+        }
+      }
+    },
+    {
+      "id": "whatsapp-cloud-transport-internal",
+      "kind": "internal",
+      "files": {
+        "src/lib/whatsapp/cloud-api.server.ts": "b4708eba03db205f9c359e95ac7d50b8daee39616e8fb26b59310faf80bb18c7"
+      },
+      "resources": ["system.whatsapp"],
+      "actions": ["view", "manage"],
+      "scopes": ["workspace"],
+      "permission_keys": ["system.whatsapp.view.workspace", "system.whatsapp.manage.workspace"],
+      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants.",
+      "controls": [
+        {
+          "file": "src/lib/whatsapp/cloud-api.server.ts",
+          "symbol": "metaObjectId"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0254_whatsapp_cloud_connections.sql",
+          "symbol": "wa_cloud_connections"
+        },
+        {
+          "file": "drizzle/migrations/0254_whatsapp_cloud_connections.sql",
+          "symbol": "wa_cloud_sync_numbers"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "allows active authorized cloud administrator"
+        },
+        "missing_permission": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud explicit deny even after role grant"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud inactive member before privilege access"
+        }
+      },
+      "exception": {
+        "mechanism": "Server-only utility called by authorized connection management; strict numeric object IDs, fixed Meta host, bearer credentials not URLs. No public endpoint.",
+        "boundary": "No credential storage access or tenant decision in transport; authenticated callers supply only their authorized connection. Webhook HMAC validates bytes before processing.",
+        "revocation": "Caller authorization is current on every operation; revoking Meta token stops requests; no automatic retry/fallback.",
+        "review_by": "2027-01-26"
+      }
     }
   ],
   "retired": {}
