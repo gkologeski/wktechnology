@@ -304,24 +304,9 @@ function ContactsCardContent({
       if (error) return toast.error(error.message);
       if (deniedIfUnaffected(affected)) return;
     } else {
-      // Remove vínculo many-to-many
-      const { error } = await sb
-        .from("deal_contacts")
-        .delete()
-        .eq("deal_id", entityId)
-        .eq("contact_id", contactId);
+      // Remove o vínculo many-to-many e/ou o contato principal, conforme existirem
+      const { error } = await unlinkDealContact(supabase, sb, entityId, contactId);
       if (error) return toast.error(error.message);
-      // Se for o contato primário do negócio, limpa também
-      const { data: deal } = await supabase
-        .from("deals")
-        .select("primary_contact_id")
-        .eq("id", entityId)
-        .maybeSingle();
-      if (
-        (deal as { primary_contact_id?: string | null } | null)?.primary_contact_id === contactId
-      ) {
-        await sb.from("deals").update({ primary_contact_id: null }).eq("id", entityId);
-      }
     }
     toast.success("Contato desvinculado");
     emitTimelineRefresh();
