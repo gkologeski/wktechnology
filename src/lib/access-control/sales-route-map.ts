@@ -63,6 +63,7 @@ const routes: Record<string, readonly string[]> = {
   "/landing-pages": ["techsales.marketing.landing_pages"],
   "/settings/email": ["techsales.email_accounts"],
   "/settings/email-templates": ["system.automation.email_templates"],
+  "/settings/channels": ["system.channels"],
   "/settings/whatsapp": ["system.whatsapp"],
   "/settings/voice-agent": ["techsales.prospecting_voice"],
   "/settings/prospecting": ["techsales.prospecting_search"],

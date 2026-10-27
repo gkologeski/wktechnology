@@ -186,6 +186,7 @@ import { Route as AuthenticatedSettingsBillingRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsBookingRouteImport } from './routes/_authenticated/settings.booking'
 import { Route as AuthenticatedSettingsBrandingRouteImport } from './routes/_authenticated/settings.branding'
 import { Route as AuthenticatedSettingsCalendarsRouteImport } from './routes/_authenticated/settings.calendars'
+import { Route as AuthenticatedSettingsChannelsRouteImport } from './routes/_authenticated/settings.channels'
 import { Route as AuthenticatedSettingsChargingTemplatesRouteImport } from './routes/_authenticated/settings.charging-templates'
 import { Route as AuthenticatedSettingsClausesRouteImport } from './routes/_authenticated/settings.clauses'
 import { Route as AuthenticatedSettingsContractDefaultsRouteImport } from './routes/_authenticated/settings.contract-defaults'
@@ -1411,6 +1412,12 @@ const AuthenticatedSettingsCalendarsRoute =
   AuthenticatedSettingsCalendarsRouteImport.update({
     id: '/calendars',
     path: '/calendars',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsChannelsRoute =
+  AuthenticatedSettingsChannelsRouteImport.update({
+    id: '/channels',
+    path: '/channels',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
 const AuthenticatedSettingsChargingTemplatesRoute =
@@ -2976,6 +2983,7 @@ export interface FileRoutesByFullPath {
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/settings/channels': typeof AuthenticatedSettingsChannelsRoute
   '/settings/charging-templates': typeof AuthenticatedSettingsChargingTemplatesRoute
   '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/settings/contract-defaults': typeof AuthenticatedSettingsContractDefaultsRoute
@@ -3388,6 +3396,7 @@ export interface FileRoutesByTo {
   '/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/settings/channels': typeof AuthenticatedSettingsChannelsRoute
   '/settings/charging-templates': typeof AuthenticatedSettingsChargingTemplatesRoute
   '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/settings/contract-defaults': typeof AuthenticatedSettingsContractDefaultsRoute
@@ -3807,6 +3816,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/booking': typeof AuthenticatedSettingsBookingRoute
   '/_authenticated/settings/branding': typeof AuthenticatedSettingsBrandingRoute
   '/_authenticated/settings/calendars': typeof AuthenticatedSettingsCalendarsRoute
+  '/_authenticated/settings/channels': typeof AuthenticatedSettingsChannelsRoute
   '/_authenticated/settings/charging-templates': typeof AuthenticatedSettingsChargingTemplatesRoute
   '/_authenticated/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/_authenticated/settings/contract-defaults': typeof AuthenticatedSettingsContractDefaultsRoute
@@ -4227,6 +4237,7 @@ export interface FileRouteTypes {
     | '/settings/booking'
     | '/settings/branding'
     | '/settings/calendars'
+    | '/settings/channels'
     | '/settings/charging-templates'
     | '/settings/clauses'
     | '/settings/contract-defaults'
@@ -4639,6 +4650,7 @@ export interface FileRouteTypes {
     | '/settings/booking'
     | '/settings/branding'
     | '/settings/calendars'
+    | '/settings/channels'
     | '/settings/charging-templates'
     | '/settings/clauses'
     | '/settings/contract-defaults'
@@ -5057,6 +5069,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/booking'
     | '/_authenticated/settings/branding'
     | '/_authenticated/settings/calendars'
+    | '/_authenticated/settings/channels'
     | '/_authenticated/settings/charging-templates'
     | '/_authenticated/settings/clauses'
     | '/_authenticated/settings/contract-defaults'
@@ -6690,6 +6703,13 @@ declare module '@tanstack/react-router' {
       path: '/calendars'
       fullPath: '/settings/calendars'
       preLoaderRoute: typeof AuthenticatedSettingsCalendarsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/channels': {
+      id: '/_authenticated/settings/channels'
+      path: '/channels'
+      fullPath: '/settings/channels'
+      preLoaderRoute: typeof AuthenticatedSettingsChannelsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/settings/charging-templates': {
@@ -8549,6 +8569,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsBookingRoute: typeof AuthenticatedSettingsBookingRoute
   AuthenticatedSettingsBrandingRoute: typeof AuthenticatedSettingsBrandingRoute
   AuthenticatedSettingsCalendarsRoute: typeof AuthenticatedSettingsCalendarsRoute
+  AuthenticatedSettingsChannelsRoute: typeof AuthenticatedSettingsChannelsRoute
   AuthenticatedSettingsChargingTemplatesRoute: typeof AuthenticatedSettingsChargingTemplatesRoute
   AuthenticatedSettingsClausesRoute: typeof AuthenticatedSettingsClausesRoute
   AuthenticatedSettingsContractDefaultsRoute: typeof AuthenticatedSettingsContractDefaultsRoute
@@ -8646,6 +8667,7 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsBookingRoute: AuthenticatedSettingsBookingRoute,
   AuthenticatedSettingsBrandingRoute: AuthenticatedSettingsBrandingRoute,
   AuthenticatedSettingsCalendarsRoute: AuthenticatedSettingsCalendarsRoute,
+  AuthenticatedSettingsChannelsRoute: AuthenticatedSettingsChannelsRoute,
   AuthenticatedSettingsChargingTemplatesRoute:
     AuthenticatedSettingsChargingTemplatesRoute,
   AuthenticatedSettingsClausesRoute: AuthenticatedSettingsClausesRoute,

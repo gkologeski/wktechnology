@@ -255,7 +255,7 @@
       "id": "configuration-navigation-compatibility",
       "kind": "internal",
       "files": {
-        "src/lib/access-control/sales-route-map.ts": "900aa638af6edaad38f79c08e711af8274d92639caf1ee7e5b72cce626c3fdc8",
+        "src/lib/access-control/sales-route-map.ts": "a564bc78dc95654b256271ec4fe9c151d63bc7fb3b4f73ad940b0dd1f4b2fa5c",
         "src/routes/_authenticated/settings.tsx": "a4f951fe15ac2c7de40486935dabe323cc57935a567137ef3012fa0bfb6b743b",
         "src/routes/_authenticated.tsx": "18faf2eba2b27b297cac5039fdc0913b7b661631c9e578c23e3d9f21dae5c27f"
       },
@@ -2264,6 +2264,136 @@
         "src/integrations/supabase/types.ts": "9a3ba3e6e96aa2bec32140249eb0ad9f13dacbc06e5bf05c1242acb98f7adbe7"
       },
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change."
+    },
+    {
+      "id": "service-channel-account-center",
+      "kind": "business",
+      "files": {
+        "src/lib/prospecting/sdr/channel-accounts.functions.ts": "3f6eae3a93430d78f4f5281bbef94ed402fc19c7e503ded840300566913d86f8",
+        "src/lib/prospecting/sdr/channel-access.server.ts": "a23a8c47439c6f10cf0a30dae2253b53af3a894e3238c7099381a0465594a95a",
+        "src/routes/_authenticated/settings.channels.tsx": "468e5d7ee6c7e9aa3274f49f459e555dcdb7df30e0fb8215c00100da1fabf88e",
+        "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c"
+      },
+      "resources": ["system.channels", "techsales.marketing.sdr_agent"],
+      "actions": ["view", "manage", "update"],
+      "scopes": ["workspace"],
+      "permission_keys": ["system.channels.view.workspace", "system.channels.manage.workspace"],
+      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back.",
+      "controls": [
+        {
+          "file": "src/lib/prospecting/sdr/channel-access.server.ts",
+          "symbol": "requireChannelAccess"
+        },
+        {
+          "file": "src/routes/_authenticated/settings.channels.tsx",
+          "symbol": "ServiceChannelsPage"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channel_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channel_save"
+        },
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channels_read"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "allows active authorized channel manager"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects missing channel permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects explicit channel deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects foreign workspace channel access"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects inactive channel member"
+        }
+      }
+    },
+    {
+      "id": "service-channel-identity-resolution",
+      "kind": "internal",
+      "files": {
+        "src/lib/prospecting/sdr/channel-identity.ts": "2082bb676d0617767b6f490fe40d3722d490e0081475835eb65b4955e984c21f"
+      },
+      "resources": ["system.channels"],
+      "actions": ["view"],
+      "scopes": ["workspace"],
+      "permission_keys": ["system.channels.view.workspace"],
+      "rationale": "Pure identity interpolation and deterministic routing only; no network, persistence, or authorization decision. Callers must resolve authorized account metadata server-side. No runtime activation in this package.",
+      "controls": [
+        {
+          "file": "src/lib/prospecting/sdr/channel-identity.ts",
+          "symbol": "renderChannelIdentity"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channel_accounts"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "allows active authorized channel manager"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects missing channel permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects explicit channel deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects foreign workspace channel access"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects inactive channel member"
+        }
+      },
+      "exception": {
+        "mechanism": "Pure functions accept already authorized channel metadata; no provider credentials, service client, or public endpoint.",
+        "boundary": "Workspace/account matching and explicit selected agent matching; conflicting responders fail closed.",
+        "revocation": "No cache or side effects. Runtime callers must re-read bindings.",
+        "review_by": "2027-01-27"
+      }
+    },
+    {
+      "id": "service-channel-navigation-labels",
+      "kind": "presentation",
+      "files": {
+        "src/lib/menu-config.ts": "4ad46a66e7badc79af7d04dbd5364f6b044d56133e453bfbb44220dbd1c2c3bf",
+        "src/lib/menu-resources.ts": "eed3bafa935431fd30fe5d01ddce63848afb0911c6cedeb3fba21b0890f32d17"
+      },
+      "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files."
     }
   ],
   "retired": {}

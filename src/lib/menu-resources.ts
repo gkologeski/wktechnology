@@ -87,6 +87,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/settings/marketplace": ["system.marketplace"],
   "/integrations": ["system.integrations"],
   "/settings/integrations": ["system.integrations"],
+  "/settings/channels": ["system.channels"],
   "/settings/whatsapp": ["system.whatsapp"],
   "/settings/integrations/linkedin": ["system.linkedin"],
   "/settings/hubspot-sync": ["system.hubspot_sync"],
