@@ -292,6 +292,183 @@ export const listEnrollments = createServerFn({ method: "POST" })
     };
   });
 
+// Resultados (30 dias): funil e totais contados no banco sob RLS, reuniões
+// reais (`sdr_meetings`) e qualificações canônicas, com nomes lidos pelo usuário.
+export const getSdrResults = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "view")])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const ws = await requireSdr(supabase, userId, "view");
+    const since = new Date(Date.now() - 30 * 86400_000).toISOString();
+    const head = { count: "exact" as const, head: true };
+    const enr = () =>
+      supabase.from("sdr_enrollments").select("id", head).eq("workspace_id", ws).gte("created_at", since);
+    const act = (kind: string, status: string) =>
+      supabase
+        .from("sdr_actions")
+        .select("id", head)
+        .eq("workspace_id", ws)
+        .gte("created_at", since)
+        .eq("kind", kind)
+        .eq("status", status);
+    const counted = await Promise.all([
+      enr(),
+      enr().not("last_inbound_at", "is", null),
+      supabase
+        .from("sdr_enrollments")
+        .select("id, prospecting_qualifications!inner(decision)", head)
+        .eq("workspace_id", ws)
+        .gte("created_at", since)
+        .in("prospecting_qualifications.decision", ["qualified", "scheduled"]),
+      enr().in("meeting_status", ["link_sent", "pending_sync", "confirmed", "sync_failed"]),
+      enr().eq("meeting_status", "confirmed"),
+      enr().eq("status", "handoff"),
+      enr().eq("status", "opted_out"),
+      act("message_sent", "success"),
+      act("material_sent", "success"),
+      act("message_sent", "failed"),
+    ]);
+    const failed = counted.find((r) => r.error)?.error;
+    if (failed) throw new Error(failed.message);
+    const n = counted.map((r) => r.count ?? 0);
+    const totals = {
+      started: n[0],
+      replied: n[1],
+      qualified: n[2],
+      meetingProposed: n[3],
+      meetingConfirmed: n[4],
+      handoff: n[5],
+      optedOut: n[6],
+      messagesSent: n[7],
+      materialsSent: n[8],
+      sendFailures: n[9],
+    };
+
+    const [meetingsRes, pendingRes, qualifiedRes] = await Promise.all([
+      supabase
+        .from("sdr_meetings")
+        .select(
+          "id, start_at, end_at, timezone, status, meet_link, host_user_id, contact_id, lead_id, playbook_id, conversation_id, enrollment_id",
+        )
+        .eq("workspace_id", ws)
+        .gte("start_at", since)
+        .order("start_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("sdr_enrollments")
+        .select("id, meeting_status, booking_id, contact_id, lead_id, contact_phone, playbook_id, last_action_at")
+        .eq("workspace_id", ws)
+        .in("meeting_status", ["link_sent", "pending_sync", "sync_failed"])
+        .order("last_action_at", { ascending: false, nullsFirst: false })
+        .limit(50),
+      supabase
+        .from("sdr_enrollments")
+        .select(
+          "id, contact_id, lead_id, contact_phone, playbook_id, commercial_stage, prospecting_qualifications!inner(total_score, decision, questionnaire:prospecting_questionnaires(name))",
+        )
+        .eq("workspace_id", ws)
+        .gte("created_at", since)
+        .order("last_action_at", { ascending: false, nullsFirst: false })
+        .limit(100),
+    ]);
+    const listError = [meetingsRes, pendingRes, qualifiedRes].find((r) => r.error)?.error;
+    if (listError) throw new Error(listError.message);
+    const meetings = meetingsRes.data ?? [];
+    const pending = pendingRes.data ?? [];
+    const qualified = qualifiedRes.data ?? [];
+
+    const all = [...meetings, ...pending, ...qualified] as Array<{
+      contact_id: string | null;
+      lead_id: string | null;
+      playbook_id: string | null;
+    }>;
+    const uniq = (vals: Array<string | null | undefined>) => [
+      ...new Set(vals.filter((v): v is string => !!v)),
+    ];
+    const people = async (table: "contacts" | "leads", ids: string[]) => {
+      const out: Record<
+        string,
+        { first_name: string | null; last_name: string | null; company_name: string | null }
+      > = {};
+      for (let i = 0; i < ids.length; i += 100) {
+        const { data: chunk } = await supabase
+          .from(table)
+          .select("id, first_name, last_name, company_name")
+          .eq("workspace_id", ws)
+          .in("id", ids.slice(i, i + 100));
+        for (const p of chunk ?? []) out[p.id] = p;
+      }
+      return out;
+    };
+    const agentIds = uniq(all.map((r) => r.playbook_id));
+    const hostIds = uniq(meetings.map((m) => m.host_user_id));
+    const [contacts, leads, agentRows, hostRows] = await Promise.all([
+      people("contacts", uniq(all.map((r) => r.contact_id))),
+      people("leads", uniq(all.map((r) => r.lead_id))),
+      agentIds.length
+        ? supabase
+            .from("sdr_playbooks")
+            .select("id, name")
+            .eq("workspace_id", ws)
+            .in("id", agentIds)
+            .then((r) => r.data ?? [])
+        : Promise.resolve([] as Array<{ id: string; name: string }>),
+      hostIds.length
+        ? supabase
+            .from("profiles")
+            .select("id, full_name")
+            .in("id", hostIds)
+            .then((r) => r.data ?? [])
+        : Promise.resolve([] as Array<{ id: string; full_name: string | null }>),
+    ]);
+    const agents = Object.fromEntries(agentRows.map((a) => [a.id, a.name]));
+    const hosts = Object.fromEntries(hostRows.map((h) => [h.id, h.full_name]));
+    const personOf = (r: { contact_id: string | null; lead_id: string | null }) => {
+      const p = r.contact_id ? contacts[r.contact_id] : r.lead_id ? leads[r.lead_id] : null;
+      return p
+        ? { first_name: p.first_name, last_name: p.last_name, company_name: p.company_name }
+        : null;
+    };
+    const agentOf = (id: string | null) => (id ? (agents[id] ?? null) : null);
+
+    return {
+      since,
+      totals,
+      meetings: meetings.map((m) => ({
+        ...m,
+        person: personOf(m),
+        agent_name: agentOf(m.playbook_id),
+        host_name: m.host_user_id ? (hosts[m.host_user_id] ?? null) : null,
+      })),
+      pendingMeetings: pending.map((e) => ({
+        ...e,
+        person: personOf(e),
+        agent_name: agentOf(e.playbook_id),
+      })),
+      qualifications: qualified.map((e) => {
+        const q = e.prospecting_qualifications as unknown as {
+          total_score: number | null;
+          decision: string;
+          questionnaire: { name?: string } | null;
+        };
+        return {
+          id: e.id,
+          contact_id: e.contact_id,
+          lead_id: e.lead_id,
+          contact_phone: e.contact_phone,
+          commercial_stage: e.commercial_stage,
+          person: personOf(e),
+          agent_name: agentOf(e.playbook_id),
+          total: Number(q?.total_score ?? 0),
+          decision: q?.decision ?? "pending",
+          questionnaire: q?.questionnaire?.name ?? null,
+        };
+      }),
+    };
+  });
+
+
+
 export const enrollLead = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "create")])
   .inputValidator((input) =>
