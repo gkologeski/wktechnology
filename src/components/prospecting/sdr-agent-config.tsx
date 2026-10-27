@@ -236,7 +236,7 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
             />
             <p id="cfg-optout-help" className="text-xs text-muted-foreground">
               Separe por vírgula. Quando o cliente envia uma delas, o agente para de contatá-lo. Os
-              pedidos claros de saída (“não quero mais”, “me tire da lista”) já são reconhecidos
+              pedidos claros (“não me mande mais”, “me tire da lista”, “sair”) já são reconhecidos
               sempre.
             </p>
           </div>
