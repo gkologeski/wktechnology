@@ -37,9 +37,13 @@ export async function cloudRequest(
       "Content-Type": "application/json",
     },
     ...(options.body === undefined ? {} : { body: JSON.stringify(options.body) }),
-    redirect: "error",
+    redirect: "manual",
     signal: AbortSignal.timeout(20_000),
   });
+  // Workers supports manual redirects; never forward the bearer token elsewhere.
+  if (response.status >= 300 && response.status < 400) {
+    throw new MetaCloudError(response.status);
+  }
   let result: any;
   try {
     result = await response.json();

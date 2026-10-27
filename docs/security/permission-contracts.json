@@ -1783,7 +1783,7 @@
       "id": "whatsapp-cloud-transport-internal",
       "kind": "internal",
       "files": {
-        "src/lib/whatsapp/cloud-api.server.ts": "b4708eba03db205f9c359e95ac7d50b8daee39616e8fb26b59310faf80bb18c7"
+        "src/lib/whatsapp/cloud-api.server.ts": "cffbdc2ab5775e9b80f8eb98e9fb84038a527f72eeaf34cc2c98a8f2f16800bc"
       },
       "resources": ["system.whatsapp"],
       "actions": ["view", "manage"],
@@ -1906,7 +1906,7 @@
       "id": "whatsapp-cloud-internal-routing",
       "kind": "internal",
       "files": {
-        "src/lib/whatsapp/cloud-runtime.server.ts": "55c68291eae9722088043a1c96dc6c00ed46a779c4114978da0b2a8db8863861",
+        "src/lib/whatsapp/cloud-runtime.server.ts": "fe75a99797c0e1812c9932a515693bff548f89011f3c67495ec91fc4e949758e",
         "src/lib/whatsapp/meta-channel.server.ts": "40c3bb7fddd839f421bb67b574f61bdd99e3197b38acf54409ac6cd94a0a801a",
         "src/lib/whatsapp/templates.server.ts": "693872ba81f6e46c295d73c4b760aaaa2505f1ae186c865420d9d30af201ea9e",
         "src/lib/whatsapp/inbound-media.server.ts": "06291dd9157bf46bae7e141c906d771bce154e73bf41b00b22adb9654d3cdc28",

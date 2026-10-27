@@ -15,8 +15,25 @@ describe("Meta official transport", () => {
       "https://graph.facebook.com/v23.0/123456/messages",
     );
     expect(fetcher.mock.calls[0][1].headers.Authorization).toBe("Bearer secret-test-token");
-    expect(fetcher.mock.calls[0][1].redirect).toBe("error");
+    expect(fetcher.mock.calls[0][1].redirect).toBe("manual");
   });
+  it.each([301, 302, 303, 307, 308])(
+    "rejects redirect %s without forwarding credentials",
+    async (status) => {
+      const fetcher = vi.fn(async (_url, options) => {
+        if (options.redirect !== "manual") throw new Error("Unsupported edge redirect mode");
+        return new Response("secret-test-token", {
+          status,
+          headers: { Location: "https://evil.invalid" },
+        });
+      });
+      vi.stubGlobal("fetch", fetcher);
+      await expect(cloudRequest(credentials, "123456", "phone_numbers")).rejects.toThrow(
+        `Meta Cloud API: falha ${status}.`,
+      );
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    },
+  );
   it("rejects object path injection before sending credentials", async () => {
     const fetcher = vi.fn();
     vi.stubGlobal("fetch", fetcher);
