@@ -144,7 +144,14 @@ UPDATE public.service_agent_jobs j SET status='ready',agent_version_id='79000000
 FROM public.service_agent_sessions s WHERE s.id=j.session_id AND s.channel='email';
 CREATE TEMP TABLE service_delivery_attempt AS SELECT result.* FROM public.service_agent_begin_send((SELECT j.id FROM public.service_agent_jobs j JOIN public.service_agent_sessions s ON s.id=j.session_id WHERE s.channel='email')) result;
 DO $$ BEGIN IF (SELECT count(*) FROM service_delivery_attempt)<>1 THEN RAISE EXCEPTION 'Authorized send not claimed';END IF;END $$;
-UPDATE public.service_agent_sessions SET ai_owner='human',ai_version=ai_version+1 WHERE channel='email';
+-- Simulate Gmail sync winning the race before the send callback records its provider ID.
+INSERT INTO public.email_messages(id,workspace_id,owner_id,account_id,thread_id,provider_message_id,message_id_header,direction,from_email,body_text,sent_at)
+SELECT '79000000-0000-4000-8000-000000000050',j.workspace_id,'10000000-0000-4000-8000-000000000001','79000000-0000-4000-8000-000000000003','79000000-0000-4000-8000-000000000004','isolated-accepted-provider-id',j.draft_payload->>'delivery_header','outbound','sdr@techerp-test.invalid',j.draft_text,now() FROM service_delivery_attempt j;
+DO $$ BEGIN IF (SELECT ai_owner FROM public.service_agent_sessions WHERE channel='email')<>'ai' THEN RAISE EXCEPTION 'Synced agent message was mistaken for human takeover';END IF;RAISE NOTICE 'PASS Gmail sync can precede provider callback without false takeover';END $$;
+-- A real operator message still takes ownership, even if a copied header matches the attempt.
+INSERT INTO public.email_messages(id,workspace_id,owner_id,account_id,thread_id,provider_message_id,message_id_header,direction,from_email,body_text,sent_at)
+SELECT '79000000-0000-4000-8000-000000000051',j.workspace_id,'10000000-0000-4000-8000-000000000001','79000000-0000-4000-8000-000000000003','79000000-0000-4000-8000-000000000004','isolated-human-mail',j.draft_payload->>'delivery_header','outbound','sdr@techerp-test.invalid','[ISO] Humano assumiu o atendimento por e-mail',now() FROM service_delivery_attempt j;
+DO $$ BEGIN IF (SELECT ai_owner FROM public.service_agent_sessions WHERE channel='email')<>'human' THEN RAISE EXCEPTION 'Human email did not take ownership';END IF;RAISE NOTICE 'PASS real human email still takes ownership';END $$;
 DO $$ DECLARE j record;first_id uuid;second_id uuid;BEGIN
  SELECT * INTO j FROM service_delivery_attempt;
  first_id:=public.service_agent_complete_email(j.id,j.send_token,'isolated-accepted-provider-id','<isolated-service@techerp-test.invalid>');

@@ -2611,7 +2611,8 @@
         "drizzle/migrations/0262_sdr_opportunity_link.sql": "ffee033b466bc4b15a178b5469204eb4e6be6d58f475fd9d877ce4f1a1c26147",
         "drizzle/migrations/0264_service_agent_handoff.sql": "c90a06e3b335e66c33b6f8657bab632739f7ec1c07d7322c94c486d8173b8a15",
         "src/routes/api/public/hooks/sdr-tick.ts": "e2aa8a7e49ef906f4fa5dd51e0eebdc414c07d79b2c501a2550e1375c10874b5",
-        "drizzle/migrations/0265_service_agent_wake_pending.sql": "306ab84daf4856e9b629b644d1d04a2a13c06b54ccda44a5c3bfede8a93d6968"
+        "drizzle/migrations/0265_service_agent_wake_pending.sql": "306ab84daf4856e9b629b644d1d04a2a13c06b54ccda44a5c3bfede8a93d6968",
+        "drizzle/migrations/0266_service_agent_email_sync_proof.sql": "749f88dec7426ea6963e1f8aaf43d8454e9ed715239e1c87ef443106c6e462f9"
       },
       "resources": [
         "system.channels",
@@ -2622,7 +2623,7 @@
       "actions": ["view", "update", "create", "approve"],
       "scopes": ["own", "team", "workspace"],
       "permission_keys": ["system.channels.view.workspace", "system.channels.approve.workspace"],
-      "rationale": "Real email/chat source records, canonical enrollment and source-actor RLS. Current binding/version/lease rechecked before each effect. Anonymous chat has no customer scope; verified email lookup is restricted to linked person. Private CRM context requires explicit approval. SQL acceptance in tests/sql/service-agent-queue-isolated.sql validates actual permissions, coalescence, historical/automatic exclusion, handoff and CAS in rollback; CI exercises RPC fail-closed paths. Authenticated cron starts WhatsApp and email/chat concurrently and waits for both outcomes. Source actor and lease are rechecked by each worker. Handoff uses the configured active workspace recipient only after source assign permission; otherwise keeps the current operator. Canonical reason and timestamp persist, and the recipient is notified. Existing recovery schedule is tightened to one minute without changing command, credentials or suspended state. Repeated automatic menus pause before inference; tests service-worker.test.ts, channel-tick.test.ts and isolated SQL handoff acceptance cover these paths. No production activation yet. Queue waiting re-reads a burst-postponed deadline within its bounded request budget. A running-to-finished trigger wakes an already queued newer inbound using the existing authenticated cron command; it never exposes or replaces credentials and never changes the queued message.",
+      "rationale": "Real email/chat source records, canonical enrollment and source-actor RLS. Current binding/version/lease rechecked before each effect. Anonymous chat has no customer scope; verified email lookup is restricted to linked person. Private CRM context requires explicit approval. SQL acceptance in tests/sql/service-agent-queue-isolated.sql validates actual permissions, coalescence, historical/automatic exclusion, handoff and CAS in rollback; CI exercises RPC fail-closed paths. Authenticated cron starts WhatsApp and email/chat concurrently and waits for both outcomes. Source actor and lease are rechecked by each worker. Handoff uses the configured active workspace recipient only after source assign permission; otherwise keeps the current operator. Canonical reason and timestamp persist, and the recipient is notified. Existing recovery schedule is tightened to one minute without changing command, credentials or suspended state. Repeated automatic menus pause before inference; tests service-worker.test.ts, channel-tick.test.ts and isolated SQL handoff acceptance cover these paths. No production activation yet. Queue waiting re-reads a burst-postponed deadline within its bounded request budget. A running-to-finished trigger wakes an already queued newer inbound using the existing authenticated cron command; it never exposes or replaces credentials and never changes the queued message. Gmail-sync-before-callback is recognized only for the same stored source mailbox and trusted provider ID or in-flight delivery nonce plus canonical body. Authenticated operator messages and different body/header messages still take human ownership; actual SQL acceptance tests cover both orders and idempotent proof.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-worker.server.ts",
@@ -2665,6 +2666,10 @@
         {
           "file": "drizzle/migrations/0265_service_agent_wake_pending.sql",
           "symbol": "service_agent_wake_next"
+        },
+        {
+          "file": "drizzle/migrations/0266_service_agent_email_sync_proof.sql",
+          "symbol": "service_agent_message_event"
         }
       ],
       "tests": {
