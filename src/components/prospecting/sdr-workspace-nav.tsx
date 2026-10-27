@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { BarChart3, Radar, Wand2, type LucideIcon } from "lucide-react";
 import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
@@ -16,16 +17,10 @@ const ICONS: Record<SdrViewId, LucideIcon> = {
 
 /**
  * Navegação em dois níveis do Agente SDR: áreas (Operação, Estúdio,
- * Resultados) e, abaixo, as seções da área atual. Renderizar dentro do
- * `<Tabs>` da página. Puramente presentacional.
+ * Resultados) como links e, abaixo, as seções da área atual. Renderizar
+ * dentro do `<Tabs>` da página. Puramente presentacional.
  */
-export function SdrWorkspaceNav({
-  section,
-  onSectionChange,
-}: {
-  section: SdrSectionId;
-  onSectionChange: (section: SdrSectionId) => void;
-}) {
+export function SdrWorkspaceNav({ section }: { section: SdrSectionId }) {
   const view = viewOfSection(section);
   return (
     <div className="space-y-4">
@@ -34,19 +29,19 @@ export function SdrWorkspaceNav({
           const Icon = ICONS[v.id];
           const active = v.id === view.id;
           return (
-            <button
+            <Link
               key={v.id}
-              type="button"
+              to="/agents/sdr"
+              search={{ section: active ? section : v.sections[0].id }}
+              replace
+              resetScroll={false}
               aria-current={active ? "page" : undefined}
-              onClick={() => {
-                if (!active) onSectionChange(v.sections[0].id);
-              }}
               className={cn(
                 "flex items-start gap-3 rounded-lg border px-4 py-3 text-left transition-colors",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 active
                   ? "border-primary/40 bg-primary/5"
-                  : "border-border bg-card hover:border-border hover:bg-muted/60",
+                  : "border-border bg-card hover:bg-muted/60",
               )}
             >
               <span
