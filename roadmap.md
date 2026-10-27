@@ -3,9 +3,10 @@
 - [x] Pacote 1: 9 abas viram 3 áreas (Operação, Estúdio, Resultados) com seções, endereço por `?section=`, cabeçalho padrão e "Novo agente" levando ao Playbook (com permissão de criar)
 - [x] Pacote 2: Estúdio integrado — barra única do agente aberto (endereço `?agent=`), conversa de teste fixa à direita em todas as seções do Estúdio, Playbook segue o agente aberto
 - [x] Botão "Duplicar agente": copia playbook, configuração, ferramentas e persona (como rascunho); cópia desativada, sem número de WhatsApp e não principal
-- [ ] Testar a duplicação de verdade (não executada para não criar agente real sem seu aceite)
+- [x] Duplicação testada de verdade: cópia idêntica (playbook e persona em rascunho), desativada, não principal; cópia de teste apagada em seguida
 - [x] Pacote 3: Operação com indicadores (Para revisar, Falhas, Em conversa, Com humano) e "Em atendimento" com nomes, agente, situação/etapa em português, filtros por situação e atalho para a conversa
-- [ ] Pacote 4: Resultados com funil e tabela de reuniões — aguarda "pode seguir"
+- [x] Pacote 4: Resultados com totais contados no banco (antes truncados em 500), funil, reuniões reais com anfitrião/horário, reuniões aguardando ação e qualificações
+- [x] Conferência no celular e no modo escuro (corrigida rolagem lateral das tabelas no celular)
 - [ ] Publicação (aguarda aceite do usuário)
 
 # Roadmap — Lia obedece à persona publicada (refatoração SDR)

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Send, Trash2, UserRound } from "lucide-react";
+import { Loader2, Send, Trash2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,16 +23,15 @@ import { SdrAgentConfigPanel } from "./sdr-agent-config";
 import { SdrAgentProfileCard } from "./sdr-agent-profile-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { SdrSkillsPanel } from "./sdr-skills-panel";
+import { SdrResultsPanel } from "./sdr-results-panel";
 import { SdrMaterialsPanel, type SdrMaterialRow } from "./sdr-materials-panel";
 import { Link } from "@tanstack/react-router";
-import { leadScoreBandLabel, LEAD_SCORE_MAX } from "@/lib/prospecting/lead-score";
-import { EmptyState, MetricCard, SectionHeader } from "@/components/techhire/ui";
+import { EmptyState, SectionHeader } from "@/components/techhire/ui";
 import {
   approveSdrDraft,
   setSdrOfferApproval,
   discardSdrDraft,
   getSdrOverview,
-  retrySdrMeetingSync,
   saveSdrPilotPlaybook,
   saveSdrSettings,
   setSdrOfferActive,
@@ -41,34 +40,7 @@ import {
   resetSdrBreaker,
 } from "@/lib/prospecting/sdr.functions";
 
-const STAGE: Record<string, string> = {
-  awaiting_reply: "Aguardando resposta",
-  discovery: "Descoberta",
-  qualified: "Qualificado",
-  material_sent: "Material enviado",
-  meeting_link_sent: "Link de agenda enviado",
-  meeting_booked: "Reunião marcada",
-  handoff: "Com humano",
-  opted_out: "Recusou",
-  closed: "Encerrado",
-};
-const MEETING: Record<string, string> = {
-  none: "—",
-  link_sent: "Link enviado",
-  pending_sync: "Aguardando Google",
-  confirmed: "Confirmada",
-  sync_failed: "Falha no Google",
-};
-
 type Overview = Awaited<ReturnType<typeof getSdrOverview>>;
-
-const DECISION: Record<string, string> = {
-  pending: "Pendente",
-  qualified: "Qualificado",
-  disqualified: "Desqualificado",
-  nurture: "Nutrição",
-  scheduled: "Agendado",
-};
 
 /** Agente SDR dentro da Prospecção (mesmo conteúdo de /agents/sdr). */
 export function SdrAgentPanel() {
@@ -164,9 +136,7 @@ export function SdrConsoleTabs({ agentId }: { agentId?: string | null } = {}) {
         ))}
       </TabsContent>
       <TabsContent value="sdr-results" className="mt-4">
-        {body((d) => (
-          <ResultsPanel d={d} />
-        ))}
+        <SdrResultsPanel />
       </TabsContent>
     </>
   );
@@ -802,95 +772,6 @@ function DraftCard({ job }: { job: Overview["jobs"][number] }) {
           Descartar
         </Button>
       </div>
-    </div>
-  );
-}
-
-function ResultsPanel({ d }: { d: Overview }) {
-  const retry = useServerFn(retrySdrMeetingSync);
-  const refresh = useRefresh();
-  const r = useMutation({
-    mutationFn: (enrollmentId: string) => retry({ data: { enrollmentId } }),
-    onSuccess: (x) => (
-      x.status === "confirmed"
-        ? toast.success("Reunião confirmada no Google")
-        : toast.error("Google ainda recusou"),
-      refresh()
-    ),
-    onError: (e: Error) => toast.error(e.message),
-  });
-  const count = (k: string) => d.metrics[k] ?? 0;
-  const by = (stage: string) => d.enrollments.filter((e) => e.commercial_stage === stage).length;
-  return (
-    <div className="space-y-6">
-      <SectionHeader title="Resultados (30 dias)" />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Conversas" value={d.enrollments.length} />
-        <MetricCard label="Mensagens enviadas" value={count("message_sent:success")} />
-        <MetricCard label="Qualificados" value={by("qualified")} />
-        <MetricCard
-          label="Reuniões confirmadas"
-          value={d.enrollments.filter((e) => e.meeting_status === "confirmed").length}
-        />
-        <MetricCard label="Com humano" value={by("handoff")} />
-        <MetricCard label="Recusas" value={by("opted_out")} />
-        <MetricCard label="Materiais enviados" value={count("material_sent:success")} />
-        <MetricCard label="Falhas de envio" value={count("message_sent:failed")} />
-      </div>
-      {d.enrollments.length === 0 ? (
-        <EmptyState
-          title="Sem conversas do SDR"
-          description="Ative o SDR numa campanha para começar."
-        />
-      ) : (
-        <div className="overflow-x-auto rounded-lg border bg-card">
-          <table className="w-full text-sm">
-            <thead className="text-left text-xs text-muted-foreground">
-              <tr>
-                <th className="p-2">Telefone</th>
-                <th className="p-2">Etapa</th>
-                <th className="p-2">Qualificação</th>
-                <th className="p-2">Reunião</th>
-                <th className="p-2" />
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {d.enrollments.map((e) => (
-                <tr key={e.id}>
-                  <td className="p-2">{e.contact_phone}</td>
-                  <td className="p-2">{STAGE[e.commercial_stage ?? ""] ?? e.commercial_stage}</td>
-                  <td className="p-2">
-                    {(() => {
-                      const q = e.qualification_id ? d.qualifications[e.qualification_id] : null;
-                      if (!q) return "—";
-                      return (
-                        <span title={q.questionnaire ?? undefined}>
-                          {q.total}/{LEAD_SCORE_MAX} · {leadScoreBandLabel(q.total)} ·{" "}
-                          {DECISION[q.decision] ?? q.decision}
-                        </span>
-                      );
-                    })()}
-                  </td>
-                  <td className="p-2">{MEETING[e.meeting_status ?? "none"] ?? e.meeting_status}</td>
-                  <td className="p-2 text-right">
-                    {e.meeting_status === "sync_failed" && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        disabled={r.isPending}
-                        onClick={() => r.mutate(e.id)}
-                      >
-                        <RefreshCw className="mr-1 h-3 w-3" />
-                        Reenviar ao Google
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
     </div>
   );
 }

@@ -235,7 +235,7 @@ export function SdrEnrollmentsPanel({
         />
       ) : (
         <>
-          <div className="overflow-x-auto rounded-lg border bg-card">
+          <div className="relative overflow-x-auto rounded-lg border bg-card">
             <table className="w-full text-sm">
               <caption className="sr-only">Atendimentos do Agente SDR</caption>
               <thead className="text-left text-xs text-muted-foreground">
