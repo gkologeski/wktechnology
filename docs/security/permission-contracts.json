@@ -1716,14 +1716,14 @@
         "src/lib/whatsapp/cloud-connections.server.ts": "b5f5c15e109a7c269666c29b81a4aecf16f95ecdd72028edded8c6e841374289",
         "src/lib/whatsapp/cloud-connections.functions.ts": "96b22387fa972c8c4e1d496a9ca6718adcd953d1904c6f995a496f9d94443595",
         "src/components/whatsapp/cloud-connections-panel.tsx": "1a5d48ea405e27e8c795c11e4666dc9421faa2deba6dca5f855af09f5a148dfb",
-        "src/routes/_authenticated/settings.whatsapp.tsx": "3b5b07439aa9ca3ad243bff9ba78612cd7cf0482bd79a0195b8d5552a6252f60",
+        "src/routes/_authenticated/settings.whatsapp.tsx": "5a283508e6de49ef640c38f7f8d756c20564a31f5e22b0707d233ba5a3ce8046",
         "drizzle/migrations/0254_whatsapp_cloud_connections.sql": "60e6d9ebb0c44cc12e2b4ad4e3594cb1f5674ce77f5a1e247610c9eb174ed3f2"
       },
       "resources": ["system.whatsapp"],
       "actions": ["view", "manage"],
       "scopes": ["workspace"],
       "permission_keys": ["system.whatsapp.view.workspace", "system.whatsapp.manage.workspace"],
-      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants.",
+      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants. The legacy WhatsApp route now renders the same extracted WhatsAppConfiguration used by the channel center; original transport operations and server checks are preserved.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -1744,6 +1744,10 @@
         {
           "file": "src/components/whatsapp/cloud-connections-panel.tsx",
           "symbol": "CloudConnectionsPanel"
+        },
+        {
+          "file": "src/components/service-channels/whatsapp-configuration.tsx",
+          "symbol": "WhatsAppConfiguration"
         }
       ],
       "database": [
@@ -2269,12 +2273,12 @@
       "id": "service-channel-account-center",
       "kind": "business",
       "files": {
-        "src/lib/prospecting/sdr/channel-accounts.functions.ts": "3f6eae3a93430d78f4f5281bbef94ed402fc19c7e503ded840300566913d86f8",
+        "src/lib/prospecting/sdr/channel-accounts.functions.ts": "1e32508d9a905698e2b566dc3db7eb10d756ebb99e9a86bc99eb9578bfb1ff2e",
         "src/lib/prospecting/sdr/channel-access.server.ts": "a23a8c47439c6f10cf0a30dae2253b53af3a894e3238c7099381a0465594a95a",
-        "src/routes/_authenticated/settings.channels.tsx": "eebd109704bb28e9bacf88faac345e58913a899c8effa565790aa95f1ea4aa49",
+        "src/routes/_authenticated/settings.channels.tsx": "d04c6a22f9bb7c6e22591c213c35bdf14e3c2cb2985fb63cbb41332fb9a0c6c5",
         "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c",
-        "src/components/service-channels/account-editor.tsx": "2e60fb838bff03b053f2e75a29e6a784424f0b0f5f6a80ae705def905004b0c0",
-        "src/components/service-channels/agent-channels.tsx": "c3e14508489c2c4dcdf96886cdc42c9a8b177811d7a11d1ac496b835769809f9",
+        "src/components/service-channels/account-editor.tsx": "62592e657e9dc7ca0c69ff22a73d945d6af4b5d8902eda485c36928b45fcb132",
+        "src/components/service-channels/agent-channels.tsx": "97abf189efffa02a15a536b7e9aef0a8cf3bc97d85f88c95915d7e916cdb8a41",
         "src/components/prospecting/sdr-agent-config.tsx": "b4870cc2ee2718d2e4f5996a6f7f0ce81b99dc3455a24192d314a515bd2a839d"
       },
       "resources": ["system.channels", "techsales.marketing.sdr_agent"],
@@ -2934,6 +2938,150 @@
           "file": "src/lib/prospecting/sdr/service-guard.test.ts",
           "name": "rejects inactive source actor"
         }
+      }
+    },
+    {
+      "id": "service-channel-inline-connection-configuration",
+      "kind": "business",
+      "files": {
+        "src/components/service-channels/connection-configuration.tsx": "9f0bf3710d602d58c920e2de445b4a315bcd9c34c0fa89ede96fca38a17fb283",
+        "src/components/service-channels/whatsapp-configuration.tsx": "a50a70db9e47ea9364cb8dda67f3b9990e8de7e90a025434c433df5b109856bb",
+        "src/components/service-channels/email-configuration.tsx": "e6b66f3eae964ca0188509161496f3d503de89de2bdac89b399c8999be614c14",
+        "src/components/service-channels/widget-configuration.tsx": "91c4e76deaab8216b997f81200667ab809b657641fb3cdce57c122346581b297",
+        "src/components/service-channels/channel-health.tsx": "0532fc66657082a73f9e1084d3920356e235cb0ba207f84c5ed12bbb27e9f8da",
+        "src/routes/_authenticated/settings.email.tsx": "891552262648430e13927eb1edb3c91b1a92122d1eecb5e3ecc62aee5b249c90",
+        "src/routes/_authenticated/settings.widget.tsx": "61c30eeb459f28bd2a43a0d678ff19583e3448ea1e9709c7ef95cecbc0fc37b1"
+      },
+      "resources": [
+        "system.channels",
+        "system.whatsapp",
+        "system.widget",
+        "techsales.email_accounts",
+        "techsales.inbox.email"
+      ],
+      "actions": ["view", "manage", "create", "update", "delete"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "system.whatsapp.view.workspace",
+        "system.whatsapp.manage.workspace",
+        "system.widget.view.workspace",
+        "techsales.email_accounts.view.own",
+        "techsales.email_accounts.create.own",
+        "techsales.email_accounts.update.own",
+        "techsales.email_accounts.delete.own"
+      ],
+      "rationale": "Existing WhatsApp, Gmail and widget configuration forms are shared by original routes and the new central screen, not duplicated or embedded via iframe. TransportCapabilities gates view and each mutation independently using current effective permissions and active workspace. Existing server handlers and RLS remain unchanged; no channel-management permission grants access to transport credentials. Health reads existing finite metadata endpoints only; it never reads tokens or app secrets and distinguishes unavailable/error states. Legacy WhatsApp live inspection occurs only after an authorized cloud metadata read identifies no matching Meta number. Widgets describe installation readiness, not unverified external connectivity. Gmail OAuth uses the same signed state/callback and trusted origin listener; only its local return path changes.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/prospecting/sdr/channel-permissions.ts",
+          "symbol": "transportCapabilities"
+        },
+        {
+          "file": "src/components/service-channels/email-configuration.tsx",
+          "symbol": "EmailConfiguration"
+        },
+        {
+          "file": "src/components/service-channels/whatsapp-configuration.tsx",
+          "symbol": "WhatsAppConfiguration"
+        },
+        {
+          "file": "src/components/service-channels/widget-configuration.tsx",
+          "symbol": "ChatConfiguration"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_record_access"
+        },
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channel_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "allows active matching workspace transport management"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "rejects missing transport permission despite channel management"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "preserves an effective management deny while allowing read"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "rejects configuration for a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "rejects inactive context without an active workspace"
+        }
+      }
+    },
+    {
+      "id": "service-channel-transport-capabilities",
+      "kind": "internal",
+      "files": {
+        "src/lib/prospecting/sdr/channel-permissions.ts": "1ade8280c9ab03a0a03206e60f7bcf05abd8b022f89dbfe476e5efae6891235e"
+      },
+      "resources": [
+        "system.channels",
+        "system.whatsapp",
+        "system.widget",
+        "techsales.email_accounts"
+      ],
+      "actions": ["view", "manage", "create", "update", "delete"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": ["system.channels.view.workspace"],
+      "rationale": "Pure UI projection over current effective permission keys. Unknown, loading, error, absent workspace and mismatched workspace contexts fail closed; email actions remain independent. No I/O, grants or authorization bypass. Each actual operation retains its existing authenticated server and database boundary.",
+      "controls": [
+        {
+          "file": "src/lib/prospecting/sdr/channel-permissions.ts",
+          "symbol": "scopeAllows"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channel_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "allows active matching workspace transport management"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "rejects missing transport permission despite channel management"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "preserves an effective management deny while allowing read"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "rejects configuration for a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "rejects inactive context without an active workspace"
+        }
+      },
+      "exception": {
+        "mechanism": "Pure permission presentation helper invoked by forms after usePermissions resolves the effective matrix.",
+        "boundary": "Does not access accounts, credentials, providers or persistence. Server and RLS remain authoritative.",
+        "revocation": "Effective deny, inactive/missing workspace, loading and error produce no enabled actions. Foreign-account status checks pass the explicit expected workspace.",
+        "review_by": "2027-01-27"
       }
     }
   ],

@@ -12,7 +12,7 @@ export const listServiceChannels = createServerFn({ method: "GET" })
     const [accounts, bindings, agents] = await Promise.all([
       db
         .from("service_channel_accounts")
-        .select("id,channel,source_key,label,display_name,enabled")
+        .select("id,workspace_id,channel,source_key,label,display_name,enabled")
         .eq("workspace_id", access.workspace)
         .order("label"),
       db
@@ -36,6 +36,7 @@ export const listServiceChannels = createServerFn({ method: "GET" })
 
 export type ServiceAccount = {
   id: string;
+  workspace_id: string;
   channel: "whatsapp" | "email" | "chat";
   source_key: string;
   label: string;

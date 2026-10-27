@@ -1,3 +1,4 @@
+import { ConnectionConfiguration } from "@/components/service-channels/connection-configuration";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -30,7 +31,7 @@ function ServiceChannelsPage() {
   const list = useServerFn(listServiceChannels);
   const discover = useServerFn(discoverServiceChannels);
   const accounts = useQuery({
-    queryKey: ["service_channels"],
+    queryKey: ["service_channels", permissions.workspaceId],
     queryFn: () => list(),
     enabled: canView,
   });
@@ -38,10 +39,14 @@ function ServiceChannelsPage() {
     mutationFn: () => discover(),
     onSuccess: () => {
       query.invalidateQueries({ queryKey: ["service_channels"] });
+      void query.invalidateQueries({ queryKey: ["wa-cloud-connections"] });
+      void query.invalidateQueries({ queryKey: ["whatsapp-connection"] });
+      void query.invalidateQueries({ queryKey: ["email_accounts"] });
       toast.success("Contas atualizadas.");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+  const [configurationOpen, setConfigurationOpen] = useState(false);
   const [channel, setChannel] = useState<keyof typeof TYPES>("whatsapp");
   if (!canView)
     return (
@@ -71,11 +76,14 @@ function ServiceChannelsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">{TYPES[channel].label}</h2>
         <div className="flex gap-2">
-          <Button variant="outline" asChild>
-            <a href={TYPES[channel].path}>
-              <Settings className="mr-2 h-4 w-4" />
-              Configurar conexão
-            </a>
+          <Button
+            variant="outline"
+            onClick={() => setConfigurationOpen((open) => !open)}
+            aria-expanded={configurationOpen}
+            aria-controls="channel-connection-settings"
+          >
+            <Settings className="mr-2 h-4 w-4" />
+            {configurationOpen ? "Ocultar configuração" : "Configurar conexão"}
           </Button>
           {canManage && (
             <Button variant="outline" disabled={refresh.isPending} onClick={() => refresh.mutate()}>
@@ -85,6 +93,13 @@ function ServiceChannelsPage() {
           )}
         </div>
       </div>
+      {configurationOpen && (
+        <Card id="channel-connection-settings">
+          <CardContent className="pt-6">
+            <ConnectionConfiguration key={channel} channel={channel} />
+          </CardContent>
+        </Card>
+      )}
       {accounts.isLoading && <p>Carregando contas…</p>}
       {accounts.isError && (
         <div role="alert" className="rounded-lg border border-destructive p-4">

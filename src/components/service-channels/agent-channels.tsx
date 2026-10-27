@@ -11,7 +11,7 @@ export function AgentChannels({ agentId }: { agentId: string }) {
   const canManage = permissions.can("system.channels.manage.workspace");
   const list = useServerFn(listServiceChannels);
   const query = useQuery({
-    queryKey: ["service_channels"],
+    queryKey: ["service_channels", permissions.workspaceId],
     queryFn: () => list(),
     enabled: canView,
   });

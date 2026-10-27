@@ -1,3 +1,4 @@
+import { ChannelHealth } from "./channel-health";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -36,7 +37,10 @@ export function AccountEditor({
   suggestedAgentId?: string;
 }) {
   const permissions = usePermissions();
-  canManage = canManage && permissions.can("system.channels.manage.workspace");
+  canManage =
+    canManage &&
+    account.workspace_id === permissions.workspaceId &&
+    permissions.can("system.channels.manage.workspace");
   const [label, setLabel] = useState(account.label);
   const [name, setName] = useState(account.display_name);
   const [enabled, setEnabled] = useState(account.enabled);
@@ -80,6 +84,9 @@ export function AccountEditor({
         </Badge>
       </CardHeader>
       <CardContent>
+        <div className="mb-4">
+          <ChannelHealth account={account} />
+        </div>
         <fieldset disabled={!canManage || mutation.isPending} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Label>
