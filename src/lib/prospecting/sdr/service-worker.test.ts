@@ -23,7 +23,11 @@ vi.mock("@/lib/gmail.server", () => ({
   gmailSendRaw: vi.fn(),
 }));
 import { FakeDb } from "./test-fake-db";
-import { processServiceJob, type ServiceWorkerDeps } from "./service-worker.server";
+import {
+  processServiceJob,
+  tickServiceAgents,
+  type ServiceWorkerDeps,
+} from "./service-worker.server";
 import type { ServiceJob } from "./service-transports.server";
 const ws = "11111111-1111-4111-8111-111111111111";
 const account = "22222222-2222-4222-8222-222222222222";
@@ -265,5 +269,41 @@ describe("email/chat service orchestration", () => {
     db.t("live_chat_messages")[0].workspace_id = "foreign";
     expect(await processServiceJob(db, job, deps)).toBe("skipped");
     expect(spies.turn).not.toHaveBeenCalled();
+  });
+});
+
+describe("service queue customer wait", () => {
+  it("rechecks a postponed burst deadline instead of waiting for the next cron", async () => {
+    vi.useFakeTimers();
+    try {
+      const started = Date.now();
+      db.t("service_agent_jobs").splice(0);
+      const queued = {
+        id: "waiting",
+        workspace_id: ws,
+        status: "queued",
+        available_at: new Date(started + 5000).toISOString(),
+      };
+      db.t("service_agent_jobs").push(queued);
+      const original = db.rpc.bind(db);
+      db.rpc = vi.fn(async (name, args) =>
+        name === "service_agent_claim" ? { data: [], error: null } : original(name, args),
+      );
+      let settled = false;
+      const pending = tickServiceAgents(db, 3, deps).then(() => {
+        settled = true;
+      });
+      await vi.advanceTimersByTimeAsync(0);
+      await vi.advanceTimersByTimeAsync(2000);
+      queued.available_at = new Date(started + 7000).toISOString();
+      await vi.advanceTimersByTimeAsync(3100);
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(2100);
+      await pending;
+      expect(settled).toBe(true);
+      expect(db.rpc).toHaveBeenCalledTimes(3);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

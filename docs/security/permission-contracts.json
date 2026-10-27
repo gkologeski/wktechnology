@@ -2265,19 +2265,19 @@
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
       "files": {
-        "src/integrations/supabase/types.ts": "9a3ba3e6e96aa2bec32140249eb0ad9f13dacbc06e5bf05c1242acb98f7adbe7"
+        "src/integrations/supabase/types.ts": "0bdbf3ca3459c1a413e52289d2afe6e9589f51fae63e0fd01d33500780fd97e4"
       },
-      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change."
+      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes."
     },
     {
       "id": "service-channel-account-center",
       "kind": "business",
       "files": {
-        "src/lib/prospecting/sdr/channel-accounts.functions.ts": "1e32508d9a905698e2b566dc3db7eb10d756ebb99e9a86bc99eb9578bfb1ff2e",
+        "src/lib/prospecting/sdr/channel-accounts.functions.ts": "5a32fe89cc59d1378a4b5c1579970d2afabe707f29173a8e8f062019519e8dc6",
         "src/lib/prospecting/sdr/channel-access.server.ts": "a23a8c47439c6f10cf0a30dae2253b53af3a894e3238c7099381a0465594a95a",
         "src/routes/_authenticated/settings.channels.tsx": "d04c6a22f9bb7c6e22591c213c35bdf14e3c2cb2985fb63cbb41332fb9a0c6c5",
         "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c",
-        "src/components/service-channels/account-editor.tsx": "62592e657e9dc7ca0c69ff22a73d945d6af4b5d8902eda485c36928b45fcb132",
+        "src/components/service-channels/account-editor.tsx": "ddc6c5dc8ba0e276af9d20a3b465032def8c8afa79dfb0865c2a0fc36980d016",
         "src/components/service-channels/agent-channels.tsx": "97abf189efffa02a15a536b7e9aef0a8cf3bc97d85f88c95915d7e916cdb8a41",
         "src/components/prospecting/sdr-agent-config.tsx": "b4870cc2ee2718d2e4f5996a6f7f0ce81b99dc3455a24192d314a515bd2a839d"
       },
@@ -2602,7 +2602,7 @@
       "id": "service-channel-email-chat-worker",
       "kind": "service",
       "files": {
-        "src/lib/prospecting/sdr/service-worker.server.ts": "daaa88ac96c4aacb8c1aeaaaa97effbffebd4c036383c8ec7985b78c811344f7",
+        "src/lib/prospecting/sdr/service-worker.server.ts": "16122155e88366f4db461fa7da9c5c7620bcc97128437ee0ca638cc50cc6756d",
         "src/lib/prospecting/sdr/service-transports.server.ts": "6be9872511c8d3d2506ff7897e426104df89f0800487d7e806351f76c50a379d",
         "src/lib/prospecting/sdr/tools/store.server.ts": "a8ada9804f3bc58a3d1ee9232a668e44f093efff4e90bfb78f64de30365fff4d",
         "drizzle/migrations/0258_service_agent_queue.sql": "1df35e4858d14e524b4056925ef5ce73e3567d8fe3caf0a5076bd79b36b61810",
@@ -2610,7 +2610,8 @@
         "drizzle/migrations/0260_service_agent_delivery.sql": "5086f1318c0c5d9de08f822d567138475fac28b821a6469991944db5a462e6b4",
         "drizzle/migrations/0262_sdr_opportunity_link.sql": "ffee033b466bc4b15a178b5469204eb4e6be6d58f475fd9d877ce4f1a1c26147",
         "drizzle/migrations/0264_service_agent_handoff.sql": "c90a06e3b335e66c33b6f8657bab632739f7ec1c07d7322c94c486d8173b8a15",
-        "src/routes/api/public/hooks/sdr-tick.ts": "e2aa8a7e49ef906f4fa5dd51e0eebdc414c07d79b2c501a2550e1375c10874b5"
+        "src/routes/api/public/hooks/sdr-tick.ts": "e2aa8a7e49ef906f4fa5dd51e0eebdc414c07d79b2c501a2550e1375c10874b5",
+        "drizzle/migrations/0265_service_agent_wake_pending.sql": "306ab84daf4856e9b629b644d1d04a2a13c06b54ccda44a5c3bfede8a93d6968"
       },
       "resources": [
         "system.channels",
@@ -2621,7 +2622,7 @@
       "actions": ["view", "update", "create", "approve"],
       "scopes": ["own", "team", "workspace"],
       "permission_keys": ["system.channels.view.workspace", "system.channels.approve.workspace"],
-      "rationale": "Real email/chat source records, canonical enrollment and source-actor RLS. Current binding/version/lease rechecked before each effect. Anonymous chat has no customer scope; verified email lookup is restricted to linked person. Private CRM context requires explicit approval. SQL acceptance in tests/sql/service-agent-queue-isolated.sql validates actual permissions, coalescence, historical/automatic exclusion, handoff and CAS in rollback; CI exercises RPC fail-closed paths. Authenticated cron starts WhatsApp and email/chat concurrently and waits for both outcomes. Source actor and lease are rechecked by each worker. Handoff uses the configured active workspace recipient only after source assign permission; otherwise keeps the current operator. Canonical reason and timestamp persist, and the recipient is notified. Existing recovery schedule is tightened to one minute without changing command, credentials or suspended state. Repeated automatic menus pause before inference; tests service-worker.test.ts, channel-tick.test.ts and isolated SQL handoff acceptance cover these paths. No production activation yet.",
+      "rationale": "Real email/chat source records, canonical enrollment and source-actor RLS. Current binding/version/lease rechecked before each effect. Anonymous chat has no customer scope; verified email lookup is restricted to linked person. Private CRM context requires explicit approval. SQL acceptance in tests/sql/service-agent-queue-isolated.sql validates actual permissions, coalescence, historical/automatic exclusion, handoff and CAS in rollback; CI exercises RPC fail-closed paths. Authenticated cron starts WhatsApp and email/chat concurrently and waits for both outcomes. Source actor and lease are rechecked by each worker. Handoff uses the configured active workspace recipient only after source assign permission; otherwise keeps the current operator. Canonical reason and timestamp persist, and the recipient is notified. Existing recovery schedule is tightened to one minute without changing command, credentials or suspended state. Repeated automatic menus pause before inference; tests service-worker.test.ts, channel-tick.test.ts and isolated SQL handoff acceptance cover these paths. No production activation yet. Queue waiting re-reads a burst-postponed deadline within its bounded request budget. A running-to-finished trigger wakes an already queued newer inbound using the existing authenticated cron command; it never exposes or replaces credentials and never changes the queued message.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-worker.server.ts",
@@ -2660,6 +2661,10 @@
         {
           "file": "drizzle/migrations/0264_service_agent_handoff.sql",
           "symbol": "service_agent_commit_turn"
+        },
+        {
+          "file": "drizzle/migrations/0265_service_agent_wake_pending.sql",
+          "symbol": "service_agent_wake_next"
         }
       ],
       "tests": {
@@ -3154,6 +3159,85 @@
           "file": "src/components/record/associations/unlink-deal-contact.test.ts",
           "name": "deal contact unlink refuses an inactive member"
         }
+      }
+    },
+    {
+      "id": "project-rpc-generated-type-compatibility",
+      "kind": "internal",
+      "files": {
+        "src/lib/projects/dashboard-views.server.ts": "c5ce1c7eeacda7945a2696828e09a7b6992e0a7b8ca36d847525bd455f577af9",
+        "src/lib/projects/public-api.server.ts": "6cc142c7f964e8d7cb5fad333f932b527696191a9d95156d025412b1f7b506a1",
+        "src/lib/projects/time-offline.functions.ts": "31355596598af5b4c5a7e0019f705d1994369c740f338b422ccceef9f9a66354",
+        "src/lib/projects/ops.functions.ts": "d148ab12dfb46e5c57432400cbfab8f54914065fcefc9d2af3efc31a6444a703"
+      },
+      "resources": ["techprojects.dashboard", "techprojects.projects", "techprojects.time_entries"],
+      "actions": ["view", "create", "update", "export"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [],
+      "rationale": "Type-only compatibility after the upstream Supabase schema type refresh exceeded TypeScript instantiation depth. The existing finite RPC signatures are asserted before bind rather than after it. Runtime function, receiver, arguments, authenticated client, API-key subject execution and SQL permissions are identical. No query, permission key, RLS, grant or request validation is changed. Tests assert that the authenticated receiver and database refusals remain intact; existing API/offline tests cover payload validation and idempotency.",
+      "controls": [
+        {
+          "file": "src/lib/projects/dashboard-views.server.ts",
+          "symbol": "rpc"
+        },
+        {
+          "file": "src/lib/projects/public-api.server.ts",
+          "symbol": "callPort"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/active-workspace.server.ts",
+          "symbol": "resolveActiveWorkspace"
+        },
+        {
+          "file": "src/lib/projects/time-offline.functions.ts",
+          "symbol": "rpc"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0177_techprojects_cycle5_dashboard.sql",
+          "symbol": "project_dash_summary"
+        },
+        {
+          "file": "drizzle/migrations/0179_techprojects_cycle6_api_offline_ops.sql",
+          "symbol": "project_time_entry_sync"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/projects/rpc-boundary.test.ts",
+          "name": "preserves authenticated client and allowed database result"
+        },
+        "missing_permission": {
+          "file": "src/lib/projects/rpc-boundary.test.ts",
+          "name": "propagates missing permission without returning data"
+        },
+        "explicit_deny": {
+          "file": "src/lib/projects/rpc-boundary.test.ts",
+          "name": "propagates explicit deny without a fallback query"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/projects/rpc-boundary.test.ts",
+          "name": "propagates foreign workspace refusal"
+        },
+        "inactive_member": {
+          "file": "src/lib/projects/rpc-boundary.test.ts",
+          "name": "propagates inactive membership refusal"
+        }
+      },
+      "exception": {
+        "mechanism": "Existing authenticated RPC gateways remain the only persistence path; this patch changes only when the already existing TypeScript assertion is applied.",
+        "boundary": "Dashboard/offline calls retain caller JWT/RLS and workspace checks; public API ports retain verified key owner and transaction-local subject. No administrative table query is introduced.",
+        "revocation": "Current SQL permission denials and inactive/foreign workspace refusals propagate unchanged, without fallback data or retry under another actor.",
+        "review_by": "2027-01-27"
       }
     }
   ],

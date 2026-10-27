@@ -37,3 +37,16 @@ DO $$ DECLARE j record;r text;BEGIN
  RAISE NOTICE 'PASS inactive recipient preserves current active operator';
 END $$;
 SELECT set_config('request.jwt.claim.role','',true);
+-- Releasing an obsolete run keeps a newer queued inbound intact and triggers recovery.
+SELECT set_config('request.jwt.claim.role','service_role',true);
+INSERT INTO public.service_agent_jobs(id,workspace_id,session_id,inbound_message_id,conversation_version,status,lease_token,lease_until,available_at)
+SELECT '79000000-0000-4000-8000-000000000016',workspace_id,id,'79000000-0000-4000-8000-000000000015',ai_version,'running',gen_random_uuid(),now()+interval '2 minutes',now() FROM public.service_agent_sessions WHERE channel='chat';
+INSERT INTO public.service_agent_jobs(id,workspace_id,session_id,inbound_message_id,conversation_version,status,available_at)
+SELECT '79000000-0000-4000-8000-000000000017',workspace_id,id,'79000000-0000-4000-8000-000000000015',ai_version,'queued',now()+interval '5 minutes' FROM public.service_agent_sessions WHERE channel='chat';
+UPDATE public.service_agent_jobs SET status='skipped',lease_token=NULL WHERE id='79000000-0000-4000-8000-000000000016';
+DO $$ BEGIN
+ IF (SELECT status FROM public.service_agent_jobs WHERE id='79000000-0000-4000-8000-000000000017')<>'queued' THEN RAISE EXCEPTION 'Wake modified the pending inbound';END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_trigger WHERE tgrelid='public.service_agent_jobs'::regclass AND tgname='service_agent_running_finished' AND tgenabled<>'D') THEN RAISE EXCEPTION 'Pending wake trigger missing';END IF;
+ RAISE NOTICE 'PASS obsolete run release preserves queued inbound and invokes recovery trigger';
+END $$;
+SELECT set_config('request.jwt.claim.role','',true);

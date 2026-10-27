@@ -529,7 +529,8 @@ export async function tickServiceAgents(admin: any, limit = 3, deps: ServiceWork
   }
 
   let jobs = must(await admin.rpc("service_agent_claim", { p_limit: limit })) as ServiceJob[];
-  if (!jobs.length) {
+  const waitDeadline = Date.now() + 60000;
+  while (!jobs.length && Date.now() < waitDeadline) {
     const next = must(
       await admin
         .from("service_agent_jobs")
@@ -540,10 +541,10 @@ export async function tickServiceAgents(admin: any, limit = 3, deps: ServiceWork
         .maybeSingle(),
     ) as any;
     const delay = next ? Date.parse(next.available_at) - Date.now() : 0;
-    if (delay > 0 && delay <= 60000) {
+    if (delay > 0 && delay + 100 <= waitDeadline - Date.now()) {
       await new Promise((resolve) => setTimeout(resolve, delay + 100));
       jobs = must(await admin.rpc("service_agent_claim", { p_limit: limit })) as ServiceJob[];
-    }
+    } else break;
   }
   const outcomes = await Promise.all(jobs.map((job) => processServiceJob(admin, job, deps)));
   const ready = must(

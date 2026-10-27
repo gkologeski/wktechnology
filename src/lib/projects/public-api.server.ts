@@ -124,7 +124,7 @@ function meta(total: number, limit: number, offset: number, rows: number) {
 }
 
 async function callPort(admin: Admin, fn: string, args: Record<string, unknown>) {
-  const rpc = admin.rpc.bind(admin) as unknown as RpcFn;
+  const rpc = (admin.rpc as unknown as RpcFn).bind(admin);
   return rpc(fn, args);
 }
 

@@ -80,10 +80,19 @@ export function AccountEditor({
           <p className="mt-1 text-sm text-muted-foreground">{account.source_key}</p>
         </div>
         <Badge variant={account.enabled ? "default" : "secondary"}>
-          {account.enabled ? "Automação permitida" : "Automação desligada"}
+          {!account.routing_configured
+            ? "Configuração não aplicada"
+            : account.enabled
+              ? "Automação permitida"
+              : "Automação desligada"}
         </Badge>
       </CardHeader>
       <CardContent>
+        {!account.routing_configured && (
+          <p className="mb-3 text-sm text-muted-foreground">
+            A conta descoberta mantém o atendimento atual até você salvar estas configurações.
+          </p>
+        )}
         <div className="mb-4">
           <ChannelHealth account={account} />
         </div>
