@@ -143,6 +143,25 @@ export function detectOptOut(text: string, extra: string[] = []): boolean {
   return STOP_PATTERNS.some((re) => re.test(t));
 }
 
+/**
+ * Frases de saída digitadas na Configuração do agente, separadas por vírgula
+ * ou quebra de linha: apara bordas, descarta vazias e repetidas (sem diferenciar
+ * maiúsculas) e mantém a ordem. Até 50 frases de 80 caracteres.
+ */
+export function parseOptOutPhrases(text: string): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of text.split(/[,\n]/)) {
+    const phrase = raw.trim().slice(0, 80);
+    const k = phrase.toLocaleLowerCase("pt-BR");
+    if (!phrase || seen.has(k)) continue;
+    seen.add(k);
+    out.push(phrase);
+    if (out.length === 50) break;
+  }
+  return out;
+}
+
 /** Ofertas que o agente pode usar: ativas e aprovadas. */
 export function selectableOffers<T extends Pick<SdrOffer, "status" | "approved_at" | "name">>(
   offers: T[],
