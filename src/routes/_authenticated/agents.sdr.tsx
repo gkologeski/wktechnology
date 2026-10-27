@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Save } from "lucide-react";
@@ -19,20 +19,31 @@ import {
   listEnrollments,
 } from "@/lib/sdr-agent.functions";
 import { SdrConsoleTabs } from "@/components/prospecting/sdr-console";
+import { PageHeader } from "@/components/techhire/ui";
+import { SdrWorkspaceNav } from "@/components/prospecting/sdr-workspace-nav";
+import {
+  DEFAULT_SDR_SECTION,
+  parseSdrSection,
+  viewOfSection,
+  type SdrSectionId,
+} from "@/components/prospecting/sdr-workspace-sections";
 
 export const Route = createFileRoute("/_authenticated/agents/sdr")({
+  validateSearch: (search: Record<string, unknown>): { section?: SdrSectionId } => ({
+    section: parseSdrSection(search.section),
+  }),
   component: SdrAgentPage,
   head: () => ({
     meta: [
       { title: "Agente SDR | TechERP" },
       {
         name: "description",
-        content: "Configure, acompanhe e teste o agente SDR do TechSales.",
+        content: "Opere, configure e acompanhe os resultados do agente SDR do TechSales.",
       },
       { property: "og:title", content: "Agente SDR | TechERP" },
       {
         property: "og:description",
-        content: "Configure, acompanhe e teste o agente SDR do TechSales.",
+        content: "Opere, configure e acompanhe os resultados do agente SDR do TechSales.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -137,51 +148,35 @@ function SdrAgentPage() {
     await reload();
   }
 
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Agente SDR</h1>
-        <Button variant="outline" onClick={() => setActive(empty)}>
-          <Plus className="h-4 w-4 mr-1" /> Novo agente
-        </Button>
-      </div>
-      <p className="max-w-3xl text-sm text-muted-foreground">
-        Cada agente tem uma <strong className="text-foreground">persona</strong> (identidade e tom,
-        versionada) e um <strong className="text-foreground">playbook</strong> (roteiro,
-        qualificação, agenda e passagem para humano). Público, disparos, cadência e limites são da{" "}
-        <strong className="text-foreground">campanha</strong>, que escolhe qual agente responde.
-      </p>
+  function newAgent() {
+    setActive(empty);
+    goTo("playbook");
+  }
 
-      <Tabs defaultValue="sdr-supervision">
-        <TabsList className="h-auto w-full justify-start overflow-x-auto">
-          <TabsTrigger className="shrink-0" value="sdr-supervision">
-            Supervisão
-          </TabsTrigger>
-          <TabsTrigger className="shrink-0" value="sdr-results">
-            Resultados
-          </TabsTrigger>
-          <TabsTrigger className="shrink-0" value="sdr-catalog">
-            Portfólio e materiais
-          </TabsTrigger>
-          <TabsTrigger className="shrink-0" value="sdr-settings">
-            Configuração
-          </TabsTrigger>
-          <TabsTrigger className="shrink-0" value="sdr-agent">
-            Persona e teste
-          </TabsTrigger>
-          <TabsTrigger className="shrink-0" value="sdr-agent-config">
-            Configuração do agente
-          </TabsTrigger>
-          <TabsTrigger className="shrink-0" value="sdr-skills">
-            Habilidades e ferramentas
-          </TabsTrigger>
-          <TabsTrigger className="shrink-0" value="playbook">
-            Playbook
-          </TabsTrigger>
-          <TabsTrigger className="shrink-0" value="enrollments">
-            Em atendimento
-          </TabsTrigger>
-        </TabsList>
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="TechSales · Agentes de IA"
+        title="Agente SDR"
+        description="Acompanhe as conversas na Operação, ajuste o agente no Estúdio e veja o retorno em Resultados."
+        primaryAction={
+          <Button onClick={newAgent}>
+            <Plus className="h-4 w-4 mr-1" aria-hidden="true" /> Novo agente
+          </Button>
+        }
+      />
+
+      <Tabs value={section} onValueChange={(v) => goTo(parseSdrSection(v) ?? DEFAULT_SDR_SECTION)}>
+        <SdrWorkspaceNav section={section} onSectionChange={goTo} />
+        {view.id === "studio" ? (
+          <p className="mt-4 max-w-3xl text-sm text-muted-foreground">
+            Cada agente tem uma <strong className="text-foreground">persona</strong> (identidade e
+            tom, versionada) e um <strong className="text-foreground">playbook</strong> (roteiro,
+            qualificação, agenda e passagem para humano). Público, disparos, cadência e limites são
+            da <strong className="text-foreground">campanha</strong>, que escolhe qual agente
+            responde.
+          </p>
+        ) : null}
         <SdrConsoleTabs />
 
         <TabsContent value="playbook" className="space-y-4">
