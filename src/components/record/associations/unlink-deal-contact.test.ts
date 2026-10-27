@@ -19,7 +19,10 @@ function fakeDb(state: { linked: boolean; primary: string | null }, affected = 1
       then: (resolve: (v: unknown) => unknown) => {
         if (op) {
           writes.push({ table, op });
-          return resolve({ data: Array.from({ length: affected }, () => ({ id: "x" })), error: null });
+          return resolve({
+            data: Array.from({ length: affected }, () => ({ id: "x" })),
+            error: null,
+          });
         }
         if (table === "deal_contacts")
           return resolve({ data: state.linked ? [{ contact_id: "c1" }] : [], error: null });
