@@ -2940,7 +2940,7 @@
       "files": {
         "src/lib/prospecting/sdr-agent.functions.ts": "9e70847151ff538b10c076d83822dc502fae133bb744e1c53df67651f68a2835",
         "src/components/prospecting/sdr-agent-studio.tsx": "a1ff1ea135f177f16085bfb3cb962cc3471f73996ed852c514225ffd0ff0cbb6",
-        "src/routes/_authenticated/agents.sdr.tsx": "2ac01587fcebe1ed4540aab1c86e85deeea8c44bf450f794a61f6afd8ef39789",
+        "src/routes/_authenticated/agents.sdr.tsx": "c0331295affb8d378df92d7b08f1665f741769e4cce3153675b89553f964d209",
         "src/components/prospecting/sdr-agent-actions.tsx": "44da01a38550b1be3e95de752a37e57a73a3ed16944d824f73e271f11e0580ee",
         "src/components/prospecting/sdr-agent-picker.tsx": "4277cd1e6a1066b07845b803e9d401e8fc6eff796e1acf57e0581a75f41d0039",
         "src/components/prospecting/sdr-skills-panel.tsx": "46f6c3e9a5140c3de3281d78f0f08fd4d71d6005ed4af82bd21ff9f305585c3e",

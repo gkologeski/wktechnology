@@ -1,7 +1,9 @@
 # Roadmap — Reorganização da tela /agents/sdr (porte G, em pacotes)
 
 - [x] Pacote 1: 9 abas viram 3 áreas (Operação, Estúdio, Resultados) com seções, endereço por `?section=`, cabeçalho padrão e "Novo agente" levando ao Playbook (com permissão de criar)
-- [ ] Pacote 2: Estúdio integrado (configuração à esquerda, conversa de teste fixa à direita, seções em blocos) — aguarda "pode seguir"
+- [x] Pacote 2: Estúdio integrado — barra única do agente aberto (endereço `?agent=`), conversa de teste fixa à direita em todas as seções do Estúdio, Playbook segue o agente aberto
+- [x] Botão "Duplicar agente": copia playbook, configuração, ferramentas e persona (como rascunho); cópia desativada, sem número de WhatsApp e não principal
+- [ ] Testar a duplicação de verdade (não executada para não criar agente real sem seu aceite)
 - [ ] Pacote 3: Operação com indicadores e fila de intervenção; "Em atendimento" com nomes e status em português — aguarda "pode seguir"
 - [ ] Pacote 4: Resultados com funil e tabela de reuniões — aguarda "pode seguir"
 - [ ] Publicação (aguarda aceite do usuário)
