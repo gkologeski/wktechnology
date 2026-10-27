@@ -34,7 +34,7 @@ import {
   saveSdrAgentConfig,
 } from "@/lib/prospecting/sdr-agent.functions";
 import { SDR_TOOLS, type AgentConfig, type SdrTool } from "@/lib/prospecting/sdr/agent-config";
-import { parseOptOutPhrases } from "@/lib/prospecting/sdr/policy";
+import { parseOptOutPhrases } from "./sdr-opt-out-text";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
 const TOOL_LABEL: Record<SdrTool, string> = {
