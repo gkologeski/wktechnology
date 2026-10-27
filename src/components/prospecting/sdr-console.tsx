@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, RefreshCw, Send, Trash2, UserRound } from "lucide-react";
+import { Loader2, Send, Trash2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,14 +26,12 @@ import { SdrSkillsPanel } from "./sdr-skills-panel";
 import { SdrResultsPanel } from "./sdr-results-panel";
 import { SdrMaterialsPanel, type SdrMaterialRow } from "./sdr-materials-panel";
 import { Link } from "@tanstack/react-router";
-import { leadScoreBandLabel, LEAD_SCORE_MAX } from "@/lib/prospecting/lead-score";
-import { EmptyState, MetricCard, SectionHeader } from "@/components/techhire/ui";
+import { EmptyState, SectionHeader } from "@/components/techhire/ui";
 import {
   approveSdrDraft,
   setSdrOfferApproval,
   discardSdrDraft,
   getSdrOverview,
-  retrySdrMeetingSync,
   saveSdrPilotPlaybook,
   saveSdrSettings,
   setSdrOfferActive,
@@ -42,34 +40,7 @@ import {
   resetSdrBreaker,
 } from "@/lib/prospecting/sdr.functions";
 
-const STAGE: Record<string, string> = {
-  awaiting_reply: "Aguardando resposta",
-  discovery: "Descoberta",
-  qualified: "Qualificado",
-  material_sent: "Material enviado",
-  meeting_link_sent: "Link de agenda enviado",
-  meeting_booked: "Reunião marcada",
-  handoff: "Com humano",
-  opted_out: "Recusou",
-  closed: "Encerrado",
-};
-const MEETING: Record<string, string> = {
-  none: "—",
-  link_sent: "Link enviado",
-  pending_sync: "Aguardando Google",
-  confirmed: "Confirmada",
-  sync_failed: "Falha no Google",
-};
-
 type Overview = Awaited<ReturnType<typeof getSdrOverview>>;
-
-const DECISION: Record<string, string> = {
-  pending: "Pendente",
-  qualified: "Qualificado",
-  disqualified: "Desqualificado",
-  nurture: "Nutrição",
-  scheduled: "Agendado",
-};
 
 /** Agente SDR dentro da Prospecção (mesmo conteúdo de /agents/sdr). */
 export function SdrAgentPanel() {

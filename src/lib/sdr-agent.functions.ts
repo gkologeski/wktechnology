@@ -302,7 +302,11 @@ export const getSdrResults = createServerFn({ method: "POST" })
     const since = new Date(Date.now() - 30 * 86400_000).toISOString();
     const head = { count: "exact" as const, head: true };
     const enr = () =>
-      supabase.from("sdr_enrollments").select("id", head).eq("workspace_id", ws).gte("created_at", since);
+      supabase
+        .from("sdr_enrollments")
+        .select("id", head)
+        .eq("workspace_id", ws)
+        .gte("created_at", since);
     const act = (kind: string, status: string) =>
       supabase
         .from("sdr_actions")
@@ -356,7 +360,9 @@ export const getSdrResults = createServerFn({ method: "POST" })
         .limit(100),
       supabase
         .from("sdr_enrollments")
-        .select("id, meeting_status, booking_id, contact_id, lead_id, contact_phone, playbook_id, last_action_at")
+        .select(
+          "id, meeting_status, booking_id, contact_id, lead_id, contact_phone, playbook_id, last_action_at",
+        )
         .eq("workspace_id", ws)
         .in("meeting_status", ["link_sent", "pending_sync", "sync_failed"])
         .order("last_action_at", { ascending: false, nullsFirst: false })
@@ -466,8 +472,6 @@ export const getSdrResults = createServerFn({ method: "POST" })
       }),
     };
   });
-
-
 
 export const enrollLead = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "create")])

@@ -138,11 +138,21 @@ function MeetingsTable({ rows }: { rows: Results["meetings"] }) {
         <caption className="sr-only">Reuniões marcadas pelo Agente SDR</caption>
         <thead className="text-left text-xs text-muted-foreground">
           <tr>
-            <th scope="col" className="p-3 font-medium">Contato</th>
-            <th scope="col" className="p-3 font-medium">Data e hora</th>
-            <th scope="col" className="p-3 font-medium">Anfitrião</th>
-            <th scope="col" className="p-3 font-medium">Agente</th>
-            <th scope="col" className="p-3 font-medium">Situação</th>
+            <th scope="col" className="p-3 font-medium">
+              Contato
+            </th>
+            <th scope="col" className="p-3 font-medium">
+              Data e hora
+            </th>
+            <th scope="col" className="p-3 font-medium">
+              Anfitrião
+            </th>
+            <th scope="col" className="p-3 font-medium">
+              Agente
+            </th>
+            <th scope="col" className="p-3 font-medium">
+              Situação
+            </th>
             <th scope="col" className="p-3">
               <span className="sr-only">Ações</span>
             </th>
@@ -259,12 +269,24 @@ function QualificationsTable({ rows }: { rows: Results["qualifications"] }) {
         <caption className="sr-only">Qualificações feitas pelo Agente SDR</caption>
         <thead className="text-left text-xs text-muted-foreground">
           <tr>
-            <th scope="col" className="p-3 font-medium">Contato</th>
-            <th scope="col" className="p-3 font-medium">Agente</th>
-            <th scope="col" className="p-3 font-medium">Etapa</th>
-            <th scope="col" className="p-3 text-right font-medium">Nota</th>
-            <th scope="col" className="p-3 font-medium">Faixa</th>
-            <th scope="col" className="p-3 font-medium">Decisão</th>
+            <th scope="col" className="p-3 font-medium">
+              Contato
+            </th>
+            <th scope="col" className="p-3 font-medium">
+              Agente
+            </th>
+            <th scope="col" className="p-3 font-medium">
+              Etapa
+            </th>
+            <th scope="col" className="p-3 text-right font-medium">
+              Nota
+            </th>
+            <th scope="col" className="p-3 font-medium">
+              Faixa
+            </th>
+            <th scope="col" className="p-3 font-medium">
+              Decisão
+            </th>
           </tr>
         </thead>
         <tbody className="divide-y">
@@ -280,7 +302,10 @@ function QualificationsTable({ rows }: { rows: Results["qualifications"] }) {
               </td>
               <td className="p-3 text-muted-foreground">{q.agent_name ?? "—"}</td>
               <td className="whitespace-nowrap p-3">{commercialStageLabel(q.commercial_stage)}</td>
-              <td className="whitespace-nowrap p-3 text-right tabular-nums" title={q.questionnaire ?? undefined}>
+              <td
+                className="whitespace-nowrap p-3 text-right tabular-nums"
+                title={q.questionnaire ?? undefined}
+              >
                 {q.total}/{LEAD_SCORE_MAX}
               </td>
               <td className="p-3">{leadScoreBandLabel(q.total)}</td>

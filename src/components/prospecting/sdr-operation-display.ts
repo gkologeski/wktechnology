@@ -107,8 +107,16 @@ export type FunnelStep = {
 const FUNNEL: ReadonlyArray<{ key: keyof SdrResultTotals; label: string; hint: string }> = [
   { key: "started", label: "Conversas iniciadas", hint: "Atendimentos criados no período" },
   { key: "replied", label: "Responderam", hint: "O cliente enviou ao menos uma mensagem" },
-  { key: "qualified", label: "Qualificados", hint: "Qualificação concluída como qualificado ou agendado" },
-  { key: "meetingProposed", label: "Reunião proposta", hint: "Horário oferecido, link enviado ou reunião marcada" },
+  {
+    key: "qualified",
+    label: "Qualificados",
+    hint: "Qualificação concluída como qualificado ou agendado",
+  },
+  {
+    key: "meetingProposed",
+    label: "Reunião proposta",
+    hint: "Horário oferecido, link enviado ou reunião marcada",
+  },
   { key: "meetingConfirmed", label: "Reunião confirmada", hint: "Evento confirmado na agenda" },
 ];
 
@@ -154,7 +162,10 @@ export function qualificationDecisionLabel(decision: string | null | undefined):
 }
 
 /** Data e hora da reunião no fuso dela (padrão São Paulo), ex.: "22/10/2026 15:00". */
-export function formatMeetingTime(iso: string | null | undefined, timeZone?: string | null): string {
+export function formatMeetingTime(
+  iso: string | null | undefined,
+  timeZone?: string | null,
+): string {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "—";
