@@ -2598,13 +2598,15 @@
       "id": "service-channel-email-chat-worker",
       "kind": "service",
       "files": {
-        "src/lib/prospecting/sdr/service-worker.server.ts": "7640415a49635a72a5d9eb5fd46e0e364131791f6e736df23729f1b87f5609f5",
+        "src/lib/prospecting/sdr/service-worker.server.ts": "daaa88ac96c4aacb8c1aeaaaa97effbffebd4c036383c8ec7985b78c811344f7",
         "src/lib/prospecting/sdr/service-transports.server.ts": "6be9872511c8d3d2506ff7897e426104df89f0800487d7e806351f76c50a379d",
         "src/lib/prospecting/sdr/tools/store.server.ts": "a8ada9804f3bc58a3d1ee9232a668e44f093efff4e90bfb78f64de30365fff4d",
         "drizzle/migrations/0258_service_agent_queue.sql": "1df35e4858d14e524b4056925ef5ce73e3567d8fe3caf0a5076bd79b36b61810",
         "drizzle/migrations/0259_service_agent_commit.sql": "8552e42c40381f6e21d580455071bf87b071d56f23d006c62c37bb801cd095cd",
         "drizzle/migrations/0260_service_agent_delivery.sql": "5086f1318c0c5d9de08f822d567138475fac28b821a6469991944db5a462e6b4",
-        "drizzle/migrations/0262_sdr_opportunity_link.sql": "ffee033b466bc4b15a178b5469204eb4e6be6d58f475fd9d877ce4f1a1c26147"
+        "drizzle/migrations/0262_sdr_opportunity_link.sql": "ffee033b466bc4b15a178b5469204eb4e6be6d58f475fd9d877ce4f1a1c26147",
+        "drizzle/migrations/0264_service_agent_handoff.sql": "c90a06e3b335e66c33b6f8657bab632739f7ec1c07d7322c94c486d8173b8a15",
+        "src/routes/api/public/hooks/sdr-tick.ts": "e2aa8a7e49ef906f4fa5dd51e0eebdc414c07d79b2c501a2550e1375c10874b5"
       },
       "resources": [
         "system.channels",
@@ -2615,7 +2617,7 @@
       "actions": ["view", "update", "create", "approve"],
       "scopes": ["own", "team", "workspace"],
       "permission_keys": ["system.channels.view.workspace", "system.channels.approve.workspace"],
-      "rationale": "Real email/chat source records, canonical enrollment and source-actor RLS. Current binding/version/lease rechecked before each effect. Anonymous chat has no customer scope; verified email lookup is restricted to linked person. Private CRM context requires explicit approval. SQL acceptance in tests/sql/service-agent-queue-isolated.sql validates actual permissions, coalescence, historical/automatic exclusion, handoff and CAS in rollback; CI exercises RPC fail-closed paths. No runtime cron integration or production activation in this package.",
+      "rationale": "Real email/chat source records, canonical enrollment and source-actor RLS. Current binding/version/lease rechecked before each effect. Anonymous chat has no customer scope; verified email lookup is restricted to linked person. Private CRM context requires explicit approval. SQL acceptance in tests/sql/service-agent-queue-isolated.sql validates actual permissions, coalescence, historical/automatic exclusion, handoff and CAS in rollback; CI exercises RPC fail-closed paths. Authenticated cron starts WhatsApp and email/chat concurrently and waits for both outcomes. Source actor and lease are rechecked by each worker. Handoff uses the configured active workspace recipient only after source assign permission; otherwise keeps the current operator. Canonical reason and timestamp persist, and the recipient is notified. Existing recovery schedule is tightened to one minute without changing command, credentials or suspended state. Repeated automatic menus pause before inference; tests service-worker.test.ts, channel-tick.test.ts and isolated SQL handoff acceptance cover these paths. No production activation yet.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-worker.server.ts",
@@ -2624,6 +2626,14 @@
         {
           "file": "src/lib/prospecting/sdr/service-transports.server.ts",
           "symbol": "serviceJobGuard"
+        },
+        {
+          "file": "src/lib/cron-auth.server.ts",
+          "symbol": "requireCronAuth"
+        },
+        {
+          "file": "src/routes/api/public/hooks/sdr-tick.ts",
+          "symbol": "cronInfo"
         }
       ],
       "database": [
@@ -2642,6 +2652,10 @@
         {
           "file": "drizzle/migrations/0262_sdr_opportunity_link.sql",
           "symbol": "sdr_link_opportunity"
+        },
+        {
+          "file": "drizzle/migrations/0264_service_agent_handoff.sql",
+          "symbol": "service_agent_commit_turn"
         }
       ],
       "tests": {
@@ -2679,8 +2693,8 @@
       "files": {
         "src/lib/prospecting/sdr/service-inbox.functions.ts": "6f5c88f0b3b6d29a134901e8f1afa2c3c7c3bc086efab95d1d5875918011009d",
         "src/components/inbox/service-agent-panel.tsx": "7547eb22e669832aff919828df695ed7488a90295bdf7667d3e2c9d8e2b6224f",
-        "src/routes/_authenticated/inbox.email.tsx": "4b96e6d327e2e749803f0f0a1d20bc92e1c99d86d4b3c005fb327fc2747628b0",
-        "src/routes/_authenticated/inbox.chat.tsx": "86b69a9a4b57a8c37769c7b39650e86fc600c4eb84218fcbfb4d38439d1ac9c2",
+        "src/routes/_authenticated/inbox.email.tsx": "81528e71d7c0ad6a688f2bbf2f0f7dd1dc64782cd443d233e3d2d486b201e91d",
+        "src/routes/_authenticated/inbox.chat.tsx": "a9a574184396f702170ccdffc9038ad96042d3ec776aa1ea0467ca632661c20c",
         "drizzle/migrations/0261_service_agent_inbox.sql": "f57837357421e86cfea2da0cc02ffd95a67bc97f9275c924a14afa1db201c5c6",
         "drizzle/migrations/0263_service_agent_identity.sql": "eada2cd36edad4e52906d1e2ea6e42c395045f5e95e1d73e764afe7ba3c4f858"
       },
@@ -2866,6 +2880,60 @@
         "boundary": "No synthetic WhatsApp rows. Lease, source version and workspace checks precede tools, canonical CRM CAS and transport. No provider credentials in metadata or browser state.",
         "revocation": "Disabled account/binding, inactive actor, deny, human ownership, opt-out and source identity changes invalidate subsequent effects. Uncertain sends freeze automation; no blind resend.",
         "review_by": "2027-01-27"
+      }
+    },
+    {
+      "id": "service-channel-inbox-direct-conversation",
+      "kind": "business",
+      "files": {
+        "src/lib/inbox/message-history.functions.ts": "849faeb12961ae980aeaace9607a1b500ba0f5a8e2756dec9a94ff6d28bfe94e"
+      },
+      "resources": ["techsales.inbox.email", "techsales.inbox.chat", "techsales.inbox.whatsapp"],
+      "actions": ["view"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techsales.inbox.chat.view.workspace",
+        "techsales.inbox.email.view.workspace",
+        "techsales.inbox.whatsapp.view.workspace"
+      ],
+      "rationale": "Inbox notification links validate the conversation UUID and load metadata independently of list pagination. Chat metadata first checks the current source record using the authenticated client, then queries the active workspace under RLS. Existing history endpoints retain their action middleware and record guards. A direct URL never grants visibility or bypasses per-conversation permissions. Source SQL matrix covers missing permission, deny, other workspace and inactive; CI guard tests fail closed on all denied source outcomes.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_record_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "allows current authorized leased source"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source missing required permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source with explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects foreign workspace source"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects inactive source actor"
+        }
       }
     }
   ],

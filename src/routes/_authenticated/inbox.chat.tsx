@@ -20,7 +20,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SnippetTextarea } from "@/components/snippets/snippet-textarea";
-import { listConversationMessages } from "@/lib/inbox/message-history.functions";
+import {
+  getChatSessionMeta,
+  listConversationMessages,
+} from "@/lib/inbox/message-history.functions";
 import { useMessageHistory } from "@/hooks/use-message-history";
 import { MessageHistoryViewport } from "@/components/inbox/message-history-viewport";
 import type { HistoryPage } from "@/lib/inbox/message-history";
@@ -55,6 +58,12 @@ import {
 type ChatSessionRow = Awaited<ReturnType<typeof listChatSessions>>[number];
 
 export const Route = createFileRoute("/_authenticated/inbox/chat")({
+  validateSearch: (search: Record<string, unknown>): { conversation?: string } => ({
+    ...(typeof search.conversation === "string" &&
+    /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(search.conversation)
+      ? { conversation: search.conversation }
+      : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Chat ao vivo — Inbox TechERP" },
@@ -78,7 +87,11 @@ function LiveChatInbox() {
   const convertFn = useServerFn(convertChatSessionToTicket);
   const membersFn = useServerFn(listWorkspaceMembers);
   const assignFn = useServerFn(assignChatSession);
-  const [selected, setSelected] = useState<string | null>(null);
+  const { conversation: urlConversation } = Route.useSearch();
+  const [selected, setSelected] = useState<string | null>(urlConversation ?? null);
+  useEffect(() => {
+    if (urlConversation) setSelected(urlConversation);
+  }, [urlConversation]);
   const [draft, setDraft] = useState("");
   const [filter, setFilter] = useState<"mine" | "unassigned" | "all">("all");
 
@@ -90,7 +103,12 @@ function LiveChatInbox() {
     total,
     query: sessionsQ,
   } = useInboxChannelPage<ChatSessionRow>("chat", filter, debouncedSearch);
-  const [selectedSnapshot, setSelectedSnapshot] = useState<ChatSessionRow | null>(null);
+  const metaFn = useServerFn(getChatSessionMeta);
+  const metaQ = useQuery({
+    queryKey: ["chat_session", user?.id, selected],
+    queryFn: () => metaFn({ data: { session_id: selected! } }),
+    enabled: !!selected,
+  });
   // Antes: consulta a cada 3 s. Agora: tempo real da sessão + reconciliação limitada.
   const history = useMessageHistory<ChatMessageRow>({
     contextKey: selected && user?.id ? `${user.id}:chat:${selected}` : null,
@@ -122,6 +140,7 @@ function LiveChatInbox() {
     mutationFn: (id: string) => closeFn({ data: { session_id: id } }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["inbox-channel", "chat"] });
+      qc.invalidateQueries({ queryKey: ["chat_session"] });
       toast.success("Encerrada.");
     },
   });
@@ -130,6 +149,7 @@ function LiveChatInbox() {
       convertFn({ data: { session_id: id } }) as Promise<{ ticket_id: string }>,
     onSuccess: (res) => {
       qc.invalidateQueries({ queryKey: ["inbox-channel", "chat"] });
+      qc.invalidateQueries({ queryKey: ["chat_session"] });
       toast.success("Ticket criado");
       navigate({ to: "/tickets/$id", params: { id: res.ticket_id } });
     },
@@ -138,14 +158,17 @@ function LiveChatInbox() {
   const assign = useMutation({
     mutationFn: (assignedTo: string | null) =>
       assignFn({ data: { conversationId: selected ?? "", assignedTo } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["inbox-channel", "chat"] }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["inbox-channel", "chat"] });
+      void qc.invalidateQueries({ queryKey: ["chat_session"] });
+    },
     onError: (error: Error) => toast.error(error.message),
   });
 
   const messages = history.items;
-  const current =
-    sessions.find((s) => s.id === selected) ??
-    (selectedSnapshot?.id === selected ? selectedSnapshot : undefined);
+  const current = metaQ.isError
+    ? undefined
+    : (sessions.find((s) => s.id === selected) ?? metaQ.data);
   const photoRows = current ? [...sessions, current] : sessions;
   const photos = usePersonPhotos(
     photoRows.map((r) => r.contact_id),
@@ -226,7 +249,6 @@ function LiveChatInbox() {
                   selected={selected === s.id}
                   onClick={() => {
                     setSelected(s.id);
-                    setSelectedSnapshot(s);
                   }}
                   badge={
                     s.status === "closed" ? (
@@ -255,7 +277,13 @@ function LiveChatInbox() {
       }
       conversation={
         <>
-          {!current ? (
+          {metaQ.isError ? (
+            <InboxError onRetry={() => void metaQ.refetch()}>
+              Conversa indisponível ou sem permissão.
+            </InboxError>
+          ) : !current && selected && metaQ.isLoading ? (
+            <InboxLoading />
+          ) : !current ? (
             <InboxEmpty>Selecione uma sessão para iniciar o atendimento.</InboxEmpty>
           ) : history.initial === "error" ? (
             <InboxError onRetry={history.retryInitial}>

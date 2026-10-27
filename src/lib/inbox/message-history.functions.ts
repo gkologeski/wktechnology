@@ -1,3 +1,4 @@
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Histórico paginado das conversas da Inbox (sob RLS do usuário).
@@ -135,4 +136,22 @@ export const getEmailMessageBody = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!row) throw new Error("Mensagem não encontrada");
     return row;
+  });
+
+export const getChatSessionMeta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ session_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    await assertSalesRecord(context.supabase, "live_chat_sessions", data.session_id, "view");
+    const workspace = await resolveActiveWorkspace(context.userId);
+    const result = await context.supabase
+      .from("live_chat_sessions")
+      .select(
+        "id, visitor_id, visitor_name, visitor_email, visitor_url, contact_id, lead_id, identity_status, status, assignee_id, last_message_at, created_at",
+      )
+      .eq("id", data.session_id)
+      .eq("workspace_id", workspace)
+      .single();
+    if (result.error || !result.data) throw new Error("Conversa indisponível.");
+    return result.data;
   });

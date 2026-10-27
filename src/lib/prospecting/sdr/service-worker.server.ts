@@ -1,3 +1,4 @@
+import { repeatsIdenticalInbound } from "./conversation-guards";
 import { hubspotSourceClient } from "@/lib/access-control/hubspot-source-client.server";
 import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 import { configFromRow, hasTool, scopeKnowledge } from "./agent-config";
@@ -166,6 +167,39 @@ export async function processServiceJob(
       )
     )
       throw Object.assign(new Error("inbound_missing"), { serviceGuard: true });
+    const recentInbound = history
+      .filter((message) => message.direction === "inbound")
+      .slice(-2)
+      .map((message) => ({
+        ...message,
+        body: message.body.replace(/^E-mail do remetente: [^\n]+\n/, ""),
+      }));
+    const repeatedWithinWindow =
+      recentInbound.length === 2 &&
+      Date.parse(recentInbound[1].created_at) - Date.parse(recentInbound[0].created_at) <=
+        10 * 60_000;
+    if (repeatedWithinWindow && repeatsIdenticalInbound(recentInbound)) {
+      const result = must(
+        await admin.rpc("service_agent_commit_turn", {
+          p_job: job.id,
+          p_lease: job.lease_token,
+          p_evidence: [],
+          p_qualification: null,
+          p_enrollment: {
+            status: "paused",
+            handoff_at: new Date().toISOString(),
+            handoff_reason: "Proteção técnica: mensagens repetidas",
+            follow_up_at: null,
+          },
+          p_job_patch: {
+            status: "drafted",
+            draft_text: "",
+            draft_payload: { intent: "handoff", technical_stop: "repeated_inbound" },
+          },
+        }),
+      );
+      return result === "ok" ? "handoff" : "skipped";
+    }
     const config = configFromRow(playbook);
     const { offers, materials } = scopeKnowledge(
       config,

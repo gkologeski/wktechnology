@@ -53,6 +53,12 @@ import {
 } from "@/components/inbox/inbox-workspace";
 
 export const Route = createFileRoute("/_authenticated/inbox/email")({
+  validateSearch: (search: Record<string, unknown>): { conversation?: string } => ({
+    ...(typeof search.conversation === "string" &&
+    /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(search.conversation)
+      ? { conversation: search.conversation }
+      : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Email — Inbox TechERP" },
@@ -99,7 +105,11 @@ function EmailInbox() {
   const membersFn = useServerFn(listWorkspaceMembers);
   const assignFn = useServerFn(assignEmailThread);
 
-  const [selected, setSelected] = useState<string | null>(null);
+  const { conversation: urlConversation } = Route.useSearch();
+  const [selected, setSelected] = useState<string | null>(urlConversation ?? null);
+  useEffect(() => {
+    if (urlConversation) setSelected(urlConversation);
+  }, [urlConversation]);
   const [filter, setFilter] = useState<"mine" | "unassigned" | "all">("all");
 
   const [search, setSearch] = useState("");
