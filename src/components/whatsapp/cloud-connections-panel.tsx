@@ -14,6 +14,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { StatusBadge } from "@/components/techhire/ui";
+import { qualityDisplay } from "@/lib/whatsapp/quality-display";
 
 export function CloudConnectionsPanel() {
   const permissions = usePermissions();
@@ -159,11 +161,14 @@ export function CloudConnectionsPanel() {
           <div key={connection.id} className="rounded-lg border p-4 space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <h3 className="font-medium">{connection.label}</h3>
-                <p className="text-sm text-muted-foreground">
-                  WABA {connection.waba_id} ·{" "}
-                  {connection.enabled ? "Ativa" : "Em preparação / desativada"}
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="font-medium">{connection.label}</h3>
+                  <StatusBadge
+                    status={connection.enabled ? "open" : "draft"}
+                    label={connection.enabled ? "Ativa" : "Em preparação / desativada"}
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground">WABA {connection.waba_id}</p>
               </div>
               <Button
                 variant="outline"
@@ -206,23 +211,31 @@ export function CloudConnectionsPanel() {
             </Button>
             {query.data.numbers
               .filter((number: any) => number.connection_id === connection.id)
-              .map((number: any) => (
-                <div
-                  key={number.phone_number_id}
-                  className="flex flex-wrap justify-between gap-2 border-t pt-2 text-sm"
-                >
-                  <span>
-                    {number.display_phone_number} · {number.verified_name || "Sem nome verificado"}
-                  </span>
-                  <span>
-                    Qualidade:{" "}
-                    {({ GREEN: "Alta", YELLOW: "Média", RED: "Baixa" } as Record<string, string>)[
-                      number.quality_rating
-                    ] || "Não avaliada"}{" "}
-                    · {number.available ? number.status || "Consultar Meta" : "Indisponível"}
-                  </span>
-                </div>
-              ))}
+              .map((number: any) => {
+                const q = qualityDisplay(number.quality_rating);
+                return (
+                  <div
+                    key={number.phone_number_id}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border-subtle bg-surface-1 px-3 py-3"
+                  >
+                    <div className="min-w-0">
+                      <p className="text-base font-semibold text-text-primary">
+                        {number.display_phone_number || "Número indisponível"}
+                      </p>
+                      <p className="truncate text-sm text-text-secondary">
+                        {number.verified_name || "Sem nome verificado"}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge
+                        status={number.available ? "open" : "closed"}
+                        label={number.available ? number.status || "Disponível" : "Indisponível"}
+                      />
+                      <StatusBadge status={q.tone} label={q.label} />
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         ))}
       </CardContent>
