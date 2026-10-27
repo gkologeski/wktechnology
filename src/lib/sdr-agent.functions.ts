@@ -235,7 +235,10 @@ export const listEnrollments = createServerFn({ method: "POST" })
       ? null
       : {
           total: total.count ?? 0,
-          ...Object.fromEntries(STATUSES.map((s, i) => [s, byStatus[i].count ?? 0])),
+          active: byStatus[0].count ?? 0,
+          paused: byStatus[1].count ?? 0,
+          handoff: byStatus[2].count ?? 0,
+          opted_out: byStatus[3].count ?? 0,
         };
     const items = rows ?? [];
     // Nomes lidos com o cliente do usuário: sem acesso ao registro, o nome fica vazio.
