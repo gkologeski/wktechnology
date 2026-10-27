@@ -4,7 +4,14 @@
 // de canal vinculado, para nunca responder clientes antes de ser revisada.
 
 /** Colunas que pertencem ao registro, não ao conteúdo do agente. */
-const NOT_COPIED = new Set(["id", "created_at", "updated_at", "owner_id", "workspace_id", "enabled"]);
+const NOT_COPIED = new Set([
+  "id",
+  "created_at",
+  "updated_at",
+  "owner_id",
+  "workspace_id",
+  "enabled",
+]);
 
 export const SDR_AGENT_NAME_MAX = 120;
 

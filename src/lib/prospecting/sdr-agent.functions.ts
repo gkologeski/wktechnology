@@ -381,9 +381,8 @@ export const duplicateSdrAgent = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertSalesRecord(context.supabase, "sdr_playbooks", data.playbookId, "view");
     const { requireSdr } = await import("@/lib/prospecting/sdr/access.server");
-    const { playbookCopyFields, personaCopy } = await import(
-      "@/lib/prospecting/sdr/duplicate-agent"
-    );
+    const { playbookCopyFields, personaCopy } =
+      await import("@/lib/prospecting/sdr/duplicate-agent");
     const { supabase, userId } = context;
     const ws = await requireSdr(supabase, userId, "create");
     const { data: ro } = await supabase.rpc("is_read_only_view");

@@ -153,7 +153,11 @@ export function SdrAgentActions({
         variant="outline"
         disabled={!current || !canCreate || duplicateM.isPending}
         onClick={onDuplicate}
-        title={canCreate ? "Criar uma cópia com todo o conteúdo" : "Você não tem permissão para criar agentes."}
+        title={
+          canCreate
+            ? "Criar uma cópia com todo o conteúdo"
+            : "Você não tem permissão para criar agentes."
+        }
         aria-label={current ? `Duplicar agente ${current.name}` : "Duplicar agente"}
       >
         {duplicateM.isPending ? (
