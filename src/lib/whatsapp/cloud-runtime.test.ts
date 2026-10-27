@@ -29,7 +29,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
                   ? {
                       phone_number_id: "654321",
                       connection_id: "connection",
-                      display_phone_number: "+5548999999999",
+                      display_phone_number: "+55 48 6136-5335",
                       available: state.available,
                     }
                   : null
@@ -67,6 +67,7 @@ describe("cloud runtime sender isolation", () => {
       workspaceId: "wk",
       phoneNumberId: "654321",
       provider: "cloud",
+      displayPhoneNumber: "+554861365335",
     });
   });
   it("cloud runtime rejects missing sender capability", async () => {
