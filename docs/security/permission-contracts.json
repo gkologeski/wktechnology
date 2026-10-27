@@ -2588,6 +2588,10 @@
           "symbol": "SdrAgentActions"
         },
         {
+          "file": "src/components/prospecting/sdr-agent-actions.tsx",
+          "symbol": "SdrNewAgentButton"
+        },
+        {
           "file": "src/components/prospecting/sdr-agent-picker.tsx",
           "symbol": "SdrAgentPicker"
         }
