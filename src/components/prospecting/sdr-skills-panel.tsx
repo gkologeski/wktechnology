@@ -54,34 +54,41 @@ const STATUS_PT: Record<string, string> = {
 
 export function SdrSkillsPanel({
   playbooks,
+  agentId,
 }: {
   playbooks: { id: string; name: string; enabled: boolean }[];
+  /** Agente escolhido na barra do Estúdio; sem ela, a seção mostra seletor próprio. */
+  agentId?: string | null;
 }) {
   const [picked, setPicked] = useState<string | null>(null);
   const { defaultPlaybookId } = useSdrPlaybooks();
-  const playbookId =
-    picked && playbooks.some((p) => p.id === picked)
+  const controlled = agentId !== undefined;
+  const playbookId = controlled
+    ? agentId
+    : picked && playbooks.some((p) => p.id === picked)
       ? picked
       : pickDefaultAgent(playbooks, defaultPlaybookId);
   if (!playbooks.length)
     return <EmptyState title="Nenhum agente ainda" description="Crie um agente na aba Playbook." />;
   return (
     <div className="space-y-4">
-      <div className="flex w-full max-w-md flex-col gap-1.5">
-        <Label htmlFor="sdr-skills-agent">Agente</Label>
-        <Select value={playbookId ?? undefined} onValueChange={setPicked}>
-          <SelectTrigger id="sdr-skills-agent">
-            <SelectValue placeholder="Escolha o agente" />
-          </SelectTrigger>
-          <SelectContent>
-            {sortDefaultFirst(playbooks, defaultPlaybookId).map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {agentOptionLabel(p, defaultPlaybookId)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {!controlled && (
+        <div className="flex w-full max-w-md flex-col gap-1.5">
+          <Label htmlFor="sdr-skills-agent">Agente</Label>
+          <Select value={playbookId ?? undefined} onValueChange={setPicked}>
+            <SelectTrigger id="sdr-skills-agent">
+              <SelectValue placeholder="Escolha o agente" />
+            </SelectTrigger>
+            <SelectContent>
+              {sortDefaultFirst(playbooks, defaultPlaybookId).map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {agentOptionLabel(p, defaultPlaybookId)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       {playbookId && <SkillsForm key={playbookId} playbookId={playbookId} />}
     </div>
   );
