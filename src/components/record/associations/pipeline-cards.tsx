@@ -1,4 +1,5 @@
 import { withAssociationAccess } from "./access";
+import { unlinkDealContact } from "./unlink-deal-contact";
 import type { AssociationEntity } from "../associations-panel";
 import { useEffect, useState } from "react";
 import { useRefreshCallback } from "@/hooks/use-refresh-callback";
@@ -116,22 +117,8 @@ function DealsCardContent({
       const { error } = await sb.from("deals").update({ company_id: null }).eq("id", dealId);
       if (error) return toast.error(error.message);
     } else {
-      const { error } = await sb
-        .from("deal_contacts")
-        .delete()
-        .eq("deal_id", dealId)
-        .eq("contact_id", entityId);
+      const { error } = await unlinkDealContact(supabase, dealId, entityId);
       if (error) return toast.error(error.message);
-      const { data: deal } = await supabase
-        .from("deals")
-        .select("primary_contact_id")
-        .eq("id", dealId)
-        .maybeSingle();
-      if (
-        (deal as { primary_contact_id?: string | null } | null)?.primary_contact_id === entityId
-      ) {
-        await sb.from("deals").update({ primary_contact_id: null }).eq("id", dealId);
-      }
     }
     toast.success("Negócio desvinculado");
     emitTimelineRefresh();

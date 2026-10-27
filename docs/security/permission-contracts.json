@@ -3083,6 +3083,78 @@
         "revocation": "Effective deny, inactive/missing workspace, loading and error produce no enabled actions. Foreign-account status checks pass the explicit expected workspace.",
         "review_by": "2027-01-27"
       }
+    },
+    {
+      "id": "deal-contact-unlink-existing-links",
+      "kind": "business",
+      "files": {
+        "src/components/record/associations/company-cards.tsx": "3ac0a3d33a5f38748f158a1e1c6061b2bcb9585b48647e2ffccb990cb4441cd0",
+        "src/components/record/associations/pipeline-cards.tsx": "afd61d083edf12ced17ddafd734b8f39c82defec1f666814a26058127840d06f",
+        "src/components/record/associations/unlink-deal-contact.ts": "49b82c4169aa7d7496ba380458b5d44b7b99726cf023665a6b1ea5715c9787c1"
+      },
+      "resources": [
+        "techsales.deals",
+        "techsales.contacts",
+        "techsales.companies",
+        "techsales.leads",
+        "techsales.tickets"
+      ],
+      "actions": ["view", "update"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techsales.deals.view.workspace",
+        "techsales.deals.update.workspace",
+        "techsales.contacts.view.workspace",
+        "techsales.contacts.update.workspace",
+        "techsales.companies.view.workspace",
+        "techsales.companies.update.workspace",
+        "techsales.leads.update.workspace",
+        "techsales.tickets.view.workspace",
+        "techsales.tickets.update.workspace"
+      ],
+      "rationale": "Bug fix only: unlinking a deal contact removes just the links that exist (deal_contacts row and/or deals.primary_contact_id), so a primary-only contact no longer trips the zero-row denial. Writes still go through the checked mutation client; existing association capability gate and sales RLS (deal update+view for deal_contacts delete and deals update) are unchanged. No new action, key, grant or SQL.",
+      "controls": [
+        {
+          "file": "src/components/record/associations/unlink-deal-contact.ts",
+          "symbol": "unlinkDealContact"
+        },
+        {
+          "file": "src/lib/access-control/checked-mutation-client.ts",
+          "symbol": "checkedMutationClient"
+        },
+        {
+          "file": "src/components/record/associations/access.tsx",
+          "symbol": "withAssociationAccess"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_context_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/components/record/associations/unlink-deal-contact.test.ts",
+          "name": "deal contact unlink permits an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/components/record/associations/unlink-deal-contact.test.ts",
+          "name": "deal contact unlink refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/components/record/associations/unlink-deal-contact.test.ts",
+          "name": "deal contact unlink refuses an explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/components/record/associations/unlink-deal-contact.test.ts",
+          "name": "deal contact unlink refuses a foreign workspace deal"
+        },
+        "inactive_member": {
+          "file": "src/components/record/associations/unlink-deal-contact.test.ts",
+          "name": "deal contact unlink refuses an inactive member"
+        }
+      }
     }
   ],
   "retired": {}
