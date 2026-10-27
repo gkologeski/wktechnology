@@ -502,7 +502,11 @@ function SdrAgentPage() {
               </Card>
             </TabsContent>
           </div>
-          {hasStudioTestSide(section) && openAgent ? <SdrStudioSide agentId={openAgent} /> : null}
+          {hasStudioTestSide(section) && openAgent ? (
+            <div className="mt-4 min-w-0 xl:sticky xl:top-4">
+              <SdrStudioSide agentId={openAgent} />
+            </div>
+          ) : null}
         </div>
       </Tabs>
     </div>
