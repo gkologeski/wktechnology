@@ -24,6 +24,7 @@ import {
   StatusBadge,
 } from "@/components/techhire/ui";
 import { WhatsAppIcon } from "@/components/whatsapp/whatsapp-icon";
+import { qualityDisplay } from "@/lib/whatsapp/quality-display";
 import {
   getWhatsAppConnection,
   testWhatsAppConnection,
@@ -50,13 +51,6 @@ export const Route = createFileRoute("/_authenticated/settings/whatsapp")({
   component: WhatsAppSettings,
 });
 
-const QUALITY_LABELS: Record<string, string> = {
-  GREEN: "Alta",
-  YELLOW: "Média",
-  RED: "Baixa",
-  UNKNOWN: "Não avaliada",
-  NA: "Não avaliada",
-};
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
