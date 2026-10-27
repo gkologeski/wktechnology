@@ -21,6 +21,7 @@ import {
 import { SdrConsoleTabs } from "@/components/prospecting/sdr-console";
 import { PageHeader } from "@/components/techhire/ui";
 import { SdrWorkspaceNav } from "@/components/prospecting/sdr-workspace-nav";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   DEFAULT_SDR_SECTION,
   parseSdrSection,
@@ -50,6 +51,12 @@ export const Route = createFileRoute("/_authenticated/agents/sdr")({
     ],
   }),
 });
+
+const SDR_CREATE_KEYS = [
+  "techsales.marketing.sdr_agent.create.own",
+  "techsales.marketing.sdr_agent.create.team",
+  "techsales.marketing.sdr_agent.create.workspace",
+];
 
 type Step = { delay_hours: number; template: string };
 type Playbook = {
