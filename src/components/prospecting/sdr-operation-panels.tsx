@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { EmptyState, MetricCard, SectionHeader, StatusBadge } from "@/components/techhire/ui";
 import { RowSkeleton } from "@/components/techhire/ui";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { listEnrollments } from "@/lib/sdr-agent.functions";
 import { getSdrOverview } from "@/lib/prospecting/sdr.functions";
 import {
@@ -19,6 +20,12 @@ import {
 } from "./sdr-operation-display";
 
 type EnrollmentsResult = Awaited<ReturnType<typeof listEnrollments>>;
+
+const INBOX_VIEW_KEYS = [
+  "techsales.inbox.whatsapp.view.own",
+  "techsales.inbox.whatsapp.view.team",
+  "techsales.inbox.whatsapp.view.workspace",
+];
 
 function useEnrollments(status?: EnrollmentFilter) {
   const fn = useServerFn(listEnrollments);
@@ -147,6 +154,9 @@ export function SdrEnrollmentsPanel({
 }) {
   const q = useEnrollments(status);
   const all = useEnrollments();
+  // Atalho para a Inbox só aparece para quem pode ver conversas de WhatsApp
+  // (a própria Inbox revalida no servidor e no banco).
+  const canOpenInbox = usePermissions().canAny(INBOX_VIEW_KEYS);
   const counts = all.data?.counts ?? null;
   const items = q.data?.items ?? [];
   const filterTotal = counts ? (status ? counts[status] : counts.total) : null;
@@ -304,7 +314,7 @@ export function SdrEnrollmentsPanel({
                         {fmtDate(e.last_action_at ?? e.created_at)}
                       </td>
                       <td className="p-3 text-right">
-                        {e.conversation_id ? (
+                        {e.conversation_id && canOpenInbox ? (
                           <Button asChild size="sm" variant="ghost">
                             <Link to="/inbox/whatsapp" search={{ conversation: e.conversation_id }}>
                               Abrir conversa
