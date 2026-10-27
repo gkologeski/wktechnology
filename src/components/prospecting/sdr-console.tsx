@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SdrAgentPicker } from "./sdr-agent-picker";
+import { SdrStudioTestChat } from "./sdr-agent-studio";
 import { SdrAgentConfigPanel } from "./sdr-agent-config";
 import { SdrAgentProfileCard } from "./sdr-agent-profile-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -95,8 +96,11 @@ export function SdrAgentPanel() {
   );
 }
 
-/** Abas extras do Agente SDR. Renderizar dentro do <Tabs> da página. */
-export function SdrConsoleTabs() {
+/**
+ * Abas extras do Agente SDR. Renderizar dentro do <Tabs> da página. Com
+ * `agentId`, as seções por agente seguem a escolha da barra do Estúdio.
+ */
+export function SdrConsoleTabs({ agentId }: { agentId?: string | null } = {}) {
   const fetchOverview = useServerFn(getSdrOverview);
   const q = useQuery({ queryKey: ["sdr-overview"], queryFn: () => fetchOverview() });
 
@@ -138,17 +142,25 @@ export function SdrConsoleTabs() {
       </TabsContent>
       <TabsContent value="sdr-agent" className="mt-4">
         {body((d) => (
-          <SdrAgentPicker workspaceId={d.workspaceId} playbooks={d.readiness.playbooks} />
+          <SdrAgentPicker
+            workspaceId={d.workspaceId}
+            playbooks={d.readiness.playbooks}
+            agentId={agentId}
+          />
         ))}
       </TabsContent>
       <TabsContent value="sdr-agent-config" className="mt-4">
         {body((d) => (
-          <SdrAgentConfigPanel workspaceId={d.workspaceId} playbooks={d.readiness.playbooks} />
+          <SdrAgentConfigPanel
+            workspaceId={d.workspaceId}
+            playbooks={d.readiness.playbooks}
+            agentId={agentId}
+          />
         ))}
       </TabsContent>
       <TabsContent value="sdr-skills" className="mt-4">
         {body((d) => (
-          <SdrSkillsPanel playbooks={d.readiness.playbooks} />
+          <SdrSkillsPanel playbooks={d.readiness.playbooks} agentId={agentId} />
         ))}
       </TabsContent>
       <TabsContent value="sdr-results" className="mt-4">
@@ -158,6 +170,19 @@ export function SdrConsoleTabs() {
       </TabsContent>
     </>
   );
+}
+
+/** Coluna fixa do Estúdio: conversa de teste do agente escolhido. */
+export function SdrStudioSide({ agentId }: { agentId: string }) {
+  const fetchOverview = useServerFn(getSdrOverview);
+  const q = useQuery({ queryKey: ["sdr-overview"], queryFn: () => fetchOverview() });
+  if (!q.data)
+    return (
+      <div className="flex items-center gap-2 py-10 text-sm text-muted-foreground" role="status">
+        <Loader2 className="h-4 w-4 animate-spin" /> Carregando conversa de teste…
+      </div>
+    );
+  return <SdrStudioTestChat workspaceId={q.data.workspaceId} playbookId={agentId} />;
 }
 
 function useRefresh() {
