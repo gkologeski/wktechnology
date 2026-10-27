@@ -1,6 +1,7 @@
 // Habilidades e ferramentas por agente: liga/desliga, prontidão real,
 // anfitrião/agenda do agendamento direto, teste simulado e registro.
 import { useSdrPlaybooks } from "@/hooks/use-default-sdr-agent";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   agentOptionLabel,
   pickDefaultAgent,
@@ -124,7 +125,15 @@ function defaultSchedule(c: Catalog): NonNullable<ToolConfig["scheduling"]> | nu
   };
 }
 
+const SDR_UPDATE_KEYS = [
+  "techsales.marketing.sdr_agent.update.own",
+  "techsales.marketing.sdr_agent.update.team",
+  "techsales.marketing.sdr_agent.update.workspace",
+];
+
 function SkillsForm({ playbookId }: { playbookId: string }) {
+  // Espelho da permissão; o servidor (saveSdrToolConfig) revalida.
+  const canSave = usePermissions().canAny(SDR_UPDATE_KEYS);
   const fetchCat = useServerFn(getSdrToolCatalog);
   const save = useServerFn(saveSdrToolConfig);
   const test = useServerFn(testSdrTool);
@@ -584,7 +593,11 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
       </section>
 
       <div className="flex justify-end">
-        <Button onClick={onSave} disabled={saving}>
+        <Button
+          onClick={onSave}
+          disabled={saving || !canSave}
+          title={canSave ? undefined : "Você não tem permissão para editar este agente."}
+        >
           {saving ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
