@@ -157,7 +157,6 @@
             },
             "email": {
               "type": "string",
-              "format": "email",
               "description": "E-mail do lead."
             },
             "phone": {
