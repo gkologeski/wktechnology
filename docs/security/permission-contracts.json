@@ -1715,7 +1715,7 @@
       "files": {
         "src/lib/whatsapp/cloud-connections.server.ts": "b5f5c15e109a7c269666c29b81a4aecf16f95ecdd72028edded8c6e841374289",
         "src/lib/whatsapp/cloud-connections.functions.ts": "96b22387fa972c8c4e1d496a9ca6718adcd953d1904c6f995a496f9d94443595",
-        "src/components/whatsapp/cloud-connections-panel.tsx": "1a5d48ea405e27e8c795c11e4666dc9421faa2deba6dca5f855af09f5a148dfb",
+        "src/components/whatsapp/cloud-connections-panel.tsx": "90255e7b3101e07d8fd854f384f7817e7e588d60d5c4d5432862cff50e9e900d",
         "src/routes/_authenticated/settings.whatsapp.tsx": "5a283508e6de49ef640c38f7f8d756c20564a31f5e22b0707d233ba5a3ce8046",
         "drizzle/migrations/0254_whatsapp_cloud_connections.sql": "60e6d9ebb0c44cc12e2b4ad4e3594cb1f5674ce77f5a1e247610c9eb174ed3f2"
       },
@@ -2960,7 +2960,7 @@
       "kind": "business",
       "files": {
         "src/components/service-channels/connection-configuration.tsx": "9f0bf3710d602d58c920e2de445b4a315bcd9c34c0fa89ede96fca38a17fb283",
-        "src/components/service-channels/whatsapp-configuration.tsx": "a50a70db9e47ea9364cb8dda67f3b9990e8de7e90a025434c433df5b109856bb",
+        "src/components/service-channels/whatsapp-configuration.tsx": "d53d37365e1a1c803673dbf251decb7e3b1eff8e696e81d1f8c8219a26e205d8",
         "src/components/service-channels/email-configuration.tsx": "e6b66f3eae964ca0188509161496f3d503de89de2bdac89b399c8999be614c14",
         "src/components/service-channels/widget-configuration.tsx": "91c4e76deaab8216b997f81200667ab809b657641fb3cdce57c122346581b297",
         "src/components/service-channels/channel-health.tsx": "0532fc66657082a73f9e1084d3920356e235cb0ba207f84c5ed12bbb27e9f8da",
@@ -3249,6 +3249,14 @@
         "revocation": "Current SQL permission denials and inactive/foreign workspace refusals propagate unchanged, without fallback data or retry under another actor.",
         "review_by": "2027-01-27"
       }
+    },
+    {
+      "id": "whatsapp-quality-presentation",
+      "kind": "presentation",
+      "files": {
+        "src/lib/whatsapp/quality-display.ts": "5424033e2d2d4e7121f6e7fe4e10b2cd0cb990905383465aae88126e7f0a5c8d"
+      },
+      "rationale": "Pure mapping of existing Meta quality ratings to labels and visual tones; no I/O, actions, permissions, or data access."
     }
   ],
   "retired": {}
