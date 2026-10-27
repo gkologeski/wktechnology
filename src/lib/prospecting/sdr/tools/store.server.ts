@@ -35,13 +35,18 @@ export function createDbToolStore(
     jobId: string | null;
     conversationId: string;
     enrollmentId: string | null;
+    conversationReference?: { table: "email_threads" | "live_chat_sessions"; id: string };
+    customerScope?: { leadId: string | null; contactId: string | null };
+    restrictCustomerContext?: boolean;
   },
 ): ToolStore {
   const ws = ctx.workspaceId;
   const authorize = async (refs: Parameters<typeof assertSalesWorker>[3] = []) => {
     if (!ctx.enrollmentId) throw new Error("Ferramenta sem origem de atendimento autorizada.");
     await assertSalesWorker(admin, "sdr_enrollments", ctx.enrollmentId, [
-      { table: "whatsapp_conversations", id: ctx.conversationId, action: "update" },
+      ctx.conversationReference
+        ? { ...ctx.conversationReference, action: "update" }
+        : { table: "whatsapp_conversations", id: ctx.conversationId, action: "update" },
       ...(ctx.agentVersionId ? [{ agent_version_id: ctx.agentVersionId }] : []),
       ...refs,
     ]);
@@ -236,11 +241,14 @@ export function createDbToolStore(
       const out: CustomerCandidate[] = [];
       for (const kind of ["lead", "contact"] as const) {
         const table = kind === "lead" ? "leads" : "contacts";
+        const scopedId = kind === "lead" ? ctx.customerScope?.leadId : ctx.customerScope?.contactId;
+        if (ctx.customerScope && !scopedId) continue;
         let query = crm
           .from(table)
           .select("id, first_name, last_name, email, phone, mobile_phone")
           .eq("workspace_id", ws)
           .limit(5);
+        if (scopedId) query = query.eq("id", scopedId);
         if (q.email) query = query.ilike("email", like(q.email));
         if (q.firstName) query = query.ilike("first_name", like(q.firstName));
         if (q.lastName) query = query.ilike("last_name", like(q.lastName));
@@ -272,6 +280,7 @@ export function createDbToolStore(
       return out;
     },
     async crmContext(link) {
+      if (ctx.restrictCustomerContext) return {};
       const out: Record<string, unknown> = {};
       const personId = link.contactId ?? link.leadId;
       if (personId) {

@@ -55,10 +55,12 @@ export const syncOfflineTimeEntry = createServerFn({ method: "POST" })
     const { canonicalJson, sha256Hex } = await import("./public-api.shared");
     if ((await sha256Hex(canonicalJson(data.payload))) !== data.requestHash)
       throw new Error("OFFLINE_REQUEST_CONFLICT: conteúdo diferente do guardado no aparelho.");
-    const rpc = context.supabase.rpc.bind(context.supabase) as unknown as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    const rpc = (
+      context.supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>
+    ).bind(context.supabase);
     const { data: res, error } = await rpc("project_time_entry_sync", {
       p_ws: data.workspaceId,
       p_client_request_id: data.clientRequestId,

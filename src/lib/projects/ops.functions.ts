@@ -9,10 +9,12 @@ export const getProjectsOps = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<ProjectsOpsStatus> => {
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
     const ws = await resolveActiveWorkspace(context.userId);
-    const rpc = context.supabase.rpc.bind(context.supabase) as unknown as (
-      fn: string,
-      args: Record<string, unknown>,
-    ) => Promise<{ data: unknown; error: { message: string } | null }>;
+    const rpc = (
+      context.supabase.rpc as unknown as (
+        fn: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>
+    ).bind(context.supabase);
     const { data, error } = await rpc("project_ops_status", { p_ws: ws });
     if (error) throw new Error(error.message);
     return data as ProjectsOpsStatus;

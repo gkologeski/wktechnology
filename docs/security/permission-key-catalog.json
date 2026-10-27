@@ -233,6 +233,9 @@
     "system.calendars.view.own",
     "system.calendars.view.team",
     "system.calendars.view.workspace",
+    "system.channels.approve.workspace",
+    "system.channels.manage.workspace",
+    "system.channels.view.workspace",
     "system.communication.subscription_types.create.workspace",
     "system.communication.subscription_types.delete.workspace",
     "system.communication.subscription_types.update.workspace",
@@ -2804,6 +2807,15 @@
     },
     "system.phone_normalization.manage.workspace": {
       "migration": "drizzle/migrations/0248_admin_settings_matrix.sql"
+    },
+    "system.channels.view.workspace": {
+      "migration": "drizzle/migrations/0256_service_channel_registry.sql"
+    },
+    "system.channels.manage.workspace": {
+      "migration": "drizzle/migrations/0256_service_channel_registry.sql"
+    },
+    "system.channels.approve.workspace": {
+      "migration": "drizzle/migrations/0263_service_agent_identity.sql"
     }
   }
 }

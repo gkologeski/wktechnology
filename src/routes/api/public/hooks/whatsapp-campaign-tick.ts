@@ -298,6 +298,19 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
       // SDR: liga template → campanha → conversa. Falha aqui não desfaz o envio.
       if (conv) {
         try {
+          // Campaign opt-in remains authoritative; an unbound campaign must not fall back to receptive AI.
+          const origin = await supabaseAdmin
+            .from("whatsapp_conversations")
+            .update({
+              origin_campaign_id: camp.id,
+              origin_template_name: camp.template_name,
+              origin_wa_message_id: wamid,
+              conversation_origin: "campaign",
+            })
+            .eq("id", conv.id)
+            .eq("workspace_id", camp.workspace_id)
+            .is("origin_campaign_id", null);
+          if (origin.error) throw new Error("Não foi possível registrar a origem da campanha.");
           const { data: sdrCfg } = await supabaseAdmin
             .from("whatsapp_campaigns")
             .select("sdr_enabled, sdr_playbook_id")

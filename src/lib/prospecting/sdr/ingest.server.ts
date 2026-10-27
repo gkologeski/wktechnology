@@ -1,3 +1,4 @@
+import { loadChannelRuntime } from "./channel-runtime.server";
 // Entrada do SDR: vínculo envio de campanha → conversa e enfileiramento
 // idempotente das respostas. Chamado pelo tick de campanha e pelo webhook.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,6 +87,31 @@ export async function linkCampaignSend(
     .eq("id", p.campaign.sdr_playbook_id)
     .maybeSingle();
   if (!playbook || playbook.workspace_id !== p.workspaceId) return null;
+
+  const conversation = await admin
+    .from("whatsapp_conversations")
+    .select("wa_phone_number_id")
+    .eq("id", p.conversationId)
+    .eq("workspace_id", p.workspaceId)
+    .maybeSingle();
+  if (conversation.error) throw new Error("Não foi possível verificar a conta da campanha.");
+  const channel = await loadChannelRuntime(admin, {
+    workspaceId: p.workspaceId,
+    channel: "whatsapp",
+    sourceKey: conversation.data?.wa_phone_number_id,
+    agentId: playbook.id,
+    origin: "campaign",
+  });
+  if (channel.status === "blocked") {
+    await recordSdrAction(admin, {
+      workspace_id: p.workspaceId,
+      kind: "channel_routing",
+      status: "failed",
+      payload: { campaign_id: p.campaign.id },
+      error: channel.reason,
+    });
+    return null;
+  }
 
   const find = () =>
     admin
@@ -212,13 +238,35 @@ export async function ingestInboundForSdr(
     body: string;
   },
 ): Promise<IngestResult> {
-  const { data: conv, error: cErr } = await admin
-    .from("whatsapp_conversations")
-    .select("id, workspace_id, sdr_enrollment_id, ai_owner, ai_version, contact_id, lead_id")
-    .eq("id", p.conversationId)
-    .maybeSingle();
+  const readConversation = () =>
+    admin
+      .from("whatsapp_conversations")
+      .select(
+        "id, workspace_id, sdr_enrollment_id, ai_owner, ai_version, contact_id, lead_id, wa_phone_number_id",
+      )
+      .eq("id", p.conversationId)
+      .eq("workspace_id", p.workspaceId)
+      .maybeSingle();
+  let { data: conv, error: cErr } = await readConversation();
   if (cErr) throw new Error(cErr.message);
-  if (!conv?.sdr_enrollment_id || conv.workspace_id !== p.workspaceId) return "not_sdr";
+  if (!conv || conv.workspace_id !== p.workspaceId) return "not_sdr";
+  if (
+    !conv.sdr_enrollment_id &&
+    p.providerPhoneId &&
+    conv.wa_phone_number_id === p.providerPhoneId
+  ) {
+    const bound = await admin.rpc("sdr_bind_inbound_channel", {
+      p_workspace: p.workspaceId,
+      p_conversation: conv.id,
+      p_phone_id: p.providerPhoneId,
+    });
+    if (bound.error) throw new Error("Não foi possível vincular o agente receptivo.");
+    if (bound.data) {
+      ({ data: conv, error: cErr } = await readConversation());
+      if (cErr) throw new Error(cErr.message);
+    }
+  }
+  if (!conv?.sdr_enrollment_id) return "not_sdr";
 
   const { data: enr, error: eErr } = await admin
     .from("sdr_enrollments")

@@ -631,6 +631,13 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         permissionAny: adminAny("system.integrations"),
       },
       {
+        to: "/settings/channels",
+        label: "Canais de atendimento",
+        icon: MessageSquare,
+        need: "admin",
+        permissionAny: adminAny("system.channels"),
+      },
+      {
         to: "/settings/whatsapp",
         label: "WhatsApp",
         icon: MessageSquare,

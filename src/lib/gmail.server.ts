@@ -90,14 +90,34 @@ export function buildRawMime(opts: {
   bodyText?: string;
   inReplyTo?: string;
   references?: string;
+  messageId?: string;
+  autoSubmitted?: boolean;
   attachments?: MimeAttachment[];
 }): string {
+  for (const value of [
+    opts.from,
+    opts.fromName,
+    opts.subject,
+    opts.inReplyTo,
+    opts.references,
+    opts.messageId,
+    ...opts.to,
+    ...(opts.cc ?? []),
+    ...(opts.bcc ?? []),
+    ...(opts.attachments ?? []).flatMap((a) => [a.filename, a.contentType]),
+  ]) {
+    if (value != null && /[\r\n]/.test(value)) throw new Error("Cabeçalho de e-mail inválido.");
+  }
+  if (opts.messageId && !/^<[^<>\s]+@[^<>\s]+>$/.test(opts.messageId))
+    throw new Error("Identificador de e-mail inválido.");
   const fromHeader = opts.fromName ? `${encodeHeader(opts.fromName)} <${opts.from}>` : opts.from;
   const headers: string[] = [`From: ${fromHeader}`, `To: ${opts.to.join(", ")}`];
   if (opts.cc && opts.cc.length) headers.push(`Cc: ${opts.cc.join(", ")}`);
   if (opts.bcc && opts.bcc.length) headers.push(`Bcc: ${opts.bcc.join(", ")}`);
   headers.push(`Subject: ${encodeHeader(opts.subject)}`);
   headers.push("MIME-Version: 1.0");
+  if (opts.messageId) headers.push(`Message-ID: ${opts.messageId}`);
+  if (opts.autoSubmitted) headers.push("Auto-Submitted: auto-generated");
   if (opts.inReplyTo) headers.push(`In-Reply-To: ${opts.inReplyTo}`);
   if (opts.references) headers.push(`References: ${opts.references}`);
 

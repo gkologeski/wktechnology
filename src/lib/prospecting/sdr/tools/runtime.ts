@@ -30,9 +30,11 @@ export function selectTools(cfg: ToolConfig | null, facts: ReadinessFacts) {
   };
 }
 
-export function makeExecutor(ctx: ToolCtx) {
-  return (name: string, args: unknown, callId: string) =>
-    executeTool(ctx, fromFnName(name), args, callId);
+export function makeExecutor(ctx: ToolCtx, beforeExecute?: () => Promise<unknown>) {
+  return async (name: string, args: unknown, callId: string) => {
+    await beforeExecute?.();
+    return executeTool(ctx, fromFnName(name), args, callId);
+  };
 }
 
 export function newEventId(): string {

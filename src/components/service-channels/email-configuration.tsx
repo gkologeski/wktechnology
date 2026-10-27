@@ -1,0 +1,225 @@
+import { transportCapabilities } from "@/lib/prospecting/sdr/channel-permissions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { GOOGLE_OAUTH_ORIGIN } from "@/lib/platform-domains";
+import { useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
+import { Mail, Plug, RefreshCw, Trash2 } from "lucide-react";
+import {
+  listEmailAccounts,
+  startGmailOAuth,
+  disconnectEmailAccount,
+} from "@/lib/email-accounts.functions";
+import { syncMyEmailAccounts } from "@/lib/gmail-sync.functions";
+import { useActivityWindows } from "@/components/activity/activity-window-context";
+import { ACTIONS_BY_KEY } from "@/components/activity/timeline-shared";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { EmailSignatureEditor } from "@/components/email/email-signature-editor";
+
+const GOOGLE_OAUTH_MESSAGE_ORIGINS = new Set([GOOGLE_OAUTH_ORIGIN]);
+
+function isTrustedGoogleOAuthMessageOrigin(origin: string) {
+  return origin === window.location.origin || GOOGLE_OAUTH_MESSAGE_ORIGINS.has(origin);
+}
+
+export function EmailConfiguration({
+  oauthStatus,
+  returnTo = "/settings/email",
+}: {
+  oauthStatus?: string;
+  returnTo?: "/settings/email" | "/settings/channels";
+}) {
+  const permissions = usePermissions();
+  const capabilities = transportCapabilities("email", permissions);
+  const canView = capabilities.view;
+  const openActivity = useActivityWindows();
+  const qc = useQueryClient();
+  const search = { gmail: oauthStatus };
+  const start = useServerFn(startGmailOAuth);
+  const list = useServerFn(listEmailAccounts);
+  const disconnect = useServerFn(disconnectEmailAccount);
+  const syncNow = useServerFn(syncMyEmailAccounts);
+
+  const { data, isLoading, isError, refetch } = useQuery({
+    queryKey: ["email_accounts", permissions.workspaceId],
+    queryFn: () => list(),
+    enabled: canView,
+  });
+
+  const syncMut = useMutation({
+    mutationFn: (accountId?: string) =>
+      syncNow({ data: accountId ? { account_id: accountId } : {} }),
+    onSuccess: (res) => {
+      const inserted = res.results.reduce((a, r) => a + r.inserted, 0);
+      const errs = res.results.filter((r) => r.error);
+      if (errs.length) toast.error(`Erros: ${errs.map((e) => e.error).join("; ")}`);
+      toast.success(
+        inserted > 0 ? `${inserted} mensagem(ns) sincronizada(s)` : "Nenhuma mensagem nova",
+      );
+      qc.invalidateQueries({ queryKey: ["email_accounts"] });
+      qc.invalidateQueries({ queryKey: ["email_threads"] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  useEffect(() => {
+    if (search.gmail === "connected") {
+      toast.success("Gmail conectado com sucesso");
+      qc.invalidateQueries({ queryKey: ["email_accounts"] });
+    }
+  }, [search.gmail, qc]);
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (!isTrustedGoogleOAuthMessageOrigin(event.origin)) return;
+      const data = event.data as { type?: string; integration?: string };
+      if (data.type !== "google-oauth-connected" || data.integration !== "gmail") return;
+      toast.success("Gmail conectado com sucesso");
+      qc.invalidateQueries({ queryKey: ["email_accounts"] });
+    };
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [qc]);
+
+  const connect = async () => {
+    const oauthWindow = window.open("about:blank", "google-gmail-oauth");
+    try {
+      const r = await start({
+        data: { return_to: returnTo, origin: window.location.origin },
+      });
+      if (oauthWindow) {
+        oauthWindow.location.href = r.url;
+        oauthWindow.focus();
+        toast.info("Finalize a conexão do Google na nova aba.");
+        return;
+      }
+      const fallback = window.open(r.url, "_blank", "noopener,noreferrer");
+      if (fallback) {
+        toast.info("Finalize a conexão do Google na nova aba.");
+        return;
+      }
+      window.location.assign(r.url);
+    } catch (e) {
+      oauthWindow?.close();
+      toast.error(e instanceof Error ? e.message : "Erro ao iniciar OAuth");
+    }
+  };
+
+  const remove = async (id: string) => {
+    if (!(await confirmDialog("Desconectar esta conta?"))) return;
+    try {
+      await disconnect({ data: { id } });
+      toast.success("Conta desconectada");
+      qc.invalidateQueries({ queryKey: ["email_accounts"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro");
+    }
+  };
+
+  const items = data?.items ?? [];
+
+  if (!canView) return <p>Sem permissão para visualizar contas de e-mail.</p>;
+  return (
+    <div className="space-y-4 max-w-2xl">
+      <Card>
+        <CardContent className="pt-6 flex items-center justify-between gap-4">
+          <div>
+            <div className="font-medium flex items-center gap-2">
+              <Mail className="h-4 w-4" /> Gmail
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Conecte sua conta Gmail para enviar e receber e-mails no TechERP.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => openActivity?.({ action: ACTIONS_BY_KEY["create:email"] })}
+              disabled={!capabilities.compose}
+            >
+              Novo email
+            </Button>
+            <Button onClick={connect} disabled={!capabilities.create}>
+              <Plug className="h-4 w-4 mr-1" /> Conectar Gmail
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="space-y-2">
+        <h3 className="text-sm font-medium text-muted-foreground">Contas conectadas</h3>
+        {isLoading ? (
+          <p className="text-sm text-muted-foreground">Carregando…</p>
+        ) : isError ? (
+          <div role="alert">
+            Não foi possível carregar as contas.{" "}
+            <Button variant="outline" onClick={() => void refetch()}>
+              Tentar novamente
+            </Button>
+          </div>
+        ) : items.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma conta conectada ainda.</p>
+        ) : (
+          items.map((a) => (
+            <div key={a.id} className="space-y-2">
+              <Card>
+                <CardContent className="pt-6 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{a.email}</div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-2 mt-1">
+                      <Badge variant="outline">{a.provider}</Badge>
+                      <Badge variant={a.status === "connected" ? "default" : "destructive"}>
+                        {a.status}
+                      </Badge>
+                      {a.last_sync_at && (
+                        <span>último sync: {new Date(a.last_sync_at).toLocaleString()}</span>
+                      )}
+                    </div>
+                    {a.last_error && (
+                      <p className="text-xs text-destructive mt-1">{a.last_error}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => syncMut.mutate(a.id)}
+                      disabled={syncMut.isPending || !capabilities.update}
+                      title="Sincronizar agora"
+                    >
+                      <RefreshCw
+                        className={`h-3 w-3 mr-1 ${syncMut.isPending ? "animate-spin" : ""}`}
+                      />
+                      Sincronizar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => remove(a.id)}
+                      title="Desconectar"
+                      disabled={!capabilities.remove}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+              {capabilities.update && (
+                <EmailSignatureEditor
+                  accountId={a.id}
+                  accountEmail={a.email}
+                  initialHtml={a.signature_html ?? null}
+                />
+              )}
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}

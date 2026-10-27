@@ -255,7 +255,7 @@
       "id": "configuration-navigation-compatibility",
       "kind": "internal",
       "files": {
-        "src/lib/access-control/sales-route-map.ts": "900aa638af6edaad38f79c08e711af8274d92639caf1ee7e5b72cce626c3fdc8",
+        "src/lib/access-control/sales-route-map.ts": "a564bc78dc95654b256271ec4fe9c151d63bc7fb3b4f73ad940b0dd1f4b2fa5c",
         "src/routes/_authenticated/settings.tsx": "a4f951fe15ac2c7de40486935dabe323cc57935a567137ef3012fa0bfb6b743b",
         "src/routes/_authenticated.tsx": "18faf2eba2b27b297cac5039fdc0913b7b661631c9e578c23e3d9f21dae5c27f"
       },
@@ -1715,15 +1715,15 @@
       "files": {
         "src/lib/whatsapp/cloud-connections.server.ts": "b5f5c15e109a7c269666c29b81a4aecf16f95ecdd72028edded8c6e841374289",
         "src/lib/whatsapp/cloud-connections.functions.ts": "96b22387fa972c8c4e1d496a9ca6718adcd953d1904c6f995a496f9d94443595",
-        "src/components/whatsapp/cloud-connections-panel.tsx": "1a5d48ea405e27e8c795c11e4666dc9421faa2deba6dca5f855af09f5a148dfb",
-        "src/routes/_authenticated/settings.whatsapp.tsx": "3b5b07439aa9ca3ad243bff9ba78612cd7cf0482bd79a0195b8d5552a6252f60",
+        "src/components/whatsapp/cloud-connections-panel.tsx": "90255e7b3101e07d8fd854f384f7817e7e588d60d5c4d5432862cff50e9e900d",
+        "src/routes/_authenticated/settings.whatsapp.tsx": "5a283508e6de49ef640c38f7f8d756c20564a31f5e22b0707d233ba5a3ce8046",
         "drizzle/migrations/0254_whatsapp_cloud_connections.sql": "60e6d9ebb0c44cc12e2b4ad4e3594cb1f5674ce77f5a1e247610c9eb174ed3f2"
       },
       "resources": ["system.whatsapp"],
       "actions": ["view", "manage"],
       "scopes": ["workspace"],
       "permission_keys": ["system.whatsapp.view.workspace", "system.whatsapp.manage.workspace"],
-      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants.",
+      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants. The legacy WhatsApp route now renders the same extracted WhatsAppConfiguration used by the channel center; original transport operations and server checks are preserved.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -1744,6 +1744,10 @@
         {
           "file": "src/components/whatsapp/cloud-connections-panel.tsx",
           "symbol": "CloudConnectionsPanel"
+        },
+        {
+          "file": "src/components/service-channels/whatsapp-configuration.tsx",
+          "symbol": "WhatsAppConfiguration"
         }
       ],
       "database": [
@@ -2059,8 +2063,8 @@
       "id": "whatsapp-cloud-workers",
       "kind": "service",
       "files": {
-        "src/lib/prospecting/sdr/actions.server.ts": "d567310047de0523fd620993b0262e7fbf77f7dd91f315b2f264d68ec1cdf094",
-        "src/routes/api/public/hooks/whatsapp-campaign-tick.ts": "c7d124ea8d956503a8a108ea2470608ea644827168d4c7cf032e30434453d6df"
+        "src/lib/prospecting/sdr/actions.server.ts": "5486e6e482416801a7883c274d6877ba57623dd925306d49ee3126582e46b3ca",
+        "src/routes/api/public/hooks/whatsapp-campaign-tick.ts": "f7269f73e84c0e6fa9038cd04bec34964d3ffedd349c7bdd358408a4e140d38a"
       },
       "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
       "actions": ["view", "create", "update", "manage"],
@@ -2261,9 +2265,839 @@
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
       "files": {
-        "src/integrations/supabase/types.ts": "9a3ba3e6e96aa2bec32140249eb0ad9f13dacbc06e5bf05c1242acb98f7adbe7"
+        "src/integrations/supabase/types.ts": "0bdbf3ca3459c1a413e52289d2afe6e9589f51fae63e0fd01d33500780fd97e4"
       },
-      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change."
+      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes."
+    },
+    {
+      "id": "service-channel-account-center",
+      "kind": "business",
+      "files": {
+        "src/lib/prospecting/sdr/channel-accounts.functions.ts": "5a32fe89cc59d1378a4b5c1579970d2afabe707f29173a8e8f062019519e8dc6",
+        "src/lib/prospecting/sdr/channel-access.server.ts": "a23a8c47439c6f10cf0a30dae2253b53af3a894e3238c7099381a0465594a95a",
+        "src/routes/_authenticated/settings.channels.tsx": "d04c6a22f9bb7c6e22591c213c35bdf14e3c2cb2985fb63cbb41332fb9a0c6c5",
+        "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c",
+        "src/components/service-channels/account-editor.tsx": "1caa1effd64517444291ce975921952ff18fd090880ec0750f9183dd0dc87c79",
+        "src/components/service-channels/agent-channels.tsx": "97abf189efffa02a15a536b7e9aef0a8cf3bc97d85f88c95915d7e916cdb8a41",
+        "src/components/prospecting/sdr-agent-config.tsx": "b4870cc2ee2718d2e4f5996a6f7f0ce81b99dc3455a24192d314a515bd2a839d"
+      },
+      "resources": ["system.channels", "techsales.marketing.sdr_agent"],
+      "actions": ["view", "manage", "update"],
+      "scopes": ["workspace"],
+      "permission_keys": ["system.channels.view.workspace", "system.channels.manage.workspace"],
+      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back.",
+      "controls": [
+        {
+          "file": "src/lib/prospecting/sdr/channel-access.server.ts",
+          "symbol": "requireChannelAccess"
+        },
+        {
+          "file": "src/routes/_authenticated/settings.channels.tsx",
+          "symbol": "ServiceChannelsPage"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/components/service-channels/agent-channels.tsx",
+          "symbol": "AgentChannels"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channel_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channel_save"
+        },
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channels_read"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "allows active authorized channel manager"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects missing channel permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects explicit channel deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects foreign workspace channel access"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects inactive channel member"
+        }
+      }
+    },
+    {
+      "id": "service-channel-identity-resolution",
+      "kind": "internal",
+      "files": {
+        "src/lib/prospecting/sdr/channel-identity.ts": "d0bc92b7473e96e243378252fe0e4d9bd01bee2f1e8555507001245c35b9e724"
+      },
+      "resources": ["system.channels"],
+      "actions": ["view"],
+      "scopes": ["workspace"],
+      "permission_keys": ["system.channels.view.workspace"],
+      "rationale": "Pure identity interpolation and deterministic routing only; no network, persistence, or authorization decision. Callers must resolve authorized account metadata server-side. No runtime activation in this package.",
+      "controls": [
+        {
+          "file": "src/lib/prospecting/sdr/channel-identity.ts",
+          "symbol": "renderChannelIdentity"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channel_accounts"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "allows active authorized channel manager"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects missing channel permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects explicit channel deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects foreign workspace channel access"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects inactive channel member"
+        }
+      },
+      "exception": {
+        "mechanism": "Pure functions accept already authorized channel metadata; no provider credentials, service client, or public endpoint.",
+        "boundary": "Workspace/account matching and explicit selected agent matching; conflicting responders fail closed.",
+        "revocation": "No cache or side effects. Runtime callers must re-read bindings.",
+        "review_by": "2027-01-27"
+      }
+    },
+    {
+      "id": "service-channel-navigation-labels",
+      "kind": "presentation",
+      "files": {
+        "src/lib/menu-config.ts": "4ad46a66e7badc79af7d04dbd5364f6b044d56133e453bfbb44220dbd1c2c3bf",
+        "src/lib/menu-resources.ts": "eed3bafa935431fd30fe5d01ddce63848afb0911c6cedeb3fba21b0890f32d17"
+      },
+      "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files."
+    },
+    {
+      "id": "service-channel-worker-routing",
+      "kind": "service",
+      "files": {
+        "src/lib/prospecting/sdr/channel-runtime.server.ts": "a1528c862f67ac28a1b664d975c6aaf7b534d280bc8345a66e861142a5fe12cf",
+        "src/lib/prospecting/sdr/worker.server.ts": "cd13f9c73227ade460282d91852229634ce186c95d85f948c50c42a7c16fb6f1",
+        "src/lib/prospecting/sdr/ingest.server.ts": "c700c4343049bbf926c1dbd3cb8a6b393a8f1b9b5259d8e2ab3d4cc89fed056e",
+        "src/lib/prospecting/sdr/tools/runtime.ts": "dcb7dd1240f535cf9ff084ad43989bafcd4db6d56f02ebb2c8efbc18965d4918",
+        "drizzle/migrations/0257_service_channel_runtime_identity.sql": "2d829bed7441a6f7c8dc5c26f374ee4b66853f04a23caae6cd2d3e915815617f"
+      },
+      "resources": ["system.channels", "techsales.marketing.sdr_agent", "techsales.inbox.whatsapp"],
+      "actions": ["view", "manage", "update", "create"],
+      "scopes": ["workspace"],
+      "permission_keys": ["system.channels.view.workspace", "system.channels.manage.workspace"],
+      "rationale": "Explicitly configured account routing only; discovery does not activate or silence legacy agents. The provider-only inbound RPC locks the tenant conversation, preserves human/paused ownership, active membership and opt-out, and never creates a receptive follow-up. Runtime validates account/agent/mode before inference, tools, commit and send. Existing assertSalesWorker, claim lease, CAS and transport checks remain mandatory. Identity snapshot writes are service-only. Browser configuration is checked by the channel matrix. Synthetic SQL validates actual permissions and RPC behavior in a rollback transaction.",
+      "controls": [
+        {
+          "file": "src/lib/prospecting/sdr/channel-runtime.server.ts",
+          "symbol": "loadChannelRuntime"
+        },
+        {
+          "file": "src/lib/access-control/sales-worker.server.ts",
+          "symbol": "assertSalesWorker"
+        },
+        {
+          "file": "src/lib/prospecting/sdr/tools/dispatcher.ts",
+          "symbol": "executeTool"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0257_service_channel_runtime_identity.sql",
+          "symbol": "sdr_channel_identity_guard"
+        },
+        {
+          "file": "drizzle/migrations/0257_service_channel_runtime_identity.sql",
+          "symbol": "sdr_bind_inbound_channel"
+        },
+        {
+          "file": "drizzle/migrations/0257_service_channel_runtime_identity.sql",
+          "symbol": "service_channel_save"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "allows active authorized channel manager"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects missing channel permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects explicit channel deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects foreign workspace channel access"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects inactive channel member"
+        }
+      },
+      "exception": {
+        "mechanism": "Service-role ingest is reachable only after the existing provider webhook/cron authentication; actor and workspace come from verified stored conversations, never customer text.",
+        "boundary": "No credentials in registry or identity. The new RPC is not executable by anon or authenticated. Worker retains current sales subject checks and compare-and-set; current binding rechecked for every effect.",
+        "revocation": "Account disable, binding/agent disable, changed account identity reference or revoked actor permissions stop subsequent effects. Human/paused conversations are never automatically reclaimed.",
+        "review_by": "2027-01-27"
+      }
+    },
+    {
+      "id": "service-channel-prompt-identity",
+      "kind": "internal",
+      "files": {
+        "src/lib/prospecting/sdr/agent.server.ts": "85c27606b823d4de56d3a3efee868254e719903dc430a18eb11b8c91b1562729"
+      },
+      "resources": ["system.channels"],
+      "actions": ["view"],
+      "scopes": ["workspace"],
+      "permission_keys": ["system.channels.view.workspace"],
+      "rationale": "Prompt formatting uses only server-resolved account identity. Published persona remains stored intact; only explicit variables and legacy self-introduction names are adapted in memory. Authorized worker and sandbox callers retain provider and permission enforcement. No public identity lookup or credential access.",
+      "controls": [
+        {
+          "file": "src/lib/prospecting/sdr/channel-identity.ts",
+          "symbol": "personaForChannel"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0257_service_channel_runtime_identity.sql",
+          "symbol": "sdr_channel_identity_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "allows active authorized channel manager"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects missing channel permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects explicit channel deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects foreign workspace channel access"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects inactive channel member"
+        }
+      },
+      "exception": {
+        "mechanism": "Prompt formatter called inside authorized SDR runtime or authenticated agent sandbox, not an endpoint.",
+        "boundary": "Whitelisted single-pass variables; customer messages never supply or override the server identity.",
+        "revocation": "No cache or persistence in formatter; callers revalidate account and agent bindings per effect.",
+        "review_by": "2027-01-27"
+      }
+    },
+    {
+      "id": "service-channel-agent-sandbox",
+      "kind": "business",
+      "files": {
+        "src/lib/prospecting/sdr-agent.functions.ts": "6a20902a0678cde3182fcde646f9aab32114aead1186162ed2a466797d4c138f",
+        "src/components/prospecting/sdr-agent-studio.tsx": "9ec10fda5fd355f291bc16aeaf679c7fd208c237ba1f82ec5344420fff803eac"
+      },
+      "resources": ["system.channels", "techsales.marketing.sdr_agent"],
+      "actions": ["view", "create", "update", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "techsales.marketing.sdr_agent.view.workspace",
+        "techsales.marketing.sdr_agent.update.workspace",
+        "techsales.marketing.sdr_agent.manage.workspace"
+      ],
+      "rationale": "Existing SDR version/config/test endpoints retain sales middleware, record checks and assertSdr workspace enforcement. Optional sandbox channel preview additionally requires current channel view and account/binding user RLS; only account UUID is accepted, never client identity text. Disabled accounts may be simulated without activating them. Sandbox continues memory tools and fake calendar with no external delivery or CRM writes.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/prospecting/sdr/access.server.ts",
+          "symbol": "assertSdr"
+        },
+        {
+          "file": "src/lib/prospecting/sdr/channel-access.server.ts",
+          "symbol": "requireChannelAccess"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channels_read"
+        },
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_bindings_read"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "allows active authorized channel manager"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects missing channel permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects explicit channel deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects foreign workspace channel access"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects inactive channel member"
+        }
+      }
+    },
+    {
+      "id": "service-channel-email-chat-worker",
+      "kind": "service",
+      "files": {
+        "src/lib/prospecting/sdr/service-worker.server.ts": "7a61c413c1fa05c8503e094b4120ce0fcf9600e3ce92ae9d591f2a5db4c387ce",
+        "src/lib/prospecting/sdr/service-transports.server.ts": "6be9872511c8d3d2506ff7897e426104df89f0800487d7e806351f76c50a379d",
+        "src/lib/prospecting/sdr/tools/store.server.ts": "a8ada9804f3bc58a3d1ee9232a668e44f093efff4e90bfb78f64de30365fff4d",
+        "drizzle/migrations/0258_service_agent_queue.sql": "1df35e4858d14e524b4056925ef5ce73e3567d8fe3caf0a5076bd79b36b61810",
+        "drizzle/migrations/0259_service_agent_commit.sql": "8552e42c40381f6e21d580455071bf87b071d56f23d006c62c37bb801cd095cd",
+        "drizzle/migrations/0260_service_agent_delivery.sql": "5086f1318c0c5d9de08f822d567138475fac28b821a6469991944db5a462e6b4",
+        "drizzle/migrations/0262_sdr_opportunity_link.sql": "ffee033b466bc4b15a178b5469204eb4e6be6d58f475fd9d877ce4f1a1c26147",
+        "drizzle/migrations/0264_service_agent_handoff.sql": "c90a06e3b335e66c33b6f8657bab632739f7ec1c07d7322c94c486d8173b8a15",
+        "src/routes/api/public/hooks/sdr-tick.ts": "e2aa8a7e49ef906f4fa5dd51e0eebdc414c07d79b2c501a2550e1375c10874b5",
+        "drizzle/migrations/0265_service_agent_wake_pending.sql": "306ab84daf4856e9b629b644d1d04a2a13c06b54ccda44a5c3bfede8a93d6968",
+        "drizzle/migrations/0266_service_agent_email_sync_proof.sql": "749f88dec7426ea6963e1f8aaf43d8454e9ed715239e1c87ef443106c6e462f9",
+        "drizzle/migrations/0267_service_agent_technical_rate.sql": "1863bae6f62bd858e4c2245e3b79284101c2593c138e50f6c49098160f323528"
+      },
+      "resources": [
+        "system.channels",
+        "techsales.marketing.sdr_agent",
+        "techsales.inbox.email",
+        "techsales.inbox.chat"
+      ],
+      "actions": ["view", "update", "create", "approve"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": ["system.channels.view.workspace", "system.channels.approve.workspace"],
+      "rationale": "Real email/chat source records, canonical enrollment and source-actor RLS. Current binding/version/lease rechecked before each effect. Anonymous chat has no customer scope; verified email lookup is restricted to linked person. Private CRM context requires explicit approval. SQL acceptance in tests/sql/service-agent-queue-isolated.sql validates actual permissions, coalescence, historical/automatic exclusion, handoff and CAS in rollback; CI exercises RPC fail-closed paths. Authenticated cron starts WhatsApp and email/chat concurrently and waits for both outcomes. Source actor and lease are rechecked by each worker. Handoff uses the configured active workspace recipient only after source assign permission; otherwise keeps the current operator. Canonical reason and timestamp persist, and the recipient is notified. Existing recovery schedule is tightened to one minute without changing command, credentials or suspended state. Repeated automatic menus pause before inference; tests service-worker.test.ts, channel-tick.test.ts and isolated SQL handoff acceptance cover these paths. No production activation yet. Queue waiting re-reads a burst-postponed deadline within its bounded request budget. A running-to-finished trigger wakes an already queued newer inbound using the existing authenticated cron command; it never exposes or replaces credentials and never changes the queued message. Gmail-sync-before-callback is recognized only for the same stored source mailbox and trusted provider ID or in-flight delivery nonce plus canonical body. Authenticated operator messages and different body/header messages still take human ownership; actual SQL acceptance tests cover both orders and idempotent proof. Email/chat also honor the existing technical per-conversation/hour setting using only confirmed deliveries. The guarded RPC never consumes commercial/follow-up quotas, requires a current lease/source actor and causes a notified human handoff before inference when exceeded. SQL verifies threshold, rolling window and lost-lease denial; unit tests verify no model call and the technical reason.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-worker.server.ts",
+          "symbol": "assertSalesWorker"
+        },
+        {
+          "file": "src/lib/prospecting/sdr/service-transports.server.ts",
+          "symbol": "serviceJobGuard"
+        },
+        {
+          "file": "src/lib/cron-auth.server.ts",
+          "symbol": "requireCronAuth"
+        },
+        {
+          "file": "src/routes/api/public/hooks/sdr-tick.ts",
+          "symbol": "cronInfo"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0258_service_agent_queue.sql",
+          "symbol": "service_agent_source_context"
+        },
+        {
+          "file": "drizzle/migrations/0259_service_agent_commit.sql",
+          "symbol": "service_agent_commit_turn"
+        },
+        {
+          "file": "drizzle/migrations/0260_service_agent_delivery.sql",
+          "symbol": "service_agent_begin_send"
+        },
+        {
+          "file": "drizzle/migrations/0262_sdr_opportunity_link.sql",
+          "symbol": "sdr_link_opportunity"
+        },
+        {
+          "file": "drizzle/migrations/0264_service_agent_handoff.sql",
+          "symbol": "service_agent_commit_turn"
+        },
+        {
+          "file": "drizzle/migrations/0265_service_agent_wake_pending.sql",
+          "symbol": "service_agent_wake_next"
+        },
+        {
+          "file": "drizzle/migrations/0266_service_agent_email_sync_proof.sql",
+          "symbol": "service_agent_message_event"
+        },
+        {
+          "file": "drizzle/migrations/0267_service_agent_technical_rate.sql",
+          "symbol": "service_agent_technical_limit"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "allows current authorized leased source"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source missing required permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source with explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects foreign workspace source"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects inactive source actor"
+        }
+      },
+      "exception": {
+        "mechanism": "Only trusted stored inbox events enqueue service jobs; authenticated cron processes them with current published actor and workspace reauthorization.",
+        "boundary": "No synthetic WhatsApp rows. Lease, source version and workspace checks precede tools, canonical CRM CAS and transport. No provider credentials in metadata or browser state.",
+        "revocation": "Disabled account/binding, inactive actor, deny, human ownership, opt-out and source identity changes invalidate subsequent effects. Uncertain sends freeze automation; no blind resend.",
+        "review_by": "2027-01-27"
+      }
+    },
+    {
+      "id": "service-channel-inbox-supervision",
+      "kind": "business",
+      "files": {
+        "src/lib/prospecting/sdr/service-inbox.functions.ts": "6f5c88f0b3b6d29a134901e8f1afa2c3c7c3bc086efab95d1d5875918011009d",
+        "src/components/inbox/service-agent-panel.tsx": "7547eb22e669832aff919828df695ed7488a90295bdf7667d3e2c9d8e2b6224f",
+        "src/routes/_authenticated/inbox.email.tsx": "81528e71d7c0ad6a688f2bbf2f0f7dd1dc64782cd443d233e3d2d486b201e91d",
+        "src/routes/_authenticated/inbox.chat.tsx": "a9a574184396f702170ccdffc9038ad96042d3ec776aa1ea0467ca632661c20c",
+        "drizzle/migrations/0261_service_agent_inbox.sql": "f57837357421e86cfea2da0cc02ffd95a67bc97f9275c924a14afa1db201c5c6",
+        "drizzle/migrations/0263_service_agent_identity.sql": "eada2cd36edad4e52906d1e2ea6e42c395045f5e95e1d73e764afe7ba3c4f858"
+      },
+      "resources": [
+        "system.channels",
+        "techsales.marketing.sdr_agent",
+        "techsales.inbox.email",
+        "techsales.inbox.chat"
+      ],
+      "actions": ["view", "update", "create", "approve"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": ["system.channels.view.workspace", "system.channels.approve.workspace"],
+      "rationale": "Authenticated source-record view/update and current workspace enforced in server functions and SQL. Minimal inbox state only; raw service jobs and tool traces are not selectable by browser roles. Explicit system.channels.approve.workspace plus visible customer references required for private CRM. Source reassociation invalidates approval and in-flight turns. No automatic grants. Buttons follow SQL can_control/can_verify; final RPC always rechecks. Isolated SQL covers active grant, missing key, explicit deny, foreign tenant and inactive membership.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/components/inbox/service-agent-panel.tsx",
+          "symbol": "ServiceAgentPanel"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0261_service_agent_inbox.sql",
+          "symbol": "service_agent_inbox_state"
+        },
+        {
+          "file": "drizzle/migrations/0263_service_agent_identity.sql",
+          "symbol": "service_agent_verify_identity"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "allows current authorized leased source"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source missing required permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source with explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects foreign workspace source"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects inactive source actor"
+        }
+      }
+    },
+    {
+      "id": "service-channel-widget-material-delivery",
+      "kind": "public",
+      "files": {
+        "src/routes/api/public/widget/messages.ts": "91078ca531dc329fb707ba1cba30d0156816fb71ac09c3ef291926afb61409f0",
+        "src/routes/widget.$workspaceId.tsx": "1ae098ff84b3e1ca2da6ab352371bb59185b647be1bc25b4c96dc32f71216448"
+      },
+      "resources": [
+        "system.channels",
+        "techsales.marketing.sdr_agent",
+        "techsales.inbox.email",
+        "techsales.inbox.chat"
+      ],
+      "actions": ["view", "update", "create", "approve"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": ["system.channels.view.workspace", "system.channels.approve.workspace"],
+      "rationale": "Existing visitor capability and exact stored session authorize public chat history. Only material IDs already attached to delivered messages can be signed, further filtered by the session workspace, active/approved/file status and tenant storage prefix. Signed links last five minutes; no public bucket or arbitrary requested path. UI displays sender name and delivered links; no new public CRM access. Public revocation scenarios replace employee membership scenarios because the widget intentionally has no user account.",
+      "controls": [
+        {
+          "file": "src/routes/api/public/widget/messages.ts",
+          "symbol": "loadSession"
+        },
+        {
+          "file": "src/routes/widget.$workspaceId.tsx",
+          "symbol": "visitorIdLocal"
+        },
+        {
+          "file": "src/routes/api/public/widget/messages.ts",
+          "symbol": "widgetPreflight"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0260_service_agent_delivery.sql",
+          "symbol": "service_agent_send_chat"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/widget-materials.test.ts",
+          "name": "allows the actual visitor to read delivered approved workspace material"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/widget-materials.test.ts",
+          "name": "rejects a missing public session capability"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/widget-materials.test.ts",
+          "name": "revokes access to an explicitly unapproved material"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/widget-materials.test.ts",
+          "name": "does not sign a foreign workspace material"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/widget-materials.test.ts",
+          "name": "does not sign an inactive material"
+        }
+      },
+      "exception": {
+        "mechanism": "Only trusted stored inbox events enqueue service jobs; authenticated cron processes them with current published actor and workspace reauthorization.",
+        "boundary": "No synthetic WhatsApp rows. Lease, source version and workspace checks precede tools, canonical CRM CAS and transport. No provider credentials in metadata or browser state.",
+        "revocation": "Disabled account/binding, inactive actor, deny, human ownership, opt-out and source identity changes invalidate subsequent effects. Uncertain sends freeze automation; no blind resend.",
+        "review_by": "2027-01-27"
+      }
+    },
+    {
+      "id": "service-channel-email-mime-boundary",
+      "kind": "internal",
+      "files": {
+        "src/lib/gmail.server.ts": "313794a82c6cb4538181e1efaf1102e882e6a101b1c60f19d82bed6e26b9af1d"
+      },
+      "resources": [
+        "system.channels",
+        "techsales.marketing.sdr_agent",
+        "techsales.inbox.email",
+        "techsales.inbox.chat"
+      ],
+      "actions": ["view", "update", "create", "approve"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": ["system.channels.view.workspace", "system.channels.approve.workspace"],
+      "rationale": "Shared MIME encoder only: rejects CR/LF header injection and malformed deterministic message identifiers; auto-generated header suppresses email bot loops. Does not decide recipients, accounts or authorization. Existing authenticated mail handlers and new service delivery perform source permission and mailbox checks before calling this helper. Provider success recorded under a single authorized send token.",
+      "controls": [
+        {
+          "file": "src/lib/gmail.server.ts",
+          "symbol": "encodeHeader"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0260_service_agent_delivery.sql",
+          "symbol": "service_agent_complete_email"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "allows current authorized leased source"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source missing required permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source with explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects foreign workspace source"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects inactive source actor"
+        }
+      },
+      "exception": {
+        "mechanism": "Only trusted stored inbox events enqueue service jobs; authenticated cron processes them with current published actor and workspace reauthorization.",
+        "boundary": "No synthetic WhatsApp rows. Lease, source version and workspace checks precede tools, canonical CRM CAS and transport. No provider credentials in metadata or browser state.",
+        "revocation": "Disabled account/binding, inactive actor, deny, human ownership, opt-out and source identity changes invalidate subsequent effects. Uncertain sends freeze automation; no blind resend.",
+        "review_by": "2027-01-27"
+      }
+    },
+    {
+      "id": "service-channel-inbox-direct-conversation",
+      "kind": "business",
+      "files": {
+        "src/lib/inbox/message-history.functions.ts": "849faeb12961ae980aeaace9607a1b500ba0f5a8e2756dec9a94ff6d28bfe94e"
+      },
+      "resources": ["techsales.inbox.email", "techsales.inbox.chat", "techsales.inbox.whatsapp"],
+      "actions": ["view"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techsales.inbox.chat.view.workspace",
+        "techsales.inbox.email.view.workspace",
+        "techsales.inbox.whatsapp.view.workspace"
+      ],
+      "rationale": "Inbox notification links validate the conversation UUID and load metadata independently of list pagination. Chat metadata first checks the current source record using the authenticated client, then queries the active workspace under RLS. Existing history endpoints retain their action middleware and record guards. A direct URL never grants visibility or bypasses per-conversation permissions. Source SQL matrix covers missing permission, deny, other workspace and inactive; CI guard tests fail closed on all denied source outcomes.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_record_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "allows current authorized leased source"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source missing required permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source with explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects foreign workspace source"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects inactive source actor"
+        }
+      }
+    },
+    {
+      "id": "service-channel-inline-connection-configuration",
+      "kind": "business",
+      "files": {
+        "src/components/service-channels/connection-configuration.tsx": "9f0bf3710d602d58c920e2de445b4a315bcd9c34c0fa89ede96fca38a17fb283",
+        "src/components/service-channels/whatsapp-configuration.tsx": "d53d37365e1a1c803673dbf251decb7e3b1eff8e696e81d1f8c8219a26e205d8",
+        "src/components/service-channels/email-configuration.tsx": "e6b66f3eae964ca0188509161496f3d503de89de2bdac89b399c8999be614c14",
+        "src/components/service-channels/widget-configuration.tsx": "91c4e76deaab8216b997f81200667ab809b657641fb3cdce57c122346581b297",
+        "src/components/service-channels/channel-health.tsx": "0532fc66657082a73f9e1084d3920356e235cb0ba207f84c5ed12bbb27e9f8da",
+        "src/routes/_authenticated/settings.email.tsx": "891552262648430e13927eb1edb3c91b1a92122d1eecb5e3ecc62aee5b249c90",
+        "src/routes/_authenticated/settings.widget.tsx": "61c30eeb459f28bd2a43a0d678ff19583e3448ea1e9709c7ef95cecbc0fc37b1"
+      },
+      "resources": [
+        "system.channels",
+        "system.whatsapp",
+        "system.widget",
+        "techsales.email_accounts",
+        "techsales.inbox.email"
+      ],
+      "actions": ["view", "manage", "create", "update", "delete"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "system.whatsapp.view.workspace",
+        "system.whatsapp.manage.workspace",
+        "system.widget.view.workspace",
+        "techsales.email_accounts.view.own",
+        "techsales.email_accounts.create.own",
+        "techsales.email_accounts.update.own",
+        "techsales.email_accounts.delete.own"
+      ],
+      "rationale": "Existing WhatsApp, Gmail and widget configuration forms are shared by original routes and the new central screen, not duplicated or embedded via iframe. TransportCapabilities gates view and each mutation independently using current effective permissions and active workspace. Existing server handlers and RLS remain unchanged; no channel-management permission grants access to transport credentials. Health reads existing finite metadata endpoints only; it never reads tokens or app secrets and distinguishes unavailable/error states. Legacy WhatsApp live inspection occurs only after an authorized cloud metadata read identifies no matching Meta number. Widgets describe installation readiness, not unverified external connectivity. Gmail OAuth uses the same signed state/callback and trusted origin listener; only its local return path changes.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/prospecting/sdr/channel-permissions.ts",
+          "symbol": "transportCapabilities"
+        },
+        {
+          "file": "src/components/service-channels/email-configuration.tsx",
+          "symbol": "EmailConfiguration"
+        },
+        {
+          "file": "src/components/service-channels/whatsapp-configuration.tsx",
+          "symbol": "WhatsAppConfiguration"
+        },
+        {
+          "file": "src/components/service-channels/widget-configuration.tsx",
+          "symbol": "ChatConfiguration"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_record_access"
+        },
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channel_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "allows active matching workspace transport management"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "rejects missing transport permission despite channel management"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "preserves an effective management deny while allowing read"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "rejects configuration for a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "rejects inactive context without an active workspace"
+        }
+      }
+    },
+    {
+      "id": "service-channel-transport-capabilities",
+      "kind": "internal",
+      "files": {
+        "src/lib/prospecting/sdr/channel-permissions.ts": "1ade8280c9ab03a0a03206e60f7bcf05abd8b022f89dbfe476e5efae6891235e"
+      },
+      "resources": [
+        "system.channels",
+        "system.whatsapp",
+        "system.widget",
+        "techsales.email_accounts"
+      ],
+      "actions": ["view", "manage", "create", "update", "delete"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": ["system.channels.view.workspace"],
+      "rationale": "Pure UI projection over current effective permission keys. Unknown, loading, error, absent workspace and mismatched workspace contexts fail closed; email actions remain independent. No I/O, grants or authorization bypass. Each actual operation retains its existing authenticated server and database boundary.",
+      "controls": [
+        {
+          "file": "src/lib/prospecting/sdr/channel-permissions.ts",
+          "symbol": "scopeAllows"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channel_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "allows active matching workspace transport management"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "rejects missing transport permission despite channel management"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "preserves an effective management deny while allowing read"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "rejects configuration for a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-permissions.test.ts",
+          "name": "rejects inactive context without an active workspace"
+        }
+      },
+      "exception": {
+        "mechanism": "Pure permission presentation helper invoked by forms after usePermissions resolves the effective matrix.",
+        "boundary": "Does not access accounts, credentials, providers or persistence. Server and RLS remain authoritative.",
+        "revocation": "Effective deny, inactive/missing workspace, loading and error produce no enabled actions. Foreign-account status checks pass the explicit expected workspace.",
+        "review_by": "2027-01-27"
+      }
     },
     {
       "id": "deal-contact-unlink-existing-links",
@@ -2336,6 +3170,93 @@
           "name": "deal contact unlink refuses an inactive member"
         }
       }
+    },
+    {
+      "id": "project-rpc-generated-type-compatibility",
+      "kind": "internal",
+      "files": {
+        "src/lib/projects/dashboard-views.server.ts": "c5ce1c7eeacda7945a2696828e09a7b6992e0a7b8ca36d847525bd455f577af9",
+        "src/lib/projects/public-api.server.ts": "6cc142c7f964e8d7cb5fad333f932b527696191a9d95156d025412b1f7b506a1",
+        "src/lib/projects/time-offline.functions.ts": "31355596598af5b4c5a7e0019f705d1994369c740f338b422ccceef9f9a66354",
+        "src/lib/projects/ops.functions.ts": "d148ab12dfb46e5c57432400cbfab8f54914065fcefc9d2af3efc31a6444a703"
+      },
+      "resources": ["techprojects.dashboard", "techprojects.projects", "techprojects.time_entries"],
+      "actions": ["view", "create", "update", "export"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [],
+      "rationale": "Type-only compatibility after the upstream Supabase schema type refresh exceeded TypeScript instantiation depth. The existing finite RPC signatures are asserted before bind rather than after it. Runtime function, receiver, arguments, authenticated client, API-key subject execution and SQL permissions are identical. No query, permission key, RLS, grant or request validation is changed. Tests assert that the authenticated receiver and database refusals remain intact; existing API/offline tests cover payload validation and idempotency.",
+      "controls": [
+        {
+          "file": "src/lib/projects/dashboard-views.server.ts",
+          "symbol": "rpc"
+        },
+        {
+          "file": "src/lib/projects/public-api.server.ts",
+          "symbol": "callPort"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/active-workspace.server.ts",
+          "symbol": "resolveActiveWorkspace"
+        },
+        {
+          "file": "src/lib/projects/time-offline.functions.ts",
+          "symbol": "rpc"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0177_techprojects_cycle5_dashboard.sql",
+          "symbol": "project_dash_summary"
+        },
+        {
+          "file": "drizzle/migrations/0179_techprojects_cycle6_api_offline_ops.sql",
+          "symbol": "project_time_entry_sync"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/projects/rpc-boundary.test.ts",
+          "name": "preserves authenticated client and allowed database result"
+        },
+        "missing_permission": {
+          "file": "src/lib/projects/rpc-boundary.test.ts",
+          "name": "propagates missing permission without returning data"
+        },
+        "explicit_deny": {
+          "file": "src/lib/projects/rpc-boundary.test.ts",
+          "name": "propagates explicit deny without a fallback query"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/projects/rpc-boundary.test.ts",
+          "name": "propagates foreign workspace refusal"
+        },
+        "inactive_member": {
+          "file": "src/lib/projects/rpc-boundary.test.ts",
+          "name": "propagates inactive membership refusal"
+        }
+      },
+      "exception": {
+        "mechanism": "Existing authenticated RPC gateways remain the only persistence path; this patch changes only when the already existing TypeScript assertion is applied.",
+        "boundary": "Dashboard/offline calls retain caller JWT/RLS and workspace checks; public API ports retain verified key owner and transaction-local subject. No administrative table query is introduced.",
+        "revocation": "Current SQL permission denials and inactive/foreign workspace refusals propagate unchanged, without fallback data or retry under another actor.",
+        "review_by": "2027-01-27"
+      }
+    },
+    {
+      "id": "whatsapp-quality-presentation",
+      "kind": "presentation",
+      "files": {
+        "src/lib/whatsapp/quality-display.ts": "5424033e2d2d4e7121f6e7fe4e10b2cd0cb990905383465aae88126e7f0a5c8d"
+      },
+      "rationale": "Pure mapping of existing Meta quality ratings to labels and visual tones; no I/O, actions, permissions, or data access."
     }
   ],
   "retired": {}

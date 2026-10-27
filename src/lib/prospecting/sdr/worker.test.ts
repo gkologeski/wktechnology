@@ -1234,3 +1234,88 @@ describe("permissões atuais do worker", () => {
     expect(metaSend).not.toHaveBeenCalled();
   });
 });
+
+describe("channel identity in the production worker", () => {
+  function bindBruna() {
+    db.t("workspaces").push({ id: W1, name: "WK Technology" });
+    db.t("sdr_playbooks")[0].name = "Agente Bruna";
+    db.t("whatsapp_conversations")[0].wa_phone_number_id = "phone-bruna";
+    db.t("sdr_agent_versions").push({
+      id: "version-bruna",
+      playbook_id: "pb1",
+      status: "published",
+      persona: { assistant_name: "Lia", description: "Sou a Lia, especialista da WK Technology." },
+    });
+    db.t("service_channel_accounts").push({
+      id: W2,
+      workspace_id: W1,
+      channel: "whatsapp",
+      source_key: "phone-bruna",
+      label: "Tucano — Bruna",
+      display_name: "Bruna",
+      enabled: true,
+      routing_configured: true,
+    });
+    db.t("service_channel_bindings").push({
+      account_id: W2,
+      workspace_id: W1,
+      agent_id: "pb1",
+      display_name: "",
+      enabled: true,
+      inbound: true,
+      campaigns: true,
+    });
+  }
+  const out = {
+    reply: "Qual projeto vocês querem desenvolver?",
+    intent: "continue",
+    offer_keys: [],
+    material_ids: [],
+    answers: [],
+    handoff_reason: "",
+  };
+  it("builds the real prompt with Bruna and persists the conversation identity", async () => {
+    bindBruna();
+    job(db);
+    const d = deps(out);
+    expect(await processJob(db, await claimOne(db), d)).toBe("drafted");
+    const system = vi.mocked(d.callAgent).mock.calls[0][0].system;
+    expect(system).toContain("Nome: Bruna");
+    expect(system).toContain("Sou a Bruna, especialista da WK Technology.");
+    expect(system).not.toContain("Sou a Lia");
+    expect(db.find("sdr_enrollments", "e1")?.channel_identity).toMatchObject({
+      displayName: "Bruna",
+      workspaceId: W1,
+      accountId: W2,
+    });
+  });
+  it("stops CRM writes and sending when the channel is disabled during inference", async () => {
+    bindBruna();
+    job(db);
+    const d = deps(out, {
+      callAgent: vi.fn(async () => {
+        db.t("service_channel_accounts")[0].enabled = false;
+        return { ok: true as const, output: out };
+      }),
+    });
+    expect(await processJob(db, await claimOne(db), d)).toBe("skipped");
+    expect(d.sendMessage).not.toHaveBeenCalled();
+    expect(d.ensureOpportunity).not.toHaveBeenCalled();
+    expect(db.t("prospecting_qualifications")).toHaveLength(0);
+  });
+  it("does not send a previously approved draft after account deactivation", async () => {
+    bindBruna();
+    job(db);
+    const claimed = await claimOne(db);
+    db.t("service_channel_accounts")[0].enabled = false;
+    const result = await sendSdrMessage(db, {
+      jobId: claimed.id,
+      expectedStatus: "running",
+      leaseToken: claimed.lease_token,
+      text: "Mensagem aprovada",
+      actorUserId: "u1",
+    });
+    expect(result).toMatchObject({ ok: false, reason: "channel_disabled", category: "technical" });
+    expect(metaSend).not.toHaveBeenCalled();
+  });
+});

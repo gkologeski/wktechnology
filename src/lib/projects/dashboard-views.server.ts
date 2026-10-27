@@ -25,7 +25,7 @@ type Rpc = (
 ) => Promise<{ data: unknown; error: { message: string; code?: string } | null }>;
 
 // As funções novas são chamadas por nome; o retorno é jsonb normalizado abaixo.
-const rpc = (sb: Sb): Rpc => sb.rpc.bind(sb) as unknown as Rpc;
+const rpc = (sb: Sb): Rpc => (sb.rpc as unknown as Rpc).bind(sb);
 
 function fail(prefix: string, error: { message: string; code?: string }): never {
   // Mensagens do banco já vêm em PT-BR e sem dados sensíveis (permissão, filtro inválido etc.).
