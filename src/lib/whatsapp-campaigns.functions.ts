@@ -354,11 +354,17 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
       override_commercial: r.overrideCommercial,
       status: "pending" as const,
     }));
-    // Insere em lotes de 500 para evitar payload gigante
-    for (let i = 0; i < rows.length; i += 500) {
-      const slice = rows.slice(i, i + 500);
+    // Lotes de 100: cada linha passa por gatilho e políticas de acesso, e 500
+    // de uma vez estouravam o tempo limite do banco. Em falha, a campanha
+    // parcial é removida para não sobrar rascunho sem destinatários.
+    for (let i = 0; i < rows.length; i += 100) {
+      const slice = rows.slice(i, i + 100);
       const { error: rErr } = await supabase.from("whatsapp_campaign_recipients").insert(slice);
-      if (rErr) throw rErr;
+      if (rErr) {
+        await supabase.from("whatsapp_campaign_recipients").delete().eq("campaign_id", camp.id);
+        await supabase.from("whatsapp_campaigns").delete().eq("id", camp.id);
+        throw rErr;
+      }
     }
     return { id: camp.id as string };
   });
@@ -551,10 +557,10 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
         override_commercial: r.overrideCommercial,
         status: "pending" as const,
       }));
-      for (let i = 0; i < rows.length; i += 500) {
+      for (let i = 0; i < rows.length; i += 100) {
         const { error: rErr } = await supabase
           .from("whatsapp_campaign_recipients")
-          .insert(rows.slice(i, i + 500));
+          .insert(rows.slice(i, i + 100));
         if (rErr) throw rErr;
       }
       patch.total = rows.length;
@@ -610,8 +616,8 @@ export const duplicateWhatsAppCampaign = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (cErr) throw cErr;
-    for (let i = 0; i < recips.length; i += 500) {
-      const slice = recips.slice(i, i + 500).map((r) => ({
+    for (let i = 0; i < recips.length; i += 100) {
+      const slice = recips.slice(i, i + 100).map((r) => ({
         campaign_id: camp.id,
         owner_id: userId,
         contact_id: r.contact_id,
