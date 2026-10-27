@@ -1,3 +1,5 @@
+import { loadChannelRuntime, assertChannelRuntime } from "./channel-runtime.server";
+import { personaForChannel } from "./channel-identity";
 import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 // Execução do SDR: follow-ups, turnos com lease e conciliação de reuniões.
 // Nenhuma transação SQL fica aberta durante a chamada de IA: o claim marca o
@@ -272,7 +274,9 @@ export async function processJob(
   const [{ data: conv }, { data: enr }, { data: settings }] = await Promise.all([
     admin
       .from("whatsapp_conversations")
-      .select("id, workspace_id, ai_owner, ai_version, contact_id, lead_id, contact_phone")
+      .select(
+        "id, workspace_id, ai_owner, ai_version, contact_id, lead_id, contact_phone, wa_phone_number_id",
+      )
       .eq("id", job.conversation_id)
       .maybeSingle(),
     admin.from("sdr_enrollments").select("*").eq("id", job.enrollment_id).maybeSingle(),
@@ -426,7 +430,40 @@ export async function processJob(
     .eq("playbook_id", playbook.id)
     .eq("status", "published")
     .maybeSingle();
-  const persona = parsePersona(agentVersion?.persona);
+  const sourcePersona = parsePersona(agentVersion?.persona);
+  const channelInput = {
+    workspaceId: job.workspace_id,
+    channel: "whatsapp" as const,
+    sourceKey: conv.wa_phone_number_id,
+    agentId: playbook.id,
+    origin: enr.campaign_id ? ("campaign" as const) : ("inbound" as const),
+    snapshot: enr.channel_identity,
+    assistantName: sourcePersona.assistant_name,
+  };
+  const channel = await loadChannelRuntime(admin, channelInput);
+  if (channel.status === "blocked") {
+    await finish(admin, job.id, job.lease_token, {
+      status: "skipped",
+      error: channel.reason,
+      block_category: "technical",
+    });
+    return "skipped";
+  }
+  if (channel.status === "active" && !enr.channel_identity) {
+    const captured = await admin
+      .from("sdr_enrollments")
+      .update({ channel_identity: channel.identity })
+      .eq("id", enr.id)
+      .eq("workspace_id", job.workspace_id)
+      .is("channel_identity", null);
+    if (captured.error) throw new Error("Não foi possível registrar a identidade da conversa.");
+    channelInput.snapshot = channel.identity;
+  }
+  const persona =
+    channel.status === "active"
+      ? personaForChannel(sourcePersona, channel.identity)
+      : sourcePersona;
+  const checkChannel = () => assertChannelRuntime(admin, channelInput);
 
   // Ferramentas: só as ligadas na versão PUBLICADA e prontas executam.
   const toolCfg = parseToolConfig(agentVersion?.tool_config);
@@ -530,6 +567,8 @@ export async function processJob(
     scheduling: selected.directBooking ? (toolCfg?.scheduling ?? null) : null,
   });
 
+  if (channel.status === "active") context.channelIdentity = channel.identity;
+
   await admin
     .from("sdr_turn_jobs")
     .update({ ai_started_at: new Date().toISOString(), agent_version_id: agentVersion?.id ?? null })
@@ -555,7 +594,7 @@ export async function processJob(
         ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
       tools: {
         specs: toolCtx ? selected.specs : [],
-        executor: toolCtx && selected.specs.length ? makeExecutor(toolCtx) : null,
+        executor: toolCtx && selected.specs.length ? makeExecutor(toolCtx, checkChannel) : null,
         effects,
         directBooking: selected.directBooking,
       },
@@ -693,6 +732,15 @@ export async function processJob(
         ? `closed:${closeNow}`
         : "empty_reply";
 
+  const latestChannel = await loadChannelRuntime(admin, channelInput);
+  if (latestChannel.status === "blocked") {
+    await finish(admin, job.id, job.lease_token, {
+      status: "skipped",
+      error: latestChannel.reason,
+      block_category: "technical",
+    });
+    return "skipped";
+  }
   // Compare-and-set: nada é gravado se lease, dono, versão, estado ou workspace mudaram durante a IA.
   const { data: commit, error: cErr } = await admin.rpc("sdr_commit_turn", {
     p_job: job.id,

@@ -33,7 +33,21 @@ export function renderChannelIdentity(text: string, identity: ChannelIdentity): 
 
 /** Published instructions are copied, never changed in storage by runtime identity resolution. */
 export function personaForChannel(persona: Persona, identity: ChannelIdentity): Persona {
-  const render = (text: string) => renderChannelIdentity(text, identity);
+  const oldName = persona.assistant_name.trim();
+  const escaped = oldName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Adapt only legacy self-introductions, never names mentioned in business instructions.
+  const introduction = oldName
+    ? new RegExp(
+        `(\\b(?:sou|me chamo|meu nome é)\\s+(?:(?:a|o)\\s+)?)${escaped}(?=[\\s,.;:!?]|$)`,
+        "giu",
+      )
+    : null;
+  const render = (text: string) => {
+    const legacy = introduction
+      ? text.replace(introduction, (_match, prefix: string) => `${prefix}${identity.displayName}`)
+      : text;
+    return renderChannelIdentity(legacy, identity);
+  };
   return {
     ...persona,
     assistant_name: identity.displayName,

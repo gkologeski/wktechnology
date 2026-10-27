@@ -2059,8 +2059,8 @@
       "id": "whatsapp-cloud-workers",
       "kind": "service",
       "files": {
-        "src/lib/prospecting/sdr/actions.server.ts": "d567310047de0523fd620993b0262e7fbf77f7dd91f315b2f264d68ec1cdf094",
-        "src/routes/api/public/hooks/whatsapp-campaign-tick.ts": "c7d124ea8d956503a8a108ea2470608ea644827168d4c7cf032e30434453d6df"
+        "src/lib/prospecting/sdr/actions.server.ts": "42829c118929900fd73a0c7993fe2a493e21e41db16c2a430854ccb44d30e2b2",
+        "src/routes/api/public/hooks/whatsapp-campaign-tick.ts": "f7269f73e84c0e6fa9038cd04bec34964d3ffedd349c7bdd358408a4e140d38a"
       },
       "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
       "actions": ["view", "create", "update", "manage"],
@@ -2271,8 +2271,11 @@
       "files": {
         "src/lib/prospecting/sdr/channel-accounts.functions.ts": "3f6eae3a93430d78f4f5281bbef94ed402fc19c7e503ded840300566913d86f8",
         "src/lib/prospecting/sdr/channel-access.server.ts": "a23a8c47439c6f10cf0a30dae2253b53af3a894e3238c7099381a0465594a95a",
-        "src/routes/_authenticated/settings.channels.tsx": "468e5d7ee6c7e9aa3274f49f459e555dcdb7df30e0fb8215c00100da1fabf88e",
-        "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c"
+        "src/routes/_authenticated/settings.channels.tsx": "eebd109704bb28e9bacf88faac345e58913a899c8effa565790aa95f1ea4aa49",
+        "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c",
+        "src/components/service-channels/account-editor.tsx": "2e60fb838bff03b053f2e75a29e6a784424f0b0f5f6a80ae705def905004b0c0",
+        "src/components/service-channels/agent-channels.tsx": "c3e14508489c2c4dcdf96886cdc42c9a8b177811d7a11d1ac496b835769809f9",
+        "src/components/prospecting/sdr-agent-config.tsx": "b4870cc2ee2718d2e4f5996a6f7f0ce81b99dc3455a24192d314a515bd2a839d"
       },
       "resources": ["system.channels", "techsales.marketing.sdr_agent"],
       "actions": ["view", "manage", "update"],
@@ -2295,6 +2298,10 @@
         {
           "file": "src/lib/access-control/use-permissions.tsx",
           "symbol": "usePermissions"
+        },
+        {
+          "file": "src/components/service-channels/agent-channels.tsx",
+          "symbol": "AgentChannels"
         }
       ],
       "database": [
@@ -2338,7 +2345,7 @@
       "id": "service-channel-identity-resolution",
       "kind": "internal",
       "files": {
-        "src/lib/prospecting/sdr/channel-identity.ts": "2082bb676d0617767b6f490fe40d3722d490e0081475835eb65b4955e984c21f"
+        "src/lib/prospecting/sdr/channel-identity.ts": "d0bc92b7473e96e243378252fe0e4d9bd01bee2f1e8555507001245c35b9e724"
       },
       "resources": ["system.channels"],
       "actions": ["view"],
@@ -2394,6 +2401,198 @@
         "src/lib/menu-resources.ts": "eed3bafa935431fd30fe5d01ddce63848afb0911c6cedeb3fba21b0890f32d17"
       },
       "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files."
+    },
+    {
+      "id": "service-channel-worker-routing",
+      "kind": "service",
+      "files": {
+        "src/lib/prospecting/sdr/channel-runtime.server.ts": "a1528c862f67ac28a1b664d975c6aaf7b534d280bc8345a66e861142a5fe12cf",
+        "src/lib/prospecting/sdr/worker.server.ts": "8d46e34eeada41228ed36e56df6e6381c6f587689b018955ef1a65da991e562b",
+        "src/lib/prospecting/sdr/ingest.server.ts": "c700c4343049bbf926c1dbd3cb8a6b393a8f1b9b5259d8e2ab3d4cc89fed056e",
+        "src/lib/prospecting/sdr/tools/runtime.ts": "dcb7dd1240f535cf9ff084ad43989bafcd4db6d56f02ebb2c8efbc18965d4918",
+        "drizzle/migrations/0257_service_channel_runtime_identity.sql": "2d829bed7441a6f7c8dc5c26f374ee4b66853f04a23caae6cd2d3e915815617f"
+      },
+      "resources": ["system.channels", "techsales.marketing.sdr_agent", "techsales.inbox.whatsapp"],
+      "actions": ["view", "manage", "update", "create"],
+      "scopes": ["workspace"],
+      "permission_keys": ["system.channels.view.workspace", "system.channels.manage.workspace"],
+      "rationale": "Explicitly configured account routing only; discovery does not activate or silence legacy agents. The provider-only inbound RPC locks the tenant conversation, preserves human/paused ownership, active membership and opt-out, and never creates a receptive follow-up. Runtime validates account/agent/mode before inference, tools, commit and send. Existing assertSalesWorker, claim lease, CAS and transport checks remain mandatory. Identity snapshot writes are service-only. Browser configuration is checked by the channel matrix. Synthetic SQL validates actual permissions and RPC behavior in a rollback transaction.",
+      "controls": [
+        {
+          "file": "src/lib/prospecting/sdr/channel-runtime.server.ts",
+          "symbol": "loadChannelRuntime"
+        },
+        {
+          "file": "src/lib/access-control/sales-worker.server.ts",
+          "symbol": "assertSalesWorker"
+        },
+        {
+          "file": "src/lib/prospecting/sdr/tools/dispatcher.ts",
+          "symbol": "executeTool"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0257_service_channel_runtime_identity.sql",
+          "symbol": "sdr_channel_identity_guard"
+        },
+        {
+          "file": "drizzle/migrations/0257_service_channel_runtime_identity.sql",
+          "symbol": "sdr_bind_inbound_channel"
+        },
+        {
+          "file": "drizzle/migrations/0257_service_channel_runtime_identity.sql",
+          "symbol": "service_channel_save"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "allows active authorized channel manager"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects missing channel permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects explicit channel deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects foreign workspace channel access"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects inactive channel member"
+        }
+      },
+      "exception": {
+        "mechanism": "Service-role ingest is reachable only after the existing provider webhook/cron authentication; actor and workspace come from verified stored conversations, never customer text.",
+        "boundary": "No credentials in registry or identity. The new RPC is not executable by anon or authenticated. Worker retains current sales subject checks and compare-and-set; current binding rechecked for every effect.",
+        "revocation": "Account disable, binding/agent disable, changed account identity reference or revoked actor permissions stop subsequent effects. Human/paused conversations are never automatically reclaimed.",
+        "review_by": "2027-01-27"
+      }
+    },
+    {
+      "id": "service-channel-prompt-identity",
+      "kind": "internal",
+      "files": {
+        "src/lib/prospecting/sdr/agent.server.ts": "85c27606b823d4de56d3a3efee868254e719903dc430a18eb11b8c91b1562729"
+      },
+      "resources": ["system.channels"],
+      "actions": ["view"],
+      "scopes": ["workspace"],
+      "permission_keys": ["system.channels.view.workspace"],
+      "rationale": "Prompt formatting uses only server-resolved account identity. Published persona remains stored intact; only explicit variables and legacy self-introduction names are adapted in memory. Authorized worker and sandbox callers retain provider and permission enforcement. No public identity lookup or credential access.",
+      "controls": [
+        {
+          "file": "src/lib/prospecting/sdr/channel-identity.ts",
+          "symbol": "personaForChannel"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0257_service_channel_runtime_identity.sql",
+          "symbol": "sdr_channel_identity_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "allows active authorized channel manager"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects missing channel permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects explicit channel deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects foreign workspace channel access"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects inactive channel member"
+        }
+      },
+      "exception": {
+        "mechanism": "Prompt formatter called inside authorized SDR runtime or authenticated agent sandbox, not an endpoint.",
+        "boundary": "Whitelisted single-pass variables; customer messages never supply or override the server identity.",
+        "revocation": "No cache or persistence in formatter; callers revalidate account and agent bindings per effect.",
+        "review_by": "2027-01-27"
+      }
+    },
+    {
+      "id": "service-channel-agent-sandbox",
+      "kind": "business",
+      "files": {
+        "src/lib/prospecting/sdr-agent.functions.ts": "6a20902a0678cde3182fcde646f9aab32114aead1186162ed2a466797d4c138f",
+        "src/components/prospecting/sdr-agent-studio.tsx": "9ec10fda5fd355f291bc16aeaf679c7fd208c237ba1f82ec5344420fff803eac"
+      },
+      "resources": ["system.channels", "techsales.marketing.sdr_agent"],
+      "actions": ["view", "create", "update", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "techsales.marketing.sdr_agent.view.workspace",
+        "techsales.marketing.sdr_agent.update.workspace",
+        "techsales.marketing.sdr_agent.manage.workspace"
+      ],
+      "rationale": "Existing SDR version/config/test endpoints retain sales middleware, record checks and assertSdr workspace enforcement. Optional sandbox channel preview additionally requires current channel view and account/binding user RLS; only account UUID is accepted, never client identity text. Disabled accounts may be simulated without activating them. Sandbox continues memory tools and fake calendar with no external delivery or CRM writes.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/prospecting/sdr/access.server.ts",
+          "symbol": "assertSdr"
+        },
+        {
+          "file": "src/lib/prospecting/sdr/channel-access.server.ts",
+          "symbol": "requireChannelAccess"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_channels_read"
+        },
+        {
+          "file": "drizzle/migrations/0256_service_channel_registry.sql",
+          "symbol": "service_bindings_read"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "allows active authorized channel manager"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects missing channel permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects explicit channel deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects foreign workspace channel access"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/channel-access.test.ts",
+          "name": "rejects inactive channel member"
+        }
+      }
     }
   ],
   "retired": {}

@@ -136,6 +136,7 @@ export const testSdrAgent = createServerFn({ method: "POST" })
       persona: z.unknown(),
       /** editor = persona em edição (rascunho explícito); published = versão em produção. */
       persona_source: z.enum(["editor", "published"]).default("editor"),
+      channel_account_id: z.string().uuid().optional(),
       origin: z.enum(["prospecting", "inbound"]),
       messages: z.array(TestMsg).min(1).max(40),
       sandbox_state: z.unknown().optional(),
@@ -193,7 +194,7 @@ export const testSdrAgent = createServerFn({ method: "POST" })
     const published = vers?.find((v) => v.status === "published") ?? null;
     const draft = vers?.find((v) => v.status === "draft") ?? null;
     const usePublished = data.persona_source === "published";
-    const persona = usePublished
+    let persona = usePublished
       ? parsePersona(published?.persona)
       : PersonaSchema.parse(data.persona ?? {});
     const toolCfg = usePublished
@@ -229,6 +230,25 @@ export const testSdrAgent = createServerFn({ method: "POST" })
       .select("name")
       .eq("id", data.workspaceId)
       .maybeSingle();
+    let channelIdentity: import("@/lib/prospecting/sdr/channel-identity").ChannelIdentity | null =
+      null;
+    if (data.channel_account_id) {
+      const { requireChannelAccess } = await import("@/lib/prospecting/sdr/channel-access.server");
+      const access = await requireChannelAccess(context.supabase, context.userId, "view");
+      if (access.workspace !== data.workspaceId) throw new Error("Workspace da conta inválido.");
+      const { loadPreviewChannelIdentity } =
+        await import("@/lib/prospecting/sdr/channel-runtime.server");
+      const { personaForChannel } = await import("@/lib/prospecting/sdr/channel-identity");
+      channelIdentity = await loadPreviewChannelIdentity(context.supabase, {
+        workspaceId: data.workspaceId,
+        accountId: data.channel_account_id,
+        agentId: data.playbookId,
+        agentName: pb.name,
+        assistantName: persona.assistant_name,
+        companyName: ws?.name ?? "",
+      });
+      persona = personaForChannel(persona, channelIdentity);
+    }
     const prevState = parseState(
       (data.sandbox_state as { conversation_state?: unknown } | null)?.conversation_state,
     );
@@ -250,6 +270,7 @@ export const testSdrAgent = createServerFn({ method: "POST" })
         history,
         state: prevState,
         context: {
+          channelIdentity,
           companyName: (ws?.name as string | undefined) ?? null,
           agentName: (pb.name as string | null) ?? null,
           origin:
@@ -317,6 +338,7 @@ export const testSdrAgent = createServerFn({ method: "POST" })
         sandbox: true,
         side_effects: "nenhum (sem WhatsApp, CRM, agenda ou notificações)",
         persona_source: usePublished ? "versão publicada" : "editor (rascunho)",
+        channel_identity: channelIdentity,
         agent_version_id: decision.trace.agent_version_id,
         tool_calls: effects.trace.map((t) => ({
           tool: t.tool,

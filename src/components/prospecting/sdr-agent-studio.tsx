@@ -1,3 +1,5 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { listServiceChannels } from "@/lib/prospecting/sdr/channel-accounts.functions";
 // Persona, teste isolado e versões (rascunho × publicado) do agente.
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -174,6 +176,10 @@ function Studio({ workspaceId, playbookId }: { workspaceId: string; playbookId: 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="grid gap-1.5 sm:col-span-2">
                   <Label htmlFor="pa-name">Nome do assistente</Label>
+                  <p className="text-xs text-muted-foreground">
+                    A conta pode definir outra identidade. Nas instruções, use{" "}
+                    {"{{identidade.nome}}"}, {"{{canal.nome}}"} ou {"{{empresa.nome}}"}.
+                  </p>
                   <Input
                     id="pa-name"
                     value={persona.assistant_name}
@@ -420,6 +426,14 @@ function TestChat({
   persona: Persona;
 }) {
   const run = useServerFn(testSdrAgent);
+  const permissions = usePermissions();
+  const listChannels = useServerFn(listServiceChannels);
+  const channels = useQuery({
+    queryKey: ["service_channels"],
+    queryFn: () => listChannels(),
+    enabled: permissions.can("system.channels.view.workspace"),
+  });
+  const [channelAccountId, setChannelAccountId] = useState("none");
   // Estado simulado das ferramentas (horários oferecidos, reunião fictícia) entre turnos.
   const sandboxRef = useRef<unknown>(null);
   const [origin, setOrigin] = useState<"inbound" | "prospecting">("inbound");
@@ -443,6 +457,7 @@ function TestChat({
           playbookId,
           persona,
           persona_source: personaSource,
+          channel_account_id: channelAccountId === "none" ? undefined : channelAccountId,
           origin,
           messages: next.map(({ role, text }) => ({ role, text })),
           sandbox_state: sandboxRef.current,
@@ -502,6 +517,40 @@ function TestChat({
             <Trash2 className="size-4" />
           </Button>
         </div>
+        {channels.data && (
+          <div className="mt-3 grid gap-1.5">
+            <Label htmlFor="pa-channel-account" className="text-xs">
+              Conta e identidade no teste
+            </Label>
+            <Select
+              value={channelAccountId}
+              onValueChange={(value) => {
+                setChannelAccountId(value);
+                setMsgs([]);
+                sandboxRef.current = null;
+              }}
+            >
+              <SelectTrigger id="pa-channel-account">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">Persona sem conta selecionada</SelectItem>
+                {channels.data.accounts
+                  .filter((account) =>
+                    channels.data.bindings.some(
+                      (binding) =>
+                        binding.account_id === account.id && binding.agent_id === playbookId,
+                    ),
+                  )
+                  .map((account) => (
+                    <SelectItem key={account.id} value={account.id}>
+                      {account.channel} · {account.label}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div className="grid gap-1.5">
             <Label htmlFor="pa-origin" className="text-xs">

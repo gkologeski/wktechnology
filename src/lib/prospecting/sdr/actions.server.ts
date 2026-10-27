@@ -1,3 +1,4 @@
+import { loadChannelRuntime } from "./channel-runtime.server";
 import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 // Efeitos externos do SDR: envio (com rechecagem), CRM sem duplicatas,
 // handoff/opt-out e reunião confirmada só com retorno do Google.
@@ -94,6 +95,7 @@ async function sendMaterialFiles(
     actorUserId: string | null;
     fromNumber: string | null;
     jobId: string;
+    checkChannel?: () => Promise<void>;
   },
 ): Promise<{ sent: number; failed: string[] }> {
   const out = { sent: 0, failed: [] as string[] };
@@ -120,6 +122,7 @@ async function sendMaterialFiles(
         .from("sdr-materials")
         .createSignedUrl(m.storage_path, 600);
       if (error || !signed?.signedUrl) throw new Error(error?.message ?? "sem URL");
+      await p.checkChannel?.();
       const res = await p.metaSend(p.num, {
         to: p.conv.contact_phone,
         body: m.title,
@@ -162,6 +165,12 @@ export type SendOutcome =
 
 /** Categoria de cada motivo de bloqueio (exibida na supervisão). */
 export const SDR_BLOCK_CATEGORY: Record<string, BlockCategory> = {
+  channel_account_unavailable: "technical",
+  channel_disabled: "technical",
+  channel_agent_unavailable: "technical",
+  channel_agent_disabled: "technical",
+  channel_identity_mismatch: "technical",
+  channel_identity_incomplete: "technical",
   followup_quota: "prospecting",
   followup_hours: "prospecting",
   followup_max_reached: "prospecting",
@@ -227,7 +236,7 @@ export async function sendSdrMessage(
       .maybeSingle(),
     admin
       .from("sdr_enrollments")
-      .select("id, status, owner_id, playbook_id, follow_up_count")
+      .select("id, status, owner_id, playbook_id, follow_up_count, campaign_id, channel_identity")
       .eq("id", job.enrollment_id)
       .maybeSingle(),
     admin
@@ -243,6 +252,27 @@ export async function sendSdrMessage(
   if (conv.ai_owner !== "ai") return blocked("owner_not_ai");
   if (conv.ai_version !== job.conversation_version) return blocked("stale_version");
   if (!enr || enr.status !== "active") return blocked("enrollment_inactive");
+  const checkChannel = async () => {
+    const state = await loadChannelRuntime(admin, {
+      workspaceId: job.workspace_id,
+      channel: "whatsapp",
+      sourceKey: conv.wa_phone_number_id,
+      agentId: enr.playbook_id,
+      origin: enr.campaign_id ? "campaign" : "inbound",
+      snapshot: enr.channel_identity,
+    });
+    if (state.status === "blocked")
+      throw Object.assign(new Error(state.reason), { channelReason: state.reason });
+  };
+  const channel = await loadChannelRuntime(admin, {
+    workspaceId: job.workspace_id,
+    channel: "whatsapp",
+    sourceKey: conv.wa_phone_number_id,
+    agentId: enr.playbook_id,
+    origin: enr.campaign_id ? "campaign" : "inbound",
+    snapshot: enr.channel_identity,
+  });
+  if (channel.status === "blocked") return blocked(channel.reason);
   if (job.kind === "follow_up" && conv.wa_phone_number_id) {
     const { brPhoneVariants } = await import("@/lib/whatsapp/phone-variants");
     const globalOptOut = await admin
@@ -486,6 +516,7 @@ export async function sendSdrMessage(
   let failedFiles: string[] = [];
   try {
     const num = await resolveWaNumber(job.workspace_id, conv.wa_phone_number_id ?? null);
+    await checkChannel();
     const res = await metaSend(num, { to: conv.contact_phone, body: p.text });
     wamid = res.wamid;
     raw = res.raw;
@@ -520,6 +551,7 @@ export async function sendSdrMessage(
       actorUserId: p.actorUserId,
       fromNumber: num.displayPhoneNumber ?? null,
       jobId: job.id,
+      checkChannel,
     });
     failedFiles = files.failed;
     await admin
@@ -545,13 +577,15 @@ export async function sendSdrMessage(
     const msg = (e as Error).message.slice(0, 300);
     const status = (e as { status?: number }).status;
     // Rejeição definitiva (4xx exceto 408) = não aceito. Rede/timeout/5xx/sem id = incerto.
+    const channelReason = (e as { channelReason?: string }).channelReason;
     const definitive =
-      !(e as { uncertain?: boolean }).uncertain &&
-      typeof status === "number" &&
-      status >= 400 &&
-      status < 500 &&
-      status !== 408;
-    const reason = definitive ? "provider_failed" : "uncertain_after_send";
+      !!channelReason ||
+      (!(e as { uncertain?: boolean }).uncertain &&
+        typeof status === "number" &&
+        status >= 400 &&
+        status < 500 &&
+        status !== 408);
+    const reason = channelReason ?? (definitive ? "provider_failed" : "uncertain_after_send");
     await admin
       .from("sdr_turn_jobs")
       .update({
@@ -575,7 +609,7 @@ export async function sendSdrMessage(
       error: definitive ? msg : `uncertain_after_send: ${msg}`,
       created_by: p.actorUserId,
     });
-    await tripBreakerIfNeeded(admin, job.workspace_id);
+    if (!channelReason) await tripBreakerIfNeeded(admin, job.workspace_id);
     return blocked(reason);
   }
 

@@ -77,3 +77,16 @@ describe("identidade de atendimento por conta", () => {
     ).toThrow("Mais de um agente");
   });
 });
+
+describe("legacy introductions", () => {
+  it("adapts only self-introductions and preserves unrelated people and instructions", () => {
+    const persona = parsePersona({
+      assistant_name: "Lia",
+      description: "Sou a Lia, especialista da WK. Me chamo Lia.",
+      instructions: "Transferir para Lia quando necessário. Nunca inventar preços.",
+    });
+    const rendered = personaForChannel(persona, identity);
+    expect(rendered.description).toBe("Sou a Bruna, especialista da WK. Me chamo Bruna.");
+    expect(rendered.instructions).toBe(persona.instructions);
+  });
+});

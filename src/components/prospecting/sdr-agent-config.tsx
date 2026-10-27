@@ -1,3 +1,4 @@
+import { AgentChannels } from "@/components/service-channels/agent-channels";
 // Configuração completa e independente de UM agente SDR: catálogo, materiais,
 // ferramentas, qualificação/CRM, responsável e agenda, handoff, canais,
 // guardrails, fontes e logs. Nada aqui é global — vale só para o agente aberto.
@@ -407,14 +408,11 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
         </div>
       </FormSection>
 
-      <FormSection title="Canais" description="Canais suportados por este agente hoje.">
-        <div className="flex items-center gap-2 text-sm">
-          <Checkbox checked disabled aria-label="WhatsApp" />
-          WhatsApp
-          <span className="text-xs text-muted-foreground">
-            (e-mail e voz ainda não são executados pelo agente)
-          </span>
-        </div>
+      <FormSection
+        title="Canais de atendimento"
+        description="Contas e identidade utilizadas por este agente."
+      >
+        <AgentChannels agentId={playbookId} />
       </FormSection>
 
       <FormSection title="Guardrails" description="Limites fixos que o agente não pode quebrar.">
