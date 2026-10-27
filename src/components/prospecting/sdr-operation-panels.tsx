@@ -305,12 +305,14 @@ export function SdrEnrollmentsPanel({
                       <td className="p-3">
                         <StatusBadge status={st.tone} label={st.label} />
                       </td>
-                      <td className="p-3">{commercialStageLabel(e.commercial_stage)}</td>
+                      <td className="whitespace-nowrap p-3">
+                        {commercialStageLabel(e.commercial_stage)}
+                      </td>
                       <td className="p-3 text-right tabular-nums">{e.messages_sent ?? 0}</td>
                       <td className="p-3 text-right tabular-nums">
                         {e.qualification_score == null ? "—" : e.qualification_score}
                       </td>
-                      <td className="p-3 text-xs text-muted-foreground">
+                      <td className="whitespace-nowrap p-3 text-xs text-muted-foreground">
                         {fmtDate(e.last_action_at ?? e.created_at)}
                       </td>
                       <td className="p-3 text-right">

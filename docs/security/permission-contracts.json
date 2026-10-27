@@ -2543,7 +2543,7 @@
         "src/components/prospecting/sdr-console.tsx": "4cccf9be3e3cf775d516aed2cb8573f52104cbcbd4af8afb326e09a740296514",
         "src/components/prospecting/sdr-studio-agent-bar.tsx": "84cc91802054f71827201ba06b93eecbc530eaa2605a564f4c30441b476bd1df",
         "src/lib/sdr-agent.functions.ts": "a667fa3510e03416e3ca26b90b25ff0fae7bf934a5146a6e509a61f55adad65e",
-        "src/components/prospecting/sdr-operation-panels.tsx": "8777a3d6280e096fca1d3ee8e340c34d9b739db2d71f5b76d129ce8a4b885b0c"
+        "src/components/prospecting/sdr-operation-panels.tsx": "02fe09d8db98ebcc679da3584ebddde1e40c479449701d639d2491bb9b32a253"
       },
       "resources": ["system.channels", "techsales.marketing.sdr_agent", "techsales.inbox.whatsapp"],
       "actions": ["view", "create", "update", "manage", "delete", "delete"],
