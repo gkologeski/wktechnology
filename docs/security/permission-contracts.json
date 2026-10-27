@@ -2641,7 +2641,7 @@
         "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c",
         "src/components/service-channels/account-editor.tsx": "1caa1effd64517444291ce975921952ff18fd090880ec0750f9183dd0dc87c79",
         "src/components/service-channels/agent-channels.tsx": "97abf189efffa02a15a536b7e9aef0a8cf3bc97d85f88c95915d7e916cdb8a41",
-        "src/components/prospecting/sdr-agent-config.tsx": "b4870cc2ee2718d2e4f5996a6f7f0ce81b99dc3455a24192d314a515bd2a839d"
+        "src/components/prospecting/sdr-agent-config.tsx": "84a005c3b8c8cae41b8465a1dbdae9efd7ca1b5e4070891cac09384cde5841b6"
       },
       "resources": [
         "system.channels",
@@ -2659,7 +2659,7 @@
         "system.channels.view.workspace",
         "system.channels.manage.workspace"
       ],
-      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back.",
+      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back. The agent config panel may now receive the agent chosen in the Estúdio bar instead of its own selector; channel controls and server checks are unchanged.",
       "controls": [
         {
           "file": "src/lib/prospecting/sdr/channel-access.server.ts",
@@ -2943,12 +2943,9 @@
         "src/routes/_authenticated/agents.sdr.tsx": "2ac01587fcebe1ed4540aab1c86e85deeea8c44bf450f794a61f6afd8ef39789",
         "src/components/prospecting/sdr-agent-actions.tsx": "44da01a38550b1be3e95de752a37e57a73a3ed16944d824f73e271f11e0580ee",
         "src/components/prospecting/sdr-agent-picker.tsx": "4277cd1e6a1066b07845b803e9d401e8fc6eff796e1acf57e0581a75f41d0039",
-        "src/components/prospecting/sdr-agent-config.tsx": "84a005c3b8c8cae41b8465a1dbdae9efd7ca1b5e4070891cac09384cde5841b6",
         "src/components/prospecting/sdr-skills-panel.tsx": "dd8bd8da400ec323afdb7b27e6a0bcee7ca05260b36a090faf85eda7f0022cef",
         "src/components/prospecting/sdr-console.tsx": "4cccf9be3e3cf775d516aed2cb8573f52104cbcbd4af8afb326e09a740296514",
-        "src/components/prospecting/sdr-studio-agent-bar.tsx": "84cc91802054f71827201ba06b93eecbc530eaa2605a564f4c30441b476bd1df",
-        "src/components/prospecting/sdr-workspace-sections.ts": "287fd543ae36008fe318f9a14185fe3d011791ed61937fa47566d72036623b65",
-        "src/lib/prospecting/sdr/duplicate-agent.ts": "7de81ce01ed1493515bd57b88ee7d1ce87785c8eaf1076f4bdf98fe143cd6248"
+        "src/components/prospecting/sdr-studio-agent-bar.tsx": "84cc91802054f71827201ba06b93eecbc530eaa2605a564f4c30441b476bd1df"
       },
       "resources": [
         "system.channels",
@@ -2980,7 +2977,7 @@
         "techsales.marketing.sdr_agent.delete.own",
         "techsales.marketing.sdr_agent.delete.workspace"
       ],
-      "rationale": "Existing SDR version/config/test endpoints retain sales middleware, record checks and assertSdr workspace enforcement. Optional sandbox channel preview additionally requires current channel view and account/binding user RLS; only account UUID is accepted, never client identity text. Disabled accounts may be simulated without activating them. Sandbox continues memory tools and fake calendar with no external delivery or CRM writes. The /agents/sdr page groups the same sections into Operação, Estúdio and Resultados through a validated section search param and disables Novo agente unless usePermissions grants an SDR create key; playbook server functions keep requireSalesPermission plus requireSdr, so the UI gate is advisory and adds no new action or data access. The Estúdio shares one agent selection (validated UUID search param, resolved only among agents returned by listPlaybooks under RLS) across Persona, Playbook, configuration and skills, and shows the existing sandbox test chat beside each Estúdio section; this adds no data access. Principal/rename/delete actions moved unchanged into SdrAgentActions. New duplicateSdrAgent requires requireSalesPermission create, assertSalesRecord view on the source, requireSdr create in the caller's workspace and blocks read-only View-as; it reads the source playbook and draft/published version with the user client and inserts the copy and a single draft version through user RLS (sales_create + view_as_ro_ins + sales_agent_version_guard), never service role. The copy is disabled, has no published version, is not made principal and copies no service_channel_bindings, so it cannot answer customers until reviewed, published and enabled through existing gated flows. The Estúdio shares one agent selection (validated UUID search param, resolved only among agents returned by listPlaybooks under RLS) across Persona, Playbook, configuration and skills, and shows the existing sandbox test chat beside each Estúdio section; this adds no data access. Principal/rename/delete actions moved unchanged into SdrAgentActions. New duplicateSdrAgent requires requireSalesPermission create, assertSalesRecord view on the source, requireSdr create in the caller's workspace and blocks read-only View-as; it reads the source playbook and draft/published version with the user client and inserts the copy and a single draft version through user RLS (sales_create + view_as_ro_ins + sales_agent_version_guard), never service role. The copy is disabled, has no published version, is not made principal and copies no service_channel_bindings, so it cannot answer customers until reviewed, published and enabled through existing gated flows.",
+      "rationale": "Existing SDR version/config/test endpoints retain sales middleware, record checks and assertSdr workspace enforcement. Optional sandbox channel preview additionally requires current channel view and account/binding user RLS; only account UUID is accepted, never client identity text. Disabled accounts may be simulated without activating them. Sandbox continues memory tools and fake calendar with no external delivery or CRM writes. The /agents/sdr page groups the same sections into Operação, Estúdio and Resultados through a validated section search param and disables Novo agente unless usePermissions grants an SDR create key; playbook server functions keep requireSalesPermission plus requireSdr, so the UI gate is advisory and adds no new action or data access. The Estúdio shares one agent selection (validated UUID search param, resolved only among agents returned by listPlaybooks under RLS) across Persona, Playbook, configuration and skills, and shows the existing sandbox test chat beside each Estúdio section; this adds no data access. Principal/rename/delete actions moved unchanged into SdrAgentActions. New duplicateSdrAgent requires requireSalesPermission create, assertSalesRecord view on the source, requireSdr create in the caller's workspace and blocks read-only View-as; it reads the source playbook and draft/published version with the user client and inserts the copy and a single draft version through user RLS (sales_create + view_as_ro_ins + sales_agent_version_guard), never service role. The copy is disabled, has no published version, is not made principal and copies no service_channel_bindings, so it cannot answer customers until reviewed, published and enabled through existing gated flows. The Estúdio shares one agent selection (validated UUID search param, resolved only among agents returned by listPlaybooks under RLS) across Persona, Playbook, configuration and skills, and shows the existing sandbox test chat beside each Estúdio section; this adds no data access. Principal/rename/delete actions moved unchanged into SdrAgentActions. New duplicateSdrAgent requires requireSalesPermission create, assertSalesRecord view on the source, requireSdr create in the caller's workspace and blocks read-only View-as; it reads the source playbook and draft/published version with the user client and inserts the copy and a single draft version through user RLS (sales_create + view_as_ro_ins + sales_agent_version_guard), never service role. The copy is disabled, has no published version, is not made principal and copies no service_channel_bindings, so it cannot answer customers until reviewed, published and enabled through existing gated flows. SdrAgentActions (usePermissions gate mirrored by server checks), getSdrOverview and saveSdrToolConfig are the server-gated entry points these Estúdio views render or call; the pure copy rules live in sdr-agent-duplicate-rules.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -2997,6 +2994,18 @@
         {
           "file": "src/lib/access-control/use-permissions.tsx",
           "symbol": "usePermissions"
+        },
+        {
+          "file": "src/components/prospecting/sdr-agent-actions.tsx",
+          "symbol": "SdrAgentActions"
+        },
+        {
+          "file": "src/lib/prospecting/sdr.functions.ts",
+          "symbol": "getSdrOverview"
+        },
+        {
+          "file": "src/lib/prospecting/sdr-tools.functions.ts",
+          "symbol": "saveSdrToolConfig"
         }
       ],
       "database": [
@@ -3797,9 +3806,17 @@
       "kind": "presentation",
       "files": {
         "src/components/prospecting/sdr-workspace-nav.tsx": "dfdcd6de66ff2417c93fd3f5102c0770795cb4d9fd7fafaa445d8deed9f46a74",
-        "src/components/prospecting/sdr-workspace-sections.ts": "76a8427d71c2f25824149d31e0cc7a0df3d9395cfec66c231bf9f5f4022102f5"
+        "src/components/prospecting/sdr-workspace-sections.ts": "287fd543ae36008fe318f9a14185fe3d011791ed61937fa47566d72036623b65"
       },
-      "rationale": "Static labels and grouping of existing Agente SDR sections into three areas, rendered as same-page links and tab triggers. No event handlers, I/O, server functions, permissions or data access; each section keeps its own existing controls."
+      "rationale": "Static labels and grouping of existing Agente SDR sections into three areas, rendered as same-page links and tab triggers. No event handlers, I/O, server functions, permissions or data access; each section keeps its own existing controls. Also pure helpers to parse the agent UUID from the address, decide which sections show the test chat column and pick the open agent among the already authorized list; no I/O or permissions."
+    },
+    {
+      "id": "sdr-agent-duplicate-rules",
+      "kind": "presentation",
+      "files": {
+        "src/lib/prospecting/sdr/duplicate-agent.ts": "7de81ce01ed1493515bd57b88ee7d1ce87785c8eaf1076f4bdf98fe143cd6248"
+      },
+      "rationale": "Pure functions that decide which playbook columns and which persona version are copied when duplicating an agent (copy is disabled, draft-only). No I/O, handlers, server functions or permissions; authorization and writes live in duplicateSdrAgent under service-channel-agent-sandbox."
     }
   ],
   "retired": {}
