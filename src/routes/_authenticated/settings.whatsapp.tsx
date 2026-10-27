@@ -24,6 +24,7 @@ import {
   StatusBadge,
 } from "@/components/techhire/ui";
 import { WhatsAppIcon } from "@/components/whatsapp/whatsapp-icon";
+import { qualityDisplay } from "@/lib/whatsapp/quality-display";
 import {
   getWhatsAppConnection,
   testWhatsAppConnection,
@@ -50,13 +51,6 @@ export const Route = createFileRoute("/_authenticated/settings/whatsapp")({
   component: WhatsAppSettings,
 });
 
-const QUALITY_LABELS: Record<string, string> = {
-  GREEN: "Alta",
-  YELLOW: "Média",
-  RED: "Baixa",
-  UNKNOWN: "Não avaliada",
-  NA: "Não avaliada",
-};
 
 function Field({ label, value }: { label: string; value: string }) {
   return (
@@ -161,11 +155,17 @@ function WhatsAppSettings() {
                   </p>
                 </div>
               </div>
-              {data.connected ? (
-                <StatusBadge status="open" label="Conectado" />
-              ) : (
-                <StatusBadge status="closed" label="Com falha" />
-              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {data.connected ? (
+                  <StatusBadge status="open" label="Conectado" />
+                ) : (
+                  <StatusBadge status="closed" label="Com falha" />
+                )}
+                <StatusBadge
+                  status={qualityDisplay(data.qualityRating).tone}
+                  label={qualityDisplay(data.qualityRating).label}
+                />
+              </div>
             </div>
 
             {!data.connected && data.error ? (
@@ -179,11 +179,7 @@ function WhatsAppSettings() {
 
             <Separator />
 
-            <div className="grid gap-4 sm:grid-cols-3">
-              <Field
-                label="Qualidade da linha"
-                value={QUALITY_LABELS[data.qualityRating || "UNKNOWN"] || "Não avaliada"}
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Também no aplicativo" value={data.isOnBizApp ? "Sim" : "Não"} />
               <Field label="Tipo de conta" value={data.platformType || "Não informado"} />
             </div>
