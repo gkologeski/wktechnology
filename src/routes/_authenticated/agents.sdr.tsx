@@ -94,6 +94,12 @@ function SdrAgentPage() {
   const [active, setActive] = useState<Playbook>(empty);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const section: SdrSectionId = search.section ?? DEFAULT_SDR_SECTION;
+  const view = viewOfSection(section);
+  const goTo = (next: SdrSectionId) =>
+    navigate({ search: { section: next }, replace: true, resetScroll: false });
 
   async function reload(attempt = 0): Promise<void> {
     setLoading(true);

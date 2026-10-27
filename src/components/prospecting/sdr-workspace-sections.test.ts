@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { DEFAULT_SDR_SECTION, SDR_VIEWS, parseSdrSection, viewOfSection } from "./sdr-workspace-sections";
+import {
+  DEFAULT_SDR_SECTION,
+  SDR_VIEWS,
+  parseSdrSection,
+  viewOfSection,
+} from "./sdr-workspace-sections";
 
 describe("navegação do Agente SDR", () => {
   it("mantém as nove seções anteriores, cada uma em exatamente uma área", () => {
