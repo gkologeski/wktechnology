@@ -419,6 +419,7 @@ import { Route as ApiPublicScimV2GroupsRouteImport } from './routes/api/public/s
 import { Route as ApiPublicScimV2UsersRouteImport } from './routes/api/public/scim/v2/Users'
 import { Route as ApiPublicV1AtsApplicationsRouteImport } from './routes/api/public/v1/ats/applications'
 import { Route as ApiPublicV1AtsJobsRouteImport } from './routes/api/public/v1/ats/jobs'
+import { Route as ApiPublicWhatsappCloudConnectionIdRouteImport } from './routes/api/public/whatsapp/cloud/$connectionId'
 import { Route as ApiPublicZapierTriggersEventRouteImport } from './routes/api/public/zapier/triggers.$event'
 import { Route as ApiPublicZapierUnsubscribeIdRouteImport } from './routes/api/public/zapier/unsubscribe.$id'
 import { Route as ApiPublicScimV2UsersIdRouteImport } from './routes/api/public/scim/v2/Users.$id'
@@ -2771,6 +2772,12 @@ const ApiPublicV1AtsJobsRoute = ApiPublicV1AtsJobsRouteImport.update({
   path: '/api/public/v1/ats/jobs',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicWhatsappCloudConnectionIdRoute =
+  ApiPublicWhatsappCloudConnectionIdRouteImport.update({
+    id: '/api/public/whatsapp/cloud/$connectionId',
+    path: '/api/public/whatsapp/cloud/$connectionId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicZapierTriggersEventRoute =
   ApiPublicZapierTriggersEventRouteImport.update({
     id: '/api/public/zapier/triggers/$event',
@@ -3216,6 +3223,7 @@ export interface FileRoutesByFullPath {
   '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
   '/api/public/v1/ats/applications': typeof ApiPublicV1AtsApplicationsRouteWithChildren
   '/api/public/v1/ats/jobs': typeof ApiPublicV1AtsJobsRoute
+  '/api/public/whatsapp/cloud/$connectionId': typeof ApiPublicWhatsappCloudConnectionIdRoute
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
   '/projects/settings/imports/': typeof AuthenticatedProjectsSettingsImportsIndexRoute
@@ -3626,6 +3634,7 @@ export interface FileRoutesByTo {
   '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
   '/api/public/v1/ats/applications': typeof ApiPublicV1AtsApplicationsRouteWithChildren
   '/api/public/v1/ats/jobs': typeof ApiPublicV1AtsJobsRoute
+  '/api/public/whatsapp/cloud/$connectionId': typeof ApiPublicWhatsappCloudConnectionIdRoute
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
   '/projects/settings/imports': typeof AuthenticatedProjectsSettingsImportsIndexRoute
@@ -4045,6 +4054,7 @@ export interface FileRoutesById {
   '/api/public/scim/v2/Users': typeof ApiPublicScimV2UsersRouteWithChildren
   '/api/public/v1/ats/applications': typeof ApiPublicV1AtsApplicationsRouteWithChildren
   '/api/public/v1/ats/jobs': typeof ApiPublicV1AtsJobsRoute
+  '/api/public/whatsapp/cloud/$connectionId': typeof ApiPublicWhatsappCloudConnectionIdRoute
   '/api/public/zapier/triggers/$event': typeof ApiPublicZapierTriggersEventRoute
   '/api/public/zapier/unsubscribe/$id': typeof ApiPublicZapierUnsubscribeIdRoute
   '/_authenticated/projects/settings/imports/': typeof AuthenticatedProjectsSettingsImportsIndexRoute
@@ -4464,6 +4474,7 @@ export interface FileRouteTypes {
     | '/api/public/scim/v2/Users'
     | '/api/public/v1/ats/applications'
     | '/api/public/v1/ats/jobs'
+    | '/api/public/whatsapp/cloud/$connectionId'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
     | '/projects/settings/imports/'
@@ -4874,6 +4885,7 @@ export interface FileRouteTypes {
     | '/api/public/scim/v2/Users'
     | '/api/public/v1/ats/applications'
     | '/api/public/v1/ats/jobs'
+    | '/api/public/whatsapp/cloud/$connectionId'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
     | '/projects/settings/imports'
@@ -5292,6 +5304,7 @@ export interface FileRouteTypes {
     | '/api/public/scim/v2/Users'
     | '/api/public/v1/ats/applications'
     | '/api/public/v1/ats/jobs'
+    | '/api/public/whatsapp/cloud/$connectionId'
     | '/api/public/zapier/triggers/$event'
     | '/api/public/zapier/unsubscribe/$id'
     | '/_authenticated/projects/settings/imports/'
@@ -5433,6 +5446,7 @@ export interface RootRouteChildren {
   ApiPublicScimV2UsersRoute: typeof ApiPublicScimV2UsersRouteWithChildren
   ApiPublicV1AtsApplicationsRoute: typeof ApiPublicV1AtsApplicationsRouteWithChildren
   ApiPublicV1AtsJobsRoute: typeof ApiPublicV1AtsJobsRoute
+  ApiPublicWhatsappCloudConnectionIdRoute: typeof ApiPublicWhatsappCloudConnectionIdRoute
   ApiPublicZapierTriggersEventRoute: typeof ApiPublicZapierTriggersEventRoute
   ApiPublicZapierUnsubscribeIdRoute: typeof ApiPublicZapierUnsubscribeIdRoute
 }
@@ -8309,6 +8323,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicV1AtsJobsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/whatsapp/cloud/$connectionId': {
+      id: '/api/public/whatsapp/cloud/$connectionId'
+      path: '/api/public/whatsapp/cloud/$connectionId'
+      fullPath: '/api/public/whatsapp/cloud/$connectionId'
+      preLoaderRoute: typeof ApiPublicWhatsappCloudConnectionIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/zapier/triggers/$event': {
       id: '/api/public/zapier/triggers/$event'
       path: '/api/public/zapier/triggers/$event'
@@ -9402,6 +9423,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicScimV2UsersRoute: ApiPublicScimV2UsersRouteWithChildren,
   ApiPublicV1AtsApplicationsRoute: ApiPublicV1AtsApplicationsRouteWithChildren,
   ApiPublicV1AtsJobsRoute: ApiPublicV1AtsJobsRoute,
+  ApiPublicWhatsappCloudConnectionIdRoute:
+    ApiPublicWhatsappCloudConnectionIdRoute,
   ApiPublicZapierTriggersEventRoute: ApiPublicZapierTriggersEventRoute,
   ApiPublicZapierUnsubscribeIdRoute: ApiPublicZapierUnsubscribeIdRoute,
 }

@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { usePersonPhotos } from "@/hooks/use-person-photos";
 import { formatDateTime } from "@/lib/crm";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -76,6 +77,7 @@ type Item = {
 };
 
 function UnifiedInboxPage() {
+  const permissions = usePermissions();
   const [channel, setChannel] = useState<"all" | "email" | "whatsapp" | "chat">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
@@ -190,6 +192,7 @@ function UnifiedInboxPage() {
   // Mesma política de janela/modelo dos demais compositores (servidor revalida).
   const waComposer = useWhatsAppComposer({
     to: current?.channel === "whatsapp" ? (current.replyTo ?? "") : "",
+    conversationId: current?.channel === "whatsapp" ? current.id : null,
     enabled: current?.channel === "whatsapp",
   });
   const waBlocked = current?.channel === "whatsapp" && !waComposer.policy.freeTextAllowed;
@@ -212,6 +215,14 @@ function UnifiedInboxPage() {
           } as never,
         });
       } else if (current.channel === "whatsapp") {
+        if (
+          !permissions.canAny([
+            "techsales.inbox.whatsapp.create.own",
+            "techsales.inbox.whatsapp.create.team",
+            "techsales.inbox.whatsapp.create.workspace",
+          ])
+        )
+          throw new Error("Sem permissão para enviar WhatsApp.");
         if (!current.replyTo) throw new Error("Não foi possível identificar o número do cliente.");
         if (waBlocked) {
           setTemplateDialogOpen(true);
@@ -220,6 +231,7 @@ function UnifiedInboxPage() {
         const res = await sendWa({
           data: {
             to: current.replyTo,
+            conversationId: current.id,
             body: draft,
             contactId: current.contactId ?? undefined,
           } as never,
@@ -401,6 +413,8 @@ function UnifiedInboxPage() {
               <div className="m-4 space-y-2 rounded-[calc(var(--radius)+1rem)] bg-product-panel-muted p-2 ring-1 ring-border-subtle focus-within:ring-2 focus-within:ring-ring">
                 {current.channel === "whatsapp" && (
                   <SendWhatsAppDialog
+                    conversationId={current.id}
+                    lockRecipient
                     open={templateDialogOpen}
                     onOpenChange={setTemplateDialogOpen}
                     defaultTo={current.replyTo ?? ""}

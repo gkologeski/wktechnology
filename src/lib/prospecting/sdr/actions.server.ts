@@ -220,7 +220,9 @@ export async function sendSdrMessage(
   const [{ data: conv }, { data: enr }, { data: settings }] = await Promise.all([
     admin
       .from("whatsapp_conversations")
-      .select("id, workspace_id, ai_owner, ai_version, contact_phone, last_inbound_at, contact_id")
+      .select(
+        "id, workspace_id, ai_owner, ai_version, contact_phone, last_inbound_at, contact_id, wa_phone_number_id",
+      )
       .eq("id", job.conversation_id)
       .maybeSingle(),
     admin
@@ -241,6 +243,17 @@ export async function sendSdrMessage(
   if (conv.ai_owner !== "ai") return blocked("owner_not_ai");
   if (conv.ai_version !== job.conversation_version) return blocked("stale_version");
   if (!enr || enr.status !== "active") return blocked("enrollment_inactive");
+  if (job.kind === "follow_up" && conv.wa_phone_number_id) {
+    const { brPhoneVariants } = await import("@/lib/whatsapp/phone-variants");
+    const globalOptOut = await admin
+      .from("sdr_enrollments")
+      .select("id")
+      .eq("workspace_id", job.workspace_id)
+      .in("contact_phone", brPhoneVariants(conv.contact_phone))
+      .not("opted_out_at", "is", null)
+      .limit(1);
+    if (globalOptOut.error || globalOptOut.data?.length) return blocked("enrollment_inactive");
+  }
   try {
     await assertSalesWorker(admin, "sdr_enrollments", enr.id, [
       { table: "whatsapp_conversations", id: conv.id },
@@ -472,7 +485,7 @@ export async function sendSdrMessage(
   let raw: unknown = null;
   let failedFiles: string[] = [];
   try {
-    const num = await resolveWaNumber(job.workspace_id);
+    const num = await resolveWaNumber(job.workspace_id, conv.wa_phone_number_id ?? null);
     const res = await metaSend(num, { to: conv.contact_phone, body: p.text });
     wamid = res.wamid;
     raw = res.raw;

@@ -6,6 +6,8 @@ import {
   listCloudConnections,
   createCloudConnection,
   syncCloudConnection,
+  setCloudConnectionEnabled,
+  subscribeCloudConnection,
 } from "@/lib/whatsapp/cloud-connections.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +22,8 @@ export function CloudConnectionsPanel() {
   const list = useServerFn(listCloudConnections);
   const create = useServerFn(createCloudConnection);
   const sync = useServerFn(syncCloudConnection);
+  const toggle = useServerFn(setCloudConnectionEnabled);
+  const subscribe = useServerFn(subscribeCloudConnection);
   const queryClient = useQueryClient();
   const key = ["wa-cloud-connections", permissions.workspaceId];
   const query = useQuery({ queryKey: key, queryFn: () => list(), enabled: canView });
@@ -34,6 +38,24 @@ export function CloudConnectionsPanel() {
   const [form, setForm] = useState(empty);
   const [open, setOpen] = useState(false);
   const refresh = () => queryClient.invalidateQueries({ queryKey: key });
+  const subscription = useMutation({
+    mutationFn: (id: string) => subscribe({ data: { id } }),
+    onSuccess: () => {
+      void refresh();
+      toast.success(
+        "Aplicativo inscrito. Envie uma mensagem de teste para um dos novos números e atualize a conexão.",
+      );
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const activation = useMutation({
+    mutationFn: (data: { id: string; enabled: boolean }) => toggle({ data }),
+    onSuccess: () => {
+      void refresh();
+      toast.success("Situação da conexão atualizada.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   const save = useMutation({
     mutationFn: () => create({ data: form }),
     onSuccess: () => {
@@ -68,8 +90,8 @@ export function CloudConnectionsPanel() {
           </Button>
         </div>
         <p className="text-sm text-muted-foreground">
-          Nesta etapa, as conexões ficam em preparação. O número atual continua atendendo pelo
-          conector Lovable.
+          O número atual continua atendendo pelo conector Lovable e não será migrado
+          automaticamente. Novas conexões precisam receber um evento assinado antes da ativação.
         </p>
         {open && canManage && (
           <form
@@ -139,7 +161,8 @@ export function CloudConnectionsPanel() {
               <div>
                 <h3 className="font-medium">{connection.label}</h3>
                 <p className="text-sm text-muted-foreground">
-                  WABA {connection.waba_id} · Em preparação
+                  WABA {connection.waba_id} ·{" "}
+                  {connection.enabled ? "Ativa" : "Em preparação / desativada"}
                 </p>
               </div>
               <Button
@@ -150,6 +173,37 @@ export function CloudConnectionsPanel() {
                 Sincronizar números
               </Button>
             </div>
+            <p className="break-all text-xs text-muted-foreground">
+              Webhook: {typeof window !== "undefined" ? window.location.origin : ""}
+              /api/public/whatsapp/cloud/{connection.id}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Na Meta, configure este endereço com o token de verificação informado no cadastro,
+              assine o campo messages e envie um evento de teste. Verificação:{" "}
+              {connection.webhook_verified_at ? "confirmada" : "pendente"}. Evento assinado:{" "}
+              {connection.webhook_received_at ? "recebido" : "pendente"}.
+            </p>
+            <Button
+              variant="outline"
+              disabled={
+                !canManage ||
+                activation.isPending ||
+                (!connection.enabled && (!connection.webhook_received_at || !connection.synced_at))
+              }
+              onClick={() => activation.mutate({ id: connection.id, enabled: !connection.enabled })}
+            >
+              {connection.enabled ? "Desativar conexão" : "Ativar conexão"}
+            </Button>
+            <Button
+              variant="outline"
+              disabled={!canManage || !connection.webhook_verified_at || subscription.isPending}
+              onClick={() => subscription.mutate(connection.id)}
+            >
+              Assinar eventos da conta
+            </Button>
+            <Button variant="ghost" onClick={() => refresh()}>
+              Atualizar situação
+            </Button>
             {query.data.numbers
               .filter((number: any) => number.connection_id === connection.id)
               .map((number: any) => (

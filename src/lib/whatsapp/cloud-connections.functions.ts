@@ -13,7 +13,9 @@ export const listCloudConnections = createServerFn({ method: "GET" })
     const admin = supabaseAdmin as any;
     const connections = await admin
       .from("wa_cloud_connections")
-      .select("id,label,waba_id,api_version,enabled,webhook_verified_at,synced_at")
+      .select(
+        "id,label,waba_id,api_version,enabled,webhook_verified_at,webhook_received_at,synced_at",
+      )
       .eq("workspace_id", workspaceId)
       .order("created_at");
     if (connections.error) throw new Error("Não foi possível carregar as conexões Meta.");
@@ -91,10 +93,15 @@ export const syncCloudConnection = createServerFn({ method: "POST" })
       .single();
     if (error || !connection) throw new Error("Conexão indisponível.");
     const secrets = JSON.parse(await decryptApiKey(connection.credentials_ciphertext));
-    const numbers = await inspectCloudNumbers(
+    let numbers = await inspectCloudNumbers(
       { accessToken: secrets.accessToken, apiVersion: connection.api_version },
       connection.waba_id,
     );
+    const { gatewayConfigured, getConnectedPhone } = await import("./gateway-channel.server");
+    if (gatewayConfigured()) {
+      const legacy = await getConnectedPhone();
+      numbers = numbers.filter((number) => number.phone_number_id !== legacy.id);
+    }
     const now = new Date().toISOString();
     // Transactional RPC prevents partial sync and cross-tenant number takeover.
     const result = await admin.rpc("wa_cloud_sync_numbers", {
@@ -105,4 +112,95 @@ export const syncCloudConnection = createServerFn({ method: "POST" })
     });
     if (result.error) throw new Error("Não foi possível sincronizar os números com segurança.");
     return { count: numbers.length };
+  });
+
+export const setCloudConnectionEnabled = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("system.whatsapp", "manage")])
+  .inputValidator((input) => z.object({ id: z.string().uuid(), enabled: z.boolean() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    await authorizeCloudConnection(context.supabase, workspaceId, "manage");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let query = (supabaseAdmin as any)
+      .from("wa_cloud_connections")
+      .update({ enabled: data.enabled })
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId);
+    if (data.enabled)
+      query = query
+        .not("webhook_verified_at", "is", null)
+        .not("webhook_received_at", "is", null)
+        .not("synced_at", "is", null);
+    const result = await query.select("id").single();
+    if (result.error)
+      throw new Error(
+        "Antes de ativar, sincronize os números, verifique o webhook e receba um evento assinado da Meta.",
+      );
+    return { ok: true };
+  });
+
+export const subscribeCloudConnection = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("system.whatsapp", "manage")])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    await authorizeCloudConnection(context.supabase, workspaceId, "manage");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { decryptApiKey } = await import("@/lib/ai/provider-resolver.server");
+    const { cloudRequest } = await import("./cloud-api.server");
+    const row = await (supabaseAdmin as any)
+      .from("wa_cloud_connections")
+      .select("*")
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId)
+      .single();
+    if (row.error || !row.data?.webhook_verified_at)
+      throw new Error("Configure e verifique o endereço do webhook na Meta primeiro.");
+    const secrets = JSON.parse(await decryptApiKey(row.data.credentials_ciphertext));
+    const result = await cloudRequest(
+      { accessToken: secrets.accessToken, apiVersion: row.data.api_version },
+      row.data.waba_id,
+      "subscribed_apps",
+      { method: "POST" },
+    );
+    if (result?.success !== true) throw new Error("A Meta não confirmou a assinatura dos eventos.");
+    return { ok: true };
+  });
+
+export const listCloudSenders = createServerFn({ method: "GET" })
+  .middleware([
+    requireSalesPermission(["techsales.inbox.whatsapp", "techsales.marketing.campaigns"], "view"),
+  ])
+  .handler(async ({ context }) => {
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const membership = await context.supabase.rpc("is_workspace_member", {
+      _workspace: workspaceId,
+      _user: context.userId,
+    });
+    if (membership.error || !membership.data) throw new Error("Membro ativo obrigatório.");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const admin = supabaseAdmin as any;
+    const connections = await admin
+      .from("wa_cloud_connections")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .eq("enabled", true);
+    if (connections.error) throw new Error("Não foi possível consultar os remetentes.");
+    if (!connections.data.length) return [];
+    const numbers = await admin
+      .from("wa_cloud_numbers")
+      .select("phone_number_id,display_phone_number,verified_name,quality_rating")
+      .eq("workspace_id", workspaceId)
+      .eq("available", true)
+      .in(
+        "connection_id",
+        connections.data.map((row: any) => row.id),
+      );
+    if (numbers.error) throw new Error("Não foi possível consultar os remetentes.");
+    return numbers.data as {
+      phone_number_id: string;
+      display_phone_number: string;
+      verified_name: string | null;
+      quality_rating: string | null;
+    }[];
   });

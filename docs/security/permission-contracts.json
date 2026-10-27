@@ -1714,8 +1714,8 @@
       "kind": "business",
       "files": {
         "src/lib/whatsapp/cloud-connections.server.ts": "b5f5c15e109a7c269666c29b81a4aecf16f95ecdd72028edded8c6e841374289",
-        "src/lib/whatsapp/cloud-connections.functions.ts": "6b658b31d75c7659dc7651b766ca6470c40b2e5b75d32eefab2951166b8151f0",
-        "src/components/whatsapp/cloud-connections-panel.tsx": "e25a38f0506bdbf7e5b6d466665948b3b1f957c5558e113000c1da98bb29b4ff",
+        "src/lib/whatsapp/cloud-connections.functions.ts": "96b22387fa972c8c4e1d496a9ca6718adcd953d1904c6f995a496f9d94443595",
+        "src/components/whatsapp/cloud-connections-panel.tsx": "1a5d48ea405e27e8c795c11e4666dc9421faa2deba6dca5f855af09f5a148dfb",
         "src/routes/_authenticated/settings.whatsapp.tsx": "3b5b07439aa9ca3ad243bff9ba78612cd7cf0482bd79a0195b8d5552a6252f60",
         "drizzle/migrations/0254_whatsapp_cloud_connections.sql": "60e6d9ebb0c44cc12e2b4ad4e3594cb1f5674ce77f5a1e247610c9eb174ed3f2"
       },
@@ -1834,6 +1834,436 @@
         "revocation": "Caller authorization is current on every operation; revoking Meta token stops requests; no automatic retry/fallback.",
         "review_by": "2027-01-26"
       }
+    },
+    {
+      "id": "whatsapp-cloud-authenticated-routing",
+      "kind": "business",
+      "files": {
+        "src/lib/whatsapp.functions.ts": "3c49fe665b6bbd2252f80dab74dafccbcc422906133e933701554f0f926e8852",
+        "src/lib/whatsapp-campaigns.functions.ts": "656ff55c42c6ca4372d92a3e562c1bde451325417fe254edd9225cef93aeba5d",
+        "src/routes/_authenticated/inbox.index.tsx": "6871432118a6bd8ef6477bf0ca6ef3bd14a00e7fbec3beef7bb955f610daee80",
+        "src/routes/_authenticated/inbox.whatsapp.tsx": "1fc2be372627dcfd81a950952a3c6626dfbaff0b5b56a2be92623f45e8d0009e",
+        "src/routes/_authenticated/campaigns.whatsapp.tsx": "5dfdec509a34b8de6af31a3e8df677edcf9b00b9722a0b5c3d7cc6e820876dfa",
+        "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9"
+      },
+      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
+      "actions": ["view", "create", "update", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "system.whatsapp.manage.workspace",
+        "system.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.create.workspace",
+        "techsales.marketing.campaigns.view.workspace",
+        "techsales.marketing.campaigns.create.workspace",
+        "techsales.marketing.campaigns.update.workspace"
+      ],
+      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0254_whatsapp_cloud_connections.sql",
+          "symbol": "wa_cloud_numbers"
+        },
+        {
+          "file": "drizzle/migrations/0255_whatsapp_cloud_routing.sql",
+          "symbol": "wa_cloud_campaign_sender_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "allows active authorized cloud administrator"
+        },
+        "missing_permission": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud explicit deny even after role grant"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud inactive member before privilege access"
+        }
+      }
+    },
+    {
+      "id": "whatsapp-cloud-internal-routing",
+      "kind": "internal",
+      "files": {
+        "src/lib/whatsapp/cloud-runtime.server.ts": "55c68291eae9722088043a1c96dc6c00ed46a779c4114978da0b2a8db8863861",
+        "src/lib/whatsapp/meta-channel.server.ts": "40c3bb7fddd839f421bb67b574f61bdd99e3197b38acf54409ac6cd94a0a801a",
+        "src/lib/whatsapp/templates.server.ts": "693872ba81f6e46c295d73c4b760aaaa2505f1ae186c865420d9d30af201ea9e",
+        "src/lib/whatsapp/inbound-media.server.ts": "06291dd9157bf46bae7e141c906d771bce154e73bf41b00b22adb9654d3cdc28",
+        "src/lib/whatsapp/webhook-processor.server.ts": "b2af9223aa38440f6853830bbee7e52b989bdf7360078fc86a08901e5efd7a2e"
+      },
+      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
+      "actions": ["view", "create", "update", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "system.whatsapp.manage.workspace",
+        "system.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.create.workspace",
+        "techsales.marketing.campaigns.view.workspace",
+        "techsales.marketing.campaigns.create.workspace",
+        "techsales.marketing.campaigns.update.workspace"
+      ],
+      "rationale": "Server-only transport and processing called by authenticated sends, authorized workers or signature-verified webhook. Resolve exact workspace/number and active connection before decrypting; private media scope and signed status events retain verified tenant. No fallback after rejection.",
+      "controls": [
+        {
+          "file": "src/lib/whatsapp/cloud-runtime.server.ts",
+          "symbol": "resolveCloudNumber"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-runtime.server.ts",
+          "symbol": "sendCloudPayload"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-runtime.server.ts",
+          "symbol": "cloudTemplates"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-runtime.server.ts",
+          "symbol": "downloadCloudMedia"
+        },
+        {
+          "file": "src/lib/whatsapp/webhook-processor.server.ts",
+          "symbol": "resolveWorkspace"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0254_whatsapp_cloud_connections.sql",
+          "symbol": "wa_cloud_numbers"
+        },
+        {
+          "file": "drizzle/migrations/0255_whatsapp_cloud_routing.sql",
+          "symbol": "wa_cloud_campaign_sender_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime allows mapped active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime rejects missing sender capability"
+        },
+        "explicit_deny": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime rejects explicitly disabled connection"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime rejects foreign workspace sender"
+        },
+        "inactive_member": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime rejects inactive number"
+        }
+      },
+      "exception": {
+        "mechanism": "Server-only transport and processing called by authenticated sends, authorized workers or signature-verified webhook. Resolve exact workspace/number and active connection before decrypting; private media scope and signed status events retain verified tenant. No fallback after rejection.",
+        "boundary": "Explicit workspace/phone mapping, authenticated effective permissions in caller or signed Meta connection capability. No browser access to encrypted credentials.",
+        "revocation": "Connection disabled or number unavailable blocks sends. Worker rechecks source permissions. No fallback to another sender.",
+        "review_by": "2027-01-26"
+      }
+    },
+    {
+      "id": "whatsapp-cloud-public-webhook",
+      "kind": "public",
+      "files": {
+        "src/lib/whatsapp/cloud-webhook.server.ts": "a1041e0c973a4bca4627f8645a10d8a6ab69a9193cbe2676779745a4ecc493fc",
+        "src/routes/api/public/whatsapp/cloud/$connectionId.ts": "8bc36097f621d366e8fb622eee61e6ae5b95b620bc16c0603498208d5f9a627d"
+      },
+      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
+      "actions": ["view", "create", "update", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "system.whatsapp.manage.workspace",
+        "system.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.create.workspace",
+        "techsales.marketing.campaigns.view.workspace",
+        "techsales.marketing.campaigns.create.workspace",
+        "techsales.marketing.campaigns.update.workspace"
+      ],
+      "rationale": "GET requires connection-specific secret verification token; POST verifies HMAC raw bytes and exact WABA/registered phone; trusted tenant injected by server, durable deduplicated delivery. Disabled connection stores but does not process.",
+      "controls": [
+        {
+          "file": "src/lib/whatsapp/cloud-api.server.ts",
+          "symbol": "verifyMetaSignature"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-webhook.server.ts",
+          "symbol": "handleCloudWebhook"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0254_whatsapp_cloud_connections.sql",
+          "symbol": "wa_cloud_numbers"
+        },
+        {
+          "file": "drizzle/migrations/0255_whatsapp_cloud_routing.sql",
+          "symbol": "wa_cloud_campaign_sender_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/whatsapp/cloud-webhook.test.ts",
+          "name": "cloud webhook allows signed mapped workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/whatsapp/cloud-webhook.test.ts",
+          "name": "cloud webhook rejects missing signature"
+        },
+        "explicit_deny": {
+          "file": "src/lib/whatsapp/cloud-webhook.test.ts",
+          "name": "cloud webhook rejects invalid verification token"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/whatsapp/cloud-webhook.test.ts",
+          "name": "cloud webhook rejects foreign account"
+        },
+        "inactive_member": {
+          "file": "src/lib/whatsapp/cloud-webhook.test.ts",
+          "name": "cloud webhook keeps disabled connection dormant"
+        }
+      },
+      "exception": {
+        "mechanism": "GET requires connection-specific secret verification token; POST verifies HMAC raw bytes and exact WABA/registered phone; trusted tenant injected by server, durable deduplicated delivery. Disabled connection stores but does not process.",
+        "boundary": "Explicit workspace/phone mapping, authenticated effective permissions in caller or signed Meta connection capability. No browser access to encrypted credentials.",
+        "revocation": "Connection disabled or number unavailable blocks sends. Worker rechecks source permissions. No fallback to another sender.",
+        "review_by": "2027-01-26"
+      }
+    },
+    {
+      "id": "whatsapp-cloud-workers",
+      "kind": "service",
+      "files": {
+        "src/lib/prospecting/sdr/actions.server.ts": "d567310047de0523fd620993b0262e7fbf77f7dd91f315b2f264d68ec1cdf094",
+        "src/routes/api/public/hooks/whatsapp-campaign-tick.ts": "c7d124ea8d956503a8a108ea2470608ea644827168d4c7cf032e30434453d6df"
+      },
+      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
+      "actions": ["view", "create", "update", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "system.whatsapp.manage.workspace",
+        "system.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.create.workspace",
+        "techsales.marketing.campaigns.view.workspace",
+        "techsales.marketing.campaigns.create.workspace",
+        "techsales.marketing.campaigns.update.workspace"
+      ],
+      "rationale": "Existing lease, cron capability and sales_worker_authorize remain mandatory; Lia uses conversation number and campaigns fixed selected sender; rejection pauses direct campaigns instead of failover.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-worker.server.ts",
+          "symbol": "assertSalesWorker"
+        },
+        {
+          "file": "src/lib/cron-auth.server.ts",
+          "symbol": "requireCronAuth"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0254_whatsapp_cloud_connections.sql",
+          "symbol": "wa_cloud_numbers"
+        },
+        {
+          "file": "drizzle/migrations/0255_whatsapp_cloud_routing.sql",
+          "symbol": "wa_cloud_campaign_sender_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime allows mapped active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime rejects missing sender capability"
+        },
+        "explicit_deny": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime rejects explicitly disabled connection"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime rejects foreign workspace sender"
+        },
+        "inactive_member": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime rejects inactive number"
+        }
+      },
+      "exception": {
+        "mechanism": "Existing lease, cron capability and sales_worker_authorize remain mandatory; Lia uses conversation number and campaigns fixed selected sender; rejection pauses direct campaigns instead of failover.",
+        "boundary": "Explicit workspace/phone mapping, authenticated effective permissions in caller or signed Meta connection capability. No browser access to encrypted credentials.",
+        "revocation": "Connection disabled or number unavailable blocks sends. Worker rechecks source permissions. No fallback to another sender.",
+        "review_by": "2027-01-26"
+      }
+    },
+    {
+      "id": "whatsapp-cloud-channel-capability",
+      "kind": "internal",
+      "files": {
+        "src/lib/channel-availability.functions.ts": "8ccd710305400ddf014206b7d3972b3e1c254d5a1ceca42c8a440d8bee9ed8f2"
+      },
+      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
+      "actions": ["view", "create", "update", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "system.whatsapp.manage.workspace",
+        "system.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.create.workspace",
+        "techsales.marketing.campaigns.view.workspace",
+        "techsales.marketing.campaigns.create.workspace",
+        "techsales.marketing.campaigns.update.workspace"
+      ],
+      "rationale": "Authenticated active workspace receives only channel readiness; no tokens/account details. Actual reads and sends remain independently protected by Inbox/campaign permissions and RLS.",
+      "controls": [
+        {
+          "file": "src/lib/active-workspace.server.ts",
+          "symbol": "resolveActiveWorkspace"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0254_whatsapp_cloud_connections.sql",
+          "symbol": "wa_cloud_numbers"
+        },
+        {
+          "file": "drizzle/migrations/0255_whatsapp_cloud_routing.sql",
+          "symbol": "wa_cloud_campaign_sender_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "allows active authorized cloud administrator"
+        },
+        "missing_permission": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud explicit deny even after role grant"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/whatsapp/cloud-connections.test.ts",
+          "name": "rejects cloud inactive member before privilege access"
+        }
+      },
+      "exception": {
+        "mechanism": "Authenticated active workspace receives only channel readiness; no tokens/account details. Actual reads and sends remain independently protected by Inbox/campaign permissions and RLS.",
+        "boundary": "Explicit workspace/phone mapping, authenticated effective permissions in caller or signed Meta connection capability. No browser access to encrypted credentials.",
+        "revocation": "Connection disabled or number unavailable blocks sends. Worker rechecks source permissions. No fallback to another sender.",
+        "review_by": "2027-01-26"
+      }
+    },
+    {
+      "id": "whatsapp-cloud-composer-policy",
+      "kind": "internal",
+      "files": {
+        "src/hooks/use-whatsapp-composer.ts": "5050f9c0673ee97f39821c54535bedf72269105b474a093966a407594eca7c01",
+        "src/components/whatsapp/send-whatsapp-dialog.tsx": "4957c318fd247cb6a17a213f797413059558b278d5c5e5943a0bbf3878fb7e1b"
+      },
+      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
+      "actions": ["view", "create", "update", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "system.whatsapp.manage.workspace",
+        "system.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.create.workspace",
+        "techsales.marketing.campaigns.view.workspace",
+        "techsales.marketing.campaigns.create.workspace",
+        "techsales.marketing.campaigns.update.workspace"
+      ],
+      "rationale": "UI policy only; authenticated getWhatsAppTemplateCatalog/getWhatsAppServiceWindow recheck Inbox view permissions and tenant. Cache includes conversation sender; sending rechecks permissions, recipient, window and approved template server-side.",
+      "controls": [
+        {
+          "file": "src/lib/whatsapp/composer-policy.ts",
+          "symbol": "composerPolicy"
+        },
+        {
+          "file": "src/hooks/use-whatsapp-composer.ts",
+          "symbol": "useWhatsAppComposer"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0254_whatsapp_cloud_connections.sql",
+          "symbol": "wa_cloud_numbers"
+        },
+        {
+          "file": "drizzle/migrations/0255_whatsapp_cloud_routing.sql",
+          "symbol": "wa_cloud_campaign_sender_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime allows mapped active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime rejects missing sender capability"
+        },
+        "explicit_deny": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime rejects explicitly disabled connection"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime rejects foreign workspace sender"
+        },
+        "inactive_member": {
+          "file": "src/lib/whatsapp/cloud-runtime.test.ts",
+          "name": "cloud runtime rejects inactive number"
+        }
+      },
+      "exception": {
+        "mechanism": "UI policy only; authenticated getWhatsAppTemplateCatalog/getWhatsAppServiceWindow recheck Inbox view permissions and tenant. Cache includes conversation sender; sending rechecks permissions, recipient, window and approved template server-side.",
+        "boundary": "Explicit workspace/phone mapping, authenticated effective permissions in caller or signed Meta connection capability. No browser access to encrypted credentials.",
+        "revocation": "Connection disabled or number unavailable blocks sends. Worker rechecks source permissions. No fallback to another sender.",
+        "review_by": "2027-01-26"
+      }
+    },
+    {
+      "id": "whatsapp-cloud-database-types",
+      "kind": "presentation",
+      "files": {
+        "src/integrations/supabase/types.ts": "9a3ba3e6e96aa2bec32140249eb0ad9f13dacbc06e5bf05c1242acb98f7adbe7"
+      },
+      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change."
     }
   ],
   "retired": {}

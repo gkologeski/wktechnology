@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSdrPlaybooks } from "@/hooks/use-default-sdr-agent";
 import { agentOptionLabel, sortDefaultFirst } from "@/lib/prospecting/sdr/default-agent";
@@ -25,6 +26,7 @@ import {
   type AudienceState,
 } from "@/components/whatsapp/campaign-audience-panel";
 import { getWhatsAppTemplateCatalog } from "@/lib/whatsapp.functions";
+import { listCloudSenders } from "@/lib/whatsapp/cloud-connections.functions";
 import { catalogMessage, composerPolicy } from "@/lib/whatsapp/composer-policy";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,6 +73,11 @@ function parseRecipients(raw: string): { phone: string; variables: Record<string
 }
 
 function CampaignsPage() {
+  const permissions = usePermissions();
+  const [sender, setSender] = useState("lovable");
+  const [consentEvidence, setConsentEvidence] = useState("");
+  const sendersFn = useServerFn(listCloudSenders);
+  const senders = useQuery({ queryKey: ["wa-cloud-senders"], queryFn: () => sendersFn() });
   const qc = useQueryClient();
   const listFn = useServerFn(listWhatsAppCampaigns);
   const tmplFn = useServerFn(getWhatsAppTemplateCatalog);
@@ -84,8 +91,8 @@ function CampaignsPage() {
     refetchInterval: 5000,
   });
   const catalogQ = useQuery({
-    queryKey: ["wa", "templates", "campaigns"],
-    queryFn: () => tmplFn({ data: {} }),
+    queryKey: ["wa", "templates", "campaigns", sender],
+    queryFn: () => tmplFn({ data: { phoneNumberId: sender === "lovable" ? null : sender } }),
     staleTime: 60_000,
   });
   const templates = catalogQ.data?.items ?? [];
@@ -136,6 +143,8 @@ function CampaignsPage() {
   const [audienceTouched, setAudienceTouched] = useState(false);
 
   function resetForm() {
+    setSender("lovable");
+    setConsentEvidence("");
     setEditingId(null);
     setEditStatus("");
     setEditTotal(0);
@@ -196,6 +205,8 @@ function CampaignsPage() {
           });
         }
         setBody(full.body_template ?? "");
+        setSender(full.sender_phone_number_id || "lovable");
+        setConsentEvidence(full.consent_evidence || "");
         setTemplateName(full.template_name || "__none__");
         setMediaUrl(full.media_url ?? "");
         setSdrPlaybook(full.sdr_playbook_id ?? "__none__");
@@ -205,6 +216,15 @@ function CampaignsPage() {
 
   const create = useMutation({
     mutationFn: async () => {
+      const action = editingId ? "update" : "create";
+      if (
+        !permissions.canAny(
+          ["own", "team", "workspace"].map(
+            (scope) => `techsales.marketing.campaigns.${action}.${scope}`,
+          ),
+        )
+      )
+        throw new Error("Sem permissão para salvar campanhas.");
       if (ivError) throw new Error(ivError);
       if (isEditing && editingId) {
         // Para HSM monta content_variables_template a partir de {{1}}..{{N}}
@@ -252,6 +272,8 @@ function CampaignsPage() {
             name,
             body_template: selectedTpl?.body ?? body,
             template_name: templateName !== "__none__" ? templateName : null,
+            sender_phone_number_id: sender === "lovable" ? null : sender,
+            consent_evidence: sender === "lovable" ? null : consentEvidence,
             template_language: selectedTpl?.language ?? null,
             content_variables_template,
             media_url: mediaUrl || null,
@@ -289,6 +311,8 @@ function CampaignsPage() {
           name,
           body_template: selectedTpl?.body ?? body,
           template_name: templateName !== "__none__" ? templateName : undefined,
+          sender_phone_number_id: sender === "lovable" ? null : sender,
+          consent_evidence: sender === "lovable" ? null : consentEvidence,
           template_language: selectedTpl?.language ?? undefined,
           content_variables_template,
           media_url: mediaUrl || undefined,
@@ -370,6 +394,59 @@ function CampaignsPage() {
               <DialogTitle>{isEditing ? "Editar campanha" : "Nova campanha"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
+              <div>
+                <label className="text-xs text-muted-foreground">Número remetente</label>
+                <Select
+                  value={sender}
+                  disabled={isEditing && editStatus !== "draft"}
+                  onValueChange={(value) => {
+                    setSender(value);
+                    setTemplateName("__none__");
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lovable">Conector Lovable atual</SelectItem>
+                    {senders.data?.map((number) => (
+                      <SelectItem
+                        key={number.phone_number_id}
+                        value={number.phone_number_id}
+                        disabled={number.quality_rating === "RED"}
+                      >
+                        {number.display_phone_number} · {number.verified_name || "Meta"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {senders.isError && (
+                  <p role="alert" className="text-sm text-destructive">
+                    Não foi possível consultar os números oficiais.
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">
+                  O remetente permanece fixo após o início da campanha. Não há alternância
+                  automática por restrição.
+                </p>
+                {sender !== "lovable" && (
+                  <div className="mt-2">
+                    <label className="text-xs text-muted-foreground">
+                      Origem da autorização dos destinatários
+                    </label>
+                    <Textarea
+                      value={consentEvidence}
+                      onChange={(event) => setConsentEvidence(event.target.value)}
+                      placeholder="Informe onde estão registrados os consentimentos desta lista: formulário, data, campanha ou referência verificável."
+                      maxLength={2000}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Este registro é uma declaração do responsável. Ter o telefone no CRM ou um
+                      template aprovado não comprova consentimento.
+                    </p>
+                  </div>
+                )}
+              </div>
               <div>
                 <label className="text-xs text-muted-foreground">Nome</label>
                 <Input

@@ -1,3 +1,4 @@
+import { cloudTemplates } from "./cloud-runtime.server";
 // Modelos aprovados: a conta WhatsApp Business conectada é a fonte oficial.
 // A tabela local `wa_templates` só é usada quando o conector não está configurado.
 import { gatewayConfigured, listGatewayTemplates } from "./gateway-channel.server";
@@ -18,9 +19,20 @@ export type TemplateCatalog = {
 export async function loadTemplateCatalog(
   supabase: any,
   workspaceId: string,
-  opts: { language?: string | null } = {},
+  opts: { language?: string | null; phoneNumberId?: string | null } = {},
 ): Promise<TemplateCatalog> {
   const lang = opts.language?.trim() || null;
+  if (opts.phoneNumberId) {
+    const templates = await cloudTemplates(workspaceId, opts.phoneNumberId);
+    if (templates)
+      return {
+        source: "provider",
+        items: templates.filter((t) => t.status === "APPROVED" && (!lang || t.language === lang)),
+      };
+    const { getConnectedPhone } = await import("./gateway-channel.server");
+    if ((await getConnectedPhone()).id !== opts.phoneNumberId)
+      throw new Error("Número não conectado.");
+  }
   if (gatewayConfigured()) {
     const all = await listGatewayTemplates();
     const items = all
@@ -50,7 +62,7 @@ export async function loadTemplateCatalog(
 export async function loadApprovedTemplates(
   supabase: any,
   workspaceId: string,
-  opts: { language?: string | null } = {},
+  opts: { language?: string | null; phoneNumberId?: string | null } = {},
 ): Promise<ApprovedTemplate[]> {
   return (await loadTemplateCatalog(supabase, workspaceId, opts)).items;
 }

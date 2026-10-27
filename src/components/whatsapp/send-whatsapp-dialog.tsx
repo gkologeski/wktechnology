@@ -57,6 +57,7 @@ import { MessageDraftPin } from "@/components/message-draft-pin";
 
 import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
 type Props = {
+  conversationId?: string;
   defaultTo?: string;
   contactId?: string;
   contactName?: string;
@@ -73,6 +74,7 @@ type Props = {
 };
 
 export function SendWhatsAppDialog({
+  conversationId,
   defaultTo = "",
   contactId,
   contactName,
@@ -176,6 +178,7 @@ export function SendWhatsAppDialog({
   const sendFn = useServerFn(sendWhatsAppMessage);
   const composer = useWhatsAppComposer({
     to,
+    conversationId,
     enabled: open,
     templateRequiredByServer,
     alwaysLoadTemplates: true,
@@ -218,6 +221,7 @@ export function SendWhatsAppDialog({
       const res = await sendFn({
         data: {
           to,
+          conversationId,
           body: isOfficialHsm ? "" : previewBody,
           contactId,
           templateName: templateName || undefined,
