@@ -7,7 +7,14 @@ export const Route = createFileRoute("/widget/$workspaceId")({
   component: WidgetPage,
 });
 
-type Msg = { id: string; direction: "inbound" | "outbound"; body: string; created_at: string };
+type Msg = {
+  id: string;
+  direction: "inbound" | "outbound";
+  body: string;
+  created_at: string;
+  author_name?: string | null;
+  attachments?: { title: string; url: string }[];
+};
 
 function visitorIdLocal(): string {
   if (typeof window === "undefined") return "anon";
@@ -138,7 +145,21 @@ function WidgetPage() {
                 <div
                   className={`rounded-2xl px-3 py-2 max-w-[80%] ${m.direction === "inbound" ? "bg-primary text-primary-foreground" : "bg-muted"}`}
                 >
-                  {m.body}
+                  {m.direction === "outbound" && m.author_name && (
+                    <div className="mb-1 text-xs font-medium">{m.author_name}</div>
+                  )}
+                  <div className="whitespace-pre-wrap">{m.body}</div>
+                  {(m.attachments ?? []).map((file) => (
+                    <a
+                      key={file.url}
+                      href={file.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-2 block underline"
+                    >
+                      {file.title}
+                    </a>
+                  ))}
                 </div>
               </div>
             ))}

@@ -1,3 +1,4 @@
+import { hubspotSourceClient } from "@/lib/access-control/hubspot-source-client.server";
 import { loadChannelRuntime, assertChannelRuntime } from "./channel-runtime.server";
 import { personaForChannel } from "./channel-identity";
 import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
@@ -65,7 +66,7 @@ export async function loadKnowledge(admin: Admin, workspaceId: string) {
     admin.from("sdr_offers").select("*").eq("workspace_id", workspaceId).order("position"),
     admin
       .from("sdr_materials")
-      .select("id, title, approved, active, url, storage_path")
+      .select("id, title, approved, active, url, storage_path, kind, file_name, mime")
       .eq("workspace_id", workspaceId),
     admin
       .from("sdr_material_offers")
@@ -212,7 +213,12 @@ async function loadQualification(
 }
 
 /** ICP do lead com critérios do próprio workspace (o cliente admin não aplica RLS). */
-async function scopedIcpFit(admin: Admin, workspaceId: string, leadId: string) {
+async function scopedIcpFit(
+  admin: Admin,
+  workspaceId: string,
+  leadId: string,
+  crmClient: Admin = admin,
+) {
   const { computeIcpFit } = await import("@/lib/scoring/icp.server");
   const [{ data: criteria }, { data: lead }] = await Promise.all([
     admin
@@ -220,12 +226,17 @@ async function scopedIcpFit(admin: Admin, workspaceId: string, leadId: string) {
       .select("id, name, entity, field, op, value, points, enabled")
       .eq("workspace_id", workspaceId)
       .eq("enabled", true),
-    admin.from("leads").select("*").eq("id", leadId).eq("workspace_id", workspaceId).maybeSingle(),
+    crmClient
+      .from("leads")
+      .select("*")
+      .eq("id", leadId)
+      .eq("workspace_id", workspaceId)
+      .maybeSingle(),
   ]);
   if (!lead) return null;
   let company = null;
   if (lead.company_id) {
-    ({ data: company } = await admin
+    ({ data: company } = await crmClient
       .from("companies")
       .select("*")
       .eq("id", lead.company_id)
@@ -264,6 +275,69 @@ async function adoptLatestInbound(admin: Admin, job: Job): Promise<void> {
     .eq("id", job.id)
     .eq("lease_token", job.lease_token);
   if (error) console.error("[sdr] não foi possível assumir a mensagem mais recente", error.message);
+}
+
+export async function prepareSdrQualification(
+  admin: Admin,
+  p: {
+    workspaceId: string;
+    enrollment: Record<string, any>;
+    playbook: Record<string, any>;
+    config: import("./agent-config").AgentConfig;
+    questions: CanonicalQuestion[];
+    out: { answers: Parameters<typeof acceptAnswers>[1]; warnings: string[] };
+    inbound: ConversationMessage[];
+    crmClient?: Admin;
+  },
+) {
+  const { enrollment: enr, playbook, config: agentConfig, questions, out, inbound } = p;
+  const target = enr.lead_id
+    ? { entity: "lead" as const, id: enr.lead_id as string }
+    : enr.contact_id
+      ? { entity: "contact" as const, id: enr.contact_id as string }
+      : null;
+  let canonical: CanonicalScore | null = null;
+  let qualificationPayload: Record<string, unknown> | null = null;
+  let evidence: Record<string, unknown>[] = [];
+  if (playbook.questionnaire_id && target && questions.length && hasTool(agentConfig, "qualify")) {
+    const existing = await loadQualification(
+      admin,
+      p.workspaceId,
+      playbook.questionnaire_id,
+      target,
+    );
+    const { accepted, rejected } = acceptAnswers(questions, out.answers, inbound);
+    out.warnings.push(...rejected.slice(0, 5));
+    const merged = mergeAnswers(existing?.answers as Record<string, unknown> | null, accepted);
+    const icp =
+      target.entity === "lead"
+        ? await scopedIcpFit(admin, p.workspaceId, target.id, p.crmClient)
+        : null;
+    canonical = scoreCanonical(questions, merged.answers, icp);
+    if (merged.added.length) {
+      qualificationPayload = {
+        id: existing?.id ?? null,
+        expected_updated_at: existing?.updated_at ?? null,
+        expected_answers: existing?.answers ?? {},
+        questionnaire_id: playbook.questionnaire_id,
+        entity: target.entity,
+        entity_id: target.id,
+        answers: merged.answers,
+        score: canonical.score,
+        questionnaire_points: canonical.unified.questionnairePoints,
+        icp_points: canonical.unified.icpPoints,
+        total_score: canonical.unified.total,
+      };
+      evidence = merged.added.map((a) => ({
+        field: a.label.slice(0, 80),
+        question_id: a.question_id,
+        value: Array.isArray(a.value) ? a.value.join(" | ") : String(a.value),
+        message_id: a.message_id,
+        excerpt: a.excerpt,
+      }));
+    }
+  }
+  return { canonical, qualificationPayload, evidence, target };
 }
 
 export async function processJob(
@@ -565,6 +639,7 @@ export async function processJob(
     enr,
     playbookName: (playbook.name as string | null) ?? null,
     scheduling: selected.directBooking ? (toolCfg?.scheduling ?? null) : null,
+    crmClient: hubspotSourceClient(admin, { table: "sdr_enrollments", id: enr.id }),
   });
 
   if (channel.status === "active") context.channelIdentity = channel.identity;
@@ -645,50 +720,19 @@ export async function processJob(
 
   // Qualificação canônica: mesmo questionário, cálculo e linha da Prospecção.
   const inbound = history.filter((m) => m.direction === "inbound");
-  const target = enr.lead_id
-    ? { entity: "lead" as const, id: enr.lead_id as string }
-    : enr.contact_id
-      ? { entity: "contact" as const, id: enr.contact_id as string }
-      : null;
-  let canonical: CanonicalScore | null = null;
-  let qualificationPayload: Record<string, unknown> | null = null;
-  let evidence: Record<string, unknown>[] = [];
-  if (playbook.questionnaire_id && target && questions.length && hasTool(agentConfig, "qualify")) {
-    const existing = await loadQualification(
-      admin,
-      job.workspace_id,
-      playbook.questionnaire_id,
-      target,
-    );
-    const { accepted, rejected } = acceptAnswers(questions, out.answers, inbound);
-    out.warnings.push(...rejected.slice(0, 5));
-    const merged = mergeAnswers(existing?.answers as Record<string, unknown> | null, accepted);
-    const icp =
-      target.entity === "lead" ? await scopedIcpFit(admin, job.workspace_id, target.id) : null;
-    canonical = scoreCanonical(questions, merged.answers, icp);
-    if (merged.added.length) {
-      qualificationPayload = {
-        id: existing?.id ?? null,
-        expected_updated_at: existing?.updated_at ?? null,
-        expected_answers: existing?.answers ?? {},
-        questionnaire_id: playbook.questionnaire_id,
-        entity: target.entity,
-        entity_id: target.id,
-        answers: merged.answers,
-        score: canonical.score,
-        questionnaire_points: canonical.unified.questionnairePoints,
-        icp_points: canonical.unified.icpPoints,
-        total_score: canonical.unified.total,
-      };
-      evidence = merged.added.map((a) => ({
-        field: a.label.slice(0, 80),
-        question_id: a.question_id,
-        value: Array.isArray(a.value) ? a.value.join(" | ") : String(a.value),
-        message_id: a.message_id,
-        excerpt: a.excerpt,
-      }));
-    }
-  }
+  const { canonical, qualificationPayload, evidence, target } = await prepareSdrQualification(
+    admin,
+    {
+      workspaceId: job.workspace_id,
+      enrollment: enr,
+      playbook,
+      config: agentConfig,
+      questions,
+      out,
+      inbound,
+      crmClient: hubspotSourceClient(admin, { table: "sdr_enrollments", id: enr.id }),
+    },
+  );
   const offerNames = offers.filter((o) => out.offer_keys.includes(o.offer_key)).map((o) => o.name);
   const qualified = qualifiesForOpportunity({
     canonical,
@@ -1055,6 +1099,7 @@ export async function loadPromptContext(
     enr: Record<string, unknown>;
     playbookName: string | null;
     scheduling: ScheduleConfig | null;
+    crmClient?: Admin;
   },
 ): Promise<Omit<PromptContext, "state" | "facts" | "jobKind">> {
   const ws = p.workspaceId;
@@ -1072,7 +1117,7 @@ export async function loadPromptContext(
           .maybeSingle()
       : Promise.resolve({ data: null }),
     leadId || contactId
-      ? admin
+      ? (p.crmClient ?? admin)
           .from(contactId ? "contacts" : "leads")
           .select(
             contactId

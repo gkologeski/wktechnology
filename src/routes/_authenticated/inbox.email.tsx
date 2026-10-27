@@ -1,3 +1,4 @@
+import { ServiceAgentPanel } from "@/components/inbox/service-agent-panel";
 import { usePersonPhotos } from "@/hooks/use-person-photos";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -351,6 +352,11 @@ function EmailInbox() {
                     </Button>
                   </>
                 }
+              />
+              <ServiceAgentPanel
+                key={current.thread.id}
+                channel="email"
+                sourceId={current.thread.id}
               />
               {history.initial === "error" ? (
                 <InboxError onRetry={history.retryInitial}>

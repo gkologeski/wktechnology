@@ -1,3 +1,4 @@
+import { hubspotSourceClient } from "@/lib/access-control/hubspot-source-client.server";
 import { loadChannelRuntime } from "./channel-runtime.server";
 import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 // Efeitos externos do SDR: envio (com rechecagem), CRM sem duplicatas,
@@ -762,49 +763,89 @@ export async function ensureOpportunity(
     offerNames: string[];
   },
 ): Promise<string | null> {
+  await assertSalesWorker(admin, "sdr_enrollments", p.enrollment.id, [
+    ...(p.enrollment.deal_id ? [{ table: "deals", id: p.enrollment.deal_id }] : []),
+    ...(p.enrollment.contact_id ? [{ table: "contacts", id: p.enrollment.contact_id }] : []),
+    ...(p.enrollment.lead_id ? [{ table: "leads", id: p.enrollment.lead_id }] : []),
+  ]);
   if (p.enrollment.deal_id) return p.enrollment.deal_id;
-  let dealId: string | null = null;
-  if (p.enrollment.contact_id) {
-    const { data } = await admin
-      .from("deal_contacts")
-      .select("deal_id, deals!inner(id, workspace_id, stage)")
-      .eq("contact_id", p.enrollment.contact_id)
-      .eq("deals.workspace_id", p.workspaceId)
-      .not("deals.stage", "in", "(won,lost)")
-      .limit(1);
-    dealId = (data?.[0]?.deal_id as string | undefined) ?? null;
-  }
-  if (!dealId && p.enrollment.lead_id) {
-    const { data } = await admin
+  const crm = hubspotSourceClient(admin, { table: "sdr_enrollments", id: p.enrollment.id });
+  const checked = <T>(r: { data: T; error: { message: string } | null }) => {
+    if (r.error) throw new Error(r.error.message);
+    return r.data;
+  };
+  const open = (row: { id: string; stage?: string | null }) =>
+    typeof row.stage === "string" && !["won", "lost"].includes(row.stage);
+  // Recover an earlier creation before linking: retries never create a second opportunity.
+  const prior = checked(
+    await crm
       .from("deals")
-      .select("id")
+      .select("id,stage")
       .eq("workspace_id", p.workspaceId)
-      .eq("lead_id", p.enrollment.lead_id)
-      .not("stage", "in", "(won,lost)")
-      .limit(1);
-    dealId = (data?.[0]?.id as string | undefined) ?? null;
-  }
-  if (!dealId) {
-    const { data: created, error } = await admin
-      .from("deals")
-      .insert({
-        owner_id: p.enrollment.owner_id,
-        workspace_id: p.workspaceId,
-        name: p.title.slice(0, 200),
-        lead_id: p.enrollment.lead_id,
-        description: `Oportunidade identificada pelo SDR: ${p.offerNames.join(", ")}. Valor: sob proposta (a definir pelo especialista).`,
-        external_ids: { sdr_enrollment_id: p.enrollment.id },
-      })
-      .select("id")
-      .single();
-    if (error) throw new Error(`Falha ao criar negócio: ${error.message}`);
-    dealId = created.id as string;
-    if (p.enrollment.contact_id)
+      .contains("external_ids", { sdr_enrollment_id: p.enrollment.id })
+      .limit(1),
+  ) as { id: string; stage: string | null }[];
+  let dealId: string | null = prior[0]?.id ?? null;
+  if (!dealId && p.enrollment.contact_id) {
+    // Association IDs are only candidates; each deal is read through the actual source subject/RLS.
+    const candidates = checked(
       await admin
         .from("deal_contacts")
-        .insert({ deal_id: dealId, contact_id: p.enrollment.contact_id });
+        .select("deal_id")
+        .eq("contact_id", p.enrollment.contact_id)
+        .limit(200),
+    ) as { deal_id: string }[];
+    for (const candidate of candidates) {
+      const deal = checked(
+        await crm
+          .from("deals")
+          .select("id,stage")
+          .eq("workspace_id", p.workspaceId)
+          .eq("id", candidate.deal_id)
+          .maybeSingle(),
+      ) as { id: string; stage: string | null } | null;
+      if (deal && open(deal)) {
+        dealId = deal.id;
+        break;
+      }
+    }
   }
-  await admin.from("sdr_enrollments").update({ deal_id: dealId }).eq("id", p.enrollment.id);
+  if (!dealId && p.enrollment.lead_id) {
+    const candidates = checked(
+      await crm
+        .from("deals")
+        .select("id,stage")
+        .eq("workspace_id", p.workspaceId)
+        .eq("lead_id", p.enrollment.lead_id)
+        .limit(200),
+    ) as { id: string; stage: string | null }[];
+    dealId = candidates.find(open)?.id ?? null;
+  }
+  if (!dealId) {
+    await assertSalesWorker(admin, "sdr_enrollments", p.enrollment.id, [
+      { resource: "techsales.deals", action: "create" },
+    ]);
+    const created = checked(
+      await crm
+        .from("deals")
+        .insert({
+          workspace_id: p.workspaceId,
+          name: p.title.slice(0, 200),
+          lead_id: p.enrollment.lead_id,
+          description: `Oportunidade identificada pelo SDR: ${p.offerNames.join(", ")}. Valor: sob proposta (a definir pelo especialista).`,
+          external_ids: { sdr_enrollment_id: p.enrollment.id },
+        })
+        .select("id")
+        .single(),
+    ) as { id: string };
+    dealId = created.id;
+  }
+  const linked = await admin.rpc("sdr_link_opportunity", {
+    p_enrollment: p.enrollment.id,
+    p_deal: dealId,
+    p_contact: p.enrollment.contact_id,
+  });
+  if (linked.error) throw new Error(linked.error.message);
   await recordSdrAction(admin, {
     workspace_id: p.workspaceId,
     enrollment_id: p.enrollment.id,

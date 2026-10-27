@@ -19,6 +19,10 @@ const CORS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+function widgetPreflight() {
+  return new Response(null, { status: 204, headers: CORS });
+}
+
 async function loadSession(sessionId: string, visitorId: string) {
   const { data } = await supabaseAdmin
     .from("live_chat_sessions")
@@ -32,7 +36,7 @@ async function loadSession(sessionId: string, visitorId: string) {
 export const Route = createFileRoute("/api/public/widget/messages")({
   server: {
     handlers: {
-      OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
+      OPTIONS: async () => widgetPreflight(),
       GET: async ({ request }) => {
         const url = new URL(request.url);
         const sessionId = url.searchParams.get("session_id") ?? "";
@@ -44,13 +48,68 @@ export const Route = createFileRoute("/api/public/widget/messages")({
         if (!s) return Response.json({ error: "invalid session" }, { status: 403, headers: CORS });
         let q = supabaseAdmin
           .from("live_chat_messages")
-          .select("id, direction, body, created_at")
+          .select("id, direction, body, created_at, author_name, agent_attachments")
           .eq("session_id", sessionId)
           .order("created_at", { ascending: true })
           .limit(200);
         if (since) q = q.gt("created_at", since);
-        const { data } = await q;
-        return Response.json({ messages: data ?? [] }, { headers: CORS });
+        const { data, error } = await q;
+        if (error)
+          return Response.json({ error: "messages unavailable" }, { status: 503, headers: CORS });
+        const rows = (data ?? []) as any[];
+        const validId = (id: unknown): id is string =>
+          typeof id === "string" && /^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id);
+        const ids = [
+          ...new Set(
+            rows.flatMap((message) =>
+              (Array.isArray(message.agent_attachments) ? message.agent_attachments : [])
+                .slice(0, 10)
+                .map((item: any) => item?.material_id)
+                .filter(validId),
+            ),
+          ),
+        ];
+        const links = new Map<string, { title: string; url: string }>();
+        if (ids.length) {
+          const { data: found } = await supabaseAdmin
+            .from("sdr_materials")
+            .select("id,storage_path,title")
+            .in("id", ids)
+            .eq("workspace_id", s.owner_id)
+            .eq("active", true)
+            .eq("approved", true)
+            .eq("kind", "file");
+          const files = (found ?? []).filter((file) =>
+            file.storage_path?.startsWith(`${s.owner_id}/`),
+          );
+          if (files.length) {
+            const signed = await supabaseAdmin.storage.from("sdr-materials").createSignedUrls(
+              files.map((file) => file.storage_path!),
+              300,
+            );
+            for (const file of files) {
+              const url = signed.data?.find((item) => item.path === file.storage_path)?.signedUrl;
+              if (url) links.set(file.id, { title: file.title, url });
+            }
+          }
+        }
+        const messages = rows.map((message) => {
+          const attachments = (
+            Array.isArray(message.agent_attachments) ? message.agent_attachments : []
+          )
+            .slice(0, 10)
+            .map((item: any) => links.get(item?.material_id))
+            .filter(Boolean);
+          return {
+            id: message.id,
+            direction: message.direction,
+            body: message.body,
+            created_at: message.created_at,
+            author_name: message.author_name,
+            attachments,
+          };
+        });
+        return Response.json({ messages }, { headers: { ...CORS, "Cache-Control": "no-store" } });
       },
       POST: async ({ request }) => {
         try {

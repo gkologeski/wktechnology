@@ -1,3 +1,4 @@
+import { ServiceAgentPanel } from "@/components/inbox/service-agent-panel";
 import { usePersonPhotos } from "@/hooks/use-person-photos";
 import { formatDateTime } from "@/lib/crm";
 import { compactCount } from "@/lib/inbox/channel-page";
@@ -315,6 +316,7 @@ function LiveChatInbox() {
                   </>
                 }
               />
+              <ServiceAgentPanel key={current.id} channel="chat" sourceId={current.id} />
               <MessageHistoryViewport
                 resetKey={selected}
                 count={messages.length}
