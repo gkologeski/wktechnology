@@ -1,4 +1,5 @@
 import { withAssociationAccess } from "./access";
+import { unlinkDealContact } from "./unlink-deal-contact";
 import type { AssociationEntity } from "../associations-panel";
 import { useEffect, useState } from "react";
 import { useRefreshCallback } from "@/hooks/use-refresh-callback";

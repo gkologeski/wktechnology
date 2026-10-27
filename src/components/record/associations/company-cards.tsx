@@ -27,6 +27,7 @@ import {
   useAssociateWithPeriod,
 } from "./primitives";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
+import { unlinkDealContact } from "./unlink-deal-contact";
 
 /* ───────────── Company card (entity = contact|deal) ───────────── */
 
