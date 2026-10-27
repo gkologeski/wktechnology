@@ -498,6 +498,7 @@ export const getSdrAgentConfig = createServerFn({ method: "POST" })
         handoff_score: pb.handoff_score as number,
         opportunity_min_score: pb.opportunity_min_score as number,
         max_messages: pb.max_messages as number,
+        opt_out_phrases: ((pb as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
         follow_up_hours: pb.follow_up_hours as number,
         max_follow_ups: pb.max_follow_ups as number,
         business_hours: pb.business_hours as {
@@ -538,6 +539,9 @@ export const saveSdrAgentConfig = createServerFn({ method: "POST" })
           max_messages: z.number().int().min(1).max(20).optional(),
           follow_up_hours: z.number().int().min(1).max(720).optional(),
           max_follow_ups: z.number().int().min(0).max(10).optional(),
+          // Antes editados na aba Playbook; agora na Configuração do agente.
+          enabled: z.boolean().optional(),
+          opt_out_phrases: z.array(z.string().trim().min(1).max(80)).max(50).optional(),
           mode: z.enum(["supervised", "auto"]).optional(),
         })
         .default({}),

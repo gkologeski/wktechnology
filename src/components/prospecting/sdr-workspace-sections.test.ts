@@ -10,15 +10,21 @@ import {
 } from "./sdr-workspace-sections";
 
 describe("navegação do Agente SDR", () => {
-  it("mantém as nove seções anteriores, cada uma em exatamente uma área", () => {
+  it("tem oito seções, cada uma em exatamente uma área, sem a aba Playbook", () => {
     const ids = SDR_VIEWS.flatMap((v) => v.sections.map((s) => s.id));
-    expect(ids).toHaveLength(9);
-    expect(new Set(ids).size).toBe(9);
+    expect(ids).toHaveLength(8);
+    expect(new Set(ids).size).toBe(8);
+    expect(ids).not.toContain("playbook");
     expect(SDR_VIEWS.map((v) => v.id)).toEqual(["operation", "studio", "results"]);
   });
 
-  it("agrupa playbook e habilidades no Estúdio e supervisão na Operação", () => {
-    expect(viewOfSection("playbook").id).toBe("studio");
+  it("endereço antigo do Playbook abre a Configuração do agente", () => {
+    expect(parseSdrSection("playbook")).toBe("sdr-agent-config");
+    expect(viewOfSection(parseSdrSection("playbook")).id).toBe("studio");
+  });
+
+  it("agrupa configuração e habilidades no Estúdio e supervisão na Operação", () => {
+    expect(viewOfSection("sdr-agent-config").id).toBe("studio");
     expect(viewOfSection("sdr-skills").id).toBe("studio");
     expect(viewOfSection("sdr-supervision").id).toBe("operation");
     expect(viewOfSection("sdr-results").id).toBe("results");
@@ -33,7 +39,7 @@ describe("navegação do Agente SDR", () => {
   });
 
   it("conversa de teste fixa em todas as seções do Estúdio, exceto Persona (já tem a sua)", () => {
-    expect(hasStudioTestSide("playbook")).toBe(true);
+    expect(hasStudioTestSide("sdr-agent-config")).toBe(true);
     expect(hasStudioTestSide("sdr-skills")).toBe(true);
     expect(hasStudioTestSide("sdr-agent")).toBe(false);
     expect(hasStudioTestSide("sdr-supervision")).toBe(false);

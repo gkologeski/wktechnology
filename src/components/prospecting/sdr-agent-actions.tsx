@@ -1,10 +1,10 @@
-// Ações sobre o agente aberto: principal, editar nome, duplicar e excluir.
+// Ações sobre o agente: criar, principal, editar nome, duplicar e excluir.
 // A UI só espelha as permissões; o servidor revalida cada ação.
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Copy, Loader2, Pencil, Star, Trash2 } from "lucide-react";
+import { Copy, Loader2, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,7 +17,12 @@ import {
 } from "@/components/ui/dialog";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { usePermissions } from "@/lib/access-control/use-permissions";
-import { deletePlaybook, renamePlaybook, setDefaultPlaybook } from "@/lib/sdr-agent.functions";
+import {
+  deletePlaybook,
+  renamePlaybook,
+  setDefaultPlaybook,
+  upsertPlaybook,
+} from "@/lib/sdr-agent.functions";
 import { duplicateSdrAgent } from "@/lib/prospecting/sdr-agent.functions";
 
 const P = "techsales.marketing.sdr_agent";
@@ -184,7 +189,8 @@ export function SdrAgentActions({
         <DialogContent>
           <DialogTitle>Editar agente</DialogTitle>
           <DialogDescription>
-            Persona e tom ficam em "Persona e teste"; regras de canal e sequência ficam no Playbook.
+            Persona e tom ficam em "Persona e teste"; situação, roteiro, número de WhatsApp e regras
+            ficam em "Configuração do agente".
           </DialogDescription>
           <div className="space-y-1.5">
             <Label htmlFor="sdr-agent-name">Nome do agente</Label>
@@ -204,6 +210,94 @@ export function SdrAgentActions({
               Salvar
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
+const NEW_AGENT_PROMPT =
+  "Avalie de 0 a 100 o interesse do lead em comprar nosso produto, com base nas respostas.";
+
+/**
+ * Cria um agente só com o nome; o resto é ajustado em "Configuração do agente".
+ * Nasce ativo, sem número de WhatsApp e sem persona publicada, então não atende
+ * ninguém até ser configurado. O servidor revalida a permissão de criação.
+ */
+export function SdrNewAgentButton({ onCreated }: { onCreated: (id: string) => void }) {
+  const qc = useQueryClient();
+  const permissions = usePermissions();
+  const create = useServerFn(upsertPlaybook);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const canCreate = permissions.canAny(CREATE_KEYS);
+
+  const createM = useMutation({
+    mutationFn: () =>
+      create({
+        data: { name: name.trim(), enabled: true, qualification_prompt: NEW_AGENT_PROMPT },
+      }),
+    onSuccess: async (r) => {
+      const id = (r.item as { id: string }).id;
+      toast.success("Agente criado", {
+        description: "Configure o roteiro, a persona e o número de WhatsApp antes de usá-lo.",
+      });
+      setOpen(false);
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["sdr-overview"] }),
+        qc.invalidateQueries({ queryKey: ["sdr-playbooks"] }),
+      ]);
+      onCreated(id);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  return (
+    <>
+      <Button
+        onClick={() => {
+          setName("");
+          setOpen(true);
+        }}
+        disabled={!canCreate}
+        title={canCreate ? undefined : "Você não tem permissão para criar agentes."}
+      >
+        <Plus className="h-4 w-4 mr-1" aria-hidden="true" /> Novo agente
+      </Button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogTitle>Novo agente</DialogTitle>
+          <DialogDescription>
+            Depois de criar, você ajusta tudo em "Configuração do agente" e em "Persona e teste".
+          </DialogDescription>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (name.trim() && !createM.isPending) createM.mutate();
+            }}
+          >
+            <div className="space-y-1.5">
+              <Label htmlFor="sdr-new-agent-name">Nome do agente</Label>
+              <Input
+                id="sdr-new-agent-name"
+                value={name}
+                maxLength={120}
+                required
+                autoFocus
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={!name.trim() || createM.isPending}>
+                {createM.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
+                Criar agente
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </>

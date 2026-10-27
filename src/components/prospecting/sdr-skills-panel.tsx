@@ -70,7 +70,9 @@ export function SdrSkillsPanel({
       ? picked
       : pickDefaultAgent(playbooks, defaultPlaybookId);
   if (!playbooks.length)
-    return <EmptyState title="Nenhum agente ainda" description="Crie um agente na aba Playbook." />;
+    return (
+      <EmptyState title="Nenhum agente ainda" description="Use “Novo agente” no topo da página." />
+    );
   return (
     <div className="space-y-4">
       {!controlled && (
