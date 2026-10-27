@@ -1,3 +1,4 @@
+import { resolveCloudNumber, sendCloudPayload } from "./cloud-runtime.server";
 // Canal único de WhatsApp: conexão WhatsApp Business do Lovable.
 // Resolve o número conectado do workspace, envia texto/mídia/template e
 // marca mensagens como lidas. Não há mais envio via Twilio.
@@ -15,6 +16,9 @@ export { WA_NOT_CONNECTED_MESSAGE };
 export type WaNumber = {
   phoneNumberId: string;
   displayPhoneNumber: string;
+  provider?: "cloud";
+  workspaceId?: string;
+  connectionId?: string;
 };
 
 export function normalizePhone(raw: string): string {
@@ -36,11 +40,19 @@ export function applyPositionalTemplate(body: string, vars: string[]): string {
  * Parâmetros mantidos por compatibilidade com os chamadores.
  */
 export async function resolveWaNumber(
-  _workspaceId?: string,
-  _preferredPhoneNumberId?: string | null,
+  workspaceId?: string,
+  preferredPhoneNumberId?: string | null,
 ): Promise<WaNumber> {
+  if (workspaceId && preferredPhoneNumberId) {
+    const cloud = await resolveCloudNumber(workspaceId, preferredPhoneNumberId);
+    if (cloud) return cloud;
+  }
   if (!gatewayConfigured()) throw new Error(WA_NOT_CONNECTED_MESSAGE);
   const info = await getConnectedPhone();
+  if (preferredPhoneNumberId && preferredPhoneNumberId !== info.id)
+    throw new Error(
+      "O número desta conversa não está conectado. Não é permitido trocar o remetente automaticamente.",
+    );
   return {
     phoneNumberId: info.id,
     displayPhoneNumber: normalizePhone(info.display_phone_number),
@@ -136,14 +148,26 @@ export async function metaSend(
 
   if (payload.contextMessageId) body.context = { message_id: payload.contextMessageId };
 
-  void num;
+  if (num.provider === "cloud") {
+    if (!num.workspaceId) throw new Error("Workspace do remetente ausente.");
+    const res = await sendCloudPayload(num.workspaceId, num.phoneNumberId, body);
+    return { wamid: (res?.messages?.[0]?.id as string) ?? null, raw: res };
+  }
   const res = await gatewayFetch("/messages", { method: "POST", body: JSON.stringify(body) });
   return { wamid: (res?.messages?.[0]?.id as string) ?? null, raw: res };
 }
 
 /** Marca uma mensagem recebida como lida na Meta (métricas corretas). */
 export async function metaMarkRead(num: WaNumber, wamid: string): Promise<void> {
-  void num;
+  if (num.provider === "cloud") {
+    if (!num.workspaceId) throw new Error("Workspace do remetente ausente.");
+    await sendCloudPayload(num.workspaceId, num.phoneNumberId, {
+      messaging_product: "whatsapp",
+      status: "read",
+      message_id: wamid,
+    });
+    return;
+  }
   await gatewayFetch("/messages", {
     method: "POST",
     body: JSON.stringify({ messaging_product: "whatsapp", status: "read", message_id: wamid }),
@@ -179,11 +203,13 @@ export async function findConversationNumber(
       .select("wa_phone_number_id, last_inbound_at, last_message_at")
       .eq("workspace_id", workspaceId)
       .eq("id", conversationId)
+      .in("contact_phone", brPhoneVariants(phoneE164))
       .maybeSingle();
     if (data) {
       const row = data as Row;
       return { phoneNumberId: row.wa_phone_number_id ?? null, lastInboundAt: row.last_inbound_at };
     }
+    throw new Error("Conversa indisponível para este destinatário.");
   }
   const { data } = await supabase
     .from("whatsapp_conversations")

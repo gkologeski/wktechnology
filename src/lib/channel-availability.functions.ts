@@ -9,16 +9,27 @@ export const getChannelAvailability = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<ChannelAvailability> => {
     const { supabase, userId } = context;
     const ws = await resolveActiveWorkspace(userId);
+    const membership = await supabase.rpc("is_workspace_member", { _workspace: ws, _user: userId });
+    if (membership.error || !membership.data) throw new Error("Membro ativo obrigatório.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
     const { gatewayConfigured, getConnectedPhone } =
       await import("@/lib/whatsapp/gateway-channel.server");
-    const waCheck = gatewayConfigured()
-      ? getConnectedPhone().then(
-          () => ({ ready: true }),
-          () => ({ ready: false, reason: "Conexão do WhatsApp com falha" }),
-        )
-      : Promise.resolve({ ready: false, reason: "WhatsApp não configurado" });
+    const cloud = await (supabaseAdmin as any)
+      .from("wa_cloud_connections")
+      .select("id")
+      .eq("workspace_id", ws)
+      .eq("enabled", true)
+      .limit(1);
+    const waCheck =
+      !cloud.error && cloud.data?.length
+        ? Promise.resolve({ ready: true })
+        : gatewayConfigured()
+          ? getConnectedPhone().then(
+              () => ({ ready: true }),
+              () => ({ ready: false, reason: "Conexão do WhatsApp com falha" }),
+            )
+          : Promise.resolve({ ready: false, reason: "WhatsApp não configurado" });
 
     const [wa, mail, cal, health] = await Promise.all([
       waCheck,

@@ -69,6 +69,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
         to: z.string().min(5),
         body: z.string().max(4096).optional().default(""),
         contactId: z.string().uuid().optional(),
+        conversationId: z.string().uuid().optional(),
         mediaUrl: z.string().url().optional(),
         mediaContentType: z.string().max(120).optional(),
         templateName: z.string().optional(),
@@ -91,7 +92,12 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       await import("@/lib/whatsapp/meta-channel.server");
 
     const toBare = normalizePhone(data.to);
-    const existing = await findConversationNumber(supabase, workspaceId, toBare);
+    const existing = await findConversationNumber(
+      supabase,
+      workspaceId,
+      toBare,
+      data.conversationId ?? null,
+    );
 
     if (!isWithinServiceWindow(existing?.lastInboundAt) && !data.templateName) {
       return {
@@ -114,6 +120,7 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       try {
         approvedList = await loadApprovedTemplates(supabase, workspaceId, {
           language: data.templateLanguage ?? null,
+          phoneNumberId: existing?.phoneNumberId ?? null,
         });
       } catch (e) {
         console.error("[whatsapp] catálogo de modelos indisponível", (e as Error).message);
@@ -548,7 +555,13 @@ export const getWhatsAppTemplateCatalog = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.inbox.whatsapp", "view")])
   .inputValidator((input) =>
     z
-      .object({ language: z.string().max(10).nullish() })
+      .object({
+        language: z.string().max(10).nullish(),
+        phoneNumberId: z
+          .string()
+          .regex(/^\d{5,30}$/)
+          .nullish(),
+      })
       .default({})
       .parse(input ?? {}),
   )
@@ -558,9 +571,14 @@ export const getWhatsAppTemplateCatalog = createServerFn({ method: "POST" })
     const { loadTemplateCatalog } = await import("@/lib/whatsapp/templates.server");
     const { describeTemplate } = await import("@/lib/whatsapp/template-shape");
     const { gatewayConfigured } = await import("@/lib/whatsapp/gateway-channel.server");
-    const channelReady = gatewayConfigured();
+    const channelReady = data.phoneNumberId
+      ? !!(await (
+          await import("@/lib/whatsapp/meta-channel.server")
+        ).resolveWaNumber(workspaceId, data.phoneNumberId))
+      : gatewayConfigured();
     const catalog = await loadTemplateCatalog(supabase, workspaceId, {
       language: data.language ?? null,
+      phoneNumberId: data.phoneNumberId ?? null,
     });
     return {
       workspaceId,

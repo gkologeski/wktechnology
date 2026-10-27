@@ -16,6 +16,12 @@ const CreateInput = z.object({
   name: z.string().min(1).max(120),
   body_template: z.string().max(1600).optional().default(""),
   template_name: z.string().max(60).optional(),
+  sender_phone_number_id: z
+    .string()
+    .regex(/^\d{5,30}$/)
+    .nullable()
+    .optional(),
+  consent_evidence: z.string().trim().min(10).max(2000).nullable().optional(),
   template_language: z.string().max(10).optional(),
   content_variables_template: z.record(z.string(), z.string()).optional(),
   media_url: z.string().url().optional().or(z.literal("")),
@@ -315,6 +321,8 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         name: data.name,
         body_template: data.body_template || null,
         template_name: data.template_name || null,
+        sender_phone_number_id: data.sender_phone_number_id ?? null,
+        consent_evidence: data.consent_evidence ?? null,
         template_language: data.template_language || null,
         content_variables_template: data.content_variables_template ?? {},
         media_url: data.media_url || null,
@@ -443,6 +451,12 @@ const UpdateInput = z.object({
   name: z.string().min(1).max(120).optional(),
   body_template: z.string().max(1600).nullable().optional(),
   template_name: z.string().max(60).nullable().optional(),
+  sender_phone_number_id: z
+    .string()
+    .regex(/^\d{5,30}$/)
+    .nullable()
+    .optional(),
+  consent_evidence: z.string().trim().min(10).max(2000).nullable().optional(),
   template_language: z.string().max(10).nullable().optional(),
   content_variables_template: z.record(z.string(), z.string()).optional(),
   media_url: z.string().url().nullable().optional().or(z.literal("")),
@@ -485,6 +499,9 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
     if (data.name !== undefined) patch.name = data.name;
     if (data.body_template !== undefined) patch.body_template = data.body_template || null;
     if (data.template_name !== undefined) patch.template_name = data.template_name || null;
+    if (data.sender_phone_number_id !== undefined)
+      patch.sender_phone_number_id = data.sender_phone_number_id;
+    if (data.consent_evidence !== undefined) patch.consent_evidence = data.consent_evidence;
     if (data.template_language !== undefined)
       patch.template_language = data.template_language || null;
     if (data.content_variables_template !== undefined)
@@ -715,7 +732,7 @@ export const getWhatsAppCampaignForEdit = createServerFn({ method: "POST" })
     const { data: camp, error } = await context.supabase
       .from("whatsapp_campaigns")
       .select(
-        "id, status, total, body_template, template_name, media_url, sdr_playbook_id, recent_contact_days, exclude_customers, exclude_open_deals, audience_config",
+        "id, status, total, body_template, template_name, sender_phone_number_id, consent_evidence, media_url, sdr_playbook_id, recent_contact_days, exclude_customers, exclude_open_deals, audience_config",
       )
       .eq("id", data.id)
       .single();

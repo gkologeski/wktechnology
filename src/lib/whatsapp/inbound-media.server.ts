@@ -1,3 +1,4 @@
+import { downloadCloudMedia } from "./cloud-runtime.server";
 // Baixa mídia recebida pelo gateway e guarda no armazenamento privado.
 import { INBOUND_MEDIA_TYPES, MAX_INBOUND_MEDIA_BYTES } from "./inbound-media";
 
@@ -47,26 +48,36 @@ export async function storeInboundMedia(
   if (!m || !(INBOUND_MEDIA_TYPES as readonly string[]).includes(m.type)) return "skip";
   const media = m[m.type];
   if (!media?.id) return "skip";
-  const h = headers();
-  const metaRes = await fetch(`${GATEWAY_URL}/media/${encodeURIComponent(media.id)}`, {
-    headers: h,
-  });
-  if (metaRes.status === 404 || metaRes.status === 400) {
-    await admin
-      .from("whatsapp_messages")
-      .update({ media_url: "unavailable", media_content_type: media.mime_type ?? null })
-      .eq("id", msg.id);
-    return "unavailable";
+  const cloud = m._cloud_phone_number_id
+    ? await downloadCloudMedia(msg.workspace_id, m._cloud_phone_number_id, media.id)
+    : null;
+  let info: { url?: string; mime_type?: string; file_size?: number };
+  let dl: Response;
+  if (cloud) {
+    info = cloud.info;
+    dl = cloud.response;
+  } else {
+    const h = headers();
+    const metaRes = await fetch(`${GATEWAY_URL}/media/${encodeURIComponent(media.id)}`, {
+      headers: h,
+    });
+    if (metaRes.status === 404 || metaRes.status === 400) {
+      await admin
+        .from("whatsapp_messages")
+        .update({ media_url: "unavailable", media_content_type: media.mime_type ?? null })
+        .eq("id", msg.id);
+      return "unavailable";
+    }
+    if (!metaRes.ok) throw new Error(`Mídia [${metaRes.status}]: ${await metaRes.text()}`);
+    info = (await metaRes.json()) as { url?: string; mime_type?: string; file_size?: number };
+    if (!info.url) throw new Error("Mídia sem endereço");
+    if (info.file_size && info.file_size > MAX_INBOUND_MEDIA_BYTES)
+      throw new Error("Arquivo maior que 16 MB");
+    dl = await fetch(`${GATEWAY_URL}/media_download`, {
+      headers: { ...h, "X-WhatsApp-Media-URL": info.url },
+    });
+    if (!dl.ok) throw new Error(`Download [${dl.status}]: ${await dl.text()}`);
   }
-  if (!metaRes.ok) throw new Error(`Mídia [${metaRes.status}]: ${await metaRes.text()}`);
-  const info = (await metaRes.json()) as { url?: string; mime_type?: string; file_size?: number };
-  if (!info.url) throw new Error("Mídia sem endereço");
-  if (info.file_size && info.file_size > MAX_INBOUND_MEDIA_BYTES)
-    throw new Error("Arquivo maior que 16 MB");
-  const dl = await fetch(`${GATEWAY_URL}/media_download`, {
-    headers: { ...h, "X-WhatsApp-Media-URL": info.url },
-  });
-  if (!dl.ok) throw new Error(`Download [${dl.status}]: ${await dl.text()}`);
   const bytes = await readLimited(dl);
   const contentType =
     info.mime_type ||

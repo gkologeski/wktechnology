@@ -29,6 +29,13 @@ async function resolveWorkspace(
   phoneNumberId?: string | null,
 ) {
   if (phoneNumberId) {
+    const { data: cloud, error: cloudError } = await admin
+      .from("wa_cloud_numbers")
+      .select("workspace_id")
+      .eq("phone_number_id", phoneNumberId)
+      .maybeSingle();
+    if (cloudError) throw new Retry("Cloud number lookup failed");
+    if (cloud?.workspace_id) return { id: null, workspace_id: cloud.workspace_id as string };
     const { data: configured } = await admin
       .from("wa_phone_numbers")
       .select("workspace_id")
@@ -77,11 +84,13 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
   const ourPhone = normalizePhone(value?.metadata?.display_phone_number ?? "");
   let workspaceId: string | null = null;
   for (const m of value?.messages ?? []) {
-    const { data: dup } = await admin
+    let duplicateQuery = admin
       .from("whatsapp_messages")
       .select("id, conversation_id, workspace_id, body")
-      .eq("wa_message_id", m.id)
-      .maybeSingle();
+      .eq("wa_message_id", m.id);
+    if (value._verified_workspace_id)
+      duplicateQuery = duplicateQuery.eq("workspace_id", value._verified_workspace_id);
+    const { data: dup } = await duplicateQuery.maybeSingle();
     if (dup) {
       // Reentrega: reenfileira de forma idempotente caso a tentativa anterior tenha parado no meio.
       if (dup.workspace_id && dup.conversation_id) {
@@ -180,7 +189,7 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
         context_message_id: m.context?.id ?? null,
         media_content_type: media?.mime_type ?? null,
         status: "received",
-        raw: m,
+        raw: { ...m, _cloud_phone_number_id: value?.metadata?.phone_number_id },
       })
       .select("id")
       .single();
@@ -190,7 +199,7 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
       await storeInboundMedia(admin, {
         id: inserted.id,
         workspace_id: ws.workspace_id,
-        raw: m,
+        raw: { ...m, _cloud_phone_number_id: value?.metadata?.phone_number_id },
       }).catch((e) => console.error("[whatsapp-media]", (e as Error).message));
     await suggestCompanyLeftSafe(admin, {
       workspaceId: ws.workspace_id,
@@ -226,11 +235,13 @@ async function sdrIngest(admin: Admin, p: Parameters<typeof ingestInboundForSdr>
 async function handleStatuses(admin: Admin, value: any): Promise<string | null> {
   let workspaceId: string | null = null;
   for (const s of value?.statuses ?? []) {
-    const { data: msg, error } = await admin
+    let statusQuery = admin
       .from("whatsapp_messages")
       .select("id, status, workspace_id, delivered_at, read_at")
-      .eq("wa_message_id", s.id)
-      .maybeSingle();
+      .eq("wa_message_id", s.id);
+    if (value._verified_workspace_id)
+      statusQuery = statusQuery.eq("workspace_id", value._verified_workspace_id);
+    const { data: msg, error } = await statusQuery.maybeSingle();
     if (error) throw new Retry(error.message);
     // Status chegou antes do registro do envio: fica pendente para nova tentativa.
     if (!msg) throw new Retry("Mensagem enviada ainda não registrada");

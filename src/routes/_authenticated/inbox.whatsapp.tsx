@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { compactCount } from "@/lib/inbox/channel-page";
 import { useInboxChannelPage } from "@/hooks/use-inbox-channel-page";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -123,6 +124,7 @@ export const Route = createFileRoute("/_authenticated/inbox/whatsapp")({
 });
 
 function WhatsAppInbox() {
+  const permissions = usePermissions();
   const openActivity = useActivityWindows();
   const qc = useQueryClient();
   const { user } = useAuth();
@@ -303,13 +305,25 @@ function WhatsAppInbox() {
       templateVariables?: string[];
       templateHeaderVariables?: string[];
     }) =>
-      sendFn({ data: input }).then((res) => {
-        if (!res.ok) {
-          if (res.code === "TEMPLATE_REQUIRED") setTemplateRequired(true);
-          throw new Error(res.error);
-        }
-        return res;
-      }),
+      Promise.resolve()
+        .then(() => {
+          if (
+            !permissions.canAny([
+              "techsales.inbox.whatsapp.create.own",
+              "techsales.inbox.whatsapp.create.team",
+              "techsales.inbox.whatsapp.create.workspace",
+            ])
+          )
+            throw new Error("Sem permissão para enviar WhatsApp.");
+          return sendFn({ data: { ...input, conversationId: selected ?? undefined } });
+        })
+        .then((res) => {
+          if (!res.ok) {
+            if (res.code === "TEMPLATE_REQUIRED") setTemplateRequired(true);
+            throw new Error(res.error);
+          }
+          return res;
+        }),
     onSuccess: (res) => {
       setDraft("");
       messageDraft.clearAfterSend();

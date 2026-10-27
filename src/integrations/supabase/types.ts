@@ -25340,6 +25340,8 @@ export type Database = {
           started_at: string | null
           status: string
           template_language: string | null
+          consent_evidence: string | null
+          sender_phone_number_id: string | null
           template_name: string | null
           total: number
           updated_at: string
@@ -25374,6 +25376,8 @@ export type Database = {
           started_at?: string | null
           status?: string
           template_language?: string | null
+          consent_evidence?: string | null
+          sender_phone_number_id?: string | null
           template_name?: string | null
           total?: number
           updated_at?: string
@@ -25408,6 +25412,8 @@ export type Database = {
           started_at?: string | null
           status?: string
           template_language?: string | null
+          consent_evidence?: string | null
+          sender_phone_number_id?: string | null
           template_name?: string | null
           total?: number
           updated_at?: string

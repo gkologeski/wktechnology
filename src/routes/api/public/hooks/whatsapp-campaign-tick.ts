@@ -27,6 +27,7 @@ type Campaign = {
   owner_id: string;
   body_template: string | null;
   template_name: string | null;
+  sender_phone_number_id?: string | null;
   template_language: string | null;
   content_variables_template: Record<string, string>;
   media_url: string | null;
@@ -90,7 +91,9 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
   // Número oficial da Meta do workspace (obrigatório).
   let num: WaNumber;
   try {
-    num = await resolveWaNumber(camp.workspace_id);
+    num = await resolveWaNumber(camp.workspace_id, camp.sender_phone_number_id ?? null);
+    if (num.provider === "cloud" && !camp.template_name)
+      throw new Error("Campanhas Meta diretas exigem template aprovado.");
   } catch (e) {
     const message = e instanceof Error ? e.message : "Número da Meta indisponível";
     await supabaseAdmin
@@ -193,6 +196,22 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
       if (res !== "ok") continue;
     }
     const toBare = normalizePhone(r.phone);
+    const { brPhoneVariants } = await import("@/lib/whatsapp/phone-variants");
+    const optedOut = await supabaseAdmin
+      .from("sdr_enrollments")
+      .select("id")
+      .eq("workspace_id", camp.workspace_id)
+      .in("contact_phone", brPhoneVariants(toBare))
+      .not("opted_out_at", "is", null)
+      .limit(1);
+    if (optedOut.error) throw new Error("Não foi possível verificar descadastramento.");
+    if (optedOut.data?.length) {
+      await supabaseAdmin
+        .from("whatsapp_campaign_recipients")
+        .update({ status: "skipped", error: "Contato descadastrado em outro atendimento" })
+        .eq("id", r.id);
+      continue;
+    }
     const vars = (r.variables ?? {}) as Record<string, string>;
     const body = applyTemplate(camp.body_template ?? "", vars);
 
@@ -306,6 +325,13 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         }
       }
     } catch (e) {
+      if (num.provider === "cloud") {
+        // Never retry a rejected/uncertain delivery on another phone number.
+        await supabaseAdmin
+          .from("whatsapp_campaigns")
+          .update({ status: "paused", last_tick_at: new Date().toISOString() })
+          .eq("id", camp.id);
+      }
       await supabaseAdmin
         .from("whatsapp_campaign_recipients")
         .update({
@@ -315,6 +341,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         })
         .eq("id", r.id);
       failedInc += 1;
+      if (num.provider === "cloud") break;
     }
   }
 
@@ -336,7 +363,8 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
     await supabaseAdmin
       .from("whatsapp_campaigns")
       .update({ status: "completed", finished_at: new Date().toISOString() })
-      .eq("id", camp.id);
+      .eq("id", camp.id)
+      .eq("status", "running");
   }
 
   return { processed: recips.length, sent: sentInc, failed: failedInc };
@@ -396,7 +424,7 @@ export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")
           const { data: camps, error } = await supabaseAdmin
             .from("whatsapp_campaigns")
             .select(
-              "id, owner_id, body_template, template_name, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, recent_contact_days, exclude_customers, exclude_open_deals",
+              "id, owner_id, body_template, template_name, sender_phone_number_id, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, recent_contact_days, exclude_customers, exclude_open_deals",
             )
             .eq("status", "running")
             .or(`scheduled_at.is.null,scheduled_at.lte.${nowIso}`)

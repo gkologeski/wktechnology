@@ -77,7 +77,7 @@ export function useWhatsAppComposer(opts: {
   const catalogFn = useServerFn(getWhatsAppTemplateCatalog);
   const templatesQ = useQuery({
     queryKey: waTemplatesKey(workspaceId, channel, language),
-    queryFn: () => catalogFn({ data: { language } }),
+    queryFn: () => catalogFn({ data: { language, phoneNumberId: channel } }),
     enabled:
       enabled &&
       channelReady === true &&
