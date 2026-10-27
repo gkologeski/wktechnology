@@ -133,7 +133,7 @@ function MeetingsTable({ rows }: { rows: Results["meetings"] }) {
       />
     );
   return (
-    <div className="overflow-x-auto rounded-lg border bg-card">
+    <div className="relative overflow-x-auto rounded-lg border bg-card">
       <table className="w-full text-sm">
         <caption className="sr-only">Reuniões marcadas pelo Agente SDR</caption>
         <thead className="text-left text-xs text-muted-foreground">
@@ -264,7 +264,7 @@ function QualificationsTable({ rows }: { rows: Results["qualifications"] }) {
       />
     );
   return (
-    <div className="overflow-x-auto rounded-lg border bg-card">
+    <div className="relative overflow-x-auto rounded-lg border bg-card">
       <table className="w-full text-sm">
         <caption className="sr-only">Qualificações feitas pelo Agente SDR</caption>
         <thead className="text-left text-xs text-muted-foreground">
@@ -306,7 +306,7 @@ function QualificationsTable({ rows }: { rows: Results["qualifications"] }) {
                 className="whitespace-nowrap p-3 text-right tabular-nums"
                 title={q.questionnaire ?? undefined}
               >
-                {q.total}/{LEAD_SCORE_MAX}
+                {q.total.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}/{LEAD_SCORE_MAX}
               </td>
               <td className="p-3">{leadScoreBandLabel(q.total)}</td>
               <td className="p-3">{qualificationDecisionLabel(q.decision)}</td>
