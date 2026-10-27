@@ -1,6 +1,7 @@
 // Habilidades e ferramentas por agente: liga/desliga, prontidão real,
 // anfitrião/agenda do agendamento direto, teste simulado e registro.
 import { useSdrPlaybooks } from "@/hooks/use-default-sdr-agent";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   agentOptionLabel,
   pickDefaultAgent,
@@ -54,34 +55,41 @@ const STATUS_PT: Record<string, string> = {
 
 export function SdrSkillsPanel({
   playbooks,
+  agentId,
 }: {
   playbooks: { id: string; name: string; enabled: boolean }[];
+  /** Agente escolhido na barra do Estúdio; sem ela, a seção mostra seletor próprio. */
+  agentId?: string | null;
 }) {
   const [picked, setPicked] = useState<string | null>(null);
   const { defaultPlaybookId } = useSdrPlaybooks();
-  const playbookId =
-    picked && playbooks.some((p) => p.id === picked)
+  const controlled = agentId !== undefined;
+  const playbookId = controlled
+    ? agentId
+    : picked && playbooks.some((p) => p.id === picked)
       ? picked
       : pickDefaultAgent(playbooks, defaultPlaybookId);
   if (!playbooks.length)
     return <EmptyState title="Nenhum agente ainda" description="Crie um agente na aba Playbook." />;
   return (
     <div className="space-y-4">
-      <div className="flex w-full max-w-md flex-col gap-1.5">
-        <Label htmlFor="sdr-skills-agent">Agente</Label>
-        <Select value={playbookId ?? undefined} onValueChange={setPicked}>
-          <SelectTrigger id="sdr-skills-agent">
-            <SelectValue placeholder="Escolha o agente" />
-          </SelectTrigger>
-          <SelectContent>
-            {sortDefaultFirst(playbooks, defaultPlaybookId).map((p) => (
-              <SelectItem key={p.id} value={p.id}>
-                {agentOptionLabel(p, defaultPlaybookId)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {!controlled && (
+        <div className="flex w-full max-w-md flex-col gap-1.5">
+          <Label htmlFor="sdr-skills-agent">Agente</Label>
+          <Select value={playbookId ?? undefined} onValueChange={setPicked}>
+            <SelectTrigger id="sdr-skills-agent">
+              <SelectValue placeholder="Escolha o agente" />
+            </SelectTrigger>
+            <SelectContent>
+              {sortDefaultFirst(playbooks, defaultPlaybookId).map((p) => (
+                <SelectItem key={p.id} value={p.id}>
+                  {agentOptionLabel(p, defaultPlaybookId)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
       {playbookId && <SkillsForm key={playbookId} playbookId={playbookId} />}
     </div>
   );
@@ -117,7 +125,15 @@ function defaultSchedule(c: Catalog): NonNullable<ToolConfig["scheduling"]> | nu
   };
 }
 
+const SDR_UPDATE_KEYS = [
+  "techsales.marketing.sdr_agent.update.own",
+  "techsales.marketing.sdr_agent.update.team",
+  "techsales.marketing.sdr_agent.update.workspace",
+];
+
 function SkillsForm({ playbookId }: { playbookId: string }) {
+  // Espelho da permissão; o servidor (saveSdrToolConfig) revalida.
+  const canSave = usePermissions().canAny(SDR_UPDATE_KEYS);
   const fetchCat = useServerFn(getSdrToolCatalog);
   const save = useServerFn(saveSdrToolConfig);
   const test = useServerFn(testSdrTool);
@@ -577,7 +593,11 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
       </section>
 
       <div className="flex justify-end">
-        <Button onClick={onSave} disabled={saving}>
+        <Button
+          onClick={onSave}
+          disabled={saving || !canSave}
+          title={canSave ? undefined : "Você não tem permissão para editar este agente."}
+        >
           {saving ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (

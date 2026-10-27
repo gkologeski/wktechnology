@@ -371,6 +371,80 @@ export const testSdrAgent = createServerFn({ method: "POST" })
     };
   });
 
+/**
+ * Duplica um agente com todo o conteúdo (playbook, configuração, ferramentas e
+ * persona). A cópia nasce desativada, só com rascunho e sem número de canal.
+ */
+export const duplicateSdrAgent = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.marketing.sdr_agent", "create")])
+  .inputValidator((i) => z.object({ playbookId: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertSalesRecord(context.supabase, "sdr_playbooks", data.playbookId, "view");
+    const { requireSdr } = await import("@/lib/prospecting/sdr/access.server");
+    const { playbookCopyFields, personaCopy } =
+      await import("@/lib/prospecting/sdr/duplicate-agent");
+    const { supabase, userId } = context;
+    const ws = await requireSdr(supabase, userId, "create");
+    const { data: ro } = await supabase.rpc("is_read_only_view");
+    if (ro) throw new Error("No modo Ver como não é possível duplicar agentes.");
+
+    const [src, names, versions] = await Promise.all([
+      supabase
+        .from("sdr_playbooks")
+        .select("*")
+        .eq("id", data.playbookId)
+        .eq("workspace_id", ws)
+        .maybeSingle(),
+      supabase.from("sdr_playbooks").select("name").eq("workspace_id", ws),
+      supabase
+        .from("sdr_agent_versions")
+        .select("status, persona, flow, tool_config, notes")
+        .eq("playbook_id", data.playbookId)
+        .eq("workspace_id", ws)
+        .in("status", ["draft", "published"]),
+    ]);
+    for (const r of [src, names, versions]) if (r.error) throw new Error(r.error.message);
+    if (!src.data) throw new Error("Agente não encontrado neste workspace.");
+
+    const fields = playbookCopyFields(
+      src.data as Record<string, unknown>,
+      (names.data ?? []).map((n) => String(n.name ?? "")),
+    );
+    const now = new Date().toISOString();
+    const { data: created, error } = await supabase
+      .from("sdr_playbooks")
+      .insert({ ...fields, owner_id: userId, workspace_id: ws, updated_at: now } as never)
+      .select("id, name")
+      .single();
+    if (error || !created)
+      throw new Error(
+        error?.code === "42501"
+          ? "Sem permissão para criar a cópia deste agente."
+          : (error?.message ?? "Não foi possível duplicar o agente."),
+      );
+
+    const persona = personaCopy(versions.data ?? []);
+    if (persona) {
+      const { copiedFrom: _from, ...row } = persona;
+      const { error: vErr } = await supabase.from("sdr_agent_versions").insert({
+        ...row,
+        workspace_id: ws,
+        playbook_id: created.id,
+        created_by: userId,
+      } as never);
+      if (vErr) {
+        // Sem a persona a cópia ficaria incompleta: desfaz (se a permissão permitir).
+        await supabase.from("sdr_playbooks").delete().eq("id", created.id).eq("workspace_id", ws);
+        throw new Error(`Não foi possível copiar a persona: ${vErr.message}`);
+      }
+    }
+    return {
+      id: created.id as string,
+      name: created.name as string,
+      personaFrom: persona?.copiedFrom ?? null,
+    };
+  });
+
 // ---------- configuração completa POR AGENTE ----------
 // Cada agente guarda a própria configuração em `sdr_playbooks`. O workspace
 // controla só liga/desliga e limites técnicos: nunca sobrescreve estes campos.

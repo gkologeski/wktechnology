@@ -416,14 +416,46 @@ function Studio({ workspaceId, playbookId }: { workspaceId: string; playbookId: 
   );
 }
 
+/**
+ * Conversa de teste fixa ao lado das demais seções do Estúdio. Usa a persona
+ * salva (rascunho ou publicada) e a configuração gravada do agente.
+ */
+export function SdrStudioTestChat({
+  workspaceId,
+  playbookId,
+}: {
+  workspaceId: string;
+  playbookId: string;
+}) {
+  const list = useServerFn(getSdrAgentVersions);
+  const q = useQuery({
+    queryKey: ["sdr-agent-versions", playbookId],
+    queryFn: () => list({ data: { workspaceId, playbookId } }),
+  });
+  const src =
+    q.data?.find((v) => v.status === "draft") ?? q.data?.find((v) => v.status === "published");
+  const persona = src ? parsePersona(src.persona) : DEFAULT_PERSONA;
+  return (
+    <TestChat
+      key={playbookId}
+      workspaceId={workspaceId}
+      playbookId={playbookId}
+      persona={persona}
+      editorLabel="Rascunho salvo"
+    />
+  );
+}
+
 function TestChat({
   workspaceId,
   playbookId,
   persona,
+  editorLabel = "Rascunho aberto nesta tela",
 }: {
   workspaceId: string;
   playbookId: string;
   persona: Persona;
+  editorLabel?: string;
 }) {
   const run = useServerFn(testSdrAgent);
   const permissions = usePermissions();
@@ -582,7 +614,7 @@ function TestChat({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="editor">Rascunho aberto nesta tela</SelectItem>
+                <SelectItem value="editor">{editorLabel}</SelectItem>
                 <SelectItem value="published">Versão publicada</SelectItem>
               </SelectContent>
             </Select>

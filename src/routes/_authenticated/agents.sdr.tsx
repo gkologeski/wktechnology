@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,20 +19,29 @@ import {
   deletePlaybook,
   listEnrollments,
 } from "@/lib/sdr-agent.functions";
-import { SdrConsoleTabs } from "@/components/prospecting/sdr-console";
+import { SdrConsoleTabs, SdrStudioSide } from "@/components/prospecting/sdr-console";
+import { SdrStudioAgentBar } from "@/components/prospecting/sdr-studio-agent-bar";
+import { useSdrPlaybooks } from "@/hooks/use-default-sdr-agent";
 import { PageHeader } from "@/components/techhire/ui";
 import { SdrWorkspaceNav } from "@/components/prospecting/sdr-workspace-nav";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   DEFAULT_SDR_SECTION,
+  hasStudioTestSide,
+  isWorkspaceWideSection,
+  parseSdrAgent,
   parseSdrSection,
+  resolveStudioAgent,
   viewOfSection,
   type SdrSectionId,
 } from "@/components/prospecting/sdr-workspace-sections";
 
 export const Route = createFileRoute("/_authenticated/agents/sdr")({
-  validateSearch: (search: Record<string, unknown>): { section?: SdrSectionId } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { section?: SdrSectionId; agent?: string } => ({
     section: parseSdrSection(search.section),
+    agent: parseSdrAgent(search.agent),
   }),
   component: SdrAgentPage,
   head: () => ({
@@ -107,7 +117,33 @@ function SdrAgentPage() {
   const section: SdrSectionId = search.section ?? DEFAULT_SDR_SECTION;
   const view = viewOfSection(section);
   const goTo = (next: SdrSectionId) =>
-    navigate({ search: { section: next }, replace: true, resetScroll: false });
+    navigate({ search: (prev) => ({ ...prev, section: next }), replace: true, resetScroll: false });
+  const qc = useQueryClient();
+  const playbooks = useSdrPlaybooks();
+  const agents = (playbooks.data?.items ?? []) as unknown as Array<{
+    id: string;
+    name: string;
+    enabled: boolean;
+    questionnaire_id: string | null;
+  }>;
+  const defaultAgentId = playbooks.defaultPlaybookId;
+  const agentId = resolveStudioAgent(agents, search.agent, defaultAgentId);
+  const [creating, setCreating] = useState(false);
+  // Na criação, as seções por agente ficam vazias até o Playbook ser salvo.
+  const openAgent = creating ? null : agentId;
+  const selectAgent = (id: string | null) => {
+    setCreating(false);
+    navigate({
+      search: (prev) => ({ ...prev, agent: id ?? undefined }),
+      replace: true,
+      resetScroll: false,
+    });
+  };
+  const refreshAgents = () =>
+    Promise.all([
+      qc.invalidateQueries({ queryKey: ["sdr-playbooks"] }),
+      qc.invalidateQueries({ queryKey: ["sdr-overview"] }),
+    ]);
 
   async function reload(attempt = 0): Promise<void> {
     setLoading(true);
@@ -115,7 +151,6 @@ function SdrAgentPage() {
       const [a, b] = await Promise.all([listFn(), enrFn({ data: {} })]);
       setItems(a.items as unknown as Playbook[]);
       setEnrollments(b.items as Array<Record<string, unknown>>);
-      if ((a.items?.length ?? 0) > 0) setActive(a.items[0] as unknown as Playbook);
     } catch (e) {
       // Falha passageira (ex.: servidor reiniciando): tenta de novo uma vez.
       if (attempt < 1) {
@@ -134,14 +169,21 @@ function SdrAgentPage() {
   useEffect(() => {
     reload(); /* eslint-disable-next-line */
   }, []);
+  // O Playbook edita o agente aberto na barra do Estúdio.
+  useEffect(() => {
+    if (creating) return;
+    setActive(items.find((p) => p.id === agentId) ?? empty);
+  }, [agentId, items, creating]);
 
   async function save() {
     setSaving(true);
     try {
       const r = await saveFn({ data: active });
       toast.success("Playbook salvo");
-      setActive(r.item as unknown as Playbook);
-      await reload();
+      const saved = r.item as unknown as Playbook;
+      setActive(saved);
+      await Promise.all([reload(), refreshAgents()]);
+      if (creating && saved.id) selectAgent(saved.id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar");
     } finally {
@@ -158,11 +200,12 @@ function SdrAgentPage() {
     } catch (e) {
       return toast.error(e instanceof Error ? e.message : "Erro ao excluir");
     }
-    setActive(empty);
-    await reload();
+    await Promise.all([reload(), refreshAgents()]);
+    selectAgent(null);
   }
 
   function newAgent() {
+    setCreating(true);
     setActive(empty);
     goTo("playbook");
   }
@@ -196,263 +239,275 @@ function SdrAgentPage() {
             responde.
           </p>
         ) : null}
-        <SdrConsoleTabs />
+        {view.id === "studio" ? (
+          <SdrStudioAgentBar
+            agents={agents}
+            agentId={agentId}
+            defaultAgentId={defaultAgentId}
+            creating={creating}
+            workspaceWide={isWorkspaceWideSection(section)}
+            loading={playbooks.isLoading}
+            onSelect={selectAgent}
+          />
+        ) : null}
+        <div
+          className={
+            hasStudioTestSide(section)
+              ? "grid min-w-0 gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(360px,2fr)] xl:items-start"
+              : undefined
+          }
+        >
+          <div className="min-w-0">
+            <SdrConsoleTabs agentId={view.id === "studio" ? openAgent : undefined} />
 
-        <TabsContent value="playbook" className="space-y-4">
-          <div className="grid md:grid-cols-[260px_1fr] gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Agentes (playbooks)</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1">
-                {loading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : items.length === 0 ? (
-                  <div className="text-xs text-muted-foreground">Nenhum ainda.</div>
-                ) : (
-                  items.map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => setActive(p)}
-                      className={`w-full text-left text-sm px-2 py-1 rounded hover:bg-muted ${active.id === p.id ? "bg-muted" : ""}`}
-                    >
-                      {p.name}{" "}
-                      {p.enabled ? (
-                        <Badge variant="secondary" className="ml-1">
-                          on
-                        </Badge>
-                      ) : null}
-                    </button>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-sm">Editar playbook</CardTitle>
-                <div className="flex gap-2">
-                  {active.id && (
-                    <Button variant="ghost" size="sm" onClick={() => remove(active.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                  <Button size="sm" onClick={save} disabled={saving}>
-                    {saving ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="h-4 w-4 mr-1" />
-                    )}{" "}
-                    Salvar
-                  </Button>
+            <TabsContent value="playbook" className="mt-4 space-y-4">
+              {loading && !creating ? (
+                <div
+                  className="flex items-center gap-2 py-10 text-sm text-muted-foreground"
+                  role="status"
+                >
+                  <Loader2 className="h-4 w-4 animate-spin" /> Carregando playbook…
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Nome</Label>
-                    <Input
-                      value={active.name}
-                      onChange={(e) => setActive({ ...active, name: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label>Canal</Label>
-                    <select
-                      className="w-full border rounded h-9 px-2 bg-background"
-                      value={active.channel}
-                      onChange={(e) =>
-                        setActive({ ...active, channel: e.target.value as Playbook["channel"] })
-                      }
-                    >
-                      <option value="whatsapp">WhatsApp</option>
-                      <option value="call">Ligação</option>
-                      <option value="email">Email</option>
-                    </select>
-                  </div>
-                  <div>
-                    <Label>Máx. mensagens</Label>
-                    <Input
-                      type="number"
-                      min={1}
-                      max={20}
-                      value={active.max_messages}
-                      onChange={(e) =>
-                        setActive({ ...active, max_messages: Number(e.target.value) })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label>Score p/ handoff</Label>
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={active.handoff_score}
-                      onChange={(e) =>
-                        setActive({ ...active, handoff_score: Number(e.target.value) })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label>Horário comercial — início</Label>
-                    <Input
-                      value={active.business_hours.start}
-                      onChange={(e) =>
-                        setActive({
-                          ...active,
-                          business_hours: { ...active.business_hours, start: e.target.value },
-                        })
-                      }
-                    />
-                  </div>
-                  <div>
-                    <Label>Horário comercial — fim</Label>
-                    <Input
-                      value={active.business_hours.end}
-                      onChange={(e) =>
-                        setActive({
-                          ...active,
-                          business_hours: { ...active.business_hours, end: e.target.value },
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={active.enabled}
-                    onCheckedChange={(v) => setActive({ ...active, enabled: v })}
-                  />
-                  <span className="text-sm">Ativo</span>
-                </div>
-                <div>
-                  <Label>Frases de opt-out (separadas por vírgula)</Label>
-                  <Input
-                    value={active.opt_out_phrases.join(", ")}
-                    onChange={(e) =>
-                      setActive({
-                        ...active,
-                        opt_out_phrases: e.target.value
-                          .split(",")
-                          .map((s) => s.trim())
-                          .filter(Boolean),
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Prompt de qualificação</Label>
-                  <Textarea
-                    rows={3}
-                    value={active.qualification_prompt ?? ""}
-                    onChange={(e) => setActive({ ...active, qualification_prompt: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label>Sequência de mensagens</Label>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        setActive({
-                          ...active,
-                          steps: [...active.steps, { delay_hours: 24, template: "" }],
-                        })
-                      }
-                    >
-                      <Plus className="h-3 w-3 mr-1" /> Adicionar
-                    </Button>
-                  </div>
-                  {active.steps.map((s, i) => (
-                    <div key={i} className="border rounded p-2 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <Label className="text-xs">Atraso (horas)</Label>
+              ) : (
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle className="text-sm">
+                      {active.id ? `Playbook de ${active.name}` : "Playbook do novo agente"}
+                    </CardTitle>
+                    <div className="flex gap-2">
+                      {active.id && (
+                        <Button variant="ghost" size="sm" onClick={() => remove(active.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                      <Button size="sm" onClick={save} disabled={saving}>
+                        {saving ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-1" />
+                        )}{" "}
+                        Salvar
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Nome</Label>
                         <Input
-                          className="w-24"
-                          type="number"
-                          min={0}
-                          value={s.delay_hours}
-                          onChange={(e) => {
-                            const steps = [...active.steps];
-                            steps[i] = { ...s, delay_hours: Number(e.target.value) };
-                            setActive({ ...active, steps });
-                          }}
+                          value={active.name}
+                          onChange={(e) => setActive({ ...active, name: e.target.value })}
                         />
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="ml-auto"
-                          onClick={() =>
-                            setActive({ ...active, steps: active.steps.filter((_, j) => j !== i) })
+                      </div>
+                      <div>
+                        <Label>Canal</Label>
+                        <select
+                          className="w-full border rounded h-9 px-2 bg-background"
+                          value={active.channel}
+                          onChange={(e) =>
+                            setActive({ ...active, channel: e.target.value as Playbook["channel"] })
                           }
                         >
-                          <Trash2 className="h-3 w-3" />
-                        </Button>
+                          <option value="whatsapp">WhatsApp</option>
+                          <option value="call">Ligação</option>
+                          <option value="email">Email</option>
+                        </select>
                       </div>
-                      <Textarea
-                        rows={2}
-                        value={s.template}
-                        onChange={(e) => {
-                          const steps = [...active.steps];
-                          steps[i] = { ...s, template: e.target.value };
-                          setActive({ ...active, steps });
-                        }}
+                      <div>
+                        <Label>Máx. mensagens</Label>
+                        <Input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={active.max_messages}
+                          onChange={(e) =>
+                            setActive({ ...active, max_messages: Number(e.target.value) })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label>Score p/ handoff</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={active.handoff_score}
+                          onChange={(e) =>
+                            setActive({ ...active, handoff_score: Number(e.target.value) })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label>Horário comercial — início</Label>
+                        <Input
+                          value={active.business_hours.start}
+                          onChange={(e) =>
+                            setActive({
+                              ...active,
+                              business_hours: { ...active.business_hours, start: e.target.value },
+                            })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label>Horário comercial — fim</Label>
+                        <Input
+                          value={active.business_hours.end}
+                          onChange={(e) =>
+                            setActive({
+                              ...active,
+                              business_hours: { ...active.business_hours, end: e.target.value },
+                            })
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={active.enabled}
+                        onCheckedChange={(v) => setActive({ ...active, enabled: v })}
+                      />
+                      <span className="text-sm">Ativo</span>
+                    </div>
+                    <div>
+                      <Label>Frases de opt-out (separadas por vírgula)</Label>
+                      <Input
+                        value={active.opt_out_phrases.join(", ")}
+                        onChange={(e) =>
+                          setActive({
+                            ...active,
+                            opt_out_phrases: e.target.value
+                              .split(",")
+                              .map((s) => s.trim())
+                              .filter(Boolean),
+                          })
+                        }
                       />
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="enrollments">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Leads em atendimento</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {enrollments.length === 0 ? (
-                <div className="text-xs text-muted-foreground">Nenhum lead enrolado.</div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="text-xs text-muted-foreground">
-                    <tr>
-                      <th className="text-left p-2">Lead</th>
-                      <th className="text-left p-2">Status</th>
-                      <th className="text-left p-2">Msgs</th>
-                      <th className="text-left p-2">Score</th>
-                      <th className="text-left p-2">Última ação</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {enrollments.map((e) => (
-                      <tr key={String(e.id)} className="border-t">
-                        <td className="p-2">
-                          {String(e.lead_id ?? e.contact_id ?? "—").slice(0, 8)}
-                        </td>
-                        <td className="p-2">
-                          <Badge variant="outline">{String(e.status)}</Badge>
-                        </td>
-                        <td className="p-2">{String(e.messages_sent ?? 0)}</td>
-                        <td className="p-2">
-                          {e.qualification_score == null ? "—" : String(e.qualification_score)}
-                        </td>
-                        <td className="p-2 text-xs text-muted-foreground">
-                          {e.last_action_at
-                            ? new Date(String(e.last_action_at)).toLocaleString()
-                            : "—"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    <div>
+                      <Label>Prompt de qualificação</Label>
+                      <Textarea
+                        rows={3}
+                        value={active.qualification_prompt ?? ""}
+                        onChange={(e) =>
+                          setActive({ ...active, qualification_prompt: e.target.value })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>Sequência de mensagens</Label>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            setActive({
+                              ...active,
+                              steps: [...active.steps, { delay_hours: 24, template: "" }],
+                            })
+                          }
+                        >
+                          <Plus className="h-3 w-3 mr-1" /> Adicionar
+                        </Button>
+                      </div>
+                      {active.steps.map((s, i) => (
+                        <div key={i} className="border rounded p-2 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Label className="text-xs">Atraso (horas)</Label>
+                            <Input
+                              className="w-24"
+                              type="number"
+                              min={0}
+                              value={s.delay_hours}
+                              onChange={(e) => {
+                                const steps = [...active.steps];
+                                steps[i] = { ...s, delay_hours: Number(e.target.value) };
+                                setActive({ ...active, steps });
+                              }}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="ml-auto"
+                              onClick={() =>
+                                setActive({
+                                  ...active,
+                                  steps: active.steps.filter((_, j) => j !== i),
+                                })
+                              }
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <Textarea
+                            rows={2}
+                            value={s.template}
+                            onChange={(e) => {
+                              const steps = [...active.steps];
+                              steps[i] = { ...s, template: e.target.value };
+                              setActive({ ...active, steps });
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+            </TabsContent>
+
+            <TabsContent value="enrollments">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm">Leads em atendimento</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {enrollments.length === 0 ? (
+                    <div className="text-xs text-muted-foreground">Nenhum lead enrolado.</div>
+                  ) : (
+                    <table className="w-full text-sm">
+                      <thead className="text-xs text-muted-foreground">
+                        <tr>
+                          <th className="text-left p-2">Lead</th>
+                          <th className="text-left p-2">Status</th>
+                          <th className="text-left p-2">Msgs</th>
+                          <th className="text-left p-2">Score</th>
+                          <th className="text-left p-2">Última ação</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {enrollments.map((e) => (
+                          <tr key={String(e.id)} className="border-t">
+                            <td className="p-2">
+                              {String(e.lead_id ?? e.contact_id ?? "—").slice(0, 8)}
+                            </td>
+                            <td className="p-2">
+                              <Badge variant="outline">{String(e.status)}</Badge>
+                            </td>
+                            <td className="p-2">{String(e.messages_sent ?? 0)}</td>
+                            <td className="p-2">
+                              {e.qualification_score == null ? "—" : String(e.qualification_score)}
+                            </td>
+                            <td className="p-2 text-xs text-muted-foreground">
+                              {e.last_action_at
+                                ? new Date(String(e.last_action_at)).toLocaleString()
+                                : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </div>
+          {hasStudioTestSide(section) && openAgent ? (
+            <div className="mt-4 min-w-0 xl:sticky xl:top-4">
+              <SdrStudioSide agentId={openAgent} />
+            </div>
+          ) : null}
+        </div>
       </Tabs>
     </div>
   );
