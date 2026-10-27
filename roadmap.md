@@ -4,7 +4,7 @@
 - [x] Pacote 2: Estúdio integrado — barra única do agente aberto (endereço `?agent=`), conversa de teste fixa à direita em todas as seções do Estúdio, Playbook segue o agente aberto
 - [x] Botão "Duplicar agente": copia playbook, configuração, ferramentas e persona (como rascunho); cópia desativada, sem número de WhatsApp e não principal
 - [ ] Testar a duplicação de verdade (não executada para não criar agente real sem seu aceite)
-- [ ] Pacote 3: Operação com indicadores e fila de intervenção; "Em atendimento" com nomes e status em português — aguarda "pode seguir"
+- [x] Pacote 3: Operação com indicadores (Para revisar, Falhas, Em conversa, Com humano) e "Em atendimento" com nomes, agente, situação/etapa em português, filtros por situação e atalho para a conversa
 - [ ] Pacote 4: Resultados com funil e tabela de reuniões — aguarda "pode seguir"
 - [ ] Publicação (aguarda aceite do usuário)
 

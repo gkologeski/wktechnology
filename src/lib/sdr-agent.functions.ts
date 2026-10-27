@@ -207,15 +207,89 @@ export const listEnrollments = createServerFn({ method: "POST" })
     let q = supabase
       .from("sdr_enrollments")
       .select(
-        "id, status, messages_sent, last_action_at, handoff_at, qualification_score, lead_id, contact_id, playbook_id, created_at",
+        "id, status, commercial_stage, contact_phone, conversation_id, messages_sent, last_action_at, handoff_at, qualification_score, lead_id, contact_id, playbook_id, created_at",
       )
       .eq("workspace_id", ws)
+      .order("last_action_at", { ascending: false, nullsFirst: false })
       .order("created_at", { ascending: false })
       .limit(200);
     if (data.status) q = q.eq("status", data.status);
-    const { data: rows, error } = await q;
+    // Totais por situação, contados no banco sob RLS (nunca pela página carregada).
+    const countBy = (status?: string) => {
+      let c = supabase
+        .from("sdr_enrollments")
+        .select("id", { count: "exact", head: true })
+        .eq("workspace_id", ws);
+      if (status) c = c.eq("status", status);
+      return c;
+    };
+    const STATUSES = ["active", "paused", "handoff", "opted_out"] as const;
+    const [{ data: rows, error }, total, ...byStatus] = await Promise.all([
+      q,
+      countBy(),
+      ...STATUSES.map((s) => countBy(s)),
+    ]);
     if (error) throw new Error(error.message);
-    return { items: rows ?? [] };
+    const countError = [total, ...byStatus].find((r) => r.error)?.error;
+    const counts = countError
+      ? null
+      : {
+          total: total.count ?? 0,
+          active: byStatus[0].count ?? 0,
+          paused: byStatus[1].count ?? 0,
+          handoff: byStatus[2].count ?? 0,
+          opted_out: byStatus[3].count ?? 0,
+        };
+    const items = rows ?? [];
+    // Nomes lidos com o cliente do usuário: sem acesso ao registro, o nome fica vazio.
+    const idsOf = (k: "contact_id" | "lead_id" | "playbook_id") => [
+      ...new Set(items.map((r) => r[k]).filter((v): v is string => !!v)),
+    ];
+    const people = async (table: "contacts" | "leads", ids: string[]) => {
+      const out: Record<
+        string,
+        { first_name: string | null; last_name: string | null; company_name: string | null }
+      > = {};
+      for (let i = 0; i < ids.length; i += 100) {
+        const { data: chunk } = await supabase
+          .from(table)
+          .select("id, first_name, last_name, company_name")
+          .eq("workspace_id", ws)
+          .in("id", ids.slice(i, i + 100));
+        for (const p of chunk ?? []) out[p.id] = p;
+      }
+      return out;
+    };
+    const [contacts, leads, agentRows] = await Promise.all([
+      people("contacts", idsOf("contact_id")),
+      people("leads", idsOf("lead_id")),
+      idsOf("playbook_id").length
+        ? supabase
+            .from("sdr_playbooks")
+            .select("id, name")
+            .eq("workspace_id", ws)
+            .in("id", idsOf("playbook_id"))
+            .then((r) => r.data ?? [])
+        : Promise.resolve([] as Array<{ id: string; name: string }>),
+    ]);
+    const agents = Object.fromEntries(agentRows.map((a) => [a.id, a.name]));
+    return {
+      items: items.map((r) => {
+        const person = r.contact_id ? contacts[r.contact_id] : r.lead_id ? leads[r.lead_id] : null;
+        return {
+          ...r,
+          person: person
+            ? {
+                first_name: person.first_name,
+                last_name: person.last_name,
+                company_name: person.company_name,
+              }
+            : null,
+          agent_name: r.playbook_id ? (agents[r.playbook_id] ?? null) : null,
+        };
+      }),
+      counts,
+    };
   });
 
 export const enrollLead = createServerFn({ method: "POST" })

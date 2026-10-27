@@ -9,21 +9,23 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Save } from "lucide-react";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-import {
-  listPlaybooks,
-  upsertPlaybook,
-  deletePlaybook,
-  listEnrollments,
-} from "@/lib/sdr-agent.functions";
+import { listPlaybooks, upsertPlaybook, deletePlaybook } from "@/lib/sdr-agent.functions";
 import { SdrConsoleTabs, SdrStudioSide } from "@/components/prospecting/sdr-console";
 import { SdrStudioAgentBar } from "@/components/prospecting/sdr-studio-agent-bar";
 import { useSdrPlaybooks } from "@/hooks/use-default-sdr-agent";
 import { PageHeader } from "@/components/techhire/ui";
 import { SdrWorkspaceNav } from "@/components/prospecting/sdr-workspace-nav";
+import {
+  SdrEnrollmentsPanel,
+  SdrOperationSummary,
+} from "@/components/prospecting/sdr-operation-panels";
+import {
+  parseEnrollmentFilter,
+  type EnrollmentFilter,
+} from "@/components/prospecting/sdr-operation-display";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   DEFAULT_SDR_SECTION,
@@ -39,9 +41,10 @@ import {
 export const Route = createFileRoute("/_authenticated/agents/sdr")({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { section?: SdrSectionId; agent?: string } => ({
+  ): { section?: SdrSectionId; agent?: string; status?: EnrollmentFilter } => ({
     section: parseSdrSection(search.section),
     agent: parseSdrAgent(search.agent),
+    status: parseEnrollmentFilter(search.status),
   }),
   component: SdrAgentPage,
   head: () => ({
@@ -104,10 +107,8 @@ function SdrAgentPage() {
   const listFn = useServerFn(listPlaybooks);
   const saveFn = useServerFn(upsertPlaybook);
   const delFn = useServerFn(deletePlaybook);
-  const enrFn = useServerFn(listEnrollments);
 
   const [items, setItems] = useState<Playbook[]>([]);
-  const [enrollments, setEnrollments] = useState<Array<Record<string, unknown>>>([]);
   const [active, setActive] = useState<Playbook>(empty);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -148,9 +149,8 @@ function SdrAgentPage() {
   async function reload(attempt = 0): Promise<void> {
     setLoading(true);
     try {
-      const [a, b] = await Promise.all([listFn(), enrFn({ data: {} })]);
+      const a = await listFn();
       setItems(a.items as unknown as Playbook[]);
-      setEnrollments(b.items as Array<Record<string, unknown>>);
     } catch (e) {
       // Falha passageira (ex.: servidor reiniciando): tenta de novo uma vez.
       if (attempt < 1) {
@@ -230,6 +230,7 @@ function SdrAgentPage() {
 
       <Tabs value={section} onValueChange={(v) => goTo(parseSdrSection(v) ?? DEFAULT_SDR_SECTION)}>
         <SdrWorkspaceNav section={section} />
+        {view.id === "operation" ? <SdrOperationSummary /> : null}
         {view.id === "studio" ? (
           <p className="mt-4 max-w-3xl text-sm text-muted-foreground">
             Cada agente tem uma <strong className="text-foreground">persona</strong> (identidade e
@@ -456,50 +457,17 @@ function SdrAgentPage() {
               )}
             </TabsContent>
 
-            <TabsContent value="enrollments">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm">Leads em atendimento</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {enrollments.length === 0 ? (
-                    <div className="text-xs text-muted-foreground">Nenhum lead enrolado.</div>
-                  ) : (
-                    <table className="w-full text-sm">
-                      <thead className="text-xs text-muted-foreground">
-                        <tr>
-                          <th className="text-left p-2">Lead</th>
-                          <th className="text-left p-2">Status</th>
-                          <th className="text-left p-2">Msgs</th>
-                          <th className="text-left p-2">Score</th>
-                          <th className="text-left p-2">Última ação</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {enrollments.map((e) => (
-                          <tr key={String(e.id)} className="border-t">
-                            <td className="p-2">
-                              {String(e.lead_id ?? e.contact_id ?? "—").slice(0, 8)}
-                            </td>
-                            <td className="p-2">
-                              <Badge variant="outline">{String(e.status)}</Badge>
-                            </td>
-                            <td className="p-2">{String(e.messages_sent ?? 0)}</td>
-                            <td className="p-2">
-                              {e.qualification_score == null ? "—" : String(e.qualification_score)}
-                            </td>
-                            <td className="p-2 text-xs text-muted-foreground">
-                              {e.last_action_at
-                                ? new Date(String(e.last_action_at)).toLocaleString()
-                                : "—"}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  )}
-                </CardContent>
-              </Card>
+            <TabsContent value="enrollments" className="mt-4">
+              <SdrEnrollmentsPanel
+                status={search.status}
+                onStatusChange={(next) =>
+                  navigate({
+                    search: (prev) => ({ ...prev, status: next }),
+                    replace: true,
+                    resetScroll: false,
+                  })
+                }
+              />
             </TabsContent>
           </div>
           {hasStudioTestSide(section) && openAgent ? (
