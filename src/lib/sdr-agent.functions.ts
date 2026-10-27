@@ -242,10 +242,14 @@ export const listEnrollments = createServerFn({ method: "POST" })
         };
     const items = rows ?? [];
     // Nomes lidos com o cliente do usuário: sem acesso ao registro, o nome fica vazio.
-    const idsOf = (k: "contact_id" | "lead_id" | "playbook_id") =>
-      [...new Set(items.map((r) => r[k]).filter((v): v is string => !!v))];
+    const idsOf = (k: "contact_id" | "lead_id" | "playbook_id") => [
+      ...new Set(items.map((r) => r[k]).filter((v): v is string => !!v)),
+    ];
     const people = async (table: "contacts" | "leads", ids: string[]) => {
-      const out: Record<string, { first_name: string | null; last_name: string | null; company_name: string | null }> = {};
+      const out: Record<
+        string,
+        { first_name: string | null; last_name: string | null; company_name: string | null }
+      > = {};
       for (let i = 0; i < ids.length; i += 100) {
         const { data: chunk } = await supabase
           .from(table)

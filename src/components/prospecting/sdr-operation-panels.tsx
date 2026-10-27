@@ -52,8 +52,17 @@ export function SdrOperationSummary() {
   const unavailable = "Indisponível";
 
   return (
-    <section aria-label="Indicadores da Operação" className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <Link to="/agents/sdr" search={{ section: "sdr-supervision" }} replace resetScroll={false} className={cardLink}>
+    <section
+      aria-label="Indicadores da Operação"
+      className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"
+    >
+      <Link
+        to="/agents/sdr"
+        search={{ section: "sdr-supervision" }}
+        replace
+        resetScroll={false}
+        className={cardLink}
+      >
         <MetricCard
           label="Para revisar"
           value={jobs ? jobs.toReview : "—"}
@@ -63,7 +72,13 @@ export function SdrOperationSummary() {
           loading={overview.isLoading}
         />
       </Link>
-      <Link to="/agents/sdr" search={{ section: "sdr-supervision" }} replace resetScroll={false} className={cardLink}>
+      <Link
+        to="/agents/sdr"
+        search={{ section: "sdr-supervision" }}
+        replace
+        resetScroll={false}
+        className={cardLink}
+      >
         <MetricCard
           label="Falhas a resolver"
           value={jobs ? jobs.failed : "—"}
@@ -89,7 +104,11 @@ export function SdrOperationSummary() {
         <MetricCard
           label="Em conversa"
           value={counts ? counts.active : "—"}
-          hint={enrollments.error || (enrollments.data && !counts) ? unavailable : "Atendidos pelo agente agora"}
+          hint={
+            enrollments.error || (enrollments.data && !counts)
+              ? unavailable
+              : "Atendidos pelo agente agora"
+          }
           icon={MessagesSquare}
           tone="positive"
           loading={enrollments.isLoading}
@@ -105,7 +124,11 @@ export function SdrOperationSummary() {
         <MetricCard
           label="Com humano"
           value={counts ? counts.handoff : "—"}
-          hint={enrollments.error || (enrollments.data && !counts) ? unavailable : "Passados para a equipe"}
+          hint={
+            enrollments.error || (enrollments.data && !counts)
+              ? unavailable
+              : "Passados para a equipe"
+          }
           icon={UserRound}
           loading={enrollments.isLoading}
         />
@@ -128,10 +151,15 @@ export function SdrEnrollmentsPanel({
   const items = q.data?.items ?? [];
   const filterTotal = counts ? (status ? counts[status] : counts.total) : null;
 
-  const filters: Array<{ id: EnrollmentFilter | undefined; label: string; count: number | null }> = [
-    { id: undefined, label: "Todos", count: counts?.total ?? null },
-    ...ENROLLMENT_FILTERS.map((f) => ({ id: f, label: FILTER_LABELS[f], count: counts?.[f] ?? null })),
-  ];
+  const filters: Array<{ id: EnrollmentFilter | undefined; label: string; count: number | null }> =
+    [
+      { id: undefined, label: "Todos", count: counts?.total ?? null },
+      ...ENROLLMENT_FILTERS.map((f) => ({
+        id: f,
+        label: FILTER_LABELS[f],
+        count: counts?.[f] ?? null,
+      })),
+    ];
 
   return (
     <div className="space-y-4">
@@ -153,7 +181,12 @@ export function SdrEnrollmentsPanel({
             >
               {f.label}
               {f.count != null ? (
-                <span className={cn("ml-1.5 tabular-nums", active ? "opacity-90" : "text-muted-foreground")}>
+                <span
+                  className={cn(
+                    "ml-1.5 tabular-nums",
+                    active ? "opacity-90" : "text-muted-foreground",
+                  )}
+                >
                   {f.count.toLocaleString("pt-BR")}
                 </span>
               ) : null}
@@ -163,7 +196,11 @@ export function SdrEnrollmentsPanel({
       </div>
 
       {q.isLoading ? (
-        <div className="space-y-2 rounded-lg border bg-card p-3" role="status" aria-label="Carregando atendimentos">
+        <div
+          className="space-y-2 rounded-lg border bg-card p-3"
+          role="status"
+          aria-label="Carregando atendimentos"
+        >
           {Array.from({ length: 6 }).map((_, i) => (
             <RowSkeleton key={i} />
           ))}
@@ -177,7 +214,9 @@ export function SdrEnrollmentsPanel({
       ) : items.length === 0 ? (
         <EmptyState
           icon={MessageSquare}
-          title={status ? `Nenhum atendimento em "${FILTER_LABELS[status]}"` : "Nenhum atendimento ainda"}
+          title={
+            status ? `Nenhum atendimento em "${FILTER_LABELS[status]}"` : "Nenhum atendimento ainda"
+          }
           description={
             status
               ? "Escolha outra situação para ver os demais atendimentos."
@@ -191,14 +230,30 @@ export function SdrEnrollmentsPanel({
               <caption className="sr-only">Atendimentos do Agente SDR</caption>
               <thead className="text-left text-xs text-muted-foreground">
                 <tr>
-                  <th scope="col" className="p-3 font-medium">Contato</th>
-                  <th scope="col" className="p-3 font-medium">Agente</th>
-                  <th scope="col" className="p-3 font-medium">Situação</th>
-                  <th scope="col" className="p-3 font-medium">Etapa</th>
-                  <th scope="col" className="p-3 text-right font-medium">Mensagens</th>
-                  <th scope="col" className="p-3 text-right font-medium">Nota</th>
-                  <th scope="col" className="p-3 font-medium">Última ação</th>
-                  <th scope="col" className="p-3"><span className="sr-only">Ações</span></th>
+                  <th scope="col" className="p-3 font-medium">
+                    Contato
+                  </th>
+                  <th scope="col" className="p-3 font-medium">
+                    Agente
+                  </th>
+                  <th scope="col" className="p-3 font-medium">
+                    Situação
+                  </th>
+                  <th scope="col" className="p-3 font-medium">
+                    Etapa
+                  </th>
+                  <th scope="col" className="p-3 text-right font-medium">
+                    Mensagens
+                  </th>
+                  <th scope="col" className="p-3 text-right font-medium">
+                    Nota
+                  </th>
+                  <th scope="col" className="p-3 font-medium">
+                    Última ação
+                  </th>
+                  <th scope="col" className="p-3">
+                    <span className="sr-only">Ações</span>
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y">

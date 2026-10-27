@@ -12,11 +12,7 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, Plus, Trash2, Save } from "lucide-react";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
-import {
-  listPlaybooks,
-  upsertPlaybook,
-  deletePlaybook,
-} from "@/lib/sdr-agent.functions";
+import { listPlaybooks, upsertPlaybook, deletePlaybook } from "@/lib/sdr-agent.functions";
 import { SdrConsoleTabs, SdrStudioSide } from "@/components/prospecting/sdr-console";
 import { SdrStudioAgentBar } from "@/components/prospecting/sdr-studio-agent-bar";
 import { useSdrPlaybooks } from "@/hooks/use-default-sdr-agent";
