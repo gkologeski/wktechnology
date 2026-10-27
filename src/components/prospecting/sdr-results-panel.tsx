@@ -99,15 +99,13 @@ function Funnel({ totals }: { totals: Results["totals"] }) {
               <span className="font-medium text-foreground">{s.label}</span>
               <span className="tabular-nums text-foreground">
                 {s.value.toLocaleString("pt-BR")}
-                <span className="ml-2 text-xs text-muted-foreground">
-                  {s.pct == null ? "—" : `${s.pct}%`}
-                </span>
+                <span className="ml-2 text-xs text-muted-foreground">{s.pctLabel}</span>
               </span>
             </div>
             <div
               className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted"
               role="img"
-              aria-label={`${s.label}: ${s.value} (${s.pct == null ? "sem conversas" : `${s.pct}%`})`}
+              aria-label={`${s.label}: ${s.value} (${s.pct == null ? "sem conversas" : s.pctLabel})`}
             >
               <div
                 className="h-full rounded-full bg-primary transition-[width]"

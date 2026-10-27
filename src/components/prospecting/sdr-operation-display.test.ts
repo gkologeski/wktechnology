@@ -77,6 +77,7 @@ describe("Resultados do Agente SDR", () => {
     ]);
     expect(f.map((s) => s.pct)).toEqual([100, 19, 0, 0, 0]);
     expect(f[4].value).toBe(2);
+    expect(f.map((s) => s.pctLabel)).toEqual(["100%", "19%", "0%", "<1%", "<1%"]);
   });
 
   it("sem conversas não inventa percentual", () => {
@@ -87,7 +88,7 @@ describe("Resultados do Agente SDR", () => {
       meetingProposed: 0,
       meetingConfirmed: 0,
     });
-    expect(f.every((s) => s.pct === null)).toBe(true);
+    expect(f.every((s) => s.pct === null && s.pctLabel === "—")).toBe(true);
   });
 
   it("traduz situação da reunião e decisão da qualificação", () => {

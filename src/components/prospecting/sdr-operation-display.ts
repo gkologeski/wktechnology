@@ -102,6 +102,8 @@ export type FunnelStep = {
   value: number;
   /** Percentual sobre as conversas iniciadas (0–100, inteiro); null sem conversas. */
   pct: number | null;
+  /** Percentual para exibir: "—" sem conversas e "<1%" quando há casos mas arredonda a zero. */
+  pctLabel: string;
 };
 
 const FUNNEL: ReadonlyArray<{ key: keyof SdrResultTotals; label: string; hint: string }> = [
@@ -122,11 +124,12 @@ const FUNNEL: ReadonlyArray<{ key: keyof SdrResultTotals; label: string; hint: s
 
 /** Etapas do funil com percentual sobre as conversas iniciadas. */
 export function buildSdrFunnel(t: SdrResultTotals): FunnelStep[] {
-  return FUNNEL.map((s) => ({
-    ...s,
-    value: t[s.key],
-    pct: t.started > 0 ? Math.round((t[s.key] / t.started) * 100) : null,
-  }));
+  return FUNNEL.map((s) => {
+    const value = t[s.key];
+    const pct = t.started > 0 ? Math.round((value / t.started) * 100) : null;
+    const pctLabel = pct == null ? "—" : pct === 0 && value > 0 ? "<1%" : `${pct}%`;
+    return { ...s, value, pct, pctLabel };
+  });
 }
 
 const MEETING_STATUS: Record<string, { label: string; tone: SdrTone }> = {
