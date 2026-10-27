@@ -10,7 +10,6 @@ export type SdrSectionId =
   | "sdr-supervision"
   | "enrollments"
   | "sdr-agent"
-  | "playbook"
   | "sdr-agent-config"
   | "sdr-skills"
   | "sdr-catalog"
@@ -40,7 +39,6 @@ export const SDR_VIEWS: ReadonlyArray<SdrView> = [
     description: "Monte a persona, o roteiro, as habilidades e os materiais do agente.",
     sections: [
       { id: "sdr-agent", label: "Persona e teste" },
-      { id: "playbook", label: "Playbook" },
       { id: "sdr-agent-config", label: "Configuração do agente" },
       { id: "sdr-skills", label: "Habilidades e ferramentas" },
       { id: "sdr-catalog", label: "Portfólio e materiais" },
@@ -59,9 +57,19 @@ export const DEFAULT_SDR_SECTION: SdrSectionId = "sdr-supervision";
 
 const SECTION_IDS = new Set<string>(SDR_VIEWS.flatMap((v) => v.sections.map((s) => s.id)));
 
+/**
+ * Endereços antigos que continuam abrindo a seção que os substituiu. O antigo
+ * "Playbook" foi incorporado à Configuração do agente.
+ */
+const LEGACY_SECTIONS: Readonly<Record<string, SdrSectionId>> = {
+  playbook: "sdr-agent-config",
+};
+
 /** Lê a seção do endereço; valores desconhecidos são ignorados. */
 export function parseSdrSection(value: unknown): SdrSectionId | undefined {
-  return typeof value === "string" && SECTION_IDS.has(value) ? (value as SdrSectionId) : undefined;
+  if (typeof value !== "string") return undefined;
+  if (SECTION_IDS.has(value)) return value as SdrSectionId;
+  return LEGACY_SECTIONS[value];
 }
 
 /** Área à qual a seção pertence; seção desconhecida cai na Operação. */
