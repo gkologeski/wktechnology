@@ -27,7 +27,8 @@ export async function resolveCloudNumber(workspaceId: string, phoneNumberId: str
     throw new Error("Conexão Meta indisponível ou ainda não ativada.");
   return {
     phoneNumberId,
-    displayPhoneNumber: number.data.display_phone_number,
+    // Meta returns display formatting; conversation identity uses the canonical sender.
+    displayPhoneNumber: `+${String(number.data.display_phone_number).replace(/\D/g, "")}`,
     workspaceId,
     connectionId: connection.data.id as string,
     provider: "cloud" as const,
