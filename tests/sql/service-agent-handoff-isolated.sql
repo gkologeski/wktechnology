@@ -50,3 +50,25 @@ DO $$ BEGIN
  RAISE NOTICE 'PASS obsolete run release preserves queued inbound and invokes recovery trigger';
 END $$;
 SELECT set_config('request.jwt.claim.role','',true);
+-- Technical rate counts only confirmed deliveries in the current source/hour.
+SELECT set_config('request.jwt.claim.role','service_role',true);
+UPDATE public.service_agent_sessions SET ai_owner='ai',ai_version=ai_version+1 WHERE channel='chat';
+UPDATE public.sdr_enrollments SET status='active',cancel_reason=NULL WHERE id=(SELECT enrollment_id FROM public.service_agent_sessions WHERE channel='chat');
+UPDATE public.sdr_workspace_settings SET tech_conv_turns_per_hour=40 WHERE workspace_id='aaaaaaaa-0000-4000-8000-00000000000a';
+UPDATE public.service_agent_jobs j SET available_at=now(),conversation_version=s.ai_version FROM public.service_agent_sessions s WHERE j.id='79000000-0000-4000-8000-000000000017' AND s.id=j.session_id;
+INSERT INTO public.service_agent_jobs(workspace_id,session_id,inbound_message_id,conversation_version,status,sent_at)
+SELECT s.workspace_id,s.id,'79000000-0000-4000-8000-000000000015',s.ai_version,'sent',now() FROM public.service_agent_sessions s CROSS JOIN generate_series(1,40) WHERE s.channel='chat';
+CREATE TEMP TABLE service_rate_claim AS SELECT * FROM public.service_agent_claim(10);
+DO $$ DECLARE j record;BEGIN
+ SELECT * INTO j FROM service_rate_claim WHERE id='79000000-0000-4000-8000-000000000017';
+ IF j.id IS NULL OR NOT public.service_agent_technical_limit(j.id,j.lease_token) THEN RAISE EXCEPTION 'Technical rate threshold was ignored';END IF;
+ UPDATE public.service_agent_jobs SET sent_at=now()-interval '2 hours' WHERE session_id=j.session_id AND status='sent';
+ IF public.service_agent_technical_limit(j.id,j.lease_token) THEN RAISE EXCEPTION 'Old delivery counted in the current technical window';END IF;
+ BEGIN
+  PERFORM public.service_agent_technical_limit(j.id,gen_random_uuid());
+  RAISE EXCEPTION 'Stale technical-limit lease accepted';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
+ RAISE NOTICE 'PASS technical threshold, rolling window and current source lease';
+END $$;
+SELECT set_config('request.jwt.claim.role','',true);

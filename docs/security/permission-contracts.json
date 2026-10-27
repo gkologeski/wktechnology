@@ -2277,7 +2277,7 @@
         "src/lib/prospecting/sdr/channel-access.server.ts": "a23a8c47439c6f10cf0a30dae2253b53af3a894e3238c7099381a0465594a95a",
         "src/routes/_authenticated/settings.channels.tsx": "d04c6a22f9bb7c6e22591c213c35bdf14e3c2cb2985fb63cbb41332fb9a0c6c5",
         "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c",
-        "src/components/service-channels/account-editor.tsx": "ddc6c5dc8ba0e276af9d20a3b465032def8c8afa79dfb0865c2a0fc36980d016",
+        "src/components/service-channels/account-editor.tsx": "1caa1effd64517444291ce975921952ff18fd090880ec0750f9183dd0dc87c79",
         "src/components/service-channels/agent-channels.tsx": "97abf189efffa02a15a536b7e9aef0a8cf3bc97d85f88c95915d7e916cdb8a41",
         "src/components/prospecting/sdr-agent-config.tsx": "b4870cc2ee2718d2e4f5996a6f7f0ce81b99dc3455a24192d314a515bd2a839d"
       },
@@ -2602,7 +2602,7 @@
       "id": "service-channel-email-chat-worker",
       "kind": "service",
       "files": {
-        "src/lib/prospecting/sdr/service-worker.server.ts": "16122155e88366f4db461fa7da9c5c7620bcc97128437ee0ca638cc50cc6756d",
+        "src/lib/prospecting/sdr/service-worker.server.ts": "7a61c413c1fa05c8503e094b4120ce0fcf9600e3ce92ae9d591f2a5db4c387ce",
         "src/lib/prospecting/sdr/service-transports.server.ts": "6be9872511c8d3d2506ff7897e426104df89f0800487d7e806351f76c50a379d",
         "src/lib/prospecting/sdr/tools/store.server.ts": "a8ada9804f3bc58a3d1ee9232a668e44f093efff4e90bfb78f64de30365fff4d",
         "drizzle/migrations/0258_service_agent_queue.sql": "1df35e4858d14e524b4056925ef5ce73e3567d8fe3caf0a5076bd79b36b61810",
@@ -2612,7 +2612,8 @@
         "drizzle/migrations/0264_service_agent_handoff.sql": "c90a06e3b335e66c33b6f8657bab632739f7ec1c07d7322c94c486d8173b8a15",
         "src/routes/api/public/hooks/sdr-tick.ts": "e2aa8a7e49ef906f4fa5dd51e0eebdc414c07d79b2c501a2550e1375c10874b5",
         "drizzle/migrations/0265_service_agent_wake_pending.sql": "306ab84daf4856e9b629b644d1d04a2a13c06b54ccda44a5c3bfede8a93d6968",
-        "drizzle/migrations/0266_service_agent_email_sync_proof.sql": "749f88dec7426ea6963e1f8aaf43d8454e9ed715239e1c87ef443106c6e462f9"
+        "drizzle/migrations/0266_service_agent_email_sync_proof.sql": "749f88dec7426ea6963e1f8aaf43d8454e9ed715239e1c87ef443106c6e462f9",
+        "drizzle/migrations/0267_service_agent_technical_rate.sql": "1863bae6f62bd858e4c2245e3b79284101c2593c138e50f6c49098160f323528"
       },
       "resources": [
         "system.channels",
@@ -2623,7 +2624,7 @@
       "actions": ["view", "update", "create", "approve"],
       "scopes": ["own", "team", "workspace"],
       "permission_keys": ["system.channels.view.workspace", "system.channels.approve.workspace"],
-      "rationale": "Real email/chat source records, canonical enrollment and source-actor RLS. Current binding/version/lease rechecked before each effect. Anonymous chat has no customer scope; verified email lookup is restricted to linked person. Private CRM context requires explicit approval. SQL acceptance in tests/sql/service-agent-queue-isolated.sql validates actual permissions, coalescence, historical/automatic exclusion, handoff and CAS in rollback; CI exercises RPC fail-closed paths. Authenticated cron starts WhatsApp and email/chat concurrently and waits for both outcomes. Source actor and lease are rechecked by each worker. Handoff uses the configured active workspace recipient only after source assign permission; otherwise keeps the current operator. Canonical reason and timestamp persist, and the recipient is notified. Existing recovery schedule is tightened to one minute without changing command, credentials or suspended state. Repeated automatic menus pause before inference; tests service-worker.test.ts, channel-tick.test.ts and isolated SQL handoff acceptance cover these paths. No production activation yet. Queue waiting re-reads a burst-postponed deadline within its bounded request budget. A running-to-finished trigger wakes an already queued newer inbound using the existing authenticated cron command; it never exposes or replaces credentials and never changes the queued message. Gmail-sync-before-callback is recognized only for the same stored source mailbox and trusted provider ID or in-flight delivery nonce plus canonical body. Authenticated operator messages and different body/header messages still take human ownership; actual SQL acceptance tests cover both orders and idempotent proof.",
+      "rationale": "Real email/chat source records, canonical enrollment and source-actor RLS. Current binding/version/lease rechecked before each effect. Anonymous chat has no customer scope; verified email lookup is restricted to linked person. Private CRM context requires explicit approval. SQL acceptance in tests/sql/service-agent-queue-isolated.sql validates actual permissions, coalescence, historical/automatic exclusion, handoff and CAS in rollback; CI exercises RPC fail-closed paths. Authenticated cron starts WhatsApp and email/chat concurrently and waits for both outcomes. Source actor and lease are rechecked by each worker. Handoff uses the configured active workspace recipient only after source assign permission; otherwise keeps the current operator. Canonical reason and timestamp persist, and the recipient is notified. Existing recovery schedule is tightened to one minute without changing command, credentials or suspended state. Repeated automatic menus pause before inference; tests service-worker.test.ts, channel-tick.test.ts and isolated SQL handoff acceptance cover these paths. No production activation yet. Queue waiting re-reads a burst-postponed deadline within its bounded request budget. A running-to-finished trigger wakes an already queued newer inbound using the existing authenticated cron command; it never exposes or replaces credentials and never changes the queued message. Gmail-sync-before-callback is recognized only for the same stored source mailbox and trusted provider ID or in-flight delivery nonce plus canonical body. Authenticated operator messages and different body/header messages still take human ownership; actual SQL acceptance tests cover both orders and idempotent proof. Email/chat also honor the existing technical per-conversation/hour setting using only confirmed deliveries. The guarded RPC never consumes commercial/follow-up quotas, requires a current lease/source actor and causes a notified human handoff before inference when exceeded. SQL verifies threshold, rolling window and lost-lease denial; unit tests verify no model call and the technical reason.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-worker.server.ts",
@@ -2670,6 +2671,10 @@
         {
           "file": "drizzle/migrations/0266_service_agent_email_sync_proof.sql",
           "symbol": "service_agent_message_event"
+        },
+        {
+          "file": "drizzle/migrations/0267_service_agent_technical_rate.sql",
+          "symbol": "service_agent_technical_limit"
         }
       ],
       "tests": {

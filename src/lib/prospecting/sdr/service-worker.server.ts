@@ -178,7 +178,20 @@ export async function processServiceJob(
       recentInbound.length === 2 &&
       Date.parse(recentInbound[1].created_at) - Date.parse(recentInbound[0].created_at) <=
         10 * 60_000;
-    if (repeatedWithinWindow && repeatsIdenticalInbound(recentInbound)) {
+    const rateReached =
+      must(
+        await admin.rpc("service_agent_technical_limit", {
+          p_job: job.id,
+          p_lease: job.lease_token,
+        }),
+      ) === true;
+    const technicalStop =
+      repeatedWithinWindow && repeatsIdenticalInbound(recentInbound)
+        ? "repeated_inbound"
+        : rateReached
+          ? "conversation_rate"
+          : null;
+    if (technicalStop) {
       const result = must(
         await admin.rpc("service_agent_commit_turn", {
           p_job: job.id,
@@ -188,13 +201,16 @@ export async function processServiceJob(
           p_enrollment: {
             status: "paused",
             handoff_at: new Date().toISOString(),
-            handoff_reason: "Proteção técnica: mensagens repetidas",
+            handoff_reason:
+              technicalStop === "repeated_inbound"
+                ? "Proteção técnica: mensagens repetidas"
+                : "Proteção técnica: ritmo de respostas acima do limite configurado",
             follow_up_at: null,
           },
           p_job_patch: {
             status: "drafted",
             draft_text: "",
-            draft_payload: { intent: "handoff", technical_stop: "repeated_inbound" },
+            draft_payload: { intent: "handoff", technical_stop: technicalStop },
           },
         }),
       );

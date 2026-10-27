@@ -153,10 +153,12 @@ export function AccountEditor({
               <Switch checked={inbound} onCheckedChange={setInbound} />
               Receptivo
             </Label>
-            <Label className="flex items-center gap-2">
-              <Switch checked={campaigns} onCheckedChange={setCampaigns} />
-              Após campanhas
-            </Label>
+            {account.channel === "whatsapp" && (
+              <Label className="flex items-center gap-2">
+                <Switch checked={campaigns} onCheckedChange={setCampaigns} />
+                Após campanhas WhatsApp
+              </Label>
+            )}
             <Label className="flex items-center gap-2">
               <Switch checked={agentEnabled} onCheckedChange={setAgentEnabled} />
               Agente automático

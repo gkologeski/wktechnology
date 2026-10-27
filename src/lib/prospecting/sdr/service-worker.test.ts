@@ -138,7 +138,9 @@ beforeEach(() => {
   db.rpc = vi.fn(async (name, args) =>
     ["service_agent_commit_turn", "service_agent_finish_decision"].includes(name)
       ? { data: "ok", error: null }
-      : rpc(name, args),
+      : name === "service_agent_technical_limit"
+        ? { data: false, error: null }
+        : rpc(name, args),
   );
   spies.turn.mockResolvedValue(decision());
   spies.context.mockResolvedValue({});
@@ -264,6 +266,22 @@ describe("email/chat service orchestration", () => {
     });
     expect(await processServiceJob(db, job, deps)).toBe("drafted");
     expect(spies.turn).toHaveBeenCalledOnce();
+  });
+  it("uses only the technical rate setting to hand over before inference", async () => {
+    const original = db.rpc.bind(db);
+    db.rpc = vi.fn(async (name, args) =>
+      name === "service_agent_technical_limit" ? { data: true, error: null } : original(name, args),
+    );
+    expect(await processServiceJob(db, job, deps)).toBe("handoff");
+    expect(spies.turn).not.toHaveBeenCalled();
+    expect(db.rpc).toHaveBeenCalledWith(
+      "service_agent_commit_turn",
+      expect.objectContaining({
+        p_job_patch: expect.objectContaining({
+          draft_payload: { intent: "handoff", technical_stop: "conversation_rate" },
+        }),
+      }),
+    );
   });
   it("does not process a source event from another workspace", async () => {
     db.t("live_chat_messages")[0].workspace_id = "foreign";
