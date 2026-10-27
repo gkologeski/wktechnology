@@ -34,6 +34,7 @@ import {
   saveSdrAgentConfig,
 } from "@/lib/prospecting/sdr-agent.functions";
 import { SDR_TOOLS, type AgentConfig, type SdrTool } from "@/lib/prospecting/sdr/agent-config";
+import { parseOptOutPhrases } from "@/lib/prospecting/sdr/policy";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 
 const TOOL_LABEL: Record<SdrTool, string> = {
@@ -72,7 +73,7 @@ export function SdrAgentConfigPanel({
     return (
       <EmptyState
         title="Nenhum agente ainda"
-        description="Crie um agente na aba Playbook para configurar persona, catálogo e ferramentas."
+        description="Use “Novo agente” no topo da página para criar o primeiro agente."
       />
     );
 
@@ -206,6 +207,43 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
       </div>
 
       <FormSection
+        title="Situação e pedidos de saída"
+        description="Nome, número de WhatsApp e horários ficam em outros lugares: o nome em Editar, o número em Canais de atendimento e os horários em Regras gerais e na campanha."
+      >
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="cfg-enabled"
+              checked={agent.enabled}
+              onCheckedChange={(v) => setAgent({ ...agent, enabled: v })}
+              aria-describedby="cfg-enabled-help"
+            />
+            <Label htmlFor="cfg-enabled" className="text-sm">
+              Agente ativo
+            </Label>
+          </div>
+          <p id="cfg-enabled-help" className="text-xs text-muted-foreground">
+            Desativado, o agente não atende conversas novas e não pode ser o principal.
+          </p>
+          <div className="space-y-1.5">
+            <Label htmlFor="cfg-optout">Frases de saída</Label>
+            <Input
+              id="cfg-optout"
+              value={optOutText}
+              maxLength={4000}
+              onChange={(e) => setOptOutText(e.target.value)}
+              aria-describedby="cfg-optout-help"
+            />
+            <p id="cfg-optout-help" className="text-xs text-muted-foreground">
+              Separe por vírgula. Quando o cliente envia uma delas, o agente para de contatá-lo. Os
+              pedidos claros de saída (“não quero mais”, “me tire da lista”) já são reconhecidos
+              sempre.
+            </p>
+          </div>
+        </div>
+      </FormSection>
+
+      <FormSection
         title="Ferramentas permitidas"
         description="O que este agente pode fazer sozinho."
       >
@@ -320,7 +358,7 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
             />
           </div>
           <div className="space-y-1.5 md:col-span-2">
-            <Label htmlFor="cfg-prompt">Orientações do roteiro (prompt do playbook)</Label>
+            <Label htmlFor="cfg-prompt">Orientações do roteiro</Label>
             <Textarea
               id="cfg-prompt"
               rows={8}

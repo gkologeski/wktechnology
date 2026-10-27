@@ -184,7 +184,7 @@ export function SdrAgentActions({
         <DialogContent>
           <DialogTitle>Editar agente</DialogTitle>
           <DialogDescription>
-            Persona e tom ficam em "Persona e teste"; regras de canal e sequência ficam no Playbook.
+            Persona e tom ficam em "Persona e teste"; situação, roteiro, número de WhatsApp e regras ficam em "Configuração do agente".
           </DialogDescription>
           <div className="space-y-1.5">
             <Label htmlFor="sdr-agent-name">Nome do agente</Label>
