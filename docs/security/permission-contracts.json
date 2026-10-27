@@ -2536,7 +2536,7 @@
       "files": {
         "src/lib/prospecting/sdr-agent.functions.ts": "6a20902a0678cde3182fcde646f9aab32114aead1186162ed2a466797d4c138f",
         "src/components/prospecting/sdr-agent-studio.tsx": "9ec10fda5fd355f291bc16aeaf679c7fd208c237ba1f82ec5344420fff803eac",
-        "src/routes/_authenticated/agents.sdr.tsx": "bc79033a5cd456833a36936a2f7434d006db725b553823dd31096c9cec2cec59"
+        "src/routes/_authenticated/agents.sdr.tsx": "320f498321e2908af3a1b8bc4eef475936d86f9da193692fb3b8bb84325575e3"
       },
       "resources": ["system.channels", "techsales.marketing.sdr_agent"],
       "actions": ["view", "create", "update", "manage"],
