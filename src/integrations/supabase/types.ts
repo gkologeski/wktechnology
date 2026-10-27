@@ -12285,6 +12285,8 @@ export type Database = {
       }
       live_chat_messages: {
         Row: {
+          agent_attachments: Json | null
+          author_name: string | null
           author_user_id: string | null
           body: string
           created_at: string
@@ -12295,6 +12297,8 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          agent_attachments?: Json | null
+          author_name?: string | null
           author_user_id?: string | null
           body: string
           created_at?: string
@@ -12305,6 +12309,8 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          agent_attachments?: Json | null
+          author_name?: string | null
           author_user_id?: string | null
           body?: string
           created_at?: string
@@ -21714,6 +21720,7 @@ export type Database = {
           booking_id: string | null
           campaign_id: string | null
           cancel_reason: string | null
+          channel_identity: Json | null
           commercial_stage: string
           company_id: string | null
           contact_id: string | null
@@ -21749,6 +21756,7 @@ export type Database = {
           booking_id?: string | null
           campaign_id?: string | null
           cancel_reason?: string | null
+          channel_identity?: Json | null
           commercial_stage?: string
           company_id?: string | null
           contact_id?: string | null
@@ -21784,6 +21792,7 @@ export type Database = {
           booking_id?: string | null
           campaign_id?: string | null
           cancel_reason?: string | null
+          channel_identity?: Json | null
           commercial_stage?: string
           company_id?: string | null
           contact_id?: string | null
@@ -22979,6 +22988,295 @@ export type Database = {
           },
         ]
       }
+      service_agent_evidence: {
+        Row: {
+          created_at: string
+          enrollment_id: string
+          excerpt: string
+          field: string
+          id: string
+          question_id: string | null
+          session_id: string
+          source_message_id: string
+          value: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          enrollment_id: string
+          excerpt: string
+          field: string
+          id?: string
+          question_id?: string | null
+          session_id: string
+          source_message_id: string
+          value: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          enrollment_id?: string
+          excerpt?: string
+          field?: string
+          id?: string
+          question_id?: string | null
+          session_id?: string
+          source_message_id?: string
+          value?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_agent_evidence_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_agent_evidence_session_id_workspace_id_fkey"
+            columns: ["session_id", "workspace_id"]
+            isOneToOne: false
+            referencedRelation: "service_agent_sessions"
+            referencedColumns: ["id", "workspace_id"]
+          },
+          {
+            foreignKeyName: "service_agent_evidence_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_agent_inbound_events: {
+        Row: {
+          channel: string
+          message_id: string
+          session_id: string
+        }
+        Insert: {
+          channel: string
+          message_id: string
+          session_id: string
+        }
+        Update: {
+          channel?: string
+          message_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_agent_inbound_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "service_agent_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_agent_ingest_errors: {
+        Row: {
+          attempts: number
+          channel: string
+          created_at: string
+          error: string
+          message_id: string
+          resolved_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          attempts?: number
+          channel: string
+          created_at?: string
+          error: string
+          message_id: string
+          resolved_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          attempts?: number
+          channel?: string
+          created_at?: string
+          error?: string
+          message_id?: string
+          resolved_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_agent_ingest_errors_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_agent_jobs: {
+        Row: {
+          agent_version_id: string | null
+          attempts: number
+          available_at: string
+          conversation_version: number
+          created_at: string
+          draft_payload: Json | null
+          draft_text: string | null
+          error: string | null
+          id: string
+          inbound_message_id: string
+          lease_token: string | null
+          lease_until: string | null
+          outbound_message_id: string
+          provider_message_id: string | null
+          send_started_at: string | null
+          send_token: string | null
+          sent_at: string | null
+          session_id: string
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          agent_version_id?: string | null
+          attempts?: number
+          available_at?: string
+          conversation_version: number
+          created_at?: string
+          draft_payload?: Json | null
+          draft_text?: string | null
+          error?: string | null
+          id?: string
+          inbound_message_id: string
+          lease_token?: string | null
+          lease_until?: string | null
+          outbound_message_id?: string
+          provider_message_id?: string | null
+          send_started_at?: string | null
+          send_token?: string | null
+          sent_at?: string | null
+          session_id: string
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          agent_version_id?: string | null
+          attempts?: number
+          available_at?: string
+          conversation_version?: number
+          created_at?: string
+          draft_payload?: Json | null
+          draft_text?: string | null
+          error?: string | null
+          id?: string
+          inbound_message_id?: string
+          lease_token?: string | null
+          lease_until?: string | null
+          outbound_message_id?: string
+          provider_message_id?: string | null
+          send_started_at?: string | null
+          send_token?: string | null
+          sent_at?: string | null
+          session_id?: string
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_agent_jobs_agent_version_id_fkey"
+            columns: ["agent_version_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_agent_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "service_agent_jobs_session_id_workspace_id_fkey"
+            columns: ["session_id", "workspace_id"]
+            isOneToOne: false
+            referencedRelation: "service_agent_sessions"
+            referencedColumns: ["id", "workspace_id"]
+          },
+          {
+            foreignKeyName: "service_agent_jobs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_agent_sessions: {
+        Row: {
+          account_id: string
+          ai_owner: string
+          ai_version: number
+          channel: string
+          context_approved: boolean
+          created_at: string
+          enrollment_id: string
+          id: string
+          identity_verified: boolean
+          last_inbound_at: string | null
+          origin: string
+          source_id: string
+          workspace_id: string
+        }
+        Insert: {
+          account_id: string
+          ai_owner?: string
+          ai_version?: number
+          channel: string
+          context_approved?: boolean
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          identity_verified?: boolean
+          last_inbound_at?: string | null
+          origin?: string
+          source_id: string
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string
+          ai_owner?: string
+          ai_version?: number
+          channel?: string
+          context_approved?: boolean
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          identity_verified?: boolean
+          last_inbound_at?: string | null
+          origin?: string
+          source_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_agent_sessions_account_id_workspace_id_fkey"
+            columns: ["account_id", "workspace_id"]
+            isOneToOne: false
+            referencedRelation: "service_channel_accounts"
+            referencedColumns: ["id", "workspace_id"]
+          },
+          {
+            foreignKeyName: "service_agent_sessions_enrollment_id_workspace_id_fkey"
+            columns: ["enrollment_id", "workspace_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_enrollments"
+            referencedColumns: ["id", "workspace_id"]
+          },
+          {
+            foreignKeyName: "service_agent_sessions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_catalog: {
         Row: {
           active: boolean
@@ -23062,6 +23360,105 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      service_channel_accounts: {
+        Row: {
+          channel: string
+          created_at: string
+          display_name: string
+          enabled: boolean
+          id: string
+          label: string
+          routing_configured: boolean
+          source_key: string
+          workspace_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          display_name?: string
+          enabled?: boolean
+          id?: string
+          label: string
+          routing_configured?: boolean
+          source_key: string
+          workspace_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          display_name?: string
+          enabled?: boolean
+          id?: string
+          label?: string
+          routing_configured?: boolean
+          source_key?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_channel_accounts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_channel_bindings: {
+        Row: {
+          account_id: string
+          agent_id: string
+          campaigns: boolean
+          display_name: string
+          enabled: boolean
+          inbound: boolean
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          account_id: string
+          agent_id: string
+          campaigns?: boolean
+          display_name?: string
+          enabled?: boolean
+          inbound?: boolean
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string
+          agent_id?: string
+          campaigns?: boolean
+          display_name?: string
+          enabled?: boolean
+          inbound?: boolean
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_channel_bindings_account_id_workspace_id_fkey"
+            columns: ["account_id", "workspace_id"]
+            isOneToOne: false
+            referencedRelation: "service_channel_accounts"
+            referencedColumns: ["id", "workspace_id"]
+          },
+          {
+            foreignKeyName: "service_channel_bindings_agent_id_workspace_id_fkey"
+            columns: ["agent_id", "workspace_id"]
+            isOneToOne: false
+            referencedRelation: "sdr_playbooks"
+            referencedColumns: ["id", "workspace_id"]
+          },
+          {
+            foreignKeyName: "service_channel_bindings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       services: {
         Row: {
@@ -31295,6 +31692,14 @@ export type Database = {
         Args: { p_run: string; p_workspace: string }
         Returns: Json
       }
+      sdr_bind_inbound_channel: {
+        Args: {
+          p_conversation: string
+          p_phone_id: string
+          p_workspace: string
+        }
+        Returns: string
+      }
       sdr_claim_jobs: {
         Args: { p_lease_seconds: number; p_limit: number }
         Returns: {
@@ -31345,6 +31750,10 @@ export type Database = {
         Returns: string
       }
       sdr_guard: { Args: { p_job: string; p_lease: string }; Returns: string }
+      sdr_link_opportunity: {
+        Args: { p_contact?: string; p_deal: string; p_enrollment: string }
+        Returns: undefined
+      }
       sdr_publish_agent_version: {
         Args: { p_user: string; p_version: string }
         Returns: string
@@ -31369,9 +31778,156 @@ export type Database = {
         Args: { _owner: string; _workspace: string }
         Returns: undefined
       }
+      service_agent_begin_send: {
+        Args: { p_job: string }
+        Returns: {
+          agent_version_id: string | null
+          attempts: number
+          available_at: string
+          conversation_version: number
+          created_at: string
+          draft_payload: Json | null
+          draft_text: string | null
+          error: string | null
+          id: string
+          inbound_message_id: string
+          lease_token: string | null
+          lease_until: string | null
+          outbound_message_id: string
+          provider_message_id: string | null
+          send_started_at: string | null
+          send_token: string | null
+          sent_at: string | null
+          session_id: string
+          status: string
+          updated_at: string
+          workspace_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "service_agent_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      service_agent_claim: {
+        Args: { p_limit?: number }
+        Returns: {
+          agent_version_id: string | null
+          attempts: number
+          available_at: string
+          conversation_version: number
+          created_at: string
+          draft_payload: Json | null
+          draft_text: string | null
+          error: string | null
+          id: string
+          inbound_message_id: string
+          lease_token: string | null
+          lease_until: string | null
+          outbound_message_id: string
+          provider_message_id: string | null
+          send_started_at: string | null
+          send_token: string | null
+          sent_at: string | null
+          session_id: string
+          status: string
+          updated_at: string
+          workspace_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "service_agent_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      service_agent_commit_turn: {
+        Args: {
+          p_enrollment: Json
+          p_evidence: Json
+          p_job: string
+          p_job_patch: Json
+          p_lease: string
+          p_qualification: Json
+        }
+        Returns: string
+      }
+      service_agent_complete_email: {
+        Args: {
+          p_header: string
+          p_job: string
+          p_provider_id: string
+          p_send_token: string
+        }
+        Returns: string
+      }
+      service_agent_email_is_automatic: {
+        Args: { p_from: string; p_headers: Json; p_mailbox: string }
+        Returns: boolean
+      }
+      service_agent_enqueue: {
+        Args: { p_channel: string; p_message: string }
+        Returns: string
+      }
+      service_agent_enrollment_exists: {
+        Args: { p_enrollment: string }
+        Returns: boolean
+      }
+      service_agent_finish_decision: {
+        Args: { p_job: string; p_lease: string; p_status: string }
+        Returns: string
+      }
+      service_agent_guard: {
+        Args: { p_job: string; p_lease: string }
+        Returns: string
+      }
+      service_agent_inbox_state: {
+        Args: { p_channel: string; p_source: string }
+        Returns: Json
+      }
+      service_agent_send_chat: {
+        Args: { p_attachments?: Json; p_job: string; p_lease: string }
+        Returns: string
+      }
+      service_agent_set_owner: {
+        Args: { p_channel: string; p_owner: string; p_source: string }
+        Returns: undefined
+      }
+      service_agent_source_context: {
+        Args: { p_enrollment: string }
+        Returns: Json
+      }
+      service_agent_technical_limit: {
+        Args: { p_job: string; p_lease: string }
+        Returns: boolean
+      }
+      service_agent_verify_identity: {
+        Args: { p_channel: string; p_source: string }
+        Returns: undefined
+      }
       service_bill_checked: {
         Args: { p_mode: string; p_service: string; p_starts?: string }
         Returns: Json
+      }
+      service_channel_access: {
+        Args: { a: string; c: Json; w: string }
+        Returns: boolean
+      }
+      service_channel_authorize: { Args: { p_action: string }; Returns: Json }
+      service_channel_save: {
+        Args: {
+          p_account: string
+          p_agent: string
+          p_agent_enabled: boolean
+          p_agent_name: string
+          p_campaigns: boolean
+          p_enabled: boolean
+          p_inbound: boolean
+          p_label: string
+          p_name: string
+        }
+        Returns: undefined
       }
       services_next_billing: {
         Args: {

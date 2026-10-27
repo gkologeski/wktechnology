@@ -1,3 +1,11 @@
+# Roadmap — Reorganização da tela /agents/sdr (porte G, em pacotes)
+
+- [x] Pacote 1: 9 abas viram 3 áreas (Operação, Estúdio, Resultados) com seções, endereço por `?section=`, cabeçalho padrão e "Novo agente" levando ao Playbook (com permissão de criar)
+- [ ] Pacote 2: Estúdio integrado (configuração à esquerda, conversa de teste fixa à direita, seções em blocos) — aguarda "pode seguir"
+- [ ] Pacote 3: Operação com indicadores e fila de intervenção; "Em atendimento" com nomes e status em português — aguarda "pode seguir"
+- [ ] Pacote 4: Resultados com funil e tabela de reuniões — aguarda "pode seguir"
+- [ ] Publicação (aguarda aceite do usuário)
+
 # Roadmap — Lia obedece à persona publicada (refatoração SDR)
 
 - [x] Prompt em seções: contrato técnico, precedência, persona publicada na íntegra, controles, complemento, contexto verificável

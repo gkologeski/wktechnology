@@ -2535,7 +2535,8 @@
       "kind": "business",
       "files": {
         "src/lib/prospecting/sdr-agent.functions.ts": "6a20902a0678cde3182fcde646f9aab32114aead1186162ed2a466797d4c138f",
-        "src/components/prospecting/sdr-agent-studio.tsx": "9ec10fda5fd355f291bc16aeaf679c7fd208c237ba1f82ec5344420fff803eac"
+        "src/components/prospecting/sdr-agent-studio.tsx": "9ec10fda5fd355f291bc16aeaf679c7fd208c237ba1f82ec5344420fff803eac",
+        "src/routes/_authenticated/agents.sdr.tsx": "320f498321e2908af3a1b8bc4eef475936d86f9da193692fb3b8bb84325575e3"
       },
       "resources": ["system.channels", "techsales.marketing.sdr_agent"],
       "actions": ["view", "create", "update", "manage"],
@@ -2544,9 +2545,12 @@
         "system.channels.view.workspace",
         "techsales.marketing.sdr_agent.view.workspace",
         "techsales.marketing.sdr_agent.update.workspace",
-        "techsales.marketing.sdr_agent.manage.workspace"
+        "techsales.marketing.sdr_agent.manage.workspace",
+        "techsales.marketing.sdr_agent.create.own",
+        "techsales.marketing.sdr_agent.create.team",
+        "techsales.marketing.sdr_agent.create.workspace"
       ],
-      "rationale": "Existing SDR version/config/test endpoints retain sales middleware, record checks and assertSdr workspace enforcement. Optional sandbox channel preview additionally requires current channel view and account/binding user RLS; only account UUID is accepted, never client identity text. Disabled accounts may be simulated without activating them. Sandbox continues memory tools and fake calendar with no external delivery or CRM writes.",
+      "rationale": "Existing SDR version/config/test endpoints retain sales middleware, record checks and assertSdr workspace enforcement. Optional sandbox channel preview additionally requires current channel view and account/binding user RLS; only account UUID is accepted, never client identity text. Disabled accounts may be simulated without activating them. Sandbox continues memory tools and fake calendar with no external delivery or CRM writes. The /agents/sdr page groups the same sections into Operação, Estúdio and Resultados through a validated section search param and disables Novo agente unless usePermissions grants an SDR create key; playbook server functions keep requireSalesPermission plus requireSdr, so the UI gate is advisory and adds no new action or data access.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -3257,6 +3261,15 @@
         "src/lib/whatsapp/quality-display.ts": "5424033e2d2d4e7121f6e7fe4e10b2cd0cb990905383465aae88126e7f0a5c8d"
       },
       "rationale": "Pure mapping of existing Meta quality ratings to labels and visual tones; no I/O, actions, permissions, or data access."
+    },
+    {
+      "id": "sdr-workspace-navigation",
+      "kind": "presentation",
+      "files": {
+        "src/components/prospecting/sdr-workspace-nav.tsx": "dfdcd6de66ff2417c93fd3f5102c0770795cb4d9fd7fafaa445d8deed9f46a74",
+        "src/components/prospecting/sdr-workspace-sections.ts": "76a8427d71c2f25824149d31e0cc7a0df3d9395cfec66c231bf9f5f4022102f5"
+      },
+      "rationale": "Static labels and grouping of existing Agente SDR sections into three areas, rendered as same-page links and tab triggers. No event handlers, I/O, server functions, permissions or data access; each section keeps its own existing controls."
     }
   ],
   "retired": {}
