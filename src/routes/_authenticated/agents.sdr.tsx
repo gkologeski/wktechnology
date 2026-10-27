@@ -94,6 +94,7 @@ function SdrAgentPage() {
   const [active, setActive] = useState<Playbook>(empty);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const permissions = usePermissions();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const section: SdrSectionId = search.section ?? DEFAULT_SDR_SECTION;
@@ -158,6 +159,7 @@ function SdrAgentPage() {
     setActive(empty);
     goTo("playbook");
   }
+  const canCreate = permissions.canAny(SDR_CREATE_KEYS);
 
   return (
     <div className="space-y-6">
@@ -166,14 +168,18 @@ function SdrAgentPage() {
         title="Agente SDR"
         description="Acompanhe as conversas na Operação, ajuste o agente no Estúdio e veja o retorno em Resultados."
         primaryAction={
-          <Button onClick={newAgent}>
+          <Button
+            onClick={newAgent}
+            disabled={!canCreate}
+            title={canCreate ? undefined : "Você não tem permissão para criar agentes."}
+          >
             <Plus className="h-4 w-4 mr-1" aria-hidden="true" /> Novo agente
           </Button>
         }
       />
 
       <Tabs value={section} onValueChange={(v) => goTo(parseSdrSection(v) ?? DEFAULT_SDR_SECTION)}>
-        <SdrWorkspaceNav section={section} onSectionChange={goTo} />
+        <SdrWorkspaceNav section={section} />
         {view.id === "studio" ? (
           <p className="mt-4 max-w-3xl text-sm text-muted-foreground">
             Cada agente tem uma <strong className="text-foreground">persona</strong> (identidade e
