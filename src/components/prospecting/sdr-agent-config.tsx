@@ -117,6 +117,7 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
 
   const [cfg, setCfg] = useState<AgentConfig | null>(null);
   const [agent, setAgent] = useState<{
+    enabled: boolean;
     qualification_prompt: string;
     handoff_score: number;
     opportunity_min_score: number;
@@ -125,11 +126,14 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
     max_follow_ups: number;
     mode: "supervised" | "auto";
   } | null>(null);
+  // Texto livre enquanto digita; vira lista só ao salvar (vírgulas não somem).
+  const [optOutText, setOptOutText] = useState("");
 
   useEffect(() => {
     if (!q.data || cfg) return;
     setCfg(q.data.config as AgentConfig);
     setAgent({
+      enabled: q.data.agent.enabled,
       qualification_prompt: q.data.agent.qualification_prompt ?? "",
       handoff_score: q.data.agent.handoff_score,
       opportunity_min_score: q.data.agent.opportunity_min_score,
@@ -138,14 +142,24 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
       max_follow_ups: q.data.agent.max_follow_ups,
       mode: q.data.agent.mode === "auto" ? "auto" : "supervised",
     });
+    setOptOutText((q.data.agent.opt_out_phrases ?? []).join(", "));
   }, [q.data, cfg]);
 
   const saveM = useMutation({
-    mutationFn: () => save({ data: { workspaceId, playbookId, config: cfg, agent: agent ?? {} } }),
+    mutationFn: () =>
+      save({
+        data: {
+          workspaceId,
+          playbookId,
+          config: cfg,
+          agent: agent ? { ...agent, opt_out_phrases: parseOptOutPhrases(optOutText) } : {},
+        },
+      }),
     onSuccess: async () => {
       toast.success("Configuração do agente salva");
       await qc.invalidateQueries({ queryKey: key });
       await qc.invalidateQueries({ queryKey: ["sdr-overview"] });
+      await qc.invalidateQueries({ queryKey: ["sdr-playbooks"] });
     },
     onError: (e: Error) => toast.error(e.message),
   });
