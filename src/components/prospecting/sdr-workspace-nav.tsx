@@ -58,7 +58,7 @@ export function SdrWorkspaceNav({ section }: { section: SdrSectionId }) {
                   {v.description}
                 </span>
               </span>
-            </button>
+            </Link>
           );
         })}
       </nav>
