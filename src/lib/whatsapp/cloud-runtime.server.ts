@@ -152,7 +152,7 @@ export async function downloadCloudMedia(
   if (info.file_size > 16 * 1024 * 1024) throw new Error("Mídia excede 16 MB.");
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${connection.credentials.accessToken}` },
-    redirect: "error",
+    redirect: "manual",
     signal: AbortSignal.timeout(20_000),
   });
   if (!response.ok) throw new Error(`Falha no download Meta (${response.status}).`);
