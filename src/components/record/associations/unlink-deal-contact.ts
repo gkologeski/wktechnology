@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { checkedMutationClient } from "@/lib/access-control/checked-mutation-client";
+
 type DbError = { message: string; code?: string } | null;
 
 /**
@@ -7,15 +9,15 @@ type DbError = { message: string; code?: string } | null;
  * removed, so a primary-only contact does not trip the zero-row denial of the
  * checked writer.
  *
- * `reader` is the plain client (RLS reads); `writer` is the checked mutation
+ * Reads use the plain client (RLS); writes go through the checked mutation
  * client, which reports zero-row writes as permission errors.
  */
 export async function unlinkDealContact(
   reader: any,
-  writer: any,
   dealId: string,
   contactId: string,
 ): Promise<{ error: DbError }> {
+  const writer = checkedMutationClient(reader) as any;
   const [linkRes, dealRes] = await Promise.all([
     reader
       .from("deal_contacts")

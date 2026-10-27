@@ -306,7 +306,7 @@ function ContactsCardContent({
       if (deniedIfUnaffected(affected)) return;
     } else {
       // Remove o vínculo many-to-many e/ou o contato principal, conforme existirem
-      const { error } = await unlinkDealContact(supabase, sb, entityId, contactId);
+      const { error } = await unlinkDealContact(supabase, entityId, contactId);
       if (error) return toast.error(error.message);
     }
     toast.success("Contato desvinculado");

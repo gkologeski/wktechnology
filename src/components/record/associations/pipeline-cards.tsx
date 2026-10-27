@@ -117,7 +117,7 @@ function DealsCardContent({
       const { error } = await sb.from("deals").update({ company_id: null }).eq("id", dealId);
       if (error) return toast.error(error.message);
     } else {
-      const { error } = await unlinkDealContact(supabase, sb, dealId, entityId);
+      const { error } = await unlinkDealContact(supabase, dealId, entityId);
       if (error) return toast.error(error.message);
     }
     toast.success("Negócio desvinculado");
