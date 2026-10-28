@@ -457,6 +457,16 @@ export async function applyFullImport(
 ): Promise<{ runId: string; summary: FullImportSummary }> {
   await assertFullImportAccess(ctx);
   const token = await tokenKeepingStatus(ctx.admin, ctx.workspaceId);
+  // Uma execução por vez: duas em paralelo criariam cadastros em dobro.
+  const { data: active } = await ctx.admin
+    .from("contaazul_import_runs")
+    .select("id")
+    .eq("workspace_id", ctx.workspaceId)
+    .eq("status", "running")
+    .gte("started_at", new Date(Date.now() - 60 * 60 * 1000).toISOString())
+    .limit(1);
+  if (active?.length)
+    throw new Error("Já existe uma importação do Conta Azul em andamento. Aguarde ela terminar.");
   const { data: run, error: runErr } = await ctx.admin
     .from("contaazul_import_runs")
     .insert({ workspace_id: ctx.workspaceId, started_by: ctx.userId })
