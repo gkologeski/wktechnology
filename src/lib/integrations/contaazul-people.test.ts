@@ -75,6 +75,7 @@ describe("conciliação Conta Azul — fronteira de acesso", () => {
       decidePeopleLinks(admin, {
         workspaceId: WS,
         userId: USER,
+        client: rpcClient(() => true),
         ids: ["l1"],
         action: "choose",
         localId: "22222222-2222-4222-8222-222222222222",

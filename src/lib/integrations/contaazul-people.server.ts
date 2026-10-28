@@ -77,7 +77,9 @@ async function tokenKeepingStatus(admin: SupabaseClient, workspaceId: string): P
 export async function refreshPeopleLinks(
   admin: SupabaseClient,
   workspaceId: string,
+  auth: { client: SupabaseClient; userId: string },
 ): Promise<Record<string, number>> {
+  await assertPeopleAccess(auth.client, workspaceId, auth.userId, "manage");
   const token = await tokenKeepingStatus(admin, workspaceId);
   const raw = await caFetchAll({ accessToken: token, path: "/v1/pessoas", pageSize: 500 });
   const people: Array<CaPerson & { profile: string | null }> = raw
@@ -197,11 +199,13 @@ export async function decidePeopleLinks(
   opts: {
     workspaceId: string;
     userId: string;
+    client: SupabaseClient;
     ids: string[];
     action: PeopleAction;
     localId?: string | null;
   },
 ): Promise<number> {
+  await assertPeopleAccess(opts.client, opts.workspaceId, opts.userId, "manage");
   const { data: links, error } = await admin
     .from("contaazul_person_links")
     .select("id, person_kind, status, local_company_id, local_contact_id, candidates")

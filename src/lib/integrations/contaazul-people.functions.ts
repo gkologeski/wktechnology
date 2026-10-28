@@ -64,7 +64,10 @@ export const contaAzulPeopleRefresh = createServerFn({ method: "POST" })
       p_entity: "connection",
     });
     if (ok !== true) throw new Error("Sem permissão de gestão da integração Conta Azul.");
-    return { counts: await people.refreshPeopleLinks(supabaseAdmin, workspaceId) };
+    return { counts: await people.refreshPeopleLinks(supabaseAdmin, workspaceId, {
+      client: context.supabase,
+      userId: context.userId,
+    }) };
   });
 
 /** Confirma, troca, marca como nova (somente financeiro), ignora ou reabre vínculos. */
@@ -93,6 +96,7 @@ export const contaAzulPeopleDecide = createServerFn({ method: "POST" })
     const changed = await people.decidePeopleLinks(supabaseAdmin, {
       workspaceId,
       userId: context.userId,
+      client: context.supabase,
       ids: data.ids,
       action: data.action,
       localId: data.localId ?? null,
