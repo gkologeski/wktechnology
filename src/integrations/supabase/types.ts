@@ -5689,6 +5689,53 @@ export type Database = {
           },
         ]
       }
+      contaazul_import_runs: {
+        Row: {
+          error: string | null
+          finished_at: string | null
+          id: string
+          rolled_back_at: string | null
+          rolled_back_by: string | null
+          started_at: string
+          started_by: string
+          status: string
+          summary: Json
+          workspace_id: string
+        }
+        Insert: {
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          rolled_back_at?: string | null
+          rolled_back_by?: string | null
+          started_at?: string
+          started_by: string
+          status?: string
+          summary?: Json
+          workspace_id: string
+        }
+        Update: {
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          rolled_back_at?: string | null
+          rolled_back_by?: string | null
+          started_at?: string
+          started_by?: string
+          status?: string
+          summary?: Json
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contaazul_import_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contaazul_person_links: {
         Row: {
           candidates: Json
@@ -5774,6 +5821,81 @@ export type Database = {
           },
           {
             foreignKeyName: "contaazul_person_links_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contaazul_record_links: {
+        Row: {
+          candidates: Json
+          contaazul_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decision: string | null
+          entity: string
+          id: string
+          label: string | null
+          local_id: string | null
+          local_pair_id: string | null
+          previous: Json | null
+          run_id: string | null
+          status: string
+          tier: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          candidates?: Json
+          contaazul_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
+          entity: string
+          id?: string
+          label?: string | null
+          local_id?: string | null
+          local_pair_id?: string | null
+          previous?: Json | null
+          run_id?: string | null
+          status: string
+          tier?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          candidates?: Json
+          contaazul_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decision?: string | null
+          entity?: string
+          id?: string
+          label?: string | null
+          local_id?: string | null
+          local_pair_id?: string | null
+          previous?: Json | null
+          run_id?: string | null
+          status?: string
+          tier?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contaazul_record_links_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "contaazul_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contaazul_record_links_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
