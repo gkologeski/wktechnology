@@ -1,11 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireWorkspaceContext } from "@/lib/access-control/active-workspace.middleware";
 
 /** Lista as vendas importadas do Conta Azul (somente leitura). */
 export const listFinanceSales = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .inputValidator((input) =>
     z
       .object({
@@ -26,10 +26,7 @@ export const listFinanceSales = createServerFn({ method: "POST" })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
-    const [{ resolveActiveWorkspace }, sales] = await Promise.all([
-      import("@/lib/active-workspace.server"),
-      import("./finance-sales.server"),
-    ]);
-    const workspaceId = await resolveActiveWorkspace(context.userId);
-    return sales.listSales(context.supabase, workspaceId, context.userId, data);
+    const sales = await import("./finance-sales.server");
+    // Membro ativo e workspace selecionado já validados; a permissão é checada no servidor e na RLS.
+    return sales.listSales(context.supabase, context.activeWorkspaceId, context.userId, data);
   });
