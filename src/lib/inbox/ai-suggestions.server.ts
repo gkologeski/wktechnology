@@ -74,9 +74,8 @@ export async function suggestCompanyLeft(
 async function classifyWithAI(workspaceId: string, companyName: string, message: string) {
   try {
     const { aiChatFetch } = await import("@/lib/ai/provider-resolver.server");
-    const { buildCompanyLeftPrompt, parseCompanyLeftAnswer, COMPANY_LEFT_SCHEMA } = await import(
-      "./company-left-ai"
-    );
+    const { buildCompanyLeftPrompt, parseCompanyLeftAnswer, COMPANY_LEFT_SCHEMA } =
+      await import("./company-left-ai");
     const res = await aiChatFetch(
       {
         method: "POST",

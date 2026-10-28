@@ -28,7 +28,10 @@ export function buildCompanyLeftPrompt(companyName: string, message: string) {
         "ou quando a empresa negada for diferente da informada. Em dúvida, falso com confiança baixa. " +
         "confianca vai de 0 a 1.",
     },
-    { role: "user", content: `Empresa no cadastro: ${companyName}\nMensagem: ${message.slice(0, 1500)}` },
+    {
+      role: "user",
+      content: `Empresa no cadastro: ${companyName}\nMensagem: ${message.slice(0, 1500)}`,
+    },
   ];
 }
 
