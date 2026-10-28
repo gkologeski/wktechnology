@@ -806,7 +806,7 @@ export async function applyFullImport(
       (id) => `contaazul:${ev.get(id)!.direction}:${id}`,
     );
     const existingRef = new Map<string, string>();
-    for (const part of chunks(createRefs, 300)) {
+    for (const part of chunks(createRefs, 60)) {
       const { data, error } = await ctx.admin
         .from("financial_entries")
         .select("id, external_ref")
