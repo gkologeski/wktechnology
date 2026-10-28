@@ -2133,7 +2133,9 @@
         "src/routes/_authenticated/inbox.whatsapp.tsx": "1fc2be372627dcfd81a950952a3c6626dfbaff0b5b56a2be92623f45e8d0009e",
         "src/routes/_authenticated/campaigns.whatsapp.tsx": "5dfdec509a34b8de6af31a3e8df677edcf9b00b9722a0b5c3d7cc6e820876dfa",
         "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9",
-        "drizzle/migrations/0263_wa_outbound_activity_trigger.sql": "6c6a9521a5cfa09cd1724061fd78939fa94d56344ccb8c3052418ea9426a96e0"
+        "drizzle/migrations/0263_wa_outbound_activity_trigger.sql": "6c6a9521a5cfa09cd1724061fd78939fa94d56344ccb8c3052418ea9426a96e0",
+        "drizzle/migrations/0264_wa_outbound_activity_fast_lookup.sql": "120f2512f182b4b1f4a0f89489dbe4cff8c00f7be3be5f31ff9b5b5ccea6a53a",
+        "drizzle/migrations/0265_wa_outbound_activity_contact_owner_fallback.sql": "f951df73a114e86f227c877eddfff7960b975bc8cc723add13b9d3940090baa0"
       },
       "resources": [
         "system.whatsapp",
@@ -2160,7 +2162,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender or conversation assignee only when an active member, otherwise null; failures never block the message.",
+      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -2182,6 +2184,14 @@
         },
         {
           "file": "drizzle/migrations/0263_wa_outbound_activity_trigger.sql",
+          "symbol": "wa_outbound_register_activity"
+        },
+        {
+          "file": "drizzle/migrations/0264_wa_outbound_activity_fast_lookup.sql",
+          "symbol": "activities_wa_message_id_idx"
+        },
+        {
+          "file": "drizzle/migrations/0265_wa_outbound_activity_contact_owner_fallback.sql",
           "symbol": "wa_outbound_register_activity"
         }
       ],
