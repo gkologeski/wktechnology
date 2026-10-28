@@ -265,3 +265,138 @@ export function matchByName<T extends { id: string; name: string }>(
     return { remoteId: r.id, outcome: "new" as const, localIds: [] };
   });
 }
+
+/* -------------------------------------------------------------------------- */
+/* Nomes parecidos → sugestão (nunca vínculo automático)                      */
+/* -------------------------------------------------------------------------- */
+
+const NAME_STOPWORDS = new Set([
+  "de",
+  "da",
+  "do",
+  "das",
+  "dos",
+  "e",
+  "the",
+  "and",
+  "comercio",
+  "servicos",
+  "industria",
+  "brasil",
+  "grupo",
+]);
+
+const ABBREVIATIONS: Record<string, string> = {
+  tec: "tecnologia",
+  tecnol: "tecnologia",
+  sist: "sistemas",
+  sistemas: "sistemas",
+  com: "comercio",
+  serv: "servicos",
+  ind: "industria",
+  adm: "administracao",
+  cons: "consultoria",
+  inf: "informatica",
+  info: "informatica",
+};
+
+export function nameTokens(input: unknown): string[] {
+  return normCompanyName(input)
+    .split(" ")
+    .map((w) => ABBREVIATIONS[w] ?? w)
+    .filter((w) => w.length > 1 && !NAME_STOPWORDS.has(w));
+}
+
+function jaroWinkler(a: string, b: string): number {
+  if (a === b) return 1;
+  if (!a.length || !b.length) return 0;
+  const range = Math.max(0, Math.floor(Math.max(a.length, b.length) / 2) - 1);
+  const am = new Array<boolean>(a.length).fill(false);
+  const bm = new Array<boolean>(b.length).fill(false);
+  let matches = 0;
+  for (let i = 0; i < a.length; i++) {
+    for (let j = Math.max(0, i - range); j < Math.min(b.length, i + range + 1); j++) {
+      if (bm[j] || a[i] !== b[j]) continue;
+      am[i] = bm[j] = true;
+      matches++;
+      break;
+    }
+  }
+  if (!matches) return 0;
+  let t = 0;
+  let k = 0;
+  for (let i = 0; i < a.length; i++) {
+    if (!am[i]) continue;
+    while (!bm[k]) k++;
+    if (a[i] !== b[k]) t++;
+    k++;
+  }
+  const jaro = (matches / a.length + matches / b.length + (matches - t / 2) / matches) / 3;
+  let prefix = 0;
+  while (prefix < 4 && a[prefix] === b[prefix]) prefix++;
+  return jaro + prefix * 0.1 * (1 - jaro);
+}
+
+/** Semelhança 0–1 entre nomes, insensível a acentos, sufixos, abreviações e ordem. */
+export function nameSimilarity(a: unknown, b: unknown): number {
+  const ta = nameTokens(a);
+  const tb = nameTokens(b);
+  if (!ta.length || !tb.length) return 0;
+  const sa = [...ta].sort().join(" ");
+  const sb = [...tb].sort().join(" ");
+  if (sa === sb) return 1;
+  const setB = new Set(tb);
+  const common = ta.filter((t) => setB.has(t)).length;
+  const dice = (2 * common) / (ta.length + tb.length);
+  const jw = jaroWinkler(sa, sb);
+  return Math.round(Math.max(dice, 0.5 * dice + 0.5 * jw) * 10000) / 10000;
+}
+
+export const SUGGEST_MIN = 0.9;
+export const REVIEW_MIN = 0.75;
+
+export type NameSuggestion = {
+  outcome: "suggested" | "review" | "new";
+  score: number | null;
+  candidates: Array<{ id: string; name: string; score: number }>;
+};
+
+/** Índice por token para evitar comparar cada nome com todas as empresas. */
+export function buildNameIndex<T extends { id: string; name: string }>(items: T[]) {
+  const byToken = new Map<string, T[]>();
+  for (const item of items) {
+    for (const t of new Set(nameTokens(item.name))) {
+      if (t.length < 3) continue;
+      const list = byToken.get(t);
+      if (list) list.push(item);
+      else byToken.set(t, [item]);
+    }
+  }
+  return byToken;
+}
+
+export function suggestByName<T extends { id: string; name: string }>(
+  name: string,
+  index: Map<string, T[]>,
+  maxCandidates = 5,
+): NameSuggestion {
+  const pool = new Map<string, T>();
+  for (const t of new Set(nameTokens(name))) {
+    const list = index.get(t);
+    if (!list || list.length > 400) continue; // token comum demais não ajuda
+    for (const item of list) pool.set(item.id, item);
+  }
+  const scored = [...pool.values()]
+    .map((c) => ({ id: c.id, name: c.name, score: nameSimilarity(name, c.name) }))
+    .filter((c) => c.score >= REVIEW_MIN)
+    .sort((x, y) => y.score - x.score)
+    .slice(0, maxCandidates);
+  if (!scored.length) return { outcome: "new", score: null, candidates: [] };
+  const [best, second] = scored;
+  const unique = !second || second.score < REVIEW_MIN + 0.1;
+  return {
+    outcome: best!.score >= SUGGEST_MIN && unique ? "suggested" : "review",
+    score: best!.score,
+    candidates: scored,
+  };
+}
