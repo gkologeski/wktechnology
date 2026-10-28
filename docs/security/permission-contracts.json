@@ -2627,7 +2627,7 @@
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
       "files": {
-        "src/integrations/supabase/types.ts": "8831934edde2e6fdc4b4b50283b699924f517e5a88c3832c7e2524c0286fc97e"
+        "src/integrations/supabase/types.ts": "83179ebc18b8d5a7d8297a19ef229a7e15d1c5f0d49a024c111fbc62ccba3b50"
       },
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies."
     },
@@ -3911,10 +3911,12 @@
       "id": "contaazul-full-import",
       "kind": "business",
       "files": {
-        "src/lib/integrations/contaazul-full-import.server.ts": "244301eb48ae2b9a1b06755a2e8d0886ab89c318768b025e2e808690fffca2cc",
+        "src/lib/integrations/contaazul-full-import.server.ts": "7e8199c8506bd613ca7e9e623425db933fe544e6a8d6340f128c696ba2bc7747",
         "src/lib/integrations/contaazul-full-import.functions.ts": "a057329a32bdd21899fac099e93d29c3635de6d50a2ec07f8f60648cd2906be7",
-        "src/components/contaazul/contaazul-full-import.tsx": "e10e858c6e9ad2ecf45c7e85b5342ced192334add40a04a3d823c8f997372dea",
-        "drizzle/migrations/0257_contaazul_record_links.sql": "0bb3d412cb48f89cc437b861c3b80312e5315f96330e28b2a227be9b61ffb4f7"
+        "src/components/contaazul/contaazul-full-import.tsx": "cac71519ab138d874c19c72c566d6b47a8c2c491b79c827625ad233e995085f3",
+        "drizzle/migrations/0257_contaazul_record_links.sql": "0bb3d412cb48f89cc437b861c3b80312e5315f96330e28b2a227be9b61ffb4f7",
+        "drizzle/migrations/0258_contacts_audience_column_grants.sql": "39d44eff592f0e0d42cdad7c60bd7aba9ce1e4ff0e428e42eba7deed3383dd92",
+        "drizzle/migrations/0259_shared_fields_contacts_audience.sql": "1c95724d3b315eafb5582ce771964a5e03491e416a9f4e337d0597f71183be75"
       },
       "resources": [
         "system.integrations",
