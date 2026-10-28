@@ -262,6 +262,18 @@ export async function getValidAccessToken(
 
   if (!tokens.refresh_token) return tokens.access_token;
   const refreshed = await refreshTokens(tokens.refresh_token);
+  if (row?.status && row.status !== "connected") {
+    // Conexão pausada/pendente: renova só os tokens, sem reativar a sincronização automática.
+    const { error } = await supabase
+      .from("integrations")
+      .update({
+        oauth_tokens: refreshed as unknown as Record<string, unknown>,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", row.id);
+    if (error) throw new Error(error.message);
+    return refreshed.access_token;
+  }
   await saveTokens(supabase, { workspaceId, tokens: refreshed });
   return refreshed.access_token;
 }
