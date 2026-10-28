@@ -767,6 +767,10 @@ export async function applyFullImport(
 
     /* ---- Lançamentos ---- */
     phase = "lançamentos";
+    await ctx.admin
+      .from("contaazul_import_runs")
+      .update({ summary: { ...summary, written, errors, phase } })
+      .eq("id", runId);
     const ev = new Map(plan.api.events.map((e) => [e.id, e]));
     const localById = new Map(plan.localEvents.map((l) => [l.id, l]));
     const today = new Date().toISOString().slice(0, 10);
@@ -807,12 +811,18 @@ export async function applyFullImport(
     );
     const existingRef = new Map<string, string>();
     for (const part of chunks(createRefs, 60)) {
-      const { data, error } = await ctx.admin
-        .from("financial_entries")
-        .select("id, external_ref")
-        .eq("workspace_id", ws)
-        .in("external_ref", part);
-      if (error) throw new Error(error.message);
+      const query = () =>
+        ctx.admin
+          .from("financial_entries")
+          .select("id, external_ref")
+          .eq("workspace_id", ws)
+          .in("external_ref", part);
+      let { data, error } = await query();
+      for (let attempt = 1; error && attempt <= 3; attempt++) {
+        await new Promise((r) => setTimeout(r, 1000 * attempt));
+        ({ data, error } = await query());
+      }
+      if (error) throw new Error(`conferência de referências: ${error.message}`);
       for (const r of (data ?? []) as Array<{ id: string; external_ref: string }>)
         existingRef.set(r.external_ref, r.id);
     }
