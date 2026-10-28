@@ -65,7 +65,13 @@ async function pageAll<T>(
 ): Promise<T[]> {
   const out: T[] = [];
   for (let from = 0; ; from += 1000) {
-    const { data, error } = await build(from, from + 999);
+    let res = await build(from, from + 999);
+    // Erros temporários de rede/banco: até 3 novas tentativas por página.
+    for (let attempt = 1; res.error && attempt <= 3; attempt++) {
+      await new Promise((r) => setTimeout(r, 500 * 2 ** attempt));
+      res = await build(from, from + 999);
+    }
+    const { data, error } = res;
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as T[];
     out.push(...rows);
