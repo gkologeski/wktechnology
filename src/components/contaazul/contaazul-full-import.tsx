@@ -49,6 +49,12 @@ const WRITTEN: Record<string, string> = {
   payments_estimated_date: "Baixas com data estimada",
   entries_cancelled: "Lançamentos cancelados (perdidos)",
   transfers_created: "Transferências criadas",
+  discounts_adjusted: "Quitados com desconto ajustados",
+  sales_created: "Vendas importadas",
+  sales_updated: "Vendas atualizadas",
+  entries_resumed: "Lançamentos retomados",
+  companies_resumed: "Empresas retomadas",
+  contacts_resumed: "Contatos retomados",
   links_written: "Vínculos gravados",
 };
 
@@ -76,6 +82,11 @@ function SummaryGrid({ s }: { s: FullImportSummary }) {
       `${s.categories.match} existentes · ${s.categories.create} novas · ${s.categories.review} para revisar`,
     ],
     ["Centros de custo", `${s.costCenters.match} existentes · ${s.costCenters.create} novos`],
+    [
+      "Vendas",
+      s.sales ? `${s.sales.total} lidas · ${s.sales.create} novas · ${brl(s.sales.value)}` : "—",
+    ],
+    ["Quitados com desconto a ajustar", `${s.discounts?.toAdjust ?? 0}`],
     ["Contas financeiras", `${s.bankAccounts.match} existentes · ${s.bankAccounts.create} novas`],
   ];
   return (

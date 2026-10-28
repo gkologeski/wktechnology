@@ -11,8 +11,16 @@ export const listFinanceSales = createServerFn({ method: "POST" })
       .object({
         search: z.string().max(200).optional(),
         status: z.string().max(80).nullable().optional(),
-        from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
-        to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+        from: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .nullable()
+          .optional(),
+        to: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .nullable()
+          .optional(),
         page: z.number().int().min(0).max(2000).default(0),
       })
       .parse(input ?? {}),

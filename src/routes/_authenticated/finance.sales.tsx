@@ -51,7 +51,11 @@ const dateBr = (iso: string | null) => {
   const d = parseIsoDate(iso);
   return d ? d.toLocaleDateString("pt-BR") : "—";
 };
-const ITEMS: Record<string, string> = { SERVICE: "Serviço", PRODUCT: "Produto", BOTH: "Produto e serviço" };
+const ITEMS: Record<string, string> = {
+  SERVICE: "Serviço",
+  PRODUCT: "Produto",
+  BOTH: "Produto e serviço",
+};
 
 function FinanceSalesPage() {
   const permissions = usePermissions();
@@ -67,10 +71,12 @@ function FinanceSalesPage() {
     queryFn: () => list({ data: { search, status, from, to, page } }),
     placeholderData: keepPreviousData,
   });
-  const reset = <T,>(set: (v: T) => void) => (v: T) => {
-    set(v);
-    setPage(0);
-  };
+  const reset =
+    <T,>(set: (v: T) => void) =>
+    (v: T) => {
+      set(v);
+      setPage(0);
+    };
   const summary = q.data?.summary;
   const statuses = Object.entries(summary?.byStatus ?? {}).sort((a, b) => b[1].count - a[1].count);
   const rows = q.data?.rows ?? [];
@@ -118,7 +124,12 @@ function FinanceSalesPage() {
         }
         actions={
           <div className="flex flex-wrap items-center gap-2">
-            <IsoDatePicker ariaLabel="Data inicial" value={from} max={to} onChange={reset(setFrom)} />
+            <IsoDatePicker
+              ariaLabel="Data inicial"
+              value={from}
+              max={to}
+              onChange={reset(setFrom)}
+            />
             <IsoDatePicker ariaLabel="Data final" value={to} min={from} onChange={reset(setTo)} />
           </div>
         }
@@ -164,22 +175,34 @@ function FinanceSalesPage() {
                   <TableCell className="tabular-nums">{dateBr(r.sale_date)}</TableCell>
                   <TableCell>
                     {r.company_id ? (
-                      <Link to="/companies/$id" params={{ id: r.company_id }} className="hover:underline">
+                      <Link
+                        to="/companies/$id"
+                        params={{ id: r.company_id }}
+                        className="hover:underline"
+                      >
                         {r.customer_name ?? "—"}
                       </Link>
                     ) : r.contact_id ? (
-                      <Link to="/contacts/$id" params={{ id: r.contact_id }} className="hover:underline">
+                      <Link
+                        to="/contacts/$id"
+                        params={{ id: r.contact_id }}
+                        className="hover:underline"
+                      >
                         {r.customer_name ?? "—"}
                       </Link>
                     ) : (
                       (r.customer_name ?? "—")
                     )}
                   </TableCell>
-                  <TableCell>{(r.items_kind && ITEMS[r.items_kind]) ?? r.items_kind ?? "—"}</TableCell>
+                  <TableCell>
+                    {(r.items_kind && ITEMS[r.items_kind]) ?? r.items_kind ?? "—"}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline">{r.status_label ?? "Sem situação"}</Badge>
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">{brl(Number(r.total) || 0)}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {brl(Number(r.total) || 0)}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -189,7 +212,12 @@ function FinanceSalesPage() {
               {count} venda(s){from || to ? ` entre ${dateBr(from)} e ${dateBr(to)}` : ""}
             </span>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page === 0}
+                onClick={() => setPage((p) => p - 1)}
+              >
                 Anterior
               </Button>
               <span className="text-muted-foreground">

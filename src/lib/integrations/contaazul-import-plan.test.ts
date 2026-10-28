@@ -309,7 +309,13 @@ describe("quitação com desconto e vendas", () => {
       situacao: { nome: "APROVADO", descricao: "Aprovado" },
       criado_em: "2021-06-21T11:26:32.875",
     })!;
-    expect(s).toMatchObject({ number: 103, date: "2021-01-23", total: 1430.4, customerId: "c1", statusLabel: "Aprovada" });
+    expect(s).toMatchObject({
+      number: 103,
+      date: "2021-01-23",
+      total: 1430.4,
+      customerId: "c1",
+      statusLabel: "Aprovada",
+    });
     expect(mapCaSale({ numero: 1 })).toBeNull();
   });
 });

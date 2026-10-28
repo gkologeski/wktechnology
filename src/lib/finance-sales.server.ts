@@ -27,7 +27,12 @@ export async function assertSalesView(
 
 type Query = ReturnType<ReturnType<SupabaseClient["from"]>["select"]>;
 
-function applyFilters<Q extends Query>(q: Q, workspaceId: string, f: SalesFilter, withStatus: boolean): Q {
+function applyFilters<Q extends Query>(
+  q: Q,
+  workspaceId: string,
+  f: SalesFilter,
+  withStatus: boolean,
+): Q {
   let out = q.eq("workspace_id", workspaceId) as Q;
   const term = f.search?.trim().replace(/[%_,()]/g, " ");
   if (term) out = out.ilike("customer_name", `%${term}%`) as Q;
@@ -65,7 +70,10 @@ export async function listSales(client: SupabaseClient, workspaceId: string, f: 
   if (sums.error) throw new Error(sums.error.message);
   const byStatus: Record<string, { count: number; total: number }> = {};
   let total = 0;
-  for (const r of (sums.data ?? []) as Array<{ total: number | string; status_label: string | null }>) {
+  for (const r of (sums.data ?? []) as Array<{
+    total: number | string;
+    status_label: string | null;
+  }>) {
     const k = r.status_label ?? "Sem situação";
     const v = Number(r.total) || 0;
     byStatus[k] = { count: (byStatus[k]?.count ?? 0) + 1, total: (byStatus[k]?.total ?? 0) + v };
