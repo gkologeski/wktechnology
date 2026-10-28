@@ -120,6 +120,18 @@ async function guarded(
 /* Leitura                                                                     */
 /* -------------------------------------------------------------------------- */
 
+/** Leituras da API com novas tentativas para quedas de conexão (erro de rede). */
+async function withNetworkRetry<T>(run: () => Promise<T>, attempts = 4): Promise<T> {
+  for (let i = 1; ; i++) {
+    try {
+      return await run();
+    } catch (err) {
+      if (i >= attempts || !/fetch failed|ECONNRESET|socket|network/i.test(String(err))) throw err;
+      await new Promise((r) => setTimeout(r, 1000 * 2 ** i));
+    }
+  }
+}
+
 async function fetchApi(token: string) {
   const range = { data_vencimento_de: "2000-01-01", data_vencimento_ate: "2040-12-31" };
   const big = { pageSize: 500, maxPages: 1000 };

@@ -290,19 +290,10 @@ export async function caFetch<T = unknown>(opts: {
   let lastError = "";
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     await opts.authorize?.();
-    let res: Response;
-    try {
-      res = await fetch(url.toString(), {
-        method: opts.method ?? "GET",
-        headers: { Authorization: `Bearer ${opts.accessToken}`, Accept: "application/json" },
-      });
-    } catch (err) {
-      // Falha de rede (conexão encerrada): tenta de novo como um erro temporário.
-      lastError = err instanceof Error ? err.message : String(err);
-      if (attempt === maxAttempts) throw new Error(`Conta Azul ${opts.path} falhou: ${lastError}`);
-      await sleep(500 * 2 ** (attempt - 1));
-      continue;
-    }
+    const res = await fetch(url.toString(), {
+      method: opts.method ?? "GET",
+      headers: { Authorization: `Bearer ${opts.accessToken}`, Accept: "application/json" },
+    });
     if (res.ok) {
       const text = await res.text();
       if (!text) return [] as unknown as T;
