@@ -345,11 +345,30 @@ export function nameSimilarity(a: unknown, b: unknown): number {
   const sa = [...ta].sort().join(" ");
   const sb = [...tb].sort().join(" ");
   if (sa === sb) return 1;
-  const setB = new Set(tb);
-  const common = ta.filter((t) => setB.has(t)).length;
+  // Tokens casam se iguais ou quase iguais (erros de digitação).
+  const used = new Set<number>();
+  let common = 0;
+  for (const t of ta) {
+    let best = -1;
+    let bestScore = 0;
+    tb.forEach((u, i) => {
+      if (used.has(i)) return;
+      const sc = t === u ? 1 : jaroWinkler(t, u);
+      if (sc > bestScore) {
+        bestScore = sc;
+        best = i;
+      }
+    });
+    if (best >= 0 && bestScore >= 0.92) {
+      used.add(best);
+      common += bestScore;
+    }
+  }
   const dice = (2 * common) / (ta.length + tb.length);
+  // Um nome contido no outro (ex.: "Solutcom" x "Solutcom Informática") pede revisão.
+  const contained = common >= Math.min(ta.length, tb.length) - 0.0001 ? 0.8 : 0;
   const jw = jaroWinkler(sa, sb);
-  return Math.round(Math.max(dice, 0.5 * dice + 0.5 * jw) * 10000) / 10000;
+  return Math.round(Math.max(dice, contained, 0.6 * dice + 0.4 * jw) * 10000) / 10000;
 }
 
 export const SUGGEST_MIN = 0.9;
