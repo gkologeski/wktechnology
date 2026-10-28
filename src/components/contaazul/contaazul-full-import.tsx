@@ -11,6 +11,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { formatDateTime } from "@/lib/crm";
+import { Can } from "@/lib/access-control/use-permissions";
+import { INTEGRATIONS_MANAGE } from "@/lib/access-control/admin-permission-keys";
 import {
   contaAzulFullImportApply,
   contaAzulFullImportDecide,
@@ -203,23 +205,25 @@ export function ContaAzulFullImport({
           description="Traz do Conta Azul o que ainda não está no TechERP, sem duplicar o que veio da planilha. Simule antes para ver as quantidades."
           action={
             canManage ? (
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => previewMut.mutate()}
-                  disabled={busy || !connected}
-                >
-                  <ScanSearch className="mr-2 h-4 w-4" aria-hidden />
-                  {previewMut.isPending ? "Simulando..." : "Simular"}
-                </Button>
-                <Button
-                  onClick={() => void handleApply()}
-                  disabled={busy || !connected || !simulated}
-                >
-                  <Download className="mr-2 h-4 w-4" aria-hidden />
-                  {applyMut.isPending ? "Importando..." : "Importar"}
-                </Button>
-              </div>
+              <Can any={INTEGRATIONS_MANAGE} fallback={null}>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => previewMut.mutate()}
+                    disabled={busy || !connected}
+                  >
+                    <ScanSearch className="mr-2 h-4 w-4" aria-hidden />
+                    {previewMut.isPending ? "Simulando..." : "Simular"}
+                  </Button>
+                  <Button
+                    onClick={() => void handleApply()}
+                    disabled={busy || !connected || !simulated}
+                  >
+                    <Download className="mr-2 h-4 w-4" aria-hidden />
+                    {applyMut.isPending ? "Importando..." : "Importar"}
+                  </Button>
+                </div>
+              </Can>
             ) : null
           }
         />
