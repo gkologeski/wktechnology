@@ -58,7 +58,8 @@ export const contaAzulPeopleRefresh = createServerFn({ method: "POST" })
     ]);
     const workspaceId = await resolveActiveWorkspace(context.userId);
     await people.assertPeopleAccess(context.supabase, workspaceId, context.userId, "manage");
-    const { data: ok } = await context.supabase.rpc("sales_contaazul_authorize", {
+    // Função restrita ao servidor; recebe o usuário já autenticado pelo middleware.
+    const { data: ok } = await supabaseAdmin.rpc("sales_contaazul_authorize", {
       p_user: context.userId,
       p_ws: workspaceId,
       p_entity: "connection",
