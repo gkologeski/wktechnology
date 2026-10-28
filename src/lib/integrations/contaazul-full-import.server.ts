@@ -104,6 +104,18 @@ async function mapLimit<T, R>(
   return out;
 }
 
+/** O cliente do usuário no servidor lança erro em vez de devolvê-lo; normaliza. */
+async function guarded(
+  run: () => PromiseLike<{ error: { message: string } | null }>,
+): Promise<string | null> {
+  try {
+    const { error } = await run();
+    return error ? error.message : null;
+  } catch (err) {
+    return err instanceof Error ? err.message : String(err);
+  }
+}
+
 /* -------------------------------------------------------------------------- */
 /* Leitura                                                                     */
 /* -------------------------------------------------------------------------- */
@@ -941,9 +953,12 @@ export async function applyFullImport(
       const cc = api?.costCenterId ? centerMap.get(api.costCenterId) : undefined;
       if (api && cc) allocations.push({ entry_id: e.id, cost_center_id: cc, amount: api.amount });
     }
-    for (const part of chunks(allocations, 200)) {
-      const { error } = await ctx.client.from("financial_entry_allocations").insert(part);
-      if (error) fail(`Rateio por centro de custo: ${error.message}`);
+    // Lotes pequenos: cada rateio passa pela regra financeira do banco (limite de 8 s).
+    for (const part of chunks(allocations, 20)) {
+      const error = await guarded(() =>
+        ctx.client.from("financial_entry_allocations").insert(part),
+      );
+      if (error) fail(`Rateio por centro de custo: ${error}`);
       else bump("allocations_created", part.length);
     }
 
@@ -970,15 +985,15 @@ export async function applyFullImport(
         });
       }
     });
-    for (const part of chunks(paymentRows, 100)) {
-      const { error } = await ctx.client.from("financial_payments").insert(part);
+    for (const part of chunks(paymentRows, 50)) {
+      const error = await guarded(() => ctx.client.from("financial_payments").insert(part));
       if (!error) {
         bump("payments_created", part.length);
         continue;
       }
       for (const row of part) {
-        const { error: e1 } = await ctx.client.from("financial_payments").insert(row);
-        if (e1) fail(`Baixa ${String(row["reference"])}: ${e1.message}`);
+        const e1 = await guarded(() => ctx.client.from("financial_payments").insert(row));
+        if (e1) fail(`Baixa ${String(row["reference"])}: ${e1}`);
         else bump("payments_created");
       }
     }
