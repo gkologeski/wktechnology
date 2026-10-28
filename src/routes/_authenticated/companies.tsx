@@ -271,6 +271,8 @@ function CompaniesHubspotView() {
         }),
         { count: "exact" },
       );
+      // Clientes/fornecedores só financeiros (Conta Azul) não aparecem no TechSales.
+      q = q.eq("audience", "sales");
 
       if (activeView === "mine" && user?.id)
         q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
@@ -661,7 +663,7 @@ function CompaniesHubspotView() {
         ids = Array.from(selectedIds);
       } else {
         // Refaz a query atual sem paginação (limit defensivo de 5.000).
-        let q = supabase.from("companies").select("id");
+        let q = supabase.from("companies").select("id").eq("audience", "sales");
         if (activeView === "mine" && user?.id)
           q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
         if (activeView === "unassigned")

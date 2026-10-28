@@ -254,6 +254,8 @@ function ContactsHubspotView() {
         }),
         { count: "exact" },
       );
+      // Contatos só financeiros (Conta Azul) não aparecem no TechSales.
+      q = q.eq("audience", "sales");
 
       if (activeView === "mine" && user?.id) {
         q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
@@ -692,7 +694,7 @@ function ContactsHubspotView() {
             size="sm"
             onClick={async () => {
               try {
-                let q = supabase.from("contacts").select("id");
+                let q = supabase.from("contacts").select("id").eq("audience", "sales");
                 if (activeView === "mine" && user?.id) {
                   q = q.or(responsibleOrExpr([user.id], { columns: RESPONSIBLE_COLUMNS_FULL }));
                 }

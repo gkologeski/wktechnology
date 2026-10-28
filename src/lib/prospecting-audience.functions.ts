@@ -144,6 +144,7 @@ export async function resolveAudienceServer(
         .from("contacts")
         .select("id, first_name, last_name, email, phone")
         .eq("workspace_id", workspaceId)
+        .eq("audience", "sales")
         .is("deleted_at", null);
       q = applyFilters(q, rule.filter ?? null);
       const { data } = await q.limit(10000);
@@ -173,6 +174,7 @@ export async function resolveAudienceServer(
         .from("companies")
         .select("id")
         .eq("workspace_id", workspaceId)
+        .eq("audience", "sales")
         .is("deleted_at", null);
       q = applyFilters(q, rule.filter ?? null);
       const { data: cos } = await q.limit(5000);
@@ -183,6 +185,7 @@ export async function resolveAudienceServer(
           .from("contacts")
           .select("id, first_name, last_name, email, phone")
           .eq("workspace_id", workspaceId)
+          .eq("audience", "sales")
           .is("deleted_at", null)
           .in("company_id", companyIds)
           .limit(10000);
@@ -233,6 +236,7 @@ export async function resolveAudienceServer(
             .from("contacts")
             .select("id, first_name, last_name, email, phone")
             .eq("workspace_id", workspaceId)
+            .eq("audience", "sales")
             .is("deleted_at", null)
             .in("id", Array.from(contactIds))
             .limit(10000);
@@ -313,6 +317,7 @@ export async function resolveAudienceServer(
           .from("contacts")
           .select("id, first_name, last_name, email, phone")
           .eq("workspace_id", workspaceId)
+          .eq("audience", "sales")
           .in("id", entityIds)
           .limit(20000);
         const arr = (contacts ?? []) as Array<{
@@ -334,6 +339,7 @@ export async function resolveAudienceServer(
           .from("contacts")
           .select("id, first_name, last_name, email, phone")
           .eq("workspace_id", workspaceId)
+          .eq("audience", "sales")
           .in("company_id", entityIds)
           .limit(20000);
         const arr = (contacts ?? []) as Array<{
@@ -368,6 +374,7 @@ export async function resolveAudienceServer(
             .from("contacts")
             .select("id, first_name, last_name, email, phone")
             .eq("workspace_id", workspaceId)
+            .eq("audience", "sales")
             .in("id", Array.from(contactIds))
             .limit(20000);
           const arr = (contacts ?? []) as Array<{

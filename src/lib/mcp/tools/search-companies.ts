@@ -27,6 +27,7 @@ export default defineTool({
       .from("companies")
       .select("id,name,domain,cnpj,industry,city,state,phone,website,score,updated_at")
       .eq("workspace_id", workspaceId)
+      .eq("audience", "sales")
       .is("deleted_at", null)
       .or(
         `name.ilike.${orSafeLike(query)},domain.ilike.${orSafeLike(query)},cnpj.ilike.${orSafeLike(query)}`,
