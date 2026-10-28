@@ -3307,6 +3307,14 @@
         "src/lib/prospecting/sdr/duplicate-agent.ts": "7de81ce01ed1493515bd57b88ee7d1ce87785c8eaf1076f4bdf98fe143cd6248"
       },
       "rationale": "Pure functions that decide which playbook columns and which persona version are copied when duplicating an agent (copy is disabled, draft-only). No I/O, handlers, server functions or permissions; authorization and writes live in duplicateSdrAgent under service-channel-agent-sandbox."
+    },
+    {
+      "id": "contaazul-reconcile-rules",
+      "kind": "presentation",
+      "files": {
+        "src/lib/integrations/contaazul-reconcile.ts": "0e1243897e88fbd8f71d4967bad622653016e793abe85332022e0275a5b45513"
+      },
+      "rationale": "Pure Conta Azul reconciliation rules (match API events, people and catalog names against existing TechERP rows; ambiguous cases go to review). No I/O, handlers, server functions, credentials or permissions; any future import using it stays behind the existing Conta Azul integration authorization (system.integrations manage + sales_contaazul_authorize)."
     }
   ],
   "retired": {}
