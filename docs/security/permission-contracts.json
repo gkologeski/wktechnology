@@ -3911,10 +3911,9 @@
       "id": "contaazul-full-import",
       "kind": "business",
       "files": {
-        "src/lib/integrations/contaazul-import-plan.ts": "60a72553cb8232fba76eff0a98247aa60d26bcdfdb3773653bcaf6e0596fcf09",
         "src/lib/integrations/contaazul-full-import.server.ts": "244301eb48ae2b9a1b06755a2e8d0886ab89c318768b025e2e808690fffca2cc",
         "src/lib/integrations/contaazul-full-import.functions.ts": "a057329a32bdd21899fac099e93d29c3635de6d50a2ec07f8f60648cd2906be7",
-        "src/components/contaazul/contaazul-full-import.tsx": "e5201bc7c0f759a5427fc602d06e65bd29cb88b6eec38b026266d35ed26268cb",
+        "src/components/contaazul/contaazul-full-import.tsx": "e10e858c6e9ad2ecf45c7e85b5342ced192334add40a04a3d823c8f997372dea",
         "drizzle/migrations/0257_contaazul_record_links.sql": "0bb3d412cb48f89cc437b861c3b80312e5315f96330e28b2a227be9b61ffb4f7"
       },
       "resources": [
@@ -3941,6 +3940,10 @@
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
           "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "Can"
         }
       ],
       "database": [
@@ -3971,6 +3974,14 @@
           "name": "nega membro inativo"
         }
       }
+    },
+    {
+      "id": "contaazul-import-plan-rules",
+      "kind": "presentation",
+      "files": {
+        "src/lib/integrations/contaazul-import-plan.ts": "60a72553cb8232fba76eff0a98247aa60d26bcdfdb3773653bcaf6e0596fcf09"
+      },
+      "rationale": "Pure Conta Azul full-import planning (map API events/transfers, match against existing TechERP rows and links, payment split parsing). No I/O, handlers, server functions, credentials or permissions; only consumed by contaazul-full-import.server.ts behind assertFullImportAccess."
     }
   ],
   "retired": {}
