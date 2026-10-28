@@ -135,34 +135,39 @@ async function withNetworkRetry<T>(run: () => Promise<T>, attempts = 4): Promise
 async function fetchApi(token: string) {
   const range = { data_vencimento_de: "2000-01-01", data_vencimento_ate: "2040-12-31" };
   const big = { pageSize: 500, maxPages: 1000 };
+  const get = (
+    path: string,
+    query: Record<string, string> | undefined,
+    pageSize: number,
+    maxPages: number,
+  ) => withNetworkRetry(() => caFetchAll({ accessToken: token, path, query, pageSize, maxPages }));
   const [rec, pag, cats, centers, accounts] = await Promise.all([
-    caFetchAll({
-      accessToken: token,
-      path: "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar",
-      query: range,
-      ...big,
-    }),
-    caFetchAll({
-      accessToken: token,
-      path: "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
-      query: range,
-      ...big,
-    }),
-    caFetchAll({ accessToken: token, path: "/v1/categorias", pageSize: 100, maxPages: 100 }),
-    caFetchAll({ accessToken: token, path: "/v1/centro-de-custo", pageSize: 100, maxPages: 100 }),
-    caFetchAll({ accessToken: token, path: "/v1/conta-financeira", pageSize: 100, maxPages: 100 }),
+    get(
+      "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar",
+      range,
+      big.pageSize,
+      big.maxPages,
+    ),
+    get(
+      "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
+      range,
+      big.pageSize,
+      big.maxPages,
+    ),
+    get("/v1/categorias", undefined, 100, 100),
+    get("/v1/centro-de-custo", undefined, 100, 100),
+    get("/v1/conta-financeira", undefined, 100, 100),
   ]);
   const transfers: Raw[] = [];
   const lastYear = new Date().getUTCFullYear() + 1;
   for (let y = 2010; y <= lastYear; y++) {
     transfers.push(
-      ...(await caFetchAll({
-        accessToken: token,
-        path: "/v1/financeiro/transferencias",
-        query: { data_inicio: `${y}-01-01`, data_fim: `${y}-12-31` },
-        pageSize: 100,
-        maxPages: 200,
-      })),
+      ...(await get(
+        "/v1/financeiro/transferencias",
+        { data_inicio: `${y}-01-01`, data_fim: `${y}-12-31` },
+        100,
+        200,
+      )),
     );
   }
   const events: CaEvent[] = [];
