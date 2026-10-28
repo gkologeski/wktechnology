@@ -25,21 +25,22 @@ export async function assertSalesView(
   if (error || data !== true) throw new Error("Sem permissão para consultar as vendas.");
 }
 
-type Query = ReturnType<ReturnType<SupabaseClient["from"]>["select"]>;
+/** Subconjunto dos filtros do PostgREST usado aqui (evita tipos genéricos profundos). */
+type Filterable = {
+  eq(column: string, value: unknown): Filterable;
+  ilike(column: string, pattern: string): Filterable;
+  gte(column: string, value: unknown): Filterable;
+  lte(column: string, value: unknown): Filterable;
+};
 
-function applyFilters<Q extends Query>(
-  q: Q,
-  workspaceId: string,
-  f: SalesFilter,
-  withStatus: boolean,
-): Q {
-  let out = q.eq("workspace_id", workspaceId) as Q;
+function applyFilters<Q>(q: Q, workspaceId: string, f: SalesFilter, withStatus: boolean): Q {
+  let out = (q as unknown as Filterable).eq("workspace_id", workspaceId);
   const term = f.search?.trim().replace(/[%_,()]/g, " ");
-  if (term) out = out.ilike("customer_name", `%${term}%`) as Q;
-  if (f.from) out = out.gte("sale_date", f.from) as Q;
-  if (f.to) out = out.lte("sale_date", f.to) as Q;
-  if (withStatus && f.status) out = out.eq("status_label", f.status) as Q;
-  return out;
+  if (term) out = out.ilike("customer_name", `%${term}%`);
+  if (f.from) out = out.gte("sale_date", f.from);
+  if (f.to) out = out.lte("sale_date", f.to);
+  if (withStatus && f.status) out = out.eq("status_label", f.status);
+  return out as unknown as Q;
 }
 
 export async function listSales(client: SupabaseClient, workspaceId: string, f: SalesFilter) {
