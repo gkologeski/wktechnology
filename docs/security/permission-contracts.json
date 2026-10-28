@@ -3998,7 +3998,7 @@
       "kind": "business",
       "files": {
         "src/lib/finance-sales.server.ts": "e97b7eeb93a110cd0cde64e112204ca13a89af6e60638c453a56d7701c99b469",
-        "src/lib/finance-sales.functions.ts": "ff0e6f80bec8afa3bf11832cb6409f9c6300d79ef442eaf01d73a6eb5e5c49f1",
+        "src/lib/finance-sales.functions.ts": "a692115bdbafded5e25f0e1ba2c8a13b7e9fb64550c6e31b135c698d4d174511",
         "src/routes/_authenticated/finance.sales.tsx": "a498a3f49272ddeac2a8c3cd77208ce14808dabcb95b0bea0dd57b6552557b99",
         "drizzle/migrations/0260_finance_sales.sql": "1bc92266330df3c3c3629194a62dc9d13751defedde631df83fadf912b2ba025"
       },
@@ -4025,8 +4025,8 @@
           "symbol": "HrScreenAccess"
         },
         {
-          "file": "src/integrations/supabase/auth-middleware.ts",
-          "symbol": "requireSupabaseAuth"
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
         }
       ],
       "database": [
