@@ -57,7 +57,7 @@ async function loadAll<T>(
 }
 
 /** Token válido sem reativar a sincronização automática (status pausado é preservado). */
-async function tokenKeepingStatus(admin: SupabaseClient, workspaceId: string): Promise<string> {
+export async function tokenKeepingStatus(admin: SupabaseClient, workspaceId: string): Promise<string> {
   const row = await loadIntegration(admin, workspaceId);
   const tokens = row?.oauth_tokens ?? null;
   if (!row || !tokens?.access_token) throw new ContaAzulNotConnectedError();
