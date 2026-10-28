@@ -274,26 +274,33 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       }
     }
 
-    const { error: mErr } = await supabase.from("whatsapp_messages").insert({
-      conversation_id: conv.id,
-      owner_id: userId,
-      workspace_id: workspaceId,
-      direction: "outbound",
-      body: data.body,
-      media_url: data.mediaUrl ?? null,
-      media_content_type: data.mediaContentType ?? null,
-      from_number: num.displayPhoneNumber,
-      to_number: toBare,
-      provider: "meta",
-      wa_message_id: wamid,
-      context_message_id: data.contextMessageId ?? null,
-      status: "accepted",
-      template_name: data.templateName ?? null,
-      is_template: !!data.templateName,
-      sent_by: userId,
-      sent_at: nowIso,
-      raw,
-    });
+    // O cliente da rota lança em erro de gravação; captura para manter a mensagem clara.
+    let mErr: unknown = null;
+    try {
+      const { error } = await supabase.from("whatsapp_messages").insert({
+        conversation_id: conv.id,
+        owner_id: userId,
+        workspace_id: workspaceId,
+        direction: "outbound",
+        body: data.body,
+        media_url: data.mediaUrl ?? null,
+        media_content_type: data.mediaContentType ?? null,
+        from_number: num.displayPhoneNumber,
+        to_number: toBare,
+        provider: "meta",
+        wa_message_id: wamid,
+        context_message_id: data.contextMessageId ?? null,
+        status: "accepted",
+        template_name: data.templateName ?? null,
+        is_template: !!data.templateName,
+        sent_by: userId,
+        sent_at: nowIso,
+        raw,
+      });
+      mErr = error;
+    } catch (e) {
+      mErr = e;
+    }
     // Mensagem manual em conversa do SDR: humano assume e trabalhos da IA ficam obsoletos.
     {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -316,19 +323,29 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       );
 
     if (contactId) {
-      await supabase.from("activities").insert({
-        workspace_id: workspaceId,
-        owner_id: workspaceId,
-        type: "whatsapp",
-        related_contact_id: contactId,
-        subject: data.templateName ? `WhatsApp · ${data.templateName}` : "WhatsApp enviado",
-        body: data.body || preview,
-        email_direction: "outbound",
-        completed: true,
-        outcome: "sent",
-        outcome_set_at: new Date().toISOString(),
-        external_ids: { wa_message_id: wamid, conversation_id: conv.id },
-      });
+      // Melhor esforço: a mensagem já saiu e está no histórico da conversa; uma falha
+      // na linha do tempo não pode aparecer como erro (levaria a reenvio duplicado).
+      const { buildOutboundWhatsAppActivity } = await import("@/lib/whatsapp/outbound-activity");
+      try {
+        const { error: aErr } = await supabase.from("activities").insert(
+          buildOutboundWhatsAppActivity({
+            workspaceId,
+            userId,
+            contactId,
+            conversationId: conv.id,
+            wamid: wamid ?? null,
+            body: data.body,
+            preview,
+            templateName: data.templateName ?? null,
+          }),
+        );
+        if (aErr) console.warn("[whatsapp] registro na linha do tempo ignorado", aErr.code);
+      } catch (e) {
+        console.warn(
+          "[whatsapp] registro na linha do tempo ignorado",
+          (e as { code?: string }).code,
+        );
+      }
     }
 
     return { ok: true as const, error: null, sid: wamid ?? "", conversationId: conv.id as string };
