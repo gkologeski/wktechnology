@@ -1,3 +1,4 @@
+import { describeDeliveryError } from "@/lib/whatsapp/delivery-error";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { compactCount } from "@/lib/inbox/channel-page";
 import { useInboxChannelPage } from "@/hooks/use-inbox-channel-page";
