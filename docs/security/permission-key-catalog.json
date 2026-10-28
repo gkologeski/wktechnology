@@ -2762,7 +2762,8 @@
     "techservice.tickets.view.own",
     "techservice.tickets.view.workspace",
     "techfinance.contaazul_people.view.workspace",
-    "techfinance.contaazul_people.manage.workspace"
+    "techfinance.contaazul_people.manage.workspace",
+    "techfinance.sales.view.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -2824,6 +2825,9 @@
     },
     "techfinance.contaazul_people.manage.workspace": {
       "migration": "drizzle/migrations/0256_contaazul_people_audience.sql"
+    },
+    "techfinance.sales.view.workspace": {
+      "migration": "drizzle/migrations/0260_finance_sales.sql"
     }
   }
 }
