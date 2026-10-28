@@ -2188,7 +2188,7 @@
         },
         {
           "file": "drizzle/migrations/0264_wa_outbound_activity_fast_lookup.sql",
-          "symbol": "activities_wa_message_id_idx"
+          "symbol": "wa_outbound_register_activity"
         },
         {
           "file": "drizzle/migrations/0265_wa_outbound_activity_contact_owner_fallback.sql",
