@@ -3916,7 +3916,8 @@
         "src/components/contaazul/contaazul-full-import.tsx": "cac71519ab138d874c19c72c566d6b47a8c2c491b79c827625ad233e995085f3",
         "drizzle/migrations/0257_contaazul_record_links.sql": "0bb3d412cb48f89cc437b861c3b80312e5315f96330e28b2a227be9b61ffb4f7",
         "drizzle/migrations/0258_contacts_audience_column_grants.sql": "39d44eff592f0e0d42cdad7c60bd7aba9ce1e4ff0e428e42eba7deed3383dd92",
-        "drizzle/migrations/0259_shared_fields_contacts_audience.sql": "1c95724d3b315eafb5582ce771964a5e03491e416a9f4e337d0597f71183be75"
+        "drizzle/migrations/0259_shared_fields_contacts_audience.sql": "1c95724d3b315eafb5582ce771964a5e03491e416a9f4e337d0597f71183be75",
+        "src/lib/integrations/contaazul-api.server.ts": "b6732181ac9740f26cbcf0ed4a928605c97435c88ccf785a45382896469be9b2"
       },
       "resources": [
         "system.integrations",
@@ -3933,7 +3934,7 @@
         "techfinance.contaazul_people.view.workspace",
         "techfinance.contaazul_people.manage.workspace"
       ],
-      "rationale": "Full Conta Azul import (preview, apply, review decisions, rollback). Server functions require system.integrations via requireSalesPermission, then assertFullImportAccess: contaazul_people_access manage through the caller's client (active membership, deny, read-only View-as) plus sales_contaazul_authorize for connection, categories, cost centers, bank accounts, receivables and payables. Business writes (companies/contacts audience=finance, catalog rows, financial entries, payments, allocations) go through the caller's client so existing RLS and finance_core_guard apply; contaazul_record_links and contaazul_import_runs are service_role-only tables (RLS enabled, no authenticated grant) read/written by the server after authorization, always filtered by workspace_id. Existing rows are never rewritten; rollback removes only rows tagged with the run id.",
+      "rationale": "Full Conta Azul import (preview, apply, review decisions, rollback). Server functions require system.integrations via requireSalesPermission, then assertFullImportAccess: contaazul_people_access manage through the caller's client (active membership, deny, read-only View-as) plus sales_contaazul_authorize for connection, categories, cost centers, bank accounts, receivables and payables. Business writes (companies/contacts audience=finance, catalog rows, financial entries, payments, allocations) go through the caller's client so existing RLS and finance_core_guard apply; contaazul_record_links and contaazul_import_runs are service_role-only tables (RLS enabled, no authenticated grant) read/written by the server after authorization, always filtered by workspace_id. Existing rows are never rewritten; rollback removes only rows tagged with the run id. 0258 grants only SELECT/INSERT on the new contacts.audience column (column-level grants model; no UPDATE) and 0259 re-creates shared_fields_contacts with the same field-masking definition plus audience so TechSales lists can exclude finance-only contacts. The shared Conta Azul HTTP client only gained network-error retries.",
       "controls": [
         {
           "file": "src/lib/integrations/contaazul-full-import.server.ts",
@@ -3952,6 +3953,14 @@
         {
           "file": "drizzle/migrations/0257_contaazul_record_links.sql",
           "symbol": "contaazul_record_links"
+        },
+        {
+          "file": "drizzle/migrations/0258_contacts_audience_column_grants.sql",
+          "symbol": "contacts"
+        },
+        {
+          "file": "drizzle/migrations/0259_shared_fields_contacts_audience.sql",
+          "symbol": "shared_fields_contacts"
         }
       ],
       "tests": {
