@@ -29839,6 +29839,7 @@ export type Database = {
         Args: { p_user: string; p_ws: string }
         Returns: boolean
       }
+      finance_sales_visible_workspaces: { Args: never; Returns: string[] }
       finance_scope_access: {
         Args: {
           _action: string
