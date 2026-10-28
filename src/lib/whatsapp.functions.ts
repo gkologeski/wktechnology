@@ -258,15 +258,20 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
 
     if (found) {
       // Melhor esforço: membros sem permissão de edição não bloqueiam o envio já feito.
-      const { error: uErr } = await supabase
-        .from("whatsapp_conversations")
-        .update({
-          last_message_at: nowIso,
-          last_message_preview: preview,
-          ...(found.contact_id ? {} : { contact_id: contactId }),
-        })
-        .eq("id", conv.id);
-      if (uErr) console.warn("[whatsapp] atualização da conversa ignorada", uErr.code);
+      // O cliente da rota lança em qualquer erro de gravação, por isso o try/catch.
+      try {
+        const { error: uErr } = await supabase
+          .from("whatsapp_conversations")
+          .update({
+            last_message_at: nowIso,
+            last_message_preview: preview,
+            ...(found.contact_id ? {} : { contact_id: contactId }),
+          })
+          .eq("id", conv.id);
+        if (uErr) console.warn("[whatsapp] atualização da conversa ignorada", uErr.code);
+      } catch (e) {
+        console.warn("[whatsapp] atualização da conversa ignorada", (e as { code?: string }).code);
+      }
     }
 
     const { error: mErr } = await supabase.from("whatsapp_messages").insert({
