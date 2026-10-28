@@ -31,6 +31,7 @@ import {
   type CaSyncStateRow,
 } from "@/components/contaazul/contaazul-sync-progress";
 import { ContaAzulOAuthDiagnostics } from "@/components/contaazul/contaazul-oauth-diagnostics";
+import { ContaAzulPeopleReview } from "@/components/contaazul/contaazul-people-review";
 
 export function ContaAzulIntegrationPage() {
   const qc = useQueryClient();
@@ -49,6 +50,7 @@ export function ContaAzulIntegrationPage() {
     refetchInterval: autoRefresh ? 5000 : false,
     refetchIntervalInBackground: false,
   });
+  const paused = data?.status === "pending";
 
   // Retorno do popup OAuth.
   useEffect(() => {
@@ -301,18 +303,27 @@ export function ContaAzulIntegrationPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <Button
                     onClick={() => void handleSync()}
-                    disabled={busy || !data?.connected || selected.length === 0}
+                    disabled={busy || !data?.connected || paused || selected.length === 0}
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
                     {busy ? "Sincronizando..." : "Sincronizar agora"}
                   </Button>
                   <span className="text-xs text-muted-foreground">
-                    A sincronização incremental automática roda a cada 6 horas pelo agendador.
+                    {paused
+                      ? "Sincronização pausada até a conciliação com a planilha ser aprovada, para não duplicar registros."
+                      : "A sincronização incremental automática roda a cada 6 horas pelo agendador."}
                   </span>
                 </div>
               </Can>
             </CardContent>
           </Card>
+
+          <Can
+            any={INTEGRATIONS_MANAGE}
+            fallback={<ContaAzulPeopleReview canManage={false} connected={!!data?.connected} />}
+          >
+            <ContaAzulPeopleReview canManage connected={!!data?.connected} />
+          </Can>
 
           <ContaAzulSyncProgress
             syncState={(data?.syncState ?? []) as CaSyncStateRow[]}

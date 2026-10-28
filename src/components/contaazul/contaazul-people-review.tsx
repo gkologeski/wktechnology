@@ -20,10 +20,26 @@ import {
 
 type Tab = "suggested" | "review" | "new" | "linked" | "decided";
 const TABS: Array<{ id: Tab; label: string; hint: string }> = [
-  { id: "suggested", label: "Sugeridos", hint: "Nome muito parecido com um único cadastro. Confirme para vincular." },
-  { id: "review", label: "Revisar", hint: "Mais de um cadastro possível ou semelhança média. Escolha o correto." },
-  { id: "new", label: "Novas", hint: "Sem cadastro parecido. Entram como somente financeiro, fora do TechSales." },
-  { id: "linked", label: "Vinculadas", hint: "CNPJ, e-mail ou nome idêntico a um cadastro existente." },
+  {
+    id: "suggested",
+    label: "Sugeridos",
+    hint: "Nome muito parecido com um único cadastro. Confirme para vincular.",
+  },
+  {
+    id: "review",
+    label: "Revisar",
+    hint: "Mais de um cadastro possível ou semelhança média. Escolha o correto.",
+  },
+  {
+    id: "new",
+    label: "Novas",
+    hint: "Sem cadastro parecido. Entram como somente financeiro, fora do TechSales.",
+  },
+  {
+    id: "linked",
+    label: "Vinculadas",
+    hint: "CNPJ, e-mail ou nome idêntico a um cadastro existente.",
+  },
   { id: "decided", label: "Decididas", hint: "Vínculos confirmados por você e itens ignorados." },
 ];
 
@@ -54,7 +70,13 @@ const MATCH_LABEL: Record<string, string> = {
 };
 
 /** Revisão de clientes/fornecedores do Conta Azul. Nada é vinculado sem confirmação. */
-export function ContaAzulPeopleReview({ canManage, connected }: { canManage: boolean; connected: boolean }) {
+export function ContaAzulPeopleReview({
+  canManage,
+  connected,
+}: {
+  canManage: boolean;
+  connected: boolean;
+}) {
   const qc = useQueryClient();
   const list = useServerFn(contaAzulPeopleList);
   const refresh = useServerFn(contaAzulPeopleRefresh);
@@ -83,8 +105,11 @@ export function ContaAzulPeopleReview({ canManage, connected }: { canManage: boo
     onError: (e: Error) => toast.error(e.message),
   });
   const decideMut = useMutation({
-    mutationFn: (v: { ids: string[]; action: "confirm" | "choose" | "new" | "ignore" | "reopen"; localId?: string }) =>
-      decide({ data: v }),
+    mutationFn: (v: {
+      ids: string[];
+      action: "confirm" | "choose" | "new" | "ignore" | "reopen";
+      localId?: string;
+    }) => decide({ data: v }),
     onSuccess: (r) => {
       toast.success(`${r.changed} item(ns) atualizados.`);
       invalidate();
@@ -114,7 +139,9 @@ export function ContaAzulPeopleReview({ canManage, connected }: { canManage: boo
                 disabled={!connected || busy}
                 aria-label="Ler clientes e fornecedores do Conta Azul e recalcular sugestões"
               >
-                <RefreshCw className={`mr-2 h-4 w-4 ${refreshMut.isPending ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`mr-2 h-4 w-4 ${refreshMut.isPending ? "animate-spin" : ""}`}
+                />
                 {refreshMut.isPending ? "Lendo o Conta Azul..." : "Atualizar lista"}
               </Button>
             ) : null
@@ -157,21 +184,40 @@ export function ContaAzulPeopleReview({ canManage, connected }: { canManage: boo
             <div className="flex flex-wrap items-center gap-2" aria-live="polite">
               <span className="text-sm text-muted-foreground">{ids.length} selecionado(s)</span>
               {(tab === "suggested" || tab === "linked") && (
-                <Button size="sm" disabled={busy} onClick={() => decideMut.mutate({ ids, action: "confirm" })}>
+                <Button
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => decideMut.mutate({ ids, action: "confirm" })}
+                >
                   <Check className="mr-1 h-4 w-4" /> Confirmar vínculo
                 </Button>
               )}
               {tab !== "decided" && (
-                <Button size="sm" variant="outline" disabled={busy} onClick={() => decideMut.mutate({ ids, action: "new" })}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={busy}
+                  onClick={() => decideMut.mutate({ ids, action: "new" })}
+                >
                   <Sparkles className="mr-1 h-4 w-4" /> Criar como somente financeiro
                 </Button>
               )}
               {tab !== "decided" ? (
-                <Button size="sm" variant="ghost" disabled={busy} onClick={() => decideMut.mutate({ ids, action: "ignore" })}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => decideMut.mutate({ ids, action: "ignore" })}
+                >
                   <EyeOff className="mr-1 h-4 w-4" /> Ignorar
                 </Button>
               ) : (
-                <Button size="sm" variant="ghost" disabled={busy} onClick={() => decideMut.mutate({ ids, action: "reopen" })}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  disabled={busy}
+                  onClick={() => decideMut.mutate({ ids, action: "reopen" })}
+                >
                   <RotateCcw className="mr-1 h-4 w-4" /> Reabrir
                 </Button>
               )}
@@ -189,7 +235,11 @@ export function ContaAzulPeopleReview({ canManage, connected }: { canManage: boo
           <EmptyState
             title="Não foi possível carregar a lista"
             description={(query.error as Error).message}
-            action={<Button variant="outline" onClick={() => void query.refetch()}>Tentar novamente</Button>}
+            action={
+              <Button variant="outline" onClick={() => void query.refetch()}>
+                Tentar novamente
+              </Button>
+            }
           />
         ) : rows.length === 0 ? (
           <EmptyState
@@ -218,7 +268,10 @@ export function ContaAzulPeopleReview({ canManage, connected }: { canManage: boo
             {rows.map((r) => {
               const cands = (Array.isArray(r.candidates) ? r.candidates : []) as Candidate[];
               return (
-                <div key={r.id} className="flex flex-col gap-2 px-3 py-3 md:flex-row md:items-start">
+                <div
+                  key={r.id}
+                  className="flex flex-col gap-2 px-3 py-3 md:flex-row md:items-start"
+                >
                   {canManage && (
                     <Checkbox
                       aria-label={`Selecionar ${r.name}`}
@@ -236,23 +289,38 @@ export function ContaAzulPeopleReview({ canManage, connected }: { canManage: boo
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="font-medium">{r.name}</span>
                       <Badge variant="outline">{r.profile ?? "—"}</Badge>
-                      <Badge variant="outline">{r.person_kind === "company" ? "Empresa" : "Pessoa física"}</Badge>
+                      <Badge variant="outline">
+                        {r.person_kind === "company" ? "Empresa" : "Pessoa física"}
+                      </Badge>
                       {r.status === "ignored" && <Badge variant="secondary">Ignorado</Badge>}
-                      {r.match_by && <Badge variant="secondary">{MATCH_LABEL[r.match_by] ?? r.match_by}</Badge>}
+                      {r.match_by && (
+                        <Badge variant="secondary">{MATCH_LABEL[r.match_by] ?? r.match_by}</Badge>
+                      )}
                     </div>
-                    {r.document && <p className="text-xs text-muted-foreground">Documento: {r.document}</p>}
+                    {r.document && (
+                      <p className="text-xs text-muted-foreground">Documento: {r.document}</p>
+                    )}
                   </div>
                   <div className="flex min-w-0 flex-col gap-1 md:w-1/2">
                     {cands.length === 0 ? (
-                      <span className="text-sm text-muted-foreground">Sem cadastro parecido no TechERP.</span>
+                      <span className="text-sm text-muted-foreground">
+                        Sem cadastro parecido no TechERP.
+                      </span>
                     ) : (
                       cands.map((c) => {
                         const chosen = c.id === (r.local_company_id ?? r.local_contact_id);
                         return (
-                          <div key={c.id} className="flex items-center justify-between gap-2 rounded border px-2 py-1 text-sm">
+                          <div
+                            key={c.id}
+                            className="flex items-center justify-between gap-2 rounded border px-2 py-1 text-sm"
+                          >
                             <a
                               className="truncate underline-offset-2 hover:underline"
-                              href={r.person_kind === "company" ? `/companies/${c.id}` : `/contacts/${c.id}`}
+                              href={
+                                r.person_kind === "company"
+                                  ? `/companies/${c.id}`
+                                  : `/contacts/${c.id}`
+                              }
                               target="_blank"
                               rel="noreferrer"
                             >
@@ -269,7 +337,13 @@ export function ContaAzulPeopleReview({ canManage, connected }: { canManage: boo
                                     size="sm"
                                     variant="outline"
                                     disabled={busy}
-                                    onClick={() => decideMut.mutate({ ids: [r.id], action: "choose", localId: c.id })}
+                                    onClick={() =>
+                                      decideMut.mutate({
+                                        ids: [r.id],
+                                        action: "choose",
+                                        localId: c.id,
+                                      })
+                                    }
                                   >
                                     É este
                                   </Button>
@@ -292,10 +366,20 @@ export function ContaAzulPeopleReview({ canManage, connected }: { canManage: boo
             <span className="text-muted-foreground">
               {page * 50 + 1}–{Math.min(total, page * 50 + 50)} de {total}
             </span>
-            <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage(page - 1)}>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={page === 0}
+              onClick={() => setPage(page - 1)}
+            >
               Anterior
             </Button>
-            <Button size="sm" variant="outline" disabled={(page + 1) * 50 >= total} onClick={() => setPage(page + 1)}>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={(page + 1) * 50 >= total}
+              onClick={() => setPage(page + 1)}
+            >
               Próxima
             </Button>
           </div>
