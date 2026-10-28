@@ -38,8 +38,14 @@ describe("reconcileEntries", () => {
   });
 
   it("mesma data e valor com vários candidatos diferentes vai para revisão", () => {
-    const local = [e({ id: "L1", description: "X", counterparty: "P" }), e({ id: "L2", description: "Y", counterparty: "Q" })];
-    const api = [e({ id: "A1", description: "Z", counterparty: "R" }), e({ id: "A2", description: "W", counterparty: "S" })];
+    const local = [
+      e({ id: "L1", description: "X", counterparty: "P" }),
+      e({ id: "L2", description: "Y", counterparty: "Q" }),
+    ];
+    const api = [
+      e({ id: "A1", description: "Z", counterparty: "R" }),
+      e({ id: "A2", description: "W", counterparty: "S" }),
+    ];
     const r = reconcileEntries(local, api);
     expect(r.matched).toEqual([]);
     expect(r.review).toEqual([{ apiIds: ["A1", "A2"], localIds: ["L1", "L2"] }]);
