@@ -404,7 +404,11 @@ function summarize(plan: Plan) {
       paymentsToAdd: topUps.length,
       paymentsToAddValue: topUps.reduce((s, m) => s + m.topUpCents, 0) / 100,
       cancelledInContaAzul: plan.entryPlan.match.filter((m) => m.cancel).length,
-      localOnly: plan.localEvents.length - plan.entryPlan.match.length,
+      localOnly: (() => {
+        const linked = new Set(plan.entryPlan.match.map((m) => m.localId));
+        for (const l of plan.local.links.values()) if (l.localId) linked.add(l.localId);
+        return plan.localEvents.filter((l) => !linked.has(l.id)).length;
+      })(),
     },
     transfers: {
       match: plan.transferPlan.match.length,
