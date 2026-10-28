@@ -32,6 +32,7 @@ import {
 } from "@/components/contaazul/contaazul-sync-progress";
 import { ContaAzulOAuthDiagnostics } from "@/components/contaazul/contaazul-oauth-diagnostics";
 import { ContaAzulPeopleReview } from "@/components/contaazul/contaazul-people-review";
+import { ContaAzulFullImport } from "@/components/contaazul/contaazul-full-import";
 
 export function ContaAzulIntegrationPage() {
   const qc = useQueryClient();
@@ -323,6 +324,13 @@ export function ContaAzulIntegrationPage() {
             fallback={<ContaAzulPeopleReview canManage={false} connected={!!data?.connected} />}
           >
             <ContaAzulPeopleReview canManage connected={!!data?.connected} />
+          </Can>
+
+          <Can
+            any={INTEGRATIONS_MANAGE}
+            fallback={<ContaAzulFullImport canManage={false} connected={!!data?.connected} />}
+          >
+            <ContaAzulFullImport canManage connected={!!data?.connected} />
           </Can>
 
           <ContaAzulSyncProgress
