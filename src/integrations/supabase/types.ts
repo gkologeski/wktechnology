@@ -28678,6 +28678,7 @@ export type Database = {
           area_atuacao: string | null
           assigned_to: string | null
           assigned_user_id: string | null
+          audience: string | null
           cargo_catalog_version: number | null
           cargo_resumido: string | null
           cep: string | null
