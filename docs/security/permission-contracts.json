@@ -3997,8 +3997,8 @@
       "id": "finance-sales",
       "kind": "business",
       "files": {
-        "src/lib/finance-sales.server.ts": "cf0fd22604d916fe5d5a2fa71809ade26da5b84c35b8cb64ffb7232d0846df5b",
-        "src/lib/finance-sales.functions.ts": "6b12d4df1be5d5e88130074b7967d6a70f214d23c217916019372c6cd9bca530",
+        "src/lib/finance-sales.server.ts": "e97b7eeb93a110cd0cde64e112204ca13a89af6e60638c453a56d7701c99b469",
+        "src/lib/finance-sales.functions.ts": "ff0e6f80bec8afa3bf11832cb6409f9c6300d79ef442eaf01d73a6eb5e5c49f1",
         "src/routes/_authenticated/finance.sales.tsx": "a498a3f49272ddeac2a8c3cd77208ce14808dabcb95b0bea0dd57b6552557b99",
         "drizzle/migrations/0260_finance_sales.sql": "1bc92266330df3c3c3629194a62dc9d13751defedde631df83fadf912b2ba025"
       },
@@ -4023,6 +4023,10 @@
         {
           "file": "src/components/hr-access.tsx",
           "symbol": "HrScreenAccess"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
         }
       ],
       "database": [
@@ -4053,6 +4057,15 @@
           "name": "nega vendas a membro inativo"
         }
       }
+    },
+    {
+      "id": "finance-sales-labels",
+      "kind": "presentation",
+      "files": {
+        "src/lib/access-control/resource-labels.ts": "b9486bd90fbd4e5aa1cf7af67fbb77163e7c88ac9d2a95dffcd041df79abfcef",
+        "src/lib/menu-config-finance.ts": "634465260359b9d97cfd6a635ae5bd7ade12cb9ab9a83ec9e96e507d83194e1d"
+      },
+      "rationale": "PT-BR labels for the new techfinance.sales and contaazul_people resources and a sidebar entry for /finance/sales gated by techfinance.sales.view.workspace; menu visibility is cosmetic, the page and server function enforce the permission (contract finance-sales)."
     }
   ],
   "retired": {}

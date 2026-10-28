@@ -43,7 +43,13 @@ function applyFilters<Q>(q: Q, workspaceId: string, f: SalesFilter, withStatus: 
   return out as unknown as Q;
 }
 
-export async function listSales(client: SupabaseClient, workspaceId: string, f: SalesFilter) {
+export async function listSales(
+  client: SupabaseClient,
+  workspaceId: string,
+  userId: string,
+  f: SalesFilter,
+) {
+  await assertSalesView(client, workspaceId, userId);
   const from = f.page * SALES_PAGE_SIZE;
   const rowsQ = applyFilters(
     client

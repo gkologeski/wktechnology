@@ -31,6 +31,5 @@ export const listFinanceSales = createServerFn({ method: "POST" })
       import("./finance-sales.server"),
     ]);
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    await sales.assertSalesView(context.supabase, workspaceId, context.userId);
-    return sales.listSales(context.supabase, workspaceId, data);
+    return sales.listSales(context.supabase, workspaceId, context.userId, data);
   });
