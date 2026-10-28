@@ -40,13 +40,21 @@ export const contaAzulPeopleList = createServerFn({ method: "POST" })
     if (data.search?.trim()) q = q.ilike("name", `%${data.search.trim().replace(/[%_,]/g, " ")}%`);
     const { data: rows, error, count } = await q;
     if (error) throw new Error(error.message);
-    const { data: all, error: cErr } = await supabaseAdmin
-      .from("contaazul_person_links")
-      .select("status")
-      .eq("workspace_id", workspaceId);
-    if (cErr) throw new Error(cErr.message);
+    const STATUSES = ["suggested", "review", "new", "linked", "confirmed", "ignored"] as const;
+    const counted = await Promise.all(
+      STATUSES.map((st) =>
+        supabaseAdmin
+          .from("contaazul_person_links")
+          .select("id", { count: "exact", head: true })
+          .eq("workspace_id", workspaceId)
+          .eq("status", st),
+      ),
+    );
     const totals: Record<string, number> = {};
-    for (const r of all ?? []) totals[r.status] = (totals[r.status] ?? 0) + 1;
+    counted.forEach((r, i) => {
+      if (r.error) throw new Error(r.error.message);
+      if (r.count) totals[STATUSES[i]!] = r.count;
+    });
     return { rows: rows ?? [], total: count ?? 0, totals };
   });
 
