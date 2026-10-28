@@ -5527,6 +5527,7 @@ export type Database = {
           annualrevenue: number | null
           assigned_to: string | null
           assigned_user_id: string | null
+          audience: string
           cep: string | null
           city: string | null
           cnpj: string | null
@@ -5576,6 +5577,7 @@ export type Database = {
           annualrevenue?: number | null
           assigned_to?: string | null
           assigned_user_id?: string | null
+          audience?: string
           cep?: string | null
           city?: string | null
           cnpj?: string | null
@@ -5625,6 +5627,7 @@ export type Database = {
           annualrevenue?: number | null
           assigned_to?: string | null
           assigned_user_id?: string | null
+          audience?: string
           cep?: string | null
           city?: string | null
           cnpj?: string | null
@@ -5679,6 +5682,98 @@ export type Database = {
           },
           {
             foreignKeyName: "companies_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contaazul_person_links: {
+        Row: {
+          candidates: Json
+          contaazul_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          document: string | null
+          email: string | null
+          id: string
+          local_company_id: string | null
+          local_contact_id: string | null
+          match_by: string | null
+          name: string
+          person_kind: string
+          profile: string | null
+          score: number | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          candidates?: Json
+          contaazul_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          document?: string | null
+          email?: string | null
+          id?: string
+          local_company_id?: string | null
+          local_contact_id?: string | null
+          match_by?: string | null
+          name: string
+          person_kind: string
+          profile?: string | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          candidates?: Json
+          contaazul_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          document?: string | null
+          email?: string | null
+          id?: string
+          local_company_id?: string | null
+          local_contact_id?: string | null
+          match_by?: string | null
+          name?: string
+          person_kind?: string
+          profile?: string | null
+          score?: number | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contaazul_person_links_local_company_id_fkey"
+            columns: ["local_company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contaazul_person_links_local_contact_id_fkey"
+            columns: ["local_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contaazul_person_links_local_contact_id_fkey"
+            columns: ["local_contact_id"]
+            isOneToOne: false
+            referencedRelation: "shared_fields_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contaazul_person_links_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -5779,6 +5874,7 @@ export type Database = {
           area_atuacao: string | null
           assigned_to: string | null
           assigned_user_id: string | null
+          audience: string
           cargo_catalog_version: number | null
           cargo_resumido: string | null
           cep: string | null
@@ -5834,6 +5930,7 @@ export type Database = {
           area_atuacao?: string | null
           assigned_to?: string | null
           assigned_user_id?: string | null
+          audience?: string
           cargo_catalog_version?: number | null
           cargo_resumido?: string | null
           cep?: string | null
@@ -5889,6 +5986,7 @@ export type Database = {
           area_atuacao?: string | null
           assigned_to?: string | null
           assigned_user_id?: string | null
+          audience?: string
           cargo_catalog_version?: number | null
           cargo_resumido?: string | null
           cep?: string | null
@@ -29083,6 +29181,10 @@ export type Database = {
           owner_id: string
           owner_name: string
         }[]
+      }
+      contaazul_people_access: {
+        Args: { p_action: string; p_user: string; p_ws: string }
+        Returns: boolean
       }
       contract_approval_decide: {
         Args: { p_approval: string; p_comment?: string; p_decision: string }
