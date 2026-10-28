@@ -130,3 +130,38 @@ describe("matchByName", () => {
     expect(r.map((x) => x.outcome)).toEqual(["linked", "new"]);
   });
 });
+
+import { buildNameIndex, nameSimilarity, suggestByName } from "./contaazul-reconcile";
+
+describe("nomes parecidos", () => {
+  const companies = [
+    { id: "C1", name: "WK Tecnologia e Sistemas Ltda" },
+    { id: "C2", name: "Padaria Pão Quente" },
+    { id: "C3", name: "Solutcom Informática" },
+    { id: "C4", name: "Solutcom Consultoria" },
+  ];
+  const idx = buildNameIndex(companies);
+
+  it("ignora acentos, sufixos, abreviações e ordem", () => {
+    expect(nameSimilarity("WK TEC. SISTEMAS LTDA - ME", "WK Tecnologia e Sistemas Ltda")).toBe(1);
+    expect(nameSimilarity("Quente Pao Padaria", "Padaria Pão Quente")).toBe(1);
+  });
+
+  it("um único candidato forte vira sugestão, não vínculo", () => {
+    const s = suggestByName("Padaria Pao Quentee", idx);
+    expect(s.outcome).toBe("suggested");
+    expect(s.candidates[0]!.id).toBe("C2");
+  });
+
+  it("dois candidatos parecidos vão para revisão", () => {
+    expect(suggestByName("Solutcom", idx).outcome).toBe("review");
+  });
+
+  it("nome sem semelhança é empresa nova", () => {
+    expect(suggestByName("Metalúrgica Zeta", idx)).toEqual({
+      outcome: "new",
+      score: null,
+      candidates: [],
+    });
+  });
+});
