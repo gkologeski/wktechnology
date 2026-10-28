@@ -14,6 +14,7 @@ import {
   Bell,
   Mail,
   Package,
+  ShoppingCart,
 } from "lucide-react";
 import { MENU_PERMISSIONS, type SidebarGroup } from "@/lib/menu-config";
 
@@ -135,6 +136,12 @@ export const FINANCE_SIDEBAR_GROUPS: SidebarGroup[] = [
         icon: Package,
         need: "manager",
         permissionAny: MENU_PERMISSIONS.financeReceivable,
+      },
+      {
+        title: "Vendas importadas",
+        url: "/finance/sales",
+        icon: ShoppingCart,
+        permissionAny: ["techfinance.sales.view.workspace"],
       },
       {
         title: "NFS-e",

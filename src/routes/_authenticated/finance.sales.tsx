@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatIsoDate, parseIsoDate } from "@/lib/iso-date";
+import { parseIsoDate } from "@/lib/iso-date";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { listFinanceSales } from "@/lib/finance-sales.functions";
 
@@ -207,7 +207,6 @@ function FinanceSalesPage() {
           </div>
         </>
       )}
-      <p className="sr-only">{formatIsoDate(new Date())}</p>
     </div>
   );
 }
