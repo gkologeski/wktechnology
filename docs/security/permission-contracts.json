@@ -3839,16 +3839,14 @@
       "id": "contaazul-people-reconciliation",
       "kind": "business",
       "files": {
-        "src/lib/integrations/contaazul-people.server.ts": "de73423ba14428c413b15bb806d7fd0a3e726d9ff4febdf35a869f78bfad6123",
-        "src/lib/integrations/contaazul.functions.ts": "dc6434a886861deb042aa1b11447bc1841044d2e3d625a2069cdb7b66d837adf",
-        "src/lib/integrations/contaazul-api.server.ts": "961e9a63c076ec382e2aaac6ba67946a8cf6abcf22064bbc216e65bdb7819d05",
-        "src/components/contaazul/contaazul-people-review.tsx": "9526bec023f05124803729c2007fdb8ff8667d97f7d4ee6099f068509e03a4a7",
+        "src/lib/integrations/contaazul-people.server.ts": "d8dd9b71bddf0c78cbaba655e3d8024d2f701f1102d1bd350acb62edc762b17f",
+        "src/lib/integrations/contaazul-people.functions.ts": "ab2d0dbe61edfb16ee4898e2250b3ea2ca9634b2268c6c2cad5bbed41ed8e013",
+        "src/components/contaazul/contaazul-people-review.tsx": "925feda2b1352c37963ba6beb1efe81dbbd5ba6dc86fc9fafd67fbf2f736815f",
         "src/components/integrations/pages/contaazul-integration-page.tsx": "ef935b23635f1bc18dc8ce023a0aab70af24ae5ba0ad7e49016c4f5bdf99231e",
         "drizzle/migrations/0256_contaazul_people_audience.sql": "5b0a152fd663227562994854d3f7c9957646265850b2591b24137d5d95c37e1a",
         "src/routes/_authenticated/companies.tsx": "bf43410ae2cdb347d72a31b27d7b0d164359194cb53f45941d30604bd72de638",
         "src/routes/_authenticated/contacts.tsx": "2ee579f0b872fd5eb807e38fa55aa908acfff7cf783eccc9dc75501c2095e9fd",
-        "src/lib/prospecting-audience.functions.ts": "addebddb6a429506e919e0bdf0c6dd8a83387767213e76b5cb8da105d1fb4bf7",
-        "src/lib/mcp/tools/search-companies.ts": "66ecb85718d7b8a6dbe99f5fe0515fece9195be6f4831b1387fd5ea45b8d9661"
+        "src/lib/prospecting-audience.functions.ts": "addebddb6a429506e919e0bdf0c6dd8a83387767213e76b5cb8da105d1fb4bf7"
       },
       "resources": [
         "techfinance.contaazul_people",
@@ -3870,6 +3868,14 @@
         {
           "file": "src/lib/integrations/contaazul-people.server.ts",
           "symbol": "assertPeopleAccess"
+        },
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "Can"
         }
       ],
       "database": [

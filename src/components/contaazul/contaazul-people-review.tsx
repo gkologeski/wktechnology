@@ -11,6 +11,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Can } from "@/lib/access-control/use-permissions";
+import { INTEGRATIONS_MANAGE } from "@/lib/access-control/admin-permission-keys";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   contaAzulPeopleDecide,
@@ -133,17 +135,19 @@ export function ContaAzulPeopleReview({
           description="Compare os cadastros do Conta Azul com as Empresas e Contatos do TechERP. Os que não existirem entram como somente financeiro e não aparecem no TechSales."
           action={
             canManage ? (
-              <Button
-                variant="outline"
-                onClick={() => refreshMut.mutate()}
-                disabled={!connected || busy}
-                aria-label="Ler clientes e fornecedores do Conta Azul e recalcular sugestões"
-              >
-                <RefreshCw
-                  className={`mr-2 h-4 w-4 ${refreshMut.isPending ? "animate-spin" : ""}`}
-                />
-                {refreshMut.isPending ? "Lendo o Conta Azul..." : "Atualizar lista"}
-              </Button>
+              <Can any={INTEGRATIONS_MANAGE} fallback={null}>
+                <Button
+                  variant="outline"
+                  onClick={() => refreshMut.mutate()}
+                  disabled={!connected || busy}
+                  aria-label="Ler clientes e fornecedores do Conta Azul e recalcular sugestões"
+                >
+                  <RefreshCw
+                    className={`mr-2 h-4 w-4 ${refreshMut.isPending ? "animate-spin" : ""}`}
+                  />
+                  {refreshMut.isPending ? "Lendo o Conta Azul..." : "Atualizar lista"}
+                </Button>
+              </Can>
             ) : null
           }
         />

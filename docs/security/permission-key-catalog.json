@@ -2760,7 +2760,9 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace"
+    "techservice.tickets.view.workspace",
+    "techfinance.contaazul_people.view.workspace",
+    "techfinance.contaazul_people.manage.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
