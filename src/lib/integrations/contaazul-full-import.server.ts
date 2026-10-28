@@ -424,7 +424,7 @@ function summarize(plan: Plan) {
     },
     discounts: {
       toAdjust: plan.local.entries.filter((e) => {
-        const api = e.caid && !e.kind ? plan.api.events.find((x) => x.id === e.caid) : undefined;
+        const api = e.caid && !e.kind ? ev.get(e.caid) : undefined;
         return !!api && caDiscountCents(api) > 0 && Number(e.amount) - effectiveAmount(api) > 0.004;
       }).length,
     },
