@@ -707,7 +707,8 @@ export async function applyFullImport(
       if (already.length)
         bump(kind === "company" ? "companies_resumed" : "contacts_resumed", already.length);
       const todo = list.filter((p) => !resumedIds.has(p.contaazul_id));
-      for (const part of chunks(todo, 200)) {
+      // Contatos passam por gatilhos pesados (vínculo por domínio); lotes menores evitam o limite de 8 s.
+      for (const part of chunks(todo, kind === "company" ? 100 : 15)) {
         const { data, error } = await ctx.client
           .from(table)
           .insert(part.map((p) => payloadOf(p)))
@@ -810,7 +811,7 @@ export async function applyFullImport(
       else toInsert.push(e);
     }
     const created = new Map<string, string>(); // id Conta Azul → lançamento
-    for (const part of chunks(toInsert, 200)) {
+    for (const part of chunks(toInsert, 100)) {
       const rows = part.map((e) => ({
         workspace_id: ws,
         owner_id: ctx.userId,
@@ -887,7 +888,7 @@ export async function applyFullImport(
         });
       }
     });
-    for (const part of chunks(paymentRows, 200)) {
+    for (const part of chunks(paymentRows, 100)) {
       const { error } = await ctx.client.from("financial_payments").insert(part);
       if (!error) {
         bump("payments_created", part.length);
