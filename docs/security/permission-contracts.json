@@ -2627,7 +2627,7 @@
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
       "files": {
-        "src/integrations/supabase/types.ts": "83179ebc18b8d5a7d8297a19ef229a7e15d1c5f0d49a024c111fbc62ccba3b50"
+        "src/integrations/supabase/types.ts": "dec1a64a20c2f6b2a5cc7f2afebe0e565102943416b18406178072efd469d14f"
       },
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies."
     },
@@ -3911,9 +3911,9 @@
       "id": "contaazul-full-import",
       "kind": "business",
       "files": {
-        "src/lib/integrations/contaazul-full-import.server.ts": "7df8b39239c3656f4a73a562d4d45ad25af3f27b2fba66f46a3c130e1543a525",
+        "src/lib/integrations/contaazul-full-import.server.ts": "7c1cf936e2ba0dadc3831a15b69db60b8bb069702181f83f57a914e57638098d",
         "src/lib/integrations/contaazul-full-import.functions.ts": "a057329a32bdd21899fac099e93d29c3635de6d50a2ec07f8f60648cd2906be7",
-        "src/components/contaazul/contaazul-full-import.tsx": "cac71519ab138d874c19c72c566d6b47a8c2c491b79c827625ad233e995085f3",
+        "src/components/contaazul/contaazul-full-import.tsx": "48bf2c9311beb67ccf2df9fc1bf456550170d36bcf7e2ebea5ee9bffa4360b3d",
         "drizzle/migrations/0257_contaazul_record_links.sql": "0bb3d412cb48f89cc437b861c3b80312e5315f96330e28b2a227be9b61ffb4f7",
         "drizzle/migrations/0258_contacts_audience_column_grants.sql": "33a133c44047df6387d430888b04511a38aacf8c67195a1022262c922e90749f",
         "drizzle/migrations/0259_shared_fields_contacts_audience.sql": "1c95724d3b315eafb5582ce771964a5e03491e416a9f4e337d0597f71183be75"
@@ -3989,9 +3989,89 @@
       "id": "contaazul-import-plan-rules",
       "kind": "presentation",
       "files": {
-        "src/lib/integrations/contaazul-import-plan.ts": "60a72553cb8232fba76eff0a98247aa60d26bcdfdb3773653bcaf6e0596fcf09"
+        "src/lib/integrations/contaazul-import-plan.ts": "90f73e9c3b6adc6107c39842e00fbf72b0f791c5ec7a126c7eb29daa65b89dad"
       },
       "rationale": "Pure Conta Azul full-import planning (map API events/transfers, match against existing TechERP rows and links, payment split parsing). No I/O, handlers, server functions, credentials or permissions; only consumed by contaazul-full-import.server.ts behind assertFullImportAccess."
+    },
+    {
+      "id": "finance-sales",
+      "kind": "business",
+      "files": {
+        "src/lib/finance-sales.server.ts": "e97b7eeb93a110cd0cde64e112204ca13a89af6e60638c453a56d7701c99b469",
+        "src/lib/finance-sales.functions.ts": "a692115bdbafded5e25f0e1ba2c8a13b7e9fb64550c6e31b135c698d4d174511",
+        "src/routes/_authenticated/finance.sales.tsx": "a498a3f49272ddeac2a8c3cd77208ce14808dabcb95b0bea0dd57b6552557b99",
+        "drizzle/migrations/0260_finance_sales.sql": "1bc92266330df3c3c3629194a62dc9d13751defedde631df83fadf912b2ba025",
+        "drizzle/migrations/0261_finance_sales_policy_initplan.sql": "255e5562f724338d3317aaf6ec50af68583f3a71570aa91b7a8058b5be1c6edc"
+      },
+      "resources": [
+        "techfinance.sales"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techfinance.sales.view.workspace"
+      ],
+      "rationale": "Read-only list of sales imported from Conta Azul. The page renders only behind HrScreenAccess(techfinance.sales); listFinanceSales requires an authenticated session, resolves the active workspace and calls finance_sales_access (work_subject_context: active membership, deny, workspace) before reading through the caller's client, where RLS on finance_sales applies the same function. Authenticated users only have SELECT; rows are written exclusively by the authorized Conta Azul full import on the server. The key is not granted to any role automatically.",
+      "controls": [
+        {
+          "file": "src/lib/finance-sales.server.ts",
+          "symbol": "assertSalesView"
+        },
+        {
+          "file": "src/components/hr-access.tsx",
+          "symbol": "HrScreenAccess"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0260_finance_sales.sql",
+          "symbol": "finance_sales_access"
+        },
+        {
+          "file": "drizzle/migrations/0261_finance_sales_policy_initplan.sql",
+          "symbol": "finance_sales_visible_workspaces"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/finance-sales.test.ts",
+          "name": "permite membro ativo com a permissão de ver vendas"
+        },
+        "missing_permission": {
+          "file": "src/lib/finance-sales.test.ts",
+          "name": "nega quem não tem a permissão de ver vendas"
+        },
+        "explicit_deny": {
+          "file": "src/lib/finance-sales.test.ts",
+          "name": "nega quando há bloqueio explícito (deny) nas vendas"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/finance-sales.test.ts",
+          "name": "nega vendas de outro workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/finance-sales.test.ts",
+          "name": "nega vendas a membro inativo"
+        }
+      }
+    },
+    {
+      "id": "finance-sales-labels",
+      "kind": "presentation",
+      "files": {
+        "src/lib/access-control/resource-labels.ts": "b9486bd90fbd4e5aa1cf7af67fbb77163e7c88ac9d2a95dffcd041df79abfcef",
+        "src/lib/menu-config-finance.ts": "634465260359b9d97cfd6a635ae5bd7ade12cb9ab9a83ec9e96e507d83194e1d",
+        "src/lib/breadcrumb-labels.ts": "5ceacb475469982eb39e8bae82317e1a89f0f7385f9de612e22ec91252c8bc00"
+      },
+      "rationale": "PT-BR labels for the new techfinance.sales and contaazul_people resources and a sidebar entry for /finance/sales gated by techfinance.sales.view.workspace; menu visibility is cosmetic, the page and server function enforce the permission (contract finance-sales)."
     }
   ],
   "retired": {}

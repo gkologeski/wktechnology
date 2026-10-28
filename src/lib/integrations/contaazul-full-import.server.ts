@@ -10,7 +10,11 @@ import { mapBankAccount } from "./contaazul-map";
 import { assertPeopleAccess, tokenKeepingStatus } from "./contaazul-people.server";
 import { normalizeEmailAddress } from "@/lib/email-address";
 import {
+  caDiscountCents,
   caEventTargetStatus,
+  effectiveAmount,
+  mapCaSale,
+  type CaSale,
   cnpjOrNull,
   linkKey,
   mapCaEvent,
@@ -158,6 +162,9 @@ async function fetchApi(token: string) {
     get("/v1/centro-de-custo", undefined, 100, 100),
     get("/v1/conta-financeira", undefined, 100, 100),
   ]);
+  const sales = (await get("/v1/venda/busca", undefined, 500, 200))
+    .map(mapCaSale)
+    .filter((v): v is CaSale => !!v);
   const transfers: Raw[] = [];
   const lastYear = new Date().getUTCFullYear() + 1;
   for (let y = 2010; y <= lastYear; y++) {
@@ -183,7 +190,7 @@ async function fetchApi(token: string) {
     else invalid++;
   }
   const tr = transfers.map(mapCaTransfer).filter((t): t is CaTransfer => !!t);
-  return { events, invalid, cats, centers, accounts, transfers: tr };
+  return { events, invalid, cats, centers, accounts, transfers: tr, sales };
 }
 
 type LocalRow = {
@@ -263,8 +270,18 @@ async function loadLocal(ctx: Ctx) {
       .eq("workspace_id", ws),
   ]);
   for (const r of [cats, centers, banks]) if (r.error) throw new Error(r.error.message);
+  const sales = await pageAll<{ external_id: string }>((a, b) =>
+    ctx.admin
+      .from("finance_sales")
+      .select("external_id")
+      .eq("workspace_id", ws)
+      .eq("source", "contaazul")
+      .order("id")
+      .range(a, b),
+  );
   return {
     entries,
+    saleIds: new Set(sales.map((r) => r.external_id)),
     links: new Map<string, ExistingLink>(
       links.map((l) => [
         linkKey(l.entity, l.contaazul_id),
@@ -400,6 +417,17 @@ function summarize(plan: Plan) {
       create: plan.bankPlan.create.length,
       review: plan.bankPlan.review.length,
     },
+    sales: {
+      total: plan.api.sales.length,
+      create: plan.api.sales.filter((v) => !plan.local.saleIds.has(v.id)).length,
+      value: Math.round(plan.api.sales.reduce((acc, v) => acc + v.total, 0) * 100) / 100,
+    },
+    discounts: {
+      toAdjust: plan.local.entries.filter((e) => {
+        const api = e.caid && !e.kind ? ev.get(e.caid) : undefined;
+        return !!api && caDiscountCents(api) > 0 && Number(e.amount) - effectiveAmount(api) > 0.004;
+      }).length,
+    },
     people: {
       create: plan.peopleToCreate.length,
       companies: plan.peopleToCreate.filter((p) => p.person_kind === "company").length,
@@ -477,6 +505,74 @@ export function describeShape(detail: unknown): string[] {
       ? Object.keys(baixas[0] as Raw).map((k) => `baixas.${k}`)
       : [];
   return [...top, ...inner].slice(0, 60);
+}
+
+/**
+ * Ajusta um lançamento importado que o Conta Azul quitou com desconto: retira as
+ * baixas, troca o valor pelo líquido quitado e devolve as mesmas baixas.
+ * Devolve a mensagem de erro, ou null quando deu certo.
+ */
+async function adjustDiscountedEntry(
+  ctx: Ctx,
+  entryId: string,
+  target: number,
+  api: CaEvent,
+): Promise<string | null> {
+  const { data: pays, error } = await ctx.admin
+    .from("financial_payments")
+    .select("workspace_id, entry_id, bank_account_id, paid_at, amount, method, reference, notes")
+    .eq("entry_id", entryId);
+  if (error) return error.message;
+  const { data: entry, error: eErr } = await ctx.admin
+    .from("financial_entries")
+    .select("metadata")
+    .eq("id", entryId)
+    .single();
+  if (eErr || !entry) return eErr?.message ?? "lançamento indisponível";
+  const original = (pays ?? []) as Array<Record<string, unknown>>;
+  const restore = () =>
+    guarded(() =>
+      ctx.client
+        .from("financial_payments")
+        .insert(original.map((p) => ({ ...p, created_by: ctx.userId }))),
+    );
+  if (original.length) {
+    const del = await guarded(() =>
+      ctx.client.from("financial_payments").delete().eq("entry_id", entryId),
+    );
+    if (del) return del;
+  }
+  const alloc = await guarded(() =>
+    ctx.client
+      .from("financial_entry_allocations")
+      .update({ amount: target })
+      .eq("entry_id", entryId)
+      .gt("amount", target),
+  );
+  const upd = await guarded(() =>
+    ctx.client
+      .from("financial_entries")
+      .update({
+        amount: target,
+        metadata: {
+          ...((entry as { metadata: Record<string, unknown> | null }).metadata ?? {}),
+          contaazul_total: api.amount,
+          contaazul_discount: caDiscountCents(api) / 100,
+        },
+      })
+      .eq("id", entryId),
+  );
+  if (upd) {
+    const back = original.length ? await restore() : null;
+    return `${upd}${back ? ` (baixas não devolvidas: ${back})` : ""}`;
+  }
+  if (original.length) {
+    const back = await restore();
+    if (back) return `baixas não devolvidas: ${back}`;
+  }
+  return alloc && !/sem permissão para alterar esta associação/i.test(alloc)
+    ? `rateio: ${alloc}`
+    : null;
 }
 
 export async function previewFullImport(ctx: Ctx): Promise<FullImportSummary> {
@@ -890,7 +986,7 @@ export async function applyFullImport(
         direction: e.direction,
         origin_type: "manual",
         description: e.description,
-        amount: e.amount,
+        amount: effectiveAmount(e),
         paid_amount: 0,
         currency: "BRL",
         due_date: e.dueDate,
@@ -904,6 +1000,9 @@ export async function applyFullImport(
           contaazul_id: e.id,
           contaazul_run: runId,
           contaazul_status: e.caStatus,
+          ...(caDiscountCents(e) > 0
+            ? { contaazul_total: e.amount, contaazul_discount: caDiscountCents(e) / 100 }
+            : {}),
           counterparty_name: e.counterpartyName,
           counterparty_contact_id: (e.counterpartyId && contactByCa.get(e.counterpartyId)) || null,
         },
@@ -1036,6 +1135,17 @@ export async function applyFullImport(
       else bump("entries_cancelled");
     }
 
+    // Quitados com desconto já importados: o valor passa a ser o líquido quitado.
+    for (const e of plan.local.entries) {
+      const api = e.caid && !e.kind ? ev.get(e.caid) : undefined;
+      if (!api || caDiscountCents(api) <= 0) continue;
+      const target = effectiveAmount(api);
+      if (Number(e.amount) - target <= 0.004) continue;
+      const result = await adjustDiscountedEntry(ctx, e.id, target, api);
+      if (result) fail(`Desconto ${api.id}: ${result}`);
+      else bump("discounts_adjusted");
+    }
+
     await flushLinks();
 
     /* ---- Transferências ---- */
@@ -1118,6 +1228,45 @@ export async function applyFullImport(
     }
 
     await flushLinks();
+
+    /* ---- Vendas (somente leitura no TechERP) ---- */
+    phase = "vendas";
+    const saleRow = (v: CaSale) => ({
+      workspace_id: ws,
+      source: "contaazul",
+      external_id: v.id,
+      number: v.number,
+      sale_date: v.date,
+      kind: v.kind,
+      items_kind: v.itemsKind,
+      status: v.status,
+      status_label: v.statusLabel,
+      total: v.total,
+      customer_external_id: v.customerId,
+      customer_name: v.customerName?.slice(0, 300) ?? null,
+      company_id: (v.customerId && companyByCa.get(v.customerId)) || null,
+      contact_id: (v.customerId && contactByCa.get(v.customerId)) || null,
+      external_created_at: v.createdAt,
+      external_updated_at: v.updatedAt,
+      updated_at: now(),
+    });
+    const newSales = plan.api.sales.filter((v) => !plan.local.saleIds.has(v.id));
+    const oldSales = plan.api.sales.filter((v) => plan.local.saleIds.has(v.id));
+    for (const part of chunks(newSales, 200)) {
+      const { error } = await ctx.admin
+        .from("finance_sales")
+        .insert(part.map((v) => ({ ...saleRow(v), run_id: runId })));
+      if (error) fail(`Vendas (lote de ${part.length}): ${error.message}`);
+      else bump("sales_created", part.length);
+    }
+    for (const part of chunks(oldSales, 200)) {
+      const { error } = await ctx.admin
+        .from("finance_sales")
+        .upsert(part.map(saleRow), { onConflict: "workspace_id,source,external_id" });
+      if (error) fail(`Vendas (atualização): ${error.message}`);
+      else bump("sales_updated", part.length);
+    }
+
     bump("links_written", linksWritten);
     const final: FullImportSummary = { ...summary, written, errors, adopted_runs: adopted };
     await ctx.admin
@@ -1252,7 +1401,14 @@ export async function rollbackFullImport(ctx: Ctx, runId: string): Promise<Recor
       if (!error) bump(`${table}_removed`, 1);
     }
   }
-  // 5) Vínculos da execução.
+  // 5) Vendas trazidas pela execução.
+  const { error: sErr } = await ctx.admin
+    .from("finance_sales")
+    .delete()
+    .eq("workspace_id", ws)
+    .in("run_id", runIds);
+  if (sErr) throw new Error(`Vendas: ${sErr.message}`);
+  // 6) Vínculos da execução.
   const { error: lErr } = await ctx.admin
     .from("contaazul_record_links")
     .delete()

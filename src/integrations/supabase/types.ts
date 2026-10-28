@@ -10567,6 +10567,111 @@ export type Database = {
           },
         ]
       }
+      finance_sales: {
+        Row: {
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          customer_external_id: string | null
+          customer_name: string | null
+          external_created_at: string | null
+          external_id: string
+          external_updated_at: string | null
+          id: string
+          items_kind: string | null
+          kind: string | null
+          number: number | null
+          run_id: string | null
+          sale_date: string | null
+          source: string
+          status: string | null
+          status_label: string | null
+          total: number
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          customer_external_id?: string | null
+          customer_name?: string | null
+          external_created_at?: string | null
+          external_id: string
+          external_updated_at?: string | null
+          id?: string
+          items_kind?: string | null
+          kind?: string | null
+          number?: number | null
+          run_id?: string | null
+          sale_date?: string | null
+          source?: string
+          status?: string | null
+          status_label?: string | null
+          total?: number
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          customer_external_id?: string | null
+          customer_name?: string | null
+          external_created_at?: string | null
+          external_id?: string
+          external_updated_at?: string | null
+          id?: string
+          items_kind?: string | null
+          kind?: string | null
+          number?: number | null
+          run_id?: string | null
+          sale_date?: string | null
+          source?: string
+          status?: string | null
+          status_label?: string | null
+          total?: number
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_sales_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_sales_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_sales_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "shared_fields_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_sales_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "contaazul_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "finance_sales_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financial_bank_accounts: {
         Row: {
           active: boolean
@@ -29730,6 +29835,11 @@ export type Database = {
         }[]
       }
       finance_reference_list: { Args: { _resource: string }; Returns: Json }
+      finance_sales_access: {
+        Args: { p_user: string; p_ws: string }
+        Returns: boolean
+      }
+      finance_sales_visible_workspaces: { Args: never; Returns: string[] }
       finance_scope_access: {
         Args: {
           _action: string

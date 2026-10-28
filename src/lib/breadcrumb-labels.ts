@@ -77,6 +77,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
   macros: "Macros",
   mobile: "Mobile",
   nfse: "NFS-e",
+  sales: "Vendas",
   notifications: "Notificações",
   slack: "Slack",
   payments: "Pagamentos",

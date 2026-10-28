@@ -282,3 +282,40 @@ describe("pessoas e baixas", () => {
     ]);
   });
 });
+
+describe("quitação com desconto e vendas", () => {
+  it("quitado com pago menor que o total vira desconto e valor líquido", async () => {
+    const { caDiscountCents, effectiveAmount } = await import("./contaazul-import-plan");
+    const e = ev({ id: "D", amount: 167.54, paid: 148.35, caStatus: "ACQUITTED" });
+    expect(caDiscountCents(e)).toBe(1919);
+    expect(effectiveAmount(e)).toBe(148.35);
+  });
+  it("pagamento parcial em aberto não é desconto", async () => {
+    const { caDiscountCents, effectiveAmount } = await import("./contaazul-import-plan");
+    const e = ev({ id: "P", amount: 100, paid: 40, caStatus: "PENDING" });
+    expect(caDiscountCents(e)).toBe(0);
+    expect(effectiveAmount(e)).toBe(100);
+  });
+  it("lê a venda do Conta Azul com situação em português", async () => {
+    const { mapCaSale } = await import("./contaazul-import-plan");
+    const s = mapCaSale({
+      id: "v1",
+      numero: 103,
+      data: "2021-01-23",
+      tipo: "SALE",
+      itens: "SERVICE",
+      total: 1430.4,
+      cliente: { id: "c1", nome: "Julio" },
+      situacao: { nome: "APROVADO", descricao: "Aprovado" },
+      criado_em: "2021-06-21T11:26:32.875",
+    })!;
+    expect(s).toMatchObject({
+      number: 103,
+      date: "2021-01-23",
+      total: 1430.4,
+      customerId: "c1",
+      statusLabel: "Aprovada",
+    });
+    expect(mapCaSale({ numero: 1 })).toBeNull();
+  });
+});
