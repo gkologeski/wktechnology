@@ -2627,7 +2627,7 @@
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
       "files": {
-        "src/integrations/supabase/types.ts": "8dd92964e3fa77282e8fbd3177820b520f80f442bb018830be55aff4b99fb035"
+        "src/integrations/supabase/types.ts": "8831934edde2e6fdc4b4b50283b699924f517e5a88c3832c7e2524c0286fc97e"
       },
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies."
     },
@@ -3839,10 +3839,10 @@
       "id": "contaazul-people-reconciliation",
       "kind": "business",
       "files": {
-        "src/lib/integrations/contaazul-people.server.ts": "90e12fa50fc04871548a379e27b32852ffab9be03e5fb9f761cd18c67469c691",
+        "src/lib/integrations/contaazul-people.server.ts": "4f6512f392420f46a12b8387daceca88d64144c58a4a115def6b73cd70ec4347",
         "src/lib/integrations/contaazul-people.functions.ts": "e3fe474785113f631c6971c002268cbdb5ca0cdfec6448c328009647a5124c64",
         "src/components/contaazul/contaazul-people-review.tsx": "925feda2b1352c37963ba6beb1efe81dbbd5ba6dc86fc9fafd67fbf2f736815f",
-        "src/components/integrations/pages/contaazul-integration-page.tsx": "ef935b23635f1bc18dc8ce023a0aab70af24ae5ba0ad7e49016c4f5bdf99231e",
+        "src/components/integrations/pages/contaazul-integration-page.tsx": "e8815ac5d78669f0cc29445296c53adfef5ca6eb79f1b0c541b9473b500a17a7",
         "drizzle/migrations/0256_contaazul_people_audience.sql": "5b0a152fd663227562994854d3f7c9957646265850b2591b24137d5d95c37e1a",
         "src/routes/_authenticated/companies.tsx": "bf43410ae2cdb347d72a31b27d7b0d164359194cb53f45941d30604bd72de638",
         "src/routes/_authenticated/contacts.tsx": "2ee579f0b872fd5eb807e38fa55aa908acfff7cf783eccc9dc75501c2095e9fd",
@@ -3903,6 +3903,71 @@
         },
         "inactive_member": {
           "file": "src/lib/integrations/contaazul-people.test.ts",
+          "name": "nega membro inativo"
+        }
+      }
+    },
+    {
+      "id": "contaazul-full-import",
+      "kind": "business",
+      "files": {
+        "src/lib/integrations/contaazul-import-plan.ts": "60a72553cb8232fba76eff0a98247aa60d26bcdfdb3773653bcaf6e0596fcf09",
+        "src/lib/integrations/contaazul-full-import.server.ts": "244301eb48ae2b9a1b06755a2e8d0886ab89c318768b025e2e808690fffca2cc",
+        "src/lib/integrations/contaazul-full-import.functions.ts": "a057329a32bdd21899fac099e93d29c3635de6d50a2ec07f8f60648cd2906be7",
+        "src/components/contaazul/contaazul-full-import.tsx": "e5201bc7c0f759a5427fc602d06e65bd29cb88b6eec38b026266d35ed26268cb",
+        "drizzle/migrations/0257_contaazul_record_links.sql": "0bb3d412cb48f89cc437b861c3b80312e5315f96330e28b2a227be9b61ffb4f7"
+      },
+      "resources": [
+        "system.integrations",
+        "techfinance.contaazul_people"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techfinance.contaazul_people.view.workspace",
+        "techfinance.contaazul_people.manage.workspace"
+      ],
+      "rationale": "Full Conta Azul import (preview, apply, review decisions, rollback). Server functions require system.integrations via requireSalesPermission, then assertFullImportAccess: contaazul_people_access manage through the caller's client (active membership, deny, read-only View-as) plus sales_contaazul_authorize for connection, categories, cost centers, bank accounts, receivables and payables. Business writes (companies/contacts audience=finance, catalog rows, financial entries, payments, allocations) go through the caller's client so existing RLS and finance_core_guard apply; contaazul_record_links and contaazul_import_runs are service_role-only tables (RLS enabled, no authenticated grant) read/written by the server after authorization, always filtered by workspace_id. Existing rows are never rewritten; rollback removes only rows tagged with the run id.",
+      "controls": [
+        {
+          "file": "src/lib/integrations/contaazul-full-import.server.ts",
+          "symbol": "assertFullImportAccess"
+        },
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0257_contaazul_record_links.sql",
+          "symbol": "contaazul_record_links"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/integrations/contaazul-full-import.test.ts",
+          "name": "permite membro ativo com conciliação e importação financeira"
+        },
+        "missing_permission": {
+          "file": "src/lib/integrations/contaazul-full-import.test.ts",
+          "name": "nega sem a permissão de importação financeira"
+        },
+        "explicit_deny": {
+          "file": "src/lib/integrations/contaazul-full-import.test.ts",
+          "name": "nega quando há bloqueio explícito (deny)"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/integrations/contaazul-full-import.test.ts",
+          "name": "nega outro workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/integrations/contaazul-full-import.test.ts",
           "name": "nega membro inativo"
         }
       }
