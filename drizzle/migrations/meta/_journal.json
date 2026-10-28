@@ -1821,6 +1821,13 @@
       "when": 1793206035344,
       "tag": "0259_shared_fields_contacts_audience",
       "breakpoints": true
+    },
+    {
+      "idx": 260,
+      "version": "7",
+      "when": 1793206458199,
+      "tag": "0260_finance_sales",
+      "breakpoints": true
     }
   ]
 }
