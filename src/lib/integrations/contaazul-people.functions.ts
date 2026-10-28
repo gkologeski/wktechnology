@@ -59,12 +59,15 @@ export const contaAzulPeopleRefresh = createServerFn({ method: "POST" })
     const workspaceId = await resolveActiveWorkspace(context.userId);
     await people.assertPeopleAccess(context.supabase, workspaceId, context.userId, "manage");
     // Função restrita ao servidor; recebe o usuário já autenticado pelo middleware.
-    const { data: ok } = await supabaseAdmin.rpc("sales_contaazul_authorize", {
+    const { data: ok, error: authErr } = await supabaseAdmin.rpc("sales_contaazul_authorize", {
       p_user: context.userId,
       p_ws: workspaceId,
       p_entity: "connection",
     });
-    if (ok !== true) throw new Error("Sem permissão de gestão da integração Conta Azul.");
+    if (ok !== true) {
+      console.error("[ca-people] authorize", ok, authErr?.message);
+      throw new Error("Sem permissão de gestão da integração Conta Azul.");
+    }
     return {
       counts: await people.refreshPeopleLinks(supabaseAdmin, workspaceId, {
         client: context.supabase,
