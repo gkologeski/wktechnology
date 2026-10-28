@@ -121,19 +121,34 @@ export type EntryPlan = {
   /** Não existe no TechERP: criar. */
   create: string[];
   /** Possível mesmo lançamento com data ou valor alterado, ou vários candidatos. */
-  review: Array<{ apiId: string; reason: "date_changed" | "amount_changed" | "ambiguous"; localIds: string[] }>;
+  review: Array<{
+    apiId: string;
+    reason: "date_changed" | "amount_changed" | "ambiguous";
+    localIds: string[];
+  }>;
   /** Já vinculados ou ignorados em execuções anteriores. */
   skipped: number;
 };
 
 function matchDelta(api: CaEvent, local: LocalEntry) {
-  const cancel = caEventTargetStatus(api) === "cancelled" && local.status !== "cancelled" && local.paid === 0;
+  const cancel =
+    caEventTargetStatus(api) === "cancelled" && local.status !== "cancelled" && local.paid === 0;
   const topUp =
-    local.status === "cancelled" || cancel ? 0 : Math.max(0, toCents(api.paid) - toCents(local.paid));
+    local.status === "cancelled" || cancel
+      ? 0
+      : Math.max(0, toCents(api.paid) - toCents(local.paid));
   return { topUpCents: topUp, cancel };
 }
 
-const toRecon = (e: { id: string; direction: Direction; dueDate: string; amount: number; description: string; counterparty: string | null; status: EntryStatus }): ReconEntry => ({
+const toRecon = (e: {
+  id: string;
+  direction: Direction;
+  dueDate: string;
+  amount: number;
+  description: string;
+  counterparty: string | null;
+  status: EntryStatus;
+}): ReconEntry => ({
   id: e.id,
   direction: e.direction,
   dueDate: e.dueDate,
@@ -168,16 +183,28 @@ export function planEntries(
     }
     if (link.decision === "ignore") plan.skipped++;
     else if (link.decision === "new") plan.create.push(a.id);
-    else if (link.decision === "same" && link.localId && localById.has(link.localId) && !usedLocal.has(link.localId)) {
+    else if (
+      link.decision === "same" &&
+      link.localId &&
+      localById.has(link.localId) &&
+      !usedLocal.has(link.localId)
+    ) {
       usedLocal.add(link.localId);
-      plan.match.push({ apiId: a.id, localId: link.localId, tier: "manual", ...matchDelta(a, localById.get(link.localId)!) });
+      plan.match.push({
+        apiId: a.id,
+        localId: link.localId,
+        tier: "manual",
+        ...matchDelta(a, localById.get(link.localId)!),
+      });
     } else pending.push(a); // revisão em aberto: recalcula
   }
 
   const pool = local.filter((l) => !usedLocal.has(l.id));
   const rec = reconcileEntries(
     pool.map(toRecon),
-    pending.map((a) => toRecon({ ...a, counterparty: a.counterpartyName, status: caEventTargetStatus(a) })),
+    pending.map((a) =>
+      toRecon({ ...a, counterparty: a.counterpartyName, status: caEventTargetStatus(a) }),
+    ),
   );
   for (const m of rec.matched) {
     if (m.tier === "date_amount") {
@@ -193,11 +220,13 @@ export function planEntries(
     });
   }
   for (const g of rec.review)
-    for (const apiId of g.apiIds) plan.review.push({ apiId, reason: "ambiguous", localIds: g.localIds });
+    for (const apiId of g.apiIds)
+      plan.review.push({ apiId, reason: "ambiguous", localIds: g.localIds });
 
   // Sobras dos dois lados: mesmo texto/contraparte com data ou valor diferente → revisão.
   const localOnly = rec.localOnly.map((id) => localById.get(id)!);
-  const keyText = (d: string, desc: string, cp: string | null) => `${d}|${normText(desc)}|${normText(cp)}`;
+  const keyText = (d: string, desc: string, cp: string | null) =>
+    `${d}|${normText(desc)}|${normText(cp)}`;
   const byAmount = new Map<string, string[]>();
   const byDate = new Map<string, string[]>();
   for (const l of localOnly) {
@@ -212,8 +241,10 @@ export function planEntries(
     const base = keyText(a.direction, a.description, a.counterpartyName);
     const sameAmount = byAmount.get(`${base}|${toCents(a.amount)}`);
     const sameDate = byDate.get(`${base}|${a.dueDate}`);
-    if (sameAmount?.length) plan.review.push({ apiId, reason: "date_changed", localIds: sameAmount.slice(0, 5) });
-    else if (sameDate?.length) plan.review.push({ apiId, reason: "amount_changed", localIds: sameDate.slice(0, 5) });
+    if (sameAmount?.length)
+      plan.review.push({ apiId, reason: "date_changed", localIds: sameAmount.slice(0, 5) });
+    else if (sameDate?.length)
+      plan.review.push({ apiId, reason: "amount_changed", localIds: sameDate.slice(0, 5) });
     else plan.create.push(apiId);
   }
   return plan;
@@ -245,7 +276,10 @@ export function mapCaTransfer(raw: Raw): CaTransfer | null {
     id,
     date,
     amount,
-    description: (String(raw["descricao"] ?? "").trim() || "Transferência entre contas").slice(0, 500),
+    description: (String(raw["descricao"] ?? "").trim() || "Transferência entre contas").slice(
+      0,
+      500,
+    ),
     fromAccountId: acc("origem"),
     toAccountId: acc("destino"),
   };
@@ -268,7 +302,11 @@ export function planTransfers(
     const k = `${t.date}|${toCents(t.amount)}`;
     pool.set(k, [...(pool.get(k) ?? []), t]);
   }
-  const out = { match: [] as Array<{ apiId: string; localId: string }>, create: [] as string[], skipped: 0 };
+  const out = {
+    match: [] as Array<{ apiId: string; localId: string }>,
+    create: [] as string[],
+    skipped: 0,
+  };
   for (const a of api) {
     if (links.has(linkKey("transfer", a.id))) {
       out.skipped++;
@@ -308,7 +346,8 @@ export function planCatalog(
     const link = links.get(linkKey(entity, r.id));
     if (link && link.status !== "review") plan.skipped++;
     else if (link?.decision === "new") plan.create.push(r.id);
-    else if (link?.decision === "same" && link.localId) plan.match.push({ remoteId: r.id, localId: link.localId });
+    else if (link?.decision === "same" && link.localId)
+      plan.match.push({ remoteId: r.id, localId: link.localId });
     else if (link?.decision === "ignore") plan.skipped++;
     else if (byExt.has(r.id)) plan.match.push({ remoteId: r.id, localId: byExt.get(r.id)! });
     else todo.push(r);
@@ -316,7 +355,8 @@ export function planCatalog(
   const free = local.filter((l) => !used.has(l.id));
   for (const m of matchByName(todo, free)) {
     if (m.outcome === "linked") plan.match.push({ remoteId: m.remoteId, localId: m.localIds[0]! });
-    else if (m.outcome === "review") plan.review.push({ remoteId: m.remoteId, localIds: m.localIds });
+    else if (m.outcome === "review")
+      plan.review.push({ remoteId: m.remoteId, localIds: m.localIds });
     else plan.create.push(m.remoteId);
   }
   return plan;
@@ -343,7 +383,12 @@ export type PaymentPart = { paidAt: string; cents: number; accountId: string | n
 
 const pickPath = (raw: Raw, paths: string[]): unknown => {
   for (const p of paths) {
-    const v = p.split(".").reduce<unknown>((acc, k) => (acc && typeof acc === "object" ? (acc as Raw)[k] : undefined), raw);
+    const v = p
+      .split(".")
+      .reduce<unknown>(
+        (acc, k) => (acc && typeof acc === "object" ? (acc as Raw)[k] : undefined),
+        raw,
+      );
     if (v !== undefined && v !== null && v !== "") return v;
   }
   return undefined;

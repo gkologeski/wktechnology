@@ -21,7 +21,10 @@ import {
 import type { FullImportSummary } from "@/lib/integrations/contaazul-full-import.server";
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-const RUN_STATUS: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+const RUN_STATUS: Record<
+  string,
+  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+> = {
   running: { label: "Em andamento", variant: "secondary" },
   completed: { label: "Concluída", variant: "default" },
   failed: { label: "Interrompida", variant: "destructive" },
@@ -51,13 +54,25 @@ function SummaryGrid({ s }: { s: FullImportSummary }) {
   const rows: Array<[string, string]> = [
     ["Lidos do Conta Azul", `${s.api.events} lançamentos · ${s.api.transfers} transferências`],
     ["Já existem no TechERP (só vínculo)", `${s.entries.match} lançamentos`],
-    ["Novos a criar", `${s.entries.create} (${s.entries.createReceivable} a receber, ${s.entries.createPayable} a pagar) · ${brl(s.entries.createValue)}`],
-    ["Baixas novas em lançamentos existentes", `${s.entries.paymentsToAdd} · ${brl(s.entries.paymentsToAddValue)}`],
+    [
+      "Novos a criar",
+      `${s.entries.create} (${s.entries.createReceivable} a receber, ${s.entries.createPayable} a pagar) · ${brl(s.entries.createValue)}`,
+    ],
+    [
+      "Baixas novas em lançamentos existentes",
+      `${s.entries.paymentsToAdd} · ${brl(s.entries.paymentsToAddValue)}`,
+    ],
     ["Para revisar", `${s.entries.review} lançamentos`],
     ["Só no TechERP (preservados)", `${s.entries.localOnly}`],
     ["Transferências", `${s.transfers.match} existentes · ${s.transfers.create} novas`],
-    ["Clientes e fornecedores novos", `${s.people.companies} empresas · ${s.people.contacts} contatos (somente financeiro)`],
-    ["Categorias", `${s.categories.match} existentes · ${s.categories.create} novas · ${s.categories.review} para revisar`],
+    [
+      "Clientes e fornecedores novos",
+      `${s.people.companies} empresas · ${s.people.contacts} contatos (somente financeiro)`,
+    ],
+    [
+      "Categorias",
+      `${s.categories.match} existentes · ${s.categories.create} novas · ${s.categories.review} para revisar`,
+    ],
     ["Centros de custo", `${s.costCenters.match} existentes · ${s.costCenters.create} novos`],
     ["Contas financeiras", `${s.bankAccounts.match} existentes · ${s.bankAccounts.create} novas`],
   ];
@@ -71,12 +86,14 @@ function SummaryGrid({ s }: { s: FullImportSummary }) {
       ))}
       {s.people.pendingSuggestions > 0 ? (
         <p className="text-xs text-muted-foreground sm:col-span-2">
-          {s.people.pendingSuggestions} cliente(s)/fornecedor(es) ainda sem decisão ficam de fora até você decidir.
+          {s.people.pendingSuggestions} cliente(s)/fornecedor(es) ainda sem decisão ficam de fora
+          até você decidir.
         </p>
       ) : null}
       {s.entries.cancelledInContaAzul > 0 ? (
         <p className="text-xs text-muted-foreground sm:col-span-2">
-          {s.entries.cancelledInContaAzul} lançamento(s) existentes estão perdidos no Conta Azul e não serão cancelados automaticamente.
+          {s.entries.cancelledInContaAzul} lançamento(s) existentes estão perdidos no Conta Azul e
+          não serão cancelados automaticamente.
         </p>
       ) : null}
     </dl>
@@ -93,7 +110,13 @@ type ReviewRow = {
 };
 
 /** Importação completa com simulação, execução, revisão e desfazer. */
-export function ContaAzulFullImport({ canManage, connected }: { canManage: boolean; connected: boolean }) {
+export function ContaAzulFullImport({
+  canManage,
+  connected,
+}: {
+  canManage: boolean;
+  connected: boolean;
+}) {
   const qc = useQueryClient();
   const preview = useServerFn(contaAzulFullImportPreview);
   const apply = useServerFn(contaAzulFullImportApply);
@@ -138,7 +161,8 @@ export function ContaAzulFullImport({ canManage, connected }: { canManage: boole
     onError: (e: Error) => toast.error(e.message),
   });
   const decideMut = useMutation({
-    mutationFn: (v: { ids: string[]; decision: "same" | "new" | "ignore"; localId?: string }) => decide({ data: v }),
+    mutationFn: (v: { ids: string[]; decision: "same" | "new" | "ignore"; localId?: string }) =>
+      decide({ data: v }),
     onSuccess: () => {
       toast.success("Decisão registrada. Ela é aplicada na próxima importação.");
       invalidate();
@@ -180,11 +204,18 @@ export function ContaAzulFullImport({ canManage, connected }: { canManage: boole
           action={
             canManage ? (
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={() => previewMut.mutate()} disabled={busy || !connected}>
+                <Button
+                  variant="outline"
+                  onClick={() => previewMut.mutate()}
+                  disabled={busy || !connected}
+                >
                   <ScanSearch className="mr-2 h-4 w-4" aria-hidden />
                   {previewMut.isPending ? "Simulando..." : "Simular"}
                 </Button>
-                <Button onClick={() => void handleApply()} disabled={busy || !connected || !simulated}>
+                <Button
+                  onClick={() => void handleApply()}
+                  disabled={busy || !connected || !simulated}
+                >
                   <Download className="mr-2 h-4 w-4" aria-hidden />
                   {applyMut.isPending ? "Importando..." : "Importar"}
                 </Button>
@@ -193,10 +224,14 @@ export function ContaAzulFullImport({ canManage, connected }: { canManage: boole
           }
         />
         {!connected ? (
-          <p className="text-sm text-muted-foreground">Conecte o Conta Azul para simular ou importar.</p>
+          <p className="text-sm text-muted-foreground">
+            Conecte o Conta Azul para simular ou importar.
+          </p>
         ) : null}
         {canManage && !simulated && connected ? (
-          <p className="text-xs text-muted-foreground">O botão Importar fica disponível depois de uma simulação.</p>
+          <p className="text-xs text-muted-foreground">
+            O botão Importar fica disponível depois de uma simulação.
+          </p>
         ) : null}
         {previewMut.isPending || applyMut.isPending ? (
           <div className="space-y-2" aria-live="polite">
@@ -226,21 +261,33 @@ export function ContaAzulFullImport({ canManage, connected }: { canManage: boole
               </Button>
             </p>
           ) : runs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma importação completa executada ainda.</p>
+            <p className="text-sm text-muted-foreground">
+              Nenhuma importação completa executada ainda.
+            </p>
           ) : (
             <ul className="space-y-3">
               {runs.map((r) => {
                 const st = RUN_STATUS[r.status] ?? { label: r.status, variant: "outline" as const };
-                const s = r.summary as FullImportSummary & { written?: Record<string, number>; errors?: string[] };
+                const s = r.summary as FullImportSummary & {
+                  written?: Record<string, number>;
+                  errors?: string[];
+                };
                 return (
                   <li key={r.id} className="space-y-2 rounded-md border border-border p-3">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2 text-sm">
                         <Badge variant={st.variant}>{st.label}</Badge>
-                        <span className="text-muted-foreground">{formatDateTime(r.started_at)}</span>
+                        <span className="text-muted-foreground">
+                          {formatDateTime(r.started_at)}
+                        </span>
                       </div>
                       {canManage && (r.status === "completed" || r.status === "failed") ? (
-                        <Button size="sm" variant="outline" onClick={() => void handleRollback(r.id)} disabled={busy}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => void handleRollback(r.id)}
+                          disabled={busy}
+                        >
                           <RotateCcw className="mr-2 h-4 w-4" aria-hidden />
                           Desfazer
                         </Button>
@@ -259,7 +306,9 @@ export function ContaAzulFullImport({ canManage, connected }: { canManage: boole
                     {r.error ? <p className="text-xs text-destructive">{r.error}</p> : null}
                     {s?.errors?.length ? (
                       <details className="text-xs">
-                        <summary className="cursor-pointer text-muted-foreground">{s.errors.length} aviso(s)</summary>
+                        <summary className="cursor-pointer text-muted-foreground">
+                          {s.errors.length} aviso(s)
+                        </summary>
                         <ul className="mt-1 list-disc space-y-0.5 pl-4">
                           {s.errors.map((e, i) => (
                             <li key={i}>{e}</li>
@@ -277,17 +326,43 @@ export function ContaAzulFullImport({ canManage, connected }: { canManage: boole
         <div className="space-y-2">
           <h3 className="text-sm font-semibold">Lançamentos para revisar ({reviewTotal})</h3>
           {q.isLoading ? null : review.length === 0 ? (
-            <EmptyState title="Nada para revisar" description="Itens em dúvida aparecem aqui depois de uma importação." />
+            <EmptyState
+              title="Nada para revisar"
+              description="Itens em dúvida aparecem aqui depois de uma importação."
+            />
           ) : (
             <ul className="space-y-2">
               {review.map((row) => {
-                const cands = (Array.isArray(row.candidates) ? row.candidates : []) as Array<{ id: string; label?: string }>;
+                const cands = (Array.isArray(row.candidates) ? row.candidates : []) as Array<{
+                  id: string;
+                  label?: string;
+                }>;
                 return (
-                  <li key={row.id} className="space-y-2 rounded-md border border-border p-3 text-sm">
+                  <li
+                    key={row.id}
+                    className="space-y-2 rounded-md border border-border p-3 text-sm"
+                  >
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline">{row.entity === "receivable" ? "A receber" : row.entity === "payable" ? "A pagar" : row.entity}</Badge>
-                      <span className="text-xs text-muted-foreground">{REASON[row.tier ?? ""] ?? "Conferir"}</span>
-                      {row.decision ? <Badge variant="secondary">Decidido: {row.decision === "same" ? "mesmo lançamento" : row.decision === "new" ? "criar novo" : "ignorar"}</Badge> : null}
+                      <Badge variant="outline">
+                        {row.entity === "receivable"
+                          ? "A receber"
+                          : row.entity === "payable"
+                            ? "A pagar"
+                            : row.entity}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {REASON[row.tier ?? ""] ?? "Conferir"}
+                      </span>
+                      {row.decision ? (
+                        <Badge variant="secondary">
+                          Decidido:{" "}
+                          {row.decision === "same"
+                            ? "mesmo lançamento"
+                            : row.decision === "new"
+                              ? "criar novo"
+                              : "ignorar"}
+                        </Badge>
+                      ) : null}
                     </div>
                     <p>
                       <span className="text-xs text-muted-foreground">Conta Azul: </span>
@@ -295,13 +370,23 @@ export function ContaAzulFullImport({ canManage, connected }: { canManage: boole
                     </p>
                     <ul className="space-y-1">
                       {cands.map((c) => (
-                        <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 rounded bg-muted/40 px-2 py-1">
+                        <li
+                          key={c.id}
+                          className="flex flex-wrap items-center justify-between gap-2 rounded bg-muted/40 px-2 py-1"
+                        >
                           <span className="text-xs">
                             <span className="text-muted-foreground">TechERP: </span>
                             {c.label ?? c.id}
                           </span>
                           {canManage ? (
-                            <Button size="sm" variant="ghost" disabled={decideMut.isPending} onClick={() => decideMut.mutate({ ids: [row.id], decision: "same", localId: c.id })}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={decideMut.isPending}
+                              onClick={() =>
+                                decideMut.mutate({ ids: [row.id], decision: "same", localId: c.id })
+                              }
+                            >
                               <Check className="mr-1 h-3.5 w-3.5" aria-hidden />É o mesmo
                             </Button>
                           ) : null}
@@ -310,11 +395,21 @@ export function ContaAzulFullImport({ canManage, connected }: { canManage: boole
                     </ul>
                     {canManage ? (
                       <div className="flex flex-wrap gap-2">
-                        <Button size="sm" variant="outline" disabled={decideMut.isPending} onClick={() => decideMut.mutate({ ids: [row.id], decision: "new" })}>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={decideMut.isPending}
+                          onClick={() => decideMut.mutate({ ids: [row.id], decision: "new" })}
+                        >
                           <Plus className="mr-1 h-3.5 w-3.5" aria-hidden />
                           Criar como novo
                         </Button>
-                        <Button size="sm" variant="ghost" disabled={decideMut.isPending} onClick={() => decideMut.mutate({ ids: [row.id], decision: "ignore" })}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={decideMut.isPending}
+                          onClick={() => decideMut.mutate({ ids: [row.id], decision: "ignore" })}
+                        >
                           <EyeOff className="mr-1 h-3.5 w-3.5" aria-hidden />
                           Ignorar
                         </Button>
@@ -327,13 +422,23 @@ export function ContaAzulFullImport({ canManage, connected }: { canManage: boole
           )}
           {reviewTotal > 50 ? (
             <div className="flex items-center justify-end gap-2 text-xs">
-              <Button size="sm" variant="outline" disabled={page === 0} onClick={() => setPage((p) => p - 1)}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={page === 0}
+                onClick={() => setPage((p) => p - 1)}
+              >
                 Anterior
               </Button>
               <span className="text-muted-foreground">
                 Página {page + 1} de {Math.ceil(reviewTotal / 50)}
               </span>
-              <Button size="sm" variant="outline" disabled={(page + 1) * 50 >= reviewTotal} onClick={() => setPage((p) => p + 1)}>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={(page + 1) * 50 >= reviewTotal}
+                onClick={() => setPage((p) => p + 1)}
+              >
                 Próxima
               </Button>
             </div>

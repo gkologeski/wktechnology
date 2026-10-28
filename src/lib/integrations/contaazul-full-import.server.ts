@@ -32,7 +32,14 @@ import { toCents, type EntryStatus } from "./contaazul-reconcile";
 type Raw = Record<string, unknown>;
 type Ctx = { admin: SupabaseClient; client: SupabaseClient; workspaceId: string; userId: string };
 
-const ENTITIES_REQUIRED = ["connection", "categories", "cost-centers", "bank-accounts", "receivable", "payable"];
+const ENTITIES_REQUIRED = [
+  "connection",
+  "categories",
+  "cost-centers",
+  "bank-accounts",
+  "receivable",
+  "payable",
+];
 
 /** Exige: conciliar pessoas (cliente do usuário) + gestão/importação financeira do Conta Azul. */
 export async function assertFullImportAccess(ctx: Ctx): Promise<void> {
@@ -44,11 +51,18 @@ export async function assertFullImportAccess(ctx: Ctx): Promise<void> {
       p_entity: entity,
     });
     if (error || data !== true)
-      throw new Error("Sem permissão para importar dados financeiros do Conta Azul neste workspace.");
+      throw new Error(
+        "Sem permissão para importar dados financeiros do Conta Azul neste workspace.",
+      );
   }
 }
 
-async function pageAll<T>(build: (from: number, to: number) => PromiseLike<{ data: unknown; error: { message: string } | null }>): Promise<T[]> {
+async function pageAll<T>(
+  build: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: unknown; error: { message: string } | null }>,
+): Promise<T[]> {
   const out: T[] = [];
   for (let from = 0; ; from += 1000) {
     const { data, error } = await build(from, from + 999);
@@ -60,13 +74,17 @@ async function pageAll<T>(build: (from: number, to: number) => PromiseLike<{ dat
   return out;
 }
 
-const chunks = <T,>(list: T[], size: number) => {
+const chunks = <T>(list: T[], size: number) => {
   const out: T[][] = [];
   for (let i = 0; i < list.length; i += size) out.push(list.slice(i, i + size));
   return out;
 };
 
-async function mapLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+async function mapLimit<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
   const out = new Array<R>(items.length);
   let next = 0;
   await Promise.all(
@@ -88,8 +106,18 @@ async function fetchApi(token: string) {
   const range = { data_vencimento_de: "2000-01-01", data_vencimento_ate: "2040-12-31" };
   const big = { pageSize: 500, maxPages: 1000 };
   const [rec, pag, cats, centers, accounts] = await Promise.all([
-    caFetchAll({ accessToken: token, path: "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar", query: range, ...big }),
-    caFetchAll({ accessToken: token, path: "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar", query: range, ...big }),
+    caFetchAll({
+      accessToken: token,
+      path: "/v1/financeiro/eventos-financeiros/contas-a-receber/buscar",
+      query: range,
+      ...big,
+    }),
+    caFetchAll({
+      accessToken: token,
+      path: "/v1/financeiro/eventos-financeiros/contas-a-pagar/buscar",
+      query: range,
+      ...big,
+    }),
     caFetchAll({ accessToken: token, path: "/v1/categorias", pageSize: 100, maxPages: 100 }),
     caFetchAll({ accessToken: token, path: "/v1/centro-de-custo", pageSize: 100, maxPages: 100 }),
     caFetchAll({ accessToken: token, path: "/v1/conta-financeira", pageSize: 100, maxPages: 100 }),
@@ -177,15 +205,26 @@ async function loadLocal(ctx: Ctx) {
   }>((a, b) =>
     ctx.admin
       .from("contaazul_person_links")
-      .select("id, contaazul_id, name, person_kind, status, match_by, document, email, local_company_id, local_contact_id")
+      .select(
+        "id, contaazul_id, name, person_kind, status, match_by, document, email, local_company_id, local_contact_id",
+      )
       .eq("workspace_id", ws)
       .order("id")
       .range(a, b),
   );
   const [cats, centers, banks] = await Promise.all([
-    ctx.admin.from("financial_categories").select("id, name, kind, ext:external_ids->>contaazul").eq("workspace_id", ws),
-    ctx.admin.from("financial_cost_centers").select("id, name, ext:external_ids->>contaazul").eq("workspace_id", ws),
-    ctx.admin.from("financial_bank_accounts").select("id, name, active, ext:metadata->>contaazul_id").eq("workspace_id", ws),
+    ctx.admin
+      .from("financial_categories")
+      .select("id, name, kind, ext:external_ids->>contaazul")
+      .eq("workspace_id", ws),
+    ctx.admin
+      .from("financial_cost_centers")
+      .select("id, name, ext:external_ids->>contaazul")
+      .eq("workspace_id", ws),
+    ctx.admin
+      .from("financial_bank_accounts")
+      .select("id, name, active, ext:metadata->>contaazul_id")
+      .eq("workspace_id", ws),
   ]);
   for (const r of [cats, centers, banks]) if (r.error) throw new Error(r.error.message);
   return {
@@ -193,13 +232,29 @@ async function loadLocal(ctx: Ctx) {
     links: new Map<string, ExistingLink>(
       links.map((l) => [
         linkKey(l.entity, l.contaazul_id),
-        { entity: l.entity, contaazulId: l.contaazul_id, status: l.status, decision: l.decision, localId: l.local_id },
+        {
+          entity: l.entity,
+          contaazulId: l.contaazul_id,
+          status: l.status,
+          decision: l.decision,
+          localId: l.local_id,
+        },
       ]),
     ),
     people,
-    cats: (cats.data ?? []) as Array<{ id: string; name: string; kind: "revenue" | "expense"; ext: string | null }>,
+    cats: (cats.data ?? []) as Array<{
+      id: string;
+      name: string;
+      kind: "revenue" | "expense";
+      ext: string | null;
+    }>,
     centers: (centers.data ?? []) as Array<{ id: string; name: string; ext: string | null }>,
-    banks: (banks.data ?? []) as Array<{ id: string; name: string; active: boolean; ext: string | null }>,
+    banks: (banks.data ?? []) as Array<{
+      id: string;
+      name: string;
+      active: boolean;
+      ext: string | null;
+    }>,
   };
 }
 
@@ -227,16 +282,22 @@ async function buildPlan(ctx: Ctx, token: string) {
   for (const e of local.entries) {
     if (e.kind !== "transfer" && e.kind !== "transfer_orphan") continue;
     const key = e.kind === "transfer" && e.pair ? e.pair : e.id;
-    if (!pairs.has(key)) pairs.set(key, { key, localId: e.id, date: e.due_date, amount: num(e.amount) });
+    if (!pairs.has(key))
+      pairs.set(key, { key, localId: e.id, date: e.due_date, amount: num(e.amount) });
   }
 
   const catPlan = (["revenue", "expense"] as const).map((kind) =>
     planCatalog(
       "category",
       api.cats
-        .filter((c) => (String(c["tipo"] ?? "").toUpperCase() === "RECEITA" ? "revenue" : "expense") === kind)
+        .filter(
+          (c) =>
+            (String(c["tipo"] ?? "").toUpperCase() === "RECEITA" ? "revenue" : "expense") === kind,
+        )
         .map((c) => ({ id: String(c["id"]), name: String(c["nome"] ?? "") })),
-      local.cats.filter((c) => c.kind === kind).map((c) => ({ id: c.id, name: c.name, contaazulId: c.ext })),
+      local.cats
+        .filter((c) => c.kind === kind)
+        .map((c) => ({ id: c.id, name: c.name, contaazulId: c.ext })),
       local.links,
     ),
   );
@@ -255,16 +316,31 @@ async function buildPlan(ctx: Ctx, token: string) {
   const entryPlan = planEntries(localEvents, api.events, local.links);
   const transferPlan = planTransfers([...pairs.values()], api.transfers, local.links);
   const peopleToCreate = local.people.filter(
-    (p) => p.status === "confirmed" && p.match_by === "new_finance" && !p.local_company_id && !p.local_contact_id,
+    (p) =>
+      p.status === "confirmed" &&
+      p.match_by === "new_finance" &&
+      !p.local_company_id &&
+      !p.local_contact_id,
   );
-  return { api, local, localEvents, catPlan, centerPlan, bankPlan, entryPlan, transferPlan, peopleToCreate };
+  return {
+    api,
+    local,
+    localEvents,
+    catPlan,
+    centerPlan,
+    bankPlan,
+    entryPlan,
+    transferPlan,
+    peopleToCreate,
+  };
 }
 
 type Plan = Awaited<ReturnType<typeof buildPlan>>;
 
 function summarize(plan: Plan) {
   const ev = new Map(plan.api.events.map((e) => [e.id, e]));
-  const sumCents = (ids: string[]) => ids.reduce((s, id) => s + toCents(ev.get(id)?.amount ?? 0), 0) / 100;
+  const sumCents = (ids: string[]) =>
+    ids.reduce((s, id) => s + toCents(ev.get(id)?.amount ?? 0), 0) / 100;
   const cat = {
     match: plan.catPlan.reduce((s, p) => s + p.match.length, 0),
     create: plan.catPlan.reduce((s, p) => s + p.create.length, 0),
@@ -272,21 +348,37 @@ function summarize(plan: Plan) {
   };
   const topUps = plan.entryPlan.match.filter((m) => m.topUpCents > 0);
   return {
-    api: { events: plan.api.events.length, invalid: plan.api.invalid, transfers: plan.api.transfers.length },
+    api: {
+      events: plan.api.events.length,
+      invalid: plan.api.invalid,
+      transfers: plan.api.transfers.length,
+    },
     categories: cat,
-    costCenters: { match: plan.centerPlan.match.length, create: plan.centerPlan.create.length, review: plan.centerPlan.review.length },
-    bankAccounts: { match: plan.bankPlan.match.length, create: plan.bankPlan.create.length, review: plan.bankPlan.review.length },
+    costCenters: {
+      match: plan.centerPlan.match.length,
+      create: plan.centerPlan.create.length,
+      review: plan.centerPlan.review.length,
+    },
+    bankAccounts: {
+      match: plan.bankPlan.match.length,
+      create: plan.bankPlan.create.length,
+      review: plan.bankPlan.review.length,
+    },
     people: {
       create: plan.peopleToCreate.length,
       companies: plan.peopleToCreate.filter((p) => p.person_kind === "company").length,
       contacts: plan.peopleToCreate.filter((p) => p.person_kind === "person").length,
-      pendingSuggestions: plan.local.people.filter((p) => p.status === "suggested" || p.status === "review").length,
+      pendingSuggestions: plan.local.people.filter(
+        (p) => p.status === "suggested" || p.status === "review",
+      ).length,
     },
     entries: {
       match: plan.entryPlan.match.length,
       create: plan.entryPlan.create.length,
-      createReceivable: plan.entryPlan.create.filter((id) => ev.get(id)?.direction === "receivable").length,
-      createPayable: plan.entryPlan.create.filter((id) => ev.get(id)?.direction === "payable").length,
+      createReceivable: plan.entryPlan.create.filter((id) => ev.get(id)?.direction === "receivable")
+        .length,
+      createPayable: plan.entryPlan.create.filter((id) => ev.get(id)?.direction === "payable")
+        .length,
       createValue: sumCents(plan.entryPlan.create),
       review: plan.entryPlan.review.length,
       skipped: plan.entryPlan.skipped,
@@ -295,7 +387,11 @@ function summarize(plan: Plan) {
       cancelledInContaAzul: plan.entryPlan.match.filter((m) => m.cancel).length,
       localOnly: plan.localEvents.length - plan.entryPlan.match.length,
     },
-    transfers: { match: plan.transferPlan.match.length, create: plan.transferPlan.create.length, skipped: plan.transferPlan.skipped },
+    transfers: {
+      match: plan.transferPlan.match.length,
+      create: plan.transferPlan.create.length,
+      skipped: plan.transferPlan.skipped,
+    },
   };
 }
 
@@ -320,7 +416,10 @@ async function upsertLinks(ctx: Ctx, rows: Array<Record<string, unknown>>) {
 
 async function detailOf(token: string, id: string): Promise<unknown> {
   try {
-    return await caFetch({ accessToken: token, path: `/v1/financeiro/eventos-financeiros/parcelas/${id}` });
+    return await caFetch({
+      accessToken: token,
+      path: `/v1/financeiro/eventos-financeiros/parcelas/${id}`,
+    });
   } catch {
     return null;
   }
@@ -331,7 +430,10 @@ export function describeShape(detail: unknown): string[] {
   if (!detail || typeof detail !== "object") return [];
   const top = Object.keys(detail as Raw);
   const baixas = (detail as Raw)["baixas"];
-  const inner = Array.isArray(baixas) && baixas[0] && typeof baixas[0] === "object" ? Object.keys(baixas[0] as Raw).map((k) => `baixas.${k}`) : [];
+  const inner =
+    Array.isArray(baixas) && baixas[0] && typeof baixas[0] === "object"
+      ? Object.keys(baixas[0] as Raw).map((k) => `baixas.${k}`)
+      : [];
   return [...top, ...inner].slice(0, 60);
 }
 
@@ -339,11 +441,18 @@ export async function previewFullImport(ctx: Ctx): Promise<FullImportSummary> {
   await assertFullImportAccess(ctx);
   const token = await tokenKeepingStatus(ctx.admin, ctx.workspaceId);
   const plan = await buildPlan(ctx, token);
-  const sample = plan.api.events.find((e) => e.paid > 0 && plan.entryPlan.create.includes(e.id)) ?? plan.api.events.find((e) => e.paid > 0);
-  return { ...summarize(plan), detailFormat: sample ? describeShape(await detailOf(token, sample.id)) : [] };
+  const sample =
+    plan.api.events.find((e) => e.paid > 0 && plan.entryPlan.create.includes(e.id)) ??
+    plan.api.events.find((e) => e.paid > 0);
+  return {
+    ...summarize(plan),
+    detailFormat: sample ? describeShape(await detailOf(token, sample.id)) : [],
+  };
 }
 
-export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summary: FullImportSummary }> {
+export async function applyFullImport(
+  ctx: Ctx,
+): Promise<{ runId: string; summary: FullImportSummary }> {
   await assertFullImportAccess(ctx);
   const token = await tokenKeepingStatus(ctx.admin, ctx.workspaceId);
   const { data: run, error: runErr } = await ctx.admin
@@ -367,7 +476,16 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
     const now = () => new Date().toISOString();
     const links: Array<Record<string, unknown>> = [];
     const link = (entity: LinkEntity, contaazulId: string, rest: Record<string, unknown>) =>
-      links.push({ workspace_id: ws, entity, contaazul_id: contaazulId, run_id: runId, updated_at: now(), candidates: [], decision: null, ...rest });
+      links.push({
+        workspace_id: ws,
+        entity,
+        contaazul_id: contaazulId,
+        run_id: runId,
+        updated_at: now(),
+        candidates: [],
+        decision: null,
+        ...rest,
+      });
 
     /* ---- Cadastros auxiliares ---- */
     const catMap = new Map<string, string>(); // id Conta Azul → id local
@@ -382,36 +500,82 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
       if (l.entity === "bank_account") bankMap.set(l.contaazulId, l.localId);
     }
     const catalogs = [
-      { entity: "category" as const, plans: plan.catPlan, map: catMap, table: "financial_categories" },
-      { entity: "cost_center" as const, plans: [plan.centerPlan], map: centerMap, table: "financial_cost_centers" },
-      { entity: "bank_account" as const, plans: [plan.bankPlan], map: bankMap, table: "financial_bank_accounts" },
+      {
+        entity: "category" as const,
+        plans: plan.catPlan,
+        map: catMap,
+        table: "financial_categories",
+      },
+      {
+        entity: "cost_center" as const,
+        plans: [plan.centerPlan],
+        map: centerMap,
+        table: "financial_cost_centers",
+      },
+      {
+        entity: "bank_account" as const,
+        plans: [plan.bankPlan],
+        map: bankMap,
+        table: "financial_bank_accounts",
+      },
     ];
     const remoteName = new Map<string, string>();
-    for (const r of [...plan.api.cats, ...plan.api.centers, ...plan.api.accounts]) remoteName.set(String(r["id"]), String(r["nome"] ?? ""));
+    for (const r of [...plan.api.cats, ...plan.api.centers, ...plan.api.accounts])
+      remoteName.set(String(r["id"]), String(r["nome"] ?? ""));
     const rawAccount = new Map(plan.api.accounts.map((a) => [String(a["id"]), a]));
     const rawCenter = new Map(plan.api.centers.map((a) => [String(a["id"]), a]));
     for (const c of catalogs) {
       for (const p of c.plans) {
         for (const m of p.match) {
           c.map.set(m.remoteId, m.localId);
-          link(c.entity, m.remoteId, { status: "matched", local_id: m.localId, tier: "name", label: remoteName.get(m.remoteId) });
+          link(c.entity, m.remoteId, {
+            status: "matched",
+            local_id: m.localId,
+            tier: "name",
+            label: remoteName.get(m.remoteId),
+          });
         }
         for (const r of p.review)
-          link(c.entity, r.remoteId, { status: "review", label: remoteName.get(r.remoteId), candidates: r.localIds.map((id) => ({ id })) });
+          link(c.entity, r.remoteId, {
+            status: "review",
+            label: remoteName.get(r.remoteId),
+            candidates: r.localIds.map((id) => ({ id })),
+          });
         for (const id of p.create) {
           const name = (remoteName.get(id) || "Sem nome").slice(0, 200);
           let payload: Record<string, unknown>;
           if (c.entity === "category") {
             const raw = rawCat.get(id)!;
-            payload = { workspace_id: ws, name, kind: String(raw["tipo"] ?? "").toUpperCase() === "RECEITA" ? "revenue" : "expense", external_ids: { contaazul: id, contaazul_run: runId } };
+            payload = {
+              workspace_id: ws,
+              name,
+              kind: String(raw["tipo"] ?? "").toUpperCase() === "RECEITA" ? "revenue" : "expense",
+              external_ids: { contaazul: id, contaazul_run: runId },
+            };
           } else if (c.entity === "cost_center") {
-            payload = { workspace_id: ws, name, active: rawCenter.get(id)?.["ativo"] !== false, external_ids: { contaazul: id, contaazul_run: runId } };
+            payload = {
+              workspace_id: ws,
+              name,
+              active: rawCenter.get(id)?.["ativo"] !== false,
+              external_ids: { contaazul: id, contaazul_run: runId },
+            };
           } else {
             const raw = rawAccount.get(id)!;
             const mapped = mapBankAccount(raw);
-            payload = { workspace_id: ws, name, kind: mapped?.kind ?? "bank", initial_balance: 0, active: raw["ativo"] !== false, metadata: { contaazul_id: id, contaazul_run: runId, source: "contaazul" } };
+            payload = {
+              workspace_id: ws,
+              name,
+              kind: mapped?.kind ?? "bank",
+              initial_balance: 0,
+              active: raw["ativo"] !== false,
+              metadata: { contaazul_id: id, contaazul_run: runId, source: "contaazul" },
+            };
           }
-          const { data, error } = await ctx.client.from(c.table).insert(payload).select("id").single();
+          const { data, error } = await ctx.client
+            .from(c.table)
+            .insert(payload)
+            .select("id")
+            .single();
           if (error || !data) {
             fail(`${c.entity} ${name}: ${error?.message}`);
             continue;
@@ -431,7 +595,10 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
         const localId = catMap.get(id);
         const parentLocal = typeof parent === "string" ? catMap.get(parent) : undefined;
         if (localId && parentLocal && parentLocal !== localId) {
-          const { error } = await ctx.client.from("financial_categories").update({ parent_id: parentLocal }).eq("id", localId);
+          const { error } = await ctx.client
+            .from("financial_categories")
+            .update({ parent_id: parentLocal })
+            .eq("id", localId);
           if (error) fail(`Categoria pai ${id}: ${error.message}`);
         }
       }
@@ -444,16 +611,35 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
       if (p.local_company_id) companyByCa.set(p.contaazul_id, p.local_company_id);
       if (p.local_contact_id) contactByCa.set(p.contaazul_id, p.local_contact_id);
     }
-    const personUpdates: Array<{ id: string; local_company_id?: string; local_contact_id?: string }> = [];
+    const personUpdates: Array<{
+      id: string;
+      local_company_id?: string;
+      local_contact_id?: string;
+    }> = [];
     const createPeople = async (kind: "company" | "person") => {
       const list = plan.peopleToCreate.filter((p) => p.person_kind === kind);
       const table = kind === "company" ? "companies" : "contacts";
       const payloadOf = (p: (typeof list)[number], withDoc = true): Record<string, unknown> => {
         const ext = { contaazul: p.contaazul_id, contaazul_run: runId };
         if (kind === "company")
-          return { workspace_id: ws, owner_id: ctx.userId, name: p.name.slice(0, 300), audience: "finance", cnpj: withDoc ? cnpjOrNull(p.document) : null, external_ids: ext };
+          return {
+            workspace_id: ws,
+            owner_id: ctx.userId,
+            name: p.name.slice(0, 300),
+            audience: "finance",
+            cnpj: withDoc ? cnpjOrNull(p.document) : null,
+            external_ids: ext,
+          };
         const n = splitPersonName(p.name);
-        return { workspace_id: ws, owner_id: ctx.userId, first_name: n.first, last_name: n.last, email: normalizeEmailAddress(p.email), audience: "finance", external_ids: ext };
+        return {
+          workspace_id: ws,
+          owner_id: ctx.userId,
+          first_name: n.first,
+          last_name: n.last,
+          email: normalizeEmailAddress(p.email),
+          audience: "finance",
+          external_ids: ext,
+        };
       };
       const record = (rows: Array<{ id: string; ext: string | null }>) => {
         const byCa = new Map(list.map((p) => [p.contaazul_id, p]));
@@ -461,22 +647,36 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
           const p = r.ext ? byCa.get(r.ext) : undefined;
           if (!p) continue;
           (kind === "company" ? companyByCa : contactByCa).set(p.contaazul_id, r.id);
-          personUpdates.push(kind === "company" ? { id: p.id, local_company_id: r.id } : { id: p.id, local_contact_id: r.id });
+          personUpdates.push(
+            kind === "company"
+              ? { id: p.id, local_company_id: r.id }
+              : { id: p.id, local_contact_id: r.id },
+          );
           bump(kind === "company" ? "companies_created" : "contacts_created");
         }
       };
       for (const part of chunks(list, 200)) {
-        const { data, error } = await ctx.client.from(table).insert(part.map((p) => payloadOf(p))).select("id, ext:external_ids->>contaazul");
+        const { data, error } = await ctx.client
+          .from(table)
+          .insert(part.map((p) => payloadOf(p)))
+          .select("id, ext:external_ids->>contaazul");
         if (!error) {
           record((data ?? []) as Array<{ id: string; ext: string | null }>);
           continue;
         }
         // Lote recusado: tenta um a um (ex.: CNPJ já usado) sem perder os demais.
         for (const p of part) {
-          let res = await ctx.client.from(table).insert(payloadOf(p)).select("id, ext:external_ids->>contaazul");
+          let res = await ctx.client
+            .from(table)
+            .insert(payloadOf(p))
+            .select("id, ext:external_ids->>contaazul");
           if (res.error && kind === "company" && cnpjOrNull(p.document))
-            res = await ctx.client.from(table).insert(payloadOf(p, false)).select("id, ext:external_ids->>contaazul");
-          if (res.error) fail(`${kind === "company" ? "Empresa" : "Contato"} ${p.name}: ${res.error.message}`);
+            res = await ctx.client
+              .from(table)
+              .insert(payloadOf(p, false))
+              .select("id, ext:external_ids->>contaazul");
+          if (res.error)
+            fail(`${kind === "company" ? "Empresa" : "Contato"} ${p.name}: ${res.error.message}`);
           else record((res.data ?? []) as Array<{ id: string; ext: string | null }>);
         }
       }
@@ -485,7 +685,11 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
     await createPeople("person");
     await mapLimit(personUpdates, 8, async (u) => {
       const { id, ...patch } = u;
-      const { error } = await ctx.admin.from("contaazul_person_links").update({ ...patch, updated_at: now() }).eq("id", id).eq("workspace_id", ws);
+      const { error } = await ctx.admin
+        .from("contaazul_person_links")
+        .update({ ...patch, updated_at: now() })
+        .eq("id", id)
+        .eq("workspace_id", ws);
       if (error) fail(`Vínculo de pessoa ${id}: ${error.message}`);
     });
 
@@ -493,8 +697,10 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
     const ev = new Map(plan.api.events.map((e) => [e.id, e]));
     const localById = new Map(plan.localEvents.map((l) => [l.id, l]));
     const today = new Date().toISOString().slice(0, 10);
-    const fmt = (l: LocalEntry) => `${l.dueDate} · R$ ${l.amount.toFixed(2)} · ${l.description}${l.counterparty ? ` · ${l.counterparty}` : ""}`;
-    const evLabel = (e: CaEvent) => `${e.dueDate} · R$ ${e.amount.toFixed(2)} · ${e.description}${e.counterpartyName ? ` · ${e.counterpartyName}` : ""}`;
+    const fmt = (l: LocalEntry) =>
+      `${l.dueDate} · R$ ${l.amount.toFixed(2)} · ${l.description}${l.counterparty ? ` · ${l.counterparty}` : ""}`;
+    const evLabel = (e: CaEvent) =>
+      `${e.dueDate} · R$ ${e.amount.toFixed(2)} · ${e.description}${e.counterpartyName ? ` · ${e.counterpartyName}` : ""}`;
 
     const payments: Array<{ entryId: string; ev: CaEvent; targetCents: number }> = [];
     for (const m of plan.entryPlan.match) {
@@ -515,24 +721,40 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
         status: "review",
         tier: r.reason,
         label: evLabel(e),
-        candidates: r.localIds.map((id) => ({ id, label: localById.get(id) ? fmt(localById.get(id)!) : id })),
+        candidates: r.localIds.map((id) => ({
+          id,
+          label: localById.get(id) ? fmt(localById.get(id)!) : id,
+        })),
       });
     }
 
     // Referências já usadas (ex.: execução interrompida) viram vínculo, não duplicata.
-    const createRefs = plan.entryPlan.create.map((id) => `contaazul:${ev.get(id)!.direction}:${id}`);
+    const createRefs = plan.entryPlan.create.map(
+      (id) => `contaazul:${ev.get(id)!.direction}:${id}`,
+    );
     const existingRef = new Map<string, string>();
     for (const part of chunks(createRefs, 300)) {
-      const { data, error } = await ctx.admin.from("financial_entries").select("id, external_ref").eq("workspace_id", ws).in("external_ref", part);
+      const { data, error } = await ctx.admin
+        .from("financial_entries")
+        .select("id, external_ref")
+        .eq("workspace_id", ws)
+        .in("external_ref", part);
       if (error) throw new Error(error.message);
-      for (const r of (data ?? []) as Array<{ id: string; external_ref: string }>) existingRef.set(r.external_ref, r.id);
+      for (const r of (data ?? []) as Array<{ id: string; external_ref: string }>)
+        existingRef.set(r.external_ref, r.id);
     }
     const toInsert: CaEvent[] = [];
     for (const id of plan.entryPlan.create) {
       const e = ev.get(id)!;
       const ref = `contaazul:${e.direction}:${id}`;
       const found = existingRef.get(ref);
-      if (found) link(e.direction, id, { status: "matched", local_id: found, tier: "external_ref", label: evLabel(e) });
+      if (found)
+        link(e.direction, id, {
+          status: "matched",
+          local_id: found,
+          tier: "external_ref",
+          label: evLabel(e),
+        });
       else toInsert.push(e);
     }
     const created = new Map<string, string>(); // id Conta Azul → lançamento
@@ -561,7 +783,10 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
           counterparty_contact_id: (e.counterpartyId && contactByCa.get(e.counterpartyId)) || null,
         },
       }));
-      const { data, error } = await ctx.client.from("financial_entries").insert(rows).select("id, external_ref");
+      const { data, error } = await ctx.client
+        .from("financial_entries")
+        .insert(rows)
+        .select("id, external_ref");
       if (error) {
         fail(`Lançamentos (lote de ${rows.length}): ${error.message}`);
         continue;
@@ -578,7 +803,8 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
       link(e.direction, caId, { status: "imported", local_id: entryId, label: evLabel(e) });
       const cc = e.costCenterId ? centerMap.get(e.costCenterId) : undefined;
       if (cc) allocations.push({ entry_id: entryId, cost_center_id: cc, amount: e.amount });
-      if (e.paid > 0 && caEventTargetStatus(e) !== "cancelled") payments.push({ entryId, ev: e, targetCents: toCents(e.paid) });
+      if (e.paid > 0 && caEventTargetStatus(e) !== "cancelled")
+        payments.push({ entryId, ev: e, targetCents: toCents(e.paid) });
     }
     for (const part of chunks(allocations, 200)) {
       const { error } = await ctx.client.from("financial_entry_allocations").insert(part);
@@ -602,7 +828,9 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
           paid_at: part.paidAt,
           amount: part.cents / 100,
           reference: `contaazul:${runId}:${p.ev.id}`,
-          notes: est ? "Baixa importada do Conta Azul (data estimada)" : "Baixa importada do Conta Azul",
+          notes: est
+            ? "Baixa importada do Conta Azul (data estimada)"
+            : "Baixa importada do Conta Azul",
           created_by: ctx.userId,
         });
       }
@@ -623,16 +851,27 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
     // Perdidos/cancelados no Conta Azul: só os lançamentos criados agora.
     for (const [caId, entryId] of created) {
       if (caEventTargetStatus(ev.get(caId)!) !== "cancelled") continue;
-      const { error } = await ctx.client.from("financial_entries").update({ status: "cancelled" }).eq("id", entryId);
+      const { error } = await ctx.client
+        .from("financial_entries")
+        .update({ status: "cancelled" })
+        .eq("id", entryId);
       if (error) fail(`Cancelar ${caId}: ${error.message}`);
       else bump("entries_cancelled");
     }
 
     /* ---- Transferências ---- */
     const trById = new Map(plan.api.transfers.map((t) => [t.id, t]));
-    for (const m of plan.transferPlan.match) link("transfer", m.apiId, { status: "matched", local_id: m.localId, tier: "date_amount", label: trById.get(m.apiId)?.description });
+    for (const m of plan.transferPlan.match)
+      link("transfer", m.apiId, {
+        status: "matched",
+        local_id: m.localId,
+        tier: "date_amount",
+        label: trById.get(m.apiId)?.description,
+      });
     const catByName = (name: string, kind: "revenue" | "expense") =>
-      plan.local.cats.find((c) => c.kind === kind && c.name.trim().toLowerCase() === name.toLowerCase())?.id ?? null;
+      plan.local.cats.find(
+        (c) => c.kind === kind && c.name.trim().toLowerCase() === name.toLowerCase(),
+      )?.id ?? null;
     const outCat = catByName("Transferência de Saída", "expense");
     const inCat = catByName("Transferência de Entrada", "revenue");
     for (const id of plan.transferPlan.create) {
@@ -652,9 +891,18 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
         status: t.date < today ? "overdue" : "open",
         category_id: direction === "payable" ? outCat : inCat,
         external_ref: `contaazul:transfer:${id}:${direction === "payable" ? "out" : "in"}`,
-        metadata: { import_source: "contaazul_api", kind: "transfer", transfer_pair_id: pair, contaazul_id: id, contaazul_run: runId },
+        metadata: {
+          import_source: "contaazul_api",
+          kind: "transfer",
+          transfer_pair_id: pair,
+          contaazul_id: id,
+          contaazul_run: runId,
+        },
       });
-      const { data, error } = await ctx.client.from("financial_entries").insert([leg("payable"), leg("receivable")]).select("id, direction");
+      const { data, error } = await ctx.client
+        .from("financial_entries")
+        .insert([leg("payable"), leg("receivable")])
+        .select("id, direction");
       if (error || !data) {
         fail(`Transferência ${id}: ${error?.message}`);
         continue;
@@ -676,24 +924,41 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
         notes: "Transferência importada do Conta Azul",
         created_by: ctx.userId,
       });
-      const { error: pErr } = await ctx.client.from("financial_payments").insert([pay(out.id, acc(t.fromAccountId)), pay(inn.id, acc(t.toAccountId))]);
+      const { error: pErr } = await ctx.client
+        .from("financial_payments")
+        .insert([pay(out.id, acc(t.fromAccountId)), pay(inn.id, acc(t.toAccountId))]);
       if (pErr) fail(`Baixa da transferência ${id}: ${pErr.message}`);
       bump("transfers_created");
-      link("transfer", id, { status: "imported", local_id: out.id, local_pair_id: inn.id, label: t.description });
+      link("transfer", id, {
+        status: "imported",
+        local_id: out.id,
+        local_pair_id: inn.id,
+        label: t.description,
+      });
     }
 
     await upsertLinks(ctx, links);
     bump("links_written", links.length);
     const final: FullImportSummary = { ...summary, written, errors };
-    await ctx.admin.from("contaazul_import_runs").update({ status: "completed", summary: final, finished_at: now() }).eq("id", runId);
+    await ctx.admin
+      .from("contaazul_import_runs")
+      .update({ status: "completed", summary: final, finished_at: now() })
+      .eq("id", runId);
     return { runId, summary: final };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     await ctx.admin
       .from("contaazul_import_runs")
-      .update({ status: "failed", error: message.slice(0, 500), summary: { ...(summary ?? {}), written, errors }, finished_at: new Date().toISOString() })
+      .update({
+        status: "failed",
+        error: message.slice(0, 500),
+        summary: { ...(summary ?? {}), written, errors },
+        finished_at: new Date().toISOString(),
+      })
       .eq("id", runId);
-    throw new Error(`Importação interrompida: ${message}. O que já foi gravado pode ser desfeito pela execução registrada.`);
+    throw new Error(
+      `Importação interrompida: ${message}. O que já foi gravado pode ser desfeito pela execução registrada.`,
+    );
   }
 }
 
@@ -704,26 +969,50 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
 export async function rollbackFullImport(ctx: Ctx, runId: string): Promise<Record<string, number>> {
   await assertFullImportAccess(ctx);
   const ws = ctx.workspaceId;
-  const { data: run } = await ctx.admin.from("contaazul_import_runs").select("id, status").eq("id", runId).eq("workspace_id", ws).maybeSingle();
+  const { data: run } = await ctx.admin
+    .from("contaazul_import_runs")
+    .select("id, status")
+    .eq("id", runId)
+    .eq("workspace_id", ws)
+    .maybeSingle();
   if (!run) throw new Error("Execução não encontrada neste workspace.");
-  if ((run as { status: string }).status === "rolled_back") throw new Error("Esta execução já foi desfeita.");
+  if ((run as { status: string }).status === "rolled_back")
+    throw new Error("Esta execução já foi desfeita.");
   const done: Record<string, number> = {};
   const bump = (k: string, n: number) => (done[k] = (done[k] ?? 0) + n);
 
   // 1) Baixas lançadas pela execução (inclusive em lançamentos já existentes).
   const pays = await pageAll<{ id: string }>((a, b) =>
-    ctx.admin.from("financial_payments").select("id").eq("workspace_id", ws).like("reference", `contaazul:${runId}:%`).order("id").range(a, b),
+    ctx.admin
+      .from("financial_payments")
+      .select("id")
+      .eq("workspace_id", ws)
+      .like("reference", `contaazul:${runId}:%`)
+      .order("id")
+      .range(a, b),
   );
-  for (const part of chunks(pays.map((p) => p.id), 200)) {
+  for (const part of chunks(
+    pays.map((p) => p.id),
+    200,
+  )) {
     const { error } = await ctx.client.from("financial_payments").delete().in("id", part);
     if (error) throw new Error(`Baixas: ${error.message}`);
     bump("payments_removed", part.length);
   }
   // 2) Lançamentos criados (rateios primeiro).
   const entries = await pageAll<{ id: string }>((a, b) =>
-    ctx.admin.from("financial_entries").select("id").eq("workspace_id", ws).eq("metadata->>contaazul_run", runId).order("id").range(a, b),
+    ctx.admin
+      .from("financial_entries")
+      .select("id")
+      .eq("workspace_id", ws)
+      .eq("metadata->>contaazul_run", runId)
+      .order("id")
+      .range(a, b),
   );
-  for (const part of chunks(entries.map((e) => e.id), 200)) {
+  for (const part of chunks(
+    entries.map((e) => e.id),
+    200,
+  )) {
     await ctx.client.from("financial_entry_allocations").delete().in("entry_id", part);
     const { error } = await ctx.client.from("financial_entries").delete().in("id", part);
     if (error) throw new Error(`Lançamentos: ${error.message}`);
@@ -732,13 +1021,30 @@ export async function rollbackFullImport(ctx: Ctx, runId: string): Promise<Recor
   // 3) Empresas e contatos somente financeiros criados: exclusão lógica.
   for (const table of ["companies", "contacts"] as const) {
     const rows = await pageAll<{ id: string }>((a, b) =>
-      ctx.admin.from(table).select("id").eq("workspace_id", ws).eq("external_ids->>contaazul_run", runId).is("deleted_at", null).order("id").range(a, b),
+      ctx.admin
+        .from(table)
+        .select("id")
+        .eq("workspace_id", ws)
+        .eq("external_ids->>contaazul_run", runId)
+        .is("deleted_at", null)
+        .order("id")
+        .range(a, b),
     );
-    for (const part of chunks(rows.map((r) => r.id), 200)) {
-      const { error } = await ctx.client.from(table).update({ deleted_at: new Date().toISOString() }).in("id", part);
+    for (const part of chunks(
+      rows.map((r) => r.id),
+      200,
+    )) {
+      const { error } = await ctx.client
+        .from(table)
+        .update({ deleted_at: new Date().toISOString() })
+        .in("id", part);
       if (error) throw new Error(`${table}: ${error.message}`);
       const col = table === "companies" ? "local_company_id" : "local_contact_id";
-      await ctx.admin.from("contaazul_person_links").update({ [col]: null }).eq("workspace_id", ws).in(col, part);
+      await ctx.admin
+        .from("contaazul_person_links")
+        .update({ [col]: null })
+        .eq("workspace_id", ws)
+        .in(col, part);
       bump(`${table}_removed`, part.length);
     }
   }
@@ -748,18 +1054,30 @@ export async function rollbackFullImport(ctx: Ctx, runId: string): Promise<Recor
     ["financial_cost_centers", "external_ids->>contaazul_run"],
     ["financial_bank_accounts", "metadata->>contaazul_run"],
   ] as const) {
-    const { data } = await ctx.admin.from(table).select("id").eq("workspace_id", ws).eq(path, runId);
+    const { data } = await ctx.admin
+      .from(table)
+      .select("id")
+      .eq("workspace_id", ws)
+      .eq(path, runId);
     for (const r of (data ?? []) as Array<{ id: string }>) {
       const { error } = await ctx.client.from(table).delete().eq("id", r.id);
       if (!error) bump(`${table}_removed`, 1);
     }
   }
   // 5) Vínculos da execução.
-  const { error: lErr } = await ctx.admin.from("contaazul_record_links").delete().eq("workspace_id", ws).eq("run_id", runId);
+  const { error: lErr } = await ctx.admin
+    .from("contaazul_record_links")
+    .delete()
+    .eq("workspace_id", ws)
+    .eq("run_id", runId);
   if (lErr) throw new Error(`Vínculos: ${lErr.message}`);
   await ctx.admin
     .from("contaazul_import_runs")
-    .update({ status: "rolled_back", rolled_back_at: new Date().toISOString(), rolled_back_by: ctx.userId })
+    .update({
+      status: "rolled_back",
+      rolled_back_at: new Date().toISOString(),
+      rolled_back_by: ctx.userId,
+    })
     .eq("id", runId);
   return done;
 }
@@ -782,16 +1100,28 @@ export async function decideRecordLinks(
     .in("id", ids);
   if (error) throw new Error(error.message);
   let changed = 0;
-  for (const row of (data ?? []) as Array<{ id: string; entity: LinkEntity; status: string; candidates: Array<{ id: string }> }>) {
+  for (const row of (data ?? []) as Array<{
+    id: string;
+    entity: LinkEntity;
+    status: string;
+    candidates: Array<{ id: string }>;
+  }>) {
     if (row.status !== "review") continue;
     let target: string | null = null;
     if (decision === "same") {
       target = localId ?? (row.candidates.length === 1 ? row.candidates[0]!.id : null);
-      if (!target || !row.candidates.some((c) => c.id === target)) throw new Error("Escolha um dos lançamentos sugeridos.");
+      if (!target || !row.candidates.some((c) => c.id === target))
+        throw new Error("Escolha um dos lançamentos sugeridos.");
     }
     const { error: upErr } = await ctx.admin
       .from("contaazul_record_links")
-      .update({ decision, local_id: target, decided_by: ctx.userId, decided_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+      .update({
+        decision,
+        local_id: target,
+        decided_by: ctx.userId,
+        decided_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", row.id)
       .eq("workspace_id", ctx.workspaceId);
     if (upErr) throw new Error(upErr.message);

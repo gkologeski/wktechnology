@@ -58,11 +58,24 @@ describe("mapCaEvent", () => {
       },
       "receivable",
     )!;
-    expect(e).toMatchObject({ dueDate: "2014-07-10", competenceDate: "2014-06-10", amount: 319.99, paid: 319.99, categoryId: "c1", costCenterId: "cc1", counterpartyId: "p1" });
+    expect(e).toMatchObject({
+      dueDate: "2014-07-10",
+      competenceDate: "2014-06-10",
+      amount: 319.99,
+      paid: 319.99,
+      categoryId: "c1",
+      costCenterId: "cc1",
+      counterpartyId: "p1",
+    });
     expect(caEventTargetStatus(e)).toBe("paid");
   });
   it("fornecedor é a contraparte de contas a pagar", () => {
-    expect(mapCaEvent({ id: "y", data_vencimento: "2020-01-01", total: 5, fornecedor: { id: "f1", nome: "F" } }, "payable")?.counterpartyId).toBe("f1");
+    expect(
+      mapCaEvent(
+        { id: "y", data_vencimento: "2020-01-01", total: 5, fornecedor: { id: "f1", nome: "F" } },
+        "payable",
+      )?.counterpartyId,
+    ).toBe("f1");
   });
   it("descarta item sem vencimento ou sem valor", () => {
     expect(mapCaEvent({ id: "z", total: 10 }, "payable")).toBeNull();
@@ -78,15 +91,25 @@ describe("mapCaEvent", () => {
 describe("planEntries", () => {
   it("vincula o mesmo lançamento sem criar outro", () => {
     const plan = planEntries([loc({ id: "L1" })], [ev({ id: "A1" })], new Map());
-    expect(plan.match).toEqual([{ apiId: "A1", localId: "L1", tier: "exact", topUpCents: 0, cancel: false }]);
+    expect(plan.match).toEqual([
+      { apiId: "A1", localId: "L1", tier: "exact", topUpCents: 0, cancel: false },
+    ]);
     expect(plan.create).toEqual([]);
   });
   it("baixa feita depois da planilha vira baixa nova no lançamento existente", () => {
-    const plan = planEntries([loc({ id: "L1" })], [ev({ id: "A1", paid: 100, caStatus: "ACQUITTED" })], new Map());
+    const plan = planEntries(
+      [loc({ id: "L1" })],
+      [ev({ id: "A1", paid: 100, caStatus: "ACQUITTED" })],
+      new Map(),
+    );
     expect(plan.match[0]!.topUpCents).toBe(10000);
   });
   it("não abate de novo o que já está baixado", () => {
-    const plan = planEntries([loc({ id: "L1", paid: 100, status: "paid" })], [ev({ id: "A1", paid: 100, caStatus: "ACQUITTED" })], new Map());
+    const plan = planEntries(
+      [loc({ id: "L1", paid: 100, status: "paid" })],
+      [ev({ id: "A1", paid: 100, caStatus: "ACQUITTED" })],
+      new Map(),
+    );
     expect(plan.match[0]!.topUpCents).toBe(0);
   });
   it("só no Conta Azul é criado", () => {
@@ -94,7 +117,11 @@ describe("planEntries", () => {
     expect(plan.create).toEqual(["A1"]);
   });
   it("mesmo texto com outra data vai para revisão, não duplica", () => {
-    const plan = planEntries([loc({ id: "L1", dueDate: "2026-09-01" })], [ev({ id: "A1" })], new Map());
+    const plan = planEntries(
+      [loc({ id: "L1", dueDate: "2026-09-01" })],
+      [ev({ id: "A1" })],
+      new Map(),
+    );
     expect(plan.create).toEqual([]);
     expect(plan.review).toEqual([{ apiId: "A1", reason: "date_changed", localIds: ["L1"] }]);
   });
@@ -103,19 +130,36 @@ describe("planEntries", () => {
     expect(plan.review[0]).toMatchObject({ reason: "amount_changed" });
   });
   it("só data e valor iguais com texto diferente vai para revisão", () => {
-    const plan = planEntries([loc({ id: "L1", description: "Outra coisa", counterparty: "Outro" })], [ev({ id: "A1" })], new Map());
+    const plan = planEntries(
+      [loc({ id: "L1", description: "Outra coisa", counterparty: "Outro" })],
+      [ev({ id: "A1" })],
+      new Map(),
+    );
     expect(plan.match).toEqual([]);
     expect(plan.review[0]).toMatchObject({ apiId: "A1", reason: "ambiguous", localIds: ["L1"] });
   });
   it("execução repetida não reimporta o que já tem vínculo", () => {
     const links = new Map<string, ExistingLink>([
-      [linkKey("receivable", "A1"), { entity: "receivable", contaazulId: "A1", status: "imported", decision: null, localId: "N1" }],
+      [
+        linkKey("receivable", "A1"),
+        {
+          entity: "receivable",
+          contaazulId: "A1",
+          status: "imported",
+          decision: null,
+          localId: "N1",
+        },
+      ],
     ]);
     const plan = planEntries([loc({ id: "N1" })], [ev({ id: "A1" })], links);
     expect(plan).toMatchObject({ match: [], create: [], review: [], skipped: 1 });
   });
   it("decisões da revisão são respeitadas", () => {
-    const review = (id: string, decision: ExistingLink["decision"], localId: string | null = null): [string, ExistingLink] => [
+    const review = (
+      id: string,
+      decision: ExistingLink["decision"],
+      localId: string | null = null,
+    ): [string, ExistingLink] => [
       linkKey("receivable", id),
       { entity: "receivable", contaazulId: id, status: "review", decision, localId },
     ];
@@ -136,16 +180,40 @@ describe("planEntries", () => {
 
 describe("transferências", () => {
   it("lê origem e destino", () => {
-    const t = mapCaTransfer({ id: "t1", valor: 50, data: "2018-12-10", origem: { conta_financeira: { id: "a" } }, destino: { conta_financeira: { id: "b" } } })!;
+    const t = mapCaTransfer({
+      id: "t1",
+      valor: 50,
+      data: "2018-12-10",
+      origem: { conta_financeira: { id: "a" } },
+      destino: { conta_financeira: { id: "b" } },
+    })!;
     expect(t).toMatchObject({ fromAccountId: "a", toAccountId: "b", amount: 50 });
   });
   it("pareia por data e valor, um para um", () => {
     const local = [{ key: "p1", localId: "L1", date: "2020-01-01", amount: 10 }];
     const api = [
-      { id: "t1", date: "2020-01-01", amount: 10, description: "", fromAccountId: null, toAccountId: null },
-      { id: "t2", date: "2020-01-01", amount: 10, description: "", fromAccountId: null, toAccountId: null },
+      {
+        id: "t1",
+        date: "2020-01-01",
+        amount: 10,
+        description: "",
+        fromAccountId: null,
+        toAccountId: null,
+      },
+      {
+        id: "t2",
+        date: "2020-01-01",
+        amount: 10,
+        description: "",
+        fromAccountId: null,
+        toAccountId: null,
+      },
     ];
-    expect(planTransfers(local, api, new Map())).toEqual({ match: [{ apiId: "t1", localId: "L1" }], create: ["t2"], skipped: 0 });
+    expect(planTransfers(local, api, new Map())).toEqual({
+      match: [{ apiId: "t1", localId: "L1" }],
+      create: ["t2"],
+      skipped: 0,
+    });
   });
 });
 
@@ -173,7 +241,10 @@ describe("cadastros auxiliares", () => {
 
 describe("pessoas e baixas", () => {
   it("divide nome de pessoa sem inventar sobrenome", () => {
-    expect(splitPersonName("Maria Eduarda Santos")).toEqual({ first: "Maria", last: "Eduarda Santos" });
+    expect(splitPersonName("Maria Eduarda Santos")).toEqual({
+      first: "Maria",
+      last: "Eduarda Santos",
+    });
     expect(splitPersonName("Julio")).toEqual({ first: "Julio", last: null });
   });
   it("CNPJ só com 14 dígitos", () => {
@@ -181,7 +252,16 @@ describe("pessoas e baixas", () => {
     expect(cnpjOrNull("123.456.789-00")).toBeNull();
   });
   it("usa as baixas do detalhe quando somam o valor pago", () => {
-    const detail = { baixas: [{ data_pagamento: "2026-09-12", composicao_valor: { valor_liquido: 60 }, conta_financeira: { id: "acc" } }, { data_pagamento: "2026-09-20", composicao_valor: { valor_liquido: 40 } }] };
+    const detail = {
+      baixas: [
+        {
+          data_pagamento: "2026-09-12",
+          composicao_valor: { valor_liquido: 60 },
+          conta_financeira: { id: "acc" },
+        },
+        { data_pagamento: "2026-09-20", composicao_valor: { valor_liquido: 40 } },
+      ],
+    };
     const r = paymentParts(detail, ev({ id: "A", paid: 100 }), 10000);
     expect(r.estimated).toBe(false);
     expect(r.parts).toEqual([
@@ -190,10 +270,15 @@ describe("pessoas e baixas", () => {
     ]);
   });
   it("sem detalhe reconhecível usa o vencimento e marca como estimada", () => {
-    expect(paymentParts(null, ev({ id: "A", paid: 100 }), 10000)).toEqual({ parts: [{ paidAt: "2026-09-10", cents: 10000, accountId: null }], estimated: true });
+    expect(paymentParts(null, ev({ id: "A", paid: 100 }), 10000)).toEqual({
+      parts: [{ paidAt: "2026-09-10", cents: 10000, accountId: null }],
+      estimated: true,
+    });
   });
   it("complemento de baixa usa a data da última baixa", () => {
     const detail = { baixas: [{ data_pagamento: "2026-09-12", valor: 100 }] };
-    expect(paymentParts(detail, ev({ id: "A", paid: 100 }), 4000).parts).toEqual([{ paidAt: "2026-09-12", cents: 4000, accountId: null }]);
+    expect(paymentParts(detail, ev({ id: "A", paid: 100 }), 4000).parts).toEqual([
+      { paidAt: "2026-09-12", cents: 4000, accountId: null },
+    ]);
   });
 });
