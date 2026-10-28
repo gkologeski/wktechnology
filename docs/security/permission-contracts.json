@@ -2215,8 +2215,9 @@
         "src/lib/whatsapp/cloud-runtime.server.ts": "efc7af7dca6ed0e4d97ccc345b60965fa3942880907f59730321202eadaee6b2",
         "src/lib/whatsapp/meta-channel.server.ts": "40c3bb7fddd839f421bb67b574f61bdd99e3197b38acf54409ac6cd94a0a801a",
         "src/lib/whatsapp/templates.server.ts": "693872ba81f6e46c295d73c4b760aaaa2505f1ae186c865420d9d30af201ea9e",
-        "src/lib/whatsapp/inbound-media.server.ts": "06291dd9157bf46bae7e141c906d771bce154e73bf41b00b22adb9654d3cdc28",
-        "src/lib/whatsapp/webhook-processor.server.ts": "b2af9223aa38440f6853830bbee7e52b989bdf7360078fc86a08901e5efd7a2e"
+        "src/lib/whatsapp/inbound-media.server.ts": "9b35dcfc34aa9022b2f452134ddff27df62b9b780eba135f6b4609461e7fe50b",
+        "src/lib/whatsapp/webhook-processor.server.ts": "b2af9223aa38440f6853830bbee7e52b989bdf7360078fc86a08901e5efd7a2e",
+        "src/lib/inbox/ai-suggestions.server.ts": "876b710d4680b8db4d9f36fae8c274ecd9bfbd5c2f890c232d00cd73ba48c089"
       },
       "resources": [
         "system.whatsapp",
@@ -2243,7 +2244,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Server-only transport and processing called by authenticated sends, authorized workers or signature-verified webhook. Resolve exact workspace/number and active connection before decrypting; private media scope and signed status events retain verified tenant. No fallback after rejection.",
+      "rationale": "Server-only transport and processing called by authenticated sends, authorized workers or signature-verified webhook. Resolve exact workspace/number and active connection before decrypting; private media scope and signed status events retain verified tenant. No fallback after rejection. Company-left suggestions stay read-only proposals scoped to the verified conversation workspace; AI fallback only classifies the inbound text.",
       "controls": [
         {
           "file": "src/lib/whatsapp/cloud-runtime.server.ts",
@@ -2264,6 +2265,10 @@
         {
           "file": "src/lib/whatsapp/webhook-processor.server.ts",
           "symbol": "resolveWorkspace"
+        },
+        {
+          "file": "src/lib/inbox/ai-suggestions.server.ts",
+          "symbol": "matchCompanies"
         }
       ],
       "database": [
@@ -3812,6 +3817,15 @@
         "src/lib/whatsapp/quality-display.ts": "5424033e2d2d4e7121f6e7fe4e10b2cd0cb990905383465aae88126e7f0a5c8d"
       },
       "rationale": "Pure mapping of existing Meta quality ratings to labels and visual tones; no I/O, actions, permissions, or data access."
+    },
+    {
+      "id": "whatsapp-inbound-pure-helpers",
+      "kind": "presentation",
+      "files": {
+        "src/lib/whatsapp/inbound-media.ts": "2b46e658ac480a38d4dd7a6133783fae0aae99110a61de2fa270a771fcea0fce",
+        "src/lib/inbox/company-left-ai.ts": "bacdfc14db27ab2717ae7e8cfaef468ef78036d03f11521dc3ff707da99012d8"
+      },
+      "rationale": "Pure helpers: inbound media labels/source choice and company-left AI prompt/answer parsing; no I/O, actions, permissions, or data access."
     },
     {
       "id": "sdr-workspace-navigation",
