@@ -169,6 +169,7 @@ type LocalRow = {
   kind: string | null;
   pair: string | null;
   cp: string | null;
+  caid: string | null;
 };
 
 async function loadLocal(ctx: Ctx) {
@@ -177,7 +178,7 @@ async function loadLocal(ctx: Ctx) {
     ctx.admin
       .from("financial_entries")
       .select(
-        "id, direction, due_date, amount, paid_amount, description, status, external_ref, kind:metadata->>kind, pair:metadata->>transfer_pair_id, cp:metadata->contazul->>fornecedor",
+        "id, direction, due_date, amount, paid_amount, description, status, external_ref, kind:metadata->>kind, pair:metadata->>transfer_pair_id, cp:metadata->contazul->>fornecedor, caid:metadata->>contaazul_id",
       )
       .eq("workspace_id", ws)
       .order("id")
@@ -918,6 +919,27 @@ export async function applyFullImport(
       if (cc) allocations.push({ entry_id: entryId, cost_center_id: cc, amount: e.amount });
       if (e.paid > 0 && caEventTargetStatus(e) !== "cancelled")
         payments.push({ entryId, ev: e, targetCents: toCents(e.paid) });
+    }
+    // Lançamentos criados pela importação (inclusive em execuções anteriores) sem rateio.
+    const ours = plan.local.entries.filter((e) => e.caid && !e.kind);
+    const oursWithAlloc = new Set<string>();
+    for (const part of chunks(
+      ours.map((e) => e.id),
+      150,
+    )) {
+      const { data, error } = await ctx.admin
+        .from("financial_entry_allocations")
+        .select("entry_id")
+        .in("entry_id", part);
+      if (error) throw new Error(`conferência de rateios: ${error.message}`);
+      for (const r of (data ?? []) as Array<{ entry_id: string }>) oursWithAlloc.add(r.entry_id);
+    }
+    const queued = new Set(allocations.map((a) => a["entry_id"] as string));
+    for (const e of ours) {
+      if (oursWithAlloc.has(e.id) || queued.has(e.id)) continue;
+      const api = ev.get(e.caid!);
+      const cc = api?.costCenterId ? centerMap.get(api.costCenterId) : undefined;
+      if (api && cc) allocations.push({ entry_id: e.id, cost_center_id: cc, amount: api.amount });
     }
     for (const part of chunks(allocations, 200)) {
       const { error } = await ctx.client.from("financial_entry_allocations").insert(part);
