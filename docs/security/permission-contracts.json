@@ -2127,12 +2127,13 @@
       "id": "whatsapp-cloud-authenticated-routing",
       "kind": "business",
       "files": {
-        "src/lib/whatsapp.functions.ts": "3c49fe665b6bbd2252f80dab74dafccbcc422906133e933701554f0f926e8852",
+        "src/lib/whatsapp.functions.ts": "38b1948d647219feac7841bf141c8d0cc0128eae9dceee4c556120cd27ee1834",
         "src/lib/whatsapp-campaigns.functions.ts": "d63dd9ddfbd6107481a27cc8631db5a28044326cd2c0f74b79a04947ae2252bb",
         "src/routes/_authenticated/inbox.index.tsx": "6871432118a6bd8ef6477bf0ca6ef3bd14a00e7fbec3beef7bb955f610daee80",
         "src/routes/_authenticated/inbox.whatsapp.tsx": "1fc2be372627dcfd81a950952a3c6626dfbaff0b5b56a2be92623f45e8d0009e",
         "src/routes/_authenticated/campaigns.whatsapp.tsx": "5dfdec509a34b8de6af31a3e8df677edcf9b00b9722a0b5c3d7cc6e820876dfa",
-        "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9"
+        "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9",
+        "src/lib/whatsapp/outbound-activity.ts": "18fe401156343db6bfd295ae041590039ff5b3b7536253daf2487e07da61377f"
       },
       "resources": [
         "system.whatsapp",
@@ -2159,7 +2160,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns.",
+      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound Inbox timeline activity uses the authenticated sender as author/responsible (never the workspace id) and is best-effort after the real send, so a timeline failure is not reported as a send failure.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
