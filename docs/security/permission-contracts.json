@@ -2268,7 +2268,7 @@
         },
         {
           "file": "src/lib/inbox/ai-suggestions.server.ts",
-          "symbol": "suggestCompanyLeft"
+          "symbol": "matchCompanies"
         }
       ],
       "database": [
