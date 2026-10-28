@@ -16,14 +16,17 @@ export const contaAzulPeopleList = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const [{ resolveActiveWorkspace }, people] = await Promise.all([
+    const [{ resolveActiveWorkspace }, { supabaseAdmin }, people] = await Promise.all([
       import("@/lib/active-workspace.server"),
+      import("@/integrations/supabase/client.server"),
       import("./contaazul-people.server"),
     ]);
     const workspaceId = await resolveActiveWorkspace(context.userId);
     await people.assertPeopleAccess(context.supabase, workspaceId, context.userId, "view");
+    // Acesso já verificado acima; a leitura usa o cliente do servidor limitada ao workspace
+    // para não reavaliar a permissão linha a linha (estourava o tempo do banco).
     const statuses = data.tab === "decided" ? ["confirmed", "ignored"] : [data.tab];
-    let q = context.supabase
+    let q = supabaseAdmin
       .from("contaazul_person_links")
       .select(
         "id, name, person_kind, profile, document, email, status, match_by, score, candidates, local_company_id, local_contact_id, decided_at",
@@ -37,7 +40,7 @@ export const contaAzulPeopleList = createServerFn({ method: "POST" })
     if (data.search?.trim()) q = q.ilike("name", `%${data.search.trim().replace(/[%_,]/g, " ")}%`);
     const { data: rows, error, count } = await q;
     if (error) throw new Error(error.message);
-    const { data: all, error: cErr } = await context.supabase
+    const { data: all, error: cErr } = await supabaseAdmin
       .from("contaazul_person_links")
       .select("status")
       .eq("workspace_id", workspaceId);
@@ -59,13 +62,12 @@ export const contaAzulPeopleRefresh = createServerFn({ method: "POST" })
     const workspaceId = await resolveActiveWorkspace(context.userId);
     await people.assertPeopleAccess(context.supabase, workspaceId, context.userId, "manage");
     // Função restrita ao servidor; recebe o usuário já autenticado pelo middleware.
-    const { data: ok, error: authErr } = await supabaseAdmin.rpc("sales_contaazul_authorize", {
+    const { data: ok } = await supabaseAdmin.rpc("sales_contaazul_authorize", {
       p_user: context.userId,
       p_ws: workspaceId,
       p_entity: "connection",
     });
     if (ok !== true) {
-      console.error("[ca-people] authorize", ok, authErr?.message);
       throw new Error("Sem permissão de gestão da integração Conta Azul.");
     }
     return {
