@@ -52,7 +52,7 @@ export const listConversationMessages = createServerFn({ method: "POST" })
         table: "whatsapp_messages",
         fk: "conversation_id",
         select:
-          "id, conversation_id, direction, body, media_url, media_content_type, status, created_at, sent_at, delivered_at, read_at, wa_message_id, template_name, is_template",
+          "id, conversation_id, direction, body, media_url, media_content_type, status, created_at, sent_at, delivered_at, read_at, wa_message_id, template_name, is_template, error_code, error_message",
         limit: 50,
       },
       chat: {

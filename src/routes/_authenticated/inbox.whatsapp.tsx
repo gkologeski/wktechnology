@@ -1,3 +1,4 @@
+import { describeDeliveryError } from "@/lib/whatsapp/delivery-error";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { compactCount } from "@/lib/inbox/channel-page";
 import { useInboxChannelPage } from "@/hooks/use-inbox-channel-page";
@@ -673,6 +674,12 @@ function WhatsAppInbox() {
                       outbound={m.direction === "outbound"}
                       when={m.created_at}
                       status={m.direction === "outbound" ? m.status : null}
+                      failure={
+                        m.direction === "outbound" &&
+                        (m.status === "failed" || m.status === "undelivered")
+                          ? describeDeliveryError(m.error_code, m.error_message)
+                          : null
+                      }
                     >
                       {m.media_url && (
                         <div className="mb-1">
@@ -1031,6 +1038,8 @@ type WaMessageRow = {
   wa_message_id: string | null;
   template_name: string | null;
   is_template: boolean | null;
+  error_code?: string | null;
+  error_message?: string | null;
 };
 const WA_PATCH_KEYS = [
   "status",
@@ -1041,6 +1050,8 @@ const WA_PATCH_KEYS = [
   "body",
   "media_url",
   "media_content_type",
+  "error_code",
+  "error_message",
 ] as const;
 
 /** Material da Lia: anexo de saída sem arquivo guardado na mensagem, com linha "📎 Nome". */
