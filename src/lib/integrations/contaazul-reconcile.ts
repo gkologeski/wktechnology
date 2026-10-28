@@ -366,7 +366,14 @@ export function nameSimilarity(a: unknown, b: unknown): number {
   }
   const dice = (2 * common) / (ta.length + tb.length);
   // Um nome contido no outro (ex.: "Solutcom" x "Solutcom Informática") pede revisão.
-  const contained = common >= Math.min(ta.length, tb.length) - 0.0001 ? 0.8 : 0;
+  const shorter = ta.length <= tb.length ? ta : tb;
+  const coverage = shorter.length / Math.max(ta.length, tb.length);
+  const contained =
+    common >= shorter.length - 0.0001 &&
+    coverage >= 0.5 &&
+    (shorter.length >= 2 || shorter[0]!.length >= 5)
+      ? 0.8
+      : 0;
   const jw = jaroWinkler(sa, sb);
   return Math.round(Math.max(dice, contained, 0.6 * dice + 0.4 * jw) * 10000) / 10000;
 }
