@@ -399,6 +399,8 @@ export type FullImportSummary = ReturnType<typeof summarize> & {
   written?: Record<string, number>;
   errors?: string[];
   detailFormat?: string[];
+  adopted_runs?: string[];
+  adopted_by?: string;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -462,6 +464,22 @@ export async function applyFullImport(
     .single();
   if (runErr || !run) throw new Error(runErr?.message ?? "Falha ao registrar a execução.");
   const runId = (run as { id: string }).id;
+  // Execuções interrompidas antes desta passam a ser desfeitas junto com ela.
+  const { data: failedRuns } = await ctx.admin
+    .from("contaazul_import_runs")
+    .select("id, summary")
+    .eq("workspace_id", ctx.workspaceId)
+    .eq("status", "failed")
+    .neq("id", runId);
+  const adopted: string[] = [];
+  for (const r of (failedRuns ?? []) as Array<{ id: string; summary: Record<string, unknown> | null }>) {
+    if (r.summary?.["adopted_by"]) continue;
+    adopted.push(r.id);
+    await ctx.admin
+      .from("contaazul_import_runs")
+      .update({ summary: { ...(r.summary ?? {}), adopted_by: runId } })
+      .eq("id", r.id);
+  }
   const written: Record<string, number> = {};
   const errors: string[] = [];
   const bump = (k: string, n = 1) => (written[k] = (written[k] ?? 0) + n);
@@ -603,6 +621,14 @@ export async function applyFullImport(
         }
       }
 
+    let linksWritten = 0;
+    const flushLinks = async () => {
+      const batch = links.splice(0);
+      await upsertLinks(ctx, batch);
+      linksWritten += batch.length;
+    };
+    await flushLinks();
+
     /* ---- Clientes e fornecedores somente financeiros ---- */
     const companyByCa = new Map<string, string>();
     const contactByCa = new Map<string, string>();
@@ -655,7 +681,26 @@ export async function applyFullImport(
           bump(kind === "company" ? "companies_created" : "contacts_created");
         }
       };
-      for (const part of chunks(list, 200)) {
+      // Retomada: cadastros criados por execução interrompida só ganham o vínculo.
+      const already: Array<{ id: string; ext: string | null }> = [];
+      for (const part of chunks(list.map((p) => p.contaazul_id), 200)) {
+        const { data, error } = await ctx.admin
+          .from(table)
+          .select("id, ext:external_ids->>contaazul")
+          .eq("workspace_id", ws)
+          .is("deleted_at", null)
+          .in("external_ids->>contaazul", part);
+        if (error) throw new Error(error.message);
+        already.push(...((data ?? []) as Array<{ id: string; ext: string | null }>));
+      }
+      const resumedIds = new Set(already.map((r) => r.ext));
+      const before = written[kind === "company" ? "companies_created" : "contacts_created"] ?? 0;
+      record(already);
+      if (before) written[kind === "company" ? "companies_created" : "contacts_created"] = before;
+      else delete written[kind === "company" ? "companies_created" : "contacts_created"];
+      if (already.length) bump(kind === "company" ? "companies_resumed" : "contacts_resumed", already.length);
+      const todo = list.filter((p) => !resumedIds.has(p.contaazul_id));
+      for (const part of chunks(todo, 200)) {
         const { data, error } = await ctx.client
           .from(table)
           .insert(part.map((p) => payloadOf(p)))
@@ -859,6 +904,8 @@ export async function applyFullImport(
       else bump("entries_cancelled");
     }
 
+    await flushLinks();
+
     /* ---- Transferências ---- */
     const trById = new Map(plan.api.transfers.map((t) => [t.id, t]));
     for (const m of plan.transferPlan.match)
@@ -937,9 +984,9 @@ export async function applyFullImport(
       });
     }
 
-    await upsertLinks(ctx, links);
-    bump("links_written", links.length);
-    const final: FullImportSummary = { ...summary, written, errors };
+    await flushLinks();
+    bump("links_written", linksWritten);
+    const final: FullImportSummary = { ...summary, written, errors, adopted_runs: adopted };
     await ctx.admin
       .from("contaazul_import_runs")
       .update({ status: "completed", summary: final, finished_at: now() })
@@ -971,13 +1018,20 @@ export async function rollbackFullImport(ctx: Ctx, runId: string): Promise<Recor
   const ws = ctx.workspaceId;
   const { data: run } = await ctx.admin
     .from("contaazul_import_runs")
-    .select("id, status")
+    .select("id, status, summary")
     .eq("id", runId)
     .eq("workspace_id", ws)
     .maybeSingle();
   if (!run) throw new Error("Execução não encontrada neste workspace.");
   if ((run as { status: string }).status === "rolled_back")
     throw new Error("Esta execução já foi desfeita.");
+  const runSummary = ((run as { summary: Record<string, unknown> | null }).summary ?? {}) as {
+    adopted_runs?: string[];
+    adopted_by?: string;
+  };
+  if (runSummary.adopted_by)
+    throw new Error("Esta execução foi retomada por outra; desfaça a execução mais recente.");
+  const runIds = [runId, ...(runSummary.adopted_runs ?? [])];
   const done: Record<string, number> = {};
   const bump = (k: string, n: number) => (done[k] = (done[k] ?? 0) + n);
 
@@ -987,7 +1041,7 @@ export async function rollbackFullImport(ctx: Ctx, runId: string): Promise<Recor
       .from("financial_payments")
       .select("id")
       .eq("workspace_id", ws)
-      .like("reference", `contaazul:${runId}:%`)
+      .or(runIds.map((r) => `reference.like.contaazul:${r}:*`).join(","))
       .order("id")
       .range(a, b),
   );
@@ -1005,7 +1059,7 @@ export async function rollbackFullImport(ctx: Ctx, runId: string): Promise<Recor
       .from("financial_entries")
       .select("id")
       .eq("workspace_id", ws)
-      .eq("metadata->>contaazul_run", runId)
+      .in("metadata->>contaazul_run", runIds)
       .order("id")
       .range(a, b),
   );
@@ -1025,7 +1079,7 @@ export async function rollbackFullImport(ctx: Ctx, runId: string): Promise<Recor
         .from(table)
         .select("id")
         .eq("workspace_id", ws)
-        .eq("external_ids->>contaazul_run", runId)
+        .in("external_ids->>contaazul_run", runIds)
         .is("deleted_at", null)
         .order("id")
         .range(a, b),
@@ -1058,7 +1112,7 @@ export async function rollbackFullImport(ctx: Ctx, runId: string): Promise<Recor
       .from(table)
       .select("id")
       .eq("workspace_id", ws)
-      .eq(path, runId);
+      .in(path, runIds);
     for (const r of (data ?? []) as Array<{ id: string }>) {
       const { error } = await ctx.client.from(table).delete().eq("id", r.id);
       if (!error) bump(`${table}_removed`, 1);
