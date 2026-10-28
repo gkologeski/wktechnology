@@ -448,7 +448,7 @@ export async function applyFullImport(ctx: Ctx): Promise<{ runId: string; summar
     const createPeople = async (kind: "company" | "person") => {
       const list = plan.peopleToCreate.filter((p) => p.person_kind === kind);
       const table = kind === "company" ? "companies" : "contacts";
-      const payloadOf = (p: (typeof list)[number], withDoc = true) => {
+      const payloadOf = (p: (typeof list)[number], withDoc = true): Record<string, unknown> => {
         const ext = { contaazul: p.contaazul_id, contaazul_run: runId };
         if (kind === "company")
           return { workspace_id: ws, owner_id: ctx.userId, name: p.name.slice(0, 300), audience: "finance", cnpj: withDoc ? cnpjOrNull(p.document) : null, external_ids: ext };
