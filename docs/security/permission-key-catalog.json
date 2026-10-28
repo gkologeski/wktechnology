@@ -2816,6 +2816,12 @@
     },
     "system.channels.approve.workspace": {
       "migration": "drizzle/migrations/0263_service_agent_identity.sql"
+    },
+    "techfinance.contaazul_people.view.workspace": {
+      "migration": "drizzle/migrations/0256_contaazul_people_audience.sql"
+    },
+    "techfinance.contaazul_people.manage.workspace": {
+      "migration": "drizzle/migrations/0256_contaazul_people_audience.sql"
     }
   }
 }
