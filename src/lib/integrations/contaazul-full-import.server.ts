@@ -472,7 +472,10 @@ export async function applyFullImport(
     .eq("status", "failed")
     .neq("id", runId);
   const adopted: string[] = [];
-  for (const r of (failedRuns ?? []) as Array<{ id: string; summary: Record<string, unknown> | null }>) {
+  for (const r of (failedRuns ?? []) as Array<{
+    id: string;
+    summary: Record<string, unknown> | null;
+  }>) {
     if (r.summary?.["adopted_by"]) continue;
     adopted.push(r.id);
     await ctx.admin
@@ -683,7 +686,10 @@ export async function applyFullImport(
       };
       // Retomada: cadastros criados por execução interrompida só ganham o vínculo.
       const already: Array<{ id: string; ext: string | null }> = [];
-      for (const part of chunks(list.map((p) => p.contaazul_id), 200)) {
+      for (const part of chunks(
+        list.map((p) => p.contaazul_id),
+        200,
+      )) {
         const { data, error } = await ctx.admin
           .from(table)
           .select("id, ext:external_ids->>contaazul")
@@ -698,7 +704,8 @@ export async function applyFullImport(
       record(already);
       if (before) written[kind === "company" ? "companies_created" : "contacts_created"] = before;
       else delete written[kind === "company" ? "companies_created" : "contacts_created"];
-      if (already.length) bump(kind === "company" ? "companies_resumed" : "contacts_resumed", already.length);
+      if (already.length)
+        bump(kind === "company" ? "companies_resumed" : "contacts_resumed", already.length);
       const todo = list.filter((p) => !resumedIds.has(p.contaazul_id));
       for (const part of chunks(todo, 200)) {
         const { data, error } = await ctx.client
@@ -1123,7 +1130,7 @@ export async function rollbackFullImport(ctx: Ctx, runId: string): Promise<Recor
     .from("contaazul_record_links")
     .delete()
     .eq("workspace_id", ws)
-    .eq("run_id", runId);
+    .in("run_id", runIds);
   if (lErr) throw new Error(`Vínculos: ${lErr.message}`);
   await ctx.admin
     .from("contaazul_import_runs")
@@ -1132,7 +1139,8 @@ export async function rollbackFullImport(ctx: Ctx, runId: string): Promise<Recor
       rolled_back_at: new Date().toISOString(),
       rolled_back_by: ctx.userId,
     })
-    .eq("id", runId);
+    .eq("workspace_id", ws)
+    .in("id", runIds);
   return done;
 }
 

@@ -285,7 +285,9 @@ export function ContaAzulFullImport({
                           {formatDateTime(r.started_at)}
                         </span>
                       </div>
-                      {canManage && (r.status === "completed" || r.status === "failed") ? (
+                      {canManage &&
+                      (r.status === "completed" || r.status === "failed") &&
+                      !s?.adopted_by ? (
                         <Button
                           size="sm"
                           variant="outline"
@@ -308,6 +310,11 @@ export function ContaAzulFullImport({
                       </dl>
                     ) : null}
                     {r.error ? <p className="text-xs text-destructive">{r.error}</p> : null}
+                    {s?.adopted_by ? (
+                      <p className="text-xs text-muted-foreground">
+                        Retomada pela execução seguinte; desfazer aquela também desfaz esta.
+                      </p>
+                    ) : null}
                     {s?.errors?.length ? (
                       <details className="text-xs">
                         <summary className="cursor-pointer text-muted-foreground">
