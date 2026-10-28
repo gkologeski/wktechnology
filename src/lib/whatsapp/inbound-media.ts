@@ -56,3 +56,10 @@ export function isLegacyPlaceholder(body: string | null | undefined): boolean {
     body ?? "",
   );
 }
+
+/** Origem para baixar a mídia: Meta direta (número Cloud) ou Conector Lovable. */
+export function audioSource(raw: any): "cloud" | "gateway" {
+  return raw && typeof raw._cloud_phone_number_id === "string" && raw._cloud_phone_number_id
+    ? "cloud"
+    : "gateway";
+}
