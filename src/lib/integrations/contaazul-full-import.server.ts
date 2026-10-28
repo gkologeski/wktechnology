@@ -506,8 +506,10 @@ export async function applyFullImport(
     if (errors.length < 50) errors.push(msg.slice(0, 300));
   };
   let summary: FullImportSummary | null = null;
+  let phase = "leitura e planejamento";
   try {
     const plan = await buildPlan(ctx, token);
+    phase = "cadastros auxiliares";
     summary = summarize(plan);
     const ws = ctx.workspaceId;
     const now = () => new Date().toISOString();
@@ -649,6 +651,7 @@ export async function applyFullImport(
     await flushLinks();
 
     /* ---- Clientes e fornecedores somente financeiros ---- */
+    phase = "clientes e fornecedores";
     const companyByCa = new Map<string, string>();
     const contactByCa = new Map<string, string>();
     for (const p of plan.local.people) {
@@ -763,6 +766,7 @@ export async function applyFullImport(
     });
 
     /* ---- Lançamentos ---- */
+    phase = "lançamentos";
     const ev = new Map(plan.api.events.map((e) => [e.id, e]));
     const localById = new Map(plan.localEvents.map((l) => [l.id, l]));
     const today = new Date().toISOString().slice(0, 10);
@@ -931,6 +935,7 @@ export async function applyFullImport(
     await flushLinks();
 
     /* ---- Transferências ---- */
+    phase = "transferências";
     const trById = new Map(plan.api.transfers.map((t) => [t.id, t]));
     for (const m of plan.transferPlan.match)
       link("transfer", m.apiId, {
@@ -1017,7 +1022,7 @@ export async function applyFullImport(
       .eq("id", runId);
     return { runId, summary: final };
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = `${phase}: ${err instanceof Error ? err.message : String(err)}`;
     await ctx.admin
       .from("contaazul_import_runs")
       .update({
