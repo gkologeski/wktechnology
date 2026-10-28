@@ -350,31 +350,48 @@ const pickPath = (raw: Raw, paths: string[]): unknown => {
 };
 
 /**
- * Extrai as baixas do detalhe da parcela. Se o formato não for reconhecido ou
- * a soma não bater com o valor pago, usa uma baixa única no vencimento.
+ * Extrai as baixas do detalhe da parcela. `targetCents` é o quanto falta baixar
+ * no TechERP. Se o formato não for reconhecido, usa uma baixa única no
+ * vencimento (marcada como estimada).
  */
-export function paymentParts(detail: unknown, ev: CaEvent, maxCents: number): { parts: PaymentPart[]; estimated: boolean } {
-  const target = Math.min(toCents(ev.paid), maxCents);
-  if (target <= 0) return { parts: [], estimated: false };
-  const list = detail && typeof detail === "object" ? ((detail as Raw)["baixas"] ?? (detail as Raw)["pagamentos"]) : null;
-  if (Array.isArray(list) && list.length) {
-    const parts: PaymentPart[] = [];
+export function paymentParts(
+  detail: unknown,
+  ev: CaEvent,
+  targetCents: number,
+): { parts: PaymentPart[]; estimated: boolean } {
+  if (targetCents <= 0) return { parts: [], estimated: false };
+  const parsed: PaymentPart[] = [];
+  const list =
+    detail && typeof detail === "object"
+      ? ((detail as Raw)["baixas"] ?? (detail as Raw)["pagamentos"])
+      : null;
+  if (Array.isArray(list)) {
     for (const item of list as Raw[]) {
       const paidAt = parseDateOnly(pickPath(item, ["data_pagamento", "data", "data_baixa"]));
       const cents = toCents(
-        pickPath(item, ["composicao_valor.valor_liquido", "valor_composicao.valor_liquido", "valor_pago", "valor"]),
+        pickPath(item, [
+          "composicao_valor.valor_liquido",
+          "valor_composicao.valor_liquido",
+          "valor_pago",
+          "valor",
+        ]),
       );
       const acc = pickPath(item, ["conta_financeira.id", "id_conta_financeira"]);
-      if (!paidAt || cents <= 0) return fallback();
-      parts.push({ paidAt, cents, accountId: typeof acc === "string" ? acc : null });
+      if (!paidAt || cents <= 0) {
+        parsed.length = 0;
+        break;
+      }
+      parsed.push({ paidAt, cents, accountId: typeof acc === "string" ? acc : null });
     }
-    const sum = parts.reduce((s, p) => s + p.cents, 0);
-    if (sum === target) return { parts, estimated: false };
   }
-  return fallback();
-  function fallback() {
-    return { parts: [{ paidAt: ev.dueDate, cents: target, accountId: null }], estimated: true };
+  const sum = parsed.reduce((s, p) => s + p.cents, 0);
+  if (parsed.length && sum === targetCents) return { parts: parsed, estimated: false };
+  if (parsed.length) {
+    // Baixa parcial já existente: lança a diferença na data da última baixa.
+    const last = [...parsed].sort((a, b) => a.paidAt.localeCompare(b.paidAt)).at(-1)!;
+    return { parts: [{ ...last, cents: targetCents }], estimated: true };
   }
+  return { parts: [{ paidAt: ev.dueDate, cents: targetCents, accountId: null }], estimated: true };
 }
 
 /** Nome comparável de empresa, reexportado para a tela de revisão. */
