@@ -809,12 +809,12 @@ export async function applyFullImport(
     const createRefs = plan.entryPlan.create.map(
       (id) => `contaazul:${ev.get(id)!.direction}:${id}`,
     );
-    const existingRef = new Map<string, string>();
+    const existingRef = new Map<string, { id: string; paid: number; status: string }>();
     for (const part of chunks(createRefs, 60)) {
       const query = () =>
         ctx.admin
           .from("financial_entries")
-          .select("id, external_ref")
+          .select("id, external_ref, paid_amount, status")
           .eq("workspace_id", ws)
           .in("external_ref", part);
       let { data, error } = await query();
@@ -823,24 +823,32 @@ export async function applyFullImport(
         ({ data, error } = await query());
       }
       if (error) throw new Error(`conferência de referências: ${error.message}`);
-      for (const r of (data ?? []) as Array<{ id: string; external_ref: string }>)
-        existingRef.set(r.external_ref, r.id);
+      for (const r of (data ?? []) as Array<{
+        id: string;
+        external_ref: string;
+        paid_amount: number | string | null;
+        status: string;
+      }>)
+        existingRef.set(r.external_ref, {
+          id: r.id,
+          paid: Number(r.paid_amount ?? 0),
+          status: r.status,
+        });
     }
     const toInsert: CaEvent[] = [];
     for (const id of plan.entryPlan.create) {
       const e = ev.get(id)!;
       const ref = `contaazul:${e.direction}:${id}`;
-      const found = existingRef.get(ref);
-      if (found)
-        link(e.direction, id, {
-          status: "matched",
-          local_id: found,
-          tier: "external_ref",
-          label: evLabel(e),
-        });
-      else toInsert.push(e);
+      if (!existingRef.has(ref)) toInsert.push(e);
     }
     const created = new Map<string, string>(); // id Conta Azul → lançamento
+    // Retomada: lançamentos criados por execução interrompida completam baixas/rateio.
+    const resumed = new Map<string, { id: string; paid: number; status: string }>();
+    for (const id of plan.entryPlan.create) {
+      const found = existingRef.get(`contaazul:${ev.get(id)!.direction}:${id}`);
+      if (found) resumed.set(id, found);
+    }
+    if (resumed.size) bump("entries_resumed", resumed.size);
     for (const part of chunks(toInsert, 100)) {
       const rows = part.map((e) => ({
         workspace_id: ws,
@@ -880,7 +888,29 @@ export async function applyFullImport(
       }
     }
     bump("entries_created", created.size);
+    const withAlloc = new Set<string>();
+    for (const part of chunks(
+      [...resumed.values()].map((r) => r.id),
+      150,
+    )) {
+      const { data, error } = await ctx.admin
+        .from("financial_entry_allocations")
+        .select("entry_id")
+        .in("entry_id", part);
+      if (error) throw new Error(`conferência de rateios: ${error.message}`);
+      for (const r of (data ?? []) as Array<{ entry_id: string }>) withAlloc.add(r.entry_id);
+    }
     const allocations: Array<Record<string, unknown>> = [];
+    for (const [caId, r] of resumed) {
+      const e = ev.get(caId)!;
+      link(e.direction, caId, { status: "imported", local_id: r.id, label: evLabel(e) });
+      const cc = e.costCenterId ? centerMap.get(e.costCenterId) : undefined;
+      if (cc && !withAlloc.has(r.id))
+        allocations.push({ entry_id: r.id, cost_center_id: cc, amount: e.amount });
+      const missing = toCents(e.paid) - toCents(r.paid);
+      if (missing > 0 && r.status !== "cancelled" && caEventTargetStatus(e) !== "cancelled")
+        payments.push({ entryId: r.id, ev: e, targetCents: missing });
+    }
     for (const [caId, entryId] of created) {
       const e = ev.get(caId)!;
       link(e.direction, caId, { status: "imported", local_id: entryId, label: evLabel(e) });
@@ -932,7 +962,13 @@ export async function applyFullImport(
     }
     bump("payments_estimated_date", estimated);
     // Perdidos/cancelados no Conta Azul: só os lançamentos criados agora.
-    for (const [caId, entryId] of created) {
+    const toCancel = [
+      ...created,
+      ...[...resumed]
+        .filter(([, r]) => r.status !== "cancelled" && r.paid === 0)
+        .map(([caId, r]) => [caId, r.id] as [string, string]),
+    ];
+    for (const [caId, entryId] of toCancel) {
       if (caEventTargetStatus(ev.get(caId)!) !== "cancelled") continue;
       const { error } = await ctx.client
         .from("financial_entries")
@@ -1032,7 +1068,8 @@ export async function applyFullImport(
       .eq("id", runId);
     return { runId, summary: final };
   } catch (err) {
-    const message = `${phase}: ${err instanceof Error ? err.message : String(err)}`;
+    const where = err instanceof Error ? (err.stack ?? "").split("\n").slice(1, 4).join(" | ") : "";
+    const message = `${phase}: ${err instanceof Error ? err.message : String(err)} [${where.slice(0, 300)}]`;
     await ctx.admin
       .from("contaazul_import_runs")
       .update({
