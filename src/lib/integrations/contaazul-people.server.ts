@@ -2,7 +2,12 @@
 // Só grava na tabela de vínculos; nunca cria, renomeia ou mescla empresas.
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import { caFetchAll, getValidAccessToken } from "./contaazul-api.server";
+import {
+  caFetchAll,
+  ContaAzulNotConnectedError,
+  loadIntegration,
+  refreshTokens,
+} from "./contaazul-api.server";
 import {
   buildNameIndex,
   matchPeople,
@@ -51,12 +56,29 @@ async function loadAll<T>(
   return out;
 }
 
+/** Token válido sem reativar a sincronização automática (status pausado é preservado). */
+async function tokenKeepingStatus(admin: SupabaseClient, workspaceId: string): Promise<string> {
+  const row = await loadIntegration(admin, workspaceId);
+  const tokens = row?.oauth_tokens ?? null;
+  if (!row || !tokens?.access_token) throw new ContaAzulNotConnectedError();
+  const expiresAt = tokens.expires_at ? Date.parse(tokens.expires_at) : 0;
+  if (!(expiresAt > 0 && expiresAt - Date.now() < 120_000)) return tokens.access_token;
+  if (!tokens.refresh_token) throw new ContaAzulNotConnectedError();
+  const refreshed = await refreshTokens(tokens.refresh_token);
+  const { error } = await admin
+    .from("integrations")
+    .update({ oauth_tokens: refreshed as unknown as Record<string, unknown> })
+    .eq("id", row.id);
+  if (error) throw new Error(error.message);
+  return refreshed.access_token;
+}
+
 /** Lê pessoas da API e recalcula sugestões, preservando decisões humanas. */
 export async function refreshPeopleLinks(
   admin: SupabaseClient,
   workspaceId: string,
 ): Promise<Record<string, number>> {
-  const token = await getValidAccessToken(admin, workspaceId);
+  const token = await tokenKeepingStatus(admin, workspaceId);
   const raw = await caFetchAll({ accessToken: token, path: "/v1/pessoas", pageSize: 500 });
   const people: Array<CaPerson & { profile: string | null }> = raw
     .filter((p) => p["id"] && p["nome"])
