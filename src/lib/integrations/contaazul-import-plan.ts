@@ -441,3 +441,72 @@ export function paymentParts(
 
 /** Nome comparável de empresa, reexportado para a tela de revisão. */
 export const comparableName = normCompanyName;
+
+/* -------------------------------------------------------------------------- */
+/* Quitação com desconto e vendas                                             */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Conta Azul marca como quitado (ACQUITTED) com valor pago menor que o total
+ * quando houve desconto. A diferença é desconto, não saldo em aberto.
+ */
+export function caDiscountCents(e: CaEvent): number {
+  if (e.caStatus !== "ACQUITTED" || e.paid <= 0) return 0;
+  return Math.max(0, toCents(e.amount) - toCents(e.paid));
+}
+
+/** Valor do lançamento no TechERP: o líquido quitado quando houve desconto. */
+export function effectiveAmount(e: CaEvent): number {
+  return caDiscountCents(e) > 0 ? e.paid : e.amount;
+}
+
+export type CaSale = {
+  id: string;
+  number: number | null;
+  date: string | null;
+  kind: string | null;
+  itemsKind: string | null;
+  status: string | null;
+  statusLabel: string | null;
+  total: number;
+  customerId: string | null;
+  customerName: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
+};
+
+const SALE_STATUS_PT: Record<string, string> = {
+  APROVADO: "Aprovada",
+  EM_ANDAMENTO: "Em andamento",
+  EM_ABERTO: "Em aberto",
+  CANCELADO: "Cancelada",
+  FATURADO: "Faturada",
+  ORCAMENTO: "Orçamento",
+};
+
+/** Converte um item de `/v1/venda/busca`. */
+export function mapCaSale(raw: Raw): CaSale | null {
+  const id = typeof raw["id"] === "string" ? raw["id"] : "";
+  if (!id) return null;
+  const sit = (raw["situacao"] ?? null) as Raw | null;
+  const status = typeof sit?.["nome"] === "string" ? (sit["nome"] as string) : null;
+  const customer = (raw["cliente"] ?? null) as Raw | null;
+  const n = Number(raw["numero"]);
+  const ts = (v: unknown) => (typeof v === "string" && v ? v : null);
+  return {
+    id,
+    number: Number.isInteger(n) ? n : null,
+    date: parseDateOnly(raw["data"]),
+    kind: ts(raw["tipo"]),
+    itemsKind: ts(raw["itens"]),
+    status,
+    statusLabel:
+      (status && SALE_STATUS_PT[status]) ||
+      (typeof sit?.["descricao"] === "string" ? (sit["descricao"] as string) : status),
+    total: Math.round(num(raw["total"]) * 100) / 100,
+    customerId: typeof customer?.["id"] === "string" ? (customer["id"] as string) : null,
+    customerName: typeof customer?.["nome"] === "string" ? (customer["nome"] as string) : null,
+    createdAt: ts(raw["criado_em"]),
+    updatedAt: ts(raw["data_alteracao"]),
+  };
+}
