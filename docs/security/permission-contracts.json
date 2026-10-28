@@ -2627,7 +2627,7 @@
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
       "files": {
-        "src/integrations/supabase/types.ts": "e51f4eabe6b78cb73b52b6564025c55dc19634d3a1a624c78333c5df85c11010"
+        "src/integrations/supabase/types.ts": "dec1a64a20c2f6b2a5cc7f2afebe0e565102943416b18406178072efd469d14f"
       },
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies."
     },
@@ -4000,7 +4000,8 @@
         "src/lib/finance-sales.server.ts": "e97b7eeb93a110cd0cde64e112204ca13a89af6e60638c453a56d7701c99b469",
         "src/lib/finance-sales.functions.ts": "a692115bdbafded5e25f0e1ba2c8a13b7e9fb64550c6e31b135c698d4d174511",
         "src/routes/_authenticated/finance.sales.tsx": "a498a3f49272ddeac2a8c3cd77208ce14808dabcb95b0bea0dd57b6552557b99",
-        "drizzle/migrations/0260_finance_sales.sql": "1bc92266330df3c3c3629194a62dc9d13751defedde631df83fadf912b2ba025"
+        "drizzle/migrations/0260_finance_sales.sql": "1bc92266330df3c3c3629194a62dc9d13751defedde631df83fadf912b2ba025",
+        "drizzle/migrations/0261_finance_sales_policy_initplan.sql": "255e5562f724338d3317aaf6ec50af68583f3a71570aa91b7a8058b5be1c6edc"
       },
       "resources": [
         "techfinance.sales"
@@ -4033,6 +4034,10 @@
         {
           "file": "drizzle/migrations/0260_finance_sales.sql",
           "symbol": "finance_sales_access"
+        },
+        {
+          "file": "drizzle/migrations/0261_finance_sales_policy_initplan.sql",
+          "symbol": "finance_sales_visible_workspaces"
         }
       ],
       "tests": {
@@ -4063,7 +4068,8 @@
       "kind": "presentation",
       "files": {
         "src/lib/access-control/resource-labels.ts": "b9486bd90fbd4e5aa1cf7af67fbb77163e7c88ac9d2a95dffcd041df79abfcef",
-        "src/lib/menu-config-finance.ts": "634465260359b9d97cfd6a635ae5bd7ade12cb9ab9a83ec9e96e507d83194e1d"
+        "src/lib/menu-config-finance.ts": "634465260359b9d97cfd6a635ae5bd7ade12cb9ab9a83ec9e96e507d83194e1d",
+        "src/lib/breadcrumb-labels.ts": "5ceacb475469982eb39e8bae82317e1a89f0f7385f9de612e22ec91252c8bc00"
       },
       "rationale": "PT-BR labels for the new techfinance.sales and contaazul_people resources and a sidebar entry for /finance/sales gated by techfinance.sales.view.workspace; menu visibility is cosmetic, the page and server function enforce the permission (contract finance-sales)."
     }
