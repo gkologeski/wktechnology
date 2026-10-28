@@ -322,31 +322,8 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
         "Mensagem enviada ao WhatsApp, mas não foi possível registrá-la no histórico.",
       );
 
-    if (contactId) {
-      // Melhor esforço: a mensagem já saiu e está no histórico da conversa; uma falha
-      // na linha do tempo não pode aparecer como erro (levaria a reenvio duplicado).
-      const { buildOutboundWhatsAppActivity } = await import("@/lib/whatsapp/outbound-activity");
-      try {
-        const { error: aErr } = await supabase.from("activities").insert(
-          buildOutboundWhatsAppActivity({
-            workspaceId,
-            userId,
-            contactId,
-            conversationId: conv.id,
-            wamid: wamid ?? null,
-            body: data.body,
-            preview,
-            templateName: data.templateName ?? null,
-          }),
-        );
-        if (aErr) console.warn("[whatsapp] registro na linha do tempo ignorado", aErr.code);
-      } catch (e) {
-        console.warn(
-          "[whatsapp] registro na linha do tempo ignorado",
-          (e as { code?: string }).code,
-        );
-      }
-    }
+    // A linha do tempo do contato é registrada pelo banco (gatilho em whatsapp_messages),
+    // para Inbox, campanhas e agentes com a mesma regra de autor.
 
     return { ok: true as const, error: null, sid: wamid ?? "", conversationId: conv.id as string };
   });
