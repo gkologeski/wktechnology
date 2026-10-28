@@ -10,7 +10,10 @@ const USER = "00000000-0000-4000-8000-000000000001";
 /** Simula a decisão do banco (contaazul_people_access) por cenário. */
 function rpcClient(allowed: (args: Record<string, string>) => boolean) {
   return {
-    rpc: vi.fn(async (_fn: string, args: Record<string, string>) => ({ data: allowed(args), error: null })),
+    rpc: vi.fn(async (_fn: string, args: Record<string, string>) => ({
+      data: allowed(args),
+      error: null,
+    })),
   } as unknown as SupabaseClient;
 }
 
@@ -20,7 +23,14 @@ describe("conciliação Conta Azul — fronteira de acesso", () => {
     await expect(assertPeopleAccess(c, WS, USER, "manage")).resolves.toBeUndefined();
   });
   it("nega quem não tem a permissão", async () => {
-    await expect(assertPeopleAccess(rpcClient(() => false), WS, USER, "view")).rejects.toThrow(/Sem permissão/);
+    await expect(
+      assertPeopleAccess(
+        rpcClient(() => false),
+        WS,
+        USER,
+        "view",
+      ),
+    ).rejects.toThrow(/Sem permissão/);
   });
   it("nega quando há bloqueio explícito (deny)", async () => {
     const c = {

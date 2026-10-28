@@ -16,7 +16,7 @@ import {
   contaAzulPeopleDecide,
   contaAzulPeopleList,
   contaAzulPeopleRefresh,
-} from "@/lib/integrations/contaazul.functions";
+} from "@/lib/integrations/contaazul-people.functions";
 
 type Tab = "suggested" | "review" | "new" | "linked" | "decided";
 const TABS: Array<{ id: Tab; label: string; hint: string }> = [
