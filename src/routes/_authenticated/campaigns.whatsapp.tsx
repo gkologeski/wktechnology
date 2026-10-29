@@ -642,7 +642,11 @@ function CampaignsPage() {
                 )}
               </div>
               <div className="text-xs text-muted-foreground mt-1">
-                {c.sent}/{c.total} enviadas · {c.failed} falhas
+                {c.sent} enviadas · {c.failed} falhas
+                {c.status === "completed" && c.total - c.sent - c.failed > 0
+                  ? ` · ${c.total - c.sent - c.failed} ignoradas por regras`
+                  : ""}
+                {` · ${c.total} na lista`}
                 {c.started_at ? ` · iniciou ${formatDateTime(c.started_at)}` : ""}
                 {c.status === "running" && <PacingInfo c={c} />}
               </div>
