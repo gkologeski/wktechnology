@@ -3759,10 +3759,11 @@
       "id": "projects-core-functions",
       "kind": "business",
       "files": {
-        "src/lib/projects.functions.ts": "6d866ae62bb65f2befa78893b1cca2113be174d107b5cfc412f07be6dae5f961",
+        "src/lib/projects.functions.ts": "8eb05c6aefbb0fb75e60f1b45cbf397187e84debbf8a093d2583b84fd223016a",
         "drizzle/migrations/0270_project_tasks_list_order_idx.sql": "07d21d3555ea051bcffed01768b5f553d1f232f48707c8e6a99508d4de2c7dba",
         "drizzle/migrations/0271_project_tasks_project_status_sort_idx.sql": "d322f1f7ccbff70366e149140c915a18e1a16a36476157f127913a38c63edbae",
-        "drizzle/migrations/0272_project_tasks_status_partial_idx.sql": "a92803906adba67c20581284aea6d40e5f32de147660f119635ea0a00f1fa24f"
+        "drizzle/migrations/0272_project_tasks_status_partial_idx.sql": "a92803906adba67c20581284aea6d40e5f32de147660f119635ea0a00f1fa24f",
+        "src/lib/access-control/work-read-gate.server.ts": "75e0c5fd2438e009647fd31b8cc6ee9ea459bfc2cae26b292bcbed6d9076e921"
       },
       "resources": [
         "techprojects.projects",
@@ -3809,11 +3810,19 @@
         "techprojects.time_entries.delete.workspace",
         "techprojects.profitability.view.workspace"
       ],
-      "rationale": "Existing TechProjects server functions. Every function requires an authenticated session; reads (projects, tasks, time entries) run with the user client so work_view/work_context_access RLS filters every row by workspace, active membership, scope and deny. Writes re-check role keys (assertAnyPermission) and the record (assertWorkRecord -> work_record_access); milestones, members and profitability use requireWorkPermission. This delivery only adds optional offset/limit/status paging to listTasks/listAllProjectTasks (same client, same RLS) and read indexes on project_tasks (0270-0272: no policy, grant or data change).",
+      "rationale": "Existing TechProjects server functions. Reads of projects/tasks first pass workCanRead (work_area_authorize view: active member of the active workspace, effective key, deny wins) and return empty when denied; RLS work_view/work_context_access still filters every row by workspace and scope. Time-entry reads/writes check work_time_context grants (workTimeCan/assertWorkTimeCan) before work_time_* RLS; deletes use deleteByIdGuarded so an RLS-denied delete fails; capabilities come from project_time_capabilities via workRpc. Writes re-check role keys (assertAnyPermission) and records (assertWorkRecord -> work_record_access); milestones, members and profitability use requireWorkPermission. This delivery adds the read gate, optional offset/limit/status paging to listTasks/listAllProjectTasks (same client, same RLS) and read indexes on project_tasks (0270-0272: no policy, grant or data change).",
       "controls": [
         {
-          "file": "src/integrations/supabase/auth-middleware.ts",
-          "symbol": "requireSupabaseAuth"
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workCanRead"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workTimeCan"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "assertWorkTimeCan"
         },
         {
           "file": "src/lib/access-control/work-permission.middleware.ts",
@@ -3824,14 +3833,26 @@
           "symbol": "assertWorkRecord"
         },
         {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
           "file": "src/lib/access-control/enforce.server.ts",
           "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/db/delete-guarded.ts",
+          "symbol": "deleteByIdGuarded"
         }
       ],
       "database": [
         {
           "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
-          "symbol": "work_record_access"
+          "symbol": "work_area_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_time_context"
         },
         {
           "file": "drizzle/migrations/0270_project_tasks_list_order_idx.sql",
@@ -3848,24 +3869,24 @@
       ],
       "tests": {
         "allowed": {
-          "file": "src/lib/access-control/work-record-boundary-ci.test.ts",
-          "name": "work record boundary allows an authorized active member to update a task"
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate allows an authorized active member to list tasks"
         },
         "missing_permission": {
-          "file": "src/lib/access-control/work-record-boundary-ci.test.ts",
-          "name": "work record boundary rejects a task update without the update key"
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate denies listing without a view key"
         },
         "explicit_deny": {
-          "file": "src/lib/access-control/work-record-boundary-ci.test.ts",
-          "name": "work record boundary rejects a task update under explicit deny"
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate denies listing under explicit deny"
         },
         "foreign_workspace": {
-          "file": "src/lib/access-control/work-record-boundary-ci.test.ts",
-          "name": "work record boundary rejects a task from another workspace"
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate denies listing for another workspace"
         },
         "inactive_member": {
-          "file": "src/lib/access-control/work-record-boundary-ci.test.ts",
-          "name": "work record boundary rejects an inactive workspace member"
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate denies listing for an inactive member"
         }
       }
     }
