@@ -99,7 +99,13 @@ function AuthenticatedLayout() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const { isAdmin, isManager, loading: roleLoading } = useMyRole();
+  const {
+    isAdmin,
+    isManager,
+    loading: roleLoading,
+    isError: roleError,
+    refetch: retryRole,
+  } = useMyRole();
   const {
     isLicensed,
     loading: licenseLoading,
@@ -146,16 +152,21 @@ function AuthenticatedLayout() {
     );
   }
 
+  // Só telas restritas a admin/gerente esperam a checagem de papel.
+  const roleRestricted =
+    !salesRouteResources(path) && (matches(path, ADMIN_ONLY) || matches(path, MANAGER_PLUS));
   const roleBlocked =
     !roleLoading &&
-    !salesRouteResources(path) &&
+    roleRestricted &&
     ((matches(path, ADMIN_ONLY) && !isAdmin) || (matches(path, MANAGER_PLUS) && !isManager));
 
   const pathModule = detectModuleFromPath(path);
   const licenseBlocked = !!pathModule && !isLicensed(pathModule);
   const moduleBlocked = !accessLoading && !!pathModule && !canAccessModule(pathModule);
-  const accessPending = roleLoading || (!!pathModule && (accessLoading || licenseLoading));
-  const accessFailed = !!pathModule && (licenseError || accessError);
+  const accessPending =
+    (roleRestricted && roleLoading && !roleError) ||
+    (!!pathModule && (accessLoading || licenseLoading));
+  const accessFailed = (roleRestricted && roleError) || (!!pathModule && (licenseError || accessError));
   const blocked = accessPending || accessFailed || roleBlocked || licenseBlocked || moduleBlocked;
 
   return (
@@ -198,6 +209,7 @@ function AuthenticatedLayout() {
                     <Button
                       variant="outline"
                       onClick={() => {
+                        void retryRole();
                         void retryLicense();
                         void retryAccess();
                       }}
