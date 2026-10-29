@@ -2647,7 +2647,7 @@
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
       "files": {
-        "src/integrations/supabase/types.ts": "dec1a64a20c2f6b2a5cc7f2afebe0e565102943416b18406178072efd469d14f"
+        "src/integrations/supabase/types.ts": "6e788bd52b1b3f583127470ee03e93b6202c6d2e24b9416ade11d6fce79ef4a6"
       },
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies."
     },
@@ -2804,7 +2804,7 @@
       "kind": "presentation",
       "files": {
         "src/lib/menu-config.ts": "4ad46a66e7badc79af7d04dbd5364f6b044d56133e453bfbb44220dbd1c2c3bf",
-        "src/lib/menu-resources.ts": "eed3bafa935431fd30fe5d01ddce63848afb0911c6cedeb3fba21b0890f32d17"
+        "src/lib/menu-resources.ts": "fa4fc6ce9a753fa6bf68ae8a2d5ee11ddf18ccdcd442461aa1fa773b7fd487b9"
       },
       "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files."
     },
@@ -4101,6 +4101,114 @@
         "src/lib/breadcrumb-labels.ts": "5ceacb475469982eb39e8bae82317e1a89f0f7385f9de612e22ec91252c8bc00"
       },
       "rationale": "PT-BR labels for the new techfinance.sales and contaazul_people resources and a sidebar entry for /finance/sales gated by techfinance.sales.view.workspace; menu visibility is cosmetic, the page and server function enforce the permission (contract finance-sales)."
+    },
+    {
+      "id": "projects-clickup-import",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0267_clickup_importer.sql": "65e20a858e6a85091126d895b1dcb9d47cb83873aac486120a81412623c72354",
+        "drizzle/migrations/0266_projects_perf_indexes.sql": "d27d72647496ce96600f0cff4355bb76a4a13a2da12671ae3281a9ca01d275e4",
+        "src/lib/integrations/clickup/clickup-import.server.ts": "add224bf732ca7d0abe01a06884845e8ba452de03bc115b2f60da608e2e49761",
+        "src/lib/integrations/clickup/clickup-import.functions.ts": "00e7fa9221fdad9bbca568a9391f456cce0b1e6bb0d618e4b54fa0c7ece101ef",
+        "src/lib/integrations/clickup/clickup-import.middleware.ts": "7d32c2b75e626e5dd9a80a9b8b43038efeece0923af9835a5a965bf803ad65b4",
+        "src/components/projects/clickup-import/clickup-import-page.tsx": "25338654baa66db38bf00f49e7d5e6c8ec5f03dc65f8b061a515d4ae46b790ce",
+        "src/routes/_authenticated/projects.settings.imports.clickup.tsx": "0c780f5362f1f7f091668dca2d1480163b4255d12e9fd23b3c8dec8d24d84629",
+        "src/routes/_authenticated/projects.settings.imports.index.tsx": "1b467a4bdabfc704d37c532aee03bbe9894423de41e1fca5d7ed1657e56d0c0b",
+        "drizzle/migrations/0268_project_tasks_comment.sql": "f6ddbc10f820db9e8add066f99a665d477b4bc02e22b57b7fcb856b2d4d75e41",
+        "drizzle/migrations/0269_clickup_apply_step_fix.sql": "3cec267765eec356abbbcd175ce6900e26735aab20ec9dc2438f4496064309cd"
+      },
+      "resources": [
+        "techprojects.clickup_import"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techprojects.clickup_import.view.workspace",
+        "techprojects.clickup_import.manage.workspace"
+      ],
+      "rationale": "ClickUp -> TechProjects importer. The screen renders only behind HrScreenAccess(techprojects.clickup_import) and the menu entries map to the same resource. Every server function requires an authenticated session, resolves the active workspace and calls assertClickUpImport (clickup_import_access: work_subject_context, active membership, deny wins, workspace-bound) before reading ClickUp (GET only, fixed host, no redirects) or calling any RPC. Staging tables are SELECT-only for authenticated under RLS with the same function; all writes go through SECURITY DEFINER RPCs clickup_import_* that re-check clickup_import_require (manage key, not read-only 'Ver como') and validate that spaces/projects/people belong to the run workspace. Writes suppress workflow events; rollback only removes rows the run created and nobody changed since. 0266 adds read indexes only. Keys are not granted to any role automatically.",
+      "controls": [
+        {
+          "file": "src/lib/integrations/clickup/clickup-import.server.ts",
+          "symbol": "assertClickUpImport"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-import.middleware.ts",
+          "symbol": "requireClickUpImport"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/components/hr-access.tsx",
+          "symbol": "HrScreenAccess"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0267_clickup_importer.sql",
+          "symbol": "clickup_import_access"
+        },
+        {
+          "file": "drizzle/migrations/0267_clickup_importer.sql",
+          "symbol": "clickup_import_require"
+        },
+        {
+          "file": "drizzle/migrations/0266_projects_perf_indexes.sql",
+          "symbol": "project_tasks"
+        },
+        {
+          "file": "drizzle/migrations/0268_project_tasks_comment.sql",
+          "symbol": "project_tasks"
+        },
+        {
+          "file": "drizzle/migrations/0269_clickup_apply_step_fix.sql",
+          "symbol": "clickup_import_apply_step"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/integrations/clickup/clickup-import.test.ts",
+          "name": "permite membro ativo com a permissão de gerenciar o importador do ClickUp"
+        },
+        "missing_permission": {
+          "file": "src/lib/integrations/clickup/clickup-import.test.ts",
+          "name": "nega quem não tem a permissão do importador do ClickUp"
+        },
+        "explicit_deny": {
+          "file": "src/lib/integrations/clickup/clickup-import.test.ts",
+          "name": "nega quando há bloqueio explícito (deny) no importador do ClickUp"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/integrations/clickup/clickup-import.test.ts",
+          "name": "nega o importador do ClickUp de outro workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/integrations/clickup/clickup-import.test.ts",
+          "name": "nega o importador do ClickUp a membro inativo"
+        }
+      }
+    },
+    {
+      "id": "projects-clickup-import-navigation",
+      "kind": "presentation",
+      "files": {
+        "src/lib/integrations/clickup/clickup-plan.ts": "533a97467cf1f2c7b5da96d712d85d596da4bef664ea769de1e35051dc68918e",
+        "src/components/projects/clockify-import/projects-imports-hub.tsx": "d27a05dc685ec8bcebe499543b467862fac4f823bef8e610fb88ca07351d558d",
+        "src/lib/access-control/hr-menu-access.ts": "e5ee43a97b0745a704864719532c28788b6a427efc83f38df79f04dfbb9b2981",
+        "src/lib/menu-config-projects.ts": "1a9c9d12b840c50bcfb1911f9acc95372aece7baf8c3fc4b260007c66c62fc79"
+      },
+      "resources": [],
+      "actions": [],
+      "scopes": [],
+      "permission_keys": [],
+      "rationale": "Pure ClickUp organization rules (no data access) and menu/hub links to the ClickUp importer. Visibility of the links follows techprojects.clickup_import.view; the screen and every server function enforce the projects-clickup-import contract."
     }
   ],
   "retired": {}

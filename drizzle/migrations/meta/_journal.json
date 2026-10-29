@@ -1870,6 +1870,27 @@
       "when": 1793241212786,
       "tag": "0266_projects_perf_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 267,
+      "version": "7",
+      "when": 1793242296071,
+      "tag": "0267_clickup_importer",
+      "breakpoints": true
+    },
+    {
+      "idx": 268,
+      "version": "7",
+      "when": 1793242996562,
+      "tag": "0268_project_tasks_comment",
+      "breakpoints": true
+    },
+    {
+      "idx": 269,
+      "version": "7",
+      "when": 1793244002660,
+      "tag": "0269_clickup_apply_step_fix",
+      "breakpoints": true
     }
   ]
 }

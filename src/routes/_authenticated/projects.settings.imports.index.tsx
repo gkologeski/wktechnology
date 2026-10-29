@@ -26,6 +26,7 @@ function Order3RouteAccess() {
       resources={[
         "techprojects.clockify_import",
         "techprojects.jibble_import",
+        "techprojects.clickup_import",
         "techprojects.reconciliation",
       ]}
     >

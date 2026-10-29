@@ -7,6 +7,7 @@ const resources: Record<string, string> = {
   "/projects/settings/operations": "techprojects.operations",
   "/projects/settings/imports/clockify": "techprojects.clockify_import",
   "/projects/settings/imports/jibble": "techprojects.jibble_import",
+  "/projects/settings/imports/clickup": "techprojects.clickup_import",
   "/projects/settings/imports/reconciliation": "techprojects.reconciliation",
   "/contracts/templates": "techcontracts.contract_templates",
   "/contracts/links": "techcontracts.links",
@@ -36,6 +37,7 @@ export function canSeeHrMenu(url: string, keys: ReadonlySet<string>, ready: bool
     "/projects/settings/imports": [
       "techprojects.clockify_import",
       "techprojects.jibble_import",
+      "techprojects.clickup_import",
       "techprojects.reconciliation",
     ],
   };

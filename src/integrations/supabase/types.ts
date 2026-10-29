@@ -5151,6 +5151,369 @@ export type Database = {
           },
         ]
       }
+      clickup_import_created: {
+        Row: {
+          created_at: string
+          label: string | null
+          run_id: string
+          target_id: string
+          target_table: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          label?: string | null
+          run_id: string
+          target_id: string
+          target_table: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          label?: string | null
+          run_id?: string
+          target_id?: string
+          target_table?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clickup_import_created_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "clickup_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clickup_import_created_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clickup_import_groups: {
+        Row: {
+          action: string
+          clockify_refs: number
+          closed_count: number
+          decided_at: string | null
+          decided_by: string | null
+          erp_list_id: string | null
+          erp_list_name: string
+          erp_project_id: string | null
+          erp_space_id: string | null
+          folder_ext_id: string | null
+          folder_name: string | null
+          id: string
+          list_ext_id: string
+          list_name: string
+          new_project_name: string | null
+          new_project_status:
+            | Database["public"]["Enums"]["project_status"]
+            | null
+          new_space_name: string | null
+          reason: string | null
+          run_id: string
+          space_ext_id: string
+          space_name: string
+          target_project_id: string | null
+          target_space_id: string | null
+          task_count: number
+          team_id: string
+          team_name: string
+          workspace_id: string
+        }
+        Insert: {
+          action?: string
+          clockify_refs?: number
+          closed_count?: number
+          decided_at?: string | null
+          decided_by?: string | null
+          erp_list_id?: string | null
+          erp_list_name: string
+          erp_project_id?: string | null
+          erp_space_id?: string | null
+          folder_ext_id?: string | null
+          folder_name?: string | null
+          id?: string
+          list_ext_id: string
+          list_name: string
+          new_project_name?: string | null
+          new_project_status?:
+            | Database["public"]["Enums"]["project_status"]
+            | null
+          new_space_name?: string | null
+          reason?: string | null
+          run_id: string
+          space_ext_id: string
+          space_name: string
+          target_project_id?: string | null
+          target_space_id?: string | null
+          task_count?: number
+          team_id: string
+          team_name: string
+          workspace_id: string
+        }
+        Update: {
+          action?: string
+          clockify_refs?: number
+          closed_count?: number
+          decided_at?: string | null
+          decided_by?: string | null
+          erp_list_id?: string | null
+          erp_list_name?: string
+          erp_project_id?: string | null
+          erp_space_id?: string | null
+          folder_ext_id?: string | null
+          folder_name?: string | null
+          id?: string
+          list_ext_id?: string
+          list_name?: string
+          new_project_name?: string | null
+          new_project_status?:
+            | Database["public"]["Enums"]["project_status"]
+            | null
+          new_space_name?: string | null
+          reason?: string | null
+          run_id?: string
+          space_ext_id?: string
+          space_name?: string
+          target_project_id?: string | null
+          target_space_id?: string | null
+          task_count?: number
+          team_id?: string
+          team_name?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clickup_import_groups_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "clickup_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clickup_import_groups_target_project_id_fkey"
+            columns: ["target_project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clickup_import_groups_target_space_id_fkey"
+            columns: ["target_space_id"]
+            isOneToOne: false
+            referencedRelation: "project_spaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clickup_import_groups_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clickup_import_links: {
+        Row: {
+          created_at: string
+          created_run_id: string | null
+          entity_type: string
+          external_id: string
+          imported_updated_at: string
+          meta: Json
+          target_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_run_id?: string | null
+          entity_type: string
+          external_id: string
+          imported_updated_at?: string
+          meta?: Json
+          target_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_run_id?: string | null
+          entity_type?: string
+          external_id?: string
+          imported_updated_at?: string
+          meta?: Json
+          target_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clickup_import_links_created_run_id_fkey"
+            columns: ["created_run_id"]
+            isOneToOne: false
+            referencedRelation: "clickup_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clickup_import_links_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clickup_import_people: {
+        Row: {
+          clickup_user_id: number
+          decided_at: string | null
+          decided_by: string | null
+          email: string | null
+          match_reason: string | null
+          status: string
+          task_count: number
+          updated_at: string
+          user_id: string | null
+          username: string | null
+          workspace_id: string
+        }
+        Insert: {
+          clickup_user_id: number
+          decided_at?: string | null
+          decided_by?: string | null
+          email?: string | null
+          match_reason?: string | null
+          status?: string
+          task_count?: number
+          updated_at?: string
+          user_id?: string | null
+          username?: string | null
+          workspace_id: string
+        }
+        Update: {
+          clickup_user_id?: number
+          decided_at?: string | null
+          decided_by?: string | null
+          email?: string | null
+          match_reason?: string | null
+          status?: string
+          task_count?: number
+          updated_at?: string
+          user_id?: string | null
+          username?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clickup_import_people_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clickup_import_runs: {
+        Row: {
+          applied_at: string | null
+          confirmed_at: string | null
+          confirmed_by: string | null
+          counts: Json
+          created_at: string
+          error: string | null
+          id: string
+          requested_by: string
+          rolled_back_at: string | null
+          rolled_back_by: string | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          counts?: Json
+          created_at?: string
+          error?: string | null
+          id?: string
+          requested_by: string
+          rolled_back_at?: string | null
+          rolled_back_by?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          confirmed_at?: string | null
+          confirmed_by?: string | null
+          counts?: Json
+          created_at?: string
+          error?: string | null
+          id?: string
+          requested_by?: string
+          rolled_back_at?: string | null
+          rolled_back_by?: string | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clickup_import_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      clickup_import_tasks: {
+        Row: {
+          external_id: string
+          list_ext_id: string
+          parent_external_id: string | null
+          payload: Json
+          run_id: string
+          workspace_id: string
+        }
+        Insert: {
+          external_id: string
+          list_ext_id: string
+          parent_external_id?: string | null
+          payload: Json
+          run_id: string
+          workspace_id: string
+        }
+        Update: {
+          external_id?: string
+          list_ext_id?: string
+          parent_external_id?: string | null
+          payload?: Json
+          run_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clickup_import_tasks_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "clickup_import_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "clickup_import_tasks_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clockify_connections: {
         Row: {
           created_at: string
@@ -29373,6 +29736,60 @@ export type Database = {
       can_write_owner: {
         Args: { _owner: string; _user: string }
         Returns: boolean
+      }
+      clickup_import_access: {
+        Args: { p_action: string; p_user: string; p_ws: string }
+        Returns: boolean
+      }
+      clickup_import_apply_step: {
+        Args: { p_limit?: number; p_run: string }
+        Returns: Json
+      }
+      clickup_import_assignees: {
+        Args: { p_payload: Json; p_ws: string }
+        Returns: string[]
+      }
+      clickup_import_finish_collect: {
+        Args: { p_counts: Json; p_run: string }
+        Returns: Json
+      }
+      clickup_import_require: {
+        Args: { p_action: string; p_ws: string }
+        Returns: undefined
+      }
+      clickup_import_rollback_step: {
+        Args: { p_limit?: number; p_run: string }
+        Returns: Json
+      }
+      clickup_import_set_group: {
+        Args: {
+          p_action: string
+          p_group: string
+          p_list_name: string
+          p_new_project: string
+          p_new_space: string
+          p_project: string
+          p_space: string
+        }
+        Returns: undefined
+      }
+      clickup_import_set_person: {
+        Args: {
+          p_clickup_user: number
+          p_status: string
+          p_user: string
+          p_ws: string
+        }
+        Returns: undefined
+      }
+      clickup_import_stage: {
+        Args: { p_groups: Json; p_people: Json; p_run: string; p_tasks: Json }
+        Returns: Json
+      }
+      clickup_import_start: { Args: { p_ws: string }; Returns: string }
+      clickup_import_sync_assignees: {
+        Args: { p_limit?: number; p_run: string }
+        Returns: Json
       }
       clockify_import_apply: {
         Args: {

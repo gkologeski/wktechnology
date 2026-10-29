@@ -132,6 +132,12 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
         icon: Download,
       },
       {
+        title: "Importar do ClickUp",
+        url: "/projects/settings/imports/clickup",
+        need: "admin",
+        icon: Download,
+      },
+      {
         title: "Conciliação de horas",
         url: "/projects/settings/imports/reconciliation",
         need: "admin",
