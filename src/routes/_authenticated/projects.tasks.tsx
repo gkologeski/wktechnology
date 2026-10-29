@@ -88,6 +88,7 @@ const KANBAN_TONE: Record<string, string> = {
 
 type StatusFilter = "all" | "todo" | "doing" | "review" | "done";
 type OwnerFilter = "all" | "mine";
+const PAGE_SIZE = 100;
 
 function ProjectTasksPage() {
   const qc = useQueryClient();
@@ -98,10 +99,11 @@ function ProjectTasksPage() {
   const status: StatusFilter = "all";
   const projectId: string = "all";
   const [owner, setOwner] = useState<OwnerFilter>("all");
+  const [page, setPage] = useState(0);
 
-  const tasksKey = ["project_tasks", "all", { status, projectId, owner, search }] as const;
+  const tasksKey = ["project_tasks", "all", { status, projectId, owner, search, page }] as const;
   const {
-    data: rows = [],
+    data: pageRows = [],
     isLoading,
     isError,
     error: loadError,
@@ -111,6 +113,7 @@ function ProjectTasksPage() {
     queryKey: tasksKey,
     // Uma nova tentativa só: com o banco lento, o aviso de erro aparece antes.
     retry: 1,
+    placeholderData: (prev) => prev,
     queryFn: () =>
       listTasksFn({
         data: {
@@ -118,9 +121,14 @@ function ProjectTasksPage() {
           projectId: projectId === "all" ? undefined : projectId,
           mineOnly: owner === "mine" ? true : undefined,
           search: search || undefined,
+          // Busca uma a mais só para saber se existe próxima página.
+          offset: page * PAGE_SIZE,
+          limit: PAGE_SIZE + 1,
         },
       }),
   });
+  const hasNext = pageRows.length > PAGE_SIZE;
+  const rows = hasNext ? pageRows.slice(0, PAGE_SIZE) : pageRows;
 
   // Seleção múltipla / ações em massa (padrão de grids — Fase 4).
   const { canAny } = usePermissions();
@@ -247,11 +255,20 @@ function ProjectTasksPage() {
           <Input
             placeholder="Buscar por título…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
             className="pl-8"
           />
         </div>
-        <Select value={owner} onValueChange={(v) => setOwner(v as OwnerFilter)}>
+        <Select
+          value={owner}
+          onValueChange={(v) => {
+            setOwner(v as OwnerFilter);
+            setPage(0);
+          }}
+        >
           <SelectTrigger className="w-44">
             <SelectValue placeholder="Responsável" />
           </SelectTrigger>
@@ -493,6 +510,35 @@ function ProjectTasksPage() {
             </GridListShell>
           )}
         </div>
+      )}
+
+      {!isLoading && !isError && (page > 0 || hasNext) && (
+        <nav
+          aria-label="Paginação de tarefas"
+          className="flex items-center justify-between gap-2 text-sm text-muted-foreground"
+        >
+          <span aria-live="polite">
+            Página {page + 1} · tarefas {page * PAGE_SIZE + 1}–{page * PAGE_SIZE + rows.length}
+          </span>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={page === 0 || isFetching}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+            >
+              Anterior
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!hasNext || isFetching}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Próxima
+            </Button>
+          </div>
+        </nav>
       )}
 
       {taskMissing && (
