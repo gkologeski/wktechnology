@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.project_tasks IS 'Tarefas do TechProjects (RLS por workspace e escopo).';
