@@ -109,6 +109,8 @@ function ProjectTasksPage() {
     isFetching,
   } = useQuery({
     queryKey: tasksKey,
+    // Uma nova tentativa só: com o banco lento, o aviso de erro aparece antes.
+    retry: 1,
     queryFn: () =>
       listTasksFn({
         data: {
