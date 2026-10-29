@@ -403,6 +403,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as AuthenticatedatsSourcingSequencesIdRouteImport } from './routes/_authenticated/(ats)/sourcing/sequences_.$id'
 import { Route as AuthenticatedProjectsSettingsImportsIndexRouteImport } from './routes/_authenticated/projects.settings.imports.index'
+import { Route as AuthenticatedProjectsSettingsImportsClickupRouteImport } from './routes/_authenticated/projects.settings.imports.clickup'
 import { Route as AuthenticatedProjectsSettingsImportsClockifyRouteImport } from './routes/_authenticated/projects.settings.imports.clockify'
 import { Route as AuthenticatedProjectsSettingsImportsJibbleRouteImport } from './routes/_authenticated/projects.settings.imports.jibble'
 import { Route as AuthenticatedProjectsSettingsImportsReconciliationRouteImport } from './routes/_authenticated/projects.settings.imports.reconciliation'
@@ -2682,6 +2683,12 @@ const AuthenticatedProjectsSettingsImportsIndexRoute =
     path: '/projects/settings/imports/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedProjectsSettingsImportsClickupRoute =
+  AuthenticatedProjectsSettingsImportsClickupRouteImport.update({
+    id: '/projects/settings/imports/clickup',
+    path: '/projects/settings/imports/clickup',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProjectsSettingsImportsClockifyRoute =
   AuthenticatedProjectsSettingsImportsClockifyRouteImport.update({
     id: '/projects/settings/imports/clockify',
@@ -3221,6 +3228,7 @@ export interface FileRoutesByFullPath {
   '/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/api/public/health/': typeof ApiPublicHealthIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
+  '/projects/settings/imports/clickup': typeof AuthenticatedProjectsSettingsImportsClickupRoute
   '/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/projects/settings/imports/jibble': typeof AuthenticatedProjectsSettingsImportsJibbleRoute
   '/projects/settings/imports/reconciliation': typeof AuthenticatedProjectsSettingsImportsReconciliationRoute
@@ -3634,6 +3642,7 @@ export interface FileRoutesByTo {
   '/settings/roles': typeof AuthenticatedSettingsRolesIndexRoute
   '/api/public/health': typeof ApiPublicHealthIndexRoute
   '/sourcing/sequences/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
+  '/projects/settings/imports/clickup': typeof AuthenticatedProjectsSettingsImportsClickupRoute
   '/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/projects/settings/imports/jibble': typeof AuthenticatedProjectsSettingsImportsJibbleRoute
   '/projects/settings/imports/reconciliation': typeof AuthenticatedProjectsSettingsImportsReconciliationRoute
@@ -4056,6 +4065,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/roles/': typeof AuthenticatedSettingsRolesIndexRoute
   '/api/public/health/': typeof ApiPublicHealthIndexRoute
   '/_authenticated/(ats)/sourcing/sequences_/$id': typeof AuthenticatedatsSourcingSequencesIdRoute
+  '/_authenticated/projects/settings/imports/clickup': typeof AuthenticatedProjectsSettingsImportsClickupRoute
   '/_authenticated/projects/settings/imports/clockify': typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   '/_authenticated/projects/settings/imports/jibble': typeof AuthenticatedProjectsSettingsImportsJibbleRoute
   '/_authenticated/projects/settings/imports/reconciliation': typeof AuthenticatedProjectsSettingsImportsReconciliationRoute
@@ -4478,6 +4488,7 @@ export interface FileRouteTypes {
     | '/settings/roles/'
     | '/api/public/health/'
     | '/sourcing/sequences/$id'
+    | '/projects/settings/imports/clickup'
     | '/projects/settings/imports/clockify'
     | '/projects/settings/imports/jibble'
     | '/projects/settings/imports/reconciliation'
@@ -4891,6 +4902,7 @@ export interface FileRouteTypes {
     | '/settings/roles'
     | '/api/public/health'
     | '/sourcing/sequences/$id'
+    | '/projects/settings/imports/clickup'
     | '/projects/settings/imports/clockify'
     | '/projects/settings/imports/jibble'
     | '/projects/settings/imports/reconciliation'
@@ -5312,6 +5324,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/roles/'
     | '/api/public/health/'
     | '/_authenticated/(ats)/sourcing/sequences_/$id'
+    | '/_authenticated/projects/settings/imports/clickup'
     | '/_authenticated/projects/settings/imports/clockify'
     | '/_authenticated/projects/settings/imports/jibble'
     | '/_authenticated/projects/settings/imports/reconciliation'
@@ -8237,6 +8250,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsSettingsImportsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/projects/settings/imports/clickup': {
+      id: '/_authenticated/projects/settings/imports/clickup'
+      path: '/projects/settings/imports/clickup'
+      fullPath: '/projects/settings/imports/clickup'
+      preLoaderRoute: typeof AuthenticatedProjectsSettingsImportsClickupRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/projects/settings/imports/clockify': {
       id: '/_authenticated/projects/settings/imports/clockify'
       path: '/projects/settings/imports/clockify'
@@ -9060,6 +9080,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedContractsTemplatesIndexRoute: typeof AuthenticatedContractsTemplatesIndexRoute
   AuthenticatedProjectsSettingsIndexRoute: typeof AuthenticatedProjectsSettingsIndexRoute
   AuthenticatedatsSourcingSequencesIdRoute: typeof AuthenticatedatsSourcingSequencesIdRoute
+  AuthenticatedProjectsSettingsImportsClickupRoute: typeof AuthenticatedProjectsSettingsImportsClickupRoute
   AuthenticatedProjectsSettingsImportsClockifyRoute: typeof AuthenticatedProjectsSettingsImportsClockifyRoute
   AuthenticatedProjectsSettingsImportsJibbleRoute: typeof AuthenticatedProjectsSettingsImportsJibbleRoute
   AuthenticatedProjectsSettingsImportsReconciliationRoute: typeof AuthenticatedProjectsSettingsImportsReconciliationRoute
@@ -9237,6 +9258,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedProjectsSettingsIndexRoute,
   AuthenticatedatsSourcingSequencesIdRoute:
     AuthenticatedatsSourcingSequencesIdRoute,
+  AuthenticatedProjectsSettingsImportsClickupRoute:
+    AuthenticatedProjectsSettingsImportsClickupRoute,
   AuthenticatedProjectsSettingsImportsClockifyRoute:
     AuthenticatedProjectsSettingsImportsClockifyRoute,
   AuthenticatedProjectsSettingsImportsJibbleRoute:
