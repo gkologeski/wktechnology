@@ -29,6 +29,7 @@ export const AI_FEATURES = {
   sdr_agente: "Agente SDR (Prospecção)",
   sdr_agente_teste: "Agente SDR (teste em sandbox)",
   assistente_projetos: "Assistente de análise (TechProjects)",
+  inbox_sugestao_empresa: "Sugestão de desassociação de empresa (Inbox)",
   outros: "Outros",
 } as const;
 

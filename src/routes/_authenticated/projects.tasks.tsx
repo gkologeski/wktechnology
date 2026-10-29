@@ -477,7 +477,17 @@ function ProjectTasksPage() {
       )}
 
       <TaskDetailsSheet
-        task={selectedTask}
+        task={
+          selectedTask
+            ? {
+                ...selectedTask,
+                custom_field_values: selectedTask.custom_field_values as Record<
+                  string,
+                  unknown
+                > | null,
+              }
+            : null
+        }
         open={!!selectedTask}
         showCoreFields
         onOpenChange={(v) => {
