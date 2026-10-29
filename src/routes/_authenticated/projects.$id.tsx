@@ -40,6 +40,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { TaskDetailsSheet } from "@/components/projects/task-details-sheet";
 import {
   getProject,
   updateProject,
@@ -281,6 +282,7 @@ function TasksKanban({ projectId }: { projectId: string }) {
   const upd = useServerFn(updateTask);
   const del = useServerFn(deleteTask);
   const [openCreate, setOpenCreate] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
   const { data: tasks = [] } = useQuery({
     queryKey: ["project-tasks", projectId],
@@ -349,8 +351,17 @@ function TasksKanban({ projectId }: { projectId: string }) {
                   className="rounded-md border bg-card p-2 text-sm shadow-sm cursor-grab active:cursor-grabbing"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="font-medium flex-1">{t.title}</div>
                     <button
+                      type="button"
+                      className="flex-1 rounded-sm text-left font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label={`Abrir detalhes da tarefa ${t.title}`}
+                      onClick={() => setSelectedTaskId(t.id)}
+                    >
+                      {t.title}
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Remover tarefa ${t.title}`}
                       className="text-muted-foreground hover:text-destructive disabled:opacity-50"
                       disabled={!taskAccess.for(t.id).can_delete}
                       onClick={async () => {
@@ -374,6 +385,14 @@ function TasksKanban({ projectId }: { projectId: string }) {
         ))}
       </div>
       <NewTaskDialog projectId={projectId} open={openCreate} onOpenChange={setOpenCreate} />
+      <TaskDetailsSheet
+        task={(tasks as any[]).find((t) => t.id === selectedTaskId) ?? null}
+        open={!!selectedTaskId && tasks.some((t) => t.id === selectedTaskId)}
+        showCoreFields
+        onOpenChange={(v) => {
+          if (!v) setSelectedTaskId(null);
+        }}
+      />
     </div>
   );
 }
