@@ -32934,6 +32934,10 @@ export type Database = {
         Args: { p_campaign: string; p_seconds: number }
         Returns: boolean
       }
+      wa_campaign_prune_recent: {
+        Args: { p_campaign_id: string }
+        Returns: number
+      }
       wa_classify_phone: { Args: { _raw: string }; Returns: string[] }
       wa_cloud_sync_numbers: {
         Args: {
@@ -32944,6 +32948,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      wa_phone_recent_key: { Args: { p: string }; Returns: string }
       wa_pick_mobile: { Args: { _fields: string[] }; Returns: string }
       wa_reserve_template_quota: {
         Args: { p_limit: number; p_recipient: string }

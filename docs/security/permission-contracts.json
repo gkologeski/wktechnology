@@ -2128,14 +2128,15 @@
       "kind": "business",
       "files": {
         "src/lib/whatsapp.functions.ts": "1134b8ac720de7dcd2dfb45acfbbcc23d3c55351755afad874ec9fb80ce87aac",
-        "src/lib/whatsapp-campaigns.functions.ts": "237a5c218e6e86b54f790a84cbee674325a0692da1a7e82980f96b2999ef0913",
+        "src/lib/whatsapp-campaigns.functions.ts": "f7472fae624ca011e62b45d888f4886a1abdc967d6c153ced94d985c947a3e84",
         "src/routes/_authenticated/inbox.index.tsx": "6871432118a6bd8ef6477bf0ca6ef3bd14a00e7fbec3beef7bb955f610daee80",
         "src/routes/_authenticated/inbox.whatsapp.tsx": "165ac43240712c3713a9b7daec6a059aad630a3a309ae77dd3f38ccd7aa8ea94",
         "src/routes/_authenticated/campaigns.whatsapp.tsx": "03099933c701ea7007f30e5a160fc394923be5d2d981b12f3cdf50ab9eb77d3f",
         "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9",
         "drizzle/migrations/0263_wa_outbound_activity_trigger.sql": "6c6a9521a5cfa09cd1724061fd78939fa94d56344ccb8c3052418ea9426a96e0",
         "drizzle/migrations/0264_wa_outbound_activity_fast_lookup.sql": "120f2512f182b4b1f4a0f89489dbe4cff8c00f7be3be5f31ff9b5b5ccea6a53a",
-        "drizzle/migrations/0265_wa_outbound_activity_contact_owner_fallback.sql": "f951df73a114e86f227c877eddfff7960b975bc8cc723add13b9d3940090baa0"
+        "drizzle/migrations/0265_wa_outbound_activity_contact_owner_fallback.sql": "f951df73a114e86f227c877eddfff7960b975bc8cc723add13b9d3940090baa0",
+        "drizzle/migrations/0274_wa_campaign_prune_recent.sql": "367295426b6d5a14d7319414235e7c4d84cf48d1085bfd1b322763be7c041101"
       },
       "resources": [
         "system.whatsapp",
@@ -2162,7 +2163,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message. Undelivered outbound messages show a translated failure label (pure describeDeliveryError + InboxMessageBubble), built only from error fields of messages the user already reads.",
+      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message. Undelivered outbound messages show a translated failure label (pure describeDeliveryError + InboxMessageBubble), built only from error fields of messages the user already reads. Recent-contact pruning RPC wa_campaign_prune_recent is SECURITY INVOKER (caller RLS on recipients applies), requires active workspace membership, EXECUTE only for authenticated/service_role, and only marks pending rows of that campaign as skipped.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
