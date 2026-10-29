@@ -496,7 +496,6 @@ export function InboxMessageBubble({
   when,
   status,
   footer,
-  failure,
   children,
 }: {
   outbound?: boolean;
@@ -504,12 +503,10 @@ export function InboxMessageBubble({
   when?: string | null;
   status?: InboxDeliveryStatus;
   footer?: ReactNode;
-  /** Motivo de não entrega (exibido em etiqueta discreta abaixo do balão). */
-  failure?: { label: string; detail: string } | null;
   children: ReactNode;
 }) {
   return (
-    <div className={cn("flex flex-col", outbound ? "items-end" : "items-start")}>
+    <div className={cn("flex", outbound ? "justify-end" : "justify-start")}>
       <div
         className={cn(
           "min-w-0 max-w-[82%] overflow-hidden rounded-[calc(var(--radius)+1rem)] px-4 py-3 text-sm shadow-sm [overflow-wrap:anywhere] sm:max-w-[72%]",
@@ -537,16 +534,6 @@ export function InboxMessageBubble({
           {outbound ? <InboxMessageStatus status={status} /> : null}
         </div>
       </div>
-      {failure ? (
-        <div
-          role="status"
-          title={failure.detail}
-          className="mt-1 inline-flex max-w-[82%] items-center gap-1 rounded-full bg-destructive px-2 py-0.5 text-[11px] font-medium leading-4 text-destructive-foreground sm:max-w-[72%]"
-        >
-          <AlertCircle className="h-3 w-3 shrink-0" aria-hidden="true" />
-          <span className="truncate">{failure.label}</span>
-        </div>
-      ) : null}
     </div>
   );
 }
