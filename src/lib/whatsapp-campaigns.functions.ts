@@ -366,6 +366,8 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         throw rErr;
       }
     }
+    // Limpeza em lote de quem recebeu outra campanha no período (segunda proteção fica no disparo).
+    await (supabase as any).rpc("wa_campaign_prune_recent", { p_campaign_id: camp.id });
     return { id: camp.id as string };
   });
 
@@ -445,6 +447,8 @@ export const setWhatsAppCampaignStatus = createServerFn({ method: "POST" })
       .update(patch)
       .eq("id", data.id)
       .select("id");
+    if (!error && rows?.length && data.status === "running")
+      await (context.supabase as any).rpc("wa_campaign_prune_recent", { p_campaign_id: data.id });
     if (error) throw error;
     // RLS nega sem erro: sem linha alterada, a pausa não valeu.
     if (!rows || rows.length === 0)
@@ -563,6 +567,7 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
           .insert(rows.slice(i, i + 100));
         if (rErr) throw rErr;
       }
+      await (supabase as any).rpc("wa_campaign_prune_recent", { p_campaign_id: data.id });
       patch.total = rows.length;
       patch.recent_contact_days = recentDays;
       patch.exclude_customers = commercial.excludeCustomers;
