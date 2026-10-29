@@ -212,15 +212,32 @@ export const deleteProject = createServerFn({ method: "POST" })
 
 export const listTasks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) => z.object({ projectId: z.string().uuid() }).parse(input))
+  .inputValidator((input) =>
+    z
+      .object({
+        projectId: z.string().uuid(),
+        // Carregamento aos poucos por coluna do quadro (opcional; sem informar, comportamento anterior).
+        status: taskStatusEnum.optional(),
+        offset: z.number().int().min(0).optional(),
+        limit: z.number().int().min(1).max(500).optional(),
+      })
+      .parse(input),
+  )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { data: rows, error } = await supabase
+    let q = supabase
       .from("project_tasks")
       .select("*")
       .eq("project_id", data.projectId)
       .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: true })
+      .order("id", { ascending: true });
+    if (data.status) q = q.eq("status", data.status);
+    if (data.limit) {
+      const offset = data.offset ?? 0;
+      q = q.range(offset, offset + data.limit - 1);
+    }
+    const { data: rows, error } = await q;
     if (error) throw error;
     return rows ?? [];
   });

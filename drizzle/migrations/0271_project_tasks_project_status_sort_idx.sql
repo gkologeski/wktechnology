@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS project_tasks_project_status_sort_idx ON public.project_tasks (project_id, status, sort_order, created_at, id);
