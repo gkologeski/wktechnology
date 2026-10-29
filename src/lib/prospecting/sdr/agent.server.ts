@@ -182,7 +182,7 @@ export function buildPrompt(p: BuildPromptInput): { text: string; sections: Prom
     c.crm?.personName ? `- Nome no cadastro vinculado: ${c.crm.personName}.` : "",
     c.crm?.companyName ? `- Empresa no cadastro vinculado: ${c.crm.companyName}.` : "",
     c.jobKind === "follow_up"
-      ? "- Tipo de turno: retomada automática (sem nova mensagem do cliente)."
+      ? FOLLOW_UP_GUIDANCE
       : "- Tipo de turno: resposta à mensagem do cliente.",
     c.scheduling
       ? `- Agenda configurada: fuso ${c.scheduling.timezone}, reuniões de ${c.scheduling.durationMinutes} min.`
@@ -247,6 +247,16 @@ function questionList(questions: CanonicalQuestion[]): string {
     })
     .join("\n");
 }
+
+/** Orientação de retomada: a IA continua a conversa existente, nunca recomeça. */
+export const FOLLOW_UP_GUIDANCE = [
+  "- Tipo de turno: retomada automática (sem nova mensagem do cliente).",
+  "- Como retomar: leia o histórico inteiro e continue exatamente de onde a conversa parou. Identifique o último assunto pendente (material ou apresentação enviada, proposta, retorno que o cliente prometeu dar, reunião, dúvida em aberto) e retome por ele.",
+  "- Se o cliente disse que ia olhar algo ou daria retorno, pergunte de forma leve se ele conseguiu ver (ex.: \"Conseguiu dar uma olhada na apresentação?\").",
+  "- Se já houve conversa, NÃO se apresente de novo, NÃO repita a mensagem de abertura e NÃO refaça perguntas já respondidas.",
+  "- Seja curto: uma ou duas frases e uma única pergunta de retomada, chamando o cliente pelo nome se já conhecido.",
+  "- Só use a abordagem de abertura se o cliente nunca respondeu.",
+].join("\n");
 
 export function buildMessages(system: string, history: ConversationMessage[]) {
   // Mensagens seguidas do cliente viram UMA só (contexto completo, nada perdido);
