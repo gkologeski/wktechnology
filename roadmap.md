@@ -301,3 +301,11 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [x] verify, build e navegador (amostra por módulo, teclado, celular, escuro)
 - [ ] Formulário público com data no navegador (não há formulário com data cadastrado na WK; coberto por teste)
 - [ ] Publicação (aguarda aceite do usuário)
+
+# Roadmap — Indicação ignorada no follow-up (Bruna/DSIN, porte M)
+
+- [x] Indicação por e-mail ou só pelo nome reconhecida e registrada (Lead para revisão ou nota)
+- [x] Retomadas suspensas para quem indicou; retomada quase igual à anterior é cancelada
+- [x] Ajuste no prompt (classificação da indicação e não repetir retomada)
+- [x] Rodrigo Paiola: indicação do Bruno registrada (contato Bruno Silva já existia), sem novas retomadas
+- [ ] Publicação (aguarda aceite do usuário)

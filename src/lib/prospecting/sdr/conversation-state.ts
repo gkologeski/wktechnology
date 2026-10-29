@@ -4,6 +4,7 @@
 // A IA SUGERE a situação de forma estruturada; o servidor valida contra o
 // histórico real e grava pelo commit atômico (sdr_commit_turn, mesmo tenant,
 // lease e versão). Nada aqui decide texto: só estado e efeitos permitidos.
+import { validateEmailAddress } from "@/lib/email-address";
 import { toWhatsAppE164 } from "@/lib/phone/whatsapp-e164";
 import type { ConversationMessage } from "./policy";
 
@@ -50,6 +51,8 @@ export type Situation = {
   confirmed_name: string | null;
   contact_source_question: boolean;
   shared_contact: SharedContact;
+  /** Nome da pessoa indicada, como o próprio cliente escreveu (senão null). */
+  referral_name: string | null;
   evidence_message_id: string | null;
 };
 
@@ -62,6 +65,7 @@ export const DEFAULT_SITUATION: Situation = {
   confirmed_name: null,
   contact_source_question: false,
   shared_contact: "none",
+  referral_name: null,
   evidence_message_id: null,
 };
 
@@ -79,6 +83,7 @@ export const SITUATION_SCHEMA = {
     confirmed_name: { type: ["string", "null"] },
     contact_source_question: { type: "boolean" },
     shared_contact: { type: "string", enum: [...SHARED_CONTACT] },
+    referral_name: { type: ["string", "null"] },
     evidence_message_id: { type: ["string", "null"] },
   },
 } as const;
@@ -90,6 +95,7 @@ const oneOf = <T extends string>(list: readonly T[], v: unknown, d: T): T =>
 export function parseSituation(raw: unknown): Situation {
   const r = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
   const name = typeof r.confirmed_name === "string" ? r.confirmed_name.trim().slice(0, 60) : "";
+  const refName = typeof r.referral_name === "string" ? r.referral_name.trim().slice(0, 80) : "";
   const ev = typeof r.evidence_message_id === "string" ? r.evidence_message_id.trim() : "";
   return {
     suppress_reply: oneOf(SUPPRESS_REASONS, r.suppress_reply, "none"),
@@ -100,6 +106,7 @@ export function parseSituation(raw: unknown): Situation {
     confirmed_name: name || null,
     contact_source_question: r.contact_source_question === true,
     shared_contact: oneOf(SHARED_CONTACT, r.shared_contact, "none"),
+    referral_name: refName || null,
     evidence_message_id: ev || null,
   };
 }
@@ -114,6 +121,15 @@ export type ConversationState = {
   decision_maker_confirmed?: (Stamp & { message_id: string }) | null;
   confirmed_name?: (Stamp & { name: string; message_id: string }) | null;
   contact_source_asked?: (Stamp & { message_id: string }) | null;
+  /** O cliente indicou outra pessoa (fato do cliente; dados escritos por ele). */
+  referral_received?:
+    | (Stamp & {
+        name: string | null;
+        email: string | null;
+        phone: string | null;
+        message_id: string;
+      })
+    | null;
 };
 
 export function parseState(raw: unknown): ConversationState {
@@ -185,13 +201,68 @@ export function statePromptLines(s: ConversationState): string[] {
     lines.push("- O cliente já confirmou que é responsável pela área/decisão.");
   if (s.meeting_declined) lines.push("- O cliente recusou reunião nesta conversa.");
   if (s.contact_source_asked) lines.push("- O cliente já perguntou de onde veio o contato.");
+  if (s.referral_received) {
+    const r = s.referral_received;
+    const who = [r.name, r.email, r.phone].filter(Boolean).join(", ") || "sem dados";
+    lines.push(
+      `- Esta pessoa já indicou outro responsável (${who}); não volte a qualificá-la sobre o assunto, trate apenas do que ela própria trouxer.`,
+    );
+  }
   return lines.length ? lines : ["- Nenhum estado registrado."];
 }
 
-export type Referral = { name: string | null; phoneE164: string };
+/** Telefone legível numa mensagem (dado, não decisão). */
+export type SharedPhone = { name: string | null; phoneE164: string };
+/** Nome antigo mantido para quem só lida com telefone. */
+export type Referral = SharedPhone;
+
+/** Indicação validada: ao menos nome, e-mail ou telefone escrito pelo cliente. */
+export type ReferralInfo = {
+  name: string | null;
+  phoneE164: string | null;
+  email: string | null;
+  messageId: string | null;
+};
+
+const HONORIFIC = /^(?:(?:sr|sra|srta|dr|dra|eng|prof|profa)\.?\s+)+/iu;
+
+/** Remove tratamento ("Sr.", "Dra.") do nome escrito pelo cliente. */
+export function cleanPersonName(name: string | null | undefined): string | null {
+  const v = String(name ?? "")
+    .replace(HONORIFIC, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return v.length >= 2 ? v.slice(0, 80) : null;
+}
+
+const NAME_BEFORE =
+  /(?:com (?:o|a)?\s*|e (?:o|a)\s+|^|\s)((?:(?:Sr|Sra|Srta|Dr|Dra)\.?\s+)?[A-ZÀ-Ú][\p{L}]+(?: [A-ZÀ-Ú][\p{L}]+){0,3})\s*$/u;
+
+/**
+ * E-mail escrito na mensagem (dado, não decisão). Só aceita endereço válido
+ * pelo validador do sistema; o nome é o que vem imediatamente antes, se houver.
+ */
+export function parseSharedEmail(text: string): { name: string | null; email: string } | null {
+  const raw = String(text ?? "");
+  const re = /[^\s@<>()[\]"',;:]+@[^\s@<>()[\]"',;:]+\.[^\s@<>()[\]"',;:.]{2,}/gu;
+  for (const m of raw.matchAll(re)) {
+    const candidate = m[0].replace(/[.!?]+$/, "");
+    const v = validateEmailAddress(candidate);
+    if (!v.ok) continue;
+    const before = raw
+      .slice(0, m.index)
+      .split(/\n/)
+      .pop()!
+      .replace(/[:\-–,(]+\s*$/, "")
+      .trimEnd();
+    const nm = before.match(NAME_BEFORE);
+    return { name: cleanPersonName(nm?.[1]), email: v.value };
+  }
+  return null;
+}
 
 /** Telefone brasileiro em texto ou cartão de contato (dado, não decisão). */
-export function parseSharedPhone(text: string): Referral | null {
+export function parseSharedPhone(text: string): SharedPhone | null {
   const raw = String(text ?? "");
   const card = raw.match(/Contato compartilhado\s*\n\s*([^:\n]+):\s*([+\d][\d\s().-]{7,})/);
   if (card) {
@@ -227,8 +298,10 @@ export type StateDecision = {
   close: CloseReason | null;
   /** Retomadas automáticas canceladas, sem encerrar. */
   stopFollowUps: boolean;
+  /** Motivo gravado em `cancel_reason` ao suspender retomadas (sem encerrar). */
+  stopReason: "asked_contact_source" | null;
   suppress: Exclude<SuppressReason, "none"> | null;
-  referral: Referral | null;
+  referral: ReferralInfo | null;
   corporatePhone: string | null;
   warnings: string[];
 };
@@ -288,21 +361,55 @@ export function decideState(p: {
     else if (!src) warnings.push("Nome sugerido não aparece em mensagem do cliente: ignorado.");
   }
 
-  // Contato compartilhado: o número precisa estar legível no turno atual.
-  let referral: Referral | null = null;
+  // Contato compartilhado: só vale o que o cliente escreveu no turno atual.
+  let referral: ReferralInfo | null = null;
   let corporatePhone: string | null = null;
-  if (s.shared_contact !== "none" && p.jobKind === "reply") {
+  if (s.shared_contact === "own_corporate" && p.jobKind === "reply") {
     const parsed = current.map((m) => parseSharedPhone(m.body)).find(Boolean) ?? null;
     if (!parsed) warnings.push("Contato compartilhado sem número legível: nada registrado.");
-    else if (s.shared_contact === "referral") referral = parsed;
     else corporatePhone = parsed.phoneE164;
+  } else if (s.shared_contact === "referral" && p.jobKind === "reply") {
+    const phoneHit = current.map((m) => ({ m, v: parseSharedPhone(m.body) })).find((x) => x.v);
+    const mailHit = current.map((m) => ({ m, v: parseSharedEmail(m.body) })).find((x) => x.v);
+    let nameHit: { m: ConversationMessage; name: string } | null = null;
+    if (s.referral_name) {
+      const n = norm(s.referral_name);
+      const src = current.find((m) => n.length >= 2 && ` ${norm(m.body)} `.includes(` ${n} `));
+      const clean = cleanPersonName(s.referral_name);
+      if (src && clean) nameHit = { m: src, name: clean };
+      else warnings.push("Nome do indicado não aparece na mensagem do cliente: ignorado.");
+    }
+    const name = nameHit?.name ?? phoneHit?.v?.name ?? mailHit?.v?.name ?? null;
+    const email = mailHit?.v?.email ?? null;
+    const phone = phoneHit?.v?.phoneE164 ?? null;
+    if (name || email || phone) {
+      const messageId = (phoneHit?.m ?? mailHit?.m ?? nameHit?.m)!.id;
+      referral = { name, email, phoneE164: phone, messageId };
+      const prev = p.state.referral_received;
+      const same = !!prev && prev.name === name && prev.email === email && prev.phone === phone;
+      if (!same)
+        patch.referral_received = {
+          at,
+          job_id: p.jobId,
+          name,
+          email,
+          phone,
+          message_id: messageId,
+        };
+    } else {
+      warnings.push(
+        "Indicação sem nome, e-mail ou telefone escrito pelo cliente: nada registrado.",
+      );
+    }
   }
 
   let close: CloseReason | null = null;
   if (s.conversation === "closed") {
     let reason: CloseReason = s.close_reason === "none" ? "other" : s.close_reason;
     if (reason === "referral_received" && !referral) {
-      warnings.push("Encerramento por indicação sem número registrado: conversa segue aberta.");
+      warnings.push(
+        "Encerramento por indicação sem nome, e-mail ou telefone registrado: conversa segue aberta.",
+      );
       reason = "none";
     }
     if (reason !== "none") {
@@ -321,7 +428,10 @@ export function decideState(p: {
   return {
     patch,
     close,
-    stopFollowUps: !!patch.contact_source_asked,
+    // Contato de origem perguntado ou indicação recebida: quem escreveu não
+    // recebe mais retomadas automáticas (a conversa segue para o que ele trouxer).
+    stopFollowUps: !!patch.contact_source_asked || !!referral || !!p.state.referral_received,
+    stopReason: patch.contact_source_asked ? "asked_contact_source" : null,
     suppress,
     referral,
     corporatePhone,

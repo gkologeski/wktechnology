@@ -19,6 +19,7 @@ import { claimsMaterialSent } from "./conversation-guards";
 import {
   currentInbound,
   decideState,
+  parseSharedEmail,
   parseSharedPhone,
   type CloseReason,
   type ConversationState,
@@ -155,6 +156,13 @@ export function preTurnFacts(i: TurnInput): { facts: string[]; explicitOptOut: b
     if (phone)
       facts.push(
         `A mensagem atual contém um telefone legível (${phone.phoneE164}${phone.name ? `, nome: ${phone.name}` : ""}); classifique em situation.shared_contact se é de outra pessoa (referral) ou outro número do próprio cliente (own_corporate). O registro só acontece pelo sistema após esta resposta.`,
+      );
+    const mail = currentInbound(i.history)
+      .map((m) => parseSharedEmail(m.body))
+      .find(Boolean);
+    if (mail)
+      facts.push(
+        `A mensagem atual contém o e-mail escrito ${mail.email}${mail.name ? ` (nome escrito antes dele: ${mail.name})` : ""}; se for de outra pessoa indicada pelo cliente, use situation.shared_contact=referral e situation.referral_name com o nome escrito. O registro só acontece pelo sistema após esta resposta.`,
       );
     if (currentInbound(i.history).some((m) => isAutoResponder(m.body)))
       facts.push(
@@ -425,6 +433,8 @@ export async function decideTurn(i: TurnInput, deps: TurnDeps): Promise<TurnDeci
     !!close ||
     state.stopFollowUps ||
     !!i.state.contact_source_asked ||
+    // Quem indicou outra pessoa não recebe retomadas automáticas.
+    !!i.state.referral_received ||
     // Conversa já encerrada nunca volta a ter retomadas automáticas: só
     // responde ao que o cliente escrever.
     !!i.state.closed;

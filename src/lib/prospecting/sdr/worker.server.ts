@@ -28,6 +28,7 @@ import {
   parseState,
   stateJobIds,
   type ConversationState,
+  type ReferralInfo,
 } from "./conversation-state";
 import { resolveChoice } from "./booking-guard";
 import { parseToolConfig, type ScheduleConfig } from "./tools/catalog";
@@ -809,7 +810,7 @@ export async function processJob(
   if (silent) {
     if (optOut || closeNow || suppressedAfterClose)
       await admin.rpc("sdr_set_conversation_owner", { p_conversation: conv.id, p_owner: "paused" });
-    if (decision.state.referral && closeNow)
+    if (decision.state.referral && decision.state.patch.referral_received && closeNow)
       await saveReferralNow(admin, job, enr, conv, target, decision.state.referral);
     await recordSdrAction(admin, {
       workspace_id: job.workspace_id,
@@ -970,6 +971,8 @@ export async function processJob(
       "stale_version",
       "enrollment_inactive",
       "lease_lost",
+      // Retomada quase igual à anterior: cancelada, sem virar rascunho.
+      "followup_repetition",
     ].includes(sent.reason);
     await admin
       .from("sdr_turn_jobs")
@@ -1002,7 +1005,9 @@ export async function processJob(
       payload: { phone: turnState.corporatePhone, result: st },
     });
   }
-  if (turnState.referral) await saveReferralNow(admin, job, enr, conv, target, turnState.referral);
+  // Só registra no CRM quando a indicação é nova nesta conversa (sem duplicar nota).
+  if (turnState.referral && turnState.patch.referral_received)
+    await saveReferralNow(admin, job, enr, conv, target, turnState.referral);
   if (optOut) {
     await applyOptOutNow();
     return "sent";
@@ -1027,7 +1032,7 @@ export async function processJob(
       .from("sdr_enrollments")
       .update({
         follow_up_at: null,
-        ...(turnState.stopFollowUps ? { cancel_reason: "asked_contact_source" } : {}),
+        ...(turnState.stopReason ? { cancel_reason: turnState.stopReason } : {}),
       })
       .eq("id", enr.id)
       .eq("workspace_id", job.workspace_id);
@@ -1041,7 +1046,7 @@ async function saveReferralNow(
   enr: Record<string, unknown>,
   conv: Record<string, unknown>,
   target: { entity: "lead" | "contact"; id: string } | null,
-  referral: { name: string | null; phoneE164: string },
+  referral: ReferralInfo,
 ) {
   const { saveReferral } = await import("./third-party.server");
   const saved = await saveReferral(admin, {
@@ -1058,7 +1063,7 @@ async function saveReferralNow(
     job_id: job.id,
     kind: "referral_saved",
     status: saved.status === "failed" ? "failed" : "success",
-    payload: { ...saved, phone: referral.phoneE164, name: referral.name },
+    payload: { ...saved, phone: referral.phoneE164, email: referral.email, name: referral.name },
     error: saved.status === "failed" ? saved.error : null,
   });
 }
@@ -1160,7 +1165,9 @@ async function scheduleFollowUps(
   const { isWithinServiceWindow } = await import("@/lib/whatsapp/meta-channel.server");
   const { data: due } = await admin
     .from("sdr_enrollments")
-    .select("id, workspace_id, conversation_id, follow_up_count, commercial_stage")
+    .select(
+      "id, workspace_id, conversation_id, follow_up_count, commercial_stage, conversation_state",
+    )
     .eq("status", "active")
     .in("workspace_id", workspaceIds)
     .lte("follow_up_at", new Date().toISOString())
@@ -1174,6 +1181,18 @@ async function scheduleFollowUps(
       .eq("id", e.conversation_id)
       .maybeSingle();
     const clear = { follow_up_at: null };
+    // Quem indicou outra pessoa não recebe retomada automática.
+    if (parseState(e.conversation_state).referral_received) {
+      await admin.from("sdr_enrollments").update(clear).eq("id", e.id);
+      await recordSdrAction(admin, {
+        workspace_id: e.workspace_id,
+        enrollment_id: e.id,
+        kind: "follow_up",
+        status: "skipped",
+        error: "referral_received",
+      });
+      continue;
+    }
     // Conversa fechada na Inbox não recebe retomada automática.
     if (!conv || conv.ai_owner !== "ai" || conv.status === "closed") {
       await admin.from("sdr_enrollments").update(clear).eq("id", e.id);

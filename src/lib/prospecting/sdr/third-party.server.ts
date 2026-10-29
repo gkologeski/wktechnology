@@ -2,7 +2,7 @@
  * Guarda no CRM a indicação recebida de um terceiro. Nunca envia mensagem ao
  * indicado. Escopo sempre pelo workspace do job (vindo do servidor).
  */
-import type { Referral } from "./third-party";
+import type { ReferralInfo } from "./conversation-state";
 import { brPhoneVariants } from "@/lib/whatsapp/phone-variants";
 import { loadSdrAgentUserId } from "./agent-identity.server";
 
@@ -13,45 +13,78 @@ export type SaveReferralResult =
   | { status: "existing"; entity: "lead" | "contact"; id: string }
   | { status: "created"; entity: "lead"; id: string }
   | { status: "ambiguous"; candidates: number }
+  /** Só o nome foi informado: fica como nota para revisão, sem cadastro novo. */
+  | { status: "noted" }
   | { status: "failed"; error: string };
 
+type Hit = { entity: "lead" | "contact"; id: string };
+
+async function findByKey(
+  admin: Admin,
+  workspaceId: string,
+  column: "whatsapp_e164" | "email",
+  values: string[],
+): Promise<{ hits: Hit[] } | { error: string }> {
+  const [c, l] = await Promise.all(
+    (["contacts", "leads"] as const).map((table) =>
+      admin
+        .from(table)
+        .select("id")
+        .eq("workspace_id", workspaceId)
+        .in(column, values)
+        .is("deleted_at", null)
+        .limit(3),
+    ),
+  );
+  if (c.error || l.error) return { error: (c.error ?? l.error).message };
+  return {
+    hits: [
+      ...(c.data ?? []).map((r: { id: string }) => ({ entity: "contact" as const, id: r.id })),
+      ...(l.data ?? []).map((r: { id: string }) => ({ entity: "lead" as const, id: r.id })),
+    ],
+  };
+}
+
+/**
+ * Indicação: procura cadastro pelo telefone e depois pelo e-mail escritos
+ * pelo cliente; sem nenhum, cria um Lead para revisão humana. Indicação só
+ * com nome vira nota na linha do tempo de quem indicou (nada é inventado).
+ */
 export async function saveReferral(
   admin: Admin,
   p: {
     workspaceId: string;
     ownerId: string;
-    referral: Referral;
+    referral: ReferralInfo;
     referrerLabel: string;
     companyId: string | null;
     referrer: { entity: "lead" | "contact"; id: string } | null;
   },
 ): Promise<SaveReferralResult> {
   const owner = (await loadSdrAgentUserId(admin, p.workspaceId)) ?? p.ownerId;
-  const variants = brPhoneVariants(p.referral.phoneE164);
-  const [c, l] = await Promise.all([
-    admin
-      .from("contacts")
-      .select("id")
-      .eq("workspace_id", p.workspaceId)
-      .in("whatsapp_e164", variants)
-      .limit(3),
-    admin
-      .from("leads")
-      .select("id")
-      .eq("workspace_id", p.workspaceId)
-      .in("whatsapp_e164", variants)
-      .limit(3),
-  ]);
-  if (c.error || l.error) return { status: "failed", error: (c.error ?? l.error).message };
-  const hits = [
-    ...(c.data ?? []).map((r: { id: string }) => ({ entity: "contact" as const, id: r.id })),
-    ...(l.data ?? []).map((r: { id: string }) => ({ entity: "lead" as const, id: r.id })),
-  ];
+  const r = p.referral;
+  let hits: Hit[] = [];
+  if (r.phoneE164) {
+    const found = await findByKey(
+      admin,
+      p.workspaceId,
+      "whatsapp_e164",
+      brPhoneVariants(r.phoneE164),
+    );
+    if ("error" in found) return { status: "failed", error: found.error };
+    hits = found.hits;
+  }
+  if (!hits.length && r.email) {
+    const found = await findByKey(admin, p.workspaceId, "email", [r.email]);
+    if ("error" in found) return { status: "failed", error: found.error };
+    hits = found.hits;
+  }
   const date = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
-  const note = `Indicado por ${p.referrerLabel} via Lia em ${date}.`;
+  const note = `Indicado por ${p.referrerLabel} via agente SDR em ${date}.`;
   let result: SaveReferralResult;
   if (hits.length > 1) result = { status: "ambiguous", candidates: hits.length };
   else if (hits.length === 1) result = { status: "existing", ...hits[0] };
+  else if (!r.phoneE164 && !r.email) result = { status: "noted" };
   else {
     let companyName: string | null = null;
     if (p.companyId) {
@@ -63,7 +96,7 @@ export async function saveReferral(
         .maybeSingle();
       companyName = (co as { name?: string } | null)?.name ?? null;
     }
-    const [first, ...rest] = (p.referral.name ?? "Indicação").trim().split(/\s+/);
+    const [first, ...rest] = (r.name ?? "Indicação").trim().split(/\s+/);
     const { data: row, error } = await admin
       .from("leads")
       .insert({
@@ -72,11 +105,11 @@ export async function saveReferral(
         assigned_to: owner,
         first_name: first || "Indicação",
         last_name: rest.join(" ") || null,
-        phone: p.referral.phoneE164,
-        whatsapp_e164: p.referral.phoneE164,
+        ...(r.phoneE164 ? { phone: r.phoneE164, whatsapp_e164: r.phoneE164 } : {}),
+        ...(r.email ? { email: r.email } : {}),
         company_id: p.companyId,
         company_name: companyName,
-        source: "Indicação (Lia)",
+        source: "Indicação (agente SDR)",
         notes: note,
       })
       .select("id")
@@ -90,16 +123,19 @@ export async function saveReferral(
       result.status === "created" || result.status === "existing"
         ? ` Registro: ${result.entity === "lead" ? "Lead" : "Contato"} ${result.id}.`
         : result.status === "ambiguous"
-          ? " Há mais de um cadastro com esse número; escolha manualmente."
-          : "";
+          ? " Há mais de um cadastro com esses dados; escolha manualmente."
+          : result.status === "noted"
+            ? " Sem e-mail ou telefone informado: nenhum cadastro criado."
+            : "";
+    const data = [r.name ?? "Contato", r.email, r.phoneE164].filter(Boolean).join(" — ");
     await admin.from("activities").insert({
       workspace_id: p.workspaceId,
       owner_id: owner,
       assigned_to: owner,
       type: "note",
       completed: true,
-      subject: "Indicação recebida pela Lia",
-      body: `${p.referral.name ?? "Contato"} — ${p.referral.phoneE164}.${target}`,
+      subject: "Indicação recebida pelo agente SDR",
+      body: `${data}.${target}`,
       [p.referrer.entity === "lead" ? "related_lead_id" : "related_contact_id"]: p.referrer.id,
       related_company_id: p.companyId,
     });

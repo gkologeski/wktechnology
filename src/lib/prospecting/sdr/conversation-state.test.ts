@@ -35,3 +35,18 @@ describe("estado efetivo da conversa", () => {
     expect(s.close_reason).toBe("none");
   });
 });
+
+describe("indicação escrita pelo cliente", () => {
+  it("e-mail com tratamento antes: nome sem 'Sr.' e e-mail válido", async () => {
+    const { parseSharedEmail, cleanPersonName } = await import("./conversation-state");
+    const text =
+      "Olá Bruna, tudo bem ?\nsou responsável pelos times de desenvolvimento, teste e produto\nsobre infraestrutura, o responsável é o Sr. Bruno bruno@dsin.com.br";
+    expect(parseSharedEmail(text)).toEqual({ name: "Bruno", email: "bruno@dsin.com.br" });
+    expect(cleanPersonName("Dra. Ana Lima")).toBe("Ana Lima");
+  });
+  it("texto sem e-mail válido não vira indicação", async () => {
+    const { parseSharedEmail } = await import("./conversation-state");
+    expect(parseSharedEmail("me chama no @bruno do instagram")).toBeNull();
+    expect(parseSharedEmail("fala com o João do financeiro")).toBeNull();
+  });
+});

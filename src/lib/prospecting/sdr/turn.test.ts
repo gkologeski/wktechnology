@@ -382,6 +382,77 @@ describe("estado explícito (não depende da redação)", () => {
     expect(r.close).toBeNull();
     expect(r.state.referral).toBeNull();
   });
+  it("indicação só por e-mail (caso DSIN): registrada e sem retomadas para quem indicou", async () => {
+    const msg =
+      "sou responsável pelos times de desenvolvimento, teste e produto\nsobre infraestrutura, o responsável é o Sr. Bruno bruno@dsin.com.br";
+    const { r } = await run(
+      [inb(msg)],
+      [
+        output("Obrigada pela indicação do Bruno, Rodrigo!", {
+          shared_contact: "referral",
+          referral_name: "Sr. Bruno",
+        }),
+      ],
+    );
+    expect(r.system).toContain("e-mail escrito bruno@dsin.com.br");
+    expect(r.state.referral).toMatchObject({
+      name: "Bruno",
+      email: "bruno@dsin.com.br",
+      phoneE164: null,
+    });
+    expect(r.state.patch.referral_received?.email).toBe("bruno@dsin.com.br");
+    expect(r.noFollowUp).toBe(true);
+    expect(r.close).toBeNull();
+  });
+  it("IA classifica e-mail de outra pessoa como número próprio: nada é inventado", async () => {
+    const { r } = await run(
+      [inb("o responsável é o Bruno bruno@dsin.com.br")],
+      [output("Obrigada!", { shared_contact: "own_corporate" })],
+    );
+    expect(r.state.referral).toBeNull();
+    expect(r.state.corporatePhone).toBeNull();
+  });
+  it("indicação só pelo nome escrito pelo cliente encerra por indicação", async () => {
+    const { r } = await run(
+      [inb("quem cuida disso é a Mariana Souza do financeiro")],
+      [
+        output("Obrigada pela indicação!", {
+          shared_contact: "referral",
+          referral_name: "Mariana Souza",
+          conversation: "closed",
+          close_reason: "referral_received",
+        }),
+      ],
+    );
+    expect(r.state.referral).toMatchObject({ name: "Mariana Souza", email: null, phoneE164: null });
+    expect(r.close).toBe("referral_received");
+  });
+  it("nome do indicado que o cliente não escreveu é descartado", async () => {
+    const { r } = await run(
+      [inb("fala com o pessoal do financeiro")],
+      [output("Obrigada!", { shared_contact: "referral", referral_name: "Carlos" })],
+    );
+    expect(r.state.referral).toBeNull();
+    expect(r.noFollowUp).toBe(false);
+  });
+  it("indicação já registrada: retomada automática não acontece e prompt avisa", async () => {
+    const state: ConversationState = {
+      referral_received: {
+        at: "",
+        job_id: null,
+        name: "Bruno",
+        email: "bruno@dsin.com.br",
+        phone: null,
+        message_id: "m1",
+      },
+    };
+    const { r } = await run([inb("x"), outb("Obrigada!")], [output("Rodrigo, conseguiu ver?")], {
+      state,
+      jobKind: "follow_up",
+    });
+    expect(r.noFollowUp).toBe(true);
+    expect(r.system).toContain("já indicou outro responsável (Bruno, bruno@dsin.com.br)");
+  });
   it("cargo técnico não é descartado pelo código", async () => {
     const { r } = await run(
       [inb("Sou desenvolvedor aqui na empresa")],
