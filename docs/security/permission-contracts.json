@@ -4108,13 +4108,14 @@
       "files": {
         "drizzle/migrations/0267_clickup_importer.sql": "65e20a858e6a85091126d895b1dcb9d47cb83873aac486120a81412623c72354",
         "drizzle/migrations/0266_projects_perf_indexes.sql": "d27d72647496ce96600f0cff4355bb76a4a13a2da12671ae3281a9ca01d275e4",
-        "src/lib/integrations/clickup/clickup-import.server.ts": "4d0b2cc8a2801982f48165d6650263b9d53bc2967908fb7a4cd8146a3da387d3",
+        "src/lib/integrations/clickup/clickup-import.server.ts": "0bb85ee4d36e30357be17550ecaa2befdc995c05e35de9e91569f1b631c92002",
         "src/lib/integrations/clickup/clickup-import.functions.ts": "00e7fa9221fdad9bbca568a9391f456cce0b1e6bb0d618e4b54fa0c7ece101ef",
-        "src/lib/integrations/clickup/clickup-import.middleware.ts": "b0cef557c7429164a3eea7958046dc9c4eac552106fb046dd24e9fa3709c6aba",
-        "src/components/projects/clickup-import/clickup-import-page.tsx": "41c9bcadac826c0a9bdacf8415553d3ca85526f366ed3174bb7fafcca0b200f6",
+        "src/lib/integrations/clickup/clickup-import.middleware.ts": "7d32c2b75e626e5dd9a80a9b8b43038efeece0923af9835a5a965bf803ad65b4",
+        "src/components/projects/clickup-import/clickup-import-page.tsx": "a673f7671d7db5e6eacc26182a7b0950c80ea366d5ddeb31ff6b303a673b24b7",
         "src/routes/_authenticated/projects.settings.imports.clickup.tsx": "0c780f5362f1f7f091668dca2d1480163b4255d12e9fd23b3c8dec8d24d84629",
         "src/routes/_authenticated/projects.settings.imports.index.tsx": "1b467a4bdabfc704d37c532aee03bbe9894423de41e1fca5d7ed1657e56d0c0b",
-        "drizzle/migrations/0268_project_tasks_comment.sql": "f6ddbc10f820db9e8add066f99a665d477b4bc02e22b57b7fcb856b2d4d75e41"
+        "drizzle/migrations/0268_project_tasks_comment.sql": "f6ddbc10f820db9e8add066f99a665d477b4bc02e22b57b7fcb856b2d4d75e41",
+        "drizzle/migrations/0269_clickup_apply_step_fix.sql": "3cec267765eec356abbbcd175ce6900e26735aab20ec9dc2438f4496064309cd"
       },
       "resources": [
         "techprojects.clickup_import"
@@ -4165,6 +4166,10 @@
         {
           "file": "drizzle/migrations/0268_project_tasks_comment.sql",
           "symbol": "project_tasks"
+        },
+        {
+          "file": "drizzle/migrations/0269_clickup_apply_step_fix.sql",
+          "symbol": "clickup_import_apply_step"
         }
       ],
       "tests": {
@@ -4194,7 +4199,7 @@
       "id": "projects-clickup-import-navigation",
       "kind": "presentation",
       "files": {
-        "src/lib/integrations/clickup/clickup-plan.ts": "5b5c04d2c684cb8c4a91017bb85cdeb2daeff76f3285ead5109e69b883029e96",
+        "src/lib/integrations/clickup/clickup-plan.ts": "533a97467cf1f2c7b5da96d712d85d596da4bef664ea769de1e35051dc68918e",
         "src/components/projects/clockify-import/projects-imports-hub.tsx": "d27a05dc685ec8bcebe499543b467862fac4f823bef8e610fb88ca07351d558d",
         "src/lib/access-control/hr-menu-access.ts": "e5ee43a97b0745a704864719532c28788b6a427efc83f38df79f04dfbb9b2981",
         "src/lib/menu-config-projects.ts": "1a9c9d12b840c50bcfb1911f9acc95372aece7baf8c3fc4b260007c66c62fc79"
