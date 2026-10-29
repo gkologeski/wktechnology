@@ -41,11 +41,16 @@ import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { TaskDetailsSheet } from "@/components/projects/task-details-sheet";
+import { TASK_STATUS_LABEL } from "@/components/projects/task-core-fields";
 import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
 export const Route = createFileRoute("/_authenticated/projects/tasks")({
-  validateSearch: (search: Record<string, unknown>): { view?: "table" | "kanban" } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { view?: "table" | "kanban"; taskId?: string } => ({
     view: search.view === "kanban" ? "kanban" : "table",
+    taskId: typeof search.taskId === "string" && search.taskId ? search.taskId : undefined,
   }),
   head: () => ({
     meta: [
@@ -64,12 +69,7 @@ export const Route = createFileRoute("/_authenticated/projects/tasks")({
   ),
 });
 
-const STATUS_LABEL: Record<string, string> = {
-  todo: "A fazer",
-  doing: "Em execução",
-  review: "Em revisão",
-  done: "Concluída",
-};
+const STATUS_LABEL = TASK_STATUS_LABEL;
 
 const STATUS_TONE: Record<string, string> = {
   todo: "bg-muted text-muted-foreground",
@@ -173,10 +173,17 @@ function ProjectTasksPage() {
     ] as GridFilterField<any>[],
   );
 
-  const view = Route.useSearch().view ?? "table";
+  const { view = "table", taskId } = Route.useSearch();
   const navigate = Route.useNavigate();
   const setView = (v: "table" | "kanban") =>
     void navigate({ to: ".", search: (prev) => ({ ...prev, view: v }) });
+  // Painel de detalhes: a tarefa aberta fica na URL (?taskId=) para links diretos.
+  const openTask = (id: string) =>
+    void navigate({ to: ".", search: (prev) => ({ ...prev, taskId: id }) });
+  const closeTask = () =>
+    void navigate({ to: ".", search: (prev) => ({ ...prev, taskId: undefined }), replace: true });
+  const selectedTask = taskId ? (rows.find((t) => t.id === taskId) ?? null) : null;
+  const taskMissing = !!taskId && !isLoading && !selectedTask;
 
   const {
     sorted: sortedRows,
@@ -294,7 +301,14 @@ function ProjectTasksPage() {
             const project = (t as { projects?: { id: string; name: string } }).projects;
             return (
               <div className="space-y-1 pr-6">
-                <p className="text-sm font-medium leading-snug">{t.title}</p>
+                <button
+                  type="button"
+                  onClick={() => openTask(t.id)}
+                  className="block w-full text-left text-sm font-medium leading-snug hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                  aria-label={`Abrir detalhes da tarefa ${t.title}`}
+                >
+                  {t.title}
+                </button>
                 {project && (
                   <Link
                     to="/projects/$id"
@@ -390,6 +404,12 @@ function ProjectTasksPage() {
                       <TableRow
                         key={t.id}
                         data-state={selection.isSelected(t.id) ? "selected" : undefined}
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          // Checkbox e link do projeto mantêm a própria ação.
+                          if ((e.target as HTMLElement).closest("a,button,[role=checkbox]")) return;
+                          openTask(t.id);
+                        }}
                       >
                         <TableCell>
                           <Checkbox
@@ -399,17 +419,14 @@ function ProjectTasksPage() {
                           />
                         </TableCell>
                         <TableCell>
-                          {project ? (
-                            <Link
-                              to="/projects/$id"
-                              params={{ id: project.id }}
-                              className="font-medium hover:underline"
-                            >
-                              {t.title}
-                            </Link>
-                          ) : (
-                            <span className="font-medium">{t.title}</span>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => openTask(t.id)}
+                            className="text-left font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                            aria-label={`Abrir detalhes da tarefa ${t.title}`}
+                          >
+                            {t.title}
+                          </button>
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {project ? (
@@ -444,6 +461,29 @@ function ProjectTasksPage() {
           )}
         </div>
       )}
+
+      {taskMissing && (
+        <div
+          role="alert"
+          className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
+        >
+          <span className="text-muted-foreground">
+            A tarefa do link não está entre as tarefas carregadas ou você não tem acesso a ela.
+          </span>
+          <Button size="sm" variant="ghost" onClick={closeTask}>
+            Fechar aviso
+          </Button>
+        </div>
+      )}
+
+      <TaskDetailsSheet
+        task={selectedTask}
+        open={!!selectedTask}
+        showCoreFields
+        onOpenChange={(v) => {
+          if (!v) closeTask();
+        }}
+      />
     </div>
   );
 }
