@@ -4,9 +4,12 @@
 - [x] Chave do ClickUp removida do campo "lista padrão"
 - [x] Projetos repetidos unificados (OS - Citel, OS - Quantity, OS - IXC, OS - InForma) e empresa "In Forma" unificada em "InForma", com cópia para desfazer
 - [x] "In Forma Software" do CRM unificada como "InForma" e "Outsourcing -> InForma" juntado em "OS - InForma"
-- [ ] Tabelas de preparação/vínculo e motor de importação (Dailys como tarefas, Byteway como projeto novo de Consultoria, sem workspaces de teste)
-- [ ] Tela de revisão, vínculo de responsáveis com TechPeople e "Desfazer importação"
-- [ ] Permissões novas e testes (permitido, sem chave, negado, outro workspace, inativo)
+- [x] Tabelas de preparação/vínculo e motor de importação (Dailys como tarefas, Byteway como projeto novo de Consultoria, sem workspaces de teste)
+- [x] Tela de revisão, vínculo de responsáveis com TechPeople e "Desfazer importação"
+- [x] Permissões novas e testes (permitido, sem chave, negado, outro workspace, inativo)
+- [x] Importação aplicada: 16.474 tarefas, 12 projetos e 3 espaços novos (desfazer testado sem efeito real)
+- [ ] 3 responsáveis do ClickUp sem cadastro no TechERP (Adauto Lucas, Eduardo Gonçalves, Thiago Mandrik — 84 tarefas): aguardam decisão do usuário
+- [ ] Ficha do projeto mostra no máximo 1.000 tarefas (OS - Citel tem 13.298; OS - Controles internos 6.378): paginação aguarda aceite
 - [ ] Publicação (aguarda aceite do usuário)
 
 # Roadmap — Reorganização da tela /agents/sdr (porte G, em pacotes)
