@@ -336,17 +336,23 @@ export const listAllProjectTasks = createServerFn({ method: "POST" })
         assigneeId: z.string().uuid().optional(),
         mineOnly: z.boolean().optional(),
         search: z.string().optional(),
+        // Paginação: offset/limit. Sem informar, mantém o comportamento anterior (500).
+        offset: z.number().int().min(0).optional(),
+        limit: z.number().int().min(1).max(500).optional(),
       })
       .parse(input ?? {}),
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const offset = data.offset ?? 0;
+    const limit = data.limit ?? 500;
     let q = supabase
       .from("project_tasks")
       .select("*, projects(id, name, status)")
       .order("due_at", { ascending: true, nullsFirst: false })
       .order("created_at", { ascending: false })
-      .limit(500);
+      .order("id", { ascending: true })
+      .range(offset, offset + limit - 1);
     if (data.status) q = q.eq("status", data.status);
     if (data.projectId) q = q.eq("project_id", data.projectId);
     if (data.assigneeId) q = q.eq("assignee_id", data.assigneeId);
