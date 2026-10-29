@@ -2763,7 +2763,9 @@
     "techservice.tickets.view.workspace",
     "techfinance.contaazul_people.view.workspace",
     "techfinance.contaazul_people.manage.workspace",
-    "techfinance.sales.view.workspace"
+    "techfinance.sales.view.workspace",
+    "techprojects.clickup_import.view.workspace",
+    "techprojects.clickup_import.manage.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -2828,6 +2830,12 @@
     },
     "techfinance.sales.view.workspace": {
       "migration": "drizzle/migrations/0260_finance_sales.sql"
+    },
+    "techprojects.clickup_import.view.workspace": {
+      "migration": "drizzle/migrations/0267_clickup_importer.sql"
+    },
+    "techprojects.clickup_import.manage.workspace": {
+      "migration": "drizzle/migrations/0267_clickup_importer.sql"
     }
   }
 }
