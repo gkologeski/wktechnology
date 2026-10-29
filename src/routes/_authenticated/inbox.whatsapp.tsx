@@ -1,4 +1,5 @@
 import { describeDeliveryError } from "@/lib/whatsapp/delivery-error";
+import { DeliveryFailureLabel } from "@/components/inbox/delivery-failure-label";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { compactCount } from "@/lib/inbox/channel-page";
 import { useInboxChannelPage } from "@/hooks/use-inbox-channel-page";
@@ -695,6 +696,14 @@ function WhatsAppInbox() {
                         <SdrMaterialLink messageId={m.id} label={sdrMaterialOf(m)!} />
                       ) : null}
                     </InboxMessageBubble>
+                    <DeliveryFailureLabel
+                      failure={
+                        m.direction === "outbound" &&
+                        (m.status === "failed" || m.status === "undelivered")
+                          ? describeDeliveryError(m.error_code, m.error_message)
+                          : null
+                      }
+                    />
                     {suggestionsByMsg.get(m.id)?.map((sg) => (
                       <InboxAiSuggestionCard
                         key={sg.id}
