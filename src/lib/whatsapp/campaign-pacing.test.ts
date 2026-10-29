@@ -132,3 +132,28 @@ describe("laço do disparo espaçado", () => {
     expect(persisted[0]).toBe(40_000);
   });
 });
+
+describe("ignorados no disparo espaçado", () => {
+  it("contatos ignorados não consomem o intervalo", async () => {
+    const c = clock(0);
+    const queue = ["skip", "skip", "skip", "send", "send"];
+    const sendTimes: number[] = [];
+    await runPacedLoop({
+      interval: { min: 10, max: 10 },
+      nextAt: 0,
+      startedAt: 0,
+      budgetMs: 60_000,
+      now: c.now,
+      sleep: c.sleep,
+      sendOne: async () => {
+        const k = queue.shift();
+        if (!k) return { processed: 0 };
+        if (k === "skip") return { processed: 1, attempted: 0 };
+        sendTimes.push(c.now());
+        return { processed: 1, attempted: 1 };
+      },
+      persistNextAt: async () => {},
+    });
+    expect(sendTimes).toEqual([0, 10_000]);
+  });
+});
