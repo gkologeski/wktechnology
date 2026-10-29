@@ -30526,6 +30526,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      hr_people_full_workspaces: {
+        Args: { _action: string }
+        Returns: string[]
+      }
       hr_person_resource_access: {
         Args: {
           _action: string
@@ -32757,6 +32761,7 @@ export type Database = {
       }
       shared_audit_workspace: { Args: { a: Json; b: Json }; Returns: string }
       shared_chat_access: { Args: { a?: string; i: string }; Returns: boolean }
+      shared_chat_view_ids: { Args: never; Returns: string[] }
       shared_chat_write: { Args: { a: string; p: Json }; Returns: Json }
       shared_configuration_access: {
         Args: { a: string; c: Json; o: string; r: string; w: string }
