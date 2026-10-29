@@ -1,7 +1,7 @@
 // Server functions do importador ClickUp (finas: validação + delegação ao serviço).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireClickUpImport } from "./clickup-import.middleware";
 
 const uuid = z.string().uuid();
 const cursorSchema = z.object({
@@ -20,39 +20,35 @@ const cursorSchema = z.object({
 });
 
 export const getClickUpImportStatus = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireClickUpImport("view")])
   .handler(async ({ context }) => {
     const s = await import("./clickup-import.server");
-    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
-    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const workspaceId = context.clickupWorkspaceId;
     return s.getStatus({ client: context.supabase, workspaceId, userId: context.userId });
   });
 
 export const getClickUpImportTargets = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireClickUpImport("view")])
   .handler(async ({ context }) => {
     const s = await import("./clickup-import.server");
-    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
-    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const workspaceId = context.clickupWorkspaceId;
     return s.listTargets({ client: context.supabase, workspaceId, userId: context.userId });
   });
 
 export const startClickUpCollect = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireClickUpImport("manage")])
   .handler(async ({ context }) => {
     const s = await import("./clickup-import.server");
-    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
-    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const workspaceId = context.clickupWorkspaceId;
     return s.startCollect({ client: context.supabase, workspaceId, userId: context.userId });
   });
 
 export const stepClickUpCollect = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireClickUpImport("manage")])
   .inputValidator((d) => z.object({ runId: uuid, cursor: cursorSchema }).parse(d))
   .handler(async ({ data, context }) => {
     const s = await import("./clickup-import.server");
-    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
-    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const workspaceId = context.clickupWorkspaceId;
     const ctx = { client: context.supabase, workspaceId, userId: context.userId };
     const r = await s.collectStep(ctx, data.runId, data.cursor);
     if (r.done) await s.finishCollect(ctx, data.runId, r.cursor);
@@ -60,7 +56,7 @@ export const stepClickUpCollect = createServerFn({ method: "POST" })
   });
 
 export const setClickUpGroup = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireClickUpImport("manage")])
   .inputValidator((d) =>
     z
       .object({
@@ -76,13 +72,12 @@ export const setClickUpGroup = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const s = await import("./clickup-import.server");
-    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
-    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const workspaceId = context.clickupWorkspaceId;
     return s.setGroup({ client: context.supabase, workspaceId, userId: context.userId }, data);
   });
 
 export const setClickUpPerson = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireClickUpImport("manage")])
   .inputValidator((d) =>
     z
       .object({
@@ -94,20 +89,18 @@ export const setClickUpPerson = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const s = await import("./clickup-import.server");
-    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
-    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const workspaceId = context.clickupWorkspaceId;
     return s.setPerson({ client: context.supabase, workspaceId, userId: context.userId }, data);
   });
 
 export const runClickUpImportStep = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireClickUpImport("manage")])
   .inputValidator((d) =>
     z.object({ runId: uuid, kind: z.enum(["apply", "assignees", "rollback"]) }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const s = await import("./clickup-import.server");
-    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
-    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const workspaceId = context.clickupWorkspaceId;
     return s.runStep(
       { client: context.supabase, workspaceId, userId: context.userId },
       data.kind,

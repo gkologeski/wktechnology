@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/command";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { HrScreenAccess } from "@/components/hr-access";
 import {
   getClickUpImportStatus,
   getClickUpImportTargets,
@@ -106,6 +107,14 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const fmt = (n: number) => n.toLocaleString("pt-BR");
 
 export function ClickUpImportPage() {
+  return (
+    <HrScreenAccess resources={["techprojects.clickup_import"]}>
+      <ClickUpImportContent />
+    </HrScreenAccess>
+  );
+}
+
+function ClickUpImportContent() {
   const qc = useQueryClient();
   const status = useServerFn(getClickUpImportStatus);
   const targets = useServerFn(getClickUpImportTargets);
