@@ -3666,7 +3666,7 @@
       "files": {
         "src/components/projects/task-core-fields.tsx": "2a74fe35cf612bd5368ccd7474083f8a18ea26ad9ab35bec20f972a2101d8069",
         "src/components/projects/task-details-sheet.tsx": "a621343a6749d977f6733bf53531821e64e428a6ed5a684afc2e35b0579c9494",
-        "src/routes/_authenticated/projects.tasks.tsx": "010ef89f73425eaaab69f1e70bfb57089c09d2d0481fd8e98e4f160fc1d0c3bf",
+        "src/routes/_authenticated/projects.tasks.tsx": "9b3ba9855313396da74d3dff24e78bba955fa126053ecab44579d1c9948575ae",
         "src/routes/_authenticated/projects.$id.tsx": "0c607ea4b65d7dd8a4347f3e0b42e64b23bd500c8fbb38980a749754d89dceeb"
       },
       "resources": ["techprojects.tasks"],

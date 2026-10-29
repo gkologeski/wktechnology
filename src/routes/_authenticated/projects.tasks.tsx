@@ -100,7 +100,14 @@ function ProjectTasksPage() {
   const [owner, setOwner] = useState<OwnerFilter>("all");
 
   const tasksKey = ["project_tasks", "all", { status, projectId, owner, search }] as const;
-  const { data: rows = [], isLoading } = useQuery({
+  const {
+    data: rows = [],
+    isLoading,
+    isError,
+    error: loadError,
+    refetch,
+    isFetching,
+  } = useQuery({
     queryKey: tasksKey,
     queryFn: () =>
       listTasksFn({
@@ -183,7 +190,29 @@ function ProjectTasksPage() {
   const closeTask = () =>
     void navigate({ to: ".", search: (prev) => ({ ...prev, taskId: undefined }), replace: true });
   const selectedTask = taskId ? (rows.find((t) => t.id === taskId) ?? null) : null;
-  const taskMissing = !!taskId && !isLoading && !selectedTask;
+  const taskMissing = !!taskId && !isLoading && !isError && !selectedTask;
+  // Falha de carga (ex.: tempo esgotado no banco) não pode parecer lista vazia.
+  const errorState = (
+    <div role="alert" className="p-12 text-center">
+      <ListTodo className="mx-auto h-10 w-10 text-muted-foreground" />
+      <h3 className="mt-4 text-lg font-medium">Não foi possível carregar as tarefas</h3>
+      <p className="mt-2 text-sm text-muted-foreground">
+        {loadError instanceof Error && loadError.message
+          ? loadError.message
+          : "O servidor demorou a responder."}{" "}
+        Tente novamente em instantes.
+      </p>
+      <Button
+        className="mt-4"
+        size="sm"
+        variant="outline"
+        disabled={isFetching}
+        onClick={() => void refetch()}
+      >
+        {isFetching ? "Tentando…" : "Tentar novamente"}
+      </Button>
+    </div>
+  );
 
   const {
     sorted: sortedRows,
@@ -268,7 +297,9 @@ function ProjectTasksPage() {
         />
       )}
 
-      {view === "kanban" ? (
+      {isError ? (
+        <div className="rounded-lg border bg-card">{errorState}</div>
+      ) : view === "kanban" ? (
         <KanbanBoard
           rows={gridFilters.filtered as Array<(typeof rows)[number] & { id: string }>}
           canUpdateRecord={(id) => workAccess.for(id).can_update}
