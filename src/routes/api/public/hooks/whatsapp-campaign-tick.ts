@@ -407,7 +407,7 @@ async function processPaced(camp: Campaign, interval: PacingInterval, startedAt:
         const res = await processCampaign(camp, 1);
         camp.sent += res.sent ?? 0;
         camp.failed += res.failed ?? 0;
-        return res;
+        return { ...res, attempted: (res.sent ?? 0) + (res.failed ?? 0) };
       },
       persistNextAt: async (ms) => {
         await supabaseAdmin

@@ -82,7 +82,7 @@ export async function runPacedLoop(p: {
   budgetMs?: number;
   now?: () => number;
   sleep: (ms: number) => Promise<void>;
-  sendOne: () => Promise<{ processed: number }>;
+  sendOne: () => Promise<{ processed: number; attempted?: number }>;
   persistNextAt: (ms: number) => Promise<void>;
   rng?: () => number;
 }): Promise<{ processed: number; nextAt: number }> {
@@ -99,6 +99,8 @@ export async function runPacedLoop(p: {
     const res = await p.sendOne();
     if (!res.processed) break;
     processed += res.processed;
+    // Ignorados (fixo, envio recente, cliente…) não gastam intervalo: segue direto.
+    if (res.attempted === 0) continue;
     nextAt = now() + randomIntervalSeconds(p.interval.min, p.interval.max, p.rng) * 1000;
     await p.persistNextAt(nextAt);
   }
