@@ -2899,7 +2899,7 @@
       "id": "service-channel-prompt-identity",
       "kind": "internal",
       "files": {
-        "src/lib/prospecting/sdr/agent.server.ts": "8a573e900523899b71596d8440128ff1b45a63d2c783377395bd169d5b0b23a8"
+        "src/lib/prospecting/sdr/agent.server.ts": "3febcca93b444936f07d21af149a6675374c8951fb29ca60fb65e85e8703045a"
       },
       "resources": [
         "system.channels"
@@ -4475,7 +4475,7 @@
       "files": {
         "src/lib/prospecting/sdr/conversation-state.ts": "d512312cd70a31fb1f02cd488f1f68153d1193281bf789dbb2e1a5f34b394cc6",
         "src/lib/prospecting/sdr/repetition.ts": "c7216d50c51eb70375689471f0749b262ed9e8e62afe131362e54aa91f1c88a9",
-        "src/lib/prospecting/sdr/turn.ts": "b3a524027e003999de6f4cd8a90378d792769c1e203c85ba5664e8d291f83c6c"
+        "src/lib/prospecting/sdr/turn.ts": "ea92e0092b497d92101119e05315de470a86e7d6fe882936c7a22e4b2884d303"
       },
       "rationale": "Pure SDR turn logic without network or database access: validates referral name/email/phone written by the customer, derives conversation state and detects near-repeat follow-ups. Callers (authorized worker and authenticated sandbox) keep their existing permission, workspace and CAS checks."
     },
