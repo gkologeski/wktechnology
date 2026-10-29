@@ -62,6 +62,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { HrScreenAccess } from "@/components/hr-access";
 import {
+  createClickUpHistoricalPerson,
   getClickUpImportStatus,
   getClickUpImportTargets,
   runClickUpImportStep,
@@ -766,6 +767,7 @@ function PeopleTable({
   onSaved: () => void;
 }) {
   const save = useServerFn(setClickUpPerson);
+  const createHistorical = useServerFn(createClickUpHistoricalPerson);
   const [pending, setPending] = useState<number | null>(null);
   const memberName = new Map(members.map((m) => [m.id, m.name]));
   if (!people.length)
@@ -788,6 +790,19 @@ function PeopleTable({
       onSaved();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não foi possível salvar.");
+    } finally {
+      setPending(null);
+    }
+  }
+
+  async function createPerson(p: Person) {
+    setPending(p.clickup_user_id);
+    try {
+      await createHistorical({ data: { clickupUserId: p.clickup_user_id } });
+      toast.success(`${p.username ?? "Pessoa"} cadastrada sem acesso.`);
+      onSaved();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível cadastrar.");
     } finally {
       setPending(null);
     }
@@ -875,6 +890,17 @@ function PeopleTable({
                       disabled={pending === p.clickup_user_id}
                     >
                       Confirmar
+                    </Button>
+                  )}
+                  {editable && p.status !== "confirmed" && p.email && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => createPerson(p)}
+                      disabled={pending === p.clickup_user_id}
+                      title="Cria a pessoa como membro inativo: o nome aparece nas tarefas, sem login nem acesso."
+                    >
+                      Cadastrar sem acesso
                     </Button>
                   )}
                   {editable && p.status !== "ignored" && (
