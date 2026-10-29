@@ -276,30 +276,54 @@ function MetricTile({
 
 // ============= TASKS KANBAN =============
 
+// Cada coluna carrega aos poucos (projetos chegam a 13 mil tarefas). Não há contagem exata
+// porque contar com a regra de acesso em milhares de linhas estoura o tempo do banco.
+const COLUMN_PAGE = 50;
+type TaskStatusKey = (typeof TASK_COLUMNS)[number]["key"];
+
+function useColumnTasks(projectId: string, status: TaskStatusKey) {
+  const list = useServerFn(listTasks);
+  const q = useInfiniteQuery({
+    queryKey: ["project-tasks", projectId, status],
+    initialPageParam: 0,
+    retry: 1,
+    queryFn: ({ pageParam }) =>
+      list({ data: { projectId, status, offset: pageParam, limit: COLUMN_PAGE + 1 } }),
+    getNextPageParam: (last, pages) =>
+      last.length > COLUMN_PAGE ? pages.length * COLUMN_PAGE : undefined,
+  });
+  const rows = useMemo(
+    () => (q.data?.pages ?? []).flatMap((p) => p.slice(0, COLUMN_PAGE)),
+    [q.data],
+  );
+  return { ...q, rows };
+}
+
 function TasksKanban({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
-  const list = useServerFn(listTasks);
   const upd = useServerFn(updateTask);
   const del = useServerFn(deleteTask);
   const [openCreate, setOpenCreate] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
-  const { data: tasks = [] } = useQuery({
-    queryKey: ["project-tasks", projectId],
-    queryFn: () => list({ data: { projectId } }),
-  });
+  const todo = useColumnTasks(projectId, "todo");
+  const doing = useColumnTasks(projectId, "doing");
+  const review = useColumnTasks(projectId, "review");
+  const done = useColumnTasks(projectId, "done");
+  const columns = useMemo(
+    () => ({ todo, doing, review, done }) as Record<TaskStatusKey, typeof todo>,
+    [todo, doing, review, done],
+  );
+  const tasks = useMemo(
+    () => [...todo.rows, ...doing.rows, ...review.rows, ...done.rows],
+    [todo.rows, doing.rows, review.rows, done.rows],
+  );
 
   const taskAccess = useWorkCapabilities(
     "techprojects.tasks",
     tasks.map((t) => t.id),
   );
   const { canAny: canTask } = usePermissions();
-  const grouped = useMemo(() => {
-    const m = new Map<string, any[]>();
-    for (const c of TASK_COLUMNS) m.set(c.key, []);
-    for (const t of tasks as any[]) m.get(t.status)?.push(t);
-    return m;
-  }, [tasks]);
 
   const move = async (taskId: string, status: string) => {
     if (!taskAccess.for(taskId).can_update) return;
