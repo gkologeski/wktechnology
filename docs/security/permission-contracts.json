@@ -2407,8 +2407,7 @@
       "kind": "service",
       "files": {
         "src/lib/prospecting/sdr/actions.server.ts": "5486e6e482416801a7883c274d6877ba57623dd925306d49ee3126582e46b3ca",
-        "src/routes/api/public/hooks/whatsapp-campaign-tick.ts": "2be596667a0c3f3f23ad146dce24d2dc8e73e3e6bf4425e813937d58be915bcd",
-        "src/lib/whatsapp/campaign-pacing.ts": "d79c9edcff2c27ccc94f2db0ecdbe977932bc93d8435e412d94561fd8b7d3ca5"
+        "src/routes/api/public/hooks/whatsapp-campaign-tick.ts": "2be596667a0c3f3f23ad146dce24d2dc8e73e3e6bf4425e813937d58be915bcd"
       },
       "resources": [
         "system.whatsapp",
@@ -4460,6 +4459,14 @@
           "name": "work read gate denies listing for an inactive member"
         }
       }
+    },
+    {
+      "id": "whatsapp-campaign-pacing-pure",
+      "kind": "presentation",
+      "files": {
+        "src/lib/whatsapp/campaign-pacing.ts": "d79c9edcff2c27ccc94f2db0ecdbe977932bc93d8435e412d94561fd8b7d3ca5"
+      },
+      "rationale": "Pure timing helpers for paced campaign dispatch (interval draw, loop that skips waiting after ignored recipients). No I/O, data access, actions or authorization; the caller (campaign tick worker) keeps cron auth, lease and assertSalesWorker."
     }
   ],
   "retired": {}
