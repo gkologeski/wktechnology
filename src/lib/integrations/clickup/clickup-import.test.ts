@@ -58,3 +58,44 @@ describe("importador ClickUp — fronteira de acesso", () => {
     await expect(assertClickUpImport(c, WS, USER, "manage")).rejects.toThrow(/Sem permissão/);
   });
 });
+
+describe("importador ClickUp — cadastrar responsável sem acesso", () => {
+  /** clickup_import_access liberado; user_has_permission decide a gestão de membros. */
+  const withMembers = (canManageMembers: boolean) => {
+    const calls: string[] = [];
+    const c = {
+      calls,
+      rpc: vi.fn(async (fn: string) => {
+        calls.push(fn);
+        if (fn === "clickup_import_access") return { data: true, error: null };
+        if (fn === "user_has_permission") return { data: canManageMembers, error: null };
+        return { data: { ok: true }, error: null };
+      }),
+      from: vi.fn(() => {
+        calls.push("from");
+        throw new Error("não deveria ler dados sem permissão");
+      }),
+    };
+    return c as unknown as SupabaseClient & { calls: string[] };
+  };
+
+  it("nega cadastrar sem a permissão de gerenciar membros, mesmo gerenciando o importador", async () => {
+    const { createHistoricalPerson } = await import("./clickup-import.server");
+    const c = withMembers(false);
+    await expect(
+      createHistoricalPerson({ client: c, workspaceId: WS, userId: USER }, 88077985),
+    ).rejects.toThrow();
+    expect(c.calls).toContain("user_has_permission");
+    expect(c.calls).not.toContain("from");
+    expect(c.calls).not.toContain("clickup_import_set_person");
+  });
+
+  it("nega cadastrar sem a permissão do importador do ClickUp", async () => {
+    const { createHistoricalPerson } = await import("./clickup-import.server");
+    const c = client(() => false);
+    await expect(
+      createHistoricalPerson({ client: c, workspaceId: WS, userId: USER }, 88077985),
+    ).rejects.toThrow(/Sem permissão/);
+    expect(c.calls).not.toContain("clickup_import_set_person");
+  });
+});
