@@ -239,9 +239,20 @@ export async function finishCollect(ctx: Ctx, runId: string, cursor: CollectCurs
       p_run: runId,
       p_groups: updated.slice(i, i + 400),
       p_tasks: [],
-      p_people: Object.entries(cursor.people)
-        .slice(0, i === 0 ? 500 : 0)
-        .map(([id, p]) => ({ id, username: p.username, email: p.email, task_count: p.tasks })),
+      p_people: [],
+    });
+  const people = Object.entries(cursor.people).map(([id, p]) => ({
+    id,
+    username: p.username,
+    email: p.email,
+    task_count: p.tasks,
+  }));
+  for (let i = 0; i < people.length; i += 400)
+    await rpc(ctx.client, "clickup_import_stage", {
+      p_run: runId,
+      p_groups: [],
+      p_tasks: [],
+      p_people: people.slice(i, i + 400),
     });
   const totalTasks = Object.values(cursor.counts).reduce((s, x) => s + x.tasks, 0);
   return rpc(ctx.client, "clickup_import_finish_collect", {
