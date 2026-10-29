@@ -180,7 +180,7 @@ function ClickUpImportContent() {
     let total = 0;
     try {
       for (let i = 0; i < 500; i++) {
-        const res = (await run({ data: { runId: r.id, kind } })) as Record<string, number | boolean>;
+        const res = await run({ data: { runId: r.id, kind } });
         if (kind === "apply") {
           total += Number(res["created"] ?? 0);
           const rem = Number(res["remaining"] ?? 0);

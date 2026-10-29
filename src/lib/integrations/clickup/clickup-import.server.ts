@@ -265,34 +265,78 @@ export async function finishCollect(ctx: Ctx, runId: string, cursor: CollectCurs
   });
 }
 
-export async function getStatus(ctx: Ctx) {
+export type ClickUpRun = {
+  id: string;
+  status: string;
+  counts: Record<string, number>;
+  applied_at: string | null;
+  created_at: string;
+};
+export type ClickUpGroupRow = {
+  id: string;
+  team_name: string;
+  space_name: string;
+  folder_name: string | null;
+  list_name: string;
+  task_count: number;
+  closed_count: number;
+  action: "import" | "skip";
+  reason: string | null;
+  target_space_id: string | null;
+  new_space_name: string | null;
+  target_project_id: string | null;
+  new_project_name: string | null;
+  new_project_status: string | null;
+  erp_list_name: string;
+  erp_project_id: string | null;
+  erp_list_id: string | null;
+};
+export type ClickUpPersonRow = {
+  clickup_user_id: number;
+  username: string | null;
+  email: string | null;
+  task_count: number;
+  user_id: string | null;
+  status: "confirmed" | "suggested" | "unmatched" | "ignored";
+  match_reason: string | null;
+};
+export type StepResult = Record<string, number | boolean | null>;
+
+export async function getStatus(ctx: Ctx): Promise<{
+  configured: boolean;
+  canManage: boolean;
+  run: ClickUpRun | null;
+  groups: ClickUpGroupRow[];
+  people: ClickUpPersonRow[];
+  linkedTasks: number;
+}> {
   await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "view");
   const canManage = await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "manage")
     .then(() => true)
     .catch(() => false);
   const { data: runs, error } = await ctx.client
     .from("clickup_import_runs" as never)
-    .select("*")
+    .select("id, status, counts, applied_at, created_at")
     .eq("workspace_id", ctx.workspaceId)
     .neq("status", "discarded")
     .order("created_at", { ascending: false })
     .limit(5);
   if (error) throw new Error(error.message);
-  const run = ((runs ?? []) as Record<string, unknown>[])[0] ?? null;
-  let groups: unknown[] = [];
+  const run = ((runs ?? []) as unknown as ClickUpRun[])[0] ?? null;
+  let groups: ClickUpGroupRow[] = [];
   if (run) {
     const g = await ctx.client
       .from("clickup_import_groups" as never)
       .select(
         "id, team_name, space_name, folder_name, list_name, task_count, closed_count, action, reason, target_space_id, new_space_name, target_project_id, new_project_name, new_project_status, erp_list_name, erp_project_id, erp_list_id",
       )
-      .eq("run_id", String(run["id"]))
+      .eq("run_id", run.id)
       .order("team_name")
       .order("space_name")
       .order("folder_name", { nullsFirst: true })
       .order("list_name");
     if (g.error) throw new Error(g.error.message);
-    groups = g.data ?? [];
+    groups = (g.data ?? []) as unknown as ClickUpGroupRow[];
   }
   const people = await ctx.client
     .from("clickup_import_people" as never)
@@ -305,7 +349,7 @@ export async function getStatus(ctx: Ctx) {
     const l = await ctx.client
       .from("clickup_import_links" as never)
       .select("external_id", { count: "exact", head: true })
-      .eq("created_run_id", String(run["id"]))
+      .eq("created_run_id", run.id)
       .eq("entity_type", "task");
     linkedTasks = l.count ?? 0;
   }
@@ -314,7 +358,7 @@ export async function getStatus(ctx: Ctx) {
     canManage,
     run,
     groups,
-    people: people.data ?? [],
+    people: (people.data ?? []) as unknown as ClickUpPersonRow[],
     linkedTasks,
   };
 }
@@ -396,5 +440,5 @@ export async function runStep(
       : kind === "assignees"
         ? "clickup_import_sync_assignees"
         : "clickup_import_rollback_step";
-  return rpc<Record<string, unknown>>(ctx.client, fn, { p_run: runId, p_limit: 300 });
+  return rpc<StepResult>(ctx.client, fn, { p_run: runId, p_limit: 300 });
 }
