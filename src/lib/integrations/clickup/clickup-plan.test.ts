@@ -95,6 +95,16 @@ describe("organização proposta do ClickUp", () => {
   });
 });
 
+describe("nome da lista", () => {
+  it("lista e espaço genéricos usam o nome do workspace do cliente", () => {
+    const g = planGroup(
+      list({ teamName: "OS - ActiveCorp", spaceName: "Space", listName: "List" }),
+      erp,
+    );
+    expect(g.erp_list_name).toBe("OS - ActiveCorp");
+  });
+});
+
 describe("conversão de tarefas", () => {
   it("status fechado vira concluído e nomes conhecidos viram etapas", () => {
     expect(mapStatus("qualquer", "closed")).toBe("done");

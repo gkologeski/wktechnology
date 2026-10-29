@@ -65,7 +65,7 @@ function cleanTeamName(s: string): string {
   return s.replace(/\[arquivado\]|\(arquivado\)/gi, "").trim();
 }
 
-const GENERIC_LIST = new Set(["list", "lista", ""]);
+const GENERIC_LIST = new Set(["list", "lista", "space", "espaco", ""]);
 
 type SpaceRule = {
   space: string;
@@ -111,9 +111,13 @@ export function planGroup(
     folder_name: l.folderName,
     list_ext_id: l.listId,
     list_name: l.listName,
-    erp_list_name: GENERIC_LIST.has(normName(l.listName))
-      ? (l.folderName ?? l.spaceName)
-      : l.listName,
+    erp_list_name: !GENERIC_LIST.has(normName(l.listName))
+      ? l.listName
+      : l.folderName && !GENERIC_LIST.has(normName(l.folderName))
+        ? l.folderName
+        : !GENERIC_LIST.has(normName(l.spaceName))
+          ? l.spaceName
+          : cleanTeamName(l.teamName),
   };
   if (CLICKUP_EXCLUDED_TEAMS.some((t) => normName(t) === normName(l.teamName))) {
     return {
