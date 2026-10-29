@@ -83,6 +83,7 @@ export const getProject = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    if (!(await workCanRead(supabase, "techprojects.projects"))) return null;
     const { data: row, error } = await workCostTable(supabase, "projects")
       .select(
         "*, contracts(id, number, title, currency, counterparty_company_id), services(id, name, currency)",

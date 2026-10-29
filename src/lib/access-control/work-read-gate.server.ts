@@ -31,7 +31,10 @@ export async function workTimeCan(
 ): Promise<boolean> {
   const { data, error } = await call(client, "work_time_context", {});
   if (error) throw new Error(error.message);
-  const ctx = (data ?? {}) as { time_grants?: Record<string, unknown> | string[]; read_only?: boolean };
+  const ctx = (data ?? {}) as {
+    time_grants?: Record<string, unknown> | string[];
+    read_only?: boolean;
+  };
   if (action !== "view" && ctx.read_only) return false;
   const grants = ctx.time_grants ?? {};
   const has = (k: string) => (Array.isArray(grants) ? grants.includes(k) : k in grants);
