@@ -1846,7 +1846,7 @@
         "src/lib/whatsapp.functions.ts": "1134b8ac720de7dcd2dfb45acfbbcc23d3c55351755afad874ec9fb80ce87aac",
         "src/lib/whatsapp-campaigns.functions.ts": "d63dd9ddfbd6107481a27cc8631db5a28044326cd2c0f74b79a04947ae2252bb",
         "src/routes/_authenticated/inbox.index.tsx": "6871432118a6bd8ef6477bf0ca6ef3bd14a00e7fbec3beef7bb955f610daee80",
-        "src/routes/_authenticated/inbox.whatsapp.tsx": "2ded2692dc7d1772d9b68dc8787ab276322052e927c702c92968c3e82145515c",
+        "src/routes/_authenticated/inbox.whatsapp.tsx": "165ac43240712c3713a9b7daec6a059aad630a3a309ae77dd3f38ccd7aa8ea94",
         "src/routes/_authenticated/campaigns.whatsapp.tsx": "5dfdec509a34b8de6af31a3e8df677edcf9b00b9722a0b5c3d7cc6e820876dfa",
         "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9",
         "drizzle/migrations/0263_wa_outbound_activity_trigger.sql": "6c6a9521a5cfa09cd1724061fd78939fa94d56344ccb8c3052418ea9426a96e0",
@@ -3746,20 +3746,20 @@
       "id": "inbox-delivery-failure-label",
       "kind": "presentation",
       "files": {
-        "src/components/inbox/inbox-workspace.tsx": "6306e878d4a1767ade0633d268b3f88ccfe3b1d06020604552d0807cf879bf5d",
+        "src/components/inbox/delivery-failure-label.tsx": "d336f1bff6bac02fb5f1d7a9dc8c31c1b9e00e6b8d6a4ddf586e7cc58fe55899",
         "src/lib/whatsapp/delivery-error.ts": "ad2b72d7c1e433d7f76129a94f92b2c341356219cbc4536cb586cdb11ec5715c"
       },
       "resources": [],
       "actions": [],
       "scopes": [],
       "permission_keys": [],
-      "rationale": "Pure translation of WhatsApp delivery error codes and a small label under the message bubble. No data access or action: it only formats error fields of messages already loaded under the whatsapp-cloud-authenticated-routing contract."
+      "rationale": "Pure translation of WhatsApp delivery error codes and a small label rendered under the message bubble (no handlers, no data access). It only formats error fields of messages already loaded under the whatsapp-cloud-authenticated-routing contract."
     },
     {
       "id": "projects-core-functions",
       "kind": "business",
       "files": {
-        "src/lib/projects.functions.ts": "8eb05c6aefbb0fb75e60f1b45cbf397187e84debbf8a093d2583b84fd223016a",
+        "src/lib/projects.functions.ts": "1c21f31612d95a4ba4062f2f2861e7bfafc53ba96ca3c81be03a3f555082989a",
         "drizzle/migrations/0270_project_tasks_list_order_idx.sql": "07d21d3555ea051bcffed01768b5f553d1f232f48707c8e6a99508d4de2c7dba",
         "drizzle/migrations/0271_project_tasks_project_status_sort_idx.sql": "d322f1f7ccbff70366e149140c915a18e1a16a36476157f127913a38c63edbae",
         "drizzle/migrations/0272_project_tasks_status_partial_idx.sql": "a92803906adba67c20581284aea6d40e5f32de147660f119635ea0a00f1fa24f",

@@ -518,7 +518,6 @@ export const completeMilestone = createServerFn({ method: "POST" })
   .middleware([requireWorkPermission("techprojects.milestones", "update")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { workRpc } = await import("@/lib/access-control/work-core.server");
     return workRpc<
       import("@/integrations/supabase/types").Database["public"]["Tables"]["project_milestones"]["Row"]
     >(context.supabase, "project_milestone_complete_checked", { p_id: data.id });
@@ -695,7 +694,6 @@ export const getProjectFinancials = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { computeProjectFinancials } = await import("@/lib/projects/financials");
     const { supabase } = context;
-    const { workRpc } = await import("@/lib/access-control/work-core.server");
     await workRpc(supabase, "work_area_authorize", {
       r: "techprojects.projects",
       a: "view",
