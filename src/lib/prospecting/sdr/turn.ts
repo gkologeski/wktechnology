@@ -155,7 +155,7 @@ export function preTurnFacts(i: TurnInput): { facts: string[]; explicitOptOut: b
       .find(Boolean);
     if (phone)
       facts.push(
-        `A mensagem atual contém um telefone legível (${phone.phoneE164}${phone.name ? `, nome: ${phone.name}` : ""}); classifique em situation.shared_contact se é de outra pessoa (referral) ou outro número do próprio cliente (own_corporate). O registro só acontece pelo sistema após esta resposta.`,
+        `A mensagem atual contém um telefone legível (${phone.phoneE164}${phone.name ? `, nome: ${phone.name}` : ""}); classifique em situation.shared_contact se é de outra pessoa (referral) ou outro número do próprio cliente (own_corporate). O registro só acontece pelo sistema após esta resposta.${phone.name ? "" : " Não há nome escrito: se for indicação, não comente nem repita que recebeu um telefone; agradeça brevemente e pergunte o nome da pessoa com quem deve falar nesse número."}`,
       );
     const mail = currentInbound(i.history)
       .map((m) => parseSharedEmail(m.body))
