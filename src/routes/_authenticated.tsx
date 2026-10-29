@@ -166,7 +166,8 @@ function AuthenticatedLayout() {
   const accessPending =
     (roleRestricted && roleLoading && !roleError) ||
     (!!pathModule && (accessLoading || licenseLoading));
-  const accessFailed = (roleRestricted && roleError) || (!!pathModule && (licenseError || accessError));
+  const accessFailed =
+    (roleRestricted && roleError) || (!!pathModule && (licenseError || accessError));
   const blocked = accessPending || accessFailed || roleBlocked || licenseBlocked || moduleBlocked;
 
   return (

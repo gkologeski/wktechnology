@@ -27,7 +27,10 @@ async function fetchMyRole(userId: string): Promise<AppRole> {
   ]);
   if (owned.error) throw owned.error;
   if (rows.error) throw rows.error;
-  return pickHighestRole((owned.data ?? []).length > 0, (rows.data ?? []).map((r) => r.role));
+  return pickHighestRole(
+    (owned.data ?? []).length > 0,
+    (rows.data ?? []).map((r) => r.role),
+  );
 }
 
 export function useMyRole() {
