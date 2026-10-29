@@ -252,7 +252,7 @@ function questionList(questions: CanonicalQuestion[]): string {
 export const FOLLOW_UP_GUIDANCE = [
   "- Tipo de turno: retomada automática (sem nova mensagem do cliente).",
   "- Como retomar: leia o histórico inteiro e continue exatamente de onde a conversa parou. Identifique o último assunto pendente (material ou apresentação enviada, proposta, retorno que o cliente prometeu dar, reunião, dúvida em aberto) e retome por ele.",
-  "- Se o cliente disse que ia olhar algo ou daria retorno, pergunte de forma leve se ele conseguiu ver (ex.: \"Conseguiu dar uma olhada na apresentação?\").",
+  '- Se o cliente disse que ia olhar algo ou daria retorno, pergunte de forma leve se ele conseguiu ver (ex.: "Conseguiu dar uma olhada na apresentação?").',
   "- Se já houve conversa, NÃO se apresente de novo, NÃO repita a mensagem de abertura e NÃO refaça perguntas já respondidas.",
   "- Seja curto: uma ou duas frases e uma única pergunta de retomada, chamando o cliente pelo nome se já conhecido.",
   "- Só use a abordagem de abertura se o cliente nunca respondeu.",
