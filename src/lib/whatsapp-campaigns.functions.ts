@@ -577,7 +577,12 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
         .select("recent_contact_days, exclude_customers, exclude_open_deals")
         .eq("id", data.id)
         .single();
-      const pending: { id: string; phone: string; override_recent: boolean | null; override_commercial: boolean | null }[] = [];
+      const pending: {
+        id: string;
+        phone: string;
+        override_recent: boolean | null;
+        override_commercial: boolean | null;
+      }[] = [];
       for (let from = 0; ; from += 1000) {
         const { data: page, error: pErr } = await supabase
           .from("whatsapp_campaign_recipients")

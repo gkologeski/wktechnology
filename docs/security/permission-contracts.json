@@ -2128,7 +2128,7 @@
       "kind": "business",
       "files": {
         "src/lib/whatsapp.functions.ts": "1134b8ac720de7dcd2dfb45acfbbcc23d3c55351755afad874ec9fb80ce87aac",
-        "src/lib/whatsapp-campaigns.functions.ts": "be7676bc8c844f364f3b7d8de544c28ec1f8e61fe2157a291d87317aa492aff1",
+        "src/lib/whatsapp-campaigns.functions.ts": "237a5c218e6e86b54f790a84cbee674325a0692da1a7e82980f96b2999ef0913",
         "src/routes/_authenticated/inbox.index.tsx": "6871432118a6bd8ef6477bf0ca6ef3bd14a00e7fbec3beef7bb955f610daee80",
         "src/routes/_authenticated/inbox.whatsapp.tsx": "165ac43240712c3713a9b7daec6a059aad630a3a309ae77dd3f38ccd7aa8ea94",
         "src/routes/_authenticated/campaigns.whatsapp.tsx": "03099933c701ea7007f30e5a160fc394923be5d2d981b12f3cdf50ab9eb77d3f",
