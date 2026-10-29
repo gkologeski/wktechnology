@@ -16,7 +16,9 @@ function client(result: { data: unknown; error: { message: string } | null }) {
 describe("work record boundary (techprojects.tasks)", () => {
   it("work record boundary allows an authorized active member to update a task", async () => {
     const { client: c, rpc } = client({ data: true, error: null });
-    await expect(assertWorkRecord(c, "techprojects.tasks", TASK, "update")).resolves.toBeUndefined();
+    await expect(
+      assertWorkRecord(c, "techprojects.tasks", TASK, "update"),
+    ).resolves.toBeUndefined();
     expect(rpc).toHaveBeenCalledWith("work_record_access", {
       r: "techprojects.tasks",
       i: TASK,
