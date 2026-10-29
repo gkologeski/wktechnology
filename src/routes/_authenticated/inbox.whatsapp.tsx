@@ -674,12 +674,6 @@ function WhatsAppInbox() {
                       outbound={m.direction === "outbound"}
                       when={m.created_at}
                       status={m.direction === "outbound" ? m.status : null}
-                      failure={
-                        m.direction === "outbound" &&
-                        (m.status === "failed" || m.status === "undelivered")
-                          ? describeDeliveryError(m.error_code, m.error_message)
-                          : null
-                      }
                     >
                       {m.media_url && (
                         <div className="mb-1">
