@@ -10,6 +10,11 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
+import {
+  assertWorkTimeCan,
+  workCanRead,
+  workTimeCan,
+} from "@/lib/access-control/work-read-gate.server";
 
 const projectStatusEnum = z.enum(["planning", "active", "on_hold", "done", "cancelled"]);
 const taskStatusEnum = z.enum(["todo", "doing", "review", "done"]);
@@ -33,6 +38,7 @@ export const listProjects = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    if (!(await workCanRead(supabase, "techprojects.projects"))) return [];
     let q = workCostTable(supabase, "projects")
       .select(
         "*, contracts(id, number, title, counterparty_company_id, companies:counterparty_company_id(id, name)), services(id, name)",
@@ -61,6 +67,7 @@ export const listProjectIds = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    if (!(await workCanRead(supabase, "techprojects.projects"))) return [];
     let q = workCostTable(supabase, "projects").select("id").order("id");
     if (data.status) q = q.eq("status", data.status);
     if (data.search?.trim()) q = q.ilike("name", `%${data.search.trim()}%`);
@@ -225,6 +232,7 @@ export const listTasks = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    if (!(await workCanRead(supabase, "techprojects.tasks"))) return [];
     let q = supabase
       .from("project_tasks")
       .select("*")
@@ -361,6 +369,7 @@ export const listAllProjectTasks = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    if (!(await workCanRead(supabase, "techprojects.tasks"))) return [];
     const offset = data.offset ?? 0;
     const limit = data.limit ?? 500;
     let q = supabase
@@ -395,6 +404,7 @@ export const listAllProjectTaskIds = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    if (!(await workCanRead(supabase, "techprojects.tasks"))) return [];
     let q = supabase.from("project_tasks").select("id").order("id");
     if (data.status) q = q.eq("status", data.status);
     if (data.projectId) q = q.eq("project_id", data.projectId);
@@ -529,6 +539,7 @@ export const listTimeEntries = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    if (!(await workTimeCan(supabase, "view"))) return [];
     let q = supabase
       .from("project_time_entries")
       .select("*, project_tasks(id, title), projects(id, name)")
@@ -559,6 +570,7 @@ export const logTime = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    await assertWorkTimeCan(supabase, "create");
     const workspaceId = await resolveActiveWorkspace(userId);
     const { data: row, error } = await supabase
       .from("project_time_entries")
