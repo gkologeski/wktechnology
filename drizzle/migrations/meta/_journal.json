@@ -1863,6 +1863,13 @@
       "when": 1793225854272,
       "tag": "0265_wa_outbound_activity_contact_owner_fallback",
       "breakpoints": true
+    },
+    {
+      "idx": 266,
+      "version": "7",
+      "when": 1793241212786,
+      "tag": "0266_projects_perf_indexes",
+      "breakpoints": true
     }
   ]
 }
