@@ -356,9 +356,9 @@ function ClickUpImportContent() {
               hint={`${fmt(totals.skipped)} fora da importação`}
             />
             <MetricCard
-              label="Tarefas criadas no TechProjects"
+              label="Tarefas criadas"
               value={fmt(data?.linkedTasks ?? 0)}
-              hint="por esta importação"
+              hint="no TechProjects, por esta importação"
             />
             <MetricCard
               label="Responsáveis a revisar"
