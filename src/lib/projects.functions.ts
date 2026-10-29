@@ -1,6 +1,6 @@
 import { workCostTable } from "@/lib/access-control/work-cost-projection";
 import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
-import { assertWorkRecord } from "@/lib/access-control/work-core.server";
+import { assertWorkRecord, workRpc } from "@/lib/access-control/work-core.server";
 // Server functions for Projects (Sprint 5 - PSA MVP).
 // CRUD de projetos, tarefas, marcos, apontamento de horas e membros.
 // Marco billable concluído → gera financial_entry.
@@ -735,7 +735,6 @@ export const getTimeActionCapabilities = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ ids: z.array(z.string().uuid()).max(500) }).parse(i))
   .handler(async ({ data, context }) => {
-    const { workRpc } = await import("@/lib/access-control/work-core.server");
     return workRpc<{ can_create: boolean; rows: Array<{ id: string; can_delete: boolean }> }>(
       context.supabase,
       "project_time_capabilities",
