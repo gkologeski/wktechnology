@@ -1851,9 +1851,7 @@
         "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9",
         "drizzle/migrations/0263_wa_outbound_activity_trigger.sql": "6c6a9521a5cfa09cd1724061fd78939fa94d56344ccb8c3052418ea9426a96e0",
         "drizzle/migrations/0264_wa_outbound_activity_fast_lookup.sql": "120f2512f182b4b1f4a0f89489dbe4cff8c00f7be3be5f31ff9b5b5ccea6a53a",
-        "drizzle/migrations/0265_wa_outbound_activity_contact_owner_fallback.sql": "f951df73a114e86f227c877eddfff7960b975bc8cc723add13b9d3940090baa0",
-        "src/components/inbox/inbox-workspace.tsx": "6306e878d4a1767ade0633d268b3f88ccfe3b1d06020604552d0807cf879bf5d",
-        "src/lib/whatsapp/delivery-error.ts": "ad2b72d7c1e433d7f76129a94f92b2c341356219cbc4536cb586cdb11ec5715c"
+        "drizzle/migrations/0265_wa_outbound_activity_contact_owner_fallback.sql": "f951df73a114e86f227c877eddfff7960b975bc8cc723add13b9d3940090baa0"
       },
       "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
       "actions": ["view", "create", "update", "manage"],
@@ -3200,6 +3198,10 @@
         {
           "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
           "symbol": "sales_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0262_contact_domain_link_respect_unlink.sql",
+          "symbol": "contact_link_company_by_domain"
         }
       ],
       "tests": {
@@ -3671,11 +3673,7 @@
         "src/components/projects/task-core-fields.tsx": "2a74fe35cf612bd5368ccd7474083f8a18ea26ad9ab35bec20f972a2101d8069",
         "src/components/projects/task-details-sheet.tsx": "a621343a6749d977f6733bf53531821e64e428a6ed5a684afc2e35b0579c9494",
         "src/routes/_authenticated/projects.tasks.tsx": "8573bdf7bc21c0a5074829d0e2e93f7c4b18aaf0214125aa8991f0332457dcc3",
-        "src/routes/_authenticated/projects.$id.tsx": "ce167d2900210b66a556c0fed7f13edcdb3cd9859e5d51e05c80426b088a6235",
-        "src/lib/projects.functions.ts": "6d866ae62bb65f2befa78893b1cca2113be174d107b5cfc412f07be6dae5f961",
-        "drizzle/migrations/0270_project_tasks_list_order_idx.sql": "306dc58ccd7728869aa7452475aef06e706c69fc90400418e69fb44cbb6ca8fa",
-        "drizzle/migrations/0271_project_tasks_project_status_sort_idx.sql": "11a7d095696ff90c437aec2dce79e3524f3bfc5b2b49ba3766da92110f674978",
-        "drizzle/migrations/0272_project_tasks_status_partial_idx.sql": "a0920e77b2b17ac95d15a82ed6f4bb458ed9c04e4de5e600f97750c478362f31"
+        "src/routes/_authenticated/projects.$id.tsx": "ce167d2900210b66a556c0fed7f13edcdb3cd9859e5d51e05c80426b088a6235"
       },
       "resources": ["techprojects.tasks"],
       "actions": ["view", "update"],
@@ -3688,7 +3686,7 @@
         "techprojects.tasks.update.team",
         "techprojects.tasks.update.workspace"
       ],
-      "rationale": "Task rows and kanban cards open the task details panel (also via ?taskId=). The panel only shows tasks already returned by the RLS-filtered lists and edits title/status/assignee/due/hours/description through the existing updateTask server function, which re-checks the role keys and the record via assertWorkRecord -> work_record_access. The UI disables fields from per-record capabilities (useWorkCapabilities/useWorkRecordCapability). Other areas of the project page (milestones, members, hours, billing) are unchanged and keep their own server checks. Task list and project board load in pages (listAllProjectTasks/listTasks offset+limit, per-status board columns) through the same authenticated client, so work_view RLS still filters every row; 0270-0272 add read indexes only (no policy, grant or data change).",
+      "rationale": "Task rows and kanban cards open the task details panel (also via ?taskId=). The panel only shows tasks already returned by the RLS-filtered lists and edits title/status/assignee/due/hours/description through the existing updateTask server function, which re-checks the role keys and the record via assertWorkRecord -> work_record_access. The UI disables fields from per-record capabilities (useWorkCapabilities/useWorkRecordCapability). Other areas of the project page (milestones, members, hours, billing) are unchanged and keep their own server checks. The task list and the project board load in pages (per-status board columns with 'Carregar mais'); every row still comes from the RLS-filtered server functions of the projects-core-functions contract.",
       "controls": [
         {
           "file": "src/lib/access-control/use-work-capabilities.ts",
@@ -3743,6 +3741,133 @@
       "scopes": [],
       "permission_keys": [],
       "rationale": "Static PT-BR labels for AI usage features (adds the Inbox company-suggestion label). No data access, actions or routes; AI calls keep their own authenticated workspace checks."
+    },
+    {
+      "id": "inbox-delivery-failure-label",
+      "kind": "presentation",
+      "files": {
+        "src/components/inbox/inbox-workspace.tsx": "6306e878d4a1767ade0633d268b3f88ccfe3b1d06020604552d0807cf879bf5d",
+        "src/lib/whatsapp/delivery-error.ts": "ad2b72d7c1e433d7f76129a94f92b2c341356219cbc4536cb586cdb11ec5715c"
+      },
+      "resources": [],
+      "actions": [],
+      "scopes": [],
+      "permission_keys": [],
+      "rationale": "Pure translation of WhatsApp delivery error codes and a small label under the message bubble. No data access or action: it only formats error fields of messages already loaded under the whatsapp-cloud-authenticated-routing contract."
+    },
+    {
+      "id": "projects-core-functions",
+      "kind": "business",
+      "files": {
+        "src/lib/projects.functions.ts": "6d866ae62bb65f2befa78893b1cca2113be174d107b5cfc412f07be6dae5f961",
+        "drizzle/migrations/0270_project_tasks_list_order_idx.sql": "07d21d3555ea051bcffed01768b5f553d1f232f48707c8e6a99508d4de2c7dba",
+        "drizzle/migrations/0271_project_tasks_project_status_sort_idx.sql": "d322f1f7ccbff70366e149140c915a18e1a16a36476157f127913a38c63edbae",
+        "drizzle/migrations/0272_project_tasks_status_partial_idx.sql": "a92803906adba67c20581284aea6d40e5f32de147660f119635ea0a00f1fa24f"
+      },
+      "resources": [
+        "techprojects.projects",
+        "techprojects.tasks",
+        "techprojects.milestones",
+        "techprojects.members",
+        "techprojects.time_entries",
+        "techprojects.profitability"
+      ],
+      "actions": ["view", "create", "update", "delete", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techprojects.projects.view.own",
+        "techprojects.projects.view.team",
+        "techprojects.projects.view.workspace",
+        "techprojects.projects.create.own",
+        "techprojects.projects.create.workspace",
+        "techprojects.projects.update.own",
+        "techprojects.projects.update.team",
+        "techprojects.projects.update.workspace",
+        "techprojects.projects.delete.own",
+        "techprojects.projects.delete.workspace",
+        "techprojects.tasks.view.own",
+        "techprojects.tasks.view.team",
+        "techprojects.tasks.view.workspace",
+        "techprojects.tasks.create.own",
+        "techprojects.tasks.create.team",
+        "techprojects.tasks.create.workspace",
+        "techprojects.tasks.update.own",
+        "techprojects.tasks.update.team",
+        "techprojects.tasks.update.workspace",
+        "techprojects.tasks.delete.own",
+        "techprojects.tasks.delete.team",
+        "techprojects.tasks.delete.workspace",
+        "techprojects.milestones.view.workspace",
+        "techprojects.milestones.create.workspace",
+        "techprojects.milestones.update.workspace",
+        "techprojects.milestones.delete.workspace",
+        "techprojects.members.view.workspace",
+        "techprojects.members.manage.workspace",
+        "techprojects.time_entries.view.own",
+        "techprojects.time_entries.view.workspace",
+        "techprojects.time_entries.create.own",
+        "techprojects.time_entries.delete.workspace",
+        "techprojects.profitability.view.workspace"
+      ],
+      "rationale": "Existing TechProjects server functions. Every function requires an authenticated session; reads (projects, tasks, time entries) run with the user client so work_view/work_context_access RLS filters every row by workspace, active membership, scope and deny. Writes re-check role keys (assertAnyPermission) and the record (assertWorkRecord -> work_record_access); milestones, members and profitability use requireWorkPermission. This delivery only adds optional offset/limit/status paging to listTasks/listAllProjectTasks (same client, same RLS) and read indexes on project_tasks (0270-0272: no policy, grant or data change).",
+      "controls": [
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_record_access"
+        },
+        {
+          "file": "drizzle/migrations/0270_project_tasks_list_order_idx.sql",
+          "symbol": "project_tasks"
+        },
+        {
+          "file": "drizzle/migrations/0271_project_tasks_project_status_sort_idx.sql",
+          "symbol": "project_tasks"
+        },
+        {
+          "file": "drizzle/migrations/0272_project_tasks_status_partial_idx.sql",
+          "symbol": "project_tasks"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/work-record-boundary-ci.test.ts",
+          "name": "work record boundary allows an authorized active member to update a task"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/work-record-boundary-ci.test.ts",
+          "name": "work record boundary rejects a task update without the update key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/work-record-boundary-ci.test.ts",
+          "name": "work record boundary rejects a task update under explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/work-record-boundary-ci.test.ts",
+          "name": "work record boundary rejects a task from another workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/work-record-boundary-ci.test.ts",
+          "name": "work record boundary rejects an inactive workspace member"
+        }
+      }
     }
   ],
   "retired": {}
