@@ -1167,6 +1167,36 @@ describe("estado explícito da conversa (commit atômico)", () => {
     expect(db.find("sdr_enrollments", "e1")!.cancel_reason).toBe("referral_received");
   });
 
+  it("indicação só por e-mail (caso DSIN): cria Lead com o e-mail e não agenda retomada", async () => {
+    auto();
+    db.find("whatsapp_messages", "m1")!.body =
+      "sou responsável pelo desenvolvimento\nsobre infraestrutura, o responsável é o Sr. Bruno bruno@dsin.com.br";
+    job(db);
+    const j = await claimOne(db);
+    const d = deps({
+      reply: "Obrigada pela indicação do Bruno!",
+      intent: "continue",
+      offer_keys: [],
+      material_ids: [],
+      answers: [],
+      handoff_reason: "",
+      situation: { conversation: "active", shared_contact: "referral", referral_name: "Bruno" },
+    });
+    expect(await processJob(db, j, d)).toBe("sent");
+    const act = db.t("sdr_actions").find((a) => a.kind === "referral_saved");
+    expect(act?.payload).toMatchObject({
+      email: "bruno@dsin.com.br",
+      name: "Bruno",
+      status: "created",
+    });
+    const lead = db.t("leads").find((l) => l.email === "bruno@dsin.com.br");
+    expect(lead).toMatchObject({ first_name: "Bruno" });
+    expect(lead?.whatsapp_e164 ?? null).toBeNull();
+    const enr = db.find("sdr_enrollments", "e1")!;
+    expect(enr.follow_up_at).toBeNull();
+    expect(enr.conversation_state.referral_received.email).toBe("bruno@dsin.com.br");
+  });
+
   it("automação 'pergunta sobre IA' desligada por padrão: ninguém é transferido", async () => {
     const asked = new Date(Date.now() - 2 * 3600_000).toISOString();
     const answered = new Date(Date.now() - 3600_000).toISOString();

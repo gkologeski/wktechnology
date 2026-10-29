@@ -183,6 +183,7 @@ export const SDR_BLOCK_CATEGORY: Record<string, BlockCategory> = {
   invalid_origin: "technical",
   circuit_open: "technical",
   repetition_detected: "technical",
+  followup_repetition: "conversation",
   conversation_rate_anomaly: "technical",
   quota_check_failed: "technical",
   provider_failed: "technical",
@@ -453,6 +454,23 @@ export async function sendSdrMessage(
       .maybeSingle();
     if (lastOut?.body && normText(lastOut.body) === normText(p.text))
       return blocked("repetition_detected");
+    if (job.kind === "follow_up") {
+      // Retomada quase igual a uma das últimas mensagens enviadas: cancelada.
+      const { isNearRepeat } = await import("./repetition");
+      const { data: recentOut } = await admin
+        .from("whatsapp_messages")
+        .select("body")
+        .eq("conversation_id", conv.id)
+        .eq("direction", "outbound")
+        .order("created_at", { ascending: false })
+        .limit(3);
+      if (
+        ((recentOut ?? []) as { body: string | null }[]).some(
+          (m) => !!m.body && isNearRepeat(p.text, m.body),
+        )
+      )
+        return blocked("followup_repetition");
+    }
     const { count: lastHour } = await admin
       .from("sdr_turn_jobs")
       .select("id", { count: "exact", head: true })

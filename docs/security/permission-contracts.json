@@ -2406,7 +2406,7 @@
       "id": "whatsapp-cloud-workers",
       "kind": "service",
       "files": {
-        "src/lib/prospecting/sdr/actions.server.ts": "5486e6e482416801a7883c274d6877ba57623dd925306d49ee3126582e46b3ca",
+        "src/lib/prospecting/sdr/actions.server.ts": "9431b626fc4e47a8b1fbca0edc704a8b37a8e5bcaf4f42cf1efe00ce98cace9e",
         "src/routes/api/public/hooks/whatsapp-campaign-tick.ts": "2be596667a0c3f3f23ad146dce24d2dc8e73e3e6bf4425e813937d58be915bcd"
       },
       "resources": [
@@ -2434,7 +2434,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Existing lease, cron capability and sales_worker_authorize remain mandatory; Lia uses conversation number and campaigns fixed selected sender; rejection pauses direct campaigns instead of failover.",
+      "rationale": "Existing lease, cron capability and sales_worker_authorize remain mandatory; Lia uses conversation number and campaigns fixed selected sender; rejection pauses direct campaigns instead of failover. Review 29/10/2026: automatic follow-ups nearly identical to one of the last three sent messages are cancelled (followup_repetition); text-similarity check only, no new data access or permission change.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-worker.server.ts",
@@ -2813,7 +2813,7 @@
       "kind": "service",
       "files": {
         "src/lib/prospecting/sdr/channel-runtime.server.ts": "a1528c862f67ac28a1b664d975c6aaf7b534d280bc8345a66e861142a5fe12cf",
-        "src/lib/prospecting/sdr/worker.server.ts": "cd13f9c73227ade460282d91852229634ce186c95d85f948c50c42a7c16fb6f1",
+        "src/lib/prospecting/sdr/worker.server.ts": "e77259513c3b7c3eac3517d309ac371bb040c29ac8760a88e64157baa69a2183",
         "src/lib/prospecting/sdr/ingest.server.ts": "c700c4343049bbf926c1dbd3cb8a6b393a8f1b9b5259d8e2ab3d4cc89fed056e",
         "src/lib/prospecting/sdr/tools/runtime.ts": "dcb7dd1240f535cf9ff084ad43989bafcd4db6d56f02ebb2c8efbc18965d4918",
         "drizzle/migrations/0257_service_channel_runtime_identity.sql": "2d829bed7441a6f7c8dc5c26f374ee4b66853f04a23caae6cd2d3e915815617f"
@@ -2836,7 +2836,7 @@
         "system.channels.view.workspace",
         "system.channels.manage.workspace"
       ],
-      "rationale": "Explicitly configured account routing only; discovery does not activate or silence legacy agents. The provider-only inbound RPC locks the tenant conversation, preserves human/paused ownership, active membership and opt-out, and never creates a receptive follow-up. Runtime validates account/agent/mode before inference, tools, commit and send. Existing assertSalesWorker, claim lease, CAS and transport checks remain mandatory. Identity snapshot writes are service-only. Browser configuration is checked by the channel matrix. Synthetic SQL validates actual permissions and RPC behavior in a rollback transaction.",
+      "rationale": "Explicitly configured account routing only; discovery does not activate or silence legacy agents. The provider-only inbound RPC locks the tenant conversation, preserves human/paused ownership, active membership and opt-out, and never creates a receptive follow-up. Runtime validates account/agent/mode before inference, tools, commit and send. Existing assertSalesWorker, claim lease, CAS and transport checks remain mandatory. Identity snapshot writes are service-only. Browser configuration is checked by the channel matrix. Synthetic SQL validates actual permissions and RPC behavior in a rollback transaction. Review 29/10/2026: referral by email or name is saved only when new in the conversation state; follow-up scheduling skips enrollments whose stored state records a referral. Same assertSalesWorker, lease and CAS boundaries.",
       "controls": [
         {
           "file": "src/lib/prospecting/sdr/channel-runtime.server.ts",
@@ -2898,7 +2898,7 @@
       "id": "service-channel-prompt-identity",
       "kind": "internal",
       "files": {
-        "src/lib/prospecting/sdr/agent.server.ts": "85c27606b823d4de56d3a3efee868254e719903dc430a18eb11b8c91b1562729"
+        "src/lib/prospecting/sdr/agent.server.ts": "8a573e900523899b71596d8440128ff1b45a63d2c783377395bd169d5b0b23a8"
       },
       "resources": [
         "system.channels"
@@ -2912,7 +2912,7 @@
       "permission_keys": [
         "system.channels.view.workspace"
       ],
-      "rationale": "Prompt formatting uses only server-resolved account identity. Published persona remains stored intact; only explicit variables and legacy self-introduction names are adapted in memory. Authorized worker and sandbox callers retain provider and permission enforcement. No public identity lookup or credential access.",
+      "rationale": "Prompt formatting uses only server-resolved account identity. Published persona remains stored intact; only explicit variables and legacy self-introduction names are adapted in memory. Authorized worker and sandbox callers retain provider and permission enforcement. No public identity lookup or credential access. Review 29/10/2026: technical contract now describes referral classification (referral_name written by the customer) and follow-up non-repetition; prompt text only, no data access.",
       "controls": [
         {
           "file": "src/lib/prospecting/sdr/channel-identity.ts",
@@ -4467,6 +4467,75 @@
         "src/lib/whatsapp/campaign-pacing.ts": "d79c9edcff2c27ccc94f2db0ecdbe977932bc93d8435e412d94561fd8b7d3ca5"
       },
       "rationale": "Pure timing helpers for paced campaign dispatch (interval draw, loop that skips waiting after ignored recipients). No I/O, data access, actions or authorization; the caller (campaign tick worker) keeps cron auth, lease and assertSalesWorker."
+    },
+    {
+      "id": "sdr-referral-state-pure",
+      "kind": "presentation",
+      "files": {
+        "src/lib/prospecting/sdr/conversation-state.ts": "d512312cd70a31fb1f02cd488f1f68153d1193281bf789dbb2e1a5f34b394cc6",
+        "src/lib/prospecting/sdr/repetition.ts": "c7216d50c51eb70375689471f0749b262ed9e8e62afe131362e54aa91f1c88a9",
+        "src/lib/prospecting/sdr/turn.ts": "b3a524027e003999de6f4cd8a90378d792769c1e203c85ba5664e8d291f83c6c"
+      },
+      "rationale": "Pure SDR turn logic without network or database access: validates referral name/email/phone written by the customer, derives conversation state and detects near-repeat follow-ups. Callers (authorized worker and authenticated sandbox) keep their existing permission, workspace and CAS checks."
+    },
+    {
+      "id": "sdr-referral-crm-registration",
+      "kind": "internal",
+      "files": {
+        "src/lib/prospecting/sdr/third-party.server.ts": "1ce162d7ca0bc9903b17002d7974cc8d89cd0bb67aa997ca9848246c057308bd"
+      },
+      "resources": [
+        "techsales.marketing.sdr_agent"
+      ],
+      "actions": [
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [],
+      "rationale": "Referral and corporate phone registration called only by the SDR worker after assertSalesWorker, lease and sdr_commit_turn CAS. Lookups and inserts are filtered by the job workspace from the server; author is the workspace SDR agent identity (active member mirroring its creator). Referral by email or phone creates a Lead for human review; name-only referral only adds a timeline note. Never sends messages to the referred person.",
+      "controls": [
+        {
+          "file": "src/lib/prospecting/sdr/agent-identity.server.ts",
+          "symbol": "loadSdrAgentUserId"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0184_sdr_conversation_state.sql",
+          "symbol": "sdr_commit_turn"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "allows current authorized leased source"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source missing required permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source with explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects foreign workspace source"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects inactive source actor"
+        }
+      },
+      "exception": {
+        "mechanism": "Server-only helper invoked by the authenticated SDR worker after its sales-worker authorization and commit; not an endpoint.",
+        "boundary": "Workspace, company and referrer come from the stored enrollment; customer text only supplies the referred name, email or phone after validation.",
+        "revocation": "Worker authorization, lease loss, agent disable or inactive membership stop later calls; created Leads stay reviewable and removable by authorized users.",
+        "review_by": "2027-01-29"
+      }
     }
   ],
   "retired": {}
