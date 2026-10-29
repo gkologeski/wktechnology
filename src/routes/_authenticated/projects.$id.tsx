@@ -4,7 +4,7 @@ import { WorkScreenAccess, WorkRecordAccess } from "@/components/work-access";
 import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, Clock, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -364,10 +364,16 @@ function TasksKanban({ projectId }: { projectId: string }) {
           >
             <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2 flex items-center justify-between">
               <span>{col.label}</span>
-              <span className="tabular-nums">{grouped.get(col.key)?.length ?? 0}</span>
+              <span
+                className="tabular-nums"
+                title={columns[col.key].hasNextPage ? "Há mais tarefas para carregar" : undefined}
+              >
+                {columns[col.key].rows.length}
+                {columns[col.key].hasNextPage ? "+" : ""}
+              </span>
             </div>
             <div className="space-y-2">
-              {(grouped.get(col.key) ?? []).map((t) => (
+              {columns[col.key].rows.map((t: any) => (
                 <div
                   key={t.id}
                   draggable={taskAccess.for(t.id).can_update}
@@ -404,6 +410,41 @@ function TasksKanban({ projectId }: { projectId: string }) {
                   )}
                 </div>
               ))}
+              {columns[col.key].isLoading && (
+                <div className="space-y-2" aria-label="Carregando tarefas">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              )}
+              {columns[col.key].isError && (
+                <div className="rounded-md border border-destructive/40 p-2 text-xs" role="alert">
+                  <p className="text-destructive">Não foi possível carregar.</p>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="mt-1 h-7 px-2"
+                    onClick={() => void columns[col.key].refetch()}
+                  >
+                    Tentar novamente
+                  </Button>
+                </div>
+              )}
+              {!columns[col.key].isLoading &&
+                !columns[col.key].isError &&
+                columns[col.key].rows.length === 0 && (
+                  <p className="py-4 text-center text-xs text-muted-foreground">Sem tarefas</p>
+                )}
+              {columns[col.key].hasNextPage && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  disabled={columns[col.key].isFetchingNextPage}
+                  onClick={() => void columns[col.key].fetchNextPage()}
+                >
+                  {columns[col.key].isFetchingNextPage ? "Carregando…" : "Carregar mais"}
+                </Button>
+              )}
             </div>
           </div>
         ))}
