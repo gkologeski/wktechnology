@@ -8,8 +8,9 @@
 - [x] Tela de revisão, vínculo de responsáveis com TechPeople e "Desfazer importação"
 - [x] Permissões novas e testes (permitido, sem chave, negado, outro workspace, inativo)
 - [x] Importação aplicada: 16.474 tarefas, 12 projetos e 3 espaços novos (desfazer testado sem efeito real)
-- [ ] 3 responsáveis do ClickUp sem cadastro no TechERP (Adauto Lucas, Eduardo Gonçalves, Thiago Mandrik — 84 tarefas): aguardam decisão do usuário
-- [ ] Ficha do projeto mostra no máximo 1.000 tarefas (OS - Citel tem 13.298; OS - Controles internos 6.378): paginação aguarda aceite
+- [x] 3 responsáveis do ClickUp cadastrados sem acesso (Adauto Lucas, Eduardo Gonçalves, Thiago Mandrik) e ligados às 84 tarefas
+- [x] Ficha do projeto carrega 50 tarefas por coluna com "Carregar mais"; lista de Tarefas paginada e rápida
+- [x] Checagem de permissões sem pendências
 - [ ] Publicação (aguarda aceite do usuário)
 
 # Roadmap — Reorganização da tela /agents/sdr (porte G, em pacotes)
