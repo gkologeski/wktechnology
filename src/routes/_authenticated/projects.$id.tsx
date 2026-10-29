@@ -4,7 +4,7 @@ import { WorkScreenAccess, WorkRecordAccess } from "@/components/work-access";
 import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, Clock, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -40,6 +40,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Skeleton } from "@/components/ui/skeleton";
 import { TaskDetailsSheet } from "@/components/projects/task-details-sheet";
 import {
   getProject,
@@ -276,30 +277,54 @@ function MetricTile({
 
 // ============= TASKS KANBAN =============
 
+// Cada coluna carrega aos poucos (projetos chegam a 13 mil tarefas). Não há contagem exata
+// porque contar com a regra de acesso em milhares de linhas estoura o tempo do banco.
+const COLUMN_PAGE = 50;
+type TaskStatusKey = (typeof TASK_COLUMNS)[number]["key"];
+
+function useColumnTasks(projectId: string, status: TaskStatusKey) {
+  const list = useServerFn(listTasks);
+  const q = useInfiniteQuery({
+    queryKey: ["project-tasks", projectId, status],
+    initialPageParam: 0,
+    retry: 1,
+    queryFn: ({ pageParam }) =>
+      list({ data: { projectId, status, offset: pageParam, limit: COLUMN_PAGE + 1 } }),
+    getNextPageParam: (last, pages) =>
+      last.length > COLUMN_PAGE ? pages.length * COLUMN_PAGE : undefined,
+  });
+  const rows = useMemo(
+    () => (q.data?.pages ?? []).flatMap((p) => p.slice(0, COLUMN_PAGE)),
+    [q.data],
+  );
+  return { ...q, rows };
+}
+
 function TasksKanban({ projectId }: { projectId: string }) {
   const qc = useQueryClient();
-  const list = useServerFn(listTasks);
   const upd = useServerFn(updateTask);
   const del = useServerFn(deleteTask);
   const [openCreate, setOpenCreate] = useState(false);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
 
-  const { data: tasks = [] } = useQuery({
-    queryKey: ["project-tasks", projectId],
-    queryFn: () => list({ data: { projectId } }),
-  });
+  const todo = useColumnTasks(projectId, "todo");
+  const doing = useColumnTasks(projectId, "doing");
+  const review = useColumnTasks(projectId, "review");
+  const done = useColumnTasks(projectId, "done");
+  const columns = useMemo(
+    () => ({ todo, doing, review, done }) as Record<TaskStatusKey, typeof todo>,
+    [todo, doing, review, done],
+  );
+  const tasks = useMemo(
+    () => [...todo.rows, ...doing.rows, ...review.rows, ...done.rows],
+    [todo.rows, doing.rows, review.rows, done.rows],
+  );
 
   const taskAccess = useWorkCapabilities(
     "techprojects.tasks",
     tasks.map((t) => t.id),
   );
   const { canAny: canTask } = usePermissions();
-  const grouped = useMemo(() => {
-    const m = new Map<string, any[]>();
-    for (const c of TASK_COLUMNS) m.set(c.key, []);
-    for (const t of tasks as any[]) m.get(t.status)?.push(t);
-    return m;
-  }, [tasks]);
 
   const move = async (taskId: string, status: string) => {
     if (!taskAccess.for(taskId).can_update) return;
@@ -340,10 +365,16 @@ function TasksKanban({ projectId }: { projectId: string }) {
           >
             <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2 flex items-center justify-between">
               <span>{col.label}</span>
-              <span className="tabular-nums">{grouped.get(col.key)?.length ?? 0}</span>
+              <span
+                className="tabular-nums"
+                title={columns[col.key].hasNextPage ? "Há mais tarefas para carregar" : undefined}
+              >
+                {columns[col.key].rows.length}
+                {columns[col.key].hasNextPage ? "+" : ""}
+              </span>
             </div>
             <div className="space-y-2">
-              {(grouped.get(col.key) ?? []).map((t) => (
+              {columns[col.key].rows.map((t: any) => (
                 <div
                   key={t.id}
                   draggable={taskAccess.for(t.id).can_update}
@@ -380,6 +411,41 @@ function TasksKanban({ projectId }: { projectId: string }) {
                   )}
                 </div>
               ))}
+              {columns[col.key].isLoading && (
+                <div className="space-y-2" aria-label="Carregando tarefas">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              )}
+              {columns[col.key].isError && (
+                <div className="rounded-md border border-destructive/40 p-2 text-xs" role="alert">
+                  <p className="text-destructive">Não foi possível carregar.</p>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="mt-1 h-7 px-2"
+                    onClick={() => void columns[col.key].refetch()}
+                  >
+                    Tentar novamente
+                  </Button>
+                </div>
+              )}
+              {!columns[col.key].isLoading &&
+                !columns[col.key].isError &&
+                columns[col.key].rows.length === 0 && (
+                  <p className="py-4 text-center text-xs text-muted-foreground">Sem tarefas</p>
+                )}
+              {columns[col.key].hasNextPage && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  disabled={columns[col.key].isFetchingNextPage}
+                  onClick={() => void columns[col.key].fetchNextPage()}
+                >
+                  {columns[col.key].isFetchingNextPage ? "Carregando…" : "Carregar mais"}
+                </Button>
+              )}
             </div>
           </div>
         ))}

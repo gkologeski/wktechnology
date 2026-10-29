@@ -1846,7 +1846,7 @@
         "src/lib/whatsapp.functions.ts": "1134b8ac720de7dcd2dfb45acfbbcc23d3c55351755afad874ec9fb80ce87aac",
         "src/lib/whatsapp-campaigns.functions.ts": "d63dd9ddfbd6107481a27cc8631db5a28044326cd2c0f74b79a04947ae2252bb",
         "src/routes/_authenticated/inbox.index.tsx": "6871432118a6bd8ef6477bf0ca6ef3bd14a00e7fbec3beef7bb955f610daee80",
-        "src/routes/_authenticated/inbox.whatsapp.tsx": "1fc2be372627dcfd81a950952a3c6626dfbaff0b5b56a2be92623f45e8d0009e",
+        "src/routes/_authenticated/inbox.whatsapp.tsx": "165ac43240712c3713a9b7daec6a059aad630a3a309ae77dd3f38ccd7aa8ea94",
         "src/routes/_authenticated/campaigns.whatsapp.tsx": "5dfdec509a34b8de6af31a3e8df677edcf9b00b9722a0b5c3d7cc6e820876dfa",
         "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9",
         "drizzle/migrations/0263_wa_outbound_activity_trigger.sql": "6c6a9521a5cfa09cd1724061fd78939fa94d56344ccb8c3052418ea9426a96e0",
@@ -1865,7 +1865,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message.",
+      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message. Undelivered outbound messages show a translated failure label (pure describeDeliveryError + InboxMessageBubble), built only from error fields of messages the user already reads.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -2557,9 +2557,9 @@
         "src/lib/prospecting/sdr-agent.functions.ts": "30fc8169efe39a2f8573baf3df6d4e84a74076ffcbf7e95b5baa37d99e748330",
         "src/components/prospecting/sdr-agent-studio.tsx": "a1ff1ea135f177f16085bfb3cb962cc3471f73996ed852c514225ffd0ff0cbb6",
         "src/routes/_authenticated/agents.sdr.tsx": "e8467d55e712ff1e3f483acc873da0fe07e2a4a728707c82022bd8142e2aae4b",
-        "src/components/prospecting/sdr-agent-actions.tsx": "ae19827c2366abe36433583f47d965103185b0e4743fcf39058ea2a65325ec3f",
+        "src/components/prospecting/sdr-agent-actions.tsx": "f17d0e8a62209bfd8034262548b4e5b164cd9f9ea8abb877fd12b953fb658cde",
         "src/components/prospecting/sdr-agent-picker.tsx": "4277cd1e6a1066b07845b803e9d401e8fc6eff796e1acf57e0581a75f41d0039",
-        "src/components/prospecting/sdr-skills-panel.tsx": "258a0ef7018bae8125a3ee4c1e5f3b0f011290520982e9a74ef64605cdedff0b",
+        "src/components/prospecting/sdr-skills-panel.tsx": "0f7fd7bbb94c748cac9a04a25406584fd6a73c8466da48223882698115727572",
         "src/components/prospecting/sdr-console.tsx": "6b24123c6aeecb3aa5722dfa073aecb4ae12754815e4235cca641c2d4021a57d",
         "src/components/prospecting/sdr-studio-agent-bar.tsx": "84cc91802054f71827201ba06b93eecbc530eaa2605a564f4c30441b476bd1df",
         "src/lib/sdr-agent.functions.ts": "5b72111380ad8cf6e83b58d9d8a70cf0950ffca91e80fb60fbe70e3645f468ee",
@@ -2956,7 +2956,7 @@
       "id": "service-channel-inbox-direct-conversation",
       "kind": "business",
       "files": {
-        "src/lib/inbox/message-history.functions.ts": "849faeb12961ae980aeaace9607a1b500ba0f5a8e2756dec9a94ff6d28bfe94e"
+        "src/lib/inbox/message-history.functions.ts": "9640eeaf148f5d1f00b1fdba191a246dbf2261ac91d27271b23376c56f4d76b3"
       },
       "resources": ["techsales.inbox.email", "techsales.inbox.chat", "techsales.inbox.whatsapp"],
       "actions": ["view"],
@@ -2966,7 +2966,7 @@
         "techsales.inbox.email.view.workspace",
         "techsales.inbox.whatsapp.view.workspace"
       ],
-      "rationale": "Inbox notification links validate the conversation UUID and load metadata independently of list pagination. Chat metadata first checks the current source record using the authenticated client, then queries the active workspace under RLS. Existing history endpoints retain their action middleware and record guards. A direct URL never grants visibility or bypasses per-conversation permissions. Source SQL matrix covers missing permission, deny, other workspace and inactive; CI guard tests fail closed on all denied source outcomes.",
+      "rationale": "Inbox notification links validate the conversation UUID and load metadata independently of list pagination. Chat metadata first checks the current source record using the authenticated client, then queries the active workspace under RLS. Existing history endpoints retain their action middleware and record guards. A direct URL never grants visibility or bypasses per-conversation permissions. Source SQL matrix covers missing permission, deny, other workspace and inactive; CI guard tests fail closed on all denied source outcomes. WhatsApp history also returns error_code/error_message of the same RLS-filtered message rows (no new rows or tables).",
       "controls": [
         {
           "file": "src/lib/access-control/sales-core.server.ts",
@@ -3156,7 +3156,8 @@
       "files": {
         "src/components/record/associations/company-cards.tsx": "3ac0a3d33a5f38748f158a1e1c6061b2bcb9585b48647e2ffccb990cb4441cd0",
         "src/components/record/associations/pipeline-cards.tsx": "afd61d083edf12ced17ddafd734b8f39c82defec1f666814a26058127840d06f",
-        "src/components/record/associations/unlink-deal-contact.ts": "49b82c4169aa7d7496ba380458b5d44b7b99726cf023665a6b1ea5715c9787c1"
+        "src/components/record/associations/unlink-deal-contact.ts": "49b82c4169aa7d7496ba380458b5d44b7b99726cf023665a6b1ea5715c9787c1",
+        "drizzle/migrations/0262_contact_domain_link_respect_unlink.sql": "34d3b40b1599870f6dcf4fbb388bd484ed709a7ff8b05b637b96f1611ff09d26"
       },
       "resources": [
         "techsales.deals",
@@ -3178,7 +3179,7 @@
         "techsales.tickets.view.workspace",
         "techsales.tickets.update.workspace"
       ],
-      "rationale": "Bug fix only: unlinking a deal contact removes just the links that exist (deal_contacts row and/or deals.primary_contact_id), so a primary-only contact no longer trips the zero-row denial. Writes still go through the checked mutation client; existing association capability gate and sales RLS (deal update+view for deal_contacts delete and deals update) are unchanged. No new action, key, grant or SQL.",
+      "rationale": "Bug fix only: unlinking a deal contact removes just the links that exist (deal_contacts row and/or deals.primary_contact_id), so a primary-only contact no longer trips the zero-row denial. Writes still go through the checked mutation client; existing association capability gate and sales RLS (deal update+view for deal_contacts delete and deals update) are unchanged. No new action, key, grant or SQL. 0262 narrows the SECURITY INVOKER contact domain-link trigger (EXECUTE revoked from PUBLIC/anon/authenticated): an explicit company removal with unchanged e-mail is no longer re-linked by domain; it never links across workspaces and adds no access.",
       "controls": [
         {
           "file": "src/components/record/associations/unlink-deal-contact.ts",
@@ -3197,6 +3198,10 @@
         {
           "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
           "symbol": "sales_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0262_contact_domain_link_respect_unlink.sql",
+          "symbol": "contact_link_company_by_domain"
         }
       ],
       "tests": {
@@ -3565,23 +3570,24 @@
       "files": {
         "drizzle/migrations/0267_clickup_importer.sql": "65e20a858e6a85091126d895b1dcb9d47cb83873aac486120a81412623c72354",
         "drizzle/migrations/0266_projects_perf_indexes.sql": "d27d72647496ce96600f0cff4355bb76a4a13a2da12671ae3281a9ca01d275e4",
-        "src/lib/integrations/clickup/clickup-import.server.ts": "add224bf732ca7d0abe01a06884845e8ba452de03bc115b2f60da608e2e49761",
-        "src/lib/integrations/clickup/clickup-import.functions.ts": "00e7fa9221fdad9bbca568a9391f456cce0b1e6bb0d618e4b54fa0c7ece101ef",
+        "src/lib/integrations/clickup/clickup-import.server.ts": "fc7dc63bb71ecf7bd18f714617b1abdbe2d77c51ede9c7aad0ca2d1b40f026f4",
+        "src/lib/integrations/clickup/clickup-import.functions.ts": "e62e710dd0814003392018fa80d80fe21e1a8277b67afc39f5642b0b3fb107b9",
         "src/lib/integrations/clickup/clickup-import.middleware.ts": "7d32c2b75e626e5dd9a80a9b8b43038efeece0923af9835a5a965bf803ad65b4",
-        "src/components/projects/clickup-import/clickup-import-page.tsx": "25338654baa66db38bf00f49e7d5e6c8ec5f03dc65f8b061a515d4ae46b790ce",
+        "src/components/projects/clickup-import/clickup-import-page.tsx": "619d3d88c013fc0e8be7ee3378d32ce725a5169d245305619a027e73e38c1091",
         "src/routes/_authenticated/projects.settings.imports.clickup.tsx": "0c780f5362f1f7f091668dca2d1480163b4255d12e9fd23b3c8dec8d24d84629",
         "src/routes/_authenticated/projects.settings.imports.index.tsx": "1b467a4bdabfc704d37c532aee03bbe9894423de41e1fca5d7ed1657e56d0c0b",
         "drizzle/migrations/0268_project_tasks_comment.sql": "f6ddbc10f820db9e8add066f99a665d477b4bc02e22b57b7fcb856b2d4d75e41",
         "drizzle/migrations/0269_clickup_apply_step_fix.sql": "3cec267765eec356abbbcd175ce6900e26735aab20ec9dc2438f4496064309cd"
       },
-      "resources": ["techprojects.clickup_import"],
+      "resources": ["techprojects.clickup_import", "system.members"],
       "actions": ["view", "manage"],
       "scopes": ["workspace"],
       "permission_keys": [
         "techprojects.clickup_import.view.workspace",
-        "techprojects.clickup_import.manage.workspace"
+        "techprojects.clickup_import.manage.workspace",
+        "system.members.manage.workspace"
       ],
-      "rationale": "ClickUp -> TechProjects importer. The screen renders only behind HrScreenAccess(techprojects.clickup_import) and the menu entries map to the same resource. Every server function requires an authenticated session, resolves the active workspace and calls assertClickUpImport (clickup_import_access: work_subject_context, active membership, deny wins, workspace-bound) before reading ClickUp (GET only, fixed host, no redirects) or calling any RPC. Staging tables are SELECT-only for authenticated under RLS with the same function; all writes go through SECURITY DEFINER RPCs clickup_import_* that re-check clickup_import_require (manage key, not read-only 'Ver como') and validate that spaces/projects/people belong to the run workspace. Writes suppress workflow events; rollback only removes rows the run created and nobody changed since. 0266 adds read indexes only. Keys are not granted to any role automatically.",
+      "rationale": "ClickUp -> TechProjects importer. The screen renders only behind HrScreenAccess(techprojects.clickup_import) and the menu entries map to the same resource. Every server function requires an authenticated session, resolves the active workspace and calls assertClickUpImport (clickup_import_access: work_subject_context, active membership, deny wins, workspace-bound) before reading ClickUp (GET only, fixed host, no redirects) or calling any RPC. Staging tables are SELECT-only for authenticated under RLS with the same function; all writes go through SECURITY DEFINER RPCs clickup_import_* that re-check clickup_import_require (manage key, not read-only 'Ver como') and validate that spaces/projects/people belong to the run workspace. Writes suppress workflow events; rollback only removes rows the run created and nobody changed since. 0266 adds read indexes only. Keys are not granted to any role automatically. 'Cadastrar sem acesso' (createHistoricalPerson) additionally requires system.members.manage.workspace via user_has_permission before any read; it creates a login-banned account plus an inactive workspace member (same model as HubSpot/Clockify historical identities, no invite, no role) and links it through clickup_import_set_person with the user client.",
       "controls": [
         {
           "file": "src/lib/integrations/clickup/clickup-import.server.ts",
@@ -3666,8 +3672,8 @@
       "files": {
         "src/components/projects/task-core-fields.tsx": "2a74fe35cf612bd5368ccd7474083f8a18ea26ad9ab35bec20f972a2101d8069",
         "src/components/projects/task-details-sheet.tsx": "a621343a6749d977f6733bf53531821e64e428a6ed5a684afc2e35b0579c9494",
-        "src/routes/_authenticated/projects.tasks.tsx": "d2bd830dd5836a95ffd27470fd8ac0477ccf59408eaae904bd13c297c9d0d221",
-        "src/routes/_authenticated/projects.$id.tsx": "0c607ea4b65d7dd8a4347f3e0b42e64b23bd500c8fbb38980a749754d89dceeb"
+        "src/routes/_authenticated/projects.tasks.tsx": "8573bdf7bc21c0a5074829d0e2e93f7c4b18aaf0214125aa8991f0332457dcc3",
+        "src/routes/_authenticated/projects.$id.tsx": "ce167d2900210b66a556c0fed7f13edcdb3cd9859e5d51e05c80426b088a6235"
       },
       "resources": ["techprojects.tasks"],
       "actions": ["view", "update"],
@@ -3680,7 +3686,7 @@
         "techprojects.tasks.update.team",
         "techprojects.tasks.update.workspace"
       ],
-      "rationale": "Task rows and kanban cards open the task details panel (also via ?taskId=). The panel only shows tasks already returned by the RLS-filtered lists and edits title/status/assignee/due/hours/description through the existing updateTask server function, which re-checks the role keys and the record via assertWorkRecord -> work_record_access. The UI disables fields from per-record capabilities (useWorkCapabilities/useWorkRecordCapability). Other areas of the project page (milestones, members, hours, billing) are unchanged and keep their own server checks.",
+      "rationale": "Task rows and kanban cards open the task details panel (also via ?taskId=). The panel only shows tasks already returned by the RLS-filtered lists and edits title/status/assignee/due/hours/description through the existing updateTask server function, which re-checks the role keys and the record via assertWorkRecord -> work_record_access. The UI disables fields from per-record capabilities (useWorkCapabilities/useWorkRecordCapability). Other areas of the project page (milestones, members, hours, billing) are unchanged and keep their own server checks. The task list and the project board load in pages (per-status board columns with 'Carregar mais'); every row still comes from the RLS-filtered server functions of the projects-core-functions contract.",
       "controls": [
         {
           "file": "src/lib/access-control/use-work-capabilities.ts",
@@ -3735,6 +3741,154 @@
       "scopes": [],
       "permission_keys": [],
       "rationale": "Static PT-BR labels for AI usage features (adds the Inbox company-suggestion label). No data access, actions or routes; AI calls keep their own authenticated workspace checks."
+    },
+    {
+      "id": "inbox-delivery-failure-label",
+      "kind": "presentation",
+      "files": {
+        "src/components/inbox/delivery-failure-label.tsx": "d336f1bff6bac02fb5f1d7a9dc8c31c1b9e00e6b8d6a4ddf586e7cc58fe55899",
+        "src/lib/whatsapp/delivery-error.ts": "ad2b72d7c1e433d7f76129a94f92b2c341356219cbc4536cb586cdb11ec5715c"
+      },
+      "resources": [],
+      "actions": [],
+      "scopes": [],
+      "permission_keys": [],
+      "rationale": "Pure translation of WhatsApp delivery error codes and a small label rendered under the message bubble (no handlers, no data access). It only formats error fields of messages already loaded under the whatsapp-cloud-authenticated-routing contract."
+    },
+    {
+      "id": "projects-core-functions",
+      "kind": "business",
+      "files": {
+        "src/lib/projects.functions.ts": "1c21f31612d95a4ba4062f2f2861e7bfafc53ba96ca3c81be03a3f555082989a",
+        "drizzle/migrations/0270_project_tasks_list_order_idx.sql": "07d21d3555ea051bcffed01768b5f553d1f232f48707c8e6a99508d4de2c7dba",
+        "drizzle/migrations/0271_project_tasks_project_status_sort_idx.sql": "d322f1f7ccbff70366e149140c915a18e1a16a36476157f127913a38c63edbae",
+        "drizzle/migrations/0272_project_tasks_status_partial_idx.sql": "a92803906adba67c20581284aea6d40e5f32de147660f119635ea0a00f1fa24f",
+        "src/lib/access-control/work-read-gate.server.ts": "75e0c5fd2438e009647fd31b8cc6ee9ea459bfc2cae26b292bcbed6d9076e921"
+      },
+      "resources": [
+        "techprojects.projects",
+        "techprojects.tasks",
+        "techprojects.milestones",
+        "techprojects.members",
+        "techprojects.time_entries",
+        "techprojects.profitability"
+      ],
+      "actions": ["view", "create", "update", "delete", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techprojects.projects.view.own",
+        "techprojects.projects.view.team",
+        "techprojects.projects.view.workspace",
+        "techprojects.projects.create.own",
+        "techprojects.projects.create.workspace",
+        "techprojects.projects.update.own",
+        "techprojects.projects.update.team",
+        "techprojects.projects.update.workspace",
+        "techprojects.projects.delete.own",
+        "techprojects.projects.delete.workspace",
+        "techprojects.tasks.view.own",
+        "techprojects.tasks.view.team",
+        "techprojects.tasks.view.workspace",
+        "techprojects.tasks.create.own",
+        "techprojects.tasks.create.team",
+        "techprojects.tasks.create.workspace",
+        "techprojects.tasks.update.own",
+        "techprojects.tasks.update.team",
+        "techprojects.tasks.update.workspace",
+        "techprojects.tasks.delete.own",
+        "techprojects.tasks.delete.team",
+        "techprojects.tasks.delete.workspace",
+        "techprojects.milestones.view.workspace",
+        "techprojects.milestones.create.workspace",
+        "techprojects.milestones.update.workspace",
+        "techprojects.milestones.delete.workspace",
+        "techprojects.members.view.workspace",
+        "techprojects.members.manage.workspace",
+        "techprojects.time_entries.view.own",
+        "techprojects.time_entries.view.workspace",
+        "techprojects.time_entries.create.own",
+        "techprojects.time_entries.delete.workspace",
+        "techprojects.profitability.view.workspace"
+      ],
+      "rationale": "Existing TechProjects server functions. Reads of projects/tasks first pass workCanRead (work_area_authorize view: active member of the active workspace, effective key, deny wins) and return empty when denied; RLS work_view/work_context_access still filters every row by workspace and scope. Time-entry reads/writes check work_time_context grants (workTimeCan/assertWorkTimeCan) before work_time_* RLS; deletes use deleteByIdGuarded so an RLS-denied delete fails; capabilities come from project_time_capabilities via workRpc. Writes re-check role keys (assertAnyPermission) and records (assertWorkRecord -> work_record_access); milestones, members and profitability use requireWorkPermission. This delivery adds the read gate, optional offset/limit/status paging to listTasks/listAllProjectTasks (same client, same RLS) and read indexes on project_tasks (0270-0272: no policy, grant or data change).",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workCanRead"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workTimeCan"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "assertWorkTimeCan"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/db/delete-guarded.ts",
+          "symbol": "deleteByIdGuarded"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_area_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_time_context"
+        },
+        {
+          "file": "drizzle/migrations/0270_project_tasks_list_order_idx.sql",
+          "symbol": "project_tasks"
+        },
+        {
+          "file": "drizzle/migrations/0271_project_tasks_project_status_sort_idx.sql",
+          "symbol": "project_tasks"
+        },
+        {
+          "file": "drizzle/migrations/0272_project_tasks_status_partial_idx.sql",
+          "symbol": "project_tasks"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate allows an authorized active member to list tasks"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate denies listing without a view key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate denies listing under explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate denies listing for another workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate denies listing for an inactive member"
+        }
+      }
     }
   ],
   "retired": {}

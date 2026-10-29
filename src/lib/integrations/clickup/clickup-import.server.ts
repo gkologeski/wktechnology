@@ -441,6 +441,63 @@ export async function setPerson(
   return { ok: true };
 }
 
+/**
+ * Identidade histórica (mesmo modelo de HubSpot/Clockify): conta com login bloqueado +
+ * membro inativo, só por ação explícita de quem pode gerenciar a importação E os membros.
+ * Não envia convite, não ativa acesso e não concede cargo.
+ */
+export async function createHistoricalPerson(ctx: Ctx, clickupUserId: number) {
+  await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "manage");
+  const { assertPermission } = await import("@/lib/access-control/enforce.server");
+  await assertPermission(
+    ctx.client,
+    ctx.userId,
+    ctx.workspaceId,
+    "system.members.manage.workspace",
+  );
+  const { data: row, error } = await ctx.client
+    .from("clickup_import_people" as never)
+    .select("clickup_user_id, username, email, user_id, status")
+    .eq("workspace_id", ctx.workspaceId)
+    .eq("clickup_user_id", clickupUserId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  const person = row as unknown as ClickUpPersonRow | null;
+  if (!person) throw new Error("Responsável do ClickUp não encontrado.");
+  if (person.user_id && person.status === "confirmed") return { ok: true, userId: person.user_id };
+  const { normalizeEmailAddress } = await import("@/lib/email-address");
+  const email = normalizeEmailAddress(person.email);
+  if (!email) throw new Error("A pessoa não tem e-mail no ClickUp; escolha alguém manualmente.");
+  const fullName = person.username?.trim() || email;
+
+  const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
+  const created = await db.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    ban_duration: "876000h",
+    user_metadata: { full_name: fullName, source: "clickup" },
+  });
+  if (created.error || !created.data.user) {
+    throw new Error(
+      "Não foi possível cadastrar (o e-mail já pode estar em uso na plataforma). Escolha a pessoa existente.",
+    );
+  }
+  const newId = created.data.user.id;
+  await db.from("profiles").upsert({ id: newId, full_name: fullName }, { onConflict: "id" });
+  const { error: mErr } = await db
+    .from("workspace_members")
+    .insert({ workspace_id: ctx.workspaceId, user_id: newId, role: "member", status: "inactive" });
+  if (mErr) throw new Error(mErr.message);
+  // O vínculo volta pelo cliente do usuário (RPC reconfere a permissão).
+  await rpc(ctx.client, "clickup_import_set_person", {
+    p_ws: ctx.workspaceId,
+    p_clickup_user: clickupUserId,
+    p_user: newId,
+    p_status: "confirmed",
+  });
+  return { ok: true, userId: newId };
+}
+
 export async function runStep(ctx: Ctx, kind: "apply" | "assignees" | "rollback", runId: string) {
   await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "manage");
   const fn =
