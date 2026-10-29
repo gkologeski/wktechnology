@@ -38,23 +38,26 @@ import {
 } from "@/lib/project-list-extras.functions";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
-type TaskLite = {
-  id: string;
-  title: string;
+import { TaskCoreFields, type TaskCoreValues } from "@/components/projects/task-core-fields";
+type TaskLite = Omit<TaskCoreValues, "projects"> & {
   project_id?: string | null;
   list_id?: string | null;
   tags?: string[];
   custom_field_values?: Record<string, any> | null;
+  projects?: { id: string; name: string } | null;
 };
 
 export function TaskDetailsSheet({
   task,
   open,
   onOpenChange,
+  showCoreFields = false,
 }: {
   task: TaskLite | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  /** Status/responsável/prazo/horas/descrição — telas sem status customizado. */
+  showCoreFields?: boolean;
 }) {
   const capability = useWorkRecordCapability("techprojects.tasks", task?.id ?? "");
   if (!task) return null;
@@ -66,6 +69,12 @@ export function TaskDetailsSheet({
         </SheetHeader>
         <fieldset className="contents" disabled={!capability.can_update}>
           <div className="mt-4 space-y-6">
+            {showCoreFields && (
+              <>
+                <TaskCoreFields key={task.id} task={task} />
+                <Separator />
+              </>
+            )}
             <TagsSection task={task} />
             {task.list_id && (
               <>
