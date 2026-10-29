@@ -351,14 +351,14 @@ function ClickUpImportContent() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <MetricCard label="Listas lidas" value={fmt(totals.lists)} />
             <MetricCard
-              label="Tarefas a importar"
+              label={applied ? "Tarefas lidas" : "Tarefas a importar"}
               value={fmt(totals.tasks)}
               hint={`${fmt(totals.skipped)} fora da importação`}
             />
             <MetricCard
-              label="Tarefas já no TechProjects"
+              label="Tarefas criadas no TechProjects"
               value={fmt(data?.linkedTasks ?? 0)}
-              hint="criadas por esta importação"
+              hint="por esta importação"
             />
             <MetricCard
               label="Responsáveis a revisar"

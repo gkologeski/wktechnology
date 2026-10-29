@@ -352,11 +352,12 @@ export async function getStatus(ctx: Ctx): Promise<{
     .eq("workspace_id", ctx.workspaceId)
     .order("task_count", { ascending: false });
   if (people.error) throw new Error(people.error.message);
-  let linkedTasks = 0;
-  if (run) {
+  let linkedTasks = Number(run?.counts?.["tasks_created"] ?? 0);
+  if (run && !linkedTasks && ["applying", "rolling_back"].includes(run.status)) {
     const l = await ctx.client
       .from("clickup_import_links" as never)
       .select("external_id", { count: "exact", head: true })
+      .eq("workspace_id", ctx.workspaceId)
       .eq("created_run_id", run.id)
       .eq("entity_type", "task");
     linkedTasks = l.count ?? 0;
