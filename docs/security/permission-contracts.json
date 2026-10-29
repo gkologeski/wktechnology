@@ -4113,8 +4113,7 @@
         "src/lib/integrations/clickup/clickup-import.middleware.ts": "b0cef557c7429164a3eea7958046dc9c4eac552106fb046dd24e9fa3709c6aba",
         "src/components/projects/clickup-import/clickup-import-page.tsx": "41c9bcadac826c0a9bdacf8415553d3ca85526f366ed3174bb7fafcca0b200f6",
         "src/routes/_authenticated/projects.settings.imports.clickup.tsx": "0c780f5362f1f7f091668dca2d1480163b4255d12e9fd23b3c8dec8d24d84629",
-        "src/routes/_authenticated/projects.settings.imports.index.tsx": "1b467a4bdabfc704d37c532aee03bbe9894423de41e1fca5d7ed1657e56d0c0b",
-        "src/lib/menu-config-projects.ts": "1a9c9d12b840c50bcfb1911f9acc95372aece7baf8c3fc4b260007c66c62fc79"
+        "src/routes/_authenticated/projects.settings.imports.index.tsx": "1b467a4bdabfc704d37c532aee03bbe9894423de41e1fca5d7ed1657e56d0c0b"
       },
       "resources": [
         "techprojects.clickup_import"
@@ -4157,6 +4156,10 @@
         {
           "file": "drizzle/migrations/0267_clickup_importer.sql",
           "symbol": "clickup_import_require"
+        },
+        {
+          "file": "drizzle/migrations/0266_projects_perf_indexes.sql",
+          "symbol": "idx_project_tasks_project_sort"
         }
       ],
       "tests": {
