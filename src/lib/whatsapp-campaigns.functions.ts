@@ -568,6 +568,67 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
       patch.exclude_customers = commercial.excludeCustomers;
       patch.exclude_open_deals = commercial.excludeOpenDeals;
       patch.audience_config = ra.audience_config ?? null;
+    } else {
+      // Regras mudaram (ex.: 7 → 30 dias)? Retira da fila quem não passa mais,
+      // para o disparo não perder tempo com quem seria ignorado.
+      const workspaceId = await resolveActiveWorkspace(context.userId);
+      const { data: cfg } = await supabase
+        .from("whatsapp_campaigns")
+        .select("recent_contact_days, exclude_customers, exclude_open_deals")
+        .eq("id", data.id)
+        .single();
+      const pending: { id: string; phone: string; override_recent: boolean | null; override_commercial: boolean | null }[] = [];
+      for (let from = 0; ; from += 1000) {
+        const { data: page, error: pErr } = await supabase
+          .from("whatsapp_campaign_recipients")
+          .select("id, phone, override_recent, override_commercial")
+          .eq("campaign_id", data.id)
+          .eq("status", "pending")
+          .range(from, from + 999);
+        if (pErr) throw pErr;
+        pending.push(...((page ?? []) as typeof pending));
+        if (!page || page.length < 1000) break;
+      }
+      if (pending.length && cfg) {
+        const recent = await applyRecentGuard(
+          supabase,
+          workspaceId,
+          cfg.recent_contact_days ?? 0,
+          pending.filter((r) => r.override_recent).map((r) => r.phone),
+          pending,
+        );
+        const commercial = await applyCommercialGuard(
+          supabase,
+          workspaceId,
+          {
+            exclude_customers: cfg.exclude_customers ?? true,
+            exclude_open_deals: cfg.exclude_open_deals ?? true,
+            commercial_overrides: pending.filter((r) => r.override_commercial).map((r) => r.phone),
+          },
+          recent.kept,
+        );
+        const { COMMERCIAL_LABEL } = await import("@/lib/campaigns/commercial-status");
+        const groups: [string, string[]][] = [
+          ["Envio recente", recent.removed.map((r) => r.id)],
+          ...Object.entries(
+            commercial.removed.reduce<Record<string, string[]>>((acc, r) => {
+              const label = COMMERCIAL_LABEL[r.commercialReason];
+              (acc[label] ??= []).push(r.id);
+              return acc;
+            }, {}),
+          ),
+        ];
+        for (const [reason, ids] of groups) {
+          for (let i = 0; i < ids.length; i += 100) {
+            const { error: uErr } = await supabase
+              .from("whatsapp_campaign_recipients")
+              .update({ status: "skipped", error: reason })
+              .in("id", ids.slice(i, i + 100))
+              .eq("status", "pending");
+            if (uErr) throw uErr;
+          }
+        }
+      }
     }
     if (Object.keys(patch).length === 0) return { ok: true };
     const { error } = await supabase
