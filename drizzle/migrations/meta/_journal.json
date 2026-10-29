@@ -1919,6 +1919,13 @@
       "when": 1793293401492,
       "tag": "0273_rls_initplan_people_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 274,
+      "version": "7",
+      "when": 1793304854918,
+      "tag": "0274_wa_campaign_prune_recent",
+      "breakpoints": true
     }
   ]
 }
