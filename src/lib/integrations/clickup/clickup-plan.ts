@@ -199,7 +199,10 @@ export function mapPriority(p: string | null | undefined): TaskPayload["priority
 }
 
 /** Milissegundos do ClickUp -> data local (America/Sao_Paulo) no formato AAAA-MM-DD. */
-export function msToLocalDate(ms: string | number | null | undefined, timeZone = "America/Sao_Paulo") {
+export function msToLocalDate(
+  ms: string | number | null | undefined,
+  timeZone = "America/Sao_Paulo",
+) {
   if (ms === null || ms === undefined || ms === "") return null;
   const n = Number(ms);
   if (!Number.isFinite(n) || n <= 0) return null;

@@ -26,16 +26,18 @@ describe("importador ClickUp — fronteira de acesso", () => {
   it("permite membro ativo com a permissão de gerenciar o importador do ClickUp", async () => {
     const c = client((a) => a["p_ws"] === WS && a["p_action"] === "manage");
     await expect(assertClickUpImport(c, WS, USER, "manage")).resolves.toBeUndefined();
-    await expect(runStep({ client: c, workspaceId: WS, userId: USER }, "apply", RUN)).resolves.toEqual({
+    await expect(
+      runStep({ client: c, workspaceId: WS, userId: USER }, "apply", RUN),
+    ).resolves.toEqual({
       ok: true,
     });
     expect(c.calls).toContain("clickup_import_apply_step");
   });
   it("nega quem não tem a permissão do importador do ClickUp", async () => {
     const c = client(() => false);
-    await expect(runStep({ client: c, workspaceId: WS, userId: USER }, "rollback", RUN)).rejects.toThrow(
-      /Sem permissão/,
-    );
+    await expect(
+      runStep({ client: c, workspaceId: WS, userId: USER }, "rollback", RUN),
+    ).rejects.toThrow(/Sem permissão/);
     expect(c.calls).not.toContain("clickup_import_rollback_step");
   });
   it("nega quando há bloqueio explícito (deny) no importador do ClickUp", async () => {

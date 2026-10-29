@@ -19,11 +19,14 @@ export async function assertClickUpImport(
   userId: string,
   action: ClickUpAction,
 ): Promise<void> {
-  const { data, error } = await client.rpc("clickup_import_access" as never, {
-    p_ws: workspaceId,
-    p_user: userId,
-    p_action: action,
-  } as never);
+  const { data, error } = await client.rpc(
+    "clickup_import_access" as never,
+    {
+      p_ws: workspaceId,
+      p_user: userId,
+      p_action: action,
+    } as never,
+  );
   if (error || data !== true) throw new Error("Sem permissão para o importador do ClickUp.");
 }
 
@@ -214,7 +217,8 @@ export async function collectStep(ctx: Ctx, runId: string, cursor: CollectCursor
       } else c.page++;
     }
   } catch (e) {
-    if (e instanceof ClickUpRateLimited) return { cursor: c, done: false, waitSeconds: e.waitSeconds };
+    if (e instanceof ClickUpRateLimited)
+      return { cursor: c, done: false, waitSeconds: e.waitSeconds };
     throw e;
   }
   if (c.index < c.lists.length) return { cursor: c, done: false, waitSeconds: 0 };
@@ -232,7 +236,11 @@ export async function finishCollect(ctx: Ctx, runId: string, cursor: CollectCurs
   const rows = (groups ?? []) as Record<string, unknown>[];
   const updated = rows.map((g) => {
     const k = String(g["list_ext_id"]);
-    return { ...g, task_count: cursor.counts[k]?.tasks ?? 0, closed_count: cursor.counts[k]?.closed ?? 0 };
+    return {
+      ...g,
+      task_count: cursor.counts[k]?.tasks ?? 0,
+      closed_count: cursor.counts[k]?.closed ?? 0,
+    };
   });
   for (let i = 0; i < updated.length; i += 400)
     await rpc(ctx.client, "clickup_import_stage", {
@@ -416,7 +424,11 @@ export async function setGroup(
 
 export async function setPerson(
   ctx: Ctx,
-  d: { clickupUserId: number; userId: string | null; status: "confirmed" | "ignored" | "unmatched" },
+  d: {
+    clickupUserId: number;
+    userId: string | null;
+    status: "confirmed" | "ignored" | "unmatched";
+  },
 ) {
   await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "manage");
   await rpc(ctx.client, "clickup_import_set_person", {
@@ -428,11 +440,7 @@ export async function setPerson(
   return { ok: true };
 }
 
-export async function runStep(
-  ctx: Ctx,
-  kind: "apply" | "assignees" | "rollback",
-  runId: string,
-) {
+export async function runStep(ctx: Ctx, kind: "apply" | "assignees" | "rollback", runId: string) {
   await assertClickUpImport(ctx.client, ctx.workspaceId, ctx.userId, "manage");
   const fn =
     kind === "apply"
