@@ -3,7 +3,7 @@
 - [x] Leitura completa do ClickUp (11 workspaces, 16.477 tarefas) e proposta de organização
 - [x] Chave do ClickUp removida do campo "lista padrão"
 - [x] Projetos repetidos unificados (OS - Citel, OS - Quantity, OS - IXC, OS - InForma) e empresa "In Forma" unificada em "InForma", com cópia para desfazer
-- [ ] Decidir se a empresa "In Forma Software" (com CNPJ, do CRM) é a mesma InForma (aguarda o usuário)
+- [x] "In Forma Software" do CRM unificada como "InForma" e "Outsourcing -> InForma" juntado em "OS - InForma"
 - [ ] Tabelas de preparação/vínculo e motor de importação (Dailys como tarefas, Byteway como projeto novo de Consultoria, sem workspaces de teste)
 - [ ] Tela de revisão, vínculo de responsáveis com TechPeople e "Desfazer importação"
 - [ ] Permissões novas e testes (permitido, sem chave, negado, outro workspace, inativo)
