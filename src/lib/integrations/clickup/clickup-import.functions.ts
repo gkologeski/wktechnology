@@ -93,6 +93,18 @@ export const setClickUpPerson = createServerFn({ method: "POST" })
     return s.setPerson({ client: context.supabase, workspaceId, userId: context.userId }, data);
   });
 
+export const createClickUpHistoricalPerson = createServerFn({ method: "POST" })
+  .middleware([requireClickUpImport("manage")])
+  .inputValidator((d) => z.object({ clickupUserId: z.number().int().positive() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const s = await import("./clickup-import.server");
+    const workspaceId = context.clickupWorkspaceId;
+    return s.createHistoricalPerson(
+      { client: context.supabase, workspaceId, userId: context.userId },
+      data.clickupUserId,
+    );
+  });
+
 export const runClickUpImportStep = createServerFn({ method: "POST" })
   .middleware([requireClickUpImport("manage")])
   .inputValidator((d) =>
