@@ -567,7 +567,6 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
           .insert(rows.slice(i, i + 100));
         if (rErr) throw rErr;
       }
-      await (supabase as any).rpc("wa_campaign_prune_recent", { p_campaign_id: data.id });
       patch.total = rows.length;
       patch.recent_contact_days = recentDays;
       patch.exclude_customers = commercial.excludeCustomers;
@@ -640,13 +639,16 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
         }
       }
     }
-    if (Object.keys(patch).length === 0) return { ok: true };
-    const { error } = await supabase
-      .from("whatsapp_campaigns")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .update(patch as any)
-      .eq("id", data.id);
-    if (error) throw error;
+    if (Object.keys(patch).length > 0) {
+      const { error } = await supabase
+        .from("whatsapp_campaigns")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .update(patch as any)
+        .eq("id", data.id);
+      if (error) throw error;
+    }
+    // Limpeza em lote com as regras já gravadas; o disparo segue conferindo.
+    await (supabase as any).rpc("wa_campaign_prune_recent", { p_campaign_id: data.id });
     return { ok: true };
   });
 
