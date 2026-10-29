@@ -1905,6 +1905,13 @@
       "when": 1793283653599,
       "tag": "0271_project_tasks_project_status_sort_idx",
       "breakpoints": true
+    },
+    {
+      "idx": 272,
+      "version": "7",
+      "when": 1793284083049,
+      "tag": "0272_project_tasks_status_partial_idx",
+      "breakpoints": true
     }
   ]
 }
