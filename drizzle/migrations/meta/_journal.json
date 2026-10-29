@@ -1891,6 +1891,13 @@
       "when": 1793244002660,
       "tag": "0269_clickup_apply_step_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 270,
+      "version": "7",
+      "when": 1793282360276,
+      "tag": "0270_project_tasks_list_order_idx",
+      "breakpoints": true
     }
   ]
 }
