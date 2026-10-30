@@ -12,11 +12,17 @@ import {
 } from "@/lib/whatsapp/meta-channel.server";
 import {
   pacingEnabled,
+  PACING_CHAIN_BUDGET_MS,
+  PACING_CHAIN_MAX_HOPS,
+  PACING_CHAIN_TIMEOUT_MS,
   PACING_RUN_BUDGET_MS,
   resolveInterval,
   runPacedLoop,
+  shouldChainNextRun,
+  type PacedStop,
   type PacingInterval,
 } from "@/lib/whatsapp/campaign-pacing";
+import { z } from "zod";
 
 function applyTemplate(body: string, vars: Record<string, string>): string {
   return body.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? "");
@@ -393,23 +399,73 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+const CAMPAIGN_COLUMNS =
+  "id, owner_id, body_template, template_name, sender_phone_number_id, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, recent_contact_days, exclude_customers, exclude_open_deals";
+
+type PacedRun = { budgetMs: number; idle: boolean; hop: number };
+
+/**
+ * Acorda a próxima rodada da mesma campanha quando ainda há fila e o próximo
+ * envio está próximo. A chamada sai pelo banco, com o endereço e as credenciais
+ * da tarefa agendada; falha aqui só atrasa até a próxima tarefa agendada.
+ */
+async function chainNextRun(camp: Campaign, stop: PacedStop, nextAt: number, hop: number) {
+  const [{ data: live }, { count: pending }] = await Promise.all([
+    supabaseAdmin.from("whatsapp_campaigns").select("status").eq("id", camp.id).maybeSingle(),
+    supabaseAdmin
+      .from("whatsapp_campaign_recipients")
+      .select("id", { count: "exact", head: true })
+      .eq("campaign_id", camp.id)
+      .eq("status", "pending"),
+  ]);
+  const chain = shouldChainNextRun({
+    stop,
+    status: live?.status,
+    pending: pending ?? 0,
+    nextAt,
+    now: Date.now(),
+    hop,
+  });
+  if (!chain) return false;
+  const { data, error } = await supabaseAdmin.rpc("wa_campaign_chain_tick", {
+    p_campaign: camp.id,
+    p_hop: hop + 1,
+    p_timeout_ms: PACING_CHAIN_TIMEOUT_MS,
+  });
+  if (error) {
+    console.error("[whatsapp-campaign] encadeamento falhou", camp.id, error.message);
+    return false;
+  }
+  return data != null;
+}
+
 /**
  * Disparo espaçado: um destinatário por vez, com intervalo sorteado entre X e Y.
  * `next_send_at` persiste o espaçamento entre execuções; o lease impede duas
- * execuções simultâneas na mesma campanha.
+ * execuções simultâneas na mesma campanha. Rodada bloqueada pelo lease não
+ * encadeia, então existe no máximo uma cadeia viva por campanha.
  */
-async function processPaced(camp: Campaign, interval: PacingInterval, startedAt: number) {
+async function processPaced(
+  camp: Campaign,
+  interval: PacingInterval,
+  startedAt: number,
+  run: PacedRun,
+) {
   const { data: claimed } = await supabaseAdmin.rpc("wa_campaign_claim_dispatch", {
     p_campaign: camp.id,
-    p_seconds: Math.ceil(PACING_RUN_BUDGET_MS / 1000) + 30,
+    p_seconds: Math.ceil(run.budgetMs / 1000) + 30,
   });
-  if (!claimed) return { processed: 0, skipped: "locked" };
+  if (!claimed) return { processed: 0, skipped: "locked", chained: false };
   let processed = 0;
+  let stop: PacedStop = "empty";
+  let nextAt = camp.next_send_at ? new Date(camp.next_send_at).getTime() : 0;
   try {
     const r = await runPacedLoop({
       interval,
       startedAt,
-      nextAt: camp.next_send_at ? new Date(camp.next_send_at).getTime() : 0,
+      budgetMs: run.budgetMs,
+      idle: run.idle,
+      nextAt,
       sleep,
       sendOne: async () => {
         const res = await processCampaign(camp, 1);
@@ -425,13 +481,59 @@ async function processPaced(camp: Campaign, interval: PacingInterval, startedAt:
       },
     });
     processed = r.processed;
+    stop = r.stop;
+    nextAt = r.nextAt;
   } finally {
     await supabaseAdmin
       .from("whatsapp_campaigns")
       .update({ dispatch_lease_until: null })
       .eq("id", camp.id);
   }
-  return { processed };
+  // Só depois de liberar o lease, para a próxima rodada conseguir assumir.
+  let chained = false;
+  try {
+    chained = await chainNextRun(camp, stop, nextAt, run.hop);
+  } catch (e) {
+    console.error("[whatsapp-campaign] encadeamento falhou", camp.id, (e as Error).message);
+  }
+  return { processed, chained };
+}
+
+const ChainBody = z.object({
+  campaignId: z.string().uuid().optional(),
+  hop: z.number().int().min(0).max(PACING_CHAIN_MAX_HOPS).optional(),
+});
+
+/** Rodada encadeada: só a campanha indicada, só se ainda estiver em execução e espaçada. */
+async function runChained(campaignId: string, hop: number) {
+  const nowIso = new Date().toISOString();
+  const { data: c, error } = await supabaseAdmin
+    .from("whatsapp_campaigns")
+    .select(CAMPAIGN_COLUMNS)
+    .eq("id", campaignId)
+    .eq("status", "running")
+    .or(`scheduled_at.is.null,scheduled_at.lte.${nowIso}`)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!c) return { campaigns: 0, results: [], hop };
+  const camp = c as unknown as Campaign;
+  const { data: ws } = await supabaseAdmin
+    .from("sdr_workspace_settings")
+    .select("workspace_id, template_interval_min_s, template_interval_max_s")
+    .eq("workspace_id", camp.workspace_id)
+    .maybeSingle();
+  const interval = resolveInterval(camp, ws ?? null);
+  if (!pacingEnabled(interval)) return { campaigns: 0, results: [], hop };
+  const res = await processPaced(camp, interval, Date.now(), {
+    budgetMs: PACING_CHAIN_BUDGET_MS,
+    idle: true,
+    hop,
+  });
+  return {
+    campaigns: 1,
+    results: [{ id: camp.id, processed: res.processed, chained: res.chained }],
+    hop,
+  };
 }
 
 export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")({
@@ -440,18 +542,32 @@ export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")
       POST: async ({ request }) => {
         const unauth = requireCronAuth(request);
         if (unauth) return unauth;
+        const raw = await request.text();
+        let parsedJson: unknown = {};
+        try {
+          parsedJson = raw ? JSON.parse(raw) : {};
+        } catch {
+          return new Response("Invalid body", { status: 400 });
+        }
+        const parsed = ChainBody.safeParse(parsedJson ?? {});
+        if (!parsed.success) return new Response("Invalid body", { status: 400 });
+        const { campaignId, hop } = parsed.data;
+        if (campaignId) {
+          const chainedRun = await runCronWithLogging("whatsapp-campaign-chain", () =>
+            runChained(campaignId, hop ?? 1),
+          );
+          return Response.json(chainedRun);
+        }
         const run = await runCronWithLogging("whatsapp-campaign-tick", async () => {
           const nowIso = new Date().toISOString();
           const { data: camps, error } = await supabaseAdmin
             .from("whatsapp_campaigns")
-            .select(
-              "id, owner_id, body_template, template_name, sender_phone_number_id, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, recent_contact_days, exclude_customers, exclude_open_deals",
-            )
+            .select(CAMPAIGN_COLUMNS)
             .eq("status", "running")
             .or(`scheduled_at.is.null,scheduled_at.lte.${nowIso}`)
             .limit(50);
           if (error) throw new Error(error.message);
-          const results: Array<{ id: string; processed: number }> = [];
+          const results: Array<{ id: string; processed: number; chained?: boolean }> = [];
           const startedAt = Date.now();
           const wsIds = Array.from(new Set((camps ?? []).map((c) => c.workspace_id)));
           const { data: wsSettings } = wsIds.length
@@ -472,12 +588,23 @@ export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")
             const res = await processCampaign(camp);
             results.push({ id: c.id, processed: res.processed });
           }
-          // Campanhas espaçadas rodam em paralelo, cada uma no seu próprio ritmo.
+          // Campanhas espaçadas rodam em paralelo, cada uma no seu próprio ritmo;
+          // a rodada agendada abre (ou reabre) a cadeia de cada uma.
           const pacedRes = await Promise.all(
-            paced.map(({ camp, interval }) => processPaced(camp, interval, startedAt)),
+            paced.map(({ camp, interval }) =>
+              processPaced(camp, interval, startedAt, {
+                budgetMs: PACING_RUN_BUDGET_MS,
+                idle: false,
+                hop: 0,
+              }),
+            ),
           );
           paced.forEach(({ camp }, i) =>
-            results.push({ id: camp.id, processed: pacedRes[i].processed }),
+            results.push({
+              id: camp.id,
+              processed: pacedRes[i].processed,
+              chained: pacedRes[i].chained,
+            }),
           );
           return { campaigns: results.length, results };
         });
