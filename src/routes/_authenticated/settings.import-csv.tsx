@@ -33,6 +33,7 @@ import {
   pickMappedColumns,
 } from "@/lib/csv-import-rows";
 import { Progress } from "@/components/ui/progress";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useDefaultPhoneCountry } from "@/lib/phone/phone-country-context";
 export const Route = createFileRoute("/_authenticated/settings/import-csv")({
   component: ImportCsvPage,
@@ -64,6 +65,11 @@ function ImportCsvPage() {
   } | null>(null);
 
   const fields = ENTITY_FIELDS[entity];
+  // Mesmas chaves conferidas no servidor (criar registros da entidade); nega enquanto carrega.
+  const access = usePermissions();
+  const canImport =
+    !access.isLoading &&
+    access.canAny([`techsales.${entity}.create.workspace`, `techsales.${entity}.create.own`]);
   const dedupeOptions = DEDUPE_KEYS[entity];
 
   const phoneCountry = useDefaultPhoneCountry();
@@ -344,8 +350,19 @@ function ImportCsvPage() {
                 </Select>
               </div>
             </div>
+            {!canImport && (
+              <p className="text-sm text-muted-foreground" role="status">
+                {access.isLoading
+                  ? "Conferindo suas permissões…"
+                  : "Você não tem permissão para criar registros deste tipo."}
+              </p>
+            )}
             <div className="flex items-center gap-2">
-              <Button onClick={runPreview} disabled={loading !== null} variant="outline">
+              <Button
+                onClick={runPreview}
+                disabled={loading !== null || !canImport}
+                variant="outline"
+              >
                 {loading === "preview" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                 Analisar
               </Button>
