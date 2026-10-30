@@ -6,7 +6,7 @@
 
 - Público das campanhas WhatsApp (fila de prospecção ou filtro próprio) e variáveis do modelo são resolvidos no servidor ao salvar, por lista branca de campos em `campaign-audience.ts`, e gravados em `whatsapp_campaign_recipients.variables`; por quê: o disparo continua igual e nenhum campo fora da lista entra na mensagem.
 
-- Cada rodada do disparo espaçado espera no máximo `PACING_RUN_BUDGET_MS` (abaixo do tempo limite da chamada agendada) e relê o status da campanha antes de cada envio; por quê: esperas longas eram cortadas sem liberar o lease e uma pausa precisa valer na hora.
+- Campanhas espaçadas se auto-encadeiam: a tarefa agendada só abre a cadeia (`kickPaced`; se não conseguir, envia como antes dentro de `PACING_RUN_BUDGET_MS`), e cada rodada encadeada envia por até `PACING_CHAIN_BUDGET_MS`, libera o lease e pede a próxima via `wa_campaign_chain_tick` (mesmo endereço/credencial da tarefa agendada, só service_role), decidido por `shouldChainNextRun`; relê o status antes de cada envio. Por quê: o intervalo configurado vale de fato sem depender da cadência de 2 min, e o lease garante uma cadeia por campanha.
 
 - Número de WhatsApp de Contatos/Leads (política do CANAL, separada do E.164 genérico de `src/lib/phone/e164.ts`) vive em `whatsapp_e164` (E.164, só celular do Brasil +55 DDD 9XXXXXXXX; formato antigo de 8 dígitos 6–9 ganha o 9; fixo e estrangeiro são recusados), normalizado por gatilho no banco e por `src/lib/phone/whatsapp-e164.ts` no app; todo disparo escolhe WhatsApp → Celular → Telefone e nunca usa fixo; por quê: fixo quase nunca tem WhatsApp e gerava falhas em massa.
 
