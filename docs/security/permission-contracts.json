@@ -2417,7 +2417,8 @@
       "kind": "service",
       "files": {
         "src/lib/prospecting/sdr/actions.server.ts": "9431b626fc4e47a8b1fbca0edc704a8b37a8e5bcaf4f42cf1efe00ce98cace9e",
-        "src/routes/api/public/hooks/whatsapp-campaign-tick.ts": "2be596667a0c3f3f23ad146dce24d2dc8e73e3e6bf4425e813937d58be915bcd"
+        "src/routes/api/public/hooks/whatsapp-campaign-tick.ts": "de6faed7efc97c4619b27f8288ed5d886567ed5d426cddb304da8644ffb508d3",
+        "drizzle/migrations/0284_wa_campaign_chain_tick.sql": "441fe5787b991d97adfad377ebf115ad548b7c05f8924f00de1aad136920a7ba"
       },
       "resources": [
         "system.whatsapp",
@@ -2444,7 +2445,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Existing lease, cron capability and sales_worker_authorize remain mandatory; Lia uses conversation number and campaigns fixed selected sender; rejection pauses direct campaigns instead of failover. Review 29/10/2026: automatic follow-ups nearly identical to one of the last three sent messages are cancelled (followup_repetition); text-similarity check only, no new data access or permission change.",
+      "rationale": "Existing lease, cron capability and sales_worker_authorize remain mandatory; Lia uses conversation number and campaigns fixed selected sender; rejection pauses direct campaigns instead of failover. Review 29/10/2026: automatic follow-ups nearly identical to one of the last three sent messages are cancelled (followup_repetition); text-similarity check only, no new data access or permission change. Review 30/10/2026: paced campaigns self-chain. The scheduled tick only opens a chain per running paced campaign (falls back to the old in-process run when the chain cannot be opened); chained runs carry {campaignId, hop} validated by zod and require the same CRON_SECRET bearer. Next run is requested through SECURITY DEFINER wa_campaign_chain_tick (EXECUTE only service_role) that reuses the URL and headers of the cron job whatsapp-campaign-tick (no secret passes through the app), only for status running, hop 1..1000. Lease wa_campaign_claim_dispatch still prevents concurrent runs; locked runs never chain, so at most one chain per campaign. Every send keeps assertSalesWorker and the existing guards.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-worker.server.ts",
@@ -2463,6 +2464,10 @@
         {
           "file": "drizzle/migrations/0255_whatsapp_cloud_routing.sql",
           "symbol": "wa_cloud_campaign_sender_guard"
+        },
+        {
+          "file": "drizzle/migrations/0284_wa_campaign_chain_tick.sql",
+          "symbol": "wa_campaign_chain_tick"
         }
       ],
       "tests": {
@@ -4474,9 +4479,9 @@
       "id": "whatsapp-campaign-pacing-pure",
       "kind": "presentation",
       "files": {
-        "src/lib/whatsapp/campaign-pacing.ts": "d79c9edcff2c27ccc94f2db0ecdbe977932bc93d8435e412d94561fd8b7d3ca5"
+        "src/lib/whatsapp/campaign-pacing.ts": "7398770bb726665b544444d70ec63074503aef4e8cc74a8c210c6e044622063e"
       },
-      "rationale": "Pure timing helpers for paced campaign dispatch (interval draw, loop that skips waiting after ignored recipients). No I/O, data access, actions or authorization; the caller (campaign tick worker) keeps cron auth, lease and assertSalesWorker."
+      "rationale": "Pure timing helpers for paced campaign dispatch (interval draw, loop that skips waiting after ignored recipients, stop reason, optional idle wait until budget end, chain decision shouldChainNextRun with horizon and hop cap). No I/O, data access, actions or authorization; the caller (campaign tick worker) keeps cron auth, lease and assertSalesWorker."
     },
     {
       "id": "sdr-referral-state-pure",
