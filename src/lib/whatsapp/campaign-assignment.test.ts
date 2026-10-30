@@ -13,13 +13,23 @@ describe("distribuição das conversas da campanha", () => {
     expect(pickRoundRobin([], 5)).toBeNull();
   });
   it("membro específico exige exatamente um membro", () => {
-    expect(() => normalizeAssignment({ assignment_mode: "member", assignment_member_ids: [] })).toThrow();
-    expect(normalizeAssignment({ assignment_mode: "member", assignment_member_ids: [A] }).assignment_member_ids).toEqual([A]);
+    expect(() =>
+      normalizeAssignment({ assignment_mode: "member", assignment_member_ids: [] }),
+    ).toThrow();
+    expect(
+      normalizeAssignment({ assignment_mode: "member", assignment_member_ids: [A] })
+        .assignment_member_ids,
+    ).toEqual([A]);
   });
   it("dividir exige ao menos dois membros distintos", () => {
-    expect(() => normalizeAssignment({ assignment_mode: "round_robin", assignment_member_ids: [A, A] })).toThrow();
+    expect(() =>
+      normalizeAssignment({ assignment_mode: "round_robin", assignment_member_ids: [A, A] }),
+    ).toThrow();
   });
   it("desatribuídas descarta membros", () => {
-    expect(normalizeAssignment({ assignment_mode: "unassigned", assignment_member_ids: [A] }).assignment_member_ids).toEqual([]);
+    expect(
+      normalizeAssignment({ assignment_mode: "unassigned", assignment_member_ids: [A] })
+        .assignment_member_ids,
+    ).toEqual([]);
   });
 });

@@ -7,7 +7,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ASSIGNMENT_MODES, ASSIGNMENT_MODE_LABELS, type AssignmentMode } from "@/lib/whatsapp/campaign-assignment";
+import {
+  ASSIGNMENT_MODES,
+  ASSIGNMENT_MODE_LABELS,
+  type AssignmentMode,
+} from "@/lib/whatsapp/campaign-assignment";
 
 const HELP: Record<AssignmentMode, string> = {
   auto: "Quando o cliente responder, a regra ativa da Central de Distribuição escolhe o responsável.",
@@ -36,7 +40,9 @@ export function CampaignAssignmentSection({
     <div className="space-y-3">
       <RadioGroup
         value={mode}
-        onValueChange={(v) => onChange(v as AssignmentMode, v === "member" ? memberIds.slice(0, 1) : memberIds)}
+        onValueChange={(v) =>
+          onChange(v as AssignmentMode, v === "member" ? memberIds.slice(0, 1) : memberIds)
+        }
         disabled={disabled}
         aria-label="Distribuição das conversas"
       >
