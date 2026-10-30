@@ -837,20 +837,25 @@ export const listAudienceFieldValues = createServerFn({ method: "POST" })
     const workspaceId = await resolveActiveWorkspace(context.userId);
     const fields = await loadServerFilterFields(context.supabase, workspaceId, context.userId);
     if (!isSuggestField(data.entity, data.column, fields)) throw new Error("Campo não permitido.");
-    const path = filterColumnPath(data.column);
+    filterColumnPath(data.column); // valida chave personalizada
     const isCustom = data.column.startsWith(CUSTOM_FIELD_PREFIX);
-    const alias = isCustom ? "v" : data.column;
-    let q = (context.supabase as any)
-      .from(data.entity)
-      .select(isCustom ? `v:${path}` : data.column)
-      .eq("workspace_id", workspaceId)
-      .not(path, "is", null)
-      .neq(path, "")
-      .order(path, { ascending: true })
-      .limit(5000);
     const term = (data.search ?? "").replace(/[%_,()]/g, " ").trim();
-    if (term) q = q.ilike(path, `%${term}%`);
-    const { data: rows, error } = await q;
+    // Valores distintos direto no banco (RLS do usuário): evita truncar em linhas repetidas.
+    const { data: rows, error } = await (context.supabase as any).rpc(
+      "whatsapp_campaign_filter_values",
+      {
+        p_entity: data.entity,
+        p_workspace: workspaceId,
+        p_column: isCustom ? "custom_fields" : data.column,
+        p_custom_key: isCustom ? data.column.slice(CUSTOM_FIELD_PREFIX.length) : null,
+        p_search: term || null,
+        p_limit: 200,
+      },
+    );
     if (error) throw new Error(error.message);
-    return distinctValues(((rows ?? []) as Record<string, unknown>[]).map((r) => r[alias]));
+    return distinctValues(
+      ((rows ?? []) as unknown[]).map((r) =>
+        r && typeof r === "object" ? Object.values(r as Record<string, unknown>)[0] : r,
+      ),
+    );
   });

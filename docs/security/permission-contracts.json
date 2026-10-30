@@ -2128,15 +2128,16 @@
       "kind": "business",
       "files": {
         "src/lib/whatsapp.functions.ts": "1134b8ac720de7dcd2dfb45acfbbcc23d3c55351755afad874ec9fb80ce87aac",
-        "src/lib/whatsapp-campaigns.functions.ts": "f7472fae624ca011e62b45d888f4886a1abdc967d6c153ced94d985c947a3e84",
+        "src/lib/whatsapp-campaigns.functions.ts": "5a6c769f447ca9007647855feb00e086550f3f6d356998d25478bc5b5e76c1d1",
         "src/routes/_authenticated/inbox.index.tsx": "6871432118a6bd8ef6477bf0ca6ef3bd14a00e7fbec3beef7bb955f610daee80",
         "src/routes/_authenticated/inbox.whatsapp.tsx": "165ac43240712c3713a9b7daec6a059aad630a3a309ae77dd3f38ccd7aa8ea94",
-        "src/routes/_authenticated/campaigns.whatsapp.tsx": "03099933c701ea7007f30e5a160fc394923be5d2d981b12f3cdf50ab9eb77d3f",
+        "src/routes/_authenticated/campaigns.whatsapp.tsx": "1f0651accaa28ec004fc5eb3cc7f83d4cafa49d13cb1a0dbb8aea459dc0b0175",
         "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9",
         "drizzle/migrations/0263_wa_outbound_activity_trigger.sql": "6c6a9521a5cfa09cd1724061fd78939fa94d56344ccb8c3052418ea9426a96e0",
         "drizzle/migrations/0264_wa_outbound_activity_fast_lookup.sql": "120f2512f182b4b1f4a0f89489dbe4cff8c00f7be3be5f31ff9b5b5ccea6a53a",
         "drizzle/migrations/0265_wa_outbound_activity_contact_owner_fallback.sql": "f951df73a114e86f227c877eddfff7960b975bc8cc723add13b9d3940090baa0",
-        "drizzle/migrations/0274_wa_campaign_prune_recent.sql": "367295426b6d5a14d7319414235e7c4d84cf48d1085bfd1b322763be7c041101"
+        "drizzle/migrations/0274_wa_campaign_prune_recent.sql": "367295426b6d5a14d7319414235e7c4d84cf48d1085bfd1b322763be7c041101",
+        "drizzle/migrations/0283_whatsapp_campaign_filter_values.sql": "80b87e4714d99c0674fa970819ff36a4558446abfcfb969b30a2100fc4fccf4c"
       },
       "resources": [
         "system.whatsapp",
@@ -2163,7 +2164,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message. Undelivered outbound messages show a translated failure label (pure describeDeliveryError + InboxMessageBubble), built only from error fields of messages the user already reads. Recent-contact pruning RPC wa_campaign_prune_recent is SECURITY INVOKER (caller RLS on recipients applies), requires active workspace membership, EXECUTE only for authenticated/service_role, and only marks pending rows of that campaign as skipped.",
+      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message. Undelivered outbound messages show a translated failure label (pure describeDeliveryError + InboxMessageBubble), built only from error fields of messages the user already reads. Recent-contact pruning RPC wa_campaign_prune_recent is SECURITY INVOKER (caller RLS on recipients applies), requires active workspace membership, EXECUTE only for authenticated/service_role, and only marks pending rows of that campaign as skipped. Audience filter suggestions use RPC whatsapp_campaign_filter_values: SECURITY INVOKER (caller RLS), entity limited to leads/contacts/companies/deals, column validated against the table catalog and custom key by regex, EXECUTE only for authenticated; server still checks isSuggestField and active workspace. The New Campaign dialog only regroups existing fields into sections.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -2198,6 +2199,10 @@
         {
           "file": "drizzle/migrations/0274_wa_campaign_prune_recent.sql",
           "symbol": "wa_campaign_prune_recent"
+        },
+        {
+          "file": "drizzle/migrations/0283_whatsapp_campaign_filter_values.sql",
+          "symbol": "whatsapp_campaign_filter_values"
         }
       ],
       "tests": {
