@@ -278,7 +278,7 @@ function TasksHubspotView() {
 
     if (activeView === "mine_open" && user?.id) {
       q = q
-        .or(responsibleOrExpr([user.id], { columns: TASK_RESPONSIBLE_COLUMNS }))
+        .eq("assigned_to", user.id)
         .eq("completed", false)
         .neq("task_status", "COMPLETED");
     } else if (activeView === "due_today") {
@@ -308,15 +308,13 @@ function TasksHubspotView() {
         .lt("due_date", new Date(startOfDay.getTime() + 7 * 86_400_000).toISOString());
     }
 
-    // Responsável efetivo (assigned_to com fallback para owner_id), respeitando o escopo.
+    // Filtro direto por assigned_to (sem OR): o OR impedia o uso do índice parcial de tarefas.
     if (assignee === ASSIGNEE_ME && user?.id)
-      q = q.or(responsibleOrExpr([user.id], { columns: TASK_RESPONSIBLE_COLUMNS }));
+      q = q.eq("assigned_to", user.id);
     else if (assignee === ASSIGNEE_NONE)
-      q = q.or(
-        responsibleOrExpr([], { columns: TASK_RESPONSIBLE_COLUMNS, includeUnassigned: true }),
-      );
+      q = q.is("assigned_to", null);
     else if (assignee !== ASSIGNEE_ALL)
-      q = q.or(responsibleOrExpr([assignee], { columns: TASK_RESPONSIBLE_COLUMNS }));
+      q = q.eq("assigned_to", assignee);
 
     const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
     if (term.length >= 2) {
