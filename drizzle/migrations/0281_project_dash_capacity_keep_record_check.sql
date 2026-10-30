@@ -10,3 +10,4 @@ BEGIN
   IF position('v_pws' IN d) > 0 THEN RAISE EXCEPTION 'capacity_base: reversão incompleta'; END IF;
   EXECUTE d;
 END $mig$;
+COMMENT ON FUNCTION public.project_dash_capacity_base(text, jsonb) IS 'Painel: capacidade; via rápida de horas por workspace; projetos pela regra completa (inclui espaço/pasta).';

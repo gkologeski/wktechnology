@@ -20,3 +20,4 @@ BEGIN
   END IF;
   EXECUTE d;
 END $mig$;
+COMMENT ON FUNCTION public.project_dash_ds_forecast(text, jsonb) IS 'Painel: previsão; vias rápidas por workspace (tarefas, marcos, horas) antes das regras por linha.';

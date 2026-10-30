@@ -23,3 +23,4 @@ BEGIN
   IF position('p.workspace_id = b.full_ws OR' IN d) = 0 THEN RAISE EXCEPTION 'ds_projects: troca não aplicada'; END IF;
   EXECUTE d;
 END $mig$;
+COMMENT ON FUNCTION public.project_dash_ds_tasks(text, jsonb) IS 'Painel: tarefas do recorte; via rápida work_view_full_workspace antes da regra por linha.';
