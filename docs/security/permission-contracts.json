@@ -4712,9 +4712,8 @@
       "id": "csv-import-batched",
       "kind": "business",
       "files": {
-        "src/lib/csv-import.functions.ts": "71b540249e6f1dc53ea79a4e8d398e0969915610e37331dd7202d34f3b867884",
-        "src/lib/csv-import-rows.ts": "b6c8b1cb2a9ef4c31ed0b49b8cfc58e93f8e66adee8e12a72e2cba7ace0120e1",
-        "src/routes/_authenticated/settings.import-csv.tsx": "2dd17c79fcac9f29ab8198e82fbbc040631bd57e20a7c85a047605f666bb084a",
+        "src/lib/csv-import.functions.ts": "eb0b223a70eece8313918586ae598f88664f3d3bf135ed407912bef80733ac3a",
+        "src/routes/_authenticated/settings.import-csv.tsx": "41cbd7a2e1e5fb2c6b82b907a3630bd9d289390347f885a0aada065adee4e9f6",
         "drizzle/migrations/0285_contact_domain_link_indexed.sql": "40ac82ca81766c5134fc440d1086df32d24f77f15168569eb91677459bc3ce5b"
       },
       "resources": [
@@ -4738,15 +4737,15 @@
         "techsales.companies.create.workspace",
         "techsales.companies.create.own"
       ],
-      "rationale": "CSV import now runs in client batches of 100 rows and server inserts of 10 rows so each write ends before the 8 s statement timeout; analysis also requires the create key (stricter). Writes still use the caller's RLS client with the active workspace set explicitly. 0285 moves the contact domain-link candidate lookup to indexed SECURITY DEFINER helper usable only inside triggers (pg_trigger_depth guard, no anon EXECUTE); the final match still runs under the caller's companies RLS, so linked companies and visibility are unchanged. No new key, grant to roles or policy.",
+      "rationale": "CSV import runs in client batches of 100 rows and server inserts of 10 rows so each write ends before the 8 s statement timeout. Analysis and execution both require the entity create key on the server (analysis became stricter); the screen denies Analisar/Importar while permissions load or without the key. Writes use the caller's RLS client with the active workspace set explicitly. 0285 moves the contact domain-link candidate lookup to an indexed SECURITY DEFINER helper that answers only inside triggers (pg_trigger_depth guard, no anon EXECUTE); the final match still runs under the caller's companies RLS, so linked companies and visibility are unchanged. No new key, role grant or policy.",
       "controls": [
         {
           "file": "src/lib/access-control/admin-gates.server.ts",
           "symbol": "assertImportEntity"
         },
         {
-          "file": "src/lib/access-control/enforce.server.ts",
-          "symbol": "assertAnyPermission"
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
         }
       ],
       "database": [
@@ -4785,6 +4784,14 @@
           "name": "csv import refuses an inactive member"
         }
       }
+    },
+    {
+      "id": "csv-import-row-helpers",
+      "kind": "presentation",
+      "files": {
+        "src/lib/csv-import-rows.ts": "b6c8b1cb2a9ef4c31ed0b49b8cfc58e93f8e66adee8e12a72e2cba7ace0120e1"
+      },
+      "rationale": "Pure helpers that trim mapped CSV columns, split rows into batches and sum batch results. No data access, route, server function or UI event; authorization stays in csv-import-batched."
     }
   ],
   "retired": {}

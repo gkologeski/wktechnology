@@ -413,6 +413,7 @@ function ImportCsvPage() {
               onClick={runExecute}
               disabled={
                 loading !== null ||
+                !canImport ||
                 preview.newRecords + (strategy === "update" ? preview.duplicates : 0) === 0
               }
             >
