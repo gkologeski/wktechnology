@@ -166,11 +166,23 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
         },
         { onConflict: "contact_phone,twilio_number" },
       )
-      .select("id, assigned_to")
+      .select("id, assigned_to, origin_campaign_id")
       .single();
     if (cErr) throw new Retry(cErr.message);
-    // Conversa sem responsável: distribui pela regra ativa da Central de Distribuição.
-    if (!conv.assigned_to) await autoAssignConversation(admin, ws.workspace_id, conv.id);
+    // Conversa sem responsável: distribui pela regra ativa da Central de Distribuição,
+    // exceto quando a campanha de origem pediu conversas desatribuídas.
+    if (!conv.assigned_to) {
+      let keepUnassigned = false;
+      if (conv.origin_campaign_id) {
+        const { data: oc } = await admin
+          .from("whatsapp_campaigns")
+          .select("assignment_mode")
+          .eq("id", conv.origin_campaign_id)
+          .maybeSingle();
+        keepUnassigned = oc?.assignment_mode === "unassigned";
+      }
+      if (!keepUnassigned) await autoAssignConversation(admin, ws.workspace_id, conv.id);
+    }
     const media = ["image", "audio", "video", "document", "sticker"].includes(m.type)
       ? m[m.type]
       : null;

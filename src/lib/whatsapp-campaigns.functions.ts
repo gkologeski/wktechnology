@@ -2,6 +2,7 @@ import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
+import { AssignmentInput } from "@/lib/whatsapp/campaign-assignment";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { campaignIntervalColumns } from "@/lib/whatsapp/campaign-pacing";
@@ -110,6 +111,8 @@ const CreateInput = z.object({
   commercial_overrides: z.array(z.string().max(40)).max(5000).optional(),
   /** Estado do quadro Público para reabrir na edição (opaco, só exibição). */
   audience_config: z.record(z.string(), z.unknown()).nullable().optional(),
+  /** Distribuição das conversas geradas (padrão: Central de Distribuição). */
+  assignment: AssignmentInput.optional(),
 });
 
 const PreviewInput = CreateInput.pick({
@@ -314,9 +317,14 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
       userId,
       data,
     );
+    const { resolveAssignment } = await import("@/lib/whatsapp/campaign-assignment.server");
+    const assignment = data.assignment
+      ? await resolveAssignment(supabase, workspaceId, data.assignment)
+      : { assignment_mode: "auto" as const, assignment_member_ids: [] };
     const { data: camp, error } = await supabase
       .from("whatsapp_campaigns")
       .insert({
+        ...assignment,
         owner_id: userId,
         name: data.name,
         body_template: data.body_template || null,
@@ -476,6 +484,7 @@ const UpdateInput = z.object({
   sdr_playbook_id: z.string().uuid().nullable().optional(),
   send_interval_min_s: z.number().int().min(0).max(3600).nullable().optional(),
   send_interval_max_s: z.number().int().min(0).max(3600).nullable().optional(),
+  assignment: AssignmentInput.optional(),
   /** Quando presente, refaz a lista de pendentes (só rascunho). */
   replace_audience: CreateInput.pick({
     recipients: true,
@@ -526,6 +535,13 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
       patch,
       campaignIntervalColumns(data.send_interval_min_s, data.send_interval_max_s),
     );
+    if (data.assignment) {
+      const { resolveAssignment } = await import("@/lib/whatsapp/campaign-assignment.server");
+      const ws = await resolveActiveWorkspace(context.userId);
+      Object.assign(patch, await resolveAssignment(supabase, ws, data.assignment), {
+        assignment_cursor: 0,
+      });
+    }
     if (data.replace_audience) {
       const { canReplaceAudience } = await import("@/lib/whatsapp/campaign-actions");
       if (!canReplaceAudience(existing.status))
@@ -811,7 +827,7 @@ export const getWhatsAppCampaignForEdit = createServerFn({ method: "POST" })
     const { data: camp, error } = await context.supabase
       .from("whatsapp_campaigns")
       .select(
-        "id, status, total, body_template, template_name, sender_phone_number_id, consent_evidence, media_url, sdr_playbook_id, recent_contact_days, exclude_customers, exclude_open_deals, audience_config",
+        "id, status, total, body_template, template_name, sender_phone_number_id, consent_evidence, media_url, sdr_playbook_id, recent_contact_days, exclude_customers, exclude_open_deals, audience_config, assignment_mode, assignment_member_ids",
       )
       .eq("id", data.id)
       .single();

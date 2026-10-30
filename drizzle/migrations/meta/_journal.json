@@ -2003,6 +2003,13 @@
       "when": 1793383528878,
       "tag": "0285_contact_domain_link_indexed",
       "breakpoints": true
+    },
+    {
+      "idx": 286,
+      "version": "7",
+      "when": 1793387605363,
+      "tag": "0286_wa_campaign_assignment",
+      "breakpoints": true
     }
   ]
 }

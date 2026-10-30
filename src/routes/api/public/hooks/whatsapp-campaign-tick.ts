@@ -51,6 +51,7 @@ type Campaign = {
   recent_contact_days?: number | null;
   exclude_customers?: boolean | null;
   exclude_open_deals?: boolean | null;
+  assignment_mode?: string | null;
 };
 
 /** Variáveis posicionais do template, renderizadas com os dados do destinatário. */
@@ -271,6 +272,26 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         .select("id")
         .single();
 
+      if (conv && (camp.assignment_mode === "member" || camp.assignment_mode === "round_robin")) {
+        // Distribuição definida na campanha; nunca reatribui conversa que já tem responsável.
+        const { data: cur } = await supabaseAdmin
+          .from("whatsapp_conversations")
+          .select("assigned_to")
+          .eq("id", conv.id)
+          .maybeSingle();
+        if (cur && !cur.assigned_to) {
+          const { data: assignee } = await supabaseAdmin.rpc("wa_campaign_next_assignee", {
+            _campaign_id: camp.id,
+          });
+          if (assignee)
+            await supabaseAdmin
+              .from("whatsapp_conversations")
+              .update({ assigned_to: assignee as string })
+              .eq("id", conv.id)
+              .is("assigned_to", null);
+          else console.warn("[wa-campaign] nenhum membro ativo para distribuir", camp.id);
+        }
+      }
       if (conv) {
         const { ensureWhatsAppConversationIdentity } =
           await import("@/lib/inbox/identity-resolution.server");
@@ -402,7 +423,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 const CAMPAIGN_COLUMNS =
-  "id, owner_id, body_template, template_name, sender_phone_number_id, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, dispatch_lease_until, recent_contact_days, exclude_customers, exclude_open_deals";
+  "id, owner_id, body_template, template_name, sender_phone_number_id, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, dispatch_lease_until, recent_contact_days, exclude_customers, exclude_open_deals, assignment_mode";
 
 type PacedRun = { budgetMs: number; idle: boolean; hop: number };
 
