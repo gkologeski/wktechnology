@@ -25,7 +25,14 @@ import {
   type DedupeStrategy,
 } from "@/lib/csv-import.functions";
 
-import { pickMappedColumns } from "@/lib/csv-import-rows";
+import {
+  CSV_IMPORT_CLIENT_BATCH,
+  EMPTY_BATCH_RESULT,
+  chunkRows,
+  mergeBatchResult,
+  pickMappedColumns,
+} from "@/lib/csv-import-rows";
+import { Progress } from "@/components/ui/progress";
 import { useDefaultPhoneCountry } from "@/lib/phone/phone-country-context";
 export const Route = createFileRoute("/_authenticated/settings/import-csv")({
   component: ImportCsvPage,
@@ -49,6 +56,12 @@ function ImportCsvPage() {
   const [preview, setPreview] = useState<Preview | null>(null);
   const [result, setResult] = useState<ResultType | null>(null);
   const [loading, setLoading] = useState<"preview" | "execute" | null>(null);
+  const [progress, setProgress] = useState<{
+    batch: number;
+    batches: number;
+    done: number;
+    total: number;
+  } | null>(null);
 
   const fields = ENTITY_FIELDS[entity];
   const dedupeOptions = DEDUPE_KEYS[entity];
@@ -132,17 +145,39 @@ function ImportCsvPage() {
   async function runExecute() {
     if (!preview) return;
     setLoading("execute");
+    setResult(null);
+    const batches = chunkRows(pickMappedColumns(rows, mapping).rows, CSV_IMPORT_CLIENT_BATCH);
+    let total: ResultType = EMPTY_BATCH_RESULT;
+    setProgress({ batch: 0, batches: batches.length, done: 0, total: rows.length });
     try {
-      const r = await executeFn({
-        data: { entity, rows: pickMappedColumns(rows, mapping).rows, mapping, dedupeKey, strategy },
-      });
-      setResult(r);
+      for (const [i, batch] of batches.entries()) {
+        setProgress({
+          batch: i + 1,
+          batches: batches.length,
+          done: i * CSV_IMPORT_CLIENT_BATCH,
+          total: rows.length,
+        });
+        try {
+          const r = await executeFn({
+            data: { entity, rows: batch, mapping, dedupeKey, strategy },
+          });
+          total = mergeBatchResult(total, r, i * CSV_IMPORT_CLIENT_BATCH);
+        } catch (e) {
+          setResult(total);
+          const reason = e instanceof Error ? e.message : "Falha ao importar";
+          toast.error(
+            `Importação parada no lote ${i + 1} de ${batches.length} (${reason}). ` +
+              `${total.inserted} criados antes da falha. Importe de novo com "Ignorar duplicados" para continuar.`,
+          );
+          return;
+        }
+      }
+      setResult(total);
       toast.success(
-        `Importação concluída: ${r.inserted} criados, ${r.updated} atualizados, ${r.skipped} ignorados`,
+        `Importação concluída: ${total.inserted} criados, ${total.updated} atualizados, ${total.skipped} ignorados`,
       );
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha ao importar");
     } finally {
+      setProgress(null);
       setLoading(null);
     }
   }
@@ -367,9 +402,24 @@ function ImportCsvPage() {
               {loading === "execute" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
               Importar agora
             </Button>
+            {progress && (
+              <div className="mt-4 space-y-2" role="status" aria-live="polite">
+                <p className="text-sm text-muted-foreground">
+                  Importando lote {progress.batch} de {progress.batches} ·{" "}
+                  {Math.min(progress.done, progress.total)} de {progress.total} linhas enviadas
+                </p>
+                <Progress
+                  value={progress.total ? (progress.done / progress.total) * 100 : 0}
+                  aria-label="Progresso da importação"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Mantenha esta página aberta até o fim.
+                </p>
+              </div>
+            )}
             {result && (
               <div className="mt-4 flex items-center gap-2 text-sm">
-                <CheckCircle2 className="h-4 w-4 text-green-600" />
+                <CheckCircle2 className="h-4 w-4 text-primary" />
                 {result.inserted} criados · {result.updated} atualizados · {result.skipped}{" "}
                 ignorados · {result.invalid} inválidos
               </div>
