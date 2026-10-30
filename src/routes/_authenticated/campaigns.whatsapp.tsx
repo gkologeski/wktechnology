@@ -1,3 +1,4 @@
+import { FormSection } from "@/components/techhire/ui";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSdrPlaybooks } from "@/hooks/use-default-sdr-agent";
@@ -393,73 +394,92 @@ function CampaignsPage() {
             <DialogHeader>
               <DialogTitle>{isEditing ? "Editar campanha" : "Nova campanha"}</DialogTitle>
             </DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs text-muted-foreground">Número remetente</label>
-                <Select
-                  value={sender}
-                  disabled={isEditing && editStatus !== "draft"}
-                  onValueChange={(value) => {
-                    setSender(value);
-                    setTemplateName("__none__");
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="lovable">Conector Lovable atual</SelectItem>
-                    {senders.data?.map((number) => (
-                      <SelectItem
-                        key={number.phone_number_id}
-                        value={number.phone_number_id}
-                        disabled={number.quality_rating === "RED"}
-                      >
-                        {number.display_phone_number} · {number.verified_name || "Meta"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {senders.isError && (
-                  <p role="alert" className="text-sm text-destructive">
-                    Não foi possível consultar os números oficiais.
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  O remetente permanece fixo após o início da campanha. Não há alternância
-                  automática por restrição.
-                </p>
-                {sender !== "lovable" && (
-                  <div className="mt-2">
-                    <label className="text-xs text-muted-foreground">
-                      Origem da autorização dos destinatários
-                    </label>
-                    <Textarea
-                      value={consentEvidence}
-                      onChange={(event) => setConsentEvidence(event.target.value)}
-                      placeholder="Informe onde estão registrados os consentimentos desta lista: formulário, data, campanha ou referência verificável."
-                      maxLength={2000}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Este registro é uma declaração do responsável. Ter o telefone no CRM ou um
-                      template aprovado não comprova consentimento.
-                    </p>
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Nome</label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Black Friday Outubro"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+            <div>
+              <FormSection title="Identificação" className="gap-3 py-4 md:grid-cols-1">
                 <div>
-                  <label className="text-xs text-muted-foreground">Template</label>
+                  <label htmlFor="camp-name" className="text-xs text-muted-foreground">
+                    Nome da campanha
+                  </label>
+                  <Input
+                    id="camp-name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Black Friday Outubro"
+                  />
+                </div>
+              </FormSection>
+              <FormSection
+                title="Remetente"
+                description="Número que envia as mensagens desta campanha."
+                className="gap-3 py-4 md:grid-cols-1"
+              >
+                <div>
+                  <label htmlFor="camp-sender" className="text-xs text-muted-foreground">
+                    Número remetente
+                  </label>
+                  <Select
+                    value={sender}
+                    disabled={isEditing && editStatus !== "draft"}
+                    onValueChange={(value) => {
+                      setSender(value);
+                      setTemplateName("__none__");
+                    }}
+                  >
+                    <SelectTrigger id="camp-sender">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lovable">Conector Lovable atual</SelectItem>
+                      {senders.data?.map((number) => (
+                        <SelectItem
+                          key={number.phone_number_id}
+                          value={number.phone_number_id}
+                          disabled={number.quality_rating === "RED"}
+                        >
+                          {number.display_phone_number} · {number.verified_name || "Meta"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {senders.isError && (
+                    <p role="alert" className="text-sm text-destructive">
+                      Não foi possível consultar os números oficiais.
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    O remetente permanece fixo após o início da campanha. Não há alternância
+                    automática por restrição.
+                  </p>
+                  {sender !== "lovable" && (
+                    <div className="mt-2">
+                      <label className="text-xs text-muted-foreground">
+                        Origem da autorização dos destinatários
+                      </label>
+                      <Textarea
+                        value={consentEvidence}
+                        onChange={(event) => setConsentEvidence(event.target.value)}
+                        placeholder="Informe onde estão registrados os consentimentos desta lista: formulário, data, campanha ou referência verificável."
+                        maxLength={2000}
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        Este registro é uma declaração do responsável. Ter o telefone no CRM ou um
+                        template aprovado não comprova consentimento.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </FormSection>
+              <FormSection
+                title="Mensagem"
+                description="Modelo aprovado ou texto livre, e mídia opcional."
+                className="gap-3 py-4 md:grid-cols-1"
+              >
+                <div>
+                  <label htmlFor="camp-template" className="text-xs text-muted-foreground">
+                    Template
+                  </label>
                   <Select value={templateName} onValueChange={setTemplateName}>
-                    <SelectTrigger>
+                    <SelectTrigger id="camp-template">
                       <SelectValue placeholder="Nenhum (texto livre)" />
                     </SelectTrigger>
                     <SelectContent>
@@ -489,123 +509,147 @@ function CampaignsPage() {
                   )}
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground">Msgs por minuto</label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={120}
-                    value={rate}
-                    onChange={(e) => setRate(Number(e.target.value))}
-                  />
-                </div>
-              </div>
-              <fieldset className="space-y-1">
-                <legend className="text-xs text-muted-foreground">
-                  Intervalo aleatório entre disparos (segundos)
-                </legend>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min={0}
-                    max={3600}
-                    aria-label="Intervalo mínimo em segundos"
-                    placeholder="padrão"
-                    value={ivMin}
-                    onChange={(e) => setIvMin(e.target.value)}
-                  />
-                  <span className="text-xs text-muted-foreground">a</span>
-                  <Input
-                    type="number"
-                    min={0}
-                    max={3600}
-                    aria-label="Intervalo máximo em segundos"
-                    placeholder="padrão"
-                    value={ivMax}
-                    onChange={(e) => setIvMax(e.target.value)}
-                  />
-                </div>
-                <p className={`text-xs ${ivError ? "text-destructive" : "text-muted-foreground"}`}>
-                  {ivError ??
-                    "Em branco usa o padrão do workspace (Agente SDR › Configuração). Cada disparo espera um tempo sorteado nesse intervalo; pode atrasar até ~1 min além do sorteado."}
-                </p>
-              </fieldset>
-              <div>
-                <label htmlFor="camp-body" className="text-xs text-muted-foreground">
-                  Mensagem (use {`{{1}}, {{2}}`} para variáveis)
-                </label>
-                <Textarea
-                  id="camp-body"
-                  rows={isHsm ? 5 : 3}
-                  value={isHsm ? (selectedTpl?.body ?? "") : body}
-                  disabled={isHsm}
-                  aria-describedby={isHsm ? "camp-body-hint" : undefined}
-                  placeholder={isHsm ? "Prévia indisponível para este modelo" : undefined}
-                  onChange={(e) => setBody(e.target.value)}
-                />
-              </div>
-              {isHsm && (
-                <p id="camp-body-hint" className="text-xs text-muted-foreground">
-                  Texto do modelo aprovado pela Meta ({selectedTpl?.language}) — não pode ser
-                  editado. Defina as {selectedTpl?.variableCount ?? 0} variáveis no quadro abaixo.
-                </p>
-              )}
-              {isHsm && (
-                <div>
-                  <label htmlFor="camp-sdr" className="text-xs text-muted-foreground">
-                    Agente SDR após resposta (opcional)
+                  <label htmlFor="camp-body" className="text-xs text-muted-foreground">
+                    Mensagem (use {`{{1}}, {{2}}`} para variáveis)
                   </label>
-                  <Select value={sdrPlaybook} onValueChange={setSdrPlaybook}>
-                    <SelectTrigger id="camp-sdr">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Desligado</SelectItem>
-                      {playbooks.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {agentOptionLabel(p, defaultPlaybookId)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Quando o cliente responder, o SDR prepara a conversa para sua aprovação.
-                  </p>
+                  <Textarea
+                    id="camp-body"
+                    rows={isHsm ? 5 : 3}
+                    value={isHsm ? (selectedTpl?.body ?? "") : body}
+                    disabled={isHsm}
+                    aria-describedby={isHsm ? "camp-body-hint" : undefined}
+                    placeholder={isHsm ? "Prévia indisponível para este modelo" : undefined}
+                    onChange={(e) => setBody(e.target.value)}
+                  />
                 </div>
+                {isHsm && (
+                  <p id="camp-body-hint" className="text-xs text-muted-foreground">
+                    Texto do modelo aprovado pela Meta ({selectedTpl?.language}) — não pode ser
+                    editado. Defina as {selectedTpl?.variableCount ?? 0} variáveis no quadro abaixo.
+                  </p>
+                )}
+                <div>
+                  <label htmlFor="camp-media" className="text-xs text-muted-foreground">
+                    URL de mídia (opcional)
+                  </label>
+                  <Input
+                    id="camp-media"
+                    value={mediaUrl}
+                    onChange={(e) => setMediaUrl(e.target.value)}
+                    placeholder="https://..."
+                  />
+                </div>
+              </FormSection>
+              <FormSection
+                title="Público"
+                description="Quem vai receber a campanha."
+                className="gap-3 py-4 md:grid-cols-1"
+              >
+                {isEditing && !hasStoredAudience && (
+                  <p className="text-xs text-muted-foreground" role="note">
+                    O público desta campanha não foi registrado (criada antes desta versão). Ela tem{" "}
+                    {editTotal} destinatário(s).
+                    {editStatus === "draft"
+                      ? " Para trocar, monte um novo público abaixo."
+                      : " Para mudar a lista, duplique a campanha."}
+                  </p>
+                )}
+                {(!isEditing || editStatus === "draft" || hasStoredAudience) && (
+                  <CampaignAudiencePanel
+                    value={audience}
+                    onChange={(v) => {
+                      setAudienceTouched(true);
+                      setAudience(v);
+                    }}
+                    readOnly={isEditing && editStatus !== "draft"}
+                    variableCount={isHsm ? (selectedTpl?.variableCount ?? 0) : 0}
+                    manualRaw={recipientsRaw}
+                    onManualRaw={(r) => {
+                      setAudienceTouched(true);
+                      setRecipientsRaw(r);
+                    }}
+                    manualCount={parseRecipients(recipientsRaw).length}
+                  />
+                )}
+              </FormSection>
+              {isHsm && (
+                <FormSection title="Após a resposta" className="gap-3 py-4 md:grid-cols-1">
+                  <div>
+                    <label htmlFor="camp-sdr" className="text-xs text-muted-foreground">
+                      Agente SDR após resposta (opcional)
+                    </label>
+                    <Select value={sdrPlaybook} onValueChange={setSdrPlaybook}>
+                      <SelectTrigger id="camp-sdr">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none__">Desligado</SelectItem>
+                        {playbooks.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {agentOptionLabel(p, defaultPlaybookId)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Quando o cliente responder, o SDR prepara a conversa para sua aprovação.
+                    </p>
+                  </div>
+                </FormSection>
               )}
-              <div>
-                <label className="text-xs text-muted-foreground">URL de mídia (opcional)</label>
-                <Input
-                  value={mediaUrl}
-                  onChange={(e) => setMediaUrl(e.target.value)}
-                  placeholder="https://..."
-                />
-              </div>
-              {isEditing && !hasStoredAudience && (
-                <p className="text-xs text-muted-foreground" role="note">
-                  O público desta campanha não foi registrado (criada antes desta versão). Ela tem{" "}
-                  {editTotal} destinatário(s).
-                  {editStatus === "draft"
-                    ? " Para trocar, monte um novo público abaixo."
-                    : " Para mudar a lista, duplique a campanha."}
-                </p>
-              )}
-              {(!isEditing || editStatus === "draft" || hasStoredAudience) && (
-                <CampaignAudiencePanel
-                  value={audience}
-                  onChange={(v) => {
-                    setAudienceTouched(true);
-                    setAudience(v);
-                  }}
-                  readOnly={isEditing && editStatus !== "draft"}
-                  variableCount={isHsm ? (selectedTpl?.variableCount ?? 0) : 0}
-                  manualRaw={recipientsRaw}
-                  onManualRaw={(r) => {
-                    setAudienceTouched(true);
-                    setRecipientsRaw(r);
-                  }}
-                  manualCount={parseRecipients(recipientsRaw).length}
-                />
-              )}
+              <FormSection
+                title="Ritmo de envio"
+                description="Velocidade e intervalo entre disparos."
+                className="gap-3 py-4 md:grid-cols-1"
+              >
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="camp-rate" className="text-xs text-muted-foreground">
+                      Msgs por minuto
+                    </label>
+                    <Input
+                      id="camp-rate"
+                      type="number"
+                      min={1}
+                      max={120}
+                      value={rate}
+                      onChange={(e) => setRate(Number(e.target.value))}
+                    />
+                  </div>
+                  <fieldset className="space-y-1">
+                    <legend className="text-xs text-muted-foreground">
+                      Intervalo aleatório entre disparos (segundos)
+                    </legend>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min={0}
+                        max={3600}
+                        aria-label="Intervalo mínimo em segundos"
+                        placeholder="padrão"
+                        value={ivMin}
+                        onChange={(e) => setIvMin(e.target.value)}
+                      />
+                      <span className="text-xs text-muted-foreground">a</span>
+                      <Input
+                        type="number"
+                        min={0}
+                        max={3600}
+                        aria-label="Intervalo máximo em segundos"
+                        placeholder="padrão"
+                        value={ivMax}
+                        onChange={(e) => setIvMax(e.target.value)}
+                      />
+                    </div>
+                    <p
+                      className={`text-xs ${ivError ? "text-destructive" : "text-muted-foreground"}`}
+                    >
+                      {ivError ??
+                        "Em branco usa o padrão do workspace (Agente SDR › Configuração). Cada disparo espera um tempo sorteado nesse intervalo; pode atrasar até ~1 min além do sorteado."}
+                    </p>
+                  </fieldset>
+                </div>
+              </FormSection>
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setOpen(false)}>
