@@ -4619,10 +4619,11 @@
       "kind": "business",
       "files": {
         "drizzle/migrations/0277_work_view_workspace_fast_path.sql": "da4c3612766e8134edcb061201cb6e92d0260992616001f6a15851271cafd99a",
-        "drizzle/migrations/0278_project_dash_fast_path_and_alloc_owner.sql": "4746c9558cd39e286618ccfa81cf591b5f93dd7f3f959203773b33f88aefe055",
-        "drizzle/migrations/0279_project_dash_forecast_fast_path.sql": "16ad7561f2fa18e1e4df71839f10b42ed0d7c32fd6094d276b731516693a2251",
-        "drizzle/migrations/0280_project_dash_capacity_fast_path.sql": "c2b2d8dc1ffbc9c6cf9eff5327a82e060503c9ea8e4a275299eb9ca529aa3933",
-        "drizzle/migrations/0281_project_dash_capacity_keep_record_check.sql": "2e25041e63ec1007e92951647041cda813f805c9d59b5b955d413d6c7b890165"
+        "drizzle/migrations/0278_project_dash_fast_path_and_alloc_owner.sql": "34e0ccf9538220513188dffffc8280c685f73126e97f556fa3618d7f5c5e6dce",
+        "drizzle/migrations/0279_project_dash_forecast_fast_path.sql": "ca55cd4923ee4593b29b515c46b224f544b97d7962b51fdaac5ea6f235da60ce",
+        "drizzle/migrations/0280_project_dash_capacity_fast_path.sql": "ff274cf726b77f8c64850bfd5ae69f50252bf6f5182bb1947a9f0f4b9dd5f42c",
+        "drizzle/migrations/0281_project_dash_capacity_keep_record_check.sql": "cda1e63ca2034c6a2559a4ec6e39d6ad4ccd875887ebcb10fb9f2ec6589d3b5d",
+        "drizzle/migrations/0282_project_dash_function_comments.sql": "f06673684581ad3a54c90b0f388afb29eae0751705680958667c8a90adf89365"
       },
       "resources": [
         "techprojects.projects",
@@ -4652,6 +4653,26 @@
         {
           "file": "drizzle/migrations/0277_work_view_workspace_fast_path.sql",
           "symbol": "work_view_full_workspace"
+        },
+        {
+          "file": "drizzle/migrations/0278_project_dash_fast_path_and_alloc_owner.sql",
+          "symbol": "project_dash_ds_tasks"
+        },
+        {
+          "file": "drizzle/migrations/0279_project_dash_forecast_fast_path.sql",
+          "symbol": "project_dash_ds_forecast"
+        },
+        {
+          "file": "drizzle/migrations/0280_project_dash_capacity_fast_path.sql",
+          "symbol": "project_dash_capacity_base"
+        },
+        {
+          "file": "drizzle/migrations/0281_project_dash_capacity_keep_record_check.sql",
+          "symbol": "project_dash_capacity_base"
+        },
+        {
+          "file": "drizzle/migrations/0282_project_dash_function_comments.sql",
+          "symbol": "project_dash_ds_tasks"
         }
       ],
       "tests": {
