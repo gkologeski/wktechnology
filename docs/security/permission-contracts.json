@@ -4652,22 +4652,6 @@
         {
           "file": "drizzle/migrations/0277_work_view_workspace_fast_path.sql",
           "symbol": "work_view_full_workspace"
-        },
-        {
-          "file": "drizzle/migrations/0278_project_dash_fast_path_and_alloc_owner.sql",
-          "symbol": "project_dash_ds_tasks"
-        },
-        {
-          "file": "drizzle/migrations/0279_project_dash_forecast_fast_path.sql",
-          "symbol": "project_dash_ds_forecast"
-        },
-        {
-          "file": "drizzle/migrations/0280_project_dash_capacity_fast_path.sql",
-          "symbol": "project_dash_capacity_base"
-        },
-        {
-          "file": "drizzle/migrations/0281_project_dash_capacity_keep_record_check.sql",
-          "symbol": "project_dash_capacity_base"
         }
       ],
       "tests": {
