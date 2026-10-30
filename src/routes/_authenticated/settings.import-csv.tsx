@@ -25,6 +25,7 @@ import {
   type DedupeStrategy,
 } from "@/lib/csv-import.functions";
 
+import { pickMappedColumns } from "@/lib/csv-import-rows";
 import { useDefaultPhoneCountry } from "@/lib/phone/phone-country-context";
 export const Route = createFileRoute("/_authenticated/settings/import-csv")({
   component: ImportCsvPage,
@@ -131,7 +132,7 @@ function ImportCsvPage() {
     if (!preview) return;
     setLoading("execute");
     try {
-      const r = await executeFn({ data: { entity, rows, mapping, dedupeKey, strategy } });
+      const r = await executeFn({ data: { entity, rows: pickMappedColumns(rows, mapping).rows, mapping, dedupeKey, strategy } });
       setResult(r);
       toast.success(
         `Importação concluída: ${r.inserted} criados, ${r.updated} atualizados, ${r.skipped} ignorados`,
