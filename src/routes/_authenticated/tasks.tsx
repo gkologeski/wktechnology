@@ -68,11 +68,10 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRowGuarded, deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
 import { chunkIds } from "@/lib/chunk-ids";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
-import { responsibleId, responsibleOrExpr } from "@/lib/entity/responsible";
+import { responsibleId } from "@/lib/entity/responsible";
 
 // Em tarefas, toda inserção já grava o responsável (gatilho copia o criador);
 // filtrar só por assigned_to usa índice e evita o OU com owner_id que estourava o tempo.
-const TASK_RESPONSIBLE_COLUMNS = ["assigned_to"] as const;
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
@@ -277,10 +276,7 @@ function TasksHubspotView() {
     const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
 
     if (activeView === "mine_open" && user?.id) {
-      q = q
-        .or(responsibleOrExpr([user.id], { columns: TASK_RESPONSIBLE_COLUMNS }))
-        .eq("completed", false)
-        .neq("task_status", "COMPLETED");
+      q = q.eq("assigned_to", user.id).eq("completed", false).neq("task_status", "COMPLETED");
     } else if (activeView === "due_today") {
       q = q
         .eq("completed", false)
@@ -308,15 +304,10 @@ function TasksHubspotView() {
         .lt("due_date", new Date(startOfDay.getTime() + 7 * 86_400_000).toISOString());
     }
 
-    // Responsável efetivo (assigned_to com fallback para owner_id), respeitando o escopo.
-    if (assignee === ASSIGNEE_ME && user?.id)
-      q = q.or(responsibleOrExpr([user.id], { columns: TASK_RESPONSIBLE_COLUMNS }));
-    else if (assignee === ASSIGNEE_NONE)
-      q = q.or(
-        responsibleOrExpr([], { columns: TASK_RESPONSIBLE_COLUMNS, includeUnassigned: true }),
-      );
-    else if (assignee !== ASSIGNEE_ALL)
-      q = q.or(responsibleOrExpr([assignee], { columns: TASK_RESPONSIBLE_COLUMNS }));
+    // Filtro direto por assigned_to (sem OR): o OR impedia o uso do índice parcial de tarefas.
+    if (assignee === ASSIGNEE_ME && user?.id) q = q.eq("assigned_to", user.id);
+    else if (assignee === ASSIGNEE_NONE) q = q.is("assigned_to", null);
+    else if (assignee !== ASSIGNEE_ALL) q = q.eq("assigned_to", assignee);
 
     const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
     if (term.length >= 2) {
