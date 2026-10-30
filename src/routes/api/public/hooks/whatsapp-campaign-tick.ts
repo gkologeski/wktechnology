@@ -105,6 +105,8 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
 
   let sentInc = 0;
   let failedInc = 0;
+  // Destinatários que chegaram a um desfecho (ignorado, enviado ou falha).
+  let handled = 0;
 
   // Política de prospecção: cota de templates (opcional) e horário de campanha.
   const { data: pol } = await supabaseAdmin
@@ -141,6 +143,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         .from("whatsapp_campaign_recipients")
         .update({ status: "skipped", error: "Telefone fixo ou inválido (sem WhatsApp)" })
         .eq("id", r.id);
+      handled += 1;
       continue;
     }
     // Terceira proteção: mesmo telefone recebeu WhatsApp de OUTRA campanha há pouco.
@@ -161,6 +164,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
           .from("whatsapp_campaign_recipients")
           .update({ status: "skipped", error: "Envio recente" })
           .eq("id", r.id);
+        handled += 1;
         continue;
       }
     }
@@ -183,6 +187,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
           .from("whatsapp_campaign_recipients")
           .update({ status: "skipped", error: COMMERCIAL_LABEL[reason] })
           .eq("id", r.id);
+        handled += 1;
         continue;
       }
     }
@@ -210,6 +215,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         .from("whatsapp_campaign_recipients")
         .update({ status: "skipped", error: "Contato descadastrado em outro atendimento" })
         .eq("id", r.id);
+      handled += 1;
       continue;
     }
     const vars = (r.variables ?? {}) as Record<string, string>;
@@ -295,6 +301,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         })
         .eq("id", r.id);
       sentInc += 1;
+      handled += 1;
       // SDR: liga template → campanha → conversa. Falha aqui não desfaz o envio.
       if (conv) {
         try {
@@ -354,6 +361,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         })
         .eq("id", r.id);
       failedInc += 1;
+      handled += 1;
       if (num.provider === "cloud") break;
     }
   }
@@ -380,7 +388,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
       .eq("status", "running");
   }
 
-  return { processed: recips.length, sent: sentInc, failed: failedInc };
+  return { processed: handled, sent: sentInc, failed: failedInc };
 }
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
