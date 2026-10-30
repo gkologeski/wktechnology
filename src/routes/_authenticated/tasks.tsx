@@ -508,7 +508,33 @@ function TasksHubspotView() {
   const hasActiveFilters =
     filters.statuses.length > 0 || filters.priorities.length > 0 || filters.duePreset !== "any";
 
+  // Marca na tela antes da resposta do banco; devolve função para desfazer.
+  const patchTasksInCache = (ids: string[], complete: boolean) => {
+    const idSet = new Set(ids);
+    const snapshot = qc.getQueriesData({ queryKey: ["tasks", "hubspot-list"] });
+    qc.setQueriesData<{ rows: Activity[]; count: number }>(
+      { queryKey: ["tasks", "hubspot-list"] },
+      (old) =>
+        old
+          ? {
+              ...old,
+              rows: old.rows.map((r) =>
+                idSet.has(r.id)
+                  ? {
+                      ...r,
+                      completed: complete,
+                      task_status: complete ? "COMPLETED" : "NOT_STARTED",
+                    }
+                  : r,
+              ),
+            }
+          : old,
+    );
+    return () => snapshot.forEach(([key, data]) => qc.setQueryData(key, data));
+  };
+
   const markComplete = async (id: string, complete: boolean) => {
+    const rollback = patchTasksInCache([id], complete);
     const { error } = await supabase
       .from("activities")
       .update({
@@ -516,7 +542,10 @@ function TasksHubspotView() {
         task_status: complete ? "COMPLETED" : "NOT_STARTED",
       })
       .eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      rollback();
+      return toast.error(error.message);
+    }
     toast.success(complete ? "Concluída" : "Reaberta");
     qc.invalidateQueries({ queryKey: ["tasks"] });
   };
@@ -532,6 +561,7 @@ function TasksHubspotView() {
     const ids = Array.from(selectedIds);
     if (!ids.length || completing) return;
     setCompleting(true);
+    const rollback = patchTasksInCache(ids, true);
     const toastId = toast.loading(`Concluindo 0 de ${ids.length}…`);
     let changed = 0;
     let done = 0;
@@ -547,6 +577,7 @@ function TasksHubspotView() {
             changed ? `${changed} concluída(s) antes da falha: ${error.message}` : error.message,
             { id: toastId },
           );
+          rollback();
           qc.invalidateQueries({ queryKey: ["tasks"] });
           return;
         }
@@ -556,6 +587,7 @@ function TasksHubspotView() {
       }
       if (changed === 0) {
         toast.dismiss(toastId);
+        rollback();
         deniedIfUnaffected([]);
         return;
       }
