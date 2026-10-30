@@ -32934,6 +32934,10 @@ export type Database = {
           prefill_message: string
         }[]
       }
+      wa_campaign_chain_tick: {
+        Args: { p_campaign: string; p_hop: number; p_timeout_ms: number }
+        Returns: number
+      }
       wa_campaign_claim_dispatch: {
         Args: { p_campaign: string; p_seconds: number }
         Returns: boolean

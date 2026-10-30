@@ -1989,6 +1989,13 @@
       "when": 1793359515066,
       "tag": "0283_whatsapp_campaign_filter_values",
       "breakpoints": true
+    },
+    {
+      "idx": 284,
+      "version": "7",
+      "when": 1793368200459,
+      "tag": "0284_wa_campaign_chain_tick",
+      "breakpoints": true
     }
   ]
 }

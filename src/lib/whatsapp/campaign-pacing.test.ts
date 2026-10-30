@@ -157,3 +157,109 @@ describe("ignorados no disparo espaçado", () => {
     expect(sendTimes).toEqual([0, 10_000]);
   });
 });
+
+import {
+  PACING_CHAIN_HORIZON_MS,
+  PACING_CHAIN_MAX_HOPS,
+  shouldChainNextRun,
+} from "./campaign-pacing";
+
+describe("encadeamento das rodadas", () => {
+  const base = { stop: "budget" as const, status: "running", pending: 10, nextAt: 8_000, now: 0, hop: 3 };
+
+  it("campanha em execução com fila e próximo envio em 8 s encadeia", () => {
+    expect(shouldChainNextRun(base)).toBe(true);
+  });
+  it("campanha pausada, cancelada ou concluída não encadeia", () => {
+    expect(shouldChainNextRun({ ...base, status: "paused" })).toBe(false);
+    expect(shouldChainNextRun({ ...base, status: "cancelled" })).toBe(false);
+    expect(shouldChainNextRun({ ...base, status: "completed" })).toBe(false);
+  });
+  it("fila vazia não encadeia", () => {
+    expect(shouldChainNextRun({ ...base, pending: 0 })).toBe(false);
+  });
+  it("rodada que parou sem trabalho (horário, cota, pausa) não encadeia", () => {
+    expect(shouldChainNextRun({ ...base, stop: "empty" })).toBe(false);
+  });
+  it("próximo envio além de 150 s fica para a tarefa agendada", () => {
+    expect(PACING_CHAIN_HORIZON_MS).toBe(150_000);
+    expect(shouldChainNextRun({ ...base, nextAt: 150_000 })).toBe(true);
+    expect(shouldChainNextRun({ ...base, nextAt: 150_001 })).toBe(false);
+  });
+  it("teto de 1000 rodadas por cadeia", () => {
+    expect(PACING_CHAIN_MAX_HOPS).toBe(1_000);
+    expect(shouldChainNextRun({ ...base, hop: 999 })).toBe(true);
+    expect(shouldChainNextRun({ ...base, hop: 1_000 })).toBe(false);
+  });
+});
+
+describe("motivo de parada e espera ociosa", () => {
+  it("fila sem trabalho devolve parada 'empty'", async () => {
+    const c = clock(0);
+    const r = await runPacedLoop({
+      interval: { min: 5, max: 10 },
+      nextAt: 0,
+      startedAt: 0,
+      budgetMs: 25_000,
+      now: c.now,
+      sleep: c.sleep,
+      sendOne: async () => ({ processed: 0 }),
+      persistNextAt: async () => {},
+    });
+    expect(r.stop).toBe("empty");
+  });
+  it("intervalo de 5 a 10 s envia várias mensagens numa rodada de 25 s", async () => {
+    const c = clock(0);
+    const sendTimes: number[] = [];
+    const r = await runPacedLoop({
+      interval: { min: 5, max: 10 },
+      nextAt: 0,
+      startedAt: 0,
+      budgetMs: 25_000,
+      idle: true,
+      rng: () => 0.5, // 8 s
+      now: c.now,
+      sleep: c.sleep,
+      sendOne: async () => {
+        sendTimes.push(c.now());
+        return { processed: 1, attempted: 1 };
+      },
+      persistNextAt: async () => {},
+    });
+    expect(sendTimes).toEqual([0, 8_000, 16_000, 24_000]);
+    expect(r.stop).toBe("budget");
+    expect(r.nextAt).toBe(32_000);
+  });
+  it("com espera ociosa, a rodada aguarda até o fim do orçamento sem enviar", async () => {
+    const c = clock(0);
+    const sendOne = vi.fn(async () => ({ processed: 1 }));
+    const r = await runPacedLoop({
+      interval: { min: 60, max: 60 },
+      nextAt: 100_000,
+      startedAt: 0,
+      budgetMs: 25_000,
+      idle: true,
+      now: c.now,
+      sleep: c.sleep,
+      sendOne,
+      persistNextAt: async () => {},
+    });
+    expect(sendOne).not.toHaveBeenCalled();
+    expect(c.now()).toBe(25_000);
+    expect(r.stop).toBe("budget");
+  });
+  it("sem espera ociosa (rodada agendada), sai na hora", async () => {
+    const c = clock(0);
+    await runPacedLoop({
+      interval: { min: 60, max: 60 },
+      nextAt: 100_000,
+      startedAt: 0,
+      budgetMs: 4_000,
+      now: c.now,
+      sleep: c.sleep,
+      sendOne: async () => ({ processed: 1 }),
+      persistNextAt: async () => {},
+    });
+    expect(c.now()).toBe(0);
+  });
+});
