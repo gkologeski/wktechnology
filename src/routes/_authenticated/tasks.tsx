@@ -276,10 +276,7 @@ function TasksHubspotView() {
     const endOfDay = new Date(startOfDay.getTime() + 86_400_000);
 
     if (activeView === "mine_open" && user?.id) {
-      q = q
-        .eq("assigned_to", user.id)
-        .eq("completed", false)
-        .neq("task_status", "COMPLETED");
+      q = q.eq("assigned_to", user.id).eq("completed", false).neq("task_status", "COMPLETED");
     } else if (activeView === "due_today") {
       q = q
         .eq("completed", false)
@@ -308,12 +305,9 @@ function TasksHubspotView() {
     }
 
     // Filtro direto por assigned_to (sem OR): o OR impedia o uso do índice parcial de tarefas.
-    if (assignee === ASSIGNEE_ME && user?.id)
-      q = q.eq("assigned_to", user.id);
-    else if (assignee === ASSIGNEE_NONE)
-      q = q.is("assigned_to", null);
-    else if (assignee !== ASSIGNEE_ALL)
-      q = q.eq("assigned_to", assignee);
+    if (assignee === ASSIGNEE_ME && user?.id) q = q.eq("assigned_to", user.id);
+    else if (assignee === ASSIGNEE_NONE) q = q.is("assigned_to", null);
+    else if (assignee !== ASSIGNEE_ALL) q = q.eq("assigned_to", assignee);
 
     const term = debouncedSearch.trim().replace(/[,()]/g, " ").trim();
     if (term.length >= 2) {
