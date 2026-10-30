@@ -1954,6 +1954,13 @@
       "when": 1793357737470,
       "tag": "0278_project_dash_fast_path_and_alloc_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 279,
+      "version": "7",
+      "when": 1793358314739,
+      "tag": "0279_project_dash_forecast_fast_path",
+      "breakpoints": true
     }
   ]
 }
