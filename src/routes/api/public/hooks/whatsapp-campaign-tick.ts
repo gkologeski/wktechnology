@@ -13,6 +13,7 @@ import {
 import {
   pacingEnabled,
   PACING_CHAIN_BUDGET_MS,
+  PACING_CHAIN_HORIZON_MS,
   PACING_CHAIN_MAX_HOPS,
   PACING_CHAIN_TIMEOUT_MS,
   PACING_RUN_BUDGET_MS,
@@ -46,6 +47,7 @@ type Campaign = {
   send_interval_min_s: number | null;
   send_interval_max_s: number | null;
   next_send_at: string | null;
+  dispatch_lease_until?: string | null;
   recent_contact_days?: number | null;
   exclude_customers?: boolean | null;
   exclude_open_deals?: boolean | null;
@@ -400,7 +402,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 const CAMPAIGN_COLUMNS =
-  "id, owner_id, body_template, template_name, sender_phone_number_id, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, recent_contact_days, exclude_customers, exclude_open_deals";
+  "id, owner_id, body_template, template_name, sender_phone_number_id, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, dispatch_lease_until, recent_contact_days, exclude_customers, exclude_open_deals";
 
 type PacedRun = { budgetMs: number; idle: boolean; hop: number };
 
@@ -499,6 +501,32 @@ async function processPaced(
   return { processed, chained };
 }
 
+/**
+ * Rodada agendada de uma campanha espaçada: só abre a cadeia (a chamada
+ * agendada tem tempo limite curto). Se a cadeia já estiver ativa (lease), não
+ * faz nada; se o banco não conseguir abrir a cadeia, envia aqui mesmo, como
+ * antes, dentro do orçamento curto.
+ */
+async function kickPaced(camp: Campaign, interval: PacingInterval, startedAt: number) {
+  const leaseUntil = camp.dispatch_lease_until ? new Date(camp.dispatch_lease_until).getTime() : 0;
+  if (leaseUntil > Date.now()) return { processed: 0, skipped: "locked", chained: false };
+  const nextAt = camp.next_send_at ? new Date(camp.next_send_at).getTime() : 0;
+  if (nextAt - Date.now() > PACING_CHAIN_HORIZON_MS)
+    return { processed: 0, skipped: "waiting", chained: false };
+  const { data, error } = await supabaseAdmin.rpc("wa_campaign_chain_tick", {
+    p_campaign: camp.id,
+    p_hop: 1,
+    p_timeout_ms: PACING_CHAIN_TIMEOUT_MS,
+  });
+  if (!error && data != null) return { processed: 0, chained: true };
+  if (error) console.error("[whatsapp-campaign] abrir cadeia falhou", camp.id, error.message);
+  return processPaced(camp, interval, startedAt, {
+    budgetMs: PACING_RUN_BUDGET_MS,
+    idle: false,
+    hop: 0,
+  });
+}
+
 const ChainBody = z.object({
   campaignId: z.string().uuid().optional(),
   hop: z.number().int().min(0).max(PACING_CHAIN_MAX_HOPS).optional(),
@@ -588,16 +616,10 @@ export const Route = createFileRoute("/api/public/hooks/whatsapp-campaign-tick")
             const res = await processCampaign(camp);
             results.push({ id: c.id, processed: res.processed });
           }
-          // Campanhas espaçadas rodam em paralelo, cada uma no seu próprio ritmo;
-          // a rodada agendada abre (ou reabre) a cadeia de cada uma.
+          // Campanhas espaçadas: a rodada agendada abre (ou reabre) a cadeia de
+          // cada uma; os envios acontecem nas rodadas encadeadas.
           const pacedRes = await Promise.all(
-            paced.map(({ camp, interval }) =>
-              processPaced(camp, interval, startedAt, {
-                budgetMs: PACING_RUN_BUDGET_MS,
-                idle: false,
-                hop: 0,
-              }),
-            ),
+            paced.map(({ camp, interval }) => kickPaced(camp, interval, startedAt)),
           );
           paced.forEach(({ camp }, i) =>
             results.push({
