@@ -115,7 +115,10 @@ function ImportCsvPage() {
     }
     setLoading("preview");
     try {
-      const p = await previewFn({ data: { entity, rows, mapping, dedupeKey } });
+      const { rows: sendRows, truncated } = pickMappedColumns(rows, mapping);
+      const cut = Object.entries(truncated).map(([c, n]) => `${c} (${n} linhas)`);
+      if (cut.length) toast.warning(`Textos com mais de 2.000 caracteres foram cortados: ${cut.join(", ")}`);
+      const p = await previewFn({ data: { entity, rows: sendRows, mapping, dedupeKey } });
       setPreview(p);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao analisar");
