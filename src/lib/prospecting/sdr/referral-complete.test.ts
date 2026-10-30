@@ -15,3 +15,11 @@ describe("indicação já completa", () => {
     expect(text).toContain('Cartão "Contato compartilhado" com nome NUNCA é telefone solto');
   });
 });
+
+describe("prospecção ativa", () => {
+  it("proíbe oferecer ajuda e manda retomar a última pergunta", () => {
+    const text = buildSystemPrompt({ offers: [], materials: [], questions: [], bookingAvailable: false } as unknown as Parameters<typeof buildSystemPrompt>[0]);
+    expect(text).toContain('NUNCA pergunte "como posso ajudar"');
+    expect(text).toContain("retome a sua última pergunta");
+  });
+});
