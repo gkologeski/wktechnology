@@ -4613,6 +4613,62 @@
           "name": "sales fast path refuses an inactive member"
         }
       }
+    },
+    {
+      "id": "work-rls-workspace-fast-path",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0277_work_view_workspace_fast_path.sql": "da4c3612766e8134edcb061201cb6e92d0260992616001f6a15851271cafd99a"
+      },
+      "resources": [
+        "techprojects.projects",
+        "techprojects.tasks"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techprojects.projects.view.workspace",
+        "techprojects.tasks.view.workspace"
+      ],
+      "rationale": "Performance-only rewrite of the existing work_view SELECT policies on projects and project_tasks. work_view_full_workspace() returns the caller's context workspace once per query only when work_access_context holds the .workspace view key (deny resolved upstream; inactive membership yields an empty context). Policy = 'workspace_id = that value OR <original work_context_access row check>'; the first term implies the second, so visible rows are identical. Verified live: same counts (32,336 tasks, 179 projects) with an admin session.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workCanRead"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0277_work_view_workspace_fast_path.sql",
+          "symbol": "work_view_full_workspace"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/work-rls-fast-path.test.ts",
+          "name": "work fast path allows an active member with the workspace view key"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/work-rls-fast-path.test.ts",
+          "name": "work fast path refuses a member without the view key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/work-rls-fast-path.test.ts",
+          "name": "work fast path keeps an explicit deny of the workspace key"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/work-rls-fast-path.test.ts",
+          "name": "work fast path refuses rows from a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/work-rls-fast-path.test.ts",
+          "name": "work fast path refuses an inactive member"
+        }
+      }
     }
   ],
   "retired": {}
