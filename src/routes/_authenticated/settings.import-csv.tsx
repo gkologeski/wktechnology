@@ -25,6 +25,7 @@ import {
   type DedupeStrategy,
 } from "@/lib/csv-import.functions";
 
+import { pickMappedColumns } from "@/lib/csv-import-rows";
 import { useDefaultPhoneCountry } from "@/lib/phone/phone-country-context";
 export const Route = createFileRoute("/_authenticated/settings/import-csv")({
   component: ImportCsvPage,
@@ -115,7 +116,11 @@ function ImportCsvPage() {
     }
     setLoading("preview");
     try {
-      const p = await previewFn({ data: { entity, rows, mapping, dedupeKey } });
+      const { rows: sendRows, truncated } = pickMappedColumns(rows, mapping);
+      const cut = Object.entries(truncated).map(([c, n]) => `${c} (${n} linhas)`);
+      if (cut.length)
+        toast.warning(`Textos com mais de 2.000 caracteres foram cortados: ${cut.join(", ")}`);
+      const p = await previewFn({ data: { entity, rows: sendRows, mapping, dedupeKey } });
       setPreview(p);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha ao analisar");
@@ -128,7 +133,9 @@ function ImportCsvPage() {
     if (!preview) return;
     setLoading("execute");
     try {
-      const r = await executeFn({ data: { entity, rows, mapping, dedupeKey, strategy } });
+      const r = await executeFn({
+        data: { entity, rows: pickMappedColumns(rows, mapping).rows, mapping, dedupeKey, strategy },
+      });
       setResult(r);
       toast.success(
         `Importação concluída: ${r.inserted} criados, ${r.updated} atualizados, ${r.skipped} ignorados`,
