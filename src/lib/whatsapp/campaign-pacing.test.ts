@@ -217,7 +217,7 @@ describe("motivo de parada e espera ociosa", () => {
       startedAt: 0,
       budgetMs: 25_000,
       idle: true,
-      rng: () => 0.5, // 7 s
+      rng: () => 0.5, // 8 s
       now: c.now,
       sleep: c.sleep,
       sendOne: async () => {
@@ -226,9 +226,9 @@ describe("motivo de parada e espera ociosa", () => {
       },
       persistNextAt: async () => {},
     });
-    expect(sendTimes).toEqual([0, 7_000, 14_000, 21_000]);
+    expect(sendTimes).toEqual([0, 8_000, 16_000, 24_000]);
     expect(r.stop).toBe("budget");
-    expect(r.nextAt).toBe(28_000);
+    expect(r.nextAt).toBe(32_000);
   });
   it("com espera ociosa, a rodada aguarda até o fim do orçamento sem enviar", async () => {
     const c = clock(0);
