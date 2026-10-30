@@ -853,5 +853,9 @@ export const listAudienceFieldValues = createServerFn({ method: "POST" })
       },
     );
     if (error) throw new Error(error.message);
-    return distinctValues((rows ?? []) as unknown[]);
+    return distinctValues(
+      ((rows ?? []) as unknown[]).map((r) =>
+        r && typeof r === "object" ? Object.values(r as Record<string, unknown>)[0] : r,
+      ),
+    );
   });
