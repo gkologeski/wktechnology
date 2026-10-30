@@ -28,7 +28,10 @@ describe("lotes da importação", () => {
     expect(CSV_IMPORT_INSERT_CHUNK).toBe(10);
   });
   it("2.350 linhas viram 24 lotes, o último com 50", () => {
-    const batches = chunkRows(Array.from({ length: 2350 }, (_, i) => i), 100);
+    const batches = chunkRows(
+      Array.from({ length: 2350 }, (_, i) => i),
+      100,
+    );
     expect(batches).toHaveLength(24);
     expect(batches[23]).toHaveLength(50);
     expect(batches.flat()).toHaveLength(2350);
