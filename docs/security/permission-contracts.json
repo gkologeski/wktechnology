@@ -4707,6 +4707,84 @@
           "name": "work fast path refuses an inactive member"
         }
       }
+    },
+    {
+      "id": "csv-import-batched",
+      "kind": "business",
+      "files": {
+        "src/lib/csv-import.functions.ts": "71b540249e6f1dc53ea79a4e8d398e0969915610e37331dd7202d34f3b867884",
+        "src/lib/csv-import-rows.ts": "b6c8b1cb2a9ef4c31ed0b49b8cfc58e93f8e66adee8e12a72e2cba7ace0120e1",
+        "src/routes/_authenticated/settings.import-csv.tsx": "2dd17c79fcac9f29ab8198e82fbbc040631bd57e20a7c85a047605f666bb084a",
+        "drizzle/migrations/0285_contact_domain_link_indexed.sql": "40ac82ca81766c5134fc440d1086df32d24f77f15168569eb91677459bc3ce5b"
+      },
+      "resources": [
+        "techsales.contacts",
+        "techsales.leads",
+        "techsales.companies"
+      ],
+      "actions": [
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.contacts.create.workspace",
+        "techsales.contacts.create.own",
+        "techsales.leads.create.workspace",
+        "techsales.leads.create.own",
+        "techsales.companies.create.workspace",
+        "techsales.companies.create.own"
+      ],
+      "rationale": "CSV import now runs in client batches of 100 rows and server inserts of 10 rows so each write ends before the 8 s statement timeout; analysis also requires the create key (stricter). Writes still use the caller's RLS client with the active workspace set explicitly. 0285 moves the contact domain-link candidate lookup to indexed SECURITY DEFINER helper usable only inside triggers (pg_trigger_depth guard, no anon EXECUTE); the final match still runs under the caller's companies RLS, so linked companies and visibility are unchanged. No new key, grant to roles or policy.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/admin-gates.server.ts",
+          "symbol": "assertImportEntity"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0285_contact_domain_link_indexed.sql",
+          "symbol": "contact_domain_company_candidates"
+        },
+        {
+          "file": "drizzle/migrations/0285_contact_domain_link_indexed.sql",
+          "symbol": "contact_link_company_by_domain"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/csv-import-permissions.test.ts",
+          "name": "csv import permits an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/csv-import-permissions.test.ts",
+          "name": "csv import refuses a member without the create key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/csv-import-permissions.test.ts",
+          "name": "csv import refuses an explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/csv-import-permissions.test.ts",
+          "name": "csv import refuses a key granted only in a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/csv-import-permissions.test.ts",
+          "name": "csv import refuses an inactive member"
+        }
+      }
     }
   ],
   "retired": {}

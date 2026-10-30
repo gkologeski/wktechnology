@@ -158,6 +158,8 @@ export const previewCsvImport = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    // A análise faz parte da importação: exige a mesma chave de criação.
+    await assertImportEntity(context.supabase, context.userId, data.entity);
     const workspaceId = await getActiveWorkspaceId(context.userId);
     const { entity, rows, mapping, dedupeKey } = data;
 
