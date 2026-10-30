@@ -33086,6 +33086,7 @@ export type Database = {
         Args: { c: Json; w: string }
         Returns: boolean
       }
+      work_view_full_workspace: { Args: { r: string }; Returns: string }
       workflow_delivery_claim: {
         Args: {
           p_channel: string
