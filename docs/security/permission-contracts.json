@@ -2140,7 +2140,7 @@
         "drizzle/migrations/0283_whatsapp_campaign_filter_values.sql": "80b87e4714d99c0674fa970819ff36a4558446abfcfb969b30a2100fc4fccf4c",
         "drizzle/migrations/0286_wa_campaign_assignment.sql": "bdc20018b0184de35ab5b6fbea3305d0b847441e960b6ab05ae27ecdee78b207",
         "src/components/whatsapp/campaign-assignment-section.tsx": "784136197ffd47a38eb41b6e026918e5a74cbce2f409feb13cb41a647a0380e4",
-        "src/lib/whatsapp/campaign-assignment.server.ts": "79fce1facf94604070689e8089577bee729b31fd590725f7632aaa52b5b2814d",
+        "src/lib/whatsapp/campaign-assignment.server.ts": "f75a7485b12b320af56635b016a47ffefafd1c85b7cec5718dc71b59c4ce77df",
         "src/lib/whatsapp/campaign-assignment.ts": "64a5d57db367eaf54d98f1f4d76e3c5e370d2e76ea1051a4010cce4381010cd4"
       },
       "resources": [
@@ -2678,7 +2678,7 @@
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
       "files": {
-        "src/integrations/supabase/types.ts": "6369253430910a2ec84a28700eccce0dbd51214fef4e6c1cd4cefd4783cc899b"
+        "src/integrations/supabase/types.ts": "286d934a9de59eb6891e74cbd16f4c5ae548bbfebc9435c6235ea724e6824143"
       },
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies."
     },
@@ -2929,7 +2929,7 @@
       "id": "service-channel-prompt-identity",
       "kind": "internal",
       "files": {
-        "src/lib/prospecting/sdr/agent.server.ts": "45ece5cbbfa72ca8efcf6f1d87fc563347e2be2cccbd051df773f37e46dc3112"
+        "src/lib/prospecting/sdr/agent.server.ts": "53f12db2c692724a89822dca1a24d2a20ebb3f120ea1de78522dd6fd0923ea37"
       },
       "resources": [
         "system.channels"

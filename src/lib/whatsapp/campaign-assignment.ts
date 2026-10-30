@@ -30,8 +30,6 @@ export function normalizeAssignment(cfg: AssignmentConfig): AssignmentConfig {
   const ids = [...new Set(cfg.assignment_member_ids)];
   assertAssignmentMembers(cfg.assignment_mode, ids);
   if (cfg.assignment_mode === "member") {
-    if (ids.length !== 1)
-      throw new Error("Escolha exatamente um membro para receber as conversas.");
     return { assignment_mode: "member", assignment_member_ids: ids };
   }
   if (cfg.assignment_mode === "round_robin") {

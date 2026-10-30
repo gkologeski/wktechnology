@@ -1,5 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { normalizeAssignment, type AssignmentConfig } from "./campaign-assignment";
+import {
+  assertAssignmentMembers,
+  normalizeAssignment,
+  type AssignmentConfig,
+} from "./campaign-assignment";
 
 /** Valida a regra e garante que todos os membros são ativos no workspace. */
 export async function resolveAssignment(
@@ -8,6 +12,7 @@ export async function resolveAssignment(
   cfg: AssignmentConfig,
 ): Promise<AssignmentConfig> {
   const norm = normalizeAssignment(cfg);
+  assertAssignmentMembers(norm.assignment_mode, norm.assignment_member_ids);
   if (norm.assignment_member_ids.length === 0) return norm;
   const { data, error } = await supabase
     .from("workspace_members")
