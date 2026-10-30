@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -35,6 +36,14 @@ export function CampaignAssignmentSection({
   disabled?: boolean;
   onChange: (mode: AssignmentMode, memberIds: string[]) => void;
 }) {
+  // Sem chave de criar/editar campanhas, a regra fica só para leitura (o servidor também barra).
+  const permissions = usePermissions();
+  const canSave = permissions.canAny(
+    ["create", "update"].flatMap((a) =>
+      ["own", "team", "workspace"].map((s) => `techsales.marketing.campaigns.${a}.${s}`),
+    ),
+  );
+  disabled = disabled || !canSave;
   const label = (m: Member) => m.full_name?.trim() || "Sem nome";
   return (
     <div className="space-y-3">

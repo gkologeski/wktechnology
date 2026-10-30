@@ -2139,9 +2139,9 @@
         "drizzle/migrations/0274_wa_campaign_prune_recent.sql": "367295426b6d5a14d7319414235e7c4d84cf48d1085bfd1b322763be7c041101",
         "drizzle/migrations/0283_whatsapp_campaign_filter_values.sql": "80b87e4714d99c0674fa970819ff36a4558446abfcfb969b30a2100fc4fccf4c",
         "drizzle/migrations/0286_wa_campaign_assignment.sql": "bdc20018b0184de35ab5b6fbea3305d0b847441e960b6ab05ae27ecdee78b207",
-        "src/components/whatsapp/campaign-assignment-section.tsx": "a3905eba4b6c8cf1032204f6b78988b60df55a69d058e2da3504ad7dfc4c3307",
+        "src/components/whatsapp/campaign-assignment-section.tsx": "784136197ffd47a38eb41b6e026918e5a74cbce2f409feb13cb41a647a0380e4",
         "src/lib/whatsapp/campaign-assignment.server.ts": "79fce1facf94604070689e8089577bee729b31fd590725f7632aaa52b5b2814d",
-        "src/lib/whatsapp/campaign-assignment.ts": "0d5e5158d6802575093dc733021f3cbf2980dbd6b37bc3a6b9328e7c7259e5d4"
+        "src/lib/whatsapp/campaign-assignment.ts": "64a5d57db367eaf54d98f1f4d76e3c5e370d2e76ea1051a4010cce4381010cd4"
       },
       "resources": [
         "system.whatsapp",
@@ -2177,6 +2177,14 @@
         {
           "file": "src/lib/access-control/use-permissions.tsx",
           "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/whatsapp/campaign-assignment.ts",
+          "symbol": "assertAssignmentMembers"
+        },
+        {
+          "file": "src/lib/whatsapp/campaign-assignment.server.ts",
+          "symbol": "resolveAssignment"
         }
       ],
       "database": [
@@ -2207,6 +2215,10 @@
         {
           "file": "drizzle/migrations/0283_whatsapp_campaign_filter_values.sql",
           "symbol": "whatsapp_campaign_filter_values"
+        },
+        {
+          "file": "drizzle/migrations/0286_wa_campaign_assignment.sql",
+          "symbol": "wa_campaign_next_assignee"
         }
       ],
       "tests": {

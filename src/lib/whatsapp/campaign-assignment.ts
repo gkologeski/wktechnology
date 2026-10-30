@@ -17,16 +17,24 @@ export const AssignmentInput = z.object({
 });
 export type AssignmentConfig = z.infer<typeof AssignmentInput>;
 
+/** Regra de quantidade de membros por modo; lança erro em português. */
+export function assertAssignmentMembers(mode: AssignmentMode, ids: string[]): void {
+  if (mode === "member" && ids.length !== 1)
+    throw new Error("Escolha exatamente um membro para receber as conversas.");
+  if (mode === "round_robin" && ids.length < 2)
+    throw new Error("Escolha ao menos dois membros para dividir as conversas.");
+}
+
 /** Normaliza e valida a regra (sem consultar o banco). */
 export function normalizeAssignment(cfg: AssignmentConfig): AssignmentConfig {
   const ids = [...new Set(cfg.assignment_member_ids)];
+  assertAssignmentMembers(cfg.assignment_mode, ids);
   if (cfg.assignment_mode === "member") {
     if (ids.length !== 1)
       throw new Error("Escolha exatamente um membro para receber as conversas.");
     return { assignment_mode: "member", assignment_member_ids: ids };
   }
   if (cfg.assignment_mode === "round_robin") {
-    if (ids.length < 2) throw new Error("Escolha ao menos dois membros para dividir as conversas.");
     return { assignment_mode: "round_robin", assignment_member_ids: ids };
   }
   return { assignment_mode: cfg.assignment_mode, assignment_member_ids: [] };
