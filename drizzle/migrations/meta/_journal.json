@@ -1961,6 +1961,13 @@
       "when": 1793358314739,
       "tag": "0279_project_dash_forecast_fast_path",
       "breakpoints": true
+    },
+    {
+      "idx": 280,
+      "version": "7",
+      "when": 1793358358946,
+      "tag": "0280_project_dash_capacity_fast_path",
+      "breakpoints": true
     }
   ]
 }
