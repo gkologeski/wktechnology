@@ -1947,6 +1947,13 @@
       "when": 1793356969232,
       "tag": "0277_work_view_workspace_fast_path",
       "breakpoints": true
+    },
+    {
+      "idx": 278,
+      "version": "7",
+      "when": 1793357737470,
+      "tag": "0278_project_dash_fast_path_and_alloc_owner",
+      "breakpoints": true
     }
   ]
 }
