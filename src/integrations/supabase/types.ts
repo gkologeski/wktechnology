@@ -29831,6 +29831,10 @@ export type Database = {
         Args: { p_action: string; p_user: string; p_ws: string }
         Returns: boolean
       }
+      contact_domain_company_candidates: {
+        Args: { _dom: string; _ws: string }
+        Returns: string[]
+      }
       contract_approval_decide: {
         Args: { p_approval: string; p_comment?: string; p_decision: string }
         Returns: Json

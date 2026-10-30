@@ -6,6 +6,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertImportEntity } from "@/lib/access-control/admin-gates.server";
+import { CSV_IMPORT_INSERT_CHUNK, CSV_IMPORT_LOOKUP_CHUNK, chunkRows } from "@/lib/csv-import-rows";
 
 import {
   countryFromRecordField,
@@ -153,6 +154,8 @@ export const previewCsvImport = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    // A análise faz parte da importação: exige a mesma chave de criação.
+    await assertImportEntity(context.supabase, context.userId, data.entity);
     const workspaceId = await getActiveWorkspaceId(context.userId);
     const { entity, rows, mapping, dedupeKey } = data;
 
@@ -167,14 +170,14 @@ export const previewCsvImport = createServerFn({ method: "POST" })
       ),
     );
 
-    // Buscar existentes no workspace
+    // Buscar existentes no workspace, em blocos (evita URL longa demais)
     const existing = new Map<string, string>(); // key value → id
-    if (keyValues.length > 0) {
+    for (const keys of chunkRows(keyValues, CSV_IMPORT_LOOKUP_CHUNK)) {
       const { data: found, error } = await context.supabase
         .from(entity)
         .select(`id, ${dedupeKey}`)
         .eq("workspace_id", workspaceId)
-        .in(dedupeKey, keyValues);
+        .in(dedupeKey, keys);
       if (error) throw new Error(error.message);
       for (const row of (found ?? []) as unknown as Array<Record<string, string>>) {
         existing.set(normalize(row[dedupeKey]), row.id);
@@ -240,12 +243,12 @@ export const executeCsvImport = createServerFn({ method: "POST" })
     );
 
     const existing = new Map<string, string>();
-    if (keyValues.length > 0) {
+    for (const keys of chunkRows(keyValues, CSV_IMPORT_LOOKUP_CHUNK)) {
       const { data: found, error } = await context.supabase
         .from(entity)
         .select(`id, ${dedupeKey}`)
         .eq("workspace_id", workspaceId)
-        .in(dedupeKey, keyValues);
+        .in(dedupeKey, keys);
       if (error) throw new Error(error.message);
       for (const row of (found ?? []) as unknown as Array<Record<string, string>>) {
         existing.set(normalize(row[dedupeKey]), row.id);
@@ -275,22 +278,20 @@ export const executeCsvImport = createServerFn({ method: "POST" })
         }
         // create_new: insere mesmo se duplicado
       }
-      // owner_id é setado abaixo
-      toInsert.push({ ...r, owner_id: context.userId });
+      // Workspace explícito: o mesmo usado na deduplicação acima (RLS confere).
+      toInsert.push({ ...r, owner_id: context.userId, workspace_id: workspaceId });
     }
 
     let inserted = 0;
     let updated = 0;
-    if (toInsert.length > 0) {
-      const chunkSize = 500;
-      for (let i = 0; i < toInsert.length; i += chunkSize) {
-        const chunk = toInsert.slice(i, i + chunkSize);
-        const { error, count } = await context.supabase
-          .from(entity)
-          .insert(chunk as never, { count: "exact" });
-        if (error) throw new Error(error.message);
-        inserted += count ?? chunk.length;
-      }
+    // Gravações pequenas: cada linha passa por várias regras automáticas no banco,
+    // e um lote grande estourava o limite de tempo da gravação.
+    for (const chunk of chunkRows(toInsert, CSV_IMPORT_INSERT_CHUNK)) {
+      const { error, count } = await context.supabase
+        .from(entity)
+        .insert(chunk as never, { count: "exact" });
+      if (error) throw new Error(error.message);
+      inserted += count ?? chunk.length;
     }
     if (toUpdate.length > 0) {
       for (const { id, values } of toUpdate) {

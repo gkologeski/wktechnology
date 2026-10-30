@@ -4707,6 +4707,91 @@
           "name": "work fast path refuses an inactive member"
         }
       }
+    },
+    {
+      "id": "csv-import-batched",
+      "kind": "business",
+      "files": {
+        "src/lib/csv-import.functions.ts": "57d59e7c0b3f558e64d5c2909b52e01b664c7d8344fd2a5ba6ea7dfe2d4693e1",
+        "src/routes/_authenticated/settings.import-csv.tsx": "c1872bc41d6906b27f98f3b59b0099d44f0a03b6f7e274cc88791ec7cd7416e4",
+        "drizzle/migrations/0285_contact_domain_link_indexed.sql": "40ac82ca81766c5134fc440d1086df32d24f77f15168569eb91677459bc3ce5b"
+      },
+      "resources": [
+        "techsales.contacts",
+        "techsales.leads",
+        "techsales.companies"
+      ],
+      "actions": [
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.contacts.create.workspace",
+        "techsales.contacts.create.own",
+        "techsales.leads.create.workspace",
+        "techsales.leads.create.own",
+        "techsales.companies.create.workspace",
+        "techsales.companies.create.own"
+      ],
+      "rationale": "CSV import runs in client batches of 100 rows and server inserts of 10 rows so each write ends before the 8 s statement timeout. Analysis and execution both require the entity create key on the server (analysis became stricter); the screen denies Analisar/Importar while permissions load or without the key. Writes use the caller's RLS client with the active workspace set explicitly. 0285 moves the contact domain-link candidate lookup to an indexed SECURITY DEFINER helper that answers only inside triggers (pg_trigger_depth guard, no anon EXECUTE); the final match still runs under the caller's companies RLS, so linked companies and visibility are unchanged. No new key, role grant or policy.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/admin-gates.server.ts",
+          "symbol": "assertImportEntity"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0285_contact_domain_link_indexed.sql",
+          "symbol": "contact_domain_company_candidates"
+        },
+        {
+          "file": "drizzle/migrations/0285_contact_domain_link_indexed.sql",
+          "symbol": "contact_link_company_by_domain"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/csv-import-permissions.test.ts",
+          "name": "csv import permits an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/csv-import-permissions.test.ts",
+          "name": "csv import refuses a member without the create key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/csv-import-permissions.test.ts",
+          "name": "csv import refuses an explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/csv-import-permissions.test.ts",
+          "name": "csv import refuses a key granted only in a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/csv-import-permissions.test.ts",
+          "name": "csv import refuses an inactive member"
+        }
+      }
+    },
+    {
+      "id": "csv-import-row-helpers",
+      "kind": "presentation",
+      "files": {
+        "src/lib/csv-import-rows.ts": "b6c8b1cb2a9ef4c31ed0b49b8cfc58e93f8e66adee8e12a72e2cba7ace0120e1"
+      },
+      "rationale": "Pure helpers that trim mapped CSV columns, split rows into batches and sum batch results. No data access, route, server function or UI event; authorization stays in csv-import-batched."
     }
   ],
   "retired": {}
