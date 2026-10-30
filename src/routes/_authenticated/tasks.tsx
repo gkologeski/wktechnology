@@ -68,11 +68,10 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRowGuarded, deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
 import { chunkIds } from "@/lib/chunk-ids";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
-import { responsibleId, responsibleOrExpr } from "@/lib/entity/responsible";
+import { responsibleId } from "@/lib/entity/responsible";
 
 // Em tarefas, toda inserção já grava o responsável (gatilho copia o criador);
 // filtrar só por assigned_to usa índice e evita o OU com owner_id que estourava o tempo.
-const TASK_RESPONSIBLE_COLUMNS = ["assigned_to"] as const;
 
 export const Route = createFileRoute("/_authenticated/tasks")({
   component: TasksPage,
