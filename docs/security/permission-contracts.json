@@ -2194,6 +2194,10 @@
         {
           "file": "drizzle/migrations/0265_wa_outbound_activity_contact_owner_fallback.sql",
           "symbol": "wa_outbound_register_activity"
+        },
+        {
+          "file": "drizzle/migrations/0274_wa_campaign_prune_recent.sql",
+          "symbol": "wa_campaign_prune_recent"
         }
       ],
       "tests": {
@@ -2648,7 +2652,7 @@
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
       "files": {
-        "src/integrations/supabase/types.ts": "6e788bd52b1b3f583127470ee03e93b6202c6d2e24b9416ade11d6fce79ef4a6"
+        "src/integrations/supabase/types.ts": "6369253430910a2ec84a28700eccce0dbd51214fef4e6c1cd4cefd4783cc899b"
       },
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies."
     },
@@ -4536,6 +4540,78 @@
         "boundary": "Workspace, company and referrer come from the stored enrollment; customer text only supplies the referred name, email or phone after validation.",
         "revocation": "Worker authorization, lease loss, agent disable or inactive membership stop later calls; created Leads stay reviewable and removable by authorized users.",
         "review_by": "2027-01-29"
+      }
+    },
+    {
+      "id": "sales-rls-per-query-evaluation",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0273_rls_initplan_people_chat.sql": "bba65ea7f899886e2f0e7227fcbace60f03d5c302fe9e8510d6271af1d5c1fbe",
+        "drizzle/migrations/0275_rls_hide_test_initplan_sales_entities.sql": "35b03d726015c05b310e6782749fc81d640e8e9341fab4de0704ff6815ac9e70",
+        "drizzle/migrations/0276_sales_rls_workspace_fast_path.sql": "730f9ed4458b984a8d4ac0e6624b2abc1b8dc3bb5795b84b391edaea3a29949f"
+      },
+      "resources": [
+        "techsales.contacts",
+        "techsales.companies",
+        "techsales.leads",
+        "techsales.deals",
+        "techsales.activities"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.contacts.view.workspace",
+        "techsales.companies.view.workspace",
+        "techsales.leads.view.workspace",
+        "techsales.deals.view.workspace",
+        "techsales.activities.view.workspace"
+      ],
+      "rationale": "Performance-only rewrites of existing SELECT policies; who can read which rows is unchanged. 0273 turns People/Chat checks into per-query sets. 0275 makes the 'Ver como' test-record filter an InitPlan plus hashed subplan (same form as activities in 0117). 0276 adds sales_full_grants(): the '<workspace>:<resource>' pairs the caller reads through the .workspace key path of sales_context_access, computed once per query (SECURITY INVOKER, EXECUTE only for authenticated/service_role). Each sales_view policy is 'pair IN sales_full_grants(...) OR <original sales_context_access row check>'; the first term implies the second, so results are identical, and when it does not match the original per-row rule still decides (own/team, deny resolved upstream in user_effective_permissions, workspace binding, inactive membership returns an empty context). rep_scope_* only wrap auth.uid() as an InitPlan. Verified on the live database with an admin session: exact counts identical to the workspace totals before/after.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesAnyArea"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0273_rls_initplan_people_chat.sql",
+          "symbol": "hr_people_full_workspaces"
+        },
+        {
+          "file": "drizzle/migrations/0275_rls_hide_test_initplan_sales_entities.sql",
+          "symbol": "view_as_hide_test"
+        },
+        {
+          "file": "drizzle/migrations/0276_sales_rls_workspace_fast_path.sql",
+          "symbol": "sales_full_grants"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-rls-fast-path.test.ts",
+          "name": "sales fast path allows an active member with the workspace view key"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-rls-fast-path.test.ts",
+          "name": "sales fast path refuses a member without the view key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-rls-fast-path.test.ts",
+          "name": "sales fast path keeps an explicit deny of the workspace key"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-rls-fast-path.test.ts",
+          "name": "sales fast path refuses rows from a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-rls-fast-path.test.ts",
+          "name": "sales fast path refuses an inactive member"
+        }
       }
     }
   ],
