@@ -118,7 +118,8 @@ function ImportCsvPage() {
     try {
       const { rows: sendRows, truncated } = pickMappedColumns(rows, mapping);
       const cut = Object.entries(truncated).map(([c, n]) => `${c} (${n} linhas)`);
-      if (cut.length) toast.warning(`Textos com mais de 2.000 caracteres foram cortados: ${cut.join(", ")}`);
+      if (cut.length)
+        toast.warning(`Textos com mais de 2.000 caracteres foram cortados: ${cut.join(", ")}`);
       const p = await previewFn({ data: { entity, rows: sendRows, mapping, dedupeKey } });
       setPreview(p);
     } catch (e) {
@@ -132,7 +133,9 @@ function ImportCsvPage() {
     if (!preview) return;
     setLoading("execute");
     try {
-      const r = await executeFn({ data: { entity, rows: pickMappedColumns(rows, mapping).rows, mapping, dedupeKey, strategy } });
+      const r = await executeFn({
+        data: { entity, rows: pickMappedColumns(rows, mapping).rows, mapping, dedupeKey, strategy },
+      });
       setResult(r);
       toast.success(
         `Importação concluída: ${r.inserted} criados, ${r.updated} atualizados, ${r.skipped} ignorados`,
