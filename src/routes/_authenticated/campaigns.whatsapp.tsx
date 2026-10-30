@@ -27,6 +27,9 @@ import {
   type AudienceState,
 } from "@/components/whatsapp/campaign-audience-panel";
 import { getWhatsAppTemplateCatalog } from "@/lib/whatsapp.functions";
+import { CampaignAssignmentSection } from "@/components/whatsapp/campaign-assignment-section";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import type { AssignmentMode } from "@/lib/whatsapp/campaign-assignment";
 import { listCloudSenders } from "@/lib/whatsapp/cloud-connections.functions";
 import { catalogMessage, composerPolicy } from "@/lib/whatsapp/composer-policy";
 import { Button } from "@/components/ui/button";
@@ -120,6 +123,10 @@ function CampaignsPage() {
   const editFn = useServerFn(getWhatsAppCampaignForEdit);
   const [mediaUrl, setMediaUrl] = useState("");
   const [sdrPlaybook, setSdrPlaybook] = useState<string>("__none__");
+  const [assignMode, setAssignMode] = useState<AssignmentMode>("auto");
+  const [assignIds, setAssignIds] = useState<string[]>([]);
+  const { data: activeMembers = [] } = useWorkspaceMembers();
+  const assignment = { assignment_mode: assignMode, assignment_member_ids: assignIds };
   // Intervalo aleatório entre disparos: "" = usar o padrão do workspace.
   const [ivMin, setIvMin] = useState<string>("");
   const [ivMax, setIvMax] = useState<string>("");
@@ -161,6 +168,8 @@ function CampaignsPage() {
     setSdrPlaybook(defaultPlaybookId ?? "__none__");
     setIvMin("");
     setIvMax("");
+    setAssignMode("auto");
+    setAssignIds([]);
   }
 
   function openEdit(c: (typeof items)[number]) {
@@ -211,6 +220,8 @@ function CampaignsPage() {
         setTemplateName(full.template_name || "__none__");
         setMediaUrl(full.media_url ?? "");
         setSdrPlaybook(full.sdr_playbook_id ?? "__none__");
+        setAssignMode((full.assignment_mode as AssignmentMode) ?? "auto");
+        setAssignIds(full.assignment_member_ids ?? []);
       })
       .catch(() => toast.error("Não foi possível carregar os dados salvos da campanha."));
   }
@@ -280,6 +291,7 @@ function CampaignsPage() {
             media_url: mediaUrl || null,
             rate_per_minute: rate,
             sdr_playbook_id: isHsm && sdrPlaybook !== "__none__" ? sdrPlaybook : null,
+            assignment,
             ...intervalPayload,
           },
         });
@@ -329,6 +341,7 @@ function CampaignsPage() {
           commercial_overrides: audience.commercialOverrides,
           audience_config: toAudienceConfig(audience, recipientsRaw),
           sdr_playbook_id: isHsm && sdrPlaybook !== "__none__" ? sdrPlaybook : null,
+          assignment,
           ...intervalPayload,
         },
       });
@@ -597,6 +610,21 @@ function CampaignsPage() {
                   </div>
                 </FormSection>
               )}
+              <FormSection
+                title="Distribuição das conversas"
+                description="Quem fica responsável pelas conversas geradas por esta campanha."
+                className="gap-3 py-4 md:grid-cols-1"
+              >
+                <CampaignAssignmentSection
+                  mode={assignMode}
+                  memberIds={assignIds}
+                  members={activeMembers}
+                  onChange={(m, ids) => {
+                    setAssignMode(m);
+                    setAssignIds(ids);
+                  }}
+                />
+              </FormSection>
               <FormSection
                 title="Ritmo de envio"
                 description="Velocidade e intervalo entre disparos."
