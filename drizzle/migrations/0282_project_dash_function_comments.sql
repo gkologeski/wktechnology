@@ -1,0 +1,3 @@
+COMMENT ON FUNCTION public.project_dash_ds_tasks(text, jsonb) IS 'Painel: tarefas do recorte; via rápida work_view_full_workspace antes da regra por linha.';
+COMMENT ON FUNCTION public.project_dash_ds_forecast(text, jsonb) IS 'Painel: previsão; vias rápidas por workspace (tarefas, marcos, horas) antes das regras por linha.';
+COMMENT ON FUNCTION public.project_dash_capacity_base(text, jsonb) IS 'Painel: capacidade; via rápida de horas por workspace; projetos pela regra completa (inclui espaço/pasta).';
