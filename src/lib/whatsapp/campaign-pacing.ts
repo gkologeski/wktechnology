@@ -112,35 +112,46 @@ export function campaignIntervalColumns(
 /**
  * Laço do disparo espaçado, sem banco: só envia quando `nextAt` venceu, sorteia
  * o próximo intervalo após cada tentativa (envio ou falha) e para no orçamento.
+ * Com `idle`, quando o próximo envio passa do orçamento a rodada espera até o
+ * fim do orçamento (em vez de sair na hora), para a cadeia não girar à toa.
  */
 export async function runPacedLoop(p: {
   interval: PacingInterval;
   nextAt: number;
   startedAt: number;
   budgetMs?: number;
+  idle?: boolean;
   now?: () => number;
   sleep: (ms: number) => Promise<void>;
   sendOne: () => Promise<{ processed: number; attempted?: number }>;
   persistNextAt: (ms: number) => Promise<void>;
   rng?: () => number;
-}): Promise<{ processed: number; nextAt: number }> {
+}): Promise<{ processed: number; nextAt: number; stop: PacedStop }> {
   const now = p.now ?? Date.now;
   const budget = p.budgetMs ?? PACING_RUN_BUDGET_MS;
   let nextAt = p.nextAt;
   let processed = 0;
+  let stop: PacedStop = "budget";
   while (now() - p.startedAt < budget) {
     const wait = nextAt - now();
     if (wait > 0) {
-      if (now() + wait - p.startedAt > budget) break;
+      const left = budget - (now() - p.startedAt);
+      if (wait > left) {
+        if (p.idle && left > 0) await p.sleep(left);
+        break;
+      }
       await p.sleep(wait);
     }
     const res = await p.sendOne();
-    if (!res.processed) break;
+    if (!res.processed) {
+      stop = "empty";
+      break;
+    }
     processed += res.processed;
     // Ignorados (fixo, envio recente, cliente…) não gastam intervalo: segue direto.
     if (res.attempted === 0) continue;
     nextAt = now() + randomIntervalSeconds(p.interval.min, p.interval.max, p.rng) * 1000;
     await p.persistNextAt(nextAt);
   }
-  return { processed, nextAt };
+  return { processed, nextAt, stop };
 }
