@@ -27269,6 +27269,9 @@ export type Database = {
       }
       whatsapp_campaigns: {
         Row: {
+          assignment_cursor: number
+          assignment_member_ids: string[]
+          assignment_mode: string
           audience_config: Json | null
           body_template: string | null
           consent_evidence: string | null
@@ -27305,6 +27308,9 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          assignment_cursor?: number
+          assignment_member_ids?: string[]
+          assignment_mode?: string
           audience_config?: Json | null
           body_template?: string | null
           consent_evidence?: string | null
@@ -27341,6 +27347,9 @@ export type Database = {
           workspace_id?: string
         }
         Update: {
+          assignment_cursor?: number
+          assignment_member_ids?: string[]
+          assignment_mode?: string
           audience_config?: Json | null
           body_template?: string | null
           consent_evidence?: string | null
@@ -32945,6 +32954,10 @@ export type Database = {
       wa_campaign_claim_dispatch: {
         Args: { p_campaign: string; p_seconds: number }
         Returns: boolean
+      }
+      wa_campaign_next_assignee: {
+        Args: { _campaign_id: string }
+        Returns: string
       }
       wa_campaign_prune_recent: {
         Args: { p_campaign_id: string }
