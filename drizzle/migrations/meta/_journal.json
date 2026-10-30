@@ -1933,6 +1933,13 @@
       "when": 1793330471164,
       "tag": "0275_rls_hide_test_initplan_sales_entities",
       "breakpoints": true
+    },
+    {
+      "idx": 276,
+      "version": "7",
+      "when": 1793330862452,
+      "tag": "0276_sales_rls_workspace_fast_path",
+      "breakpoints": true
     }
   ]
 }

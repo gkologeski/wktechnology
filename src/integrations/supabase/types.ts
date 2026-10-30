@@ -32269,6 +32269,10 @@ export type Database = {
         Args: { e: string; i: string }
         Returns: boolean
       }
+      sales_full_grants: {
+        Args: { _action: string; _resources: string[] }
+        Returns: string[]
+      }
       sales_inbox_rotate: {
         Args: { p_record: string; p_rule: string; p_table: string }
         Returns: Json
