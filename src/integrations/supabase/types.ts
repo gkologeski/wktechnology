@@ -32958,6 +32958,17 @@ export type Database = {
         Args: { p_limit: number; p_recipient: string }
         Returns: Json
       }
+      whatsapp_campaign_filter_values: {
+        Args: {
+          p_column: string
+          p_custom_key?: string
+          p_entity: string
+          p_limit?: number
+          p_search?: string
+          p_workspace: string
+        }
+        Returns: string[]
+      }
       wk_head_rh_permission: {
         Args: { _key: string; _workspace: string }
         Returns: boolean
