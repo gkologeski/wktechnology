@@ -193,7 +193,6 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
                     ResponsiveContainer,
                     ComposedChart,
                     Bar,
-                    Line,
                     XAxis,
                     YAxis,
                     Tooltip,
