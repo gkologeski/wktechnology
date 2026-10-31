@@ -5104,11 +5104,61 @@
     },
     {
       "id": "delete-guard-chunked",
-      "kind": "presentation",
+      "kind": "business",
       "files": {
         "src/lib/delete-guard.ts": "fe9872dd4daa1b2efa0166a8f7ea76d4280b08597bf580e01e1a7389863a0b53"
       },
-      "rationale": "Client helper that sends deletes with the caller's RLS-bound client in chunks of 100 ids and counts affected rows. It never widens access: each chunk is evaluated by the table's delete policies; denied rows are reported, not bypassed."
+      "rationale": "Client helper that sends deletes with the caller's RLS-bound client in chunks of 100 ids and counts affected rows. It never widens access: each chunk is evaluated by the table's delete policies; denied rows are reported, not bypassed.",
+      "resources": [
+        "techsales.contacts"
+      ],
+      "actions": [
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.contacts.delete.own",
+        "techsales.contacts.delete.team",
+        "techsales.contacts.delete.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/delete-guard.ts",
+          "symbol": "deleteInChunks"
+        }
+      ],
+      "database": [
+        {
+          "file": "supabase/migrations/20260515093553_59fb739a-6e3d-402c-b9f0-6d8228a1fc38.sql",
+          "symbol": "contacts"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      }
     }
   ],
   "retired": {}
