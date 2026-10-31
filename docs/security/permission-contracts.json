@@ -275,7 +275,7 @@
         "system.communication.subscription_types.update.workspace",
         "system.communication.subscription_types.view.workspace"
       ],
-      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed.",
+      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS.",
       "database": [
         {
           "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
@@ -309,12 +309,17 @@
       "files": {
         "src/lib/access-control/sales-route-map.ts": "a564bc78dc95654b256271ec4fe9c151d63bc7fb3b4f73ad940b0dd1f4b2fa5c",
         "src/routes/_authenticated/settings.tsx": "a4f951fe15ac2c7de40486935dabe323cc57935a567137ef3012fa0bfb6b743b",
-        "src/routes/_authenticated.tsx": "18faf2eba2b27b297cac5039fdc0913b7b661631c9e578c23e3d9f21dae5c27f"
+        "src/routes/_authenticated.tsx": "18448332bcad1cb959dd7b657792dbeb47058f66e40d261182ef77981f08b445",
+        "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
       },
       "controls": [
         {
           "file": "src/lib/access-control/sales-route-map.ts",
           "symbol": "salesRouteResources"
+        },
+        {
+          "file": "src/lib/use-my-role.ts",
+          "symbol": "pickHighestRole"
         }
       ],
       "exception": {
@@ -2141,7 +2146,7 @@
         "drizzle/migrations/0286_wa_campaign_assignment.sql": "bdc20018b0184de35ab5b6fbea3305d0b847441e960b6ab05ae27ecdee78b207",
         "src/components/whatsapp/campaign-assignment-section.tsx": "784136197ffd47a38eb41b6e026918e5a74cbce2f409feb13cb41a647a0380e4",
         "src/lib/whatsapp/campaign-assignment.server.ts": "f75a7485b12b320af56635b016a47ffefafd1c85b7cec5718dc71b59c4ce77df",
-        "src/lib/whatsapp/campaign-assignment.ts": "64a5d57db367eaf54d98f1f4d76e3c5e370d2e76ea1051a4010cce4381010cd4"
+        "src/lib/whatsapp/campaign-assignment.ts": "3dc79264158d836b33f4325a096794071cf2ba45bb0f50fead681412ad8fb51b"
       },
       "resources": [
         "system.whatsapp",
@@ -4813,9 +4818,289 @@
       "id": "notification-cursor-helper",
       "kind": "presentation",
       "files": {
-        "src/lib/notification-cursor.ts": "71d8a3a41fa79fb4f3a21a03a61bea62461383919f56ef8b02b7dc6c72b99b78"
+        "src/lib/notification-cursor.ts": "3c746dfae0dca089e514e293014d0962c10ac603d2e0be26b255d579c5d7ed09"
       },
       "rationale": "Pure cursor helper for notification pagination; no I/O, actions, permissions, grants or policies."
+    },
+    {
+      "id": "crm-derived-filter-options",
+      "kind": "business",
+      "files": {
+        "src/lib/entity/derived-filter-options.functions.ts": "8ae942cf8c4e116e66cfbb50454b5b029b159135901c6fd8b33696a8172282d0",
+        "src/lib/entity/derived-filter-options.server.ts": "59ef7907a838c0e4240bfcaca416f1dd444e3668b033b5363220719fb7372c49",
+        "src/components/entity/derived-filter-fields.tsx": "a2e774ab0677a32a9b5cd79b6f61911cb27dc1c22c07419ac88daa945641953f"
+      },
+      "resources": [
+        "techsales.contacts",
+        "techsales.leads",
+        "techsales.companies"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.contacts.view.own",
+        "techsales.contacts.view.team",
+        "techsales.contacts.view.workspace",
+        "techsales.leads.view.own",
+        "techsales.leads.view.team",
+        "techsales.leads.view.workspace",
+        "techsales.companies.view.own",
+        "techsales.companies.view.team",
+        "techsales.companies.view.workspace"
+      ],
+      "rationale": "Filter choices for derived CRM fields (cargo resumido, área, nível, porte) list distinct values the caller can already read. Server functions require the entity view permission (requireSalesPermission), the loader re-asserts it with assertSalesAnyArea, validates the column against the derived-field allow-list and calls the SECURITY INVOKER RPC whatsapp_campaign_filter_values so caller RLS limits rows to the active workspace. The UI only requests options when the effective view key exists. No grants, roles or policies change.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesAnyArea"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0283_whatsapp_campaign_filter_values.sql",
+          "symbol": "whatsapp_campaign_filter_values"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      }
+    },
+    {
+      "id": "crm-derived-filter-query-helper",
+      "kind": "presentation",
+      "files": {
+        "src/lib/entity/derived-filter-query.ts": "62b2375f986ead0c6b44e81700bac3094075056f322b0547b54d8000182ebd09"
+      },
+      "rationale": "Pure query-builder helper: turns selected filter values into in()/ilike() on columns allowed by isDerivedCrmField. No I/O, actions or permission decisions; callers' queries still run under RLS."
+    },
+    {
+      "id": "sales-dashboard-campaign-funnel",
+      "kind": "business",
+      "files": {
+        "src/lib/deals/campaign-funnel.server.ts": "e618c1abd104cb54f5740e36ca5fb9c776874d1045925b9c323e2bb56fa48851",
+        "src/components/deals/dashboard/campaigns/campaigns-section.tsx": "39944d5a5d640a2ef44912271d5d858fb1312cb9da969fc24d1a37327e6aaf20"
+      },
+      "resources": [
+        "techsales.marketing.campaigns"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.marketing.campaigns.view.own",
+        "techsales.marketing.campaigns.view.team",
+        "techsales.marketing.campaigns.view.workspace"
+      ],
+      "rationale": "Campaign funnel aggregation is reached only through getCampaignFunnel (requireSalesPermission campaigns view) and now re-asserts the same view permission with assertSalesAnyArea before reading. It reads campaign recipients, conversations, messages and meetings with the caller client page by page, so RLS still limits rows to the caller's active workspace and scope; only sent campaign recipients are counted per day. Dashboard links to campaign pages render only when the effective campaigns view key exists.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesAnyArea"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "supabase/migrations/20260518165159_94f55558-37f3-4e35-959a-a6df9166074d.sql",
+          "symbol": "whatsapp_campaign_recipients"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      }
+    },
+    {
+      "id": "sales-tasks-list-assignee-filter",
+      "kind": "business",
+      "files": {
+        "src/routes/_authenticated/tasks.tsx": "ff987eaf61823b4e1bc8b4b91babd0064a079b9c60c2a1a06daf3c4b865b4235"
+      },
+      "resources": [
+        "techsales.activities"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.activities.view.own",
+        "techsales.activities.view.team",
+        "techsales.activities.view.workspace"
+      ],
+      "rationale": "Tasks list keeps its existing gate: the effective activities view scope (useResourceScope) decides own/team/workspace before querying, and RLS on activities enforces it in the database. The change only replaces an OR responsible filter with direct equality on assigned_to (index friendly) and makes completion optimistic with rollback; deletes still go through deleteRowGuarded. No grants or policies change.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/use-resource-scope.tsx",
+          "symbol": "useResourceScope"
+        }
+      ],
+      "database": [
+        {
+          "file": "supabase/migrations/20260515093553_59fb739a-6e3d-402c-b9f0-6d8228a1fc38.sql",
+          "symbol": "activities"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      }
+    },
+    {
+      "id": "notifications-personal-history",
+      "kind": "personal",
+      "files": {
+        "src/lib/notifications.functions.ts": "f210cfb4fedfa93f02483d610f2e4ecac1a2fd4d7c4608b6bc82449b20492b55",
+        "src/components/notifications-bell.tsx": "5a96ff0356019543402561394c0d9f748f73ce807c122da200c3c43a8f07ecb4"
+      },
+      "resources": [
+        "system.notifications"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own"
+      ],
+      "rationale": "Bell notifications are personal: server functions require an authenticated session (requireSupabaseAuth) and scope every read to the caller id via scopeNotifications; reads are paged by (created_at,id) cursor and the unread count is a head count on the same scope. RLS notif_select_own/notif_update_own (user_id = auth.uid()) enforces it in the database. The bell subscribes only to the signed-in user's rows (useAuth). Preference reads/writes use the server admin client only after the same caller scoping on profiles.id.",
+      "exception": {
+        "mechanism": "Authenticated Supabase session; caller id from verified JWT; RLS user_id = auth.uid().",
+        "boundary": "Only the caller's own notification rows; no workspace-wide or other-user reads.",
+        "revocation": "Signing out, banning or deactivating the member revokes the session and therefore all access.",
+        "review_by": "2027-04-30"
+      },
+      "controls": [
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/notification-cursor.ts",
+          "symbol": "scopeNotifications"
+        },
+        {
+          "file": "src/lib/auth.tsx",
+          "symbol": "useAuth"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        }
+      ],
+      "database": [
+        {
+          "file": "supabase/migrations/20260606022600_562a7bbe-e537-4b2c-b60e-6113dba77f36.sql",
+          "symbol": "notifications"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/notification-scope.test.ts",
+          "name": "notifications allow the signed-in owner to read own rows"
+        },
+        "missing_permission": {
+          "file": "src/lib/notification-scope.test.ts",
+          "name": "notifications refuse a caller without session"
+        },
+        "explicit_deny": {
+          "file": "src/lib/notification-scope.test.ts",
+          "name": "notifications refuse a forged caller identifier"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/notification-scope.test.ts",
+          "name": "notifications never widen to the workspace of another member"
+        },
+        "inactive_member": {
+          "file": "src/lib/notification-scope.test.ts",
+          "name": "notifications refuse an inactive member whose session was revoked"
+        }
+      }
     }
   ],
   "retired": {}

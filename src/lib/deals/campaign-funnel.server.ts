@@ -1,6 +1,7 @@
 // Agregação do painel de campanhas com o cliente do usuário (RLS/RBAC valem).
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { assertSalesAnyArea } from "@/lib/access-control/sales-core.server";
 import { mergeSteps, step, summarizeBlocks } from "./campaign-funnel.logic";
 import type { CampaignDay, CampaignFunnelData, CampaignRank } from "./campaign-funnel.types";
 
@@ -41,6 +42,7 @@ export async function loadCampaignFunnel(
   workspaceId: string,
   input: { from: string; to: string; ownerId: string | null },
 ): Promise<CampaignFunnelData> {
+  await assertSalesAnyArea(sb, "techsales.marketing.campaigns", "view");
   const { from, to, ownerId } = input;
   const span = Date.parse(to) - Date.parse(from);
   const prevFrom = new Date(Date.parse(from) - span).toISOString();
