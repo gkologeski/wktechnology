@@ -1849,10 +1849,10 @@
       "kind": "business",
       "files": {
         "src/lib/whatsapp.functions.ts": "1134b8ac720de7dcd2dfb45acfbbcc23d3c55351755afad874ec9fb80ce87aac",
-        "src/lib/whatsapp-campaigns.functions.ts": "a7759f6f212670b3c2ade5cf6033dda198f7eaccf53cb947e7da01e0f2e4fa92",
+        "src/lib/whatsapp-campaigns.functions.ts": "53b7384a5d3880272a89c0f53649a3c677e38daa604f64962988fabcbd5883ea",
         "src/routes/_authenticated/inbox.index.tsx": "6871432118a6bd8ef6477bf0ca6ef3bd14a00e7fbec3beef7bb955f610daee80",
         "src/routes/_authenticated/inbox.whatsapp.tsx": "165ac43240712c3713a9b7daec6a059aad630a3a309ae77dd3f38ccd7aa8ea94",
-        "src/routes/_authenticated/campaigns.whatsapp.tsx": "76737d5d3238acd5f5b04b9f731dbd314102f774abaa7cecbfa2ff446fe0532d",
+        "src/routes/_authenticated/campaigns.whatsapp.tsx": "257b98e0bec9a354bd6e4e1982e26d281108725716589ccd30b8d93f61f3132c",
         "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9",
         "drizzle/migrations/0263_wa_outbound_activity_trigger.sql": "6c6a9521a5cfa09cd1724061fd78939fa94d56344ccb8c3052418ea9426a96e0",
         "drizzle/migrations/0264_wa_outbound_activity_fast_lookup.sql": "120f2512f182b4b1f4a0f89489dbe4cff8c00f7be3be5f31ff9b5b5ccea6a53a",
@@ -1866,7 +1866,8 @@
         "src/lib/whatsapp/campaign-audience.server.ts": "d98b566daa40fce72e8fae90617322e73ecbf1def3610b30424aff97f1a1f086",
         "src/lib/whatsapp/campaign-audience-query.ts": "bb5dd8b9faa846eae0b6b72e28ed07b80110e9f23c84ca79ff3d62f8a55937f6",
         "drizzle/migrations/0287_wa_campaign_audience_ids.sql": "10b88936a1dc30f8b95d9cb2a228bb5b88ca21ace204fd80fc0ea3121166c54a",
-        "drizzle/migrations/0288_wa_campaign_audience_ids_array.sql": "11ee5282e7d64a30bd16f340a6566076a3d3cefc555fcd01d6732c49ba81ae93"
+        "drizzle/migrations/0288_wa_campaign_audience_ids_array.sql": "11ee5282e7d64a30bd16f340a6566076a3d3cefc555fcd01d6732c49ba81ae93",
+        "drizzle/migrations/0289_sales_row_guard_child_skip_context.sql": "7dc5c38b2dac757557e99dec6373570dc37b96cedb5ffb8e57ec55b63a59ae0e"
       },
       "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
       "actions": ["view", "create", "update", "manage"],
@@ -1880,7 +1881,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message. Undelivered outbound messages show a translated failure label (pure describeDeliveryError + InboxMessageBubble), built only from error fields of messages the user already reads. Recent-contact pruning RPC wa_campaign_prune_recent is SECURITY INVOKER (caller RLS on recipients applies), requires active workspace membership, EXECUTE only for authenticated/service_role, and only marks pending rows of that campaign as skipped. Audience filter suggestions use RPC whatsapp_campaign_filter_values: SECURITY INVOKER (caller RLS), entity limited to leads/contacts/companies/deals, column validated against the table catalog and custom key by regex, EXECUTE only for authenticated; server still checks isSuggestField and active workspace. The New Campaign dialog only regroups existing fields into sections. Campaign conversation distribution (assignment_mode auto/member/round_robin/unassigned) is saved only through create/update campaign server functions under the existing campaigns create/update keys; members are validated as active in the caller's workspace; at send time RPC wa_campaign_next_assignee (SECURITY DEFINER, EXECUTE only service_role, row lock, re-checks active membership) picks the assignee and only fills conversations with no assignee; unassigned campaigns skip automatic distribution on reply. Campaign audience filters are resolved by RPC wa_campaign_audience_ids: SECURITY INVOKER (caller RLS and column grants apply; protected shared-field columns are read through the masked shared_fields_* views), base/entity limited to leads/contacts/companies/deals, operators allow-listed, columns validated against the table catalog and custom keys by regex, values only as literals, max 10 groups/20 filters/20 terms, EXECUTE only for authenticated; the server still validates filters with isAllowedFilter under the existing campaigns view/create keys and the active workspace. Related reads, recent sends and opt-outs only paginate/parallelize the same user-client queries; compileAudienceGroups re-validates custom keys with filterColumnPath before the RPC.",
+      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message. Undelivered outbound messages show a translated failure label (pure describeDeliveryError + InboxMessageBubble), built only from error fields of messages the user already reads. Recent-contact pruning RPC wa_campaign_prune_recent is SECURITY INVOKER (caller RLS on recipients applies), requires active workspace membership, EXECUTE only for authenticated/service_role, and only marks pending rows of that campaign as skipped. Audience filter suggestions use RPC whatsapp_campaign_filter_values: SECURITY INVOKER (caller RLS), entity limited to leads/contacts/companies/deals, column validated against the table catalog and custom key by regex, EXECUTE only for authenticated; server still checks isSuggestField and active workspace. The New Campaign dialog only regroups existing fields into sections. Campaign conversation distribution (assignment_mode auto/member/round_robin/unassigned) is saved only through create/update campaign server functions under the existing campaigns create/update keys; members are validated as active in the caller's workspace; at send time RPC wa_campaign_next_assignee (SECURITY DEFINER, EXECUTE only service_role, row lock, re-checks active membership) picks the assignee and only fills conversations with no assignee; unassigned campaigns skip automatic distribution on reply. Campaign audience filters are resolved by RPC wa_campaign_audience_ids: SECURITY INVOKER (caller RLS and column grants apply; protected shared-field columns are read through the masked shared_fields_* views), base/entity limited to leads/contacts/companies/deals, operators allow-listed, columns validated against the table catalog and custom keys by regex, values only as literals, max 10 groups/20 filters/20 terms, EXECUTE only for authenticated; the server still validates filters with isAllowedFilter under the existing campaigns view/create keys and the active workspace. Related reads, recent sends and opt-outs only paginate/parallelize the same user-client queries; compileAudienceGroups re-validates custom keys with filterColumnPath before the RPC. Campaign recipients are inserted in batches of 1,000 with the campaign workspace set explicitly, still through the user's client (RLS sales_create + sales_row_guard per row); sales_row_guard now computes the access context only after child tables return, which keeps every check and outcome identical.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -1947,6 +1948,10 @@
         {
           "file": "drizzle/migrations/0288_wa_campaign_audience_ids_array.sql",
           "symbol": "wa_campaign_audience_ids"
+        },
+        {
+          "file": "drizzle/migrations/0289_sales_row_guard_child_skip_context.sql",
+          "symbol": "sales_row_guard"
         }
       ],
       "tests": {
@@ -2336,6 +2341,14 @@
         "revocation": "Connection disabled or number unavailable blocks sends. Worker rechecks source permissions. No fallback to another sender.",
         "review_by": "2027-01-26"
       }
+    },
+    {
+      "id": "whatsapp-campaign-recipient-batching",
+      "kind": "presentation",
+      "files": {
+        "src/lib/whatsapp/campaign-recipient-batches.ts": "9f870f83251611c6c70c02c298f86fc7ba581ca08698a80da70f15d7ce06663f"
+      },
+      "rationale": "Pure array chunking helper (batch size constant) used by the campaign server functions. No I/O, routes, actions, grants or data access; the inserts it sizes stay under the whatsapp-cloud-authenticated-routing contract (user client, RLS and sales_row_guard per row)."
     },
     {
       "id": "whatsapp-cloud-database-types",

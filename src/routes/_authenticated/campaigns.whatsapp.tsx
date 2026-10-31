@@ -6,7 +6,7 @@ import { agentOptionLabel, sortDefaultFirst } from "@/lib/prospecting/sdr/defaul
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Megaphone, Play, Pause, X, Plus, Pencil, Copy, Trash2 } from "lucide-react";
+import { Megaphone, Play, Pause, X, Plus, Pencil, Copy, Trash2, Loader2 } from "lucide-react";
 import {
   createWhatsAppCampaign,
   deleteWhatsAppCampaign,
@@ -683,8 +683,21 @@ function CampaignsPage() {
               <Button variant="ghost" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
-              <Button onClick={() => create.mutate()} disabled={create.isPending || !name}>
-                {isEditing ? "Salvar alterações" : "Criar rascunho"}
+              <Button
+                onClick={() => create.mutate()}
+                disabled={create.isPending || !name}
+                aria-busy={create.isPending}
+              >
+                {create.isPending && <Loader2 className="size-4 animate-spin" aria-hidden />}
+                <span aria-live="polite">
+                  {create.isPending
+                    ? isEditing
+                      ? "Salvando alterações…"
+                      : "Salvando rascunho e destinatários…"
+                    : isEditing
+                      ? "Salvar alterações"
+                      : "Criar rascunho"}
+                </span>
               </Button>
             </DialogFooter>
           </DialogContent>

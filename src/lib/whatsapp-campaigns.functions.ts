@@ -355,6 +355,7 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
     const rows = guarded.kept.map((r) => ({
       campaign_id: camp.id,
       owner_id: userId,
+      workspace_id: workspaceId,
       contact_id: r.contactId,
       phone: r.phone,
       variables: r.variables,
@@ -362,11 +363,10 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
       override_commercial: r.overrideCommercial,
       status: "pending" as const,
     }));
-    // Lotes de 100: cada linha passa por gatilho e políticas de acesso, e 500
-    // de uma vez estouravam o tempo limite do banco. Em falha, a campanha
-    // parcial é removida para não sobrar rascunho sem destinatários.
-    for (let i = 0; i < rows.length; i += 100) {
-      const slice = rows.slice(i, i + 100);
+    // Lotes grandes (cada linha ainda passa por gatilho e políticas de acesso).
+    // Em falha, a campanha parcial é removida para não sobrar rascunho incompleto.
+    const { recipientBatches } = await import("@/lib/whatsapp/campaign-recipient-batches");
+    for (const slice of recipientBatches(rows)) {
       const { error: rErr } = await supabase.from("whatsapp_campaign_recipients").insert(slice);
       if (rErr) {
         await supabase.from("whatsapp_campaign_recipients").delete().eq("campaign_id", camp.id);
@@ -570,6 +570,7 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
       const rows = guarded.kept.map((r) => ({
         campaign_id: data.id,
         owner_id: context.userId,
+        workspace_id: workspaceId,
         contact_id: r.contactId,
         phone: r.phone,
         variables: r.variables,
@@ -577,10 +578,9 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
         override_commercial: r.overrideCommercial,
         status: "pending" as const,
       }));
-      for (let i = 0; i < rows.length; i += 100) {
-        const { error: rErr } = await supabase
-          .from("whatsapp_campaign_recipients")
-          .insert(rows.slice(i, i + 100));
+      const { recipientBatches } = await import("@/lib/whatsapp/campaign-recipient-batches");
+      for (const slice of recipientBatches(rows)) {
+        const { error: rErr } = await supabase.from("whatsapp_campaign_recipients").insert(slice);
         if (rErr) throw rErr;
       }
       patch.total = rows.length;
@@ -705,10 +705,12 @@ export const duplicateWhatsAppCampaign = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (cErr) throw cErr;
-    for (let i = 0; i < recips.length; i += 100) {
-      const slice = recips.slice(i, i + 100).map((r) => ({
+    const { recipientBatches } = await import("@/lib/whatsapp/campaign-recipient-batches");
+    for (const part of recipientBatches(recips)) {
+      const slice = part.map((r) => ({
         campaign_id: camp.id,
         owner_id: userId,
+        workspace_id: workspaceId,
         contact_id: r.contact_id,
         phone: r.phone,
         variables: r.variables ?? {},
