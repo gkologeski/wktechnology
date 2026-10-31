@@ -4808,6 +4808,23 @@
         "src/lib/csv-import-rows.ts": "b6c8b1cb2a9ef4c31ed0b49b8cfc58e93f8e66adee8e12a72e2cba7ace0120e1"
       },
       "rationale": "Pure helpers that trim mapped CSV columns, split rows into batches and sum batch results. No data access, route, server function or UI event; authorization stays in csv-import-batched."
+    },
+    {
+      "id": "notifications-bell-history-scroll",
+      "kind": "presentation",
+      "files": {
+        "src/components/notifications-bell.tsx": "5a96ff0356019543402561394c0d9f748f73ce807c122da200c3c43a8f07ecb4",
+        "src/lib/notification-cursor.ts": "71d8a3a41fa79fb4f3a21a03a61bea62461383919f56ef8b02b7dc6c72b99b78"
+      },
+      "rationale": "Notification bell UI: fixed-height scroll area and paginated history using the existing listMyNotifications reader (still restricted to the caller's own user_id). Pure cursor helper with no I/O. No new actions, permissions, grants or policies."
+    },
+    {
+      "id": "sales-dashboard-campaign-daily-chart",
+      "kind": "presentation",
+      "files": {
+        "src/components/deals/dashboard/campaigns/campaigns-section.tsx": "c9123716a597c48525ee79e45ad7c61553725c08061d243ba080eb439aed13b6"
+      },
+      "rationale": "Chart presentation only: removes the replies line from the daily campaign sends chart and updates its description. No data access or action changes."
     }
   ],
   "retired": {}
