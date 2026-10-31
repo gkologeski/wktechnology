@@ -11,7 +11,10 @@ const MAX_ROWS = 200000;
 
 /** Busca todas as páginas (o banco corta cada resposta em 1.000 linhas). */
 export async function fetchAllPages<T>(
-  page: (from: number, to: number) => PromiseLike<{ data: unknown; error: { message: string } | null }>,
+  page: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: unknown; error: { message: string } | null }>,
 ): Promise<T[]> {
   const out: T[] = [];
   for (let start = 0; start < MAX_ROWS; start += PAGE) {
