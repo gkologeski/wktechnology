@@ -4,6 +4,7 @@ import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { scopeNotifications } from "@/lib/notification-cursor";
 
 export const listMyNotifications = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -19,7 +20,7 @@ export const listMyNotifications = createServerFn({ method: "GET" })
   )
   .handler(async ({ data: input, context }) => {
     const { supabase, userId } = context;
-    const { NOTIFICATION_PAGE_SIZE, cursorFilter, nextCursorOf, scopeNotifications } =
+    const { NOTIFICATION_PAGE_SIZE, cursorFilter, nextCursorOf } =
       await import("@/lib/notification-cursor");
     let q = scopeNotifications(
       supabase
@@ -51,11 +52,13 @@ export const markNotificationRead = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    await supabase
-      .from("notifications")
-      .update({ read_at: new Date().toISOString() })
-      .eq("id", data.id)
-      .eq("user_id", userId);
+    await scopeNotifications(
+      supabase
+        .from("notifications")
+        .update({ read_at: new Date().toISOString() })
+        .eq("id", data.id),
+      userId,
+    );
     return { ok: true };
   });
 
@@ -63,11 +66,10 @@ export const markAllNotificationsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
-    await supabase
-      .from("notifications")
-      .update({ read_at: new Date().toISOString() })
-      .eq("user_id", userId)
-      .is("read_at", null);
+    await scopeNotifications(
+      supabase.from("notifications").update({ read_at: new Date().toISOString() }),
+      userId,
+    ).is("read_at", null);
     return { ok: true };
   });
 
@@ -138,11 +140,11 @@ export const getMyNotificationPrefs = createServerFn({ method: "GET" })
     // Data API (column-level GRANT restricted). Read with the service-role
     // client, scoped to the current user only.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .select("notification_preferences")
-      .eq("id", userId)
-      .maybeSingle();
+    const { data, error } = await scopeNotifications(
+      supabaseAdmin.from("profiles").select("notification_preferences"),
+      userId,
+      "id",
+    ).maybeSingle();
     if (error) throw new Error(error.message);
     return { prefs: mergeWithDefaults(data?.notification_preferences) };
   });
@@ -153,10 +155,11 @@ export const updateMyNotificationPrefs = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("profiles")
-      .update({ notification_preferences: data.prefs })
-      .eq("id", userId);
+    const { error } = await scopeNotifications(
+      supabaseAdmin.from("profiles").update({ notification_preferences: data.prefs }),
+      userId,
+      "id",
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });

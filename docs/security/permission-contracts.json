@@ -4818,7 +4818,7 @@
       "id": "notification-cursor-helper",
       "kind": "presentation",
       "files": {
-        "src/lib/notification-cursor.ts": "d15c946cc73d8e1e92722ba9113fab7385850d680443e38cdc381fd241d0354d"
+        "src/lib/notification-cursor.ts": "3c746dfae0dca089e514e293014d0962c10ac603d2e0be26b255d579c5d7ed09"
       },
       "rationale": "Pure cursor helper for notification pagination; no I/O, actions, permissions, grants or policies."
     },
@@ -5031,7 +5031,7 @@
       "id": "notifications-personal-history",
       "kind": "personal",
       "files": {
-        "src/lib/notifications.functions.ts": "80330cceb336d6124a511af3527d32cd1d40cfa66413d75537a84b1bf0b68563",
+        "src/lib/notifications.functions.ts": "f210cfb4fedfa93f02483d610f2e4ecac1a2fd4d7c4608b6bc82449b20492b55",
         "src/components/notifications-bell.tsx": "5a96ff0356019543402561394c0d9f748f73ce807c122da200c3c43a8f07ecb4"
       },
       "resources": [
@@ -5044,7 +5044,7 @@
       "scopes": [
         "own"
       ],
-      "rationale": "Bell notifications are personal: server functions require an authenticated session (requireSupabaseAuth) and scope every read to the caller id via scopeNotifications; reads are paged by (created_at,id) cursor and the unread count is a head count on the same scope. RLS notif_select_own/notif_update_own (user_id = auth.uid()) enforces it in the database. The bell subscribes only to the signed-in user's rows (useAuth).",
+      "rationale": "Bell notifications are personal: server functions require an authenticated session (requireSupabaseAuth) and scope every read to the caller id via scopeNotifications; reads are paged by (created_at,id) cursor and the unread count is a head count on the same scope. RLS notif_select_own/notif_update_own (user_id = auth.uid()) enforces it in the database. The bell subscribes only to the signed-in user's rows (useAuth). Preference reads/writes use the server admin client only after the same caller scoping on profiles.id.",
       "exception": {
         "mechanism": "Authenticated Supabase session; caller id from verified JWT; RLS user_id = auth.uid().",
         "boundary": "Only the caller's own notification rows; no workspace-wide or other-user reads.",

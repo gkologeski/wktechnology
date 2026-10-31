@@ -27,7 +27,8 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function scopeNotifications<T extends { eq: (column: string, value: string) => T }>(
   query: T,
   callerId: string | null | undefined,
+  column: "user_id" | "id" = "user_id",
 ): T {
   if (!callerId || !UUID.test(callerId)) throw new Error("Sessão inválida.");
-  return query.eq("user_id", callerId);
+  return query.eq(column, callerId);
 }
