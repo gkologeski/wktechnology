@@ -288,87 +288,58 @@ export async function loadAudienceRows(
   const ids = (k: string) => raw.map((r) => r[k]).filter(Boolean) as string[];
   const selfIds = ids("id");
 
-  // Contatos
+  // Contatos (etapa 1) — as demais leituras dependem só da base e destes contatos.
   let contactIds: string[] = [];
   if (base === "leads") contactIds = ids("converted_contact_id");
   if (base === "deals") contactIds = ids("primary_contact_id");
-  const contacts = new Map(
-    (await fetchByIds(db, "contacts", SELECT.contacts, contactIds, workspaceId)).map((c) => [
-      c.id as string,
-      c,
-    ]),
-  );
+  const none = Promise.resolve([] as R[]);
+  const [contactRows, companyContactRows] = await Promise.all([
+    fetchByIds(db, "contacts", SELECT.contacts, contactIds, workspaceId),
+    base === "companies"
+      ? fetchWhereIn(db, "contacts", SELECT.contacts, "company_id", selfIds, workspaceId)
+      : none,
+  ]);
+  const contacts = new Map(contactRows.map((c) => [c.id as string, c]));
   const companyContacts =
     base === "companies"
       ? firstBy(
-          await fetchWhereIn(db, "contacts", SELECT.contacts, "company_id", selfIds, workspaceId),
+          companyContactRows,
           "company_id",
           (c) => pickWhatsAppNumber([c.whatsapp_e164, c.mobile_phone, c.phone]).status === "ok",
         )
       : new Map<string, R>();
 
-  // Negócios
-  const dealById =
-    base === "leads"
-      ? new Map(
-          (await fetchByIds(db, "deals", SELECT.deals, ids("converted_deal_id"), workspaceId)).map(
-            (d) => [d.id as string, d],
-          ),
-        )
-      : new Map<string, R>();
-  const dealsByContact =
-    base === "contacts"
-      ? firstBy(
-          await fetchWhereIn(
-            db,
-            "deals",
-            SELECT.deals,
-            "primary_contact_id",
-            selfIds,
-            workspaceId,
-            true,
-          ),
-          "primary_contact_id",
-        )
-      : new Map<string, R>();
-  const dealsByCompany =
-    base === "companies"
-      ? firstBy(
-          await fetchWhereIn(db, "deals", SELECT.deals, "company_id", selfIds, workspaceId, true),
-          "company_id",
-        )
-      : new Map<string, R>();
-
-  // Empresas
+  // Etapa 2, em paralelo: negócios, empresas e leads convertidos.
   const relatedContacts = [...contacts.values(), ...companyContacts.values()];
   const companyIds =
     base === "companies"
       ? []
       : [...ids("company_id"), ...relatedContacts.map((c) => c.company_id!)];
-  const companies = new Map(
-    (await fetchByIds(db, "companies", SELECT.companies, companyIds, workspaceId)).map((c) => [
-      c.id as string,
-      c,
-    ]),
-  );
-
-  // Leads (convertidos no contato), quando a base não é de leads
   const contactKeys =
     base === "contacts" ? selfIds : [...contacts.keys(), ...relatedContacts.map((c) => c.id!)];
-  const leadsByContact =
+  const [dealRows, contactDealRows, companyDealRows, companyRows, leadRows] = await Promise.all([
     base === "leads"
-      ? new Map<string, R>()
-      : firstBy(
-          await fetchWhereIn(
-            db,
-            "leads",
-            SELECT.leads,
-            "converted_contact_id",
-            contactKeys,
-            workspaceId,
-          ),
-          "converted_contact_id",
-        );
+      ? fetchByIds(db, "deals", SELECT.deals, ids("converted_deal_id"), workspaceId)
+      : none,
+    base === "contacts"
+      ? fetchWhereIn(db, "deals", SELECT.deals, "primary_contact_id", selfIds, workspaceId, true)
+      : none,
+    base === "companies"
+      ? fetchWhereIn(db, "deals", SELECT.deals, "company_id", selfIds, workspaceId, true)
+      : none,
+    fetchByIds(db, "companies", SELECT.companies, companyIds, workspaceId),
+    base === "leads"
+      ? none
+      : fetchWhereIn(db, "leads", SELECT.leads, "converted_contact_id", contactKeys, workspaceId),
+  ]);
+  const dealById = new Map(dealRows.map((d) => [d.id as string, d]));
+  const dealsByContact =
+    base === "contacts" ? firstBy(contactDealRows, "primary_contact_id") : new Map<string, R>();
+  const dealsByCompany =
+    base === "companies" ? firstBy(companyDealRows, "company_id") : new Map<string, R>();
+  const companies = new Map(companyRows.map((c) => [c.id as string, c]));
+  const leadsByContact =
+    base === "leads" ? new Map<string, R>() : firstBy(leadRows, "converted_contact_id");
 
   // Responsáveis e remetente (nome do perfil)
   const allRecords = [
