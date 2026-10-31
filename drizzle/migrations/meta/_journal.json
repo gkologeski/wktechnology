@@ -2010,6 +2010,20 @@
       "when": 1793387605363,
       "tag": "0286_wa_campaign_assignment",
       "breakpoints": true
+    },
+    {
+      "idx": 287,
+      "version": "7",
+      "when": 1793447956132,
+      "tag": "0287_wa_campaign_audience_ids",
+      "breakpoints": true
+    },
+    {
+      "idx": 288,
+      "version": "7",
+      "when": 1793448533518,
+      "tag": "0288_wa_campaign_audience_ids_array",
+      "breakpoints": true
     }
   ]
 }
