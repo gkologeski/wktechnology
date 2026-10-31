@@ -5,6 +5,16 @@ import { dealState, type CommercialFlag } from "./commercial-status";
 
 type Db = any;
 
+/** Lotes simultâneos (cada lote faz até 2 leituras; o runtime aceita 6 por chamada). */
+async function eachPart<T>(parts: T[], fn: (part: T) => Promise<void>, slots = 3) {
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(slots, parts.length) }, async () => {
+      while (next < parts.length) await fn(parts[next++]);
+    }),
+  );
+}
+
 const add = (m: Map<string, Set<CommercialFlag>>, k: string, f: CommercialFlag) => {
   const s = m.get(k) ?? new Set<CommercialFlag>();
   s.add(f);
@@ -22,7 +32,7 @@ export async function loadCommercialFlags(
   // telefone → contatos / leads (+ empresas)
   const contactsByPhone = new Map<string, { id: string; company_id: string | null }[]>();
   const leadsByPhone = new Map<string, { id: string; company_id: string | null }[]>();
-  for (const part of chunkIds(uniq, 150)) {
+  await eachPart(chunkIds(uniq, 150), async (part) => {
     const [{ data: cs }, { data: ls }] = await Promise.all([
       db
         .from("contacts")
@@ -47,7 +57,7 @@ export async function loadCommercialFlags(
           { id: l.converted_contact_id, company_id: l.company_id },
         ]);
     }
-  }
+  });
   const contactIds = [...new Set([...contactsByPhone.values()].flat().map((c) => c.id))];
   const leadIds = [...new Set([...leadsByPhone.values()].flat().map((l) => l.id))];
   const companyIds = [
@@ -67,7 +77,7 @@ export async function loadCommercialFlags(
     else if (st === "open") cb("open_deal");
   };
   const DEAL_COLS = "id, stage, company_id, primary_contact_id, lead_id";
-  for (const part of chunkIds(companyIds, 150)) {
+  await eachPart(chunkIds(companyIds, 150), async (part) => {
     const [{ data: ds }, { data: ks }] = await Promise.all([
       db
         .from("deals")
@@ -84,8 +94,8 @@ export async function loadCommercialFlags(
     ]);
     for (const d of ds ?? []) mark(d.stage, (f) => add(companyFlags, d.company_id, f));
     for (const k of ks ?? []) add(companyFlags, k.counterparty_company_id, "customer");
-  }
-  for (const part of chunkIds(contactIds, 150)) {
+  });
+  await eachPart(chunkIds(contactIds, 150), async (part) => {
     const [{ data: ds }, { data: links }] = await Promise.all([
       db
         .from("deals")
@@ -109,8 +119,8 @@ export async function loadCommercialFlags(
         if (st.has(l.deal_id))
           mark(st.get(l.deal_id) as string, (f) => add(contactFlags, l.contact_id, f));
     }
-  }
-  for (const part of chunkIds(leadIds, 150)) {
+  });
+  await eachPart(chunkIds(leadIds, 150), async (part) => {
     const { data: ds } = await db
       .from("deals")
       .select(DEAL_COLS)
@@ -118,7 +128,7 @@ export async function loadCommercialFlags(
       .is("deleted_at", null)
       .in("lead_id", part);
     for (const d of ds ?? []) mark(d.stage, (f) => add(leadFlags, d.lead_id, f));
-  }
+  });
   for (const phone of uniq) {
     const merge = (s?: Set<CommercialFlag>) => s?.forEach((f) => add(out, phone, f));
     for (const c of contactsByPhone.get(phone) ?? []) {
