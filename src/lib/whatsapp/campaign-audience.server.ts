@@ -3,13 +3,11 @@ import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
 // e filtro explícito por workspace. Só lê colunas da lista branca.
 import {
   fullName,
-  combineAudienceGroups,
+  compileAudienceGroups,
   isAllowedFilter,
   normalizeAudienceGroups,
   buildFilterFields,
   catalogTypeFromDataType,
-  filterColumnPath,
-  filterTerms,
   type FilterFieldCatalog,
   type AudienceBase,
   type AudienceFilter,
@@ -32,10 +30,29 @@ export type AudienceInput =
       groups_logic?: "and" | "or";
     };
 
-/** Teto de IDs lidos por filtro antes de combinar grupos. */
-const MAX_IDS_PER_FILTER = 20000;
+/** Leituras em lote simultâneas (o runtime aceita até 6 conexões por chamada). */
+const POOL = 6;
 
-const clean = (v: string) => v.replace(/[%_,()*"\\]/g, " ").trim();
+/** Executa `fn` para cada lote com até POOL simultâneos, devolvendo na ordem dos lotes. */
+async function inPool<T, U>(items: T[], fn: (item: T) => Promise<U>): Promise<U[]> {
+  const out = new Array<U>(items.length);
+  let next = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(POOL, items.length) }, async () => {
+      while (next < items.length) {
+        const i = next++;
+        out[i] = await fn(items[i]);
+      }
+    }),
+  );
+  return out;
+}
+
+const chunk = <T>(xs: T[], size = 200): T[][] => {
+  const out: T[][] = [];
+  for (let i = 0; i < xs.length; i += size) out.push(xs.slice(i, i + size));
+  return out;
+};
 
 /**
  * Lista de filtros aceitos no servidor: fixos + colunas reais da tabela (tipo do banco)
@@ -77,110 +94,26 @@ export async function loadServerFilterFields(
   return out;
 }
 
-function applyOp(q: Db, f: AudienceFilter): Db {
-  const col = filterColumnPath(f.column);
-  const v = f.value.trim();
-  const terms = filterTerms(f);
-  switch (f.op) {
-    case "ilike":
-      return terms.length <= 1
-        ? q.ilike(col, `%${clean(terms[0] ?? v)}%`)
-        : q.or(terms.map((t) => `${col}.ilike.*${clean(t)}*`).join(","));
-    case "not_ilike":
-      for (const t of terms.length ? terms : [v])
-        q = q.or(`${col}.is.null,${col}.not.ilike.*${clean(t)}*`);
-      return q;
-    case "neq":
-      return q.or(`${col}.is.null,${col}.neq."${clean(v)}"`);
-    case "is_null":
-      return q.is(col, null);
-    case "is_not_null":
-      return q.not(col, "is", null);
-    default:
-      return q[f.op](col, v);
-  }
-}
-
-async function fetchColumn(build: () => Db): Promise<R[]> {
-  const out: R[] = [];
-  for (let from = 0; from < MAX_IDS_PER_FILTER; from += 1000) {
-    const { data, error } = await build()
-      .order("id", { ascending: true })
-      .range(from, from + 999);
-    if (error) throw new Error(error.message);
-    out.push(...((data ?? []) as R[]));
-    if (!data || data.length < 1000) break;
-  }
-  return out;
-}
-
-/** Como a entidade relacionada liga-se à base. */
-type Link =
-  | { kind: "direct"; col: string } // coluna da relacionada = id da base
-  | { kind: "reverse"; col: string }; // coluna da base = id da relacionada
-const LINKS: Record<AudienceBase, Partial<Record<AudienceBase, Link[]>>> = {
-  contacts: {
-    companies: [{ kind: "reverse", col: "company_id" }],
-    deals: [{ kind: "direct", col: "primary_contact_id" }],
-    leads: [{ kind: "direct", col: "converted_contact_id" }],
-  },
-  companies: {
-    contacts: [{ kind: "direct", col: "company_id" }],
-    deals: [{ kind: "direct", col: "company_id" }],
-    leads: [{ kind: "direct", col: "company_id" }],
-  },
-  deals: {
-    companies: [{ kind: "reverse", col: "company_id" }],
-    contacts: [{ kind: "reverse", col: "primary_contact_id" }],
-    leads: [{ kind: "direct", col: "converted_deal_id" }],
-  },
-  leads: {
-    companies: [{ kind: "reverse", col: "company_id" }],
-    contacts: [{ kind: "reverse", col: "converted_contact_id" }],
-    deals: [{ kind: "reverse", col: "converted_deal_id" }],
-  },
-};
-
-/** IDs da base que atendem a um filtro (próprio ou de entidade relacionada). */
-async function idsForFilter(
+/**
+ * IDs da base que atendem aos grupos, resolvidos numa única consulta no banco
+ * (`wa_campaign_audience_ids`, SECURITY INVOKER: RLS e grants por coluna do usuário).
+ */
+async function audienceIds(
   db: Db,
   ws: string,
   base: AudienceBase,
-  f: AudienceFilter,
-): Promise<Set<string>> {
-  const entity = f.entity ?? base;
-  const rowsOf = (t: string, cols: string) =>
-    fetchColumn(() =>
-      applyOp(db.from(t).select(cols).eq("workspace_id", ws).is("deleted_at", null), f),
-    );
-  if (entity === base) return new Set((await rowsOf(base, "id")).map((r) => r.id as string));
-
-  const links = LINKS[base][entity] ?? [];
-  const directCols = links.filter((l) => l.kind === "direct").map((l) => l.col);
-  const rel = await rowsOf(entity, ["id", ...directCols].join(", "));
-  const relIds = rel.map((r) => r.id as string);
-  const out = new Set<string>();
-  for (const l of links) {
-    if (l.kind === "direct") {
-      for (const r of rel) if (r[l.col]) out.add(r[l.col] as string);
-    } else {
-      for (const r of await fetchWhereIn(db, base, "id", l.col, relIds, ws))
-        out.add(r.id as string);
-    }
-  }
-  // Negócio ↔ contato também via deal_contacts.
-  if ((base === "contacts" && entity === "deals") || (base === "deals" && entity === "contacts")) {
-    const [from, to] = base === "contacts" ? ["deal_id", "contact_id"] : ["contact_id", "deal_id"];
-    for (let i = 0; i < relIds.length; i += 200) {
-      const { data, error } = await db
-        .from("deal_contacts")
-        .select(to)
-        .in(from, relIds.slice(i, i + 200));
-      if (error) throw new Error(error.message);
-      for (const r of (data ?? []) as R[]) if (r[to]) out.add(r[to] as string);
-    }
-  }
-  return out;
+  groups: AudienceGroup[],
+  logic: "and" | "or",
+): Promise<string[]> {
+  const { data, error } = await db.rpc("wa_campaign_audience_ids", {
+    p_workspace: ws,
+    p_base: base,
+    p_groups: compileAudienceGroups(base, groups),
+    p_groups_logic: logic,
+    p_limit: MAX_AUDIENCE + 1,
+  });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as string[];
 }
 
 const SELECT: Record<AudienceBase, string> = {
@@ -220,19 +153,18 @@ function applyQueueFilters(q: Db, entity: string, filters: Record<string, unknow
 }
 
 async function fetchByIds(db: Db, table: string, cols: string, ids: string[], ws: string) {
-  const out: R[] = [];
   const uniq = [...new Set(ids.filter(Boolean))];
-  for (let i = 0; i < uniq.length; i += 200) {
+  const parts = await inPool(chunk(uniq), async (part) => {
     const { data, error } = await db
       .from(table)
       .select(cols)
       .eq("workspace_id", ws)
       .is("deleted_at", null)
-      .in("id", uniq.slice(i, i + 200));
+      .in("id", part);
     if (error) throw new Error(error.message);
-    out.push(...((data ?? []) as R[]));
-  }
-  return out;
+    return (data ?? []) as R[];
+  });
+  return parts.flat();
 }
 
 /** Lê registros onde `col` está em `ids` (workspace ativo, não excluídos). */
@@ -245,21 +177,21 @@ async function fetchWhereIn(
   ws: string,
   openDealsOnly = false,
 ) {
-  const out: R[] = [];
   const uniq = [...new Set(ids.filter(Boolean))];
-  for (let i = 0; i < uniq.length; i += 200) {
+  // Lotes pela própria chave: a ordem (mais recente primeiro) por chave é preservada.
+  const parts = await inPool(chunk(uniq), async (part) => {
     let q = db
       .from(table)
       .select(cols)
       .eq("workspace_id", ws)
       .is("deleted_at", null)
-      .in(col, uniq.slice(i, i + 200));
+      .in(col, part);
     if (openDealsOnly) q = q.is("closed_at", null);
     const { data, error } = await q.order("created_at", { ascending: false }).limit(5000);
     if (error) throw new Error(error.message);
-    out.push(...((data ?? []) as R[]));
-  }
-  return out;
+    return (data ?? []) as R[];
+  });
+  return parts.flat();
 }
 
 /** Primeiro registro (mais recente) por valor de `key`. */
@@ -339,18 +271,14 @@ export async function loadAudienceRows(
         db.from(fBase).select(SELECT[fBase]).eq("workspace_id", workspaceId).is("deleted_at", null),
       );
     } else {
-      const ids = await combineAudienceGroups(
+      const ids = await audienceIds(
+        db,
+        workspaceId,
+        fBase,
         groups,
-        (f) => idsForFilter(db, workspaceId, fBase, f),
         audience.groups_logic === "and" ? "and" : "or",
       );
-      raw = await fetchByIds(
-        db,
-        fBase,
-        SELECT[fBase],
-        [...ids].sort().slice(0, MAX_AUDIENCE + 1),
-        workspaceId,
-      );
+      raw = await fetchByIds(db, fBase, SELECT[fBase], ids, workspaceId);
     }
   }
   const truncated = raw.length > MAX_AUDIENCE;
@@ -456,14 +384,12 @@ export async function loadAudienceRows(
     ...new Set([...allRecords.map((r) => r.assigned_to), senderId].filter(Boolean) as string[]),
   ];
   const people = new Map<string, string>();
-  for (let i = 0; i < userIds.length; i += 200) {
-    const { data, error } = await db
-      .from("profiles")
-      .select("id, full_name")
-      .in("id", userIds.slice(i, i + 200));
+  const profileParts = await inPool(chunk(userIds), async (part) => {
+    const { data, error } = await db.from("profiles").select("id, full_name").in("id", part);
     if (error) throw new Error(error.message);
-    for (const p of (data ?? []) as R[]) if (p.full_name) people.set(p.id!, p.full_name);
-  }
+    return (data ?? []) as R[];
+  });
+  for (const p of profileParts.flat()) if (p.full_name) people.set(p.id!, p.full_name);
   const owner = (group: string, uid?: string | null) => {
     const n = uid ? people.get(uid) : undefined;
     return {
