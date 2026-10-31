@@ -7,17 +7,42 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export const listMyNotifications = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((i) =>
+    z
+      .object({
+        cursor: z
+          .object({ createdAt: z.string().datetime({ offset: true }), id: z.string().uuid() })
+          .nullish(),
+      })
+      .optional()
+      .parse(i),
+  )
+  .handler(async ({ data: input, context }) => {
     const { supabase, userId } = context;
-    const { data, error } = await supabase
+    const { NOTIFICATION_PAGE_SIZE, cursorFilter, nextCursorOf } =
+      await import("@/lib/notification-cursor");
+    let q = supabase
       .from("notifications")
       .select("id, type, title, body, link, entity, entity_id, read_at, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
-      .limit(50);
-    if (error) throw new Error(error.message);
-    const unread = (data ?? []).filter((n) => !n.read_at).length;
-    return { items: data ?? [], unread };
+      .order("id", { ascending: false })
+      .limit(NOTIFICATION_PAGE_SIZE);
+    if (input?.cursor) q = q.or(cursorFilter(input.cursor));
+    const [list, count] = await Promise.all([
+      q,
+      input?.cursor
+        ? Promise.resolve({ count: null, error: null })
+        : supabase
+            .from("notifications")
+            .select("id", { count: "exact", head: true })
+            .eq("user_id", userId)
+            .is("read_at", null),
+    ]);
+    if (list.error) throw new Error(list.error.message);
+    if (count.error) throw new Error(count.error.message);
+    const items = list.data ?? [];
+    return { items, unread: count.count ?? 0, nextCursor: nextCursorOf(items) };
   });
 
 export const markNotificationRead = createServerFn({ method: "POST" })
