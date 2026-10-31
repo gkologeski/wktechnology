@@ -10,16 +10,17 @@ export const listMyNotifications = createServerFn({ method: "GET" })
   .inputValidator((i) =>
     z
       .object({
-        cursor: z.object({ createdAt: z.string().datetime({ offset: true }), id: z.string().uuid() }).nullish(),
+        cursor: z
+          .object({ createdAt: z.string().datetime({ offset: true }), id: z.string().uuid() })
+          .nullish(),
       })
       .optional()
       .parse(i),
   )
   .handler(async ({ data: input, context }) => {
     const { supabase, userId } = context;
-    const { NOTIFICATION_PAGE_SIZE, cursorFilter, nextCursorOf } = await import(
-      "@/lib/notification-cursor"
-    );
+    const { NOTIFICATION_PAGE_SIZE, cursorFilter, nextCursorOf } =
+      await import("@/lib/notification-cursor");
     let q = supabase
       .from("notifications")
       .select("id, type, title, body, link, entity, entity_id, read_at, created_at")

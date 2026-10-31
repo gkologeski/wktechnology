@@ -2,8 +2,8 @@ import { formatDateTime } from "@/lib/crm";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { Bell, CheckCheck } from "lucide-react";
+import { useInfiniteQuery, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
+import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -60,10 +60,26 @@ export function NotificationsBell() {
   const [shaking, setShaking] = useState(false);
   const prefsRef = useRef<NotificationPrefs | null>(null);
 
-  const q = useQuery({
+  const q = useInfiniteQuery({
     queryKey: ["notifications"],
-    queryFn: () => listFn(),
+    initialPageParam: null as { createdAt: string; id: string } | null,
+    queryFn: ({ pageParam }) => listFn({ data: { cursor: pageParam } }),
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
     refetchInterval: 60_000,
+  });
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = q;
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasNextPage) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
+      },
+      { rootMargin: "120px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
   });
 
   const prefsQ = useQuery({
@@ -121,8 +137,8 @@ export function NotificationsBell() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
-  const items = q.data?.items ?? [];
-  const unread = q.data?.unread ?? 0;
+  const items = q.data?.pages.flatMap((p) => p.items) ?? [];
+  const unread = q.data?.pages[0]?.unread ?? 0;
 
   return (
     <Popover>
@@ -145,7 +161,7 @@ export function NotificationsBell() {
             </Button>
           )}
         </div>
-        <ScrollArea className="max-h-96">
+        <ScrollArea className="h-96">
           {items.length === 0 ? (
             <div className="p-6 text-center text-sm text-muted-foreground">
               Nenhuma notificação.
@@ -190,6 +206,29 @@ export function NotificationsBell() {
                 );
               })}
             </ul>
+          )}
+          {items.length > 0 && (
+            <div
+              ref={sentinelRef}
+              className="p-3 text-center text-xs text-muted-foreground"
+              aria-live="polite"
+            >
+              {isFetchingNextPage ? (
+                <span className="inline-flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Carregando anteriores…
+                </span>
+              ) : hasNextPage ? (
+                <button
+                  type="button"
+                  className="hover:text-foreground"
+                  onClick={() => void fetchNextPage()}
+                >
+                  Carregar anteriores
+                </button>
+              ) : (
+                "Fim do histórico"
+              )}
+            </div>
           )}
         </ScrollArea>
         <div className="p-2 border-t text-right">
