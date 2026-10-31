@@ -2017,6 +2017,13 @@
       "when": 1793447956132,
       "tag": "0287_wa_campaign_audience_ids",
       "breakpoints": true
+    },
+    {
+      "idx": 288,
+      "version": "7",
+      "when": 1793448533518,
+      "tag": "0288_wa_campaign_audience_ids_array",
+      "breakpoints": true
     }
   ]
 }
