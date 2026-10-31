@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MultiSelectOptions } from "@/components/ui/multi-select-options";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { toLabel } from "@/lib/entity-fields-meta";
 import { DERIVED_CRM_FIELDS } from "@/lib/entity/derived-fields";
 import { isMultiValue, joinMulti, splitMulti } from "@/lib/entity/derived-filter-query";
@@ -32,10 +33,14 @@ function DerivedChoice({
         ? listLeadDerivedOptions
         : listCompanyDerivedOptions,
   );
+  const { canAny, isLoading: permsLoading } = usePermissions();
+  const resource = `techsales.${entity}`;
+  const allowed = canAny(["own", "team", "workspace"].map((s) => `${resource}.view.${s}`));
   const q = useQuery({
     queryKey: ["derived-filter-options", entity, column],
     queryFn: () => fn({ data: { column } }),
     staleTime: 10 * 60_000,
+    enabled: allowed,
   });
   // Filtro antigo em texto livre continua valendo até a pessoa escolher opções.
   const selected = isMultiValue(value) ? splitMulti(value) : [];
@@ -46,7 +51,15 @@ function DerivedChoice({
         value={selected}
         onChange={(next) => onChange(next.length ? joinMulti(next) : "")}
         options={(q.data ?? []).map((v) => ({ value: v, label: v }))}
-        placeholder={q.isLoading ? "Carregando…" : q.isError ? "Erro ao carregar" : "Todos"}
+        placeholder={
+          permsLoading || (allowed && q.isLoading)
+            ? "Carregando…"
+            : !allowed
+              ? "Sem permissão"
+              : q.isError
+                ? "Erro ao carregar"
+                : "Todos"
+        }
         emptyText={q.isError ? "Não foi possível carregar as opções" : "Nenhuma opção"}
         className="min-h-8 text-xs"
       />

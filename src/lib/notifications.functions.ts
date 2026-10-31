@@ -19,12 +19,14 @@ export const listMyNotifications = createServerFn({ method: "GET" })
   )
   .handler(async ({ data: input, context }) => {
     const { supabase, userId } = context;
-    const { NOTIFICATION_PAGE_SIZE, cursorFilter, nextCursorOf } =
+    const { NOTIFICATION_PAGE_SIZE, cursorFilter, nextCursorOf, scopeNotifications } =
       await import("@/lib/notification-cursor");
-    let q = supabase
-      .from("notifications")
-      .select("id, type, title, body, link, entity, entity_id, read_at, created_at")
-      .eq("user_id", userId)
+    let q = scopeNotifications(
+      supabase
+        .from("notifications")
+        .select("id, type, title, body, link, entity, entity_id, read_at, created_at"),
+      userId,
+    )
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .limit(NOTIFICATION_PAGE_SIZE);
@@ -33,11 +35,10 @@ export const listMyNotifications = createServerFn({ method: "GET" })
       q,
       input?.cursor
         ? Promise.resolve({ count: null, error: null })
-        : supabase
-            .from("notifications")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", userId)
-            .is("read_at", null),
+        : scopeNotifications(
+            supabase.from("notifications").select("id", { count: "exact", head: true }),
+            userId,
+          ).is("read_at", null),
     ]);
     if (list.error) throw new Error(list.error.message);
     if (count.error) throw new Error(count.error.message);

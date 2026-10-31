@@ -17,3 +17,17 @@ export function nextCursorOf(
   const last = rows[rows.length - 1];
   return { createdAt: last.created_at, id: last.id };
 }
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Notificações são pessoais: só a sessão autenticada lê as próprias linhas.
+ * Sem sessão válida, nada é consultado. A RLS (user_id = auth.uid()) confirma no banco.
+ */
+export function scopeNotifications<T extends { eq: (column: string, value: string) => T }>(
+  query: T,
+  callerId: string | null | undefined,
+): T {
+  if (!callerId || !UUID.test(callerId)) throw new Error("Sessão inválida.");
+  return query.eq("user_id", callerId);
+}

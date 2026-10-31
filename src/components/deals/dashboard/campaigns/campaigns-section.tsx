@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { CalendarCheck, CheckCheck, MessageCircleReply, Send, UserRound } from "lucide-react";
 import { MetricCard, SectionHeader } from "@/components/techhire/ui";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { LazyChart } from "@/components/charts/lazy-chart";
 import { stepConversion } from "@/lib/deals/campaign-funnel.logic";
 import type { CampaignFunnelData, FunnelStep } from "@/lib/deals/campaign-funnel.types";
@@ -34,6 +35,10 @@ function rate(a?: FunnelStep, b?: FunnelStep) {
 }
 
 export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
+  const { canAny } = usePermissions();
+  const canOpenCampaigns = canAny(
+    ["own", "team", "workspace"].map((s) => `techsales.marketing.campaigns.view.${s}`),
+  );
   const [channel, setChannel] = useState<(typeof CHANNELS)[number]["key"]>("all");
   const all = data.funnel.all;
   const sent = find(all, "sent");
@@ -370,7 +375,9 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
                     {data.ranking.map((r) => (
                       <tr key={r.id} className="border-t border-border-subtle">
                         <td className="max-w-56 truncate py-1.5">
-                          {r.channel === "whatsapp" ? (
+                          {!canOpenCampaigns ? (
+                            r.name
+                          ) : r.channel === "whatsapp" ? (
                             <Link
                               to="/campaigns/whatsapp"
                               className="text-text-primary hover:underline focus-visible:underline"

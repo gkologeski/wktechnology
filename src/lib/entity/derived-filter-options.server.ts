@@ -2,6 +2,13 @@
 // SECURITY INVOKER — a RLS do usuário decide quais linhas entram.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { DERIVED_CRM_FIELDS } from "./derived-fields";
+import { assertSalesAnyArea } from "@/lib/access-control/sales-core.server";
+
+const RESOURCE = {
+  leads: "techsales.leads",
+  contacts: "techsales.contacts",
+  companies: "techsales.companies",
+} as const;
 
 export type DerivedOptionsEntity = "leads" | "contacts" | "companies";
 
@@ -19,6 +26,7 @@ export async function loadDerivedFilterOptions(
   column: string,
 ): Promise<string[]> {
   assertDerivedOptionColumn(entity, column);
+  await assertSalesAnyArea(sb, RESOURCE[entity], "view");
   const { data, error } = await sb.rpc(
     "whatsapp_campaign_filter_values" as never,
     {
