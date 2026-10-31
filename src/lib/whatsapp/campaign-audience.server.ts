@@ -545,16 +545,35 @@ function formatBRL(v: string | number): string {
     : String(v);
 }
 
+/**
+ * Lê todas as páginas (a API devolve no máximo 1.000 linhas por chamada), ordenando
+ * por id para a paginação ser estável, até `cap` linhas.
+ */
+async function fetchAllPages(build: () => Db, cap: number): Promise<Db[]> {
+  const out: Db[] = [];
+  for (let from = 0; from < cap; from += 1000) {
+    const { data, error } = await build()
+      .order("id", { ascending: true })
+      .range(from, Math.min(from + 999, cap - 1));
+    if (error) throw new Error(error.message);
+    out.push(...((data ?? []) as Db[]));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
+
 /** Telefones que pediram para não receber mensagens (opt-out do SDR) no workspace. */
 export async function loadOptedOutPhones(db: Db, workspaceId: string): Promise<Set<string>> {
-  const { data, error } = await db
-    .from("sdr_enrollments")
-    .select("contact_phone")
-    .eq("workspace_id", workspaceId)
-    .not("opted_out_at", "is", null)
-    .limit(10000);
-  if (error) throw new Error(error.message);
-  return new Set(((data ?? []) as R[]).map((r) => r.contact_phone).filter(Boolean) as string[]);
+  const rows = await fetchAllPages(
+    () =>
+      db
+        .from("sdr_enrollments")
+        .select("id, contact_phone")
+        .eq("workspace_id", workspaceId)
+        .not("opted_out_at", "is", null),
+    10000,
+  );
+  return new Set((rows as R[]).map((r) => r.contact_phone).filter(Boolean) as string[]);
 }
 
 /** Envios de WhatsApp de campanhas do workspace desde `since` (mesmo canal), por telefone. */
@@ -565,18 +584,18 @@ export async function loadRecentWhatsAppSends(
   excludeCampaignId?: string,
 ) {
   const { indexRecent, phoneRecentKey } = await import("@/lib/campaigns/recent-contact");
-  let q = db
-    .from("whatsapp_campaign_recipients")
-    .select("phone, sent_at, campaign_id, whatsapp_campaigns(name)")
-    .eq("workspace_id", workspaceId)
-    .eq("status", "sent")
-    .gte("sent_at", since)
-    .limit(20000);
-  if (excludeCampaignId) q = q.neq("campaign_id", excludeCampaignId);
-  const { data, error } = await q;
-  if (error) throw new Error(error.message);
+  const rows = await fetchAllPages(() => {
+    let q = db
+      .from("whatsapp_campaign_recipients")
+      .select("id, phone, sent_at, campaign_id, whatsapp_campaigns(name)")
+      .eq("workspace_id", workspaceId)
+      .eq("status", "sent")
+      .gte("sent_at", since);
+    if (excludeCampaignId) q = q.neq("campaign_id", excludeCampaignId);
+    return q;
+  }, 20000);
   return indexRecent(
-    ((data ?? []) as Db[]).map((r) => ({
+    rows.map((r) => ({
       key: phoneRecentKey(String(r.phone ?? "")),
       at: (r.sent_at as string | null) ?? null,
       campaignName: (r.whatsapp_campaigns?.name as string | undefined) ?? null,
