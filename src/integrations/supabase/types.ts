@@ -32947,6 +32947,16 @@ export type Database = {
           prefill_message: string
         }[]
       }
+      wa_campaign_audience_ids: {
+        Args: {
+          p_base: string
+          p_groups: Json
+          p_groups_logic?: string
+          p_limit?: number
+          p_workspace: string
+        }
+        Returns: string[]
+      }
       wa_campaign_chain_tick: {
         Args: { p_campaign: string; p_hop: number; p_timeout_ms: number }
         Returns: number
