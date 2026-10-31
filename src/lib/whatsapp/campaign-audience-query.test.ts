@@ -109,7 +109,7 @@ describe("público da campanha WhatsApp — consulta no banco", () => {
     const r = await loadAudienceRows(db, "ws", {
       type: "filter",
       base: "contacts",
-      groups: [{ logic: "and", filters: [{ column: "cargo_resumido", op: "ilike", value: "CIO" }] }],
+      groups: [{ logic: "and", filters: [{ column: "job_title", op: "ilike", value: "CIO" }] }],
     });
     expect(rpcCalls.map((c) => c.fn)).toEqual(["wa_campaign_audience_ids"]);
     expect(rpcCalls[0].args).toMatchObject({ p_base: "contacts", p_limit: 5001 });
