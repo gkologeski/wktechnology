@@ -67,10 +67,10 @@ export function NotificationsBell() {
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     refetchInterval: 60_000,
   });
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [sentinel, setSentinel] = useState<HTMLDivElement | null>(null);
   const { hasNextPage, isFetchingNextPage, fetchNextPage } = q;
   useEffect(() => {
-    const el = sentinelRef.current;
+    const el = sentinel;
     if (!el || !hasNextPage) return;
     const io = new IntersectionObserver(
       (entries) => {
@@ -80,7 +80,7 @@ export function NotificationsBell() {
     );
     io.observe(el);
     return () => io.disconnect();
-  });
+  }, [sentinel, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const prefsQ = useQuery({
     queryKey: ["notification-prefs"],
@@ -209,7 +209,7 @@ export function NotificationsBell() {
           )}
           {items.length > 0 && (
             <div
-              ref={sentinelRef}
+              ref={setSentinel}
               className="p-3 text-center text-xs text-muted-foreground"
               aria-live="polite"
             >
