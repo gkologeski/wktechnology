@@ -3915,7 +3915,7 @@
         "src/components/integrations/pages/contaazul-integration-page.tsx": "e8815ac5d78669f0cc29445296c53adfef5ca6eb79f1b0c541b9473b500a17a7",
         "drizzle/migrations/0256_contaazul_people_audience.sql": "5b0a152fd663227562994854d3f7c9957646265850b2591b24137d5d95c37e1a",
         "src/routes/_authenticated/companies.tsx": "bf43410ae2cdb347d72a31b27d7b0d164359194cb53f45941d30604bd72de638",
-        "src/routes/_authenticated/contacts.tsx": "2ee579f0b872fd5eb807e38fa55aa908acfff7cf783eccc9dc75501c2095e9fd",
+        "src/routes/_authenticated/contacts.tsx": "663d1d5b1fa1043739b9f8030df4c342990e1d39212ba2426dd06750b97dc9ac",
         "src/lib/prospecting-audience.functions.ts": "addebddb6a429506e919e0bdf0c6dd8a83387767213e76b5cb8da105d1fb4bf7"
       },
       "resources": [
@@ -3933,7 +3933,7 @@
         "techfinance.contaazul_people.view.workspace",
         "techfinance.contaazul_people.manage.workspace"
       ],
-      "rationale": "Conta Azul client/supplier reconciliation. Server functions require system.integrations plus contaazul_people_access (active membership, deny, read-only View-as) via the caller's client; refresh additionally requires sales_contaazul_authorize. Writes only to contaazul_person_links scoped by workspace, rejecting local targets from other workspaces. TechSales lists, prospecting audiences and MCP search only narrow results to audience='sales'; existing RLS is unchanged.",
+      "rationale": "Conta Azul client/supplier reconciliation. Server functions require system.integrations plus contaazul_people_access (active membership, deny, read-only View-as) via the caller's client; refresh additionally requires sales_contaazul_authorize. Writes only to contaazul_person_links scoped by workspace, rejecting local targets from other workspaces. TechSales lists, prospecting audiences and MCP search only narrow results to audience='sales'; existing RLS is unchanged. Bulk delete now goes through deleteRowsGuarded in chunks of 100; the delete action stays behind the existing Can delete keys and RLS decides each row.",
       "controls": [
         {
           "file": "src/lib/integrations/contaazul-people.server.ts",
@@ -5099,6 +5099,64 @@
         "inactive_member": {
           "file": "src/lib/notification-scope.test.ts",
           "name": "notifications refuse an inactive member whose session was revoked"
+        }
+      }
+    },
+    {
+      "id": "delete-guard-chunked",
+      "kind": "business",
+      "files": {
+        "src/lib/delete-guard.ts": "fe9872dd4daa1b2efa0166a8f7ea76d4280b08597bf580e01e1a7389863a0b53"
+      },
+      "rationale": "Client helper that sends deletes with the caller's RLS-bound client in chunks of 100 ids and counts affected rows. It never widens access: each chunk is evaluated by the table's delete policies; denied rows are reported, not bypassed.",
+      "resources": [
+        "techsales.contacts"
+      ],
+      "actions": [
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.contacts.delete.own",
+        "techsales.contacts.delete.team",
+        "techsales.contacts.delete.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/delete-guard.ts",
+          "symbol": "deleteInChunks"
+        }
+      ],
+      "database": [
+        {
+          "file": "supabase/migrations/20260515093553_59fb739a-6e3d-402c-b9f0-6d8228a1fc38.sql",
+          "symbol": "contacts"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
         }
       }
     }

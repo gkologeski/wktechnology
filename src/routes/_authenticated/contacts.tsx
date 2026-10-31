@@ -9,6 +9,7 @@ import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-quer
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { deleteRowsGuarded, partialDeleteMessage } from "@/lib/delete-guard";
 import { Can } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -660,19 +661,21 @@ function ContactsHubspotView() {
     const ids = Array.from(selectedIds);
     if (!ids.length) return;
     if (!(await confirmDialog(`Excluir ${ids.length} contato(s)?`))) return;
-    const { data: affected, error } = await supabase
-      .from("contacts")
-      .delete()
-      .in("id", ids)
-      .select("id");
-    if (error) return toast.error(error.message);
-    if (deniedIfUnaffected(affected)) return;
-    if (affected.length < ids.length) {
-      toast.warning(`${affected.length} de ${ids.length} excluído(s). Verifique suas permissões.`);
-    } else {
-      toast.success(`${ids.length} excluído(s)`);
-    }
-
+    const tid = toast.loading(`Excluindo 0 de ${ids.length.toLocaleString("pt-BR")}…`);
+    const res = await deleteRowsGuarded("contacts", ids, {
+      onProgress: (done, total) =>
+        toast.loading(
+          `Excluindo ${done.toLocaleString("pt-BR")} de ${total.toLocaleString("pt-BR")}…`,
+          { id: tid },
+        ),
+    });
+    toast.dismiss(tid);
+    if (!res.ok) toast.error(res.message);
+    else if (res.deleted < res.requested)
+      toast.warning(partialDeleteMessage(res.deleted, res.requested));
+    else toast.success(`${res.deleted.toLocaleString("pt-BR")} excluído(s)`);
+    qc.invalidateQueries({ queryKey: ["contacts"] });
+    if (!res.ok && res.deleted === 0) return;
     clearSelection();
     qc.invalidateQueries({ queryKey: ["contacts"] });
   };
