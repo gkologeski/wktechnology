@@ -3,7 +3,6 @@ import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
 // e filtro explícito por workspace. Só lê colunas da lista branca.
 import {
   fullName,
-  compileAudienceGroups,
   isAllowedFilter,
   normalizeAudienceGroups,
   buildFilterFields,
@@ -14,6 +13,7 @@ import {
   type AudienceGroup,
   type AudienceRow,
 } from "./campaign-audience";
+import { compileAudienceGroups } from "./campaign-audience-query";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = any;
@@ -180,12 +180,7 @@ async function fetchWhereIn(
   const uniq = [...new Set(ids.filter(Boolean))];
   // Lotes pela própria chave: a ordem (mais recente primeiro) por chave é preservada.
   const parts = await inPool(chunk(uniq), async (part) => {
-    let q = db
-      .from(table)
-      .select(cols)
-      .eq("workspace_id", ws)
-      .is("deleted_at", null)
-      .in(col, part);
+    let q = db.from(table).select(cols).eq("workspace_id", ws).is("deleted_at", null).in(col, part);
     if (openDealsOnly) q = q.is("closed_at", null);
     const { data, error } = await q.order("created_at", { ascending: false }).limit(5000);
     if (error) throw new Error(error.message);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compileAudienceGroups } from "./campaign-audience";
+import { compileAudienceGroups } from "./campaign-audience-query";
 import {
   loadAudienceRows,
   loadOptedOutPhones,
