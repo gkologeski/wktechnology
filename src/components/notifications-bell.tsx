@@ -76,7 +76,7 @@ export function NotificationsBell() {
       (entries) => {
         if (entries[0]?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
       },
-      { rootMargin: "120px" },
+      { root: el.closest("[data-radix-scroll-area-viewport]"), rootMargin: "120px" },
     );
     io.observe(el);
     return () => io.disconnect();
