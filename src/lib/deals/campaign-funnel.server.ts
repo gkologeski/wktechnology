@@ -6,7 +6,26 @@ import type { CampaignDay, CampaignFunnelData, CampaignRank } from "./campaign-f
 
 type Sb = SupabaseClient<Database>;
 const CHUNK = 200;
-const LIMIT = 20000;
+const PAGE = 1000;
+const MAX_ROWS = 200000;
+
+/** Busca todas as páginas (o banco corta cada resposta em 1.000 linhas). */
+export async function fetchAllPages<T>(
+  page: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{ data: unknown; error: { message: string } | null }>,
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let start = 0; start < MAX_ROWS; start += PAGE) {
+    const r = await page(start, start + PAGE - 1);
+    if (r.error) throw new Error(r.error.message);
+    const rows = (r.data as T[] | null) ?? [];
+    out.push(...rows);
+    if (rows.length < PAGE) break;
+  }
+  return out;
+}
 
 function chunks<T>(arr: T[]): T[][] {
   const out: T[][] = [];
@@ -59,26 +78,30 @@ export async function loadCampaignFunnel(
   let previousSent = 0;
 
   for (const ids of chunks(waIds)) {
-    const r = await sb
-      .from("whatsapp_campaign_recipients")
-      .select("campaign_id,status,error,sent_at,created_at,wa_message_id")
-      .in("campaign_id", ids)
-      .gte("created_at", prevFrom)
-      .lte("created_at", to)
-      .limit(LIMIT);
-    if (r.error) throw new Error(r.error.message);
-    waRows.push(...(r.data as WaR[]));
+    const rows = await fetchAllPages<WaR>((a, b) =>
+      sb
+        .from("whatsapp_campaign_recipients")
+        .select("campaign_id,status,error,sent_at,created_at,wa_message_id")
+        .in("campaign_id", ids)
+        .gte("created_at", prevFrom)
+        .lte("created_at", to)
+        .order("id")
+        .range(a, b),
+    );
+    waRows.push(...rows);
   }
   for (const ids of chunks(emIds)) {
-    const r = await sb
-      .from("email_broadcast_recipients")
-      .select("broadcast_id,status,error,sent_at,created_at")
-      .in("broadcast_id", ids)
-      .gte("created_at", prevFrom)
-      .lte("created_at", to)
-      .limit(LIMIT);
-    if (r.error) throw new Error(r.error.message);
-    emRows.push(...(r.data as EmR[]));
+    const rows = await fetchAllPages<EmR>((a, b) =>
+      sb
+        .from("email_broadcast_recipients")
+        .select("broadcast_id,status,error,sent_at,created_at")
+        .in("broadcast_id", ids)
+        .gte("created_at", prevFrom)
+        .lte("created_at", to)
+        .order("id")
+        .range(a, b),
+    );
+    emRows.push(...rows);
   }
 
   const inRange = (iso: string | null) => !!iso && iso >= from && iso <= to;
@@ -123,15 +146,17 @@ export async function loadCampaignFunnel(
   };
   const convs: Conv[] = [];
   for (const ids of chunks(waIds)) {
-    const r = await sb
-      .from("whatsapp_conversations")
-      .select("id,origin_campaign_id,ai_owner,last_inbound_at,created_at")
-      .in("origin_campaign_id", ids)
-      .gte("created_at", from)
-      .lte("created_at", to)
-      .limit(LIMIT);
-    if (r.error) throw new Error(r.error.message);
-    convs.push(...(r.data as Conv[]));
+    const rows = await fetchAllPages<Conv>((a, b) =>
+      sb
+        .from("whatsapp_conversations")
+        .select("id,origin_campaign_id,ai_owner,last_inbound_at,created_at")
+        .in("origin_campaign_id", ids)
+        .gte("created_at", from)
+        .lte("created_at", to)
+        .order("id")
+        .range(a, b),
+    );
+    convs.push(...rows);
   }
   const replied = convs.filter((c) => !!c.last_inbound_at);
   const human = convs.filter((c) => c.ai_owner === "human" || c.ai_owner === "paused");
@@ -154,16 +179,18 @@ export async function loadCampaignFunnel(
   // Respostas por dia (mensagens recebidas nas conversas de campanha).
   const replyDays = new Map<string, number>();
   for (const ids of chunks(convs.map((c) => c.id))) {
-    const r = await sb
-      .from("whatsapp_messages")
-      .select("created_at")
-      .in("conversation_id", ids)
-      .eq("direction", "inbound")
-      .gte("created_at", from)
-      .lte("created_at", to)
-      .limit(LIMIT);
-    if (r.error) throw new Error(r.error.message);
-    for (const m of r.data ?? [])
+    const rows = await fetchAllPages<{ created_at: string }>((a, b) =>
+      sb
+        .from("whatsapp_messages")
+        .select("created_at")
+        .in("conversation_id", ids)
+        .eq("direction", "inbound")
+        .gte("created_at", from)
+        .lte("created_at", to)
+        .order("id")
+        .range(a, b),
+    );
+    for (const m of rows)
       replyDays.set(dayKey(m.created_at), (replyDays.get(dayKey(m.created_at)) ?? 0) + 1);
   }
 

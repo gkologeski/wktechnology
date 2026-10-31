@@ -185,7 +185,7 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
             <div className={card}>
               <SectionHeader
                 title="Envios por dia"
-                description="Disparos por canal e respostas recebidas."
+                description="Mensagens disparadas por campanhas, por canal."
               />
               <div className="mt-3 h-56">
                 <LazyChart>
@@ -193,7 +193,6 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
                     ResponsiveContainer,
                     ComposedChart,
                     Bar,
-                    Line,
                     XAxis,
                     YAxis,
                     Tooltip,
@@ -236,14 +235,6 @@ export function CampaignsSection({ data }: { data: CampaignFunnelData }) {
                           stackId="s"
                           fill="var(--color-chart-2)"
                           radius={[3, 3, 0, 0]}
-                        />
-                        <Line
-                          dataKey="replies"
-                          name="Respostas"
-                          type="monotone"
-                          stroke="var(--color-chart-4)"
-                          strokeWidth={2}
-                          dot={false}
                         />
                       </ComposedChart>
                     </ResponsiveContainer>
