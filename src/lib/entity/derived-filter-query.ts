@@ -17,7 +17,10 @@ export function isMultiValue(value: string | undefined): boolean {
 }
 
 export function applyDerivedFilters<
-  T extends { ilike: (column: string, pattern: string) => T; in: (column: string, values: string[]) => T },
+  T extends {
+    ilike: (column: string, pattern: string) => T;
+    in: (column: string, values: string[]) => T;
+  },
 >(query: T, filters?: Record<string, string>): T {
   let out = query;
   for (const [key, value] of Object.entries(filters ?? {})) {

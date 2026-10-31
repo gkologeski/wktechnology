@@ -19,14 +19,17 @@ export async function loadDerivedFilterOptions(
   column: string,
 ): Promise<string[]> {
   assertDerivedOptionColumn(entity, column);
-  const { data, error } = await sb.rpc("whatsapp_campaign_filter_values" as never, {
-    p_entity: entity,
-    p_workspace: workspaceId,
-    p_column: column,
-    p_custom_key: null,
-    p_search: null,
-    p_limit: 500,
-  } as never);
+  const { data, error } = await sb.rpc(
+    "whatsapp_campaign_filter_values" as never,
+    {
+      p_entity: entity,
+      p_workspace: workspaceId,
+      p_column: column,
+      p_custom_key: null,
+      p_search: null,
+      p_limit: 500,
+    } as never,
+  );
   if (error) throw new Error(error.message);
   return ((data ?? []) as unknown[])
     .map((r) => (r && typeof r === "object" ? Object.values(r as Record<string, unknown>)[0] : r))
