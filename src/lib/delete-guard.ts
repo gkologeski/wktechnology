@@ -20,34 +20,32 @@ export async function deleteRowGuarded(table: string, id: string): Promise<Guard
   return { ok: true, deleted };
 }
 
-/**
- * Exclui vários registros e informa quantos foram realmente excluídos.
- * Retorna ok=false quando nenhum registro pôde ser excluído.
- */
-export async function deleteRowsGuarded(
-  table: string,
+/** Tamanho de lote: mantém a URL curta (ids vão no endereço) e cada chamada rápida. */
+export const DELETE_CHUNK_SIZE = 100;
+
+type ChunkRunner = (ids: string[]) => Promise<{ data: unknown; error: { message: string } | null }>;
+
+/** Núcleo puro: exclui em lotes, soma linhas afetadas e para no primeiro erro. */
+export async function deleteInChunks(
   ids: string[],
+  run: ChunkRunner,
+  onProgress?: (done: number, total: number) => void,
+  size = DELETE_CHUNK_SIZE,
 ): Promise<GuardedDeleteResult & { requested: number }> {
   if (ids.length === 0)
     return { ok: false, deleted: 0, requested: 0, message: "Nenhum registro selecionado." };
   let deleted = 0;
-  for (let i = 0; i < ids.length; i += 200) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
-      .from(table)
-      .delete()
-      .in("id", ids.slice(i, i + 200))
-      .select("id");
+  for (let i = 0; i < ids.length; i += size) {
+    const { data, error } = await run(ids.slice(i, i + size));
     if (error)
       return {
         ok: false,
         deleted,
         requested: ids.length,
-        message: deleted
-          ? `${deleted} excluído(s) antes da falha: ${error.message}`
-          : error.message,
+        message: `${deleted} de ${ids.length} excluído(s); a exclusão parou por uma falha (${error.message}). Tente novamente para os restantes.`,
       };
     deleted += Array.isArray(data) ? data.length : 0;
+    onProgress?.(Math.min(i + size, ids.length), ids.length);
   }
   if (deleted === 0)
     return {
@@ -57,6 +55,23 @@ export async function deleteRowsGuarded(
       message: "Nenhum registro foi excluído: você não tem permissão sobre eles.",
     };
   return { ok: true, deleted, requested: ids.length };
+}
+
+/**
+ * Exclui vários registros em lotes e informa quantos foram realmente excluídos.
+ * Retorna ok=false quando nenhum registro pôde ser excluído.
+ */
+export function deleteRowsGuarded(
+  table: string,
+  ids: string[],
+  opts?: { onProgress?: (done: number, total: number) => void },
+): Promise<GuardedDeleteResult & { requested: number }> {
+  return deleteInChunks(
+    ids,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (chunk) => (supabase as any).from(table).delete().in("id", chunk).select("id"),
+    opts?.onProgress,
+  );
 }
 
 /** Mensagem para exclusões parciais (alguns registros bloqueados pela permissão). */
