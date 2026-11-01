@@ -2,6 +2,7 @@
 // Chamado pelo retorno da Vapi. Envia no máximo uma mensagem por tentativa
 // (reserva atômica em followup_status), respeita descadastro e a janela de 24 h.
 import { chooseFollowup, followupUsesTemplate } from "@/lib/prospecting-call-followup";
+import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function sbAdmin(): Promise<any> {
@@ -73,6 +74,15 @@ export async function sendCallFollowup(attemptId: string): Promise<{ status: str
     if (opt.error) return finish("failed", "Não foi possível verificar descadastro");
     if (opt.data?.length) return finish("skipped", "Contato descadastrado");
 
+    // Quem executa a campanha precisa continuar com acesso ao lead e às campanhas.
+    try {
+      await assertSalesWorker(sb, "prospecting_campaigns", campaignId, [
+        { table: "leads", id: att.lead_id },
+        { resource: "techsales.marketing.campaigns", action: "create" },
+      ]);
+    } catch {
+      return finish("skipped", "Sem permissão atual para enviar WhatsApp");
+    }
     const existing = await findConversationNumber(sb, att.workspace_id, to);
     const answeredText = String(camp.followup_answered_text ?? "").trim();
     const useTemplate = followupUsesTemplate(
@@ -81,23 +91,66 @@ export async function sendCallFollowup(attemptId: string): Promise<{ status: str
       answeredText.length > 0,
     );
     const firstName = String(lead.first_name ?? "").trim() || "tudo bem";
-    const { sendWhatsAppFromServer } = await import("@/lib/whatsapp-send.server");
-    await sendWhatsAppFromServer({
-      supabase: sb,
-      workspaceId: att.workspace_id,
+    const { metaSend, resolveWaNumber } = await import("@/lib/whatsapp/meta-channel.server");
+    const num = await resolveWaNumber(
+      att.workspace_id,
+      camp.followup_sender_phone_number_id ?? existing?.phoneNumberId ?? null,
+    );
+    const body = useTemplate ? "" : answeredText.replaceAll("{{lead.name}}", firstName);
+    const { wamid, raw } = await metaSend(num, {
       to,
-      body: useTemplate ? "" : answeredText.replaceAll("{{lead.name}}", firstName),
-      templateName: useTemplate ? camp.followup_template_name : "pos-ligacao",
-      metaTemplate: useTemplate
+      body,
+      template: useTemplate
         ? {
             name: camp.followup_template_name,
             language: camp.followup_template_language ?? "pt_BR",
             variables: [firstName],
           }
         : null,
-      preferredPhoneNumberId: camp.followup_sender_phone_number_id ?? null,
-      source: { origin: "voice_call_followup", attempt_id: attemptId, kind },
     });
+    // Registro na conversa (best-effort; o envio já aconteceu).
+    try {
+      const { data: conv } = await sb
+        .from("whatsapp_conversations")
+        .upsert(
+          {
+            owner_id: att.workspace_id,
+            workspace_id: att.workspace_id,
+            contact_phone: to,
+            twilio_number: num.displayPhoneNumber,
+            provider: "meta",
+            wa_phone_number_id: num.phoneNumberId,
+            last_message_at: new Date().toISOString(),
+            last_message_preview: (body || `[template ${camp.followup_template_name}]`).slice(0, 120),
+          },
+          { onConflict: "contact_phone,twilio_number" },
+        )
+        .select("id")
+        .single();
+      if (conv?.id) {
+        const { ensureWhatsAppConversationIdentity } =
+          await import("@/lib/inbox/identity-resolution.server");
+        await ensureWhatsAppConversationIdentity(sb, conv.id, {}).catch(() => null);
+        await sb.from("whatsapp_messages").insert({
+          conversation_id: conv.id,
+          owner_id: att.workspace_id,
+          workspace_id: att.workspace_id,
+          direction: "outbound",
+          body,
+          from_number: num.displayPhoneNumber,
+          to_number: to,
+          provider: "meta",
+          wa_message_id: wamid,
+          status: "accepted",
+          template_name: useTemplate ? camp.followup_template_name : null,
+          is_template: useTemplate,
+          sent_at: new Date().toISOString(),
+          raw: { ...raw, source: { origin: "voice_call_followup", attempt_id: attemptId, kind } },
+        });
+      }
+    } catch (e) {
+      console.warn("[call-followup] registro falhou (envio ok)", e);
+    }
     return finish("sent");
   } catch (e) {
     const msg = e instanceof Error ? e.message.slice(0, 300) : "erro";

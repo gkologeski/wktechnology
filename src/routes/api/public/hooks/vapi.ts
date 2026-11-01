@@ -2,6 +2,7 @@
 // Auth: header `x-vapi-secret`/signature or Vapi assistant.server.secret payload
 // compared against VAPI_WEBHOOK_SECRET.
 import { createFileRoute } from "@tanstack/react-router";
+import { verifyVapiWebhook } from "@/lib/vapi-webhook-auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isRetriableEndedReason } from "@/lib/prospecting-ended-reason";
 
@@ -94,11 +95,6 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.VAPI_WEBHOOK_SECRET;
-        if (!expected) return new Response("Server misconfigured", { status: 500 });
-        const got =
-          request.headers.get("x-vapi-secret") ?? request.headers.get("x-vapi-signature") ?? "";
-
         let body: { message?: Record<string, unknown> } & Record<string, unknown>;
         try {
           body = (await request.json()) as typeof body;
@@ -106,9 +102,8 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           return new Response("Bad JSON", { status: 400 });
         }
         const msg = (body.message ?? body) as Record<string, unknown>;
-        const payloadSecret = String(msg.secret ?? body.secret ?? "");
-        if (got !== expected && payloadSecret !== expected)
-          return new Response("Unauthorized", { status: 401 });
+        const auth = verifyVapiWebhook(request, String(msg.secret ?? body.secret ?? ""));
+        if (!auth.ok) return auth.response;
 
         const type = String(msg.type ?? "");
         const call = (msg.call as Record<string, unknown> | undefined) ?? undefined;
@@ -208,8 +203,11 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
 
         return Response.json({ ok: true });
       },
-      GET: async () =>
-        Response.json({ ok: true, info: "Vapi webhook — POST with x-vapi-secret header" }),
+      GET: async ({ request }) => {
+        const auth = verifyVapiWebhook(request);
+        if (!auth.ok) return auth.response;
+        return Response.json({ ok: true, info: "Vapi webhook — POST with x-vapi-secret header" });
+      },
     },
   },
 });
