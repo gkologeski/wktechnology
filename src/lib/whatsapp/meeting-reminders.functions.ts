@@ -200,7 +200,9 @@ export const getMeetingReminderStatus = createServerFn({ method: "POST" })
       disabled: Boolean(act?.wa_reminders_disabled),
       dueDate: (act?.due_date as string | null) ?? null,
       offsets: (rules ?? []).map((r) => r.offset_minutes as number),
-      dispatches: (sends ?? []).filter((x) => x.meeting_at === act?.due_date || !act?.due_date),
+      dispatches: (sends ?? []).filter(
+        (x) => !act?.due_date || new Date(x.meeting_at).getTime() === new Date(act.due_date).getTime(),
+      ),
     };
   });
 
