@@ -29,6 +29,7 @@ import {
 } from "@/lib/prospecting-campaigns.functions";
 import type { AudienceRule } from "@/lib/prospecting-audience.functions";
 import { HubspotListBuilder } from "@/components/prospecting/list-builder";
+import { CampaignCallFollowup } from "@/components/prospecting/campaign-call-followup";
 import { listScripts, type ProspectingScript } from "@/lib/prospecting-scripts.functions";
 
 export const Route = createFileRoute("/_authenticated/prospecting/campaigns/$id")({
@@ -393,6 +394,14 @@ function CampaignDetailPage() {
         </Button>
       </div>
 
+      <CampaignCallFollowup
+        key={campaign.updated_at}
+        campaign={campaign}
+        scripts={scripts}
+        leads={audit}
+        onChanged={refresh}
+      />
+
       <Card>
         <CardHeader>
           <CardTitle>Resultados por variante</CardTitle>
@@ -535,6 +544,18 @@ function CampaignDetailPage() {
                         <div className="col-span-2">
                           <span className="text-muted-foreground">Ended reason:</span>{" "}
                           {a.ended_reason ?? "—"}
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">WhatsApp pós-ligação:</span>{" "}
+                          {a.followup_status === "sent"
+                            ? "enviado"
+                            : a.followup_status === "skipped"
+                              ? `não enviado (${a.followup_error ?? "regra"})`
+                              : a.followup_status === "failed"
+                                ? `falhou (${a.followup_error ?? "erro"})`
+                                : a.followup_status === "sending"
+                                  ? "enviando"
+                                  : "—"}
                         </div>
                       </div>
                       {a.summary && (

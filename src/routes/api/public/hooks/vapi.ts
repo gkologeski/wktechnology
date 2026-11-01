@@ -90,15 +90,24 @@ async function settleCampaignIfIdle(campaignId: string | null | undefined, attem
     .eq("status", "running");
 }
 
+// Autenticação do retorno da Vapi: segredo compartilhado (VAPI_WEBHOOK_SECRET)
+// no cabeçalho x-vapi-secret/x-vapi-signature ou no campo `secret` da mensagem.
+function verifyVapiWebhook(
+  request: Request,
+  payloadSecret?: string | null,
+): { ok: true } | { ok: false; response: Response } {
+  const expected = process.env.VAPI_WEBHOOK_SECRET;
+  if (!expected)
+    return { ok: false, response: new Response("Server misconfigured", { status: 500 }) };
+  const got = request.headers.get("x-vapi-secret") ?? request.headers.get("x-vapi-signature") ?? "";
+  if (got === expected || (payloadSecret ?? "") === expected) return { ok: true };
+  return { ok: false, response: new Response("Unauthorized", { status: 401 }) };
+}
+
 export const Route = createFileRoute("/api/public/hooks/vapi")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const expected = process.env.VAPI_WEBHOOK_SECRET;
-        if (!expected) return new Response("Server misconfigured", { status: 500 });
-        const got =
-          request.headers.get("x-vapi-secret") ?? request.headers.get("x-vapi-signature") ?? "";
-
         let body: { message?: Record<string, unknown> } & Record<string, unknown>;
         try {
           body = (await request.json()) as typeof body;
@@ -106,9 +115,8 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           return new Response("Bad JSON", { status: 400 });
         }
         const msg = (body.message ?? body) as Record<string, unknown>;
-        const payloadSecret = String(msg.secret ?? body.secret ?? "");
-        if (got !== expected && payloadSecret !== expected)
-          return new Response("Unauthorized", { status: 401 });
+        const auth = verifyVapiWebhook(request, String(msg.secret ?? body.secret ?? ""));
+        if (!auth.ok) return auth.response;
 
         const type = String(msg.type ?? "");
         const call = (msg.call as Record<string, unknown> | undefined) ?? undefined;
@@ -195,14 +203,24 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
             (updates.ended_reason as string | undefined) ?? null,
           );
         }
+        if (isFinal && row?.id) {
+          // WhatsApp de apoio (best-effort; nunca derruba o retorno da Vapi).
+          const { sendCallFollowup } = await import("@/lib/prospecting-call-followup.server");
+          await sendCallFollowup(row.id as string).catch((e) =>
+            console.error("[vapi-hook] followup", e),
+          );
+        }
         if (!requeued) {
           await settleCampaignIfIdle(row?.campaign_id as string | null | undefined, updates.status);
         }
 
         return Response.json({ ok: true });
       },
-      GET: async () =>
-        Response.json({ ok: true, info: "Vapi webhook — POST with x-vapi-secret header" }),
+      GET: async ({ request }) => {
+        const auth = verifyVapiWebhook(request);
+        if (!auth.ok) return auth.response;
+        return Response.json({ ok: true, info: "Vapi webhook — POST with x-vapi-secret header" });
+      },
     },
   },
 });
