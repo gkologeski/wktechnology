@@ -5199,7 +5199,7 @@
       "files": {
         "src/lib/prospecting-campaigns.functions.ts": "26f7de0c94e8f5d97f15b56de766f7ddebc0b54c11ea86e46dac153949367e65",
         "src/lib/prospecting-vapi-call.server.ts": "665c76739c7684395e5de85999bde99ad301746a72a25fe8c7cf9f1bca313010",
-        "src/routes/api/public/hooks/prospecting-dial-tick.ts": "c3dd86984ceb00d38bfaa7fd3ef6725a77ee4e62ce7a7ec307c88b8584a86c18"
+        "src/routes/api/public/hooks/prospecting-dial-tick.ts": "d30e39d1e42ac571dfe69dce13333b2380029e33e55739d4182c7af1ab803bcf"
       },
       "resources": [
         "techsales.marketing.campaigns",
@@ -5237,7 +5237,7 @@
         "techsales.prospecting_voice.create.team",
         "techsales.prospecting_voice.create.workspace"
       ],
-      "rationale": "Review 01/11/2026: startVapiCall moved unchanged from prospecting-campaigns.functions.ts to server-only prospecting-vapi-call.server.ts so the client bundle no longer pulls server permission checks; no behavior or access change. Campaign server functions keep requireSalesPermission per action plus assertSalesRecord; manual dial requires techsales.prospecting_voice.create and assertSalesArea/assertSalesRecord as the caller; the dial cron requires CRON_SECRET (requireCronAuth) and every worker call passes assertSalesWorker against the running campaign before and right before dialing.",
+      "rationale": "Review 01/11/2026: startVapiCall moved unchanged from prospecting-campaigns.functions.ts to server-only prospecting-vapi-call.server.ts so the client bundle no longer pulls server permission checks; no behavior or access change. Campaign server functions keep requireSalesPermission per action plus assertSalesRecord; manual dial requires techsales.prospecting_voice.create and assertSalesArea/assertSalesRecord as the caller; the dial cron requires CRON_SECRET (requireCronAuth) and every worker call passes assertSalesWorker against the running campaign before and right before dialing. The informational GET of the dial cron now also requires requireCronAuth.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
