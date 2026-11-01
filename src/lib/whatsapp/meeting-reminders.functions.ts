@@ -100,9 +100,7 @@ const SaveSchema = z.object({
         enabled: z.boolean(),
         template_name: z.string().min(1).max(200),
         template_language: z.string().min(2).max(20),
-        variable_map: z
-          .array(z.string().refine((k) => REMINDER_VARIABLE_KEYS.includes(k)))
-          .max(10),
+        variable_map: z.array(z.string().refine((k) => REMINDER_VARIABLE_KEYS.includes(k))).max(10),
       }),
     )
     .max(4),
@@ -133,7 +131,9 @@ export const saveMeetingReminderConfig = createServerFn({ method: "POST" })
         phoneNumberId: data.sender_phone_number_id,
       });
       for (const r of active) {
-        const t = list.find((x) => x.name === r.template_name && x.language === r.template_language);
+        const t = list.find(
+          (x) => x.name === r.template_name && x.language === r.template_language,
+        );
         if (!t) throw new Error(`Modelo "${r.template_name}" não está aprovado na Meta.`);
         if (countTemplateVariables(t.components) !== r.variable_map.length)
           throw new Error(`Preencha todas as variáveis do modelo "${r.template_name}".`);
@@ -201,7 +201,8 @@ export const getMeetingReminderStatus = createServerFn({ method: "POST" })
       dueDate: (act?.due_date as string | null) ?? null,
       offsets: (rules ?? []).map((r) => r.offset_minutes as number),
       dispatches: (sends ?? []).filter(
-        (x) => !act?.due_date || new Date(x.meeting_at).getTime() === new Date(act.due_date).getTime(),
+        (x) =>
+          !act?.due_date || new Date(x.meeting_at).getTime() === new Date(act.due_date).getTime(),
       ),
     };
   });

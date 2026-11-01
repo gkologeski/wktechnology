@@ -132,7 +132,8 @@ async function sendOne(
       .not("opted_out_at", "is", null)
       .limit(1);
     if (opt.error) return finish("failed", { error: "Não foi possível verificar descadastro" });
-    if (opt.data?.length) return finish("skipped", { error: "Contato descadastrado", to_phone: to });
+    if (opt.data?.length)
+      return finish("skipped", { error: "Contato descadastrado", to_phone: to });
     let ownerName: string | null = null;
     const ownerId = m.assigned_to ?? m.owner_id;
     if (ownerId) {
@@ -152,7 +153,10 @@ async function sendOne(
     });
     const vars = buildTemplateVariables(rule.variable_map ?? [], values);
     if (!vars)
-      return finish("failed", { error: "Variável do modelo sem valor nesta reunião", to_phone: to });
+      return finish("failed", {
+        error: "Variável do modelo sem valor nesta reunião",
+        to_phone: to,
+      });
     const existing = await findConversationNumber(sb, m.workspace_id!, to);
     const num = await resolveWaNumber(m.workspace_id!, sender ?? existing?.phoneNumberId ?? null);
     const { wamid, raw } = await metaSend(num, {

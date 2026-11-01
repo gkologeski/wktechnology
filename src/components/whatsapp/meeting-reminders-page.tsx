@@ -81,7 +81,7 @@ export function MeetingRemindersPage() {
     );
   }, [q.data]);
 
-  const templates = q.data?.templates ?? [];
+  const templates = useMemo(() => q.data?.templates ?? [], [q.data]);
   const tplByKey = useMemo(
     () => new Map(templates.map((t) => [`${t.name}|${t.language}`, t])),
     [templates],
@@ -253,7 +253,10 @@ export function MeetingRemindersPage() {
                         const n = tplByKey.get(v)?.variables ?? 0;
                         update(r.offset_minutes, {
                           template_key: v,
-                          variable_map: Array.from({ length: n }, (_, i) => r.variable_map[i] ?? ""),
+                          variable_map: Array.from(
+                            { length: n },
+                            (_, i) => r.variable_map[i] ?? "",
+                          ),
                         });
                       }}
                       disabled={!canEdit}
@@ -263,7 +266,10 @@ export function MeetingRemindersPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {templates.map((x) => (
-                          <SelectItem key={`${x.name}|${x.language}`} value={`${x.name}|${x.language}`}>
+                          <SelectItem
+                            key={`${x.name}|${x.language}`}
+                            value={`${x.name}|${x.language}`}
+                          >
                             {x.name} · {x.language}
                           </SelectItem>
                         ))}
