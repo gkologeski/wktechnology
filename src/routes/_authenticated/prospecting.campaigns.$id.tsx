@@ -29,6 +29,7 @@ import {
 } from "@/lib/prospecting-campaigns.functions";
 import type { AudienceRule } from "@/lib/prospecting-audience.functions";
 import { HubspotListBuilder } from "@/components/prospecting/list-builder";
+import { CampaignCallFollowup } from "@/components/prospecting/campaign-call-followup";
 import { listScripts, type ProspectingScript } from "@/lib/prospecting-scripts.functions";
 
 export const Route = createFileRoute("/_authenticated/prospecting/campaigns/$id")({
@@ -392,6 +393,14 @@ function CampaignDetailPage() {
           Salvar
         </Button>
       </div>
+
+      <CampaignCallFollowup
+        key={campaign.updated_at}
+        campaign={campaign}
+        scripts={scripts}
+        leads={audit}
+        onChanged={refresh}
+      />
 
       <Card>
         <CardHeader>
