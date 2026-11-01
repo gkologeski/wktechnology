@@ -12,7 +12,6 @@ import {
 } from "@/lib/prospecting-audience.functions";
 import { isRetriableEndedReason } from "@/lib/prospecting-ended-reason";
 
-
 // Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function sbAdmin(): Promise<any> {

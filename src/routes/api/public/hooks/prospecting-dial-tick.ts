@@ -188,7 +188,8 @@ export const Route = createFileRoute("/api/public/hooks/prospecting-dial-tick")(
       },
       // Só informativo, mas também exige o segredo do agendador.
       GET: async ({ request }) =>
-        requireCronAuth(request) ?? Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
+        requireCronAuth(request) ??
+        Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
     },
   },
 });
