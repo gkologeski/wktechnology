@@ -26,7 +26,11 @@ const ScriptInput = z.object({
   objective: z.string().max(200).nullable().optional(),
   voice_id: z.string().max(64).nullable().optional(),
   voice_provider: z.enum(["elevenlabs", "vapi_default"]).default("elevenlabs"),
-  variables: z.record(z.string(), z.string()).default({}),
+  // Older rows may store an empty list; treat any array as "no variables".
+  variables: z.preprocess(
+    (v) => (Array.isArray(v) ? {} : v),
+    z.record(z.string(), z.string()),
+  ).default({}),
 });
 
 export const listScripts = createServerFn({ method: "POST" })
