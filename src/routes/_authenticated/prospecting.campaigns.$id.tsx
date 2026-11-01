@@ -545,6 +545,18 @@ function CampaignDetailPage() {
                           <span className="text-muted-foreground">Ended reason:</span>{" "}
                           {a.ended_reason ?? "—"}
                         </div>
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">WhatsApp pós-ligação:</span>{" "}
+                          {a.followup_status === "sent"
+                            ? "enviado"
+                            : a.followup_status === "skipped"
+                              ? `não enviado (${a.followup_error ?? "regra"})`
+                              : a.followup_status === "failed"
+                                ? `falhou (${a.followup_error ?? "erro"})`
+                                : a.followup_status === "sending"
+                                  ? "enviando"
+                                  : "—"}
+                        </div>
                       </div>
                       {a.summary && (
                         <div>
