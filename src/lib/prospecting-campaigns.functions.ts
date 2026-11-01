@@ -35,6 +35,11 @@ export type Campaign = {
   audience_rules: JsonValue;
   created_at: string;
   updated_at: string;
+  followup_enabled?: boolean;
+  followup_sender_phone_number_id?: string | null;
+  followup_template_name?: string | null;
+  followup_template_language?: string;
+  followup_answered_text?: string | null;
 };
 
 export type Variant = {
@@ -61,6 +66,8 @@ export type Attempt = {
   vapi_call_id: string | null;
   vapi_request: JsonValue | null;
   vapi_response: JsonValue | null;
+  followup_status?: string | null;
+  followup_error?: string | null;
   created_at: string;
 };
 
