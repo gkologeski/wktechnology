@@ -2,7 +2,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { cronBearerToken, requireCronAuth } from "@/lib/cron-auth.server";
-import { startVapiCall } from "@/lib/prospecting-campaigns.functions";
+import { startVapiCall } from "@/lib/prospecting-vapi-call.server";
 import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
