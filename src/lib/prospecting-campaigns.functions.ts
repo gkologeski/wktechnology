@@ -535,7 +535,7 @@ export const saveCampaignCallFollowup = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertSalesRecord(context.supabase, "prospecting_campaigns", data.id, "update");
     if (data.followup_enabled)
-      await assertSalesArea(context.supabase, "techsales.whatsapp_campaigns", "create");
+      await assertSalesArea(context.supabase, "techsales.marketing.campaigns", "create");
     if (data.followup_enabled && !data.followup_template_name)
       throw new Error("Escolha o modelo aprovado usado quando o cliente não atender.");
     const ws = await resolveActiveWorkspace(context.userId);
