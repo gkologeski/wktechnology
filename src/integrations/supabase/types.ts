@@ -20196,6 +20196,10 @@ export type Database = {
           duration_seconds: number | null
           ended_at: string | null
           ended_reason: string | null
+          followup_campaign_id: string | null
+          followup_error: string | null
+          followup_sent_at: string | null
+          followup_status: string | null
           id: string
           lead_id: string | null
           owner_id: string
@@ -20222,6 +20226,10 @@ export type Database = {
           duration_seconds?: number | null
           ended_at?: string | null
           ended_reason?: string | null
+          followup_campaign_id?: string | null
+          followup_error?: string | null
+          followup_sent_at?: string | null
+          followup_status?: string | null
           id?: string
           lead_id?: string | null
           owner_id: string
@@ -20248,6 +20256,10 @@ export type Database = {
           duration_seconds?: number | null
           ended_at?: string | null
           ended_reason?: string | null
+          followup_campaign_id?: string | null
+          followup_error?: string | null
+          followup_sent_at?: string | null
+          followup_status?: string | null
           id?: string
           lead_id?: string | null
           owner_id?: string
@@ -20378,6 +20390,11 @@ export type Database = {
           created_at: string
           dialing_window: Json
           execution_user_id: string | null
+          followup_answered_text: string | null
+          followup_enabled: boolean
+          followup_sender_phone_number_id: string | null
+          followup_template_language: string
+          followup_template_name: string | null
           id: string
           lead_ids: string[]
           max_attempts: number
@@ -20398,6 +20415,11 @@ export type Database = {
           created_at?: string
           dialing_window?: Json
           execution_user_id?: string | null
+          followup_answered_text?: string | null
+          followup_enabled?: boolean
+          followup_sender_phone_number_id?: string | null
+          followup_template_language?: string
+          followup_template_name?: string | null
           id?: string
           lead_ids?: string[]
           max_attempts?: number
@@ -20418,6 +20440,11 @@ export type Database = {
           created_at?: string
           dialing_window?: Json
           execution_user_id?: string | null
+          followup_answered_text?: string | null
+          followup_enabled?: boolean
+          followup_sender_phone_number_id?: string | null
+          followup_template_language?: string
+          followup_template_name?: string | null
           id?: string
           lead_ids?: string[]
           max_attempts?: number
