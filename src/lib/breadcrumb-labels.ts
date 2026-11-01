@@ -107,6 +107,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
   "user-groups": "Times",
   video: "Vídeo",
   "voice-agent": "Agente de voz",
+  "meeting-reminders": "Lembretes de reunião",
   webhooks: "Webhooks",
   widget: "Widget",
   "job-profiles": "Cargos e perfis",

@@ -4172,7 +4172,7 @@
       "files": {
         "src/lib/access-control/resource-labels.ts": "b9486bd90fbd4e5aa1cf7af67fbb77163e7c88ac9d2a95dffcd041df79abfcef",
         "src/lib/menu-config-finance.ts": "634465260359b9d97cfd6a635ae5bd7ade12cb9ab9a83ec9e96e507d83194e1d",
-        "src/lib/breadcrumb-labels.ts": "5ceacb475469982eb39e8bae82317e1a89f0f7385f9de612e22ec91252c8bc00"
+        "src/lib/breadcrumb-labels.ts": "a6c39e47f35663fcea3662054cd29fc46a9a2a911d57ac6ac6aa2e4d0a523739"
       },
       "rationale": "PT-BR labels for the new techfinance.sales and contaazul_people resources and a sidebar entry for /finance/sales gated by techfinance.sales.view.workspace; menu visibility is cosmetic, the page and server function enforce the permission (contract finance-sales)."
     },
