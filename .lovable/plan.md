@@ -3,6 +3,8 @@
 Porte: P — cerca de 20 a 30 minutos.
 
 ## Problemas
+0. **Erro ao salvar a voz do roteiro ("Expected object, received array").** Os dois roteiros piloto que eu criei gravaram as "variáveis" como uma lista vazia, mas a tela espera outro formato. Por isso o salvamento é recusado. A culpa é minha, não sua.
+   - Correção: ajustar o formato nos dois roteiros e fazer o salvamento aceitar uma lista vazia, para o erro não voltar.
 1. Ao ouvir "não tenho demanda", a Lia disse "posso enviar pelo WhatsApp... por aqui mesmo". Na ligação, "por aqui" é a própria chamada, então a frase fica confusa.
 2. Depois da despedida, a chamada continuou aberta por muito tempo. Hoje a ligação não tem um comando para desligar. Ela só termina quando você desliga, quando fica muito tempo em silêncio ou quando chega ao limite de 4 minutos.
 
