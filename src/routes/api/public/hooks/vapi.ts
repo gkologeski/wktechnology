@@ -195,6 +195,13 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
             (updates.ended_reason as string | undefined) ?? null,
           );
         }
+        if (isFinal && row?.id) {
+          // WhatsApp de apoio (best-effort; nunca derruba o retorno da Vapi).
+          const { sendCallFollowup } = await import("@/lib/prospecting-call-followup.server");
+          await sendCallFollowup(row.id as string).catch((e) =>
+            console.error("[vapi-hook] followup", e),
+          );
+        }
         if (!requeued) {
           await settleCampaignIfIdle(row?.campaign_id as string | null | undefined, updates.status);
         }
