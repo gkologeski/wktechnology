@@ -96,3 +96,8 @@ export function templateBodyText(components: unknown[]): string {
   );
   return String(body?.text ?? "");
 }
+
+/** Uma opção específica deve sair agora? (atalho de `dueOffsets`). */
+export function isReminderDue(meetingAtMs: number, nowMs: number, offset: number): boolean {
+  return dueOffsets(meetingAtMs, nowMs, [offset]).length > 0;
+}

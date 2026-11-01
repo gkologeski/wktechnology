@@ -11,5 +11,5 @@ export const Route = createFileRoute("/_authenticated/settings/meeting-reminders
       },
     ],
   }),
-  component: MeetingRemindersPage,
+  component: () => <MeetingRemindersPage />,
 });
