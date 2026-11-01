@@ -66,6 +66,7 @@ const routes: Record<string, readonly string[]> = {
   "/settings/channels": ["system.channels"],
   "/settings/whatsapp": ["system.whatsapp"],
   "/settings/voice-agent": ["techsales.prospecting_voice"],
+  "/settings/meeting-reminders": ["techsales.meeting_settings"],
   "/settings/prospecting": ["techsales.prospecting_search"],
   "/settings/prospecting-scripts": ["techsales.prospecting_scripts"],
   "/settings/segments": ["techsales.segments"],
