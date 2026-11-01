@@ -129,7 +129,7 @@ export function MeetingRemindersPage() {
   if (q.isLoading || permLoading)
     return (
       <div className="space-y-6 p-6">
-        <Skeletons.Rows count={6} />
+        <Skeletons.Card />
       </div>
     );
   if (q.isError)
