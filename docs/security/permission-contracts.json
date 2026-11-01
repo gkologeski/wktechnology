@@ -5309,8 +5309,7 @@
       "id": "prospecting-voice-webhook",
       "kind": "service",
       "files": {
-        "src/routes/api/public/hooks/vapi.ts": "21d8571d3e55ab839dd4efdcf2756a73d1574bfe3464148b072249be1626e8d2",
-        "src/lib/vapi-webhook-auth.server.ts": "98361a14cf86f55cdc397c103a1a5a76a2dc9b0ad6d94b686ce570b2a0355013"
+        "src/routes/api/public/hooks/vapi.ts": "874fd87756d7eb323c5f1f3636882bc1891ff97b1fa7d5a6023c2767bc29c86f"
       },
       "resources": [
         "techsales.prospecting_voice"
@@ -5331,7 +5330,7 @@
       },
       "controls": [
         {
-          "file": "src/lib/vapi-webhook-auth.server.ts",
+          "file": "src/routes/api/public/hooks/vapi.ts",
           "symbol": "verifyVapiWebhook"
         }
       ],

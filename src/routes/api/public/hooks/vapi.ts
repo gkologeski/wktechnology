@@ -2,7 +2,6 @@
 // Auth: header `x-vapi-secret`/signature or Vapi assistant.server.secret payload
 // compared against VAPI_WEBHOOK_SECRET.
 import { createFileRoute } from "@tanstack/react-router";
-import { verifyVapiWebhook } from "@/lib/vapi-webhook-auth.server";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { isRetriableEndedReason } from "@/lib/prospecting-ended-reason";
 
@@ -89,6 +88,19 @@ async function settleCampaignIfIdle(campaignId: string | null | undefined, attem
     .update({ status: nextStatus })
     .eq("id", campaignId)
     .eq("status", "running");
+}
+
+// Autenticação do retorno da Vapi: segredo compartilhado (VAPI_WEBHOOK_SECRET)
+// no cabeçalho x-vapi-secret/x-vapi-signature ou no campo `secret` da mensagem.
+function verifyVapiWebhook(
+  request: Request,
+  payloadSecret?: string | null,
+): { ok: true } | { ok: false; response: Response } {
+  const expected = process.env.VAPI_WEBHOOK_SECRET;
+  if (!expected) return { ok: false, response: new Response("Server misconfigured", { status: 500 }) };
+  const got = request.headers.get("x-vapi-secret") ?? request.headers.get("x-vapi-signature") ?? "";
+  if (got === expected || (payloadSecret ?? "") === expected) return { ok: true };
+  return { ok: false, response: new Response("Unauthorized", { status: 401 }) };
 }
 
 export const Route = createFileRoute("/api/public/hooks/vapi")({
