@@ -31,6 +31,8 @@ export async function startVapiCall(opts: {
   variantId?: string | null;
   attemptNumber?: number;
   attemptId?: string | null;
+  /** Ligação de teste: usa o WhatsApp de apoio desta campanha sem entrar na fila. */
+  followupCampaignId?: string | null;
 }): Promise<{ ok: boolean; call_id?: string; error?: string }> {
   const sb = opts.caller ?? (await sbAdmin());
   const diagnostics = await sbAdmin();
@@ -222,6 +224,7 @@ export async function startVapiCall(opts: {
       workspace_id: opts.workspaceId,
       owner_id: opts.actorId ?? opts.workspaceId,
       campaign_id: opts.campaignId ?? null,
+      followup_campaign_id: opts.followupCampaignId ?? null,
       variant_id: opts.variantId ?? null,
       script_id: opts.scriptId,
       lead_id: opts.leadId,

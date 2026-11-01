@@ -483,15 +483,83 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
 export const dialLeadNow = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.prospecting_voice", "create")])
   .inputValidator((i) =>
-    z.object({ lead_id: z.string().uuid(), script_id: z.string().uuid() }).parse(i),
+    z
+      .object({
+        lead_id: z.string().uuid(),
+        script_id: z.string().uuid(),
+        followup_campaign_id: z.string().uuid().nullable().optional(),
+      })
+      .parse(i),
   )
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
+    if (data.followup_campaign_id)
+      await assertSalesRecord(
+        context.supabase,
+        "prospecting_campaigns",
+        data.followup_campaign_id,
+        "view",
+      );
     return startVapiCall({
+      followupCampaignId: data.followup_campaign_id ?? null,
       workspaceId: ws,
       leadId: data.lead_id,
       scriptId: data.script_id,
       caller: context.supabase,
       actorId: context.userId,
     });
+  });
+
+export type CallFollowupConfig = {
+  followup_enabled: boolean;
+  followup_sender_phone_number_id: string | null;
+  followup_template_name: string | null;
+  followup_template_language: string;
+  followup_answered_text: string | null;
+};
+
+export const saveCampaignCallFollowup = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "update")])
+  .inputValidator((i) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        followup_enabled: z.boolean(),
+        followup_sender_phone_number_id: z.string().max(64).nullable(),
+        followup_template_name: z.string().max(512).nullable(),
+        followup_template_language: z.string().min(2).max(16).default("pt_BR"),
+        followup_answered_text: z.string().max(1000).nullable(),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    await assertSalesRecord(context.supabase, "prospecting_campaigns", data.id, "update");
+    if (data.followup_enabled)
+      await assertSalesArea(context.supabase, "techsales.whatsapp_campaigns", "create");
+    if (data.followup_enabled && !data.followup_template_name)
+      throw new Error("Escolha o modelo aprovado usado quando o cliente não atender.");
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { id, ...patch } = data;
+    const { error } = await context.supabase
+      .from("prospecting_campaigns")
+      .update(patch)
+      .eq("id", id)
+      .eq("workspace_id", ws);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listCallFollowupSenders = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
+  .handler(async ({ context }) => {
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { data, error } = await context.supabase
+      .from("wa_cloud_numbers")
+      .select("phone_number_id, display_phone_number, verified_name")
+      .eq("workspace_id", ws);
+    if (error) return [] as Array<{ id: string; label: string }>;
+    return (data ?? []).map((n) => ({
+      id: String(n.phone_number_id),
+      label: `${n.verified_name ?? "Meta"} · ${n.display_phone_number ?? ""}`,
+    }));
   });
