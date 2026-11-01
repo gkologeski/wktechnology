@@ -56,7 +56,9 @@ export function CampaignCallFollowup({
   const [dialing, setDialing] = useState(false);
 
   useEffect(() => {
-    sendersFn().then(setSenders).catch(() => setSenders([]));
+    sendersFn()
+      .then(setSenders)
+      .catch(() => setSenders([]));
   }, [sendersFn]);
   useEffect(() => {
     if (!testScript && scripts[0]) setTestScript(scripts[0].id);

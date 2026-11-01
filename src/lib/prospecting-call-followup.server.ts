@@ -14,7 +14,9 @@ export async function sendCallFollowup(attemptId: string): Promise<{ status: str
   const sb = await sbAdmin();
   const { data: att } = await sb
     .from("prospecting_call_attempts")
-    .select("id, workspace_id, campaign_id, followup_campaign_id, lead_id, status, ended_reason, followup_status")
+    .select(
+      "id, workspace_id, campaign_id, followup_campaign_id, lead_id, status, ended_reason, followup_status",
+    )
     .eq("id", attemptId)
     .maybeSingle();
   if (!att || att.followup_status) return { status: "skip" };
@@ -25,7 +27,9 @@ export async function sendCallFollowup(attemptId: string): Promise<{ status: str
 
   const { data: camp } = await sb
     .from("prospecting_campaigns")
-    .select("id, workspace_id, followup_enabled, followup_sender_phone_number_id, followup_template_name, followup_template_language, followup_answered_text")
+    .select(
+      "id, workspace_id, followup_enabled, followup_sender_phone_number_id, followup_template_name, followup_template_language, followup_answered_text",
+    )
     .eq("id", campaignId)
     .eq("workspace_id", att.workspace_id)
     .maybeSingle();
@@ -121,7 +125,10 @@ export async function sendCallFollowup(attemptId: string): Promise<{ status: str
             provider: "meta",
             wa_phone_number_id: num.phoneNumberId,
             last_message_at: new Date().toISOString(),
-            last_message_preview: (body || `[template ${camp.followup_template_name}]`).slice(0, 120),
+            last_message_preview: (body || `[template ${camp.followup_template_name}]`).slice(
+              0,
+              120,
+            ),
           },
           { onConflict: "contact_phone,twilio_number" },
         )
