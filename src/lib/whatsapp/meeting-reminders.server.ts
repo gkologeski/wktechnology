@@ -203,7 +203,7 @@ async function recordMessage(
   m: Record<string, string | null>,
   num: { displayPhoneNumber: string; phoneNumberId: string },
   to: string,
-  wamid: string,
+  wamid: string | null,
   raw: unknown,
   rule: Rule,
 ) {
