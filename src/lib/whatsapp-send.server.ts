@@ -34,6 +34,8 @@ export async function sendWhatsAppFromServer(params: {
   /** Template aprovado na Meta, obrigatório fora da janela de 24h. */
   metaTemplate?: { name: string; language?: string; variables?: string[] } | null;
   source?: Record<string, unknown>;
+  /** Remetente escolhido (ex.: número do agente). Sem ele, usa o da conversa. */
+  preferredPhoneNumberId?: string | null;
 }): Promise<WaSendResult> {
   const { supabase, workspaceId, to, body } = params;
   if (!to || (!body && !params.metaTemplate)) throw new Error("Destinatário ou mensagem vazios");
@@ -45,7 +47,10 @@ export async function sendWhatsAppFromServer(params: {
     throw new Error(
       "Janela de 24 horas encerrada: este envio precisa de um modelo aprovado pela Meta.",
     );
-  const num = await resolveWaNumber(workspaceId, existing?.phoneNumberId ?? null);
+  const num = await resolveWaNumber(
+    workspaceId,
+    params.preferredPhoneNumberId ?? existing?.phoneNumberId ?? null,
+  );
 
   const { wamid, raw } = await metaSend(num, {
     to: toBare,

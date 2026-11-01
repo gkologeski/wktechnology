@@ -354,7 +354,7 @@ export const listCampaignAttempts = createServerFn({ method: "POST" })
       .from("prospecting_call_attempts")
       .select("*")
       .eq("workspace_id", ws)
-      .eq("campaign_id", data.campaign_id)
+      .or(`campaign_id.eq.${data.campaign_id},followup_campaign_id.eq.${data.campaign_id}`)
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw new Error(error.message);
