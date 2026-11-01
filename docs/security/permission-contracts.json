@@ -5201,11 +5201,8 @@
         "src/lib/prospecting-vapi-call.server.ts": "c0cf0da49f7347fe2dc63b03f7447f19379bd3b854621d2ceb988cd8e2757a4c",
         "src/routes/api/public/hooks/prospecting-dial-tick.ts": "c83b39d0528a00d84dbc76d6bea13c3759b15a4b39f4155bd82b8d5160b3d5a1",
         "drizzle/migrations/0290_prospecting_call_whatsapp_followup.sql": "df467dc2e493da88db8bfcd28c8007c8659f1fab510b1ba1aea9bd45b061a87d",
-        "src/components/prospecting/campaign-call-followup.tsx": "3288e5ef08287dc3ffda049859b21dcf91d1b8e49d14cd2037532e94f3e75208",
-        "src/lib/prospecting-call-followup.server.ts": "74633d3832b18e339e0c977e1e1fb4f37b724b3f95de339356084b605cfe916d",
-        "src/lib/prospecting-call-followup.ts": "4dade440e73931dde2287ab717b239e9d583aebf2bc4edb95aa69ca8bc39782c",
-        "src/lib/whatsapp-send.server.ts": "fd2ac8c4b8f383788b151cfde15c7d78f1908c15acc704301634e6209cbbc7dd",
-        "src/routes/api/public/hooks/vapi.ts": "eec8d19efa78280e514477cbedd12f9ef50e79fe1d0bec8e01bff4bc430353aa",
+        "src/components/prospecting/campaign-call-followup.tsx": "819d9a5d9152507a423c1a1426355469794ef3cdb7df532bb077f170da173e2f",
+        "src/lib/prospecting-call-followup.server.ts": "053c80693646ab7ea41cee211e4504f28e8bce820bd73290c367d465f581f9b8",
         "src/routes/_authenticated/prospecting.campaigns.$id.tsx": "cf95037ffe8e5806cab65e72fbf60da77fcdd6adad8af0683d3ed7059556b6d5"
       },
       "resources": [
@@ -5244,7 +5241,7 @@
         "techsales.prospecting_voice.create.team",
         "techsales.prospecting_voice.create.workspace"
       ],
-      "rationale": "Review 01/11/2026: startVapiCall moved unchanged from prospecting-campaigns.functions.ts to server-only prospecting-vapi-call.server.ts so the client bundle no longer pulls server permission checks; no behavior or access change. Campaign server functions keep requireSalesPermission per action plus assertSalesRecord; manual dial requires techsales.prospecting_voice.create and assertSalesArea/assertSalesRecord as the caller; the dial cron requires CRON_SECRET (requireCronAuth) and every worker call passes assertSalesWorker against the running campaign before and right before dialing. The informational GET of the dial cron now also requires requireCronAuth. Review 01/11/2026 (2): WhatsApp after voice call. saveCampaignCallFollowup requires techsales.marketing.campaigns.update + assertSalesRecord(update) and, when enabling, assertSalesArea(techsales.marketing.campaigns, create) like WhatsApp campaigns; listCallFollowupSenders requires campaigns.view and reads only the active workspace; dialLeadNow accepts followup_campaign_id only after assertSalesRecord(view) on that campaign. The follow-up sender runs only from the Vapi webhook (VAPI_WEBHOOK_SECRET), reads campaign/lead scoped to the attempt workspace, claims once per attempt, respects opt-out and the 24h window (template outside it); whatsapp-send.server gains an optional preferred sender with the same connection checks.",
+      "rationale": "Review 01/11/2026: startVapiCall moved unchanged from prospecting-campaigns.functions.ts to server-only prospecting-vapi-call.server.ts so the client bundle no longer pulls server permission checks; no behavior or access change. Campaign server functions keep requireSalesPermission per action plus assertSalesRecord; manual dial requires techsales.prospecting_voice.create and assertSalesArea/assertSalesRecord as the caller; the dial cron requires CRON_SECRET (requireCronAuth) and every worker call passes assertSalesWorker against the running campaign before and right before dialing. The informational GET of the dial cron now also requires requireCronAuth. Review 01/11/2026 (2): WhatsApp after voice call. saveCampaignCallFollowup requires techsales.marketing.campaigns.update + assertSalesRecord(update) and, when enabling, assertSalesArea(techsales.marketing.campaigns, create) like WhatsApp campaigns; listCallFollowupSenders requires campaigns.view and reads only the active workspace; dialLeadNow accepts followup_campaign_id only after assertSalesRecord(view) on that campaign. The follow-up sender runs only from the Vapi webhook (VAPI_WEBHOOK_SECRET), reads campaign/lead scoped to the attempt workspace, claims once per attempt, respects opt-out and the 24h window (template outside it); the follow-up also passes assertSalesWorker (campaign actor must still view the lead and hold techsales.marketing.campaigns.create) and sends through resolveWaNumber (connection/number checks). The UI disables save/test buttons via usePermissions; servers enforce.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -5265,12 +5262,24 @@
         {
           "file": "src/lib/cron-auth.server.ts",
           "symbol": "requireCronAuth"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/components/prospecting/campaign-call-followup.tsx",
+          "symbol": "CampaignCallFollowup"
         }
       ],
       "database": [
         {
           "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
           "symbol": "sales_record_access"
+        },
+        {
+          "file": "drizzle/migrations/0290_prospecting_call_whatsapp_followup.sql",
+          "symbol": "prospecting_call_attempts"
         }
       ],
       "tests": {
@@ -5295,6 +5304,73 @@
           "name": "rejects inactive source actor"
         }
       }
+    },
+    {
+      "id": "prospecting-voice-webhook",
+      "kind": "service",
+      "files": {
+        "src/routes/api/public/hooks/vapi.ts": "21d8571d3e55ab839dd4efdcf2756a73d1574bfe3464148b072249be1626e8d2",
+        "src/lib/vapi-webhook-auth.server.ts": "98361a14cf86f55cdc397c103a1a5a76a2dc9b0ad6d94b686ce570b2a0355013"
+      },
+      "resources": [
+        "techsales.prospecting_voice"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [],
+      "rationale": "Vapi call status webhook. Both POST and GET require verifyVapiWebhook (shared VAPI_WEBHOOK_SECRET). Updates only the attempt matching the provider call id; the WhatsApp follow-up it triggers re-checks the campaign actor with assertSalesWorker.",
+      "exception": {
+        "mechanism": "Shared secret VAPI_WEBHOOK_SECRET in x-vapi-secret header or payload secret",
+        "boundary": "Only rows of prospecting_call_attempts matched by vapi_call_id and their campaign/lead",
+        "revocation": "Rotate VAPI_WEBHOOK_SECRET",
+        "review_by": "2027-05-01"
+      },
+      "controls": [
+        {
+          "file": "src/lib/vapi-webhook-auth.server.ts",
+          "symbol": "verifyVapiWebhook"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0290_prospecting_call_whatsapp_followup.sql",
+          "symbol": "prospecting_call_attempts"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "allows current authorized leased source"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source missing required permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source with explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects foreign workspace source"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects inactive source actor"
+        }
+      }
+    },
+    {
+      "id": "prospecting-call-followup-rules",
+      "kind": "presentation",
+      "files": {
+        "src/lib/prospecting-call-followup.ts": "4dade440e73931dde2287ab717b239e9d583aebf2bc4edb95aa69ca8bc39782c"
+      },
+      "rationale": "Pure decision of which WhatsApp follow-up applies to a call outcome (no I/O, routes, actions or data access); sending stays under prospecting-voice-campaigns."
     }
   ],
   "retired": {}

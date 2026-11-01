@@ -22,6 +22,7 @@ import {
   type Campaign,
   type LeadAudit,
 } from "@/lib/prospecting-campaigns.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import type { ProspectingScript } from "@/lib/prospecting-scripts.functions";
 
 const DEFAULT_SENDER = "__default__";
@@ -37,6 +38,10 @@ export function CampaignCallFollowup({
   leads: LeadAudit[];
   onChanged: () => void;
 }) {
+  const { canAny } = usePermissions();
+  const scopes = ["own", "team", "workspace"];
+  const canSave = canAny(scopes.map((x) => `techsales.marketing.campaigns.update.${x}`));
+  const canDial = canAny(scopes.map((x) => `techsales.prospecting_voice.create.${x}`));
   const saveFn = useServerFn(saveCampaignCallFollowup);
   const sendersFn = useServerFn(listCallFollowupSenders);
   const dialFn = useServerFn(dialLeadNow);
@@ -149,7 +154,7 @@ export function CampaignCallFollowup({
           </p>
         </div>
         <div className="flex justify-end">
-          <Button onClick={save} disabled={saving}>
+          <Button onClick={save} disabled={saving || !canSave}>
             {saving ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -196,7 +201,7 @@ export function CampaignCallFollowup({
               </Select>
             </div>
           </div>
-          <Button onClick={dial} disabled={dialing || !testLead || !testScript}>
+          <Button onClick={dial} disabled={dialing || !canDial || !testLead || !testScript}>
             {dialing ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
