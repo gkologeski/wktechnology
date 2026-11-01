@@ -323,6 +323,7 @@ export type Database = {
           transcription_status: string | null
           type: Database["public"]["Enums"]["activity_type"]
           updated_at: string
+          wa_reminders_disabled: boolean
           workspace_id: string
         }
         Insert: {
@@ -380,6 +381,7 @@ export type Database = {
           transcription_status?: string | null
           type?: Database["public"]["Enums"]["activity_type"]
           updated_at?: string
+          wa_reminders_disabled?: boolean
           workspace_id?: string
         }
         Update: {
@@ -437,6 +439,7 @@ export type Database = {
           transcription_status?: string | null
           type?: Database["public"]["Enums"]["activity_type"]
           updated_at?: string
+          wa_reminders_disabled?: boolean
           workspace_id?: string
         }
         Relationships: [
@@ -13440,6 +13443,139 @@ export type Database = {
             foreignKeyName: "meeting_participants_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_reminder_dispatches: {
+        Row: {
+          activity_id: string
+          created_at: string
+          error: string | null
+          id: string
+          meeting_at: string
+          offset_minutes: number
+          sent_at: string | null
+          status: string
+          template_name: string | null
+          to_phone: string | null
+          wa_message_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          meeting_at: string
+          offset_minutes: number
+          sent_at?: string | null
+          status?: string
+          template_name?: string | null
+          to_phone?: string | null
+          wa_message_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          error?: string | null
+          id?: string
+          meeting_at?: string
+          offset_minutes?: number
+          sent_at?: string | null
+          status?: string
+          template_name?: string | null
+          to_phone?: string | null
+          wa_message_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_reminder_dispatches_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meeting_reminder_dispatches_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_reminder_rules: {
+        Row: {
+          enabled: boolean
+          id: string
+          offset_minutes: number
+          template_language: string
+          template_name: string
+          updated_at: string
+          variable_map: Json
+          workspace_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: string
+          offset_minutes: number
+          template_language?: string
+          template_name: string
+          updated_at?: string
+          variable_map?: Json
+          workspace_id: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: string
+          offset_minutes?: number
+          template_language?: string
+          template_name?: string
+          updated_at?: string
+          variable_map?: Json
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_reminder_rules_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meeting_reminder_settings: {
+        Row: {
+          enabled: boolean
+          sender_phone_number_id: string | null
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          sender_phone_number_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          enabled?: boolean
+          sender_phone_number_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meeting_reminder_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
             referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
