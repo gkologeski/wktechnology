@@ -213,6 +213,7 @@ import { Route as AuthenticatedSettingsLegalEntitiesRouteImport } from './routes
 import { Route as AuthenticatedSettingsLegalEntityGroupsRouteImport } from './routes/_authenticated/settings.legal-entity-groups'
 import { Route as AuthenticatedSettingsMacrosRouteImport } from './routes/_authenticated/settings.macros'
 import { Route as AuthenticatedSettingsMediaRouteImport } from './routes/_authenticated/settings.media'
+import { Route as AuthenticatedSettingsMeetingRemindersRouteImport } from './routes/_authenticated/settings.meeting-reminders'
 import { Route as AuthenticatedSettingsMobileRouteImport } from './routes/_authenticated/settings.mobile'
 import { Route as AuthenticatedSettingsMyPermissionsRouteImport } from './routes/_authenticated/settings.my-permissions'
 import { Route as AuthenticatedSettingsMyTicketsRouteImport } from './routes/_authenticated/settings.my-tickets'
@@ -350,6 +351,7 @@ import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/a
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksLinkedinApplicantsSyncRouteImport } from './routes/api/public/hooks/linkedin-applicants-sync'
+import { Route as ApiPublicHooksMeetingRemindersTickRouteImport } from './routes/api/public/hooks/meeting-reminders-tick'
 import { Route as ApiPublicHooksPlatformAlertsTickRouteImport } from './routes/api/public/hooks/platform-alerts-tick'
 import { Route as ApiPublicHooksProjectAlertsTickRouteImport } from './routes/api/public/hooks/project-alerts-tick'
 import { Route as ApiPublicHooksProspectingDialTickRouteImport } from './routes/api/public/hooks/prospecting-dial-tick'
@@ -1577,6 +1579,12 @@ const AuthenticatedSettingsMediaRoute =
     path: '/media',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsMeetingRemindersRoute =
+  AuthenticatedSettingsMeetingRemindersRouteImport.update({
+    id: '/meeting-reminders',
+    path: '/meeting-reminders',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsMobileRoute =
   AuthenticatedSettingsMobileRouteImport.update({
     id: '/mobile',
@@ -2385,6 +2393,12 @@ const ApiPublicHooksLinkedinApplicantsSyncRoute =
     path: '/api/public/hooks/linkedin-applicants-sync',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksMeetingRemindersTickRoute =
+  ApiPublicHooksMeetingRemindersTickRouteImport.update({
+    id: '/api/public/hooks/meeting-reminders-tick',
+    path: '/api/public/hooks/meeting-reminders-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksPlatformAlertsTickRoute =
   ApiPublicHooksPlatformAlertsTickRouteImport.update({
     id: '/api/public/hooks/platform-alerts-tick',
@@ -3024,6 +3038,7 @@ export interface FileRoutesByFullPath {
   '/settings/legal-entity-groups': typeof AuthenticatedSettingsLegalEntityGroupsRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
+  '/settings/meeting-reminders': typeof AuthenticatedSettingsMeetingRemindersRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/my-permissions': typeof AuthenticatedSettingsMyPermissionsRoute
   '/settings/my-tickets': typeof AuthenticatedSettingsMyTicketsRoute
@@ -3164,6 +3179,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
+  '/api/public/hooks/meeting-reminders-tick': typeof ApiPublicHooksMeetingRemindersTickRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/project-alerts-tick': typeof ApiPublicHooksProjectAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
@@ -3439,6 +3455,7 @@ export interface FileRoutesByTo {
   '/settings/legal-entity-groups': typeof AuthenticatedSettingsLegalEntityGroupsRoute
   '/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/settings/media': typeof AuthenticatedSettingsMediaRoute
+  '/settings/meeting-reminders': typeof AuthenticatedSettingsMeetingRemindersRoute
   '/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/settings/my-permissions': typeof AuthenticatedSettingsMyPermissionsRoute
   '/settings/my-tickets': typeof AuthenticatedSettingsMyTicketsRoute
@@ -3578,6 +3595,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
+  '/api/public/hooks/meeting-reminders-tick': typeof ApiPublicHooksMeetingRemindersTickRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/project-alerts-tick': typeof ApiPublicHooksProjectAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
@@ -3861,6 +3879,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/legal-entity-groups': typeof AuthenticatedSettingsLegalEntityGroupsRoute
   '/_authenticated/settings/macros': typeof AuthenticatedSettingsMacrosRoute
   '/_authenticated/settings/media': typeof AuthenticatedSettingsMediaRoute
+  '/_authenticated/settings/meeting-reminders': typeof AuthenticatedSettingsMeetingRemindersRoute
   '/_authenticated/settings/mobile': typeof AuthenticatedSettingsMobileRoute
   '/_authenticated/settings/my-permissions': typeof AuthenticatedSettingsMyPermissionsRoute
   '/_authenticated/settings/my-tickets': typeof AuthenticatedSettingsMyTicketsRoute
@@ -4001,6 +4020,7 @@ export interface FileRoutesById {
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
+  '/api/public/hooks/meeting-reminders-tick': typeof ApiPublicHooksMeetingRemindersTickRoute
   '/api/public/hooks/platform-alerts-tick': typeof ApiPublicHooksPlatformAlertsTickRoute
   '/api/public/hooks/project-alerts-tick': typeof ApiPublicHooksProjectAlertsTickRoute
   '/api/public/hooks/prospecting-dial-tick': typeof ApiPublicHooksProspectingDialTickRoute
@@ -4284,6 +4304,7 @@ export interface FileRouteTypes {
     | '/settings/legal-entity-groups'
     | '/settings/macros'
     | '/settings/media'
+    | '/settings/meeting-reminders'
     | '/settings/mobile'
     | '/settings/my-permissions'
     | '/settings/my-tickets'
@@ -4424,6 +4445,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/linkedin-applicants-sync'
+    | '/api/public/hooks/meeting-reminders-tick'
     | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/project-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
@@ -4699,6 +4721,7 @@ export interface FileRouteTypes {
     | '/settings/legal-entity-groups'
     | '/settings/macros'
     | '/settings/media'
+    | '/settings/meeting-reminders'
     | '/settings/mobile'
     | '/settings/my-permissions'
     | '/settings/my-tickets'
@@ -4838,6 +4861,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/linkedin-applicants-sync'
+    | '/api/public/hooks/meeting-reminders-tick'
     | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/project-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
@@ -5120,6 +5144,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/legal-entity-groups'
     | '/_authenticated/settings/macros'
     | '/_authenticated/settings/media'
+    | '/_authenticated/settings/meeting-reminders'
     | '/_authenticated/settings/mobile'
     | '/_authenticated/settings/my-permissions'
     | '/_authenticated/settings/my-tickets'
@@ -5260,6 +5285,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-sync-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/linkedin-applicants-sync'
+    | '/api/public/hooks/meeting-reminders-tick'
     | '/api/public/hooks/platform-alerts-tick'
     | '/api/public/hooks/project-alerts-tick'
     | '/api/public/hooks/prospecting-dial-tick'
@@ -5423,6 +5449,7 @@ export interface RootRouteChildren {
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
   ApiPublicHooksLinkedinApplicantsSyncRoute: typeof ApiPublicHooksLinkedinApplicantsSyncRoute
+  ApiPublicHooksMeetingRemindersTickRoute: typeof ApiPublicHooksMeetingRemindersTickRoute
   ApiPublicHooksPlatformAlertsTickRoute: typeof ApiPublicHooksPlatformAlertsTickRoute
   ApiPublicHooksProjectAlertsTickRoute: typeof ApiPublicHooksProjectAlertsTickRoute
   ApiPublicHooksProspectingDialTickRoute: typeof ApiPublicHooksProspectingDialTickRoute
@@ -6920,6 +6947,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsMediaRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/meeting-reminders': {
+      id: '/_authenticated/settings/meeting-reminders'
+      path: '/meeting-reminders'
+      fullPath: '/settings/meeting-reminders'
+      preLoaderRoute: typeof AuthenticatedSettingsMeetingRemindersRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/mobile': {
       id: '/_authenticated/settings/mobile'
       path: '/mobile'
@@ -7879,6 +7913,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksLinkedinApplicantsSyncRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/meeting-reminders-tick': {
+      id: '/api/public/hooks/meeting-reminders-tick'
+      path: '/api/public/hooks/meeting-reminders-tick'
+      fullPath: '/api/public/hooks/meeting-reminders-tick'
+      preLoaderRoute: typeof ApiPublicHooksMeetingRemindersTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/platform-alerts-tick': {
       id: '/api/public/hooks/platform-alerts-tick'
       path: '/api/public/hooks/platform-alerts-tick'
@@ -8635,6 +8676,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsLegalEntityGroupsRoute: typeof AuthenticatedSettingsLegalEntityGroupsRoute
   AuthenticatedSettingsMacrosRoute: typeof AuthenticatedSettingsMacrosRoute
   AuthenticatedSettingsMediaRoute: typeof AuthenticatedSettingsMediaRoute
+  AuthenticatedSettingsMeetingRemindersRoute: typeof AuthenticatedSettingsMeetingRemindersRoute
   AuthenticatedSettingsMobileRoute: typeof AuthenticatedSettingsMobileRoute
   AuthenticatedSettingsMyPermissionsRoute: typeof AuthenticatedSettingsMyPermissionsRoute
   AuthenticatedSettingsMyTicketsRoute: typeof AuthenticatedSettingsMyTicketsRoute
@@ -8742,6 +8784,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsLegalEntityGroupsRoute,
   AuthenticatedSettingsMacrosRoute: AuthenticatedSettingsMacrosRoute,
   AuthenticatedSettingsMediaRoute: AuthenticatedSettingsMediaRoute,
+  AuthenticatedSettingsMeetingRemindersRoute:
+    AuthenticatedSettingsMeetingRemindersRoute,
   AuthenticatedSettingsMobileRoute: AuthenticatedSettingsMobileRoute,
   AuthenticatedSettingsMyPermissionsRoute:
     AuthenticatedSettingsMyPermissionsRoute,
@@ -9421,6 +9465,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
   ApiPublicHooksLinkedinApplicantsSyncRoute:
     ApiPublicHooksLinkedinApplicantsSyncRoute,
+  ApiPublicHooksMeetingRemindersTickRoute:
+    ApiPublicHooksMeetingRemindersTickRoute,
   ApiPublicHooksPlatformAlertsTickRoute: ApiPublicHooksPlatformAlertsTickRoute,
   ApiPublicHooksProjectAlertsTickRoute: ApiPublicHooksProjectAlertsTickRoute,
   ApiPublicHooksProspectingDialTickRoute:

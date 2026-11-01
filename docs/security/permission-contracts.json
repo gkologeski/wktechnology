@@ -275,7 +275,7 @@
         "system.communication.subscription_types.update.workspace",
         "system.communication.subscription_types.view.workspace"
       ],
-      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS.",
+      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations.",
       "database": [
         {
           "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
@@ -307,8 +307,8 @@
       "id": "configuration-navigation-compatibility",
       "kind": "internal",
       "files": {
-        "src/lib/access-control/sales-route-map.ts": "a564bc78dc95654b256271ec4fe9c151d63bc7fb3b4f73ad940b0dd1f4b2fa5c",
-        "src/routes/_authenticated/settings.tsx": "a4f951fe15ac2c7de40486935dabe323cc57935a567137ef3012fa0bfb6b743b",
+        "src/lib/access-control/sales-route-map.ts": "0df9503ad94282448e5d19988fd5d6f579ff4d89df0a03b009f454858dbe57dc",
+        "src/routes/_authenticated/settings.tsx": "a58967efc937b7a85b1cbda6b515c0cf69184ece7bcb02650ad2c1fe2c43f4f4",
         "src/routes/_authenticated.tsx": "18448332bcad1cb959dd7b657792dbeb47058f66e40d261182ef77981f08b445",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
       },
@@ -1688,7 +1688,7 @@
       "kind": "business",
       "files": {
         "drizzle/migrations/0251_deal_related_activity_history.sql": "074748f2edde9e44c7e3a76e998e93223c0766f01dd1d43735e0cff118ae654a",
-        "src/components/activity/activity-timeline-item.tsx": "5c3cedab5405785448c15dcd6d564c5e822e028937eb80f0af0c49713149a305"
+        "src/components/activity/activity-timeline-item.tsx": "337a303e9c803d0647ff432ed9153c4467ae4d4bd4af921724971f2c1149b103"
       },
       "resources": [
         "techsales.deals",
@@ -1710,7 +1710,7 @@
         "techsales.notes.view.workspace",
         "techsales.tasks.view.workspace"
       ],
-      "rationale": "User explicitly requested related contact/company history, identified as such, without moving source activity links. Invoker RPC requires a visible parent deal and keeps the existing per-activity RLS including note/task classification; same-workspace filter precedes pagination. No record mutation or permission grant. UI labels related history and other-deal provenance. Fixtures exercise production resolver with the activity resource CASE, plus separate full-schema real-JWT acceptance.",
+      "rationale": "User explicitly requested related contact/company history, identified as such, without moving source activity links. Invoker RPC requires a visible parent deal and keeps the existing per-activity RLS including note/task classification; same-workspace filter precedes pagination. No record mutation or permission grant. UI labels related history and other-deal provenance. Fixtures exercise production resolver with the activity resource CASE, plus separate full-schema real-JWT acceptance. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations.",
       "controls": [
         {
           "file": "drizzle/migrations/0251_deal_related_activity_history.sql",
@@ -2716,9 +2716,9 @@
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
       "files": {
-        "src/integrations/supabase/types.ts": "d76b0fb823334dc3ab1bf648e86fa9cfbf947f410b416cfbb3248aa13c0d359e"
+        "src/integrations/supabase/types.ts": "528f33873f96a656f0273c2503e7e96a69e2d385e2317a52c0fb9cd07699e302"
       },
-      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only."
+      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations."
     },
     {
       "id": "service-channel-account-center",
@@ -4172,7 +4172,7 @@
       "files": {
         "src/lib/access-control/resource-labels.ts": "b9486bd90fbd4e5aa1cf7af67fbb77163e7c88ac9d2a95dffcd041df79abfcef",
         "src/lib/menu-config-finance.ts": "634465260359b9d97cfd6a635ae5bd7ade12cb9ab9a83ec9e96e507d83194e1d",
-        "src/lib/breadcrumb-labels.ts": "5ceacb475469982eb39e8bae82317e1a89f0f7385f9de612e22ec91252c8bc00"
+        "src/lib/breadcrumb-labels.ts": "a6c39e47f35663fcea3662054cd29fc46a9a2a911d57ac6ac6aa2e4d0a523739"
       },
       "rationale": "PT-BR labels for the new techfinance.sales and contaazul_people resources and a sidebar entry for /finance/sales gated by techfinance.sales.view.workspace; menu visibility is cosmetic, the page and server function enforce the permission (contract finance-sales)."
     },
@@ -5371,6 +5371,98 @@
         "src/lib/prospecting-call-followup.ts": "3c4be4a5e8b297174b584a0ef569d76429af8f6efbb6629f608e1db38c2ce035"
       },
       "rationale": "Pure decision of which WhatsApp follow-up applies to a call outcome (no I/O, routes, actions or data access); sending stays under prospecting-voice-campaigns."
+    },
+    {
+      "id": "meeting-whatsapp-reminders",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0291_meeting_whatsapp_reminders.sql": "7c631bd1bc82897087978a3c104e150b8b3559e7c6ddc18c67a6d79e9d48b67e",
+        "src/components/activity/meeting-reminder-status.tsx": "2312db26ef96d6baeb0194140517db87c8dfa4c3ef506be16b2fd69521e5d2d4",
+        "src/components/whatsapp/meeting-reminders-page.tsx": "528316e1845a4c45fbac7e2dd9105364f2d4ea08a4019216e883c14fdcf42349",
+        "src/lib/whatsapp/meeting-reminders.functions.ts": "82642dd45b699730af9877f2ae6ef726e65a9f7b14202cedd4abcda6716f3156",
+        "src/lib/whatsapp/meeting-reminders.server.ts": "bc7daba547e7f31b53e16f11776803e0af3152591b9eda6af35ebadbcc83712b",
+        "src/lib/whatsapp/meeting-reminders.ts": "29824abfcfbac87d0538f213c5336c14a46edb94a0b23b2a478511686de92eab",
+        "src/routes/api/public/hooks/meeting-reminders-tick.ts": "ef4d7c62007bb7695d6943b6a7e989b6ae456f5d0c8a4f663cc8881819335345",
+        "src/routes/_authenticated/settings.meeting-reminders.tsx": "71c83eb2ece9043d224b4868cecfc7e82f0b556287d0d9c9a9abd43f84a3756f"
+      },
+      "resources": [
+        "techsales.meeting_settings",
+        "techsales.meetings"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.meeting_settings.view.workspace",
+        "techsales.meeting_settings.update.workspace",
+        "techsales.meetings.view.own",
+        "techsales.meetings.view.team",
+        "techsales.meetings.view.workspace",
+        "techsales.meetings.update.own",
+        "techsales.meetings.update.team",
+        "techsales.meetings.update.workspace"
+      ],
+      "rationale": "Meeting WhatsApp reminders reuse the existing meeting configuration permission (techsales.meeting_settings) — same resource: workspace meeting settings. getMeetingReminderConfig requires view, saveMeetingReminderConfig requires update, both via requireSalesPermission on the active workspace; tables meeting_reminder_settings/rules/dispatches have RLS through sales_context_access with the same resource (dispatches read-only for authenticated, written only by service_role). Save revalidates sender number ownership, approved template and complete variables (whitelisted keys). Per-meeting status/toggle require techsales.meetings view/update plus assertSalesRecord on the activity. The cron route requires CRON_SECRET (requireCronAuth) on POST and GET; the worker sends only approved templates, at most once per meeting+offset+time (unique claim), respects opt-out and never landlines. No permission granted to any role.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/cron-auth.server.ts",
+          "symbol": "requireCronAuth"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/whatsapp/meeting-reminders.ts",
+          "symbol": "dueOffsets"
+        },
+        {
+          "file": "src/components/whatsapp/meeting-reminders-page.tsx",
+          "symbol": "MeetingRemindersPage"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0291_meeting_whatsapp_reminders.sql",
+          "symbol": "meeting_reminder_rules"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      }
     }
   ],
   "retired": {}

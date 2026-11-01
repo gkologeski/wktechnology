@@ -25,6 +25,7 @@ import {
 } from "@/components/activity/timeline-shared";
 import { LazyEmailTimelineItem } from "@/components/activity/lazy-email-timeline-item";
 import { MeetingMetaCard } from "@/components/activity/meeting-meta-card";
+import { MeetingReminderStatus } from "@/components/activity/meeting-reminder-status";
 import {
   CallDurationBadges,
   CallRecordingPlayer,
@@ -215,6 +216,10 @@ export function ActivityTimelineItem({
 
         {a.type === "survey" && surveyResponse && <SurveyTimelineCard response={surveyResponse} />}
         {a.type === "meeting" && <MeetingMetaCard activity={a} onSummarize={onSummarizeMeeting} />}
+        {a.type === "meeting" &&
+          !a.completed &&
+          a.due_date &&
+          new Date(a.due_date).getTime() > Date.now() && <MeetingReminderStatus activityId={a.id} />}
 
         {isEditing ? (
           editForm

@@ -254,6 +254,12 @@ const sections: Section[] = [
         icon: VideoIcon,
         permission: "techsales.meeting_settings.view.workspace",
       },
+      {
+        to: "/settings/meeting-reminders",
+        label: "Lembretes de reunião (WhatsApp)",
+        icon: VideoIcon,
+        permission: "techsales.meeting_settings.view.workspace",
+      },
     ],
   },
   {
