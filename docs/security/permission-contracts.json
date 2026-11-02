@@ -5208,12 +5208,13 @@
         "src/components/prospecting/pages/voice-agent-page.tsx": "e10c687abb1b144a47e5e7acbb077ad9630a86713dbbd70871e8a70fc2d4a882",
         "src/lib/voice-agent.functions.ts": "932a46a77422c54536399f8e2d709a423e51b7b5315c87b58fe654bad81aae0a",
         "drizzle/migrations/0293_prospecting_scripts_archived_at.sql": "a6e8cce47013518da00c651e96d47f4b4cfbb1b847aed5cf720cd405d6d6fd91",
-        "src/components/prospecting/pages/scripts-page.tsx": "0481fa1e3ecda2bccf5f4156cd9396c3699c4c16872dd28e85d28bd1a9e1d99d",
+        "src/components/prospecting/pages/scripts-page.tsx": "7ee17213929ea516345b3f4faeb6ccf845dcb21c072900bb68b7b828f7619c2d",
         "src/routes/_authenticated/settings.prospecting-scripts.tsx": "dd5176c9fd9ccb8a50efba3ca1894e7c7f0d18f0d7476765a1f80c008ffa6776"
       },
       "resources": [
         "techsales.marketing.campaigns",
-        "techsales.prospecting_voice"
+        "techsales.prospecting_voice",
+        "techsales.prospecting_scripts"
       ],
       "actions": [
         "view",
@@ -5276,6 +5277,10 @@
         {
           "file": "src/components/prospecting/campaign-call-followup.tsx",
           "symbol": "CampaignCallFollowup"
+        },
+        {
+          "file": "src/components/prospecting/pages/scripts-page.tsx",
+          "symbol": "ScriptsPage"
         }
       ],
       "database": [
@@ -5286,6 +5291,10 @@
         {
           "file": "drizzle/migrations/0290_prospecting_call_whatsapp_followup.sql",
           "symbol": "prospecting_call_attempts"
+        },
+        {
+          "file": "drizzle/migrations/0293_prospecting_scripts_archived_at.sql",
+          "symbol": "prospecting_scripts"
         }
       ],
       "tests": {

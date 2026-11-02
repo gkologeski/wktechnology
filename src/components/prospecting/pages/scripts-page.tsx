@@ -25,11 +25,17 @@ import {
 } from "@/lib/prospecting-scripts.functions";
 import { previewVoice, CURATED_VOICES } from "@/lib/voice-agent.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 export function ScriptsPage() {
   const listFn = useServerFn(listScripts);
   const saveFn = useServerFn(upsertScript);
   const delFn = useServerFn(deleteScript);
+  const { canAny } = usePermissions();
+  const keys = (a: string) =>
+    ["own", "team", "workspace"].map((x) => `techsales.prospecting_scripts.${a}.${x}`);
+  const canUpdate = canAny(keys("update"));
+  const canDelete = canAny(keys("delete"));
   const archiveFn = useServerFn(setScriptArchived);
   const usageFn = useServerFn(listScriptUsage);
   const [showArchived, setShowArchived] = useState(false);
@@ -183,6 +189,7 @@ export function ScriptsPage() {
                         : "Excluir roteiro"
                   }
                   title={r.archived_at ? "Restaurar" : used.has(r.id) ? "Arquivar" : "Excluir"}
+                  disabled={r.archived_at || used.has(r.id) ? !canUpdate : !canDelete}
                   onClick={() => removeOrArchive(r)}
                 >
                   {r.archived_at ? (
