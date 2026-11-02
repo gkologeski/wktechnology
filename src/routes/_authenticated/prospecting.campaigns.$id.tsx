@@ -82,7 +82,7 @@ function CampaignDetailPage() {
   };
   useEffect(() => {
     refresh();
-    scriptsFn().then(setScripts);
+    scriptsFn({ data: { includeArchived: true } }).then(setScripts);
     /* eslint-disable-next-line */
   }, [id]);
 
@@ -317,7 +317,7 @@ function CampaignDetailPage() {
               onClick={() =>
                 setVariants([
                   ...variants,
-                  { script_id: scripts[0]?.id ?? "", weight: 50, segment_id: null },
+                  { script_id: scripts.find((s) => !s.archived_at)?.id ?? "", weight: 50, segment_id: null },
                 ])
               }
             >
@@ -346,9 +346,12 @@ function CampaignDetailPage() {
                     <SelectValue placeholder="Selecione" />
                   </SelectTrigger>
                   <SelectContent>
-                    {scripts.map((s) => (
+                    {scripts
+                      .filter((s) => !s.archived_at || s.id === v.script_id)
+                      .map((s) => (
                       <SelectItem key={s.id} value={s.id}>
                         {s.name}
+                        {s.archived_at ? " (arquivado)" : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -397,7 +400,7 @@ function CampaignDetailPage() {
       <CampaignCallFollowup
         key={campaign.updated_at}
         campaign={campaign}
-        scripts={scripts}
+        scripts={scripts.filter((s) => !s.archived_at)}
         leads={audit}
         onChanged={refresh}
       />
