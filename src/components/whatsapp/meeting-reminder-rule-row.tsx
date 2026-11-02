@@ -53,13 +53,16 @@ export function MeetingReminderRuleRow(props: {
   index: number;
   templates: TemplateOption[];
   tplByKey: Map<string, TemplateOption>;
-  canEdit: boolean;
+  /** Bloqueio extra vindo da tela (ex.: salvando). */
+  locked?: boolean;
   duplicate: boolean;
   outOfRange: boolean;
   onChange: (patch: Partial<RuleDraft>) => void;
   onRemove: () => void;
 }) {
-  const { rule: r, templates, tplByKey, canEdit, onChange } = props;
+  const { rule: r, templates, tplByKey, onChange } = props;
+  const { can } = usePermissions();
+  const canEdit = can("techsales.meeting_settings.update.workspace") && !props.locked;
   const id = r.uid;
   const t = tplByKey.get(r.template_key);
   const preview = t

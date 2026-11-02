@@ -5380,13 +5380,14 @@
       "files": {
         "drizzle/migrations/0291_meeting_whatsapp_reminders.sql": "7c631bd1bc82897087978a3c104e150b8b3559e7c6ddc18c67a6d79e9d48b67e",
         "src/components/activity/meeting-reminder-status.tsx": "2312db26ef96d6baeb0194140517db87c8dfa4c3ef506be16b2fd69521e5d2d4",
-        "src/components/whatsapp/meeting-reminders-page.tsx": "1a8582ebb75ccca1b6a50992b3d014cefdb28773c2fd60362dec56e1c3e27134",
+        "src/components/whatsapp/meeting-reminders-page.tsx": "1dc3d08b73d2545f8cd22987f47fcff4a0a934b7105eff370963d245c9a5b34f",
         "src/lib/whatsapp/meeting-reminders.functions.ts": "c0daf9468a0018f0cc58e8bc6597f652b7ba8c42196115b9da20c07db01fa113",
         "src/lib/whatsapp/meeting-reminders.server.ts": "bc7daba547e7f31b53e16f11776803e0af3152591b9eda6af35ebadbcc83712b",
         "src/lib/whatsapp/meeting-reminders.ts": "94aa141372652bd80e093e1d342ba636c53bc74fe7bf33e1339626fa67f4c1c6",
         "src/routes/api/public/hooks/meeting-reminders-tick.ts": "ef4d7c62007bb7695d6943b6a7e989b6ae456f5d0c8a4f663cc8881819335345",
         "src/routes/_authenticated/settings.meeting-reminders.tsx": "71c83eb2ece9043d224b4868cecfc7e82f0b556287d0d9c9a9abd43f84a3756f",
-        "drizzle/migrations/0292_meeting_reminder_custom_offsets.sql": "e1e0c485ce303a9c9cf79301cce2725453b0af753742053267978a8835e5538d"
+        "drizzle/migrations/0292_meeting_reminder_custom_offsets.sql": "e1e0c485ce303a9c9cf79301cce2725453b0af753742053267978a8835e5538d",
+        "src/components/whatsapp/meeting-reminder-rule-row.tsx": "1ef4c04b7cf50e27fde89fd25db5dce3c57958cfa9885d13d189ad9be5c954ed"
       },
       "resources": [
         "techsales.meeting_settings",
@@ -5554,14 +5555,6 @@
         "src/components/floating-dock/messenger-gate.ts": "f58d063ffaaa906e55febf5043d9b21e27cddfc9a05f5d14e9aae223e47483c5"
       },
       "rationale": "Pure in-memory UI state for the side dock (open callbacks, unread counter) and a pure predicate over already-loaded effective permissions. No I/O, routes, actions or data access."
-    },
-    {
-      "id": "meeting-reminder-rule-row",
-      "kind": "presentation",
-      "files": {
-        "src/components/whatsapp/meeting-reminder-rule-row.tsx": "b386c6abf4437dc3ef2ccd22db7c49c0c32ad8e4735792dc6ec20306e37e8e9c"
-      },
-      "rationale": "Presentational row for one meeting reminder (amount, unit, template, variables, preview). Receives data and callbacks from MeetingRemindersPage; no I/O, routes, actions or data access. Saving stays under meeting-whatsapp-reminders (techsales.meeting_settings.update)."
     }
   ],
   "retired": {}

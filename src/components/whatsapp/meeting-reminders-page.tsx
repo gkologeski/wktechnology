@@ -262,7 +262,7 @@ export function MeetingRemindersPage() {
             index={i}
             templates={templates}
             tplByKey={tplByKey}
-            canEdit={canEdit}
+            locked={saving}
             duplicate={isDup(r)}
             outOfRange={outOfRange(r)}
             onChange={(patch) => update(r.uid, patch)}
