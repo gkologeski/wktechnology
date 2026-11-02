@@ -105,16 +105,24 @@ export function VoiceAgentPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadPhones = async () => {
-    setBusy("phones");
+  const [phonesLoading, setPhonesLoading] = useState(false);
+  const loadPhones = async (silent = false) => {
+    setPhonesLoading(true);
     try {
       setPhones(await phonesFn());
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      if (silent) toast.warning("Não foi possível carregar a lista de números Vapi.");
+      else toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
-      setBusy(null);
+      setPhonesLoading(false);
     }
   };
+
+  // Carrega os números ao abrir, para o número salvo aparecer sem atualizar.
+  useEffect(() => {
+    void loadPhones(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const save = async () => {
     setLoading(true);
@@ -177,6 +185,12 @@ export function VoiceAgentPage() {
                   <SelectValue placeholder="Selecione um número" />
                 </SelectTrigger>
                 <SelectContent>
+                  {s.vapi_phone_number_id &&
+                    !phones.some((p) => p.id === s.vapi_phone_number_id) && (
+                      <SelectItem value={s.vapi_phone_number_id}>
+                        {phonesLoading ? "Número salvo (carregando…)" : "Número salvo"}
+                      </SelectItem>
+                    )}
                   {phones.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.number || p.name || p.id}
@@ -185,8 +199,13 @@ export function VoiceAgentPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="outline" onClick={loadPhones} disabled={busy === "phones"}>
-              {busy === "phones" ? (
+            <Button
+              variant="outline"
+              onClick={() => loadPhones()}
+              disabled={phonesLoading}
+              aria-label="Atualizar números Vapi"
+            >
+              {phonesLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <RefreshCw className="h-4 w-4" />
