@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { assertSalesArea } from "@/lib/access-control/sales-core.server";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import { SEQUENCE_RESOURCE, saveDraftSchema, type SaveDraft, type SequenceDraft } from "./draft";
-import { applyEmailSenderPolicy, type EmailSenderPolicy } from "./email-sender-policy";
 export async function listDrafts(
   client: SupabaseClient,
   workspaceId: string,
@@ -65,4 +64,51 @@ export async function previewDraftAudience(
     whatsapp: buildAudience(rows, {}, new Set()).recipients.length,
     samples: rows.slice(0, 8).map((r) => ({ id: r.sourceId, name: r.label })),
   };
+}
+
+/**
+ * Regra do remetente de e-mail das sequências: quem não é administrador
+ * envia sempre pela própria conta; administradores escolhem qualquer conta.
+ */
+export type EmailSenderPolicy = { isAdmin: boolean; ownAccountId: string | null };
+
+export function applyEmailSenderPolicy<T extends { type: string; accountId?: string | null }>(
+  steps: T[],
+  policy: EmailSenderPolicy,
+): T[] {
+  if (policy.isAdmin) return steps;
+  const hasEmail = steps.some((s) => s.type === "email");
+  if (hasEmail && !policy.ownAccountId)
+    throw new Error("Conecte sua conta de e-mail em Canais para usar passos de e-mail.");
+  return steps.map((s) => (s.type === "email" ? { ...s, accountId: policy.ownAccountId } : s));
+}
+
+/** Resolve a conta de e-mail do próprio usuário e se ele é admin do workspace. */
+export async function resolveEmailSender(
+  userId: string,
+  workspaceId: string,
+): Promise<EmailSenderPolicy & { ownLabel: string | null }> {
+  const { isWorkspaceAdmin } = await import("@/lib/workspace/admin-guard.server");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const db = supabaseAdmin as any;
+  const isAdmin = await isWorkspaceAdmin(userId, workspaceId);
+  const { data: mine } = await db
+    .from("email_accounts")
+    .select("id")
+    .eq("workspace_id", workspaceId)
+    .eq("owner_id", userId);
+  const ids = ((mine as { id: string }[] | null) || []).map((r) => r.id);
+  let own: { id: string; label: string } | null = null;
+  if (ids.length) {
+    const { data } = await db
+      .from("service_channel_accounts")
+      .select("id,label")
+      .eq("workspace_id", workspaceId)
+      .eq("channel", "email")
+      .in("source_key", ids)
+      .order("label")
+      .limit(1);
+    own = (data as { id: string; label: string }[] | null)?.[0] ?? null;
+  }
+  return { isAdmin, ownAccountId: own?.id ?? null, ownLabel: own?.label ?? null };
 }

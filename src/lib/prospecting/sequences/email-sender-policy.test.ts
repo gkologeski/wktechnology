@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { applyEmailSenderPolicy } from "./email-sender-policy";
+import { applyEmailSenderPolicy } from "./drafts.server";
 const steps = [
   { type: "email", accountId: "other" },
   { type: "whatsapp", accountId: "wa" },
@@ -19,5 +19,7 @@ it("não admin sem conta própria não salva passo de e-mail", () => {
   );
 });
 it("não admin sem conta pode salvar sequência sem e-mail", () => {
-  expect(applyEmailSenderPolicy([steps[1]], { isAdmin: false, ownAccountId: null })).toHaveLength(1);
+  expect(applyEmailSenderPolicy([steps[1]], { isAdmin: false, ownAccountId: null })).toHaveLength(
+    1,
+  );
 });
