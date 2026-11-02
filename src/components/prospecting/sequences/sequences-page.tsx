@@ -132,6 +132,7 @@ export function ProspectingSequencesPage() {
     setDraft(null);
     setDirty(false);
   }, [permissions.workspaceId]);
+  const variableFields = useAudienceFilterFields();
   const editable =
     !saving && !!row && (row.revision === 0 ? can("create") : row.can_edit && can("update"));
   const change = (next: SequenceDefinition) => {
