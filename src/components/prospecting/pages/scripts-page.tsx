@@ -131,19 +131,19 @@ export function ScriptsPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-        <label className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Switch checked={showArchived} onCheckedChange={setShowArchived} />
-          Mostrar arquivados
-        </label>
-        <Button
-          onClick={() => {
-            setEdit({ voice_provider: "elevenlabs" });
-            setOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Novo script
-        </Button>
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Switch checked={showArchived} onCheckedChange={setShowArchived} />
+            Mostrar arquivados
+          </label>
+          <Button
+            onClick={() => {
+              setEdit({ voice_provider: "elevenlabs" });
+              setOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Novo script
+          </Button>
         </div>
       </div>
 
@@ -176,7 +176,11 @@ export function ScriptsPage() {
                   variant="ghost"
                   size="icon"
                   aria-label={
-                    r.archived_at ? "Restaurar roteiro" : used.has(r.id) ? "Arquivar roteiro" : "Excluir roteiro"
+                    r.archived_at
+                      ? "Restaurar roteiro"
+                      : used.has(r.id)
+                        ? "Arquivar roteiro"
+                        : "Excluir roteiro"
                   }
                   title={r.archived_at ? "Restaurar" : used.has(r.id) ? "Arquivar" : "Excluir"}
                   onClick={() => removeOrArchive(r)}

@@ -3,7 +3,7 @@ import { ScriptsPage } from "@/components/prospecting/pages/scripts-page";
 
 export const Route = createFileRoute("/_authenticated/settings/prospecting-scripts")({
   beforeLoad: () => {
-    throw redirect({ to: "/prospecting", search: { area: "campanhas", section: "roteiros" } as never });
+    throw redirect({ to: "/prospecting", search: { area: "campanhas", section: "roteiros" } });
   },
   component: ScriptsPage,
 });

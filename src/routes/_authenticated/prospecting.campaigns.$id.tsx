@@ -317,7 +317,11 @@ function CampaignDetailPage() {
               onClick={() =>
                 setVariants([
                   ...variants,
-                  { script_id: scripts.find((s) => !s.archived_at)?.id ?? "", weight: 50, segment_id: null },
+                  {
+                    script_id: scripts.find((s) => !s.archived_at)?.id ?? "",
+                    weight: 50,
+                    segment_id: null,
+                  },
                 ])
               }
             >
@@ -349,11 +353,11 @@ function CampaignDetailPage() {
                     {scripts
                       .filter((s) => !s.archived_at || s.id === v.script_id)
                       .map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                        {s.archived_at ? " (arquivado)" : ""}
-                      </SelectItem>
-                    ))}
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                          {s.archived_at ? " (arquivado)" : ""}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
