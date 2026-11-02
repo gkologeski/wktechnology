@@ -2,7 +2,8 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { useAudienceFilterFields } from "@/hooks/use-audience-filter-fields";
+import { SequenceVariableField } from "./sequence-variable-field";
 import { getProspectingSequenceTemplates } from "@/lib/prospecting/sequences/drafts.functions";
 import type { SequenceStep } from "@/lib/prospecting/sequences/draft";
 export function SequenceTemplatePicker({
@@ -28,6 +29,7 @@ export function SequenceTemplatePicker({
     permissions.canAny(
       ["own", "team", "workspace"].map((s) => `techsales.inbox.whatsapp.view.${s}`),
     );
+  const fieldCatalog = useAudienceFilterFields();
   const load = useServerFn(getProspectingSequenceTemplates);
   const query = useQuery({
     queryKey: ["sequence-approved-templates", workspaceId, step.accountId],
@@ -100,17 +102,14 @@ export function SequenceTemplatePicker({
         <>
           <p className="whitespace-pre-wrap rounded-md bg-muted p-3 text-xs">{shape.body}</p>
           {Array.from({ length: Math.min(shape.variableCount, 20) }, (_, i) => (
-            <label key={i} className="block text-xs">
-              Valor da variável {i + 1}
-              <Input
-                disabled={disabled}
-                maxLength={1000}
-                value={step.variables[String(i + 1)] || ""}
-                onChange={(e) =>
-                  onChange({ variables: { ...step.variables, [String(i + 1)]: e.target.value } })
-                }
-              />
-            </label>
+            <SequenceVariableField
+              key={i}
+              index={i + 1}
+              fields={fieldCatalog.fields}
+              disabled={disabled || fieldCatalog.isLoading}
+              value={step.variables[String(i + 1)] || ""}
+              onChange={(v) => onChange({ variables: { ...step.variables, [String(i + 1)]: v } })}
+            />
           ))}
           {(shape.headerMediaRequired ||
             shape.headerVariableCount > 0 ||
