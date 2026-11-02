@@ -21101,6 +21101,7 @@ export type Database = {
       }
       prospecting_scripts: {
         Row: {
+          archived_at: string | null
           assigned_to: string | null
           created_at: string
           first_message: string
@@ -21116,6 +21117,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          archived_at?: string | null
           assigned_to?: string | null
           created_at?: string
           first_message?: string
@@ -21131,6 +21133,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          archived_at?: string | null
           assigned_to?: string | null
           created_at?: string
           first_message?: string
