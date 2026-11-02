@@ -21238,6 +21238,632 @@ export type Database = {
           },
         ]
       }
+      prospecting_sequence_cohort_controls: {
+        Row: {
+          cancelled_at: string
+          cancelled_by: string
+          cohort_id: string
+          workspace_id: string
+        }
+        Insert: {
+          cancelled_at?: string
+          cancelled_by: string
+          cohort_id: string
+          workspace_id: string
+        }
+        Update: {
+          cancelled_at?: string
+          cancelled_by?: string
+          cohort_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_sequence_cohort_controls_cohort_id_fkey"
+            columns: ["cohort_id"]
+            isOneToOne: true
+            referencedRelation: "prospecting_sequence_cohorts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_sequence_cohort_people: {
+        Row: {
+          block_reason: string | null
+          channels: Json
+          cohort_id: string
+          entity: string
+          id: string
+          identity_keys: string[]
+          source_id: string
+          workspace_id: string
+        }
+        Insert: {
+          block_reason?: string | null
+          channels: Json
+          cohort_id: string
+          entity: string
+          id?: string
+          identity_keys: string[]
+          source_id: string
+          workspace_id: string
+        }
+        Update: {
+          block_reason?: string | null
+          channels?: Json
+          cohort_id?: string
+          entity?: string
+          id?: string
+          identity_keys?: string[]
+          source_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_sequence_cohort_people_cohort_id_workspace_id_fkey"
+            columns: ["cohort_id", "workspace_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_sequence_cohorts"
+            referencedColumns: ["id", "workspace_id"]
+          },
+        ]
+      }
+      prospecting_sequence_cohorts: {
+        Row: {
+          consent_evidence: string
+          created_at: string
+          created_by: string
+          id: string
+          owner_id: string
+          request_id: string
+          requested: number
+          state: string
+          version_id: string
+          workspace_id: string
+        }
+        Insert: {
+          consent_evidence: string
+          created_at?: string
+          created_by: string
+          id?: string
+          owner_id: string
+          request_id: string
+          requested: number
+          state?: string
+          version_id: string
+          workspace_id: string
+        }
+        Update: {
+          consent_evidence?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          owner_id?: string
+          request_id?: string
+          requested?: number
+          state?: string
+          version_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_sequence_cohorts_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_sequence_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_sequence_cohorts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_sequence_draft_revisions: {
+        Row: {
+          author_id: string
+          created_at: string
+          definition: Json
+          draft_id: string
+          name: string
+          revision: number
+          workspace_id: string
+        }
+        Insert: {
+          author_id: string
+          created_at?: string
+          definition: Json
+          draft_id: string
+          name: string
+          revision: number
+          workspace_id: string
+        }
+        Update: {
+          author_id?: string
+          created_at?: string
+          definition?: Json
+          draft_id?: string
+          name?: string
+          revision?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_sequence_draft_revisions_draft_id_workspace_id_fkey"
+            columns: ["draft_id", "workspace_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_sequence_drafts"
+            referencedColumns: ["id", "workspace_id"]
+          },
+        ]
+      }
+      prospecting_sequence_drafts: {
+        Row: {
+          created_at: string
+          definition: Json
+          id: string
+          name: string
+          owner_id: string
+          revision: number
+          updated_at: string
+          updated_by: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          definition: Json
+          id: string
+          name: string
+          owner_id: string
+          revision: number
+          updated_at?: string
+          updated_by: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          definition?: Json
+          id?: string
+          name?: string
+          owner_id?: string
+          revision?: number
+          updated_at?: string
+          updated_by?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_sequence_drafts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_sequence_effects: {
+        Row: {
+          account_id: string | null
+          created_at: string
+          error_code: string | null
+          finished_at: string | null
+          id: string
+          kind: string
+          projection_state: string
+          provider_id: string | null
+          provider_receipt: Json | null
+          run_id: string
+          sender: Json
+          status: string
+          step_id: string
+          target: Json
+          token: string
+          workspace_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          finished_at?: string | null
+          id?: string
+          kind: string
+          projection_state?: string
+          provider_id?: string | null
+          provider_receipt?: Json | null
+          run_id: string
+          sender?: Json
+          status: string
+          step_id: string
+          target?: Json
+          token?: string
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string
+          error_code?: string | null
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          projection_state?: string
+          provider_id?: string | null
+          provider_receipt?: Json | null
+          run_id?: string
+          sender?: Json
+          status?: string
+          step_id?: string
+          target?: Json
+          token?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_sequence_effects_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_sequence_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_sequence_effects_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_sequence_identity_releases: {
+        Row: {
+          person_id: string
+          reason: string
+          released_at: string
+          workspace_id: string
+        }
+        Insert: {
+          person_id: string
+          reason: string
+          released_at?: string
+          workspace_id: string
+        }
+        Update: {
+          person_id?: string
+          reason?: string
+          released_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_sequence_identity_releases_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: true
+            referencedRelation: "prospecting_sequence_cohort_people"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_sequence_reply_wakes: {
+        Row: {
+          occurred_at: string
+          run_id: string
+          workspace_id: string
+        }
+        Insert: {
+          occurred_at: string
+          run_id: string
+          workspace_id: string
+        }
+        Update: {
+          occurred_at?: string
+          run_id?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      prospecting_sequence_run_events: {
+        Row: {
+          created_at: string
+          id: number
+          kind: string
+          reason: string | null
+          run_id: string
+          signal: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          kind: string
+          reason?: string | null
+          run_id: string
+          signal?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          kind?: string
+          reason?: string | null
+          run_id?: string
+          signal?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_sequence_run_events_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_sequence_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_sequence_run_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_sequence_runs: {
+        Row: {
+          cohort_person_id: string
+          created_at: string
+          cursor: number
+          handoff_effect_id: string | null
+          id: string
+          lease_token: string | null
+          lease_until: string | null
+          next_run_at: string
+          owner_id: string
+          previous_at: string | null
+          reason: string | null
+          state: string
+          step_entered_at: string
+          task_completed_at: string | null
+          updated_at: string
+          version_id: string
+          workspace_id: string
+        }
+        Insert: {
+          cohort_person_id: string
+          created_at?: string
+          cursor?: number
+          handoff_effect_id?: string | null
+          id?: string
+          lease_token?: string | null
+          lease_until?: string | null
+          next_run_at?: string
+          owner_id: string
+          previous_at?: string | null
+          reason?: string | null
+          state?: string
+          step_entered_at?: string
+          task_completed_at?: string | null
+          updated_at?: string
+          version_id: string
+          workspace_id: string
+        }
+        Update: {
+          cohort_person_id?: string
+          created_at?: string
+          cursor?: number
+          handoff_effect_id?: string | null
+          id?: string
+          lease_token?: string | null
+          lease_until?: string | null
+          next_run_at?: string
+          owner_id?: string
+          previous_at?: string | null
+          reason?: string | null
+          state?: string
+          step_entered_at?: string
+          task_completed_at?: string | null
+          updated_at?: string
+          version_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_sequence_runs_cohort_person_id_fkey"
+            columns: ["cohort_person_id"]
+            isOneToOne: true
+            referencedRelation: "prospecting_sequence_cohort_people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_sequence_runs_handoff_effect_id_fkey"
+            columns: ["handoff_effect_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_sequence_effects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_sequence_runs_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_sequence_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_sequence_runs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_sequence_subscriptions: {
+        Row: {
+          consent_evidence: string
+          created_at: string
+          enabled: boolean
+          error_code: string | null
+          fingerprint: string | null
+          id: string
+          last_count: number
+          last_held: number
+          last_reasons: Json
+          last_scan_at: string | null
+          lease_token: string | null
+          lease_until: string | null
+          next_scan_at: string
+          owner_id: string
+          request_id: string | null
+          updated_at: string
+          version_id: string
+          workspace_id: string
+        }
+        Insert: {
+          consent_evidence: string
+          created_at?: string
+          enabled?: boolean
+          error_code?: string | null
+          fingerprint?: string | null
+          id?: string
+          last_count?: number
+          last_held?: number
+          last_reasons?: Json
+          last_scan_at?: string | null
+          lease_token?: string | null
+          lease_until?: string | null
+          next_scan_at?: string
+          owner_id: string
+          request_id?: string | null
+          updated_at?: string
+          version_id: string
+          workspace_id: string
+        }
+        Update: {
+          consent_evidence?: string
+          created_at?: string
+          enabled?: boolean
+          error_code?: string | null
+          fingerprint?: string | null
+          id?: string
+          last_count?: number
+          last_held?: number
+          last_reasons?: Json
+          last_scan_at?: string | null
+          lease_token?: string | null
+          lease_until?: string | null
+          next_scan_at?: string
+          owner_id?: string
+          request_id?: string | null
+          updated_at?: string
+          version_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_sequence_subscriptions_version_id_fkey"
+            columns: ["version_id"]
+            isOneToOne: true
+            referencedRelation: "prospecting_sequence_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_sequence_subscriptions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prospecting_sequence_versions: {
+        Row: {
+          created_at: string
+          created_by: string
+          definition: Json
+          draft_id: string
+          draft_revision: number
+          id: string
+          name: string
+          owner_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          definition: Json
+          draft_id: string
+          draft_revision: number
+          id?: string
+          name: string
+          owner_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          definition?: Json
+          draft_id?: string
+          draft_revision?: number
+          id?: string
+          name?: string
+          owner_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_sequence_versions_draft_id_draft_revision_fkey"
+            columns: ["draft_id", "draft_revision"]
+            isOneToOne: true
+            referencedRelation: "prospecting_sequence_draft_revisions"
+            referencedColumns: ["draft_id", "revision"]
+          },
+          {
+            foreignKeyName: "prospecting_sequence_versions_draft_id_workspace_id_fkey"
+            columns: ["draft_id", "workspace_id"]
+            isOneToOne: false
+            referencedRelation: "prospecting_sequence_drafts"
+            referencedColumns: ["id", "workspace_id"]
+          },
+        ]
+      }
+      prospecting_sequence_voice_events: {
+        Row: {
+          call_id: string
+          effect_id: string
+          outcome: string | null
+          terminal: boolean
+          terminal_at: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          call_id: string
+          effect_id: string
+          outcome?: string | null
+          terminal?: boolean
+          terminal_at?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          call_id?: string
+          effect_id?: string
+          outcome?: string | null
+          terminal?: boolean
+          terminal_at?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prospecting_sequence_voice_events_effect_id_fkey"
+            columns: ["effect_id"]
+            isOneToOne: true
+            referencedRelation: "prospecting_sequence_effects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           auth: string
@@ -32251,6 +32877,309 @@ export type Database = {
       proposal_publish_with_esign: {
         Args: { p_hash: string; p_id: string; p_sent_at: string }
         Returns: Json
+      }
+      prospecting_sequence_agent_route_allowed: {
+        Args: {
+          p_agent: string
+          p_channel: string
+          p_source: string
+          p_workspace: string
+        }
+        Returns: boolean
+      }
+      prospecting_sequence_capabilities: {
+        Args: { p_owners: string[]; p_workspace: string }
+        Returns: Json
+      }
+      prospecting_sequence_claim: {
+        Args: { p_limit?: number }
+        Returns: {
+          cohort_person_id: string
+          created_at: string
+          cursor: number
+          handoff_effect_id: string | null
+          id: string
+          lease_token: string | null
+          lease_until: string | null
+          next_run_at: string
+          owner_id: string
+          previous_at: string | null
+          reason: string | null
+          state: string
+          step_entered_at: string
+          task_completed_at: string | null
+          updated_at: string
+          version_id: string
+          workspace_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "prospecting_sequence_runs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      prospecting_sequence_cohort_list: {
+        Args: { p_version: string; p_workspace: string }
+        Returns: Json
+      }
+      prospecting_sequence_cohort_prepare: {
+        Args: {
+          p_actor: string
+          p_candidates: Json
+          p_consent: string
+          p_request: string
+          p_version: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      prospecting_sequence_commercial_block: {
+        Args: { p_run: string; p_source: Json }
+        Returns: string
+      }
+      prospecting_sequence_complete_call: {
+        Args: { p_outcome: string; p_run: string; p_workspace: string }
+        Returns: string
+      }
+      prospecting_sequence_context: {
+        Args: { p_lease: string; p_run: string }
+        Returns: Json
+      }
+      prospecting_sequence_control: {
+        Args: { p_action: string; p_run: string; p_workspace: string }
+        Returns: string
+      }
+      prospecting_sequence_delivery_access: {
+        Args: { p_lease: string; p_run: string }
+        Returns: Json
+      }
+      prospecting_sequence_delivery_commit: {
+        Args: { p_effect: string; p_payload: Json; p_token: string }
+        Returns: string
+      }
+      prospecting_sequence_discard_cohort: {
+        Args: { p_cohort: string; p_workspace: string }
+        Returns: number
+      }
+      prospecting_sequence_draft_list: {
+        Args: { p_workspace: string }
+        Returns: Json
+      }
+      prospecting_sequence_draft_save: {
+        Args: {
+          p_definition: Json
+          p_expected_revision: number
+          p_id: string
+          p_name: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      prospecting_sequence_effect_begin: {
+        Args: {
+          p_lease: string
+          p_prepared?: Json
+          p_run: string
+          p_step: string
+        }
+        Returns: Json
+      }
+      prospecting_sequence_effect_finish: {
+        Args: {
+          p_effect: string
+          p_error?: string
+          p_provider: string
+          p_token: string
+        }
+        Returns: boolean
+      }
+      prospecting_sequence_effect_not_started: {
+        Args: { p_effect: string; p_reason: string; p_token: string }
+        Returns: boolean
+      }
+      prospecting_sequence_handoff: {
+        Args: {
+          p_agent?: string
+          p_lease: string
+          p_mode: string
+          p_run: string
+        }
+        Returns: string
+      }
+      prospecting_sequence_insights: {
+        Args: { p_version: string; p_workspace: string }
+        Returns: Json
+      }
+      prospecting_sequence_message_commit_0302: {
+        Args: { p_effect: string; p_payload: Json; p_token: string }
+        Returns: string
+      }
+      prospecting_sequence_person_matches: {
+        Args: { p_contact: string; p_lead: string; p_run: string }
+        Returns: boolean
+      }
+      prospecting_sequence_projection_repair: {
+        Args: { p_limit?: number }
+        Returns: Json
+      }
+      prospecting_sequence_receipt_store: {
+        Args: { p_effect: string; p_payload: Json; p_token: string }
+        Returns: boolean
+      }
+      prospecting_sequence_release_claims: {
+        Args: { p_claims: Json }
+        Returns: number
+      }
+      prospecting_sequence_release_identities: {
+        Args: { p_limit?: number }
+        Returns: number
+      }
+      prospecting_sequence_reply_signals: {
+        Args: { p_previous: string; p_run: string }
+        Returns: Json
+      }
+      prospecting_sequence_reply_thread: {
+        Args: { p_lease: string; p_recipient: string; p_run: string }
+        Returns: Json
+      }
+      prospecting_sequence_runtime_allowed: {
+        Args: {
+          p_action: string
+          p_actor: string
+          p_owner: string
+          p_workspace: string
+        }
+        Returns: boolean
+      }
+      prospecting_sequence_start: {
+        Args: { p_cohort: string; p_workspace: string }
+        Returns: number
+      }
+      prospecting_sequence_subscription_candidates: {
+        Args: { p_groups: Json; p_lease: string; p_subscription: string }
+        Returns: Json
+      }
+      prospecting_sequence_subscription_catalog: {
+        Args: { p_lease: string; p_subscription: string }
+        Returns: Json
+      }
+      prospecting_sequence_subscription_claim: {
+        Args: { p_limit?: number }
+        Returns: {
+          consent_evidence: string
+          created_at: string
+          enabled: boolean
+          error_code: string | null
+          fingerprint: string | null
+          id: string
+          last_count: number
+          last_held: number
+          last_reasons: Json
+          last_scan_at: string | null
+          lease_token: string | null
+          lease_until: string | null
+          next_scan_at: string
+          owner_id: string
+          request_id: string | null
+          updated_at: string
+          version_id: string
+          workspace_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "prospecting_sequence_subscriptions"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      prospecting_sequence_subscription_commit: {
+        Args: {
+          p_candidates: Json
+          p_fingerprint: string
+          p_lease: string
+          p_matched: number
+          p_subscription: string
+        }
+        Returns: Json
+      }
+      prospecting_sequence_subscription_error: {
+        Args: { p_error?: string; p_lease: string; p_subscription: string }
+        Returns: undefined
+      }
+      prospecting_sequence_subscription_set: {
+        Args: {
+          p_consent: string
+          p_enabled: boolean
+          p_version: string
+          p_workspace: string
+        }
+        Returns: string
+      }
+      prospecting_sequence_subscription_status: {
+        Args: { p_version: string; p_workspace: string }
+        Returns: Json
+      }
+      prospecting_sequence_task_effect: {
+        Args: { p_effect: string; p_lease: string; p_token: string }
+        Returns: string
+      }
+      prospecting_sequence_transition: {
+        Args: {
+          p_cursor: number
+          p_due: string
+          p_lease: string
+          p_reason: string
+          p_run: string
+          p_state: string
+        }
+        Returns: boolean
+      }
+      prospecting_sequence_unknown_keys: {
+        Args: { p_keys: string[]; p_workspace: string }
+        Returns: string[]
+      }
+      prospecting_sequence_version_create: {
+        Args: { p_expected_revision: number; p_id: string; p_workspace: string }
+        Returns: Json
+      }
+      prospecting_sequence_voice_access: {
+        Args: { p_lease: string; p_run: string }
+        Returns: Json
+      }
+      prospecting_sequence_voice_event: {
+        Args: {
+          p_call: string
+          p_effect: string
+          p_number: string
+          p_outcome: string
+          p_phone_id: string
+          p_terminal: boolean
+        }
+        Returns: boolean
+      }
+      prospecting_sequence_voice_pending: {
+        Args: never
+        Returns: {
+          call_id: string
+          effect_id: string
+        }[]
+      }
+      prospecting_sequence_voice_project: {
+        Args: { p_effect: string; p_token: string }
+        Returns: string
+      }
+      prospecting_sequence_wake_replies: {
+        Args: { p_limit?: number }
+        Returns: number
+      }
+      prospecting_sequence_wake_tasks: {
+        Args: { p_limit?: number }
+        Returns: number
+      }
+      prospecting_sequence_whatsapp_identity: {
+        Args: { p_phone_id: string; p_phones: Json; p_run: string }
+        Returns: boolean
       }
       purge_workspace: {
         Args: { _actor: string; _confirm_name: string; _workspace: string }
