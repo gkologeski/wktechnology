@@ -59,12 +59,35 @@ const chunk = <T>(xs: T[], size = 150): T[][] => {
  * Lista de filtros aceitos no servidor: fixos + colunas reais da tabela (tipo do banco)
  * + campos personalizados ativos do workspace. RLS continua valendo na consulta.
  */
+export type ServerFilterMetadata = {
+  columns: Record<AudienceBase, { column_name: string; data_type: string }[]>;
+  custom: { entity: string; key: string; label: string }[];
+};
+/** Shared construction for caller SDK reads and the actor-scoped dynamic reader. */
+export async function buildServerFilterFields(
+  metadata: ServerFilterMetadata,
+): Promise<FilterFieldCatalog> {
+  const { REF_COLUMNS } = await import("@/lib/entity-fields-refs");
+  const out = {} as FilterFieldCatalog;
+  for (const entity of ["leads", "contacts", "companies", "deals"] as AudienceBase[]) {
+    const catalog = (metadata.columns[entity] || []).map((r) => ({
+      name: r.column_name,
+      label: r.column_name,
+      type: catalogTypeFromDataType(r.data_type),
+      ref: (REF_COLUMNS as Record<string, string | undefined>)[r.column_name],
+    }));
+    const custom = metadata.custom
+      .filter((p) => p.entity === entity)
+      .map((p) => ({ key: p.key, label: p.label }));
+    out[entity] = buildFilterFields(entity, catalog, custom);
+  }
+  return out;
+}
 export async function loadServerFilterFields(
   db: Db,
   workspaceId: string,
   userId: string,
 ): Promise<FilterFieldCatalog> {
-  const { REF_COLUMNS } = await import("@/lib/entity-fields-refs");
   const entities: AudienceBase[] = ["leads", "contacts", "companies", "deals"];
   const { data: cps } = await db
     .from("custom_properties")
@@ -72,27 +95,18 @@ export async function loadServerFilterFields(
     .eq("workspace_id", workspaceId)
     .eq("enabled", true)
     .in("entity", entities);
-  const out = {} as FilterFieldCatalog;
+  const columns = {} as ServerFilterMetadata["columns"];
   await Promise.all(
-    entities.map(async (e) => {
+    entities.map(async (entity) => {
       const { data, error } = await db.rpc("get_entity_field_catalog", {
-        p_table: e,
+        p_table: entity,
         p_owner_id: userId,
       });
       if (error) throw new Error(error.message);
-      const catalog = ((data ?? []) as { column_name: string; data_type: string }[]).map((r) => ({
-        name: r.column_name,
-        label: r.column_name,
-        type: catalogTypeFromDataType(r.data_type),
-        ref: (REF_COLUMNS as Record<string, string | undefined>)[r.column_name],
-      }));
-      const custom = ((cps ?? []) as { entity: string; key: string; label: string }[])
-        .filter((c) => c.entity === e)
-        .map((c) => ({ key: c.key, label: c.label }));
-      out[e] = buildFilterFields(e, catalog, custom);
+      columns[entity] = data || [];
     }),
   );
-  return out;
+  return buildServerFilterFields({ columns, custom: cps || [] });
 }
 
 /**

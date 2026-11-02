@@ -1,3 +1,8 @@
+import {
+  scanSequenceSubscription,
+  setSequenceSubscription,
+} from "../../src/lib/prospecting/sequences/dynamic.server.ts";
+import { compileAudienceGroups } from "../../src/lib/whatsapp/campaign-audience-query.ts";
 import { sequenceHandoff } from "../../src/lib/prospecting/sequences/handoff.server.ts";
 import { sequenceOperations } from "../../src/lib/prospecting/sequences/operations.server.ts";
 import { processSequenceRun } from "../../src/lib/prospecting/sequences/worker.server.ts";
@@ -2470,6 +2475,326 @@ try {
     },
   );
 
+  await check(
+    "dynamic audience uses caller RLS, starts new matches once and stops with current permission",
+    async () => {
+      const makeContact = (owner, suffix) =>
+        seed("contacts", {
+          workspace_id: W,
+          owner_id: owner,
+          first_name: "Dynamic",
+          last_name: tag + "dynamic",
+          phone: "+554899110" + suffix,
+        });
+      await makeContact(actor, "4100");
+      await makeContact(accounts[1].id, "4101");
+      const def = newDefinition();
+      def.audience.entry = "dynamic";
+      def.audience.groups = [
+        {
+          logic: "and",
+          filters: [{ entity: "contacts", column: "last_name", op: "eq", value: tag + "dynamic" }],
+        },
+      ];
+      def.steps = [
+        {
+          id: crypto.randomUUID(),
+          title: "Call",
+          type: "call",
+          mode: "human",
+          assigneeId: actor,
+          scriptId: null,
+          notes: "No call",
+          attempts: 1,
+        },
+        newStep("end"),
+      ];
+      const version = await makeVersion(def),
+        input = {
+          workspaceId: W,
+          versionId: version,
+          enabled: true,
+          consentEvidence: "Synthetic future contacts only",
+        };
+      for (const i of [1, 2, 3])
+        blocked(
+          await clients[i].rpc("prospecting_sequence_subscription_set", {
+            p_workspace: W,
+            p_version: version,
+            p_enabled: true,
+            p_consent: input.consentEvidence,
+          }),
+        );
+      const id = await setSequenceSubscription(clients[0], input);
+      assert(id, "Dynamic subscription not created");
+      blocked(
+        await clients[0]
+          .from("prospecting_sequence_subscriptions")
+          .select("consent_evidence,lease_token")
+          .eq("id", id),
+      );
+      blocked(await clients[0].rpc("prospecting_sequence_subscription_claim", { p_limit: 1 }));
+      const claimPair = await Promise.all([
+        admin.rpc("prospecting_sequence_subscription_claim", { p_limit: 1 }),
+        admin.rpc("prospecting_sequence_subscription_claim", { p_limit: 1 }),
+      ]);
+      const claims = claimPair.flatMap(must).filter((s) => s.id === id);
+      assert(claims.length === 1, "Dynamic scan leased twice");
+      const candidate = must(
+        await admin.rpc("prospecting_sequence_subscription_candidates", {
+          p_subscription: id,
+          p_lease: claims[0].lease_token,
+          p_groups: compileAudienceGroups(def.audience.base, def.audience.groups),
+        }),
+      );
+      assert(candidate.matchedCount === 1, "Dynamic audience ignored caller RLS");
+      const scanned = await scanSequenceSubscription(admin, claims[0]);
+      assert(scanned.started === 1 && !scanned.error, "Dynamic match did not start");
+      const runCount = async () =>
+        must(await admin.from("prospecting_sequence_runs").select("id").eq("version_id", version))
+          .length;
+      assert((await runCount()) === 1, "Dynamic run count wrong");
+      const due = () =>
+        execFileSync(
+          "/Applications/Docker.app/Contents/Resources/bin/docker",
+          [
+            "exec",
+            "supabase_db_techerp-permissions-20261023",
+            "psql",
+            "-U",
+            "supabase_admin",
+            "-d",
+            "postgres",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-c",
+            `UPDATE public.prospecting_sequence_subscriptions SET next_scan_at=now()-interval '1 second' WHERE id='${id}'::uuid`,
+          ],
+          { stdio: "pipe" },
+        );
+      due();
+      let next = must(
+        await admin.rpc("prospecting_sequence_subscription_claim", { p_limit: 1 }),
+      )[0];
+      assert(
+        (await scanSequenceSubscription(admin, next)).started === 0 && (await runCount()) === 1,
+        "Dynamic audience enrolled same person twice",
+      );
+      await makeContact(actor, "4102");
+      due();
+      next = must(await admin.rpc("prospecting_sequence_subscription_claim", { p_limit: 1 }))[0];
+      assert(
+        (await scanSequenceSubscription(admin, next)).started === 1 && (await runCount()) === 2,
+        "New matching record did not enter",
+      );
+      const company = await seed("companies", {
+        workspace_id: W,
+        owner_id: actor,
+        name: "[ISO] Dynamic exclusion",
+      });
+      const excluded = await seed("contacts", {
+        workspace_id: W,
+        owner_id: actor,
+        company_id: company,
+        first_name: "Blocked",
+        last_name: tag + "dynamic",
+        phone: "+5548991104103",
+      });
+      const blockedDeal = await seed("deals", {
+        workspace_id: W,
+        owner_id: actor,
+        company_id: company,
+        primary_contact_id: excluded,
+        name: "[ISO] Dynamic open",
+        stage: "negotiation",
+      });
+      const cohortsBefore = must(
+        await admin.from("prospecting_sequence_cohorts").select("id").eq("version_id", version),
+      ).length;
+      due();
+      next = must(await admin.rpc("prospecting_sequence_subscription_claim", { p_limit: 1 }))[0];
+      const noEligible = await scanSequenceSubscription(admin, next);
+      assert(noEligible.started === 0 && !noEligible.error, "Blocked-only dynamic scan failed");
+      assert(
+        must(
+          await admin.from("prospecting_sequence_cohorts").select("id").eq("version_id", version),
+        ).length === cohortsBefore,
+        "Blocked-only preview left permanent duplicate snapshots",
+      );
+      const blockedStatus = must(
+        await clients[0].rpc("prospecting_sequence_subscription_status", {
+          p_workspace: W,
+          p_version: version,
+        }),
+      );
+      assert(
+        blockedStatus.reasons.open_deal === 1,
+        "Blocked dynamic reason missing after preview rollback",
+      );
+      due();
+      next = must(await admin.rpc("prospecting_sequence_subscription_claim", { p_limit: 1 }))[0];
+      await grant(roles[0], ["techsales.contacts.view.own"], "deny");
+      blocked(
+        await admin.rpc("prospecting_sequence_subscription_candidates", {
+          p_subscription: id,
+          p_lease: next.lease_token,
+          p_groups: compileAudienceGroups(def.audience.base, def.audience.groups),
+        }),
+      );
+      assert(
+        (await scanSequenceSubscription(admin, next)).error === "scan_unavailable",
+        "No source access became a successful empty audience",
+      );
+      await grant(roles[0], ["techsales.contacts.view.own"]);
+      due();
+      next = must(await admin.rpc("prospecting_sequence_subscription_claim", { p_limit: 1 }))[0];
+      assert(
+        (await scanSequenceSubscription(admin, next)).started === 0,
+        "Unchanged suppressed audience was enrolled",
+      );
+      // A closed/lost deal can make a previously blocked record eligible even when its source fields/hash are unchanged.
+      must(await admin.from("deals").update({ stage: "lost" }).eq("id", blockedDeal));
+      due();
+      next = must(await admin.rpc("prospecting_sequence_subscription_claim", { p_limit: 1 }))[0];
+      assert(
+        (await scanSequenceSubscription(admin, next)).started === 1 && (await runCount()) === 3,
+        "Unchanged source cache hid newly eligible record",
+      );
+      const ownStatus = must(
+        await clients[0].rpc("prospecting_sequence_subscription_status", {
+          p_workspace: W,
+          p_version: version,
+        }),
+      );
+      assert(ownStatus.enabled && ownStatus.matched === 3, "Own dynamic status wrong");
+      await grant(roles[1], ["system.automation.sequences.view.workspace"]);
+      const peerStatus = must(
+        await clients[1].rpc("prospecting_sequence_subscription_status", {
+          p_workspace: W,
+          p_version: version,
+        }),
+      );
+      assert(peerStatus && peerStatus.matched === null, "Another actor's audience count leaked");
+      await grant(roles[1], ["system.automation.sequences.view.workspace"], "deny");
+      due();
+      next = must(await admin.rpc("prospecting_sequence_subscription_claim", { p_limit: 1 }))[0];
+      must(
+        await clients[0].rpc("prospecting_sequence_subscription_set", {
+          p_workspace: W,
+          p_version: version,
+          p_enabled: false,
+          p_consent: "",
+        }),
+      );
+      blocked(
+        await admin.rpc("prospecting_sequence_subscription_commit", {
+          p_subscription: id,
+          p_lease: next.lease_token,
+          p_fingerprint: "a".repeat(64),
+          p_matched: 0,
+          p_candidates: [],
+        }),
+      );
+      assert((await runCount()) === 3, "Stopping entry changed existing runs");
+      await setSequenceSubscription(clients[0], input);
+      await grant(roles[0], ["system.automation.sequences.manage.own"], "deny");
+      assert(
+        !must(await admin.rpc("prospecting_sequence_subscription_claim", { p_limit: 1 })).some(
+          (s) => s.id === id,
+        ),
+        "Revoked actor still scanned audience",
+      );
+      await grant(roles[0], ["system.automation.sequences.manage.own"]);
+      const stopped = must(
+        await clients[0].rpc("prospecting_sequence_subscription_status", {
+          p_workspace: W,
+          p_version: version,
+        }),
+      );
+      assert(
+        !stopped.enabled && stopped.errorCode === "authorization_unavailable",
+        "Revocation was not reflected in status",
+      );
+    },
+  );
+
+  await check(
+    "dynamic audience rejects 5001 matches without a partial enrollment and pauses with a clear limit",
+    async () => {
+      const rows = Array.from({ length: 5001 }, (_, i) => ({
+        id: crypto.randomUUID(),
+        workspace_id: W,
+        owner_id: actor,
+        first_name: "Limit " + i,
+        last_name: tag + "dynamic_limit",
+      }));
+      for (let offset = 0; offset < rows.length; offset += 500) {
+        const chunk = rows.slice(offset, offset + 500);
+        must(await admin.from("contacts").insert(chunk));
+        chunk.forEach((r) => fixtures.push(["contacts", r.id]));
+      }
+      const def = newDefinition();
+      def.audience.entry = "dynamic";
+      def.audience.groups = [
+        {
+          logic: "and",
+          filters: [
+            { entity: "contacts", column: "last_name", op: "eq", value: tag + "dynamic_limit" },
+          ],
+        },
+      ];
+      def.steps = [
+        {
+          id: crypto.randomUUID(),
+          title: "Call",
+          type: "call",
+          mode: "human",
+          assigneeId: actor,
+          scriptId: null,
+          notes: "Never called",
+          attempts: 1,
+        },
+        newStep("end"),
+      ];
+      const version = await makeVersion(def);
+      const id = await setSequenceSubscription(clients[0], {
+        workspaceId: W,
+        versionId: version,
+        enabled: true,
+        consentEvidence: "Synthetic limit rejection only",
+      });
+      const claim = must(
+        await admin.rpc("prospecting_sequence_subscription_claim", { p_limit: 1 }),
+      ).find((s) => s.id === id);
+      assert(claim, "Limit subscription not claimed");
+      assert(
+        (await scanSequenceSubscription(admin, claim)).error === "scan_unavailable",
+        "Oversized audience was accepted",
+      );
+      assert(
+        must(await admin.from("prospecting_sequence_runs").select("id").eq("version_id", version))
+          .length === 0,
+        "Partial oversized audience started",
+      );
+      assert(
+        must(
+          await admin.from("prospecting_sequence_cohorts").select("id").eq("version_id", version),
+        ).length === 0,
+        "Oversized audience left a snapshot",
+      );
+      const status = must(
+        await clients[0].rpc("prospecting_sequence_subscription_status", {
+          p_workspace: W,
+          p_version: version,
+        }),
+      );
+      assert(
+        !status.enabled && status.errorCode === "audience_limit",
+        "Oversized audience did not pause with a clear reason",
+      );
+    },
+  );
+
   await check("only a certified unstarted effect can be retried with a fresh nonce", async () => {
     const mailbox = await seed("email_accounts", {
       workspace_id: W,
@@ -2613,6 +2938,10 @@ try {
     must(await admin.from("prospecting_sequence_cohort_people").delete().in("cohort_id", cohorts));
     must(await admin.from("prospecting_sequence_cohorts").delete().in("id", cohorts));
   }
+  if (versionIds.length)
+    must(
+      await admin.from("prospecting_sequence_subscriptions").delete().in("version_id", versionIds),
+    );
   if (versionIds.length)
     must(await admin.from("prospecting_sequence_versions").delete().in("id", versionIds));
   if (bindingAccounts.length)

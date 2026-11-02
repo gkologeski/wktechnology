@@ -71,3 +71,13 @@ it("template validation does not silently accept missing media or URL parameters
   };
   expect(inspectSequenceTemplate("s", buttons, {})[0].code).toBe("template_button_parameters");
 });
+
+it("agent handoff requires a prior communication channel instead of inventing one", () => {
+  const d = newDefinition();
+  d.settings.agentId = crypto.randomUUID();
+  d.steps = [
+    { ...newStep("agent"), type: "agent", agentId: d.settings.agentId, objective: "Atender" },
+    newStep("end"),
+  ];
+  expect(inspectSequence(d).some((i) => i.code === "agent_missing_channel")).toBe(true);
+});

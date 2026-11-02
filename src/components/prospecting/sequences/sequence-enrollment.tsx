@@ -44,6 +44,7 @@ export function SequenceEnrollment({
     queryKey: ["sequence-cohorts", workspaceId, versionId],
     enabled: !!versionId && !permissions.isLoading && !permissions.isError,
     queryFn: () => list({ data: { workspaceId, versionId: versionId! } }),
+    refetchInterval: 30000,
   });
   const reserve = async () => {
     if (!canAssign || !versionId || busy || disabled || consent.trim().length < 10) return;
@@ -69,15 +70,23 @@ export function SequenceEnrollment({
     }
   };
   const summary =
-    history.data?.find((c) => c.id === cohortSelected) ||
-    (last?.version_id === versionId ? last : history.data?.[0]);
+    permissions.isLoading ||
+    permissions.isError ||
+    permissions.workspaceId !== workspaceId ||
+    history.isError
+      ? null
+      : history.data
+        ? history.data.find((c) => c.id === cohortSelected) || history.data[0]
+        : history.isPending && last?.version_id === versionId
+          ? last
+          : null;
   return (
     <section className="space-y-3 border-t pt-4" aria-label="Inscrição do público">
       <h3 className="text-sm font-semibold">Inscrição do público em uma versão</h3>
       <p className="text-xs text-muted-foreground">
         Gera uma fotografia dos filtros salvos na versão, com exclusões, descadastros e
         duplicidades. As pessoas ficam reservadas e sem execução. Entrada automática por novos
-        registros será habilitada no próximo lote.
+        registros pode ser ativada separadamente nas versões configuradas para entrada dinâmica.
       </p>
       <label className="block space-y-1 text-xs">
         Versão para inscrição
@@ -202,6 +211,7 @@ export function SequenceEnrollment({
           held={summary?.held || 0}
           disabled={
             disabled ||
+            busy ||
             permissions.isLoading ||
             permissions.isError ||
             permissions.workspaceId !== workspaceId

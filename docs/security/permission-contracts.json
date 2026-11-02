@@ -2147,7 +2147,7 @@
         "src/components/whatsapp/campaign-assignment-section.tsx": "784136197ffd47a38eb41b6e026918e5a74cbce2f409feb13cb41a647a0380e4",
         "src/lib/whatsapp/campaign-assignment.server.ts": "f75a7485b12b320af56635b016a47ffefafd1c85b7cec5718dc71b59c4ce77df",
         "src/lib/whatsapp/campaign-assignment.ts": "3dc79264158d836b33f4325a096794071cf2ba45bb0f50fead681412ad8fb51b",
-        "src/lib/whatsapp/campaign-audience.server.ts": "0ac2b3b7fbb201afe808eb9d729bb6f41a49296b109b287e5fbf526a4d9ed6a0",
+        "src/lib/whatsapp/campaign-audience.server.ts": "2f5dfb81caf948c00427db853ca1cea4f2ba8a00adc1a94a45b7204114eedc12",
         "src/lib/whatsapp/campaign-audience-query.ts": "bb5dd8b9faa846eae0b6b72e28ed07b80110e9f23c84ca79ff3d62f8a55937f6",
         "drizzle/migrations/0287_wa_campaign_audience_ids.sql": "10b88936a1dc30f8b95d9cb2a228bb5b88ca21ace204fd80fc0ea3121166c54a",
         "drizzle/migrations/0288_wa_campaign_audience_ids_array.sql": "11ee5282e7d64a30bd16f340a6566076a3d3cefc555fcd01d6732c49ba81ae93",
@@ -5469,7 +5469,7 @@
       "kind": "business",
       "files": {
         "src/components/prospecting/sequences/sequences-page.tsx": "0c85828b95549d369c7e6d6f801b8a87599b6f8f5f0dfae446edfa6814bf4889",
-        "src/lib/prospecting/sequences/draft.ts": "0d9a9df60ba9c2f035cb65160bb6c37e1e1027f0750804dbc5beac325c1db66c",
+        "src/lib/prospecting/sequences/draft.ts": "00fc36c0abd90ac08c230c807c65411f5617aa428c9d12ccf804a47a929c0f60",
         "src/lib/prospecting/sequences/drafts.server.ts": "55429e0f960f7eeaf85c9305af088c03bc04f3e8140e95a3ec87c0f3f23faae1",
         "src/routes/_authenticated/prospecting.sequences.tsx": "8baa9510472ca9e2aa65e8f2be1407de24f500cf3f4da51f850b0d30af0a22cf",
         "drizzle/migrations/0292_prospecting_sequence_drafts.sql": "6a7b0c212a5f254186442aad6a5ae1bdab3c134948d30919548e3c801b5982c1"
@@ -5559,7 +5559,7 @@
       "kind": "business",
       "files": {
         "src/lib/prospecting/sequences/drafts.functions.ts": "1da68aefd8b8ad3e103e7861513471d2424a0e1dde75c046a39e7d3397c9c0fa",
-        "src/lib/prospecting/sequences/preflight.ts": "dd77c0ff433dc182aac579525918166dda01d1db64b7696fc6f4b59982c3a907",
+        "src/lib/prospecting/sequences/preflight.ts": "b31f4fbab952793ebd496d9328bb470cfbd9c5ff9808bd8acf479a7224bcf85d",
         "src/lib/prospecting/sequences/releases.server.ts": "ce2461ac2e3339bd5104e67a706fd316fee9029bac6b83cb5c7a11c3b7cd59fa",
         "src/components/prospecting/sequences/sequence-readiness.tsx": "e2ad721054d3d82d7e2aaba7cefaa4459b8496d85f7418da09e13c9fcb25e3ff",
         "src/components/prospecting/sequences/sequence-template-picker.tsx": "427ec2f8233bd1bd4a5b9cdb4cf64c1d85178bfe523a99b9dd40e9fff244d0e8",
@@ -5664,7 +5664,7 @@
         "src/lib/prospecting/sequences/enrollment.ts": "89156033e6734c8a301c3f51fba883111483d0e61251f05d56ae64a814c51451",
         "src/lib/prospecting/sequences/enrollment.server.ts": "72e3406fad3a0fdbabe250ac2d18cde4c1e1acadd27133c73952945031cb6f35",
         "src/lib/prospecting/sequences/enrollment.functions.ts": "8f96039c4231563ddaaab705ffeaf8d9df288b2644e116e50bbfb393bec4c422",
-        "src/components/prospecting/sequences/sequence-enrollment.tsx": "754a962daa20c87e621f9bb53a103c8bddb685e205adf964ca10cb118f09c0e9",
+        "src/components/prospecting/sequences/sequence-enrollment.tsx": "99d123bac078b0119b20af1c3ef3321c6a13e2679d580c424dc03c49d59a46d3",
         "drizzle/migrations/0294_prospecting_sequence_cohorts.sql": "721727135c04e4aa006f76491142764c0da8a3a33ecfcb98697a844063bb966e"
       },
       "resources": [
@@ -6104,8 +6104,8 @@
       "files": {
         "drizzle/migrations/0298_prospecting_sequence_operator_access.sql": "f29e0d81dd8692d82de9d4e0298e2365ddb4d459a84db206d7a2d72292ddc167",
         "src/lib/prospecting/sequences/operations.functions.ts": "f91fe4a1df573d06835a2d2f3add382416c81bff04ab1fa33d885d2c4351dfeb",
-        "src/lib/prospecting/sequences/operations.server.ts": "9a4c152770597e1155b094e00184a53606eae23fb876ca66c1639c92ca65e6bf",
-        "src/components/prospecting/sequences/sequence-operations.tsx": "0c8acfebc70c391c83403dfbe2d27b92112d13ab4678855910f59fa9557cea4c"
+        "src/lib/prospecting/sequences/operations.server.ts": "5af66c30a0c0717da72737ad5a718e685fc3333b327f1f99ed04f79328c521fe",
+        "src/components/prospecting/sequences/sequence-operations.tsx": "92a00ed99e0b0ea11f792eb071eabecc37407c3849ed34c6e05144b4e169f2b6"
       },
       "resources": [
         "system.automation.sequences",
@@ -6377,6 +6377,120 @@
         "inactive_member": {
           "file": "src/lib/prospecting/sequences/operations.server.test.ts",
           "name": "operations rejects inactive_member before mutation"
+        }
+      }
+    },
+    {
+      "id": "prospecting-sequence-dynamic-audience",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0301_prospecting_sequence_dynamic_audience.sql": "994f4efafcfa9dfea55a77cc7a0200b84c425b84b66ae0dc12c85bc1d6f3a9d4",
+        "src/lib/prospecting/sequences/dynamic.server.ts": "8d1cc130804e7fae0e6bdb303383c995929b067e1fbd7cfdfc975072ce6114b9",
+        "src/lib/prospecting/sequences/dynamic.functions.ts": "f5667a22b04e0c3243b770f75510681e429927fd245960a180c1acad867d2f0f",
+        "src/components/prospecting/sequences/sequence-dynamic.tsx": "59d0ceb5d5a51d6e8cae629ad48fcd39590badda86030a4a348a38e57af64160"
+      },
+      "resources": [
+        "system.automation.sequences",
+        "techsales.activities",
+        "techsales.inbox.email",
+        "techsales.inbox.whatsapp",
+        "techsales.contacts",
+        "techsales.leads"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "assign",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.sequences.view.own",
+        "system.automation.sequences.view.team",
+        "system.automation.sequences.view.workspace",
+        "system.automation.sequences.manage.own",
+        "system.automation.sequences.manage.team",
+        "system.automation.sequences.manage.workspace",
+        "system.automation.sequences.assign.own",
+        "system.automation.sequences.assign.team",
+        "system.automation.sequences.assign.workspace",
+        "techsales.activities.view.own",
+        "techsales.activities.update.own",
+        "techsales.inbox.email.create.own",
+        "techsales.inbox.whatsapp.create.own",
+        "techsales.contacts.view.own",
+        "techsales.leads.view.own"
+      ],
+      "rationale": "Dynamic entry is an explicit subscription to a frozen version, with current active executor, version owner scopes, contact authorization and live activation preflight. The NOBYPASSRLS subject reader uses the exact WhatsApp audience SQL/compiler and protected source projection; denied base access is an error, not zero. Service lease revalidation and common cohort writer atomically snapshot/start eligible recipients once; fully blocked previews roll back rather than accumulating duplicate snapshots. Missing permissions disable future scans. Column grants exclude consent, nonce and historical audience counts; status RPC reveals counts only to their execution actor or an active workspace administrator. Current RLS and bounded 5000 audience cap remain mandatory. No cron or provider calls are authorized by this isolated infrastructure alone. Metadata-only column grant permits the subject reader to reuse the shared native/custom filter validator; no custom field values are granted by that addition. All candidate eligibility is rechecked on each scan, without a stale timestamp cache.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0301_prospecting_sequence_dynamic_audience.sql",
+          "symbol": "prospecting_sequence_subscription_set"
+        },
+        {
+          "file": "drizzle/migrations/0301_prospecting_sequence_dynamic_audience.sql",
+          "symbol": "prospecting_sequence_subscription_candidates"
+        },
+        {
+          "file": "drizzle/migrations/0301_prospecting_sequence_dynamic_audience.sql",
+          "symbol": "prospecting_sequence_subscription_commit"
+        },
+        {
+          "file": "drizzle/migrations/0301_prospecting_sequence_dynamic_audience.sql",
+          "symbol": "prospecting_sequence_subscription_status"
+        },
+        {
+          "file": "drizzle/migrations/0301_prospecting_sequence_dynamic_audience.sql",
+          "symbol": "techerp_api.sequence_dynamic_ids"
+        },
+        {
+          "file": "drizzle/migrations/0301_prospecting_sequence_dynamic_audience.sql",
+          "symbol": "prospecting_sequence_subscription_catalog"
+        },
+        {
+          "file": "drizzle/migrations/0301_prospecting_sequence_dynamic_audience.sql",
+          "symbol": "techerp_api.sequence_dynamic_catalog"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/dynamic.test.ts",
+          "name": "dynamic activation uses current caller and frozen version preflight"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/dynamic.test.ts",
+          "name": "dynamic activation rejects missing permission before reads"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/dynamic.test.ts",
+          "name": "dynamic activation preserves explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/dynamic.test.ts",
+          "name": "dynamic activation refuses foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/dynamic.test.ts",
+          "name": "dynamic activation refuses inactive membership"
         }
       }
     }

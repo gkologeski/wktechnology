@@ -274,3 +274,20 @@ export const operationInput = z
     ]),
   })
   .strict();
+
+export const subscriptionInput = z
+  .object({
+    workspaceId: z.string().uuid(),
+    versionId: z.string().uuid(),
+    enabled: z.boolean(),
+    consentEvidence: z.string().trim().max(2000).default(""),
+  })
+  .strict()
+  .superRefine((data, ctx) => {
+    if (data.enabled && data.consentEvidence.length < 10)
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["consentEvidence"],
+        message: "Registre a autorização para os contatos futuros (mínimo de 10 caracteres).",
+      });
+  });

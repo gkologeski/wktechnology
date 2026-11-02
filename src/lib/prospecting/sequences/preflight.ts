@@ -32,6 +32,15 @@ export function inspectSequence(definition: SequenceDefinition): SequenceIssue[]
       if (!s.templateName.trim() || !s.language.trim())
         add(s.id, "template_missing", "Escolha um modelo aprovado e seu idioma.");
     }
+    if (
+      s.type === "agent" &&
+      !definition.steps.slice(0, i).some((p) => p.type === "email" || p.type === "whatsapp")
+    )
+      add(
+        s.id,
+        "agent_missing_channel",
+        "Inclua um e-mail ou WhatsApp antes de encaminhar ao agente, para definir a conversa e o canal.",
+      );
     if (s.type === "wait") {
       if (
         s.source === "previous" &&

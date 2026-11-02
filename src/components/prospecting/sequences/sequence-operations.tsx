@@ -1,3 +1,4 @@
+import { SequenceDynamic } from "./sequence-dynamic";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -150,6 +151,15 @@ export function SequenceOperations({
                 </Button>
               )}
             </div>
+          )}
+          {query.data.dynamic.available && (
+            <SequenceDynamic
+              workspaceId={workspaceId}
+              versionId={versionId}
+              status={query.data.dynamic.status}
+              canActivate={query.data.dynamic.canActivate}
+              canPause={query.data.dynamic.canPause}
+            />
           )}
           {query.data.selectedCohortCancelled && (
             <p className="text-xs">

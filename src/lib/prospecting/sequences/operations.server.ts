@@ -1,3 +1,4 @@
+import type { DynamicSubscriptionStatus } from "./dynamic.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { assertSalesArea } from "@/lib/access-control/sales-core.server";
@@ -38,15 +39,23 @@ export async function sequenceOperations(
   input: z.infer<typeof operationsInput>,
 ) {
   const data = operationsInput.parse(input);
-  await scope(client, data.workspaceId, "view");
+  const ctx = await scope(client, data.workspaceId, "view");
   const version = await client
     .from("prospecting_sequence_versions" as never)
-    .select("id,owner_id")
+    .select("id,owner_id,entry:definition->audience->>entry")
     .eq("id", data.versionId)
     .eq("workspace_id", data.workspaceId)
     .maybeSingle();
   if (version.error || !version.data) throw new Error("Versão indisponível.");
   const owner = (version.data as { owner_id: string }).owner_id;
+  const hasDynamic = (version.data as { entry?: string }).entry === "dynamic";
+  const subscription = hasDynamic
+    ? await workRpc<DynamicSubscriptionStatus | null>(
+        client,
+        "prospecting_sequence_subscription_status",
+        { p_workspace: data.workspaceId, p_version: data.versionId },
+      )
+    : null;
   const result = await client
     .from("prospecting_sequence_runs" as never)
     .select("id,owner_id,cohort_person_id,state,cursor,next_run_at,reason,updated_at", {
@@ -127,6 +136,8 @@ export async function sequenceOperations(
     p_owners: [
       ...new Set([
         owner,
+        ctx.actor,
+        ...(subscription ? [subscription.ownerId] : []),
         ...runs.map((r) => r.owner_id),
         ...(activities.data || [])
           .map((a) => a.assigned_to || a.owner_id)
@@ -179,7 +190,25 @@ export async function sequenceOperations(
     rows,
     total: result.count,
     page: data.page,
-    canStart: !!caps.owners[owner]?.manage && !!caps.owners[owner]?.assign,
+    canStart:
+      !!caps.owners[owner]?.manage &&
+      !!caps.owners[owner]?.assign &&
+      !!caps.owners[ctx.actor]?.manage &&
+      !!caps.owners[ctx.actor]?.assign,
+    dynamic: {
+      available: hasDynamic,
+      status: subscription,
+      canActivate:
+        !!caps.owners[owner]?.manage &&
+        !!caps.owners[owner]?.assign &&
+        !!caps.owners[ctx.actor]?.manage &&
+        !!caps.owners[ctx.actor]?.assign &&
+        (!subscription || !!caps.owners[subscription.ownerId]?.manage),
+      canPause:
+        !!subscription &&
+        !!caps.owners[owner]?.manage &&
+        !!caps.owners[subscription.ownerId]?.manage,
+    },
     readOnly: caps.readOnly,
     canDiscard: !!caps.owners[owner]?.manage,
     selectedCohortCancelled: !!control.data,

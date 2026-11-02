@@ -217,3 +217,26 @@ Tarefas e handoff usam `techsales.tasks`; chamadas humanas usam
 `techsales.activities`. As três chaves de atribuição de tarefas entram no
 catálogo sem concessão automática. Atribuir outro responsável exige essa ação
 antes da reserva, além de criação e vínculo ativo no workspace.
+
+## Entrada dinâmica
+
+A migração 0301 adiciona uma assinatura explícita por versão imutável. A ativação
+registra o responsável e a autorização para contatos futuros; pausar a entrada
+não cancela execuções já inscritas. Novos candidatos são reavaliados em ciclos
+de 15 minutos, com limite de 5.000 correspondências e leases exclusivos.
+
+O catálogo, a normalização, os operadores e o compilador de filtros são os
+mesmos das campanhas WhatsApp. A leitura ocorre com o sujeito ativo, sem
+BYPASSRLS, incluindo a projeção protegida dos campos. Campos personalizados
+precisam continuar ativos. Perder acesso à base gera erro, nunca público vazio.
+
+A inscrição e o início são uma transação única. O mesmo registro não reentra na
+mesma versão. Candidatos bloqueados são reavaliados mesmo se o contato não
+mudou: opt-in, negócio fechado/perdido e mudanças de vínculo podem alterar a
+eligibilidade. Prévia totalmente bloqueada é revertida, sem acumular cópias de
+snapshots sem execução. Público acima do limite pausa sem iniciar lote parcial.
+
+Consentimento, leases e fingerprints não são consultáveis pelo navegador.
+Contagens históricas exigem o próprio responsável ou administrador ativo; sem
+verificação concluída, os números são desconhecidos, não zero. O tick ainda
+precisa ser conectado ao cron na etapa final; este lote não ativa produção.
