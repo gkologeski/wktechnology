@@ -45,6 +45,10 @@ const W = "aaaaaaaa-0000-4000-8000-00000000000a",
   O = "10000000-0000-4000-8000-000000000001";
 const roles = ["30000000-0000-4000-8000-0000000000a8", "30000000-0000-4000-8000-0000000000a9"];
 const keys = [
+  "techsales.tasks.view.own",
+  "techsales.tasks.update.own",
+  "techsales.tasks.create.own",
+  "techsales.tasks.assign.own",
   "techsales.activities.view.own",
   "techsales.activities.update.own",
   "system.channels.view.workspace",
@@ -736,6 +740,10 @@ try {
       "Operator view/current capabilities failed",
     );
     assert(!JSON.stringify(operations).includes("lease_token"), "Lease token leaked to UI");
+    assert(
+      operations.rows[0].person?.label.includes("Runtime"),
+      "Current visible person was not linked in the operator panel",
+    );
     blocked(
       await clients[3].rpc("prospecting_sequence_capabilities", {
         p_workspace: W,
@@ -1144,6 +1152,12 @@ try {
       new Date("2026-11-02T13:00:00Z"),
     );
     assert(out.status === "blocked" && !called, "Lost version scope still executed");
+    blocked(
+      await clients[1].rpc("prospecting_sequence_discard_cohort", {
+        p_workspace: W,
+        p_cohort: cohort.id,
+      }),
+    );
   });
 
   await check(
@@ -1463,6 +1477,9 @@ try {
       await grant(roles[0], [
         "techsales.inbox.email.update.own",
         "techsales.activities.create.own",
+        "techsales.tasks.create.own",
+        "techsales.tasks.view.own",
+        "techsales.tasks.update.own",
       ]);
       must(
         await admin.rpc("prospecting_sequence_handoff", {
@@ -1492,6 +1509,22 @@ try {
       );
       assert(humanTask.related_contact_id === contact, "Human task lost customer association");
       fixtures.push(["activities", run.id], ["notifications", run.id]);
+      must(await admin.rpc("prospecting_sequence_release_identities", { p_limit: 500 }));
+      assert(
+        must(
+          await admin.from("prospecting_sequence_runs").select("state").eq("id", run.id).single(),
+        ).state === "human",
+        "Pending human service was released early",
+      );
+      must(await clients[0].from("activities").update({ completed: true }).eq("id", run.id));
+      must(await admin.rpc("prospecting_sequence_release_identities", { p_limit: 500 }));
+      assert(
+        must(
+          await admin.from("prospecting_sequence_runs").select("state").eq("id", run.id).single(),
+        ).state === "completed",
+        "Completed human service did not close cadence",
+      );
+
       must(
         await admin.from("email_unsubscribes").update({ reason: "user_requested" }).eq("id", token),
       );
@@ -1714,6 +1747,25 @@ try {
       "Agent was not bound to conversation",
     );
     fixtures.push(["sdr_enrollments", associated.sdr_enrollment_id]);
+    must(await admin.rpc("prospecting_sequence_release_identities", { p_limit: 500 }));
+    assert(
+      must(await admin.from("prospecting_sequence_runs").select("state").eq("id", run.id).single())
+        .state === "agent",
+      "Active agent service was released early",
+    );
+    must(
+      await admin
+        .from("sdr_enrollments")
+        .update({ status: "paused", cancel_reason: "post_close" })
+        .eq("id", associated.sdr_enrollment_id),
+    );
+    must(await admin.rpc("prospecting_sequence_release_identities", { p_limit: 500 }));
+    assert(
+      must(await admin.from("prospecting_sequence_runs").select("state").eq("id", run.id).single())
+        .state === "completed",
+      "Closed selected agent service did not close cadence",
+    );
+
     assert(
       must(
         await admin
@@ -1873,6 +1925,23 @@ try {
         `UPDATE public.prospecting_sequence_runs SET lease_until=now()-interval '1 second' WHERE id='${runs[0].id}'::uuid`,
       ],
       { stdio: "pipe" },
+    );
+    must(
+      await clients[0].rpc("prospecting_sequence_control", {
+        p_workspace: W,
+        p_run: runs[0].id,
+        p_action: "cancel",
+      }),
+    );
+    must(await admin.rpc("prospecting_sequence_release_identities", { p_limit: 500 }));
+    assert(
+      must(
+        await admin
+          .from("prospecting_sequence_identity_releases")
+          .select("person_id")
+          .eq("person_id", runs[0].cohort_person_id),
+      ).length === 0,
+      "Cancellation released unresolved delivery identity",
     );
     const anotherVersion = await makeVersion(def);
     const guarded = await prepareSequenceEnrollment(
@@ -2084,6 +2153,320 @@ try {
         saved.cursor === 1 && new Date(saved.next_run_at).getTime() - entered === 172_800_000,
         "Two 24-hour waits collapsed into 24 hours",
       );
+    },
+  );
+
+  await check(
+    "sequence tasks use task permissions and wait for their real completion",
+    async () => {
+      await seed("contacts", {
+        workspace_id: W,
+        owner_id: actor,
+        first_name: "Task",
+        last_name: tag + "task",
+        phone: "+5548991104098",
+      });
+      const def = newDefinition();
+      def.audience.groups = [
+        {
+          logic: "and",
+          filters: [{ entity: "contacts", column: "last_name", op: "eq", value: tag + "task" }],
+        },
+      ];
+      const task = {
+        id: crypto.randomUUID(),
+        title: "Follow-up",
+        type: "task",
+        assigneeId: actor,
+        notes: "Isolated only",
+        dueDays: 1,
+      };
+      def.steps = [
+        task,
+        {
+          id: crypto.randomUUID(),
+          title: "Call",
+          type: "call",
+          mode: "human",
+          assigneeId: actor,
+          scriptId: null,
+          notes: "No call",
+          attempts: 1,
+        },
+        newStep("end"),
+      ];
+      const version = await makeVersion(def);
+      const cohort = await prepareSequenceEnrollment(
+        clients[0],
+        {
+          workspaceId: W,
+          versionId: version,
+          requestId: crypto.randomUUID(),
+          consentEvidence: "Synthetic task only",
+        },
+        admin,
+      );
+      must(
+        await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: cohort.id }),
+      );
+      const run = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+        (r) => r.version_id === version,
+      );
+      assert(run, "Task run not claimable");
+      const args = { p_run: run.id, p_lease: run.lease_token, p_step: task.id };
+      await grant(roles[0], ["techsales.tasks.create.own"], "deny");
+      blocked(await admin.rpc("prospecting_sequence_effect_begin", args));
+      await grant(roles[0], [
+        "techsales.tasks.create.own",
+        "techsales.tasks.view.own",
+        "techsales.tasks.update.own",
+      ]);
+      const effect = must(await admin.rpc("prospecting_sequence_effect_begin", args));
+      const activity = must(
+        await admin.rpc("prospecting_sequence_task_effect", {
+          p_effect: effect.id,
+          p_token: effect.token,
+          p_lease: run.lease_token,
+        }),
+      );
+      fixtures.push(["activities", activity]);
+      assert(
+        must(
+          await admin.from("prospecting_sequence_runs").select("state").eq("id", run.id).single(),
+        ).state === "waiting_task",
+        "Task did not hold cadence",
+      );
+      must(
+        await clients[0]
+          .from("activities")
+          .update({ completed: true })
+          .eq("id", activity)
+          .select("id,completed")
+          .single(),
+      );
+      must(await admin.rpc("prospecting_sequence_wake_tasks", { p_limit: 100 }));
+      assert(
+        must(
+          await admin.from("prospecting_sequence_runs").select("state").eq("id", run.id).single(),
+        ).state === "active",
+        "Real task completion did not wake cadence",
+      );
+
+      // Assignment is checked before reserving a task effect, using the task catalog action.
+      def.steps[0].assigneeId = accounts[1].id;
+      def.audience.excludeOtherSequences = false;
+      const assignedVersion = await makeVersion(def);
+      const assignedCohort = await prepareSequenceEnrollment(
+        clients[0],
+        {
+          workspaceId: W,
+          versionId: assignedVersion,
+          requestId: crypto.randomUUID(),
+          consentEvidence: "Synthetic assignment scope",
+        },
+        admin,
+      );
+      must(
+        await clients[0].rpc("prospecting_sequence_start", {
+          p_workspace: W,
+          p_cohort: assignedCohort.id,
+        }),
+      );
+      const assignedRun = must(
+        await admin.rpc("prospecting_sequence_claim", { p_limit: 100 }),
+      ).find((r) => r.version_id === assignedVersion);
+      assert(assignedRun, "Assigned task not claimable");
+      const assignedArgs = {
+        p_run: assignedRun.id,
+        p_lease: assignedRun.lease_token,
+        p_step: task.id,
+      };
+      blocked(await admin.rpc("prospecting_sequence_effect_begin", assignedArgs));
+      assert(
+        must(
+          await admin
+            .from("prospecting_sequence_effects")
+            .select("id")
+            .eq("run_id", assignedRun.id),
+        ).length === 0,
+        "Denied assignment reserved an effect",
+      );
+      await grant(roles[0], ["techsales.tasks.assign.own"]);
+      assert(
+        must(await admin.rpc("prospecting_sequence_effect_begin", assignedArgs)).id,
+        "Authorized task assignment did not reserve",
+      );
+    },
+  );
+
+  await check(
+    "discard releases only safe identities and permanently prevents a cancelled snapshot starting",
+    async () => {
+      const contact = await seed("contacts", {
+        workspace_id: W,
+        owner_id: actor,
+        first_name: "Release",
+        last_name: tag + "release",
+        email: tag + "release@example.test",
+      });
+      const def = structuredClone(definition);
+      def.audience.groups[0].filters[0].value = tag + "release";
+      const prepare = async (v) =>
+        prepareSequenceEnrollment(
+          clients[0],
+          {
+            workspaceId: W,
+            versionId: v,
+            requestId: crypto.randomUUID(),
+            consentEvidence: "Synthetic lifecycle only",
+          },
+          admin,
+        );
+      const v = await makeVersion(def),
+        c = await prepare(v);
+      assert(c.held === 1, "Initial reserve failed");
+      const blockedVersion = await makeVersion(def);
+      assert(
+        (await prepare(blockedVersion)).reasons.other_sequence === 1,
+        "Live reserve did not exclude another sequence",
+      );
+      for (const i of [1, 2, 3])
+        blocked(
+          await clients[i].rpc("prospecting_sequence_discard_cohort", {
+            p_workspace: W,
+            p_cohort: c.id,
+          }),
+        );
+      await grant(roles[0], ["system.automation.sequences.manage.own"], "deny");
+      blocked(
+        await clients[0].rpc("prospecting_sequence_discard_cohort", {
+          p_workspace: W,
+          p_cohort: c.id,
+        }),
+      );
+      await grant(roles[0], ["system.automation.sequences.manage.own"]);
+      must(
+        await clients[0].rpc("prospecting_sequence_discard_cohort", {
+          p_workspace: W,
+          p_cohort: c.id,
+        }),
+      );
+      blocked(
+        await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: c.id }),
+      );
+      const next = await makeVersion(def);
+      assert(
+        (await prepare(next)).held === 1,
+        "Safe cancelled reservation still blocked another version",
+      );
+      assert(
+        (await prepare(v)).reasons.duplicate === 1,
+        "Same-version dedup was lost by cancellation",
+      );
+    },
+  );
+  await check(
+    "fresh open deals and customers stop outreach before any provider or task",
+    async () => {
+      const company = await seed("companies", {
+        workspace_id: W,
+        owner_id: actor,
+        name: "[ISO] Fresh commercial",
+      });
+      const contact = await seed("contacts", {
+        workspace_id: W,
+        owner_id: actor,
+        company_id: company,
+        first_name: "Fresh",
+        last_name: tag + "fresh",
+        phone: "+5548991104099",
+      });
+      const def = newDefinition();
+      def.audience.groups = [
+        {
+          logic: "and",
+          filters: [{ entity: "contacts", column: "last_name", op: "eq", value: tag + "fresh" }],
+        },
+      ];
+      def.steps = [
+        {
+          id: crypto.randomUUID(),
+          title: "Call",
+          type: "call",
+          mode: "human",
+          assigneeId: actor,
+          scriptId: null,
+          notes: "No call",
+          attempts: 1,
+        },
+        newStep("end"),
+      ];
+      const version = await makeVersion(def);
+      const cohort = await prepareSequenceEnrollment(
+        clients[0],
+        {
+          workspaceId: W,
+          versionId: version,
+          requestId: crypto.randomUUID(),
+          consentEvidence: "Synthetic updated business state",
+        },
+        admin,
+      );
+      assert(cohort.held === 1, "Fresh initial recipient blocked");
+      must(
+        await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: cohort.id }),
+      );
+      const deal = await seed("deals", {
+        workspace_id: W,
+        owner_id: actor,
+        name: "[ISO] New deal",
+        company_id: company,
+        primary_contact_id: contact,
+        stage: "negotiation",
+      });
+      let called = false;
+      const ports = {
+        prepare: async () => {
+          called = true;
+          throw Error("Must not prepare");
+        },
+        handoff: async () => {
+          called = true;
+        },
+      };
+      for (const [stage, reason] of [
+        ["negotiation", "open_deal"],
+        ["won", "customer"],
+      ]) {
+        must(await admin.from("deals").update({ stage }).eq("id", deal));
+        const run = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+          (r) => r.version_id === version,
+        );
+        assert(run, "Business run not claimable");
+        assert(
+          (await processSequenceRun(admin, run, ports, new Date())).status === "stop",
+          "Business change did not stop execution",
+        );
+        const saved = must(
+          await admin
+            .from("prospecting_sequence_runs")
+            .select("state,reason")
+            .eq("id", run.id)
+            .single(),
+        );
+        assert(
+          saved.state === "blocked" && saved.reason === reason && !called,
+          "Commercial exclusion did not protect outreach",
+        );
+        if (stage === "negotiation")
+          must(
+            await clients[0].rpc("prospecting_sequence_control", {
+              p_workspace: W,
+              p_run: run.id,
+              p_action: "retry",
+            }),
+          );
+      }
     },
   );
 

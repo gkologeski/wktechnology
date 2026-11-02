@@ -198,6 +198,9 @@ export async function tickProspectingSequences(
   budgetMs = 20_000,
 ) {
   const started = Date.now();
+  const released = await workRpc<number>(admin, "prospecting_sequence_release_identities", {
+    p_limit: 500,
+  });
   const repair = await workRpc<{ fixed: number; failed: number }>(
     admin,
     "prospecting_sequence_projection_repair",
@@ -235,6 +238,7 @@ export async function tickProspectingSequences(
     processed: results.length,
     deferredByBudget: runs.length - index,
     repaired: repair,
+    released,
     awakened,
     replied,
     results,

@@ -196,3 +196,24 @@ envia mensagem de IA artificial para simular uma resposta recebida.
 O aceite isolado usa JWTs reais e mensagens sintéticas para validar a pausa de
 cadência e o vínculo do agente correto. Liberação de reservas, entrada dinâmica,
 métricas consolidadas, cron, aceite no navegador e publicação ainda são necessários.
+
+## Ciclo de vida e exclusões atuais
+
+A migração 0300 mantém a evidência de inscrição imutável e registra seu
+cancelamento e a liberação de identidades separadamente. Cancelar um lote exige
+visibilidade atual de todo o público elegível e gestão sobre todos os executores,
+inclusive quando o criador da versão e o executor são pessoas diferentes.
+Inscrições canceladas não reiniciam; nova entrada da mesma pessoa exige outra
+versão. Uma entrega em andamento, incerta ou pendente de projeção continua em
+quarentena, mesmo depois de cancelar o lote.
+
+O encerramento humano exige a conclusão da tarefa real; o encerramento do agente
+usa a inscrição SDR da conversa exata entregue por esta sequência. Reservas
+concluídas deixam de bloquear outras versões. Antes de cada ação, uma nova
+verificação comercial interrompe o contato se surgiu negócio aberto ou relação
+de cliente conforme os filtros salvos, sem expor os registros comerciais ocultos.
+
+Tarefas e handoff usam `techsales.tasks`; chamadas humanas usam
+`techsales.activities`. As três chaves de atribuição de tarefas entram no
+catálogo sem concessão automática. Atribuir outro responsável exige essa ação
+antes da reserva, além de criação e vínculo ativo no workspace.

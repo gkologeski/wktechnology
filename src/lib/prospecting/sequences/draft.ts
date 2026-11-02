@@ -252,6 +252,7 @@ export const operationsInput = z
   .object({
     workspaceId: z.string().uuid(),
     versionId: z.string().uuid(),
+    cohortId: z.string().uuid().optional(),
     page: z.number().int().min(0).max(10000).default(0),
   })
   .strict();
@@ -262,6 +263,7 @@ export const operationInput = z
     id: z.string().uuid(),
     action: z.enum([
       "start",
+      "discard",
       "pause",
       "resume",
       "cancel",

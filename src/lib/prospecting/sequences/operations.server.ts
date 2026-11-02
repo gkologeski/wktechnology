@@ -20,6 +20,7 @@ export type OperationalRun = {
   canCompleteCall: boolean;
   activityId: string | null;
   activityKind: string | null;
+  person: { id: string; entity: "lead" | "contact"; label: string } | null;
 };
 async function scope(client: SupabaseClient, workspaceId: string, action: "view" | "manage") {
   await assertSalesArea(client, SEQUENCE_RESOURCE, action);
@@ -56,11 +57,43 @@ export async function sequenceOperations(
     .order("created_at", { ascending: false })
     .order("id")
     .range(data.page * 50, data.page * 50 + 49);
-  if (result.error) throw new Error("Não foi possível carregar as execuções.");
+  if (result.error || typeof result.count !== "number")
+    throw new Error("Não foi possível carregar as execuções.");
   const runs = (result.data || []) as Omit<
     OperationalRun,
-    "canManage" | "canResume" | "canCompleteCall" | "activityId" | "activityKind"
+    "canManage" | "canResume" | "canCompleteCall" | "activityId" | "activityKind" | "person"
   >[];
+  const cohortPeople = runs.length
+    ? await client
+        .from("prospecting_sequence_cohort_people" as never)
+        .select("id,entity,source_id")
+        .eq("workspace_id", data.workspaceId)
+        .in(
+          "id",
+          runs.map((r) => r.cohort_person_id),
+        )
+    : { data: [], error: null };
+  if (cohortPeople.error) throw new Error("Não foi possível consultar os destinatários visíveis.");
+  const people = (cohortPeople.data || []) as {
+    id: string;
+    entity: "lead" | "contact";
+    source_id: string;
+  }[];
+  const sourceRows = await Promise.all(
+    (["contact", "lead"] as const).map(async (entity) => {
+      const ids = people.filter((p) => p.entity === entity).map((p) => p.source_id);
+      if (!ids.length) return [];
+      const q = await client
+        .from((entity === "contact" ? "shared_fields_contacts" : "shared_fields_leads") as never)
+        .select("id,first_name,last_name")
+        .eq("workspace_id", data.workspaceId)
+        .in("id", ids);
+      if (q.error) throw new Error("Não foi possível consultar os destinatários visíveis.");
+      return (
+        (q.data || []) as { id: string; first_name: string | null; last_name: string | null }[]
+      ).map((p) => ({ ...p, entity }));
+    }),
+  );
   const effects = runs.length
     ? await client
         .from("prospecting_sequence_effects" as never)
@@ -101,11 +134,33 @@ export async function sequenceOperations(
       ]),
     ],
   });
+  const control = data.cohortId
+    ? await client
+        .from("prospecting_sequence_cohort_controls" as never)
+        .select("cohort_id,prospecting_sequence_cohorts!inner(version_id)")
+        .eq("cohort_id", data.cohortId)
+        .eq("workspace_id", data.workspaceId)
+        .eq("prospecting_sequence_cohorts.version_id", data.versionId)
+        .maybeSingle()
+    : { data: null, error: null };
+  if (control.error) throw new Error("Não foi possível conferir a situação da inscrição.");
   const rows: OperationalRun[] = runs.map((r) => {
+    const person = people.find((p) => p.id === r.cohort_person_id);
+    const source = sourceRows
+      .flat()
+      .find((p) => p.id === person?.source_id && p.entity === person?.entity);
     const task = tasks.find((t) => t.run_id === r.id);
     const a = activities.data?.find((a) => a.id === task?.id);
     return {
       ...r,
+      person: source
+        ? {
+            id: source.id,
+            entity: source.entity,
+            label:
+              [source.first_name, source.last_name].filter(Boolean).join(" ") || "Destinatário",
+          }
+        : null,
       canManage: !!caps.owners[r.owner_id]?.manage,
       canResume:
         !!caps.owners[r.owner_id]?.manage &&
@@ -122,10 +177,12 @@ export async function sequenceOperations(
   });
   return {
     rows,
-    total: result.count || 0,
+    total: result.count,
     page: data.page,
     canStart: !!caps.owners[owner]?.manage && !!caps.owners[owner]?.assign,
     readOnly: caps.readOnly,
+    canDiscard: !!caps.owners[owner]?.manage,
+    selectedCohortCancelled: !!control.data,
   };
 }
 export async function operateSequence(
@@ -134,7 +191,7 @@ export async function operateSequence(
 ) {
   const data = operationInput.parse(input);
   const ctx = await scope(client, data.workspaceId, "manage");
-  if (data.action === "start") {
+  if (data.action === "start" || data.action === "discard") {
     const cohort = await client
       .from("prospecting_sequence_cohorts" as never)
       .select("id")
@@ -150,6 +207,13 @@ export async function operateSequence(
       .maybeSingle();
     if (cohort.error || !cohort.data || version.error || !version.data)
       throw new Error("Inscrição indisponível.");
+    if (data.action === "discard") {
+      await workRpc(client, "prospecting_sequence_discard_cohort", {
+        p_workspace: data.workspaceId,
+        p_cohort: data.id,
+      });
+      return { started: 0 };
+    }
     const { preflightSequenceDefinition } = await import("./releases.server");
     const report = await preflightSequenceDefinition(
       client,

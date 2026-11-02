@@ -247,3 +247,14 @@ it("reply honors the agent resolved from its actual channel over a later configu
     { state: "human" },
   );
 });
+
+it("a newly excluded customer or open deal stops outreach immediately", () => {
+  for (const commercialBlock of ["customer", "open_deal"]) {
+    const s = scenario();
+    expect(decideExecution({ ...s, signals: { ...s.signals, commercialBlock } })).toMatchObject({
+      kind: "stop",
+      state: "blocked",
+      reason: commercialBlock,
+    });
+  }
+});

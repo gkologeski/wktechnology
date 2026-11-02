@@ -11,6 +11,7 @@ export type ExecutionState =
   | "uncertain";
 export type ExecutionSignals = {
   optedOut: boolean;
+  commercialBlock?: string | null;
   replied: boolean;
   previousReplied: boolean;
   previousContactExists?: boolean;
@@ -136,6 +137,7 @@ export function decideExecution(input: {
   });
   if (input.state !== "active") return stop(input.state, "not_active");
   if (s.optedOut) return stop("blocked", "opt_out");
+  if (s.commercialBlock) return stop("blocked", s.commercialBlock);
   if (s.meetingBooked && d.settings.stopOnMeeting) return stop("completed", "meeting_booked");
   const step = d.steps[cursor];
   const previousOutreach = d.steps

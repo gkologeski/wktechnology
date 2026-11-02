@@ -27,6 +27,7 @@ export function SequenceEnrollment({
     [consent, setConsent] = useState(""),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const [cohortSelected, setCohortSelected] = useState("");
   const [last, setLast] = useState<CohortSummary | null>(null);
   const request = useRef<string | null>(null);
   const versionId = selected || versions[0]?.id;
@@ -54,6 +55,7 @@ export function SequenceEnrollment({
         data: { workspaceId, versionId, requestId: request.current, consentEvidence: consent },
       });
       setLast(result);
+      setCohortSelected(result.id);
       toast.success("Público reservado. Nenhum disparo iniciado.");
       await cache.invalidateQueries({ queryKey: ["sequence-cohorts", workspaceId, versionId] });
     } catch (e) {
@@ -66,7 +68,9 @@ export function SequenceEnrollment({
       setBusy(false);
     }
   };
-  const summary = last?.version_id === versionId ? last : history.data?.[0];
+  const summary =
+    history.data?.find((c) => c.id === cohortSelected) ||
+    (last?.version_id === versionId ? last : history.data?.[0]);
   return (
     <section className="space-y-3 border-t pt-4" aria-label="Inscrição do público">
       <h3 className="text-sm font-semibold">Inscrição do público em uma versão</h3>
@@ -84,6 +88,7 @@ export function SequenceEnrollment({
           className="h-10 w-full rounded-md border bg-background px-3 text-sm"
           onChange={(e) => {
             setSelected(e.target.value);
+            setCohortSelected("");
             setLast(null);
             request.current = null;
             setError("");
@@ -150,10 +155,26 @@ export function SequenceEnrollment({
           Não foi possível carregar as inscrições; falha não significa público vazio.
         </p>
       )}
+      {!!history.data?.length && (
+        <label className="block text-xs space-y-1">
+          Inscrição para acompanhamento
+          <select
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+            value={summary?.id || ""}
+            onChange={(e) => setCohortSelected(e.target.value)}
+          >
+            {history.data.map((c) => (
+              <option key={c.id} value={c.id}>
+                {new Date(c.created_at).toLocaleString("pt-BR")} · {c.held} elegíveis na inscrição
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       {summary && (
         <div aria-live="polite" className="space-y-2 rounded-md bg-muted p-3 text-sm">
           <p>
-            Última inscrição: {summary.requested} encontrados · {summary.held} reservados ·{" "}
+            Inscrição: {summary.requested} encontrados · {summary.held} elegíveis no retrato ·{" "}
             {summary.blocked} bloqueados
           </p>
           {summary.held + summary.blocked < summary.requested && (

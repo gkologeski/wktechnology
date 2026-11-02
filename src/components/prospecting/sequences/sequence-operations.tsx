@@ -43,14 +43,15 @@ export function SequenceOperations({
   const [page, setPage] = useState(0),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [confirmStart, setConfirmStart] = useState(false);
+    [confirmStart, setConfirmStart] = useState(false),
+    [confirmDiscard, setConfirmDiscard] = useState(false);
   const load = useServerFn(getSequenceOperations),
     operate = useServerFn(runSequenceOperation),
     cache = useQueryClient();
   const query = useQuery({
-    queryKey: ["sequence-operations", workspaceId, versionId, page],
+    queryKey: ["sequence-operations", workspaceId, versionId, page, cohortId],
     enabled: !unavailable,
-    queryFn: () => load({ data: { workspaceId, versionId, page } }),
+    queryFn: () => load({ data: { workspaceId, versionId, page, cohortId } }),
     refetchInterval: 30000,
   });
   const act = async (id: string, action: Action) => {
@@ -60,6 +61,7 @@ export function SequenceOperations({
     try {
       await operate({ data: { workspaceId, versionId, id, action } });
       setConfirmStart(false);
+      setConfirmDiscard(false);
       await cache.invalidateQueries({ queryKey: ["sequence-operations", workspaceId, versionId] });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Não foi possível concluir a operação.");
@@ -100,7 +102,7 @@ export function SequenceOperations({
           <p className="text-xs">
             {query.data.total} execuções visíveis · página {page + 1}
           </p>
-          {cohortId && held > 0 && query.data.canStart && (
+          {cohortId && held > 0 && query.data.canStart && !query.data.selectedCohortCancelled && (
             <div className="space-y-2">
               {confirmStart ? (
                 <>
@@ -122,6 +124,38 @@ export function SequenceOperations({
               )}
             </div>
           )}
+          {cohortId && query.data.canDiscard && !query.data.selectedCohortCancelled && (
+            <div className="space-y-2">
+              {confirmDiscard ? (
+                <>
+                  <p className="text-sm">
+                    Cancelar esta inscrição e suas execuções? Reservas sem envio pendente serão
+                    liberadas. Envios já aceitos permanecem no histórico; resultados desconhecidos
+                    continuarão protegidos contra duplicidade.
+                  </p>
+                  <Button
+                    variant="destructive"
+                    disabled={busy}
+                    onClick={() => void act(cohortId, "discard")}
+                  >
+                    Confirmar cancelamento da inscrição
+                  </Button>
+                  <Button variant="ghost" disabled={busy} onClick={() => setConfirmDiscard(false)}>
+                    Voltar
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" disabled={busy} onClick={() => setConfirmDiscard(true)}>
+                  Cancelar inscrição e liberar reservas seguras
+                </Button>
+              )}
+            </div>
+          )}
+          {query.data.selectedCohortCancelled && (
+            <p className="text-xs">
+              Inscrição cancelada. O histórico foi preservado; ela não pode ser iniciada novamente.
+            </p>
+          )}
           {query.data.readOnly && (
             <p className="text-xs">
               Sessão apenas para leitura. Nenhuma execução pode ser iniciada ou alterada.
@@ -132,6 +166,14 @@ export function SequenceOperations({
               <article key={r.id} className="rounded-md border p-3 space-y-2">
                 <div className="flex flex-wrap justify-between gap-2 text-sm">
                   <span>
+                    {r.person && (
+                      <a
+                        className="font-medium underline mr-2"
+                        href={`/${r.person.entity === "contact" ? "contacts" : "leads"}/${r.person.id}`}
+                      >
+                        {r.person.label}
+                      </a>
+                    )}
                     {states[r.state] || r.state} · etapa {r.cursor + 1}
                   </span>
                   <span className="text-muted-foreground">

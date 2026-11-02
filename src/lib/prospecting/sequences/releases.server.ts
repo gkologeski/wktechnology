@@ -231,6 +231,45 @@ export async function preflightSequenceDefinition(
       }
       if (step.type === "agent" && step.agentId) agents.add(step.agentId);
     }
+  const work = definition.steps.filter(
+    (s) => s.type === "task" || (s.type === "call" && s.mode === "human"),
+  );
+  for (const step of work) {
+    const resource = step.type === "task" ? "techsales.tasks" : "techsales.activities";
+    try {
+      await assertSalesArea(client, resource, "create");
+      if (
+        (step.type === "task" || step.type === "call") &&
+        step.assigneeId &&
+        step.assigneeId !== actor
+      )
+        await assertSalesArea(client, resource, "assign");
+    } catch {
+      add(
+        step.id,
+        "activity_permission",
+        "Sem permissão atual para criar ou atribuir a atividade desta etapa.",
+      );
+    }
+  }
+  if (
+    (definition.settings.stopOnReply && !definition.settings.agentId) ||
+    definition.steps.some(
+      (s) =>
+        (s.type === "wait" && s.onReply === "human") ||
+        (s.type === "condition" && (s.yes === "human" || s.no === "human")),
+    )
+  ) {
+    try {
+      await assertSalesArea(client, "techsales.tasks", "create");
+    } catch {
+      add(
+        null,
+        "handoff_permission",
+        "O atendimento humano exige permissão para criar a tarefa de acompanhamento.",
+      );
+    }
+  }
   for (const agentId of agents) {
     if (checkedAgents.has(agentId)) continue;
     checkedAgents.add(agentId);

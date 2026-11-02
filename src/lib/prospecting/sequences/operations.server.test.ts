@@ -102,3 +102,13 @@ it("operations validates unsupported action before authorization", async () => {
   ).rejects.toThrow();
   expect(f.rpc).not.toHaveBeenCalled();
 });
+
+it("discard uses the checked cohort mutation without provider activation preflight", async () => {
+  const f = client();
+  await operateSequence(f.db, { workspaceId: W, versionId: ID, id: ID, action: "discard" });
+  expect(f.rpc).toHaveBeenCalledWith("prospecting_sequence_discard_cohort", {
+    p_workspace: W,
+    p_cohort: ID,
+  });
+  expect(f.rpc.mock.calls.some(([n]) => n === "prospecting_sequence_start")).toBe(false);
+});

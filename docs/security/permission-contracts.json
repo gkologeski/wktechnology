@@ -5469,7 +5469,7 @@
       "kind": "business",
       "files": {
         "src/components/prospecting/sequences/sequences-page.tsx": "0c85828b95549d369c7e6d6f801b8a87599b6f8f5f0dfae446edfa6814bf4889",
-        "src/lib/prospecting/sequences/draft.ts": "a5e32eee973ff5f3211de0ee957eaabce402e1937dc6b00c7a88b5912aac469f",
+        "src/lib/prospecting/sequences/draft.ts": "0d9a9df60ba9c2f035cb65160bb6c37e1e1027f0750804dbc5beac325c1db66c",
         "src/lib/prospecting/sequences/drafts.server.ts": "55429e0f960f7eeaf85c9305af088c03bc04f3e8140e95a3ec87c0f3f23faae1",
         "src/routes/_authenticated/prospecting.sequences.tsx": "8baa9510472ca9e2aa65e8f2be1407de24f500cf3f4da51f850b0d30af0a22cf",
         "drizzle/migrations/0292_prospecting_sequence_drafts.sql": "6a7b0c212a5f254186442aad6a5ae1bdab3c134948d30919548e3c801b5982c1"
@@ -5560,7 +5560,7 @@
       "files": {
         "src/lib/prospecting/sequences/drafts.functions.ts": "1da68aefd8b8ad3e103e7861513471d2424a0e1dde75c046a39e7d3397c9c0fa",
         "src/lib/prospecting/sequences/preflight.ts": "dd77c0ff433dc182aac579525918166dda01d1db64b7696fc6f4b59982c3a907",
-        "src/lib/prospecting/sequences/releases.server.ts": "e70210bf8d6d3bc2ade9e835bf04224496b805906dd8140d301cbc5eae409183",
+        "src/lib/prospecting/sequences/releases.server.ts": "ce2461ac2e3339bd5104e67a706fd316fee9029bac6b83cb5c7a11c3b7cd59fa",
         "src/components/prospecting/sequences/sequence-readiness.tsx": "e2ad721054d3d82d7e2aaba7cefaa4459b8496d85f7418da09e13c9fcb25e3ff",
         "src/components/prospecting/sequences/sequence-template-picker.tsx": "427ec2f8233bd1bd4a5b9cdb4cf64c1d85178bfe523a99b9dd40e9fff244d0e8",
         "drizzle/migrations/0293_prospecting_sequence_versions.sql": "38d37b1faf6153875d32a8cd3f4c9036689aec2fbd2dae056ed6df4bb15438a5"
@@ -5664,7 +5664,7 @@
         "src/lib/prospecting/sequences/enrollment.ts": "89156033e6734c8a301c3f51fba883111483d0e61251f05d56ae64a814c51451",
         "src/lib/prospecting/sequences/enrollment.server.ts": "72e3406fad3a0fdbabe250ac2d18cde4c1e1acadd27133c73952945031cb6f35",
         "src/lib/prospecting/sequences/enrollment.functions.ts": "8f96039c4231563ddaaab705ffeaf8d9df288b2644e116e50bbfb393bec4c422",
-        "src/components/prospecting/sequences/sequence-enrollment.tsx": "093fe12739596359b95f7c84a1f17324a32604aa008256e421ad3c97358154c2",
+        "src/components/prospecting/sequences/sequence-enrollment.tsx": "754a962daa20c87e621f9bb53a103c8bddb685e205adf964ca10cb118f09c0e9",
         "drizzle/migrations/0294_prospecting_sequence_cohorts.sql": "721727135c04e4aa006f76491142764c0da8a3a33ecfcb98697a844063bb966e"
       },
       "resources": [
@@ -5759,8 +5759,8 @@
       "id": "prospecting-sequence-durable-runtime",
       "kind": "business",
       "files": {
-        "src/lib/prospecting/sequences/runtime.ts": "8cb32561821cde85eb4406c5e2939092d9472ee22f1772c13bc490af7fb0f191",
-        "src/lib/prospecting/sequences/worker.server.ts": "5d82968760d8486e4073a8042ce534908ad0d86aa0f008d9064807a4ff447b8f",
+        "src/lib/prospecting/sequences/runtime.ts": "f71494ed36bd90053ebda96e8382f59f5ab454ef1b11aa60efe650114e919c9a",
+        "src/lib/prospecting/sequences/worker.server.ts": "7b01d5d3b73235b03696462484ff6020f74a64007d19cb3ead5e5a552dbbcc39",
         "drizzle/migrations/0295_prospecting_sequence_runtime.sql": "504420a65224ad4caa45e07b3d304432ec54bf446134ea39a6ddd1b7ae5c76a8"
       },
       "resources": [
@@ -6104,8 +6104,8 @@
       "files": {
         "drizzle/migrations/0298_prospecting_sequence_operator_access.sql": "f29e0d81dd8692d82de9d4e0298e2365ddb4d459a84db206d7a2d72292ddc167",
         "src/lib/prospecting/sequences/operations.functions.ts": "f91fe4a1df573d06835a2d2f3add382416c81bff04ab1fa33d885d2c4351dfeb",
-        "src/lib/prospecting/sequences/operations.server.ts": "ceae59236f4cd2c0d288e921ef6755358fd303429ac749c70edd597f0fbda5bd",
-        "src/components/prospecting/sequences/sequence-operations.tsx": "44b11fd783f7fa3e1ebaf001b81a7fbafe0cf5498a2a535745f1f35c621eb888"
+        "src/lib/prospecting/sequences/operations.server.ts": "9a4c152770597e1155b094e00184a53606eae23fb876ca66c1639c92ca65e6bf",
+        "src/components/prospecting/sequences/sequence-operations.tsx": "0c8acfebc70c391c83403dfbe2d27b92112d13ab4678855910f59fa9557cea4c"
       },
       "resources": [
         "system.automation.sequences",
@@ -6273,6 +6273,110 @@
         "inactive_member": {
           "file": "src/lib/prospecting/sequences/handoff.test.ts",
           "name": "handoff refuses inactive execution owner"
+        }
+      }
+    },
+    {
+      "id": "prospecting-sequence-lifecycle",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0300_prospecting_sequence_lifecycle.sql": "ef6d4a9fe400cfaad0c1041525ea8cc3e4e23faebee3ecab5378fc850a40c546"
+      },
+      "resources": [
+        "system.automation.sequences",
+        "techsales.activities",
+        "techsales.inbox.email",
+        "techsales.inbox.whatsapp",
+        "techsales.tasks"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "assign",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.sequences.view.own",
+        "system.automation.sequences.view.team",
+        "system.automation.sequences.view.workspace",
+        "system.automation.sequences.manage.own",
+        "system.automation.sequences.manage.team",
+        "system.automation.sequences.manage.workspace",
+        "system.automation.sequences.assign.own",
+        "system.automation.sequences.assign.team",
+        "system.automation.sequences.assign.workspace",
+        "techsales.activities.view.own",
+        "techsales.activities.update.own",
+        "techsales.inbox.email.create.own",
+        "techsales.inbox.whatsapp.create.own",
+        "techsales.tasks.create.own",
+        "techsales.tasks.view.own",
+        "techsales.tasks.update.own",
+        "techsales.tasks.assign.own"
+      ],
+      "rationale": "Immutable snapshots and same-version dedup are preserved. Cancelling an entire cohort checks current manage scope of every run owner and current visibility of every eligible person; cancelled snapshots cannot start. Service-only bounded release never frees sending/uncertain/pending receipts, including cancellation. Handoff completion refers to its exact delivered conversation/enrollment or canonical human activity. Fresh commercial exclusion returns only a suppression code and never details of inaccessible deals/contracts. Actual isolated JWT tests cover complete/foreign/inactive/deny/bulk mixed-owner cases and fresh customer/deal changes. Call activities and task/human-service activities use their canonical distinct resources, including assignment.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0300_prospecting_sequence_lifecycle.sql",
+          "symbol": "prospecting_sequence_discard_cohort"
+        },
+        {
+          "file": "drizzle/migrations/0300_prospecting_sequence_lifecycle.sql",
+          "symbol": "prospecting_sequence_release_identities"
+        },
+        {
+          "file": "drizzle/migrations/0300_prospecting_sequence_lifecycle.sql",
+          "symbol": "prospecting_sequence_start"
+        },
+        {
+          "file": "drizzle/migrations/0300_prospecting_sequence_lifecycle.sql",
+          "symbol": "prospecting_sequence_commercial_block"
+        },
+        {
+          "file": "drizzle/migrations/0300_prospecting_sequence_lifecycle.sql",
+          "symbol": "prospecting_sequence_task_effect"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/operations.server.test.ts",
+          "name": "discard uses the checked cohort mutation without provider activation preflight"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/operations.server.test.ts",
+          "name": "operations rejects missing_permission before mutation"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/operations.server.test.ts",
+          "name": "operations rejects explicit_deny before mutation"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/operations.server.test.ts",
+          "name": "operations rejects foreign workspace before record read"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/operations.server.test.ts",
+          "name": "operations rejects inactive_member before mutation"
         }
       }
     }
