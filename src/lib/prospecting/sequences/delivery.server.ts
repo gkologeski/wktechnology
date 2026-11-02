@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { workRpc } from "@/lib/access-control/work-core.server";
-import { TOKEN_PATTERN, renderTokens, type TokenContext } from "@/lib/message-tokens";
+import type { TokenContext } from "@/lib/message-tokens";
+import { renderRequiredTokens } from "./variable-tokens";
 import { validateEmailAddress } from "@/lib/email-address";
 import { isValidE164 } from "@/lib/phone/e164";
 import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
@@ -49,11 +50,7 @@ function assertReservedSource(
   }
 }
 function requiredTokens(text: string, context: TokenContext) {
-  for (const match of text.matchAll(new RegExp(TOKEN_PATTERN.source, "g"))) {
-    if (!renderTokens(match[0], context).trim())
-      throw new Error("Variável sem valor atual autorizado.");
-  }
-  return renderTokens(text, context);
+  return renderRequiredTokens(text, context as Record<string, unknown>);
 }
 async function tokenContext(admin: SupabaseClient, ctx: RuntimeContext): Promise<TokenContext> {
   const { loadAgentContext } = await import("@/lib/message-tokens-agent.server");
@@ -62,8 +59,13 @@ async function tokenContext(admin: SupabaseClient, ctx: RuntimeContext): Promise
     last_name?: string;
     company_name?: string;
   };
+  const { loadEntityVariables } = await import("./variable-context.server");
+  const entities = ctx.person
+    ? await loadEntityVariables(admin, ctx.run.workspace_id, ctx.person)
+    : {};
   return {
     ...source,
+    ...entities,
     full_name: [source.first_name, source.last_name].filter(Boolean).join(" "),
     company: source.company_name,
     agent: await loadAgentContext(admin, ctx.run.owner_id),
