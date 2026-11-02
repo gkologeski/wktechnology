@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { registerDockOpener, setDockState } from "@/components/floating-dock/side-dock-store";
 import { useAuth } from "@/lib/auth";
 
 // Carrega o drawer (AI SDK + react-markdown) somente quando o usuário abre o
@@ -27,22 +27,22 @@ export function AgentTrigger() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
+  useEffect(
+    () =>
+      registerDockOpener("agent", () => {
+        setMounted(true);
+        setOpen(true);
+      }),
+    [],
+  );
+  useEffect(() => {
+    setDockState({ agentAvailable: !!user });
+  }, [user]);
+
   if (!user) return null;
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => {
-          setMounted(true);
-          setOpen(true);
-        }}
-        onPointerEnter={() => setMounted(true)}
-        aria-label="Abrir assistente do CRM"
-        className="fixed bottom-5 right-[8.75rem] z-50 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg opacity-10 transition-opacity duration-200 hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-      >
-        <Sparkles className="h-5 w-5" />
-      </button>
       {mounted ? (
         <Suspense fallback={null}>
           <AgentDrawer open={open} onOpenChange={setOpen} />
