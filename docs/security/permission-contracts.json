@@ -2716,7 +2716,7 @@
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
       "files": {
-        "src/integrations/supabase/types.ts": "528f33873f96a656f0273c2503e7e96a69e2d385e2317a52c0fb9cd07699e302"
+        "src/integrations/supabase/types.ts": "cd77d3a014c274f507631823bc070e0fb03165fe7d1c9ca2de54d9f04ac2926c"
       },
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations."
     },
@@ -5386,7 +5386,6 @@
         "src/lib/whatsapp/meeting-reminders.ts": "94aa141372652bd80e093e1d342ba636c53bc74fe7bf33e1339626fa67f4c1c6",
         "src/routes/api/public/hooks/meeting-reminders-tick.ts": "ef4d7c62007bb7695d6943b6a7e989b6ae456f5d0c8a4f663cc8881819335345",
         "src/routes/_authenticated/settings.meeting-reminders.tsx": "71c83eb2ece9043d224b4868cecfc7e82f0b556287d0d9c9a9abd43f84a3756f",
-        "src/components/whatsapp/meeting-reminder-rule-row.tsx": "b386c6abf4437dc3ef2ccd22db7c49c0c32ad8e4735792dc6ec20306e37e8e9c",
         "drizzle/migrations/0292_meeting_reminder_custom_offsets.sql": "e1e0c485ce303a9c9cf79301cce2725453b0af753742053267978a8835e5538d"
       },
       "resources": [
@@ -5442,6 +5441,10 @@
       "database": [
         {
           "file": "drizzle/migrations/0291_meeting_whatsapp_reminders.sql",
+          "symbol": "meeting_reminder_rules"
+        },
+        {
+          "file": "drizzle/migrations/0292_meeting_reminder_custom_offsets.sql",
           "symbol": "meeting_reminder_rules"
         }
       ],
@@ -5551,6 +5554,14 @@
         "src/components/floating-dock/messenger-gate.ts": "f58d063ffaaa906e55febf5043d9b21e27cddfc9a05f5d14e9aae223e47483c5"
       },
       "rationale": "Pure in-memory UI state for the side dock (open callbacks, unread counter) and a pure predicate over already-loaded effective permissions. No I/O, routes, actions or data access."
+    },
+    {
+      "id": "meeting-reminder-rule-row",
+      "kind": "presentation",
+      "files": {
+        "src/components/whatsapp/meeting-reminder-rule-row.tsx": "b386c6abf4437dc3ef2ccd22db7c49c0c32ad8e4735792dc6ec20306e37e8e9c"
+      },
+      "rationale": "Presentational row for one meeting reminder (amount, unit, template, variables, preview). Receives data and callbacks from MeetingRemindersPage; no I/O, routes, actions or data access. Saving stays under meeting-whatsapp-reminders (techsales.meeting_settings.update)."
     }
   ],
   "retired": {}
