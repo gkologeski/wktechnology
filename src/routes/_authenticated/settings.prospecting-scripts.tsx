@@ -5,5 +5,10 @@ export const Route = createFileRoute("/_authenticated/settings/prospecting-scrip
   beforeLoad: () => {
     throw redirect({ to: "/prospecting", search: { area: "campanhas", section: "roteiros" } });
   },
-  component: ScriptsPage,
+  component: LegacyScriptsRedirect,
 });
+
+// Só por segurança: o beforeLoad sempre redireciona para Prospecção → Campanhas → Roteiros.
+function LegacyScriptsRedirect() {
+  return <ScriptsPage />;
+}

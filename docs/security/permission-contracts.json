@@ -5209,7 +5209,7 @@
         "src/lib/voice-agent.functions.ts": "932a46a77422c54536399f8e2d709a423e51b7b5315c87b58fe654bad81aae0a",
         "drizzle/migrations/0293_prospecting_scripts_archived_at.sql": "a6e8cce47013518da00c651e96d47f4b4cfbb1b847aed5cf720cd405d6d6fd91",
         "src/components/prospecting/pages/scripts-page.tsx": "7ee17213929ea516345b3f4faeb6ccf845dcb21c072900bb68b7b828f7619c2d",
-        "src/routes/_authenticated/settings.prospecting-scripts.tsx": "dd5176c9fd9ccb8a50efba3ca1894e7c7f0d18f0d7476765a1f80c008ffa6776"
+        "src/routes/_authenticated/settings.prospecting-scripts.tsx": "1ef5834887cf147656167ce35259a9e502765aefadfde9542cef78030f56535e"
       },
       "resources": [
         "techsales.marketing.campaigns",
