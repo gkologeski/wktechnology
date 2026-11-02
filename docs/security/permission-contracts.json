@@ -309,7 +309,7 @@
       "files": {
         "src/lib/access-control/sales-route-map.ts": "0df9503ad94282448e5d19988fd5d6f579ff4d89df0a03b009f454858dbe57dc",
         "src/routes/_authenticated/settings.tsx": "53fb56dbdfb1acae1cb3e6a585f9de60f65f9675c24e53ddfd3869eb9221d297",
-        "src/routes/_authenticated.tsx": "18448332bcad1cb959dd7b657792dbeb47058f66e40d261182ef77981f08b445",
+        "src/routes/_authenticated.tsx": "8ea21df8f99b5fc40d0233fd06bbc11b5f462d398ded7f2c7182e4a98fa3d388",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
       },
       "controls": [
@@ -5465,6 +5465,18 @@
           "name": "sales area refuses an inactive execution actor"
         }
       }
+    },
+    {
+      "id": "side-dock-shortcuts",
+      "kind": "presentation",
+      "files": {
+        "src/components/floating-dock/side-dock.tsx": "812a0c95e60354b365d70864f3008f0dc3a28ee27947cc6c7cc83b5e50da6afa",
+        "src/components/floating-dock/side-dock-store.ts": "2bcc1f9a98e04310abd9c8b467b85a1aa77d853e07efe01bedbd0724988048f3",
+        "src/components/ai-agent/agent-trigger.tsx": "80e4594868488e5fc379af608c20ca7d37272544ac29b42f371f87db608d53df",
+        "src/components/bug-report/bug-report-button.tsx": "e14a236527a049cfe48f40465965a4c9f9cb7e339114841a2c4e2f0fc27d2b95",
+        "src/components/chat/chat-trigger.tsx": "791d5af334cf11816f1e4b10bc63736492a25e6bcbbf48fdee457d0c422ed6e9"
+      },
+      "rationale": "Visual regrouping of the floating Messenger/AI/Bug-report buttons into one collapsible right-edge tab. No new routes, actions, grants or data access; the messenger keeps its existing system.messenger.view.own gate in ChatTrigger (the dock only shows the option when that gate allows), and the drawers/dialogs keep their existing server-side controls."
     }
   ],
   "retired": {}
