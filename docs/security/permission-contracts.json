@@ -308,7 +308,7 @@
       "kind": "internal",
       "files": {
         "src/lib/access-control/sales-route-map.ts": "0df9503ad94282448e5d19988fd5d6f579ff4d89df0a03b009f454858dbe57dc",
-        "src/routes/_authenticated/settings.tsx": "a58967efc937b7a85b1cbda6b515c0cf69184ece7bcb02650ad2c1fe2c43f4f4",
+        "src/routes/_authenticated/settings.tsx": "53fb56dbdfb1acae1cb3e6a585f9de60f65f9675c24e53ddfd3869eb9221d297",
         "src/routes/_authenticated.tsx": "18448332bcad1cb959dd7b657792dbeb47058f66e40d261182ef77981f08b445",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
       },

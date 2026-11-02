@@ -325,6 +325,12 @@ function SettingsLayout() {
   const [query, setQuery] = useState("");
   // Grupo de configuração escolhido manualmente nas abas (null = segue a rota).
   const [groupOverride, setGroupOverride] = useState<string | null>(null);
+  // Ao abrir outra página, o grupo volta a seguir a rota.
+  const [lastPath, setLastPath] = useState(path);
+  if (lastPath !== path) {
+    setLastPath(path);
+    setGroupOverride(null);
+  }
   const { isAdmin, isManager } = useMyRole();
   const { isPlatformAdmin } = useIsPlatformAdmin();
   const permissions = usePermissions();
@@ -456,13 +462,8 @@ function SettingsLayout() {
                       type="button"
                       aria-current={active ? "page" : undefined}
                       onClick={() => {
+                        // Só troca o grupo; o usuário escolhe a opção na grade.
                         setGroupOverride(section.label);
-                        // Se a página aberta não pertence ao grupo escolhido,
-                        // abre a 1ª opção do grupo (que ganha o foco no submenu).
-                        const alreadyInGroup = section.tabs.some((t) => isActive(t.to));
-                        if (!alreadyInGroup && section.tabs[0]) {
-                          navigate({ to: section.tabs[0].to });
-                        }
                       }}
                       className={cn(
                         "whitespace-nowrap rounded-t-lg px-3 py-2 text-sm transition-colors border-b-2",
@@ -510,7 +511,29 @@ function SettingsLayout() {
       </div>
 
       <div className="min-w-0">
-        <Outlet />
+        {!searching && !visibleTabs.some((t) => isActive(t.to)) && visibleTabs.length > 0 ? (
+          <section aria-label={`Opções de ${currentGroup}`} className="space-y-3">
+            <h2 className="text-base font-semibold">{currentGroup}</h2>
+            <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {visibleTabs.map((t) => {
+                const Icon = t.icon;
+                return (
+                  <li key={t.to}>
+                    <Link
+                      to={t.to}
+                      className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 text-sm font-medium text-foreground transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <Icon className="h-4 w-4 shrink-0 text-primary" />
+                      <span className="truncate">{t.label}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ) : (
+          <Outlet />
+        )}
       </div>
     </div>
   );
