@@ -5588,7 +5588,7 @@
         "src/components/prospecting/sequences/sequence-readiness.tsx": "e2ad721054d3d82d7e2aaba7cefaa4459b8496d85f7418da09e13c9fcb25e3ff",
         "src/components/prospecting/sequences/sequence-template-picker.tsx": "22cc4ea6715b1601c84373d158dc8844095012ba7ee69461ace4f127532ee88c",
         "drizzle/migrations/0293_prospecting_sequence_versions.sql": "38d37b1faf6153875d32a8cd3f4c9036689aec2fbd2dae056ed6df4bb15438a5",
-        "src/components/prospecting/sequences/sequence-variable-field.tsx": "0fc254aaab284a1bc284b45ac94ae0594f65e4099e509d762c847767596be3b4"
+        "src/components/prospecting/sequences/sequence-variable-field.tsx": "1d6edc4db5dd78b7f893b6f9554bee56e810245abee8c4984d2072f4d0584ea1"
       },
       "resources": [
         "system.automation.sequences",
@@ -5881,8 +5881,8 @@
       "files": {
         "drizzle/migrations/0296_prospecting_sequence_delivery.sql": "b83c2ab2890834807a3e17ba394882660b5cf6e3b42b8edbf4eb967b79ed63c9",
         "src/lib/prospecting/sequences/delivery.server.ts": "8f66be63c052d55a449acd6b8f5991fb387ccdf293687c48987f03e931f022cc",
-        "src/lib/prospecting/sequences/variable-context.server.ts": "81f009772824634d1a944012c787f1b5c35c12a6ed2b073ee5040ee41ebd8bac",
-        "src/lib/prospecting/sequences/variable-tokens.ts": "2c7c49cc9422bd66f840eee7863c54b75e597a5d870b0cda256f1b35fff6aa7e"
+        "src/lib/prospecting/sequences/variable-context.server.ts": "0bee05d1fad66cfa8b704749e8546107d404c1ce2b4ba8bde52c35c60b421739",
+        "src/lib/prospecting/sequences/variable-tokens.ts": "7bd39e46b5da365013eab58b9730f18b94ee1b9feb83220a581137039b51e6fb"
       },
       "resources": [
         "system.automation.sequences",
