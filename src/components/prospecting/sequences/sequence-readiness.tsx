@@ -1,3 +1,4 @@
+import { SequenceEnrollment } from "./sequence-enrollment";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -133,6 +134,13 @@ export function SequenceReadiness({ row, disabled }: { row: SequenceDraft; disab
               ? "Carregando versões…"
               : "Nenhuma versão criada."}
         </p>
+      )}
+      {versions.data && (
+        <SequenceEnrollment
+          workspaceId={row.workspace_id}
+          versions={versions.data}
+          disabled={disabled || busy}
+        />
       )}
     </section>
   );

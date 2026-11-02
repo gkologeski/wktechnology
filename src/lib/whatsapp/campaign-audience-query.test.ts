@@ -9,7 +9,7 @@ import {
 type Row = Record<string, unknown>;
 
 /** Banco falso: devolve `rows[tabela]` respeitando `.in`, `.range` e o teto de 1.000 da API. */
-function fakeDb(rows: Record<string, Row[]>, rpcResult: unknown = []) {
+function fakeDb(rows: Record<string, Row[]>, rpcResult: unknown = [], maxInBytes = Infinity) {
   const calls: { table: string; ops: string[] }[] = [];
   const rpcCalls: { fn: string; args: Row }[] = [];
   const from = (table: string) => {
@@ -35,6 +35,10 @@ function fakeDb(rows: Record<string, Row[]>, rpcResult: unknown = []) {
       order: chain("order"),
       limit: chain("limit"),
       in: chain("in", (col, vals) => {
+        const encoded = new URLSearchParams({
+          [String(col)]: `in.(${(vals as string[]).join(",")})`,
+        }).toString();
+        if (encoded.length > maxInBytes) throw new Error("URI too long");
         data = data.filter((r) => (vals as unknown[]).includes(r[col as string]));
       }),
       range: chain("range", (a, b) => {
@@ -116,6 +120,26 @@ describe("público da campanha WhatsApp — consulta no banco", () => {
     expect(r.rows.map((x) => x.sourceId).sort()).toEqual(["c1", "c2"]);
     // Nenhuma leitura paginada da base por filtro (o caminho antigo usava .range).
     expect(calls.some((c) => c.table === "contacts" && c.ops.includes("range"))).toBe(false);
+  });
+
+  it("lotes com UUIDs reais cabem no orçamento da URL sem perder destinatários", async () => {
+    const contacts = Array.from({ length: 1000 }, () => ({
+      id: crypto.randomUUID(),
+      first_name: "Teste",
+      job_title: "TI",
+    }));
+    const { db } = fakeDb(
+      { contacts },
+      contacts.map((r) => r.id),
+      6500,
+    );
+    const result = await loadAudienceRows(db, "ws", {
+      type: "filter",
+      base: "contacts",
+      groups: [{ logic: "and", filters: [{ column: "job_title", op: "ilike", value: "TI" }] }],
+    });
+    expect(result.rows).toHaveLength(1000);
+    expect(result.truncated).toBe(false);
   });
 
   it("envios recentes não são cortados em 1.000 linhas", async () => {

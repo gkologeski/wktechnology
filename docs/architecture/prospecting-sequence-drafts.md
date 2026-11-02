@@ -79,3 +79,29 @@ uma versão obtida diretamente pela RPC nunca autoriza execução por si só.
 Antes de inscrever ou enviar, os próximos lotes devem validar filtros,
 consentimento/opt-out, provedores, referência de cada conta/agente/responsável e
 permissões atuais. Um worker nunca pode confiar apenas na existência da versão.
+
+## Lote de reserva do público
+
+A migração 0294 registra inscrições imutáveis em estado reservado, sem criar
+filas ou enviar mensagens. A ação exige leitura e atribuição da versão, com
+escopo atual do usuário. Os filtros congelados são resolvidos pelo mesmo leitor
+de público das campanhas WhatsApp; resultados truncados são recusados.
+
+O banco revalida a identidade sob RLS e as máscaras atuais. Registra somente
+resumos na interface e mantém a evidência de autorização e os hashes de
+identidade inacessíveis aos clientes. Opt-out, ausência de canal, duplicidade,
+clientes, negócios abertos e inscrições anteriores produzem motivos distintos.
+As exclusões comerciais e de outra sequência seguem a configuração; opt-out e
+validade do canal não são opcionais. A proteção cobre estas reservas, inscrições
+legadas de sequências e inscrições SDR ativas. Não representa um catálogo de
+todas as campanhas do sistema.
+
+Repetições da mesma requisição são idempotentes. Uma trava transacional por
+workspace impede reservas concorrentes duplicadas. Consultas por UUIDs usam
+lotes de 150 para respeitar o limite de URL do gateway, inclusive nas campanhas
+WhatsApp que compartilham o leitor.
+
+Ainda faltam executor, cancelamento/liberação das reservas, ingresso dinâmico e
+retomada individual. Antes de qualquer execução, o executor deve revalidar
+permissões, consentimento, opt-out, canais, contas, agentes e disponibilidade dos
+provedores. A existência de uma reserva não autoriza um envio.

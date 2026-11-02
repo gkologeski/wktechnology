@@ -2147,7 +2147,7 @@
         "src/components/whatsapp/campaign-assignment-section.tsx": "784136197ffd47a38eb41b6e026918e5a74cbce2f409feb13cb41a647a0380e4",
         "src/lib/whatsapp/campaign-assignment.server.ts": "f75a7485b12b320af56635b016a47ffefafd1c85b7cec5718dc71b59c4ce77df",
         "src/lib/whatsapp/campaign-assignment.ts": "3dc79264158d836b33f4325a096794071cf2ba45bb0f50fead681412ad8fb51b",
-        "src/lib/whatsapp/campaign-audience.server.ts": "d98b566daa40fce72e8fae90617322e73ecbf1def3610b30424aff97f1a1f086",
+        "src/lib/whatsapp/campaign-audience.server.ts": "0ac2b3b7fbb201afe808eb9d729bb6f41a49296b109b287e5fbf526a4d9ed6a0",
         "src/lib/whatsapp/campaign-audience-query.ts": "bb5dd8b9faa846eae0b6b72e28ed07b80110e9f23c84ca79ff3d62f8a55937f6",
         "drizzle/migrations/0287_wa_campaign_audience_ids.sql": "10b88936a1dc30f8b95d9cb2a228bb5b88ca21ace204fd80fc0ea3121166c54a",
         "drizzle/migrations/0288_wa_campaign_audience_ids_array.sql": "11ee5282e7d64a30bd16f340a6566076a3d3cefc555fcd01d6732c49ba81ae93",
@@ -2178,7 +2178,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message. Undelivered outbound messages show a translated failure label (pure describeDeliveryError + InboxMessageBubble), built only from error fields of messages the user already reads. Recent-contact pruning RPC wa_campaign_prune_recent is SECURITY INVOKER (caller RLS on recipients applies), requires active workspace membership, EXECUTE only for authenticated/service_role, and only marks pending rows of that campaign as skipped. Audience filter suggestions use RPC whatsapp_campaign_filter_values: SECURITY INVOKER (caller RLS), entity limited to leads/contacts/companies/deals, column validated against the table catalog and custom key by regex, EXECUTE only for authenticated; server still checks isSuggestField and active workspace. The New Campaign dialog only regroups existing fields into sections. Campaign conversation distribution (assignment_mode auto/member/round_robin/unassigned) is saved only through create/update campaign server functions under the existing campaigns create/update keys; members are validated as active in the caller's workspace; at send time RPC wa_campaign_next_assignee (SECURITY DEFINER, EXECUTE only service_role, row lock, re-checks active membership) picks the assignee and only fills conversations with no assignee; unassigned campaigns skip automatic distribution on reply. Campaign audience filters are resolved by RPC wa_campaign_audience_ids: SECURITY INVOKER (caller RLS and column grants apply; protected shared-field columns are read through the masked shared_fields_* views), base/entity limited to leads/contacts/companies/deals, operators allow-listed, columns validated against the table catalog and custom keys by regex, values only as literals, max 10 groups/20 filters/20 terms, EXECUTE only for authenticated; the server still validates filters with isAllowedFilter under the existing campaigns view/create keys and the active workspace. Related reads, recent sends and opt-outs only paginate/parallelize the same user-client queries; compileAudienceGroups re-validates custom keys with filterColumnPath before the RPC. Campaign recipients are inserted in batches of 1,000 with the campaign workspace set explicitly, still through the user's client (RLS sales_create + sales_row_guard per row); sales_row_guard now computes the access context only after child tables return, which keeps every check and outcome identical.",
+      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message. Undelivered outbound messages show a translated failure label (pure describeDeliveryError + InboxMessageBubble), built only from error fields of messages the user already reads. Recent-contact pruning RPC wa_campaign_prune_recent is SECURITY INVOKER (caller RLS on recipients applies), requires active workspace membership, EXECUTE only for authenticated/service_role, and only marks pending rows of that campaign as skipped. Audience filter suggestions use RPC whatsapp_campaign_filter_values: SECURITY INVOKER (caller RLS), entity limited to leads/contacts/companies/deals, column validated against the table catalog and custom key by regex, EXECUTE only for authenticated; server still checks isSuggestField and active workspace. The New Campaign dialog only regroups existing fields into sections. Campaign conversation distribution (assignment_mode auto/member/round_robin/unassigned) is saved only through create/update campaign server functions under the existing campaigns create/update keys; members are validated as active in the caller's workspace; at send time RPC wa_campaign_next_assignee (SECURITY DEFINER, EXECUTE only service_role, row lock, re-checks active membership) picks the assignee and only fills conversations with no assignee; unassigned campaigns skip automatic distribution on reply. Campaign audience filters are resolved by RPC wa_campaign_audience_ids: SECURITY INVOKER (caller RLS and column grants apply; protected shared-field columns are read through the masked shared_fields_* views), base/entity limited to leads/contacts/companies/deals, operators allow-listed, columns validated against the table catalog and custom keys by regex, values only as literals, max 10 groups/20 filters/20 terms, EXECUTE only for authenticated; the server still validates filters with isAllowedFilter under the existing campaigns view/create keys and the active workspace. Related reads, recent sends and opt-outs only paginate/parallelize the same user-client queries; compileAudienceGroups re-validates custom keys with filterColumnPath before the RPC. Campaign recipients are inserted in batches of 1,000 with the campaign workspace set explicitly, still through the user's client (RLS sales_create + sales_row_guard per row); sales_row_guard now computes the access context only after child tables return, which keeps every check and outcome identical. Audience ID reads use URI-bounded batches of 150 UUIDs; no permission or filter behavior change.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -5561,7 +5561,7 @@
         "src/lib/prospecting/sequences/drafts.functions.ts": "1da68aefd8b8ad3e103e7861513471d2424a0e1dde75c046a39e7d3397c9c0fa",
         "src/lib/prospecting/sequences/preflight.ts": "0e7673ade55d3b1d3327006dd795bf5d029ca59c7e861897cc648c090b87fa01",
         "src/lib/prospecting/sequences/releases.server.ts": "c5f83ff4b7967fdfa89d41bd686eb5bcab1eb621fd6329b3ce70c0ad5d5b77f3",
-        "src/components/prospecting/sequences/sequence-readiness.tsx": "3bf25c03fcf94d955a4aef4bc58b146b0a86ce4a8e47810c4b6e6e3034a28d47",
+        "src/components/prospecting/sequences/sequence-readiness.tsx": "e2ad721054d3d82d7e2aaba7cefaa4459b8496d85f7418da09e13c9fcb25e3ff",
         "src/components/prospecting/sequences/sequence-template-picker.tsx": "427ec2f8233bd1bd4a5b9cdb4cf64c1d85178bfe523a99b9dd40e9fff244d0e8",
         "drizzle/migrations/0293_prospecting_sequence_versions.sql": "38d37b1faf6153875d32a8cd3f4c9036689aec2fbd2dae056ed6df4bb15438a5"
       },
@@ -5654,6 +5654,104 @@
         "inactive_member": {
           "file": "src/lib/prospecting/sequences/releases.server.test.ts",
           "name": "sequence version rejects inactive actor before reading or freezing"
+        }
+      }
+    },
+    {
+      "id": "prospecting-sequence-held-enrollments",
+      "kind": "business",
+      "files": {
+        "src/lib/prospecting/sequences/enrollment.ts": "841bd3b25d75f38b125e31ef27981b0adb34cfee7108a7285f3d00056c07e7c0",
+        "src/lib/prospecting/sequences/enrollment.server.ts": "72e3406fad3a0fdbabe250ac2d18cde4c1e1acadd27133c73952945031cb6f35",
+        "src/lib/prospecting/sequences/enrollment.functions.ts": "8f96039c4231563ddaaab705ffeaf8d9df288b2644e116e50bbfb393bec4c422",
+        "src/components/prospecting/sequences/sequence-enrollment.tsx": "66a0a98d882d94fd075adad3304f5c8f607c6cc1aa500e5da3cdec6a051e4b23",
+        "drizzle/migrations/0294_prospecting_sequence_cohorts.sql": "721727135c04e4aa006f76491142764c0da8a3a33ecfcb98697a844063bb966e"
+      },
+      "resources": [
+        "system.automation.sequences",
+        "techsales.contacts",
+        "techsales.leads"
+      ],
+      "actions": [
+        "view",
+        "assign"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.sequences.view.own",
+        "system.automation.sequences.view.team",
+        "system.automation.sequences.view.workspace",
+        "system.automation.sequences.assign.own",
+        "system.automation.sequences.assign.team",
+        "system.automation.sequences.assign.workspace",
+        "techsales.contacts.view.own",
+        "techsales.contacts.view.team",
+        "techsales.contacts.view.workspace",
+        "techsales.leads.view.own",
+        "techsales.leads.view.team",
+        "techsales.leads.view.workspace"
+      ],
+      "rationale": "Assign associates CRM recipients with an immutable configuration version; no execution, queues or sends. Endpoint accepts only workspace/version/request/evidence; source rows and filters come from caller RLS and protected field views. The service-only writer rechecks current actor membership, effective view/assign owner scope, then re-enters the existing non-bypass API role privately to verify source visibility and field masking. Global exclusion lookups return reason counts only; identity fingerprints and evidence are not selectable by users. Workspace transaction lock and idempotency keep held reservations consistent. No new role grants or permission catalog changes.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesArea"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/email-address.ts",
+          "symbol": "validateEmailAddress"
+        },
+        {
+          "file": "src/lib/phone/e164.ts",
+          "symbol": "isValidE164"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0294_prospecting_sequence_cohorts.sql",
+          "symbol": "prospecting_sequence_cohort_prepare"
+        },
+        {
+          "file": "drizzle/migrations/0294_prospecting_sequence_cohorts.sql",
+          "symbol": "techerp_api.sequence_audience_source"
+        },
+        {
+          "file": "drizzle/migrations/0294_prospecting_sequence_cohorts.sql",
+          "symbol": "sequence_cohort_people_read"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/enrollment.server.test.ts",
+          "name": "enrollment allows an authorized actor and resolves the frozen audience with caller RLS"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/enrollment.server.test.ts",
+          "name": "enrollment rejects missing permission before source reads or privileged write"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/enrollment.server.test.ts",
+          "name": "enrollment rejects explicit deny before privileged write"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/enrollment.server.test.ts",
+          "name": "enrollment rejects foreign workspace before fetching recipients"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/enrollment.server.test.ts",
+          "name": "enrollment rejects inactive membership before privileged write"
         }
       }
     }

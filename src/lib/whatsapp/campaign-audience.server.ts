@@ -48,7 +48,8 @@ async function inPool<T, U>(items: T[], fn: (item: T) => Promise<U>): Promise<U[
   return out;
 }
 
-const chunk = <T>(xs: T[], size = 200): T[][] => {
+// Keep UUID filters below the gateway URI limit, including projection and workspace.
+const chunk = <T>(xs: T[], size = 150): T[][] => {
   const out: T[][] = [];
   for (let i = 0; i < xs.length; i += size) out.push(xs.slice(i, i + size));
   return out;
