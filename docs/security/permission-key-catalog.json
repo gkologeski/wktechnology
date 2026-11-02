@@ -783,6 +783,8 @@
     "techfinance.charging_templates.view.own",
     "techfinance.charging_templates.view.team",
     "techfinance.charging_templates.view.workspace",
+    "techfinance.contaazul_people.manage.workspace",
+    "techfinance.contaazul_people.view.workspace",
     "techfinance.cost_centers.create.own",
     "techfinance.cost_centers.create.workspace",
     "techfinance.cost_centers.delete.own",
@@ -910,6 +912,7 @@
     "techfinance.reports.view.own",
     "techfinance.reports.view.team",
     "techfinance.reports.view.workspace",
+    "techfinance.sales.view.workspace",
     "techhire.briefing.create.own",
     "techhire.briefing.create.workspace",
     "techhire.briefing.delete.own",
@@ -1514,6 +1517,8 @@
     "techprojects.approvers.view.workspace",
     "techprojects.billing_config.manage.workspace",
     "techprojects.billing_config.view.workspace",
+    "techprojects.clickup_import.manage.workspace",
+    "techprojects.clickup_import.view.workspace",
     "techprojects.clockify_import.manage.workspace",
     "techprojects.clockify_import.view.workspace",
     "techprojects.costs.manage.workspace",
@@ -2673,6 +2678,9 @@
     "techsales.task_queues.view.own",
     "techsales.task_queues.view.team",
     "techsales.task_queues.view.workspace",
+    "techsales.tasks.assign.own",
+    "techsales.tasks.assign.team",
+    "techsales.tasks.assign.workspace",
     "techsales.tasks.create.own",
     "techsales.tasks.create.team",
     "techsales.tasks.create.workspace",
@@ -2760,12 +2768,7 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace",
-    "techfinance.contaazul_people.view.workspace",
-    "techfinance.contaazul_people.manage.workspace",
-    "techfinance.sales.view.workspace",
-    "techprojects.clickup_import.view.workspace",
-    "techprojects.clickup_import.manage.workspace"
+    "techservice.tickets.view.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -2836,6 +2839,15 @@
     },
     "techprojects.clickup_import.manage.workspace": {
       "migration": "drizzle/migrations/0267_clickup_importer.sql"
+    },
+    "techsales.tasks.assign.own": {
+      "migration": "drizzle/migrations/0300_prospecting_sequence_lifecycle.sql"
+    },
+    "techsales.tasks.assign.team": {
+      "migration": "drizzle/migrations/0300_prospecting_sequence_lifecycle.sql"
+    },
+    "techsales.tasks.assign.workspace": {
+      "migration": "drizzle/migrations/0300_prospecting_sequence_lifecycle.sql"
     }
   }
 }

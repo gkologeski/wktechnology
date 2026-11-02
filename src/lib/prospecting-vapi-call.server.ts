@@ -138,7 +138,13 @@ export async function startVapiCall(opts: {
     maxDurationSeconds: (cfg?.max_duration_seconds as number) ?? 600,
     // Let the assistant hang up right after saying goodbye instead of waiting on silence.
     endCallFunctionEnabled: true,
-    endCallPhrases: ["tenha um ótimo dia", "tenha uma ótima semana", "até mais", "tchau", "até logo"],
+    endCallPhrases: [
+      "tenha um ótimo dia",
+      "tenha uma ótima semana",
+      "até mais",
+      "tchau",
+      "até logo",
+    ],
     silenceTimeoutSeconds: 20,
     // Force Portuguese (Brazil) transcription so the model understands pt-BR audio.
     transcriber: { provider: "deepgram", model: "nova-2", language: "pt-BR" },

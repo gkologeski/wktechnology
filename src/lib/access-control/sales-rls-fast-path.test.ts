@@ -116,10 +116,14 @@ describe("atalho por workspace nas regras de leitura do TechSales", () => {
       expect(start).toBeGreaterThan(-1);
       const block = sql.slice(start, sql.indexOf(";", start));
       expect(block).toContain("IN (SELECT public.sales_full_grants(");
-      expect(block).toContain("OR public.sales_context_access((SELECT public.sales_policy_context(");
+      expect(block).toContain(
+        "OR public.sales_context_access((SELECT public.sales_policy_context(",
+      );
       expect(block).toContain("ARRAY[COALESCE(assigned_to, owner_id)]");
     }
     expect(sql).toContain("ARRAY[]::uuid[]");
-    expect(sql).toContain("REVOKE ALL ON FUNCTION public.sales_full_grants(text[], text) FROM PUBLIC, anon;");
+    expect(sql).toContain(
+      "REVOKE ALL ON FUNCTION public.sales_full_grants(text[], text) FROM PUBLIC, anon;",
+    );
   });
 });

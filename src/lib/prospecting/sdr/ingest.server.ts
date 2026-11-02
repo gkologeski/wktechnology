@@ -367,7 +367,15 @@ export async function ingestInboundForSdr(
     .maybeSingle();
   // Com a Lia atendendo, o opt-out é confirmado ao cliente pelo worker antes de
   // encerrar; sem ela (desligada ou humano), encerra aqui mesmo.
-  const aiWillConfirm = !!settings?.enabled && conv.ai_owner === "ai";
+  const route = await admin.rpc("prospecting_sequence_agent_route_allowed", {
+    p_workspace: p.workspaceId,
+    p_channel: "whatsapp",
+    p_source: conv.id,
+    p_agent: enr.playbook_id,
+  });
+  if (route.error) throw new Error("Não foi possível conferir o encaminhamento da sequência.");
+  const routeAllowed = route.data === true;
+  const aiWillConfirm = !!settings?.enabled && conv.ai_owner === "ai" && routeAllowed;
   if (
     !aiWillConfirm &&
     detectOptOut(p.body, (playbook?.opt_out_phrases as string[] | null) ?? [])
@@ -397,6 +405,7 @@ export async function ingestInboundForSdr(
   }
 
   if (!settings?.enabled) return "disabled";
+  if (!routeAllowed) return "human_owner";
   if (conv.ai_owner !== "ai") return "human_owner";
 
   const idem = turnIdemKey({

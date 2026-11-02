@@ -219,7 +219,9 @@ export function ActivityTimelineItem({
         {a.type === "meeting" &&
           !a.completed &&
           a.due_date &&
-          new Date(a.due_date).getTime() > Date.now() && <MeetingReminderStatus activityId={a.id} />}
+          new Date(a.due_date).getTime() > Date.now() && (
+            <MeetingReminderStatus activityId={a.id} />
+          )}
 
         {isEditing ? (
           editForm

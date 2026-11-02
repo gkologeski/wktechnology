@@ -838,7 +838,12 @@ export const getWhatsAppCampaignForEdit = createServerFn({ method: "POST" })
   });
 
 export const listAudienceFieldValues = createServerFn({ method: "POST" })
-  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
+  .middleware([
+    requireSalesPermission(
+      ["techsales.marketing.campaigns", "system.automation.sequences"],
+      "view",
+    ),
+  ])
   .inputValidator((input) =>
     z
       .object({
@@ -849,31 +854,6 @@ export const listAudienceFieldValues = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { isSuggestField, distinctValues, filterColumnPath, CUSTOM_FIELD_PREFIX } =
-      await import("@/lib/whatsapp/campaign-audience");
-    const { loadServerFilterFields } = await import("@/lib/whatsapp/campaign-audience.server");
-    const workspaceId = await resolveActiveWorkspace(context.userId);
-    const fields = await loadServerFilterFields(context.supabase, workspaceId, context.userId);
-    if (!isSuggestField(data.entity, data.column, fields)) throw new Error("Campo não permitido.");
-    filterColumnPath(data.column); // valida chave personalizada
-    const isCustom = data.column.startsWith(CUSTOM_FIELD_PREFIX);
-    const term = (data.search ?? "").replace(/[%_,()]/g, " ").trim();
-    // Valores distintos direto no banco (RLS do usuário): evita truncar em linhas repetidas.
-    const { data: rows, error } = await (context.supabase as any).rpc(
-      "whatsapp_campaign_filter_values",
-      {
-        p_entity: data.entity,
-        p_workspace: workspaceId,
-        p_column: isCustom ? "custom_fields" : data.column,
-        p_custom_key: isCustom ? data.column.slice(CUSTOM_FIELD_PREFIX.length) : null,
-        p_search: term || null,
-        p_limit: 200,
-      },
-    );
-    if (error) throw new Error(error.message);
-    return distinctValues(
-      ((rows ?? []) as unknown[]).map((r) =>
-        r && typeof r === "object" ? Object.values(r as Record<string, unknown>)[0] : r,
-      ),
-    );
+    const { audienceFieldSuggestions } = await import("@/lib/whatsapp/audience-suggestions.server");
+    return audienceFieldSuggestions(context.supabase, context.userId, data);
   });

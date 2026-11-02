@@ -242,6 +242,16 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
       },
 
       {
+        title: "Sequências de prospecção",
+        url: "/prospecting/sequences",
+        icon: GitBranch,
+        permissionAny: [
+          "system.automation.sequences.view.own",
+          "system.automation.sequences.view.team",
+          "system.automation.sequences.view.workspace",
+        ],
+      },
+      {
         title: "Leads",
         url: "/leads",
         icon: UserPlus,

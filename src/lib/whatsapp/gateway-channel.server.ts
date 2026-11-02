@@ -33,6 +33,8 @@ export async function gatewayFetch(path: string, init: RequestInit = {}): Promis
   if (!lovableKey || !waKey) throw new Error(WA_NOT_CONNECTED_MESSAGE);
   const res = await fetch(`${GATEWAY_URL}${path}`, {
     ...init,
+    signal: init.signal ?? AbortSignal.timeout(20_000),
+    redirect: "manual",
     headers: {
       Authorization: `Bearer ${lovableKey}`,
       "X-Connection-Api-Key": waKey,

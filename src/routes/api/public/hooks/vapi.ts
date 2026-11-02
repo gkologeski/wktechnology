@@ -118,6 +118,17 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
         const auth = verifyVapiWebhook(request, String(msg.secret ?? body.secret ?? ""));
         if (!auth.ok) return auth.response;
 
+        const { handleSequenceVoiceEvent } =
+          await import("@/lib/prospecting/sequences/voice.server");
+        try {
+          if (await handleSequenceVoiceEvent(supabaseAdmin, msg))
+            return Response.json({ ok: true });
+        } catch {
+          return Response.json(
+            { ok: false, error: "sequence_call_event_unavailable" },
+            { status: 503 },
+          );
+        }
         const type = String(msg.type ?? "");
         const call = (msg.call as Record<string, unknown> | undefined) ?? undefined;
         const callId = (call?.id as string | undefined) ?? (msg.callId as string | undefined);
