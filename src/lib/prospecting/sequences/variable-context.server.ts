@@ -38,7 +38,8 @@ export async function loadEntityVariables(
   );
   const company = await one(admin, "companies", workspaceId, "id", self?.company_id);
   let deal: Row | null = null;
-  if (person.entity === "lead") deal = await one(admin, "deals", workspaceId, "id", self?.converted_deal_id);
+  if (person.entity === "lead")
+    deal = await one(admin, "deals", workspaceId, "id", self?.converted_deal_id);
   else if (self) {
     const q = await admin
       .from("deals")

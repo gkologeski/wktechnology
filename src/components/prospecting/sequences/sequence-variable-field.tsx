@@ -58,19 +58,23 @@ function FieldCommand({
         )}
         {VARIABLE_ENTITIES.map((e) => (
           <CommandGroup key={e.entity} heading={e.label}>
-            {(fields[e.base] ?? []).filter((f) => !isBlockedFilterColumn(f.column)).map((f) => {
-              const key = `${e.entity}.${columnToPath(f.column)}`;
-              return (
-                <CommandItem
-                  key={key}
-                  value={`${e.label} ${f.label} ${key}`}
-                  onSelect={() => onPick(key, e.entity, f.column)}
-                >
-                  <Check className={selected === key ? "mr-2 h-4 w-4" : "mr-2 h-4 w-4 opacity-0"} />
-                  {f.label}
-                </CommandItem>
-              );
-            })}
+            {(fields[e.base] ?? [])
+              .filter((f) => !isBlockedFilterColumn(f.column))
+              .map((f) => {
+                const key = `${e.entity}.${columnToPath(f.column)}`;
+                return (
+                  <CommandItem
+                    key={key}
+                    value={`${e.label} ${f.label} ${key}`}
+                    onSelect={() => onPick(key, e.entity, f.column)}
+                  >
+                    <Check
+                      className={selected === key ? "mr-2 h-4 w-4" : "mr-2 h-4 w-4 opacity-0"}
+                    />
+                    {f.label}
+                  </CommandItem>
+                );
+              })}
           </CommandGroup>
         ))}
       </CommandList>

@@ -1,6 +1,10 @@
 // Variáveis de campo das Sequências: `{{entidade.coluna}}` ou `{{entidade.coluna|padrão}}`.
 // Entidades: lead, contact, company, deal. Campos personalizados: `{{lead.cf.chave}}`.
-import { CUSTOM_FIELD_PREFIX, isBlockedFilterColumn, type AudienceBase } from "@/lib/whatsapp/campaign-audience";
+import {
+  CUSTOM_FIELD_PREFIX,
+  isBlockedFilterColumn,
+  type AudienceBase,
+} from "@/lib/whatsapp/campaign-audience";
 
 export type VariableEntity = "lead" | "contact" | "company" | "deal";
 export const VARIABLE_ENTITIES: { entity: VariableEntity; base: AudienceBase; label: string }[] = [
@@ -10,7 +14,8 @@ export const VARIABLE_ENTITIES: { entity: VariableEntity; base: AudienceBase; la
   { entity: "deal", base: "deals", label: "Negócio" },
 ];
 
-const FIELD_TOKEN = /^\{\{\s*(lead|contact|company|deal)\.((?:cf\.)?[a-z0-9_]{1,60})\s*(?:\|([^{}]{0,200}))?\}\}$/i;
+const FIELD_TOKEN =
+  /^\{\{\s*(lead|contact|company|deal)\.((?:cf\.)?[a-z0-9_]{1,60})\s*(?:\|([^{}]{0,200}))?\}\}$/i;
 const ANY_TOKEN = /\{\{\s*([\w.]+)\s*(?:\|([^{}]{0,200}))?\}\}/g;
 
 /** Coluna do catálogo (ex.: `cf:setor`) → caminho do token (`cf.setor`). */
@@ -30,7 +35,11 @@ export function parseFieldToken(
 ): { entity: VariableEntity; path: string; fallback: string } | null {
   const m = FIELD_TOKEN.exec(value.trim());
   if (!m) return null;
-  return { entity: m[1].toLowerCase() as VariableEntity, path: m[2].toLowerCase(), fallback: m[3] ?? "" };
+  return {
+    entity: m[1].toLowerCase() as VariableEntity,
+    path: m[2].toLowerCase(),
+    fallback: m[3] ?? "",
+  };
 }
 
 function lookup(ctx: Record<string, unknown>, key: string): unknown {
