@@ -123,7 +123,7 @@ export async function sequenceOperations(
   const activities = tasks.length
     ? await client
         .from("activities")
-        .select("id,owner_id,assigned_to,completed")
+        .select("id,owner_id,assigned_to,completed,external_ids")
         .eq("workspace_id", data.workspaceId)
         .in(
           "id",
@@ -181,6 +181,11 @@ export async function sequenceOperations(
         !!caps.owners[r.owner_id]?.manage &&
         !!a &&
         !a.completed &&
+        !(
+          a.external_ids &&
+          typeof a.external_ids === "object" &&
+          "vapi_call_id" in a.external_ids
+        ) &&
         !!caps.owners[a.assigned_to || a.owner_id || ""]?.activity,
       activityId: a?.id || null,
       activityKind: task?.kind || null,

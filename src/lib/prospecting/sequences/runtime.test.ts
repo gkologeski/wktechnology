@@ -136,7 +136,7 @@ describe("sequence execution planner", () => {
       "2026-03-08T14:00:00.000Z",
     );
   });
-  it("unsupported automatic calls never masquerade as delivered", () => {
+  it("automatic calls produce a reserved effect rather than a delivered result", () => {
     const s = scenario();
     s.definition.steps = [
       {
@@ -151,8 +151,8 @@ describe("sequence execution planner", () => {
       },
     ];
     expect(decideExecution(s)).toMatchObject({
-      state: "blocked",
-      reason: "automatic_call_not_configured",
+      kind: "effect",
+      step: { type: "call", mode: "automatic" },
     });
   });
   it("waiting human activity never dispatches another step", () => {

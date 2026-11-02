@@ -244,3 +244,11 @@ precisa ser conectado ao cron na etapa final; este lote não ativa produção.
 ### Identidade das conversas (0302)
 
 Respostas de e-mail usam apenas a mesma caixa atual, destinatário efetivo e histórico acessível ao responsável. Trocar o e-mail não reutiliza a conversa antiga. Conversas WhatsApp de outra pessoa bloqueiam o envio; conflito surgido depois da aceitação mantém o recibo e exige reconciliação, sem reenviar nem sobrescrever vínculos.
+
+### Chamadas automáticas (0303)
+
+Uma etapa automática utiliza a configuração Vapi do workspace e um roteiro ativo e visível. Exige permissões atuais de telefonia, roteiro e criação da atividade. Cada etapa representa uma chamada; novas tentativas ficam explícitas no fluxo, com esperas próprias. O transporte faz uma única tentativa, com prazo limitado e sem seguir redirecionamentos. Resultado desconhecido fica em quarentena.
+
+O recibo é gravado antes da projeção da atividade. A chamada tem vínculo com o Lead ou Contato original e permanece aguardando retorno confirmado da telefonia. O webhook autenticado confere efeito, remetente, destinatário e ID da chamada; eventos duplicados ou atrasados não reabrem uma execução cancelada. Eventos de sequência não passam pela retomada de campanhas legadas. A conclusão manual pela operação da sequência é bloqueada para chamadas automáticas. Testes locais usam recibos sintéticos; não comprovam a configuração nem a entrega real da operadora.
+
+Referência técnica: https://docs.vapi.ai/server-url/events e https://docs.vapi.ai/api-reference/calls/create.

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
-import { assertSalesArea } from "@/lib/access-control/sales-core.server";
+import { assertSalesRecord, assertSalesArea } from "@/lib/access-control/sales-core.server";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import { requireChannelAccess } from "@/lib/prospecting/sdr/channel-access.server";
 import {
@@ -137,6 +137,46 @@ export async function preflightSequenceDefinition(
   if (senders.size > 10) add(null, "account_limit", "Use até dez contas distintas por sequência.");
   else
     for (const step of definition.steps) {
+      if (step.type === "call" && step.mode === "automatic" && step.scriptId) {
+        try {
+          await assertSalesArea(client, "techsales.prospecting_voice", "create");
+          await assertSalesArea(client, "techsales.prospecting_voice", "view");
+          await assertSalesArea(client, "techsales.activities", "create");
+          await assertSalesRecord(client, "prospecting_scripts", step.scriptId, "view");
+          const script = await client
+            .from("prospecting_scripts")
+            .select("id,archived_at,system_prompt,first_message,voice_id,voice_provider")
+            .eq("id", step.scriptId)
+            .eq("workspace_id", workspaceId)
+            .maybeSingle();
+          const voice = await client
+            .from("voice_agent_settings")
+            .select("vapi_phone_number_id,default_voice_id,default_voice_provider,language")
+            .eq("workspace_id", workspaceId)
+            .maybeSingle();
+          if (
+            script.error ||
+            !script.data ||
+            script.data.archived_at ||
+            !script.data.system_prompt?.trim() ||
+            !script.data.first_message?.trim() ||
+            voice.error ||
+            !voice.data ||
+            !z.string().uuid().safeParse(voice.data.vapi_phone_number_id).success ||
+            !(script.data.voice_id || voice.data.default_voice_id) ||
+            (script.data.voice_provider || voice.data.default_voice_provider) !== "elevenlabs" ||
+            !process.env.VAPI_API_KEY ||
+            !process.env.VAPI_WEBHOOK_SECRET
+          )
+            throw new Error("Unavailable");
+        } catch {
+          add(
+            step.id,
+            "voice_unavailable",
+            "Confira roteiro ativo, número de saída, voz, integração e permissões da telefonia.",
+          );
+        }
+      }
       if (step.type === "email" && step.accountId && !checkedEmail.has(step.accountId)) {
         checkedEmail.add(step.accountId);
         try {
@@ -210,7 +250,7 @@ export async function preflightSequenceDefinition(
         }
       }
       if (
-        (step.type === "task" || step.type === "call") &&
+        (step.type === "task" || (step.type === "call" && step.mode === "human")) &&
         step.assigneeId &&
         !checkedMembers.has(step.assigneeId)
       ) {
@@ -239,7 +279,7 @@ export async function preflightSequenceDefinition(
     try {
       await assertSalesArea(client, resource, "create");
       if (
-        (step.type === "task" || step.type === "call") &&
+        (step.type === "task" || (step.type === "call" && step.mode === "human")) &&
         step.assigneeId &&
         step.assigneeId !== actor
       )

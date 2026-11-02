@@ -1,3 +1,4 @@
+import { listScripts } from "@/lib/prospecting-scripts.functions";
 import { SequenceReadiness } from "./sequence-readiness";
 import { SequenceTemplatePicker } from "./sequence-template-picker";
 import { useEffect, useRef, useState } from "react";
@@ -99,6 +100,14 @@ export function ProspectingSequencesPage() {
     !permissions.isError &&
     !!permissions.workspaceId &&
     permissions.canAny(scopes.map((s) => `${SEQUENCE_RESOURCE}.${action}.${s}`));
+  const loadScripts = useServerFn(listScripts);
+  const voiceScripts = useQuery({
+    queryKey: ["sequence-voice-scripts", permissions.workspaceId],
+    enabled:
+      can("view") &&
+      permissions.canAny(scopes.map((scope) => `techsales.prospecting_scripts.view.${scope}`)),
+    queryFn: () => loadScripts(),
+  });
   const listFn = useServerFn(listProspectingSequenceDrafts),
     saveFn = useServerFn(saveProspectingSequenceDraft);
   const [row, setRow] = useState<SequenceDraft | null>(null),
@@ -664,7 +673,8 @@ export function ProspectingSequencesPage() {
                             />
                           </>
                         )}
-                        {(step.type === "task" || step.type === "call") && (
+                        {(step.type === "task" ||
+                          (step.type === "call" && step.mode === "human")) && (
                           <Choice
                             label="Responsável pela tarefa"
                             value={step.assigneeId || ""}
@@ -688,8 +698,43 @@ export function ProspectingSequencesPage() {
                                 ["human", "Humana · criar tarefa"],
                                 ["automatic", "Automática · telefonia"],
                               ]}
-                              onChange={(mode) => updateStep({ mode })}
+                              onChange={(mode) =>
+                                updateStep({
+                                  mode,
+                                  ...(mode === "automatic" ? { attempts: 1 } : {}),
+                                })
+                              }
                             />
+                            {step.mode === "automatic" && (
+                              <>
+                                <Choice
+                                  label="Roteiro da telefonia"
+                                  value={step.scriptId || ""}
+                                  choices={[
+                                    ["", "Selecione o roteiro"],
+                                    ...(voiceScripts.data || [])
+                                      .filter(
+                                        (s) =>
+                                          !(s as typeof s & { archived_at?: string | null })
+                                            .archived_at,
+                                      )
+                                      .map((s) => [s.id, s.name] as const),
+                                  ]}
+                                  onChange={(scriptId) =>
+                                    updateStep({ scriptId: scriptId || null })
+                                  }
+                                />
+                                {voiceScripts.isError && (
+                                  <p role="alert" className="text-xs text-destructive">
+                                    Não foi possível consultar os roteiros.
+                                  </p>
+                                )}
+                                <p className="text-xs text-muted-foreground">
+                                  Uma chamada por etapa. Para tentar novamente, adicione uma espera
+                                  e outra chamada. A sequência aguarda o resultado da telefonia.
+                                </p>
+                              </>
+                            )}
                             <label className="block text-xs">
                               Roteiro
                               <Textarea
@@ -699,16 +744,18 @@ export function ProspectingSequencesPage() {
                                 onChange={(e) => updateStep({ notes: e.target.value })}
                               />
                             </label>
-                            <label className="block text-xs">
-                              Máximo de tentativas planejadas para a tarefa
-                              <Input
-                                type="number"
-                                min={1}
-                                max={5}
-                                value={step.attempts}
-                                onChange={(e) => updateStep({ attempts: Number(e.target.value) })}
-                              />
-                            </label>
+                            {step.mode === "human" && (
+                              <label className="block text-xs">
+                                Máximo de tentativas planejadas para a tarefa
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={5}
+                                  value={step.attempts}
+                                  onChange={(e) => updateStep({ attempts: Number(e.target.value) })}
+                                />
+                              </label>
+                            )}
                           </>
                         )}
                         {step.type === "condition" && (

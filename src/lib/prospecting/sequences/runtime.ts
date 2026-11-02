@@ -202,8 +202,6 @@ export function decideExecution(input: {
   if (step.type === "email" && !s.hasEmail) return next(now, "missing_email");
   if (step.type === "whatsapp" && !s.hasWhatsApp) return next(now, "missing_whatsapp");
   if (step.type === "call" && !s.hasPhone) return next(now, "missing_phone");
-  if (step.type === "call" && step.mode === "automatic")
-    return stop("blocked", "automatic_call_not_configured");
   const due = nextBusinessInstant(now, d.settings);
   if (due.getTime() > now.getTime())
     return {

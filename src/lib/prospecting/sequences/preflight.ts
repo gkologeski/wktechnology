@@ -65,12 +65,15 @@ export function inspectSequence(definition: SequenceDefinition): SequenceIssue[]
     if ((s.type === "call" && s.mode === "human") || s.type === "task") {
       if (!s.assigneeId) add(s.id, "assignee_missing", "Escolha o responsável pela tarefa.");
     }
-    if (s.type === "call" && s.mode === "automatic")
-      add(
-        s.id,
-        "automatic_call_pending",
-        "Chamadas automáticas exigem uma integração de telefonia habilitada; use uma chamada humana nesta sequência.",
-      );
+    if (s.type === "call" && s.mode === "automatic") {
+      if (!s.scriptId) add(s.id, "voice_script_missing", "Escolha um roteiro da telefonia.");
+      if (s.attempts !== 1)
+        add(
+          s.id,
+          "voice_single_attempt",
+          "Use uma chamada por etapa; para repetir, adicione uma espera e outra chamada.",
+        );
+    }
     if (s.type === "agent" && !s.agentId) add(s.id, "agent_missing", "Escolha o agente da etapa.");
     if (s.type === "condition" && s.yes === "agent" && !definition.settings.agentId)
       add(s.id, "branch_agent_missing", "O caminho Agente exige um agente padrão nas regras.");

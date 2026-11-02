@@ -129,6 +129,10 @@ export function sequenceDeliveryPorts(
   return {
     handoff,
     prepare: async (ctx, step) => {
+      if (step.type === "call" && step.mode === "automatic") {
+        const { prepareSequenceVoice } = await import("./voice.server");
+        return prepareSequenceVoice(admin, ctx);
+      }
       if (step.type === "call" || step.type === "task")
         return async (effect) => {
           const id = await workRpc<string>(admin, "prospecting_sequence_task_effect", {

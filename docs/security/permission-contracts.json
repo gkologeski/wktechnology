@@ -5310,7 +5310,7 @@
       "id": "prospecting-voice-webhook",
       "kind": "service",
       "files": {
-        "src/routes/api/public/hooks/vapi.ts": "ceee7fc6bffc14d70d756c014c81dbe15ac72c4a128bb80eff08ac0b09912ccf"
+        "src/routes/api/public/hooks/vapi.ts": "0a515b656e7e45a3ccdb8f0d9aa8c45486f20e99a70ef3bc7c573ddde8fd69fb"
       },
       "resources": [
         "techsales.prospecting_voice"
@@ -5468,7 +5468,7 @@
       "id": "prospecting-multichannel-drafts",
       "kind": "business",
       "files": {
-        "src/components/prospecting/sequences/sequences-page.tsx": "0c85828b95549d369c7e6d6f801b8a87599b6f8f5f0dfae446edfa6814bf4889",
+        "src/components/prospecting/sequences/sequences-page.tsx": "98a93c493592c8c6dee4b8eae4214d9067b19037372bae0a0cf6723e5733eb7f",
         "src/lib/prospecting/sequences/draft.ts": "00fc36c0abd90ac08c230c807c65411f5617aa428c9d12ccf804a47a929c0f60",
         "src/lib/prospecting/sequences/drafts.server.ts": "55429e0f960f7eeaf85c9305af088c03bc04f3e8140e95a3ec87c0f3f23faae1",
         "src/routes/_authenticated/prospecting.sequences.tsx": "8baa9510472ca9e2aa65e8f2be1407de24f500cf3f4da51f850b0d30af0a22cf",
@@ -5559,8 +5559,8 @@
       "kind": "business",
       "files": {
         "src/lib/prospecting/sequences/drafts.functions.ts": "1da68aefd8b8ad3e103e7861513471d2424a0e1dde75c046a39e7d3397c9c0fa",
-        "src/lib/prospecting/sequences/preflight.ts": "b31f4fbab952793ebd496d9328bb470cfbd9c5ff9808bd8acf479a7224bcf85d",
-        "src/lib/prospecting/sequences/releases.server.ts": "ce2461ac2e3339bd5104e67a706fd316fee9029bac6b83cb5c7a11c3b7cd59fa",
+        "src/lib/prospecting/sequences/preflight.ts": "e68086bb637babf6da2e5d3d00b553baf9875c13938842e47a526e1ba0530a2a",
+        "src/lib/prospecting/sequences/releases.server.ts": "26f3fae6efd71173aeb33063e2f047c8707c2822c709661e8682aa12db4e5062",
         "src/components/prospecting/sequences/sequence-readiness.tsx": "e2ad721054d3d82d7e2aaba7cefaa4459b8496d85f7418da09e13c9fcb25e3ff",
         "src/components/prospecting/sequences/sequence-template-picker.tsx": "427ec2f8233bd1bd4a5b9cdb4cf64c1d85178bfe523a99b9dd40e9fff244d0e8",
         "drizzle/migrations/0293_prospecting_sequence_versions.sql": "38d37b1faf6153875d32a8cd3f4c9036689aec2fbd2dae056ed6df4bb15438a5"
@@ -5759,7 +5759,7 @@
       "id": "prospecting-sequence-durable-runtime",
       "kind": "business",
       "files": {
-        "src/lib/prospecting/sequences/runtime.ts": "f71494ed36bd90053ebda96e8382f59f5ab454ef1b11aa60efe650114e919c9a",
+        "src/lib/prospecting/sequences/runtime.ts": "91bd0f24930190043af394302bc6003c01d7da742c30fb749b2a0ef0f9ba059d",
         "src/lib/prospecting/sequences/worker.server.ts": "7b01d5d3b73235b03696462484ff6020f74a64007d19cb3ead5e5a552dbbcc39",
         "drizzle/migrations/0295_prospecting_sequence_runtime.sql": "504420a65224ad4caa45e07b3d304432ec54bf446134ea39a6ddd1b7ae5c76a8"
       },
@@ -5851,7 +5851,7 @@
       "kind": "business",
       "files": {
         "drizzle/migrations/0296_prospecting_sequence_delivery.sql": "b83c2ab2890834807a3e17ba394882660b5cf6e3b42b8edbf4eb967b79ed63c9",
-        "src/lib/prospecting/sequences/delivery.server.ts": "51a9252eba841b780605280355618e20b0de4c52dbc6a0427516392d25aed7ad"
+        "src/lib/prospecting/sequences/delivery.server.ts": "bf55a90a0ca613cd509452c1bcb8f077a7bbef7a7b32cf0fd03c2b534dc80478"
       },
       "resources": [
         "system.automation.sequences",
@@ -6104,7 +6104,7 @@
       "files": {
         "drizzle/migrations/0298_prospecting_sequence_operator_access.sql": "f29e0d81dd8692d82de9d4e0298e2365ddb4d459a84db206d7a2d72292ddc167",
         "src/lib/prospecting/sequences/operations.functions.ts": "f91fe4a1df573d06835a2d2f3add382416c81bff04ab1fa33d885d2c4351dfeb",
-        "src/lib/prospecting/sequences/operations.server.ts": "5af66c30a0c0717da72737ad5a718e685fc3333b327f1f99ed04f79328c521fe",
+        "src/lib/prospecting/sequences/operations.server.ts": "7d0288039281d2b7cc7280e3500634a2a5a717e7566f6a063f2bc82808b216b8",
         "src/components/prospecting/sequences/sequence-operations.tsx": "92a00ed99e0b0ea11f792eb071eabecc37407c3849ed34c6e05144b4e169f2b6"
       },
       "resources": [
@@ -6598,6 +6598,129 @@
         "inactive_member": {
           "file": "src/lib/prospecting/sequences/delivery.test.ts",
           "name": "inactive actor cannot read transport credentials"
+        }
+      }
+    },
+    {
+      "id": "prospecting-sequence-automatic-voice",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0303_prospecting_sequence_voice.sql": "3a7cf002f5970eaf96e0bc45cf92a8073c0e66f7ba5f05b61e82a703bbcd50a9",
+        "src/lib/prospecting/sequences/voice.server.ts": "7b0d2624418b7cfb63211128398fb247df659d9a5d45a35305e07a8bde055cf8"
+      },
+      "resources": [
+        "system.automation.sequences",
+        "techsales.prospecting_voice",
+        "techsales.prospecting_scripts",
+        "techsales.activities"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "manage",
+        "assign"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.sequences.view.own",
+        "system.automation.sequences.view.team",
+        "system.automation.sequences.view.workspace",
+        "system.automation.sequences.manage.own",
+        "system.automation.sequences.manage.team",
+        "system.automation.sequences.manage.workspace",
+        "system.automation.sequences.assign.own",
+        "system.automation.sequences.assign.team",
+        "system.automation.sequences.assign.workspace",
+        "techsales.prospecting_voice.view.own",
+        "techsales.prospecting_voice.create.own",
+        "techsales.prospecting_scripts.view.own",
+        "techsales.activities.create.own"
+      ],
+      "rationale": "Service-only current run/lease authorization checks active source subject, Vapi workspace configuration, scoped active script, voice view/create and activity creation. Exact sender/source rechecked after effect reservation, no provider secrets persisted. Fixed bounded single transport attempt; unknown results quarantined. Authenticated provider webhook matches exact effect, sender, recipient and immutable call ID before durable receipt/event storage. Projection uses actual linked activity and waits for verified terminal result. Duplicate/out-of-order events preserve completion and cancellation. No new user grants; isolated JWT tests use synthetic receipts only.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/prospecting/sequences/voice.server.ts",
+          "symbol": "prepareSequenceVoice"
+        },
+        {
+          "file": "src/lib/prospecting/sequences/voice.server.ts",
+          "symbol": "handleSequenceVoiceEvent"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0303_prospecting_sequence_voice.sql",
+          "symbol": "prospecting_sequence_voice_access"
+        },
+        {
+          "file": "drizzle/migrations/0303_prospecting_sequence_voice.sql",
+          "symbol": "prospecting_sequence_voice_project"
+        },
+        {
+          "file": "drizzle/migrations/0303_prospecting_sequence_voice.sql",
+          "symbol": "prospecting_sequence_voice_event"
+        },
+        {
+          "file": "drizzle/migrations/0303_prospecting_sequence_voice.sql",
+          "symbol": "prospecting_sequence_effect_begin"
+        },
+        {
+          "file": "drizzle/migrations/0303_prospecting_sequence_voice.sql",
+          "symbol": "prospecting_sequence_receipt_store"
+        },
+        {
+          "file": "drizzle/migrations/0303_prospecting_sequence_voice.sql",
+          "symbol": "prospecting_sequence_delivery_commit"
+        },
+        {
+          "file": "drizzle/migrations/0303_prospecting_sequence_voice.sql",
+          "symbol": "prospecting_sequence_complete_call"
+        },
+        {
+          "file": "drizzle/migrations/0303_prospecting_sequence_voice.sql",
+          "symbol": "prospecting_sequence_claim"
+        },
+        {
+          "file": "drizzle/migrations/0303_prospecting_sequence_voice.sql",
+          "symbol": "prospecting_sequence_voice_pending"
+        },
+        {
+          "file": "drizzle/migrations/0303_prospecting_sequence_voice.sql",
+          "symbol": "prospecting_sequence_control"
+        },
+        {
+          "file": "drizzle/migrations/0303_prospecting_sequence_voice.sql",
+          "symbol": "prospecting_sequence_wake_tasks"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/voice.test.ts",
+          "name": "voice allowed actor reserves exact sender and persists receipt before activity"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/voice.test.ts",
+          "name": "voice rejects missing_permission before credentials or transport"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/voice.test.ts",
+          "name": "voice rejects explicit_deny before credentials or transport"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/voice.test.ts",
+          "name": "voice rejects foreign_workspace before credentials or transport"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/voice.test.ts",
+          "name": "voice rejects inactive_member before credentials or transport"
         }
       }
     }

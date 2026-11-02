@@ -50,6 +50,9 @@ const W = "aaaaaaaa-0000-4000-8000-00000000000a",
   O = "10000000-0000-4000-8000-000000000001";
 const roles = ["30000000-0000-4000-8000-0000000000a8", "30000000-0000-4000-8000-0000000000a9"];
 const keys = [
+  "techsales.prospecting_voice.view.own",
+  "techsales.prospecting_voice.create.own",
+  "techsales.prospecting_scripts.view.own",
   "techsales.tasks.view.own",
   "techsales.tasks.update.own",
   "techsales.tasks.create.own",
@@ -78,6 +81,9 @@ const before = must(
     .eq("workspace_id", W)
     .in("role_id", roles)
     .in("permission_key", keys),
+);
+const voiceBefore = must(
+  await admin.from("voice_agent_settings").select("*").eq("workspace_id", W).maybeSingle(),
 );
 const settingsBefore = must(
   await admin.from("sdr_workspace_settings").select("enabled").eq("workspace_id", W).maybeSingle(),
@@ -2912,6 +2918,366 @@ try {
     },
   );
 
+  await check(
+    "automatic voice uses current scopes and waits for verified provider completion",
+    async () => {
+      await grant(roles[0], [
+        "techsales.prospecting_voice.view.own",
+        "techsales.prospecting_voice.create.own",
+        "techsales.prospecting_scripts.view.own",
+      ]);
+      const phoneId = crypto.randomUUID();
+      must(
+        await admin.from("voice_agent_settings").upsert({
+          workspace_id: W,
+          owner_id: actor,
+          vapi_phone_number_id: phoneId,
+          default_voice_id: "synthetic-voice",
+          default_voice_provider: "elevenlabs",
+        }),
+      );
+      const script = await seed("prospecting_scripts", {
+        workspace_id: W,
+        owner_id: actor,
+        name: "[ISO] Voice",
+        first_message: "Olá",
+        system_prompt: "Synthetic only",
+        voice_provider: "elevenlabs",
+      });
+      const contact = await seed("contacts", {
+        workspace_id: W,
+        owner_id: actor,
+        first_name: "Voice",
+        last_name: tag + "voice",
+        phone: "+5548991104003",
+      });
+      const def = newDefinition();
+      def.audience.groups = [
+        {
+          logic: "and",
+          filters: [{ entity: "contacts", column: "last_name", op: "eq", value: tag + "voice" }],
+        },
+      ];
+      def.steps = [
+        { ...newStep("call"), mode: "automatic", scriptId: script, attempts: 1 },
+        newStep("end"),
+      ];
+      const version = await makeVersion(def);
+      const cohort = await prepareSequenceEnrollment(
+        clients[0],
+        {
+          workspaceId: W,
+          versionId: version,
+          requestId: crypto.randomUUID(),
+          consentEvidence: "Synthetic voice, no external call",
+        },
+        admin,
+      );
+      must(
+        await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: cohort.id }),
+      );
+      const run = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+        (r) => r.version_id === version,
+      );
+      assert(run, "Voice run not claimed");
+      const access = { p_run: run.id, p_lease: run.lease_token };
+      blocked(await clients[0].rpc("prospecting_sequence_voice_access", access));
+      blocked(await clients[0].rpc("prospecting_sequence_voice_pending", {}));
+      assert(
+        must(await admin.rpc("prospecting_sequence_voice_access", access)).sourceKey === phoneId,
+        "Wrong sender",
+      );
+      await grant(roles[0], ["techsales.prospecting_voice.create.own"], "deny");
+      blocked(await admin.rpc("prospecting_sequence_voice_access", access));
+      await grant(roles[0], ["techsales.prospecting_voice.create.own"]);
+      const ctx = must(await admin.rpc("prospecting_sequence_context", access));
+      const effect = must(
+        await admin.rpc("prospecting_sequence_effect_begin", {
+          ...access,
+          p_step: def.steps[0].id,
+          p_prepared: {
+            source: ctx.source,
+            email: null,
+            phones: ["+5548991104003"],
+            whatsapp: "+5548991104003",
+          },
+        }),
+      );
+      assert(effect.sourceKey === phoneId, "Voice reservation missing sender");
+      const call = crypto.randomUUID();
+      const event = {
+        p_effect: effect.id,
+        p_call: call,
+        p_phone_id: phoneId,
+        p_number: "+5548991104003",
+        p_terminal: false,
+        p_outcome: null,
+      };
+      blocked(await clients[0].rpc("prospecting_sequence_voice_event", event));
+      blocked(
+        await admin.rpc("prospecting_sequence_voice_event", {
+          ...event,
+          p_phone_id: crypto.randomUUID(),
+        }),
+      );
+      blocked(
+        await admin.rpc("prospecting_sequence_voice_event", {
+          ...event,
+          p_number: "+5548993333333",
+        }),
+      );
+      must(
+        await clients[0].rpc("prospecting_sequence_control", {
+          p_workspace: W,
+          p_run: run.id,
+          p_action: "pause",
+        }),
+      );
+      must(await admin.rpc("prospecting_sequence_voice_event", event));
+      assert(
+        must(
+          await admin
+            .from("prospecting_sequence_runs")
+            .select("state,cursor")
+            .eq("id", run.id)
+            .single(),
+        ).state === "paused",
+        "Early callback resumed a manual pause",
+      );
+      must(
+        await clients[0].rpc("prospecting_sequence_control", {
+          p_workspace: W,
+          p_run: run.id,
+          p_action: "resume",
+        }),
+      );
+      must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 }));
+      let row = must(
+        await admin
+          .from("prospecting_sequence_runs")
+          .select("state,cursor")
+          .eq("id", run.id)
+          .single(),
+      );
+      assert(
+        row.state === "waiting_task" && row.cursor === 1,
+        "Accepted call did not wait for real result",
+      );
+      let activity = must(
+        await admin
+          .from("activities")
+          .select("completed,related_contact_id,outcome")
+          .eq("id", effect.id)
+          .single(),
+      );
+      assert(
+        !activity.completed && activity.related_contact_id === contact,
+        "Voice lost person or invented completion",
+      );
+      // Isolated fault injection ages this synthetic accepted call, never a real call.
+      execFileSync(
+        "/Applications/Docker.app/Contents/Resources/bin/docker",
+        [
+          "exec",
+          "supabase_db_techerp-permissions-20261023",
+          "psql",
+          "-U",
+          "supabase_admin",
+          "-d",
+          "postgres",
+          "-v",
+          "ON_ERROR_STOP=1",
+          "-c",
+          `UPDATE public.prospecting_sequence_effects SET finished_at=now()-interval '3 minutes' WHERE id='${effect.id}'; UPDATE public.prospecting_sequence_voice_events SET updated_at=now()-interval '3 minutes' WHERE effect_id='${effect.id}';`,
+        ],
+        { stdio: "pipe" },
+      );
+      assert(
+        must(await admin.rpc("prospecting_sequence_voice_pending", {})).some(
+          (x) => x.effect_id === effect.id,
+        ),
+        "Accepted call absent from recovery queue",
+      );
+      assert(
+        !must(await admin.rpc("prospecting_sequence_voice_pending", {})).some(
+          (x) => x.effect_id === effect.id,
+        ),
+        "Same call claimed twice for immediate recovery",
+      );
+
+      blocked(
+        await clients[0].rpc("prospecting_sequence_complete_call", {
+          p_workspace: W,
+          p_run: run.id,
+          p_outcome: "answered",
+        }),
+      );
+      must(
+        await clients[0]
+          .from("activities")
+          .update({
+            completed: true,
+            outcome: "answered",
+            outcome_set_at: new Date().toISOString(),
+          })
+          .eq("id", effect.id),
+      );
+      must(await admin.rpc("prospecting_sequence_wake_tasks", { p_limit: 100 }));
+      assert(
+        must(
+          await admin.from("prospecting_sequence_runs").select("state").eq("id", run.id).single(),
+        ).state === "waiting_task",
+        "Manual activity edit forged a terminal provider fact",
+      );
+      must(
+        await admin.rpc("prospecting_sequence_voice_event", {
+          ...event,
+          p_terminal: true,
+          p_outcome: "answered",
+        }),
+      );
+      must(await admin.rpc("prospecting_sequence_voice_event", event));
+      activity = must(
+        await admin.from("activities").select("completed,outcome").eq("id", effect.id).single(),
+      );
+      assert(
+        activity.completed && activity.outcome === "answered",
+        "Late callback regressed result",
+      );
+      must(await admin.rpc("prospecting_sequence_wake_tasks", { p_limit: 100 }));
+      row = must(
+        await admin
+          .from("prospecting_sequence_runs")
+          .select("state,cursor")
+          .eq("id", run.id)
+          .single(),
+      );
+      assert(row.state === "active" && row.cursor === 1, "Completed call did not wake sequence");
+      must(
+        await clients[0].rpc("prospecting_sequence_control", {
+          p_workspace: W,
+          p_run: run.id,
+          p_action: "cancel",
+        }),
+      );
+      must(
+        await admin.rpc("prospecting_sequence_voice_event", {
+          ...event,
+          p_terminal: true,
+          p_outcome: "answered",
+        }),
+      );
+      assert(
+        must(
+          await admin.from("prospecting_sequence_runs").select("state").eq("id", run.id).single(),
+        ).state === "cancelled",
+        "Callback resumed cancelled run",
+      );
+      const secondPhone = "+5548991104009",
+        secondSender = crypto.randomUUID();
+      must(
+        await admin
+          .from("voice_agent_settings")
+          .update({ vapi_phone_number_id: secondSender })
+          .eq("workspace_id", W),
+      );
+      await seed("contacts", {
+        workspace_id: W,
+        owner_id: actor,
+        first_name: "Voice unknown",
+        last_name: tag + "voice",
+        phone: secondPhone,
+      });
+      const next = await prepareSequenceEnrollment(
+        clients[0],
+        {
+          workspaceId: W,
+          versionId: version,
+          requestId: crypto.randomUUID(),
+          consentEvidence: "Synthetic unknown receipt only",
+        },
+        admin,
+      );
+      must(
+        await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: next.id }),
+      );
+      const run2 = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+        (r) => r.version_id === version && r.id !== run.id,
+      );
+      assert(
+        run2,
+        `Second call not claimed: held=${next.held}, blocked=${next.blocked}, reasons=${JSON.stringify(next.reasons)}`,
+      );
+      const ctx2 = must(
+        await admin.rpc("prospecting_sequence_context", {
+          p_run: run2.id,
+          p_lease: run2.lease_token,
+        }),
+      );
+      const e2 = must(
+        await admin.rpc("prospecting_sequence_effect_begin", {
+          p_run: run2.id,
+          p_lease: run2.lease_token,
+          p_step: def.steps[0].id,
+          p_prepared: {
+            source: ctx2.source,
+            email: null,
+            phones: [secondPhone],
+            whatsapp: secondPhone,
+          },
+        }),
+      );
+      must(
+        await admin.rpc("prospecting_sequence_effect_finish", {
+          p_effect: e2.id,
+          p_token: e2.token,
+          p_provider: null,
+          p_error: "provider_result_unknown",
+        }),
+      );
+      assert(
+        must(
+          await admin.from("prospecting_sequence_runs").select("state").eq("id", run2.id).single(),
+        ).state === "uncertain",
+        "Unknown call incorrectly retried",
+      );
+      const event2 = {
+        p_effect: e2.id,
+        p_call: crypto.randomUUID(),
+        p_phone_id: secondSender,
+        p_number: secondPhone,
+        p_terminal: true,
+        p_outcome: "no_answer",
+      };
+      must(await admin.rpc("prospecting_sequence_voice_event", event2));
+      const recovered = must(
+        await admin
+          .from("prospecting_sequence_runs")
+          .select("state,cursor")
+          .eq("id", run2.id)
+          .single(),
+      );
+      assert(
+        recovered.state === "waiting_task" && recovered.cursor === 1,
+        "Verified late call receipt was not recovered",
+      );
+      must(await admin.rpc("prospecting_sequence_wake_tasks", { p_limit: 100 }));
+      assert(
+        must(
+          await admin.from("prospecting_sequence_runs").select("state").eq("id", run2.id).single(),
+        ).state === "active",
+        "Recovered call never advanced",
+      );
+      must(
+        await clients[0].rpc("prospecting_sequence_control", {
+          p_workspace: W,
+          p_run: run2.id,
+          p_action: "cancel",
+        }),
+      );
+    },
+  );
+
   await check("only a certified unstarted effect can be retried with a fresh nonce", async () => {
     const mailbox = await seed("email_accounts", {
       workspace_id: W,
@@ -3084,6 +3450,8 @@ try {
       .in("permission_key", keys),
   );
   if (before.length) must(await admin.from("job_role_permission_overrides").insert(before));
+  if (voiceBefore) must(await admin.from("voice_agent_settings").upsert(voiceBefore));
+  else must(await admin.from("voice_agent_settings").delete().eq("workspace_id", W));
   if (settingsBefore)
     must(
       await admin
