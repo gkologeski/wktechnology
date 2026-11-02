@@ -5204,7 +5204,9 @@
         "src/components/prospecting/campaign-call-followup.tsx": "21e78f2aca523e51c931f9ed68ffcc9f952d90403dc99c18ea19aac77dce7ae5",
         "src/lib/prospecting-call-followup.server.ts": "71d019f722ae4a114e32bbeea36d4339a5d1add54dd4d21133399cec3c762cea",
         "src/routes/_authenticated/prospecting.campaigns.$id.tsx": "cf95037ffe8e5806cab65e72fbf60da77fcdd6adad8af0683d3ed7059556b6d5",
-        "src/lib/prospecting-scripts.functions.ts": "211cd7fc9032c2d27a7dbd69b21d187ab1777b0b3032281117f2242eec2fcddc"
+        "src/lib/prospecting-scripts.functions.ts": "211cd7fc9032c2d27a7dbd69b21d187ab1777b0b3032281117f2242eec2fcddc",
+        "src/components/prospecting/pages/voice-agent-page.tsx": "e06a2e79b4307e47971200c678d9d0acfe2d33360ebd5c4e1a13436e042e933a",
+        "src/lib/voice-agent.functions.ts": "932a46a77422c54536399f8e2d709a423e51b7b5315c87b58fe654bad81aae0a"
       },
       "resources": [
         "techsales.marketing.campaigns",
