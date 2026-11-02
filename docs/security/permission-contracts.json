@@ -2721,7 +2721,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations.",
       "files": {
-        "src/integrations/supabase/types.ts": "00abe9b5f21790052cdd382da851e0a8322fdf5f2f06f72965db889c8ee93d5c"
+        "src/integrations/supabase/types.ts": "c3c8701fad4c3f4d76f9334995010ce7b6c999a6d44703ccf0c15d029e6d5f93"
       }
     },
     {
@@ -5588,7 +5588,7 @@
         "src/components/prospecting/sequences/sequence-readiness.tsx": "e2ad721054d3d82d7e2aaba7cefaa4459b8496d85f7418da09e13c9fcb25e3ff",
         "src/components/prospecting/sequences/sequence-template-picker.tsx": "22cc4ea6715b1601c84373d158dc8844095012ba7ee69461ace4f127532ee88c",
         "drizzle/migrations/0293_prospecting_sequence_versions.sql": "38d37b1faf6153875d32a8cd3f4c9036689aec2fbd2dae056ed6df4bb15438a5",
-        "src/components/prospecting/sequences/sequence-variable-field.tsx": "9874d587473e102a29eab2998ee45211910de1a35c4990c69d4695f1068dd9c4"
+        "src/components/prospecting/sequences/sequence-variable-field.tsx": "0fc254aaab284a1bc284b45ac94ae0594f65e4099e509d762c847767596be3b4"
       },
       "resources": [
         "system.automation.sequences",
@@ -5643,6 +5643,10 @@
         {
           "file": "src/lib/whatsapp/template-shape.ts",
           "symbol": "checkTemplateVariables"
+        },
+        {
+          "file": "src/lib/whatsapp/campaign-audience.ts",
+          "symbol": "isBlockedFilterColumn"
         }
       ],
       "database": [
@@ -5934,6 +5938,14 @@
         {
           "file": "src/lib/prospecting/sequences/preflight.ts",
           "symbol": "inspectSequenceTemplate"
+        },
+        {
+          "file": "src/lib/whatsapp/campaign-audience.ts",
+          "symbol": "isBlockedFilterColumn"
+        },
+        {
+          "file": "src/lib/prospecting/sequences/variable-tokens.ts",
+          "symbol": "sanitizeEntityRow"
         }
       ],
       "database": [

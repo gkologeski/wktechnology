@@ -11,7 +11,7 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
-import type { FilterFieldCatalog } from "@/lib/whatsapp/campaign-audience";
+import { isBlockedFilterColumn, type FilterFieldCatalog } from "@/lib/whatsapp/campaign-audience";
 import {
   VARIABLE_ENTITIES,
   buildFieldToken,
@@ -58,7 +58,7 @@ function FieldCommand({
         )}
         {VARIABLE_ENTITIES.map((e) => (
           <CommandGroup key={e.entity} heading={e.label}>
-            {(fields[e.base] ?? []).map((f) => {
+            {(fields[e.base] ?? []).filter((f) => !isBlockedFilterColumn(f.column)).map((f) => {
               const key = `${e.entity}.${columnToPath(f.column)}`;
               return (
                 <CommandItem
