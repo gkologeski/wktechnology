@@ -6807,6 +6807,196 @@
         "src/lib/prospecting/sequences/insights.ts": "5f9b1542ea52436306a5cf4ff558086d294141bd92869fafaa8bf2525365c17e"
       },
       "rationale": "Pure strict JSON shape validators and Portuguese labels. No I/O, routes, mutations, credentials or data access; caller authorization and RLS remain in prospecting-sequence-insights. Does not grant or fetch information."
+    },
+    {
+      "id": "prospecting-sequence-scheduled-entry",
+      "kind": "service",
+      "files": {
+        "src/lib/prospecting/sequences/tick.server.ts": "53b375e90ee900bf715422e30f935fed3e5be098db4584067e8016aa82b3b91d",
+        "src/routes/api/public/hooks/sequences-tick.ts": "d2814da14d3ca89a5454b0e40c4a02958d4ffd458449435ec859bec442560119"
+      },
+      "resources": [
+        "system.automation.sequences",
+        "system.channels",
+        "techsales.inbox.email",
+        "techsales.inbox.whatsapp"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "manage",
+        "assign"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "system.automation.sequences.view.own",
+        "system.automation.sequences.view.team",
+        "system.automation.sequences.view.workspace",
+        "system.automation.sequences.manage.own",
+        "system.automation.sequences.manage.team",
+        "system.automation.sequences.manage.workspace",
+        "system.automation.sequences.assign.own",
+        "system.automation.sequences.assign.team",
+        "system.automation.sequences.assign.workspace",
+        "techsales.inbox.email.view.own",
+        "techsales.inbox.email.view.team",
+        "techsales.inbox.email.view.workspace",
+        "techsales.inbox.email.create.own",
+        "techsales.inbox.email.create.team",
+        "techsales.inbox.email.create.workspace",
+        "techsales.inbox.whatsapp.view.own",
+        "techsales.inbox.whatsapp.view.team",
+        "techsales.inbox.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.create.own",
+        "techsales.inbox.whatsapp.create.team",
+        "techsales.inbox.whatsapp.create.workspace"
+      ],
+      "rationale": "Existing two-minute scheduler remains the only service entry. POST validates CRON_SECRET before logs, admin reads or provider preparation. Recovery of known calls, dynamic enrollment, bounded five-run worker and legacy tick retain their own current-subject checks; no workflow impersonation. Stages are ordered and independent failures do not starve others. HTTP/log metrics contain only counts/statuses, never raw provider errors, run IDs, targets, leases or credentials. A draft/version does not activate outreach; explicit authorized consent/start or dynamic subscription remains required.",
+      "controls": [
+        {
+          "file": "src/lib/cron-auth.server.ts",
+          "symbol": "requireCronAuth"
+        },
+        {
+          "file": "src/lib/prospecting/sequences/tick.server.ts",
+          "symbol": "scheduledSequenceTick"
+        },
+        {
+          "file": "src/lib/prospecting/sequences/worker.server.ts",
+          "symbol": "tickProspectingSequences"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0300_prospecting_sequence_lifecycle.sql",
+          "symbol": "prospecting_sequence_context"
+        },
+        {
+          "file": "drizzle/migrations/0303_prospecting_sequence_voice.sql",
+          "symbol": "prospecting_sequence_voice_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "allowed worker reserves before sending and persists provider receipt"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker without current source access cannot prepare or send"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker denied at last reservation never invokes provider"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker with stale or foreign lease cannot retrieve execution context"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker for inactive owner stops before credentials or provider"
+        }
+      },
+      "exception": {
+        "mechanism": "Existing scheduler authenticated by server-only CRON_SECRET before both POST execution and GET usage information. Every selected run/subscription independently reauthorizes its current active human subject.",
+        "boundary": "No public workspace/source selection, no user-session elevation, no automatic enrollment from draft save. Bounded claims and durable effects prevent blind retry. Existing legacy engine retains its original authorization.",
+        "revocation": "Missing or incorrect CRON_SECRET prevents all work. Inactive actors, revoked keys, deny, stale leases or unavailable channels prevent the corresponding action at execution.",
+        "review_by": "2027-01-31"
+      }
+    },
+    {
+      "id": "prospecting-sequence-current-competition",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0305_prospecting_sequence_current_competing.sql": "66f9a6f8a84b794a7a6655c989782405187194df945bcece84cb12c589a22cfb"
+      },
+      "resources": [
+        "system.automation.sequences",
+        "techsales.activities",
+        "techsales.inbox.email",
+        "techsales.inbox.whatsapp",
+        "techsales.tasks"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "assign",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.sequences.view.own",
+        "system.automation.sequences.view.team",
+        "system.automation.sequences.view.workspace",
+        "system.automation.sequences.manage.own",
+        "system.automation.sequences.manage.team",
+        "system.automation.sequences.manage.workspace",
+        "system.automation.sequences.assign.own",
+        "system.automation.sequences.assign.team",
+        "system.automation.sequences.assign.workspace",
+        "techsales.activities.view.own",
+        "techsales.activities.update.own",
+        "techsales.inbox.email.create.own",
+        "techsales.inbox.whatsapp.create.own",
+        "techsales.tasks.create.own",
+        "techsales.tasks.view.own",
+        "techsales.tasks.update.own",
+        "techsales.tasks.assign.own"
+      ],
+      "rationale": "The service-only current exclusion helper also rechecks legacy and SDR active enrollment created after snapshot, scoped to the same workspace/person/canonical contact/phones. Only a stable reason code is returned, with no competing record disclosure. It preserves explicit excludeOtherSequences=false and all mandatory opt-out, unknown-delivery and commercial guards. Isolated real-JWT fixture starts competition after enrollment and proves no effect is reserved.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0305_prospecting_sequence_current_competing.sql",
+          "symbol": "prospecting_sequence_commercial_block"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "allowed worker reserves before sending and persists provider receipt"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker without current source access cannot prepare or send"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker denied at last reservation never invokes provider"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker with stale or foreign lease cannot retrieve execution context"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker for inactive owner stops before credentials or provider"
+        }
+      }
     }
   ],
   "retired": {}

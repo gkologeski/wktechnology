@@ -256,3 +256,9 @@ Referência técnica: https://docs.vapi.ai/server-url/events e https://docs.vapi
 ### Indicadores e histórico (0304)
 
 Agregados são executados pelo cliente autenticado, com SECURITY INVOKER e as mesmas políticas de leitura das execuções. O painel informa cobertura do escopo atual e distingue aceitação pelo provedor de entrega/leitura, sem consultar recibos ou alvos privados. Erro não vira zero. O histórico retorna no máximo 50 eventos. Sinais de conversão são registrados a partir do contexto verificado na transição; nomes de encerramento definidos pelo usuário não contam como resposta ou reunião.
+
+### Agendamento e coexistência
+
+O endpoint existente de sequências utiliza CRON_SECRET antes de qualquer trabalho. A ordem é: recuperar fatos de chamadas aceitas; verificar uma inscrição dinâmica; executar até cinco destinatários com orçamento de 20 segundos e dois consumidores; manter o processamento legado. Cada responsável é validado novamente em sua execução. Falhas de uma frente não impedem tentar as demais, e erros retornam apenas nomes estáveis de etapas. Logs/HTTP trazem contagens, sem IDs de destinatários ou recibos privados. O agendamento existente de dois em dois minutos foi confirmado por consulta de metadados, sem alterar seu segredo.
+
+A exclusão de outras sequências também é reavaliada antes da ação caso uma inscrição legada ou SDR tenha sido iniciada após o snapshot (0305). A escolha explícita de permitir concorrência é preservada; opt-out e quarentena de envio permanecem obrigatórios.

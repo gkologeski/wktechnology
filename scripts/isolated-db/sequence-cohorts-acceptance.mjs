@@ -3280,6 +3280,126 @@ try {
   );
 
   await check(
+    "a competing enrollment created after the snapshot blocks the next action",
+    async () => {
+      await seed("contacts", {
+        workspace_id: W,
+        owner_id: actor,
+        first_name: "Competition",
+        last_name: tag + "competition",
+        phone: "+5548991104010",
+      });
+      const def = newDefinition();
+      def.audience.groups = [
+        {
+          logic: "and",
+          filters: [
+            { entity: "contacts", column: "last_name", op: "eq", value: tag + "competition" },
+          ],
+        },
+      ];
+      def.steps = [{ ...newStep("call"), mode: "human", assigneeId: actor }, newStep("end")];
+      const version = await makeVersion(def);
+      const cohort = await prepareSequenceEnrollment(
+        clients[0],
+        {
+          workspaceId: W,
+          versionId: version,
+          requestId: crypto.randomUUID(),
+          consentEvidence: "Synthetic competing enrollment only",
+        },
+        admin,
+      );
+      must(
+        await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: cohort.id }),
+      );
+      const run = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+        (r) => r.version_id === version,
+      );
+      assert(run, "Competition fixture missing");
+      const ctx = must(
+        await admin.rpc("prospecting_sequence_context", {
+          p_run: run.id,
+          p_lease: run.lease_token,
+        }),
+      );
+      await seed("sequence_enrollments", {
+        workspace_id: W,
+        owner_id: actor,
+        sequence_id: legacy,
+        entity_id: ctx.person.id,
+        status: "active",
+      });
+      const latest = must(
+        await admin.rpc("prospecting_sequence_context", {
+          p_run: run.id,
+          p_lease: run.lease_token,
+        }),
+      );
+      assert(
+        latest.signals.commercialBlock === "other_sequence",
+        "New competing enrollment was ignored",
+      );
+      const effect = must(
+        await admin.rpc("prospecting_sequence_effect_begin", {
+          p_run: run.id,
+          p_lease: run.lease_token,
+          p_step: def.steps[0].id,
+        }),
+      );
+      assert(
+        effect.blockReason === "other_sequence" && !effect.id,
+        "Competing sequence created an effect",
+      );
+      must(
+        await clients[0].rpc("prospecting_sequence_control", {
+          p_workspace: W,
+          p_run: run.id,
+          p_action: "cancel",
+        }),
+      );
+      def.audience.excludeOtherSequences = false;
+      const allowedVersion = await makeVersion(def);
+      const allowed = await prepareSequenceEnrollment(
+        clients[0],
+        {
+          workspaceId: W,
+          versionId: allowedVersion,
+          requestId: crypto.randomUUID(),
+          consentEvidence: "Explicit concurrent policy, synthetic only",
+        },
+        admin,
+      );
+      must(
+        await clients[0].rpc("prospecting_sequence_start", {
+          p_workspace: W,
+          p_cohort: allowed.id,
+        }),
+      );
+      const next = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+        (r) => r.version_id === allowedVersion,
+      );
+      assert(next, "Explicit concurrent policy was ignored");
+      assert(
+        !must(
+          await admin.rpc("prospecting_sequence_context", {
+            p_run: next.id,
+            p_lease: next.lease_token,
+          }),
+        ).signals.commercialBlock,
+        "Concurrent policy forced exclusion",
+      );
+      must(
+        await clients[0].rpc("prospecting_sequence_control", {
+          p_workspace: W,
+          p_run: next.id,
+          p_action: "cancel",
+        }),
+      );
+    },
+  );
+
+  await check(
     "insights aggregate only caller-visible runs and never infer conversion from a custom label",
     async () => {
       const version = must(
