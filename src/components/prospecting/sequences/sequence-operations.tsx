@@ -87,8 +87,9 @@ export function SequenceOperations({
       </div>
       <SequenceInsights workspaceId={workspaceId} versionId={versionId} disabled={unavailable} />
       <p className="text-xs text-muted-foreground">
-        Execuções visíveis nesta versão. Chamadas geram atividades para o responsável; o fluxo
-        aguarda a conclusão. Uma confirmação de envio exige retorno do provedor.
+        Execuções visíveis nesta versão. Chamadas humanas aguardam a conclusão da atividade;
+        chamadas automáticas aguardam o resultado da telefonia. O envio só é confirmado após retorno
+        do provedor.
       </p>
       {query.isPending && !disabled && <p role="status">Carregando execuções…</p>}
       {query.isError && (

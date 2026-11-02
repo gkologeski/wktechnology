@@ -262,3 +262,7 @@ Agregados são executados pelo cliente autenticado, com SECURITY INVOKER e as me
 O endpoint existente de sequências utiliza CRON_SECRET antes de qualquer trabalho. A ordem é: recuperar fatos de chamadas aceitas; verificar uma inscrição dinâmica; executar até cinco destinatários com orçamento de 20 segundos e dois consumidores; manter o processamento legado. Cada responsável é validado novamente em sua execução. Falhas de uma frente não impedem tentar as demais, e erros retornam apenas nomes estáveis de etapas. Logs/HTTP trazem contagens, sem IDs de destinatários ou recibos privados. O agendamento existente de dois em dois minutos foi confirmado por consulta de metadados, sem alterar seu segredo.
 
 A exclusão de outras sequências também é reavaliada antes da ação caso uma inscrição legada ou SDR tenha sido iniciada após o snapshot (0305). A escolha explícita de permitir concorrência é preservada; opt-out e quarentena de envio permanecem obrigatórios.
+
+### Sugestões do público compartilhado (0306)
+
+O seletor de valores mantém a mesma interface das campanhas WhatsApp, mas a consulta aceita leitura de Sequências ou de Campanhas, sem conceder acesso às operações de campanha. O cliente autenticado, workspace ativo, permissão da entidade, lista branca e campos protegidos continuam obrigatórios. O RPC usa as visões compartilhadas de campos e rejeita campos mascarados, internos e personalizados inativos; não consulta valores pelo cliente de serviço. O aceite visual revelou essa dependência indevida de Campanhas e motivou a correção.

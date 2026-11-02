@@ -259,8 +259,8 @@ export function ProspectingSequencesPage() {
         }
       />
       <div className="rounded-md border bg-muted/40 p-3 text-xs text-muted-foreground">
-        Planejamento e rascunhos · Este módulo ainda não inscreve pessoas nem realiza disparos. As
-        cadências anteriores continuam independentes.
+        Crie e valide uma versão, selecione o público e confirme o início. Salvar rascunhos não
+        dispara mensagens.
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <Choice
@@ -462,8 +462,8 @@ export function ProspectingSequencesPage() {
                   </div>
                 </fieldset>
                 <p className="text-xs text-muted-foreground">
-                  Agenda, publicação, inscrição e execução serão habilitadas nos próximos lotes.
-                  Salvar estas regras não ativa atendimento.
+                  O atendimento e a agenda seguem as configurações do agente escolhido. Estas regras
+                  passam a valer na versão criada; salvar não inicia contatos.
                 </p>
               </CardContent>
             </Card>
@@ -1025,9 +1025,8 @@ function SequenceAudience({
               </>
             )}
             <p className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
-              Esta é a prévia dos filtros, antes das exclusões planejadas. Autorização de contato,
-              opt-out, contas, exclusões e deduplicação final serão validados antes da inscrição e
-              dos disparos, nos próximos lotes.
+              Esta é a prévia dos filtros, antes das exclusões de contato. Autorização, opt-out,
+              contas e deduplicação são conferidos na inscrição e novamente antes de cada ação.
             </p>
           </CardContent>
         </Card>
