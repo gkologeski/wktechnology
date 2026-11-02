@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { messengerAllowed } from "./side-dock-store";
+import { messengerAllowed } from "./messenger-gate";
 
 const perms = (keys: string[], extra: { isLoading?: boolean; isError?: boolean } = {}) => ({
   isLoading: extra.isLoading ?? false,

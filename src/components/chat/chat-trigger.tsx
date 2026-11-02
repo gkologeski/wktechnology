@@ -3,11 +3,8 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import {
-  messengerAllowed,
-  registerDockOpener,
-  setDockState,
-} from "@/components/floating-dock/side-dock-store";
+import { registerDockOpener, setDockState } from "@/components/floating-dock/side-dock-store";
+import { messengerAllowed } from "@/components/floating-dock/messenger-gate";
 import { listConversations } from "@/lib/chat.functions";
 import { useAuth } from "@/lib/auth";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
