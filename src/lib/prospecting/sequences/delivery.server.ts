@@ -170,39 +170,15 @@ export function sequenceDeliveryPorts(
         const mailbox = row.data as import("@/lib/gmail.server").EmailAccountRow;
         let threadId: string | undefined, inReplyTo: string | undefined;
         if (step.thread === "reply") {
-          const ids = ctx.definition.steps
-            .slice(0, ctx.run.cursor)
-            .filter((s) => s.type === "email" && s.accountId === step.accountId)
-            .map((s) => s.id);
-          const sent = await admin
-            .from("prospecting_sequence_effects" as never)
-            .select("provider_id")
-            .eq("run_id", ctx.run.id)
-            .eq("status", "succeeded")
-            .in("step_id", ids)
-            .order("finished_at", { ascending: false })
-            .limit(1)
-            .maybeSingle();
-          const provider = (sent.data as { provider_id?: string } | null)?.provider_id;
-          if (sent.error || !provider) throw new Error("Mensagem anterior indisponível.");
-          const previous = await admin
-            .from("email_messages")
-            .select("message_id_header,thread_id")
-            .eq("workspace_id", ctx.run.workspace_id)
-            .eq("account_id", account.sourceKey)
-            .eq("provider_message_id", provider)
-            .maybeSingle();
-          if (previous.error || !previous.data?.message_id_header)
+          const reference = await workRpc<{ threadId: string; messageIdHeader: string }>(
+            admin,
+            "prospecting_sequence_reply_thread",
+            { p_run: ctx.run.id, p_lease: ctx.run.lease_token, p_recipient: checked.value },
+          );
+          if (!reference?.threadId || !reference.messageIdHeader)
             throw new Error("Referência de resposta indisponível.");
-          const thread = await admin
-            .from("email_threads")
-            .select("provider_thread_id")
-            .eq("workspace_id", ctx.run.workspace_id)
-            .eq("id", previous.data.thread_id)
-            .maybeSingle();
-          if (thread.error || !thread.data) throw new Error("Thread indisponível.");
-          threadId = thread.data.provider_thread_id;
-          inReplyTo = previous.data.message_id_header;
+          threadId = reference.threadId;
+          inReplyTo = reference.messageIdHeader;
         }
         const accessToken = await gmail.ensureAccessToken(mailbox);
         gmail.buildRawMime({

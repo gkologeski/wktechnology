@@ -240,3 +240,7 @@ Consentimento, leases e fingerprints não são consultáveis pelo navegador.
 Contagens históricas exigem o próprio responsável ou administrador ativo; sem
 verificação concluída, os números são desconhecidos, não zero. O tick ainda
 precisa ser conectado ao cron na etapa final; este lote não ativa produção.
+
+### Identidade das conversas (0302)
+
+Respostas de e-mail usam apenas a mesma caixa atual, destinatário efetivo e histórico acessível ao responsável. Trocar o e-mail não reutiliza a conversa antiga. Conversas WhatsApp de outra pessoa bloqueiam o envio; conflito surgido depois da aceitação mantém o recibo e exige reconciliação, sem reenviar nem sobrescrever vínculos.

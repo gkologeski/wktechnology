@@ -1218,6 +1218,15 @@ try {
           body: "No send",
           thread: "new",
         },
+        {
+          id: crypto.randomUUID(),
+          title: "Reply",
+          type: "email",
+          accountId: account,
+          subject: "[ISO] Follow-up",
+          body: "No send",
+          thread: "reply",
+        },
         newStep("end"),
       ];
       const version = await makeVersion(def);
@@ -1394,6 +1403,50 @@ try {
           await admin.from("prospecting_sequence_runs").select("cursor").eq("id", run.id).single(),
         ).cursor === 1,
         "Email cursor not committed",
+      );
+      const replyRun = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+        (x) => x.id === run.id,
+      );
+      assert(replyRun, "Reply stage unavailable");
+      const referenceArgs = {
+        p_run: run.id,
+        p_lease: replyRun.lease_token,
+        p_recipient: payload.to,
+      };
+      const reference = must(await admin.rpc("prospecting_sequence_reply_thread", referenceArgs));
+      assert(
+        reference.threadId === payload.threadId &&
+          reference.messageIdHeader === payload.messageIdHeader,
+        "Same-account reply reference missing",
+      );
+      must(
+        await admin
+          .from("contacts")
+          .update({ email: tag + "changed@example.test" })
+          .eq("id", contact),
+      );
+      blocked(
+        await admin.rpc("prospecting_sequence_reply_thread", {
+          ...referenceArgs,
+          p_recipient: tag + "changed@example.test",
+        }),
+      );
+      must(await admin.from("contacts").update({ email: payload.to }).eq("id", contact));
+      must(
+        await admin
+          .from("email_threads")
+          .update({ assigned_to: accounts[1].id })
+          .eq("id", row.thread_id),
+      );
+      blocked(await admin.rpc("prospecting_sequence_reply_thread", referenceArgs));
+      must(
+        await admin.from("email_threads").update({ assigned_to: actor }).eq("id", row.thread_id),
+      );
+      blocked(await clients[0].rpc("prospecting_sequence_reply_thread", referenceArgs));
+      must(
+        await admin.rpc("prospecting_sequence_release_claims", {
+          p_claims: [{ id: replyRun.id, token: replyRun.lease_token }],
+        }),
       );
       // A provider auto-reply never becomes a customer response, nor a wake signal.
       await seed("email_messages", {
@@ -1641,6 +1694,37 @@ try {
     const run = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
       (r) => r.version_id === version,
     );
+    const conflicting = await seed("contacts", {
+      workspace_id: W,
+      owner_id: actor,
+      first_name: "Other",
+      last_name: tag + "other_wa",
+    });
+    const existing = await seed("whatsapp_conversations", {
+      workspace_id: W,
+      owner_id: actor,
+      assigned_to: actor,
+      contact_id: conflicting,
+      contact_phone: "+5548991104006",
+      twilio_number: "+554861365335",
+      wa_phone_number_id: "999000111222333",
+      provider: "meta",
+    });
+    blocked(
+      await admin.rpc("prospecting_sequence_delivery_access", {
+        p_run: run.id,
+        p_lease: run.lease_token,
+      }),
+    );
+    must(
+      await admin.from("whatsapp_conversations").update({ contact_id: null }).eq("id", existing),
+    );
+    must(
+      await admin.rpc("prospecting_sequence_delivery_access", {
+        p_run: run.id,
+        p_lease: run.lease_token,
+      }),
+    );
     const effect = must(
       await admin.rpc("prospecting_sequence_effect_begin", {
         p_run: run.id,
@@ -1654,6 +1738,39 @@ try {
       to: "+5548991104006",
       body: "[ISO] No Meta network",
     };
+    must(
+      await admin.rpc("prospecting_sequence_receipt_store", {
+        p_effect: effect.id,
+        p_token: effect.token,
+        p_payload: payload,
+      }),
+    );
+    must(
+      await admin
+        .from("whatsapp_conversations")
+        .update({ contact_id: conflicting })
+        .eq("id", existing),
+    );
+    blocked(
+      await admin.rpc("prospecting_sequence_delivery_commit", {
+        p_effect: effect.id,
+        p_token: effect.token,
+        p_payload: payload,
+      }),
+    );
+    assert(
+      must(
+        await admin
+          .from("prospecting_sequence_effects")
+          .select("provider_id,projection_state")
+          .eq("id", effect.id)
+          .single(),
+      ).projection_state === "pending",
+      "Identity race lost accepted receipt",
+    );
+    must(
+      await admin.from("whatsapp_conversations").update({ contact_id: null }).eq("id", existing),
+    );
     const message = must(
       await admin.rpc("prospecting_sequence_delivery_commit", {
         p_effect: effect.id,

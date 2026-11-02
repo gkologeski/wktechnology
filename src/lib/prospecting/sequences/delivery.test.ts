@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { newDefinition } from "./draft";
+import { newDefinition, type SequenceStep } from "./draft";
 import { sequenceDeliveryPorts } from "./delivery.server";
 import type { EffectReservation, RuntimeContext } from "./worker.server";
 const mocks = vi.hoisted(() => ({
@@ -66,7 +66,7 @@ function fixture(channel: "email" | "whatsapp" = "email") {
     },
   };
   const sourceKey = channel === "email" ? crypto.randomUUID() : "123456789";
-  const step =
+  const step: Extract<SequenceStep, { type: "email" | "whatsapp" }> =
     channel === "email"
       ? {
           id: crypto.randomUUID(),
@@ -105,10 +105,12 @@ function fixture(channel: "email" | "whatsapp" = "email") {
     };
     return chain;
   });
-  const rpc = vi.fn(async (name: string) => ({
-    data: name === "prospecting_sequence_delivery_access" ? { sourceKey } : "stored-id",
-    error: null as null | { message: string },
-  }));
+  const rpc = vi.fn(
+    async (name: string): Promise<{ data: unknown; error: null | { message: string } }> => ({
+      data: name === "prospecting_sequence_delivery_access" ? { sourceKey } : "stored-id",
+      error: null as null | { message: string },
+    }),
+  );
   const admin = { from, rpc } as unknown as SupabaseClient;
   const effect: EffectReservation = {
     id: crypto.randomUUID(),
@@ -230,5 +232,44 @@ describe("sequence provider delivery", () => {
       "prospecting_sequence_delivery_commit",
     ]);
     expect(mocks.gmail).toHaveBeenCalledOnce();
+  });
+  it("reply mode uses only the authorized same-account conversation reference", async () => {
+    const h = fixture();
+    if (h.step.type !== "email") throw Error("Email expected");
+    h.step.thread = "reply";
+    h.ctx.run.cursor = 1;
+    h.ctx.definition.steps = [{ ...h.step, id: crypto.randomUUID(), thread: "new" }, h.step];
+    const original = h.rpc.getMockImplementation()!;
+    h.rpc.mockImplementation(async (name) =>
+      name === "prospecting_sequence_reply_thread"
+        ? ({
+            data: { threadId: "authorized-thread", messageIdHeader: "<original@example.test>" },
+            error: null,
+          } as never)
+        : original(name),
+    );
+    const send = await h.ports.prepare(h.ctx, h.step);
+    await send(h.effect);
+    expect(mocks.mime).toHaveBeenCalledWith(
+      expect.objectContaining({ inReplyTo: "<original@example.test>" }),
+    );
+    expect(h.rpc).toHaveBeenCalledWith("prospecting_sequence_reply_thread", {
+      p_run: h.ctx.run.id,
+      p_lease: h.ctx.run.lease_token,
+      p_recipient: "Ana@example.test",
+    });
+  });
+  it("a changed or unreadable reply recipient never reaches Gmail", async () => {
+    const h = fixture();
+    if (h.step.type !== "email") throw Error("Email expected");
+    h.step.thread = "reply";
+    const original = h.rpc.getMockImplementation()!;
+    h.rpc.mockImplementation(async (name) =>
+      name === "prospecting_sequence_reply_thread"
+        ? { data: null, error: { message: "recipient changed" } }
+        : original(name),
+    );
+    await expect(h.ports.prepare(h.ctx, h.step)).rejects.toThrow("recipient changed");
+    expect(mocks.gmail).not.toHaveBeenCalled();
   });
 });
