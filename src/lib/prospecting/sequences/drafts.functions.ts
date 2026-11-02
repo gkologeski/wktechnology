@@ -14,7 +14,19 @@ export const saveProspectingSequenceDraft = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => saveDraftSchema.parse(i))
   .handler(async ({ context, data }) => {
     const { saveDraft } = await import("./drafts.server");
-    return saveDraft(context.supabase, data);
+    const { resolveEmailSender } = await import("./email-sender.server");
+    const sender = await resolveEmailSender(context.userId, data.workspaceId);
+    return saveDraft(context.supabase, data, sender);
+  });
+export const getSequenceEmailSender = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission(SEQUENCE_RESOURCE, "view")])
+  .inputValidator((i: unknown) => z.object({ workspaceId: z.string().uuid() }).strict().parse(i))
+  .handler(async ({ context, data }) => {
+    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+    if ((await resolveActiveWorkspace(context.userId)) !== data.workspaceId)
+      throw new Error("Workspace indisponível.");
+    const { resolveEmailSender } = await import("./email-sender.server");
+    return resolveEmailSender(context.userId, data.workspaceId);
   });
 export const previewProspectingSequenceAudience = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission(SEQUENCE_RESOURCE, "view")])
