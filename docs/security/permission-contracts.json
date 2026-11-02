@@ -5492,11 +5492,13 @@
       "id": "prospecting-multichannel-drafts",
       "kind": "business",
       "files": {
-        "src/components/prospecting/sequences/sequences-page.tsx": "54b1de406c2444d7d4ff530bdb4d2b80d82fb772b838800c547e364b45ddf0f5",
+        "src/components/prospecting/sequences/sequences-page.tsx": "932c23f23c4a676f4c85bff4885c6cb443713d27126a2df97d502b21124dd1e6",
         "src/lib/prospecting/sequences/draft.ts": "00fc36c0abd90ac08c230c807c65411f5617aa428c9d12ccf804a47a929c0f60",
-        "src/lib/prospecting/sequences/drafts.server.ts": "55429e0f960f7eeaf85c9305af088c03bc04f3e8140e95a3ec87c0f3f23faae1",
+        "src/lib/prospecting/sequences/drafts.server.ts": "0723ad7a6019db996c0f81a63594b72282ffd965cb0f2886f9384312e4eaf0de",
         "src/routes/_authenticated/prospecting.sequences.tsx": "8baa9510472ca9e2aa65e8f2be1407de24f500cf3f4da51f850b0d30af0a22cf",
-        "drizzle/migrations/0292_prospecting_sequence_drafts.sql": "6a7b0c212a5f254186442aad6a5ae1bdab3c134948d30919548e3c801b5982c1"
+        "drizzle/migrations/0292_prospecting_sequence_drafts.sql": "6a7b0c212a5f254186442aad6a5ae1bdab3c134948d30919548e3c801b5982c1",
+        "src/lib/prospecting/sequences/email-sender-policy.ts": "e746f5d4f7e16fae2d194f203c0bbc8bf9e402785d357bd0a334f30561756674",
+        "src/lib/prospecting/sequences/email-sender.server.ts": "0f769701cbedacfbf07685c7457c20c4f36aece5444568b6a2aea6409598f040"
       },
       "resources": [
         "system.automation.sequences"
@@ -5522,7 +5524,7 @@
         "system.automation.sequences.update.team",
         "system.automation.sequences.update.workspace"
       ],
-      "rationale": "Draft planning only; no enrollment, dispatch, provider changes or role grants. Direct route is mapped to sequences. Caller RLS limits audience reads. Save rechecks the exact operation and uses active workspace/owner scoped SQL CAS, with immutable revision snapshots. Channel references retain their independent channel view permission. Legacy sequences are untouched.",
+      "rationale": "Draft planning only; no enrollment, dispatch, provider changes or role grants. Direct route is mapped to sequences. Caller RLS limits audience reads. Save rechecks the exact operation and uses active workspace/owner scoped SQL CAS, with immutable revision snapshots. Channel references retain their independent channel view permission. Legacy sequences are untouched. Email sender: non-admins are forced server-side to their own connected email account (email_accounts.owner_id); workspace owners/admins may choose any account. Sender lookup checks active workspace.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -5582,7 +5584,7 @@
       "id": "prospecting-sequence-configuration-versions",
       "kind": "business",
       "files": {
-        "src/lib/prospecting/sequences/drafts.functions.ts": "1da68aefd8b8ad3e103e7861513471d2424a0e1dde75c046a39e7d3397c9c0fa",
+        "src/lib/prospecting/sequences/drafts.functions.ts": "b22d8a76fc2c421f257dc7249137fee37fccf455e8348818e500e950992d424b",
         "src/lib/prospecting/sequences/preflight.ts": "e68086bb637babf6da2e5d3d00b553baf9875c13938842e47a526e1ba0530a2a",
         "src/lib/prospecting/sequences/releases.server.ts": "26f3fae6efd71173aeb33063e2f047c8707c2822c709661e8682aa12db4e5062",
         "src/components/prospecting/sequences/sequence-readiness.tsx": "e2ad721054d3d82d7e2aaba7cefaa4459b8496d85f7418da09e13c9fcb25e3ff",
