@@ -10,7 +10,8 @@ const clamp = (v: unknown, lo: number, hi: number, d: number) => {
   const n = typeof v === "number" && Number.isFinite(v) ? v : d;
   return Math.min(hi, Math.max(lo, n));
 };
-const fmt = (v: number) => v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmt = (v: number) =>
+  v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -255,7 +256,9 @@ export function VoiceAgentPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label id="lbl-stability">Estabilidade</Label>
-                <span className="text-sm tabular-nums text-muted-foreground">{fmt(s.stability)}</span>
+                <span className="text-sm tabular-nums text-muted-foreground">
+                  {fmt(s.stability)}
+                </span>
               </div>
               <Slider
                 aria-labelledby="lbl-stability"
@@ -269,7 +272,9 @@ export function VoiceAgentPage() {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label id="lbl-similarity_boost">Similaridade</Label>
-                <span className="text-sm tabular-nums text-muted-foreground">{fmt(s.similarity_boost)}</span>
+                <span className="text-sm tabular-nums text-muted-foreground">
+                  {fmt(s.similarity_boost)}
+                </span>
               </div>
               <Slider
                 aria-labelledby="lbl-similarity_boost"
