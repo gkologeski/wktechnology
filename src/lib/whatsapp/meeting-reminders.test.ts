@@ -60,3 +60,31 @@ describe("variáveis", () => {
     expect(countTemplateVariables([{ type: "BODY", text: "Oi {{1}}, às {{2}}" }])).toBe(2);
   });
 });
+
+import { fromMinutes, offsetLabel, toMinutes, validateOffsets } from "./meeting-reminders";
+
+describe("lembretes com tempo livre", () => {
+  it("converte quantidade e unidade em minutos", () => {
+    expect(toMinutes(2, "days")).toBe(2880);
+    expect(toMinutes(3, "hours")).toBe(180);
+    expect(toMinutes(15, "minutes")).toBe(15);
+  });
+  it("reexibe na unidade salva ou na maior que divide", () => {
+    expect(fromMinutes(1440)).toEqual({ amount: 1, unit: "days" });
+    expect(fromMinutes(1440, "hours")).toEqual({ amount: 24, unit: "hours" });
+    expect(fromMinutes(90)).toEqual({ amount: 90, unit: "minutes" });
+  });
+  it("aceita de 1 minuto a 30 dias", () => {
+    expect(validateOffsets([1, 43200])).toBeNull();
+    expect(validateOffsets([0])).not.toBeNull();
+    expect(validateOffsets([43201])).not.toBeNull();
+  });
+  it("recusa tempos repetidos e mais de 10 lembretes", () => {
+    expect(validateOffsets([60, 60])).not.toBeNull();
+    expect(validateOffsets(Array.from({ length: 11 }, (_, i) => i + 1))).not.toBeNull();
+  });
+  it("rótulo em português no singular e plural", () => {
+    expect(offsetLabel(60)).toBe("1 hora antes");
+    expect(offsetLabel(2880)).toBe("2 dias antes");
+  });
+});
