@@ -5492,7 +5492,7 @@
       "id": "prospecting-multichannel-drafts",
       "kind": "business",
       "files": {
-        "src/components/prospecting/sequences/sequences-page.tsx": "35ba84860404a6919d77a725e1988193a03c6d41efa94513b247ee954d3a5da4",
+        "src/components/prospecting/sequences/sequences-page.tsx": "54b1de406c2444d7d4ff530bdb4d2b80d82fb772b838800c547e364b45ddf0f5",
         "src/lib/prospecting/sequences/draft.ts": "00fc36c0abd90ac08c230c807c65411f5617aa428c9d12ccf804a47a929c0f60",
         "src/lib/prospecting/sequences/drafts.server.ts": "55429e0f960f7eeaf85c9305af088c03bc04f3e8140e95a3ec87c0f3f23faae1",
         "src/routes/_authenticated/prospecting.sequences.tsx": "8baa9510472ca9e2aa65e8f2be1407de24f500cf3f4da51f850b0d30af0a22cf",

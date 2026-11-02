@@ -2,7 +2,6 @@ import { listScripts } from "@/lib/prospecting-scripts.functions";
 import { SequenceReadiness } from "./sequence-readiness";
 import { SequenceTemplatePicker } from "./sequence-template-picker";
 import { InsertVariableButton } from "./sequence-variable-field";
-import { useAudienceFilterFields } from "@/hooks/use-audience-filter-fields";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
