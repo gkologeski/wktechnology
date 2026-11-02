@@ -488,7 +488,16 @@ try {
         is_system: false,
       });
       try {
-        blocked(await clients[0].rpc("whatsapp_campaign_filter_values", {p_entity:"contacts",p_workspace:W,p_column:"email",p_custom_key:null,p_search:tag,p_limit:200}));
+        blocked(
+          await clients[0].rpc("whatsapp_campaign_filter_values", {
+            p_entity: "contacts",
+            p_workspace: W,
+            p_column: "email",
+            p_custom_key: null,
+            p_search: tag,
+            p_limit: 200,
+          }),
+        );
         const stale = request();
         blocked(await servicePrepare(stale, payload));
         assert(
@@ -3401,18 +3410,53 @@ try {
     },
   );
 
-  await check("shared suggestions work for sequence-only readers and preserve row and field boundaries", async () => {
-    must(await admin.from("contacts").update({job_title:"CTO "+tag}).eq("id",a));
-    await seed("contacts",{workspace_id:W,owner_id:accounts[1].id,assigned_to:accounts[1].id,first_name:"Hidden suggestion",last_name:tag+"suggestions",job_title:"Private "+tag});
-    const values=await audienceFieldSuggestions(clients[0],actor,{entity:"contacts",column:"job_title",search:tag});
-    assert(values.includes("CTO "+tag)&&!values.includes("Private "+tag),"Suggestion values lost permitted rows or leaked another owner");
-    const args={p_entity:"contacts",p_workspace:W,p_column:"job_title",p_custom_key:null,p_search:tag,p_limit:200};
-    for(const index of [1,2,3])blocked(await clients[index].rpc("whatsapp_campaign_filter_values",args));
-    blocked(await clients[0].rpc("whatsapp_campaign_filter_values",{...args,p_column:"portal_token"}));
-    await grant(roles[0],["techsales.contacts.view.own"],"deny");
-    blocked(await clients[0].rpc("whatsapp_campaign_filter_values",args));
-    await grant(roles[0],["techsales.contacts.view.own"]);
-  });
+  await check(
+    "shared suggestions work for sequence-only readers and preserve row and field boundaries",
+    async () => {
+      must(
+        await admin
+          .from("contacts")
+          .update({ job_title: "CTO " + tag })
+          .eq("id", a),
+      );
+      await seed("contacts", {
+        workspace_id: W,
+        owner_id: accounts[1].id,
+        assigned_to: accounts[1].id,
+        first_name: "Hidden suggestion",
+        last_name: tag + "suggestions",
+        job_title: "Private " + tag,
+      });
+      const values = await audienceFieldSuggestions(clients[0], actor, {
+        entity: "contacts",
+        column: "job_title",
+        search: tag,
+      });
+      assert(
+        values.includes("CTO " + tag) && !values.includes("Private " + tag),
+        "Suggestion values lost permitted rows or leaked another owner",
+      );
+      const args = {
+        p_entity: "contacts",
+        p_workspace: W,
+        p_column: "job_title",
+        p_custom_key: null,
+        p_search: tag,
+        p_limit: 200,
+      };
+      for (const index of [1, 2, 3])
+        blocked(await clients[index].rpc("whatsapp_campaign_filter_values", args));
+      blocked(
+        await clients[0].rpc("whatsapp_campaign_filter_values", {
+          ...args,
+          p_column: "portal_token",
+        }),
+      );
+      await grant(roles[0], ["techsales.contacts.view.own"], "deny");
+      blocked(await clients[0].rpc("whatsapp_campaign_filter_values", args));
+      await grant(roles[0], ["techsales.contacts.view.own"]);
+    },
+  );
 
   await check(
     "insights aggregate only caller-visible runs and never infer conversion from a custom label",
