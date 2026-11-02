@@ -2883,7 +2883,7 @@
       "files": {
         "src/lib/prospecting/sdr/channel-runtime.server.ts": "a1528c862f67ac28a1b664d975c6aaf7b534d280bc8345a66e861142a5fe12cf",
         "src/lib/prospecting/sdr/worker.server.ts": "e77259513c3b7c3eac3517d309ac371bb040c29ac8760a88e64157baa69a2183",
-        "src/lib/prospecting/sdr/ingest.server.ts": "c700c4343049bbf926c1dbd3cb8a6b393a8f1b9b5259d8e2ab3d4cc89fed056e",
+        "src/lib/prospecting/sdr/ingest.server.ts": "f9c2b94a599939a2c438af15614cfc43270fdbb6467c7a74a697961384c8c490",
         "src/lib/prospecting/sdr/tools/runtime.ts": "dcb7dd1240f535cf9ff084ad43989bafcd4db6d56f02ebb2c8efbc18965d4918",
         "drizzle/migrations/0257_service_channel_runtime_identity.sql": "2d829bed7441a6f7c8dc5c26f374ee4b66853f04a23caae6cd2d3e915815617f"
       },
@@ -5559,7 +5559,7 @@
       "kind": "business",
       "files": {
         "src/lib/prospecting/sequences/drafts.functions.ts": "1da68aefd8b8ad3e103e7861513471d2424a0e1dde75c046a39e7d3397c9c0fa",
-        "src/lib/prospecting/sequences/preflight.ts": "0e7673ade55d3b1d3327006dd795bf5d029ca59c7e861897cc648c090b87fa01",
+        "src/lib/prospecting/sequences/preflight.ts": "dd77c0ff433dc182aac579525918166dda01d1db64b7696fc6f4b59982c3a907",
         "src/lib/prospecting/sequences/releases.server.ts": "e70210bf8d6d3bc2ade9e835bf04224496b805906dd8140d301cbc5eae409183",
         "src/components/prospecting/sequences/sequence-readiness.tsx": "e2ad721054d3d82d7e2aaba7cefaa4459b8496d85f7418da09e13c9fcb25e3ff",
         "src/components/prospecting/sequences/sequence-template-picker.tsx": "427ec2f8233bd1bd4a5b9cdb4cf64c1d85178bfe523a99b9dd40e9fff244d0e8",
@@ -5759,8 +5759,8 @@
       "id": "prospecting-sequence-durable-runtime",
       "kind": "business",
       "files": {
-        "src/lib/prospecting/sequences/runtime.ts": "9d71f61ed3b78d9a20bc2132f0317b9bcb7b3bfc68e0c066ace4bbfd5655efa2",
-        "src/lib/prospecting/sequences/worker.server.ts": "29b050be1f62badb813b14822da8dbf032b7211ca457bd20be1563408eb3a765",
+        "src/lib/prospecting/sequences/runtime.ts": "8cb32561821cde85eb4406c5e2939092d9472ee22f1772c13bc490af7fb0f191",
+        "src/lib/prospecting/sequences/worker.server.ts": "5d82968760d8486e4073a8042ce534908ad0d86aa0f008d9064807a4ff447b8f",
         "drizzle/migrations/0295_prospecting_sequence_runtime.sql": "504420a65224ad4caa45e07b3d304432ec54bf446134ea39a6ddd1b7ae5c76a8"
       },
       "resources": [
@@ -6185,6 +6185,94 @@
         "inactive_member": {
           "file": "src/lib/prospecting/sequences/operations.server.test.ts",
           "name": "operations rejects inactive_member before mutation"
+        }
+      }
+    },
+    {
+      "id": "prospecting-sequence-reply-handoff",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0299_prospecting_sequence_reply_handoff.sql": "5439d769555c2453fea81bbf6ea247ff3aff232da2f5a7a019ac3280b87b9a06",
+        "src/lib/prospecting/sequences/handoff.server.ts": "81a238ed3acbe8b8a48b22863369f13f0d8dab8dfe08939a1a6d034c86c12893"
+      },
+      "resources": [
+        "system.automation.sequences",
+        "techsales.activities",
+        "techsales.inbox.email",
+        "techsales.inbox.whatsapp"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "assign",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.sequences.view.own",
+        "system.automation.sequences.view.team",
+        "system.automation.sequences.view.workspace",
+        "system.automation.sequences.manage.own",
+        "system.automation.sequences.manage.team",
+        "system.automation.sequences.manage.workspace",
+        "system.automation.sequences.assign.own",
+        "system.automation.sequences.assign.team",
+        "system.automation.sequences.assign.workspace",
+        "techsales.activities.view.own",
+        "techsales.activities.update.own",
+        "techsales.inbox.email.create.own",
+        "techsales.inbox.whatsapp.create.own"
+      ],
+      "rationale": "Service-only current lease/context and row linkage authorize handoff. Selected channel binding and published active agent are rechecked; existing human ownership is preserved. Human follow-up and notification are deterministic and transactional, protected by current activity create and Inbox update scopes. Inbound provider triggers store wake signals without locking runs; verified replies exclude automatic email and use exact source/account/header. Agent route gate prevents an account default stealing another agent or human sequence. Actual isolated JWT fixtures supplement unit RPC refusal tests; no provider messages are sent.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0299_prospecting_sequence_reply_handoff.sql",
+          "symbol": "prospecting_sequence_handoff"
+        },
+        {
+          "file": "drizzle/migrations/0299_prospecting_sequence_reply_handoff.sql",
+          "symbol": "prospecting_sequence_reply_event"
+        },
+        {
+          "file": "drizzle/migrations/0299_prospecting_sequence_reply_handoff.sql",
+          "symbol": "prospecting_sequence_context"
+        },
+        {
+          "file": "drizzle/migrations/0299_prospecting_sequence_reply_handoff.sql",
+          "symbol": "prospecting_sequence_agent_route_allowed"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/handoff.test.ts",
+          "name": "handoff confirms only the selected SQL-authorized outcome"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/handoff.test.ts",
+          "name": "handoff refuses missing permission without a fallback send"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/handoff.test.ts",
+          "name": "handoff preserves explicit deny refusal"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/handoff.test.ts",
+          "name": "handoff refuses foreign source workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/handoff.test.ts",
+          "name": "handoff refuses inactive execution owner"
         }
       }
     }

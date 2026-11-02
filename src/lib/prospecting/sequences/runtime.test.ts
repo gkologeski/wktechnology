@@ -207,3 +207,43 @@ describe("sequence execution planner", () => {
     });
   });
 });
+
+it("wait retains its response policy until elapsed rather than advancing the cursor immediately", () => {
+  const s = scenario();
+  s.definition.settings.stopOnReply = false;
+  s.definition.steps = [
+    {
+      ...newStep("wait"),
+      type: "wait",
+      source: "any",
+      onReply: "human",
+      duration: 24,
+      unit: "hours",
+    },
+    newStep("end"),
+  ];
+  s.previousAt = s.now;
+  expect(decideExecution(s)).toMatchObject({ kind: "advance", nextStep: 0, reason: "wait" });
+  s.signals.replied = true;
+  expect(decideExecution(s)).toMatchObject({ kind: "stop", state: "human" });
+  s.signals.replied = false;
+  s.now = new Date(s.now.getTime() + 86400000);
+  expect(decideExecution(s)).toMatchObject({
+    kind: "advance",
+    nextStep: 1,
+    reason: "wait_elapsed",
+  });
+});
+
+it("reply honors the agent resolved from its actual channel over a later configured channel", () => {
+  const s = scenario();
+  s.definition.settings.agentId = crypto.randomUUID();
+  s.signals.replied = true;
+  const actual = crypto.randomUUID();
+  expect(
+    decideExecution({ ...s, signals: { ...s.signals, responseAgentId: actual } }),
+  ).toMatchObject({ state: "agent", agentId: actual });
+  expect(decideExecution({ ...s, signals: { ...s.signals, responseAgentId: null } })).toMatchObject(
+    { state: "human" },
+  );
+});

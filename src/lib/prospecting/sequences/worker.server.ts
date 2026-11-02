@@ -48,7 +48,7 @@ export type SequencePorts = {
   handoff: (
     context: RuntimeContext,
     decision: Extract<ExecutionDecision, { kind: "stop" }>,
-  ) => Promise<void>;
+  ) => Promise<void | { state: "human" | "agent" }>;
 };
 /** Worker cannot send without first committing a unique effect reservation. */
 export async function processSequenceRun(
@@ -149,8 +149,10 @@ export async function processSequenceRun(
             : "effect_succeeded",
       };
     }
-    if (decision.kind === "stop" && (decision.state === "agent" || decision.state === "human"))
-      await ports.handoff(ctx, decision);
+    if (decision.kind === "stop" && (decision.state === "agent" || decision.state === "human")) {
+      const handoff = await ports.handoff(ctx, decision);
+      if (handoff) decision.state = handoff.state;
+    }
     const advanced = await workRpc<boolean>(admin, "prospecting_sequence_transition", {
       p_run: run.id,
       p_lease: run.lease_token,
@@ -201,6 +203,9 @@ export async function tickProspectingSequences(
     "prospecting_sequence_projection_repair",
     { p_limit: 10 },
   );
+  const replied = await workRpc<number>(admin, "prospecting_sequence_wake_replies", {
+    p_limit: 100,
+  });
   const awakened = await workRpc<number>(admin, "prospecting_sequence_wake_tasks", {
     p_limit: 100,
   });
@@ -231,6 +236,7 @@ export async function tickProspectingSequences(
     deferredByBudget: runs.length - index,
     repaired: repair,
     awakened,
+    replied,
     results,
   };
 }

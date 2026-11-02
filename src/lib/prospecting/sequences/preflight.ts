@@ -38,7 +38,15 @@ export function inspectSequence(definition: SequenceDefinition): SequenceIssue[]
         !definition.steps.slice(0, i).some((p) => ["email", "whatsapp", "call"].includes(p.type))
       )
         add(s.id, "wait_missing_contact", "A espera precisa de uma etapa de contato anterior.");
-      if (s.onReply === "agent" && !definition.settings.agentId)
+      const previous = definition.steps
+        .slice(0, i)
+        .reverse()
+        .find((s) => s.type === "email" || s.type === "whatsapp");
+      if (
+        s.onReply === "agent" &&
+        !definition.settings.agentId &&
+        !(previous?.type === "whatsapp" && previous.agentId)
+      )
         add(
           s.id,
           "reply_agent_missing",
@@ -52,7 +60,7 @@ export function inspectSequence(definition: SequenceDefinition): SequenceIssue[]
       add(
         s.id,
         "automatic_call_pending",
-        "A chamada automática será habilitada com o lote de execução; use tarefa humana nesta versão.",
+        "Chamadas automáticas exigem uma integração de telefonia habilitada; use uma chamada humana nesta sequência.",
       );
     if (s.type === "agent" && !s.agentId) add(s.id, "agent_missing", "Escolha o agente da etapa.");
     if (s.type === "condition" && s.yes === "agent" && !definition.settings.agentId)

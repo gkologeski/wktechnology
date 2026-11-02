@@ -1,3 +1,4 @@
+import { sequenceHandoff } from "../../src/lib/prospecting/sequences/handoff.server.ts";
 import { sequenceOperations } from "../../src/lib/prospecting/sequences/operations.server.ts";
 import { processSequenceRun } from "../../src/lib/prospecting/sequences/worker.server.ts";
 import { protectSalesClient } from "../../src/lib/access-control/sales-client-projection.ts";
@@ -49,8 +50,10 @@ const keys = [
   "system.channels.view.workspace",
   "techsales.inbox.email.view.own",
   "techsales.inbox.email.create.own",
+  "techsales.inbox.email.update.own",
   "techsales.inbox.whatsapp.view.own",
   "techsales.inbox.whatsapp.create.own",
+  "techsales.inbox.whatsapp.update.own",
   "techsales.activities.create.own",
   ...["view", "create", "update", "manage", "assign"].flatMap((a) =>
     ["own", "team", "workspace"].map((s) => `system.automation.sequences.${a}.${s}`),
@@ -67,6 +70,9 @@ const before = must(
     .in("role_id", roles)
     .in("permission_key", keys),
 );
+const settingsBefore = must(
+  await admin.from("sdr_workspace_settings").select("enabled").eq("workspace_id", W).maybeSingle(),
+);
 const grant = async (role, list, effect = "grant") =>
   must(
     await admin.from("job_role_permission_overrides").upsert(
@@ -82,6 +88,7 @@ const grant = async (role, list, effect = "grant") =>
   );
 const metrics = {},
   fixtures = [],
+  bindingAccounts = [],
   results = [],
   tag = "cohort" + crypto.randomUUID().replaceAll("-", "").slice(0, 10),
   actor = accounts[0].id;
@@ -1369,6 +1376,122 @@ try {
         ).cursor === 1,
         "Email cursor not committed",
       );
+      // A provider auto-reply never becomes a customer response, nor a wake signal.
+      await seed("email_messages", {
+        workspace_id: W,
+        owner_id: actor,
+        account_id: mailbox,
+        thread_id: row.thread_id,
+        direction: "inbound",
+        provider_message_id: "auto-" + crypto.randomUUID(),
+        from_email: payload.to,
+        to_emails: [payload.from],
+        in_reply_to: payload.messageIdHeader,
+        headers: { "Auto-Submitted": "auto-replied" },
+        received_at: new Date().toISOString(),
+      });
+      const automatic = must(
+        await admin.rpc("prospecting_sequence_reply_signals", {
+          p_run: run.id,
+          p_previous: def.steps[0].id,
+        }),
+      );
+      assert(
+        !automatic.replied && !automatic.previousReplied,
+        "Automatic email counted as a customer response",
+      );
+      assert(
+        must(await admin.rpc("prospecting_sequence_wake_replies", { p_limit: 100 })) === 0,
+        "Automatic email woke cadence",
+      );
+      await seed("email_messages", {
+        workspace_id: W,
+        owner_id: actor,
+        account_id: mailbox,
+        thread_id: row.thread_id,
+        direction: "inbound",
+        provider_message_id: "reply-" + crypto.randomUUID(),
+        from_email: payload.to,
+        to_emails: [payload.from],
+        in_reply_to: payload.messageIdHeader,
+        headers: {},
+        received_at: new Date().toISOString(),
+      });
+      const reply = must(
+        await admin.rpc("prospecting_sequence_reply_signals", {
+          p_run: run.id,
+          p_previous: def.steps[0].id,
+        }),
+      );
+      assert(reply.replied && reply.previousReplied, "Verified reply was not detected");
+      const wrongPrevious = must(
+        await admin.rpc("prospecting_sequence_reply_signals", {
+          p_run: run.id,
+          p_previous: crypto.randomUUID(),
+        }),
+      );
+      assert(
+        wrongPrevious.replied && !wrongPrevious.previousReplied,
+        "Reply leaked across previous-step condition",
+      );
+      assert(
+        !must(
+          await admin.rpc("prospecting_sequence_agent_route_allowed", {
+            p_workspace: W,
+            p_channel: "email",
+            p_source: row.thread_id,
+            p_agent: crypto.randomUUID(),
+          }),
+        ),
+        "Channel default agent stole human sequence",
+      );
+      assert(
+        must(await admin.rpc("prospecting_sequence_wake_replies", { p_limit: 100 })) === 1,
+        "Customer response did not wake cadence",
+      );
+      const responseRun = must(
+        await admin.rpc("prospecting_sequence_claim", { p_limit: 100 }),
+      ).find((x) => x.id === run.id);
+      assert(responseRun, "Reply run not claimable");
+      blocked(
+        await clients[0].rpc("prospecting_sequence_handoff", {
+          p_run: responseRun.id,
+          p_lease: responseRun.lease_token,
+          p_mode: "human",
+        }),
+      );
+      await grant(roles[0], [
+        "techsales.inbox.email.update.own",
+        "techsales.activities.create.own",
+      ]);
+      must(
+        await admin.rpc("prospecting_sequence_handoff", {
+          p_run: responseRun.id,
+          p_lease: responseRun.lease_token,
+          p_mode: "human",
+        }),
+      );
+      const response = await processSequenceRun(
+        admin,
+        responseRun,
+        {
+          prepare: async () => {
+            throw Error("Reply must not send a campaign step");
+          },
+          handoff: sequenceHandoff(admin),
+        },
+        new Date(),
+      );
+      assert(response.status === "stop", "Reply did not stop without sending");
+      const human = must(
+        await admin.from("prospecting_sequence_runs").select("state").eq("id", run.id).single(),
+      );
+      assert(human.state === "human", "Human handoff not confirmed");
+      const humanTask = must(
+        await admin.from("activities").select("id,related_contact_id").eq("id", run.id).single(),
+      );
+      assert(humanTask.related_contact_id === contact, "Human task lost customer association");
+      fixtures.push(["activities", run.id], ["notifications", run.id]);
       must(
         await admin.from("email_unsubscribes").update({ reason: "user_requested" }).eq("id", token),
       );
@@ -1409,6 +1532,40 @@ try {
       last_name: tag + "wa",
       whatsapp_e164: "+5548991104006",
     });
+    const agent = await seed("sdr_playbooks", {
+      workspace_id: W,
+      owner_id: actor,
+      name: "[ISO] Sequence agent",
+      enabled: true,
+    });
+    await seed("sdr_agent_versions", {
+      workspace_id: W,
+      playbook_id: agent,
+      version: 1,
+      status: "published",
+    });
+    bindingAccounts.push(account);
+    must(
+      await admin.from("service_channel_bindings").insert({
+        workspace_id: W,
+        account_id: account,
+        agent_id: agent,
+        enabled: true,
+        inbound: true,
+        campaigns: true,
+      }),
+    );
+    must(
+      await admin
+        .from("service_channel_accounts")
+        .update({ routing_configured: true })
+        .eq("id", account),
+    );
+    must(
+      await admin
+        .from("sdr_workspace_settings")
+        .upsert({ workspace_id: W, enabled: true }, { onConflict: "workspace_id" }),
+    );
     const def = newDefinition();
     def.audience.groups = [
       {
@@ -1425,7 +1582,7 @@ try {
         templateName: "isolated_template",
         language: "pt_BR",
         variables: {},
-        agentId: null,
+        agentId: agent,
       },
       newStep("end"),
     ];
@@ -1492,6 +1649,80 @@ try {
       must(await admin.from("prospecting_sequence_runs").select("cursor").eq("id", run.id).single())
         .cursor === 1,
       "WA cursor not committed",
+    );
+    await grant(roles[0], ["techsales.inbox.whatsapp.update.own"]);
+    await seed("whatsapp_messages", {
+      workspace_id: W,
+      owner_id: actor,
+      conversation_id: row.conversation_id,
+      direction: "inbound",
+      from_number: payload.to,
+      to_number: payload.from,
+      body: "[ISO] Reply",
+      wa_message_id: "iso-inbound-" + crypto.randomUUID(),
+      provider: "meta",
+      status: "received",
+    });
+    assert(
+      must(
+        await admin.rpc("prospecting_sequence_agent_route_allowed", {
+          p_workspace: W,
+          p_channel: "whatsapp",
+          p_source: row.conversation_id,
+          p_agent: agent,
+        }),
+      ),
+      "Selected agent was blocked",
+    );
+    assert(
+      !must(
+        await admin.rpc("prospecting_sequence_agent_route_allowed", {
+          p_workspace: W,
+          p_channel: "whatsapp",
+          p_source: row.conversation_id,
+          p_agent: crypto.randomUUID(),
+        }),
+      ),
+      "Another agent stole the conversation",
+    );
+    must(await admin.rpc("prospecting_sequence_wake_replies", { p_limit: 100 }));
+    const agentRun = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+      (x) => x.id === run.id,
+    );
+    assert(agentRun, "Agent response did not wake run");
+    const result = await processSequenceRun(
+      admin,
+      agentRun,
+      {
+        prepare: async () => {
+          throw Error("No campaign send expected");
+        },
+        handoff: sequenceHandoff(admin),
+      },
+      new Date(),
+    );
+    assert(result.status === "stop", "Agent handoff failed");
+    const associated = must(
+      await admin
+        .from("whatsapp_conversations")
+        .select("sdr_enrollment_id,ai_owner")
+        .eq("id", row.conversation_id)
+        .single(),
+    );
+    assert(
+      associated.ai_owner === "ai" && associated.sdr_enrollment_id,
+      "Agent was not bound to conversation",
+    );
+    fixtures.push(["sdr_enrollments", associated.sdr_enrollment_id]);
+    assert(
+      must(
+        await admin
+          .from("sdr_enrollments")
+          .select("playbook_id")
+          .eq("id", associated.sdr_enrollment_id)
+          .single(),
+      ).playbook_id === agent,
+      "Wrong agent took over",
     );
     const activities = must(
       await admin.from("activities").select("id").eq("related_contact_id", contact),
@@ -1789,7 +2020,7 @@ try {
           .single(),
       );
       assert(
-        saved.cursor === 1 && new Date(saved.next_run_at).getTime() - entered === 86_400_000,
+        saved.cursor === 0 && new Date(saved.next_run_at).getTime() - entered === 86_400_000,
         "First wait clock wrong",
       );
       execFileSync(
@@ -1813,9 +2044,34 @@ try {
         (r) => r.version_id === version,
       );
       assert(
-        (await processSequenceRun(admin, run, noEffects, new Date(saved.step_entered_at)))
-          .status === "advance",
-        "Second timer did not advance",
+        (await processSequenceRun(admin, run, noEffects, new Date(entered + 86_400_000))).status ===
+          "advance",
+        "Elapsed timer did not release its step",
+      );
+      execFileSync(
+        "/Applications/Docker.app/Contents/Resources/bin/docker",
+        [
+          "exec",
+          "supabase_db_techerp-permissions-20261023",
+          "psql",
+          "-U",
+          "supabase_admin",
+          "-d",
+          "postgres",
+          "-v",
+          "ON_ERROR_STOP=1",
+          "-c",
+          `UPDATE public.prospecting_sequence_runs SET next_run_at=now()-interval '1 second' WHERE id='${run.id}'::uuid`,
+        ],
+        { stdio: "pipe" },
+      );
+      run = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+        (r) => r.version_id === version,
+      );
+      assert(
+        (await processSequenceRun(admin, run, noEffects, new Date(entered + 86_400_000))).status ===
+          "advance",
+        "Second timer did not schedule",
       );
       saved = must(
         await admin
@@ -1825,7 +2081,7 @@ try {
           .single(),
       );
       assert(
-        saved.cursor === 2 && new Date(saved.next_run_at).getTime() - entered === 172_800_000,
+        saved.cursor === 1 && new Date(saved.next_run_at).getTime() - entered === 172_800_000,
         "Two 24-hour waits collapsed into 24 hours",
       );
     },
@@ -1976,6 +2232,8 @@ try {
   }
   if (versionIds.length)
     must(await admin.from("prospecting_sequence_versions").delete().in("id", versionIds));
+  if (bindingAccounts.length)
+    must(await admin.from("service_channel_bindings").delete().in("account_id", bindingAccounts));
   // Preserve exact reverse dependency order, batching only contiguous same-table fixtures.
   const reversed = [...fixtures].reverse();
   for (let index = 0; index < reversed.length; ) {
@@ -1997,6 +2255,14 @@ try {
       .in("permission_key", keys),
   );
   if (before.length) must(await admin.from("job_role_permission_overrides").insert(before));
+  if (settingsBefore)
+    must(
+      await admin
+        .from("sdr_workspace_settings")
+        .update({ enabled: settingsBefore.enabled })
+        .eq("workspace_id", W),
+    );
+  else must(await admin.from("sdr_workspace_settings").delete().eq("workspace_id", W));
 }
 if (process.env.SEQUENCE_ACCEPTANCE_REPORT)
   writeFileSync(

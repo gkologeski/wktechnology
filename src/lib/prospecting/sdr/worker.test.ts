@@ -27,6 +27,11 @@ const Q = {
 };
 
 function seed(db: FakeDb) {
+  const originalRpc = db.rpc.bind(db);
+  db.rpc = (name, args) =>
+    name === "prospecting_sequence_agent_route_allowed"
+      ? Promise.resolve({ data: true, error: null })
+      : originalRpc(name, args);
   db.unique.sdr_turn_jobs = ["workspace_id", "idem_key"];
   db.t("sdr_workspace_settings").push({
     workspace_id: W1,
@@ -195,6 +200,31 @@ describe("entrada (ingest)", () => {
     providerPhoneId: "pn1",
     body: "Olá",
   };
+  it("sequence human routing prevents an SDR reply while retaining opt-out", async () => {
+    const original = db.rpc.bind(db);
+    db.rpc = (name, args) =>
+      name === "prospecting_sequence_agent_route_allowed"
+        ? Promise.resolve({ data: false, error: null })
+        : original(name, args);
+    const input = {
+      workspaceId: W1,
+      conversationId: "c1",
+      waMessageId: "policy-denied",
+      messageId: "policy-denied-message",
+      providerPhoneId: "pn1",
+      body: "Olá",
+    };
+    expect(await ingestInboundForSdr(db, input)).toBe("human_owner");
+    expect(db.t("sdr_turn_jobs")).toHaveLength(0);
+    expect(
+      await ingestInboundForSdr(db, {
+        ...input,
+        waMessageId: "policy-optout",
+        body: "pare de me mandar mensagem",
+      }),
+    ).toBe("opted_out");
+    expect(db.t("sdr_enrollments")[0].opted_out_at).toBeTruthy();
+  });
   it("webhook repetido enfileira uma única vez", async () => {
     expect(await ingestInboundForSdr(db, p)).toBe("queued");
     expect(await ingestInboundForSdr(db, p)).toBe("duplicate");

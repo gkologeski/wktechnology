@@ -14,6 +14,7 @@ export type ExecutionSignals = {
   replied: boolean;
   previousReplied: boolean;
   previousContactExists?: boolean;
+  responseAgentId?: string | null;
   meetingBooked: boolean;
   callAnswered: boolean;
   hasPhone: boolean;
@@ -137,8 +138,17 @@ export function decideExecution(input: {
   if (s.optedOut) return stop("blocked", "opt_out");
   if (s.meetingBooked && d.settings.stopOnMeeting) return stop("completed", "meeting_booked");
   const step = d.steps[cursor];
+  const previousOutreach = d.steps
+    .slice(0, cursor)
+    .reverse()
+    .find((s) => s.type === "email" || s.type === "whatsapp");
+  const responseAgent =
+    s.responseAgentId !== undefined
+      ? s.responseAgentId
+      : (previousOutreach?.type === "whatsapp" ? previousOutreach.agentId : null) ||
+        d.settings.agentId;
   if (s.replied && d.settings.stopOnReply) {
-    const agentId = d.settings.agentId;
+    const agentId = responseAgent;
     if (step?.type === "wait" && step.onReply === "human") return stop("human", "reply");
     return agentId ? stop("agent", "reply", agentId) : stop("human", "reply");
   }
@@ -160,11 +170,14 @@ export function decideExecution(input: {
     if (step.source === "any" ? s.replied : s.previousReplied)
       return step.onReply === "human"
         ? stop("human", "reply")
-        : d.settings.agentId
-          ? stop("agent", "reply", d.settings.agentId)
+        : responseAgent
+          ? stop("agent", "reply", responseAgent)
           : stop("blocked", "agent_missing");
     if (!input.previousAt) return stop("blocked", "wait_without_reference");
-    return next(waitUntil(input.previousAt, step, d.settings), "wait");
+    const due = waitUntil(input.previousAt, step, d.settings);
+    return due.getTime() > now.getTime()
+      ? { kind: "advance", nextStep: cursor, dueAt: due.toISOString(), reason: "wait" }
+      : next(now, "wait_elapsed");
   }
   if (step.type === "condition") {
     if (step.criteria === "call_answered" && s.callResultKnown === false)

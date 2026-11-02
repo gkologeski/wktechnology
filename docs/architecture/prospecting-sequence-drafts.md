@@ -175,3 +175,24 @@ transporte nunca são interpretados automaticamente como prova de não envio.
 As solicitações Gmail e do gateway oficial têm timeout e redirects manuais.
 Ainda faltam a tela de operação, tratamento/encaminhamento imediato das respostas,
 liberação de reservas, entrada dinâmica, ligação do cron e aceite/publicação.
+
+## Operação e respostas: implementação em andamento
+
+A migração 0298 e o painel por versão permitem iniciar uma inscrição com
+preflight dos canais atuais, pausar, retomar, cancelar e conferir execuções
+paginadas. Cada botão recebe capacidades por responsável; as mutações repetem
+as verificações no SQL. Contadores são de registros visíveis, não totais globais.
+
+A migração 0299 registra sinais duráveis de respostas sem adquirir locks das
+execuções dentro da ingestão. E-mails precisam ser respostas verificadas ao
+remetente e cabeçalho originais; mensagens automáticas são excluídas. O canal,
+conversa e agente são os da resposta efetiva. Esperas mantêm a etapa atual até
+o vencimento, preservando sua política de encaminhamento. O agente padrão do
+canal não pode substituir a escolha da sequência. Atendimento humano cria uma
+atividade e notificação idempotentes; nunca retoma uma conversa assumida por
+pessoa. Vínculo com agente usa a infraestrutura publicada de canais/SDR e não
+envia mensagem de IA artificial para simular uma resposta recebida.
+
+O aceite isolado usa JWTs reais e mensagens sintéticas para validar a pausa de
+cadência e o vínculo do agente correto. Liberação de reservas, entrada dinâmica,
+métricas consolidadas, cron, aceite no navegador e publicação ainda são necessários.
