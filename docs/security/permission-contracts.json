@@ -5387,7 +5387,7 @@
         "src/routes/api/public/hooks/meeting-reminders-tick.ts": "ef4d7c62007bb7695d6943b6a7e989b6ae456f5d0c8a4f663cc8881819335345",
         "src/routes/_authenticated/settings.meeting-reminders.tsx": "71c83eb2ece9043d224b4868cecfc7e82f0b556287d0d9c9a9abd43f84a3756f",
         "drizzle/migrations/0292_meeting_reminder_custom_offsets.sql": "e1e0c485ce303a9c9cf79301cce2725453b0af753742053267978a8835e5538d",
-        "src/components/whatsapp/meeting-reminder-rule-row.tsx": "1ef4c04b7cf50e27fde89fd25db5dce3c57958cfa9885d13d189ad9be5c954ed"
+        "src/components/whatsapp/meeting-reminder-rule-row.tsx": "597844917daee7f40359ee96ecd8aa76911880ec6248561c560fd719464ce490"
       },
       "resources": [
         "techsales.meeting_settings",
