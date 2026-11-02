@@ -308,7 +308,7 @@
       "kind": "internal",
       "files": {
         "src/lib/access-control/sales-route-map.ts": "0df9503ad94282448e5d19988fd5d6f579ff4d89df0a03b009f454858dbe57dc",
-        "src/routes/_authenticated/settings.tsx": "53fb56dbdfb1acae1cb3e6a585f9de60f65f9675c24e53ddfd3869eb9221d297",
+        "src/routes/_authenticated/settings.tsx": "bdfebd66e504ea735c39b99db4f0e244269e112824fe04a8b8727f30a4c4044b",
         "src/routes/_authenticated.tsx": "8ea21df8f99b5fc40d0233fd06bbc11b5f462d398ded7f2c7182e4a98fa3d388",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
       },
@@ -2716,7 +2716,7 @@
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
       "files": {
-        "src/integrations/supabase/types.ts": "cd77d3a014c274f507631823bc070e0fb03165fe7d1c9ca2de54d9f04ac2926c"
+        "src/integrations/supabase/types.ts": "00abe9b5f21790052cdd382da851e0a8322fdf5f2f06f72965db889c8ee93d5c"
       },
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations."
     },
@@ -5203,10 +5203,13 @@
         "drizzle/migrations/0290_prospecting_call_whatsapp_followup.sql": "df467dc2e493da88db8bfcd28c8007c8659f1fab510b1ba1aea9bd45b061a87d",
         "src/components/prospecting/campaign-call-followup.tsx": "21e78f2aca523e51c931f9ed68ffcc9f952d90403dc99c18ea19aac77dce7ae5",
         "src/lib/prospecting-call-followup.server.ts": "71d019f722ae4a114e32bbeea36d4339a5d1add54dd4d21133399cec3c762cea",
-        "src/routes/_authenticated/prospecting.campaigns.$id.tsx": "cf95037ffe8e5806cab65e72fbf60da77fcdd6adad8af0683d3ed7059556b6d5",
-        "src/lib/prospecting-scripts.functions.ts": "211cd7fc9032c2d27a7dbd69b21d187ab1777b0b3032281117f2242eec2fcddc",
+        "src/routes/_authenticated/prospecting.campaigns.$id.tsx": "5bff465ce7c05015aa9d932de5db107c5786698c8618dfd2de78087bb8a3bff4",
+        "src/lib/prospecting-scripts.functions.ts": "f902e7be21d529cf9321d31a2bed54429a189e8da6a559a52669cdbe62dcede9",
         "src/components/prospecting/pages/voice-agent-page.tsx": "e10c687abb1b144a47e5e7acbb077ad9630a86713dbbd70871e8a70fc2d4a882",
-        "src/lib/voice-agent.functions.ts": "932a46a77422c54536399f8e2d709a423e51b7b5315c87b58fe654bad81aae0a"
+        "src/lib/voice-agent.functions.ts": "932a46a77422c54536399f8e2d709a423e51b7b5315c87b58fe654bad81aae0a",
+        "drizzle/migrations/0293_prospecting_scripts_archived_at.sql": "a6e8cce47013518da00c651e96d47f4b4cfbb1b847aed5cf720cd405d6d6fd91",
+        "src/components/prospecting/pages/scripts-page.tsx": "0481fa1e3ecda2bccf5f4156cd9396c3699c4c16872dd28e85d28bd1a9e1d99d",
+        "src/routes/_authenticated/settings.prospecting-scripts.tsx": "dd5176c9fd9ccb8a50efba3ca1894e7c7f0d18f0d7476765a1f80c008ffa6776"
       },
       "resources": [
         "techsales.marketing.campaigns",
@@ -5244,7 +5247,7 @@
         "techsales.prospecting_voice.create.team",
         "techsales.prospecting_voice.create.workspace"
       ],
-      "rationale": "Review 01/11/2026: startVapiCall moved unchanged from prospecting-campaigns.functions.ts to server-only prospecting-vapi-call.server.ts so the client bundle no longer pulls server permission checks; no behavior or access change. Campaign server functions keep requireSalesPermission per action plus assertSalesRecord; manual dial requires techsales.prospecting_voice.create and assertSalesArea/assertSalesRecord as the caller; the dial cron requires CRON_SECRET (requireCronAuth) and every worker call passes assertSalesWorker against the running campaign before and right before dialing. The informational GET of the dial cron now also requires requireCronAuth. Review 01/11/2026 (2): WhatsApp after voice call. saveCampaignCallFollowup requires techsales.marketing.campaigns.update + assertSalesRecord(update) and, when enabling, assertSalesArea(techsales.marketing.campaigns, create) like WhatsApp campaigns; listCallFollowupSenders requires campaigns.view and reads only the active workspace; dialLeadNow accepts followup_campaign_id only after assertSalesRecord(view) on that campaign. The follow-up sender runs only from the Vapi webhook (VAPI_WEBHOOK_SECRET), reads campaign/lead scoped to the attempt workspace, claims once per attempt, respects opt-out and the 24h window (template outside it); the follow-up also passes assertSalesWorker (campaign actor must still view the lead and hold techsales.marketing.campaigns.create) and sends through resolveWaNumber (connection/number checks). The UI disables save/test buttons via usePermissions; servers enforce. Review 01/11/2026 (3): Vapi assistant gains endCall function/phrases and 20 s silence timeout; script save validator tolerates legacy empty-array variables. No access change.",
+      "rationale": "Review 01/11/2026: startVapiCall moved unchanged from prospecting-campaigns.functions.ts to server-only prospecting-vapi-call.server.ts so the client bundle no longer pulls server permission checks; no behavior or access change. Campaign server functions keep requireSalesPermission per action plus assertSalesRecord; manual dial requires techsales.prospecting_voice.create and assertSalesArea/assertSalesRecord as the caller; the dial cron requires CRON_SECRET (requireCronAuth) and every worker call passes assertSalesWorker against the running campaign before and right before dialing. The informational GET of the dial cron now also requires requireCronAuth. Review 01/11/2026 (2): WhatsApp after voice call. saveCampaignCallFollowup requires techsales.marketing.campaigns.update + assertSalesRecord(update) and, when enabling, assertSalesArea(techsales.marketing.campaigns, create) like WhatsApp campaigns; listCallFollowupSenders requires campaigns.view and reads only the active workspace; dialLeadNow accepts followup_campaign_id only after assertSalesRecord(view) on that campaign. The follow-up sender runs only from the Vapi webhook (VAPI_WEBHOOK_SECRET), reads campaign/lead scoped to the attempt workspace, claims once per attempt, respects opt-out and the 24h window (template outside it); the follow-up also passes assertSalesWorker (campaign actor must still view the lead and hold techsales.marketing.campaigns.create) and sends through resolveWaNumber (connection/number checks). The UI disables save/test buttons via usePermissions; servers enforce. Review 01/11/2026 (3): Vapi assistant gains endCall function/phrases and 20 s silence timeout; script save validator tolerates legacy empty-array variables. No access change. Review 02/11/2026: call scripts can be archived (archived_at) via setScriptArchived requiring techsales.prospecting_scripts update + assertSalesRecord; deleteScript refuses scripts already used by campaign variants (FK restrict preserved); listScripts hides archived unless includeArchived; listScriptUsage requires prospecting_scripts view and reads variants through RLS. Settings shortcut removed; old URL only redirects. No RLS/policy change.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
