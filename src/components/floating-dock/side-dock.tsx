@@ -4,12 +4,13 @@ import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { messengerAllowed } from "./messenger-gate";
-import { openDockItem, useDockState, type DockItem } from "./side-dock-store";
+import { useAuth } from "@/lib/auth";
+import { openDockItem, type DockItem } from "./side-dock-store";
 
 // Aba recolhível presa à borda direita: agrupa Mensagens, Assistente IA e Chamado
 // para que os atalhos flutuantes não cubram botões das telas.
 export function SideDock() {
-  const { agentAvailable } = useDockState();
+  const agentAvailable = Boolean(useAuth().user);
   // Confere a permissão aqui mesmo (não depende do aviso do mensageiro).
   const chatAllowed = messengerAllowed(usePermissions());
   // Lê do mesmo cache do mensageiro; nunca busca sozinho.
