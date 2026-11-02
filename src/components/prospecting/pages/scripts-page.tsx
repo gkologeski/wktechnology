@@ -12,21 +12,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Play, Loader2 } from "lucide-react";
+import { Plus, Trash2, Play, Loader2, Archive, ArchiveRestore } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   listScripts,
   upsertScript,
   deleteScript,
+  setScriptArchived,
+  listScriptUsage,
   type ProspectingScript,
 } from "@/lib/prospecting-scripts.functions";
 import { previewVoice, CURATED_VOICES } from "@/lib/voice-agent.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 export function ScriptsPage() {
   const listFn = useServerFn(listScripts);
   const saveFn = useServerFn(upsertScript);
   const delFn = useServerFn(deleteScript);
+  const { canAny } = usePermissions();
+  const keys = (a: string) =>
+    ["own", "team", "workspace"].map((x) => `techsales.prospecting_scripts.${a}.${x}`);
+  const canUpdate = canAny(keys("update"));
+  const canDelete = canAny(keys("delete"));
+  const archiveFn = useServerFn(setScriptArchived);
+  const usageFn = useServerFn(listScriptUsage);
+  const [showArchived, setShowArchived] = useState(false);
+  const [used, setUsed] = useState<Set<string>>(new Set());
   const previewFn = useServerFn(previewVoice);
 
   const [rows, setRows] = useState<ProspectingScript[]>([]);
@@ -34,10 +47,44 @@ export function ScriptsPage() {
   const [edit, setEdit] = useState<Partial<ProspectingScript> | null>(null);
   const [previewing, setPreviewing] = useState(false);
 
-  const refresh = async () => setRows(await listFn());
+  const refresh = async (withArchived = showArchived) => {
+    try {
+      const [list, usage] = await Promise.all([
+        listFn({ data: { includeArchived: withArchived } }),
+        usageFn(),
+      ]);
+      setRows(list);
+      setUsed(new Set(usage));
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível carregar os roteiros.");
+    }
+  };
   useEffect(() => {
-    refresh(); /* eslint-disable-next-line */
-  }, []);
+    refresh(showArchived); /* eslint-disable-next-line */
+  }, [showArchived]);
+
+  const removeOrArchive = async (r: ProspectingScript) => {
+    try {
+      if (r.archived_at) {
+        await archiveFn({ data: { id: r.id, archived: false } });
+        toast.success("Roteiro restaurado");
+      } else if (used.has(r.id)) {
+        const ok = await confirmDialog(
+          "Este roteiro já foi usado em campanhas. Arquivar tira-o da lista e dos seletores, preservando o histórico. Arquivar?",
+        );
+        if (!ok) return;
+        await archiveFn({ data: { id: r.id, archived: true } });
+        toast.success("Roteiro arquivado");
+      } else {
+        if (!(await confirmDialog("Excluir este roteiro definitivamente?"))) return;
+        await delFn({ data: { id: r.id } });
+        toast.success("Roteiro excluído");
+      }
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível concluir a ação.");
+    }
+  };
 
   const save = async () => {
     if (!edit) return;
@@ -89,15 +136,21 @@ export function ScriptsPage() {
             Crie variações de roteiro para testar em campanhas A/B.
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setEdit({ voice_provider: "elevenlabs" });
-            setOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Novo script
-        </Button>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Switch checked={showArchived} onCheckedChange={setShowArchived} />
+            Mostrar arquivados
+          </label>
+          <Button
+            onClick={() => {
+              setEdit({ voice_provider: "elevenlabs" });
+              setOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Novo script
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -115,20 +168,37 @@ export function ScriptsPage() {
                     setOpen(true);
                   }}
                 >
-                  <div className="font-medium truncate">{r.name}</div>
+                  <div className="font-medium truncate">
+                    {r.name}
+                    {r.archived_at && (
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        (arquivado)
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-muted-foreground truncate">{r.objective ?? "—"}</div>
                 </button>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={async () => {
-                    if (await confirmDialog("Remover?")) {
-                      await delFn({ data: { id: r.id } });
-                      refresh();
-                    }
-                  }}
+                  aria-label={
+                    r.archived_at
+                      ? "Restaurar roteiro"
+                      : used.has(r.id)
+                        ? "Arquivar roteiro"
+                        : "Excluir roteiro"
+                  }
+                  title={r.archived_at ? "Restaurar" : used.has(r.id) ? "Arquivar" : "Excluir"}
+                  disabled={r.archived_at || used.has(r.id) ? !canUpdate : !canDelete}
+                  onClick={() => removeOrArchive(r)}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  {r.archived_at ? (
+                    <ArchiveRestore className="h-4 w-4" />
+                  ) : used.has(r.id) ? (
+                    <Archive className="h-4 w-4" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             ))}
