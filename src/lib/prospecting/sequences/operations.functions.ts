@@ -1,3 +1,4 @@
+import { insightsInput } from "./insights";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { SEQUENCE_RESOURCE } from "./draft";
@@ -15,4 +16,12 @@ export const runSequenceOperation = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const { operateSequence } = await import("./operations.server");
     return operateSequence(context.supabase, data);
+  });
+
+export const getSequenceInsights = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission(SEQUENCE_RESOURCE, "view")])
+  .inputValidator((input: unknown) => insightsInput.parse(input))
+  .handler(async ({ context, data }) => {
+    const { sequenceInsights } = await import("./insights.server");
+    return sequenceInsights(context.supabase, data);
   });

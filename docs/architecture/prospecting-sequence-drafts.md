@@ -252,3 +252,7 @@ Uma etapa automática utiliza a configuração Vapi do workspace e um roteiro at
 O recibo é gravado antes da projeção da atividade. A chamada tem vínculo com o Lead ou Contato original e permanece aguardando retorno confirmado da telefonia. O webhook autenticado confere efeito, remetente, destinatário e ID da chamada; eventos duplicados ou atrasados não reabrem uma execução cancelada. Eventos de sequência não passam pela retomada de campanhas legadas. A conclusão manual pela operação da sequência é bloqueada para chamadas automáticas. Testes locais usam recibos sintéticos; não comprovam a configuração nem a entrega real da operadora.
 
 Referência técnica: https://docs.vapi.ai/server-url/events e https://docs.vapi.ai/api-reference/calls/create.
+
+### Indicadores e histórico (0304)
+
+Agregados são executados pelo cliente autenticado, com SECURITY INVOKER e as mesmas políticas de leitura das execuções. O painel informa cobertura do escopo atual e distingue aceitação pelo provedor de entrega/leitura, sem consultar recibos ou alvos privados. Erro não vira zero. O histórico retorna no máximo 50 eventos. Sinais de conversão são registrados a partir do contexto verificado na transição; nomes de encerramento definidos pelo usuário não contam como resposta ou reunião.

@@ -1,3 +1,5 @@
+import { SequenceInsights } from "./sequence-insights";
+import { sequenceReasonLabel } from "@/lib/prospecting/sequences/insights";
 import { SequenceDynamic } from "./sequence-dynamic";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useState } from "react";
@@ -83,6 +85,7 @@ export function SequenceOperations({
           Atualizar
         </Button>
       </div>
+      <SequenceInsights workspaceId={workspaceId} versionId={versionId} disabled={unavailable} />
       <p className="text-xs text-muted-foreground">
         Execuções visíveis nesta versão. Chamadas geram atividades para o responsável; o fluxo
         aguarda a conclusão. Uma confirmação de envio exige retorno do provedor.
@@ -192,7 +195,7 @@ export function SequenceOperations({
                 </div>
                 <p className="text-xs text-muted-foreground">
                   Execução {r.id.slice(0, 8)}
-                  {r.reason ? ` · ${r.reason}` : ""}
+                  {r.reason ? ` · ${sequenceReasonLabel(r.reason)}` : ""}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {r.canManage && ["active", "waiting_task"].includes(r.state) && (

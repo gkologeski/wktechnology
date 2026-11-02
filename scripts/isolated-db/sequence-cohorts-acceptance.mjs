@@ -13,6 +13,7 @@ import { execFileSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
 import { prepareSequenceEnrollment } from "../../src/lib/prospecting/sequences/enrollment.server.ts";
 import { cohortCandidates } from "../../src/lib/prospecting/sequences/enrollment.ts";
+import { sequenceInsights } from "../../src/lib/prospecting/sequences/insights.server.ts";
 import { newDefinition, newStep } from "../../src/lib/prospecting/sequences/draft.ts";
 const root = process.env.BANKING_ISOLATED_ROOT;
 if (!root) throw Error("Explicit isolated root required");
@@ -3274,6 +3275,51 @@ try {
           p_run: run2.id,
           p_action: "cancel",
         }),
+      );
+    },
+  );
+
+  await check(
+    "insights aggregate only caller-visible runs and never infer conversion from a custom label",
+    async () => {
+      const version = must(
+        await admin
+          .from("prospecting_sequence_runs")
+          .select("version_id")
+          .eq("id", metrics.runtime_run)
+          .single(),
+      ).version_id;
+      const args = { p_workspace: W, p_version: version };
+      const visible = await sequenceInsights(clients[0], { workspaceId: W, versionId: version });
+      assert(
+        Object.values(visible.states).reduce((n, x) => n + x, 0) === 1,
+        "Metrics leaked runs or lost visible run",
+      );
+      assert(
+        visible.history.length <= 50 && visible.coverage === "current_scope",
+        "Unbounded or misleading coverage",
+      );
+      assert(
+        !JSON.stringify(visible).includes(metrics.runtime_token),
+        "Private effect nonce leaked",
+      );
+      for (const index of [1, 2, 3])
+        blocked(await clients[index].rpc("prospecting_sequence_insights", args));
+      await grant(roles[0], ["system.automation.sequences.view.own"], "deny");
+      blocked(await clients[0].rpc("prospecting_sequence_insights", args));
+      await grant(roles[0], ["system.automation.sequences.view.own"]);
+      must(
+        await admin.from("prospecting_sequence_run_events").insert({
+          workspace_id: W,
+          run_id: metrics.runtime_run,
+          kind: "completed",
+          reason: "meeting_booked",
+        }),
+      );
+      const after = must(await clients[0].rpc("prospecting_sequence_insights", args));
+      assert(
+        after.meetings === visible.meetings,
+        "Custom end label became a false meeting conversion",
       );
     },
   );

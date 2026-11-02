@@ -6103,9 +6103,9 @@
       "kind": "business",
       "files": {
         "drizzle/migrations/0298_prospecting_sequence_operator_access.sql": "f29e0d81dd8692d82de9d4e0298e2365ddb4d459a84db206d7a2d72292ddc167",
-        "src/lib/prospecting/sequences/operations.functions.ts": "f91fe4a1df573d06835a2d2f3add382416c81bff04ab1fa33d885d2c4351dfeb",
+        "src/lib/prospecting/sequences/operations.functions.ts": "a9645ee7d2b97b1c79587d9eb1675034b5332c3d47ba127c2c2e6bc783be4f66",
         "src/lib/prospecting/sequences/operations.server.ts": "7d0288039281d2b7cc7280e3500634a2a5a717e7566f6a063f2bc82808b216b8",
-        "src/components/prospecting/sequences/sequence-operations.tsx": "92a00ed99e0b0ea11f792eb071eabecc37407c3849ed34c6e05144b4e169f2b6"
+        "src/components/prospecting/sequences/sequence-operations.tsx": "39259c57d4c67679b2455ceca983cc00acf26e617d35df42954b1182a0a1c6a6"
       },
       "resources": [
         "system.automation.sequences",
@@ -6723,6 +6723,90 @@
           "name": "voice rejects inactive_member before credentials or transport"
         }
       }
+    },
+    {
+      "id": "prospecting-sequence-insights",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0304_prospecting_sequence_insights.sql": "4fe9dfe1fcc417f8a85367fb24bceed9566b82669dad714a048597c8e97ccd87",
+        "src/lib/prospecting/sequences/insights.server.ts": "598703499616e94bc89730b741e64bfe72aea4830dd5749596655afebf900f0b",
+        "src/components/prospecting/sequences/sequence-insights.tsx": "2ca92ff47678893eb826a1027ceae8a6ffeec277d0855c03c32eacbc80a96bbe"
+      },
+      "resources": [
+        "system.automation.sequences"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.sequences.view.own",
+        "system.automation.sequences.view.team",
+        "system.automation.sequences.view.workspace"
+      ],
+      "rationale": "Caller client and SECURITY INVOKER SQL preserve current active workspace, explicit deny, owner scope and row-level visibility. Aggregates only use already-readable columns; no target, nonce or provider receipt is read or returned. History is bounded to 50 events and summaries identify current scope. Unknown, malformed or failed queries are errors rather than fabricated zeroes. Reply/meeting conversion evidence is separately recorded from fresh service context; a user-supplied end label never becomes a metric signal. Client hides cached metrics on unavailable workspace or permissions.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesArea"
+        },
+        {
+          "file": "src/lib/prospecting/sequences/insights.server.ts",
+          "symbol": "sequenceInsights"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0304_prospecting_sequence_insights.sql",
+          "symbol": "prospecting_sequence_insights"
+        },
+        {
+          "file": "drizzle/migrations/0304_prospecting_sequence_insights.sql",
+          "symbol": "prospecting_sequence_transition"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/insights.server.test.ts",
+          "name": "insights allows current authorized scope and validates the bounded payload"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/insights.server.test.ts",
+          "name": "insights rejects missing permission before reading metrics"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/insights.server.test.ts",
+          "name": "insights rejects explicit deny before reading metrics"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/insights.server.test.ts",
+          "name": "insights refuses foreign workspace before reading metrics"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/insights.server.test.ts",
+          "name": "insights rejects inactive membership before reading metrics"
+        }
+      }
+    },
+    {
+      "id": "prospecting-sequence-insight-format",
+      "kind": "presentation",
+      "files": {
+        "src/lib/prospecting/sequences/insights.ts": "5f9b1542ea52436306a5cf4ff558086d294141bd92869fafaa8bf2525365c17e"
+      },
+      "rationale": "Pure strict JSON shape validators and Portuguese labels. No I/O, routes, mutations, credentials or data access; caller authorization and RLS remain in prospecting-sequence-insights. Does not grant or fetch information."
     }
   ],
   "retired": {}
