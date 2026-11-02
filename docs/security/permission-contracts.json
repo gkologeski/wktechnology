@@ -309,7 +309,7 @@
       "files": {
         "src/lib/access-control/sales-route-map.ts": "0df9503ad94282448e5d19988fd5d6f579ff4d89df0a03b009f454858dbe57dc",
         "src/routes/_authenticated/settings.tsx": "53fb56dbdfb1acae1cb3e6a585f9de60f65f9675c24e53ddfd3869eb9221d297",
-        "src/routes/_authenticated.tsx": "18448332bcad1cb959dd7b657792dbeb47058f66e40d261182ef77981f08b445",
+        "src/routes/_authenticated.tsx": "8ea21df8f99b5fc40d0233fd06bbc11b5f462d398ded7f2c7182e4a98fa3d388",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
       },
       "controls": [
@@ -5465,6 +5465,90 @@
           "name": "sales area refuses an inactive execution actor"
         }
       }
+    },
+    {
+      "id": "side-dock-shortcuts",
+      "kind": "internal",
+      "files": {
+        "src/components/floating-dock/side-dock.tsx": "812a0c95e60354b365d70864f3008f0dc3a28ee27947cc6c7cc83b5e50da6afa",
+        "src/components/ai-agent/agent-trigger.tsx": "80e4594868488e5fc379af608c20ca7d37272544ac29b42f371f87db608d53df",
+        "src/components/bug-report/bug-report-button.tsx": "e14a236527a049cfe48f40465965a4c9f9cb7e339114841a2c4e2f0fc27d2b95",
+        "src/components/chat/chat-trigger.tsx": "6ffe99c24cb1dff26347a57979daa66d55905ba35610cc5abedbd74c8217c2e8"
+      },
+      "resources": [
+        "system.messenger"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own"
+      ],
+      "permission_keys": [
+        "system.messenger.view.own"
+      ],
+      "rationale": "Collapsible right-edge tab grouping Messenger, AI assistant and bug report shortcuts. Messenger option is shown only through messengerAllowed (effective permission, deny by default); drawers keep their existing server-side controls. No new routes, grants or data access.",
+      "controls": [
+        {
+          "file": "src/components/floating-dock/messenger-gate.ts",
+          "symbol": "messengerAllowed"
+        },
+        {
+          "file": "src/components/floating-dock/side-dock-store.ts",
+          "symbol": "registerDockOpener"
+        },
+        {
+          "file": "src/components/floating-dock/side-dock-store.ts",
+          "symbol": "openDockItem"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/components/floating-dock/messenger-gate.test.ts",
+          "name": "side dock allows messenger with permission"
+        },
+        "missing_permission": {
+          "file": "src/components/floating-dock/messenger-gate.test.ts",
+          "name": "side dock hides messenger without permission"
+        },
+        "explicit_deny": {
+          "file": "src/components/floating-dock/messenger-gate.test.ts",
+          "name": "side dock hides messenger when deny removes the key"
+        },
+        "foreign_workspace": {
+          "file": "src/components/floating-dock/messenger-gate.test.ts",
+          "name": "side dock hides messenger when workspace context fails"
+        },
+        "inactive_member": {
+          "file": "src/components/floating-dock/messenger-gate.test.ts",
+          "name": "side dock hides messenger while inactive membership has no loaded permissions"
+        }
+      },
+      "exception": {
+        "mechanism": "Authenticated session and effective permissions from usePermissions; UI helpers confer no grants.",
+        "boundary": "Shortcut visibility only; messenger, AI and bug-report data remain protected by their server functions and RLS.",
+        "revocation": "Permission cache revalidates every 30 s; deny or inactive membership removes the key.",
+        "review_by": "2027-02-01"
+      },
+      "database": [
+        {
+          "file": "drizzle/migrations/0273_rls_initplan_people_chat.sql",
+          "symbol": "shared_chat_view_ids"
+        }
+      ]
+    },
+    {
+      "id": "side-dock-state",
+      "kind": "presentation",
+      "files": {
+        "src/components/floating-dock/side-dock-store.ts": "2bcc1f9a98e04310abd9c8b467b85a1aa77d853e07efe01bedbd0724988048f3",
+        "src/components/floating-dock/messenger-gate.ts": "f58d063ffaaa906e55febf5043d9b21e27cddfc9a05f5d14e9aae223e47483c5"
+      },
+      "rationale": "Pure in-memory UI state for the side dock (open callbacks, unread counter) and a pure predicate over already-loaded effective permissions. No I/O, routes, actions or data access."
     }
   ],
   "retired": {}

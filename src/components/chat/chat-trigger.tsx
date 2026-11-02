@@ -2,11 +2,9 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 // Botão flutuante que abre o mensageiro (drawer).
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { MessageSquare } from "lucide-react";
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
+import { useEffect, useState } from "react";
+import { registerDockOpener, setDockState } from "@/components/floating-dock/side-dock-store";
+import { messengerAllowed } from "@/components/floating-dock/messenger-gate";
 import { listConversations } from "@/lib/chat.functions";
 import { useAuth } from "@/lib/auth";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
@@ -16,8 +14,7 @@ import { ChatDrawer } from "./chat-drawer";
 export function ChatTrigger() {
   const { user } = useAuth();
   const permissions = usePermissions();
-  const allowed =
-    !permissions.isLoading && !permissions.isError && permissions.can("system.messenger.view.own");
+  const allowed = messengerAllowed(permissions);
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const listFn = useServerFn(listConversations);
@@ -44,36 +41,15 @@ export function ChatTrigger() {
 
   const unread = (data ?? []).reduce((acc, c) => acc + (c.unread_count || 0), 0);
 
+  useEffect(() => {
+    setDockState({ chatAllowed: allowed, chatUnread: allowed ? unread : 0 });
+  }, [allowed, unread]);
+  useEffect(() => registerDockOpener("chat", () => setOpen(true)), []);
+  useEffect(() => () => setDockState({ chatAllowed: false, chatUnread: 0 }), []);
+
   if (!allowed) return null;
   return (
     <>
-      <div className="fixed bottom-5 right-20 z-50">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                size="icon"
-                onClick={() => setOpen(true)}
-                aria-label="Abrir mensageiro"
-                className="h-12 w-12 rounded-full shadow-lg relative opacity-10 hover:opacity-100 transition-opacity duration-200"
-                variant="secondary"
-              >
-                <MessageSquare className="h-5 w-5" />
-                {unread > 0 && (
-                  <Badge
-                    variant="destructive"
-                    className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-xs rounded-full"
-                  >
-                    {unread > 99 ? "99+" : unread}
-                  </Badge>
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">Mensageiro do workspace</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </div>
       <ChatDrawer
         open={open}
         onOpenChange={setOpen}
