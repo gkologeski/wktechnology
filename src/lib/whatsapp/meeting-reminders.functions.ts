@@ -4,9 +4,11 @@ import { requireSalesPermission } from "@/lib/access-control/sales-permission.mi
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import {
   countTemplateVariables,
-  REMINDER_OFFSET_VALUES,
+  MAX_OFFSET_MINUTES,
+  MAX_REMINDER_RULES,
   REMINDER_VARIABLE_KEYS,
   templateBodyText,
+  validateOffsets,
 } from "./meeting-reminders";
 
 export type MeetingReminderConfig = {
@@ -14,6 +16,7 @@ export type MeetingReminderConfig = {
   sender_phone_number_id: string | null;
   rules: Array<{
     offset_minutes: number;
+    offset_unit: "minutes" | "hours" | "days";
     enabled: boolean;
     template_name: string;
     template_language: string;
@@ -72,6 +75,7 @@ export const getMeetingReminderConfig = createServerFn({ method: "POST" })
       sender_phone_number_id: sender,
       rules: (r.data ?? []).map((x) => ({
         offset_minutes: x.offset_minutes,
+        offset_unit: (x.offset_unit ?? "minutes") as "minutes" | "hours" | "days",
         enabled: x.enabled,
         template_name: x.template_name,
         template_language: x.template_language,
@@ -87,23 +91,56 @@ export const getMeetingReminderConfig = createServerFn({ method: "POST" })
     };
   });
 
+export const listMeetingReminderTemplates = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.meeting_settings", "view")])
+  .inputValidator((i) => z.object({ sender: z.string().max(64).nullable() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const ws = await resolveActiveWorkspace(context.userId);
+    const sb = context.supabase;
+    if (data.sender) {
+      const { data: num } = await sb
+        .from("wa_cloud_numbers")
+        .select("phone_number_id")
+        .eq("workspace_id", ws)
+        .eq("phone_number_id", data.sender)
+        .maybeSingle();
+      if (!num) throw new Error("Número de envio não pertence a este workspace.");
+    }
+    try {
+      const { loadApprovedTemplates } = await import("./templates.server");
+      const list = await loadApprovedTemplates(sb, ws, { phoneNumberId: data.sender });
+      return {
+        templates: list.map((t) => ({
+          name: t.name,
+          language: t.language,
+          body: templateBodyText(t.components),
+          variables: countTemplateVariables(t.components),
+        })),
+        templatesError: null as string | null,
+      };
+    } catch (e) {
+      return {
+        templates: [] as MeetingReminderConfig["templates"],
+        templatesError: e instanceof Error ? e.message : "Não foi possível carregar os modelos.",
+      };
+    }
+  });
+
 const SaveSchema = z.object({
   enabled: z.boolean(),
   sender_phone_number_id: z.string().max(64).nullable(),
   rules: z
     .array(
       z.object({
-        offset_minutes: z
-          .number()
-          .int()
-          .refine((v) => REMINDER_OFFSET_VALUES.includes(v)),
+        offset_minutes: z.number().int().min(1).max(MAX_OFFSET_MINUTES),
+        offset_unit: z.enum(["minutes", "hours", "days"]).default("minutes"),
         enabled: z.boolean(),
         template_name: z.string().min(1).max(200),
         template_language: z.string().min(2).max(20),
         variable_map: z.array(z.string().refine((k) => REMINDER_VARIABLE_KEYS.includes(k))).max(10),
       }),
     )
-    .max(4),
+    .max(MAX_REMINDER_RULES),
 });
 
 export const saveMeetingReminderConfig = createServerFn({ method: "POST" })
@@ -113,7 +150,8 @@ export const saveMeetingReminderConfig = createServerFn({ method: "POST" })
     const ws = await resolveActiveWorkspace(context.userId);
     const sb = context.supabase;
     const offs = data.rules.map((r) => r.offset_minutes);
-    if (new Set(offs).size !== offs.length) throw new Error("Opção de lembrete repetida.");
+    const invalid = validateOffsets(offs);
+    if (invalid) throw new Error(invalid);
     if (data.sender_phone_number_id) {
       const { data: num } = await sb
         .from("wa_cloud_numbers")

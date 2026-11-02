@@ -24,8 +24,47 @@ export const REMINDER_VARIABLE_KEYS = REMINDER_VARIABLES.map((v) => v.key) as st
 /** Atraso máximo aceito após o horário previsto do lembrete. */
 export const LATE_TOLERANCE_MS = 10 * 60_000;
 
-export function offsetLabel(minutes: number): string {
-  return REMINDER_OFFSETS.find((o) => o.minutes === minutes)?.label ?? `${minutes} min antes`;
+export type OffsetUnit = "minutes" | "hours" | "days";
+export const OFFSET_UNITS: { value: OffsetUnit; label: string; minutes: number }[] = [
+  { value: "minutes", label: "minutos", minutes: 1 },
+  { value: "hours", label: "horas", minutes: 60 },
+  { value: "days", label: "dias", minutes: 1440 },
+];
+export const MIN_OFFSET_MINUTES = 1;
+export const MAX_OFFSET_MINUTES = 30 * 1440;
+export const MAX_REMINDER_RULES = 10;
+
+export function toMinutes(amount: number, unit: OffsetUnit): number {
+  return Math.round(amount) * (OFFSET_UNITS.find((u) => u.value === unit)?.minutes ?? 1);
+}
+
+/** Melhor unidade para reexibir um tempo salvo em minutos. */
+export function fromMinutes(minutes: number, unit?: OffsetUnit): { amount: number; unit: OffsetUnit } {
+  const u =
+    unit && minutes % (OFFSET_UNITS.find((x) => x.value === unit)?.minutes ?? 1) === 0
+      ? unit
+      : minutes % 1440 === 0
+        ? "days"
+        : minutes % 60 === 0
+          ? "hours"
+          : "minutes";
+  return { amount: minutes / (OFFSET_UNITS.find((x) => x.value === u)?.minutes ?? 1), unit: u };
+}
+
+/** Erro de validação da lista de lembretes, ou null quando válida. */
+export function validateOffsets(offsets: number[]): string | null {
+  if (offsets.length > MAX_REMINDER_RULES) return `Use no máximo ${MAX_REMINDER_RULES} lembretes.`;
+  for (const m of offsets)
+    if (!Number.isInteger(m) || m < MIN_OFFSET_MINUTES || m > MAX_OFFSET_MINUTES)
+      return "Cada lembrete deve ficar entre 1 minuto e 30 dias antes.";
+  if (new Set(offsets).size !== offsets.length) return "Há dois lembretes com o mesmo tempo.";
+  return null;
+}
+
+export function offsetLabel(minutes: number, unit?: OffsetUnit): string {
+  const { amount, unit: u } = fromMinutes(minutes, unit);
+  const names = { minutes: ["minuto", "minutos"], hours: ["hora", "horas"], days: ["dia", "dias"] };
+  return `${amount} ${names[u][amount === 1 ? 0 : 1]} antes`;
 }
 
 /**
