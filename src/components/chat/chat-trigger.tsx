@@ -3,7 +3,11 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
-import { registerDockOpener, setDockState } from "@/components/floating-dock/side-dock-store";
+import {
+  messengerAllowed,
+  registerDockOpener,
+  setDockState,
+} from "@/components/floating-dock/side-dock-store";
 import { listConversations } from "@/lib/chat.functions";
 import { useAuth } from "@/lib/auth";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
@@ -13,8 +17,7 @@ import { ChatDrawer } from "./chat-drawer";
 export function ChatTrigger() {
   const { user } = useAuth();
   const permissions = usePermissions();
-  const allowed =
-    !permissions.isLoading && !permissions.isError && permissions.can("system.messenger.view.own");
+  const allowed = messengerAllowed(permissions);
   const [open, setOpen] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const listFn = useServerFn(listConversations);
