@@ -275,7 +275,7 @@
         "system.communication.subscription_types.update.workspace",
         "system.communication.subscription_types.view.workspace"
       ],
-      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS. Review 01/11/2026: meeting WhatsApp reminders \u2014 settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations.",
+      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations.",
       "database": [
         {
           "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
@@ -1706,7 +1706,7 @@
         "techsales.notes.view.workspace",
         "techsales.tasks.view.workspace"
       ],
-      "rationale": "User explicitly requested related contact/company history, identified as such, without moving source activity links. Invoker RPC requires a visible parent deal and keeps the existing per-activity RLS including note/task classification; same-workspace filter precedes pagination. No record mutation or permission grant. UI labels related history and other-deal provenance. Fixtures exercise production resolver with the activity resource CASE, plus separate full-schema real-JWT acceptance. Review 01/11/2026: meeting WhatsApp reminders \u2014 settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations.",
+      "rationale": "User explicitly requested related contact/company history, identified as such, without moving source activity links. Invoker RPC requires a visible parent deal and keeps the existing per-activity RLS including note/task classification; same-workspace filter precedes pagination. No record mutation or permission grant. UI labels related history and other-deal provenance. Fixtures exercise production resolver with the activity resource CASE, plus separate full-schema real-JWT acceptance. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations.",
       "controls": [
         {
           "file": "drizzle/migrations/0251_deal_related_activity_history.sql",
@@ -2719,9 +2719,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders \u2014 settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations.",
+      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations.",
       "files": {
-        "src/integrations/supabase/types.ts": "00abe9b5f21790052cdd382da851e0a8322fdf5f2f06f72965db889c8ee93d5c"
+        "src/integrations/supabase/types.ts": "c3c8701fad4c3f4d76f9334995010ce7b6c999a6d44703ccf0c15d029e6d5f93"
       }
     },
     {
@@ -2743,7 +2743,7 @@
         "system.channels.view.workspace",
         "system.channels.manage.workspace"
       ],
-      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back. The agent config panel may now receive the agent chosen in the Est\u00fadio bar instead of its own selector; channel controls and server checks are unchanged.",
+      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back. The agent config panel may now receive the agent chosen in the Estúdio bar instead of its own selector; channel controls and server checks are unchanged.",
       "controls": [
         {
           "file": "src/lib/prospecting/sdr/channel-access.server.ts",
@@ -3064,7 +3064,7 @@
         "techsales.inbox.whatsapp.view.team",
         "techsales.inbox.whatsapp.view.workspace"
       ],
-      "rationale": "Existing SDR version/config/test endpoints retain sales middleware, record checks and assertSdr workspace enforcement. Optional sandbox channel preview additionally requires current channel view and account/binding user RLS; only account UUID is accepted, never client identity text. Disabled accounts may be simulated without activating them. Sandbox continues memory tools and fake calendar with no external delivery or CRM writes. The /agents/sdr page groups the same sections into Opera\u00e7\u00e3o, Est\u00fadio and Resultados through a validated section search param and disables Novo agente unless usePermissions grants an SDR create key; playbook server functions keep requireSalesPermission plus requireSdr, so the UI gate is advisory and adds no new action or data access. The Est\u00fadio shares one agent selection (validated UUID search param, resolved only among agents returned by listPlaybooks under RLS) across Persona, Playbook, configuration and skills, and shows the existing sandbox test chat beside each Est\u00fadio section; this adds no data access. Principal/rename/delete actions moved unchanged into SdrAgentActions. New duplicateSdrAgent requires requireSalesPermission create, assertSalesRecord view on the source, requireSdr create in the caller's workspace and blocks read-only View-as; it reads the source playbook and draft/published version with the user client and inserts the copy and a single draft version through user RLS (sales_create + view_as_ro_ins + sales_agent_version_guard), never service role. The copy is disabled, has no published version, is not made principal and copies no service_channel_bindings, so it cannot answer customers until reviewed, published and enabled through existing gated flows. The Est\u00fadio shares one agent selection (validated UUID search param, resolved only among agents returned by listPlaybooks under RLS) across Persona, Playbook, configuration and skills, and shows the existing sandbox test chat beside each Est\u00fadio section; this adds no data access. Principal/rename/delete actions moved unchanged into SdrAgentActions. New duplicateSdrAgent requires requireSalesPermission create, assertSalesRecord view on the source, requireSdr create in the caller's workspace and blocks read-only View-as; it reads the source playbook and draft/published version with the user client and inserts the copy and a single draft version through user RLS (sales_create + view_as_ro_ins + sales_agent_version_guard), never service role. The copy is disabled, has no published version, is not made principal and copies no service_channel_bindings, so it cannot answer customers until reviewed, published and enabled through existing gated flows. SdrAgentActions and SdrAgentPicker render the usePermissions-gated agent actions; the skills form now disables saving without an SDR update key (saveSdrToolConfig still revalidates on the server); the pure copy rules live in sdr-agent-duplicate-rules. Opera\u00e7\u00e3o: SdrOperationSummary and SdrEnrollmentsPanel only read through the existing getSdrOverview and listEnrollments server functions. listEnrollments keeps requireSalesPermission(techsales.marketing.sdr_agent, view) plus requireSdr view and the explicit workspace filter; it now also returns head-only status counts and the contact/lead names, company and agent name read with the user client (RLS, workspace filter), so a person the user cannot see shows only the phone already present in the enrollment row. No new action, write or permission key; the status filter is a validated search param. The Abrir conversa shortcut renders only when usePermissions grants a techsales.inbox.whatsapp view key; the Inbox itself still enforces access server-side and in RLS. Resultados: new getSdrResults requires requireSalesPermission(techsales.marketing.sdr_agent, view) plus requireSdr view and filters every query by the caller's workspace with the user client (RLS on sdr_enrollments, sdr_actions, sdr_meetings sales_view, prospecting_qualifications, contacts, leads, profiles); totals are head-only counts in the database, never derived from a truncated page. SdrResultsPanel is read-only except the pre-existing Reenviar ao Google action (retrySdrMeetingSync keeps requireSalesPermission manage plus assertAnyPermission update/manage), shown only when usePermissions grants an SDR update/manage workspace key. The previous ResultsPanel inside sdr-console was replaced by this panel. Playbook merged into Configura\u00e7\u00e3o do agente: the separate Playbook tab is gone (legacy ?section=playbook resolves to sdr-agent-config) and Novo agente opens SdrNewAgentButton, gated by usePermissions create keys and calling the unchanged upsertPlaybook (requireSalesPermission create/update plus requireSdr create, user RLS). saveSdrAgentConfig additionally accepts enabled and opt_out_phrases for the same agent row under its existing requireSalesPermission update, assertSalesRecord update, assertSdr manage, read-only View-as block and explicit workspace filter; getSdrAgentConfig also returns opt_out_phrases from the row it already reads. No new permission key, action, table or grant.",
+      "rationale": "Existing SDR version/config/test endpoints retain sales middleware, record checks and assertSdr workspace enforcement. Optional sandbox channel preview additionally requires current channel view and account/binding user RLS; only account UUID is accepted, never client identity text. Disabled accounts may be simulated without activating them. Sandbox continues memory tools and fake calendar with no external delivery or CRM writes. The /agents/sdr page groups the same sections into Operação, Estúdio and Resultados through a validated section search param and disables Novo agente unless usePermissions grants an SDR create key; playbook server functions keep requireSalesPermission plus requireSdr, so the UI gate is advisory and adds no new action or data access. The Estúdio shares one agent selection (validated UUID search param, resolved only among agents returned by listPlaybooks under RLS) across Persona, Playbook, configuration and skills, and shows the existing sandbox test chat beside each Estúdio section; this adds no data access. Principal/rename/delete actions moved unchanged into SdrAgentActions. New duplicateSdrAgent requires requireSalesPermission create, assertSalesRecord view on the source, requireSdr create in the caller's workspace and blocks read-only View-as; it reads the source playbook and draft/published version with the user client and inserts the copy and a single draft version through user RLS (sales_create + view_as_ro_ins + sales_agent_version_guard), never service role. The copy is disabled, has no published version, is not made principal and copies no service_channel_bindings, so it cannot answer customers until reviewed, published and enabled through existing gated flows. The Estúdio shares one agent selection (validated UUID search param, resolved only among agents returned by listPlaybooks under RLS) across Persona, Playbook, configuration and skills, and shows the existing sandbox test chat beside each Estúdio section; this adds no data access. Principal/rename/delete actions moved unchanged into SdrAgentActions. New duplicateSdrAgent requires requireSalesPermission create, assertSalesRecord view on the source, requireSdr create in the caller's workspace and blocks read-only View-as; it reads the source playbook and draft/published version with the user client and inserts the copy and a single draft version through user RLS (sales_create + view_as_ro_ins + sales_agent_version_guard), never service role. The copy is disabled, has no published version, is not made principal and copies no service_channel_bindings, so it cannot answer customers until reviewed, published and enabled through existing gated flows. SdrAgentActions and SdrAgentPicker render the usePermissions-gated agent actions; the skills form now disables saving without an SDR update key (saveSdrToolConfig still revalidates on the server); the pure copy rules live in sdr-agent-duplicate-rules. Operação: SdrOperationSummary and SdrEnrollmentsPanel only read through the existing getSdrOverview and listEnrollments server functions. listEnrollments keeps requireSalesPermission(techsales.marketing.sdr_agent, view) plus requireSdr view and the explicit workspace filter; it now also returns head-only status counts and the contact/lead names, company and agent name read with the user client (RLS, workspace filter), so a person the user cannot see shows only the phone already present in the enrollment row. No new action, write or permission key; the status filter is a validated search param. The Abrir conversa shortcut renders only when usePermissions grants a techsales.inbox.whatsapp view key; the Inbox itself still enforces access server-side and in RLS. Resultados: new getSdrResults requires requireSalesPermission(techsales.marketing.sdr_agent, view) plus requireSdr view and filters every query by the caller's workspace with the user client (RLS on sdr_enrollments, sdr_actions, sdr_meetings sales_view, prospecting_qualifications, contacts, leads, profiles); totals are head-only counts in the database, never derived from a truncated page. SdrResultsPanel is read-only except the pre-existing Reenviar ao Google action (retrySdrMeetingSync keeps requireSalesPermission manage plus assertAnyPermission update/manage), shown only when usePermissions grants an SDR update/manage workspace key. The previous ResultsPanel inside sdr-console was replaced by this panel. Playbook merged into Configuração do agente: the separate Playbook tab is gone (legacy ?section=playbook resolves to sdr-agent-config) and Novo agente opens SdrNewAgentButton, gated by usePermissions create keys and calling the unchanged upsertPlaybook (requireSalesPermission create/update plus requireSdr create, user RLS). saveSdrAgentConfig additionally accepts enabled and opt_out_phrases for the same agent row under its existing requireSalesPermission update, assertSalesRecord update, assertSdr manage, read-only View-as block and explicit workspace filter; getSdrAgentConfig also returns opt_out_phrases from the row it already reads. No new permission key, action, table or grant.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -3918,7 +3918,7 @@
     {
       "id": "sdr-workspace-navigation",
       "kind": "presentation",
-      "rationale": "Static labels and grouping of existing Agente SDR sections into three areas, rendered as same-page links and tab triggers. No event handlers, I/O, server functions, permissions or data access; each section keeps its own existing controls. Also pure helpers to parse the agent UUID from the address, decide which sections show the test chat column and pick the open agent among the already authorized list; no I/O or permissions. Pure Portuguese labels, filter parsing and counters for the Opera\u00e7\u00e3o area; no I/O or permissions. Also pure funnel, meeting status, decision and meeting time labels for Resultados. Also a pure parser that turns the typed opt-out phrases into a list; detection and saving stay on the server.",
+      "rationale": "Static labels and grouping of existing Agente SDR sections into three areas, rendered as same-page links and tab triggers. No event handlers, I/O, server functions, permissions or data access; each section keeps its own existing controls. Also pure helpers to parse the agent UUID from the address, decide which sections show the test chat column and pick the open agent among the already authorized list; no I/O or permissions. Pure Portuguese labels, filter parsing and counters for the Operação area; no I/O or permissions. Also pure funnel, meeting status, decision and meeting time labels for Resultados. Also a pure parser that turns the typed opt-out phrases into a list; detection and saving stay on the server.",
       "files": {
         "src/components/prospecting/sdr-workspace-nav.tsx": "dfdcd6de66ff2417c93fd3f5102c0770795cb4d9fd7fafaa445d8deed9f46a74",
         "src/components/prospecting/sdr-workspace-sections.ts": "4f78cdaf7e633ed000e0f3f14482754b163941c11046d4d4dc1f281bd43c125d",
@@ -3984,15 +3984,15 @@
       "tests": {
         "allowed": {
           "file": "src/lib/integrations/contaazul-people.test.ts",
-          "name": "permite membro ativo com a permiss\u00e3o no workspace"
+          "name": "permite membro ativo com a permissão no workspace"
         },
         "missing_permission": {
           "file": "src/lib/integrations/contaazul-people.test.ts",
-          "name": "nega quem n\u00e3o tem a permiss\u00e3o"
+          "name": "nega quem não tem a permissão"
         },
         "explicit_deny": {
           "file": "src/lib/integrations/contaazul-people.test.ts",
-          "name": "nega quando h\u00e1 bloqueio expl\u00edcito (deny)"
+          "name": "nega quando há bloqueio explícito (deny)"
         },
         "foreign_workspace": {
           "file": "src/lib/integrations/contaazul-people.test.ts",
@@ -4064,15 +4064,15 @@
       "tests": {
         "allowed": {
           "file": "src/lib/integrations/contaazul-full-import.test.ts",
-          "name": "permite membro ativo com concilia\u00e7\u00e3o e importa\u00e7\u00e3o financeira"
+          "name": "permite membro ativo com conciliação e importação financeira"
         },
         "missing_permission": {
           "file": "src/lib/integrations/contaazul-full-import.test.ts",
-          "name": "nega sem a permiss\u00e3o de importa\u00e7\u00e3o financeira"
+          "name": "nega sem a permissão de importação financeira"
         },
         "explicit_deny": {
           "file": "src/lib/integrations/contaazul-full-import.test.ts",
-          "name": "nega quando h\u00e1 bloqueio expl\u00edcito (deny)"
+          "name": "nega quando há bloqueio explícito (deny)"
         },
         "foreign_workspace": {
           "file": "src/lib/integrations/contaazul-full-import.test.ts",
@@ -4143,15 +4143,15 @@
       "tests": {
         "allowed": {
           "file": "src/lib/finance-sales.test.ts",
-          "name": "permite membro ativo com a permiss\u00e3o de ver vendas"
+          "name": "permite membro ativo com a permissão de ver vendas"
         },
         "missing_permission": {
           "file": "src/lib/finance-sales.test.ts",
-          "name": "nega quem n\u00e3o tem a permiss\u00e3o de ver vendas"
+          "name": "nega quem não tem a permissão de ver vendas"
         },
         "explicit_deny": {
           "file": "src/lib/finance-sales.test.ts",
-          "name": "nega quando h\u00e1 bloqueio expl\u00edcito (deny) nas vendas"
+          "name": "nega quando há bloqueio explícito (deny) nas vendas"
         },
         "foreign_workspace": {
           "file": "src/lib/finance-sales.test.ts",
@@ -4243,15 +4243,15 @@
       "tests": {
         "allowed": {
           "file": "src/lib/integrations/clickup/clickup-import.test.ts",
-          "name": "permite membro ativo com a permiss\u00e3o de gerenciar o importador do ClickUp"
+          "name": "permite membro ativo com a permissão de gerenciar o importador do ClickUp"
         },
         "missing_permission": {
           "file": "src/lib/integrations/clickup/clickup-import.test.ts",
-          "name": "nega quem n\u00e3o tem a permiss\u00e3o do importador do ClickUp"
+          "name": "nega quem não tem a permissão do importador do ClickUp"
         },
         "explicit_deny": {
           "file": "src/lib/integrations/clickup/clickup-import.test.ts",
-          "name": "nega quando h\u00e1 bloqueio expl\u00edcito (deny) no importador do ClickUp"
+          "name": "nega quando há bloqueio explícito (deny) no importador do ClickUp"
         },
         "foreign_workspace": {
           "file": "src/lib/integrations/clickup/clickup-import.test.ts",
@@ -4886,7 +4886,7 @@
         "techsales.companies.view.team",
         "techsales.companies.view.workspace"
       ],
-      "rationale": "Filter choices for derived CRM fields (cargo resumido, \u00e1rea, n\u00edvel, porte) list distinct values the caller can already read. Server functions require the entity view permission (requireSalesPermission), the loader re-asserts it with assertSalesAnyArea, validates the column against the derived-field allow-list and calls the SECURITY INVOKER RPC whatsapp_campaign_filter_values so caller RLS limits rows to the active workspace. The UI only requests options when the effective view key exists. No grants, roles or policies change.",
+      "rationale": "Filter choices for derived CRM fields (cargo resumido, área, nível, porte) list distinct values the caller can already read. Server functions require the entity view permission (requireSalesPermission), the loader re-asserts it with assertSalesAnyArea, validates the column against the derived-field allow-list and calls the SECURITY INVOKER RPC whatsapp_campaign_filter_values so caller RLS limits rows to the active workspace. The UI only requests options when the effective view key exists. No grants, roles or policies change.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -5416,7 +5416,7 @@
         "techsales.meetings.update.team",
         "techsales.meetings.update.workspace"
       ],
-      "rationale": "Meeting WhatsApp reminders reuse the existing meeting configuration permission (techsales.meeting_settings) \u2014 same resource: workspace meeting settings. getMeetingReminderConfig requires view, saveMeetingReminderConfig requires update, both via requireSalesPermission on the active workspace; tables meeting_reminder_settings/rules/dispatches have RLS through sales_context_access with the same resource (dispatches read-only for authenticated, written only by service_role). Save revalidates sender number ownership, approved template and complete variables (whitelisted keys). Per-meeting status/toggle require techsales.meetings view/update plus assertSalesRecord on the activity. The cron route requires CRON_SECRET (requireCronAuth) on POST and GET; the worker sends only approved templates, at most once per meeting+offset+time (unique claim), respects opt-out and never landlines. No permission granted to any role.",
+      "rationale": "Meeting WhatsApp reminders reuse the existing meeting configuration permission (techsales.meeting_settings) — same resource: workspace meeting settings. getMeetingReminderConfig requires view, saveMeetingReminderConfig requires update, both via requireSalesPermission on the active workspace; tables meeting_reminder_settings/rules/dispatches have RLS through sales_context_access with the same resource (dispatches read-only for authenticated, written only by service_role). Save revalidates sender number ownership, approved template and complete variables (whitelisted keys). Per-meeting status/toggle require techsales.meetings view/update plus assertSalesRecord on the activity. The cron route requires CRON_SECRET (requireCronAuth) on POST and GET; the worker sends only approved templates, at most once per meeting+offset+time (unique claim), respects opt-out and never landlines. No permission granted to any role.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -5492,7 +5492,7 @@
       "id": "prospecting-multichannel-drafts",
       "kind": "business",
       "files": {
-        "src/components/prospecting/sequences/sequences-page.tsx": "ed9965483ef2ab215abcd51341e0fd2601ce82266e781c4da065106405d437a3",
+        "src/components/prospecting/sequences/sequences-page.tsx": "54b1de406c2444d7d4ff530bdb4d2b80d82fb772b838800c547e364b45ddf0f5",
         "src/lib/prospecting/sequences/draft.ts": "00fc36c0abd90ac08c230c807c65411f5617aa428c9d12ccf804a47a929c0f60",
         "src/lib/prospecting/sequences/drafts.server.ts": "55429e0f960f7eeaf85c9305af088c03bc04f3e8140e95a3ec87c0f3f23faae1",
         "src/routes/_authenticated/prospecting.sequences.tsx": "8baa9510472ca9e2aa65e8f2be1407de24f500cf3f4da51f850b0d30af0a22cf",
@@ -5586,8 +5586,9 @@
         "src/lib/prospecting/sequences/preflight.ts": "e68086bb637babf6da2e5d3d00b553baf9875c13938842e47a526e1ba0530a2a",
         "src/lib/prospecting/sequences/releases.server.ts": "26f3fae6efd71173aeb33063e2f047c8707c2822c709661e8682aa12db4e5062",
         "src/components/prospecting/sequences/sequence-readiness.tsx": "e2ad721054d3d82d7e2aaba7cefaa4459b8496d85f7418da09e13c9fcb25e3ff",
-        "src/components/prospecting/sequences/sequence-template-picker.tsx": "427ec2f8233bd1bd4a5b9cdb4cf64c1d85178bfe523a99b9dd40e9fff244d0e8",
-        "drizzle/migrations/0293_prospecting_sequence_versions.sql": "38d37b1faf6153875d32a8cd3f4c9036689aec2fbd2dae056ed6df4bb15438a5"
+        "src/components/prospecting/sequences/sequence-template-picker.tsx": "22cc4ea6715b1601c84373d158dc8844095012ba7ee69461ace4f127532ee88c",
+        "drizzle/migrations/0293_prospecting_sequence_versions.sql": "38d37b1faf6153875d32a8cd3f4c9036689aec2fbd2dae056ed6df4bb15438a5",
+        "src/components/prospecting/sequences/sequence-variable-field.tsx": "1d6edc4db5dd78b7f893b6f9554bee56e810245abee8c4984d2072f4d0584ea1"
       },
       "resources": [
         "system.automation.sequences",
@@ -5642,6 +5643,10 @@
         {
           "file": "src/lib/whatsapp/template-shape.ts",
           "symbol": "checkTemplateVariables"
+        },
+        {
+          "file": "src/lib/whatsapp/campaign-audience.ts",
+          "symbol": "isBlockedFilterColumn"
         }
       ],
       "database": [
@@ -5875,7 +5880,9 @@
       "kind": "business",
       "files": {
         "drizzle/migrations/0296_prospecting_sequence_delivery.sql": "b83c2ab2890834807a3e17ba394882660b5cf6e3b42b8edbf4eb967b79ed63c9",
-        "src/lib/prospecting/sequences/delivery.server.ts": "bf55a90a0ca613cd509452c1bcb8f077a7bbef7a7b32cf0fd03c2b534dc80478"
+        "src/lib/prospecting/sequences/delivery.server.ts": "8f66be63c052d55a449acd6b8f5991fb387ccdf293687c48987f03e931f022cc",
+        "src/lib/prospecting/sequences/variable-context.server.ts": "0bee05d1fad66cfa8b704749e8546107d404c1ce2b4ba8bde52c35c60b421739",
+        "src/lib/prospecting/sequences/variable-tokens.ts": "7bd39e46b5da365013eab58b9730f18b94ee1b9feb83220a581137039b51e6fb"
       },
       "resources": [
         "system.automation.sequences",
@@ -5931,6 +5938,14 @@
         {
           "file": "src/lib/prospecting/sequences/preflight.ts",
           "symbol": "inspectSequenceTemplate"
+        },
+        {
+          "file": "src/lib/whatsapp/campaign-audience.ts",
+          "symbol": "isBlockedFilterColumn"
+        },
+        {
+          "file": "src/lib/prospecting/sequences/variable-tokens.ts",
+          "symbol": "sanitizeEntityRow"
         }
       ],
       "database": [

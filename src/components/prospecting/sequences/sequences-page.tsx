@@ -1,6 +1,7 @@
 import { listScripts } from "@/lib/prospecting-scripts.functions";
 import { SequenceReadiness } from "./sequence-readiness";
 import { SequenceTemplatePicker } from "./sequence-template-picker";
+import { InsertVariableButton } from "./sequence-variable-field";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -130,6 +131,7 @@ export function ProspectingSequencesPage() {
     setDraft(null);
     setDirty(false);
   }, [permissions.workspaceId]);
+  const variableFields = useAudienceFilterFields();
   const editable =
     !saving && !!row && (row.revision === 0 ? can("create") : row.can_edit && can("update"));
   const change = (next: SequenceDefinition) => {
@@ -583,6 +585,13 @@ export function ProspectingSequencesPage() {
                         )}
                         {step.type === "email" && (
                           <>
+                            <div className="flex justify-end gap-2">
+                              <InsertVariableButton
+                                fields={variableFields.fields}
+                                disabled={!editable}
+                                onInsert={(t) => updateStep({ subject: `${step.subject}${t}` })}
+                              />
+                            </div>
                             <label className="block text-xs">
                               Assunto
                               <Input
@@ -591,8 +600,16 @@ export function ProspectingSequencesPage() {
                                 onChange={(e) => updateStep({ subject: e.target.value })}
                               />
                             </label>
+                            <div className="flex items-center justify-between text-xs">
+                              <span>Mensagem</span>
+                              <InsertVariableButton
+                                fields={variableFields.fields}
+                                disabled={!editable}
+                                onInsert={(t) => updateStep({ body: `${step.body}${t}` })}
+                              />
+                            </div>
                             <label className="block text-xs">
-                              Mensagem
+                              <span className="sr-only">Mensagem</span>
                               <Textarea
                                 rows={7}
                                 maxLength={10000}
