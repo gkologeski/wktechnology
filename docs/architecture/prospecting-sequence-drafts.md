@@ -266,3 +266,5 @@ A exclusão de outras sequências também é reavaliada antes da ação caso uma
 ### Sugestões do público compartilhado (0306)
 
 O seletor de valores mantém a mesma interface das campanhas WhatsApp, mas a consulta aceita leitura de Sequências ou de Campanhas, sem conceder acesso às operações de campanha. O cliente autenticado, workspace ativo, permissão da entidade, lista branca e campos protegidos continuam obrigatórios. O RPC usa as visões compartilhadas de campos e rejeita campos mascarados, internos e personalizados inativos; não consulta valores pelo cliente de serviço. O aceite visual revelou essa dependência indevida de Campanhas e motivou a correção.
+
+Empresas não possui visão `shared_fields_companies`. O catálogo de valores dessa entidade utiliza sua tabela com RLS e os mesmos guardas explícitos de campo; Contatos, Leads e Negócios continuam pelas visões protegidas. A correção complementar 0307 preserva todos os campos nativos de Empresas sem liberar registros de outro responsável.

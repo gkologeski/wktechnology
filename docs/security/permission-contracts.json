@@ -7027,7 +7027,8 @@
       "kind": "business",
       "files": {
         "src/lib/whatsapp/audience-suggestions.server.ts": "e28522e0c21c3e9b67f940b3827c9d50ac49e77da013d847c1700710e72ceea5",
-        "drizzle/migrations/0306_shared_audience_suggestions.sql": "a8ee2f0ec378775c89a010f680e12928c39d44d9be34f94c57a7483d88f620e6"
+        "drizzle/migrations/0306_shared_audience_suggestions.sql": "a8ee2f0ec378775c89a010f680e12928c39d44d9be34f94c57a7483d88f620e6",
+        "drizzle/migrations/0307_shared_audience_company_catalog.sql": "d9b06a963178b4bf1a8fe5e002886627dfbb862e2580b87213542f5abe977065"
       },
       "resources": [
         "system.automation.sequences",
@@ -7065,7 +7066,7 @@
         "techsales.deals.view.team",
         "techsales.deals.view.workspace"
       ],
-      "rationale": "Shared suggestions accept either sequence view or marketing campaign view, without granting any campaign action. Caller actor/current workspace and field allowlist are validated before the existing bounded lookup. SECURITY INVOKER SQL rechecks root entity view and same workspace, uses protected shared-field views, rejects hidden/masked/internal fields and inactive custom properties. No service data reads, grants or credentials. Real isolated JWT tests cover sequence-only use, row scopes, masked fields, explicit deny, inactive and foreign callers.",
+      "rationale": "Shared suggestions accept either sequence view or marketing campaign view, without granting any campaign action. Caller actor/current workspace and field allowlist are validated before the existing bounded lookup. SECURITY INVOKER SQL rechecks root entity view and same workspace, uses protected shared-field views for masked entities and existing Companies root RLS (Companies has no such view), with explicit field guards in both cases, rejects hidden/masked/internal fields and inactive custom properties. No service data reads, grants or credentials. Real isolated JWT tests cover sequence-only use, row scopes, masked fields, explicit deny, inactive and foreign callers.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-core.server.ts",
@@ -7083,6 +7084,10 @@
       "database": [
         {
           "file": "drizzle/migrations/0306_shared_audience_suggestions.sql",
+          "symbol": "whatsapp_campaign_filter_values"
+        },
+        {
+          "file": "drizzle/migrations/0307_shared_audience_company_catalog.sql",
           "symbol": "whatsapp_campaign_filter_values"
         }
       ],

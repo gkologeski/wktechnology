@@ -72,7 +72,7 @@ const keys = [
   ...["view", "create", "update", "manage", "assign"].flatMap((a) =>
     ["own", "team", "workspace"].map((s) => `system.automation.sequences.${a}.${s}`),
   ),
-  ...["contacts", "leads"].flatMap((r) =>
+  ...["contacts", "leads", "companies"].flatMap((r) =>
     ["own", "team", "workspace"].map((s) => `techsales.${r}.view.${s}`),
   ),
 ];
@@ -3455,6 +3455,36 @@ try {
       await grant(roles[0], ["techsales.contacts.view.own"], "deny");
       blocked(await clients[0].rpc("whatsapp_campaign_filter_values", args));
       await grant(roles[0], ["techsales.contacts.view.own"]);
+    },
+  );
+
+  await check(
+    "company suggestions use the complete native catalog with current root RLS",
+    async () => {
+      await grant(roles[0], ["techsales.companies.view.own"]);
+      await seed("companies", {
+        workspace_id: W,
+        owner_id: actor,
+        assigned_to: actor,
+        name: "[ISO] Suggestion company " + tag,
+        industry: "Tech " + tag,
+      });
+      await seed("companies", {
+        workspace_id: W,
+        owner_id: accounts[1].id,
+        assigned_to: accounts[1].id,
+        name: "[ISO] Private company " + tag,
+        industry: "Private " + tag,
+      });
+      const values = await audienceFieldSuggestions(clients[0], actor, {
+        entity: "companies",
+        column: "industry",
+        search: tag,
+      });
+      assert(
+        values.includes("Tech " + tag) && !values.includes("Private " + tag),
+        "Company catalog lost its native values or ignored row scope",
+      );
     },
   );
 
