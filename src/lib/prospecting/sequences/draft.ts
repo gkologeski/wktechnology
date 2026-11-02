@@ -105,6 +105,8 @@ export const definitionSchema = z
     steps: z.array(stepSchema).min(1).max(50),
     settings: z
       .object({
+        minimumIntervalSeconds: z.number().int().min(1).max(3600).optional(),
+        dailyLimit: z.number().int().min(1).max(1000).optional(),
         stopOnReply: z.boolean(),
         stopOnMeeting: z.boolean(),
         timezone: z
@@ -233,6 +235,8 @@ export function newDefinition(): SequenceDefinition {
       newStep("end"),
     ],
     settings: {
+      minimumIntervalSeconds: 60,
+      dailyLimit: 100,
       stopOnReply: true,
       stopOnMeeting: true,
       timezone: "America/Sao_Paulo",

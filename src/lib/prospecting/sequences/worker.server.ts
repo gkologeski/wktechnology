@@ -6,6 +6,7 @@ import { validateEmailAddress } from "@/lib/email-address";
 import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
 import {
   decideExecution,
+  SequenceNotStartedError,
   type ExecutionDecision,
   type ExecutionSignals,
   type ExecutionState,
@@ -18,13 +19,15 @@ export type SequenceRun = {
   cursor: number;
   lease_token: string;
   previous_at: string | null;
+  step_entered_at?: string;
+  created_at?: string;
 };
 export type RuntimeContext = {
   run: SequenceRun;
   definition: SequenceDefinition;
   person: { id: string; entity: "lead" | "contact" };
   source: { email: string | null; phones: (string | null)[] };
-  signals: Omit<ExecutionSignals, "hasEmail" | "hasWhatsApp">;
+  signals: Omit<ExecutionSignals, "hasEmail" | "hasWhatsApp" | "hasPhone">;
 };
 export type EffectReservation = {
   id: string;
@@ -68,21 +71,63 @@ export async function processSequenceRun(
       definition: ctx.definition,
       signals: {
         ...ctx.signals,
+        hasPhone: ctx.source.phones.some((p) => !!p && isValidE164(p)),
         hasEmail: validateEmailAddress(ctx.source.email).ok,
         hasWhatsApp:
           pickWhatsAppNumber(ctx.source.phones.filter((p): p is string => !!p && isValidE164(p)))
             .status === "ok",
       },
       now,
-      previousAt: ctx.run.previous_at ? new Date(ctx.run.previous_at) : null,
+      previousAt: new Date(
+        ctx.run.step_entered_at || ctx.run.previous_at || ctx.run.created_at || now.toISOString(),
+      ),
     });
     if (decision.kind === "effect") {
       const send = await ports.prepare(ctx, decision.step);
-      effect = await workRpc<EffectReservation>(admin, "prospecting_sequence_effect_begin", {
+      const reservation = await workRpc<
+        EffectReservation | { deferUntil: string; reason: string } | { blockReason: string }
+      >(admin, "prospecting_sequence_effect_begin", {
         p_run: run.id,
         p_lease: run.lease_token,
         p_step: decision.step.id,
+        p_prepared: {
+          source: ctx.source,
+          email: (() => {
+            const e = validateEmailAddress(ctx.source.email);
+            return e.ok ? e.value : null;
+          })(),
+          phones: ctx.source.phones.filter((p): p is string => !!p && isValidE164(p)),
+          whatsapp: (() => {
+            const p = pickWhatsAppNumber(
+              ctx.source.phones.filter((n): n is string => !!n && isValidE164(n)),
+            );
+            return p.status === "ok" ? p.e164 : null;
+          })(),
+        },
       });
+      if ("blockReason" in reservation) {
+        await workRpc(admin, "prospecting_sequence_transition", {
+          p_run: run.id,
+          p_lease: run.lease_token,
+          p_state: "blocked",
+          p_cursor: ctx.run.cursor,
+          p_due: now.toISOString(),
+          p_reason: reservation.blockReason,
+        });
+        return { id: run.id, status: "blocked" };
+      }
+      if ("deferUntil" in reservation) {
+        await workRpc(admin, "prospecting_sequence_transition", {
+          p_run: run.id,
+          p_lease: run.lease_token,
+          p_state: "active",
+          p_cursor: ctx.run.cursor,
+          p_due: reservation.deferUntil,
+          p_reason: reservation.reason,
+        });
+        return { id: run.id, status: "deferred" };
+      }
+      effect = reservation;
       const result = await send(effect);
       const receipt = typeof result === "string" ? result : result.receipt;
       if (!receipt) throw new Error("provider_receipt_missing");
@@ -115,7 +160,15 @@ export async function processSequenceRun(
       p_reason: decision.reason,
     });
     return { id: run.id, status: advanced ? decision.kind : "stale_lease" };
-  } catch {
+  } catch (error) {
+    if (effect && error instanceof SequenceNotStartedError) {
+      await workRpc(admin, "prospecting_sequence_effect_not_started", {
+        p_effect: effect.id,
+        p_token: effect.token,
+        p_reason: error.code,
+      });
+      return { id: run.id, status: "blocked" };
+    }
     // Provider exceptions deliberately omit raw errors: they may contain addresses or secrets.
     if (effect)
       await workRpc(admin, "prospecting_sequence_effect_finish", {
@@ -139,12 +192,45 @@ export async function processSequenceRun(
 export async function tickProspectingSequences(
   admin: SupabaseClient,
   ports: SequencePorts,
-  limit = 20,
+  limit = 5,
+  budgetMs = 20_000,
 ) {
+  const started = Date.now();
+  const repair = await workRpc<{ fixed: number; failed: number }>(
+    admin,
+    "prospecting_sequence_projection_repair",
+    { p_limit: 10 },
+  );
+  const awakened = await workRpc<number>(admin, "prospecting_sequence_wake_tasks", {
+    p_limit: 100,
+  });
   const runs = await workRpc<SequenceRun[]>(admin, "prospecting_sequence_claim", {
     p_limit: limit,
   });
-  const results = [];
-  for (const run of runs) results.push(await processSequenceRun(admin, run, ports));
-  return { processed: results.length, results };
+  const results: Awaited<ReturnType<typeof processSequenceRun>>[] = [];
+  let index = 0;
+  const consume = async () => {
+    while (index < runs.length && Date.now() - started < budgetMs) {
+      const run = runs[index++];
+      results.push(await processSequenceRun(admin, run, ports));
+    }
+  };
+  try {
+    const settled = await Promise.allSettled([consume(), consume()]);
+    if (settled.some((r) => r.status === "rejected"))
+      throw new Error("sequence_worker_unavailable");
+  } finally {
+    const remaining = runs.slice(index);
+    if (remaining.length)
+      await workRpc(admin, "prospecting_sequence_release_claims", {
+        p_claims: remaining.map((r) => ({ id: r.id, token: r.lease_token })),
+      });
+  }
+  return {
+    processed: results.length,
+    deferredByBudget: runs.length - index,
+    repaired: repair,
+    awakened,
+    results,
+  };
 }

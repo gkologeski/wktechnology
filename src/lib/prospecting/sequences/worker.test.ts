@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { SequenceNotStartedError } from "./runtime";
 import { newDefinition } from "./draft";
 import {
   processSequenceRun,
+  tickProspectingSequences,
   type RuntimeContext,
   type SequencePorts,
   type SequenceRun,
@@ -35,15 +37,17 @@ function harness() {
   const send = vi.fn(async () => "receipt"),
     prepare = vi.fn(async () => send),
     handoff = vi.fn(async () => {});
-  const rpc = vi.fn(async (name: string) => ({
-    data:
-      name === "prospecting_sequence_context"
-        ? context
-        : name === "prospecting_sequence_effect_begin"
-          ? { id: "effect", token: "token" }
-          : true,
-    error: null as null | { message: string },
-  }));
+  const rpc = vi.fn(
+    async (name: string): Promise<{ data: unknown; error: null | { message: string } }> => ({
+      data:
+        name === "prospecting_sequence_context"
+          ? context
+          : name === "prospecting_sequence_effect_begin"
+            ? { id: "effect", token: "token" }
+            : true,
+      error: null as null | { message: string },
+    }),
+  );
   return {
     context,
     rpc,
@@ -121,5 +125,68 @@ describe("durable sequence worker", () => {
     await processSequenceRun(h.admin, run, h.ports, now);
     expect(h.handoff).toHaveBeenCalledOnce();
     expect(h.send).not.toHaveBeenCalled();
+  });
+  it("pacing defers the same step and never invokes its provider", async () => {
+    const h = harness();
+    h.rpc.mockImplementation(async (name) => ({
+      data:
+        name === "prospecting_sequence_context"
+          ? h.context
+          : name === "prospecting_sequence_effect_begin"
+            ? { deferUntil: "2026-11-03T13:00:00Z", reason: "daily_account_limit" }
+            : true,
+      error: null,
+    }));
+    expect(await processSequenceRun(h.admin, run, h.ports, now)).toMatchObject({
+      status: "deferred",
+    });
+    expect(h.send).not.toHaveBeenCalled();
+    expect(h.rpc.mock.calls.at(-1)?.[0]).toBe("prospecting_sequence_transition");
+  });
+  it("tick budget releases untouched claims without calling a provider", async () => {
+    const h = harness();
+    h.rpc.mockImplementation(async (name) => ({
+      data:
+        name === "prospecting_sequence_projection_repair"
+          ? { fixed: 0, failed: 0 }
+          : name === "prospecting_sequence_wake_tasks"
+            ? 0
+            : name === "prospecting_sequence_claim"
+              ? [run, { ...run, id: crypto.randomUUID() }]
+              : 2,
+      error: null,
+    }));
+    const result = await tickProspectingSequences(h.admin, h.ports, 5, 0);
+    expect(result.processed).toBe(0);
+    expect(result.deferredByBudget).toBe(2);
+    expect(h.send).not.toHaveBeenCalled();
+    expect(h.rpc.mock.calls.at(-1)?.[0]).toBe("prospecting_sequence_release_claims");
+  });
+  it("unresolved identity quarantine cannot reach the provider", async () => {
+    const h = harness();
+    h.rpc.mockImplementation(async (name) => ({
+      data:
+        name === "prospecting_sequence_context"
+          ? h.context
+          : name === "prospecting_sequence_effect_begin"
+            ? { blockReason: "delivery_uncertain" }
+            : true,
+      error: null,
+    }));
+    expect(await processSequenceRun(h.admin, run, h.ports, now)).toMatchObject({
+      status: "blocked",
+    });
+    expect(h.send).not.toHaveBeenCalled();
+  });
+  it("certified pre-transport change blocks safely without declaring an unknown delivery", async () => {
+    const h = harness();
+    h.send.mockRejectedValue(new SequenceNotStartedError("source_changed_before_send"));
+    expect(await processSequenceRun(h.admin, run, h.ports, now)).toMatchObject({
+      status: "blocked",
+    });
+    expect(h.rpc.mock.calls.at(-1)?.[0]).toBe("prospecting_sequence_effect_not_started");
+    expect(h.rpc.mock.calls.some(([name]) => name === "prospecting_sequence_effect_finish")).toBe(
+      false,
+    );
   });
 });

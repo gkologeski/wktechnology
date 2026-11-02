@@ -3423,7 +3423,7 @@
       "id": "service-channel-email-mime-boundary",
       "kind": "internal",
       "files": {
-        "src/lib/gmail.server.ts": "313794a82c6cb4538181e1efaf1102e882e6a101b1c60f19d82bed6e26b9af1d"
+        "src/lib/gmail.server.ts": "1d6d6f1986c39460aa35b7e2c88d8df447c4ddf54040b6e9a0e7eefa6962fd95"
       },
       "resources": [
         "system.channels",
@@ -3446,7 +3446,7 @@
         "system.channels.view.workspace",
         "system.channels.approve.workspace"
       ],
-      "rationale": "Shared MIME encoder only: rejects CR/LF header injection and malformed deterministic message identifiers; auto-generated header suppresses email bot loops. Does not decide recipients, accounts or authorization. Existing authenticated mail handlers and new service delivery perform source permission and mailbox checks before calling this helper. Provider success recorded under a single authorized send token.",
+      "rationale": "Shared MIME encoder only: rejects CR/LF header injection and malformed deterministic message identifiers; auto-generated header suppresses email bot loops. Does not decide recipients, accounts or authorization. Existing authenticated mail handlers and new service delivery perform source permission and mailbox checks before calling this helper. Provider success recorded under a single authorized send token. Gmail transport requests now also use bounded timeouts and manual redirects; this does not introduce retries or change caller authorization.",
       "controls": [
         {
           "file": "src/lib/gmail.server.ts",
@@ -5468,8 +5468,8 @@
       "id": "prospecting-multichannel-drafts",
       "kind": "business",
       "files": {
-        "src/components/prospecting/sequences/sequences-page.tsx": "6df6f90f9d6c355f3b59f747862c521d30baca7dcb8545f13e8f28f7926ebc65",
-        "src/lib/prospecting/sequences/draft.ts": "a7533a034f1da32c3956dea7668202ca6fca0db362f8e4bd7319aa0da00bbc37",
+        "src/components/prospecting/sequences/sequences-page.tsx": "0c85828b95549d369c7e6d6f801b8a87599b6f8f5f0dfae446edfa6814bf4889",
+        "src/lib/prospecting/sequences/draft.ts": "246c5af9cb1976e448650a060b5628e85c77f2543a32770444e12a44b4bcf773",
         "src/lib/prospecting/sequences/drafts.server.ts": "55429e0f960f7eeaf85c9305af088c03bc04f3e8140e95a3ec87c0f3f23faae1",
         "src/routes/_authenticated/prospecting.sequences.tsx": "8baa9510472ca9e2aa65e8f2be1407de24f500cf3f4da51f850b0d30af0a22cf",
         "drizzle/migrations/0292_prospecting_sequence_drafts.sql": "6a7b0c212a5f254186442aad6a5ae1bdab3c134948d30919548e3c801b5982c1"
@@ -5661,7 +5661,7 @@
       "id": "prospecting-sequence-held-enrollments",
       "kind": "business",
       "files": {
-        "src/lib/prospecting/sequences/enrollment.ts": "841bd3b25d75f38b125e31ef27981b0adb34cfee7108a7285f3d00056c07e7c0",
+        "src/lib/prospecting/sequences/enrollment.ts": "89156033e6734c8a301c3f51fba883111483d0e61251f05d56ae64a814c51451",
         "src/lib/prospecting/sequences/enrollment.server.ts": "72e3406fad3a0fdbabe250ac2d18cde4c1e1acadd27133c73952945031cb6f35",
         "src/lib/prospecting/sequences/enrollment.functions.ts": "8f96039c4231563ddaaab705ffeaf8d9df288b2644e116e50bbfb393bec4c422",
         "src/components/prospecting/sequences/sequence-enrollment.tsx": "66a0a98d882d94fd075adad3304f5c8f607c6cc1aa500e5da3cdec6a051e4b23",
@@ -5759,8 +5759,8 @@
       "id": "prospecting-sequence-durable-runtime",
       "kind": "business",
       "files": {
-        "src/lib/prospecting/sequences/runtime.ts": "0910cc45c0eaace9fefce39f1aeb42ea830c529f981325d3ac58dffae3292d18",
-        "src/lib/prospecting/sequences/worker.server.ts": "d10c6dc4477dc603133e1c4dbe2c4e66a59ba3fb7e30d015825970ba71c69607",
+        "src/lib/prospecting/sequences/runtime.ts": "9d71f61ed3b78d9a20bc2132f0317b9bcb7b3bfc68e0c066ace4bbfd5655efa2",
+        "src/lib/prospecting/sequences/worker.server.ts": "29b050be1f62badb813b14822da8dbf032b7211ca457bd20be1563408eb3a765",
         "drizzle/migrations/0295_prospecting_sequence_runtime.sql": "504420a65224ad4caa45e07b3d304432ec54bf446134ea39a6ddd1b7ae5c76a8"
       },
       "resources": [
@@ -5851,7 +5851,7 @@
       "kind": "business",
       "files": {
         "drizzle/migrations/0296_prospecting_sequence_delivery.sql": "b83c2ab2890834807a3e17ba394882660b5cf6e3b42b8edbf4eb967b79ed63c9",
-        "src/lib/prospecting/sequences/delivery.server.ts": "b680d08250fbecf6e68da0d1e1bcd805a9610eb84d709133aab8d990879857c6"
+        "src/lib/prospecting/sequences/delivery.server.ts": "7105fd23654473ce9f9caef799929bdc8f236a5d8b6731a86d03f398e1c279e5"
       },
       "resources": [
         "system.automation.sequences",
@@ -5944,6 +5944,158 @@
           "file": "src/lib/prospecting/sequences/delivery.test.ts",
           "name": "inactive actor cannot read transport credentials"
         }
+      }
+    },
+    {
+      "id": "prospecting-sequence-operational-controls",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0297_prospecting_sequence_operations.sql": "cf549be995e30acaa9ba08183165af7222221f8f53e5f91dc221925c3c36e85b"
+      },
+      "resources": [
+        "system.automation.sequences",
+        "techsales.activities",
+        "techsales.inbox.email",
+        "techsales.inbox.whatsapp"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "assign",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.sequences.view.own",
+        "system.automation.sequences.view.team",
+        "system.automation.sequences.view.workspace",
+        "system.automation.sequences.manage.own",
+        "system.automation.sequences.manage.team",
+        "system.automation.sequences.manage.workspace",
+        "system.automation.sequences.assign.own",
+        "system.automation.sequences.assign.team",
+        "system.automation.sequences.assign.workspace",
+        "techsales.activities.view.own",
+        "techsales.activities.update.own",
+        "techsales.inbox.email.create.own",
+        "techsales.inbox.whatsapp.create.own"
+      ],
+      "rationale": "Current active subject and immutable version scope remain mandatory. Public call completion also checks current activity view/update and exact person linkage; role-test identities are prohibited from operating cadences. Readiness trigger only records completion of this sequence-owned task; service-only wake rechecks owner rights before execution. Unique reservations, same-account rolling quotas and pacing serialize outreach, not customer replies. Uncertainty quarantine includes current normalized delivery identities and cannot be disabled by commercial exclusions. Certifiably unstarted transport may retry with a rotated nonce; provider-unknown effects never use that path. Run-before-effect lock order protects late receipts. Limits are configurable and do not claim to replace provider policies. Cron activation and operator UI remain pending. Real isolated JWT acceptance supplements named executed unit controls.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0297_prospecting_sequence_operations.sql",
+          "symbol": "prospecting_sequence_complete_call"
+        },
+        {
+          "file": "drizzle/migrations/0297_prospecting_sequence_operations.sql",
+          "symbol": "prospecting_sequence_effect_begin"
+        },
+        {
+          "file": "drizzle/migrations/0297_prospecting_sequence_operations.sql",
+          "symbol": "prospecting_sequence_wake_tasks"
+        },
+        {
+          "file": "drizzle/migrations/0297_prospecting_sequence_operations.sql",
+          "symbol": "prospecting_sequence_unknown_keys"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "allowed worker reserves before sending and persists provider receipt"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker without current source access cannot prepare or send"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker denied at last reservation never invokes provider"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker with stale or foreign lease cannot retrieve execution context"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker for inactive owner stops before credentials or provider"
+        }
+      }
+    },
+    {
+      "id": "official-whatsapp-gateway-transport-boundary",
+      "kind": "internal",
+      "files": {
+        "src/lib/whatsapp/gateway-channel.server.ts": "c4159adddcdd95f08ac6e4eba454b388e8e45afea85c7763be9597758f8c586a"
+      },
+      "resources": [
+        "system.channels",
+        "techsales.inbox.whatsapp"
+      ],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "techsales.inbox.whatsapp.create.own"
+      ],
+      "rationale": "Server-only transport to the fixed official Lovable gateway. This change adds timeout/manual redirects; no recipient, account or authorization rules are delegated to the helper. Existing authenticated handlers/workers and the sequence delivery gate authorize the exact workspace account before calls. Environment credentials never enter metadata or client state. Transport tests cover bounded single attempts; delivery permission tests cover authorized caller boundaries.",
+      "controls": [
+        {
+          "file": "src/lib/whatsapp/gateway-channel.server.ts",
+          "symbol": "extractMessage"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0296_prospecting_sequence_delivery.sql",
+          "symbol": "prospecting_sequence_delivery_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/delivery.test.ts",
+          "name": "allowed email uses exact mailbox, recipient and durable receipt"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/delivery.test.ts",
+          "name": "delivery without channel permission stops before credentials"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/delivery.test.ts",
+          "name": "explicit deny stops provider preparation before reading the mailbox"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/delivery.test.ts",
+          "name": "foreign account cannot pass scoped delivery access"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/delivery.test.ts",
+          "name": "inactive actor cannot read transport credentials"
+        }
+      },
+      "exception": {
+        "mechanism": "Internal server module, no public route. Fixed gateway origin and server environment credentials, after caller current source authorization.",
+        "boundary": "No workspace discovery or recipient choice in this helper. Manual redirects and bounded requests do not add authority or retries.",
+        "revocation": "Missing connector credentials, caller deny/inactive membership, unavailable account or provider rejection stop subsequent sends.",
+        "review_by": "2027-01-31"
       }
     }
   ],

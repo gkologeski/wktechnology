@@ -14,6 +14,7 @@ export const enrollmentInput = z
   .strict();
 export type EnrollmentInput = z.infer<typeof enrollmentInput>;
 export const COHORT_REASONS = {
+  delivery_uncertain: "Envio anterior aguarda conciliação",
   opt_out: "Descadastro ou pedido para não receber contato",
   customer: "Já é cliente",
   open_deal: "Negociação em aberto",

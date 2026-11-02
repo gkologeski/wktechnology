@@ -4,6 +4,7 @@ import { TOKEN_PATTERN, renderTokens, type TokenContext } from "@/lib/message-to
 import { validateEmailAddress } from "@/lib/email-address";
 import { isValidE164 } from "@/lib/phone/e164";
 import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
+import { SequenceNotStartedError } from "./runtime";
 import { inspectSequenceTemplate } from "./preflight";
 import type { RuntimeContext, SequencePorts } from "./worker.server";
 async function persistReceipt(
@@ -38,13 +39,13 @@ function assertReservedSource(
   sourceKey: string,
 ) {
   if (effect.sourceKey !== sourceKey || !effect.source)
-    throw new Error("A conta ou o destinatário mudou durante a preparação.");
+    throw new SequenceNotStartedError("sender_changed_before_send");
   for (const key of ["email", "phones", "first_name", "last_name", "company_name"]) {
     if (
       JSON.stringify((effect.source as unknown as Record<string, unknown>)[key] ?? null) !==
       JSON.stringify((ctx.source as unknown as Record<string, unknown>)[key] ?? null)
     )
-      throw new Error("O destinatário mudou durante a preparação.");
+      throw new SequenceNotStartedError("source_changed_before_send");
   }
 }
 function requiredTokens(text: string, context: TokenContext) {
@@ -203,6 +204,15 @@ export function sequenceDeliveryPorts(
           threadId = thread.data.provider_thread_id;
           inReplyTo = previous.data.message_id_header;
         }
+        const accessToken = await gmail.ensureAccessToken(mailbox);
+        gmail.buildRawMime({
+          from: mailbox.email,
+          to: [checked.value],
+          subject,
+          bodyText: body,
+          messageId: "<sequence-preview@techerp.invalid>",
+          ...(inReplyTo ? { inReplyTo, references: inReplyTo } : {}),
+        });
         return async (effect) => {
           assertReservedSource(effect, ctx, account.sourceKey);
           await channelIdentity(admin, ctx, account.sourceKey, "email", agentId);

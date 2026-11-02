@@ -27,6 +27,8 @@ async function refreshAccessToken(account: EmailAccountRow): Promise<string> {
   const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET;
   if (!clientId || !clientSecret) throw new Error("Missing Google OAuth credentials");
   const res = await fetch(TOKEN_URL, {
+    signal: AbortSignal.timeout(20_000),
+    redirect: "manual",
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
@@ -192,6 +194,8 @@ export async function gmailSendRaw(
   threadId?: string,
 ): Promise<{ id: string; threadId: string }> {
   const res = await fetch(`${GMAIL_API}/messages/send`, {
+    signal: AbortSignal.timeout(20_000),
+    redirect: "manual",
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -212,7 +216,11 @@ export async function gmailGetMessageIdHeader(
 ): Promise<string | null> {
   const res = await fetch(
     `${GMAIL_API}/messages/${messageId}?format=metadata&metadataHeaders=Message-ID`,
-    { headers: { Authorization: `Bearer ${accessToken}` } },
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(20_000),
+      redirect: "manual",
+    },
   );
   if (!res.ok) return null;
   const j = (await res.json()) as { payload?: { headers?: { name: string; value: string }[] } };

@@ -1,6 +1,7 @@
 import type { SequenceDefinition, SequenceStep } from "./draft";
 export type ExecutionState =
   | "active"
+  | "waiting_task"
   | "paused"
   | "cancelled"
   | "completed"
@@ -12,8 +13,11 @@ export type ExecutionSignals = {
   optedOut: boolean;
   replied: boolean;
   previousReplied: boolean;
+  previousContactExists?: boolean;
   meetingBooked: boolean;
   callAnswered: boolean;
+  hasPhone: boolean;
+  callResultKnown?: boolean;
   hasEmail: boolean;
   hasWhatsApp: boolean;
 };
@@ -151,6 +155,8 @@ export function decideExecution(input: {
       ? stop("agent", "agent_step", step.agentId)
       : stop("blocked", "agent_missing");
   if (step.type === "wait") {
+    if (step.source === "previous" && s.previousContactExists === false)
+      return next(now, "previous_contact_skipped");
     if (step.source === "any" ? s.replied : s.previousReplied)
       return step.onReply === "human"
         ? stop("human", "reply")
@@ -161,6 +167,8 @@ export function decideExecution(input: {
     return next(waitUntil(input.previousAt, step, d.settings), "wait");
   }
   if (step.type === "condition") {
+    if (step.criteria === "call_answered" && s.callResultKnown === false)
+      return stop("blocked", "call_outcome_unknown");
     const conditions = {
       replied: s.replied,
       has_email: s.hasEmail,
@@ -178,6 +186,7 @@ export function decideExecution(input: {
   }
   if (step.type === "email" && !s.hasEmail) return next(now, "missing_email");
   if (step.type === "whatsapp" && !s.hasWhatsApp) return next(now, "missing_whatsapp");
+  if (step.type === "call" && !s.hasPhone) return next(now, "missing_phone");
   if (step.type === "call" && step.mode === "automatic")
     return stop("blocked", "automatic_call_not_configured");
   const due = nextBusinessInstant(now, d.settings);
@@ -189,4 +198,11 @@ export function decideExecution(input: {
       reason: "outside_business_hours",
     };
   return { kind: "effect", step, key: `${input.runId}:${step.id}` };
+}
+
+/** Only trusted adapter checks before invoking a transport may use this error. */
+export class SequenceNotStartedError extends Error {
+  constructor(public readonly code: "source_changed_before_send" | "sender_changed_before_send") {
+    super(code);
+  }
 }

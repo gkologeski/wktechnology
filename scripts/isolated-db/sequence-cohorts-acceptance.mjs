@@ -43,6 +43,8 @@ const W = "aaaaaaaa-0000-4000-8000-00000000000a",
   O = "10000000-0000-4000-8000-000000000001";
 const roles = ["30000000-0000-4000-8000-0000000000a8", "30000000-0000-4000-8000-0000000000a9"];
 const keys = [
+  "techsales.activities.view.own",
+  "techsales.activities.update.own",
   "system.channels.view.workspace",
   "techsales.inbox.email.view.own",
   "techsales.inbox.email.create.own",
@@ -975,9 +977,65 @@ try {
       "Wrong task linkage",
     );
     const run = must(
-      await admin.from("prospecting_sequence_runs").select("cursor").eq("id", claimed.id).single(),
+      await admin
+        .from("prospecting_sequence_runs")
+        .select("cursor,state")
+        .eq("id", claimed.id)
+        .single(),
     );
     assert(run.cursor === 1, "Task cursor not advanced");
+    assert(run.state === "waiting_task", "Cadence did not wait for the human task");
+    assert(
+      must(await admin.rpc("prospecting_sequence_wake_tasks", { p_limit: 100 })) === 0,
+      "Unfinished task woke cadence",
+    );
+    const args = { p_workspace: W, p_run: claimed.id, p_outcome: "answered" };
+    const otherContact = await seed("contacts", {
+      workspace_id: W,
+      owner_id: actor,
+      first_name: "Other",
+      last_name: tag + "task_relink",
+    });
+    must(
+      await admin
+        .from("activities")
+        .update({ related_contact_id: otherContact })
+        .eq("id", activity.id),
+    );
+    blocked(await clients[0].rpc("prospecting_sequence_complete_call", args));
+    must(
+      await admin.from("activities").update({ related_contact_id: contact }).eq("id", activity.id),
+    );
+    blocked(await clients[3].rpc("prospecting_sequence_complete_call", args));
+    blocked(await clients[2].rpc("prospecting_sequence_complete_call", args));
+    await grant(roles[0], ["techsales.activities.view.own"]);
+    await grant(roles[0], ["techsales.activities.update.own"], "deny");
+    blocked(await clients[0].rpc("prospecting_sequence_complete_call", args));
+    await grant(roles[0], ["techsales.activities.view.own", "techsales.activities.update.own"]);
+    must(await clients[0].rpc("prospecting_sequence_complete_call", args));
+    assert(
+      must(await admin.rpc("prospecting_sequence_wake_tasks", { p_limit: 100 })) === 1,
+      "Completed task did not wake cadence",
+    );
+    assert(
+      must(
+        await admin.from("prospecting_sequence_runs").select("state").eq("id", claimed.id).single(),
+      ).state === "active",
+      "Task completion did not release the wait",
+    );
+    const nextClaim = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+      (r) => r.id === claimed.id,
+    );
+    const completedContext = must(
+      await admin.rpc("prospecting_sequence_context", {
+        p_run: nextClaim.id,
+        p_lease: nextClaim.lease_token,
+      }),
+    );
+    assert(
+      completedContext.signals.callAnswered && completedContext.signals.callResultKnown,
+      "Manual result was not reflected in execution conditions",
+    );
   });
 
   await check("runtime rechecks version ownership scope after activation", async () => {
@@ -1416,6 +1474,453 @@ try {
     );
     activities.forEach((a) => fixtures.push(["activities", a.id]));
   });
+
+  await check("account pacing and rolling quota defer without creating another send", async () => {
+    const mailbox = await seed("email_accounts", {
+      workspace_id: W,
+      owner_id: actor,
+      provider: "gmail",
+      email: tag + "quota@example.test",
+      status: "connected",
+    });
+    const account = await seed("service_channel_accounts", {
+      workspace_id: W,
+      channel: "email",
+      source_key: mailbox,
+      label: "[ISO] Budget",
+      enabled: true,
+    });
+    for (let i = 0; i < 2; i++)
+      await seed("contacts", {
+        workspace_id: W,
+        owner_id: actor,
+        first_name: "Budget",
+        last_name: tag + "budget",
+        email: tag + "budget" + i + "@example.test",
+      });
+    const def = newDefinition();
+    def.settings.dailyLimit = 1;
+    def.settings.minimumIntervalSeconds = 60;
+    def.audience.excludeOtherSequences = false;
+    def.audience.groups = [
+      {
+        logic: "and",
+        filters: [{ entity: "contacts", column: "last_name", op: "eq", value: tag + "budget" }],
+      },
+    ];
+    def.steps = [
+      {
+        id: crypto.randomUUID(),
+        title: "Budget",
+        type: "email",
+        accountId: account,
+        subject: "No network",
+        body: "Synthetic quota",
+        thread: "new",
+      },
+      newStep("end"),
+    ];
+    const version = await makeVersion(def);
+    const cohort = await prepareSequenceEnrollment(
+      clients[0],
+      {
+        workspaceId: W,
+        versionId: version,
+        requestId: crypto.randomUUID(),
+        consentEvidence: "Synthetic quota, no send",
+      },
+      admin,
+    );
+    assert(cohort.held === 2, "Quota audience wrong");
+    must(
+      await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: cohort.id }),
+    );
+    const runs = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).filter(
+      (r) => r.version_id === version,
+    );
+    assert(runs.length === 2, "Quota runs missing");
+    const one = must(
+      await admin.rpc("prospecting_sequence_effect_begin", {
+        p_run: runs[0].id,
+        p_lease: runs[0].lease_token,
+        p_step: def.steps[0].id,
+      }),
+    );
+    const deferred = must(
+      await admin.rpc("prospecting_sequence_effect_begin", {
+        p_run: runs[1].id,
+        p_lease: runs[1].lease_token,
+        p_step: def.steps[0].id,
+      }),
+    );
+    assert(
+      one.id && deferred.reason === "daily_account_limit" && deferred.deferUntil && !deferred.id,
+      "Quota did not defer safely",
+    );
+    assert(
+      must(await admin.from("prospecting_sequence_effects").select("id").eq("run_id", runs[1].id))
+        .length === 0,
+      "Deferred send was reserved",
+    );
+    const release = { p_claims: runs.map((r) => ({ id: r.id, token: r.lease_token })) };
+    blocked(await clients[0].rpc("prospecting_sequence_release_claims", release));
+    assert(
+      must(await admin.rpc("prospecting_sequence_release_claims", release)) === 1,
+      "In-flight lease was released or unused lease leaked",
+    );
+    def.settings.dailyLimit = 100;
+    const nextVersion = await makeVersion(def);
+    const nextCohort = await prepareSequenceEnrollment(
+      clients[0],
+      {
+        workspaceId: W,
+        versionId: nextVersion,
+        requestId: crypto.randomUUID(),
+        consentEvidence: "Synthetic pacing, no send",
+      },
+      admin,
+    );
+    must(
+      await clients[0].rpc("prospecting_sequence_start", {
+        p_workspace: W,
+        p_cohort: nextCohort.id,
+      }),
+    );
+    const nextRun = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+      (r) => r.version_id === nextVersion,
+    );
+    const paced = must(
+      await admin.rpc("prospecting_sequence_effect_begin", {
+        p_run: nextRun.id,
+        p_lease: nextRun.lease_token,
+        p_step: def.steps[0].id,
+      }),
+    );
+    assert(
+      paced.reason === "account_pacing" && !paced.id,
+      "Different sequence bypassed account pacing",
+    );
+    metrics.paced_run = nextRun.id;
+    metrics.paced_lease = nextRun.lease_token;
+    execFileSync(
+      "/Applications/Docker.app/Contents/Resources/bin/docker",
+      [
+        "exec",
+        "supabase_db_techerp-permissions-20261023",
+        "psql",
+        "-U",
+        "supabase_admin",
+        "-d",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-c",
+        `UPDATE public.prospecting_sequence_runs SET lease_until=now()-interval '1 second' WHERE id='${runs[0].id}'::uuid`,
+      ],
+      { stdio: "pipe" },
+    );
+    const anotherVersion = await makeVersion(def);
+    const guarded = await prepareSequenceEnrollment(
+      clients[0],
+      {
+        workspaceId: W,
+        versionId: anotherVersion,
+        requestId: crypto.randomUUID(),
+        consentEvidence: "Uncertainty quarantine cannot be bypassed",
+      },
+      admin,
+    );
+    assert(
+      guarded.reasons.delivery_uncertain === 1 && guarded.held === 1,
+      "Disabling other-sequence exclusion bypassed delivery uncertainty",
+    );
+  });
+
+  await check(
+    "role-test identities cannot operate sequences even after their preview session",
+    async () => {
+      const row = must(
+        await admin
+          .from("workspace_members")
+          .select("is_test_user")
+          .eq("workspace_id", W)
+          .eq("user_id", actor)
+          .single(),
+      );
+      try {
+        must(
+          await admin
+            .from("workspace_members")
+            .update({ is_test_user: true })
+            .eq("workspace_id", W)
+            .eq("user_id", actor),
+        );
+        blocked(
+          await admin.rpc("prospecting_sequence_context", {
+            p_run: metrics.paced_run,
+            p_lease: metrics.paced_lease,
+          }),
+        );
+        blocked(
+          await clients[0].rpc("prospecting_sequence_control", {
+            p_workspace: W,
+            p_run: metrics.paced_run,
+            p_action: "pause",
+          }),
+        );
+      } finally {
+        must(
+          await admin
+            .from("workspace_members")
+            .update({ is_test_user: row.is_test_user })
+            .eq("workspace_id", W)
+            .eq("user_id", actor),
+        );
+      }
+      must(
+        await admin.rpc("prospecting_sequence_context", {
+          p_run: metrics.paced_run,
+          p_lease: metrics.paced_lease,
+        }),
+      );
+    },
+  );
+
+  await check(
+    "consecutive waits use their own entry clocks instead of collapsing into one delay",
+    async () => {
+      const def = newDefinition();
+      def.audience.groups = [
+        {
+          logic: "and",
+          filters: [{ entity: "contacts", column: "last_name", op: "eq", value: tag + "timers" }],
+        },
+      ];
+      const wait = () => ({
+        id: crypto.randomUUID(),
+        title: "Wait",
+        type: "wait",
+        duration: 24,
+        unit: "hours",
+        source: "any",
+        onReply: "human",
+      });
+      def.steps = [
+        wait(),
+        wait(),
+        {
+          id: crypto.randomUUID(),
+          title: "Call",
+          type: "call",
+          mode: "human",
+          assigneeId: actor,
+          scriptId: null,
+          notes: "No call",
+          attempts: 1,
+        },
+        newStep("end"),
+      ];
+      await seed("contacts", {
+        workspace_id: W,
+        owner_id: actor,
+        first_name: "Timer",
+        last_name: tag + "timers",
+        phone: "+5548991104008",
+      });
+      const version = await makeVersion(def);
+      const cohort = await prepareSequenceEnrollment(
+        clients[0],
+        {
+          workspaceId: W,
+          versionId: version,
+          requestId: crypto.randomUUID(),
+          consentEvidence: "Synthetic timer test, no send",
+        },
+        admin,
+      );
+      must(
+        await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: cohort.id }),
+      );
+      let run = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+        (r) => r.version_id === version,
+      );
+      const entered = new Date(run.step_entered_at).getTime();
+      const noEffects = {
+        prepare: async () => {
+          throw Error("No provider expected");
+        },
+        handoff: async () => {
+          throw Error("No handoff expected");
+        },
+      };
+      assert(
+        (await processSequenceRun(admin, run, noEffects, new Date(entered))).status === "advance",
+        "First timer did not advance",
+      );
+      let saved = must(
+        await admin
+          .from("prospecting_sequence_runs")
+          .select("cursor,next_run_at,step_entered_at")
+          .eq("id", run.id)
+          .single(),
+      );
+      assert(
+        saved.cursor === 1 && new Date(saved.next_run_at).getTime() - entered === 86_400_000,
+        "First wait clock wrong",
+      );
+      execFileSync(
+        "/Applications/Docker.app/Contents/Resources/bin/docker",
+        [
+          "exec",
+          "supabase_db_techerp-permissions-20261023",
+          "psql",
+          "-U",
+          "supabase_admin",
+          "-d",
+          "postgres",
+          "-v",
+          "ON_ERROR_STOP=1",
+          "-c",
+          `UPDATE public.prospecting_sequence_runs SET next_run_at=now()-interval '1 second' WHERE id='${run.id}'::uuid`,
+        ],
+        { stdio: "pipe" },
+      );
+      run = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+        (r) => r.version_id === version,
+      );
+      assert(
+        (await processSequenceRun(admin, run, noEffects, new Date(saved.step_entered_at)))
+          .status === "advance",
+        "Second timer did not advance",
+      );
+      saved = must(
+        await admin
+          .from("prospecting_sequence_runs")
+          .select("cursor,next_run_at")
+          .eq("id", run.id)
+          .single(),
+      );
+      assert(
+        saved.cursor === 2 && new Date(saved.next_run_at).getTime() - entered === 172_800_000,
+        "Two 24-hour waits collapsed into 24 hours",
+      );
+    },
+  );
+
+  await check("only a certified unstarted effect can be retried with a fresh nonce", async () => {
+    const mailbox = await seed("email_accounts", {
+      workspace_id: W,
+      owner_id: actor,
+      provider: "gmail",
+      email: tag + "retry_sender@example.test",
+      status: "connected",
+    });
+    const account = await seed("service_channel_accounts", {
+      workspace_id: W,
+      channel: "email",
+      source_key: mailbox,
+      label: "[ISO] Retry",
+      enabled: true,
+    });
+    const contact = await seed("contacts", {
+      workspace_id: W,
+      owner_id: actor,
+      first_name: "Retry",
+      last_name: tag + "retry",
+      email: tag + "before@example.test",
+    });
+    const def = newDefinition();
+    def.audience.groups = [
+      {
+        logic: "and",
+        filters: [{ entity: "contacts", column: "last_name", op: "eq", value: tag + "retry" }],
+      },
+    ];
+    def.steps = [
+      {
+        id: crypto.randomUUID(),
+        title: "Retry",
+        type: "email",
+        accountId: account,
+        subject: "No send",
+        body: "Synthetic retry",
+        thread: "new",
+      },
+      newStep("end"),
+    ];
+    const version = await makeVersion(def);
+    const cohort = await prepareSequenceEnrollment(
+      clients[0],
+      {
+        workspaceId: W,
+        versionId: version,
+        requestId: crypto.randomUUID(),
+        consentEvidence: "Certified no-send protocol test",
+      },
+      admin,
+    );
+    must(
+      await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: cohort.id }),
+    );
+    let run = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+      (r) => r.version_id === version,
+    );
+    must(
+      await admin
+        .from("contacts")
+        .update({ email: tag + "after@example.test" })
+        .eq("id", contact),
+    );
+    const effect = must(
+      await admin.rpc("prospecting_sequence_effect_begin", {
+        p_run: run.id,
+        p_lease: run.lease_token,
+        p_step: def.steps[0].id,
+      }),
+    );
+    const args = {
+      p_effect: effect.id,
+      p_token: effect.token,
+      p_reason: "source_changed_before_send",
+    };
+    blocked(await clients[0].rpc("prospecting_sequence_effect_not_started", args));
+    assert(
+      must(await admin.rpc("prospecting_sequence_effect_not_started", args)),
+      "Certified no-send was not recorded",
+    );
+    assert(
+      must(await admin.from("prospecting_sequence_runs").select("state").eq("id", run.id).single())
+        .state === "blocked",
+      "No-send was incorrectly quarantined as unknown",
+    );
+    must(
+      await clients[0].rpc("prospecting_sequence_control", {
+        p_workspace: W,
+        p_run: run.id,
+        p_action: "retry",
+      }),
+    );
+    run = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+      (r) => r.id === run.id,
+    );
+    const retry = must(
+      await admin.rpc("prospecting_sequence_effect_begin", {
+        p_run: run.id,
+        p_lease: run.lease_token,
+        p_step: def.steps[0].id,
+      }),
+    );
+    assert(
+      retry.id === effect.id &&
+        retry.token !== effect.token &&
+        retry.source.email === tag + "after@example.test",
+      "Retry lost idempotency or used stale recipient",
+    );
+    assert(
+      !must(await admin.rpc("prospecting_sequence_effect_not_started", args)),
+      "Old nonce modified retried effect",
+    );
+  });
 } finally {
   const versionIds = must(
     await admin
@@ -1447,11 +1952,18 @@ try {
   }
   if (versionIds.length)
     must(await admin.from("prospecting_sequence_versions").delete().in("id", versionIds));
-  for (const [table, id] of fixtures.reverse()) {
+  // Preserve exact reverse dependency order, batching only contiguous same-table fixtures.
+  const reversed = [...fixtures].reverse();
+  for (let index = 0; index < reversed.length; ) {
+    const table = reversed[index][0],
+      ids = [];
+    while (index < reversed.length && reversed[index][0] === table && ids.length < 150)
+      ids.push(reversed[index++][1]);
     if (table === "prospecting_sequence_drafts")
-      must(await admin.from("prospecting_sequence_draft_revisions").delete().eq("draft_id", id));
-    must(await admin.from(table).delete().eq("id", id));
+      must(await admin.from("prospecting_sequence_draft_revisions").delete().in("draft_id", ids));
+    must(await admin.from(table).delete().in("id", ids));
   }
+
   must(
     await admin
       .from("job_role_permission_overrides")

@@ -359,6 +359,47 @@ export function ProspectingSequencesPage() {
                   }
                 />
 
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="space-y-1 text-xs">
+                    Intervalo mínimo por conta (segundos)
+                    <Input
+                      type="number"
+                      min={1}
+                      max={3600}
+                      value={draft.settings.minimumIntervalSeconds ?? 60}
+                      disabled={!editable}
+                      onChange={(e) =>
+                        change({
+                          ...draft,
+                          settings: {
+                            ...draft.settings,
+                            minimumIntervalSeconds: Number(e.target.value),
+                          },
+                        })
+                      }
+                    />
+                  </label>
+                  <label className="space-y-1 text-xs">
+                    Limite por conta em 24 horas
+                    <Input
+                      type="number"
+                      min={1}
+                      max={1000}
+                      value={draft.settings.dailyLimit ?? 100}
+                      disabled={!editable}
+                      onChange={(e) =>
+                        change({
+                          ...draft,
+                          settings: { ...draft.settings, dailyLimit: Number(e.target.value) },
+                        })
+                      }
+                    />
+                  </label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Os limites consideram os disparos desta conta nas sequências e não substituem os
+                  limites do provedor. Respostas do agente continuam sob as regras de atendimento.
+                </p>
                 <fieldset disabled={!editable} className="space-y-4">
                   {(
                     [
@@ -659,7 +700,7 @@ export function ProspectingSequencesPage() {
                               />
                             </label>
                             <label className="block text-xs">
-                              Máximo de tentativas
+                              Máximo de tentativas planejadas para a tarefa
                               <Input
                                 type="number"
                                 min={1}

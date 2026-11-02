@@ -7,6 +7,7 @@ const signals: ExecutionSignals = {
   previousReplied: false,
   meetingBooked: false,
   callAnswered: false,
+  hasPhone: true,
   hasEmail: true,
   hasWhatsApp: true,
 };
@@ -152,6 +153,57 @@ describe("sequence execution planner", () => {
     expect(decideExecution(s)).toMatchObject({
       state: "blocked",
       reason: "automatic_call_not_configured",
+    });
+  });
+  it("waiting human activity never dispatches another step", () => {
+    expect(decideExecution({ ...scenario(), state: "waiting_task" })).toMatchObject({
+      kind: "stop",
+      state: "waiting_task",
+    });
+  });
+  it("call without a currently valid phone is skipped", () => {
+    const s = scenario();
+    s.definition.steps = [newStep("call")];
+    s.signals.hasPhone = false;
+    expect(decideExecution(s)).toMatchObject({ kind: "advance", reason: "missing_phone" });
+  });
+  it("unclassified manual call outcome does not pretend the client declined", () => {
+    const s = scenario();
+    s.definition.steps = [
+      {
+        id: crypto.randomUUID(),
+        title: "Result",
+        type: "condition",
+        criteria: "call_answered",
+        yes: "next",
+        no: "end",
+      },
+    ];
+    s.signals.callResultKnown = false;
+    expect(decideExecution(s)).toMatchObject({
+      kind: "stop",
+      state: "blocked",
+      reason: "call_outcome_unknown",
+    });
+  });
+  it("a skipped prior channel does not make the recipient wait for a nonexistent reply", () => {
+    const s = scenario();
+    s.definition.steps = [
+      {
+        id: crypto.randomUUID(),
+        title: "Wait",
+        type: "wait",
+        duration: 24,
+        unit: "hours",
+        source: "previous",
+        onReply: "human",
+      },
+    ];
+    s.signals.previousContactExists = false;
+    expect(decideExecution(s)).toMatchObject({
+      kind: "advance",
+      reason: "previous_contact_skipped",
+      dueAt: s.now.toISOString(),
     });
   });
 });

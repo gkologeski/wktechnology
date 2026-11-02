@@ -147,3 +147,31 @@ Os testes de transporte usam mocks; o aceite JWT insere recibos sintéticos e
 simula falha na Inbox. Isso não comprova entrega real por Gmail/Meta. A conexão
 ao cron, limites operacionais, handoff, painel e homologação final permanecem
 pendentes, e nenhum disparo foi ativado em produção.
+
+## Controles operacionais: implementação em andamento
+
+A migração 0297 separa tarefa criada de chamada realizada: a execução permanece
+em `waiting_task` até a conclusão da atividade associada. Um sinal indexado de
+conclusão evita varrer todas as atividades pendentes; o worker valida vínculo e
+permissões antes de continuar. O resultado canônico da chamada permite condições
+sem interpretar um texto livre como resposta negativa.
+
+Cada etapa possui relógio próprio, incluindo esperas consecutivas e esperas após
+trabalho humano. Canal anterior pulado por falta de endereço não gera espera
+por uma mensagem inexistente. Limites configuráveis por conta usam uma janela
+móvel de 24 horas e trava transacional entre sequências. Só a prospecção entra
+nessa cota; as respostas do atendimento não passam por ela. O worker processa
+até duas contas em paralelo, tem orçamento de execução e libera claims ainda
+não utilizados.
+
+A conciliação recupera projeções de recibos já registrados; resultado desconhecido
+continua em quarentena, mesmo em uma nova sequência que permita outros
+atendimentos. Identidades e aliases são comparados com os destinatários
+normalizados, inclusive após alterações no cadastro. Papéis de teste não podem
+originar execuções. Apenas uma falha certificada antes de chamar o transporte
+permite retentativa com novo nonce, mantendo a chave idempotente. Timeouts de
+transporte nunca são interpretados automaticamente como prova de não envio.
+
+As solicitações Gmail e do gateway oficial têm timeout e redirects manuais.
+Ainda faltam a tela de operação, tratamento/encaminhamento imediato das respostas,
+liberação de reservas, entrada dinâmica, ligação do cron e aceite/publicação.
