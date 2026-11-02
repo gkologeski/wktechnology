@@ -21,7 +21,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { OFFSET_UNITS, REMINDER_VARIABLES, type OffsetUnit } from "@/lib/whatsapp/meeting-reminders";
+import {
+  OFFSET_UNITS,
+  REMINDER_VARIABLES,
+  type OffsetUnit,
+} from "@/lib/whatsapp/meeting-reminders";
 
 export type RuleDraft = {
   uid: string;
