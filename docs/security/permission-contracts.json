@@ -5468,15 +5468,73 @@
     },
     {
       "id": "side-dock-shortcuts",
-      "kind": "presentation",
+      "kind": "internal",
       "files": {
         "src/components/floating-dock/side-dock.tsx": "812a0c95e60354b365d70864f3008f0dc3a28ee27947cc6c7cc83b5e50da6afa",
-        "src/components/floating-dock/side-dock-store.ts": "2bcc1f9a98e04310abd9c8b467b85a1aa77d853e07efe01bedbd0724988048f3",
+        "src/components/floating-dock/side-dock-store.ts": "c09f23b15dba8213377d62fa7da5f3cd88022c2b755a527551b8dbb215779505",
         "src/components/ai-agent/agent-trigger.tsx": "80e4594868488e5fc379af608c20ca7d37272544ac29b42f371f87db608d53df",
         "src/components/bug-report/bug-report-button.tsx": "e14a236527a049cfe48f40465965a4c9f9cb7e339114841a2c4e2f0fc27d2b95",
-        "src/components/chat/chat-trigger.tsx": "791d5af334cf11816f1e4b10bc63736492a25e6bcbbf48fdee457d0c422ed6e9"
+        "src/components/chat/chat-trigger.tsx": "e974dfcd34b6765767d786da988c7b33873e871bf85b54ce027143aab20a3dff"
       },
-      "rationale": "Visual regrouping of the floating Messenger/AI/Bug-report buttons into one collapsible right-edge tab. No new routes, actions, grants or data access; the messenger keeps its existing system.messenger.view.own gate in ChatTrigger (the dock only shows the option when that gate allows), and the drawers/dialogs keep their existing server-side controls."
+      "resources": [
+        "system.messenger"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own"
+      ],
+      "permission_keys": [
+        "system.messenger.view.own"
+      ],
+      "rationale": "Collapsible right-edge tab grouping Messenger, AI assistant and bug report shortcuts. Messenger option is shown only through messengerAllowed (effective permission, deny by default); drawers keep their existing server-side controls. No new routes, grants or data access.",
+      "controls": [
+        {
+          "file": "src/components/floating-dock/side-dock-store.ts",
+          "symbol": "messengerAllowed"
+        },
+        {
+          "file": "src/components/floating-dock/side-dock-store.ts",
+          "symbol": "registerDockOpener"
+        },
+        {
+          "file": "src/components/floating-dock/side-dock-store.ts",
+          "symbol": "openDockItem"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/components/floating-dock/side-dock-store.test.ts",
+          "name": "side dock allows messenger with permission"
+        },
+        "missing_permission": {
+          "file": "src/components/floating-dock/side-dock-store.test.ts",
+          "name": "side dock hides messenger without permission"
+        },
+        "explicit_deny": {
+          "file": "src/components/floating-dock/side-dock-store.test.ts",
+          "name": "side dock hides messenger when deny removes the key"
+        },
+        "foreign_workspace": {
+          "file": "src/components/floating-dock/side-dock-store.test.ts",
+          "name": "side dock hides messenger when workspace context fails"
+        },
+        "inactive_member": {
+          "file": "src/components/floating-dock/side-dock-store.test.ts",
+          "name": "side dock hides messenger while inactive membership has no loaded permissions"
+        }
+      },
+      "exception": {
+        "mechanism": "Authenticated session and effective permissions from usePermissions; UI helpers confer no grants.",
+        "boundary": "Shortcut visibility only; messenger, AI and bug-report data remain protected by their server functions and RLS.",
+        "revocation": "Permission cache revalidates every 30 s; deny or inactive membership removes the key.",
+        "review_by": "2027-02-01"
+      }
     }
   ],
   "retired": {}
