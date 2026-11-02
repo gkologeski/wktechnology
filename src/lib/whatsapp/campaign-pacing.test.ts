@@ -165,7 +165,14 @@ import {
 } from "./campaign-pacing";
 
 describe("encadeamento das rodadas", () => {
-  const base = { stop: "budget" as const, status: "running", pending: 10, nextAt: 8_000, now: 0, hop: 3 };
+  const base = {
+    stop: "budget" as const,
+    status: "running",
+    pending: 10,
+    nextAt: 8_000,
+    now: 0,
+    hop: 3,
+  };
 
   it("campanha em execução com fila e próximo envio em 8 s encadeia", () => {
     expect(shouldChainNextRun(base)).toBe(true);

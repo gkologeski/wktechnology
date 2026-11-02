@@ -307,7 +307,7 @@
       "id": "configuration-navigation-compatibility",
       "kind": "internal",
       "files": {
-        "src/lib/access-control/sales-route-map.ts": "0df9503ad94282448e5d19988fd5d6f579ff4d89df0a03b009f454858dbe57dc",
+        "src/lib/access-control/sales-route-map.ts": "3251202b005a6ca122893b220b9aed1a6c3772aad40d9651fb2219ce64ce4dc6",
         "src/routes/_authenticated/settings.tsx": "53fb56dbdfb1acae1cb3e6a585f9de60f65f9675c24e53ddfd3869eb9221d297",
         "src/routes/_authenticated.tsx": "18448332bcad1cb959dd7b657792dbeb47058f66e40d261182ef77981f08b445",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
@@ -1688,7 +1688,7 @@
       "kind": "business",
       "files": {
         "drizzle/migrations/0251_deal_related_activity_history.sql": "074748f2edde9e44c7e3a76e998e93223c0766f01dd1d43735e0cff118ae654a",
-        "src/components/activity/activity-timeline-item.tsx": "337a303e9c803d0647ff432ed9153c4467ae4d4bd4af921724971f2c1149b103"
+        "src/components/activity/activity-timeline-item.tsx": "e1e1fa55033fc2ed69887ff63c1562bc6337509ca0579d22dd0ccdbcbcbf0158"
       },
       "resources": [
         "techsales.deals",
@@ -2872,10 +2872,10 @@
       "id": "service-channel-navigation-labels",
       "kind": "presentation",
       "files": {
-        "src/lib/menu-config.ts": "4ad46a66e7badc79af7d04dbd5364f6b044d56133e453bfbb44220dbd1c2c3bf",
-        "src/lib/menu-resources.ts": "fa4fc6ce9a753fa6bf68ae8a2d5ee11ddf18ccdcd442461aa1fa773b7fd487b9"
+        "src/lib/menu-config.ts": "3670cfdaa470fe8bc1bd43d83db68a07fe02de22827314e6735f6f60c5e6a23d",
+        "src/lib/menu-resources.ts": "3b4ecd1b138bbbd4b1227cd841de990d347254f20163f090bc5ceaa8d99ccb22"
       },
-      "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files."
+      "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately."
     },
     {
       "id": "service-channel-worker-routing",
@@ -2967,7 +2967,7 @@
       "id": "service-channel-prompt-identity",
       "kind": "internal",
       "files": {
-        "src/lib/prospecting/sdr/agent.server.ts": "53f12db2c692724a89822dca1a24d2a20ebb3f120ea1de78522dd6fd0923ea37"
+        "src/lib/prospecting/sdr/agent.server.ts": "c8ceb9143c7a5227f5fc6baf0f07420669bf2c57d4d679f88f26bc5ea70439cd"
       },
       "resources": [
         "system.channels"
@@ -5198,13 +5198,13 @@
       "kind": "business",
       "files": {
         "src/lib/prospecting-campaigns.functions.ts": "4dd55cc35bc73330be377aedcf54fdbeac43944e8956fff292aa408fc9f0dd58",
-        "src/lib/prospecting-vapi-call.server.ts": "0821705319d921c743fbe2217d05836109ed35ac2f6eb7ce0db2a4e014397430",
+        "src/lib/prospecting-vapi-call.server.ts": "137d4d491bf882dcfd52016a588d06f9411fe0323316c0400e14472144ac2e9f",
         "src/routes/api/public/hooks/prospecting-dial-tick.ts": "c83b39d0528a00d84dbc76d6bea13c3759b15a4b39f4155bd82b8d5160b3d5a1",
         "drizzle/migrations/0290_prospecting_call_whatsapp_followup.sql": "df467dc2e493da88db8bfcd28c8007c8659f1fab510b1ba1aea9bd45b061a87d",
         "src/components/prospecting/campaign-call-followup.tsx": "21e78f2aca523e51c931f9ed68ffcc9f952d90403dc99c18ea19aac77dce7ae5",
         "src/lib/prospecting-call-followup.server.ts": "71d019f722ae4a114e32bbeea36d4339a5d1add54dd4d21133399cec3c762cea",
         "src/routes/_authenticated/prospecting.campaigns.$id.tsx": "cf95037ffe8e5806cab65e72fbf60da77fcdd6adad8af0683d3ed7059556b6d5",
-        "src/lib/prospecting-scripts.functions.ts": "211cd7fc9032c2d27a7dbd69b21d187ab1777b0b3032281117f2242eec2fcddc"
+        "src/lib/prospecting-scripts.functions.ts": "cbb0119304feb29290f6cc8903c6dab58817d73436483c5ce701bdd1d69cb66f"
       },
       "resources": [
         "techsales.marketing.campaigns",
@@ -5461,6 +5461,97 @@
         "inactive_member": {
           "file": "src/lib/access-control/sales-area-ci.test.ts",
           "name": "sales area refuses an inactive execution actor"
+        }
+      }
+    },
+    {
+      "id": "prospecting-multichannel-drafts",
+      "kind": "business",
+      "files": {
+        "src/components/prospecting/sequences/sequences-page.tsx": "f2d3bdf9f8395df1ef94016f9bba2d27b6debb833b1bf24f14154a7a52cd5a5a",
+        "src/lib/prospecting/sequences/draft.ts": "a7533a034f1da32c3956dea7668202ca6fca0db362f8e4bd7319aa0da00bbc37",
+        "src/lib/prospecting/sequences/drafts.functions.ts": "af948518da52994ef5905c757cbceb8d992bc0a5a1acec3c0240ba3f8add0c1b",
+        "src/lib/prospecting/sequences/drafts.server.ts": "55429e0f960f7eeaf85c9305af088c03bc04f3e8140e95a3ec87c0f3f23faae1",
+        "src/routes/_authenticated/prospecting.sequences.tsx": "8baa9510472ca9e2aa65e8f2be1407de24f500cf3f4da51f850b0d30af0a22cf",
+        "drizzle/migrations/0292_prospecting_sequence_drafts.sql": "6a7b0c212a5f254186442aad6a5ae1bdab3c134948d30919548e3c801b5982c1"
+      },
+      "resources": [
+        "system.automation.sequences"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.sequences.view.own",
+        "system.automation.sequences.view.team",
+        "system.automation.sequences.view.workspace",
+        "system.automation.sequences.create.own",
+        "system.automation.sequences.create.team",
+        "system.automation.sequences.create.workspace",
+        "system.automation.sequences.update.own",
+        "system.automation.sequences.update.team",
+        "system.automation.sequences.update.workspace"
+      ],
+      "rationale": "Draft planning only; no enrollment, dispatch, provider changes or role grants. Direct route is mapped to sequences. Caller RLS limits audience reads. Save rechecks the exact operation and uses active workspace/owner scoped SQL CAS, with immutable revision snapshots. Channel references retain their independent channel view permission. Legacy sequences are untouched.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesArea"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/whatsapp/campaign-audience.ts",
+          "symbol": "isBlockedFilterColumn"
+        },
+        {
+          "file": "src/components/prospecting/sequences/sequences-page.tsx",
+          "symbol": "ProspectingSequencesPage"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0292_prospecting_sequence_drafts.sql",
+          "symbol": "prospecting_sequence_draft_save"
+        },
+        {
+          "file": "drizzle/migrations/0292_prospecting_sequence_drafts.sql",
+          "symbol": "prospecting_drafts_read"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/drafts.server.test.ts",
+          "name": "sequence draft allows an authorized active caller"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/drafts.server.test.ts",
+          "name": "sequence draft refuses missing permission before mutation"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/drafts.server.test.ts",
+          "name": "sequence draft refuses explicit deny before mutation"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/drafts.server.test.ts",
+          "name": "sequence draft propagates foreign workspace refusal from database"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/drafts.server.test.ts",
+          "name": "sequence draft refuses inactive membership before mutation"
         }
       }
     }

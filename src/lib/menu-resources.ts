@@ -66,6 +66,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
 
   "/leads/import-hubspot": ["system.import"],
   "/settings/import": ["system.import"],
+  "/prospecting/sequences": ["system.automation.sequences"],
   "/prospecting": [
     "techsales.prospecting_queue",
     "techsales.prospecting_cadences",
