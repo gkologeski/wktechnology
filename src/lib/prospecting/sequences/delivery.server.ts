@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import type { TokenContext } from "@/lib/message-tokens";
-import { renderRequiredTokens } from "./variable-tokens";
+import { renderRequiredTokens, usesEntityTokens } from "./variable-tokens";
 import { validateEmailAddress } from "@/lib/email-address";
 import { isValidE164 } from "@/lib/phone/e164";
 import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
@@ -52,7 +52,11 @@ function assertReservedSource(
 function requiredTokens(text: string, context: TokenContext) {
   return renderRequiredTokens(text, context as Record<string, unknown>);
 }
-async function tokenContext(admin: SupabaseClient, ctx: RuntimeContext): Promise<TokenContext> {
+async function tokenContext(
+  admin: SupabaseClient,
+  ctx: RuntimeContext,
+  step: SequenceStep,
+): Promise<TokenContext> {
   const { loadAgentContext } = await import("@/lib/message-tokens-agent.server");
   const source = ctx.source as RuntimeContext["source"] & {
     first_name?: string;
@@ -60,7 +64,13 @@ async function tokenContext(admin: SupabaseClient, ctx: RuntimeContext): Promise
     company_name?: string;
   };
   const { loadEntityVariables } = await import("./variable-context.server");
-  const entities = ctx.person
+  const texts =
+    step.type === "email"
+      ? [step.subject, step.body]
+      : step.type === "whatsapp"
+        ? Object.values(step.variables)
+        : [];
+  const entities = texts.some((t) => usesEntityTokens(t))
     ? await loadEntityVariables(admin, ctx.run.workspace_id, ctx.person)
     : {};
   return {
@@ -150,7 +160,7 @@ export function sequenceDeliveryPorts(
         "prospecting_sequence_delivery_access",
         { p_run: ctx.run.id, p_lease: ctx.run.lease_token },
       );
-      const tokens = await tokenContext(admin, ctx);
+      const tokens = await tokenContext(admin, ctx, step);
       const agentId =
         (step.type === "whatsapp" ? step.agentId : null) || ctx.definition.settings.agentId;
       await channelIdentity(admin, ctx, account.sourceKey, step.type, agentId);

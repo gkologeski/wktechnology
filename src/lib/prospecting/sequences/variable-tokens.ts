@@ -74,3 +74,8 @@ export function sanitizeEntityRow(row: Record<string, unknown> | null | undefine
   }
   return out;
 }
+
+/** Indica se o texto usa campos de entidade (evita leitura quando não há). */
+export function usesEntityTokens(text: string): boolean {
+  return /\{\{\s*(lead|contact|company|deal)\./i.test(text);
+}
