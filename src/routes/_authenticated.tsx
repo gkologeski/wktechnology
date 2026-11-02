@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 
 import { BugReportButton } from "@/components/bug-report/bug-report-button";
 import { ChatTrigger } from "@/components/chat/chat-trigger";
+import { SideDock } from "@/components/floating-dock/side-dock";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { GlobalSearch } from "@/components/global-search/global-search";
 import { GlobalSearchTrigger } from "@/components/global-search-trigger";
@@ -246,6 +247,7 @@ function AuthenticatedLayout() {
           </div>
           <BugReportButton />
           <ChatTrigger />
+          <SideDock />
           {showTimer && <TimerWidget />}
           <GlobalSearch />
         </SidebarProvider>

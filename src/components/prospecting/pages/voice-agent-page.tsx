@@ -4,6 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+
+const clamp = (v: unknown, lo: number, hi: number, d: number) => {
+  const n = typeof v === "number" && Number.isFinite(v) ? v : d;
+  return Math.min(hi, Math.max(lo, n));
+};
+const fmt = (v: number) =>
+  v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
@@ -23,6 +32,12 @@ import {
 } from "@/lib/voice-agent.functions";
 
 export function VoiceAgentPage() {
+  const { canAny } = usePermissions();
+  const canEdit = canAny([
+    "techsales.prospecting_voice.update.own",
+    "techsales.prospecting_voice.update.team",
+    "techsales.prospecting_voice.update.workspace",
+  ]);
   const getFn = useServerFn(getVoiceAgentSettings);
   const saveFn = useServerFn(saveVoiceAgentSettings);
   const phonesFn = useServerFn(listVapiPhoneNumbers);
@@ -60,7 +75,16 @@ export function VoiceAgentPage() {
   useEffect(() => {
     (async () => {
       const cur = await getFn();
-      if (cur) setS((p) => ({ ...p, ...(cur as S) }));
+      if (cur) {
+        const c = cur as S;
+        setS((p) => ({
+          ...p,
+          ...c,
+          speed: clamp(c.speed, 0.7, 1.2, 1),
+          stability: clamp(c.stability, 0, 1, 0.5),
+          similarity_boost: clamp(c.similarity_boost, 0, 1, 0.75),
+        }));
+      }
     })();
   }, [getFn]);
 
@@ -81,16 +105,24 @@ export function VoiceAgentPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadPhones = async () => {
-    setBusy("phones");
+  const [phonesLoading, setPhonesLoading] = useState(false);
+  const loadPhones = async (silent = false) => {
+    setPhonesLoading(true);
     try {
       setPhones(await phonesFn());
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      if (silent) toast.warning("Não foi possível carregar a lista de números Vapi.");
+      else toast.error(e instanceof Error ? e.message : "Erro");
     } finally {
-      setBusy(null);
+      setPhonesLoading(false);
     }
   };
+
+  // Carrega os números ao abrir, para o número salvo aparecer sem atualizar.
+  useEffect(() => {
+    void loadPhones(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const save = async () => {
     setLoading(true);
@@ -153,6 +185,12 @@ export function VoiceAgentPage() {
                   <SelectValue placeholder="Selecione um número" />
                 </SelectTrigger>
                 <SelectContent>
+                  {s.vapi_phone_number_id &&
+                    !phones.some((p) => p.id === s.vapi_phone_number_id) && (
+                      <SelectItem value={s.vapi_phone_number_id}>
+                        {phonesLoading ? "Número salvo (carregando…)" : "Número salvo"}
+                      </SelectItem>
+                    )}
                   {phones.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.number || p.name || p.id}
@@ -161,8 +199,13 @@ export function VoiceAgentPage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="outline" onClick={loadPhones} disabled={busy === "phones"}>
-              {busy === "phones" ? (
+            <Button
+              variant="outline"
+              onClick={() => loadPhones()}
+              disabled={phonesLoading}
+              aria-label="Atualizar números Vapi"
+            >
+              {phonesLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <RefreshCw className="h-4 w-4" />
@@ -221,42 +264,51 @@ export function VoiceAgentPage() {
               Testar
             </Button>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div>
-              <Label>Velocidade</Label>
-              <Input
-                type="number"
-                step="0.05"
-                min={0.5}
-                max={2}
-                value={s.speed}
-                onChange={(e) => setS((p) => ({ ...p, speed: parseFloat(e.target.value) || 1 }))}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label id="lbl-speed">Velocidade</Label>
+                <span className="text-sm tabular-nums text-muted-foreground">{fmt(s.speed)}×</span>
+              </div>
+              <Slider
+                aria-labelledby="lbl-speed"
+                min={0.7}
+                max={1.2}
+                step={0.05}
+                value={[s.speed]}
+                onValueChange={([v]) => setS((p) => ({ ...p, speed: v }))}
               />
             </div>
-            <div>
-              <Label>Estabilidade</Label>
-              <Input
-                type="number"
-                step="0.05"
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label id="lbl-stability">Estabilidade</Label>
+                <span className="text-sm tabular-nums text-muted-foreground">
+                  {fmt(s.stability)}
+                </span>
+              </div>
+              <Slider
+                aria-labelledby="lbl-stability"
                 min={0}
                 max={1}
-                value={s.stability}
-                onChange={(e) =>
-                  setS((p) => ({ ...p, stability: parseFloat(e.target.value) || 0.5 }))
-                }
+                step={0.05}
+                value={[s.stability]}
+                onValueChange={([v]) => setS((p) => ({ ...p, stability: v }))}
               />
             </div>
-            <div>
-              <Label>Similaridade</Label>
-              <Input
-                type="number"
-                step="0.05"
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label id="lbl-similarity_boost">Similaridade</Label>
+                <span className="text-sm tabular-nums text-muted-foreground">
+                  {fmt(s.similarity_boost)}
+                </span>
+              </div>
+              <Slider
+                aria-labelledby="lbl-similarity_boost"
                 min={0}
                 max={1}
-                value={s.similarity_boost}
-                onChange={(e) =>
-                  setS((p) => ({ ...p, similarity_boost: parseFloat(e.target.value) || 0.75 }))
-                }
+                step={0.05}
+                value={[s.similarity_boost]}
+                onValueChange={([v]) => setS((p) => ({ ...p, similarity_boost: v }))}
               />
             </div>
           </div>
@@ -309,7 +361,7 @@ export function VoiceAgentPage() {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={save} disabled={loading}>
+        <Button onClick={save} disabled={loading || !canEdit}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}Salvar
         </Button>
       </div>

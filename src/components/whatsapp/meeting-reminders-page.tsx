@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { AlertTriangle, BellRing, Loader2 } from "lucide-react";
+import { AlertTriangle, BellRing, Loader2, Plus } from "lucide-react";
 import { PageHeader, SectionHeader, EmptyState, Skeletons } from "@/components/techhire/ui";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -18,37 +18,29 @@ import {
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   getMeetingReminderConfig,
+  listMeetingReminderTemplates,
   saveMeetingReminderConfig,
   type MeetingReminderConfig,
 } from "@/lib/whatsapp/meeting-reminders.functions";
 import {
+  fromMinutes,
+  MAX_OFFSET_MINUTES,
+  MAX_REMINDER_RULES,
+  MIN_OFFSET_MINUTES,
   offsetLabel,
-  REMINDER_OFFSETS,
-  REMINDER_VARIABLES,
+  toMinutes,
 } from "@/lib/whatsapp/meeting-reminders";
-
-type RuleDraft = {
-  offset_minutes: number;
-  enabled: boolean;
-  template_key: string; // name|language
-  variable_map: string[];
-};
+import { MeetingReminderRuleRow, type RuleDraft } from "./meeting-reminder-rule-row";
 
 const DEFAULT_SENDER = "__default";
-const SAMPLE: Record<string, string> = {
-  first_name: "Mariana",
-  meeting_date: "05/11/2026",
-  meeting_time: "14:00",
-  meeting_link: "https://meet.google.com/abc-defg-hij",
-  owner_name: "Lia",
-  subject: "Apresentação WK",
-};
 const STATUS_LABEL: Record<string, string> = {
   sending: "Enviando",
   sent: "Enviado",
   failed: "Falhou",
   skipped: "Ignorado",
 };
+let uidSeq = 0;
+const newUid = () => `r${++uidSeq}`;
 
 export function MeetingRemindersPage() {
   const getFn = useServerFn(getMeetingReminderConfig);
@@ -69,26 +61,58 @@ export function MeetingRemindersPage() {
     setEnabled(d.enabled);
     setSender(d.sender_phone_number_id ?? DEFAULT_SENDER);
     setRules(
-      REMINDER_OFFSETS.map((o) => {
-        const r = d.rules.find((x) => x.offset_minutes === o.minutes);
-        return {
-          offset_minutes: o.minutes,
-          enabled: Boolean(r?.enabled),
-          template_key: r ? `${r.template_name}|${r.template_language}` : "",
-          variable_map: r?.variable_map ?? [],
-        };
-      }),
+      [...d.rules]
+        .sort((x, y) => y.offset_minutes - x.offset_minutes)
+        .map((r) => {
+          const { amount, unit } = fromMinutes(r.offset_minutes, r.offset_unit);
+          return {
+            uid: newUid(),
+            amount,
+            unit,
+            enabled: r.enabled,
+            template_key: `${r.template_name}|${r.template_language}`,
+            variable_map: r.variable_map,
+          };
+        }),
     );
   }, [q.data]);
 
-  const templates = useMemo(() => q.data?.templates ?? [], [q.data]);
+  const savedSender = q.data ? (q.data.sender_phone_number_id ?? DEFAULT_SENDER) : null;
+  const tplFn = useServerFn(listMeetingReminderTemplates);
+  const tq = useQuery({
+    queryKey: ["meeting-reminder-templates", sender],
+    queryFn: () => tplFn({ data: { sender: sender === DEFAULT_SENDER ? null : sender } }),
+    enabled: Boolean(q.data) && sender !== savedSender,
+  });
+  const usingSaved = sender === savedSender;
+  const templates = useMemo(
+    () => (usingSaved ? (q.data?.templates ?? []) : (tq.data?.templates ?? [])),
+    [usingSaved, q.data, tq.data],
+  );
+  const templatesError = usingSaved
+    ? (q.data?.templatesError ?? null)
+    : tq.isError
+      ? tq.error instanceof Error
+        ? tq.error.message
+        : "Não foi possível carregar os modelos."
+      : (tq.data?.templatesError ?? null);
+  const templatesLoading = !usingSaved && tq.isLoading;
   const tplByKey = useMemo(
     () => new Map(templates.map((t) => [`${t.name}|${t.language}`, t])),
     [templates],
   );
 
-  const update = (offset: number, patch: Partial<RuleDraft>) =>
-    setRules((rs) => rs.map((r) => (r.offset_minutes === offset ? { ...r, ...patch } : r)));
+  const update = (uid: string, patch: Partial<RuleDraft>) =>
+    setRules((rs) => rs.map((r) => (r.uid === uid ? { ...r, ...patch } : r)));
+  const minutesOf = (r: RuleDraft) =>
+    Number.isFinite(r.amount) ? toMinutes(r.amount, r.unit) : NaN;
+  const outOfRange = (r: RuleDraft) => {
+    const m = minutesOf(r);
+    return !Number.isFinite(m) || m < MIN_OFFSET_MINUTES || m > MAX_OFFSET_MINUTES;
+  };
+  const counts = new Map<number, number>();
+  for (const r of rules) counts.set(minutesOf(r), (counts.get(minutesOf(r)) ?? 0) + 1);
+  const isDup = (r: RuleDraft) => (counts.get(minutesOf(r)) ?? 0) > 1;
 
   const save = async () => {
     setSaving(true);
@@ -102,7 +126,8 @@ export function MeetingRemindersPage() {
             .map((r) => {
               const [name, language] = r.template_key.split("|");
               return {
-                offset_minutes: r.offset_minutes,
+                offset_minutes: minutesOf(r),
+                offset_unit: r.unit,
                 enabled: r.enabled,
                 template_name: name!,
                 template_language: language!,
@@ -121,6 +146,7 @@ export function MeetingRemindersPage() {
   };
 
   const invalid = rules.some((r) => {
+    if (outOfRange(r) || isDup(r)) return true;
     if (!r.enabled) return false;
     const t = tplByKey.get(r.template_key);
     return !t || r.variable_map.length !== t.variables || r.variable_map.some((v) => !v);
@@ -150,7 +176,7 @@ export function MeetingRemindersPage() {
       <PageHeader
         eyebrow="Configurações"
         title="Lembretes de reunião (WhatsApp)"
-        description="Envie automaticamente um modelo aprovado na Meta para o cliente antes da reunião. Escolha uma ou mais antecedências."
+        description="Envie automaticamente um modelo aprovado na Meta para o cliente antes da reunião. Adicione quantos lembretes quiser (até 10), de 1 minuto a 30 dias antes."
         primaryAction={
           <Button onClick={save} disabled={!canEdit || saving || invalid}>
             {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> : null}
@@ -191,9 +217,10 @@ export function MeetingRemindersPage() {
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-text-tertiary">
-            Os modelos listados são os aprovados para este número. Ao trocar o número, salve e
-            recarregue a página para atualizar a lista.
+          <p className="text-xs text-text-tertiary" aria-live="polite">
+            {templatesLoading
+              ? "Carregando os modelos aprovados deste número…"
+              : "Os modelos listados são os aprovados para este número."}
           </p>
         </div>
       </section>
@@ -203,126 +230,65 @@ export function MeetingRemindersPage() {
           title="Quando lembrar"
           description="Vale para atividades do tipo Reunião com contato ou lead que tenha celular de WhatsApp."
         />
-        {data.templatesError ? (
+        {templatesLoading ? (
+          <Skeletons.Card />
+        ) : templatesError ? (
           <EmptyState
             compact
             icon={AlertTriangle}
             title="Modelos indisponíveis"
-            description={data.templatesError}
+            description={templatesError}
           />
         ) : templates.length === 0 ? (
           <EmptyState
             compact
             icon={BellRing}
-            title="Nenhum modelo aprovado"
+            title="Nenhum modelo aprovado para este número"
             description="Crie e aprove um modelo na Meta (ex.: “Oi {{1}}, lembrando da nossa reunião às {{2}}”) para usar aqui."
           />
         ) : null}
-        {rules.map((r) => {
-          const t = tplByKey.get(r.template_key);
-          const preview = t
-            ? t.body.replace(/\{\{(\d+)\}\}/g, (_m, n) => {
-                const k = r.variable_map[Number(n) - 1];
-                return k ? (SAMPLE[k] ?? "") : `{{${n}}}`;
-              })
-            : "";
-          const swId = `mr-on-${r.offset_minutes}`;
-          return (
-            <div
-              key={r.offset_minutes}
-              className="space-y-3 rounded-lg border border-border-subtle bg-card p-4"
-            >
-              <div className="flex items-center gap-3">
-                <Switch
-                  id={swId}
-                  checked={r.enabled}
-                  onCheckedChange={(v) => update(r.offset_minutes, { enabled: v })}
-                  disabled={!canEdit || templates.length === 0}
-                />
-                <Label htmlFor={swId} className="font-medium">
-                  {offsetLabel(r.offset_minutes)}
-                </Label>
-              </div>
-              {r.enabled ? (
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label htmlFor={`mr-tpl-${r.offset_minutes}`}>Modelo aprovado</Label>
-                    <Select
-                      value={r.template_key || undefined}
-                      onValueChange={(v) => {
-                        const n = tplByKey.get(v)?.variables ?? 0;
-                        update(r.offset_minutes, {
-                          template_key: v,
-                          variable_map: Array.from(
-                            { length: n },
-                            (_, i) => r.variable_map[i] ?? "",
-                          ),
-                        });
-                      }}
-                      disabled={!canEdit}
-                    >
-                      <SelectTrigger id={`mr-tpl-${r.offset_minutes}`}>
-                        <SelectValue placeholder="Escolha um modelo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {templates.map((x) => (
-                          <SelectItem
-                            key={`${x.name}|${x.language}`}
-                            value={`${x.name}|${x.language}`}
-                          >
-                            {x.name} · {x.language}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {r.template_key && !t ? (
-                      <p className="text-xs text-destructive">
-                        Este modelo não está mais aprovado. Escolha outro.
-                      </p>
-                    ) : null}
-                  </div>
-                  {t
-                    ? r.variable_map.map((k, i) => (
-                        <div key={i} className="space-y-1.5">
-                          <Label htmlFor={`mr-var-${r.offset_minutes}-${i}`}>
-                            Variável {`{{${i + 1}}}`}
-                          </Label>
-                          <Select
-                            value={k || undefined}
-                            onValueChange={(v) =>
-                              update(r.offset_minutes, {
-                                variable_map: r.variable_map.map((x, j) => (j === i ? v : x)),
-                              })
-                            }
-                            disabled={!canEdit}
-                          >
-                            <SelectTrigger id={`mr-var-${r.offset_minutes}-${i}`}>
-                              <SelectValue placeholder="Escolha o dado" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {REMINDER_VARIABLES.map((v) => (
-                                <SelectItem key={v.key} value={v.key}>
-                                  {v.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      ))
-                    : null}
-                  {t ? (
-                    <div className="md:col-span-2 rounded-md bg-muted p-3 text-sm text-text-secondary">
-                      <span className="mb-1 block text-xs font-medium text-text-tertiary">
-                        Prévia com dados de exemplo
-                      </span>
-                      {preview || "(modelo sem texto)"}
-                    </div>
-                  ) : null}
-                </div>
-              ) : null}
-            </div>
-          );
-        })}
+        {rules.length === 0 ? (
+          <EmptyState
+            compact
+            icon={BellRing}
+            title="Nenhum lembrete"
+            description="Adicione um lembrete e escolha quanto tempo antes da reunião ele sai."
+          />
+        ) : null}
+        {rules.map((r, i) => (
+          <MeetingReminderRuleRow
+            key={r.uid}
+            rule={r}
+            index={i}
+            templates={templates}
+            tplByKey={tplByKey}
+            locked={saving}
+            duplicate={isDup(r)}
+            outOfRange={outOfRange(r)}
+            onChange={(patch) => update(r.uid, patch)}
+            onRemove={() => setRules((rs) => rs.filter((x) => x.uid !== r.uid))}
+          />
+        ))}
+        <Button
+          variant="outline"
+          onClick={() =>
+            setRules((rs) => [
+              ...rs,
+              {
+                uid: newUid(),
+                amount: 1,
+                unit: "hours",
+                enabled: true,
+                template_key: "",
+                variable_map: [],
+              },
+            ])
+          }
+          disabled={!canEdit || rules.length >= MAX_REMINDER_RULES}
+        >
+          <Plus className="mr-2 h-4 w-4" aria-hidden />
+          Adicionar lembrete
+        </Button>
       </section>
 
       <section className="space-y-3">
