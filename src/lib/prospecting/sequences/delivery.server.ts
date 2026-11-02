@@ -8,6 +8,7 @@ import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
 import { SequenceNotStartedError } from "./runtime";
 import { inspectSequenceTemplate } from "./preflight";
 import type { RuntimeContext, SequencePorts } from "./worker.server";
+import type { SequenceStep } from "./draft";
 async function persistReceipt(
   admin: SupabaseClient,
   effect: import("./worker.server").EffectReservation,
