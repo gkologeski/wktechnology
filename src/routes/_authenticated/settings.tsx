@@ -241,12 +241,6 @@ const sections: Section[] = [
       { to: "/settings/email-templates", label: "Templates de email", icon: Mail, need: "manager" },
       { to: "/settings/media", label: "Biblioteca de mídia", icon: ImageIcon, need: "manager" },
       { to: "/settings/prospecting", label: "Prospecção", icon: Briefcase, need: "manager" },
-      {
-        to: "/settings/prospecting-scripts",
-        label: "Scripts de prospecção",
-        icon: FileText,
-        need: "manager",
-      },
       { to: "/settings/voice-agent", label: "Agente de voz", icon: PhoneCall, need: "admin" },
       {
         to: "/settings/video",
