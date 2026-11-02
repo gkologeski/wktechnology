@@ -67,16 +67,20 @@ const SettingsSchema = z.object({
   default_voice_provider: z.enum(["elevenlabs", "vapi_default"]).default("elevenlabs"),
   llm_model: z.string().min(1).max(80).default("gpt-4o-mini"),
   language: z.string().min(2).max(20).default("pt-BR"),
-  speed: z.number().min(0.5).max(2).default(1.0),
-  stability: z.number().min(0).max(1).default(0.5),
-  similarity_boost: z.number().min(0).max(1).default(0.75),
+  speed: z.number().min(0.7, "Velocidade deve ficar entre 0,7 e 1,2").max(1.2, "Velocidade deve ficar entre 0,7 e 1,2").default(1.0),
+  stability: z.number().min(0, "Estabilidade deve ficar entre 0 e 1").max(1, "Estabilidade deve ficar entre 0 e 1").default(0.5),
+  similarity_boost: z.number().min(0, "Similaridade deve ficar entre 0 e 1").max(1, "Similaridade deve ficar entre 0 e 1").default(0.75),
   first_message: z.string().max(500).nullable().optional(),
   max_duration_seconds: z.number().int().min(30).max(3600).default(600),
 });
 
 export const saveVoiceAgentSettings = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.prospecting_voice", "update")])
-  .inputValidator((i) => SettingsSchema.parse(i))
+  .inputValidator((i) => {
+    const r = SettingsSchema.safeParse(i);
+    if (!r.success) throw new Error(r.error.issues.map((x) => x.message).join("; "));
+    return r.data;
+  })
   .handler(async ({ data, context }) => {
     const ws = await resolveActiveWorkspace(context.userId);
     const { assertPermission } = await import("@/lib/access-control/enforce.server");
