@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 const clamp = (v: unknown, lo: number, hi: number, d: number) => {
   const n = typeof v === "number" && Number.isFinite(v) ? v : d;
@@ -31,6 +32,12 @@ import {
 } from "@/lib/voice-agent.functions";
 
 export function VoiceAgentPage() {
+  const { canAny } = usePermissions();
+  const canEdit = canAny([
+    "techsales.prospecting_voice.update.own",
+    "techsales.prospecting_voice.update.team",
+    "techsales.prospecting_voice.update.workspace",
+  ]);
   const getFn = useServerFn(getVoiceAgentSettings);
   const saveFn = useServerFn(saveVoiceAgentSettings);
   const phonesFn = useServerFn(listVapiPhoneNumbers);
@@ -335,7 +342,7 @@ export function VoiceAgentPage() {
       </Card>
 
       <div className="flex justify-end">
-        <Button onClick={save} disabled={loading}>
+        <Button onClick={save} disabled={loading || !canEdit}>
           {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}Salvar
         </Button>
       </div>
