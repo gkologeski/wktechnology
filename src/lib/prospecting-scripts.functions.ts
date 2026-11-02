@@ -16,6 +16,7 @@ export type ProspectingScript = {
   variables: Record<string, string>;
   created_at: string;
   updated_at: string;
+  archived_at: string | null;
 };
 
 const ScriptInput = z.object({
@@ -35,14 +36,15 @@ const ScriptInput = z.object({
 
 export const listScripts = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.prospecting_scripts", "view")])
-  .handler(async ({ context }): Promise<ProspectingScript[]> => {
+  .inputValidator((i) =>
+    z.object({ includeArchived: z.boolean().optional() }).optional().parse(i),
+  )
+  .handler(async ({ data: input, context }): Promise<ProspectingScript[]> => {
     const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
-    const { data, error } = await sb
-      .from("prospecting_scripts")
-      .select("*")
-      .eq("workspace_id", ws)
-      .order("created_at", { ascending: false });
+    let q = sb.from("prospecting_scripts").select("*").eq("workspace_id", ws);
+    if (!input?.includeArchived) q = q.is("archived_at", null);
+    const { data, error } = await q.order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return (data ?? []) as ProspectingScript[];
   });
@@ -92,6 +94,14 @@ export const deleteScript = createServerFn({ method: "POST" })
 
     const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
+    const { count } = await sb
+      .from("prospecting_campaign_variants")
+      .select("id", { count: "exact", head: true })
+      .eq("script_id", data.id);
+    if ((count ?? 0) > 0)
+      throw new Error(
+        "Este roteiro já foi usado em campanhas e não pode ser excluído. Arquive-o para tirá-lo da lista.",
+      );
     const { error } = await sb
       .from("prospecting_scripts")
       .delete()
@@ -99,4 +109,31 @@ export const deleteScript = createServerFn({ method: "POST" })
       .eq("workspace_id", ws);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const setScriptArchived = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.prospecting_scripts", "update")])
+  .inputValidator((i) => z.object({ id: z.string().uuid(), archived: z.boolean() }).parse(i))
+  .handler(async ({ data, context }) => {
+    await assertSalesRecord(context.supabase, "prospecting_scripts", data.id, "update");
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { data: rows, error } = await context.supabase
+      .from("prospecting_scripts")
+      .update({ archived_at: data.archived ? new Date().toISOString() : null })
+      .eq("id", data.id)
+      .eq("workspace_id", ws)
+      .select("id");
+    if (error) throw new Error(error.message);
+    if (!rows?.length) throw new Error("Sem permissão para alterar este roteiro.");
+    return { ok: true };
+  });
+
+export const listScriptUsage = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.prospecting_scripts", "view")])
+  .handler(async ({ context }): Promise<string[]> => {
+    const { data, error } = await context.supabase
+      .from("prospecting_campaign_variants")
+      .select("script_id");
+    if (error) throw new Error(error.message);
+    return Array.from(new Set((data ?? []).map((r) => r.script_id as string)));
   });
