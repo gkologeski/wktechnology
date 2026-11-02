@@ -38,6 +38,7 @@ import { listServiceChannels } from "@/lib/prospecting/sdr/channel-accounts.func
 import {
   listProspectingSequenceDrafts,
   saveProspectingSequenceDraft,
+  getSequenceEmailSender,
   previewProspectingSequenceAudience,
 } from "@/lib/prospecting/sequences/drafts.functions";
 import {
@@ -110,7 +111,13 @@ export function ProspectingSequencesPage() {
     queryFn: () => loadScripts(),
   });
   const listFn = useServerFn(listProspectingSequenceDrafts),
-    saveFn = useServerFn(saveProspectingSequenceDraft);
+    saveFn = useServerFn(saveProspectingSequenceDraft),
+    senderFn = useServerFn(getSequenceEmailSender);
+  const sender = useQuery({
+    queryKey: ["sequence-email-sender", permissions.workspaceId],
+    enabled: can("view"),
+    queryFn: () => senderFn({ data: { workspaceId: permissions.workspaceId! } }),
+  });
   const [row, setRow] = useState<SequenceDraft | null>(null),
     [draft, setDraft] = useState<SequenceDefinition | null>(null),
     [name, setName] = useState(""),
@@ -551,7 +558,23 @@ export function ProspectingSequencesPage() {
                             onChange={(e) => updateStep({ title: e.target.value })}
                           />
                         </label>
-                        {(step.type === "email" || step.type === "whatsapp") && (
+                        {step.type === "email" && sender.data && !sender.data.isAdmin && (
+                          <label className="block text-xs">
+                            Conta remetente
+                            <Input
+                              disabled
+                              aria-readonly="true"
+                              value={sender.data.ownLabel || "Nenhuma conta de e-mail conectada"}
+                            />
+                            <span className="mt-1 block text-muted-foreground">
+                              {sender.data.ownAccountId
+                                ? "Envia pela sua conta."
+                                : "Conecte sua conta de e-mail em Canais."}
+                            </span>
+                          </label>
+                        )}
+                        {(step.type === "whatsapp" ||
+                          (step.type === "email" && sender.data?.isAdmin)) && (
                           <Choice
                             label="Conta remetente"
                             value={step.accountId || ""}
