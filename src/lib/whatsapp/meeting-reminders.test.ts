@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  fromMinutes,
+  offsetLabel,
+  toMinutes,
+  validateOffsets,
   buildTemplateVariables,
   countTemplateVariables,
   dueOffsets,
@@ -60,8 +64,6 @@ describe("variáveis", () => {
     expect(countTemplateVariables([{ type: "BODY", text: "Oi {{1}}, às {{2}}" }])).toBe(2);
   });
 });
-
-import { fromMinutes, offsetLabel, toMinutes, validateOffsets } from "./meeting-reminders";
 
 describe("lembretes com tempo livre", () => {
   it("converte quantidade e unidade em minutos", () => {

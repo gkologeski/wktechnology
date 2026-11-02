@@ -1,12 +1,25 @@
 import { useEffect, useRef, useState } from "react";
 import { Bug, ChevronLeft, ChevronRight, MessageSquare, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { messengerAllowed } from "./messenger-gate";
 import { openDockItem, useDockState, type DockItem } from "./side-dock-store";
 
 // Aba recolhível presa à borda direita: agrupa Mensagens, Assistente IA e Chamado
 // para que os atalhos flutuantes não cubram botões das telas.
 export function SideDock() {
-  const { chatAllowed, chatUnread, agentAvailable } = useDockState();
+  const { agentAvailable } = useDockState();
+  // Confere a permissão aqui mesmo (não depende do aviso do mensageiro).
+  const chatAllowed = messengerAllowed(usePermissions());
+  // Lê do mesmo cache do mensageiro; nunca busca sozinho.
+  const { data: conversations } = useQuery<Array<{ unread_count?: number | null }>>({
+    queryKey: ["chat", "conversations"],
+    enabled: false,
+  });
+  const chatUnread = chatAllowed
+    ? (conversations ?? []).reduce((a, c) => a + (c.unread_count || 0), 0)
+    : 0;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
