@@ -1,0 +1,290 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { TOKEN_PATTERN, renderTokens, type TokenContext } from "@/lib/message-tokens";
+import { validateEmailAddress } from "@/lib/email-address";
+import { isValidE164 } from "@/lib/phone/e164";
+import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
+import { inspectSequenceTemplate } from "./preflight";
+import type { RuntimeContext, SequencePorts } from "./worker.server";
+async function persistReceipt(
+  admin: SupabaseClient,
+  effect: import("./worker.server").EffectReservation,
+  payload: Record<string, unknown>,
+) {
+  await workRpc(admin, "prospecting_sequence_receipt_store", {
+    p_effect: effect.id,
+    p_token: effect.token,
+    p_payload: payload,
+  });
+  try {
+    await workRpc(admin, "prospecting_sequence_delivery_commit", {
+      p_effect: effect.id,
+      p_token: effect.token,
+      p_payload: payload,
+    });
+    return { receipt: String(payload.messageId), committed: true as const };
+  } catch {
+    // Receipt already committed. Keep the run paused for Inbox repair; never send again.
+    return {
+      receipt: String(payload.messageId),
+      committed: true as const,
+      projectionPending: true,
+    };
+  }
+}
+function assertReservedSource(
+  effect: import("./worker.server").EffectReservation,
+  ctx: RuntimeContext,
+  sourceKey: string,
+) {
+  if (effect.sourceKey !== sourceKey || !effect.source)
+    throw new Error("A conta ou o destinatário mudou durante a preparação.");
+  for (const key of ["email", "phones", "first_name", "last_name", "company_name"]) {
+    if (
+      JSON.stringify((effect.source as unknown as Record<string, unknown>)[key] ?? null) !==
+      JSON.stringify((ctx.source as unknown as Record<string, unknown>)[key] ?? null)
+    )
+      throw new Error("O destinatário mudou durante a preparação.");
+  }
+}
+function requiredTokens(text: string, context: TokenContext) {
+  for (const match of text.matchAll(new RegExp(TOKEN_PATTERN.source, "g"))) {
+    if (!renderTokens(match[0], context).trim())
+      throw new Error("Variável sem valor atual autorizado.");
+  }
+  return renderTokens(text, context);
+}
+async function tokenContext(admin: SupabaseClient, ctx: RuntimeContext): Promise<TokenContext> {
+  const { loadAgentContext } = await import("@/lib/message-tokens-agent.server");
+  const source = ctx.source as RuntimeContext["source"] & {
+    first_name?: string;
+    last_name?: string;
+    company_name?: string;
+  };
+  return {
+    ...source,
+    full_name: [source.first_name, source.last_name].filter(Boolean).join(" "),
+    company: source.company_name,
+    agent: await loadAgentContext(admin, ctx.run.owner_id),
+  };
+}
+async function channelIdentity(
+  admin: SupabaseClient,
+  ctx: RuntimeContext,
+  sourceKey: string,
+  channel: "email" | "whatsapp",
+  agentId: string | null,
+) {
+  if (!agentId) return;
+  const { loadChannelRuntime } = await import("@/lib/prospecting/sdr/channel-runtime.server");
+  const state = await loadChannelRuntime(admin, {
+    workspaceId: ctx.run.workspace_id,
+    channel,
+    sourceKey,
+    agentId,
+    origin: "campaign",
+  });
+  if (state.status !== "active") throw new Error("Agente não está habilitado para esta conta.");
+}
+async function unsubscribeFooter(admin: SupabaseClient, ctx: RuntimeContext, email: string) {
+  const address = email.toLowerCase();
+  const read = () =>
+    admin
+      .from("email_unsubscribes")
+      .select("token,reason")
+      .eq("workspace_id", ctx.run.workspace_id)
+      .eq("owner_id", ctx.run.owner_id)
+      .eq("email", address)
+      .maybeSingle();
+  const existing = await read();
+  if (existing.error) throw new Error("Não foi possível verificar o descadastro.");
+  if (existing.data && existing.data.reason !== "__token__")
+    throw new Error("Destinatário descadastrado.");
+  let token = existing.data?.token;
+  if (!token) {
+    token = crypto.randomUUID().replaceAll("-", "");
+    const inserted = await admin.from("email_unsubscribes").insert({
+      workspace_id: ctx.run.workspace_id,
+      owner_id: ctx.run.owner_id,
+      email: address,
+      token,
+      reason: "__token__",
+    });
+    if (inserted.error) {
+      const concurrent = await read();
+      if (concurrent.error || !concurrent.data?.token || concurrent.data.reason !== "__token__")
+        throw new Error("Não foi possível preparar o descadastro.");
+      token = concurrent.data.token;
+    }
+  }
+  const { publicAppOrigin } = await import("@/lib/runtime-config.server");
+  return `\n\nPara não receber mais estes contatos: ${publicAppOrigin()}/api/public/email/unsubscribe/${encodeURIComponent(token)}`;
+}
+/** The caller provides handoff separately; there is no fallback to a generic/default assistant. */
+export function sequenceDeliveryPorts(
+  admin: SupabaseClient,
+  handoff: SequencePorts["handoff"],
+): SequencePorts {
+  return {
+    handoff,
+    prepare: async (ctx, step) => {
+      if (step.type === "call" || step.type === "task")
+        return async (effect) => {
+          const id = await workRpc<string>(admin, "prospecting_sequence_task_effect", {
+            p_effect: effect.id,
+            p_token: effect.token,
+            p_lease: ctx.run.lease_token,
+          });
+          return { receipt: id, committed: true };
+        };
+      if (step.type !== "email" && step.type !== "whatsapp") throw new Error("Etapa não enviável.");
+      const account = await workRpc<{ sourceKey: string }>(
+        admin,
+        "prospecting_sequence_delivery_access",
+        { p_run: ctx.run.id, p_lease: ctx.run.lease_token },
+      );
+      const tokens = await tokenContext(admin, ctx);
+      const agentId =
+        (step.type === "whatsapp" ? step.agentId : null) || ctx.definition.settings.agentId;
+      await channelIdentity(admin, ctx, account.sourceKey, step.type, agentId);
+      if (step.type === "email") {
+        const checked = validateEmailAddress(ctx.source.email);
+        if (!checked.ok) throw new Error("Destinatário inválido.");
+        const subject = requiredTokens(step.subject, tokens),
+          body =
+            requiredTokens(step.body, tokens) +
+            (await unsubscribeFooter(admin, ctx, checked.value));
+        const gmail = await import("@/lib/gmail.server");
+        const row = await admin
+          .from("email_accounts")
+          .select(
+            "id,workspace_id,owner_id,email,access_token,refresh_token,expires_at,status,history_id",
+          )
+          .eq("id", account.sourceKey)
+          .eq("workspace_id", ctx.run.workspace_id)
+          .eq("owner_id", ctx.run.owner_id)
+          .eq("status", "connected")
+          .maybeSingle();
+        if (row.error || !row.data) throw new Error("Conta Gmail indisponível.");
+        const mailbox = row.data as import("@/lib/gmail.server").EmailAccountRow;
+        let threadId: string | undefined, inReplyTo: string | undefined;
+        if (step.thread === "reply") {
+          const ids = ctx.definition.steps
+            .slice(0, ctx.run.cursor)
+            .filter((s) => s.type === "email" && s.accountId === step.accountId)
+            .map((s) => s.id);
+          const sent = await admin
+            .from("prospecting_sequence_effects" as never)
+            .select("provider_id")
+            .eq("run_id", ctx.run.id)
+            .eq("status", "succeeded")
+            .in("step_id", ids)
+            .order("finished_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          const provider = (sent.data as { provider_id?: string } | null)?.provider_id;
+          if (sent.error || !provider) throw new Error("Mensagem anterior indisponível.");
+          const previous = await admin
+            .from("email_messages")
+            .select("message_id_header,thread_id")
+            .eq("workspace_id", ctx.run.workspace_id)
+            .eq("account_id", account.sourceKey)
+            .eq("provider_message_id", provider)
+            .maybeSingle();
+          if (previous.error || !previous.data?.message_id_header)
+            throw new Error("Referência de resposta indisponível.");
+          const thread = await admin
+            .from("email_threads")
+            .select("provider_thread_id")
+            .eq("workspace_id", ctx.run.workspace_id)
+            .eq("id", previous.data.thread_id)
+            .maybeSingle();
+          if (thread.error || !thread.data) throw new Error("Thread indisponível.");
+          threadId = thread.data.provider_thread_id;
+          inReplyTo = previous.data.message_id_header;
+        }
+        return async (effect) => {
+          assertReservedSource(effect, ctx, account.sourceKey);
+          await channelIdentity(admin, ctx, account.sourceKey, "email", agentId);
+          const messageIdHeader = `<seq-${effect.id}@techerp.invalid>`;
+          const raw = gmail.buildRawMime({
+            from: mailbox.email,
+            to: [checked.value],
+            subject,
+            bodyText: body,
+            messageId: messageIdHeader,
+            ...(inReplyTo ? { inReplyTo, references: inReplyTo } : {}),
+          });
+          const result = await gmail.gmailSendRaw(
+            await gmail.ensureAccessToken(mailbox),
+            raw,
+            threadId,
+          );
+          return persistReceipt(admin, effect, {
+            messageId: result.id,
+            threadId: result.threadId,
+            messageIdHeader,
+            inReplyTo,
+            from: mailbox.email,
+            to: checked.value,
+            subject,
+            body,
+          });
+        };
+      }
+      const phone = pickWhatsAppNumber(
+        ctx.source.phones.filter((p): p is string => !!p && isValidE164(p)),
+      );
+      if (phone.status !== "ok") throw new Error("WhatsApp inválido.");
+      const { resolveWaNumber, metaSend, applyPositionalTemplate } =
+        await import("@/lib/whatsapp/meta-channel.server");
+      const { loadTemplateCatalog } = await import("@/lib/whatsapp/templates.server");
+      const { describeTemplate } = await import("@/lib/whatsapp/template-shape");
+      const number = await resolveWaNumber(ctx.run.workspace_id, account.sourceKey);
+      if (number.provider !== "cloud") {
+        const { getConnectedPhone } = await import("@/lib/whatsapp/gateway-channel.server");
+        const info = await getConnectedPhone();
+        if (info.id !== account.sourceKey || info.quality_rating === "RED")
+          throw new Error("Número indisponível ou com qualidade baixa.");
+      }
+      const catalog = await loadTemplateCatalog(admin, ctx.run.workspace_id, {
+        phoneNumberId: account.sourceKey,
+      });
+      const template =
+        catalog.source === "provider"
+          ? catalog.items.find(
+              (t) =>
+                t.name === step.templateName &&
+                t.language === step.language &&
+                t.status === "APPROVED",
+            )
+          : undefined;
+      const variables = Object.fromEntries(
+        Object.entries(step.variables).map(([key, value]) => [key, requiredTokens(value, tokens)]),
+      );
+      if (!template || inspectSequenceTemplate(step.id, template, variables).length)
+        throw new Error("Modelo atual indisponível ou incompleto.");
+      const shape = describeTemplate(template.components);
+      const values = Array.from(
+        { length: shape.variableCount },
+        (_, i) => variables[String(i + 1)],
+      );
+      const body = applyPositionalTemplate(shape.body, values);
+      return async (effect) => {
+        assertReservedSource(effect, ctx, account.sourceKey);
+        await channelIdentity(admin, ctx, account.sourceKey, "whatsapp", agentId);
+        const result = await metaSend(number, {
+          to: phone.e164,
+          template: { name: template.name, language: template.language, variables: values },
+        });
+        if (!result.wamid) throw new Error("Resultado do envio desconhecido.");
+        return persistReceipt(admin, effect, {
+          messageId: result.wamid,
+          from: number.displayPhoneNumber,
+          to: phone.e164,
+          body,
+        });
+      };
+    },
+  };
+}

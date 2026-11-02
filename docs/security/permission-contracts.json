@@ -5760,7 +5760,7 @@
       "kind": "business",
       "files": {
         "src/lib/prospecting/sequences/runtime.ts": "0910cc45c0eaace9fefce39f1aeb42ea830c529f981325d3ac58dffae3292d18",
-        "src/lib/prospecting/sequences/worker.server.ts": "a1fa61708f887da6b5bb97d0a173e898ee43b6ad775b67f9105cf0c1c1bec267",
+        "src/lib/prospecting/sequences/worker.server.ts": "d10c6dc4477dc603133e1c4dbe2c4e66a59ba3fb7e30d015825970ba71c69607",
         "drizzle/migrations/0295_prospecting_sequence_runtime.sql": "504420a65224ad4caa45e07b3d304432ec54bf446134ea39a6ddd1b7ae5c76a8"
       },
       "resources": [
@@ -5843,6 +5843,106 @@
         "inactive_member": {
           "file": "src/lib/prospecting/sequences/worker.test.ts",
           "name": "worker for inactive owner stops before credentials or provider"
+        }
+      }
+    },
+    {
+      "id": "prospecting-sequence-provider-delivery",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0296_prospecting_sequence_delivery.sql": "b83c2ab2890834807a3e17ba394882660b5cf6e3b42b8edbf4eb967b79ed63c9",
+        "src/lib/prospecting/sequences/delivery.server.ts": "b680d08250fbecf6e68da0d1e1bcd805a9610eb84d709133aab8d990879857c6"
+      },
+      "resources": [
+        "system.automation.sequences",
+        "system.channels",
+        "techsales.inbox.email",
+        "techsales.inbox.whatsapp"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "manage",
+        "assign"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "system.automation.sequences.view.own",
+        "system.automation.sequences.view.team",
+        "system.automation.sequences.view.workspace",
+        "system.automation.sequences.manage.own",
+        "system.automation.sequences.manage.team",
+        "system.automation.sequences.manage.workspace",
+        "system.automation.sequences.assign.own",
+        "system.automation.sequences.assign.team",
+        "system.automation.sequences.assign.workspace",
+        "techsales.inbox.email.view.own",
+        "techsales.inbox.email.view.team",
+        "techsales.inbox.email.view.workspace",
+        "techsales.inbox.email.create.own",
+        "techsales.inbox.email.create.team",
+        "techsales.inbox.email.create.workspace",
+        "techsales.inbox.whatsapp.view.own",
+        "techsales.inbox.whatsapp.view.team",
+        "techsales.inbox.whatsapp.view.workspace",
+        "techsales.inbox.whatsapp.create.own",
+        "techsales.inbox.whatsapp.create.team",
+        "techsales.inbox.whatsapp.create.workspace"
+      ],
+      "rationale": "Provider adapters remain disconnected from production cron pending remaining operational controls and acceptance. Service-only delivery access checks the current active execution subject, original version ownership scope, current channel view/create and exact enabled account before transport credential reads. Effect reservation repeats those checks; sender and protected recipient are compared against the reserved snapshot before send. Gmail retains deterministic Message-ID and same-account thread replies; WhatsApp only sends the exact current provider-approved template and respects connection quality guards. Provider receipt is private and persisted before Inbox projection. Projection failure pauses the run and blocks resume; it never authorizes a resend. RLS and column grants protect bodies/targets and tokens. Reserved unsubscribe tokens are distinguished from actual opt-out. Isolated JWT tests use synthetic receipts and fault injection, never live provider network. No user permission grants or automatic activation.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/email-address.ts",
+          "symbol": "validateEmailAddress"
+        },
+        {
+          "file": "src/lib/prospecting/sequences/preflight.ts",
+          "symbol": "inspectSequenceTemplate"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0296_prospecting_sequence_delivery.sql",
+          "symbol": "prospecting_sequence_delivery_access"
+        },
+        {
+          "file": "drizzle/migrations/0296_prospecting_sequence_delivery.sql",
+          "symbol": "prospecting_sequence_receipt_store"
+        },
+        {
+          "file": "drizzle/migrations/0296_prospecting_sequence_delivery.sql",
+          "symbol": "prospecting_sequence_delivery_commit"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/delivery.test.ts",
+          "name": "allowed email uses exact mailbox, recipient and durable receipt"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/delivery.test.ts",
+          "name": "delivery without channel permission stops before credentials"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/delivery.test.ts",
+          "name": "explicit deny stops provider preparation before reading the mailbox"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/delivery.test.ts",
+          "name": "foreign account cannot pass scoped delivery access"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/delivery.test.ts",
+          "name": "inactive actor cannot read transport credentials"
         }
       }
     }

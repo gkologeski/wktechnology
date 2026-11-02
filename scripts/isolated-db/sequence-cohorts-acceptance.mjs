@@ -43,6 +43,11 @@ const W = "aaaaaaaa-0000-4000-8000-00000000000a",
   O = "10000000-0000-4000-8000-000000000001";
 const roles = ["30000000-0000-4000-8000-0000000000a8", "30000000-0000-4000-8000-0000000000a9"];
 const keys = [
+  "system.channels.view.workspace",
+  "techsales.inbox.email.view.own",
+  "techsales.inbox.email.create.own",
+  "techsales.inbox.whatsapp.view.own",
+  "techsales.inbox.whatsapp.create.own",
   "techsales.activities.create.own",
   ...["view", "create", "update", "manage", "assign"].flatMap((a) =>
     ["own", "team", "workspace"].map((s) => `system.automation.sequences.${a}.${s}`),
@@ -1050,6 +1055,366 @@ try {
       new Date("2026-11-02T13:00:00Z"),
     );
     assert(out.status === "blocked" && !called, "Lost version scope still executed");
+  });
+
+  await check(
+    "email synthetic receipt commits Inbox, identity and cursor without provider network",
+    async () => {
+      await grant(roles[0], [
+        "system.channels.view.workspace",
+        "techsales.inbox.email.view.own",
+        "techsales.inbox.email.create.own",
+      ]);
+      const mailbox = await seed("email_accounts", {
+        workspace_id: W,
+        owner_id: actor,
+        provider: "gmail",
+        email: tag + "sender@example.test",
+        status: "connected",
+      });
+      const account = await seed("service_channel_accounts", {
+        workspace_id: W,
+        channel: "email",
+        source_key: mailbox,
+        label: "[ISO] Sender",
+        enabled: true,
+      });
+      const contact = await seed("contacts", {
+        workspace_id: W,
+        owner_id: actor,
+        first_name: "Email",
+        last_name: tag + "email",
+        email: tag + "target@example.test",
+      });
+      const token = await seed("email_unsubscribes", {
+        workspace_id: W,
+        owner_id: actor,
+        email: tag + "target@example.test",
+        token: crypto.randomUUID().replaceAll("-", ""),
+        reason: "__token__",
+      });
+      const def = newDefinition();
+      def.audience.groups = [
+        {
+          logic: "and",
+          filters: [{ entity: "contacts", column: "last_name", op: "eq", value: tag + "email" }],
+        },
+      ];
+      def.steps = [
+        {
+          id: crypto.randomUUID(),
+          title: "Email",
+          type: "email",
+          accountId: account,
+          subject: "[ISO] Hello",
+          body: "No send",
+          thread: "new",
+        },
+        newStep("end"),
+      ];
+      const version = await makeVersion(def);
+      const cohort = await prepareSequenceEnrollment(
+        clients[0],
+        {
+          workspaceId: W,
+          versionId: version,
+          requestId: crypto.randomUUID(),
+          consentEvidence: "Synthetic receipt, no provider call",
+        },
+        admin,
+      );
+      assert(cohort.held === 1, "Reserved unsubscribe token was treated as opt-out");
+      must(
+        await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: cohort.id }),
+      );
+      const run = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+        (r) => r.version_id === version,
+      );
+      assert(run, "Email run missing");
+      blocked(
+        await clients[0].rpc("prospecting_sequence_delivery_access", {
+          p_run: run.id,
+          p_lease: run.lease_token,
+        }),
+      );
+      await grant(roles[0], ["system.channels.view.workspace"], "deny");
+      blocked(
+        await admin.rpc("prospecting_sequence_delivery_access", {
+          p_run: run.id,
+          p_lease: run.lease_token,
+        }),
+      );
+      await grant(roles[0], ["system.channels.view.workspace"]);
+      const access = must(
+        await admin.rpc("prospecting_sequence_delivery_access", {
+          p_run: run.id,
+          p_lease: run.lease_token,
+        }),
+      );
+      assert(access.sourceKey === mailbox, "Wrong email account");
+      const effect = must(
+        await admin.rpc("prospecting_sequence_effect_begin", {
+          p_run: run.id,
+          p_lease: run.lease_token,
+          p_step: def.steps[0].id,
+        }),
+      );
+      const payload = {
+        messageId: "iso-message-" + crypto.randomUUID(),
+        threadId: "iso-thread-" + crypto.randomUUID(),
+        messageIdHeader: "<isolated@example.test>",
+        from: tag + "sender@example.test",
+        to: tag + "target@example.test",
+        subject: "[ISO] Hello",
+        body: "No network used",
+      };
+      must(
+        await admin.rpc("prospecting_sequence_receipt_store", {
+          p_effect: effect.id,
+          p_token: effect.token,
+          p_payload: payload,
+        }),
+      );
+      const pending = must(
+        await admin
+          .from("prospecting_sequence_runs")
+          .select("state,reason,cursor")
+          .eq("id", run.id)
+          .single(),
+      );
+      assert(
+        pending.state === "paused" &&
+          pending.reason === "receipt_projection_pending" &&
+          pending.cursor === 1,
+        "Receipt was not preserved independently",
+      );
+      blocked(
+        await clients[0]
+          .from("prospecting_sequence_effects")
+          .select("provider_receipt,sender,target")
+          .eq("id", effect.id),
+      );
+      const constraint = "iso_seq_" + effect.id.replaceAll("-", "").slice(0, 12);
+      const ddl = (sql) =>
+        execFileSync(
+          "/Applications/Docker.app/Contents/Resources/bin/docker",
+          [
+            "exec",
+            "supabase_db_techerp-permissions-20261023",
+            "psql",
+            "-U",
+            "supabase_admin",
+            "-d",
+            "postgres",
+            "-v",
+            "ON_ERROR_STOP=1",
+            "-c",
+            sql,
+          ],
+          { stdio: "pipe" },
+        );
+      try {
+        ddl(
+          `ALTER TABLE public.email_messages ADD CONSTRAINT ${constraint} CHECK(id<>'${effect.id}'::uuid) NOT VALID`,
+        );
+        blocked(
+          await admin.rpc("prospecting_sequence_delivery_commit", {
+            p_effect: effect.id,
+            p_token: effect.token,
+            p_payload: payload,
+          }),
+        );
+        const saved = must(
+          await admin
+            .from("prospecting_sequence_effects")
+            .select("provider_id,projection_state")
+            .eq("id", effect.id)
+            .single(),
+        );
+        assert(
+          saved.provider_id === payload.messageId && saved.projection_state === "pending",
+          "Projection failure lost receipt",
+        );
+        blocked(
+          await clients[0].rpc("prospecting_sequence_control", {
+            p_workspace: W,
+            p_run: run.id,
+            p_action: "resume",
+          }),
+        );
+      } finally {
+        ddl(`ALTER TABLE public.email_messages DROP CONSTRAINT IF EXISTS ${constraint}`);
+      }
+      const message = must(
+        await admin.rpc("prospecting_sequence_delivery_commit", {
+          p_effect: effect.id,
+          p_token: effect.token,
+          p_payload: payload,
+        }),
+      );
+      const row = must(
+        await admin
+          .from("email_messages")
+          .select("id,thread_id,direction")
+          .eq("id", message)
+          .single(),
+      );
+      fixtures.push(["email_threads", row.thread_id], ["email_messages", row.id]);
+      const thread = must(
+        await admin
+          .from("email_threads")
+          .select("contact_id,workspace_id")
+          .eq("id", row.thread_id)
+          .single(),
+      );
+      assert(
+        thread.contact_id === contact && thread.workspace_id === W && row.direction === "outbound",
+        "Email identity wrong",
+      );
+      assert(
+        must(
+          await admin.rpc("prospecting_sequence_delivery_commit", {
+            p_effect: effect.id,
+            p_token: effect.token,
+            p_payload: payload,
+          }),
+        ) === message,
+        "Receipt retry not idempotent",
+      );
+      assert(
+        must(
+          await admin.from("prospecting_sequence_runs").select("cursor").eq("id", run.id).single(),
+        ).cursor === 1,
+        "Email cursor not committed",
+      );
+      must(
+        await admin.from("email_unsubscribes").update({ reason: "user_requested" }).eq("id", token),
+      );
+      const next = await makeVersion(def);
+      const blockedCohort = await prepareSequenceEnrollment(
+        clients[0],
+        {
+          workspaceId: W,
+          versionId: next,
+          requestId: crypto.randomUUID(),
+          consentEvidence: "Synthetic opt-out check",
+        },
+        admin,
+      );
+      assert(
+        blockedCohort.held === 0 && blockedCohort.reasons.opt_out === 1,
+        "Real opt-out was ignored",
+      );
+    },
+  );
+  await check("WhatsApp synthetic receipt commits Inbox without invoking Meta", async () => {
+    await grant(roles[0], [
+      "system.channels.view.workspace",
+      "techsales.inbox.whatsapp.view.own",
+      "techsales.inbox.whatsapp.create.own",
+    ]);
+    const account = await seed("service_channel_accounts", {
+      workspace_id: W,
+      channel: "whatsapp",
+      source_key: "999000111222333",
+      label: "[ISO] WhatsApp",
+      enabled: true,
+    });
+    const contact = await seed("contacts", {
+      workspace_id: W,
+      owner_id: actor,
+      first_name: "WA",
+      last_name: tag + "wa",
+      whatsapp_e164: "+5548991104006",
+    });
+    const def = newDefinition();
+    def.audience.groups = [
+      {
+        logic: "and",
+        filters: [{ entity: "contacts", column: "last_name", op: "eq", value: tag + "wa" }],
+      },
+    ];
+    def.steps = [
+      {
+        id: crypto.randomUUID(),
+        title: "WA",
+        type: "whatsapp",
+        accountId: account,
+        templateName: "isolated_template",
+        language: "pt_BR",
+        variables: {},
+        agentId: null,
+      },
+      newStep("end"),
+    ];
+    const version = await makeVersion(def);
+    const cohort = await prepareSequenceEnrollment(
+      clients[0],
+      {
+        workspaceId: W,
+        versionId: version,
+        requestId: crypto.randomUUID(),
+        consentEvidence: "Synthetic receipt, no Meta call",
+      },
+      admin,
+    );
+    must(
+      await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: cohort.id }),
+    );
+    const run = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+      (r) => r.version_id === version,
+    );
+    const effect = must(
+      await admin.rpc("prospecting_sequence_effect_begin", {
+        p_run: run.id,
+        p_lease: run.lease_token,
+        p_step: def.steps[0].id,
+      }),
+    );
+    const payload = {
+      messageId: "isolated-wamid-" + crypto.randomUUID(),
+      from: "+554861365335",
+      to: "+5548991104006",
+      body: "[ISO] No Meta network",
+    };
+    const message = must(
+      await admin.rpc("prospecting_sequence_delivery_commit", {
+        p_effect: effect.id,
+        p_token: effect.token,
+        p_payload: payload,
+      }),
+    );
+    const row = must(
+      await admin
+        .from("whatsapp_messages")
+        .select("id,conversation_id,is_template,template_name")
+        .eq("id", message)
+        .single(),
+    );
+    fixtures.push(["whatsapp_conversations", row.conversation_id], ["whatsapp_messages", row.id]);
+    const conversation = must(
+      await admin
+        .from("whatsapp_conversations")
+        .select("contact_id,wa_phone_number_id,workspace_id")
+        .eq("id", row.conversation_id)
+        .single(),
+    );
+    assert(
+      conversation.contact_id === contact &&
+        conversation.wa_phone_number_id === "999000111222333" &&
+        row.is_template &&
+        row.template_name === "isolated_template",
+      "WA account or identity mismatch",
+    );
+    assert(
+      must(await admin.from("prospecting_sequence_runs").select("cursor").eq("id", run.id).single())
+        .cursor === 1,
+      "WA cursor not committed",
+    );
+    const activities = must(
+      await admin.from("activities").select("id").eq("related_contact_id", contact),
+    );
+    activities.forEach((a) => fixtures.push(["activities", a.id]));
   });
 } finally {
   const versionIds = must(

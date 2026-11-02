@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import { definitionSchema, type SequenceDefinition, type SequenceStep } from "./draft";
+import { isValidE164 } from "@/lib/phone/e164";
 import { validateEmailAddress } from "@/lib/email-address";
 import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
 import {
@@ -25,14 +26,21 @@ export type RuntimeContext = {
   source: { email: string | null; phones: (string | null)[] };
   signals: Omit<ExecutionSignals, "hasEmail" | "hasWhatsApp">;
 };
-export type EffectReservation = { id: string; token: string; sourceKey: string | null };
+export type EffectReservation = {
+  id: string;
+  token: string;
+  sourceKey: string | null;
+  source?: RuntimeContext["source"];
+};
 export type SequencePorts = {
   /** Reads current provider configuration, no send. Failure is safe before reservation. */
   prepare: (
     context: RuntimeContext,
     step: SequenceStep,
   ) => Promise<
-    (reservation: EffectReservation) => Promise<string | { receipt: string; committed: true }>
+    (
+      reservation: EffectReservation,
+    ) => Promise<string | { receipt: string; committed: true; projectionPending?: boolean }>
   >;
   handoff: (
     context: RuntimeContext,
@@ -61,7 +69,9 @@ export async function processSequenceRun(
       signals: {
         ...ctx.signals,
         hasEmail: validateEmailAddress(ctx.source.email).ok,
-        hasWhatsApp: pickWhatsAppNumber(ctx.source.phones).status === "ok",
+        hasWhatsApp:
+          pickWhatsAppNumber(ctx.source.phones.filter((p): p is string => !!p && isValidE164(p)))
+            .status === "ok",
       },
       now,
       previousAt: ctx.run.previous_at ? new Date(ctx.run.previous_at) : null,
@@ -86,7 +96,13 @@ export async function processSequenceRun(
               p_error: null,
             });
       if (!stored) throw new Error("provider_receipt_not_stored");
-      return { id: run.id, status: "effect_succeeded" };
+      return {
+        id: run.id,
+        status:
+          typeof result !== "string" && result.projectionPending
+            ? "projection_pending"
+            : "effect_succeeded",
+      };
     }
     if (decision.kind === "stop" && (decision.state === "agent" || decision.state === "human"))
       await ports.handoff(ctx, decision);

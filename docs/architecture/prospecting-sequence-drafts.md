@@ -125,3 +125,25 @@ de e-mail/WhatsApp, handoff, eventos de resposta, reconciliação operacional,
 liberação de reservas, entrada dinâmica, painel e homologação/publicação
 continuam necessários antes de ativar disparos. A infraestrutura isolada não
 significa que o fluxo completo esteja pronto ou publicado.
+
+## Adaptadores de entrega: implementação em andamento
+
+A migração 0296 prepara o Gmail e a Cloud API/conector oficial de WhatsApp. O
+Gmail usa a conta exata do responsável, Message-ID determinístico e referências
+à conversa da mesma conta. O WhatsApp usa exclusivamente o modelo aprovado e
+idioma da conta selecionada, com revalidação do catálogo e qualidade do número.
+Nenhum fallback troca o remetente. Valores ausentes em variáveis impedem envio.
+A identidade protegida e a conta são comparadas com a reserva antes do envio.
+
+Após aceitação do provedor, o recibo é salvo privadamente antes da projeção na
+Inbox. Essa projeção é idempotente; se falhar, a execução fica pausada, com recibo
+preservado, sem reenvio. Retomar exige que a projeção esteja conciliada. As datas
+da entrega são preservadas mesmo numa recuperação posterior. Uma pausa ou
+cancelamento manual não é desfeito pelo recebimento de um recibo tardio.
+
+O rodapé de e-mail reutiliza o descadastro existente; reservar um token para o
+link não equivale a descadastro. A utilização do link torna a exclusão efetiva.
+Os testes de transporte usam mocks; o aceite JWT insere recibos sintéticos e
+simula falha na Inbox. Isso não comprova entrega real por Gmail/Meta. A conexão
+ao cron, limites operacionais, handoff, painel e homologação final permanecem
+pendentes, e nenhum disparo foi ativado em produção.
