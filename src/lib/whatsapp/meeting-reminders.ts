@@ -39,7 +39,10 @@ export function toMinutes(amount: number, unit: OffsetUnit): number {
 }
 
 /** Melhor unidade para reexibir um tempo salvo em minutos. */
-export function fromMinutes(minutes: number, unit?: OffsetUnit): { amount: number; unit: OffsetUnit } {
+export function fromMinutes(
+  minutes: number,
+  unit?: OffsetUnit,
+): { amount: number; unit: OffsetUnit } {
   const u =
     unit && minutes % (OFFSET_UNITS.find((x) => x.value === unit)?.minutes ?? 1) === 0
       ? unit
