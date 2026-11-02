@@ -31,3 +31,72 @@ export const previewProspectingSequenceAudience = createServerFn({ method: "POST
     const { previewDraftAudience } = await import("./drafts.server");
     return previewDraftAudience(context.supabase, context.userId, data.workspaceId, data.audience);
   });
+
+export const preflightProspectingSequence = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission(SEQUENCE_RESOURCE, "view")])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        id: z.string().uuid(),
+        expectedRevision: z.number().int().min(1),
+      })
+      .strict()
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { preflightSequence } = await import("./releases.server");
+    return preflightSequence(context.supabase, data);
+  });
+export const createProspectingSequenceVersion = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission(SEQUENCE_RESOURCE, "manage")])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        id: z.string().uuid(),
+        expectedRevision: z.number().int().min(1),
+      })
+      .strict()
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { createSequenceVersion } = await import("./releases.server");
+    return createSequenceVersion(context.supabase, data);
+  });
+export const getProspectingSequenceTemplates = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission(SEQUENCE_RESOURCE, "view")])
+  .inputValidator((input: unknown) =>
+    z
+      .object({ workspaceId: z.string().uuid(), accountId: z.string().uuid() })
+      .strict()
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { sequenceTemplates } = await import("./releases.server");
+    const { describeTemplate } = await import("@/lib/whatsapp/template-shape");
+    return (
+      await sequenceTemplates(context.supabase, context.userId, data.workspaceId, data.accountId)
+    ).map((t) => ({
+      name: t.name,
+      language: t.language,
+      status: t.status,
+      ...describeTemplate(t.components),
+    }));
+  });
+export const listProspectingSequenceVersions = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission(SEQUENCE_RESOURCE, "view")])
+  .inputValidator((input: unknown) =>
+    z
+      .object({
+        workspaceId: z.string().uuid(),
+        id: z.string().uuid(),
+        expectedRevision: z.number().int().min(1),
+      })
+      .strict()
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const { listSequenceVersions } = await import("./releases.server");
+    return listSequenceVersions(context.supabase, data);
+  });

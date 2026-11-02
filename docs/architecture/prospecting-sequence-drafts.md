@@ -47,3 +47,35 @@ A aprovação do protótipo não é evidência de implantação em produção.
 
 A definição de rascunho é entrada de planejamento: não deve ser consumida por
 workers como instrução executável antes da validação e publicação de versão.
+
+## Lote de versões de configuração
+
+`0293_prospecting_sequence_versions.sql` cria snapshots imutáveis por revisão.
+A ação usa `system.automation.sequences.manage` e exige também a leitura da linha;
+permissão de editar um rascunho não concede a de criar versões. O banco copia o
+conteúdo salvo, sem aceitar definição/dono/autor enviados pelo cliente. Repetir
+a criação da mesma revisão devolve a mesma versão. Alteração concorrente exige
+recarregar. Usuários não têm escrita direta; UPDATE é proibido inclusive por
+gatilho. Não há status executável nem fila/evento de prospecção nesta migração.
+
+A tela valida a configuração salva antes de solicitar uma versão. O preflight
+revalida contas visíveis e habilitadas, Gmail conectado do próprio remetente,
+responsáveis ativos, agentes com versão publicada e vínculos habilitados para
+campanhas e atendimento nas contas utilizadas. O catálogo WhatsApp é consultado
+no provedor para o número autorizado exato; falha não vira catálogo vazio e não
+há fallback para a tabela local. Os parâmetros posicionais são conferidos.
+Cada catálogo é consultado uma vez por conta em cada validação.
+
+Limites explícitos deste lote: chamadas automáticas aguardam o executor; modelos
+com mídia, cabeçalho variável, variáveis nomeadas ou botões parametrizados exigem
+outro adaptador e impedem a validação atual. A seleção aceita modelos de corpo
+de texto com até vinte variáveis posicionais. A etapa de chamada humana exige
+responsável e será convertida em tarefa pelo futuro executor.
+
+O preflight é uma verificação pontual de configuração, não prova permanente de
+credenciais, elegibilidade dos destinatários ou disponibilidade dos provedores.
+A RPC de snapshot aplica autorização e integridade, não consulta a Meta. Mesmo
+uma versão obtida diretamente pela RPC nunca autoriza execução por si só.
+Antes de inscrever ou enviar, os próximos lotes devem validar filtros,
+consentimento/opt-out, provedores, referência de cada conta/agente/responsável e
+permissões atuais. Um worker nunca pode confiar apenas na existência da versão.

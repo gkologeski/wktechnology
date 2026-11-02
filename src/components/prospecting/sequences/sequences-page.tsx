@@ -1,3 +1,5 @@
+import { SequenceReadiness } from "./sequence-readiness";
+import { SequenceTemplatePicker } from "./sequence-template-picker";
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -106,6 +108,7 @@ export function ProspectingSequencesPage() {
     [tab, setTab] = useState<"flow" | "audience" | "settings">("flow"),
     [saving, setSaving] = useState(false),
     [dirty, setDirty] = useState(false);
+  const members = useWorkspaceMembers();
   const currentWorkspace = useRef(permissions.workspaceId);
   currentWorkspace.current = permissions.workspaceId;
   const rows = useQuery({
@@ -310,6 +313,11 @@ export function ProspectingSequencesPage() {
               {saving ? "Salvando…" : "Salvar rascunho"}
             </Button>
           </div>
+          <SequenceReadiness
+            key={`${row.id}:${row.revision}`}
+            row={row}
+            disabled={dirty || saving || row.revision < 1}
+          />
           <div className="flex gap-5 border-b">
             {(
               [
@@ -338,6 +346,19 @@ export function ProspectingSequencesPage() {
             <Card>
               <CardContent className="space-y-4 p-5">
                 <h2 className="text-base font-semibold">Regras da sequência</h2>
+                <Choice
+                  label="Agente padrão para respostas"
+                  value={draft.settings.agentId || ""}
+                  choices={[
+                    ["", "Nenhum agente selecionado"],
+                    ...(channels.data?.agents || []).map((a) => [a.id, a.name] as const),
+                  ]}
+                  disabled={!editable}
+                  onChange={(agentId) =>
+                    change({ ...draft, settings: { ...draft.settings, agentId: agentId || null } })
+                  }
+                />
+
                 <fieldset disabled={!editable} className="space-y-4">
                   {(
                     [
@@ -496,7 +517,17 @@ export function ProspectingSequencesPage() {
                                 )
                                 .map((a) => [a.id, a.label] as const),
                             ]}
-                            onChange={(accountId) => updateStep({ accountId: accountId || null })}
+                            onChange={(accountId) =>
+                              updateStep(
+                                step.type === "whatsapp"
+                                  ? {
+                                      accountId: accountId || null,
+                                      templateName: "",
+                                      variables: {},
+                                    }
+                                  : { accountId: accountId || null },
+                              )
+                            }
                             disabled={!permissions.can("system.channels.view.workspace")}
                           />
                         )}
@@ -531,28 +562,24 @@ export function ProspectingSequencesPage() {
                           </>
                         )}
                         {step.type === "whatsapp" && (
-                          <>
-                            <label className="block text-xs">
-                              Nome do template
-                              <Input
-                                maxLength={512}
-                                value={step.templateName}
-                                onChange={(e) => updateStep({ templateName: e.target.value })}
-                              />
-                            </label>
-                            <label className="block text-xs">
-                              Idioma
-                              <Input
-                                maxLength={20}
-                                value={step.language}
-                                onChange={(e) => updateStep({ language: e.target.value })}
-                              />
-                            </label>
-                            <p className="text-xs text-muted-foreground">
-                              Este lote salva o planejamento. A validação de template aprovado e
-                              variáveis ocorrerá antes de habilitar disparos.
-                            </p>
-                          </>
+                          <SequenceTemplatePicker
+                            key={`${step.id}:${step.accountId}`}
+                            workspaceId={permissions.workspaceId!}
+                            step={step}
+                            disabled={!editable}
+                            onChange={updateStep}
+                          />
+                        )}
+                        {step.type === "whatsapp" && (
+                          <Choice
+                            label="Agente para respostas neste número"
+                            value={step.agentId || ""}
+                            choices={[
+                              ["", "Usar agente padrão das regras"],
+                              ...(channels.data?.agents || []).map((a) => [a.id, a.name] as const),
+                            ]}
+                            onChange={(agentId) => updateStep({ agentId: agentId || null })}
+                          />
                         )}
                         {step.type === "wait" && (
                           <>
@@ -595,6 +622,21 @@ export function ProspectingSequencesPage() {
                               onChange={(onReply) => updateStep({ onReply })}
                             />
                           </>
+                        )}
+                        {(step.type === "task" || step.type === "call") && (
+                          <Choice
+                            label="Responsável pela tarefa"
+                            value={step.assigneeId || ""}
+                            choices={[
+                              ["", "Selecionar responsável"],
+                              ...(members.data || []).map(
+                                (m) => [m.user_id, m.full_name || "Sem nome"] as const,
+                              ),
+                            ]}
+                            onChange={(assigneeId) =>
+                              updateStep({ assigneeId: assigneeId || null })
+                            }
+                          />
                         )}
                         {step.type === "call" && (
                           <>

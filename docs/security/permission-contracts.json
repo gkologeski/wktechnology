@@ -5468,9 +5468,8 @@
       "id": "prospecting-multichannel-drafts",
       "kind": "business",
       "files": {
-        "src/components/prospecting/sequences/sequences-page.tsx": "f2d3bdf9f8395df1ef94016f9bba2d27b6debb833b1bf24f14154a7a52cd5a5a",
+        "src/components/prospecting/sequences/sequences-page.tsx": "6df6f90f9d6c355f3b59f747862c521d30baca7dcb8545f13e8f28f7926ebc65",
         "src/lib/prospecting/sequences/draft.ts": "a7533a034f1da32c3956dea7668202ca6fca0db362f8e4bd7319aa0da00bbc37",
-        "src/lib/prospecting/sequences/drafts.functions.ts": "af948518da52994ef5905c757cbceb8d992bc0a5a1acec3c0240ba3f8add0c1b",
         "src/lib/prospecting/sequences/drafts.server.ts": "55429e0f960f7eeaf85c9305af088c03bc04f3e8140e95a3ec87c0f3f23faae1",
         "src/routes/_authenticated/prospecting.sequences.tsx": "8baa9510472ca9e2aa65e8f2be1407de24f500cf3f4da51f850b0d30af0a22cf",
         "drizzle/migrations/0292_prospecting_sequence_drafts.sql": "6a7b0c212a5f254186442aad6a5ae1bdab3c134948d30919548e3c801b5982c1"
@@ -5552,6 +5551,109 @@
         "inactive_member": {
           "file": "src/lib/prospecting/sequences/drafts.server.test.ts",
           "name": "sequence draft refuses inactive membership before mutation"
+        }
+      }
+    },
+    {
+      "id": "prospecting-sequence-configuration-versions",
+      "kind": "business",
+      "files": {
+        "src/lib/prospecting/sequences/drafts.functions.ts": "1da68aefd8b8ad3e103e7861513471d2424a0e1dde75c046a39e7d3397c9c0fa",
+        "src/lib/prospecting/sequences/preflight.ts": "0e7673ade55d3b1d3327006dd795bf5d029ca59c7e861897cc648c090b87fa01",
+        "src/lib/prospecting/sequences/releases.server.ts": "c5f83ff4b7967fdfa89d41bd686eb5bcab1eb621fd6329b3ce70c0ad5d5b77f3",
+        "src/components/prospecting/sequences/sequence-readiness.tsx": "3bf25c03fcf94d955a4aef4bc58b146b0a86ce4a8e47810c4b6e6e3034a28d47",
+        "src/components/prospecting/sequences/sequence-template-picker.tsx": "427ec2f8233bd1bd4a5b9cdb4cf64c1d85178bfe523a99b9dd40e9fff244d0e8",
+        "drizzle/migrations/0293_prospecting_sequence_versions.sql": "38d37b1faf6153875d32a8cd3f4c9036689aec2fbd2dae056ed6df4bb15438a5"
+      },
+      "resources": [
+        "system.automation.sequences",
+        "system.channels",
+        "techsales.inbox.whatsapp",
+        "techsales.email_accounts",
+        "techsales.marketing.sdr_agent"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.sequences.view.own",
+        "system.automation.sequences.view.team",
+        "system.automation.sequences.view.workspace",
+        "system.automation.sequences.create.own",
+        "system.automation.sequences.create.team",
+        "system.automation.sequences.create.workspace",
+        "system.automation.sequences.update.own",
+        "system.automation.sequences.update.team",
+        "system.automation.sequences.update.workspace",
+        "system.automation.sequences.manage.own",
+        "system.automation.sequences.manage.team",
+        "system.automation.sequences.manage.workspace",
+        "system.channels.view.workspace",
+        "techsales.inbox.whatsapp.view.workspace",
+        "techsales.email_accounts.view.workspace",
+        "techsales.marketing.sdr_agent.view.workspace"
+      ],
+      "rationale": "Configuration snapshots only; no enrollment, effects or readiness flag. Server checks saved revision, caller RLS and independent channel/email/SDR permissions; the approved template catalog is fetched for the exact authorized sender without fallback or sends. SQL enforces active workspace/owner scoped view and manage before a CAS/idempotent snapshot, and forbids direct authenticated writes and all updates. Workers must revalidate a version before any future dispatch; the snapshot RPC is not provider validation or permission to execute. Includes existing draft/read/preview handlers with their unchanged authorization.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesArea"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/whatsapp/template-shape.ts",
+          "symbol": "checkTemplateVariables"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0293_prospecting_sequence_versions.sql",
+          "symbol": "prospecting_sequence_version_create"
+        },
+        {
+          "file": "drizzle/migrations/0293_prospecting_sequence_versions.sql",
+          "symbol": "prospecting_sequence_versions_read"
+        },
+        {
+          "file": "drizzle/migrations/0292_prospecting_sequence_drafts.sql",
+          "symbol": "prospecting_sequence_draft_save"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/releases.server.test.ts",
+          "name": "sequence version allows an authorized active caller and only freezes saved revision"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/releases.server.test.ts",
+          "name": "sequence version rejects missing permission before reading or freezing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/releases.server.test.ts",
+          "name": "sequence version rejects explicit deny before freezing"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/releases.server.test.ts",
+          "name": "sequence version rejects foreign workspace before reading draft"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/releases.server.test.ts",
+          "name": "sequence version rejects inactive actor before reading or freezing"
         }
       }
     }
