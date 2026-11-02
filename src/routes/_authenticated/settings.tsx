@@ -325,6 +325,12 @@ function SettingsLayout() {
   const [query, setQuery] = useState("");
   // Grupo de configuração escolhido manualmente nas abas (null = segue a rota).
   const [groupOverride, setGroupOverride] = useState<string | null>(null);
+  // Ao abrir outra página, o grupo volta a seguir a rota.
+  const [lastPath, setLastPath] = useState(path);
+  if (lastPath !== path) {
+    setLastPath(path);
+    setGroupOverride(null);
+  }
   const { isAdmin, isManager } = useMyRole();
   const { isPlatformAdmin } = useIsPlatformAdmin();
   const permissions = usePermissions();
