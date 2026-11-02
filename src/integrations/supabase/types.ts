@@ -13513,6 +13513,7 @@ export type Database = {
           enabled: boolean
           id: string
           offset_minutes: number
+          offset_unit: string
           template_language: string
           template_name: string
           updated_at: string
@@ -13523,6 +13524,7 @@ export type Database = {
           enabled?: boolean
           id?: string
           offset_minutes: number
+          offset_unit?: string
           template_language?: string
           template_name: string
           updated_at?: string
@@ -13533,6 +13535,7 @@ export type Database = {
           enabled?: boolean
           id?: string
           offset_minutes?: number
+          offset_unit?: string
           template_language?: string
           template_name?: string
           updated_at?: string
