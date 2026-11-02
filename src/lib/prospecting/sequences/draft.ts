@@ -247,3 +247,28 @@ export function newDefinition(): SequenceDefinition {
     },
   };
 }
+
+export const operationsInput = z
+  .object({
+    workspaceId: z.string().uuid(),
+    versionId: z.string().uuid(),
+    page: z.number().int().min(0).max(10000).default(0),
+  })
+  .strict();
+export const operationInput = z
+  .object({
+    workspaceId: z.string().uuid(),
+    versionId: z.string().uuid(),
+    id: z.string().uuid(),
+    action: z.enum([
+      "start",
+      "pause",
+      "resume",
+      "cancel",
+      "retry",
+      "reconcile",
+      "answered",
+      "no_answer",
+    ]),
+  })
+  .strict();

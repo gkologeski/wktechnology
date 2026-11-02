@@ -1,3 +1,4 @@
+import { SequenceOperations } from "./sequence-operations";
 import { useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -166,10 +167,25 @@ export function SequenceEnrollment({
             </p>
           ))}
           <p className="text-xs text-muted-foreground">
-            Nada foi enviado. O executor revalidará dados, autorização de contato, provedores,
-            permissões e descadastro antes de cada ação.
+            A reserva não envia mensagens. Consulte as execuções abaixo para acompanhar o início e
+            cada ação.
           </p>
         </div>
+      )}
+      {versionId && (
+        <SequenceOperations
+          key={versionId}
+          workspaceId={workspaceId}
+          versionId={versionId}
+          cohortId={summary?.id}
+          held={summary?.held || 0}
+          disabled={
+            disabled ||
+            permissions.isLoading ||
+            permissions.isError ||
+            permissions.workspaceId !== workspaceId
+          }
+        />
       )}
     </section>
   );

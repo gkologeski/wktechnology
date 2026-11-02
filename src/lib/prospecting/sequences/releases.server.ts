@@ -3,7 +3,12 @@ import { z } from "zod";
 import { assertSalesArea } from "@/lib/access-control/sales-core.server";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import { requireChannelAccess } from "@/lib/prospecting/sdr/channel-access.server";
-import { definitionSchema, SEQUENCE_RESOURCE, type SequenceDraft } from "./draft";
+import {
+  definitionSchema,
+  SEQUENCE_RESOURCE,
+  type SequenceDefinition,
+  type SequenceDraft,
+} from "./draft";
 import { inspectSequence, inspectSequenceTemplate, type SequenceIssue } from "./preflight";
 export const releaseInput = z
   .object({
@@ -100,7 +105,22 @@ export async function sequenceTemplates(
 }
 export async function preflightSequence(client: SupabaseClient, input: ReleaseInput) {
   const { draft, actor } = await authorize(client, input, "view");
-  const issues: SequenceIssue[] = inspectSequence(draft.definition);
+  return preflightSequenceDefinition(
+    client,
+    input.workspaceId,
+    actor,
+    draft.definition,
+    draft.revision,
+  );
+}
+export async function preflightSequenceDefinition(
+  client: SupabaseClient,
+  workspaceId: string,
+  actor: string,
+  definition: SequenceDefinition,
+  revision = 0,
+) {
+  const issues: SequenceIssue[] = inspectSequence(definition);
   const add = (stepId: string | null, code: string, message: string) =>
     issues.push({ stepId, code, message });
   const templateCache = new Map<string, ReturnType<typeof sequenceTemplates>>();
@@ -108,25 +128,25 @@ export async function preflightSequence(client: SupabaseClient, input: ReleaseIn
     checkedMembers = new Set<string>(),
     checkedAgents = new Set<string>();
   const agents = new Set<string>();
-  if (draft.definition.settings.agentId) agents.add(draft.definition.settings.agentId);
+  if (definition.settings.agentId) agents.add(definition.settings.agentId);
   const senders = new Set(
-    draft.definition.steps
+    definition.steps
       .flatMap((s) => (s.type === "email" || s.type === "whatsapp" ? [s.accountId] : []))
       .filter(Boolean),
   );
   if (senders.size > 10) add(null, "account_limit", "Use até dez contas distintas por sequência.");
   else
-    for (const step of draft.definition.steps) {
+    for (const step of definition.steps) {
       if (step.type === "email" && step.accountId && !checkedEmail.has(step.accountId)) {
         checkedEmail.add(step.accountId);
         try {
           await assertSalesArea(client, "techsales.email_accounts", "view");
-          const account = await channel(client, actor, input.workspaceId, step.accountId, "email");
+          const account = await channel(client, actor, workspaceId, step.accountId, "email");
           const result = await client
             .from("email_accounts")
             .select("id")
             .eq("id", account.source_key)
-            .eq("workspace_id", input.workspaceId)
+            .eq("workspace_id", workspaceId)
             .eq("owner_id", actor)
             .eq("provider", "gmail")
             .eq("status", "connected")
@@ -145,7 +165,7 @@ export async function preflightSequence(client: SupabaseClient, input: ReleaseIn
           if (!templateCache.has(step.accountId))
             templateCache.set(
               step.accountId,
-              sequenceTemplates(client, actor, input.workspaceId, step.accountId),
+              sequenceTemplates(client, actor, workspaceId, step.accountId),
             );
           const templates = await templateCache.get(step.accountId)!;
           const template = templates.find(
@@ -169,12 +189,12 @@ export async function preflightSequence(client: SupabaseClient, input: ReleaseIn
       }
       if ((step.type === "email" || step.type === "whatsapp") && step.accountId) {
         const agentId =
-          (step.type === "whatsapp" ? step.agentId : null) || draft.definition.settings.agentId;
+          (step.type === "whatsapp" ? step.agentId : null) || definition.settings.agentId;
         if (agentId) {
           const result = await client
             .from("service_channel_bindings" as never)
             .select("account_id")
-            .eq("workspace_id", input.workspaceId)
+            .eq("workspace_id", workspaceId)
             .eq("account_id", step.accountId)
             .eq("agent_id", agentId)
             .eq("enabled", true)
@@ -198,7 +218,7 @@ export async function preflightSequence(client: SupabaseClient, input: ReleaseIn
         const result = await client
           .from("workspace_members")
           .select("user_id")
-          .eq("workspace_id", input.workspaceId)
+          .eq("workspace_id", workspaceId)
           .eq("user_id", step.assigneeId)
           .eq("status", "active")
           .maybeSingle();
@@ -216,7 +236,7 @@ export async function preflightSequence(client: SupabaseClient, input: ReleaseIn
     checkedAgents.add(agentId);
     try {
       const { assertSdr } = await import("@/lib/prospecting/sdr/access.server");
-      await assertSdr(client, actor, input.workspaceId, "view");
+      await assertSdr(client, actor, workspaceId, "view");
     } catch {
       add(null, "agent_permission", "Sem acesso à configuração do agente SDR.");
       continue;
@@ -224,14 +244,14 @@ export async function preflightSequence(client: SupabaseClient, input: ReleaseIn
     const result = await client
       .from("sdr_playbooks")
       .select("id")
-      .eq("workspace_id", input.workspaceId)
+      .eq("workspace_id", workspaceId)
       .eq("id", agentId)
       .eq("enabled", true)
       .maybeSingle();
     const version = await client
       .from("sdr_agent_versions" as never)
       .select("id")
-      .eq("workspace_id", input.workspaceId)
+      .eq("workspace_id", workspaceId)
       .eq("playbook_id", agentId)
       .eq("status", "published")
       .maybeSingle();
@@ -243,7 +263,7 @@ export async function preflightSequence(client: SupabaseClient, input: ReleaseIn
       );
   }
   return {
-    revision: draft.revision,
+    revision,
     checkedAt: new Date().toISOString(),
     configurationValid: issues.length === 0,
     executionEnabled: false as const,

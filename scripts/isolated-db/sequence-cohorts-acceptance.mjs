@@ -1,3 +1,4 @@
+import { sequenceOperations } from "../../src/lib/prospecting/sequences/operations.server.ts";
 import { processSequenceRun } from "../../src/lib/prospecting/sequences/worker.server.ts";
 import { protectSalesClient } from "../../src/lib/access-control/sales-client-projection.ts";
 // Real local GoTrue JWT/PostgREST acceptance. No messages or production access.
@@ -718,6 +719,29 @@ try {
     )[0];
     assert(run?.state === "active", "Run invisible");
     metrics.runtime_run = run.id;
+    const operations = await sequenceOperations(clients[0], {
+      workspaceId: W,
+      versionId: version,
+      page: 0,
+    });
+    assert(
+      operations.total === 1 && operations.rows[0].canManage && operations.canStart,
+      "Operator view/current capabilities failed",
+    );
+    assert(!JSON.stringify(operations).includes("lease_token"), "Lease token leaked to UI");
+    blocked(
+      await clients[3].rpc("prospecting_sequence_capabilities", {
+        p_workspace: W,
+        p_owners: [actor],
+      }),
+    );
+    const caps = must(
+      await clients[1].rpc("prospecting_sequence_capabilities", {
+        p_workspace: W,
+        p_owners: [actor],
+      }),
+    );
+    assert(!caps.owners[actor].manage, "Peer gained manage capability");
     assert(
       must(await clients[3].from("prospecting_sequence_runs").select("id").eq("id", run.id))
         .length === 0,
