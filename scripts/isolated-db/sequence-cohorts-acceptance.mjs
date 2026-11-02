@@ -1,6 +1,8 @@
+import { processSequenceRun } from "../../src/lib/prospecting/sequences/worker.server.ts";
 import { protectSalesClient } from "../../src/lib/access-control/sales-client-projection.ts";
 // Real local GoTrue JWT/PostgREST acceptance. No messages or production access.
 import { readFileSync, writeFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
 import { createClient } from "@supabase/supabase-js";
 import { prepareSequenceEnrollment } from "../../src/lib/prospecting/sequences/enrollment.server.ts";
 import { cohortCandidates } from "../../src/lib/prospecting/sequences/enrollment.ts";
@@ -41,6 +43,7 @@ const W = "aaaaaaaa-0000-4000-8000-00000000000a",
   O = "10000000-0000-4000-8000-000000000001";
 const roles = ["30000000-0000-4000-8000-0000000000a8", "30000000-0000-4000-8000-0000000000a9"];
 const keys = [
+  "techsales.activities.create.own",
   ...["view", "create", "update", "manage", "assign"].flatMap((a) =>
     ["own", "team", "workspace"].map((s) => `system.automation.sequences.${a}.${s}`),
   ),
@@ -649,6 +652,405 @@ try {
       );
     },
   );
+  await check("runtime starts once and exposes only scoped runs", async () => {
+    const def = newDefinition();
+    def.audience.groups = [
+      {
+        logic: "and",
+        filters: [{ entity: "contacts", column: "last_name", op: "eq", value: tag + "runtime" }],
+      },
+    ];
+    def.steps = [
+      {
+        id: crypto.randomUUID(),
+        title: "Call",
+        type: "call",
+        mode: "human",
+        assigneeId: actor,
+        scriptId: null,
+        notes: "Isolated only",
+        attempts: 1,
+      },
+      newStep("end"),
+    ];
+    await seed("contacts", {
+      workspace_id: W,
+      owner_id: actor,
+      first_name: "Runtime",
+      last_name: tag + "runtime",
+      phone: "+5548991104003",
+    });
+    const version = await makeVersion(def);
+    const cohort = await prepareSequenceEnrollment(
+      clients[0],
+      {
+        workspaceId: W,
+        versionId: version,
+        requestId: crypto.randomUUID(),
+        consentEvidence: "Synthetic isolated test only",
+      },
+      admin,
+    );
+    assert(
+      must(
+        await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: cohort.id }),
+      ) === 1,
+      "Start failed",
+    );
+    assert(
+      must(
+        await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: cohort.id }),
+      ) === 0,
+      "Start duplicated run",
+    );
+    const run = must(
+      await clients[0]
+        .from("prospecting_sequence_runs")
+        .select("id,state")
+        .eq("version_id", version),
+    )[0];
+    assert(run?.state === "active", "Run invisible");
+    metrics.runtime_run = run.id;
+    assert(
+      must(await clients[3].from("prospecting_sequence_runs").select("id").eq("id", run.id))
+        .length === 0,
+      "Foreign run leaked",
+    );
+    blocked(
+      await clients[0]
+        .from("prospecting_sequence_runs")
+        .update({ state: "completed" })
+        .eq("id", run.id),
+    );
+  });
+  await check(
+    "runtime control denies missing manage, explicit deny, foreign and inactive actors",
+    async () => {
+      const args = { p_workspace: W, p_run: metrics.runtime_run, p_action: "pause" };
+      for (const index of [1, 2, 3])
+        blocked(await clients[index].rpc("prospecting_sequence_control", args));
+      await grant(roles[0], ["system.automation.sequences.manage.own"], "deny");
+      blocked(await clients[0].rpc("prospecting_sequence_control", args));
+      await grant(roles[0], ["system.automation.sequences.manage.own"]);
+      assert(
+        must(await clients[0].rpc("prospecting_sequence_control", args)) === "paused",
+        "Pause failed",
+      );
+      assert(
+        must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).length === 0,
+        "Paused run claimed",
+      );
+      assert(
+        must(
+          await clients[0].rpc("prospecting_sequence_control", { ...args, p_action: "resume" }),
+        ) === "active",
+        "Resume failed",
+      );
+    },
+  );
+  await check("runtime leases cannot be claimed twice or used by a browser", async () => {
+    blocked(await clients[0].rpc("prospecting_sequence_claim", { p_limit: 100 }));
+    const pair = await Promise.all([
+      admin.rpc("prospecting_sequence_claim", { p_limit: 100 }),
+      admin.rpc("prospecting_sequence_claim", { p_limit: 100 }),
+    ]);
+    const runs = pair.flatMap(must).filter((r) => r.id === metrics.runtime_run);
+    assert(runs.length === 1, "Lease duplicated");
+    metrics.runtime_lease = runs[0].lease_token;
+    blocked(
+      await clients[0].rpc("prospecting_sequence_context", {
+        p_run: metrics.runtime_run,
+        p_lease: metrics.runtime_lease,
+      }),
+    );
+    blocked(
+      await admin.rpc("prospecting_sequence_context", {
+        p_run: metrics.runtime_run,
+        p_lease: crypto.randomUUID(),
+      }),
+    );
+    const ctx = must(
+      await admin.rpc("prospecting_sequence_context", {
+        p_run: metrics.runtime_run,
+        p_lease: metrics.runtime_lease,
+      }),
+    );
+    assert(ctx.person.entity === "contact" && !ctx.signals.replied, "Context unavailable");
+    metrics.runtime_step = ctx.definition.steps[0].id;
+  });
+  await check("runtime effect permission is rechecked and reservation is unique", async () => {
+    const args = {
+      p_run: metrics.runtime_run,
+      p_lease: metrics.runtime_lease,
+      p_step: metrics.runtime_step,
+    };
+    await grant(roles[0], ["techsales.activities.create.own"], "deny");
+    blocked(await admin.rpc("prospecting_sequence_effect_begin", args));
+    await grant(roles[0], ["techsales.activities.create.own"]);
+    const e = must(await admin.rpc("prospecting_sequence_effect_begin", args));
+    metrics.runtime_effect = e.id;
+    metrics.runtime_token = e.token;
+    blocked(await admin.rpc("prospecting_sequence_effect_begin", args));
+    blocked(await clients[0].from("prospecting_sequence_effects").select("token").eq("id", e.id));
+  });
+  await check("runtime receipt survives pause and never advances paused cursor", async () => {
+    must(
+      await clients[0].rpc("prospecting_sequence_control", {
+        p_workspace: W,
+        p_run: metrics.runtime_run,
+        p_action: "pause",
+      }),
+    );
+    assert(
+      must(
+        await admin.rpc("prospecting_sequence_effect_finish", {
+          p_effect: metrics.runtime_effect,
+          p_token: metrics.runtime_token,
+          p_provider: "isolated-receipt",
+        }),
+      ),
+      "Receipt lost",
+    );
+    const run = must(
+      await admin
+        .from("prospecting_sequence_runs")
+        .select("state,cursor")
+        .eq("id", metrics.runtime_run)
+        .single(),
+    );
+    assert(run.state === "paused" && run.cursor === 0, "Paused cursor changed");
+    const repeat = must(
+      await admin.rpc("prospecting_sequence_effect_finish", {
+        p_effect: metrics.runtime_effect,
+        p_token: metrics.runtime_token,
+        p_provider: "isolated-receipt",
+      }),
+    );
+    assert(!repeat, "Receipt replay succeeded");
+  });
+
+  await check("runtime resume reconciles a paused receipt without resending", async () => {
+    must(
+      await clients[0].rpc("prospecting_sequence_control", {
+        p_workspace: W,
+        p_run: metrics.runtime_run,
+        p_action: "resume",
+      }),
+    );
+    // Isolated fault injection: expire only this synthetic run's lease. Never changes user privileges.
+    execFileSync(
+      "/Applications/Docker.app/Contents/Resources/bin/docker",
+      [
+        "exec",
+        "supabase_db_techerp-permissions-20261023",
+        "psql",
+        "-U",
+        "supabase_admin",
+        "-d",
+        "postgres",
+        "-v",
+        "ON_ERROR_STOP=1",
+        "-c",
+        `UPDATE public.prospecting_sequence_runs SET lease_until=now()-interval '1 second' WHERE id='${metrics.runtime_run}'::uuid`,
+      ],
+      { stdio: "pipe" },
+    );
+    const runs = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 }));
+    const run = runs.find((r) => r.id === metrics.runtime_run);
+    assert(run?.cursor === 1, "Confirmed effect would be retried");
+    const done = must(
+      await admin.rpc("prospecting_sequence_transition", {
+        p_run: run.id,
+        p_lease: run.lease_token,
+        p_state: "completed",
+        p_cursor: 1,
+        p_due: new Date().toISOString(),
+        p_reason: "isolated_end",
+      }),
+    );
+    assert(done, "End transition failed");
+    blocked(
+      await clients[0].rpc("prospecting_sequence_control", {
+        p_workspace: W,
+        p_run: run.id,
+        p_action: "resume",
+      }),
+    );
+  });
+
+  await check("runtime executes a real isolated call task and receipt atomically", async () => {
+    const def = newDefinition();
+    def.audience.groups = [
+      {
+        logic: "and",
+        filters: [{ entity: "contacts", column: "last_name", op: "eq", value: tag + "task" }],
+      },
+    ];
+    def.steps = [
+      {
+        id: crypto.randomUUID(),
+        title: "[ISO] Phone task",
+        type: "call",
+        mode: "human",
+        assigneeId: actor,
+        scriptId: null,
+        notes: "No external call",
+        attempts: 1,
+      },
+      newStep("end"),
+    ];
+    const contact = await seed("contacts", {
+      workspace_id: W,
+      owner_id: actor,
+      first_name: "Task",
+      last_name: tag + "task",
+      phone: "+5548991104004",
+    });
+    const version = await makeVersion(def);
+    const cohort = await prepareSequenceEnrollment(
+      clients[0],
+      {
+        workspaceId: W,
+        versionId: version,
+        requestId: crypto.randomUUID(),
+        consentEvidence: "Synthetic local task only",
+      },
+      admin,
+    );
+    assert(
+      must(
+        await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: cohort.id }),
+      ) === 1,
+      "Task run not started",
+    );
+    const claimed = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+      (r) => r.version_id === version,
+    );
+    assert(claimed, "Task not claimed");
+    const result = await processSequenceRun(
+      admin,
+      claimed,
+      {
+        prepare: async () => async (effect) => {
+          const id = must(
+            await admin.rpc("prospecting_sequence_task_effect", {
+              p_effect: effect.id,
+              p_token: effect.token,
+              p_lease: claimed.lease_token,
+            }),
+          );
+          fixtures.push(["activities", id]);
+          return { receipt: id, committed: true };
+        },
+        handoff: async () => {
+          throw Error("Unexpected handoff");
+        },
+      },
+      new Date("2026-11-02T13:00:00Z"),
+    );
+    assert(result.status === "effect_succeeded", "Task execution failed: " + result.status);
+    const effects = must(
+      await admin
+        .from("prospecting_sequence_effects")
+        .select("provider_id,status")
+        .eq("run_id", claimed.id),
+    );
+    assert(effects.length === 1 && effects[0].status === "succeeded", "Receipt not atomic");
+    const activity = must(
+      await admin
+        .from("activities")
+        .select("id,type,related_contact_id,assigned_to")
+        .eq("id", effects[0].provider_id)
+        .single(),
+    );
+    assert(
+      activity.type === "call" &&
+        activity.related_contact_id === contact &&
+        activity.assigned_to === actor,
+      "Wrong task linkage",
+    );
+    const run = must(
+      await admin.from("prospecting_sequence_runs").select("cursor").eq("id", claimed.id).single(),
+    );
+    assert(run.cursor === 1, "Task cursor not advanced");
+  });
+
+  await check("runtime rechecks version ownership scope after activation", async () => {
+    const def = newDefinition();
+    def.audience.groups = [
+      {
+        logic: "and",
+        filters: [{ entity: "contacts", column: "last_name", op: "eq", value: tag + "scope" }],
+      },
+    ];
+    def.steps = [
+      {
+        id: crypto.randomUUID(),
+        title: "Scope",
+        type: "call",
+        mode: "human",
+        assigneeId: actor,
+        scriptId: null,
+        notes: "No call",
+        attempts: 1,
+      },
+      newStep("end"),
+    ];
+    await seed("contacts", {
+      workspace_id: W,
+      owner_id: actor,
+      first_name: "Scope",
+      last_name: tag + "scope",
+      phone: "+5548991104005",
+    });
+    await grant(roles[1], [
+      "system.automation.sequences.view.own",
+      "system.automation.sequences.create.own",
+      "system.automation.sequences.manage.own",
+    ]);
+    const broad = ["view", "manage", "assign"].map(
+      (a) => `system.automation.sequences.${a}.workspace`,
+    );
+    await grant(roles[0], broad);
+    const version = await makeVersion(def, clients[1]);
+    const cohort = await prepareSequenceEnrollment(
+      clients[0],
+      {
+        workspaceId: W,
+        versionId: version,
+        requestId: crypto.randomUUID(),
+        consentEvidence: "Synthetic version scope test",
+      },
+      admin,
+    );
+    assert(
+      must(
+        await clients[0].rpc("prospecting_sequence_start", { p_workspace: W, p_cohort: cohort.id }),
+      ) === 1,
+      "Shared version did not start",
+    );
+    await grant(roles[0], broad, "deny");
+    const claimed = must(await admin.rpc("prospecting_sequence_claim", { p_limit: 100 })).find(
+      (r) => r.version_id === version,
+    );
+    assert(claimed, "Missing synthetic run");
+    let called = false;
+    const out = await processSequenceRun(
+      admin,
+      claimed,
+      {
+        prepare: async () => {
+          called = true;
+          throw Error("Must not prepare");
+        },
+        handoff: async () => {
+          called = true;
+        },
+      },
+      new Date("2026-11-02T13:00:00Z"),
+    );
+    assert(out.status === "blocked" && !called, "Lost version scope still executed");
+  });
 } finally {
   const versionIds = must(
     await admin
@@ -664,6 +1066,16 @@ try {
         await admin.from("prospecting_sequence_cohorts").select("id").in("version_id", versionIds),
       ).map((x) => x.id)
     : [];
+  if (versionIds.length) {
+    const runs = must(
+      await admin.from("prospecting_sequence_runs").select("id").in("version_id", versionIds),
+    ).map((r) => r.id);
+    if (runs.length) {
+      must(await admin.from("prospecting_sequence_effects").delete().in("run_id", runs));
+      must(await admin.from("prospecting_sequence_run_events").delete().in("run_id", runs));
+      must(await admin.from("prospecting_sequence_runs").delete().in("id", runs));
+    }
+  }
   if (cohorts.length) {
     must(await admin.from("prospecting_sequence_cohort_people").delete().in("cohort_id", cohorts));
     must(await admin.from("prospecting_sequence_cohorts").delete().in("id", cohorts));
@@ -688,6 +1100,10 @@ try {
 if (process.env.SEQUENCE_ACCEPTANCE_REPORT)
   writeFileSync(
     process.env.SEQUENCE_ACCEPTANCE_REPORT,
-    JSON.stringify({ environment: "isolated", results, metrics }, null, 2),
+    JSON.stringify(
+      { environment: "isolated", results, metrics: { bulk_duration_ms: metrics.bulk_duration_ms } },
+      null,
+      2,
+    ),
   );
 if (results.some((r) => !r.passed)) process.exitCode = 1;

@@ -105,3 +105,23 @@ Ainda faltam executor, cancelamento/liberação das reservas, ingresso dinâmico
 retomada individual. Antes de qualquer execução, o executor deve revalidar
 permissões, consentimento, opt-out, canais, contas, agentes e disponibilidade dos
 provedores. A existência de uma reserva não autoriza um envio.
+
+## Executor: implementação em andamento
+
+A infraestrutura da migração 0295 separa inscrições em execução, reservas de
+cada efeito e eventos do público imutável. Início, pausa e retomada exigem ator
+ativo no workspace atual, escopo e permissões atuais; o worker usa lease com
+expiração e bloqueio concorrente. Resultados desconhecidos ficam em quarentena,
+sem reenvio automático. Recibos recebidos durante uma pausa são preservados e
+conciliados na retomada. Tarefas de chamada humanas são criadas junto com o
+recibo e avanço da execução, numa transação única.
+
+O planejador implementa expediente configurado, esperas por horas, dias civis e
+dias úteis, fusos com horário de verão, condições, interrupção por resposta,
+opt-out e reunião. O contexto do destinatário usa a projeção protegida atual.
+
+Este lote ainda não conecta o worker a um cron de produção. Adaptadores reais
+de e-mail/WhatsApp, handoff, eventos de resposta, reconciliação operacional,
+liberação de reservas, entrada dinâmica, painel e homologação/publicação
+continuam necessários antes de ativar disparos. A infraestrutura isolada não
+significa que o fluxo completo esteja pronto ou publicado.

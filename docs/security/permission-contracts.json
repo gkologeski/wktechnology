@@ -5754,6 +5754,97 @@
           "name": "enrollment rejects inactive membership before privileged write"
         }
       }
+    },
+    {
+      "id": "prospecting-sequence-durable-runtime",
+      "kind": "business",
+      "files": {
+        "src/lib/prospecting/sequences/runtime.ts": "0910cc45c0eaace9fefce39f1aeb42ea830c529f981325d3ac58dffae3292d18",
+        "src/lib/prospecting/sequences/worker.server.ts": "a1fa61708f887da6b5bb97d0a173e898ee43b6ad775b67f9105cf0c1c1bec267",
+        "drizzle/migrations/0295_prospecting_sequence_runtime.sql": "504420a65224ad4caa45e07b3d304432ec54bf446134ea39a6ddd1b7ae5c76a8"
+      },
+      "resources": [
+        "system.automation.sequences",
+        "techsales.activities",
+        "techsales.inbox.email",
+        "techsales.inbox.whatsapp"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "assign",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.automation.sequences.view.own",
+        "system.automation.sequences.view.team",
+        "system.automation.sequences.view.workspace",
+        "system.automation.sequences.manage.own",
+        "system.automation.sequences.manage.team",
+        "system.automation.sequences.manage.workspace",
+        "system.automation.sequences.assign.own",
+        "system.automation.sequences.assign.team",
+        "system.automation.sequences.assign.workspace",
+        "techsales.activities.create.own",
+        "techsales.inbox.email.create.own",
+        "techsales.inbox.whatsapp.create.own"
+      ],
+      "rationale": "Durable execution infrastructure, not yet attached to a production cron or provider adapters. Start/control use current active subject, view/manage/assign and row ownership. Browser reads are RLS-filtered through current person visibility; tokens and writes are private. Service-only claim/context/effect ports recheck current actor and outbound permission, protected fields and tenant. Unique effect reservation and leases prevent duplicate work; unknown provider results are quarantined instead of resent. No grants to job roles, no automatic activation. Separate JWT isolated acceptance covers current denies, scopes, inactive/foreign actors and concurrency. Provider adapters and operational activation remain pending.",
+      "controls": [
+        {
+          "file": "src/lib/prospecting/sequences/worker.server.ts",
+          "symbol": "processSequenceRun"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/prospecting/sequences/runtime.ts",
+          "symbol": "nextBusinessInstant"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0295_prospecting_sequence_runtime.sql",
+          "symbol": "prospecting_sequence_runtime_allowed"
+        },
+        {
+          "file": "drizzle/migrations/0295_prospecting_sequence_runtime.sql",
+          "symbol": "prospecting_sequence_effect_begin"
+        },
+        {
+          "file": "drizzle/migrations/0295_prospecting_sequence_runtime.sql",
+          "symbol": "sequence_runs_read"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "allowed worker reserves before sending and persists provider receipt"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker without current source access cannot prepare or send"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker denied at last reservation never invokes provider"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker with stale or foreign lease cannot retrieve execution context"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sequences/worker.test.ts",
+          "name": "worker for inactive owner stops before credentials or provider"
+        }
+      }
     }
   ],
   "retired": {}

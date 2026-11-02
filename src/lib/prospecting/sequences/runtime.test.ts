@@ -1,0 +1,157 @@
+import { describe, expect, it } from "vitest";
+import { newDefinition, newStep } from "./draft";
+import { decideExecution, nextBusinessInstant, waitUntil, type ExecutionSignals } from "./runtime";
+const signals: ExecutionSignals = {
+  optedOut: false,
+  replied: false,
+  previousReplied: false,
+  meetingBooked: false,
+  callAnswered: false,
+  hasEmail: true,
+  hasWhatsApp: true,
+};
+function scenario() {
+  return {
+    runId: "run",
+    state: "active" as const,
+    cursor: 0,
+    definition: newDefinition(),
+    signals: { ...signals },
+    now: new Date("2026-11-02T13:00:00Z"),
+    previousAt: new Date("2026-11-01T13:00:00Z"),
+  };
+}
+describe("sequence execution planner", () => {
+  it("never runs a paused or uncertain inscription", () => {
+    for (const state of ["paused", "uncertain"] as const)
+      expect(decideExecution({ ...scenario(), state })).toMatchObject({ kind: "stop", state });
+  });
+  it("opt-out overrides every branch", () => {
+    const s = scenario();
+    s.signals.optedOut = true;
+    expect(decideExecution(s)).toMatchObject({ kind: "stop", state: "blocked", reason: "opt_out" });
+  });
+  it("meeting cancels future outreach", () => {
+    const s = scenario();
+    s.signals.meetingBooked = true;
+    expect(decideExecution(s)).toMatchObject({ state: "completed", reason: "meeting_booked" });
+  });
+  it("reply hands over instead of sending next message", () => {
+    const s = scenario();
+    s.signals.replied = true;
+    expect(decideExecution(s)).toMatchObject({ state: "human" });
+    s.definition.settings.agentId = crypto.randomUUID();
+    expect(decideExecution(s)).toMatchObject({
+      state: "agent",
+      agentId: s.definition.settings.agentId,
+    });
+  });
+  it("missing email skips only the email step", () => {
+    const s = scenario();
+    s.signals.hasEmail = false;
+    expect(decideExecution(s)).toMatchObject({
+      kind: "advance",
+      nextStep: 1,
+      reason: "missing_email",
+    });
+  });
+  it("effects have stable per-run per-step keys", () => {
+    const s = scenario();
+    expect(decideExecution(s)).toEqual(decideExecution(s));
+    expect(decideExecution(s)).toMatchObject({
+      kind: "effect",
+      key: `run:${s.definition.steps[0].id}`,
+    });
+  });
+  it("previous-response waits differ from any-channel waits", () => {
+    const s = scenario();
+    s.definition.settings.stopOnReply = false;
+    const step = {
+      ...newStep("wait"),
+      type: "wait" as const,
+      source: "previous" as const,
+      onReply: "human" as const,
+      duration: 1,
+      unit: "hours" as const,
+    };
+    s.definition.steps = [step];
+    s.signals.replied = true;
+    expect(decideExecution(s)).toMatchObject({ kind: "advance" });
+    step.source = "any" as "previous";
+    expect(decideExecution(s)).toMatchObject({ state: "human" });
+  });
+  it("condition uses selected signal and branch", () => {
+    const s = scenario();
+    s.definition.steps = [
+      {
+        id: crypto.randomUUID(),
+        title: "Canal",
+        type: "condition",
+        criteria: "has_whatsapp",
+        yes: "next",
+        no: "human",
+      },
+    ];
+    expect(decideExecution(s)).toMatchObject({ kind: "advance" });
+    s.signals.hasWhatsApp = false;
+    expect(decideExecution(s)).toMatchObject({ state: "human" });
+  });
+  it("weekend defers to Monday in configured zone", () => {
+    expect(
+      nextBusinessInstant(
+        new Date("2026-11-07T13:00:00Z"),
+        scenario().definition.settings,
+      ).toISOString(),
+    ).toBe("2026-11-09T12:00:00.000Z");
+  });
+  it("business day wait preserves local clock over weekend", () => {
+    const d = scenario().definition;
+    const wait = {
+      id: crypto.randomUUID(),
+      title: "wait",
+      type: "wait" as const,
+      duration: 1,
+      unit: "business_days" as const,
+      source: "any" as const,
+      onReply: "human" as const,
+    };
+    expect(waitUntil(new Date("2026-11-06T17:00:00Z"), wait, d.settings).toISOString()).toBe(
+      "2026-11-09T17:00:00.000Z",
+    );
+  });
+  it("civil day across daylight saving is not twenty-four hours", () => {
+    const d = scenario().definition;
+    d.settings.timezone = "America/New_York";
+    const wait = {
+      id: crypto.randomUUID(),
+      title: "wait",
+      type: "wait" as const,
+      duration: 1,
+      unit: "days" as const,
+      source: "any" as const,
+      onReply: "human" as const,
+    };
+    expect(waitUntil(new Date("2026-03-07T15:00:00Z"), wait, d.settings).toISOString()).toBe(
+      "2026-03-08T14:00:00.000Z",
+    );
+  });
+  it("unsupported automatic calls never masquerade as delivered", () => {
+    const s = scenario();
+    s.definition.steps = [
+      {
+        id: crypto.randomUUID(),
+        title: "Call",
+        type: "call",
+        mode: "automatic",
+        assigneeId: null,
+        scriptId: null,
+        notes: "",
+        attempts: 1,
+      },
+    ];
+    expect(decideExecution(s)).toMatchObject({
+      state: "blocked",
+      reason: "automatic_call_not_configured",
+    });
+  });
+});
