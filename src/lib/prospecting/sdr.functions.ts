@@ -33,7 +33,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
             "id, status, kind, draft_text, draft_payload, error, block_category, attempts, created_at, updated_at, ai_started_at, ai_finished_at, send_started_at, sent_at, enrollment_id, conversation_id",
           )
           .eq("workspace_id", wsId)
-          .in("status", ["drafted", "failed", "queued", "running"])
+          .in("status", ["failed", "queued", "running"])
           .order("created_at", { ascending: false })
           .limit(100),
         supabase
@@ -128,6 +128,32 @@ export const getSdrOverview = createServerFn({ method: "POST" })
         alerts24h: alerts24 ?? 0,
       },
     };
+    // Auditoria automática: mensagens refeitas, passadas a humano ou descartadas (7 dias).
+    const since7 = new Date(Date.now() - 7 * 86400_000).toISOString();
+    const { data: auditRows, error: auditErr } = await supabase
+      .from("sdr_turn_jobs")
+      .select("id, status, kind, draft_text, draft_payload, error, updated_at, conversation_id")
+      .eq("workspace_id", wsId)
+      .not("draft_payload->audit", "is", null)
+      .gte("updated_at", since7)
+      .order("updated_at", { ascending: false })
+      .limit(50);
+    if (auditErr) throw new Error(auditErr.message);
+    const audit = (auditRows ?? []).map((r) => {
+      const p = (r.draft_payload ?? {}) as {
+        audit?: { regenerations?: number; reasons?: string[]; outcome?: string };
+      };
+      return {
+        id: r.id as string,
+        kind: r.kind as string,
+        text: (r.draft_text as string | null) ?? null,
+        conversationId: (r.conversation_id as string | null) ?? null,
+        updatedAt: r.updated_at as string,
+        regenerations: Number(p.audit?.regenerations ?? 0),
+        reasons: p.audit?.reasons ?? [],
+        outcome: p.audit?.outcome ?? "sent",
+      };
+    });
     const readiness = await loadSdrReadiness(supabase, wsId);
     const metrics: Record<string, number> = {};
     for (const a of actions.data ?? [])
@@ -144,6 +170,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
       materials: materials.data ?? [],
       links: links.data ?? [],
       jobs: jobs.data ?? [],
+      audit,
       enrollments: enrollments.data ?? [],
       qualifications,
       readiness,
