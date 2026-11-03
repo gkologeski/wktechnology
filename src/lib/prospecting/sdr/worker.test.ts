@@ -559,29 +559,26 @@ describe("homologação sintética ponta a ponta (provedores simulados)", () => 
       lease_until: null, // tempo de aguardo do cliente já transcorrido
       created_at: new Date().toISOString(),
     });
-    // 2) turno supervisionado: rascunho + qualificação do servidor + oportunidade
+    // 2) turno automático (sem supervisão): qualificação do servidor + oportunidade
+    // + envio real, que só conta como feito após sucesso da Meta simulada
+    metaSend.mockResolvedValue({ wamid: "wamid.out", raw: {} });
     const j = await claimOne(db);
-    const d = deps({
-      reply: "Que bom! Posso te enviar nosso material?",
-      intent: "continue",
-      offer_keys: ["outsourcing"],
-      material_ids: [],
-      answers: goodAnswers,
-      handoff_reason: "",
-    });
-    expect(await processJob(db, j, d)).toBe("drafted");
+    const d = deps(
+      {
+        reply: "Que bom! Posso te enviar nosso material?",
+        intent: "continue",
+        offer_keys: ["outsourcing"],
+        material_ids: [],
+        answers: goodAnswers,
+        handoff_reason: "",
+      },
+      { sendMessage: sendSdrMessage },
+    );
+    expect(await processJob(db, j, d)).toBe("sent");
     expect(db.t("prospecting_qualifications")[0].total_score).toBe(50);
     expect(d.ensureOpportunity).toHaveBeenCalledTimes(1);
-    // 3) humano aprova; envio só conta como feito após sucesso da Meta simulada
-    metaSend.mockResolvedValue({ wamid: "wamid.out", raw: {} });
-    const sent = await sendSdrMessage(db, {
-      jobId: j.id,
-      expectedStatus: "drafted",
-      text: "Que bom! Posso te enviar nosso material?",
-      actorUserId: "u1",
-    });
-    expect(sent).toMatchObject({ ok: true, wamid: "wamid.out" });
     expect(metaSend).toHaveBeenCalledTimes(1);
+    expect(db.find("sdr_turn_jobs", j.id)).toMatchObject({ status: "sent" });
     // 4) cliente recusa: encerra sem novo envio
     db.t("whatsapp_messages").push({
       id: "m2",
@@ -602,8 +599,8 @@ describe("homologação sintética ponta a ponta (provedores simulados)", () => 
       answers: [],
       handoff_reason: "",
     });
-    // Envio manual (sem envio automático): a confirmação vira rascunho, mas o opt-out já vale.
-    expect(await processJob(db, c2, d2)).toBe("drafted");
+    // A confirmação sai sozinha (sem rascunho) e o opt-out vale.
+    expect(await processJob(db, c2, d2)).toBe("sent");
     expect(db.find("sdr_enrollments", "e1")).toMatchObject({
       status: "opted_out",
       follow_up_at: null,
