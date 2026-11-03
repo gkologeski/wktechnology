@@ -27924,6 +27924,27 @@ export type Database = {
           },
         ]
       }
+      wa_timeline_backup_2026_11: {
+        Row: {
+          activity_id: string
+          backed_up_at: string
+          row_data: Json
+          workspace_id: string | null
+        }
+        Insert: {
+          activity_id: string
+          backed_up_at?: string
+          row_data: Json
+          workspace_id?: string | null
+        }
+        Update: {
+          activity_id?: string
+          backed_up_at?: string
+          row_data?: Json
+          workspace_id?: string | null
+        }
+        Relationships: []
+      }
       webhook_deliveries: {
         Row: {
           attempt: number
@@ -34086,6 +34107,10 @@ export type Database = {
       wa_reserve_template_quota: {
         Args: { p_limit: number; p_recipient: string }
         Returns: Json
+      }
+      wa_timeline_rebuild_day: {
+        Args: { p_contact: string; p_day: string; p_workspace: string }
+        Returns: undefined
       }
       whatsapp_campaign_filter_values: {
         Args: {
