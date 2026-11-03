@@ -282,6 +282,12 @@ const sections: Section[] = [
       { to: "/settings/hubspot-users", label: "Usuários HubSpot", icon: Users, need: "admin" },
       { to: "/settings/ads-sync", label: "Sync de anúncios", icon: Megaphone, need: "admin" },
       { to: "/settings/whatsapp", label: "WhatsApp", icon: MessageSquare, need: "admin" },
+      {
+        to: "/settings/channels",
+        label: "Canais de atendimento",
+        icon: MessageSquare,
+        need: "admin",
+      },
     ],
   },
   {
@@ -505,7 +511,10 @@ function SettingsLayout() {
       </div>
 
       <div className="min-w-0">
-        {!searching && !visibleTabs.some((t) => isActive(t.to)) && visibleTabs.length > 0 ? (
+        {!searching &&
+        (groupOverride !== null || path === "/settings") &&
+        !visibleTabs.some((t) => isActive(t.to)) &&
+        visibleTabs.length > 0 ? (
           <section aria-label={`Opções de ${currentGroup}`} className="space-y-3">
             <h2 className="text-base font-semibold">{currentGroup}</h2>
             <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
