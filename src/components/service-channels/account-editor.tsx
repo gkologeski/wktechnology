@@ -1,4 +1,5 @@
 import { ChannelHealth } from "./channel-health";
+import { bindingIssues, campaignsLabel } from "./binding-rules";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -49,6 +50,13 @@ export function AccountEditor({
   const [inbound, setInbound] = useState(binding?.inbound ?? false);
   const [campaigns, setCampaigns] = useState(binding?.campaigns ?? false);
   const [agentEnabled, setAgentEnabled] = useState(binding?.enabled ?? false);
+  const issues = bindingIssues({
+    accountEnabled: enabled,
+    agentId: agentId === "none" ? null : agentId,
+    inbound,
+    campaigns,
+    agentEnabled,
+  });
   const save = useServerFn(saveServiceChannel);
   const qc = useQueryClient();
   const mutation = useMutation({
@@ -153,10 +161,10 @@ export function AccountEditor({
               <Switch checked={inbound} onCheckedChange={setInbound} />
               Receptivo
             </Label>
-            {account.channel === "whatsapp" && (
+            {(account.channel === "whatsapp" || account.channel === "email") && (
               <Label className="flex items-center gap-2">
                 <Switch checked={campaigns} onCheckedChange={setCampaigns} />
-                Após campanhas WhatsApp
+                {campaignsLabel(account.channel)}
               </Label>
             )}
             <Label className="flex items-center gap-2">
@@ -164,6 +172,12 @@ export function AccountEditor({
               Agente automático
             </Label>
           </div>
+          {account.channel === "email" && (
+            <p className="text-sm text-muted-foreground">
+              Para usar esta conta em sequências, ative o agente com “Receptivo” e “Após sequências
+              e campanhas por e-mail”. O agente só responde a quem respondeu um e-mail de sequência.
+            </p>
+          )}
           <p className="text-sm text-muted-foreground">
             Apresentação:{" "}
             {agentName ||
@@ -172,7 +186,18 @@ export function AccountEditor({
               "defina o nome de atendimento"}
             .
           </p>
-          {canManage && <Button onClick={() => mutation.mutate()}>Salvar configuração</Button>}
+          {issues.length > 0 && (
+            <ul role="alert" className="list-disc space-y-1 pl-5 text-sm text-destructive">
+              {issues.map((i) => (
+                <li key={i}>{i}</li>
+              ))}
+            </ul>
+          )}
+          {canManage && (
+            <Button onClick={() => mutation.mutate()} disabled={issues.length > 0}>
+              Salvar configuração
+            </Button>
+          )}
         </fieldset>
       </CardContent>
     </Card>
