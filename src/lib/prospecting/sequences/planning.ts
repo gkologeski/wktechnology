@@ -119,11 +119,13 @@ export function simulatePlan(
   const fw = factor("whatsapp");
   const limits = [fe > 0 ? emailDayCap / fe : Infinity, fw > 0 ? whatsappDayCap / fw : Infinity];
   const raw = Math.min(...limits);
-  const suggestedIntake = Math.max(1, Math.min(1000, Number.isFinite(raw) ? Math.floor(raw) : 1000));
+  const suggestedIntake = Math.max(
+    1,
+    Math.min(1000, Number.isFinite(raw) ? Math.floor(raw) : 1000),
+  );
   const intake = planning.intake.mode === "auto" ? suggestedIntake : planning.intake.dailyIntake;
   const lastDay = touches.length ? Math.max(...touches.map((t) => t.day)) : 0;
-  const entryDays =
-    audienceSize && audienceSize > 0 ? Math.ceil(audienceSize / intake) : Infinity;
+  const entryDays = audienceSize && audienceSize > 0 ? Math.ceil(audienceSize / intake) : Infinity;
   const days: PlanSimulation["days"] = [];
   const horizon = Math.min(lastDay + 1, 60);
   for (let d = 0; d <= horizon; d++) {

@@ -123,11 +123,11 @@ export function SequencePlanningTab({ definition, disabled, onChange }: Props) {
 
   // Modo automático grava a entrada sugerida para o motor usar exatamente o número exibido.
   useEffect(() => {
-    if (disabled || planning.intake.mode !== "auto") return;
+    if (disabled || !definition.planning || planning.intake.mode !== "auto") return;
     if (planning.intake.dailyIntake !== sim.suggestedIntake)
       set((p) => ({ ...p, intake: { ...p.intake, dailyIntake: sim.suggestedIntake } }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sim.suggestedIntake, planning.intake.mode, disabled]);
+  }, [sim.suggestedIntake, planning.intake.mode, disabled, !!definition.planning]);
 
   const counts = {
     email: definition.steps.filter((s) => s.type === "email").length,
@@ -172,8 +172,8 @@ export function SequencePlanningTab({ definition, disabled, onChange }: Props) {
               onChange={(n) => set((p) => ({ ...p, email: { ...p.email, safeguardPct: n } }))}
             />
             <p className="text-xs">
-              Teto seguro: <strong>{sim.emailHourCap}/hora</strong> ·{" "}
-              {sim.emailDayCap}/dia em {Math.round(sim.hoursPerDay * 10) / 10} h de expediente
+              Teto seguro: <strong>{sim.emailHourCap}/hora</strong> · {sim.emailDayCap}/dia em{" "}
+              {Math.round(sim.hoursPerDay * 10) / 10} h de expediente
             </p>
           </div>
           <div className="space-y-3 rounded-md border p-4">
@@ -197,9 +197,7 @@ export function SequencePlanningTab({ definition, disabled, onChange }: Props) {
               max={90}
               suffix="%"
               disabled={disabled}
-              onChange={(n) =>
-                set((p) => ({ ...p, whatsapp: { ...p.whatsapp, safeguardPct: n } }))
-              }
+              onChange={(n) => set((p) => ({ ...p, whatsapp: { ...p.whatsapp, safeguardPct: n } }))}
             />
             <p className="text-xs">
               Teto seguro: <strong>{sim.whatsappDayCap}/dia</strong> · reserva de{" "}
@@ -254,8 +252,8 @@ export function SequencePlanningTab({ definition, disabled, onChange }: Props) {
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          Cada contato recebe um intervalo sorteado nessa faixa desde o último envio da conta.
-          Como a fila é verificada a cada 2 minutos, intervalos curtos podem sair um pouco depois.
+          Cada contato recebe um intervalo sorteado nessa faixa desde o último envio da conta. Como
+          a fila é verificada a cada 2 minutos, intervalos curtos podem sair um pouco depois.
         </p>
       </Section>
 
@@ -388,8 +386,18 @@ export function SequencePlanningTab({ definition, disabled, onChange }: Props) {
         <div className="grid gap-3 sm:grid-cols-3">
           {(
             [
-              ["E-mail (pico)", `${sim.peak.emailPerHour}/h`, `teto ${sim.emailHourCap}/h`, sim.exceeds.email],
-              ["WhatsApp (pico)", `${sim.peak.whatsapp}/dia`, `teto ${sim.whatsappDayCap}/dia`, sim.exceeds.whatsapp],
+              [
+                "E-mail (pico)",
+                `${sim.peak.emailPerHour}/h`,
+                `teto ${sim.emailHourCap}/h`,
+                sim.exceeds.email,
+              ],
+              [
+                "WhatsApp (pico)",
+                `${sim.peak.whatsapp}/dia`,
+                `teto ${sim.whatsappDayCap}/dia`,
+                sim.exceeds.whatsapp,
+              ],
               ["Ligações (pico)", `${sim.peak.call}/dia`, "sem teto", false],
             ] as const
           ).map(([label, value, hint, over]) => (
@@ -463,9 +471,7 @@ export function SequencePlanningTab({ definition, disabled, onChange }: Props) {
               name="whatsapp-limit"
               value={planning.whatsapp.onLimit}
               disabled={disabled}
-              onChange={(onLimit) =>
-                set((p) => ({ ...p, whatsapp: { ...p.whatsapp, onLimit } }))
-              }
+              onChange={(onLimit) => set((p) => ({ ...p, whatsapp: { ...p.whatsapp, onLimit } }))}
               options={[
                 ["queue_next_day", "Enfileirar para o dia seguinte"],
                 [

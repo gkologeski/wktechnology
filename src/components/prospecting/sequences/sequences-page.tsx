@@ -1,5 +1,6 @@
 import { listScripts } from "@/lib/prospecting-scripts.functions";
 import { SequenceReadiness } from "./sequence-readiness";
+import { SequencePlanningTab } from "./sequence-planning-tab";
 import { SequenceTemplatePicker } from "./sequence-template-picker";
 import { InsertVariableButton } from "./sequence-variable-field";
 import { useEffect, useRef, useState } from "react";
@@ -122,7 +123,7 @@ export function ProspectingSequencesPage() {
     [draft, setDraft] = useState<SequenceDefinition | null>(null),
     [name, setName] = useState(""),
     [selected, setSelected] = useState(""),
-    [tab, setTab] = useState<"flow" | "audience" | "settings">("flow"),
+    [tab, setTab] = useState<"flow" | "audience" | "settings" | "planning">("flow"),
     [saving, setSaving] = useState(false),
     [dirty, setDirty] = useState(false);
   const members = useWorkspaceMembers();
@@ -342,6 +343,7 @@ export function ProspectingSequencesPage() {
                 ["flow", "Fluxo"],
                 ["audience", "Público"],
                 ["settings", "Canais e regras"],
+                ["planning", "Limites e planejamento"],
               ] as const
             ).map(([key, label]) => (
               <button
@@ -353,7 +355,9 @@ export function ProspectingSequencesPage() {
               </button>
             ))}
           </div>
-          {tab === "audience" ? (
+          {tab === "planning" ? (
+            <SequencePlanningTab definition={draft} disabled={!editable} onChange={change} />
+          ) : tab === "audience" ? (
             <SequenceAudience
               definition={draft}
               disabled={!editable}
