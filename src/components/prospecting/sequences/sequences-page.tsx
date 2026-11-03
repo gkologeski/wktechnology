@@ -527,7 +527,7 @@ export function ProspectingSequencesPage() {
                           <b className="block truncate text-sm">{s.title}</b>
                           <span className="text-xs text-muted-foreground">
                             {s.type === "wait"
-                              ? `${s.duration} ${s.unit === "hours" ? "horas" : s.unit === "business_days" ? "dias úteis" : "dias corridos"}`
+                              ? `${s.duration} ${s.unit === "minutes" ? "minutos" : s.unit === "hours" ? "horas" : s.unit === "business_days" ? "dias úteis" : "dias corridos"}`
                               : STEP_LABELS[s.type]}
                           </span>
                         </span>
@@ -687,6 +687,7 @@ export function ProspectingSequencesPage() {
                               label="Unidade"
                               value={step.unit}
                               choices={[
+                                ["minutes", "Minutos"],
                                 ["hours", "Horas"],
                                 ["days", "Dias corridos"],
                                 ["business_days", "Dias úteis"],
