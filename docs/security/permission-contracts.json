@@ -1747,7 +1747,7 @@
       },
       "files": {
         "drizzle/migrations/0251_deal_related_activity_history.sql": "074748f2edde9e44c7e3a76e998e93223c0766f01dd1d43735e0cff118ae654a",
-        "src/components/activity/activity-timeline-item.tsx": "e1e1fa55033fc2ed69887ff63c1562bc6337509ca0579d22dd0ccdbcbcbf0158"
+        "src/components/activity/activity-timeline-item.tsx": "77a40ba178e3b549103593d119dfd88f81fccfca11e6896ec5cc9e5414503699"
       }
     },
     {
@@ -7280,6 +7280,15 @@
       },
       "files": {
         "src/lib/prospecting/overview.server.ts": "5b36811b9a1729b7892a0abfa0f6f8157a20796f23659334babd4c40cdb54775"
+      }
+    },
+    {
+      "id": "timeline-whatsapp-day-conversation",
+      "kind": "presentation",
+      "rationale": "Renders the daily WhatsApp block already stored on activities.external_ids (pure parsing + bubbles). No I/O, routes, actions or grants; reads stay under activities RLS via the existing timeline RPCs.",
+      "files": {
+        "src/components/activity/whatsapp-day-conversation.tsx": "1751c7bb335562ae265df9a205acc412c403cbe79ffb13d5af2b08008d04865c",
+        "src/lib/timeline/whatsapp-day.ts": "2f82fbe609329e505938838d7ed8c8b42fb58a1c05db4ee12469163e3df7939e"
       }
     }
   ],
