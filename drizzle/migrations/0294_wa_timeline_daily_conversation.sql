@@ -1,8 +1,3 @@
--- Timeline WhatsApp: um registro por contato por dia (horário de Brasília),
--- com todas as mensagens enviadas e recebidas. Substitui o registro
--- "1 atividade por mensagem enviada".
-
--- 1) Cópia de segurança dos registros atuais
 CREATE TABLE IF NOT EXISTS public.wa_timeline_backup_2026_11 (
   activity_id uuid PRIMARY KEY,
   workspace_id uuid,
@@ -14,13 +9,12 @@ GRANT ALL ON public.wa_timeline_backup_2026_11 TO service_role;
 ALTER TABLE public.wa_timeline_backup_2026_11 ENABLE ROW LEVEL SECURITY;
 CREATE POLICY wa_timeline_backup_admin_read ON public.wa_timeline_backup_2026_11
   FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(), 'admin'::public.app_role));
+  USING (public.is_active_workspace_admin(workspace_id, auth.uid()));
 
 CREATE INDEX IF NOT EXISTS activities_wa_day_idx
   ON public.activities (workspace_id, (external_ids->>'wa_day'))
   WHERE external_ids ? 'wa_day';
 
--- 2) Reconstrói o bloco diário de um contato
 CREATE OR REPLACE FUNCTION public.wa_timeline_rebuild_day(p_workspace uuid, p_contact uuid, p_day date)
 RETURNS void
 LANGUAGE plpgsql
@@ -29,7 +23,7 @@ SET search_path TO 'public', 'pg_temp'
 AS $$
 DECLARE
   v_key text := 'conv:' || p_contact || ':' || p_day;
-  v_msgs jsonb; v_count int; v_first timestamptz; v_last record;
+  v_msgs jsonb; v_count int; v_first timestamptz;
   v_author uuid; v_act uuid; v_subject text;
 BEGIN
   SELECT coalesce(jsonb_agg(x.j ORDER BY x.at, x.id), '[]'::jsonb), count(*), min(x.at)
@@ -79,7 +73,6 @@ BEGIN
     RETURN;
   END IF;
 
-  -- Autor: responsável ativo da conversa → do contato
   SELECT c.assigned_to INTO v_author FROM whatsapp_conversations c
    WHERE c.workspace_id = p_workspace AND c.contact_id = p_contact
      AND EXISTS (SELECT 1 FROM workspace_members w WHERE w.workspace_id = p_workspace AND w.user_id = c.assigned_to AND w.status = 'active')
@@ -91,6 +84,14 @@ BEGIN
       v_author := NULL;
     END IF;
   END IF;
+  IF v_author IS NULL THEN
+    SELECT w.created_by INTO v_author FROM workspaces w WHERE w.id = p_workspace;
+  END IF;
+  IF v_author IS NULL THEN
+    SELECT wm.user_id INTO v_author FROM workspace_members wm
+     WHERE wm.workspace_id = p_workspace AND wm.status = 'active' ORDER BY wm.created_at LIMIT 1;
+  END IF;
+  IF v_author IS NULL THEN RETURN; END IF;
 
   INSERT INTO activities(workspace_id, owner_id, assigned_to, created_by, type, related_contact_id,
     subject, body, completed, hs_createdate, activity_date, external_ids)
@@ -101,7 +102,6 @@ END $$;
 
 REVOKE ALL ON FUNCTION public.wa_timeline_rebuild_day(uuid, uuid, date) FROM PUBLIC, anon, authenticated;
 
--- 3) Gatilho: mensagem nova ou mudança de status
 CREATE OR REPLACE FUNCTION public.wa_register_daily_activity()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -126,7 +126,6 @@ CREATE TRIGGER wa_register_daily_activity
   AFTER INSERT OR UPDATE OF status, body ON public.whatsapp_messages
   FOR EACH ROW EXECUTE FUNCTION public.wa_register_daily_activity();
 
--- 4) Cópia + remoção lógica de todos os registros WhatsApp atuais
 INSERT INTO public.wa_timeline_backup_2026_11 (activity_id, workspace_id, row_data)
 SELECT a.id, a.workspace_id, to_jsonb(a) FROM public.activities a
 WHERE a.type = 'whatsapp' AND a.deleted_at IS NULL
@@ -136,7 +135,6 @@ UPDATE public.activities SET deleted_at = now()
 WHERE type = 'whatsapp' AND deleted_at IS NULL
   AND id IN (SELECT activity_id FROM public.wa_timeline_backup_2026_11);
 
--- 5) Reconstrução por contato e dia
 DO $$
 DECLARE r record;
 BEGIN
