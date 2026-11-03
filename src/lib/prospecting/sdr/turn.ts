@@ -176,9 +176,10 @@ export function preTurnFacts(i: TurnInput): { facts: string[]; explicitOptOut: b
   return { facts, explicitOptOut };
 }
 
-type Violation = "price" | "questions" | "material_claim" | "booking_claim";
+export type Violation = "price" | "questions" | "material_claim" | "booking_claim";
 
-function violations(reply: string, out: ValidatedOutput, i: TurnInput): Violation[] {
+/** Regras de conteúdo que toda mensagem precisa cumprir antes de sair. */
+export function replyViolations(reply: string, out: ValidatedOutput, i: TurnInput): Violation[] {
   const v: Violation[] = [];
   if (!reply) return v;
   const g = i.config.guardrails;
@@ -207,10 +208,15 @@ const VIOLATION_TEXT: Record<Violation, (i: TurnInput) => string> = {
   booking_claim: () => "nenhuma reunião foi confirmada pela agenda neste turno",
 };
 
+export function violationText(v: ReadonlyArray<Violation>, i: TurnInput): string {
+  return v.map((x) => VIOLATION_TEXT[x](i)).join("; ");
+}
+
 /**
  * Nova geração (sem ferramentas e sem efeitos) quando a resposta viola um
- * controle CONFIGURADO ou afirma um efeito que não ocorreu. O aviso cita só o
- * controle e o fato; o texto continua vindo da IA sob a mesma configuração.
+ * controle CONFIGURADO, afirma um efeito que não ocorreu ou repete o que já foi
+ * enviado. O aviso cita só o controle e o fato; o texto continua vindo da IA
+ * sob a mesma configuração.
  */
 export async function regenerate(
   deps: Pick<TurnDeps, "callAgent">,
@@ -220,11 +226,16 @@ export async function regenerate(
     history: ConversationMessage[];
     feature: "sdr_agente" | "sdr_agente_teste";
     reason: string;
+    /** Texto recusado, para a IA não repeti-lo. */
+    rejected?: string | null;
   },
 ): Promise<string | null> {
+  const rejected = p.rejected?.trim()
+    ? ` Texto recusado (não repita nem parafraseie de perto): «${p.rejected.trim().slice(0, 600)}».`
+    : "";
   const ai = await deps.callAgent({
     workspaceId: p.workspaceId,
-    system: `${p.system}\n\n[verificação do sistema] A resposta anterior não pôde ser usada porque ${p.reason}. Gere uma nova resposta seguindo a configuração publicada, no mesmo formato e sem chamar ferramentas.`,
+    system: `${p.system}\n\n[verificação do sistema] A resposta anterior não pôde ser usada porque ${p.reason}.${rejected} Gere uma nova resposta seguindo a configuração publicada, no mesmo formato e sem chamar ferramentas.`,
     history: p.history,
     feature: p.feature,
   });

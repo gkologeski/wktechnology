@@ -337,6 +337,12 @@ export const FOLLOW_UP_CANCEL_REASONS = [
 export const FOLLOW_UP_WINDOW_MARGIN_MS = 60 * 60_000;
 const WINDOW_MS = 24 * 3600_000;
 
+/** Último instante em que uma retomada ainda pode sair (janela de 24 h menos a margem). */
+export function followUpDeadline(lastInboundAt: string | Date | null | undefined): Date | null {
+  if (!lastInboundAt) return null;
+  return new Date(new Date(lastInboundAt).getTime() + WINDOW_MS - FOLLOW_UP_WINDOW_MARGIN_MS);
+}
+
 /**
  * Próximo follow-up: só quando aguardando resposta e dentro do limite.
  * Com `lastInboundAt`, nunca passa do fim da janela de 24 h (menos a margem) e,
