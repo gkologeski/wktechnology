@@ -803,25 +803,23 @@ describe("três políticas de envio", () => {
     const sim = inboundTurn(2, { created_at: new Date(base + 40_000).toISOString() });
     expect(await processJob(db, sim as never, deps({}))).toBe("discarded");
     Object.assign(db.find("sdr_turn_jobs", ola.id)!, { status: "running", lease_token: "LO" });
-    const d = deps({
-      reply: "Que ótimo, Simone!",
-      intent: "continue",
-      offer_keys: [],
-      material_ids: [],
-      answers: [],
-      handoff_reason: "",
-    });
+    metaSend.mockResolvedValue({ wamid: "wamid.ola", raw: {} });
+    const d = deps(
+      {
+        reply: "Que ótimo, Simone!",
+        intent: "continue",
+        offer_keys: [],
+        material_ids: [],
+        answers: [],
+        handoff_reason: "",
+      },
+      { sendMessage: sendSdrMessage },
+    );
     expect(await processJob(db, { ...ola, status: "running", lease_token: "LO" } as never, d)).toBe(
-      "drafted",
+      "sent",
     );
     expect(db.find("sdr_turn_jobs", ola.id)?.inbound_message_id).toBe(sim.inbound_message_id);
-    const r = await sendSdrMessage(db, {
-      jobId: ola.id,
-      expectedStatus: "drafted",
-      text: "Que ótimo, Simone!",
-      actorUserId: "u1",
-    });
-    expect(r.ok).toBe(true);
+    expect(metaSend).toHaveBeenCalledTimes(1);
   });
 
   it("resposta para mensagem que não é a mais recente fica obsoleta", async () => {
