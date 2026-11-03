@@ -536,8 +536,8 @@ export function buildAudience(
       blockedBy = blockedBy ?? suppressed.get(phoneKey(pick.e164)) ?? null;
       const used = phoneKey(pick.e164);
       candidates = candidates.filter((p) => {
-        const e = p ? toWhatsAppE164(p) : null;
-        return !(e && e.ok && phoneKey(e.e164) === used) && !(p && phoneKey(String(p)) === used);
+        const e = toWhatsAppE164(p);
+        return !(e && phoneKey(e) === used);
       });
       pick = pickWhatsAppNumber(candidates);
     }
