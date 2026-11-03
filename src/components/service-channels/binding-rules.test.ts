@@ -1,14 +1,22 @@
 import { describe, expect, it } from "vitest";
 import { bindingIssues, campaignsLabel } from "./binding-rules";
 
-const ok = { accountEnabled: true, agentId: "a1", inbound: true, campaigns: true, agentEnabled: true };
+const ok = {
+  accountEnabled: true,
+  agentId: "a1",
+  inbound: true,
+  campaigns: true,
+  agentEnabled: true,
+};
 
 describe("bindingIssues", () => {
   it("aceita agente automático com conta ativa, agente e modo", () => {
     expect(bindingIssues(ok)).toEqual([]);
   });
   it("não exige nada quando o agente automático está desligado", () => {
-    expect(bindingIssues({ ...ok, agentEnabled: false, agentId: null, accountEnabled: false })).toEqual([]);
+    expect(
+      bindingIssues({ ...ok, agentEnabled: false, agentId: null, accountEnabled: false }),
+    ).toEqual([]);
   });
   it("exige agente escolhido", () => {
     expect(bindingIssues({ ...ok, agentId: null })).toEqual(["Escolha o agente responsável."]);

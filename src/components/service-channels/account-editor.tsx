@@ -174,8 +174,8 @@ export function AccountEditor({
           </div>
           {account.channel === "email" && (
             <p className="text-sm text-muted-foreground">
-              Para usar esta conta em sequências, ative o agente com “Receptivo” e “Após sequências e
-              campanhas por e-mail”. O agente só responde a quem respondeu um e-mail de sequência.
+              Para usar esta conta em sequências, ative o agente com “Receptivo” e “Após sequências
+              e campanhas por e-mail”. O agente só responde a quem respondeu um e-mail de sequência.
             </p>
           )}
           <p className="text-sm text-muted-foreground">
