@@ -1374,3 +1374,113 @@ describe("channel identity in the production worker", () => {
     expect(metaSend).not.toHaveBeenCalled();
   });
 });
+
+describe("auditoria automática (sem supervisão manual)", () => {
+  const reply = (text: string) => ({
+    reply: text,
+    intent: "continue",
+    offer_keys: [],
+    material_ids: [],
+    answers: [],
+    handoff_reason: "",
+  });
+
+  it("valor que a IA insiste em citar: refaz 3 vezes, não envia e passa a resposta para humano", async () => {
+    job(db);
+    const j = await claimOne(db);
+    const d = deps(reply("Fica R$ 10.000 por mês."));
+    expect(await processJob(db, j, d)).toBe("handoff");
+    expect(d.callAgent).toHaveBeenCalledTimes(4);
+    expect(d.sendMessage).not.toHaveBeenCalled();
+    expect(d.handoffToHuman).toHaveBeenCalledTimes(1);
+    const saved = db.find("sdr_turn_jobs", j.id)!;
+    expect(saved.status).not.toBe("drafted");
+    expect(saved.draft_payload.audit).toMatchObject({ regenerations: 3, outcome: "handoff" });
+  });
+
+  it("valor corrigido na nova geração: a mensagem refeita sai sozinha", async () => {
+    job(db);
+    const j = await claimOne(db);
+    const callAgent = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, output: reply("Fica R$ 10.000 por mês.") })
+      .mockResolvedValue({ ok: true, output: reply("Os valores eu confirmo com o time, combinado?") });
+    const d = deps(null, { callAgent: callAgent as never });
+    expect(await processJob(db, j, d)).toBe("sent");
+    expect(callAgent).toHaveBeenCalledTimes(2);
+    expect(d.sendMessage).toHaveBeenCalledWith(
+      db,
+      expect.objectContaining({ text: expect.stringContaining("confirmo com o time") }),
+    );
+    expect(db.find("sdr_turn_jobs", j.id)!.draft_payload.audit).toMatchObject({
+      regenerations: 1,
+      outcome: "sent",
+    });
+  });
+
+  it("retomada com valor que a IA não corrige: descartada, sem humano e sem rascunho", async () => {
+    job(db, { kind: "follow_up", inbound_message_id: null });
+    const j = await claimOne(db);
+    const d = deps(reply("Só lembrando: fica R$ 10.000 por mês."));
+    expect(await processJob(db, j, d)).toBe("discarded");
+    expect(d.sendMessage).not.toHaveBeenCalled();
+    expect(d.handoffToHuman).not.toHaveBeenCalled();
+    expect(db.find("sdr_turn_jobs", j.id)!.status).toBe("discarded");
+  });
+
+  it("repetição no envio: a IA refaz e a nova mensagem sai", async () => {
+    job(db);
+    const j = await claimOne(db);
+    const callAgent = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: true, output: reply("Tudo bem por aí?") })
+      .mockResolvedValue({ ok: true, output: reply("Vocês têm projetos parados hoje?") });
+    const sendMessage = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, reason: "repetition_detected", category: "technical" })
+      .mockResolvedValue({ ok: true, wamid: "w2" });
+    const d = deps(null, { callAgent: callAgent as never, sendMessage: sendMessage as never });
+    expect(await processJob(db, j, d)).toBe("sent");
+    expect(sendMessage).toHaveBeenCalledTimes(2);
+    expect(sendMessage.mock.calls[1][1].text).toContain("projetos parados");
+    expect(callAgent.mock.calls[1][0].system).toContain("Texto recusado");
+  });
+
+  it("repetição que persiste após 3 novas gerações: resposta passa para humano", async () => {
+    job(db);
+    const j = await claimOne(db);
+    const sendMessage = vi.fn(async () => ({
+      ok: false as const,
+      reason: "repetition_detected",
+      category: "technical" as const,
+    }));
+    const d = deps(reply("Tudo bem por aí?"), { sendMessage: sendMessage as never });
+    expect(await processJob(db, j, d)).toBe("handoff");
+    expect(d.callAgent).toHaveBeenCalledTimes(4);
+    expect(sendMessage).toHaveBeenCalledTimes(4);
+    expect(db.find("sdr_turn_jobs", j.id)!.status).toBe("skipped");
+  });
+
+  it("retomada fora do horário: reagendada antes de chamar a IA, sem rascunho", async () => {
+    const h = Number(
+      new Intl.DateTimeFormat("en-US", {
+        hour: "numeric",
+        hour12: false,
+        timeZone: "America/Sao_Paulo",
+      }).format(new Date()),
+    ) % 24;
+    Object.assign(db.t("sdr_workspace_settings")[0], {
+      quiet_hours_start: h,
+      quiet_hours_end: (h + 2) % 24,
+    });
+    job(db, { kind: "follow_up", inbound_message_id: null });
+    const j = await claimOne(db);
+    const d = deps(reply("Oi"));
+    expect(await processJob(db, j, d)).toBe("rescheduled");
+    expect(d.callAgent).not.toHaveBeenCalled();
+    const saved = db.find("sdr_turn_jobs", j.id)!;
+    expect(saved.status).toBe("queued");
+    expect(new Date(saved.lease_until).getTime()).toBeGreaterThan(Date.now());
+    expect(saved.attempts).toBe(0);
+  });
+});
