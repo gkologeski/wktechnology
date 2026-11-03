@@ -324,7 +324,7 @@
       },
       "files": {
         "src/lib/access-control/sales-route-map.ts": "3251202b005a6ca122893b220b9aed1a6c3772aad40d9651fb2219ce64ce4dc6",
-        "src/routes/_authenticated/settings.tsx": "bdfebd66e504ea735c39b99db4f0e244269e112824fe04a8b8727f30a4c4044b",
+        "src/routes/_authenticated/settings.tsx": "d887a815faf57f0d91dc5ff31cc9f0529ba0ff0a29e289875900e7cff326350a",
         "src/routes/_authenticated.tsx": "8ea21df8f99b5fc40d0233fd06bbc11b5f462d398ded7f2c7182e4a98fa3d388",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
       }
@@ -2721,7 +2721,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations.",
       "files": {
-        "src/integrations/supabase/types.ts": "c3c8701fad4c3f4d76f9334995010ce7b6c999a6d44703ccf0c15d029e6d5f93"
+        "src/integrations/supabase/types.ts": "d3e1463a226f9be1124c998a98c72b0328762103c622edb928da8ac89280e6ef"
       }
     },
     {
@@ -7289,6 +7289,138 @@
       "files": {
         "src/components/activity/whatsapp-day-conversation.tsx": "1751c7bb335562ae265df9a205acc412c403cbe79ffb13d5af2b08008d04865c",
         "src/lib/timeline/whatsapp-day.ts": "2f82fbe609329e505938838d7ed8c8b42fb58a1c05db4ee12469163e3df7939e"
+      }
+    },
+    {
+      "id": "email-agent-sequence-replies-only",
+      "kind": "business",
+      "resources": [
+        "techsales.prospecting_queue",
+        "techsales.prospecting_cadences",
+        "techsales.marketing.sdr_agent"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.prospecting_queue.view.workspace",
+        "techsales.prospecting_cadences.view.workspace",
+        "techsales.marketing.sdr_agent.view.workspace"
+      ],
+      "rationale": "Review 03/11/2026: narrows (never widens) agent intake. service_agent_message_event now enqueues inbound e-mail only when the thread holds a succeeded prospecting sequence e-mail effect in the same workspace; helper service_agent_email_is_sequence_reply is SECURITY DEFINER, EXECUTE revoked from PUBLIC/anon/authenticated and granted only to service_role. Existing service_agent_enqueue checks (workspace, binding, playbook, enrollment) unchanged. No new keys or table grants.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "hasPermission"
+        },
+        {
+          "file": "src/lib/prospecting/overview.functions.ts",
+          "symbol": "getProspectingOverview"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0057_sdr_prospecting_agent.sql",
+          "symbol": "sdr_turn_jobs_select"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "allows current authorized leased source"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source missing required permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source with explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects foreign workspace source"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects inactive source actor"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0295_email_agent_only_sequence_replies.sql": "003e26dbb2ae39e7d267bd175608919c81e997f2314e951ccde1c8f4fb99fb1d"
+      }
+    },
+    {
+      "id": "timeline-whatsapp-day-migration",
+      "kind": "business",
+      "resources": [
+        "techsales.prospecting_queue",
+        "techsales.prospecting_cadences",
+        "techsales.marketing.sdr_agent"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.prospecting_queue.view.workspace",
+        "techsales.prospecting_cadences.view.workspace",
+        "techsales.marketing.sdr_agent.view.workspace"
+      ],
+      "rationale": "Review 03/11/2026: WhatsApp daily timeline consolidation. Writes activities within the same workspace via triggers; backup table readable only by workspace admins of the same workspace (RLS). No new permission keys; timeline reads stay under activities RLS.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "hasPermission"
+        },
+        {
+          "file": "src/lib/prospecting/overview.functions.ts",
+          "symbol": "getProspectingOverview"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0057_sdr_prospecting_agent.sql",
+          "symbol": "sdr_turn_jobs_select"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "allows current authorized leased source"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source missing required permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source with explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects foreign workspace source"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects inactive source actor"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0294_wa_timeline_daily_conversation.sql": "e6f4a45417d05934c79ed838b396d1ef46576d2b1479063179db3ef625e281eb"
       }
     }
   ],
