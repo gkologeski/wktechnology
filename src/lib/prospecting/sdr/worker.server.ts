@@ -718,38 +718,36 @@ export async function processJob(
     .update({ ai_started_at: new Date().toISOString(), agent_version_id: agentVersion?.id ?? null })
     .eq("id", job.id)
     .eq("lease_token", job.lease_token);
-  const decision = await decideTurn(
-    {
-      workspaceId: job.workspace_id,
-      jobId: job.id,
-      jobKind: job.kind,
-      mode: "live",
-      agentVersionId: agentVersion?.id ?? null,
-      persona,
-      config: agentConfig,
-      offers,
-      materials,
-      questions,
-      history,
-      state,
-      context,
-      extraInstructions: (playbook.qualification_prompt as string | null) ?? null,
-      optOutPhrases:
-        ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
-      tools: {
-        specs: toolCtx ? selected.specs : [],
-        executor: toolCtx && selected.specs.length ? makeExecutor(toolCtx, checkChannel) : null,
-        effects,
-        directBooking: selected.directBooking,
-      },
-      choicePosition,
-      now: new Date(),
+  const turnInput: TurnInput = {
+    workspaceId: job.workspace_id,
+    jobId: job.id,
+    jobKind: job.kind,
+    mode: "live",
+    agentVersionId: agentVersion?.id ?? null,
+    persona,
+    config: agentConfig,
+    offers,
+    materials,
+    questions,
+    history,
+    state,
+    context,
+    extraInstructions: (playbook.qualification_prompt as string | null) ?? null,
+    optOutPhrases:
+      ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
+    tools: {
+      specs: toolCtx ? selected.specs : [],
+      executor: toolCtx && selected.specs.length ? makeExecutor(toolCtx, checkChannel) : null,
+      effects,
+      directBooking: selected.directBooking,
     },
-    {
-      callAgent: deps.callAgent,
-      compose: (p) => composeOutgoing(admin, { workspaceId: job.workspace_id, ...p }),
-    },
-  );
+    choicePosition,
+    now: new Date(),
+  };
+  const decision = await decideTurn(turnInput, {
+    callAgent: deps.callAgent,
+    compose: (p) => composeOutgoing(admin, { workspaceId: job.workspace_id, ...p }),
+  });
   await admin
     .from("sdr_turn_jobs")
     .update({ ai_finished_at: new Date().toISOString() })
