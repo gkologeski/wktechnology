@@ -251,6 +251,26 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
           : null,
       });
 
+      // Distribuição definida na campanha: resolve o responsável ANTES de gravar,
+      // porque o gatilho de responsável preenche assigned_to = owner_id em conversa nova.
+      // Nunca reatribui conversa que já tem responsável.
+      let campaignAssignee: string | null = null;
+      if (camp.assignment_mode === "member" || camp.assignment_mode === "round_robin") {
+        const { data: existing } = await supabaseAdmin
+          .from("whatsapp_conversations")
+          .select("id, assigned_to")
+          .eq("contact_phone", toBare)
+          .eq("twilio_number", num.displayPhoneNumber)
+          .maybeSingle();
+        if (!existing || !existing.assigned_to) {
+          const { data: assignee } = await supabaseAdmin.rpc("wa_campaign_next_assignee", {
+            _campaign_id: camp.id,
+          });
+          if (assignee) campaignAssignee = assignee as string;
+          else console.warn("[wa-campaign] nenhum membro ativo para distribuir", camp.id);
+        }
+      }
+
       const { data: conv } = await supabaseAdmin
         .from("whatsapp_conversations")
         .upsert(
@@ -258,6 +278,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
             owner_id: camp.owner_id,
             workspace_id: camp.workspace_id,
             ...(r.contact_id ? { contact_id: r.contact_id } : {}),
+            ...(campaignAssignee ? { assigned_to: campaignAssignee } : {}),
             contact_phone: toBare,
             twilio_number: num.displayPhoneNumber,
             provider: "meta",
@@ -271,27 +292,6 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         )
         .select("id")
         .single();
-
-      if (conv && (camp.assignment_mode === "member" || camp.assignment_mode === "round_robin")) {
-        // Distribuição definida na campanha; nunca reatribui conversa que já tem responsável.
-        const { data: cur } = await supabaseAdmin
-          .from("whatsapp_conversations")
-          .select("assigned_to")
-          .eq("id", conv.id)
-          .maybeSingle();
-        if (cur && !cur.assigned_to) {
-          const { data: assignee } = await supabaseAdmin.rpc("wa_campaign_next_assignee", {
-            _campaign_id: camp.id,
-          });
-          if (assignee)
-            await supabaseAdmin
-              .from("whatsapp_conversations")
-              .update({ assigned_to: assignee as string })
-              .eq("id", conv.id)
-              .is("assigned_to", null);
-          else console.warn("[wa-campaign] nenhum membro ativo para distribuir", camp.id);
-        }
-      }
       if (conv) {
         const { ensureWhatsAppConversationIdentity } =
           await import("@/lib/inbox/identity-resolution.server");
