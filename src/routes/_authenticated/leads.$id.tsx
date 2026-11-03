@@ -48,6 +48,7 @@ import { AiSummaryPanel } from "@/components/ai/ai-summary-panel";
 import { PropertiesPanel } from "@/components/properties-panel";
 import { deleteLeadsByIds } from "@/lib/lead-delete";
 import { RecordLayout } from "@/components/record/record-layout";
+import { WhatsAppSuppressionNotice } from "@/components/whatsapp/whatsapp-suppression-notice";
 import { AssociationsPanel } from "@/components/record/associations-panel";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
 import { qk } from "@/lib/entity-queries";
@@ -392,32 +393,35 @@ function LeadDetail() {
         synchronizedTimeline
         header={header}
         left={
-          <PropertiesPanel
-            entity="leads"
-            table="leads"
-            row={lead as unknown as Record<string, unknown> & { id: string }}
-            props={[
-              { key: "first_name", label: "Nome", primary: true },
-              { key: "last_name", label: "Sobrenome", primary: true },
-              { key: "job_title", label: "Cargo", primary: true },
-              { key: "cargo_resumido", label: "Cargo resumido", primary: true },
-              { key: "area_atuacao", label: "Área de atuação", primary: true },
-              { key: "nivel_hierarquico", label: "Nível hierárquico", primary: true },
-              { key: "email", label: "Email", type: "email", primary: true },
-              { key: "phone", label: "Telefone", type: "tel", primary: true },
-              { key: "phone_ext", label: "Ramal", primary: true },
-              { key: "mobile_phone", label: "Celular", type: "tel", primary: true },
-              { key: "whatsapp_e164", label: "WhatsApp", type: "tel", primary: true },
-              { key: "linkedin_url", label: "LinkedIn", type: "url", primary: true },
+          <>
+            <WhatsAppSuppressionNotice entity="lead" id={lead.id} />
+            <PropertiesPanel
+              entity="leads"
+              table="leads"
+              row={lead as unknown as Record<string, unknown> & { id: string }}
+              props={[
+                { key: "first_name", label: "Nome", primary: true },
+                { key: "last_name", label: "Sobrenome", primary: true },
+                { key: "job_title", label: "Cargo", primary: true },
+                { key: "cargo_resumido", label: "Cargo resumido", primary: true },
+                { key: "area_atuacao", label: "Área de atuação", primary: true },
+                { key: "nivel_hierarquico", label: "Nível hierárquico", primary: true },
+                { key: "email", label: "Email", type: "email", primary: true },
+                { key: "phone", label: "Telefone", type: "tel", primary: true },
+                { key: "phone_ext", label: "Ramal", primary: true },
+                { key: "mobile_phone", label: "Celular", type: "tel", primary: true },
+                { key: "whatsapp_e164", label: "WhatsApp", type: "tel", primary: true },
+                { key: "linkedin_url", label: "LinkedIn", type: "url", primary: true },
 
-              { key: "company_name", label: "Empresa", type: "company", primary: true },
-              { key: "source", label: "Fonte", primary: true },
-              { key: "label", label: "Label" },
-              { key: "score", label: "Score", type: "number" },
-              { key: "notes", label: "Notas" },
-            ]}
-            onSaved={() => void handlePropertiesSaved()}
-          />
+                { key: "company_name", label: "Empresa", type: "company", primary: true },
+                { key: "source", label: "Fonte", primary: true },
+                { key: "label", label: "Label" },
+                { key: "score", label: "Score", type: "number" },
+                { key: "notes", label: "Notas" },
+              ]}
+              onSaved={() => void handlePropertiesSaved()}
+            />
+          </>
         }
         center={
           <>
