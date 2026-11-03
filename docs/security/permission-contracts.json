@@ -2743,7 +2743,7 @@
         "system.channels.view.workspace",
         "system.channels.manage.workspace"
       ],
-      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back. The agent config panel may now receive the agent chosen in the Estúdio bar instead of its own selector; channel controls and server checks are unchanged.",
+      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back. The agent config panel may now receive the agent chosen in the Estúdio bar instead of its own selector; channel controls and server checks are unchanged. Email accounts now expose the existing campaigns flag (same RPC, same checks) and the editor pre-validates the agent activation rule mirrored from service_channel_save; the server check is unchanged.",
       "controls": [
         {
           "file": "src/lib/prospecting/sdr/channel-access.server.ts",
@@ -2807,7 +2807,7 @@
         "src/lib/prospecting/sdr/channel-access.server.ts": "a23a8c47439c6f10cf0a30dae2253b53af3a894e3238c7099381a0465594a95a",
         "src/routes/_authenticated/settings.channels.tsx": "d04c6a22f9bb7c6e22591c213c35bdf14e3c2cb2985fb63cbb41332fb9a0c6c5",
         "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c",
-        "src/components/service-channels/account-editor.tsx": "1caa1effd64517444291ce975921952ff18fd090880ec0750f9183dd0dc87c79",
+        "src/components/service-channels/account-editor.tsx": "a4bf631320faddfeac35c5805701d81d0a029b0b31c2a9e0d34092bdd90d7933",
         "src/components/service-channels/agent-channels.tsx": "97abf189efffa02a15a536b7e9aef0a8cf3bc97d85f88c95915d7e916cdb8a41",
         "src/components/prospecting/sdr-agent-config.tsx": "e16579d05744c8f06021ec4b3fa45aaa7b1755b99bd003c57fded76f42f8eaa1"
       }
@@ -7421,6 +7421,14 @@
       },
       "files": {
         "drizzle/migrations/0294_wa_timeline_daily_conversation.sql": "e6f4a45417d05934c79ed838b396d1ef46576d2b1479063179db3ef625e281eb"
+      }
+    },
+    {
+      "id": "service-channel-binding-rules",
+      "kind": "presentation",
+      "rationale": "Pure helper mirroring the service_channel_save activation rule for inline form feedback and the campaigns toggle label. No I/O, routes, actions, grants or data access; saving stays under service-channel-account-center (RPC rechecks permission, workspace and the same rule).",
+      "files": {
+        "src/components/service-channels/binding-rules.ts": "43a457394b27f2f37732ef0453bb1414c65388f2aa5877c76e25ff5ca5c86b14"
       }
     }
   ],
