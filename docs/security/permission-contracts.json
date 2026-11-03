@@ -5866,6 +5866,7 @@
       "kind": "business",
       "files": {
         "drizzle/migrations/0303_prospecting_sequence_voice.sql": "3a7cf002f5970eaf96e0bc45cf92a8073c0e66f7ba5f05b61e82a703bbcd50a9",
+        "drizzle/migrations/0296_sequence_call_failed_is_known.sql": "831661750eed1e86deb27ee12265fae6b8b7a73bf392209aa5d67a3d4e99ae42",
         "src/lib/prospecting/sequences/voice.server.ts": "aaed562bb53827e82e159d3355f602acac86c24768e5d2906ce956b1b105cb09"
       },
       "resources": [
