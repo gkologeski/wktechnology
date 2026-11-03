@@ -33758,6 +33758,10 @@ export type Database = {
         Args: { p_from: string; p_headers: Json; p_mailbox: string }
         Returns: boolean
       }
+      service_agent_email_is_sequence_reply: {
+        Args: { p_message: string }
+        Returns: boolean
+      }
       service_agent_enqueue: {
         Args: { p_channel: string; p_message: string }
         Returns: string
