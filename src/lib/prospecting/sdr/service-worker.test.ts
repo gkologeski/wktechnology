@@ -203,7 +203,7 @@ describe("email/chat service orchestration", () => {
     expect(db.rpc).not.toHaveBeenCalledWith("service_agent_commit_turn", expect.anything());
     expect(deps.opportunity).not.toHaveBeenCalled();
   });
-  it("readies a reply only when both agent and workspace enable automatic sending", async () => {
+  it("readies a reply when the agent is in automatic mode", async () => {
     db.t("sdr_playbooks")[0].mode = "auto";
     expect(await processServiceJob(db, job, deps)).toBe("ready");
     expect(db.rpc).toHaveBeenCalledWith("service_agent_finish_decision", {
@@ -212,9 +212,21 @@ describe("email/chat service orchestration", () => {
       p_status: "ready",
     });
   });
-  it("retains a draft when workspace automatic sending is disabled", async () => {
+  it("readies a reply even when the legacy workspace auto-send switch is off", async () => {
     db.t("sdr_playbooks")[0].mode = "auto";
     db.t("sdr_workspace_settings")[0].auto_send_enabled = false;
+    expect(await processServiceJob(db, job, deps)).toBe("ready");
+  });
+  it("readies a reply even when the legacy agent mode is still supervised", async () => {
+    db.t("sdr_playbooks")[0].mode = "supervised";
+    db.t("sdr_workspace_settings")[0].auto_send_enabled = false;
+    expect(await processServiceJob(db, job, deps)).toBe("ready");
+    expect(deps.deliver).not.toHaveBeenCalled();
+  });
+  it("still retains a draft when the reply carries a blocking warning", async () => {
+    const output = decision();
+    output.out.warnings = ["preço_não_autorizado"];
+    spies.turn.mockResolvedValue(output);
     expect(await processServiceJob(db, job, deps)).toBe("drafted");
   });
   it("hands over without attempting an automatic reply", async () => {
