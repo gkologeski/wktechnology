@@ -494,6 +494,16 @@ export function CampaignAudiencePanel({
                     ? ` (${p.commercialOverriddenCount} liberado(s))`
                     : ""}
                 </div>
+                {(p.excluded.no_whatsapp ?? 0) + (p.excluded.engagement_limit ?? 0) > 0 && (
+                  <p className="rounded border border-warning/40 bg-warning/10 p-2 text-muted-foreground">
+                    A Meta recusou recentemente{" "}
+                    {(p.excluded.no_whatsapp ?? 0) + (p.excluded.engagement_limit ?? 0)} número(s)
+                    deste público e eles ficaram de fora (já tentamos o próximo celular do
+                    cadastro). Quem está aguardando nova tentativa volta sozinho após o prazo; para
+                    diminuir essas recusas, prefira um modelo de Utilidade ou outro canal. Um número
+                    pode ser liberado na ficha do Contato/Lead.
+                  </p>
+                )}
                 {(p.commercialRemovedCount > 0 || value.commercialOverrides.length > 0) && (
                   <details className="pt-1">
                     <summary className="cursor-pointer font-medium">

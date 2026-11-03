@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, MessageCircle, Phone, ShieldCheck, Gauge, Shuffle, GitBranch } from "lucide-react";
 import { SEQUENCE_RESOURCE, type SequenceDefinition } from "@/lib/prospecting/sequences/draft";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useWhatsAppSuppressionStats } from "@/hooks/use-whatsapp-suppressions";
 import {
   defaultPlanning,
   simulatePlan,
@@ -144,6 +145,11 @@ export function SequencePlanningTab({ definition, disabled: locked, onChange }: 
   };
   const hasCall = counts.call > 0;
   const a = definition.audience;
+  const suppression = useWhatsAppSuppressionStats(
+    counts.whatsapp > 0 ? permissions.workspaceId : null,
+  );
+  const blockedTotal =
+    (suppression.data?.noWhatsApp ?? 0) + (suppression.data?.engagementLimit ?? 0);
 
   return (
     <div className="space-y-4">
@@ -152,6 +158,24 @@ export function SequencePlanningTab({ definition, disabled: locked, onChange }: 
           Esta sequência ainda usa os limites antigos de “Canais e regras”. Ao alterar qualquer
           campo abaixo e salvar, os limites por canal passam a valer no lugar deles.
         </p>
+      ) : null}
+
+      {counts.whatsapp > 0 && blockedTotal > 0 ? (
+        <div
+          role="status"
+          className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-muted-foreground"
+        >
+          <p className="font-medium text-foreground">
+            {blockedTotal} número(s) do workspace estão bloqueados pela Meta no momento
+          </p>
+          <p className="mt-1">
+            {suppression.data?.noWhatsApp ?? 0} sem WhatsApp e{" "}
+            {suppression.data?.engagementLimit ?? 0} aguardando nova tentativa (limite de
+            engajamento). Quem estiver nessa lista tem a etapa de WhatsApp pulada e segue para o
+            próximo passo (e-mail ou ligação). Para reduzir recusas por engajamento, prefira modelos
+            de Utilidade e evite repetir marketing para a mesma pessoa em poucos dias.
+          </p>
+        </div>
       ) : null}
 
       <Section icon={Gauge} title="1. Capacidade por canal e salva-guarda">
