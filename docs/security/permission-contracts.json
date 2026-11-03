@@ -5913,6 +5913,10 @@
           "symbol": "prospecting_sequence_voice_access"
         },
         {
+          "file": "drizzle/migrations/0296_sequence_call_failed_is_known.sql",
+          "symbol": "prospecting_sequence_context"
+        },
+        {
           "file": "drizzle/migrations/0303_prospecting_sequence_voice.sql",
           "symbol": "prospecting_sequence_voice_project"
         },
