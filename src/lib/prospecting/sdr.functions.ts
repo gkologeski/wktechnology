@@ -490,13 +490,15 @@ export const resumeSdrJob = createServerFn({ method: "POST" })
         .limit(1)
         .maybeSingle();
       const proof = msg?.wa_message_id ?? full.provider_message_id;
+      // Sem supervisão manual: não enviada vira descartada (nunca rascunho);
+      // se o cliente aguarda resposta, a pessoa assume a conversa.
       await supabaseAdmin
         .from("sdr_turn_jobs")
         .update(
           proof
             ? { status: "sent", provider_message_id: proof, block_category: null, updated_at: now }
             : {
-                status: "drafted",
+                status: "discarded",
                 send_started_at: null,
                 block_category: null,
                 error: "reconciled_not_sent",
@@ -506,7 +508,7 @@ export const resumeSdrJob = createServerFn({ method: "POST" })
         )
         .eq("id", full.id)
         .eq("status", "failed");
-      return { ok: true, result: proof ? "already_sent" : "back_to_draft" };
+      return { ok: true, result: proof ? "already_sent" : "not_sent" };
     }
     if (full.block_category === "reconcile")
       throw new Error("Envio incerto: use a reconciliação, nunca a repetição automática.");
