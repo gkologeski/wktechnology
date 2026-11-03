@@ -409,6 +409,8 @@ export async function decideTurn(i: TurnInput, deps: TurnDeps): Promise<TurnDeci
         trace.change_reasons.push(`nova geração por: ${v.join(", ")}`);
       }
       const remaining = best.v;
+      // Avisos do texto original deixam de valer quando a nova geração resolveu.
+      out.warnings = out.warnings.filter((w) => w !== PRICE_WARNING && w !== MATERIAL_CLAIM_WARNING);
       if (remaining.includes("price")) out.warnings.push(PRICE_WARNING);
       if (remaining.includes("material_claim") || remaining.includes("booking_claim"))
         out.warnings.push(MATERIAL_CLAIM_WARNING);
