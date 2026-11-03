@@ -65,9 +65,3 @@ export function pickUnsuppressedWhatsApp(
   return { pick, blockedBy };
 }
 
-/** Motivo gravado na execução da sequência quando a etapa de WhatsApp é pulada. */
-export function sequenceSuppressionReason(reason: SuppressionReason): string {
-  return reason === "no_whatsapp"
-    ? "whatsapp_suppressed_no_whatsapp"
-    : "whatsapp_suppressed_engagement";
-}
