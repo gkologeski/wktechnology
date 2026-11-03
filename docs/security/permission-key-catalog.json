@@ -2768,7 +2768,8 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace"
+    "techservice.tickets.view.workspace",
+    "system.whatsapp_suppressions.manage.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -2848,6 +2849,9 @@
     },
     "techsales.tasks.assign.workspace": {
       "migration": "drizzle/migrations/0300_prospecting_sequence_lifecycle.sql"
+    },
+    "system.whatsapp_suppressions.manage.workspace": {
+      "migration": "drizzle/migrations/0302_whatsapp_suppression_release_permission.sql"
     }
   }
 }

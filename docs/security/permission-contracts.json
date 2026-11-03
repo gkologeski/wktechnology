@@ -2156,7 +2156,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message. Undelivered outbound messages show a translated failure label (pure describeDeliveryError + InboxMessageBubble), built only from error fields of messages the user already reads. Recent-contact pruning RPC wa_campaign_prune_recent is SECURITY INVOKER (caller RLS on recipients applies), requires active workspace membership, EXECUTE only for authenticated/service_role, and only marks pending rows of that campaign as skipped. Audience filter suggestions use RPC whatsapp_campaign_filter_values: SECURITY INVOKER (caller RLS), entity limited to leads/contacts/companies/deals, column validated against the table catalog and custom key by regex, EXECUTE only for authenticated; server still checks isSuggestField and active workspace. The New Campaign dialog only regroups existing fields into sections. Campaign conversation distribution (assignment_mode auto/member/round_robin/unassigned) is saved only through create/update campaign server functions under the existing campaigns create/update keys; members are validated as active in the caller's workspace; at send time RPC wa_campaign_next_assignee (SECURITY DEFINER, EXECUTE only service_role, row lock, re-checks active membership) picks the assignee and only fills conversations with no assignee; unassigned campaigns skip automatic distribution on reply. Campaign audience filters are resolved by RPC wa_campaign_audience_ids: SECURITY INVOKER (caller RLS and column grants apply; protected shared-field columns are read through the masked shared_fields_* views), base/entity limited to leads/contacts/companies/deals, operators allow-listed, columns validated against the table catalog and custom keys by regex, values only as literals, max 10 groups/20 filters/20 terms, EXECUTE only for authenticated; the server still validates filters with isAllowedFilter under the existing campaigns view/create keys and the active workspace. Related reads, recent sends and opt-outs only paginate/parallelize the same user-client queries; compileAudienceGroups re-validates custom keys with filterColumnPath before the RPC. Campaign recipients are inserted in batches of 1,000 with the campaign workspace set explicitly, still through the user's client (RLS sales_create + sales_row_guard per row); sales_row_guard now computes the access context only after child tables return, which keeps every check and outcome identical. Audience ID reads use URI-bounded batches of 150 UUIDs; no permission or filter behavior change. The audience-only value lookup is shared with authorized sequence readers; it does not grant campaign listing, editing or sending. Its extracted helper checks either feature view, current actor/workspace, field allowlist and protected source lookup. All other campaign handlers retain their original gates.",
+      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message. Undelivered outbound messages show a translated failure label (pure describeDeliveryError + InboxMessageBubble), built only from error fields of messages the user already reads. Recent-contact pruning RPC wa_campaign_prune_recent is SECURITY INVOKER (caller RLS on recipients applies), requires active workspace membership, EXECUTE only for authenticated/service_role, and only marks pending rows of that campaign as skipped. Audience filter suggestions use RPC whatsapp_campaign_filter_values: SECURITY INVOKER (caller RLS), entity limited to leads/contacts/companies/deals, column validated against the table catalog and custom key by regex, EXECUTE only for authenticated; server still checks isSuggestField and active workspace. The New Campaign dialog only regroups existing fields into sections. Campaign conversation distribution (assignment_mode auto/member/round_robin/unassigned) is saved only through create/update campaign server functions under the existing campaigns create/update keys; members are validated as active in the caller's workspace; at send time RPC wa_campaign_next_assignee (SECURITY DEFINER, EXECUTE only service_role, row lock, re-checks active membership) picks the assignee and only fills conversations with no assignee; unassigned campaigns skip automatic distribution on reply. Campaign audience filters are resolved by RPC wa_campaign_audience_ids: SECURITY INVOKER (caller RLS and column grants apply; protected shared-field columns are read through the masked shared_fields_* views), base/entity limited to leads/contacts/companies/deals, operators allow-listed, columns validated against the table catalog and custom keys by regex, values only as literals, max 10 groups/20 filters/20 terms, EXECUTE only for authenticated; the server still validates filters with isAllowedFilter under the existing campaigns view/create keys and the active workspace. Related reads, recent sends and opt-outs only paginate/parallelize the same user-client queries; compileAudienceGroups re-validates custom keys with filterColumnPath before the RPC. Campaign recipients are inserted in batches of 1,000 with the campaign workspace set explicitly, still through the user's client (RLS sales_create + sales_row_guard per row); sales_row_guard now computes the access context only after child tables return, which keeps every check and outcome identical. Audience ID reads use URI-bounded batches of 150 UUIDs; no permission or filter behavior change. The audience-only value lookup is shared with authorized sequence readers; it does not grant campaign listing, editing or sending. Its extracted helper checks either feature view, current actor/workspace, field allowlist and protected source lookup. All other campaign handlers retain their original gates. Review 03/11/2026: audience build skips numbers blocked by Meta refusals (131026/131049) and tries the next mobile of the record through the pure pickUnsuppressedWhatsApp; suppressions are read with the caller client (RLS: active member of the workspace) by loadSuppressedPhones; the panel only shows the excluded counts and a warning text. No new action, key or grant; existing campaigns view/create/update keys unchanged. The panel builds filters only from the fixed field allow-list (fieldsForBase).",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -2185,6 +2185,14 @@
         {
           "file": "src/lib/whatsapp/audience-suggestions.server.ts",
           "symbol": "audienceFieldSuggestions"
+        },
+        {
+          "file": "src/lib/whatsapp/campaign-audience.ts",
+          "symbol": "isBlockedFilterColumn"
+        },
+        {
+          "file": "src/lib/whatsapp/campaign-audience.ts",
+          "symbol": "fieldsForBase"
         }
       ],
       "database": [
@@ -2257,7 +2265,7 @@
       },
       "files": {
         "src/lib/whatsapp.functions.ts": "1134b8ac720de7dcd2dfb45acfbbcc23d3c55351755afad874ec9fb80ce87aac",
-        "src/lib/whatsapp-campaigns.functions.ts": "95a41501e42a01c3d8b7b66fa814f7058ec611f28171e4e7c6b0c20966b1042f",
+        "src/lib/whatsapp-campaigns.functions.ts": "df1e546ce6632ae0c3f6e9f37d2aad257137ba169a1c9e87ce8f0199fe5ecf04",
         "src/routes/_authenticated/inbox.index.tsx": "6871432118a6bd8ef6477bf0ca6ef3bd14a00e7fbec3beef7bb955f610daee80",
         "src/routes/_authenticated/inbox.whatsapp.tsx": "165ac43240712c3713a9b7daec6a059aad630a3a309ae77dd3f38ccd7aa8ea94",
         "src/routes/_authenticated/campaigns.whatsapp.tsx": "257b98e0bec9a354bd6e4e1982e26d281108725716589ccd30b8d93f61f3132c",
@@ -2271,11 +2279,13 @@
         "src/components/whatsapp/campaign-assignment-section.tsx": "784136197ffd47a38eb41b6e026918e5a74cbce2f409feb13cb41a647a0380e4",
         "src/lib/whatsapp/campaign-assignment.server.ts": "f75a7485b12b320af56635b016a47ffefafd1c85b7cec5718dc71b59c4ce77df",
         "src/lib/whatsapp/campaign-assignment.ts": "3dc79264158d836b33f4325a096794071cf2ba45bb0f50fead681412ad8fb51b",
-        "src/lib/whatsapp/campaign-audience.server.ts": "2f5dfb81caf948c00427db853ca1cea4f2ba8a00adc1a94a45b7204114eedc12",
+        "src/lib/whatsapp/campaign-audience.server.ts": "77aa07cf0293ad370eb6ea71429ea8f656d2c051463b0e465bb245e71e690bc4",
         "src/lib/whatsapp/campaign-audience-query.ts": "bb5dd8b9faa846eae0b6b72e28ed07b80110e9f23c84ca79ff3d62f8a55937f6",
         "drizzle/migrations/0287_wa_campaign_audience_ids.sql": "10b88936a1dc30f8b95d9cb2a228bb5b88ca21ace204fd80fc0ea3121166c54a",
         "drizzle/migrations/0288_wa_campaign_audience_ids_array.sql": "11ee5282e7d64a30bd16f340a6566076a3d3cefc555fcd01d6732c49ba81ae93",
-        "drizzle/migrations/0289_sales_row_guard_child_skip_context.sql": "7dc5c38b2dac757557e99dec6373570dc37b96cedb5ffb8e57ec55b63a59ae0e"
+        "drizzle/migrations/0289_sales_row_guard_child_skip_context.sql": "7dc5c38b2dac757557e99dec6373570dc37b96cedb5ffb8e57ec55b63a59ae0e",
+        "src/lib/whatsapp/campaign-audience.ts": "b68288dd8a47d5e121fb0dca43b3c9ee51b74ca9e715cedd5df3d6d17f0801b3",
+        "src/components/whatsapp/campaign-audience-panel.tsx": "b85dc1d9e2af811185f4db943662662adb6c87560ce3f5348a685a502074aaaf"
       }
     },
     {
@@ -2306,7 +2316,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Server-only transport and processing called by authenticated sends, authorized workers or signature-verified webhook. Resolve exact workspace/number and active connection before decrypting; private media scope and signed status events retain verified tenant. No fallback after rejection. Company-left suggestions stay read-only proposals scoped to the verified conversation workspace; AI fallback only classifies the inbound text.",
+      "rationale": "Server-only transport and processing called by authenticated sends, authorized workers or signature-verified webhook. Resolve exact workspace/number and active connection before decrypting; private media scope and signed status events retain verified tenant. No fallback after rejection. Company-left suggestions stay read-only proposals scoped to the verified conversation workspace; AI fallback only classifies the inbound text. Review 03/11/2026: sendCloudPayload refuses numbers with an active Meta suppression of the same verified workspace before calling Meta. Audio transcription reads the stored media from the private whatsapp-media bucket of the verified message before falling back to the Meta/gateway download; no new access path or tenant decision.",
       "controls": [
         {
           "file": "src/lib/whatsapp/cloud-runtime.server.ts",
@@ -2372,10 +2382,10 @@
         "review_by": "2027-01-26"
       },
       "files": {
-        "src/lib/whatsapp/cloud-runtime.server.ts": "efc7af7dca6ed0e4d97ccc345b60965fa3942880907f59730321202eadaee6b2",
+        "src/lib/whatsapp/cloud-runtime.server.ts": "c318acf83389a005893a6a9e4f461b2ecde0652d19eeaa14dd4a09c7be755a2a",
         "src/lib/whatsapp/meta-channel.server.ts": "40c3bb7fddd839f421bb67b574f61bdd99e3197b38acf54409ac6cd94a0a801a",
         "src/lib/whatsapp/templates.server.ts": "693872ba81f6e46c295d73c4b760aaaa2505f1ae186c865420d9d30af201ea9e",
-        "src/lib/whatsapp/inbound-media.server.ts": "9b35dcfc34aa9022b2f452134ddff27df62b9b780eba135f6b4609461e7fe50b",
+        "src/lib/whatsapp/inbound-media.server.ts": "f0e4876eb4d3548d88e6326c507d6cba4691a6d4aaddc5d748b5ea5c18d66bb2",
         "src/lib/whatsapp/webhook-processor.server.ts": "d67cfd824e1115c8d80703b61fec104ec3fec24fdd25e55c266b60818f8a7665",
         "src/lib/inbox/ai-suggestions.server.ts": "876b710d4680b8db4d9f36fae8c274ecd9bfbd5c2f890c232d00cd73ba48c089"
       }
@@ -2490,7 +2500,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Existing lease, cron capability and sales_worker_authorize remain mandatory; Lia uses conversation number and campaigns fixed selected sender; rejection pauses direct campaigns instead of failover. Review 29/10/2026: automatic follow-ups nearly identical to one of the last three sent messages are cancelled (followup_repetition); text-similarity check only, no new data access or permission change. Review 30/10/2026: paced campaigns self-chain. The scheduled tick only opens a chain per running paced campaign (falls back to the old in-process run when the chain cannot be opened); chained runs carry {campaignId, hop} validated by zod and require the same CRON_SECRET bearer. Next run is requested through SECURITY DEFINER wa_campaign_chain_tick (EXECUTE only service_role) that reuses the URL and headers of the cron job whatsapp-campaign-tick (no secret passes through the app), only for status running, hop 1..1000. Lease wa_campaign_claim_dispatch still prevents concurrent runs; locked runs never chain, so at most one chain per campaign. Every send keeps assertSalesWorker and the existing guards.",
+      "rationale": "Existing lease, cron capability and sales_worker_authorize remain mandatory; Lia uses conversation number and campaigns fixed selected sender; rejection pauses direct campaigns instead of failover. Review 29/10/2026: automatic follow-ups nearly identical to one of the last three sent messages are cancelled (followup_repetition); text-similarity check only, no new data access or permission change. Review 30/10/2026: paced campaigns self-chain. The scheduled tick only opens a chain per running paced campaign (falls back to the old in-process run when the chain cannot be opened); chained runs carry {campaignId, hop} validated by zod and require the same CRON_SECRET bearer. Next run is requested through SECURITY DEFINER wa_campaign_chain_tick (EXECUTE only service_role) that reuses the URL and headers of the cron job whatsapp-campaign-tick (no secret passes through the app), only for status running, hop 1..1000. Lease wa_campaign_claim_dispatch still prevents concurrent runs; locked runs never chain, so at most one chain per campaign. Every send keeps assertSalesWorker and the existing guards. Review 03/11/2026: the cron worker (requireCronAuth unchanged) skips recipients whose number has an active Meta suppression in the campaign workspace before sending; no new endpoint or grant.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-worker.server.ts",
@@ -2545,7 +2555,7 @@
       },
       "files": {
         "src/lib/prospecting/sdr/actions.server.ts": "9431b626fc4e47a8b1fbca0edc704a8b37a8e5bcaf4f42cf1efe00ce98cace9e",
-        "src/routes/api/public/hooks/whatsapp-campaign-tick.ts": "d6a61048d044b5b7b11a8750b309456408e28029c4661f268d144f976634f17b",
+        "src/routes/api/public/hooks/whatsapp-campaign-tick.ts": "d0e5df292f960f21d99e1ef7b7541ec9ac43733ade5ff2a741e2ec6abdd37007",
         "drizzle/migrations/0284_wa_campaign_chain_tick.sql": "441fe5787b991d97adfad377ebf115ad548b7c05f8924f00de1aad136920a7ba"
       }
     },
@@ -2719,9 +2729,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations.",
+      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 03/11/2026: generated declarations for whatsapp_number_suppressions and the wa_* suppression functions only; no runtime I/O, grants or policies.",
       "files": {
-        "src/integrations/supabase/types.ts": "ec69bfdc8771e904e62fc9f37006622748ad23d5889cd03caabda2525d0c3fbc"
+        "src/integrations/supabase/types.ts": "adacda67ecc360a7a27a46cf541c4717e0b05053441c4b23c085774fc531f9ac"
       }
     },
     {
@@ -5505,7 +5515,7 @@
         "src/lib/prospecting/sequences/drafts.server.ts": "3ec6fc0226c9965fd35cf3ddeda93e22b35a16ee802ef675d681f34db07fe4d7",
         "src/routes/_authenticated/prospecting.sequences.tsx": "8baa9510472ca9e2aa65e8f2be1407de24f500cf3f4da51f850b0d30af0a22cf",
         "drizzle/migrations/0292_prospecting_sequence_drafts.sql": "6a7b0c212a5f254186442aad6a5ae1bdab3c134948d30919548e3c801b5982c1",
-        "src/components/prospecting/sequences/sequence-planning-tab.tsx": "fe7c2e7e0136b9fe9ed5500e0b81c3fdee5e53f24ac24f2d96a7721293207b45"
+        "src/components/prospecting/sequences/sequence-planning-tab.tsx": "2a6e64106c841b744ca7f7e755bff29eee075e20f50c38b1d8b1fdb19c56d08c"
       },
       "resources": [
         "system.automation.sequences"
@@ -5531,7 +5541,7 @@
         "system.automation.sequences.update.team",
         "system.automation.sequences.update.workspace"
       ],
-      "rationale": "Draft planning only; no enrollment, dispatch, provider changes or role grants. Direct route is mapped to sequences. Caller RLS limits audience reads. Save rechecks the exact operation and uses active workspace/owner scoped SQL CAS, with immutable revision snapshots. Channel references retain their independent channel view permission. Legacy sequences are untouched. Email sender: non-admins are forced server-side to their own connected email account (email_accounts.owner_id); workspace owners/admins may choose any account. Sender lookup checks active workspace.",
+      "rationale": "Draft planning only; no enrollment, dispatch, provider changes or role grants. Direct route is mapped to sequences. Caller RLS limits audience reads. Save rechecks the exact operation and uses active workspace/owner scoped SQL CAS, with immutable revision snapshots. Channel references retain their independent channel view permission. Legacy sequences are untouched. Email sender: non-admins are forced server-side to their own connected email account (email_accounts.owner_id); workspace owners/admins may choose any account. Sender lookup checks active workspace. Review 03/11/2026: planning tab shows workspace totals of numbers blocked by Meta (no phone numbers) through useWhatsAppSuppressionStats, server-checked for active membership; no new action.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -5703,7 +5713,8 @@
         "src/lib/prospecting/sequences/enrollment.server.ts": "e75a45694e5229236897d83fc7e1a605e0b11c37ba076ba3298db41203de6aa4",
         "src/lib/prospecting/sequences/enrollment.functions.ts": "8f96039c4231563ddaaab705ffeaf8d9df288b2644e116e50bbfb393bec4c422",
         "src/components/prospecting/sequences/sequence-enrollment.tsx": "99d123bac078b0119b20af1c3ef3321c6a13e2679d580c424dc03c49d59a46d3",
-        "drizzle/migrations/0294_prospecting_sequence_cohorts.sql": "721727135c04e4aa006f76491142764c0da8a3a33ecfcb98697a844063bb966e"
+        "drizzle/migrations/0294_prospecting_sequence_cohorts.sql": "721727135c04e4aa006f76491142764c0da8a3a33ecfcb98697a844063bb966e",
+        "drizzle/migrations/0300_sequence_cohort_prepare_indexed_identity.sql": "097325789de59a678233efe71fc614d161f543ce33fd8059cc6650948578cac2"
       },
       "resources": [
         "system.automation.sequences",
@@ -5733,7 +5744,7 @@
         "techsales.leads.view.team",
         "techsales.leads.view.workspace"
       ],
-      "rationale": "Assign associates CRM recipients with an immutable configuration version; no execution, queues or sends. Endpoint accepts only workspace/version/request/evidence; source rows and filters come from caller RLS and protected field views. The service-only writer rechecks current actor membership, effective view/assign owner scope, then re-enters the existing non-bypass API role privately to verify source visibility and field masking. Global exclusion lookups return reason counts only; identity fingerprints and evidence are not selectable by users. Workspace transaction lock and idempotency keep held reservations consistent. No new role grants or permission catalog changes.",
+      "rationale": "Assign associates CRM recipients with an immutable configuration version; no execution, queues or sends. Endpoint accepts only workspace/version/request/evidence; source rows and filters come from caller RLS and protected field views. The service-only writer rechecks current actor membership, effective view/assign owner scope, then re-enters the existing non-bypass API role privately to verify source visibility and field masking. Global exclusion lookups return reason counts only; identity fingerprints and evidence are not selectable by users. Workspace transaction lock and idempotency keep held reservations consistent. No new role grants or permission catalog changes. Review 03/11/2026: 0300_sequence_cohort_prepare_indexed_identity replaces prospecting_sequence_cohort_prepare with indexed phone/e-mail identity lookups and a faster competing-sequence check; same SECURITY/EXECUTE, same authorization checks and eligibility results.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -5768,6 +5779,10 @@
         {
           "file": "drizzle/migrations/0294_prospecting_sequence_cohorts.sql",
           "symbol": "sequence_cohort_people_read"
+        },
+        {
+          "file": "drizzle/migrations/0300_sequence_cohort_prepare_indexed_identity.sql",
+          "symbol": "prospecting_sequence_cohort_prepare"
         }
       ],
       "tests": {
@@ -5797,8 +5812,8 @@
       "id": "prospecting-sequence-durable-runtime",
       "kind": "business",
       "files": {
-        "src/lib/prospecting/sequences/runtime.ts": "c46e0956669763cb497b381d432e36d51eec6cc65dcca3c7f4590429247fa068",
-        "src/lib/prospecting/sequences/worker.server.ts": "16220b2f42e4936c4f721bb1c2517b85a59a50c4e018ebdb7f12f69ae5a2bf59",
+        "src/lib/prospecting/sequences/runtime.ts": "cb4233ed524551d5f19b20121513cba0182b61b0531bbbe37fd194cb8dd06b31",
+        "src/lib/prospecting/sequences/worker.server.ts": "3c9accf7dad6f7844accb64229e7c19b2646e388dcef24b23815fdcfcd2176ef",
         "drizzle/migrations/0295_prospecting_sequence_runtime.sql": "504420a65224ad4caa45e07b3d304432ec54bf446134ea39a6ddd1b7ae5c76a8",
         "drizzle/migrations/0298_sequence_planning_limits.sql": "3767f2b3dbfebee040a1112e99178bc275e8ccd61cdbd38d9b88d46ca7f16705",
         "drizzle/migrations/0299_sequence_overflow_to_call_transition.sql": "c07ec1f46b2427f14b0524f2d3850f8d253222f47cadca537459c17c890e2990"
@@ -5834,7 +5849,7 @@
         "techsales.inbox.email.create.own",
         "techsales.inbox.whatsapp.create.own"
       ],
-      "rationale": "Durable execution infrastructure, not yet attached to a production cron or provider adapters. Start/control use current active subject, view/manage/assign and row ownership. Browser reads are RLS-filtered through current person visibility; tokens and writes are private. Service-only claim/context/effect ports recheck current actor and outbound permission, protected fields and tenant. Unique effect reservation and leases prevent duplicate work; unknown provider results are quarantined instead of resent. No grants to job roles, no automatic activation. Separate JWT isolated acceptance covers current denies, scopes, inactive/foreign actors and concurrency. Provider adapters and operational activation remain pending. Planning limits (email per hour, WhatsApp per day with random pacing, daily intake, recent-WhatsApp skip and overflow to the next call) are enforced inside the same service-only effect reservation under the per-account advisory lock; the recent-phone lookup is service_role only and runs after the caller's assign/view checks. The planning tab is presentation over the draft definition and saves only through the existing draft save path.",
+      "rationale": "Durable execution infrastructure, not yet attached to a production cron or provider adapters. Start/control use current active subject, view/manage/assign and row ownership. Browser reads are RLS-filtered through current person visibility; tokens and writes are private. Service-only claim/context/effect ports recheck current actor and outbound permission, protected fields and tenant. Unique effect reservation and leases prevent duplicate work; unknown provider results are quarantined instead of resent. No grants to job roles, no automatic activation. Separate JWT isolated acceptance covers current denies, scopes, inactive/foreign actors and concurrency. Provider adapters and operational activation remain pending. Planning limits (email per hour, WhatsApp per day with random pacing, daily intake, recent-WhatsApp skip and overflow to the next call) are enforced inside the same service-only effect reservation under the per-account advisory lock; the recent-phone lookup is service_role only and runs after the caller's assign/view checks. The planning tab is presentation over the draft definition and saves only through the existing draft save path. Review 03/11/2026: for sequences with WhatsApp steps the service worker reads active Meta suppressions of the run workspace for the run person phones only (loadPhoneSuppressions); a blocked number is skipped for the next mobile, and when none remains the WhatsApp step advances with reason whatsapp_suppressed_* instead of sending. Lease, context authorization and effect reservation unchanged.",
       "controls": [
         {
           "file": "src/lib/prospecting/sequences/worker.server.ts",
@@ -5903,7 +5918,7 @@
       "kind": "business",
       "files": {
         "drizzle/migrations/0296_prospecting_sequence_delivery.sql": "b83c2ab2890834807a3e17ba394882660b5cf6e3b42b8edbf4eb967b79ed63c9",
-        "src/lib/prospecting/sequences/delivery.server.ts": "8f66be63c052d55a449acd6b8f5991fb387ccdf293687c48987f03e931f022cc",
+        "src/lib/prospecting/sequences/delivery.server.ts": "49dff93af494dbffceb78e6e634147e230f23a3380903314b08fbb8eabc6bbf2",
         "src/lib/prospecting/sequences/variable-context.server.ts": "0bee05d1fad66cfa8b704749e8546107d404c1ce2b4ba8bde52c35c60b421739",
         "src/lib/prospecting/sequences/variable-tokens.ts": "7bd39e46b5da365013eab58b9730f18b94ee1b9feb83220a581137039b51e6fb"
       },
@@ -5948,7 +5963,7 @@
         "techsales.inbox.whatsapp.create.team",
         "techsales.inbox.whatsapp.create.workspace"
       ],
-      "rationale": "Provider adapters remain disconnected from production cron pending remaining operational controls and acceptance. Service-only delivery access checks the current active execution subject, original version ownership scope, current channel view/create and exact enabled account before transport credential reads. Effect reservation repeats those checks; sender and protected recipient are compared against the reserved snapshot before send. Gmail retains deterministic Message-ID and same-account thread replies; WhatsApp only sends the exact current provider-approved template and respects connection quality guards. Provider receipt is private and persisted before Inbox projection. Projection failure pauses the run and blocks resume; it never authorizes a resend. RLS and column grants protect bodies/targets and tokens. Reserved unsubscribe tokens are distinguished from actual opt-out. Isolated JWT tests use synthetic receipts and fault injection, never live provider network. No user permission grants or automatic activation.",
+      "rationale": "Provider adapters remain disconnected from production cron pending remaining operational controls and acceptance. Service-only delivery access checks the current active execution subject, original version ownership scope, current channel view/create and exact enabled account before transport credential reads. Effect reservation repeats those checks; sender and protected recipient are compared against the reserved snapshot before send. Gmail retains deterministic Message-ID and same-account thread replies; WhatsApp only sends the exact current provider-approved template and respects connection quality guards. Provider receipt is private and persisted before Inbox projection. Projection failure pauses the run and blocks resume; it never authorizes a resend. RLS and column grants protect bodies/targets and tokens. Reserved unsubscribe tokens are distinguished from actual opt-out. Isolated JWT tests use synthetic receipts and fault injection, never live provider network. No user permission grants or automatic activation. Review 03/11/2026: WhatsApp delivery picks the same unsuppressed number as the worker (pickUnsuppressedWhatsApp); no new provider path.",
       "controls": [
         {
           "file": "src/lib/access-control/work-core.server.ts",
@@ -6871,9 +6886,9 @@
       "id": "prospecting-sequence-insight-format",
       "kind": "presentation",
       "files": {
-        "src/lib/prospecting/sequences/insights.ts": "e3c7c66b7de32107d06fcb68cf29a27615466bc777fad71fe212d846989c5250"
+        "src/lib/prospecting/sequences/insights.ts": "056dc355e0d671f48c92b5f656326bfc82d9d9ad86f4d8806c6d86c4f4b55ffb"
       },
-      "rationale": "Pure strict JSON shape validators and Portuguese labels. No I/O, routes, mutations, credentials or data access; caller authorization and RLS remain in prospecting-sequence-insights. Does not grant or fetch information."
+      "rationale": "Pure strict JSON shape validators and Portuguese labels. No I/O, routes, mutations, credentials or data access; caller authorization and RLS remain in prospecting-sequence-insights. Does not grant or fetch information. Review 03/11/2026: two labels for WhatsApp steps skipped by Meta suppression; text only."
     },
     {
       "id": "prospecting-sequence-scheduled-entry",
@@ -7462,6 +7477,109 @@
       "rationale": "Pure schema and simulation math for sequence limits (safe caps, business hours, cumulative daily load, suggested intake). No I/O, routes, actions or data access; enforcement lives in the service-only effect reservation under prospecting-sequence-durable-runtime.",
       "files": {
         "src/lib/prospecting/sequences/planning.ts": "e840697bcd4657cfd66cd41bab8e057dbeb8ad09deb8e3e60a00d5d87d4a14a3"
+      }
+    },
+    {
+      "id": "whatsapp-number-suppressions",
+      "kind": "business",
+      "resources": [
+        "system.whatsapp_suppressions"
+      ],
+      "actions": [
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.whatsapp_suppressions.manage.workspace"
+      ],
+      "rationale": "Numbers refused by Meta (131026 no WhatsApp: 90 days; 131049 engagement: 7 days, repeated within 30 days: 30 days) are recorded only by a SECURITY DEFINER trigger on whatsapp_messages (wa_record_suppression, EXECUTE service_role only) in the message workspace. Read: table SELECT policy is active workspace membership; record view loads only the phones of a Contact/Lead the caller can read by RLS and re-checks active membership (authorizeSuppressionRead); planning stats return totals only, without phones. Release (special action) requires active membership plus the new key system.whatsapp_suppressions.manage.workspace in the suppression workspace (authorizeSuppressionRelease, deny wins through user_effective_permissions), the UI hides the button without the effective key, and RPC wa_release_number_suppression re-checks session, membership, key and read-only \"view as\" in the database. The key is registered without automatic grant (owners/admins receive catalogue keys as today). Contact and Lead records only render the notice; their existing operations (properties, delete guard, timeline, associations) are unchanged.",
+      "controls": [
+        {
+          "file": "src/lib/whatsapp/whatsapp-suppression-access.ts",
+          "symbol": "authorizeSuppressionRead"
+        },
+        {
+          "file": "src/lib/whatsapp/whatsapp-suppression-access.ts",
+          "symbol": "authorizeSuppressionRelease"
+        },
+        {
+          "file": "src/lib/whatsapp/whatsapp-suppression-access.ts",
+          "symbol": "loadRecordSuppressions"
+        },
+        {
+          "file": "src/lib/whatsapp/whatsapp-suppression-access.ts",
+          "symbol": "releaseSuppression"
+        },
+        {
+          "file": "src/lib/whatsapp/whatsapp-suppression-access.ts",
+          "symbol": "loadSuppressionStats"
+        },
+        {
+          "file": "src/lib/whatsapp/whatsapp-suppression.ts",
+          "symbol": "suppressionKey"
+        },
+        {
+          "file": "src/lib/whatsapp/whatsapp-suppression.ts",
+          "symbol": "activeSuppressions"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/components/whatsapp/whatsapp-suppression-notice.tsx",
+          "symbol": "WhatsAppSuppressionNotice"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0301_whatsapp_number_suppressions.sql",
+          "symbol": "whatsapp_number_suppressions"
+        },
+        {
+          "file": "drizzle/migrations/0301_whatsapp_number_suppressions.sql",
+          "symbol": "wa_record_suppression"
+        },
+        {
+          "file": "drizzle/migrations/0302_whatsapp_suppression_release_permission.sql",
+          "symbol": "wa_release_number_suppression"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/whatsapp/whatsapp-suppression-access.test.ts",
+          "name": "allows active member with suppression release key"
+        },
+        "missing_permission": {
+          "file": "src/lib/whatsapp/whatsapp-suppression-access.test.ts",
+          "name": "rejects suppression release without key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/whatsapp/whatsapp-suppression-access.test.ts",
+          "name": "rejects suppression release on explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/whatsapp/whatsapp-suppression-access.test.ts",
+          "name": "rejects suppression release in foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/whatsapp/whatsapp-suppression-access.test.ts",
+          "name": "rejects suppression release for inactive member"
+        }
+      },
+      "files": {
+        "src/lib/whatsapp/whatsapp-suppression.ts": "8e3bed45754b2e9289e52df5d4d56513f7780d2f3e78bd38525a524bd115c1a1",
+        "src/lib/whatsapp/whatsapp-suppression.server.ts": "6f65fa2b6c5eb5de8228de4fe912a7b44fd7cea65424be31097bae18b01758c9",
+        "src/lib/whatsapp/whatsapp-suppression-access.ts": "191204de1b1651d7724a574c11a9c5456b43153eb8e256e99505cc7a8740d079",
+        "src/lib/whatsapp/whatsapp-suppressions.functions.ts": "29ff4ac0a1f3ef1423da6d9a4c667b326da0e9245c05ad22666c0cbe79086258",
+        "src/components/whatsapp/whatsapp-suppression-notice.tsx": "d182edffc770469e93d72228e935894c05fa33993d3a390c1cf3b5a8c775aa22",
+        "src/components/whatsapp/use-whatsapp-suppression-stats.ts": "56df014da7f402b20f229a4a100a88e22b4a28a6e47de2cd9d1c4ce0150c3e64",
+        "src/routes/_authenticated/contacts.$id.tsx": "ba10412db75fabbee1d5f06403ad4487ce9c2f46b9086c45750759cf47805ebd",
+        "src/routes/_authenticated/leads.$id.tsx": "c44c7772c785318462753b84710dcf1e537609eb60dc0551ba7bf3c6a260dae7",
+        "drizzle/migrations/0301_whatsapp_number_suppressions.sql": "da7b9b5e869f341e06426924b4b62611a0e063640956ab6d29ba704dfc3594d2",
+        "drizzle/migrations/0302_whatsapp_suppression_release_permission.sql": "e12325911933e88f4d8f3bee3a673d42a5c4e0b82cf9c8a900c4d64a7070599a"
       }
     }
   ],
