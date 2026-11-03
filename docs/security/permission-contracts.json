@@ -2786,6 +2786,10 @@
         {
           "file": "drizzle/migrations/0267_service_agent_technical_rate.sql",
           "symbol": "service_agent_technical_limit"
+        },
+        {
+          "file": "drizzle/migrations/0297_service_agent_send_ignores_legacy_auto_flags.sql",
+          "symbol": "service_agent_begin_send"
         }
       ],
       "tests": {
