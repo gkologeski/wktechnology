@@ -2073,6 +2073,13 @@
       "when": 1793670717356,
       "tag": "0295_email_agent_only_sequence_replies",
       "breakpoints": true
+    },
+    {
+      "idx": 296,
+      "version": "7",
+      "when": 1793680432096,
+      "tag": "0296_sequence_call_failed_is_known",
+      "breakpoints": true
     }
   ]
 }
