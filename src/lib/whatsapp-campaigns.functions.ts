@@ -258,7 +258,7 @@ async function resolveCampaignRecipients(
   });
   if (data.audience) {
     const { buildAudience, isAllowedField } = await import("@/lib/whatsapp/campaign-audience");
-    const { loadAudienceRows, loadOptedOutPhones } =
+    const { loadAudienceRows, loadOptedOutPhones, loadSuppressedPhones } =
       await import("@/lib/whatsapp/campaign-audience.server");
     const { base, rows, truncated } = await loadAudienceRows(
       supabase,
@@ -270,7 +270,12 @@ async function resolveCampaignRecipients(
     const map = data.variable_map ?? {};
     for (const b of Object.values(map))
       if (!isAllowedField(base, b.field)) throw new Error("Campo de variável não permitido.");
-    const summary = buildAudience(rows, map, await loadOptedOutPhones(supabase, workspaceId));
+    const summary = buildAudience(
+      rows,
+      map,
+      await loadOptedOutPhones(supabase, workspaceId),
+      await loadSuppressedPhones(supabase, workspaceId),
+    );
     const kept = data.skip_missing
       ? summary.recipients.filter((r) => r.missing.length === 0)
       : summary.recipients;
@@ -767,7 +772,7 @@ export const previewCampaignAudience = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
     const { buildAudience, isAllowedField } = await import("@/lib/whatsapp/campaign-audience");
-    const { loadAudienceRows, loadOptedOutPhones } =
+    const { loadAudienceRows, loadOptedOutPhones, loadSuppressedPhones } =
       await import("@/lib/whatsapp/campaign-audience.server");
     const { base, rows, truncated } = await loadAudienceRows(
       supabase,
@@ -778,7 +783,12 @@ export const previewCampaignAudience = createServerFn({ method: "POST" })
     const map = Object.fromEntries(
       Object.entries(data.variable_map ?? {}).filter(([, b]) => isAllowedField(base, b.field)),
     );
-    const s = buildAudience(rows, map, await loadOptedOutPhones(supabase, workspaceId));
+    const s = buildAudience(
+      rows,
+      map,
+      await loadOptedOutPhones(supabase, workspaceId),
+      await loadSuppressedPhones(supabase, workspaceId),
+    );
     const recentGuard = await applyRecentGuard(
       supabase,
       workspaceId,
