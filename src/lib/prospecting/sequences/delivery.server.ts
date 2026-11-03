@@ -4,7 +4,7 @@ import type { TokenContext } from "@/lib/message-tokens";
 import { renderRequiredTokens, usesEntityTokens } from "./variable-tokens";
 import { validateEmailAddress } from "@/lib/email-address";
 import { isValidE164 } from "@/lib/phone/e164";
-import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
+import { pickUnsuppressedWhatsApp } from "@/lib/whatsapp/whatsapp-suppression";
 import { SequenceNotStartedError } from "./runtime";
 import { inspectSequenceTemplate } from "./preflight";
 import type { RuntimeContext, SequencePorts } from "./worker.server";
@@ -235,9 +235,11 @@ export function sequenceDeliveryPorts(
           });
         };
       }
-      const phone = pickWhatsAppNumber(
+      // Mesmo número escolhido pelo worker: pula os bloqueados pela Meta (131026/131049).
+      const phone = pickUnsuppressedWhatsApp(
         ctx.source.phones.filter((p): p is string => !!p && isValidE164(p)),
-      );
+        ctx.suppressedPhones ?? new Map(),
+      ).pick;
       if (phone.status !== "ok") throw new Error("WhatsApp inválido.");
       const { resolveWaNumber, metaSend, applyPositionalTemplate } =
         await import("@/lib/whatsapp/meta-channel.server");

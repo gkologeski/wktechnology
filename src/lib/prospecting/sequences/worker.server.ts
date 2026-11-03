@@ -3,7 +3,10 @@ import { workRpc } from "@/lib/access-control/work-core.server";
 import { definitionSchema, type SequenceDefinition, type SequenceStep } from "./draft";
 import { isValidE164 } from "@/lib/phone/e164";
 import { validateEmailAddress } from "@/lib/email-address";
-import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
+import {
+  pickUnsuppressedWhatsApp,
+  type SuppressionReason,
+} from "@/lib/whatsapp/whatsapp-suppression";
 import {
   decideExecution,
   SequenceNotStartedError,
@@ -28,6 +31,8 @@ export type RuntimeContext = {
   person: { id: string; entity: "lead" | "contact" };
   source: { email: string | null; phones: (string | null)[] };
   signals: Omit<ExecutionSignals, "hasEmail" | "hasWhatsApp" | "hasPhone">;
+  /** Bloqueios da Meta (131026/131049) dos telefones da pessoa; carregado só em etapa de WhatsApp. */
+  suppressedPhones?: Map<string, SuppressionReason>;
 };
 export type EffectReservation = {
   id: string;
@@ -64,6 +69,12 @@ export async function processSequenceRun(
       p_lease: run.lease_token,
     });
     ctx.definition = definitionSchema.parse(ctx.definition);
+    const validPhones = ctx.source.phones.filter((p): p is string => !!p && isValidE164(p));
+    if (ctx.definition.steps[ctx.run.cursor]?.type === "whatsapp") {
+      const { loadPhoneSuppressions } = await import("@/lib/whatsapp/whatsapp-suppression.server");
+      ctx.suppressedPhones = await loadPhoneSuppressions(admin, ctx.run.workspace_id, validPhones);
+    }
+    const whatsapp = pickUnsuppressedWhatsApp(validPhones, ctx.suppressedPhones ?? new Map());
     const decision = decideExecution({
       runId: run.id,
       state: ctx.run.state,
@@ -71,11 +82,10 @@ export async function processSequenceRun(
       definition: ctx.definition,
       signals: {
         ...ctx.signals,
-        hasPhone: ctx.source.phones.some((p) => !!p && isValidE164(p)),
+        hasPhone: validPhones.length > 0,
         hasEmail: validateEmailAddress(ctx.source.email).ok,
-        hasWhatsApp:
-          pickWhatsAppNumber(ctx.source.phones.filter((p): p is string => !!p && isValidE164(p)))
-            .status === "ok",
+        hasWhatsApp: whatsapp.pick.status === "ok",
+        whatsAppSuppressed: whatsapp.pick.status === "ok" ? null : whatsapp.blockedBy,
       },
       now,
       previousAt: new Date(
@@ -99,13 +109,8 @@ export async function processSequenceRun(
             const e = validateEmailAddress(ctx.source.email);
             return e.ok ? e.value : null;
           })(),
-          phones: ctx.source.phones.filter((p): p is string => !!p && isValidE164(p)),
-          whatsapp: (() => {
-            const p = pickWhatsAppNumber(
-              ctx.source.phones.filter((n): n is string => !!n && isValidE164(n)),
-            );
-            return p.status === "ok" ? p.e164 : null;
-          })(),
+          phones: validPhones,
+          whatsapp: whatsapp.pick.status === "ok" ? whatsapp.pick.e164 : null,
         },
       });
       if ("blockReason" in reservation) {
