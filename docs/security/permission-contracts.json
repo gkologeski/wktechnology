@@ -5801,8 +5801,7 @@
         "drizzle/migrations/0295_prospecting_sequence_runtime.sql": "504420a65224ad4caa45e07b3d304432ec54bf446134ea39a6ddd1b7ae5c76a8",
         "drizzle/migrations/0298_sequence_planning_limits.sql": "3767f2b3dbfebee040a1112e99178bc275e8ccd61cdbd38d9b88d46ca7f16705",
         "drizzle/migrations/0299_sequence_overflow_to_call_transition.sql": "c07ec1f46b2427f14b0524f2d3850f8d253222f47cadca537459c17c890e2990",
-        "src/components/prospecting/sequences/sequence-planning-tab.tsx": "9c655b2cb5443db6577814834b891eb04ded7bd80a9f3b288645847b081efdfe",
-        "src/lib/prospecting/sequences/planning.ts": "e840697bcd4657cfd66cd41bab8e057dbeb8ad09deb8e3e60a00d5d87d4a14a3"
+        "src/components/prospecting/sequences/sequence-planning-tab.tsx": "9c655b2cb5443db6577814834b891eb04ded7bd80a9f3b288645847b081efdfe"
       },
       "resources": [
         "system.automation.sequences",
@@ -5848,6 +5847,10 @@
         {
           "file": "src/lib/prospecting/sequences/runtime.ts",
           "symbol": "nextBusinessInstant"
+        },
+        {
+          "file": "src/components/prospecting/sequences/sequence-planning-tab.tsx",
+          "symbol": "SequencePlanningTab"
         }
       ],
       "database": [
@@ -5862,6 +5865,18 @@
         {
           "file": "drizzle/migrations/0295_prospecting_sequence_runtime.sql",
           "symbol": "sequence_runs_read"
+        },
+        {
+          "file": "drizzle/migrations/0298_sequence_planning_limits.sql",
+          "symbol": "prospecting_sequence_effect_begin"
+        },
+        {
+          "file": "drizzle/migrations/0298_sequence_planning_limits.sql",
+          "symbol": "prospecting_sequence_recent_whatsapp_phones"
+        },
+        {
+          "file": "drizzle/migrations/0299_sequence_overflow_to_call_transition.sql",
+          "symbol": "prospecting_sequence_transition"
         }
       ],
       "tests": {
@@ -7443,6 +7458,14 @@
       "rationale": "Pure helper mirroring the service_channel_save activation rule for inline form feedback and the campaigns toggle label. No I/O, routes, actions, grants or data access; saving stays under service-channel-account-center (RPC rechecks permission, workspace and the same rule).",
       "files": {
         "src/components/service-channels/binding-rules.ts": "43a457394b27f2f37732ef0453bb1414c65388f2aa5877c76e25ff5ca5c86b14"
+      }
+    },
+    {
+      "id": "prospecting-sequence-planning-math",
+      "kind": "presentation",
+      "rationale": "Pure schema and simulation math for sequence limits (safe caps, business hours, cumulative daily load, suggested intake). No I/O, routes, actions or data access; enforcement lives in the service-only effect reservation under prospecting-sequence-durable-runtime.",
+      "files": {
+        "src/lib/prospecting/sequences/planning.ts": "e840697bcd4657cfd66cd41bab8e057dbeb8ad09deb8e3e60a00d5d87d4a14a3"
       }
     }
   ],
