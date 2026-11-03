@@ -2094,6 +2094,13 @@
       "when": 1793703093405,
       "tag": "0298_sequence_planning_limits",
       "breakpoints": true
+    },
+    {
+      "idx": 299,
+      "version": "7",
+      "when": 1793703141405,
+      "tag": "0299_sequence_overflow_to_call_transition",
+      "breakpoints": true
     }
   ]
 }
