@@ -176,6 +176,20 @@ export function isQuietHours(date: Date, timeZone: string, start: number, end: n
   return start > end ? h >= start || h < end : h >= start && h < end;
 }
 
+/**
+ * Primeiro instante (em passos de 15 min, até 48 h) fora do horário de
+ * silêncio. Usado para reagendar retomadas em vez de segurá-las para revisão.
+ */
+export function nextSendableAt(date: Date, timeZone: string, start: number, end: number): Date {
+  const step = 15 * 60_000;
+  let t = Math.ceil(date.getTime() / step) * step;
+  for (let i = 0; i < 48 * 4; i++) {
+    if (!isQuietHours(new Date(t), timeZone, start, end)) return new Date(t);
+    t += step;
+  }
+  return new Date(t);
+}
+
 /** Chave idempotente isolada por workspace e identidade do provedor. */
 export function turnIdemKey(parts: {
   workspaceId: string;
