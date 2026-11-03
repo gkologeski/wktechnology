@@ -172,7 +172,7 @@ export async function ensureAudioTranscripts(
 ): Promise<number> {
   const { data } = await admin
     .from("whatsapp_messages")
-    .select("id, workspace_id, raw, body")
+    .select("id, workspace_id, raw, body, media_url")
     .eq("conversation_id", conversationId)
     .eq("direction", "inbound")
     .eq("body", AUDIO_PLACEHOLDER)
@@ -189,41 +189,59 @@ export async function ensureAudioTranscripts(
         .update({ body })
         .eq("id", row.id)
         .eq("body", AUDIO_PLACEHOLDER);
-    // Mesma origem usada para guardar a mídia: Meta direta quando a mensagem
-    // veio por ela; senão, Conector Lovable.
-    const cloudId = row.raw?._cloud_phone_number_id as string | undefined;
-    let info: { url?: string; mime_type?: string; file_size?: number };
-    let dl: Response;
-    if (audioSource(row.raw) === "cloud" && cloudId) {
-      const cloud = await downloadCloudMedia(row.workspace_id, cloudId, media.id).catch(() => null);
-      if (!cloud || (cloud.info.file_size && cloud.info.file_size > MAX_AUDIO_BYTES)) {
-        await setBody(`${AUDIO_PLACEHOLDER} (não foi possível transcrever)`);
-        continue;
+    let bytes: Uint8Array | null = null;
+    let mimeHint: string | undefined;
+    // 1) Áudio já guardado no armazenamento interno ao receber a mensagem.
+    const stored = storedMediaPath(row.media_url);
+    if (stored) {
+      const file = await admin.storage.from("whatsapp-media").download(stored);
+      if (!file.error && file.data && file.data.size <= MAX_AUDIO_BYTES) {
+        bytes = new Uint8Array(await file.data.arrayBuffer());
+        mimeHint = file.data.type || undefined;
       }
-      info = cloud.info;
-      dl = cloud.response;
-    } else {
-      const h = headers();
-      const metaRes = await fetch(`${GATEWAY_URL}/media/${encodeURIComponent(media.id)}`, {
-        headers: h,
-      });
-      if (metaRes.status === 404 || metaRes.status === 400) {
-        await setBody(`${AUDIO_PLACEHOLDER} (não foi possível transcrever)`);
-        continue;
-      }
-      if (!metaRes.ok) throw new Error(`Mídia [${metaRes.status}]: ${await metaRes.text()}`);
-      info = (await metaRes.json()) as { url?: string; mime_type?: string; file_size?: number };
-      if (!info.url || (info.file_size && info.file_size > MAX_AUDIO_BYTES)) {
-        await setBody(`${AUDIO_PLACEHOLDER} (não foi possível transcrever)`);
-        continue;
-      }
-      dl = await fetch(`${GATEWAY_URL}/media_download`, {
-        headers: { ...h, "X-WhatsApp-Media-URL": info.url },
-      });
-      if (!dl.ok) throw new Error(`Download [${dl.status}]: ${await dl.text()}`);
     }
-    const bytes = await readLimited(dl);
-    const mime = (info.mime_type || media.mime_type || "audio/ogg").split(";")[0];
+    // 2) Meta direta quando o número está cadastrado nela; 3) Conector Lovable.
+    if (!bytes) {
+      const cloudId = row.raw?._cloud_phone_number_id as string | undefined;
+      let info: { url?: string; mime_type?: string; file_size?: number } | null = null;
+      let dl: Response | null = null;
+      if (audioSource(row.raw) === "cloud" && cloudId) {
+        const cloud = await downloadCloudMedia(row.workspace_id, cloudId, media.id).catch(
+          () => null,
+        );
+        if (cloud) {
+          info = cloud.info;
+          dl = cloud.response;
+        }
+      }
+      if (!dl) {
+        const h = headers();
+        const metaRes = await fetch(`${GATEWAY_URL}/media/${encodeURIComponent(media.id)}`, {
+          headers: h,
+        });
+        if (metaRes.status === 404 || metaRes.status === 400) {
+          await setBody(`${AUDIO_PLACEHOLDER} (não foi possível transcrever)`);
+          continue;
+        }
+        if (!metaRes.ok) throw new Error(`Mídia [${metaRes.status}]: ${await metaRes.text()}`);
+        info = (await metaRes.json()) as { url?: string; mime_type?: string; file_size?: number };
+        if (!info.url) {
+          await setBody(`${AUDIO_PLACEHOLDER} (não foi possível transcrever)`);
+          continue;
+        }
+        dl = await fetch(`${GATEWAY_URL}/media_download`, {
+          headers: { ...h, "X-WhatsApp-Media-URL": info.url },
+        });
+        if (!dl.ok) throw new Error(`Download [${dl.status}]: ${await dl.text()}`);
+      }
+      if (info?.file_size && info.file_size > MAX_AUDIO_BYTES) {
+        await setBody(`${AUDIO_PLACEHOLDER} (não foi possível transcrever)`);
+        continue;
+      }
+      bytes = await readLimited(dl);
+      mimeHint = info?.mime_type;
+    }
+    const mime = (mimeHint || media.mime_type || "audio/ogg").split(";")[0];
     const form = new FormData();
     form.append("model", STT_MODEL);
     form.append(
