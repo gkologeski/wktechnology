@@ -473,6 +473,10 @@ export type AudienceSummary = {
     landline: number;
     duplicate: number;
     opted_out: number;
+    /** 131026: número recusado pela Meta como sem WhatsApp. */
+    no_whatsapp?: number;
+    /** 131049: adiado pelo limite de engajamento da Meta. */
+    engagement_limit?: number;
   };
   withMissing: number;
 };
@@ -509,13 +513,38 @@ export function buildAudience(
   rows: AudienceRow[],
   map: VariableMap,
   optedOut: Set<string>,
+  suppressed: Map<string, "no_whatsapp" | "engagement_limit"> = new Map(),
 ): AudienceSummary {
-  const excluded = { no_phone: 0, invalid_phone: 0, landline: 0, duplicate: 0, opted_out: 0 };
+  const excluded = {
+    no_phone: 0,
+    invalid_phone: 0,
+    landline: 0,
+    duplicate: 0,
+    opted_out: 0,
+    no_whatsapp: 0,
+    engagement_limit: 0,
+  };
   const seen = new Set<string>();
   const optKeys = new Set([...optedOut].map(phoneKey));
   const recipients: BuiltRecipient[] = [];
   for (const r of rows) {
-    const pick = pickWhatsAppNumber(r.phones ?? [r.phone]);
+    // Número recusado pela Meta: tenta o próximo número do cadastro (nunca fixo).
+    let candidates = (r.phones ?? [r.phone]).slice();
+    let pick = pickWhatsAppNumber(candidates);
+    let blockedBy: "no_whatsapp" | "engagement_limit" | null = null;
+    while (pick.status === "ok" && suppressed.has(phoneKey(pick.e164))) {
+      blockedBy = blockedBy ?? suppressed.get(phoneKey(pick.e164)) ?? null;
+      const used = phoneKey(pick.e164);
+      candidates = candidates.filter((p) => {
+        const e = p ? toWhatsAppE164(p) : null;
+        return !(e && e.ok && phoneKey(e.e164) === used) && !(p && phoneKey(String(p)) === used);
+      });
+      pick = pickWhatsAppNumber(candidates);
+    }
+    if (blockedBy && pick.status !== "ok") {
+      excluded[blockedBy]++;
+      continue;
+    }
     if (pick.status === "empty") {
       excluded.no_phone++;
       continue;
