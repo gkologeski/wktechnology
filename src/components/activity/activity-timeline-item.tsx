@@ -38,6 +38,8 @@ import {
   type SurveyResponseSummary,
 } from "@/components/surveys/survey-timeline-card";
 import { modernizeLegacyWhatsAppHtml } from "@/lib/whatsapp-paste";
+import { readWaDayMessages } from "@/lib/timeline/whatsapp-day";
+import { WhatsAppDayConversation } from "@/components/activity/whatsapp-day-conversation";
 import {
   ActivityAssociationsMenu,
   type ActivityAssociationIds,
@@ -58,6 +60,7 @@ function externalNotice(a: Activity): string | null {
     src === "meeting_recording" ||
     src === "meeting_action_item" ||
     src === "call" ||
+    src === "whatsapp_day" ||
     callKeys.some((k) => ext[k]);
   if (!isExternal) return null;
   return isCalSynced || hasGcal || src === "google_calendar"
@@ -110,6 +113,10 @@ export function ActivityTimelineItem({
   const when =
     (a as { activity_date?: string | null }).activity_date ?? a.hs_createdate ?? a.created_at;
   const contacted = (a as { contacted_contact_ids?: string[] | null }).contacted_contact_ids ?? [];
+  const waDay =
+    a.type === "whatsapp"
+      ? readWaDayMessages((a as { external_ids?: unknown }).external_ids)
+      : null;
   const one = (v: string | null | undefined) => (v ? [v] : []);
   const assocIds: ActivityAssociationIds = {
     contacts: [...new Set([...one(a.related_contact_id), ...contacted])],
@@ -231,6 +238,8 @@ export function ActivityTimelineItem({
             createdAt={a.created_at ?? null}
             onOpenAttachment={openEmailAttachment}
           />
+        ) : waDay ? (
+          <WhatsAppDayConversation messages={waDay} />
         ) : (
           a.body &&
           !isStructuredCallBody(a) && (
