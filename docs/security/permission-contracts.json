@@ -7327,8 +7327,8 @@
       ],
       "database": [
         {
-          "file": "drizzle/migrations/0057_sdr_prospecting_agent.sql",
-          "symbol": "sdr_turn_jobs_select"
+          "file": "drizzle/migrations/0295_email_agent_only_sequence_replies.sql",
+          "symbol": "service_agent_email_is_sequence_reply"
         }
       ],
       "tests": {
@@ -7393,8 +7393,8 @@
       ],
       "database": [
         {
-          "file": "drizzle/migrations/0057_sdr_prospecting_agent.sql",
-          "symbol": "sdr_turn_jobs_select"
+          "file": "drizzle/migrations/0294_wa_timeline_daily_conversation.sql",
+          "symbol": "wa_timeline_backup_admin_read"
         }
       ],
       "tests": {
