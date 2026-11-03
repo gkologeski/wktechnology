@@ -5504,7 +5504,8 @@
         "src/lib/prospecting/sequences/draft.ts": "ce594cc6a46b49e59c3995e0fb49897355eacd863754c3c6bb0f1ac580a4e6fb",
         "src/lib/prospecting/sequences/drafts.server.ts": "3ec6fc0226c9965fd35cf3ddeda93e22b35a16ee802ef675d681f34db07fe4d7",
         "src/routes/_authenticated/prospecting.sequences.tsx": "8baa9510472ca9e2aa65e8f2be1407de24f500cf3f4da51f850b0d30af0a22cf",
-        "drizzle/migrations/0292_prospecting_sequence_drafts.sql": "6a7b0c212a5f254186442aad6a5ae1bdab3c134948d30919548e3c801b5982c1"
+        "drizzle/migrations/0292_prospecting_sequence_drafts.sql": "6a7b0c212a5f254186442aad6a5ae1bdab3c134948d30919548e3c801b5982c1",
+        "src/components/prospecting/sequences/sequence-planning-tab.tsx": "fe7c2e7e0136b9fe9ed5500e0b81c3fdee5e53f24ac24f2d96a7721293207b45"
       },
       "resources": [
         "system.automation.sequences"
@@ -5800,8 +5801,7 @@
         "src/lib/prospecting/sequences/worker.server.ts": "16220b2f42e4936c4f721bb1c2517b85a59a50c4e018ebdb7f12f69ae5a2bf59",
         "drizzle/migrations/0295_prospecting_sequence_runtime.sql": "504420a65224ad4caa45e07b3d304432ec54bf446134ea39a6ddd1b7ae5c76a8",
         "drizzle/migrations/0298_sequence_planning_limits.sql": "3767f2b3dbfebee040a1112e99178bc275e8ccd61cdbd38d9b88d46ca7f16705",
-        "drizzle/migrations/0299_sequence_overflow_to_call_transition.sql": "c07ec1f46b2427f14b0524f2d3850f8d253222f47cadca537459c17c890e2990",
-        "src/components/prospecting/sequences/sequence-planning-tab.tsx": "9c655b2cb5443db6577814834b891eb04ded7bd80a9f3b288645847b081efdfe"
+        "drizzle/migrations/0299_sequence_overflow_to_call_transition.sql": "c07ec1f46b2427f14b0524f2d3850f8d253222f47cadca537459c17c890e2990"
       },
       "resources": [
         "system.automation.sequences",
@@ -5847,10 +5847,6 @@
         {
           "file": "src/lib/prospecting/sequences/runtime.ts",
           "symbol": "nextBusinessInstant"
-        },
-        {
-          "file": "src/components/prospecting/sequences/sequence-planning-tab.tsx",
-          "symbol": "SequencePlanningTab"
         }
       ],
       "database": [

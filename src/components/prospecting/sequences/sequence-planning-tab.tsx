@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Mail, MessageCircle, Phone, ShieldCheck, Gauge, Shuffle, GitBranch } from "lucide-react";
-import type { SequenceDefinition } from "@/lib/prospecting/sequences/draft";
+import { SEQUENCE_RESOURCE, type SequenceDefinition } from "@/lib/prospecting/sequences/draft";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   defaultPlanning,
   simulatePlan,
@@ -112,7 +113,14 @@ function Section({
   );
 }
 
-export function SequencePlanningTab({ definition, disabled, onChange }: Props) {
+export function SequencePlanningTab({ definition, disabled: locked, onChange }: Props) {
+  const permissions = usePermissions();
+  // Edição exige gerenciar sequências; o salvamento continua revalidado no servidor.
+  const disabled =
+    locked ||
+    !permissions.canAny(
+      ["own", "team", "workspace"].map((s) => `${SEQUENCE_RESOURCE}.manage.${s}`),
+    );
   const planning = definition.planning ?? defaultPlanning();
   const sim = useMemo(
     () => simulatePlan(definition.steps, definition.settings, planning),
