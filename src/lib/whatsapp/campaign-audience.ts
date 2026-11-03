@@ -529,18 +529,7 @@ export function buildAudience(
   const recipients: BuiltRecipient[] = [];
   for (const r of rows) {
     // Número recusado pela Meta: tenta o próximo número do cadastro (nunca fixo).
-    let candidates = (r.phones ?? [r.phone]).slice();
-    let pick = pickWhatsAppNumber(candidates);
-    let blockedBy: "no_whatsapp" | "engagement_limit" | null = null;
-    while (pick.status === "ok" && suppressed.has(phoneKey(pick.e164))) {
-      blockedBy = blockedBy ?? suppressed.get(phoneKey(pick.e164)) ?? null;
-      const used = phoneKey(pick.e164);
-      candidates = candidates.filter((p) => {
-        const e = toWhatsAppE164(p);
-        return !(e && phoneKey(e) === used);
-      });
-      pick = pickWhatsAppNumber(candidates);
-    }
+    const { pick, blockedBy } = pickUnsuppressedWhatsApp(r.phones ?? [r.phone], suppressed);
     if (blockedBy && pick.status !== "ok") {
       excluded[blockedBy]++;
       continue;
