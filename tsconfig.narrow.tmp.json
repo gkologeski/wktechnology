@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "noEmit": true, "incremental": false },
+  "include": [],
+  "files": [
+    "src/lib/whatsapp/whatsapp-suppression.ts",
+    "src/lib/whatsapp/whatsapp-suppression.server.ts",
+    "src/lib/whatsapp/whatsapp-suppression-access.ts",
+    "src/lib/whatsapp/whatsapp-suppressions.functions.ts",
+    "src/hooks/use-whatsapp-suppressions.ts",
+    "src/components/whatsapp/whatsapp-suppression-notice.tsx",
+    "src/lib/prospecting/sequences/worker.server.ts",
+    "src/lib/prospecting/sequences/delivery.server.ts",
+    "src/lib/prospecting/sequences/runtime.ts",
+    "src/lib/whatsapp/campaign-audience.ts",
+    "src/lib/prospecting/sequences/whatsapp-suppression-skip.test.ts",
+    "src/lib/whatsapp/whatsapp-suppression-access.test.ts"
+  ]
+}
