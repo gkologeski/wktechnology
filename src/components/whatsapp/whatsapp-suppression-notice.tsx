@@ -5,10 +5,27 @@ import { Button } from "@/components/ui/button";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { formatPhoneDisplay } from "@/lib/phone/e164";
 import { SUPPRESSION_LABEL } from "@/lib/whatsapp/whatsapp-suppression";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
-  useRecordWhatsAppSuppressions,
-  useReleaseWhatsAppSuppression,
-} from "@/hooks/use-whatsapp-suppressions";
+  getRecordWhatsAppSuppressions,
+  getWhatsAppSuppressionStats,
+  releaseWhatsAppSuppression,
+} from "@/lib/whatsapp/whatsapp-suppressions.functions";
+
+const RELEASE_KEY = "system.whatsapp_suppressions.manage.workspace";
+
+/** Totais de números bloqueados no workspace (sem telefones), para avisos de planejamento. */
+export function useWhatsAppSuppressionStats(workspaceId: string | null | undefined) {
+  const load = useServerFn(getWhatsAppSuppressionStats);
+  return useQuery({
+    queryKey: ["whatsapp-suppression-stats", workspaceId],
+    enabled: !!workspaceId,
+    queryFn: () => load({ data: { workspaceId: workspaceId! } }),
+    staleTime: 5 * 60_000,
+  });
+}
 
 const dateFmt = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
@@ -23,8 +40,26 @@ export function WhatsAppSuppressionNotice({
   entity: "contact" | "lead";
   id: string;
 }) {
-  const query = useRecordWhatsAppSuppressions(entity, id);
-  const release = useReleaseWhatsAppSuppression(entity, id);
+  const permissions = usePermissions();
+  const load = useServerFn(getRecordWhatsAppSuppressions);
+  const releaseFn = useServerFn(releaseWhatsAppSuppression);
+  const qc = useQueryClient();
+  const queryKey = ["whatsapp-suppressions", entity, id] as const;
+  const query = useQuery({
+    queryKey,
+    queryFn: () => load({ data: { entity, id } }),
+    staleTime: 60_000,
+  });
+  const release = useMutation({
+    mutationFn: (suppressionId: string) => releaseFn({ data: { id: suppressionId } }),
+    onSettled: () => qc.invalidateQueries({ queryKey }),
+  });
+  // Botão só com a chave efetiva na tela E confirmação do servidor; a RPC revalida no banco.
+  const canRelease =
+    !!query.data?.canRelease &&
+    !permissions.isLoading &&
+    !permissions.isError &&
+    permissions.canAny([RELEASE_KEY]);
   const items = query.data?.items ?? [];
   if (query.isError) {
     return (
@@ -66,7 +101,7 @@ export function WhatsAppSuppressionNotice({
               {SUPPRESSION_LABEL[it.reason]}. Bloqueado até {dateFmt.format(new Date(it.expiresAt))}
               .
             </div>
-            {query.data?.canRelease ? (
+            {canRelease ? (
               <Button
                 size="sm"
                 variant="outline"

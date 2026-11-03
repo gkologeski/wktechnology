@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, MessageCircle, Phone, ShieldCheck, Gauge, Shuffle, GitBranch } from "lucide-react";
 import { SEQUENCE_RESOURCE, type SequenceDefinition } from "@/lib/prospecting/sequences/draft";
 import { usePermissions } from "@/lib/access-control/use-permissions";
-import { useWhatsAppSuppressionStats } from "@/hooks/use-whatsapp-suppressions";
+import { useWhatsAppSuppressionStats } from "@/components/whatsapp/whatsapp-suppression-notice";
 import {
   defaultPlanning,
   simulatePlan,
