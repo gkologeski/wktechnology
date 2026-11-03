@@ -335,7 +335,7 @@ describe("qualificação canônica", () => {
       score: 100,
       handoff_reason: "",
     });
-    expect(await processJob(db, j, d)).toBe("drafted");
+    expect(await processJob(db, j, d)).toBe("sent");
     const [q] = db.t("prospecting_qualifications");
     expect(q).toMatchObject({
       entity: "lead",
@@ -915,7 +915,7 @@ describe("três políticas de envio", () => {
 });
 
 describe("ferramentas reais no turno (agenda falsa)", () => {
-  it("inbound → IA escolhe opção já apresentada → rascunho com vídeo, sem link /book/", async () => {
+  it("inbound → IA escolhe opção já apresentada → mensagem com vídeo, sem link /book/", async () => {
     const { FakeCalendar, MemoryStore } = await import("./tools/memory");
     const { TOOL_IDS } = await import("./tools/catalog");
     const store = new MemoryStore();
@@ -984,7 +984,7 @@ describe("ferramentas reais no turno (agenda falsa)", () => {
       callAgent: callAgent as never,
       toolEnv: async () => ({ store, calendar: cal, calendarFacts: { ok: true } }),
     });
-    expect(await processJob(db, j, d)).toBe("drafted");
+    expect(await processJob(db, j, d)).toBe("sent");
     expect(seenTools[0]).toContain("calendar__book");
     const saved = db.t("sdr_turn_jobs").find((x) => x.id === j.id)!;
     expect(saved.draft_text).not.toMatch(/\/book\//);
@@ -1335,7 +1335,7 @@ describe("channel identity in the production worker", () => {
     bindBruna();
     job(db);
     const d = deps(out);
-    expect(await processJob(db, await claimOne(db), d)).toBe("drafted");
+    expect(await processJob(db, await claimOne(db), d)).toBe("sent");
     const system = vi.mocked(d.callAgent).mock.calls[0][0].system;
     expect(system).toContain("Nome: Bruna");
     expect(system).toContain("Sou a Bruna, especialista da WK Technology.");
