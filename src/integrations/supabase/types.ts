@@ -33048,6 +33048,10 @@ export type Database = {
         Args: { p_effect: string; p_payload: Json; p_token: string }
         Returns: boolean
       }
+      prospecting_sequence_recent_whatsapp_phones: {
+        Args: { p_days: number; p_phones: string[]; p_workspace: string }
+        Returns: string[]
+      }
       prospecting_sequence_release_claims: {
         Args: { p_claims: Json }
         Returns: number

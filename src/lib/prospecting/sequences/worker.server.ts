@@ -85,7 +85,10 @@ export async function processSequenceRun(
     if (decision.kind === "effect") {
       const send = await ports.prepare(ctx, decision.step);
       const reservation = await workRpc<
-        EffectReservation | { deferUntil: string; reason: string } | { blockReason: string }
+        | EffectReservation
+        | { deferUntil: string; reason: string }
+        | { blockReason: string }
+        | { skipTo: number; reason: string }
       >(admin, "prospecting_sequence_effect_begin", {
         p_run: run.id,
         p_lease: run.lease_token,
@@ -115,6 +118,18 @@ export async function processSequenceRun(
           p_reason: reservation.blockReason,
         });
         return { id: run.id, status: "blocked" };
+      }
+      if ("skipTo" in reservation) {
+        // Limite/contato recente: pula a etapa (ou transborda para a ligação) sem enviar.
+        await workRpc(admin, "prospecting_sequence_transition", {
+          p_run: run.id,
+          p_lease: run.lease_token,
+          p_state: "active",
+          p_cursor: reservation.skipTo,
+          p_due: now.toISOString(),
+          p_reason: reservation.reason,
+        });
+        return { id: run.id, status: "skipped" };
       }
       if ("deferUntil" in reservation) {
         await workRpc(admin, "prospecting_sequence_transition", {

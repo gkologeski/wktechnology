@@ -1,3 +1,4 @@
+import { planningSchema } from "./planning";
 import { z } from "zod";
 import { isBlockedFilterColumn } from "@/lib/whatsapp/campaign-audience";
 export const SEQUENCE_RESOURCE = "system.automation.sequences";
@@ -127,6 +128,7 @@ export const definitionSchema = z
         agentId: nullableId,
       })
       .strict(),
+    planning: planningSchema.optional(),
   })
   .strict()
   .superRefine((d, c) => {

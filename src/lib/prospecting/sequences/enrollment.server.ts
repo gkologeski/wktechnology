@@ -51,10 +51,27 @@ export async function prepareSequenceEnrollment(
     throw new Error(
       "O público excede o limite técnico de 5.000 registros. Refine os filtros antes de inscrever; nenhum lote parcial foi gravado.",
     );
-  const candidates = cohortCandidates(rows, parsed);
+  let candidates = cohortCandidates(rows, parsed);
   const writer =
     serviceClient ?? (await import("@/integrations/supabase/client.server")).supabaseAdmin;
-  return workRpc(writer, "prospecting_sequence_cohort_prepare", {
+  const recentDays = parsed.planning?.recent.entryWhatsappDays ?? 0;
+  let recentExcluded = 0;
+  if (recentDays > 0 && candidates.length) {
+    const phones = [...new Set(candidates.flatMap((c) => c.phones))];
+    const recent = new Set(
+      phones.length
+        ? await workRpc<string[]>(writer, "prospecting_sequence_recent_whatsapp_phones", {
+            p_workspace: scope.workspace,
+            p_phones: phones,
+            p_days: recentDays,
+          })
+        : [],
+    );
+    const kept = candidates.filter((c) => !c.phones.some((p) => recent.has(p)));
+    recentExcluded = candidates.length - kept.length;
+    candidates = kept;
+  }
+  const summary = await workRpc<CohortSummary>(writer, "prospecting_sequence_cohort_prepare", {
     p_workspace: scope.workspace,
     p_actor: scope.actor,
     p_version: data.versionId,
@@ -62,6 +79,13 @@ export async function prepareSequenceEnrollment(
     p_consent: data.consentEvidence,
     p_candidates: candidates,
   });
+  if (!recentExcluded) return summary;
+  return {
+    ...summary,
+    requested: summary.requested + recentExcluded,
+    blocked: summary.blocked + recentExcluded,
+    reasons: { ...summary.reasons, recent_whatsapp: recentExcluded },
+  };
 }
 export async function listSequenceCohorts(
   client: SupabaseClient,

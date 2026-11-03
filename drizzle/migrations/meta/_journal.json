@@ -2087,6 +2087,20 @@
       "when": 1793698991000,
       "tag": "0297_service_agent_send_ignores_legacy_auto_flags",
       "breakpoints": true
+    },
+    {
+      "idx": 298,
+      "version": "7",
+      "when": 1793703093405,
+      "tag": "0298_sequence_planning_limits",
+      "breakpoints": true
+    },
+    {
+      "idx": 299,
+      "version": "7",
+      "when": 1793703141405,
+      "tag": "0299_sequence_overflow_to_call_transition",
+      "breakpoints": true
     }
   ]
 }
