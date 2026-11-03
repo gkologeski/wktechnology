@@ -2080,6 +2080,13 @@
       "when": 1793680432096,
       "tag": "0296_sequence_call_failed_is_known",
       "breakpoints": true
+    },
+    {
+      "idx": 297,
+      "version": "7",
+      "when": 1793698991000,
+      "tag": "0297_service_agent_send_ignores_legacy_auto_flags",
+      "breakpoints": true
     }
   ]
 }

@@ -23,6 +23,7 @@ vi.mock("@/lib/gmail.server", () => ({
   gmailSendRaw: vi.fn(),
 }));
 import { FakeDb } from "./test-fake-db";
+import { PRICE_WARNING } from "./policy";
 import {
   processServiceJob,
   tickServiceAgents,
