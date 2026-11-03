@@ -10,22 +10,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   getRecordWhatsAppSuppressions,
-  getWhatsAppSuppressionStats,
   releaseWhatsAppSuppression,
 } from "@/lib/whatsapp/whatsapp-suppressions.functions";
 
 const RELEASE_KEY = "system.whatsapp_suppressions.manage.workspace";
-
-/** Totais de números bloqueados no workspace (sem telefones), para avisos de planejamento. */
-export function useWhatsAppSuppressionStats(workspaceId: string | null | undefined) {
-  const load = useServerFn(getWhatsAppSuppressionStats);
-  return useQuery({
-    queryKey: ["whatsapp-suppression-stats", workspaceId],
-    enabled: !!workspaceId,
-    queryFn: () => load({ data: { workspaceId: workspaceId! } }),
-    staleTime: 5 * 60_000,
-  });
-}
 
 const dateFmt = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",

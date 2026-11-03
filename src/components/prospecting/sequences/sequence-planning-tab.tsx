@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Mail, MessageCircle, Phone, ShieldCheck, Gauge, Shuffle, GitBranch } from "lucide-react";
 import { SEQUENCE_RESOURCE, type SequenceDefinition } from "@/lib/prospecting/sequences/draft";
 import { usePermissions } from "@/lib/access-control/use-permissions";
-import { useWhatsAppSuppressionStats } from "@/components/whatsapp/whatsapp-suppression-notice";
+import { useWhatsAppSuppressionStats } from "@/components/whatsapp/use-whatsapp-suppression-stats";
 import {
   defaultPlanning,
   simulatePlan,
@@ -145,9 +145,7 @@ export function SequencePlanningTab({ definition, disabled: locked, onChange }: 
   };
   const hasCall = counts.call > 0;
   const a = definition.audience;
-  const suppression = useWhatsAppSuppressionStats(
-    counts.whatsapp > 0 ? permissions.workspaceId : null,
-  );
+  const suppression = useWhatsAppSuppressionStats(counts.whatsapp > 0);
   const blockedTotal =
     (suppression.data?.noWhatsApp ?? 0) + (suppression.data?.engagementLimit ?? 0);
 
