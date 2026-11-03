@@ -2101,6 +2101,13 @@
       "when": 1793703141405,
       "tag": "0299_sequence_overflow_to_call_transition",
       "breakpoints": true
+    },
+    {
+      "idx": 300,
+      "version": "7",
+      "when": 1793719402944,
+      "tag": "0300_sequence_cohort_prepare_indexed_identity",
+      "breakpoints": true
     }
   ]
 }
