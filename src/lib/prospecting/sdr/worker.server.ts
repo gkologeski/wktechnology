@@ -111,6 +111,52 @@ async function finish(
     .eq("lease_token", leaseToken);
 }
 
+/**
+ * Retomada fora do horário de prospecção: volta para a fila no próximo
+ * horário permitido se ainda couber na janela de 24 h; senão é descartada.
+ * A tentativa não conta para o limite técnico de tentativas.
+ */
+async function rescheduleFollowUp(
+  admin: Admin,
+  job: Job,
+  settings: { timezone: string; quiet_hours_start: number; quiet_hours_end: number },
+  lastInboundAt: string | null,
+  extra: Record<string, unknown> = {},
+): Promise<string> {
+  const at = nextSendableAt(
+    new Date(),
+    settings.timezone,
+    settings.quiet_hours_start,
+    settings.quiet_hours_end,
+  );
+  const deadline = followUpDeadline(lastInboundAt);
+  if (deadline && at.getTime() <= deadline.getTime()) {
+    await finish(admin, job.id, job.lease_token, {
+      ...extra,
+      status: "queued",
+      lease_until: at.toISOString(),
+      attempts: Math.max(0, (job.attempts ?? 1) - 1),
+      error: "followup_hours",
+    });
+    return "rescheduled";
+  }
+  await finish(admin, job.id, job.lease_token, {
+    ...extra,
+    status: "discarded",
+    error: "followup_hours",
+    block_category: "prospecting",
+  });
+  await recordSdrAction(admin, {
+    workspace_id: job.workspace_id,
+    enrollment_id: job.enrollment_id,
+    job_id: job.id,
+    kind: "follow_up",
+    status: "skipped",
+    error: "followup_hours",
+  });
+  return "discarded";
+}
+
 type Job = {
   id: string;
   attempts?: number;
@@ -360,7 +406,7 @@ export async function processJob(
     admin
       .from("whatsapp_conversations")
       .select(
-        "id, workspace_id, ai_owner, ai_version, contact_id, lead_id, contact_phone, wa_phone_number_id",
+        "id, workspace_id, ai_owner, ai_version, contact_id, lead_id, contact_phone, wa_phone_number_id, last_inbound_at",
       )
       .eq("id", job.conversation_id)
       .maybeSingle(),
@@ -454,6 +500,18 @@ export async function processJob(
     await finish(admin, job.id, job.lease_token, { status: "skipped", error: "playbook_disabled" });
     return "skipped";
   }
+  // Retomada fora do horário de prospecção: reagenda antes de chamar a IA
+  // (nunca vira rascunho e nunca passa do fim da janela de 24 h).
+  if (
+    job.kind === "follow_up" &&
+    isQuietHours(
+      new Date(),
+      settings.timezone,
+      settings.quiet_hours_start,
+      settings.quiet_hours_end,
+    )
+  )
+    return rescheduleFollowUp(admin, job, settings, conv.last_inbound_at ?? null);
 
   // Áudios do cliente viram texto antes da Lia ler a conversa.
   if (job.kind === "reply") {
