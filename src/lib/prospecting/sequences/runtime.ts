@@ -22,6 +22,8 @@ export type ExecutionSignals = {
   callResultKnown?: boolean;
   hasEmail: boolean;
   hasWhatsApp: boolean;
+  /** Número do cadastro bloqueado por recusa da Meta (131026/131049): etapa pulada com esse motivo. */
+  whatsAppSuppressed?: "no_whatsapp" | "engagement_limit" | null;
 };
 export type ExecutionDecision =
   | { kind: "stop"; state: ExecutionState; reason: string; agentId?: string }
@@ -201,7 +203,15 @@ export function decideExecution(input: {
     return stop(branch === "end" ? "completed" : "human", "condition");
   }
   if (step.type === "email" && !s.hasEmail) return next(now, "missing_email");
-  if (step.type === "whatsapp" && !s.hasWhatsApp) return next(now, "missing_whatsapp");
+  if (step.type === "whatsapp" && !s.hasWhatsApp)
+    return next(
+      now,
+      s.whatsAppSuppressed === "no_whatsapp"
+        ? "whatsapp_suppressed_no_whatsapp"
+        : s.whatsAppSuppressed === "engagement_limit"
+          ? "whatsapp_suppressed_engagement"
+          : "missing_whatsapp",
+    );
   if (step.type === "call" && !s.hasPhone) return next(now, "missing_phone");
   const due = nextBusinessInstant(now, d.settings);
   if (due.getTime() > now.getTime())
