@@ -1,4 +1,5 @@
-import { pickWhatsAppNumber, toWhatsAppE164 } from "@/lib/phone/whatsapp-e164";
+import { toWhatsAppE164 } from "@/lib/phone/whatsapp-e164";
+import { pickUnsuppressedWhatsApp } from "./whatsapp-suppression";
 // Público e variáveis das campanhas de WhatsApp (regras puras, tela + servidor).
 // Os campos vêm de uma lista branca: nada fora dela entra na mensagem ou nos filtros.
 
