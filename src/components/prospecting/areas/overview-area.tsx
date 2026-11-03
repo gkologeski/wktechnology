@@ -21,13 +21,13 @@ const ICONS = {
 
 const LINKS: Record<string, { to: string; search?: Record<string, string>; label: string }> = {
   due: { to: "/prospecting", search: { area: "trabalho", section: "fila" }, label: "Abrir filas" },
-  drafts: { to: "/agents/sdr", label: "Revisar no Agente SDR" },
+  drafts: { to: "/agents/sdr", label: "Ver auditoria do Agente SDR" },
   qualified: {
     to: "/prospecting",
     search: { area: "trabalho", section: "qualificacao" },
     label: "Ver qualificação",
   },
-  meetings: { to: "/agents/sdr", label: "Supervisão do SDR" },
+  meetings: { to: "/agents/sdr", label: "Abrir Agente SDR" },
 };
 
 export function OverviewArea() {
