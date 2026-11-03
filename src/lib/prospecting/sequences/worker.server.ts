@@ -70,7 +70,8 @@ export async function processSequenceRun(
     });
     ctx.definition = definitionSchema.parse(ctx.definition);
     const validPhones = ctx.source.phones.filter((p): p is string => !!p && isValidE164(p));
-    if (ctx.definition.steps[ctx.run.cursor]?.type === "whatsapp") {
+    // Só sequências com WhatsApp consultam bloqueios (também valem para condições "tem WhatsApp").
+    if (ctx.definition.steps.some((step) => step.type === "whatsapp")) {
       const { loadPhoneSuppressions } = await import("@/lib/whatsapp/whatsapp-suppression.server");
       ctx.suppressedPhones = await loadPhoneSuppressions(admin, ctx.run.workspace_id, validPhones);
     }
