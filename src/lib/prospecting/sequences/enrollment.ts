@@ -21,6 +21,7 @@ export const COHORT_REASONS = {
   duplicate: "Já reservado nesta versão ou duplicado no público",
   other_sequence: "Em outra sequência ou atendimento ativo",
   missing_channel: "Sem canal válido para as etapas configuradas",
+  recent_whatsapp: "Recebeu WhatsApp recentemente",
 } as const;
 export type CohortSummary = {
   id: string;
