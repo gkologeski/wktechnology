@@ -2,12 +2,11 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Loader2, Send, Trash2, UserRound } from "lucide-react";
+import { Loader2, Trash2, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -29,7 +28,6 @@ import { Link } from "@tanstack/react-router";
 import { EmptyState, SectionHeader, StatusBadge } from "@/components/techhire/ui";
 import { auditReasonLabel } from "@/lib/prospecting/sdr/audit-outcome";
 import {
-  approveSdrDraft,
   setSdrOfferApproval,
   discardSdrDraft,
   getSdrOverview,
@@ -207,14 +205,10 @@ function SettingsPanel({ d }: { d: Overview }) {
           disabled={dis}
           onChange={(v) => setForm({ ...form, enabled: v })}
         />
-        <ToggleRow
-          id="sdr-auto"
-          label="Envio automático (sem aprovação)"
-          hint="Também exige playbook em modo automático. Recomendado manter desligado no piloto."
-          checked={form.auto_send_enabled}
-          disabled={dis}
-          onChange={(v) => setForm({ ...form, auto_send_enabled: v })}
-        />
+        <p className="text-xs text-muted-foreground">
+          Envio automático: sempre ligado. Não há aprovação manual; a auditoria automática refaz
+          a mensagem que cair numa regra e passa para um humano o que não tiver conserto.
+        </p>
       </div>
 
       <section aria-labelledby="sdr-pol-prosp" className="space-y-4 rounded-lg border bg-card p-4">
@@ -426,7 +420,7 @@ function PlaybookReadiness({ d, playbookId }: { d: Overview; playbookId: string 
     <section className="space-y-3" aria-labelledby="sdr-pilot-title">
       <SectionHeader
         title="Qualificação e agenda do agente"
-        description={`${pilot.name} · ${pilot.enabled ? "ativo" : "desativado"} · modo ${pilot.mode === "auto" ? "automático" : "supervisionado"}`}
+        description={`${pilot.name} · ${pilot.enabled ? "ativo" : "desativado"}`}
       />
       <div className="space-y-4 rounded-lg border bg-card p-4 text-sm">
         <div>
