@@ -153,14 +153,14 @@ beforeEach(() => {
   };
 });
 describe("email/chat service orchestration", () => {
-  it("uses the account persona and only drafts in supervised mode", async () => {
-    expect(await processServiceJob(db, job, deps)).toBe("drafted");
+  it("uses the account persona and readies the reply without manual approval", async () => {
+    expect(await processServiceJob(db, job, deps)).toBe("ready");
     expect(spies.turn.mock.calls[0][0].persona.assistant_name).toBe("Bruna");
     expect(spies.turn.mock.calls[0][0].persona.description).toBe("Sou a Bruna");
     expect(db.rpc).toHaveBeenCalledWith("service_agent_finish_decision", {
       p_job: "j1",
       p_lease: "lease1",
-      p_status: "drafted",
+      p_status: "ready",
     });
     expect(deps.deliver).not.toHaveBeenCalled();
   });
@@ -225,7 +225,7 @@ describe("email/chat service orchestration", () => {
   });
   it("still retains a draft when the reply carries a blocking warning", async () => {
     const output = decision();
-    output.out.warnings = ["preço_não_autorizado"];
+    output.out.warnings = [PRICE_WARNING];
     spies.turn.mockResolvedValue(output);
     expect(await processServiceJob(db, job, deps)).toBe("drafted");
   });
