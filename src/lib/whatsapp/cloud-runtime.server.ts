@@ -84,6 +84,17 @@ export async function sendCloudPayload(workspaceId: string, phoneNumberId: strin
       .limit(1);
     if (optedOut.error || optedOut.data?.length)
       throw new Error("Envio não permitido: descadastramento ou falha na verificação.");
+    const { suppressionKey, activeSuppressions, SUPPRESSION_LABEL } =
+      await import("./whatsapp-suppression");
+    const key = suppressionKey(String(body.to));
+    const sup = await supabaseAdmin
+      .from("whatsapp_number_suppressions")
+      .select("phone_key, reason, expires_at, released_at")
+      .eq("workspace_id", workspaceId)
+      .eq("phone_key", key);
+    if (sup.error) throw new Error("Envio não permitido: falha ao verificar números recusados.");
+    const reason = activeSuppressions((sup.data ?? []) as never).get(key);
+    if (reason) throw new Error(`Envio não permitido: ${SUPPRESSION_LABEL[reason]}.`);
   }
   if (body.type === "template") {
     const templates = await cloudList(

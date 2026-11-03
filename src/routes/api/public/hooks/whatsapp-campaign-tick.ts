@@ -227,6 +227,25 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
       handled += 1;
       continue;
     }
+    {
+      const { suppressionKey, activeSuppressions, SUPPRESSION_LABEL } =
+        await import("@/lib/whatsapp/whatsapp-suppression");
+      const sup = await supabaseAdmin
+        .from("whatsapp_number_suppressions")
+        .select("phone_key, reason, expires_at, released_at")
+        .eq("workspace_id", camp.workspace_id)
+        .eq("phone_key", suppressionKey(toBare));
+      if (sup.error) throw new Error("Não foi possível verificar números recusados.");
+      const reason = activeSuppressions((sup.data ?? []) as never).get(suppressionKey(toBare));
+      if (reason) {
+        await supabaseAdmin
+          .from("whatsapp_campaign_recipients")
+          .update({ status: "skipped", error: SUPPRESSION_LABEL[reason] })
+          .eq("id", r.id);
+        handled += 1;
+        continue;
+      }
+    }
     const vars = (r.variables ?? {}) as Record<string, string>;
     const body = applyTemplate(camp.body_template ?? "", vars);
 

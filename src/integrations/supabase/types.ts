@@ -28467,6 +28467,51 @@ export type Database = {
           },
         ]
       }
+      whatsapp_number_suppressions: {
+        Row: {
+          created_at: string
+          error_count: number
+          expires_at: string
+          id: string
+          last_error_at: string
+          last_error_code: string | null
+          phone_key: string
+          reason: string
+          released_at: string | null
+          released_by: string | null
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_count?: number
+          expires_at: string
+          id?: string
+          last_error_at?: string
+          last_error_code?: string | null
+          phone_key: string
+          reason: string
+          released_at?: string | null
+          released_by?: string | null
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          error_count?: number
+          expires_at?: string
+          id?: string
+          last_error_at?: string
+          last_error_code?: string | null
+          phone_key?: string
+          reason?: string
+          released_at?: string | null
+          released_by?: string | null
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
       whatsapp_webhook_events: {
         Row: {
           attempts: number
@@ -34110,8 +34155,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      wa_phone_key: { Args: { p: string }; Returns: string }
       wa_phone_recent_key: { Args: { p: string }; Returns: string }
       wa_pick_mobile: { Args: { _fields: string[] }; Returns: string }
+      wa_record_suppression: {
+        Args: { p_at: string; p_code: string; p_phone: string; p_ws: string }
+        Returns: undefined
+      }
+      wa_release_number_suppression: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
       wa_reserve_template_quota: {
         Args: { p_limit: number; p_recipient: string }
         Returns: Json

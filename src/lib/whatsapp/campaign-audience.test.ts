@@ -57,6 +57,8 @@ describe("público da campanha WhatsApp", () => {
       landline: 0,
       duplicate: 1,
       opted_out: 1,
+      no_whatsapp: 0,
+      engagement_limit: 0,
     });
     expect(s.recipients).toHaveLength(1);
   });
@@ -64,6 +66,27 @@ describe("público da campanha WhatsApp", () => {
   it("exclui telefone fixo do público", () => {
     const s = buildAudience([row("(11) 3333-4444")], {}, new Set());
     expect(s.excluded.landline).toBe(1);
+    expect(s.recipients).toHaveLength(0);
+  });
+
+  it("131026: pula número sem WhatsApp e usa o próximo celular do cadastro", () => {
+    const r = { ...row(null), phones: ["+5548991104003", "+5511988887777"] };
+    const s = buildAudience([r], {}, new Set(), new Map([["+554891104003", "no_whatsapp"]]));
+    expect(s.recipients[0]?.phone).toBe("+5511988887777");
+  });
+
+  it("131026/131049: sem outro número, fica fora com o motivo", () => {
+    const s = buildAudience(
+      [row("+5548991104003"), row("+5511988887777")],
+      {},
+      new Set(),
+      new Map([
+        ["+554891104003", "no_whatsapp"],
+        ["+551188887777", "engagement_limit"],
+      ]),
+    );
+    expect(s.excluded.no_whatsapp).toBe(1);
+    expect(s.excluded.engagement_limit).toBe(1);
     expect(s.recipients).toHaveLength(0);
   });
 

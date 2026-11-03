@@ -583,3 +583,19 @@ export async function loadRecentWhatsAppSends(
     })),
   );
 }
+
+/** Números bloqueados por recusa da Meta (131026/131049) ainda vigentes no workspace. */
+export async function loadSuppressedPhones(db: Db, workspaceId: string) {
+  const { activeSuppressions } = await import("./whatsapp-suppression");
+  const rows = await fetchAllPages(
+    () =>
+      db
+        .from("whatsapp_number_suppressions")
+        .select("id, phone_key, reason, expires_at, released_at")
+        .eq("workspace_id", workspaceId)
+        .is("released_at", null)
+        .gt("expires_at", new Date().toISOString()),
+    20000,
+  );
+  return activeSuppressions(rows as never);
+}

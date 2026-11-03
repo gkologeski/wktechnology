@@ -483,6 +483,8 @@ export function CampaignAudiencePanel({
                   Fora: {p.excluded.no_phone} sem telefone · {p.excluded.invalid_phone} telefone
                   inválido · {p.excluded.landline ?? 0} fixo, estrangeiro ou fora do padrão ·{" "}
                   {p.excluded.duplicate} duplicado · {p.excluded.opted_out} descadastrado ·{" "}
+                  {p.excluded.no_whatsapp ?? 0} sem WhatsApp (recusado pela Meta) ·{" "}
+                  {p.excluded.engagement_limit ?? 0} aguardando nova tentativa (limite da Meta) ·{" "}
                   {p.recentRemovedCount} por envio recente
                   {p.recentOverriddenCount > 0
                     ? ` · ${p.recentOverriddenCount} liberado(s) manualmente`
