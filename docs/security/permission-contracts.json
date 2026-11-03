@@ -2817,7 +2817,7 @@
         "review_by": "2027-01-27"
       },
       "files": {
-        "src/lib/prospecting/sdr/service-worker.server.ts": "7a61c413c1fa05c8503e094b4120ce0fcf9600e3ce92ae9d591f2a5db4c387ce",
+        "src/lib/prospecting/sdr/service-worker.server.ts": "5b460a5a9268cd04a17041ec43dccaaf764fd681169593219a7676121345cea7",
         "src/lib/prospecting/sdr/service-transports.server.ts": "6be9872511c8d3d2506ff7897e426104df89f0800487d7e806351f76c50a379d",
         "src/lib/prospecting/sdr/tools/store.server.ts": "a8ada9804f3bc58a3d1ee9232a668e44f093efff4e90bfb78f64de30365fff4d",
         "drizzle/migrations/0258_service_agent_queue.sql": "1df35e4858d14e524b4056925ef5ce73e3567d8fe3caf0a5076bd79b36b61810",
@@ -2828,7 +2828,8 @@
         "src/routes/api/public/hooks/sdr-tick.ts": "e2aa8a7e49ef906f4fa5dd51e0eebdc414c07d79b2c501a2550e1375c10874b5",
         "drizzle/migrations/0265_service_agent_wake_pending.sql": "306ab84daf4856e9b629b644d1d04a2a13c06b54ccda44a5c3bfede8a93d6968",
         "drizzle/migrations/0266_service_agent_email_sync_proof.sql": "749f88dec7426ea6963e1f8aaf43d8454e9ed715239e1c87ef443106c6e462f9",
-        "drizzle/migrations/0267_service_agent_technical_rate.sql": "1863bae6f62bd858e4c2245e3b79284101c2593c138e50f6c49098160f323528"
+        "drizzle/migrations/0267_service_agent_technical_rate.sql": "1863bae6f62bd858e4c2245e3b79284101c2593c138e50f6c49098160f323528",
+        "drizzle/migrations/0297_service_agent_send_ignores_legacy_auto_flags.sql": "08f8259e6eaaba24ee7b700311e7bc0dcd365d3edcc1f0ec9ffcb8871300c665"
       }
     },
     {
