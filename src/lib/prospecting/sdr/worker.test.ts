@@ -1404,7 +1404,10 @@ describe("auditoria automática (sem supervisão manual)", () => {
     const callAgent = vi
       .fn()
       .mockResolvedValueOnce({ ok: true, output: reply("Fica R$ 10.000 por mês.") })
-      .mockResolvedValue({ ok: true, output: reply("Isso eu alinho com o time numa conversa rápida, combinado?") });
+      .mockResolvedValue({
+        ok: true,
+        output: reply("Isso eu alinho com o time numa conversa rápida, combinado?"),
+      });
     const d = deps(null, { callAgent: callAgent as never });
     expect(await processJob(db, j, d)).toBe("sent");
     expect(callAgent).toHaveBeenCalledTimes(2);
@@ -1462,13 +1465,14 @@ describe("auditoria automática (sem supervisão manual)", () => {
   });
 
   it("retomada fora do horário: reagendada antes de chamar a IA, sem rascunho", async () => {
-    const h = Number(
-      new Intl.DateTimeFormat("en-US", {
-        hour: "numeric",
-        hour12: false,
-        timeZone: "America/Sao_Paulo",
-      }).format(new Date()),
-    ) % 24;
+    const h =
+      Number(
+        new Intl.DateTimeFormat("en-US", {
+          hour: "numeric",
+          hour12: false,
+          timeZone: "America/Sao_Paulo",
+        }).format(new Date()),
+      ) % 24;
     Object.assign(db.t("sdr_workspace_settings")[0], {
       quiet_hours_start: h,
       quiet_hours_end: (h + 2) % 24,

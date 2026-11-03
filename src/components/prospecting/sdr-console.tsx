@@ -47,7 +47,8 @@ export function SdrAgentPanel() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
-          Acompanhe a auditoria do SDR do WhatsApp. Playbooks e atendimentos ficam na página completa.
+          Acompanhe a auditoria do SDR do WhatsApp. Playbooks e atendimentos ficam na página
+          completa.
         </p>
         <Button asChild variant="outline" size="sm">
           <Link to="/agents/sdr">Abrir página completa</Link>
@@ -206,8 +207,8 @@ function SettingsPanel({ d }: { d: Overview }) {
           onChange={(v) => setForm({ ...form, enabled: v })}
         />
         <p className="text-xs text-muted-foreground">
-          Envio automático: sempre ligado. Não há aprovação manual; a auditoria automática refaz
-          a mensagem que cair numa regra e passa para um humano o que não tiver conserto.
+          Envio automático: sempre ligado. Não há aprovação manual; a auditoria automática refaz a
+          mensagem que cair numa regra e passa para um humano o que não tiver conserto.
         </p>
       </div>
 
@@ -725,7 +726,8 @@ function FailureCard({ job }: { job: Overview["jobs"][number] }) {
         ? discard({ data: { jobId: job.id } })
         : takeover({ data: { jobId: job.id, reason: "Assumido na auditoria" } }),
     onSuccess: (_r, k) => (
-      toast.success(k === "human" ? "Conversa com humano" : "Descartado"), refresh()
+      toast.success(k === "human" ? "Conversa com humano" : "Descartado"),
+      refresh()
     ),
     onError: (e: Error) => (toast.error(e.message), refresh()),
   });

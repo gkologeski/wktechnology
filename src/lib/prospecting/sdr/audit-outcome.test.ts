@@ -39,9 +39,9 @@ describe("auditoria automática sem supervisão", () => {
 
   it("só registra quando a auditoria agiu", () => {
     expect(auditRecord({ regenerations: 0, reasons: [], outcome: "sent" })).toBeNull();
-    expect(
-      auditRecord({ regenerations: 1, reasons: ["price", "price"], outcome: "sent" }),
-    ).toEqual({ regenerations: 1, reasons: ["price"], outcome: "sent" });
+    expect(auditRecord({ regenerations: 1, reasons: ["price", "price"], outcome: "sent" })).toEqual(
+      { regenerations: 1, reasons: ["price"], outcome: "sent" },
+    );
   });
 });
 

@@ -410,7 +410,9 @@ export async function decideTurn(i: TurnInput, deps: TurnDeps): Promise<TurnDeci
       }
       const remaining = best.v;
       // Avisos do texto original deixam de valer quando a nova geração resolveu.
-      out.warnings = out.warnings.filter((w) => w !== PRICE_WARNING && w !== MATERIAL_CLAIM_WARNING);
+      out.warnings = out.warnings.filter(
+        (w) => w !== PRICE_WARNING && w !== MATERIAL_CLAIM_WARNING,
+      );
       if (remaining.includes("price")) out.warnings.push(PRICE_WARNING);
       if (remaining.includes("material_claim") || remaining.includes("booking_claim"))
         out.warnings.push(MATERIAL_CLAIM_WARNING);

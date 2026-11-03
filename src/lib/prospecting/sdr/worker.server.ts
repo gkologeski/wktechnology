@@ -733,8 +733,7 @@ export async function processJob(
     state,
     context,
     extraInstructions: (playbook.qualification_prompt as string | null) ?? null,
-    optOutPhrases:
-      ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
+    optOutPhrases: ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
     tools: {
       specs: toolCtx ? selected.specs : [],
       executor: toolCtx && selected.specs.length ? makeExecutor(toolCtx, checkChannel) : null,
