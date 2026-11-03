@@ -9,14 +9,28 @@ describe("bloqueio de números recusados pela Meta", () => {
   });
   it("bloqueio vencido não bloqueia", () => {
     const m = activeSuppressions(
-      [{ phone_key: "+1", reason: "engagement_limit", expires_at: "2026-11-01T00:00:00Z", released_at: null }],
+      [
+        {
+          phone_key: "+1",
+          reason: "engagement_limit",
+          expires_at: "2026-11-01T00:00:00Z",
+          released_at: null,
+        },
+      ],
       now,
     );
     expect(m.has("+1")).toBe(false);
   });
   it("liberação manual remove o bloqueio", () => {
     const m = activeSuppressions(
-      [{ phone_key: "+1", reason: "no_whatsapp", expires_at: "2027-01-01T00:00:00Z", released_at: "2026-11-02T00:00:00Z" }],
+      [
+        {
+          phone_key: "+1",
+          reason: "no_whatsapp",
+          expires_at: "2027-01-01T00:00:00Z",
+          released_at: "2026-11-02T00:00:00Z",
+        },
+      ],
       now,
     );
     expect(m.has("+1")).toBe(false);
@@ -24,8 +38,18 @@ describe("bloqueio de números recusados pela Meta", () => {
   it("sem WhatsApp prevalece sobre engajamento", () => {
     const m = activeSuppressions(
       [
-        { phone_key: "+1", reason: "no_whatsapp", expires_at: "2027-01-01T00:00:00Z", released_at: null },
-        { phone_key: "+1", reason: "engagement_limit", expires_at: "2027-01-01T00:00:00Z", released_at: null },
+        {
+          phone_key: "+1",
+          reason: "no_whatsapp",
+          expires_at: "2027-01-01T00:00:00Z",
+          released_at: null,
+        },
+        {
+          phone_key: "+1",
+          reason: "engagement_limit",
+          expires_at: "2027-01-01T00:00:00Z",
+          released_at: null,
+        },
       ],
       now,
     );

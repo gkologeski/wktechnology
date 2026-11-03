@@ -42,6 +42,8 @@ export const SEQUENCE_REASON_LABELS: Record<string, string> = {
   open_deal: "Negociação em aberto",
   missing_email: "Sem e-mail válido",
   missing_whatsapp: "Sem WhatsApp válido",
+  whatsapp_suppressed_no_whatsapp: "WhatsApp pulado: número sem WhatsApp (recusado pela Meta)",
+  whatsapp_suppressed_engagement: "WhatsApp pulado: limite de engajamento da Meta",
   missing_phone: "Sem telefone válido",
   outside_business_hours: "Aguardando expediente",
   daily_account_limit: "Limite diário da conta",

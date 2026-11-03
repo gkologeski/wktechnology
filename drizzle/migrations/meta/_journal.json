@@ -2115,6 +2115,13 @@
       "when": 1793743864615,
       "tag": "0301_whatsapp_number_suppressions",
       "breakpoints": true
+    },
+    {
+      "idx": 302,
+      "version": "7",
+      "when": 1793745892641,
+      "tag": "0302_whatsapp_suppression_release_permission",
+      "breakpoints": true
     }
   ]
 }
