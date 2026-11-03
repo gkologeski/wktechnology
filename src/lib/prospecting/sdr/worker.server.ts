@@ -35,11 +35,13 @@ import { parseToolConfig, type ScheduleConfig } from "./tools/catalog";
 import { emptyEffects, type ToolCtx } from "./tools/dispatcher";
 import { makeExecutor, newEventId, selectTools } from "./tools/runtime";
 import type { CalendarProvider, ToolStore } from "./tools/types";
-import { decideTurn, regenerate } from "./turn";
+import { decideTurn, regenerate, replyViolations, violationText, type TurnInput } from "./turn";
 import type { PromptContext } from "./agent.server";
 import {
+  followUpDeadline,
   followUpIdemKey,
   isQuietHours,
+  nextSendableAt,
   nextStage,
   selectableMaterials,
   blockingWarnings,
@@ -50,6 +52,14 @@ import {
   type SdrMaterial,
   type SdrOffer,
 } from "./policy";
+import {
+  AUDIT_MAX_REGENERATIONS,
+  REGENERATE_ON_SEND,
+  auditHandoffReason,
+  auditRecord,
+  unsendableAction,
+  type AuditRecord,
+} from "./audit-outcome";
 import {
   acceptAnswers,
   mergeAnswers,
