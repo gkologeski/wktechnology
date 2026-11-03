@@ -43,6 +43,7 @@ import {
 import type { CanonicalQuestion } from "./qualification";
 import { isAutoResponder } from "./third-party";
 import type { TurnEffects } from "./tools/dispatcher";
+import { AUDIT_MAX_REGENERATIONS } from "./audit-outcome";
 
 export type CallAgent = (args: {
   workspaceId: string;
@@ -368,35 +369,46 @@ export async function decideTurn(i: TurnInput, deps: TurnDeps): Promise<TurnDeci
     out.material_ids = [];
   }
 
-  // Controles configurados e efeitos falsos: uma nova geração, depois aviso.
+  // Auditoria automática: controles configurados e efeitos falsos. A IA refaz
+  // até AUDIT_MAX_REGENERATIONS vezes; o que sobrar vira aviso e o worker
+  // nunca envia mensagem com aviso bloqueante (passa para humano ou descarta).
   let reply = out.reply;
   if (reply && out.intent !== "handoff") {
-    const v = violations(reply, out, i);
+    const v = replyViolations(reply, out, i);
     trace.stages.push({
       stage: "validation",
       status: v.length ? "failed" : "ok",
       detail: v.join(", "),
     });
     if (v.length) {
-      const alt = await regenerate(deps, {
-        workspaceId: i.workspaceId,
-        system,
-        history: i.history,
-        feature,
-        reason: v.map((x) => VIOLATION_TEXT[x](i)).join("; "),
-      });
-      const altV = alt ? violations(alt, out, i) : v;
-      const accepted = !!alt && altV.length < v.length;
-      trace.stages.push({
-        stage: "regeneration",
-        status: accepted ? "changed" : "failed",
-        detail: accepted ? `restam: ${altV.join(", ") || "nenhum"}` : "nova geração não resolveu",
-      });
-      if (accepted) {
-        reply = alt!;
+      let best = { reply, v };
+      const seen = new Set<Violation>(v);
+      for (let n = 1; n <= AUDIT_MAX_REGENERATIONS && best.v.length; n++) {
+        const alt = await regenerate(deps, {
+          workspaceId: i.workspaceId,
+          system,
+          history: i.history,
+          feature,
+          reason: violationText([...seen], i),
+          rejected: best.reply,
+        });
+        const altV = alt ? replyViolations(alt, out, i) : best.v;
+        altV.forEach((x) => seen.add(x));
+        const better = !!alt && altV.length < best.v.length;
+        trace.stages.push({
+          stage: "regeneration",
+          status: better ? "changed" : "failed",
+          detail: `tentativa ${n}: ${
+            !alt ? "sem resposta" : altV.length ? `restam ${altV.join(", ")}` : "aprovada"
+          }`,
+        });
+        if (better) best = { reply: alt!, v: altV };
+      }
+      if (best.reply !== reply) {
+        reply = best.reply;
         trace.change_reasons.push(`nova geração por: ${v.join(", ")}`);
       }
-      const remaining = accepted ? altV : v;
+      const remaining = best.v;
       if (remaining.includes("price")) out.warnings.push(PRICE_WARNING);
       if (remaining.includes("material_claim") || remaining.includes("booking_claim"))
         out.warnings.push(MATERIAL_CLAIM_WARNING);
