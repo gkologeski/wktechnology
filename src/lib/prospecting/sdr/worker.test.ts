@@ -1404,13 +1404,13 @@ describe("auditoria automática (sem supervisão manual)", () => {
     const callAgent = vi
       .fn()
       .mockResolvedValueOnce({ ok: true, output: reply("Fica R$ 10.000 por mês.") })
-      .mockResolvedValue({ ok: true, output: reply("Os valores eu confirmo com o time, combinado?") });
+      .mockResolvedValue({ ok: true, output: reply("Isso eu alinho com o time numa conversa rápida, combinado?") });
     const d = deps(null, { callAgent: callAgent as never });
     expect(await processJob(db, j, d)).toBe("sent");
     expect(callAgent).toHaveBeenCalledTimes(2);
     expect(d.sendMessage).toHaveBeenCalledWith(
       db,
-      expect.objectContaining({ text: expect.stringContaining("confirmo com o time") }),
+      expect.objectContaining({ text: expect.stringContaining("alinho com o time") }),
     );
     expect(db.find("sdr_turn_jobs", j.id)!.draft_payload.audit).toMatchObject({
       regenerations: 1,
