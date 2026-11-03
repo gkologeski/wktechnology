@@ -3139,8 +3139,7 @@
         "src/lib/sdr-agent.functions.ts": "5b72111380ad8cf6e83b58d9d8a70cf0950ffca91e80fb60fbe70e3645f468ee",
         "src/components/prospecting/sdr-operation-panels.tsx": "880e0f7df9cf909598cfd72235fadc57c9cbc7b550351eebcae9276d53c627a4",
         "src/components/prospecting/sdr-results-panel.tsx": "3c876914d9e89abcb5aa9d7ee43b3ba385c5603d7e506035f60655ed4346059f",
-        "src/lib/prospecting/sdr.functions.ts": "4560cc6958f94d04dd3e03aa76cf004ce1df1cc70216bc2d2f2fd47451abe32d",
-        "src/lib/prospecting/overview.server.ts": "5b36811b9a1729b7892a0abfa0f6f8157a20796f23659334babd4c40cdb54775"
+        "src/lib/prospecting/sdr.functions.ts": "4560cc6958f94d04dd3e03aa76cf004ce1df1cc70216bc2d2f2fd47451abe32d"
       }
     },
     {
@@ -3925,8 +3924,7 @@
         "src/components/prospecting/sdr-workspace-nav.tsx": "dfdcd6de66ff2417c93fd3f5102c0770795cb4d9fd7fafaa445d8deed9f46a74",
         "src/components/prospecting/sdr-workspace-sections.ts": "f424af681c1af066906f9646157549d2e2ffeaac054e9041618ef381f2f453b5",
         "src/components/prospecting/sdr-operation-display.ts": "f5b03c2bbee7cc3d11a18e4076e2903a8f5b777bffd62606e50b7ae00069765a",
-        "src/components/prospecting/sdr-opt-out-text.ts": "cfac91c6c394fde831b4466996c4e85563ab411b4bd25f9f423e6e85824f3b3f",
-        "src/components/prospecting/areas/overview-area.tsx": "33f00bc421fdcf010219e35ae01202376a07e835c4b7e2c2af7d1e1cafae80bf"
+        "src/components/prospecting/sdr-opt-out-text.ts": "cfac91c6c394fde831b4466996c4e85563ab411b4bd25f9f423e6e85824f3b3f"
       }
     },
     {
@@ -7217,6 +7215,73 @@
         "src/components/floating-dock/messenger-gate.ts": "f58d063ffaaa906e55febf5043d9b21e27cddfc9a05f5d14e9aae223e47483c5"
       },
       "rationale": "Pure in-memory UI state for the side dock (open callbacks, unread counter) and a pure predicate over already-loaded effective permissions. No I/O, routes, actions or data access."
+    },
+    {
+      "id": "prospecting-overview-metrics",
+      "kind": "business",
+      "resources": [
+        "techsales.prospecting_queue",
+        "techsales.prospecting_cadences",
+        "techsales.marketing.sdr_agent"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.prospecting_queue.view.workspace",
+        "techsales.prospecting_cadences.view.workspace",
+        "techsales.marketing.sdr_agent.view.workspace"
+      ],
+      "rationale": "Review 02/11/2026: Prospecting overview metrics. getProspectingOverview keeps requireSalesPermission view on the prospecting resources; loadOverview resolves the caller's active workspace and evaluates hasPermission per source (can.sdr etc.) before each count, reading only with the user client under RLS (sdr_turn_jobs_select is workspace-scoped). The former 'drafts awaiting review' metric now counts SDR audit handoffs (draft_payload.audit.outcome=handoff) in the same workspace; the UI only renders the returned numbers and links. No new keys, grants or writes.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "hasPermission"
+        },
+        {
+          "file": "src/lib/prospecting/overview.functions.ts",
+          "symbol": "getProspectingOverview"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0057_sdr_prospecting_agent.sql",
+          "symbol": "sdr_turn_jobs_select"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "allows current authorized leased source"
+        },
+        "missing_permission": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source missing required permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects source with explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects foreign workspace source"
+        },
+        "inactive_member": {
+          "file": "src/lib/prospecting/sdr/service-guard.test.ts",
+          "name": "rejects inactive source actor"
+        }
+      },
+      "files": {
+        "src/lib/prospecting/overview.server.ts": "5b36811b9a1729b7892a0abfa0f6f8157a20796f23659334babd4c40cdb54775",
+        "src/components/prospecting/areas/overview-area.tsx": "33f00bc421fdcf010219e35ae01202376a07e835c4b7e2c2af7d1e1cafae80bf"
+      }
     }
   ],
   "retired": {}
