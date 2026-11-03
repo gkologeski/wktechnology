@@ -45,7 +45,7 @@ export const stepSchema = z.discriminatedUnion("type", [
       ...stepBase,
       type: z.literal("wait"),
       duration: z.number().int().min(1).max(365),
-      unit: z.enum(["hours", "days", "business_days"]),
+      unit: z.enum(["minutes", "hours", "days", "business_days"]),
       source: z.enum(["previous", "any"]),
       onReply: z.enum(["agent", "human"]),
     })

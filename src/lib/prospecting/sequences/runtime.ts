@@ -54,6 +54,7 @@ export function waitUntil(
   settings: SequenceDefinition["settings"],
 ): Date {
   if (!Number.isFinite(at.getTime())) throw new Error("Data de referência inválida.");
+  if (step.unit === "minutes") return new Date(at.getTime() + step.duration * minute);
   if (step.unit === "hours") return new Date(at.getTime() + step.duration * 60 * minute);
   const p = localParts(at, settings.timezone);
   const calendar = new Date(Date.UTC(p.year, p.month - 1, p.day));
