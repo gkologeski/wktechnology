@@ -277,7 +277,7 @@ describe("email/chat service orchestration", () => {
       body,
       created_at: "2020-01-01",
     });
-    expect(await processServiceJob(db, job, deps)).toBe("drafted");
+    expect(await processServiceJob(db, job, deps)).toBe("ready");
     expect(spies.turn).toHaveBeenCalledOnce();
   });
   it("uses only the technical rate setting to hand over before inference", async () => {
