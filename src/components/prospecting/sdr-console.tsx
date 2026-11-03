@@ -26,7 +26,8 @@ import { SdrSkillsPanel } from "./sdr-skills-panel";
 import { SdrResultsPanel } from "./sdr-results-panel";
 import { SdrMaterialsPanel, type SdrMaterialRow } from "./sdr-materials-panel";
 import { Link } from "@tanstack/react-router";
-import { EmptyState, SectionHeader } from "@/components/techhire/ui";
+import { EmptyState, SectionHeader, StatusBadge } from "@/components/techhire/ui";
+import { auditReasonLabel } from "@/lib/prospecting/sdr/audit-outcome";
 import {
   approveSdrDraft,
   setSdrOfferApproval,
@@ -48,7 +49,7 @@ export function SdrAgentPanel() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
-          Supervisione o SDR do WhatsApp. Playbooks e atendimentos ficam na página completa.
+          Acompanhe a auditoria do SDR do WhatsApp. Playbooks e atendimentos ficam na página completa.
         </p>
         <Button asChild variant="outline" size="sm">
           <Link to="/agents/sdr">Abrir página completa</Link>
@@ -56,7 +57,7 @@ export function SdrAgentPanel() {
       </div>
       <Tabs defaultValue="sdr-supervision">
         <TabsList className="flex-wrap">
-          <TabsTrigger value="sdr-supervision">Supervisão</TabsTrigger>
+          <TabsTrigger value="sdr-supervision">Auditoria</TabsTrigger>
           <TabsTrigger value="sdr-results">Resultados</TabsTrigger>
           <TabsTrigger value="sdr-catalog">Portfólio e materiais</TabsTrigger>
           <TabsTrigger value="sdr-settings">Configuração</TabsTrigger>
@@ -193,7 +194,7 @@ function SettingsPanel({ d }: { d: Overview }) {
     <div className="max-w-2xl space-y-6">
       <SectionHeader
         title="Agente SDR no WhatsApp"
-        description="Assume a conversa após a resposta ao template da campanha. Supervisionado: cada mensagem vira rascunho para aprovação."
+        description="Assume a conversa após a resposta ao template da campanha. Cada mensagem passa pela auditoria automática antes de sair; o que não tiver conserto vai para um humano na Inbox."
       />
       {!d.canManage && (
         <p className="text-sm text-muted-foreground">Somente administradores podem alterar.</p>
@@ -325,7 +326,7 @@ function SettingsPanel({ d }: { d: Overview }) {
           </h3>
           <p className="text-xs text-muted-foreground">
             Controles contra loop, repetição, rajada e falhas — não são cota de vendas. Quando algo
-            trava, o motivo aparece na Supervisão para retomada controlada.
+            trava, o motivo aparece na Auditoria para retomada controlada.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -629,32 +630,83 @@ function CatalogPanel({ d }: { d: Overview }) {
   );
 }
 
-function SupervisionPanel({ d }: { d: Overview }) {
-  const drafts = d.jobs.filter((j) => j.status === "drafted" || j.status === "failed");
+const OUTCOME: Record<string, { label: string; tone: "open" | "onhold" | "closed" | "draft" }> = {
+  sent: { label: "Refeita e enviada", tone: "open" },
+  handoff: { label: "Passada a humano", tone: "onhold" },
+  discarded: { label: "Descartada", tone: "draft" },
+  rescheduled: { label: "Reagendada", tone: "draft" },
+  failed: { label: "Falha técnica", tone: "closed" },
+};
 
-  const pending = d.jobs.length - drafts.length;
+function SupervisionPanel({ d }: { d: Overview }) {
+  const failures = d.jobs.filter((j) => j.status === "failed");
+  const pending = d.jobs.length - failures.length;
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <SectionHeader
-        title="Supervisão"
-        description={`Rascunhos aguardando aprovação. ${pending} em processamento.`}
+        title="Auditoria automática"
+        description={`Nenhuma mensagem espera aprovação. Antes de sair, cada mensagem é conferida pelas regras do agente; se cair numa regra, a IA refaz. O que não tiver conserto vai para um humano na Inbox. ${pending} em processamento.`}
       />
       <PolicyCounters d={d} />
-      {drafts.length === 0 ? (
-        <EmptyState
-          title="Nada para revisar"
-          description="Novas respostas de clientes aparecem aqui como rascunho."
-        />
-      ) : (
-        drafts.map((j) => <DraftCard key={j.id} job={j} />)
-      )}
+      <section aria-labelledby="sdr-audit-failures" className="space-y-3">
+        <h3 id="sdr-audit-failures" className="text-sm font-semibold">
+          Falhas técnicas ({failures.length})
+        </h3>
+        {failures.length === 0 ? (
+          <EmptyState
+            title="Nenhuma falha técnica"
+            description="Falhas de envio ou da IA aparecem aqui para retomar ou reconciliar."
+          />
+        ) : (
+          failures.map((j) => <FailureCard key={j.id} job={j} />)
+        )}
+      </section>
+      <section aria-labelledby="sdr-audit-log" className="space-y-3">
+        <h3 id="sdr-audit-log" className="text-sm font-semibold">
+          Decisões da auditoria (7 dias)
+        </h3>
+        {d.audit.length === 0 ? (
+          <EmptyState
+            title="Nenhuma mensagem precisou ser refeita"
+            description="Quando a IA refizer, passar a humano ou descartar uma mensagem, o registro aparece aqui."
+          />
+        ) : (
+          <ul className="space-y-2">
+            {d.audit.map((a) => {
+              const o = OUTCOME[a.outcome] ?? OUTCOME.failed;
+              return (
+                <li key={a.id} className="space-y-2 rounded-lg border bg-card p-3 text-sm">
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    <StatusBadge status={o.tone} label={o.label} />
+                    <Badge variant="outline">
+                      {a.kind === "follow_up" ? "Retomada" : "Resposta"}
+                    </Badge>
+                    <span className="text-muted-foreground">
+                      {a.regenerations} nova(s) geração(ões) · {fmtTime(a.updatedAt)}
+                    </span>
+                  </div>
+                  {a.reasons.length > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      Regras: {a.reasons.map(auditReasonLabel).join("; ")}
+                    </p>
+                  )}
+                  {a.text && (
+                    <p className="line-clamp-3 whitespace-pre-wrap text-xs text-foreground">
+                      {a.outcome === "sent" ? "Enviada: " : "Última versão (não enviada): "}
+                      {a.text}
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
 
-function DraftCard({ job }: { job: Overview["jobs"][number] }) {
-  const [text, setText] = useState(job.draft_text ?? "");
-  const approve = useServerFn(approveSdrDraft);
+function FailureCard({ job }: { job: Overview["jobs"][number] }) {
   const discard = useServerFn(discardSdrDraft);
   const takeover = useServerFn(takeoverSdrConversation);
   const resumeFn = useServerFn(resumeSdrJob);
@@ -665,8 +717,8 @@ function DraftCard({ job }: { job: Overview["jobs"][number] }) {
       toast.success(
         r.result === "already_sent"
           ? "Já havia sido enviada: confirmado"
-          : r.result === "back_to_draft"
-            ? "Não enviada: voltou para aprovação"
+          : r.result === "not_sent"
+            ? "Não foi enviada. Se o cliente aguarda resposta, assuma a conversa."
             : "Retomado na fila",
       ),
       refresh()
@@ -674,41 +726,21 @@ function DraftCard({ job }: { job: Overview["jobs"][number] }) {
     onError: (e: Error) => (toast.error(e.message), refresh()),
   });
   const run = useMutation({
-    mutationFn: (k: "send" | "discard" | "human") =>
-      k === "send"
-        ? approve({ data: { jobId: job.id, text } })
-        : k === "discard"
-          ? discard({ data: { jobId: job.id } })
-          : takeover({ data: { jobId: job.id, reason: "Assumido na supervisão" } }),
+    mutationFn: (k: "discard" | "human") =>
+      k === "discard"
+        ? discard({ data: { jobId: job.id } })
+        : takeover({ data: { jobId: job.id, reason: "Assumido na auditoria" } }),
     onSuccess: (_r, k) => (
-      toast.success(
-        k === "send" ? "Mensagem enviada" : k === "human" ? "Conversa com humano" : "Descartado",
-      ),
-      refresh()
+      toast.success(k === "human" ? "Conversa com humano" : "Descartado"), refresh()
     ),
     onError: (e: Error) => (toast.error(e.message), refresh()),
   });
-  const p = (job.draft_payload ?? {}) as {
-    intent?: string;
-    offer_keys?: string[];
-    warnings?: string[];
-  };
+  const busy = run.isPending || resume.isPending;
   return (
     <div className="space-y-3 rounded-lg border bg-card p-4">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <Badge variant="outline">{job.kind === "follow_up" ? "Follow-up" : "Resposta"}</Badge>
-        {p.intent && <Badge variant="secondary">{p.intent}</Badge>}
-        {(p.offer_keys ?? []).map((k) => (
-          <Badge key={k} variant="outline">
-            {k}
-          </Badge>
-        ))}
-        {job.status === "failed" && (
-          <Badge variant="destructive">Falhou: {sdrReasonLabel(job.error)}</Badge>
-        )}
-        {job.status === "drafted" && job.error && (
-          <Badge variant="outline">{sdrReasonLabel(job.error)}</Badge>
-        )}
+        <Badge variant="outline">{job.kind === "follow_up" ? "Retomada" : "Resposta"}</Badge>
+        <Badge variant="destructive">Falhou: {sdrReasonLabel(job.error)}</Badge>
         {job.block_category && (
           <Badge variant="secondary">
             {CATEGORY_LABELS[job.block_category] ?? job.block_category}
@@ -720,54 +752,27 @@ function DraftCard({ job }: { job: Overview["jobs"][number] }) {
         {secs(job.ai_started_at, job.ai_finished_at)} · envio{" "}
         {secs(job.send_started_at, job.sent_at)} · tentativas {job.attempts ?? 0}
       </p>
-      {(p.warnings ?? []).length > 0 && (
-        <p className="text-xs text-destructive">Atenção: {(p.warnings ?? []).join("; ")}</p>
+      {job.draft_text && (
+        <p className="line-clamp-4 whitespace-pre-wrap rounded-md bg-muted/50 p-2 text-xs">
+          {job.draft_text}
+        </p>
       )}
-      <Label htmlFor={`d-${job.id}`} className="sr-only">
-        Texto do rascunho
-      </Label>
-      <Textarea
-        id={`d-${job.id}`}
-        rows={5}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-      />
       <div className="flex flex-wrap gap-2">
-        {job.status === "failed" && (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={resume.isPending}
-            onClick={() =>
-              resume.mutate(job.block_category === "reconcile" ? "reconcile" : "requeue")
-            }
-          >
-            {job.block_category === "reconcile" ? "Reconciliar" : "Retomar"}
-          </Button>
-        )}
-        <Button
-          size="sm"
-          disabled={run.isPending || job.status !== "drafted" || !text.trim()}
-          onClick={() => run.mutate("send")}
-        >
-          <Send className="mr-1 h-4 w-4" />
-          Aprovar e enviar
-        </Button>
         <Button
           size="sm"
           variant="outline"
-          disabled={run.isPending}
-          onClick={() => run.mutate("human")}
+          disabled={busy}
+          onClick={() =>
+            resume.mutate(job.block_category === "reconcile" ? "reconcile" : "requeue")
+          }
         >
+          {job.block_category === "reconcile" ? "Reconciliar" : "Retomar"}
+        </Button>
+        <Button size="sm" variant="outline" disabled={busy} onClick={() => run.mutate("human")}>
           <UserRound className="mr-1 h-4 w-4" />
           Assumir conversa
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={run.isPending}
-          onClick={() => run.mutate("discard")}
-        >
+        <Button size="sm" variant="ghost" disabled={busy} onClick={() => run.mutate("discard")}>
           <Trash2 className="mr-1 h-4 w-4" />
           Descartar
         </Button>
@@ -795,7 +800,7 @@ const SDR_REASON_LABELS: Record<string, string> = {
   max_attempts: "Tentativas esgotadas",
   provider_failed: "WhatsApp recusou o envio",
   uncertain_after_send: "Envio incerto — reconciliar antes de reenviar",
-  reconciled_not_sent: "Reconciliado: não enviado, aguardando aprovação",
+  reconciled_not_sent: "Reconciliado: não enviado (descartado)",
   lease_lost: "Processamento substituído por outro",
 };
 
