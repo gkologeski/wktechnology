@@ -134,8 +134,14 @@ export async function handleSequenceVoiceEvent(
   const terminal =
     message.type === "end-of-call-report" || (message.status === "ended" && !!reason);
   const noAnswer = /no-answer|did-not-answer|busy|voicemail|silence-timed-out/.test(reason);
-  const answered =
-    typeof call?.startedAt === "string" && !!call.startedAt && !/failed|error/.test(reason);
+  // Vapi end-of-call reports carry startedAt on the message, not always on `call`.
+  const started = [call?.startedAt, message.startedAt].some((v) => typeof v === "string" && !!v);
+  // These reasons only occur after a live conversation (someone hung up or the agent ended it).
+  const conversed =
+    /customer-ended-call|assistant-ended-call|assistant-said-end-call-phrase|assistant-forwarded-call|exceeded-max-duration/.test(
+      reason,
+    );
+  const answered = (started || conversed) && !/failed|error/.test(reason);
   const outcome = terminal ? (noAnswer ? "no_answer" : answered ? "answered" : "failed") : null;
   await workRpc(admin, "prospecting_sequence_voice_event", {
     p_effect: id,

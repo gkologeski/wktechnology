@@ -165,6 +165,41 @@ it("voice callback ignores legacy calls and records only verified sequence ident
     expect.objectContaining({ p_effect: h.effect.id, p_terminal: true, p_outcome: "answered" }),
   );
 });
+it("call ended by the assistant counts as answered even without call.startedAt", async () => {
+  const h = fixture();
+  await handleSequenceVoiceEvent(h.admin, {
+    type: "end-of-call-report",
+    endedReason: "assistant-ended-call",
+    startedAt: new Date().toISOString(),
+    call: {
+      id: uuid(),
+      phoneNumberId: h.cfg.sourceKey,
+      customer: { number: "+5548991104003" },
+      metadata: { techerpSequenceEffect: h.effect.id },
+    },
+  });
+  expect(h.rpc).toHaveBeenCalledWith(
+    "prospecting_sequence_voice_event",
+    expect.objectContaining({ p_terminal: true, p_outcome: "answered" }),
+  );
+});
+it("call that never connected stays failed", async () => {
+  const h = fixture();
+  await handleSequenceVoiceEvent(h.admin, {
+    type: "end-of-call-report",
+    endedReason: "pipeline-error-twilio-failed-to-connect-call",
+    call: {
+      id: uuid(),
+      phoneNumberId: h.cfg.sourceKey,
+      customer: { number: "+5548991104003" },
+      metadata: { techerpSequenceEffect: h.effect.id },
+    },
+  });
+  expect(h.rpc).toHaveBeenCalledWith(
+    "prospecting_sequence_voice_event",
+    expect.objectContaining({ p_terminal: true, p_outcome: "failed" }),
+  );
+});
 it("ambiguous ended status waits for the actual final call report", async () => {
   const h = fixture();
   await handleSequenceVoiceEvent(h.admin, {
