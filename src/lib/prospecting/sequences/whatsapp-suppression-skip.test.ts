@@ -103,6 +103,9 @@ describe("WhatsApp bloqueado pela Meta nas sequências", () => {
     expect(result.status).toBe("advance");
     expect(prepare).not.toHaveBeenCalled();
     const transition = rpc.mock.calls.find(([n]) => n === "prospecting_sequence_transition");
-    expect(transition?.[1]).toMatchObject({ p_cursor: 1, p_reason: "whatsapp_suppressed_no_whatsapp" });
+    expect(transition?.[1]).toMatchObject({
+      p_cursor: 1,
+      p_reason: "whatsapp_suppressed_no_whatsapp",
+    });
   });
 });

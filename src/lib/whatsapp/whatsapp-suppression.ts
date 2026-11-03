@@ -64,4 +64,3 @@ export function pickUnsuppressedWhatsApp(
   }
   return { pick, blockedBy };
 }
-
