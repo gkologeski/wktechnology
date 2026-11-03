@@ -8,6 +8,7 @@ import {
   enrollmentDisplayName,
   enrollmentStatusDisplay,
   parseEnrollmentFilter,
+  auditCounts,
   supervisionCounts,
 } from "./sdr-operation-display";
 
@@ -46,16 +47,22 @@ describe("Operação do Agente SDR — rótulos", () => {
     expect(parseEnrollmentFilter(1)).toBeUndefined();
   });
 
-  it("separa rascunhos, falhas e itens em processamento", () => {
+  it("separa falhas e itens em processamento (sem rascunhos)", () => {
     expect(
-      supervisionCounts([
-        { status: "drafted" },
-        { status: "drafted" },
-        { status: "failed" },
-        { status: "queued" },
-        { status: "running" },
+      supervisionCounts([{ status: "failed" }, { status: "queued" }, { status: "running" }]),
+    ).toEqual({ failed: 1, processing: 2 });
+  });
+
+  it("resume a auditoria: refeitas e enviadas, passadas a humano e descartadas", () => {
+    expect(
+      auditCounts([
+        { outcome: "sent", regenerations: 2 },
+        { outcome: "sent", regenerations: 0 },
+        { outcome: "handoff", regenerations: 3 },
+        { outcome: "discarded", regenerations: 3 },
+        { outcome: "rescheduled", regenerations: 0 },
       ]),
-    ).toEqual({ toReview: 2, failed: 1, processing: 2 });
+    ).toEqual({ redone: 1, handoff: 1, discarded: 2 });
   });
 });
 

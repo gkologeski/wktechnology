@@ -455,16 +455,11 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
             />
           </div>
         </div>
-        <div className="mt-3 flex items-center gap-2">
-          <Switch
-            id="cfg-mode"
-            checked={agent.mode === "auto"}
-            onCheckedChange={(v) => setAgent({ ...agent, mode: v ? "auto" : "supervised" })}
-          />
-          <Label htmlFor="cfg-mode" className="text-sm">
-            Enviar sem revisão humana (modo automático)
-          </Label>
-        </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          As mensagens saem sem aprovação manual. Antes de cada envio, a auditoria automática
+          confere as regras do agente e pede à IA que refaça o que não passar; o que não tiver
+          conserto vai para um humano na Inbox.
+        </p>
       </FormSection>
 
       <FormSection

@@ -176,6 +176,20 @@ export function isQuietHours(date: Date, timeZone: string, start: number, end: n
   return start > end ? h >= start || h < end : h >= start && h < end;
 }
 
+/**
+ * Primeiro instante (em passos de 15 min, até 48 h) fora do horário de
+ * silêncio. Usado para reagendar retomadas em vez de segurá-las para revisão.
+ */
+export function nextSendableAt(date: Date, timeZone: string, start: number, end: number): Date {
+  const step = 15 * 60_000;
+  let t = Math.ceil(date.getTime() / step) * step;
+  for (let i = 0; i < 48 * 4; i++) {
+    if (!isQuietHours(new Date(t), timeZone, start, end)) return new Date(t);
+    t += step;
+  }
+  return new Date(t);
+}
+
 /** Chave idempotente isolada por workspace e identidade do provedor. */
 export function turnIdemKey(parts: {
   workspaceId: string;
@@ -322,6 +336,12 @@ export const FOLLOW_UP_CANCEL_REASONS = [
 /** Margem antes do fim da janela de 24 h do WhatsApp para a retomada sair. */
 export const FOLLOW_UP_WINDOW_MARGIN_MS = 60 * 60_000;
 const WINDOW_MS = 24 * 3600_000;
+
+/** Último instante em que uma retomada ainda pode sair (janela de 24 h menos a margem). */
+export function followUpDeadline(lastInboundAt: string | Date | null | undefined): Date | null {
+  if (!lastInboundAt) return null;
+  return new Date(new Date(lastInboundAt).getTime() + WINDOW_MS - FOLLOW_UP_WINDOW_MARGIN_MS);
+}
 
 /**
  * Próximo follow-up: só quando aguardando resposta e dentro do limite.

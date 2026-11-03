@@ -35,11 +35,13 @@ import { parseToolConfig, type ScheduleConfig } from "./tools/catalog";
 import { emptyEffects, type ToolCtx } from "./tools/dispatcher";
 import { makeExecutor, newEventId, selectTools } from "./tools/runtime";
 import type { CalendarProvider, ToolStore } from "./tools/types";
-import { decideTurn, regenerate } from "./turn";
+import { decideTurn, regenerate, replyViolations, violationText, type TurnInput } from "./turn";
 import type { PromptContext } from "./agent.server";
 import {
+  followUpDeadline,
   followUpIdemKey,
   isQuietHours,
+  nextSendableAt,
   nextStage,
   selectableMaterials,
   blockingWarnings,
@@ -50,6 +52,14 @@ import {
   type SdrMaterial,
   type SdrOffer,
 } from "./policy";
+import {
+  AUDIT_MAX_REGENERATIONS,
+  REGENERATE_ON_SEND,
+  auditHandoffReason,
+  auditRecord,
+  unsendableAction,
+  type AuditRecord,
+} from "./audit-outcome";
 import {
   acceptAnswers,
   mergeAnswers,
@@ -99,6 +109,52 @@ async function finish(
     .eq("id", jobId)
     .eq("status", "running")
     .eq("lease_token", leaseToken);
+}
+
+/**
+ * Retomada fora do horário de prospecção: volta para a fila no próximo
+ * horário permitido se ainda couber na janela de 24 h; senão é descartada.
+ * A tentativa não conta para o limite técnico de tentativas.
+ */
+async function rescheduleFollowUp(
+  admin: Admin,
+  job: Job,
+  settings: { timezone: string; quiet_hours_start: number; quiet_hours_end: number },
+  lastInboundAt: string | null,
+  extra: Record<string, unknown> = {},
+): Promise<string> {
+  const at = nextSendableAt(
+    new Date(),
+    settings.timezone,
+    settings.quiet_hours_start,
+    settings.quiet_hours_end,
+  );
+  const deadline = followUpDeadline(lastInboundAt);
+  if (deadline && at.getTime() <= deadline.getTime()) {
+    await finish(admin, job.id, job.lease_token, {
+      ...extra,
+      status: "queued",
+      lease_until: at.toISOString(),
+      attempts: Math.max(0, (job.attempts ?? 1) - 1),
+      error: "followup_hours",
+    });
+    return "rescheduled";
+  }
+  await finish(admin, job.id, job.lease_token, {
+    ...extra,
+    status: "discarded",
+    error: "followup_hours",
+    block_category: "prospecting",
+  });
+  await recordSdrAction(admin, {
+    workspace_id: job.workspace_id,
+    enrollment_id: job.enrollment_id,
+    job_id: job.id,
+    kind: "follow_up",
+    status: "skipped",
+    error: "followup_hours",
+  });
+  return "discarded";
 }
 
 type Job = {
@@ -350,7 +406,7 @@ export async function processJob(
     admin
       .from("whatsapp_conversations")
       .select(
-        "id, workspace_id, ai_owner, ai_version, contact_id, lead_id, contact_phone, wa_phone_number_id",
+        "id, workspace_id, ai_owner, ai_version, contact_id, lead_id, contact_phone, wa_phone_number_id, last_inbound_at",
       )
       .eq("id", job.conversation_id)
       .maybeSingle(),
@@ -444,6 +500,18 @@ export async function processJob(
     await finish(admin, job.id, job.lease_token, { status: "skipped", error: "playbook_disabled" });
     return "skipped";
   }
+  // Retomada fora do horário de prospecção: reagenda antes de chamar a IA
+  // (nunca vira rascunho e nunca passa do fim da janela de 24 h).
+  if (
+    job.kind === "follow_up" &&
+    isQuietHours(
+      new Date(),
+      settings.timezone,
+      settings.quiet_hours_start,
+      settings.quiet_hours_end,
+    )
+  )
+    return rescheduleFollowUp(admin, job, settings, conv.last_inbound_at ?? null);
 
   // Áudios do cliente viram texto antes da Lia ler a conversa.
   if (job.kind === "reply") {
@@ -650,38 +718,35 @@ export async function processJob(
     .update({ ai_started_at: new Date().toISOString(), agent_version_id: agentVersion?.id ?? null })
     .eq("id", job.id)
     .eq("lease_token", job.lease_token);
-  const decision = await decideTurn(
-    {
-      workspaceId: job.workspace_id,
-      jobId: job.id,
-      jobKind: job.kind,
-      mode: "live",
-      agentVersionId: agentVersion?.id ?? null,
-      persona,
-      config: agentConfig,
-      offers,
-      materials,
-      questions,
-      history,
-      state,
-      context,
-      extraInstructions: (playbook.qualification_prompt as string | null) ?? null,
-      optOutPhrases:
-        ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
-      tools: {
-        specs: toolCtx ? selected.specs : [],
-        executor: toolCtx && selected.specs.length ? makeExecutor(toolCtx, checkChannel) : null,
-        effects,
-        directBooking: selected.directBooking,
-      },
-      choicePosition,
-      now: new Date(),
+  const turnInput: TurnInput = {
+    workspaceId: job.workspace_id,
+    jobId: job.id,
+    jobKind: job.kind,
+    mode: "live",
+    agentVersionId: agentVersion?.id ?? null,
+    persona,
+    config: agentConfig,
+    offers,
+    materials,
+    questions,
+    history,
+    state,
+    context,
+    extraInstructions: (playbook.qualification_prompt as string | null) ?? null,
+    optOutPhrases: ((playbook as Record<string, unknown>).opt_out_phrases as string[] | null) ?? [],
+    tools: {
+      specs: toolCtx ? selected.specs : [],
+      executor: toolCtx && selected.specs.length ? makeExecutor(toolCtx, checkChannel) : null,
+      effects,
+      directBooking: selected.directBooking,
     },
-    {
-      callAgent: deps.callAgent,
-      compose: (p) => composeOutgoing(admin, { workspaceId: job.workspace_id, ...p }),
-    },
-  );
+    choicePosition,
+    now: new Date(),
+  };
+  const decision = await decideTurn(turnInput, {
+    callAgent: deps.callAgent,
+    compose: (p) => composeOutgoing(admin, { workspaceId: job.workspace_id, ...p }),
+  });
   await admin
     .from("sdr_turn_jobs")
     .update({ ai_finished_at: new Date().toISOString() })
@@ -873,25 +938,21 @@ export async function processJob(
     no_follow_up: decision.noFollowUp,
     turn_trace: decision.trace,
   };
-  const autoAllowed =
-    settings.auto_send_enabled &&
-    playbook.mode === "auto" &&
-    blockingWarnings(out.warnings).length === 0 &&
-    // Horário de prospecção vale só para retomadas; respostas seguem a qualquer hora.
-    !(
-      job.kind === "follow_up" &&
-      isQuietHours(
-        new Date(),
-        settings.timezone,
-        settings.quiet_hours_start,
-        settings.quiet_hours_end,
-      )
-    );
+  // Sem supervisão manual: a mensagem sai sozinha depois da auditoria
+  // automática. Nada vira rascunho para aprovação.
+  const auditReasons: string[] = decision.trace.stages
+    .filter((s) => s.stage === "validation" && s.status === "failed" && s.detail)
+    .flatMap((s) => s.detail!.split(", "));
+  let regenerations = decision.trace.stages.filter((s) => s.stage === "regeneration").length;
+  const withAudit = (outcome: AuditRecord["outcome"]) => {
+    const audit = auditRecord({ regenerations, reasons: auditReasons, outcome });
+    return audit ? { ...payload, audit } : payload;
+  };
 
   const { data: saved } = await admin
     .from("sdr_turn_jobs")
     .update({
-      status: autoAllowed ? "running" : "drafted",
+      status: "running",
       draft_text: decision.text,
       draft_payload: payload,
       updated_at: new Date().toISOString(),
@@ -923,12 +984,68 @@ export async function processJob(
       status: "success",
     });
   };
-  if (!autoAllowed) {
-    await admin.from("sdr_turn_jobs").update({ lease_token: null }).eq("id", job.id);
-    // O pedido de parar vale mesmo que a confirmação fique para revisão.
+  /**
+   * Mensagem que não pode sair (regra que a IA não conseguiu cumprir ou
+   * bloqueio de envio): resposta ao cliente passa para um humano na Inbox;
+   * retomada é descartada. Envio incerto continua como falha para reconciliar.
+   */
+  const notSendable = async (reason: string, category?: string | null): Promise<string> => {
+    const action = unsendableAction(job.kind, reason, category);
+    if (action === "keep_failed") {
+      await admin
+        .from("sdr_turn_jobs")
+        .update({ draft_payload: withAudit("failed") })
+        .eq("id", job.id);
+      await applyOptOutNow();
+      return "failed";
+    }
+    if (action === "reschedule")
+      return rescheduleFollowUp(admin, job, settings, conv.last_inbound_at ?? null, {
+        draft_payload: withAudit("rescheduled"),
+      });
+    const human = action === "handoff" && !optOut;
+    await admin
+      .from("sdr_turn_jobs")
+      .update({
+        status: human ? "skipped" : "discarded",
+        error: reason,
+        block_category: category ?? null,
+        lease_token: null,
+        draft_payload: withAudit(human ? "handoff" : "discarded"),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", job.id)
+      .in("status", ["running", "failed", "discarded", "drafted"]);
     await applyOptOutNow();
-    return "drafted";
+    if (human) {
+      await deps.handoffToHuman(admin, {
+        workspaceId: job.workspace_id,
+        enrollmentId: enr.id,
+        conversationId: conv.id,
+        reason: auditHandoffReason([...auditReasons.filter((r) => r !== "questions"), reason]),
+        actorUserId: null,
+      });
+      return "handoff";
+    }
+    if (job.kind === "follow_up" && action === "discard")
+      await recordSdrAction(admin, {
+        workspace_id: job.workspace_id,
+        enrollment_id: enr.id,
+        job_id: job.id,
+        kind: "follow_up",
+        status: "skipped",
+        error: reason,
+      });
+    return "discarded";
+  };
+
+  // Regra de conteúdo que a IA não resolveu nem refazendo: nunca envia.
+  const unresolved = blockingWarnings(out.warnings);
+  if (unresolved.length) {
+    const content = auditReasons.filter((r) => r !== "questions");
+    return notSendable(content[0] ?? "audit_unresolved", "conversation");
   }
+
   const sendText = (text: string) =>
     deps.sendMessage(admin, {
       jobId: job.id,
@@ -937,56 +1054,59 @@ export async function processJob(
       text,
       actorUserId: null,
     });
-  let sent = await sendText(decision.text);
-  if (!sent.ok && sent.reason === "repetition_detected") {
-    // Proteção técnica: nova geração uma vez em vez de repetir a última mensagem.
+  let currentText = decision.text;
+  let sent = await sendText(currentText);
+  // Repetição: a IA refaz a mensagem (até o limite), sempre revalidada pelas
+  // mesmas regras de conteúdo antes de tentar enviar de novo.
+  let sendRegens = 0;
+  while (!sent.ok && REGENERATE_ON_SEND.has(sent.reason) && sendRegens < AUDIT_MAX_REGENERATIONS) {
+    sendRegens++;
+    regenerations++;
+    auditReasons.push(sent.reason);
     const alt = await regenerate(deps, {
       workspaceId: job.workspace_id,
       system: decision.system,
       history,
       feature: "sdr_agente",
-      reason: "ficou idêntica à mensagem anterior enviada nesta conversa",
+      reason:
+        sent.reason === "followup_repetition"
+          ? "ficou parecida demais com uma das últimas mensagens enviadas; traga um ângulo novo, sem repetir o que já foi dito"
+          : "ficou idêntica à mensagem anterior enviada nesta conversa; escreva outra resposta que avance a conversa",
+      rejected: currentText,
     });
-    if (alt) {
-      const again = await composeOutgoing(admin, {
-        workspaceId: job.workspace_id,
-        reply: alt,
-        intent: out.intent,
-        materialIds: out.material_ids,
-        attachMaterials: agentConfig.guardrails.attach_materials,
-        meeting: effects.meeting,
+    if (!alt) continue;
+    const altV = replyViolations(alt, out, turnInput).filter((x) => x !== "questions");
+    if (altV.length) {
+      auditReasons.push(...altV);
+      console.warn("[sdr] nova geração recusada pela auditoria", {
+        job: job.id,
+        motivo: violationText(altV, turnInput),
       });
-      await admin
-        .from("sdr_turn_jobs")
-        .update({ draft_text: again.text })
-        .eq("id", job.id)
-        .eq("lease_token", job.lease_token);
-      sent = await sendText(again.text);
+      continue;
     }
-  }
-  if (!sent.ok) {
-    // Descarta trabalho obsoleto; demais falhas viram rascunho para revisão humana.
-    const obsolete = [
-      "owner_not_ai",
-      "stale_version",
-      "enrollment_inactive",
-      "lease_lost",
-      // Retomada quase igual à anterior: cancelada, sem virar rascunho.
-      "followup_repetition",
-    ].includes(sent.reason);
+    const again = await composeOutgoing(admin, {
+      workspaceId: job.workspace_id,
+      reply: alt,
+      intent: out.intent,
+      materialIds: out.material_ids,
+      attachMaterials: agentConfig.guardrails.attach_materials,
+      meeting: effects.meeting,
+    });
+    currentText = again.text;
     await admin
       .from("sdr_turn_jobs")
-      .update({
-        status: obsolete ? "discarded" : "drafted",
-        error: sent.reason,
-        block_category: sent.category ?? null,
-        lease_token: null,
-      })
+      .update({ draft_text: currentText })
       .eq("id", job.id)
-      .in("status", ["running"]);
-    await applyOptOutNow();
-    return obsolete ? "discarded" : "drafted";
+      .eq("lease_token", job.lease_token);
+    sent = await sendText(currentText);
   }
+  if (!sent.ok) return notSendable(sent.reason, sent.category ?? null);
+  const sentAudit = auditRecord({ regenerations, reasons: auditReasons, outcome: "sent" });
+  if (sentAudit)
+    await admin
+      .from("sdr_turn_jobs")
+      .update({ draft_payload: { ...payload, audit: sentAudit } })
+      .eq("id", job.id);
   if (turnState.corporatePhone && target) {
     const { saveCorporatePhone } = await import("./third-party.server");
     const st = await saveCorporatePhone(admin, {

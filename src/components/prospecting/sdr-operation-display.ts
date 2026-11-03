@@ -70,19 +70,31 @@ export function enrollmentDisplayName(
   return phone?.trim() || "Contato sem nome";
 }
 
-/** Fila da Supervisão: rascunhos a revisar, falhas a resolver e o resto em andamento. */
+/** Fila da Auditoria: falhas técnicas a resolver e o resto em andamento (sem rascunhos). */
 export function supervisionCounts(jobs: ReadonlyArray<{ status: string | null }>): {
-  toReview: number;
   failed: number;
   processing: number;
 } {
-  let toReview = 0;
   let failed = 0;
-  for (const j of jobs) {
-    if (j.status === "drafted") toReview++;
-    else if (j.status === "failed") failed++;
+  for (const j of jobs) if (j.status === "failed") failed++;
+  return { failed, processing: jobs.length - failed };
+}
+
+/** Resumo da auditoria automática (7 dias). */
+export function auditCounts(rows: ReadonlyArray<{ outcome: string; regenerations: number }>): {
+  redone: number;
+  handoff: number;
+  discarded: number;
+} {
+  let redone = 0;
+  let handoff = 0;
+  let discarded = 0;
+  for (const r of rows) {
+    if (r.outcome === "sent" && r.regenerations > 0) redone++;
+    else if (r.outcome === "handoff") handoff++;
+    else if (r.outcome === "discarded" || r.outcome === "rescheduled") discarded++;
   }
-  return { toReview, failed, processing: jobs.length - toReview - failed };
+  return { redone, handoff, discarded };
 }
 
 /* ----- Resultados ----- */

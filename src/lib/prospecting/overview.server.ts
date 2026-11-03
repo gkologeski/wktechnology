@@ -92,7 +92,8 @@ export async function loadOverview(supabase: SupabaseClient, userId: string) {
           .from("sdr_turn_jobs")
           .select("id", head)
           .eq("workspace_id", ws)
-          .eq("status", "drafted")
+          .eq("draft_payload->audit->>outcome", "handoff")
+          .gte("updated_at", since)
       : none,
     can.queue
       ? supabase
@@ -152,7 +153,12 @@ export async function loadOverview(supabase: SupabaseClient, userId: string) {
       due,
     ),
     metric(
-      { key: "drafts", label: "Respostas aguardando revisão", origin: "Agente SDR · WhatsApp" },
+      {
+        key: "drafts",
+        label: "Passadas a humano pela auditoria (30 dias)",
+        origin: "Agente SDR · WhatsApp",
+        note: "Respostas que a IA não conseguiu refazer dentro das regras.",
+      },
       can.sdr,
       drafts,
     ),

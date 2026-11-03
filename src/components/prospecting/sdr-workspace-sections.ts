@@ -27,9 +27,10 @@ export const SDR_VIEWS: ReadonlyArray<SdrView> = [
   {
     id: "operation",
     label: "Operação",
-    description: "Revise rascunhos, assuma conversas e veja quem está em atendimento.",
+    description:
+      "Veja o que a auditoria automática refez, as falhas técnicas e quem está em atendimento.",
     sections: [
-      { id: "sdr-supervision", label: "Supervisão" },
+      { id: "sdr-supervision", label: "Auditoria" },
       { id: "enrollments", label: "Em atendimento" },
     ],
   },

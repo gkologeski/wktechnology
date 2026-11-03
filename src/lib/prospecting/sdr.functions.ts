@@ -33,7 +33,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
             "id, status, kind, draft_text, draft_payload, error, block_category, attempts, created_at, updated_at, ai_started_at, ai_finished_at, send_started_at, sent_at, enrollment_id, conversation_id",
           )
           .eq("workspace_id", wsId)
-          .in("status", ["drafted", "failed", "queued", "running"])
+          .in("status", ["failed", "queued", "running"])
           .order("created_at", { ascending: false })
           .limit(100),
         supabase
@@ -128,6 +128,32 @@ export const getSdrOverview = createServerFn({ method: "POST" })
         alerts24h: alerts24 ?? 0,
       },
     };
+    // Auditoria automática: mensagens refeitas, passadas a humano ou descartadas (7 dias).
+    const since7 = new Date(Date.now() - 7 * 86400_000).toISOString();
+    const { data: auditRows, error: auditErr } = await supabase
+      .from("sdr_turn_jobs")
+      .select("id, status, kind, draft_text, draft_payload, error, updated_at, conversation_id")
+      .eq("workspace_id", wsId)
+      .not("draft_payload->audit", "is", null)
+      .gte("updated_at", since7)
+      .order("updated_at", { ascending: false })
+      .limit(50);
+    if (auditErr) throw new Error(auditErr.message);
+    const audit = (auditRows ?? []).map((r) => {
+      const p = (r.draft_payload ?? {}) as {
+        audit?: { regenerations?: number; reasons?: string[]; outcome?: string };
+      };
+      return {
+        id: r.id as string,
+        kind: r.kind as string,
+        text: (r.draft_text as string | null) ?? null,
+        conversationId: (r.conversation_id as string | null) ?? null,
+        updatedAt: r.updated_at as string,
+        regenerations: Number(p.audit?.regenerations ?? 0),
+        reasons: p.audit?.reasons ?? [],
+        outcome: p.audit?.outcome ?? "sent",
+      };
+    });
     const readiness = await loadSdrReadiness(supabase, wsId);
     const metrics: Record<string, number> = {};
     for (const a of actions.data ?? [])
@@ -144,6 +170,7 @@ export const getSdrOverview = createServerFn({ method: "POST" })
       materials: materials.data ?? [],
       links: links.data ?? [],
       jobs: jobs.data ?? [],
+      audit,
       enrollments: enrollments.data ?? [],
       qualifications,
       readiness,
@@ -490,13 +517,15 @@ export const resumeSdrJob = createServerFn({ method: "POST" })
         .limit(1)
         .maybeSingle();
       const proof = msg?.wa_message_id ?? full.provider_message_id;
+      // Sem supervisão manual: não enviada vira descartada (nunca rascunho);
+      // se o cliente aguarda resposta, a pessoa assume a conversa.
       await supabaseAdmin
         .from("sdr_turn_jobs")
         .update(
           proof
             ? { status: "sent", provider_message_id: proof, block_category: null, updated_at: now }
             : {
-                status: "drafted",
+                status: "discarded",
                 send_started_at: null,
                 block_category: null,
                 error: "reconciled_not_sent",
@@ -506,7 +535,7 @@ export const resumeSdrJob = createServerFn({ method: "POST" })
         )
         .eq("id", full.id)
         .eq("status", "failed");
-      return { ok: true, result: proof ? "already_sent" : "back_to_draft" };
+      return { ok: true, result: proof ? "already_sent" : "not_sent" };
     }
     if (full.block_category === "reconcile")
       throw new Error("Envio incerto: use a reconciliação, nunca a repetição automática.");

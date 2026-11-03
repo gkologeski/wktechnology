@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, FileEdit, MessageSquare, MessagesSquare, UserRound } from "lucide-react";
+import { AlertTriangle, MessageSquare, ShieldCheck, MessagesSquare, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState, MetricCard, SectionHeader, StatusBadge } from "@/components/techhire/ui";
 import { RowSkeleton } from "@/components/techhire/ui";
@@ -15,6 +15,7 @@ import {
   enrollmentStatusDisplay,
   ENROLLMENT_FILTERS,
   FILTER_LABELS,
+  auditCounts,
   supervisionCounts,
   type EnrollmentFilter,
 } from "./sdr-operation-display";
@@ -55,6 +56,7 @@ export function SdrOperationSummary() {
   const overview = useQuery({ queryKey: ["sdr-overview"], queryFn: () => fetchOverview() });
   const enrollments = useEnrollments();
   const jobs = overview.data ? supervisionCounts(overview.data.jobs) : null;
+  const audit = overview.data ? auditCounts(overview.data.audit) : null;
   const counts = enrollments.data?.counts ?? null;
   const unavailable = "Indisponível";
 
@@ -71,11 +73,17 @@ export function SdrOperationSummary() {
         className={cardLink}
       >
         <MetricCard
-          label="Para revisar"
-          value={jobs ? jobs.toReview : "—"}
-          hint={overview.error ? unavailable : "Rascunhos aguardando aprovação"}
-          icon={FileEdit}
-          tone={jobs && jobs.toReview > 0 ? "warning" : "neutral"}
+          label="Refeitas pela auditoria"
+          value={audit ? audit.redone : "—"}
+          hint={
+            overview.error
+              ? unavailable
+              : audit
+                ? `7 dias · ${audit.handoff} passada(s) a humano`
+                : "Mensagens que a IA refez antes de enviar"
+          }
+          icon={ShieldCheck}
+          tone="neutral"
           loading={overview.isLoading}
         />
       </Link>
