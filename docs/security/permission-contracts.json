@@ -7279,8 +7279,7 @@
         }
       },
       "files": {
-        "src/lib/prospecting/overview.server.ts": "5b36811b9a1729b7892a0abfa0f6f8157a20796f23659334babd4c40cdb54775",
-        "src/components/prospecting/areas/overview-area.tsx": "33f00bc421fdcf010219e35ae01202376a07e835c4b7e2c2af7d1e1cafae80bf"
+        "src/lib/prospecting/overview.server.ts": "5b36811b9a1729b7892a0abfa0f6f8157a20796f23659334babd4c40cdb54775"
       }
     }
   ],
