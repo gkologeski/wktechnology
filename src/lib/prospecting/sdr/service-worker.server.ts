@@ -490,19 +490,9 @@ export async function processServiceJob(
           .filter((offer) => decision.out.offer_keys.includes(offer.offer_key))
           .map((offer) => offer.name),
       });
-    const settings = must(
-      await admin
-        .from("sdr_workspace_settings")
-        .select("auto_send_enabled")
-        .eq("workspace_id", job.workspace_id)
-        .single(),
-    ) as any;
-    const status =
-      playbook.mode === "auto" &&
-      settings.auto_send_enabled &&
-      !blockingWarnings(decision.out.warnings).length
-        ? "ready"
-        : "drafted";
+    // Envio automático é sempre ligado (sem supervisão manual): as chaves legadas
+    // `sdr_playbooks.mode` e `sdr_workspace_settings.auto_send_enabled` não retêm mais respostas.
+    const status = !blockingWarnings(decision.out.warnings).length ? "ready" : "drafted";
     const finished = must(
       await admin.rpc("service_agent_finish_decision", {
         p_job: job.id,

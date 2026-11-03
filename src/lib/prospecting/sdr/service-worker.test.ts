@@ -23,6 +23,7 @@ vi.mock("@/lib/gmail.server", () => ({
   gmailSendRaw: vi.fn(),
 }));
 import { FakeDb } from "./test-fake-db";
+import { PRICE_WARNING } from "./policy";
 import {
   processServiceJob,
   tickServiceAgents,
@@ -153,14 +154,14 @@ beforeEach(() => {
   };
 });
 describe("email/chat service orchestration", () => {
-  it("uses the account persona and only drafts in supervised mode", async () => {
-    expect(await processServiceJob(db, job, deps)).toBe("drafted");
+  it("uses the account persona and readies the reply without manual approval", async () => {
+    expect(await processServiceJob(db, job, deps)).toBe("ready");
     expect(spies.turn.mock.calls[0][0].persona.assistant_name).toBe("Bruna");
     expect(spies.turn.mock.calls[0][0].persona.description).toBe("Sou a Bruna");
     expect(db.rpc).toHaveBeenCalledWith("service_agent_finish_decision", {
       p_job: "j1",
       p_lease: "lease1",
-      p_status: "drafted",
+      p_status: "ready",
     });
     expect(deps.deliver).not.toHaveBeenCalled();
   });
@@ -203,7 +204,7 @@ describe("email/chat service orchestration", () => {
     expect(db.rpc).not.toHaveBeenCalledWith("service_agent_commit_turn", expect.anything());
     expect(deps.opportunity).not.toHaveBeenCalled();
   });
-  it("readies a reply only when both agent and workspace enable automatic sending", async () => {
+  it("readies a reply when the agent is in automatic mode", async () => {
     db.t("sdr_playbooks")[0].mode = "auto";
     expect(await processServiceJob(db, job, deps)).toBe("ready");
     expect(db.rpc).toHaveBeenCalledWith("service_agent_finish_decision", {
@@ -212,9 +213,21 @@ describe("email/chat service orchestration", () => {
       p_status: "ready",
     });
   });
-  it("retains a draft when workspace automatic sending is disabled", async () => {
+  it("readies a reply even when the legacy workspace auto-send switch is off", async () => {
     db.t("sdr_playbooks")[0].mode = "auto";
     db.t("sdr_workspace_settings")[0].auto_send_enabled = false;
+    expect(await processServiceJob(db, job, deps)).toBe("ready");
+  });
+  it("readies a reply even when the legacy agent mode is still supervised", async () => {
+    db.t("sdr_playbooks")[0].mode = "supervised";
+    db.t("sdr_workspace_settings")[0].auto_send_enabled = false;
+    expect(await processServiceJob(db, job, deps)).toBe("ready");
+    expect(deps.deliver).not.toHaveBeenCalled();
+  });
+  it("still retains a draft when the reply carries a blocking warning", async () => {
+    const output = decision();
+    output.out.warnings = [PRICE_WARNING];
+    spies.turn.mockResolvedValue(output);
     expect(await processServiceJob(db, job, deps)).toBe("drafted");
   });
   it("hands over without attempting an automatic reply", async () => {
@@ -264,7 +277,7 @@ describe("email/chat service orchestration", () => {
       body,
       created_at: "2020-01-01",
     });
-    expect(await processServiceJob(db, job, deps)).toBe("drafted");
+    expect(await processServiceJob(db, job, deps)).toBe("ready");
     expect(spies.turn).toHaveBeenCalledOnce();
   });
   it("uses only the technical rate setting to hand over before inference", async () => {
