@@ -212,7 +212,7 @@ export function statePromptLines(s: ConversationState): string[] {
 }
 
 /** Telefone legível numa mensagem (dado, não decisão). */
-export type SharedPhone = { name: string | null; phoneE164: string };
+export type SharedPhone = { name: string | null; phoneE164: string; extraPhones?: string[] };
 /** Nome antigo mantido para quem só lida com telefone. */
 export type Referral = SharedPhone;
 
@@ -222,6 +222,8 @@ export type ReferralInfo = {
   phoneE164: string | null;
   email: string | null;
   messageId: string | null;
+  /** Outros números do mesmo cartão (ex.: dois celulares). */
+  extraPhones?: string[];
 };
 
 const HONORIFIC = /^(?:(?:sr|sra|srta|dr|dra|eng|prof|profa)\.?\s+)+/iu;
@@ -264,10 +266,19 @@ export function parseSharedEmail(text: string): { name: string | null; email: st
 /** Telefone brasileiro em texto ou cartão de contato (dado, não decisão). */
 export function parseSharedPhone(text: string): SharedPhone | null {
   const raw = String(text ?? "");
-  const card = raw.match(/Contato compartilhado\s*\n\s*([^:\n]+):\s*([+\d][\d\s().-]{7,})/);
+  const card = raw.match(/Contato compartilhado\s*\n\s*([^:\n]+):\s*([+\d][\d\s().,;+-]{7,})/);
   if (card) {
-    const phone = toWhatsAppE164(card[2]);
-    if (phone) return { name: card[1].trim() || null, phoneE164: phone };
+    const phones = card[2]
+      .split(/[,;]/)
+      .map((x) => toWhatsAppE164(x.trim()))
+      .filter((x): x is string => !!x);
+    const unique = [...new Set(phones)];
+    if (unique.length)
+      return {
+        name: card[1].trim() || null,
+        phoneE164: unique[0]!,
+        ...(unique.length > 1 ? { extraPhones: unique.slice(1) } : {}),
+      };
   }
   const m = raw.match(/(\+?\d[\d\s().-]{8,}\d)/);
   if (!m) return null;
@@ -384,7 +395,8 @@ export function decideState(p: {
     const phone = phoneHit?.v?.phoneE164 ?? null;
     if (name || email || phone) {
       const messageId = (phoneHit?.m ?? mailHit?.m ?? nameHit?.m)!.id;
-      referral = { name, email, phoneE164: phone, messageId };
+      const extra = phoneHit?.v?.extraPhones;
+      referral = { name, email, phoneE164: phone, messageId, ...(extra?.length ? { extraPhones: extra } : {}) };
       const prev = p.state.referral_received;
       const same = !!prev && prev.name === name && prev.email === email && prev.phone === phone;
       if (!same)

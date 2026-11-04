@@ -2976,7 +2976,7 @@
       },
       "files": {
         "src/lib/prospecting/sdr/channel-runtime.server.ts": "a1528c862f67ac28a1b664d975c6aaf7b534d280bc8345a66e861142a5fe12cf",
-        "src/lib/prospecting/sdr/worker.server.ts": "4567940af8ca6f9471df44f809e002af15a05745bfb0cb13ffa772d7c868069d",
+        "src/lib/prospecting/sdr/worker.server.ts": "bbecf6afe292b79fc4ae1e1329c21846797b06bf6f8b4d839ad18b39809f341e",
         "src/lib/prospecting/sdr/ingest.server.ts": "f9c2b94a599939a2c438af15614cfc43270fdbb6467c7a74a697961384c8c490",
         "src/lib/prospecting/sdr/tools/runtime.ts": "dcb7dd1240f535cf9ff084ad43989bafcd4db6d56f02ebb2c8efbc18965d4918",
         "drizzle/migrations/0257_service_channel_runtime_identity.sql": "2d829bed7441a6f7c8dc5c26f374ee4b66853f04a23caae6cd2d3e915815617f"
@@ -3039,7 +3039,7 @@
         "review_by": "2027-01-27"
       },
       "files": {
-        "src/lib/prospecting/sdr/agent.server.ts": "c8ceb9143c7a5227f5fc6baf0f07420669bf2c57d4d679f88f26bc5ea70439cd"
+        "src/lib/prospecting/sdr/agent.server.ts": "780c6377b29fafc69b373f882e335597581c4deb4d0517a380daa685cbab7bc6"
       }
     },
     {
@@ -4565,13 +4565,15 @@
     {
       "id": "sdr-referral-state-pure",
       "kind": "presentation",
-      "rationale": "Pure SDR turn logic without network or database access: validates referral name/email/phone written by the customer, derives conversation state and detects near-repeat follow-ups. Callers (authorized worker and authenticated sandbox) keep their existing permission, workspace and CAS checks. Review 02/11/2026: audit-outcome.ts and policy helpers (nextSendableAt, followUpDeadline) are pure decision functions for the autonomous audit (regenerate up to 3 times, hand off replies, discard or reschedule follow-ups); turn.ts loops the existing regeneration. No network, database or permission change.",
+      "rationale": "Pure SDR turn logic without network or database access: validates referral name/email/phone written by the customer, derives conversation state and detects near-repeat follow-ups. Callers (authorized worker and authenticated sandbox) keep their existing permission, workspace and CAS checks. Review 02/11/2026: audit-outcome.ts and policy helpers (nextSendableAt, followUpDeadline) are pure decision functions for the autonomous audit (regenerate up to 3 times, hand off replies, discard or reschedule follow-ups); turn.ts loops the existing regeneration. No network, database or permission change. Review 04/11/2026: splitReferralName (third-party.ts) strips company words and job title from referral names; thanksReferral audit rejects thanking the referred person; newer-inbound.ts decides to requeue a reply when the customer wrote during generation. Pure, no permission change.",
       "files": {
-        "src/lib/prospecting/sdr/conversation-state.ts": "d512312cd70a31fb1f02cd488f1f68153d1193281bf789dbb2e1a5f34b394cc6",
+        "src/lib/prospecting/sdr/conversation-state.ts": "1744d1c6854fda8fb26efbaff0293568e440cc5e98066c073f92588e8f7f6c36",
         "src/lib/prospecting/sdr/repetition.ts": "c7216d50c51eb70375689471f0749b262ed9e8e62afe131362e54aa91f1c88a9",
-        "src/lib/prospecting/sdr/turn.ts": "a824bd9f7c2638c7ebce13ff3f883123d01910edd26eb105817febadcc5193d6",
+        "src/lib/prospecting/sdr/turn.ts": "dadaf331440eef3f05db9fc8a1799c32ecff2cfd1ed0f5ad15b6f0cc6a126047",
         "src/lib/prospecting/sdr/audit-outcome.ts": "f7ae888e8b6c25faa4b2282228e6e4ae0a48b795b93629694b8502b1d4f9a9ba",
-        "src/lib/prospecting/sdr/policy.ts": "987d282e49f60c80f7798ed2cf73fc5b65c379b6c698b82c21cd8ad814242383"
+        "src/lib/prospecting/sdr/policy.ts": "987d282e49f60c80f7798ed2cf73fc5b65c379b6c698b82c21cd8ad814242383",
+        "src/lib/prospecting/sdr/third-party.ts": "5ab6674898bf604264e17f47b7e54c003229d52e1c3f1ef5aed3ba71d4879195",
+        "src/lib/prospecting/sdr/newer-inbound.ts": "e1337d19230568c07268cf02b8441c79ab0d1c72d8b6491ca77df2c7ded0eb2b"
       }
     },
     {
@@ -4630,7 +4632,7 @@
         "review_by": "2027-01-29"
       },
       "files": {
-        "src/lib/prospecting/sdr/third-party.server.ts": "1ce162d7ca0bc9903b17002d7974cc8d89cd0bb67aa997ca9848246c057308bd"
+        "src/lib/prospecting/sdr/third-party.server.ts": "1235ef2966aca41808a8fccc2ed5db0cc1623e72a2ec330c9ec7ea796c1b5293"
       }
     },
     {
