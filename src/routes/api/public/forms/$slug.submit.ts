@@ -381,6 +381,22 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           if (aerr) console.error("[forms.submit] activity insert failed", aerr.message);
         }
 
+        // Inscrição nova distribuída: avisa o responsável escolhido.
+        if (newAssignee && (leadId || contactId)) {
+          const { error: nerr2 } = await supabaseAdmin.from("notifications").insert({
+            owner_id: newAssignee,
+            user_id: newAssignee,
+            workspace_id: form.workspace_id,
+            type: "form_submission",
+            title: "Nova inscrição de formulário",
+            body: `${[firstName, lastName].filter(Boolean).join(" ") || "Visitante"} enviou o formulário "${form.name ?? params.slug}".`,
+            link: leadId ? `/leads/${leadId}` : `/contacts/${contactId}`,
+            entity: leadId ? "lead" : "contact",
+            entity_id: (leadId ?? contactId)!,
+          });
+          if (nerr2) console.error("[forms.submit] notification failed", nerr2.message);
+        }
+
         await supabaseAdmin
           .from("forms")
           .update({ submit_count: (form.submit_count ?? 0) + 1 })
