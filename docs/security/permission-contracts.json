@@ -7622,6 +7622,14 @@
         {
           "file": "src/lib/access-control/use-permissions.tsx",
           "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/form-assignment-access.ts",
+          "symbol": "assertFormWorkspace"
+        },
+        {
+          "file": "src/components/whatsapp/campaign-assignment-section.tsx",
+          "symbol": "CampaignAssignmentSection"
         }
       ],
       "database": [
@@ -7631,7 +7639,7 @@
         },
         {
           "file": "drizzle/migrations/0304_forms_assignment_columns.sql",
-          "symbol": "assignment_mode"
+          "symbol": "forms_assignment_mode_chk"
         }
       ],
       "tests": {
@@ -7657,15 +7665,84 @@
         }
       },
       "files": {
-        "src/lib/form-assignment.ts": "72cfbcea6b05bdaf08562d6be6dffb9e47bd05c8c9a517b5bcf6faa2ee54b221",
-        "src/lib/form-assignment-access.ts": "5725b06591673e5d258b6fc167b08b6768d9dadcd87036d78593e407dc11e7ab",
+        "src/lib/form-assignment-access.ts": "ca200a480908bc9502407f3fa46db3ab2da4085d49747787e49c9b024d5776e1",
         "src/lib/forms.functions.ts": "aecd103393045bfb1327d4b18aaae4dee22838621a6f983f94824b598eca245e",
         "src/components/forms/forms-page.tsx": "67e502868cf6b9abeed01a579bc87dfeb177636b75a8b57634fddd8356ed973b",
-        "src/routes/api/public/forms/$slug.submit.ts": "22d02acf9761bed25162803638d50971c65ccb26c14baf3b43727faef2e7a5d8",
         "drizzle/migrations/0303_form_next_assignee.sql": "40082ae3c409d121ad3c27ab7892abc0d9156835a6a309fb9fcb8a01d9c46cb7",
-        "drizzle/migrations/0304_forms_assignment_columns.sql": "90d5007f3b71ea929e0a111d7b62b28b88c4f290b2d51d2f2a8fac87f7f95a23",
-        "src/lib/form-assignment-access.test.ts": "9bf3a6edfa2c3c086ccf129a4482a425f64c4af7b794b9927b58479add6c7b17",
-        "src/lib/form-assignment.test.ts": "0681a1da4eaed6b29e224ecd9fba6f55448e2796f403b318414cb481d9081c74"
+        "drizzle/migrations/0304_forms_assignment_columns.sql": "90d5007f3b71ea929e0a111d7b62b28b88c4f290b2d51d2f2a8fac87f7f95a23"
+      }
+    },
+    {
+      "id": "form-assignment-rules",
+      "kind": "presentation",
+      "rationale": "Pure labels/modes for form distribution and the owner fallback; no I/O, routes, actions or data access. Saving is enforced in form-submission-assignment.",
+      "files": {
+        "src/lib/form-assignment.ts": "72cfbcea6b05bdaf08562d6be6dffb9e47bd05c8c9a517b5bcf6faa2ee54b221"
+      }
+    },
+    {
+      "id": "public-form-submit",
+      "kind": "public",
+      "resources": [
+        "techsales.marketing.forms"
+      ],
+      "actions": [
+        "create"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.marketing.forms.create.workspace"
+      ],
+      "rationale": "Anonymous visitors submit published forms. Server validates Turnstile before any write, loads the form by slug with the service client, accepts only active forms (publicFormGate), limits 5 submissions per IP per form in 10 minutes, validates fields, and writes only into the form workspace. New records get their responsible from form_next_assignee (service_role only, active members).",
+      "controls": [
+        {
+          "file": "src/lib/forms/public-submit-guard.server.ts",
+          "symbol": "verifyTurnstileToken"
+        },
+        {
+          "file": "src/lib/forms/public-form-gate.ts",
+          "symbol": "publicFormGate"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0303_form_next_assignee.sql",
+          "symbol": "form_next_assignee"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/forms/public-form-gate.test.ts",
+          "name": "public form allows active form under rate limit"
+        },
+        "missing_permission": {
+          "file": "src/lib/forms/public-form-gate.test.ts",
+          "name": "public form rejects missing form"
+        },
+        "explicit_deny": {
+          "file": "src/lib/forms/public-form-gate.test.ts",
+          "name": "public form rejects rate limited ip"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/forms/public-form-gate.test.ts",
+          "name": "public form rejects slug outside any workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/forms/public-form-gate.test.ts",
+          "name": "public form keeps inactive form closed"
+        }
+      },
+      "exception": {
+        "mechanism": "Turnstile token verified server-side, active form looked up by slug, per-IP rate limit.",
+        "boundary": "Tenant comes only from the stored form; visitor cannot choose workspace, owner or assignee.",
+        "revocation": "Deactivating or deleting the form closes the endpoint immediately.",
+        "review_by": "2027-05-04"
+      },
+      "files": {
+        "src/routes/api/public/forms/$slug.submit.ts": "8192585cd230d2758bc9116545720c10e081c287cc1cb5e4f99a780e5299d92d",
+        "src/lib/forms/public-form-gate.ts": "7f3204e939f24ee33c54b39910c7a370ba0861d8f322b1c50fa718ff09684ea0"
       }
     }
   ],

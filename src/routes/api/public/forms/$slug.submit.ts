@@ -1,3 +1,4 @@
+import { publicFormGate } from "@/lib/forms/public-form-gate";
 import { pickFormAssignee } from "@/lib/form-assignment";
 import { validateEmailAddress } from "@/lib/email-address";
 import { createFileRoute } from "@tanstack/react-router";
@@ -85,7 +86,8 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           .eq("slug", params.slug)
           .maybeSingle();
         if (ferr) return Response.json({ error: ferr.message }, { status: 500, headers: cors });
-        if (!form || !form.active)
+        const closed = publicFormGate(form, 0);
+        if (closed || !form)
           return Response.json({ error: "Not found" }, { status: 404, headers: cors });
 
         // rate limit: max 5 submissions per IP per form in 10 minutes
@@ -97,11 +99,9 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             .eq("form_id", form.id)
             .eq("ip", ip)
             .gte("created_at", since);
-          if ((count ?? 0) >= 5) {
-            return Response.json(
-              { error: "Too many submissions, try again later." },
-              { status: 429, headers: cors },
-            );
+          const limited = publicFormGate(form, count ?? 0);
+          if (limited) {
+            return Response.json({ error: limited.error }, { status: limited.status, headers: cors });
           }
         }
 

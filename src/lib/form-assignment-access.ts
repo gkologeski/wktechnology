@@ -15,8 +15,7 @@ export async function authorizeFormAssignment(
   activeWorkspaceId: string,
   formWorkspaceId: string | null,
 ) {
-  if (formWorkspaceId && formWorkspaceId !== activeWorkspaceId)
-    throw new Error("Formulário de outro workspace.");
+  assertFormWorkspace(activeWorkspaceId, formWorkspaceId);
   const member = await client.rpc("is_workspace_member", {
     _workspace: activeWorkspaceId,
     _user: userId,
@@ -31,4 +30,10 @@ export async function authorizeFormAssignment(
     if (!error && data === true) return;
   }
   throw new Error("Sem permissão para alterar a distribuição do formulário.");
+}
+
+/** Formulário existente precisa ser do workspace ativo de quem edita. */
+export function assertFormWorkspace(activeWorkspaceId: string, formWorkspaceId: string | null) {
+  if (formWorkspaceId && formWorkspaceId !== activeWorkspaceId)
+    throw new Error("Formulário de outro workspace.");
 }
