@@ -1,3 +1,5 @@
+import { publicFormGate } from "@/lib/forms/public-form-gate";
+import { pickFormAssignee } from "@/lib/form-assignment";
 import { validateEmailAddress } from "@/lib/email-address";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -84,7 +86,8 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           .eq("slug", params.slug)
           .maybeSingle();
         if (ferr) return Response.json({ error: ferr.message }, { status: 500, headers: cors });
-        if (!form || !form.active)
+        const closed = publicFormGate(form, 0);
+        if (closed || !form)
           return Response.json({ error: "Not found" }, { status: 404, headers: cors });
 
         // rate limit: max 5 submissions per IP per form in 10 minutes
@@ -96,10 +99,11 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             .eq("form_id", form.id)
             .eq("ip", ip)
             .gte("created_at", since);
-          if ((count ?? 0) >= 5) {
+          const limited = publicFormGate(form, count ?? 0);
+          if (limited) {
             return Response.json(
-              { error: "Too many submissions, try again later." },
-              { status: 429, headers: cors },
+              { error: limited.error },
+              { status: limited.status, headers: cors },
             );
           }
         }
@@ -162,6 +166,17 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
           (clean.name ? clean.name.split(" ").slice(1).join(" ") || null : null);
         const company = clean.company || clean.company_name || null;
         const jobTitle = clean.job_title || clean.cargo || null;
+
+        // Responsável de inscrições novas pela regra de distribuição do formulário.
+        let newAssignee: string | null = null;
+        const resolveNewAssignee = async (): Promise<string> => {
+          const { data: picked, error: perr } = await supabaseAdmin.rpc("form_next_assignee", {
+            _form_id: form.id,
+          });
+          if (perr) console.error("[forms.submit] assignee pick failed", perr.message);
+          newAssignee = pickFormAssignee((picked as string | null) ?? null, form.owner_id);
+          return newAssignee;
+        };
 
         if (form.target === "lead") {
           // Visitante nunca deve ver erro interno de duplicidade: se o lead já
@@ -235,6 +250,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
               .insert({
                 workspace_id: form.workspace_id,
                 owner_id: form.owner_id,
+                assigned_to: await resolveNewAssignee(),
                 first_name: firstName,
                 last_name: lastName,
                 email: email || null,
@@ -297,6 +313,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
               .insert({
                 workspace_id: form.workspace_id,
                 owner_id: form.owner_id,
+                assigned_to: await resolveNewAssignee(),
                 first_name: firstName,
                 last_name: lastName,
                 email: email || null,
@@ -357,7 +374,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             owner_id: form.owner_id,
             workspace_id: form.workspace_id,
             created_by: form.owner_id,
-            assigned_to: form.owner_id,
+            assigned_to: newAssignee ?? form.owner_id,
             type: "note",
             subject: `Formulário enviado: ${form.name ?? params.slug}`,
             body: filled.join(""),
@@ -365,6 +382,22 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             related_contact_id: contactId,
           });
           if (aerr) console.error("[forms.submit] activity insert failed", aerr.message);
+        }
+
+        // Inscrição nova distribuída: avisa o responsável escolhido.
+        if (newAssignee && (leadId || contactId)) {
+          const { error: nerr2 } = await supabaseAdmin.from("notifications").insert({
+            owner_id: newAssignee,
+            user_id: newAssignee,
+            workspace_id: form.workspace_id,
+            type: "form_submission",
+            title: "Nova inscrição de formulário",
+            body: `${[firstName, lastName].filter(Boolean).join(" ") || "Visitante"} enviou o formulário "${form.name ?? params.slug}".`,
+            link: leadId ? `/leads/${leadId}` : `/contacts/${contactId}`,
+            entity: leadId ? "lead" : "contact",
+            entity_id: (leadId ?? contactId)!,
+          });
+          if (nerr2) console.error("[forms.submit] notification failed", nerr2.message);
         }
 
         await supabaseAdmin

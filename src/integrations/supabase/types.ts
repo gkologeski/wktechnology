@@ -11640,6 +11640,9 @@ export type Database = {
         Row: {
           active: boolean
           assigned_to: string | null
+          assignment_cursor: number
+          assignment_member_ids: string[]
+          assignment_mode: string
           created_at: string
           display_mode: string
           fields: Json
@@ -11658,6 +11661,9 @@ export type Database = {
         Insert: {
           active?: boolean
           assigned_to?: string | null
+          assignment_cursor?: number
+          assignment_member_ids?: string[]
+          assignment_mode?: string
           created_at?: string
           display_mode?: string
           fields?: Json
@@ -11676,6 +11682,9 @@ export type Database = {
         Update: {
           active?: boolean
           assigned_to?: string | null
+          assignment_cursor?: number
+          assignment_member_ids?: string[]
+          assignment_mode?: string
           created_at?: string
           display_mode?: string
           fields?: Json
@@ -31158,6 +31167,7 @@ export type Database = {
         }
         Returns: string
       }
+      form_next_assignee: { Args: { _form_id: string }; Returns: string }
       gcal_base_event_id: {
         Args: { provider_event_id: string }
         Returns: string

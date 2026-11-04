@@ -29,7 +29,15 @@ export function CampaignAssignmentSection({
   members,
   disabled,
   onChange,
+  modes = ASSIGNMENT_MODES,
+  labels = ASSIGNMENT_MODE_LABELS,
+  help = HELP,
+  permissionResource = "techsales.marketing.campaigns",
 }: {
+  modes?: readonly AssignmentMode[];
+  labels?: Partial<Record<AssignmentMode, string>>;
+  help?: Partial<Record<AssignmentMode, string>>;
+  permissionResource?: string;
   mode: AssignmentMode;
   memberIds: string[];
   members: Member[];
@@ -40,7 +48,7 @@ export function CampaignAssignmentSection({
   const permissions = usePermissions();
   const canSave = permissions.canAny(
     ["create", "update"].flatMap((a) =>
-      ["own", "team", "workspace"].map((s) => `techsales.marketing.campaigns.${a}.${s}`),
+      ["own", "team", "workspace"].map((s) => `${permissionResource}.${a}.${s}`),
     ),
   );
   disabled = disabled || !canSave;
@@ -55,14 +63,14 @@ export function CampaignAssignmentSection({
         disabled={disabled}
         aria-label="Distribuição das conversas"
       >
-        {ASSIGNMENT_MODES.map((m) => (
+        {modes.map((m) => (
           <label key={m} htmlFor={`assign-${m}`} className="flex items-center gap-2 text-sm">
             <RadioGroupItem id={`assign-${m}`} value={m} />
-            {ASSIGNMENT_MODE_LABELS[m]}
+            {labels[m]}
           </label>
         ))}
       </RadioGroup>
-      <p className="text-xs text-muted-foreground">{HELP[mode]}</p>
+      <p className="text-xs text-muted-foreground">{help[mode]}</p>
 
       {mode === "member" && (
         <div>

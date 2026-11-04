@@ -2122,6 +2122,20 @@
       "when": 1793745892641,
       "tag": "0302_whatsapp_suppression_release_permission",
       "breakpoints": true
+    },
+    {
+      "idx": 303,
+      "version": "7",
+      "when": 1793762014773,
+      "tag": "0303_form_next_assignee",
+      "breakpoints": true
+    },
+    {
+      "idx": 304,
+      "version": "7",
+      "when": 1793762277004,
+      "tag": "0304_forms_assignment_columns",
+      "breakpoints": true
     }
   ]
 }

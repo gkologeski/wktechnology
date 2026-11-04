@@ -2276,7 +2276,7 @@
         "drizzle/migrations/0274_wa_campaign_prune_recent.sql": "367295426b6d5a14d7319414235e7c4d84cf48d1085bfd1b322763be7c041101",
         "drizzle/migrations/0283_whatsapp_campaign_filter_values.sql": "80b87e4714d99c0674fa970819ff36a4558446abfcfb969b30a2100fc4fccf4c",
         "drizzle/migrations/0286_wa_campaign_assignment.sql": "bdc20018b0184de35ab5b6fbea3305d0b847441e960b6ab05ae27ecdee78b207",
-        "src/components/whatsapp/campaign-assignment-section.tsx": "784136197ffd47a38eb41b6e026918e5a74cbce2f409feb13cb41a647a0380e4",
+        "src/components/whatsapp/campaign-assignment-section.tsx": "489a9fd6df646ef47c0413295967bc792234b56b034a1d9d49338f0be1904243",
         "src/lib/whatsapp/campaign-assignment.server.ts": "f75a7485b12b320af56635b016a47ffefafd1c85b7cec5718dc71b59c4ce77df",
         "src/lib/whatsapp/campaign-assignment.ts": "3dc79264158d836b33f4325a096794071cf2ba45bb0f50fead681412ad8fb51b",
         "src/lib/whatsapp/campaign-audience.server.ts": "77aa07cf0293ad370eb6ea71429ea8f656d2c051463b0e465bb245e71e690bc4",
@@ -2731,7 +2731,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 03/11/2026: generated declarations for whatsapp_number_suppressions and the wa_* suppression functions only; no runtime I/O, grants or policies.",
       "files": {
-        "src/integrations/supabase/types.ts": "adacda67ecc360a7a27a46cf541c4717e0b05053441c4b23c085774fc531f9ac"
+        "src/integrations/supabase/types.ts": "2b852dcf2ab13c77dec3f73570e0e06e074002ce3ee369d3dc7788a119559136"
       }
     },
     {
@@ -7580,6 +7580,180 @@
         "src/routes/_authenticated/leads.$id.tsx": "c44c7772c785318462753b84710dcf1e537609eb60dc0551ba7bf3c6a260dae7",
         "drizzle/migrations/0301_whatsapp_number_suppressions.sql": "da7b9b5e869f341e06426924b4b62611a0e063640956ab6d29ba704dfc3594d2",
         "drizzle/migrations/0302_whatsapp_suppression_release_permission.sql": "e12325911933e88f4d8f3bee3a673d42a5c4e0b82cf9c8a900c4d64a7070599a"
+      }
+    },
+    {
+      "id": "form-submission-assignment",
+      "kind": "business",
+      "resources": [
+        "techsales.marketing.forms"
+      ],
+      "actions": [
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.marketing.forms.create.own",
+        "techsales.marketing.forms.create.team",
+        "techsales.marketing.forms.create.workspace",
+        "techsales.marketing.forms.update.own",
+        "techsales.marketing.forms.update.team",
+        "techsales.marketing.forms.update.workspace"
+      ],
+      "rationale": "Form distribution rule (owner default, specific member, round robin) reuses existing form create/update keys; no new key or grant. upsertForm keeps requireSalesPermission and adds authorizeFormAssignment (active membership, same workspace, effective key with deny winning) plus resolveAssignment (chosen members active in the workspace). The public submit route picks the assignee only through form_next_assignee (SECURITY DEFINER, EXECUTE service_role only, active members only, atomic cursor) for new Leads/Contacts; existing records keep their responsible.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/form-assignment-access.ts",
+          "symbol": "authorizeFormAssignment"
+        },
+        {
+          "file": "src/lib/whatsapp/campaign-assignment.server.ts",
+          "symbol": "resolveAssignment"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/form-assignment-access.ts",
+          "symbol": "assertFormWorkspace"
+        },
+        {
+          "file": "src/components/whatsapp/campaign-assignment-section.tsx",
+          "symbol": "CampaignAssignmentSection"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0303_form_next_assignee.sql",
+          "symbol": "form_next_assignee"
+        },
+        {
+          "file": "drizzle/migrations/0304_forms_assignment_columns.sql",
+          "symbol": "forms"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/form-assignment-access.test.ts",
+          "name": "allows active member with form edit key"
+        },
+        "missing_permission": {
+          "file": "src/lib/form-assignment-access.test.ts",
+          "name": "rejects form assignment without key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/form-assignment-access.test.ts",
+          "name": "rejects form assignment on explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/form-assignment-access.test.ts",
+          "name": "rejects form assignment in foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/form-assignment-access.test.ts",
+          "name": "rejects form assignment for inactive member"
+        }
+      },
+      "files": {
+        "src/lib/form-assignment-access.ts": "ca200a480908bc9502407f3fa46db3ab2da4085d49747787e49c9b024d5776e1",
+        "src/lib/forms.functions.ts": "aecd103393045bfb1327d4b18aaae4dee22838621a6f983f94824b598eca245e",
+        "src/components/forms/forms-page.tsx": "6c4eb4fcbf0134c5d8a90e41d739ea7c61c08d1a40a61ef3a7a21ebaa38c0f48",
+        "drizzle/migrations/0303_form_next_assignee.sql": "40082ae3c409d121ad3c27ab7892abc0d9156835a6a309fb9fcb8a01d9c46cb7",
+        "drizzle/migrations/0304_forms_assignment_columns.sql": "90d5007f3b71ea929e0a111d7b62b28b88c4f290b2d51d2f2a8fac87f7f95a23"
+      }
+    },
+    {
+      "id": "form-assignment-rules",
+      "kind": "presentation",
+      "rationale": "Pure labels/modes for form distribution and the owner fallback; no I/O, routes, actions or data access. Saving is enforced in form-submission-assignment.",
+      "files": {
+        "src/lib/form-assignment.ts": "a754a6a6ec0ac17be6d23a5284c525491e1673056ae58e6da7b364499ec764c6"
+      }
+    },
+    {
+      "id": "public-form-submit",
+      "kind": "public",
+      "resources": [
+        "techsales.marketing.forms"
+      ],
+      "actions": [
+        "create"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.marketing.forms.create.workspace"
+      ],
+      "rationale": "Anonymous visitors submit published forms. Server validates Turnstile before any write, loads the form by slug with the service client, accepts only active forms (publicFormGate), limits 5 submissions per IP per form in 10 minutes, validates fields, and writes only into the form workspace. New records get their responsible from form_next_assignee (service_role only, active members).",
+      "controls": [
+        {
+          "file": "src/lib/forms/public-submit-guard.server.ts",
+          "symbol": "verifyTurnstileToken"
+        },
+        {
+          "file": "src/lib/forms/public-form-gate.ts",
+          "symbol": "publicFormGate"
+        },
+        {
+          "file": "src/lib/forms/public-submit-guard.server.ts",
+          "symbol": "formSubmitCorsHeaders"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0303_form_next_assignee.sql",
+          "symbol": "form_next_assignee"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/forms/public-form-gate.test.ts",
+          "name": "public form allows active form under rate limit"
+        },
+        "missing_permission": {
+          "file": "src/lib/forms/public-form-gate.test.ts",
+          "name": "public form rejects missing form"
+        },
+        "explicit_deny": {
+          "file": "src/lib/forms/public-form-gate.test.ts",
+          "name": "public form rejects rate limited ip"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/forms/public-form-gate.test.ts",
+          "name": "public form rejects slug outside any workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/forms/public-form-gate.test.ts",
+          "name": "public form keeps inactive form closed"
+        }
+      },
+      "exception": {
+        "mechanism": "Turnstile token verified server-side, active form looked up by slug, per-IP rate limit.",
+        "boundary": "Tenant comes only from the stored form; visitor cannot choose workspace, owner or assignee.",
+        "revocation": "Deactivating or deleting the form closes the endpoint immediately.",
+        "review_by": "2027-05-04"
+      },
+      "files": {
+        "src/routes/api/public/forms/$slug.submit.ts": "440fd4a5674d161f15c36803f42ed15a411c6e3abf1e2b6994bc89fee9df1940"
+      }
+    },
+    {
+      "id": "public-form-gate-rules",
+      "kind": "presentation",
+      "rationale": "Pure decision for active form and per-IP limit; enforced by the public submit route (public-form-submit).",
+      "files": {
+        "src/lib/forms/public-form-gate.ts": "7f3204e939f24ee33c54b39910c7a370ba0861d8f322b1c50fa718ff09684ea0"
       }
     }
   ],

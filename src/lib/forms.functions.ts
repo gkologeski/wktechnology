@@ -3,6 +3,7 @@ import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { FORM_ASSIGNMENT_MODES } from "@/lib/form-assignment";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const FieldSchema = z.object({
@@ -46,6 +47,8 @@ const UpsertSchema = z.object({
   active: z.boolean().optional(),
   display_mode: z.enum(["inline", "popup", "slidein"]).optional().default("inline"),
   popup_config: PopupConfigSchema.optional(),
+  assignment_mode: z.enum(FORM_ASSIGNMENT_MODES).optional().default("auto"),
+  assignment_member_ids: z.array(z.string().uuid()).max(100).optional().default([]),
 });
 
 export const listForms = createServerFn({ method: "GET" })
@@ -54,7 +57,7 @@ export const listForms = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("forms")
       .select(
-        "id, name, slug, target, fields, success_message, redirect_url, active, submit_count, display_mode, popup_config, created_at, updated_at",
+        "id, name, slug, target, fields, success_message, redirect_url, active, submit_count, display_mode, popup_config, assignment_mode, assignment_member_ids, created_at, updated_at",
       )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
@@ -65,7 +68,28 @@ export const upsertForm = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.marketing.forms", ["create", "update"])])
   .inputValidator((input) => UpsertSchema.parse(input))
   .handler(async ({ data, context }) => {
+    const { resolveAssignment } = await import("@/lib/whatsapp/campaign-assignment.server");
+    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { authorizeFormAssignment } = await import("@/lib/form-assignment-access");
+    let formWs: string | null = null;
+    if (data.id) {
+      const { data: cur, error: curErr } = await context.supabase
+        .from("forms")
+        .select("workspace_id")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (curErr || !cur) throw new Error("Formulário não encontrado.");
+      formWs = cur.workspace_id;
+    }
+    await authorizeFormAssignment(context.supabase, context.userId, ws, formWs);
+    const assignment = await resolveAssignment(context.supabase, ws, {
+      assignment_mode: data.assignment_mode,
+      assignment_member_ids: data.assignment_member_ids,
+    });
     const payload = {
+      assignment_mode: assignment.assignment_mode,
+      assignment_member_ids: assignment.assignment_member_ids,
       owner_id: context.userId,
       name: data.name,
       slug: data.slug,

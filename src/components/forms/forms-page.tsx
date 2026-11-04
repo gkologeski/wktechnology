@@ -1,6 +1,14 @@
 import { getPublicAppUrl } from "@/lib/app-url";
 
 import { useState } from "react";
+import { CampaignAssignmentSection } from "@/components/whatsapp/campaign-assignment-section";
+import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import {
+  FORM_ASSIGNMENT_HELP,
+  FORM_ASSIGNMENT_LABELS,
+  FORM_ASSIGNMENT_MODES,
+  type FormAssignmentMode,
+} from "@/lib/form-assignment";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -54,6 +62,8 @@ type FormRow = {
   submit_count: number;
   display_mode: DisplayMode;
   popup_config: PopupConfig;
+  assignment_mode: FormAssignmentMode;
+  assignment_member_ids: string[];
 };
 
 const EMPTY_FIELDS: FormField[] = [
@@ -94,6 +104,8 @@ export function FormsPage() {
           active: editing?.active ?? true,
           display_mode: (editing?.display_mode as DisplayMode) ?? "inline",
           popup_config: (editing?.popup_config as PopupConfig) ?? {},
+          assignment_mode: editing?.assignment_mode ?? "auto",
+          assignment_member_ids: editing?.assignment_member_ids ?? [],
         },
       }),
     onSuccess: () => {
@@ -233,6 +245,7 @@ function EditorBody({
   saving: boolean;
 }) {
   const fields = (editing.fields ?? []) as FormField[];
+  const { data: members = [] } = useWorkspaceMembers();
   const update = (patch: Partial<FormRow>) => setEditing({ ...editing, ...patch });
   const updateField = (idx: number, patch: Partial<FormField>) => {
     const next = fields.slice();
@@ -294,6 +307,28 @@ function EditorBody({
       </div>
 
       <DisplaySection editing={editing} update={update} />
+
+      <div className="space-y-2 rounded-md border border-border p-3">
+        <div>
+          <Label>Distribuição das inscrições</Label>
+          <p className="text-xs text-muted-foreground">
+            Quem fica responsável pelos Leads/Contatos novos criados por este formulário. Cadastros
+            já existentes mantêm o responsável atual.
+          </p>
+        </div>
+        <CampaignAssignmentSection
+          mode={editing.assignment_mode ?? "auto"}
+          memberIds={editing.assignment_member_ids ?? []}
+          members={members}
+          modes={FORM_ASSIGNMENT_MODES}
+          labels={FORM_ASSIGNMENT_LABELS}
+          help={FORM_ASSIGNMENT_HELP}
+          permissionResource="techsales.marketing.forms"
+          onChange={(m, ids) =>
+            update({ assignment_mode: m as FormAssignmentMode, assignment_member_ids: ids })
+          }
+        />
+      </div>
 
       <div>
         <div className="mb-2 flex items-center justify-between">
