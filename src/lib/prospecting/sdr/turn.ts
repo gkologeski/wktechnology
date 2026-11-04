@@ -41,7 +41,7 @@ import {
   type ValidatedOutput,
 } from "./policy";
 import type { CanonicalQuestion } from "./qualification";
-import { isAutoResponder } from "./third-party";
+import { isAutoResponder, splitReferralName } from "./third-party";
 import type { TurnEffects } from "./tools/dispatcher";
 import { AUDIT_MAX_REGENERATIONS } from "./audit-outcome";
 
@@ -177,7 +177,12 @@ export function preTurnFacts(i: TurnInput): { facts: string[]; explicitOptOut: b
   return { facts, explicitOptOut };
 }
 
-export type Violation = "price" | "questions" | "material_claim" | "booking_claim";
+export type Violation =
+  | "price"
+  | "questions"
+  | "material_claim"
+  | "booking_claim"
+  | "thanks_referral";
 
 /** Regras de conteúdo que toda mensagem precisa cumprir antes de sair. */
 export function replyViolations(reply: string, out: ValidatedOutput, i: TurnInput): Violation[] {
@@ -198,7 +203,30 @@ export function replyViolations(reply: string, out: ValidatedOutput, i: TurnInpu
     i.tools.effects.meeting?.status !== "confirmed"
   )
     v.push("booking_claim");
+  if (thanksReferral(reply, out, i)) v.push("thanks_referral");
   return v;
+}
+
+function plainName(w: string): string {
+  return w.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+/**
+ * Agradecimento endereçado à pessoa indicada ("Obrigada, Thiago!") quando
+ * quem escreveu foi o cliente que indicou.
+ */
+export function thanksReferral(reply: string, out: ValidatedOutput, i: TurnInput): boolean {
+  const m = reply.match(/^\s*(?:muito\s+)?(?:obrigad[oa]|valeu|agrade[cç]o)[^,!.\n]{0,20}?,\s*([\p{L}]+)/iu);
+  if (!m) return false;
+  const greeted = plainName(m[1]!);
+  const names = new Set<string>();
+  const add = (n: string | null | undefined) => {
+    const first = splitReferralName(n).name?.split(" ")[0];
+    if (first && first.length >= 2) names.add(plainName(first));
+  };
+  add(out.situation?.referral_name);
+  for (const msg of currentInbound(i.history)) add(parseSharedPhone(msg.body)?.name);
+  return names.has(greeted);
 }
 
 const VIOLATION_TEXT: Record<Violation, (i: TurnInput) => string> = {
@@ -207,6 +235,8 @@ const VIOLATION_TEXT: Record<Violation, (i: TurnInput) => string> = {
     `o limite configurado é de ${i.config.guardrails.max_questions} pergunta(s) por mensagem`,
   material_claim: () => "nenhum material foi anexado pelo sistema neste turno",
   booking_claim: () => "nenhuma reunião foi confirmada pela agenda neste turno",
+  thanks_referral: () =>
+    "o agradecimento chama pelo nome da pessoa indicada; agradeça a quem enviou a mensagem (pelo nome dele ou sem nome) e cite o indicado só pelo primeiro nome, sem empresa ou cargo",
 };
 
 export function violationText(v: ReadonlyArray<Violation>, i: TurnInput): string {

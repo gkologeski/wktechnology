@@ -4,6 +4,7 @@
  */
 import type { ReferralInfo } from "./conversation-state";
 import { brPhoneVariants } from "@/lib/whatsapp/phone-variants";
+import { splitReferralName } from "./third-party";
 import { loadSdrAgentUserId } from "./agent-identity.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
