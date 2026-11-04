@@ -312,8 +312,8 @@ function EditorBody({
         <div>
           <Label>Distribuição das inscrições</Label>
           <p className="text-xs text-muted-foreground">
-            Quem fica responsável pelos Leads/Contatos novos criados por este formulário.
-            Cadastros já existentes mantêm o responsável atual.
+            Quem fica responsável pelos Leads/Contatos novos criados por este formulário. Cadastros
+            já existentes mantêm o responsável atual.
           </p>
         </div>
         <CampaignAssignmentSection

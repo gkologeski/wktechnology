@@ -101,7 +101,10 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             .gte("created_at", since);
           const limited = publicFormGate(form, count ?? 0);
           if (limited) {
-            return Response.json({ error: limited.error }, { status: limited.status, headers: cors });
+            return Response.json(
+              { error: limited.error },
+              { status: limited.status, headers: cors },
+            );
           }
         }
 

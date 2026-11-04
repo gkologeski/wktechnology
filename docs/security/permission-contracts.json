@@ -7667,7 +7667,7 @@
       "files": {
         "src/lib/form-assignment-access.ts": "ca200a480908bc9502407f3fa46db3ab2da4085d49747787e49c9b024d5776e1",
         "src/lib/forms.functions.ts": "aecd103393045bfb1327d4b18aaae4dee22838621a6f983f94824b598eca245e",
-        "src/components/forms/forms-page.tsx": "67e502868cf6b9abeed01a579bc87dfeb177636b75a8b57634fddd8356ed973b",
+        "src/components/forms/forms-page.tsx": "6c4eb4fcbf0134c5d8a90e41d739ea7c61c08d1a40a61ef3a7a21ebaa38c0f48",
         "drizzle/migrations/0303_form_next_assignee.sql": "40082ae3c409d121ad3c27ab7892abc0d9156835a6a309fb9fcb8a01d9c46cb7",
         "drizzle/migrations/0304_forms_assignment_columns.sql": "90d5007f3b71ea929e0a111d7b62b28b88c4f290b2d51d2f2a8fac87f7f95a23"
       }
@@ -7677,7 +7677,7 @@
       "kind": "presentation",
       "rationale": "Pure labels/modes for form distribution and the owner fallback; no I/O, routes, actions or data access. Saving is enforced in form-submission-assignment.",
       "files": {
-        "src/lib/form-assignment.ts": "72cfbcea6b05bdaf08562d6be6dffb9e47bd05c8c9a517b5bcf6faa2ee54b221"
+        "src/lib/form-assignment.ts": "a754a6a6ec0ac17be6d23a5284c525491e1673056ae58e6da7b364499ec764c6"
       }
     },
     {
@@ -7745,7 +7745,7 @@
         "review_by": "2027-05-04"
       },
       "files": {
-        "src/routes/api/public/forms/$slug.submit.ts": "8192585cd230d2758bc9116545720c10e081c287cc1cb5e4f99a780e5299d92d"
+        "src/routes/api/public/forms/$slug.submit.ts": "440fd4a5674d161f15c36803f42ed15a411c6e3abf1e2b6994bc89fee9df1940"
       }
     },
     {

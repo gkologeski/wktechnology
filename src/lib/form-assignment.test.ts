@@ -14,6 +14,8 @@ describe("distribuição de inscrições de formulário", () => {
     expect([0, 1, 2].map((c) => pickRoundRobin(["a", "b"], c))).toEqual(["a", "b", "a"]);
   });
   it("membro específico exige exatamente um", () => {
-    expect(() => normalizeAssignment({ assignment_mode: "member", assignment_member_ids: [] })).toThrow();
+    expect(() =>
+      normalizeAssignment({ assignment_mode: "member", assignment_member_ids: [] }),
+    ).toThrow();
   });
 });

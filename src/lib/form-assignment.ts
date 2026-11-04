@@ -1,7 +1,11 @@
 import type { AssignmentMode } from "@/lib/whatsapp/campaign-assignment";
 
 /** Formulários sempre geram Lead/Contato com responsável; não há modo "desatribuído". */
-export const FORM_ASSIGNMENT_MODES = ["auto", "member", "round_robin"] as const satisfies readonly AssignmentMode[];
+export const FORM_ASSIGNMENT_MODES = [
+  "auto",
+  "member",
+  "round_robin",
+] as const satisfies readonly AssignmentMode[];
 export type FormAssignmentMode = (typeof FORM_ASSIGNMENT_MODES)[number];
 
 export const FORM_ASSIGNMENT_LABELS: Record<FormAssignmentMode, string> = {
