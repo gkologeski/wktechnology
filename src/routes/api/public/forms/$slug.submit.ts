@@ -1,3 +1,4 @@
+import { pickFormAssignee } from "@/lib/form-assignment";
 import { validateEmailAddress } from "@/lib/email-address";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -163,6 +164,17 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
         const company = clean.company || clean.company_name || null;
         const jobTitle = clean.job_title || clean.cargo || null;
 
+        // Responsável de inscrições novas pela regra de distribuição do formulário.
+        let newAssignee: string | null = null;
+        const resolveNewAssignee = async (): Promise<string> => {
+          const { data: picked, error: perr } = await supabaseAdmin.rpc("form_next_assignee", {
+            _form_id: form.id,
+          });
+          if (perr) console.error("[forms.submit] assignee pick failed", perr.message);
+          newAssignee = pickFormAssignee((picked as string | null) ?? null, form.owner_id);
+          return newAssignee;
+        };
+
         if (form.target === "lead") {
           // Visitante nunca deve ver erro interno de duplicidade: se o lead já
           // existe, o envio é anexado a ele.
@@ -235,6 +247,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
               .insert({
                 workspace_id: form.workspace_id,
                 owner_id: form.owner_id,
+                assigned_to: await resolveNewAssignee(),
                 first_name: firstName,
                 last_name: lastName,
                 email: email || null,
@@ -297,6 +310,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
               .insert({
                 workspace_id: form.workspace_id,
                 owner_id: form.owner_id,
+                assigned_to: await resolveNewAssignee(),
                 first_name: firstName,
                 last_name: lastName,
                 email: email || null,
@@ -357,7 +371,7 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
             owner_id: form.owner_id,
             workspace_id: form.workspace_id,
             created_by: form.owner_id,
-            assigned_to: form.owner_id,
+            assigned_to: newAssignee ?? form.owner_id,
             type: "note",
             subject: `Formulário enviado: ${form.name ?? params.slug}`,
             body: filled.join(""),
