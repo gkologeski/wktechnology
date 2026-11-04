@@ -31158,6 +31158,7 @@ export type Database = {
         }
         Returns: string
       }
+      form_next_assignee: { Args: { _form_id: string }; Returns: string }
       gcal_base_event_id: {
         Args: { provider_event_id: string }
         Returns: string
