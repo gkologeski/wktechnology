@@ -12,6 +12,7 @@ import { parsePersona } from "./persona";
 import { configFromRow, hasTool, scopeKnowledge } from "./agent-config";
 import { loadSdrAgentUserId } from "./agent-identity.server";
 import { callSdrAgent } from "./agent.server";
+import { shouldRequeueForNewerInbound } from "./newer-inbound";
 import {
   composeOutgoing,
   ensureOpportunity,
@@ -841,6 +842,47 @@ export async function processJob(
       : closeNow
         ? `closed:${closeNow}`
         : "empty_reply";
+
+  // Cliente escreveu enquanto a IA gerava (ex.: cartão do indicado logo após o nome):
+  // descarta esta resposta e devolve o turno à fila para ler a conversa completa.
+  if (job.kind === "reply") {
+    const lastRead = [...history].reverse().find((m) => m.direction === "inbound")?.created_at ?? null;
+    const { data: newest } = await admin
+      .from("whatsapp_messages")
+      .select("created_at")
+      .eq("conversation_id", conv.id)
+      .eq("direction", "inbound")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const { data: jobRow } = await admin
+      .from("sdr_turn_jobs")
+      .select("error")
+      .eq("id", job.id)
+      .eq("workspace_id", job.workspace_id)
+      .maybeSingle();
+    const prevErr = String((jobRow as { error?: string | null } | null)?.error ?? "");
+    const requeues = /^newer_inbound:(\d+)$/.exec(prevErr)?.[1];
+    const hadEffects =
+      !!effects.meeting || !!effects.handoff || effects.optOut || effects.materialIds.length > 0;
+    if (
+      shouldRequeueForNewerInbound({
+        kind: job.kind,
+        lastReadInboundAt: lastRead,
+        latestInboundAt: (newest as { created_at?: string } | null)?.created_at ?? null,
+        requeues: requeues ? Number(requeues) : 0,
+        hadEffects,
+      })
+    ) {
+      await finish(admin, job.id, job.lease_token, {
+        status: "queued",
+        lease_until: new Date().toISOString(),
+        attempts: Math.max(0, (job.attempts ?? 1) - 1),
+        error: `newer_inbound:${(requeues ? Number(requeues) : 0) + 1}`,
+      });
+      return "retry";
+    }
+  }
 
   const latestChannel = await loadChannelRuntime(admin, channelInput);
   if (latestChannel.status === "blocked") {
