@@ -7636,10 +7636,6 @@
         {
           "file": "drizzle/migrations/0303_form_next_assignee.sql",
           "symbol": "form_next_assignee"
-        },
-        {
-          "file": "drizzle/migrations/0304_forms_assignment_columns.sql",
-          "symbol": "forms_assignment_mode_chk"
         }
       ],
       "tests": {
@@ -7704,6 +7700,10 @@
         {
           "file": "src/lib/forms/public-form-gate.ts",
           "symbol": "publicFormGate"
+        },
+        {
+          "file": "src/lib/forms/public-submit-guard.server.ts",
+          "symbol": "formSubmitCorsHeaders"
         }
       ],
       "database": [
@@ -7741,7 +7741,14 @@
         "review_by": "2027-05-04"
       },
       "files": {
-        "src/routes/api/public/forms/$slug.submit.ts": "8192585cd230d2758bc9116545720c10e081c287cc1cb5e4f99a780e5299d92d",
+        "src/routes/api/public/forms/$slug.submit.ts": "8192585cd230d2758bc9116545720c10e081c287cc1cb5e4f99a780e5299d92d"
+      }
+    },
+    {
+      "id": "public-form-gate-rules",
+      "kind": "presentation",
+      "rationale": "Pure decision for active form and per-IP limit; enforced by the public submit route (public-form-submit).",
+      "files": {
         "src/lib/forms/public-form-gate.ts": "7f3204e939f24ee33c54b39910c7a370ba0861d8f322b1c50fa718ff09684ea0"
       }
     }
