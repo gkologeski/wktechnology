@@ -1995,7 +1995,7 @@
         "system.whatsapp.view.workspace",
         "system.whatsapp.manage.workspace"
       ],
-      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants. The legacy WhatsApp route now renders the same extracted WhatsAppConfiguration used by the channel center; original transport operations and server checks are preserved.",
+      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants. The legacy WhatsApp route now renders the same extracted WhatsAppConfiguration used by the channel center; original transport operations and server checks are preserved. Additional WABAs may reuse encrypted credentials of an existing connection only inside the server after current manage authorization and same-workspace source resolution; Meta must return numbers for the new WABA before an explicitly disabled connection is persisted. Fresh private verification secrets are encrypted, never returned. Authorization is repeated after remote lookup. WABA subscriptions use connection-specific callback overrides on the fixed server public HTTPS origin, preserving app-level defaults and other accounts; verification/received-event gates for activation remain unchanged.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -2020,6 +2020,10 @@
         {
           "file": "src/components/service-channels/whatsapp-configuration.tsx",
           "symbol": "WhatsAppConfiguration"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-account-registration.server.ts",
+          "symbol": "registerCloudAccount"
         }
       ],
       "database": [
@@ -2034,32 +2038,33 @@
       ],
       "tests": {
         "allowed": {
-          "file": "src/lib/whatsapp/cloud-connections.test.ts",
-          "name": "allows active authorized cloud administrator"
+          "file": "src/lib/whatsapp/cloud-account-registration.test.ts",
+          "name": "allows authorized registration without exposing or activating credentials"
         },
         "missing_permission": {
-          "file": "src/lib/whatsapp/cloud-connections.test.ts",
-          "name": "rejects cloud missing permission"
+          "file": "src/lib/whatsapp/cloud-account-registration.test.ts",
+          "name": "rejects registration without the manage key before reading secrets"
         },
         "explicit_deny": {
-          "file": "src/lib/whatsapp/cloud-connections.test.ts",
-          "name": "rejects cloud explicit deny even after role grant"
+          "file": "src/lib/whatsapp/cloud-account-registration.test.ts",
+          "name": "honors explicit deny on registration"
         },
         "foreign_workspace": {
-          "file": "src/lib/whatsapp/cloud-connections.test.ts",
-          "name": "rejects cloud foreign workspace"
+          "file": "src/lib/whatsapp/cloud-account-registration.test.ts",
+          "name": "rejects registration in another workspace"
         },
         "inactive_member": {
-          "file": "src/lib/whatsapp/cloud-connections.test.ts",
-          "name": "rejects cloud inactive member before privilege access"
+          "file": "src/lib/whatsapp/cloud-account-registration.test.ts",
+          "name": "rejects inactive registration before reading secrets"
         }
       },
       "files": {
         "src/lib/whatsapp/cloud-connections.server.ts": "b5f5c15e109a7c269666c29b81a4aecf16f95ecdd72028edded8c6e841374289",
-        "src/lib/whatsapp/cloud-connections.functions.ts": "96b22387fa972c8c4e1d496a9ca6718adcd953d1904c6f995a496f9d94443595",
-        "src/components/whatsapp/cloud-connections-panel.tsx": "90255e7b3101e07d8fd854f384f7817e7e588d60d5c4d5432862cff50e9e900d",
+        "src/lib/whatsapp/cloud-connections.functions.ts": "dbb23f46dc4e85d07d2bf67f11e8feb154b3869191d0733d72d642d41ff8f82d",
+        "src/components/whatsapp/cloud-connections-panel.tsx": "173bfda2c6969f1aaa40deb0b07149fac984d4c4be7b0ddb861a091cea01bfd6",
         "src/routes/_authenticated/settings.whatsapp.tsx": "5a283508e6de49ef640c38f7f8d756c20564a31f5e22b0707d233ba5a3ce8046",
-        "drizzle/migrations/0254_whatsapp_cloud_connections.sql": "60e6d9ebb0c44cc12e2b4ad4e3594cb1f5674ce77f5a1e247610c9eb174ed3f2"
+        "drizzle/migrations/0254_whatsapp_cloud_connections.sql": "60e6d9ebb0c44cc12e2b4ad4e3594cb1f5674ce77f5a1e247610c9eb174ed3f2",
+        "src/lib/whatsapp/cloud-account-registration.server.ts": "29aa3d5043083dd6770c30a8175f01dcfbeb3ce0d37773f987a381648eca8790"
       }
     },
     {
@@ -2316,7 +2321,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Server-only transport and processing called by authenticated sends, authorized workers or signature-verified webhook. Resolve exact workspace/number and active connection before decrypting; private media scope and signed status events retain verified tenant. No fallback after rejection. Company-left suggestions stay read-only proposals scoped to the verified conversation workspace; AI fallback only classifies the inbound text. Review 03/11/2026: sendCloudPayload refuses numbers with an active Meta suppression of the same verified workspace before calling Meta. Audio transcription reads the stored media from the private whatsapp-media bucket of the verified message before falling back to the Meta/gateway download; no new access path or tenant decision.",
+      "rationale": "Server-only transport and processing called by authenticated sends, authorized workers or signature-verified webhook. Resolve exact workspace/number and active connection before decrypting; private media scope and signed status events retain verified tenant. No fallback after rejection. Company-left suggestions stay read-only proposals scoped to the verified conversation workspace; AI fallback only classifies the inbound text. Review 03/11/2026: sendCloudPayload refuses numbers with an active Meta suppression of the same verified workspace before calling Meta. Audio transcription reads the stored media from the private whatsapp-media bucket of the verified message before falling back to the Meta/gateway download; no new access path or tenant decision. Formatting-only repair required by the existing global lint gate; behavior and authorization unchanged.",
       "controls": [
         {
           "file": "src/lib/whatsapp/cloud-runtime.server.ts",
@@ -2385,7 +2390,7 @@
         "src/lib/whatsapp/cloud-runtime.server.ts": "c318acf83389a005893a6a9e4f461b2ecde0652d19eeaa14dd4a09c7be755a2a",
         "src/lib/whatsapp/meta-channel.server.ts": "40c3bb7fddd839f421bb67b574f61bdd99e3197b38acf54409ac6cd94a0a801a",
         "src/lib/whatsapp/templates.server.ts": "693872ba81f6e46c295d73c4b760aaaa2505f1ae186c865420d9d30af201ea9e",
-        "src/lib/whatsapp/inbound-media.server.ts": "f0e4876eb4d3548d88e6326c507d6cba4691a6d4aaddc5d748b5ea5c18d66bb2",
+        "src/lib/whatsapp/inbound-media.server.ts": "e5e286ea1f2512c52625891d0c46c757b823d0157c626cd39fbdf88b70bd9f4f",
         "src/lib/whatsapp/webhook-processor.server.ts": "d67cfd824e1115c8d80703b61fec104ec3fec24fdd25e55c266b60818f8a7665",
         "src/lib/inbox/ai-suggestions.server.ts": "876b710d4680b8db4d9f36fae8c274ecd9bfbd5c2f890c232d00cd73ba48c089"
       }
@@ -7325,10 +7330,10 @@
     {
       "id": "timeline-whatsapp-day-conversation",
       "kind": "presentation",
-      "rationale": "Renders the daily WhatsApp block already stored on activities.external_ids (pure parsing + bubbles). No I/O, routes, actions or grants; reads stay under activities RLS via the existing timeline RPCs.",
+      "rationale": "Renders the daily WhatsApp block already stored on activities.external_ids (pure parsing + bubbles). No I/O, routes, actions or grants; reads stay under activities RLS via the existing timeline RPCs. Formatting-only repair required by the existing global lint gate; behavior and authorization unchanged.",
       "files": {
         "src/components/activity/whatsapp-day-conversation.tsx": "1751c7bb335562ae265df9a205acc412c403cbe79ffb13d5af2b08008d04865c",
-        "src/lib/timeline/whatsapp-day.ts": "2f82fbe609329e505938838d7ed8c8b42fb58a1c05db4ee12469163e3df7939e"
+        "src/lib/timeline/whatsapp-day.ts": "40b787fc66f8e13b76d118d7ee5e5e13d0af2328e7ecbe50dc7f1e506eb25d2a"
       }
     },
     {

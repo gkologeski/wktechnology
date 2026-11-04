@@ -114,6 +114,34 @@ export const syncCloudConnection = createServerFn({ method: "POST" })
     return { count: numbers.length };
   });
 
+export const createCloudConnectionFromExisting = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("system.whatsapp", "manage")])
+  .inputValidator((input) =>
+    z
+      .object({
+        sourceId: z.string().uuid(),
+        label: z.string().trim().min(1).max(120),
+        wabaId: z.string().regex(/^\d{5,30}$/),
+      })
+      .parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const { registerCloudAccount } = await import("./cloud-account-registration.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { decryptApiKey, encryptApiKey } = await import("@/lib/ai/provider-resolver.server");
+    return registerCloudAccount(
+      context.supabase,
+      supabaseAdmin,
+      {
+        ...data,
+        workspaceId,
+        userId: context.userId,
+      },
+      { decrypt: decryptApiKey, encrypt: encryptApiKey, inspect: inspectCloudNumbers },
+    );
+  });
+
 export const setCloudConnectionEnabled = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("system.whatsapp", "manage")])
   .inputValidator((input) => z.object({ id: z.string().uuid(), enabled: z.boolean() }).parse(input))
@@ -154,14 +182,17 @@ export const subscribeCloudConnection = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .eq("workspace_id", workspaceId)
       .single();
-    if (row.error || !row.data?.webhook_verified_at)
-      throw new Error("Configure e verifique o endereço do webhook na Meta primeiro.");
+    if (row.error || !row.data) throw new Error("Conexão indisponível neste workspace.");
+    if (!row.data.synced_at) throw new Error("Sincronize os números desta conta primeiro.");
     const secrets = JSON.parse(await decryptApiKey(row.data.credentials_ciphertext));
+    const { cloudAccountSubscription } = await import("./cloud-account-registration.server");
+    const { publicAppOrigin } = await import("@/lib/runtime-config.server");
+    // The per-WABA callback preserves the app's existing default and other accounts.
     const result = await cloudRequest(
       { accessToken: secrets.accessToken, apiVersion: row.data.api_version },
       row.data.waba_id,
       "subscribed_apps",
-      { method: "POST" },
+      cloudAccountSubscription(row.data.id, publicAppOrigin(), secrets.verifyToken),
     );
     if (result?.success !== true) throw new Error("A Meta não confirmou a assinatura dos eventos.");
     return { ok: true };

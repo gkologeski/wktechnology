@@ -132,7 +132,9 @@ const MAX_AUDIO_BYTES = 14 * 1024 * 1024;
 /** Caminho no bucket whatsapp-media a partir da URL assinada gravada na mensagem. */
 export function storedMediaPath(mediaUrl: unknown): string | null {
   if (typeof mediaUrl !== "string") return null;
-  const m = mediaUrl.match(/\/storage\/v1\/object\/(?:sign|public|authenticated)\/whatsapp-media\/([^?#]+)/);
+  const m = mediaUrl.match(
+    /\/storage\/v1\/object\/(?:sign|public|authenticated)\/whatsapp-media\/([^?#]+)/,
+  );
   if (!m) return null;
   const path = decodeURIComponent(m[1]);
   return path.includes("..") ? null : path;

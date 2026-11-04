@@ -42,7 +42,7 @@ const decision = () => ({
     reply: "Como posso ajudar?",
     offer_keys: [],
     material_ids: [],
-    warnings: [],
+    warnings: [] as string[],
     answers: [],
   },
   text: "Como posso ajudar?",
