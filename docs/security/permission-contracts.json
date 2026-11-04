@@ -7636,6 +7636,10 @@
         {
           "file": "drizzle/migrations/0303_form_next_assignee.sql",
           "symbol": "form_next_assignee"
+        },
+        {
+          "file": "drizzle/migrations/0304_forms_assignment_columns.sql",
+          "symbol": "forms"
         }
       ],
       "tests": {
