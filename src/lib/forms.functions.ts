@@ -71,6 +71,18 @@ export const upsertForm = createServerFn({ method: "POST" })
     const { resolveAssignment } = await import("@/lib/whatsapp/campaign-assignment.server");
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
     const ws = await resolveActiveWorkspace(context.userId);
+    const { authorizeFormAssignment } = await import("@/lib/form-assignment-access");
+    let formWs: string | null = null;
+    if (data.id) {
+      const { data: cur, error: curErr } = await context.supabase
+        .from("forms")
+        .select("workspace_id")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (curErr || !cur) throw new Error("Formulário não encontrado.");
+      formWs = cur.workspace_id;
+    }
+    await authorizeFormAssignment(context.supabase, context.userId, ws, formWs);
     const assignment = await resolveAssignment(context.supabase, ws, {
       assignment_mode: data.assignment_mode,
       assignment_member_ids: data.assignment_member_ids,
