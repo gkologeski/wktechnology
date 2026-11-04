@@ -96,7 +96,8 @@ export async function saveReferral(
         .maybeSingle();
       companyName = (co as { name?: string } | null)?.name ?? null;
     }
-    const [first, ...rest] = (r.name ?? "Indicação").trim().split(/\s+/);
+    const split = splitReferralName(r.name, companyName);
+    const [first, ...rest] = (split.name ?? "Indicação").trim().split(/\s+/);
     const { data: row, error } = await admin
       .from("leads")
       .insert({
@@ -109,6 +110,7 @@ export async function saveReferral(
         ...(r.email ? { email: r.email } : {}),
         company_id: p.companyId,
         company_name: companyName,
+        ...(split.role ? { job_title: split.role } : {}),
         source: "Indicação (agente SDR)",
         notes: note,
       })
