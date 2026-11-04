@@ -158,3 +158,47 @@ export function detectCompanyLeft(text: string): { newCompany: string | null } |
   if (detectNotTarget(text) !== "left_company") return null;
   return { newCompany: extractNewCompany(text) };
 }
+
+const ROLE_WORDS =
+  /^(?:gerente|gestor|gestora|diretor|diretora|coordenador|coordenadora|supervisor|supervisora|analista|head|ceo|cto|cio|cfo|coo|socio|socia|dono|dona|proprietario|proprietaria|presidente|lider|responsavel|ti|t\.i\.?|it|de|da|do|dev|desenvolvimento|tecnologia|compras|financeiro|rh|comercial|vendas|marketing|operacoes|infra|infraestrutura|sistemas)$/;
+const ROLE_START =
+  /^(?:gerente|gestor|gestora|diretor|diretora|coordenador|coordenadora|supervisor|supervisora|analista|head|ceo|cto|cio|cfo|coo|socio|socia|dono|dona|proprietario|proprietaria|presidente|lider|responsavel)$/;
+const COMPANY_STOP = /^(?:ltda|sa|s|a|me|eireli|epp|br|brasil|do|da|de|e|the|group|grupo|tecnologia|solucoes|servicos)$/;
+
+function plain(w: string): string {
+  return w
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^\p{L}\p{N}.]/gu, "");
+}
+
+/**
+ * Separa nome real, cargo e palavras da empresa do nome de um cartão
+ * ("Thiago City Gerente TI" + empresa "City Connect BR" → nome "Thiago",
+ * cargo "Gerente TI"). Pura; sem empresa só retira o cargo.
+ */
+export function splitReferralName(
+  raw: string | null | undefined,
+  companyName?: string | null,
+): { name: string | null; role: string | null } {
+  const words = String(raw ?? "").replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+  if (!words.length) return { name: null, role: null };
+  const companyTokens = new Set(
+    String(companyName ?? "")
+      .split(/[\s\-–/&,.]+/)
+      .map(plain)
+      .filter((t) => t.length >= 2 && !COMPANY_STOP.test(t)),
+  );
+  let roleIdx = words.findIndex((w, i) => i > 0 && ROLE_START.test(plain(w)));
+  if (roleIdx < 0) {
+    // Cargo sem palavra inicial (ex.: "Ana TI"): sufixo só de termos de área.
+    roleIdx = words.length;
+    while (roleIdx > 1 && ROLE_WORDS.test(plain(words[roleIdx - 1]!))) roleIdx--;
+  }
+  const role = words.slice(roleIdx).join(" ") || null;
+  const nameWords = words
+    .slice(0, roleIdx)
+    .filter((w, i) => i === 0 || !companyTokens.has(plain(w)));
+  return { name: nameWords.join(" ") || null, role };
+}
