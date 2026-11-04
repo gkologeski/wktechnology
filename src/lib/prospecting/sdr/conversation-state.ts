@@ -266,7 +266,7 @@ export function parseSharedEmail(text: string): { name: string | null; email: st
 /** Telefone brasileiro em texto ou cartão de contato (dado, não decisão). */
 export function parseSharedPhone(text: string): SharedPhone | null {
   const raw = String(text ?? "");
-  const card = raw.match(/Contato compartilhado\s*\n\s*([^:\n]+):\s*([+\d][\d\s().,;-]{7,})/);
+  const card = raw.match(/Contato compartilhado\s*\n\s*([^:\n]+):\s*([+\d][\d\s().,;+-]{7,})/);
   if (card) {
     const phones = card[2]
       .split(/[,;]/)
