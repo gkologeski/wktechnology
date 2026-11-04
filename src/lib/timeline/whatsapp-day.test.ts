@@ -11,7 +11,13 @@ describe("bloco diário de WhatsApp", () => {
       wa_day: "conv:c:2026-10-20",
       messages: [
         { id: "2", direction: "inbound", at: "2026-10-20T15:00:00Z", body: "Sou eu" },
-        { id: "1", direction: "outbound", at: "2026-10-20T14:00:00Z", body: "Olá", origin: "agent" },
+        {
+          id: "1",
+          direction: "outbound",
+          at: "2026-10-20T14:00:00Z",
+          body: "Olá",
+          origin: "agent",
+        },
       ],
     })!;
     expect(msgs.map((m) => m.id)).toEqual(["1", "2"]);

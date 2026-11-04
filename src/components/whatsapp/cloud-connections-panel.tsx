@@ -5,6 +5,7 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   listCloudConnections,
   createCloudConnection,
+  createCloudConnectionFromExisting,
   syncCloudConnection,
   setCloudConnectionEnabled,
   subscribeCloudConnection,
@@ -23,6 +24,7 @@ export function CloudConnectionsPanel() {
   const canManage = permissions.can("system.whatsapp.manage.workspace");
   const list = useServerFn(listCloudConnections);
   const create = useServerFn(createCloudConnection);
+  const createFromExisting = useServerFn(createCloudConnectionFromExisting);
   const sync = useServerFn(syncCloudConnection);
   const toggle = useServerFn(setCloudConnectionEnabled);
   const subscribe = useServerFn(subscribeCloudConnection);
@@ -39,13 +41,14 @@ export function CloudConnectionsPanel() {
   };
   const [form, setForm] = useState(empty);
   const [open, setOpen] = useState(false);
+  const [sourceId, setSourceId] = useState("");
   const refresh = () => queryClient.invalidateQueries({ queryKey: key });
   const subscription = useMutation({
     mutationFn: (id: string) => subscribe({ data: { id } }),
     onSuccess: () => {
       void refresh();
       toast.success(
-        "Aplicativo inscrito. Envie uma mensagem de teste para um dos novos números e atualize a conexão.",
+        "Recebimento configurado para esta conta. Envie uma mensagem de teste para um dos seus números e atualize a conexão.",
       );
     },
     onError: (error: Error) => toast.error(error.message),
@@ -59,9 +62,13 @@ export function CloudConnectionsPanel() {
     onError: (error: Error) => toast.error(error.message),
   });
   const save = useMutation({
-    mutationFn: () => create({ data: form }),
+    mutationFn: () =>
+      sourceId
+        ? createFromExisting({ data: { sourceId, label: form.label, wabaId: form.wabaId } })
+        : create({ data: form }),
     onSuccess: () => {
       setForm(empty);
+      setSourceId("");
       setOpen(false);
       void refresh();
       toast.success("Conexão cadastrada. Sincronize os números para conferir a conta.");
@@ -104,6 +111,37 @@ export function CloudConnectionsPanel() {
               save.mutate();
             }}
           >
+            <div className="space-y-1 md:col-span-2">
+              <Label htmlFor="cloud-source">Credenciais da integração</Label>
+              <select
+                id="cloud-source"
+                className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+                value={sourceId}
+                disabled={save.isPending}
+                onChange={(event) => {
+                  setSourceId(event.target.value);
+                  setForm((current) => ({
+                    ...current,
+                    accessToken: "",
+                    appSecret: "",
+                    verifyToken: "",
+                  }));
+                }}
+              >
+                <option value="">Informar novas credenciais</option>
+                {query.data?.connections.map((connection: any) => (
+                  <option key={connection.id} value={connection.id}>
+                    Usar credenciais de {connection.label}
+                  </option>
+                ))}
+              </select>
+              {sourceId && (
+                <p className="text-xs text-muted-foreground">
+                  As credenciais permanecem cifradas no servidor. A Meta precisa autorizar o acesso
+                  à nova conta antes do cadastro. O recebimento será configurado somente para ela.
+                </p>
+              )}
+            </div>
             {(
               [
                 ["label", "Nome da conexão", false],
@@ -113,19 +151,21 @@ export function CloudConnectionsPanel() {
                 ["appSecret", "Segredo do aplicativo Meta", true],
                 ["verifyToken", "Token de verificação do webhook (mínimo 32 caracteres)", true],
               ] as const
-            ).map(([field, label, secret]) => (
-              <div key={field} className="space-y-1">
-                <Label htmlFor={`cloud-${field}`}>{label}</Label>
-                <Input
-                  id={`cloud-${field}`}
-                  type={secret ? "password" : "text"}
-                  autoComplete={secret ? "new-password" : "off"}
-                  required
-                  value={form[field]}
-                  onChange={(event) => setForm({ ...form, [field]: event.target.value })}
-                />
-              </div>
-            ))}
+            )
+              .filter(([field]) => !sourceId || field === "label" || field === "wabaId")
+              .map(([field, label, secret]) => (
+                <div key={field} className="space-y-1">
+                  <Label htmlFor={`cloud-${field}`}>{label}</Label>
+                  <Input
+                    id={`cloud-${field}`}
+                    type={secret ? "password" : "text"}
+                    autoComplete={secret ? "new-password" : "off"}
+                    required
+                    value={form[field]}
+                    onChange={(event) => setForm({ ...form, [field]: event.target.value })}
+                  />
+                </div>
+              ))}
             <p className="text-sm text-muted-foreground md:col-span-2">
               As credenciais são cifradas no servidor e não serão exibidas após salvar. Use a versão
               configurada no seu aplicativo Meta.
@@ -138,6 +178,7 @@ export function CloudConnectionsPanel() {
               variant="ghost"
               onClick={() => {
                 setForm(empty);
+                setSourceId("");
                 setOpen(false);
               }}
             >
@@ -183,8 +224,8 @@ export function CloudConnectionsPanel() {
               /api/public/whatsapp/cloud/{connection.id}
             </p>
             <p className="text-sm text-muted-foreground">
-              Na Meta, configure este endereço com o token de verificação informado no cadastro,
-              assine o campo messages e envie um evento de teste. Verificação:{" "}
+              Sincronize os números e use “Assinar eventos da conta” para configurar o recebimento
+              desta conta. Depois envie uma mensagem de teste para o número. Verificação:{" "}
               {connection.webhook_verified_at ? "confirmada" : "pendente"}. Evento assinado:{" "}
               {connection.webhook_received_at ? "recebido" : "pendente"}.
             </p>
@@ -201,7 +242,7 @@ export function CloudConnectionsPanel() {
             </Button>
             <Button
               variant="outline"
-              disabled={!canManage || !connection.webhook_verified_at || subscription.isPending}
+              disabled={!canManage || !connection.synced_at || subscription.isPending}
               onClick={() => subscription.mutate(connection.id)}
             >
               Assinar eventos da conta

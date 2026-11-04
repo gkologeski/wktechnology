@@ -21,20 +21,22 @@ export function readWaDayMessages(externalIds: unknown): WaDayMessage[] | null {
   if (typeof ext.wa_day !== "string" || !Array.isArray(ext.messages)) return null;
   return (ext.messages as Record<string, unknown>[])
     .filter((m) => m && typeof m.at === "string")
-    .map((m): WaDayMessage => ({
-      id: String(m.id ?? m.at),
-      direction: m.direction === "inbound" ? "inbound" : "outbound",
-      at: m.at as string,
-      body: typeof m.body === "string" ? m.body : "",
-      status: typeof m.status === "string" ? m.status : null,
-      error: typeof m.error === "string" ? m.error : null,
-      origin: (["client", "agent", "campaign", "inbox"].includes(m.origin as string)
-        ? m.origin
-        : m.direction === "inbound"
-          ? "client"
-          : "inbox") as WaDayMessage["origin"],
-      author: typeof m.author === "string" ? m.author : null,
-    }))
+    .map(
+      (m): WaDayMessage => ({
+        id: String(m.id ?? m.at),
+        direction: m.direction === "inbound" ? "inbound" : "outbound",
+        at: m.at as string,
+        body: typeof m.body === "string" ? m.body : "",
+        status: typeof m.status === "string" ? m.status : null,
+        error: typeof m.error === "string" ? m.error : null,
+        origin: (["client", "agent", "campaign", "inbox"].includes(m.origin as string)
+          ? m.origin
+          : m.direction === "inbound"
+            ? "client"
+            : "inbox") as WaDayMessage["origin"],
+        author: typeof m.author === "string" ? m.author : null,
+      }),
+    )
     .sort((a, b) => a.at.localeCompare(b.at));
 }
 
