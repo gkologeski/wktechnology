@@ -16,3 +16,12 @@ describe("shouldRequeueForNewerInbound", () => {
   it("com efeito de ferramenta não refaz", () => expect(f({ ...base, hadEffects: true })).toBe(false));
   it("retomada não refaz", () => expect(f({ ...base, kind: "follow_up" })).toBe(false));
 });
+
+import { parseSharedPhone } from "./conversation-state";
+describe("cartão com dois telefones", () => {
+  it("lê os dois números", () => {
+    const r = parseSharedPhone("👤 Contato compartilhado\nLuiz Velez OTSP: +55 11 97631-3260, +55 11 98749-0550");
+    expect(r?.phoneE164).toBe("+5511976313260");
+    expect(r?.extraPhones).toEqual(["+5511987490550"]);
+  });
+});

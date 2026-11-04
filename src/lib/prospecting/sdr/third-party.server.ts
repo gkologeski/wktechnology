@@ -108,6 +108,7 @@ export async function saveReferral(
         first_name: first || "Indicação",
         last_name: rest.join(" ") || null,
         ...(r.phoneE164 ? { phone: r.phoneE164, whatsapp_e164: r.phoneE164 } : {}),
+        ...(r.extraPhones?.[0] ? { mobile_phone: r.extraPhones[0] } : {}),
         ...(r.email ? { email: r.email } : {}),
         company_id: p.companyId,
         company_name: companyName,
