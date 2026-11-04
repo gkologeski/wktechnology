@@ -69,9 +69,9 @@ export const upsertForm = createServerFn({ method: "POST" })
   .inputValidator((input) => UpsertSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { resolveAssignment } = await import("@/lib/whatsapp/campaign-assignment.server");
-    const { data: ws, error: wsErr } = await context.supabase.rpc("current_workspace_id");
-    if (wsErr || !ws) throw new Error("Workspace não identificado.");
-    const assignment = await resolveAssignment(context.supabase, ws as string, {
+    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+    const ws = await resolveActiveWorkspace(context.userId);
+    const assignment = await resolveAssignment(context.supabase, ws, {
       assignment_mode: data.assignment_mode,
       assignment_member_ids: data.assignment_member_ids,
     });
