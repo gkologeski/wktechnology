@@ -391,9 +391,18 @@ it("lifecycle revalidates signed document content at execution", async () => {
   expect((await db`select count(*)::int n from hiring_engagements`)[0].n).toBe(1);
 });
 it("lifecycle access matrix covers every explicit action with five distinct callers", async () => {
-  for (const action of ["view","renew","replace","end_allocation","end_employment","approve","execute"]) {
-    const key=`techpeople.lifecycle.${action}.workspace`;
-    const allowed=async ()=>(await db`select hiring_lifecycle_access(${W},${E},${action}) v`)[0].v;
+  for (const action of [
+    "view",
+    "renew",
+    "replace",
+    "end_allocation",
+    "end_employment",
+    "approve",
+    "execute",
+  ]) {
+    const key = `techpeople.lifecycle.${action}.workspace`;
+    const allowed = async () =>
+      (await db`select hiring_lifecycle_access(${W},${E},${action}) v`)[0].v;
     expect(await allowed()).toBe(true);
     await db`delete from grants where user_id=${U} and key=${key}`;
     expect(await allowed()).toBe(false);
@@ -409,22 +418,42 @@ it("lifecycle access matrix covers every explicit action with five distinct call
   }
 });
 it("lifecycle guarded packages expire by source dates without revoking manual packages", async () => {
+  await db`select set_config('app.hiring_grant','on',false)`;
   await db`insert into permission_sets(id,workspace_id,owner_id,module,name) values('a0000000-0000-4000-8000-000000000001',${W},${W},'__hiring__','Fonte fixture'),('a0000000-0000-4000-8000-000000000002',${W},${W},'manual','Manual fixture')`;
   await db`select set_config('app.hiring_grant','on',false)`;
   await db`insert into user_permission_sets(id,workspace_id,owner_id,user_id,set_id) values('a0000000-0000-4000-8000-000000000003',${W},${W},${U},'a0000000-0000-4000-8000-000000000001'),('a0000000-0000-4000-8000-000000000004',${W},${W},${U},'a0000000-0000-4000-8000-000000000002')`;
   await db`insert into hiring_access_grants(workspace_id,engagement_id,user_id,set_id,assignment_id) values(${W},${E},${U},'a0000000-0000-4000-8000-000000000001','a0000000-0000-4000-8000-000000000003')`;
   await db`select set_config('app.hiring_grant','off',false)`;
   await db`update people set profile_id=${U} where id=${P}`;
-  const r=await request();await approve(r);await db`select hiring_lifecycle_execute(${W},${r},3)`;
-  expect((await db`select hiring_set_live('a0000000-0000-4000-8000-000000000002',${U},${W}) v`)[0].v).toBe(true);
-  expect((await db`select count(*)::int n from user_permission_sets where set_id='a0000000-0000-4000-8000-000000000002'`)[0].n).toBe(1);
-  expect((await db`select count(*)::int n from workspace_members where user_id=${U} and status='active'`)[0].n).toBe(1);
+  const r = await request();
+  await approve(r);
+  await db`select hiring_lifecycle_execute(${W},${r},3)`;
+  expect(
+    (await db`select hiring_set_live('a0000000-0000-4000-8000-000000000002',${U},${W}) v`)[0].v,
+  ).toBe(true);
+  expect(
+    (
+      await db`select count(*)::int n from user_permission_sets where set_id='a0000000-0000-4000-8000-000000000002'`
+    )[0].n,
+  ).toBe(1);
+  expect(
+    (
+      await db`select count(*)::int n from workspace_members where user_id=${U} and status='active'`
+    )[0].n,
+  ).toBe(1);
 });
 it("lifecycle prevents anonymous/direct snapshot access and dual-stage approver", async () => {
-  await request();await db`set role authenticated`;
-  await expect(db`select snapshot from hiring_lifecycle_requests`).rejects.toThrow("permission denied");
-  await db`reset role`;await actor("");await db`set role anon`;
+  await request();
+  await db`set role authenticated`;
+  await expect(db`select snapshot from hiring_lifecycle_requests`).rejects.toThrow(
+    "permission denied",
+  );
+  await db`reset role`;
+  await actor("");
+  await db`set role anon`;
   await expect(db`select hiring_lifecycle_context(${W},${E})`).rejects.toThrow("permission denied");
-  await db`reset role`;await actor();await db`update hiring_area_policies set ceo_id=manager_id`;
+  await db`reset role`;
+  await actor();
+  await db`update hiring_area_policies set ceo_id=manager_id`;
   await expect(preview()).rejects.toThrow("independentes");
 });
