@@ -15,13 +15,18 @@ const ctx = (): RunCtx => ({
 });
 function client(allow: boolean) {
   const writes: unknown[] = [];
-  const rpc = vi.fn(async (name: string, args: Record<string, unknown>) => {
-    if (name === "sales_workflow_record") {
-      writes.push(args.p_payload);
-      return { data: { id: "lead-1" }, error: null };
-    }
-    return { data: allow, error: null };
-  });
+  const rpc = vi.fn(
+    async (
+      name: string,
+      args: Record<string, unknown>,
+    ): Promise<{ data: unknown; error: null }> => {
+      if (name === "sales_workflow_record") {
+        writes.push(args.p_payload);
+        return { data: { id: "lead-1" }, error: null };
+      }
+      return { data: allow, error: null };
+    },
+  );
   const from = vi.fn(() => ({
     update: (row: unknown) => {
       writes.push(row);
@@ -142,5 +147,44 @@ describe("workflow authorization boundary", () => {
     expect(result.hadError).toBe(true);
     expect(c.from).not.toHaveBeenCalled();
     expect(result.log[0].error).toMatch(/origem/);
+  });
+});
+
+describe("current recruitment authorization in hiring workers", () => {
+  it("checks current application before any hiring side effect", async () => {
+    const c = client(true);
+    c.rpc.mockImplementation(async (name) => ({
+      data:
+        name === "hiring_workflow_recruitment_check"
+          ? { ready: false, reason: "Assinatura revogada", hunting: false }
+          : true,
+      error: null,
+    }));
+    await expect(
+      authorizeWorkflowStep(c.db, { ...ctx(), entity: "ats_applications", entityId: "app-1" }, {
+        type: "create_person_from_candidate",
+      } as never),
+    ).rejects.toThrow("Assinatura revogada");
+    expect(c.writes).toEqual([]);
+    expect(c.rpc).toHaveBeenCalledWith("hiring_workflow_recruitment_check", {
+      p_ws: "ws-1",
+      p_application: "app-1",
+    });
+  });
+  it("does not provision an internal employee for Hunting", async () => {
+    const c = client(true);
+    c.rpc.mockImplementation(async (name) => ({
+      data:
+        name === "hiring_workflow_recruitment_check"
+          ? { ready: true, reason: null, hunting: true }
+          : true,
+      error: null,
+    }));
+    await expect(
+      authorizeWorkflowStep(c.db, { ...ctx(), entity: "ats_applications", entityId: "app-1" }, {
+        type: "create_person_from_candidate",
+      } as never),
+    ).rejects.toThrow("Hunting");
+    expect(c.writes).toEqual([]);
   });
 });

@@ -1,3 +1,4 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { WORKFLOW_WRITABLE_TABLES, type WorkflowAction } from "../types";
 import type { RunCtx } from "./run-context";
@@ -239,4 +240,27 @@ export async function authorizeWorkflowStep(
     }
   }
   await assertSalesWorker(client, "workflows", ctx.workflowId, refs);
+  if (
+    ctx.entity === "ats_applications" &&
+    action &&
+    [
+      "create_person_from_candidate",
+      "create_contract_document",
+      "create_allocation",
+      "create_payable_schedule",
+      "create_receivable_invoice",
+      "provision_workspace_user",
+    ].includes(action.type)
+  ) {
+    const gate = await workRpc<{ ready: boolean; reason: string | null; hunting: boolean }>(
+      client,
+      "hiring_workflow_recruitment_check",
+      { p_ws: ctx.workspaceId, p_application: ctx.entityId },
+    );
+    if (!gate.ready) throw new Error(gate.reason ?? "Recrutamento ainda não autorizado.");
+    if (gate.hunting && action.type !== "create_receivable_invoice")
+      throw new Error(
+        "Hunting registra contratação pelo cliente; não cria vínculo, alocação, acesso ou obrigações internas automaticamente.",
+      );
+  }
 }

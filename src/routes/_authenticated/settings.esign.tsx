@@ -39,6 +39,12 @@ import { toast } from "sonner";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/settings/esign")({
+  validateSearch: (search: Record<string, unknown>): { document?: string } => ({
+    document:
+      typeof search.document === "string" && /^[0-9a-f-]{36}$/i.test(search.document)
+        ? search.document
+        : undefined,
+  }),
   component: () => (
     <HrScreenAccess resources={["techcontracts.esign"]}>
       <EsignPage />
@@ -81,7 +87,7 @@ function EsignPage() {
   const del = useServerFn(deleteEsignDocument);
 
   const [openCreate, setOpenCreate] = useState(false);
-  const [drawerId, setDrawerId] = useState<string | null>(null);
+  const [drawerId, setDrawerId] = useState<string | null>(Route.useSearch().document ?? null);
   const [draft, setDraft] = useState({
     title: "",
     description: "",

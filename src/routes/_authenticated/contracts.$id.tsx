@@ -1,3 +1,4 @@
+import { ContractSignatureCard } from "@/components/hiring/contract-signature-card";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { WorkScreenAccess, WorkRecordAccess } from "@/components/work-access";
 import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
@@ -494,6 +495,9 @@ function ContractDetail() {
       <AiLinkSuggestionsHistoryCard contractId={contract.id} />
 
       <ContractApprovalsPanel contractId={contract.id} />
+      {can("techcontracts.signature_evidence.view.workspace") && (
+        <ContractSignatureCard contractId={contract.id} revisionKey={contract.updated_at ?? ""} />
+      )}
 
       <ImportedFieldsCard contract={contract} />
 

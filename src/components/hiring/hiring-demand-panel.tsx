@@ -1,3 +1,4 @@
+import { RecruitmentAuthorizationPanel } from "./recruitment-authorization-panel";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -86,7 +87,14 @@ export function HiringDemandPanel({
       </p>
     );
   return data ? (
-    <DemandForm key={data.job.revision + ":" + data.job.status} data={data} onChanged={onChanged} />
+    <div className="space-y-4">
+      <RecruitmentAuthorizationPanel jobId={jobId} onChanged={onChanged} />
+      <DemandForm
+        key={data.job.revision + ":" + data.job.status}
+        data={data}
+        onChanged={onChanged}
+      />
+    </div>
   ) : null;
 }
 function DemandForm({ data, onChanged }: { data: HiringContext; onChanged: () => Promise<void> }) {

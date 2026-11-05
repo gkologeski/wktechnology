@@ -720,6 +720,8 @@
     "techcontracts.imports.view.workspace",
     "techcontracts.links.manage.workspace",
     "techcontracts.links.view.workspace",
+    "techcontracts.signature_evidence.manage.workspace",
+    "techcontracts.signature_evidence.view.workspace",
     "techfinance.audit.create.own",
     "techfinance.audit.create.workspace",
     "techfinance.audit.delete.own",
@@ -2872,6 +2874,12 @@
     },
     "techhire.hiring_policies.manage.workspace": {
       "migration": "drizzle/migrations/0308_hiring_demands_and_approvals.sql"
+    },
+    "techcontracts.signature_evidence.view.workspace": {
+      "migration": "drizzle/migrations/0309_hiring_signature_evidence.sql"
+    },
+    "techcontracts.signature_evidence.manage.workspace": {
+      "migration": "drizzle/migrations/0309_hiring_signature_evidence.sql"
     }
   }
 }

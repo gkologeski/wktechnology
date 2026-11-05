@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -111,6 +112,7 @@ const fileToB64 = (f: File) =>
   });
 
 type Detail = {
+  commercialAuthorization?: { required: boolean; ready: boolean; reason: string | null };
   profile: {
     id: string;
     deal_id: string;
@@ -198,6 +200,7 @@ export function RoleProfileDetail({
   onEdit: (i: WizardInitial) => void;
   onChanged: () => void;
 }) {
+  const { can } = usePermissions();
   const qc = useQueryClient();
   const get = useServerFn(getRoleProfile);
   const q = useQuery({
@@ -436,7 +439,10 @@ export function RoleProfileDetail({
                   Aprovar por override (admin)
                 </Button>
               ) : null}
-              {d.perms.forward && p.status === "approved" && !p.ats_job_id ? (
+              {can("techsales.role_profiles.manage.workspace") &&
+              d.perms.forward &&
+              p.status === "approved" &&
+              !p.ats_job_id ? (
                 <Button size="sm" onClick={() => setForwardOpen(true)} disabled={!!busy}>
                   <Send className="mr-1 h-3.5 w-3.5" aria-hidden />
                   Encaminhar ao recrutamento
@@ -907,7 +913,13 @@ export function RoleProfileDetail({
                     Preço, custo, margem e honorários não são enviados. A fase do negócio não muda.
                   </DialogDescription>
                 </DialogHeader>
-                {!dealWon ? (
+                {d.commercialAuthorization?.required && (
+                  <p className="text-sm text-muted-foreground">
+                    {d.commercialAuthorization.reason ??
+                      "Contrato comercial assinado e válido. A demanda no TechHire ainda precisa da aprovação da área e do CEO."}
+                  </p>
+                )}
+                {!d.commercialAuthorization?.required && !dealWon ? (
                   <div className="space-y-2">
                     <p className="text-sm text-warning">
                       O negócio ainda não foi ganho. Encaminhar agora exige autorização comercial
@@ -934,7 +946,10 @@ export function RoleProfileDetail({
                   </Button>
                   <Button
                     disabled={
-                      !!busy || (!dealWon && (!d.perms.early || earlyReason.trim().length < 10))
+                      !!busy ||
+                      (d.commercialAuthorization?.required
+                        ? !d.commercialAuthorization.ready
+                        : !dealWon && (!d.perms.early || earlyReason.trim().length < 10))
                     }
                     onClick={() =>
                       run(
@@ -943,8 +958,11 @@ export function RoleProfileDetail({
                           const r = await fns.forward({
                             data: {
                               id: p.id,
-                              early: !dealWon,
-                              reason: dealWon ? undefined : earlyReason,
+                              early: d.commercialAuthorization?.required ? false : !dealWon,
+                              reason:
+                                d.commercialAuthorization?.required || dealWon
+                                  ? undefined
+                                  : earlyReason,
                             },
                           });
                           setForwardOpen(false);

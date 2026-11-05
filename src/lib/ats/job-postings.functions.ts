@@ -1,3 +1,4 @@
+import { assertRecruitmentReady } from "@/lib/hiring/recruitment.server";
 import { assertHrRecordAccess } from "@/lib/access-control/hr-records.server";
 import { assertAnyPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 /**
@@ -83,6 +84,12 @@ export const listAllJobPostings = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ context, data }) => {
+    const workspaceId = await getActiveWorkspaceId(context.supabase, context.userId);
+    await assertAnyPermission(context.supabase, context.userId, workspaceId, [
+      "techhire.jobs.view.own",
+      "techhire.jobs.view.team",
+      "techhire.jobs.view.workspace",
+    ]);
     let q = context.supabase
       .from("ats_job_postings")
       .select(
@@ -122,6 +129,7 @@ export const publishJobToProvider = createServerFn({ method: "POST" })
     await assertAnyPermission(context.supabase, context.userId, workspaceId, [
       "techhire.jobs.publish.workspace",
     ]);
+    await assertRecruitmentReady(context.supabase, workspaceId, data.job_id);
     // 1. Carrega a vaga (RLS garante autorização)
     const { data: job, error: jobErr } = await context.supabase
       .from("ats_jobs")

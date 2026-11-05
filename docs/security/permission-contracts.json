@@ -7843,9 +7843,9 @@
       "files": {
         "drizzle/migrations/0308_hiring_demands_and_approvals.sql": "bda3034b719861a0ad28eeabc732934a730638c2d1e563ad46e81d9cf451437a",
         "src/lib/hiring/hiring.functions.ts": "2f25c0dee65152cf990f4a6500f26b0af5f34c285d6d619f46d87ec237b024df",
-        "src/components/hiring/hiring-demand-panel.tsx": "7ba4980893dc1dc0b572f8e2c6fbb70fedee789c948fb04c3ba213c2df86e26e",
+        "src/components/hiring/hiring-demand-panel.tsx": "06529fcd52fddc39f4efce37f1da2e3ae2bba9ce157b26c430bcabae9930f660",
         "src/routes/_authenticated/(ats)/jobs.$id.tsx": "aa7ddaaa13f428ca1e44a7c02b989304628327b9b893ceb8507ea894896af805",
-        "src/lib/role-profiles/service.server.ts": "ecb16e162437e63ab9f458f131bf1a664faa08c648989b79e5592e8c210976f5",
+        "src/lib/role-profiles/service.server.ts": "d49a3f0eac2b632670f3c716622ef7f24fe9764cbf1be89fa0c05d6146a151a5",
         "src/routes/_authenticated/catalog.services.tsx": "1c74fdb8057b7e7cf742c694756605fd3214024bf141a16dfafac82bad4f5f11"
       }
     },
@@ -7927,6 +7927,144 @@
       "files": {
         "src/lib/email-templates/hiring-demand-approval.tsx": "1ec191604ab92237bfee6311fe6c5f852409bf1d6310850dabc1f8368945f3b7",
         "src/lib/email-templates/registry.ts": "c0624fef520c91f974889de81cbb3ba73742ed22176126bf3f21c4d8f8f71169"
+      }
+    },
+    {
+      "id": "hiring-stage3-commercial-authorization",
+      "kind": "business",
+      "resources": [
+        "techcontracts.signature_evidence",
+        "techcontracts.contracts",
+        "techcontracts.esign",
+        "techhire.hiring_demands",
+        "techhire.jobs",
+        "techsales.role_profiles",
+        "system.workflows"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "update",
+        "create",
+        "approve",
+        "publish",
+        "send",
+        "cancel",
+        "delete",
+        "share",
+        "assign",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.signature_evidence.view.workspace",
+        "techcontracts.signature_evidence.manage.workspace",
+        "techhire.hiring_demands.view.workspace",
+        "techhire.hiring_demands.update.workspace",
+        "techhire.jobs.publish.workspace",
+        "techsales.role_profiles.view.workspace",
+        "techsales.role_profiles.manage.workspace"
+      ],
+      "rationale": "Stage 3: explicit commercial contract/evidence binding; no timestamp/status inference. Signature actions require active selected workspace, effective view/manage keys plus current contract record read/update and read-only denial. Immutable private PDF objects are uploaded by the server only after authorization, hashed and bound to actor/contract revision; SQL matches immutable metadata before recording human external attestation. Native preparation reuses authenticated esign create/send/signing with two explicit parties and a sealed document; signing offer documents never qualifies. Recruitment reads require hiring demand view and HR row scope; linking requires update, CAS and same-tenant/client/deal. Before provider publishing, HR access/publish permission and a fresh SQL business preflight run; every relevant ATS write rechecks approval/signature/date/current source. Historical records are preserved and activation is per workspace. Background hiring runs after sales_worker_authorize then current application-derived business gate, and Hunting does not provision internal hiring. Existing record/field permissions and contract legal approvals remain active.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertPermission"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkScreenAccess"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkRecordAccess"
+        },
+        {
+          "file": "src/components/hr-access.tsx",
+          "symbol": "HrScreenAccess"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        },
+        {
+          "file": "src/lib/access-control/sales-worker.server.ts",
+          "symbol": "assertSalesWorker"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0309_hiring_signature_evidence.sql",
+          "symbol": "hiring_signature_access"
+        },
+        {
+          "file": "drizzle/migrations/0310_hiring_recruitment_authorization.sql",
+          "symbol": "hiring_recruitment_execution_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/signature-postgres.test.ts",
+          "name": "signature allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/signature-postgres.test.ts",
+          "name": "signature rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/signature-postgres.test.ts",
+          "name": "signature rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/signature-postgres.test.ts",
+          "name": "signature rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/signature-postgres.test.ts",
+          "name": "signature rejects inactive membership"
+        }
+      },
+      "files": {
+        "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
+        "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
+        "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
+        "src/routes/_authenticated/contracts.$id.tsx": "4a3974c0d2200b03f55ed774bf38e37b3ef6bd2b1f199a868a33d8aa5cbfff67",
+        "src/routes/_authenticated/settings.esign.tsx": "3f34242a562fb3977f527789872cac53341b84205a943bf2c3fbcb884ce67e48",
+        "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
+        "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
+        "src/components/hiring/contract-signature-card.tsx": "e0df8ed7dbf6b01c70b806258d35d1a05d0029e2e84dd43806ad65b5a3a8eb28",
+        "src/components/hiring/recruitment-authorization-panel.tsx": "63999fab8527aaba7d5bce74450e4c9730b86a54a45104f9952d28de00ad4f8d",
+        "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
+        "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
+        "src/lib/hiring/signature.functions.ts": "fbd40253714587c00093d0dc56a57075f1d627cb29c41dadc428f8821efbcbcb"
+      }
+    },
+    {
+      "id": "hiring-stage3-shared-types",
+      "kind": "presentation",
+      "rationale": "Type-only DTO declarations; no IO, actions or values.",
+      "files": {
+        "src/lib/hiring/signature.types.ts": "de3403e80787df8cc9bd3f7b5257682ce251e5f5c0277d7eaf613a5f4217081f"
       }
     }
   ],

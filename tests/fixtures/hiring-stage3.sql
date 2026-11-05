@@ -1,0 +1,54 @@
+-- Additional platform scaffold for isolated stage-3 SQL. No production connections/data.
+CREATE SCHEMA extensions; CREATE EXTENSION pgcrypto SCHEMA extensions;
+CREATE SCHEMA storage;
+CREATE TABLE storage.buckets(id text PRIMARY KEY,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+CREATE TABLE storage.objects(id uuid DEFAULT gen_random_uuid(),bucket_id text,name text,user_metadata jsonb DEFAULT '{}');
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+GRANT USAGE ON SCHEMA storage TO authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON storage.objects TO authenticated;
+-- Deliberately broad legacy policy: stage-3 restrictive rules must still prevent writes/leaks.
+CREATE POLICY fixture_broad_storage ON storage.objects FOR ALL TO authenticated USING(true) WITH CHECK(true);
+CREATE TYPE contract_role AS ENUM('provider','client');
+CREATE TYPE esign_doc_status AS ENUM('draft','sent','partially_signed','completed','declined','expired','canceled');
+CREATE TYPE esign_signer_status AS ENUM('pending','viewed','signed','declined');
+CREATE TABLE companies(id uuid PRIMARY KEY,workspace_id uuid,name text,cnpj text,deleted_at timestamptz);
+CREATE TABLE legal_entities(id uuid PRIMARY KEY,workspace_id uuid,name text,cnpj text,active boolean DEFAULT true);
+CREATE TABLE contracts(id uuid PRIMARY KEY,workspace_id uuid,owner_id uuid,title text,number text,role contract_role DEFAULT 'provider',document_kind text DEFAULT 'main',deal_id uuid,counterparty_company_id uuid,contracting_legal_entity_id uuid,status text DEFAULT 'active',starts_at date,ends_at date,body_html text,total_value numeric,currency text DEFAULT 'BRL',created_at timestamptz DEFAULT now(),updated_at timestamptz);
+CREATE TABLE services(id uuid PRIMARY KEY,workspace_id uuid,contract_id uuid,name text,quantity numeric,unit_price numeric,currency text,source_deal_line_item_id uuid);
+ALTER TABLE deals ADD COLUMN company_id uuid,ADD COLUMN pipeline_id uuid,ADD COLUMN stage_id text,ADD COLUMN stage text DEFAULT 'won',ADD COLUMN name text,ADD COLUMN description text,ADD COLUMN primary_contact_id uuid;
+CREATE TABLE pipelines(id uuid PRIMARY KEY,stages jsonb);
+ALTER TABLE ats_jobs ADD COLUMN metadata jsonb DEFAULT '{}',ADD COLUMN owner_id uuid,ADD COLUMN pipeline_id uuid,ADD COLUMN slug text,ADD COLUMN description text,ADD COLUMN requirements text,ADD COLUMN seniority text,ADD COLUMN location text,ADD COLUMN remote_mode text,ADD COLUMN salary_min numeric,ADD COLUMN salary_max numeric,ADD COLUMN salary_currency text,ADD COLUMN company_id uuid,ADD COLUMN assigned_to uuid;
+CREATE TABLE esign_documents(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,owner_id uuid,title text,description text,body text,status esign_doc_status DEFAULT 'draft',ordered boolean,deal_id uuid,contact_id uuid,expires_at timestamptz,sent_at timestamptz,completed_at timestamptz,content_hash text,sealed_at timestamptz);
+CREATE TABLE esign_signers(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,document_id uuid REFERENCES esign_documents,owner_id uuid,name text,email text,sign_order int,status esign_signer_status DEFAULT 'pending',public_token text DEFAULT replace(gen_random_uuid()::text,'-',''),signed_name text,signature_data text,signed_at timestamptz,viewed_at timestamptz,declined_at timestamptz,decline_reason text,ip_address text,user_agent text);
+CREATE TABLE esign_audit(id uuid DEFAULT gen_random_uuid(),workspace_id uuid,document_id uuid,signer_id uuid,owner_id uuid,event text,metadata jsonb,ip_address text,user_agent text);
+CREATE TABLE ats_applications(id uuid PRIMARY KEY,workspace_id uuid,job_id uuid,status text DEFAULT 'active',stage_value text,hiring_details jsonb);
+CREATE TABLE ats_interviews(id uuid PRIMARY KEY,workspace_id uuid,job_id uuid,status text DEFAULT 'scheduled');
+CREATE TABLE ats_job_postings(LIKE ats_interviews);
+CREATE TABLE ats_offers(id uuid PRIMARY KEY,workspace_id uuid,job_id uuid,status text DEFAULT 'draft',esign_document_id uuid);
+ALTER TABLE deal_role_profiles ADD COLUMN modality text,ADD COLUMN ats_job_id uuid,ADD COLUMN approved_version_id uuid,ADD COLUMN status text,ADD COLUMN title text,ADD COLUMN company_id uuid,ADD COLUMN quantity int,ADD COLUMN contact_id uuid;
+CREATE TABLE deal_role_profile_handoffs(id uuid DEFAULT gen_random_uuid(),profile_id uuid UNIQUE,workspace_id uuid,version_id uuid,ats_job_id uuid,early boolean,early_reason text,authorized_by uuid,created_by uuid,last_synced_version int);
+CREATE TABLE deal_role_profile_versions(id uuid PRIMARY KEY,version int);
+CREATE TABLE deal_role_profile_events(profile_id uuid,workspace_id uuid,kind text,from_status text,to_status text,version int,reason text,actor_id uuid,details jsonb);
+CREATE TABLE ats_pipelines(id uuid PRIMARY KEY,workspace_id uuid,is_default boolean,created_at timestamptz DEFAULT now());
+CREATE TABLE projects(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,owner_id uuid,name text,description text,status text DEFAULT 'planning',role contract_role,company_id uuid,client_contact_id uuid,contract_id uuid,service_id uuid,deal_id uuid,delivery_group_key text,source_line_item_id uuid,origin text,planned_hours numeric,assigned_to uuid,metadata jsonb);
+CREATE UNIQUE INDEX fixture_project_group ON projects(deal_id,delivery_group_key);
+CREATE TABLE project_deal_links(project_id uuid,deal_id uuid,delivery_group_key text);
+CREATE TABLE deal_delivery_policies(workspace_id uuid,project_creator_id uuid,default_operational_owner_id uuid,allow_groups boolean);
+CREATE TABLE deal_delivery_items(line_item_id uuid,deal_id uuid,group_key text,group_label text);
+CREATE TABLE contacts(id uuid,workspace_id uuid,deleted_at timestamptz);
+CREATE TABLE deal_delivery_events(workspace_id uuid,deal_id uuid,project_id uuid,kind text,origin text,actor uuid,job_id uuid,after jsonb);
+ALTER TABLE deal_line_items ADD COLUMN name text,ADD COLUMN quantity numeric,ADD COLUMN unit text,ADD COLUMN cadence text,ADD COLUMN position int DEFAULT 0,ADD COLUMN created_at timestamptz DEFAULT now();
+CREATE FUNCTION work_record_access(r text,i uuid,a text) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT EXISTS(SELECT 1 FROM contracts c JOIN profiles p ON p.id=auth.uid() WHERE c.id=i AND c.workspace_id=p.active_workspace_id AND user_has_permission(auth.uid(),c.workspace_id,'base.contracts.'||a)) $$;
+CREATE FUNCTION work_commercial_reference_allowed(t text,i uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT EXISTS(SELECT 1 FROM deals d JOIN profiles p ON p.id=auth.uid() WHERE d.id=i AND d.workspace_id=p.active_workspace_id) $$;
+CREATE FUNCTION work_access_context() RETURNS jsonb LANGUAGE sql STABLE AS $$ SELECT jsonb_build_object('workspace',active_workspace_id) FROM profiles WHERE id=auth.uid() $$;
+CREATE FUNCTION work_context_access(c jsonb,w uuid,r text,a text,s uuid[]) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT is_workspace_member(w,auth.uid()) AND user_has_permission(auth.uid(),w,r||'.'||a||'.workspace') $$;
+CREATE FUNCTION work_area_authorize(r text,a text,i uuid DEFAULT NULL) RETURNS uuid LANGUAGE plpgsql AS $$ DECLARE w uuid;BEGIN SELECT active_workspace_id INTO w FROM profiles WHERE id=auth.uid();IF NOT is_workspace_member(w,auth.uid()) OR NOT user_has_permission(auth.uid(),w,r||'.'||a||'.workspace') THEN RAISE EXCEPTION 'not allowed';END IF;RETURN w;END $$;
+CREATE FUNCTION role_profile_can(w uuid,k text) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT is_workspace_member(w,auth.uid()) AND user_has_permission(auth.uid(),w,k) $$;
+CREATE FUNCTION deal_delivery_is_active_member(w uuid,u uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT is_workspace_member(w,u) $$;
+CREATE FUNCTION work_project_delivery_delegate(w uuid,u uuid,o uuid,d uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT is_workspace_member(w,u) $$;
+ALTER TABLE ats_jobs ALTER COLUMN id SET DEFAULT gen_random_uuid();
+ALTER TABLE deal_role_profiles ADD COLUMN ats_synced_version int;
+
+ALTER TABLE deal_role_profiles ADD COLUMN revision int DEFAULT 1;
+
+ALTER TABLE deal_role_profiles ADD COLUMN updated_at timestamptz DEFAULT now();

@@ -1,6 +1,7 @@
 // Perfis de vaga do negócio — regras de servidor. Usa o cliente do usuário (RLS)
 // para dados de negócio; o admin só entra em storage privado, link público
 // (após validar token) e avisos internos.
+import { workRpc } from "@/lib/access-control/work-core.server";
 import { parseFriendly } from "./validation-message";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database, Json } from "@/integrations/supabase/types";
@@ -86,7 +87,9 @@ function friendly(e: { message?: string } | null | undefined): Error {
 async function loadDeal(ctx: Ctx, dealId: string) {
   const { data, error } = await ctx.supabase
     .from("deals")
-    .select("id, name, company_id, primary_contact_id, workspace_id, stage, stage_id, assigned_to")
+    .select(
+      "id, name, company_id, primary_contact_id, workspace_id, stage, stage_id, pipeline_id, assigned_to",
+    )
     .eq("id", dealId)
     .eq("workspace_id", ctx.workspaceId)
     .maybeSingle();
@@ -316,7 +319,12 @@ export async function listForDeal(ctx: Ctx, dealId: string) {
       id: deal.id,
       name: deal.name,
       companyId: deal.company_id,
-      won: deal.stage === "won" || /won/i.test(deal.stage_id ?? ""),
+      won:
+        (await workRpc<string>(ctx.supabase, "deal_stage_type", {
+          p_pipeline: deal.pipeline_id,
+          p_stage_id: deal.stage_id,
+          p_stage: deal.stage,
+        })) === "won",
     },
     eligibility,
     perms,
@@ -398,6 +406,14 @@ export async function getDetail(ctx: Ctx, id: string) {
   const snap = pending ? (pending.snapshot as unknown as ProfileLike) : null;
   const diff = snap ? diffProfiles({ ...snap, data: parseData(snap.data) }, like) : [];
   return {
+    commercialAuthorization: await workRpc<{
+      required: boolean;
+      ready: boolean;
+      reason: string | null;
+    }>(ctx.supabase, "hiring_profile_recruitment_status", {
+      p_ws: ctx.workspaceId,
+      p_deal: p.deal_id,
+    }),
     profile: { ...p, data: like.data },
     commercial: commercial.data
       ? (CommercialDataZ.safeParse(commercial.data.data).data ?? null)
