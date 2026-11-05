@@ -21,7 +21,13 @@ export type LifecyclePreview = {
 export type LifecycleContext = {
   enabled: boolean;
   actor_id: string;
-  allocations: { id: string; engagement_id: string; project_name: string; starts_at: string; ends_at: string | null }[];
+  allocations: {
+    id: string;
+    engagement_id: string;
+    project_name: string;
+    starts_at: string;
+    ends_at: string | null;
+  }[];
   replacements: { id: string; name: string; starts_at: string; ends_at: string | null }[];
   requests: {
     id: string;
