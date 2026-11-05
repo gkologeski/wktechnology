@@ -201,6 +201,9 @@ describe.each(["fresh", "prototype"])("lifecycle schema %s", (mode) => {
         readFileSync("drizzle/migrations/0305_hiring_lifecycle_governance.sql", "utf8"),
       );
     await db.unsafe(readFileSync("drizzle/migrations/0321_hiring_lifecycle.sql", "utf8"));
+    await db.unsafe(
+      readFileSync("drizzle/migrations/0330_hiring_lifecycle_invite_timezone.sql", "utf8"),
+    );
   }, 120000);
   afterAll(async () => {
     if (competitor) await competitor.end();
@@ -569,5 +572,23 @@ describe.each(["fresh", "prototype"])("lifecycle schema %s", (mode) => {
           tx`select hiring_lifecycle_request(${W},${E},'end_allocation',${tx.json(p)},${tx.json(snap)},${randomUUID()})`,
       ),
     ).rejects.toThrow(/desatualizada/);
+  });
+  it("lifecycle invitation expires after inclusive local end day", async () => {
+    const a = await seed(),
+      token = randomUUID();
+    await db`select set_config('app.hiring_invite','on',false)`;
+    await db`insert into workspace_invites(workspace_id,email,role,token,invited_by,expires_at,hiring_engagement_id) values(${W},'fixture@example.test','member',${token},${U},'2035-01-01',${E})`;
+    await db`select set_config('app.hiring_invite','off',false)`;
+    const req = await propose(a, "end_engagement", {
+      date: "2027-01-31",
+      reason: "Fim de vínculo agendado no fuso operacional",
+    });
+    await approve(req);
+    await actor(U, (tx) => tx`select hiring_lifecycle_apply(${W},${req})`);
+    expect(
+      (
+        await db`select to_char(expires_at AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI') v from workspace_invites where token=${token}`
+      )[0].v,
+    ).toBe("2027-02-01 03:00");
   });
 });

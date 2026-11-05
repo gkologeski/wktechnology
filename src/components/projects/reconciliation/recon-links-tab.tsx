@@ -1,5 +1,6 @@
 // Aba "Vínculos": empresas e pessoas canônicas. Só relação exata é aplicada sozinha;
 // nome/ambíguo vira sugestão para confirmar ou recusar; desvincular reverte só o rastreado.
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,7 +8,6 @@ import { toast } from "sonner";
 import { AlertTriangle, Link2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   Table,
   TableBody,
@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/table";
 import { EmptyState, SectionHeader, Skeletons, StatusBadge } from "@/components/techhire/ui";
 import {
-  applyReconciliationExactLinks,
   decideReconciliationSuggestions,
   getReconciliationLinks,
   revertReconciliationLinks,
@@ -35,9 +34,9 @@ function toggle(set: Set<string>, id: string, on: boolean) {
 }
 
 export function ReconLinksTab() {
+  const { can } = usePermissions();
   const qc = useQueryClient();
   const get = useServerFn(getReconciliationLinks);
-  const apply = useServerFn(applyReconciliationExactLinks);
   const decide = useServerFn(decideReconciliationSuggestions);
   const revert = useServerFn(revertReconciliationLinks);
   const q = useQuery({ queryKey: ["recon-links"], queryFn: () => get() });
@@ -50,14 +49,6 @@ export function ReconLinksTab() {
     void qc.invalidateQueries({ queryKey: ["recon-links"] });
     void qc.invalidateQueries({ queryKey: ["recon-overview"] });
   };
-  const mApply = useMutation({
-    mutationFn: () => apply(),
-    onSuccess: (r) =>
-      done(
-        `Vínculos exatos: ${r.company_links} empresas, ${r.person_links} apontamentos com pessoa, ${r.allocation_links} com alocação; ${r.suggestions_new} novas sugestões.`,
-      ),
-    onError: (e: Error) => toast.error(e.message),
-  });
   const mDecide = useMutation({
     mutationFn: (v: { action: "confirm" | "reject"; note: string | null }) =>
       decide({ data: { ids: [...selSugg], ...v } }),
@@ -83,6 +74,7 @@ export function ReconLinksTab() {
     () => (q.data?.suggestions ?? []).filter((s) => s.status === "suggested"),
     [q.data],
   );
+  if (!can("techprojects.reconciliation.view.workspace")) return null;
   if (q.isLoading) return <Skeletons.Card lines={8} />;
   if (q.isError || !q.data)
     return (
@@ -96,26 +88,20 @@ export function ReconLinksTab() {
   const d = q.data;
   return (
     <div className="space-y-6">
+      <p className="text-sm text-muted-foreground">
+        Novas vinculações são feitas em Lotes assistidos. Reversões automáticas de lotes antigos sem
+        versão da origem estão bloqueadas: exigem revisão manual para preservar edições posteriores.
+      </p>
       <section className="space-y-3 rounded-lg border border-border-subtle bg-surface-2 p-5 shadow-xs">
         <SectionHeader
           title="Vínculos exatos"
           description="Liga projeto à empresa já indicada pela origem (mesmo workspace e sem conflito) e apontamento à pessoa com e-mail único nos dois lados. Alocação só com pessoa, projeto e vigência inequívocos. Ninguém ganha login, convite ou permissão."
           action={
-            <Button
-              size="sm"
-              disabled={mApply.isPending}
-              onClick={async () => {
-                const ok = await confirmDialog({
-                  title: "Aplicar vínculos exatos?",
-                  description:
-                    "Só campos de vínculo mudam; duração, datas, situação e ids da origem ficam iguais. Tudo fica rastreado e pode ser desfeito.",
-                  confirmLabel: "Aplicar",
-                });
-                if (ok) mApply.mutate();
-              }}
-            >
-              <Link2 className="mr-2 h-4 w-4" aria-hidden />
-              Aplicar vínculos exatos
+            <Button size="sm" asChild>
+              <a href="/projects/settings/imports/reconciliation?tab=review">
+                <Link2 className="mr-2 h-4 w-4" aria-hidden />
+                Vincular em lotes assistidos
+              </a>
             </Button>
           }
         />

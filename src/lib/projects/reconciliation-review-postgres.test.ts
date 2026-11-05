@@ -139,6 +139,9 @@ beforeAll(async () => {
   await db.unsafe(
     readFileSync("drizzle/migrations/0328_hiring_assisted_reconciliation.sql", "utf8"),
   );
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0329_hiring_reconciliation_legacy_safety.sql", "utf8"),
+  );
 }, 120000);
 afterAll(async () => {
   if (competitor) await competitor.end();
@@ -360,5 +363,19 @@ it("review rechecks identity evidence after preview and denies nonadmin", async 
   await db`insert into grants values(${P},${viewKey},'grant')`;
   await expect(actor((tx) => tx`select project_link_review_history(${W})`, P)).rejects.toThrow(
     /administradores/,
+  );
+});
+it("review protects unversioned historical reversal and disables unbounded application", async () => {
+  await seed();
+  const batch = randomUUID();
+  await db`update projects set company_id=${company} where id=${project}`;
+  await db`insert into project_link_batches(id,workspace_id,kind,actor) values(${batch},${W},'apply_exact',${U})`;
+  await db`insert into project_link_changes(workspace_id,batch_id,target_table,target_id,field,subject_id,new_value,actor) values(${W},${batch},'projects',${project},'company_id',${project},${company},${U})`;
+  await expect(
+    actor((tx) => tx`select project_links_revert(${W},'batch',array[]::uuid[],${batch})`),
+  ).rejects.toThrow(/revisão manual/);
+  expect((await db`select company_id from projects`)[0].company_id).toBe(company);
+  await expect(actor((tx) => tx`select project_links_apply_exact(${W})`)).rejects.toThrow(
+    /Lotes assistidos/,
   );
 });
