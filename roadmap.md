@@ -4,8 +4,8 @@
 - [x] Controle de documentos, vigência, acesso por datas, escopo e bloqueio dos atalhos legados.
 - [x] Plano financeiro separado com seleção explícita de compromissos futuros; pagos, cobranças, medições e competências trabalhadas protegidos.
 - [x] Conciliação assistida em lotes e reversão que preserva edições posteriores.
-- [x] Migração preliminar preservada; adoção aditiva 0321/0328 aplicada sem operações reais.
-- [x] Verificação global integrada: 2.741 testes, tipos e lint sem erros.
+- [x] Migração preliminar preservada; adoção aditiva 0321/0328 aplicada sem operações reais; complementos 0329/0330 validados.
+- [x] Verificação global integrada: 2.744 testes, tipos e lint sem erros.
 - [ ] Aceite visual transacional com sessão real: não executado; cenários operacionais exercitados em PostgreSQL descartável.
 
 Arquitetura e limites: `docs/architecture/hiring-integration-stage6.md`. A publicação e a conferência dos domínios são registradas no relatório de entrega da etapa 6.
