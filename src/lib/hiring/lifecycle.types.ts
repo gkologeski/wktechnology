@@ -17,6 +17,20 @@ export type LifecyclePreview = {
   manager: string;
   ceo: string;
   financial_review: string;
+  effects: {
+    kind: LifecycleKind;
+    source_engagement: string;
+    source_allocation: string | null;
+    effective_date: string;
+    new_start: string | null;
+    new_end: string | null;
+    overlap: boolean;
+    allocation_count: number;
+    new_period: boolean;
+    purchase_contract: string | null;
+    commercial_contract: string | null;
+    financial_cancelled: false;
+  };
 };
 export type LifecycleContext = {
   enabled: boolean;
