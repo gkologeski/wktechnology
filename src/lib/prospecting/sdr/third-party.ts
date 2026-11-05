@@ -163,7 +163,8 @@ const ROLE_WORDS =
   /^(?:gerente|gestor|gestora|diretor|diretora|coordenador|coordenadora|supervisor|supervisora|analista|head|ceo|cto|cio|cfo|coo|socio|socia|dono|dona|proprietario|proprietaria|presidente|lider|responsavel|ti|t\.i\.?|it|de|da|do|dev|desenvolvimento|tecnologia|compras|financeiro|rh|comercial|vendas|marketing|operacoes|infra|infraestrutura|sistemas)$/;
 const ROLE_START =
   /^(?:gerente|gestor|gestora|diretor|diretora|coordenador|coordenadora|supervisor|supervisora|analista|head|ceo|cto|cio|cfo|coo|socio|socia|dono|dona|proprietario|proprietaria|presidente|lider|responsavel)$/;
-const COMPANY_STOP = /^(?:ltda|sa|s|a|me|eireli|epp|br|brasil|do|da|de|e|the|group|grupo|tecnologia|solucoes|servicos)$/;
+const COMPANY_STOP =
+  /^(?:ltda|sa|s|a|me|eireli|epp|br|brasil|do|da|de|e|the|group|grupo|tecnologia|solucoes|servicos)$/;
 
 function plain(w: string): string {
   return w
@@ -182,7 +183,11 @@ export function splitReferralName(
   raw: string | null | undefined,
   companyName?: string | null,
 ): { name: string | null; role: string | null } {
-  const words = String(raw ?? "").replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+  const words = String(raw ?? "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
   if (!words.length) return { name: null, role: null };
   const companyTokens = new Set(
     String(companyName ?? "")

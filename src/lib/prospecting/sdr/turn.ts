@@ -208,7 +208,10 @@ export function replyViolations(reply: string, out: ValidatedOutput, i: TurnInpu
 }
 
 function plainName(w: string): string {
-  return w.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return w
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
 
 /**
@@ -216,7 +219,9 @@ function plainName(w: string): string {
  * quem escreveu foi o cliente que indicou.
  */
 export function thanksReferral(reply: string, out: ValidatedOutput, i: TurnInput): boolean {
-  const m = reply.match(/^\s*(?:muito\s+)?(?:obrigad[oa]|valeu|agrade[cç]o)[^,!.\n]{0,20}?,\s*([\p{L}]+)/iu);
+  const m = reply.match(
+    /^\s*(?:muito\s+)?(?:obrigad[oa]|valeu|agrade[cç]o)[^,!.\n]{0,20}?,\s*([\p{L}]+)/iu,
+  );
   if (!m) return false;
   const greeted = plainName(m[1]!);
   const names = new Set<string>();

@@ -2976,7 +2976,7 @@
       },
       "files": {
         "src/lib/prospecting/sdr/channel-runtime.server.ts": "a1528c862f67ac28a1b664d975c6aaf7b534d280bc8345a66e861142a5fe12cf",
-        "src/lib/prospecting/sdr/worker.server.ts": "bbecf6afe292b79fc4ae1e1329c21846797b06bf6f8b4d839ad18b39809f341e",
+        "src/lib/prospecting/sdr/worker.server.ts": "ad6e2610dc288e3e6e6b089bfda9bcd3d4bccdeb546ae41620b13ccc74ed6d11",
         "src/lib/prospecting/sdr/ingest.server.ts": "f9c2b94a599939a2c438af15614cfc43270fdbb6467c7a74a697961384c8c490",
         "src/lib/prospecting/sdr/tools/runtime.ts": "dcb7dd1240f535cf9ff084ad43989bafcd4db6d56f02ebb2c8efbc18965d4918",
         "drizzle/migrations/0257_service_channel_runtime_identity.sql": "2d829bed7441a6f7c8dc5c26f374ee4b66853f04a23caae6cd2d3e915815617f"
@@ -4567,12 +4567,12 @@
       "kind": "presentation",
       "rationale": "Pure SDR turn logic without network or database access: validates referral name/email/phone written by the customer, derives conversation state and detects near-repeat follow-ups. Callers (authorized worker and authenticated sandbox) keep their existing permission, workspace and CAS checks. Review 02/11/2026: audit-outcome.ts and policy helpers (nextSendableAt, followUpDeadline) are pure decision functions for the autonomous audit (regenerate up to 3 times, hand off replies, discard or reschedule follow-ups); turn.ts loops the existing regeneration. No network, database or permission change. Review 04/11/2026: splitReferralName (third-party.ts) strips company words and job title from referral names; thanksReferral audit rejects thanking the referred person; newer-inbound.ts decides to requeue a reply when the customer wrote during generation. Pure, no permission change.",
       "files": {
-        "src/lib/prospecting/sdr/conversation-state.ts": "1744d1c6854fda8fb26efbaff0293568e440cc5e98066c073f92588e8f7f6c36",
+        "src/lib/prospecting/sdr/conversation-state.ts": "65bcb07d044a375f7fad164d0e2bfce8b2233e2cfb09bd0ba91f3c58739772f8",
         "src/lib/prospecting/sdr/repetition.ts": "c7216d50c51eb70375689471f0749b262ed9e8e62afe131362e54aa91f1c88a9",
-        "src/lib/prospecting/sdr/turn.ts": "dadaf331440eef3f05db9fc8a1799c32ecff2cfd1ed0f5ad15b6f0cc6a126047",
+        "src/lib/prospecting/sdr/turn.ts": "059e27b5e7a9eefaface1ed5306e412057bfaca5e489730d24039bd307ce9919",
         "src/lib/prospecting/sdr/audit-outcome.ts": "f7ae888e8b6c25faa4b2282228e6e4ae0a48b795b93629694b8502b1d4f9a9ba",
         "src/lib/prospecting/sdr/policy.ts": "987d282e49f60c80f7798ed2cf73fc5b65c379b6c698b82c21cd8ad814242383",
-        "src/lib/prospecting/sdr/third-party.ts": "5ab6674898bf604264e17f47b7e54c003229d52e1c3f1ef5aed3ba71d4879195",
+        "src/lib/prospecting/sdr/third-party.ts": "977264de8e8ca93389303f781d6391c9213448ee8bee071d37c462f57246aa74",
         "src/lib/prospecting/sdr/newer-inbound.ts": "e1337d19230568c07268cf02b8441c79ab0d1c72d8b6491ca77df2c7ded0eb2b"
       }
     },

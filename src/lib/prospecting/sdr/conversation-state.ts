@@ -396,7 +396,13 @@ export function decideState(p: {
     if (name || email || phone) {
       const messageId = (phoneHit?.m ?? mailHit?.m ?? nameHit?.m)!.id;
       const extra = phoneHit?.v?.extraPhones;
-      referral = { name, email, phoneE164: phone, messageId, ...(extra?.length ? { extraPhones: extra } : {}) };
+      referral = {
+        name,
+        email,
+        phoneE164: phone,
+        messageId,
+        ...(extra?.length ? { extraPhones: extra } : {}),
+      };
       const prev = p.state.referral_received;
       const same = !!prev && prev.name === name && prev.email === email && prev.phone === phone;
       if (!same)

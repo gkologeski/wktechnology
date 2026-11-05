@@ -846,7 +846,8 @@ export async function processJob(
   // Cliente escreveu enquanto a IA gerava (ex.: cartão do indicado logo após o nome):
   // descarta esta resposta e devolve o turno à fila para ler a conversa completa.
   if (job.kind === "reply") {
-    const lastRead = [...history].reverse().find((m) => m.direction === "inbound")?.created_at ?? null;
+    const lastRead =
+      [...history].reverse().find((m) => m.direction === "inbound")?.created_at ?? null;
     const { data: newest } = await admin
       .from("whatsapp_messages")
       .select("created_at")
