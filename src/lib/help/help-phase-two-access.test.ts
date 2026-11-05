@@ -30,16 +30,20 @@ describe.each([
     expect(canReadHelpArticle(article, { ...input, grants: [] })).toBe(false);
   });
   it("deny prevalece", () => {
-    expect(canReadHelpArticle(article, {
-      ...input,
-      grants: [...input.grants, { workspaceId: workspace, key, effect: "deny" }],
-    })).toBe(false);
+    expect(
+      canReadHelpArticle(article, {
+        ...input,
+        grants: [...input.grants, { workspaceId: workspace, key, effect: "deny" }],
+      }),
+    ).toBe(false);
   });
   it("nega chave de outro workspace", () => {
-    expect(canReadHelpArticle(article, {
-      ...input,
-      grants: [{ workspaceId: other, key, effect: "allow" }],
-    })).toBe(false);
+    expect(
+      canReadHelpArticle(article, {
+        ...input,
+        grants: [{ workspaceId: other, key, effect: "allow" }],
+      }),
+    ).toBe(false);
   });
   it("nega membro inativo", () => {
     expect(canReadHelpArticle(article, { ...input, membershipStatus: "inactive" })).toBe(false);
@@ -48,7 +52,11 @@ describe.each([
 
 describe("Ajuda — caminhos oficiais do roteador", () => {
   it("remove o escape de layout sem modificar o URL público", () => {
-    expect(normalizeRoutePath("/_authenticated/projects_/$id/financeiro")).toBe("/projects/$id/financeiro");
-    expect(normalizeRoutePath("/_authenticated/sourcing/sequences_/$id")).toBe("/sourcing/sequences/$id");
+    expect(normalizeRoutePath("/_authenticated/projects_/$id/financeiro")).toBe(
+      "/projects/$id/financeiro",
+    );
+    expect(normalizeRoutePath("/_authenticated/sourcing/sequences_/$id")).toBe(
+      "/sourcing/sequences/$id",
+    );
   });
 });
