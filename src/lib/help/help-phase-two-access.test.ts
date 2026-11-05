@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { canReadHelpArticle, type HelpAccessInput } from "./help-access";
 import { normalizeRoutePath } from "../../../tests/help-coverage/help-coverage";
 import { pickRouteArticle } from "./help-route-match";
+import { listScreenRoutes } from "../../../tests/help-coverage/help-coverage";
 
 const workspace = "11111111-1111-1111-1111-111111111111";
 const other = "22222222-2222-2222-2222-222222222222";
@@ -52,6 +53,14 @@ describe.each([
 });
 
 describe("Ajuda — caminhos oficiais do roteador", () => {
+  it("mede telas oficiais e não atalhos legados nem ferramentas internas de QA", () => {
+    const routes = listScreenRoutes();
+    expect(routes).toContain("/settings/teams");
+    expect(routes).toContain("/projects/$id/financeiro");
+    expect(routes).not.toContain("/settings/workspace-team");
+    expect(routes).not.toContain("/admin/alerts");
+    expect(routes).not.toContain("/qa/test-cases");
+  });
   it("escolhe prioridade editorial estável mesmo quando a ordem da consulta muda", () => {
     const first = {
       route_pattern: "/contracts",
