@@ -1,3 +1,13 @@
+# Roadmap — Ajuda do TechContracts (porte G, 4–6 horas)
+
+- [x] Auditar telas oficiais, funcionalidades, permissões e divergências sem alterar operação
+- [x] Escrever 52 artigos: visão geral, início, referência, permissões, erros, FAQ e howtos
+- [x] Registrar conteúdo em nova migration idempotente; cobertura 11/11
+- [x] Validar permissions:check, 13 testes da Ajuda, ESLint, drizzle-kit check e leitura autenticada
+- [x] Registrar evidências e imagens pendentes em docs/help; auditoria mantém os 39 apontamentos anteriores
+- [ ] Capturas definitivas para treinamento (aguarda preparação de exemplos sem dados pessoais)
+- [ ] Aceite/publicação e revisão operacional da equipe (aguardam usuário)
+
 # Roadmap — Contratação etapa 6 (registro consolidado)
 
 - [x] Prévia versionada, aprovação gestor → CEO e execução por origem para renovação, substituição e encerramento.

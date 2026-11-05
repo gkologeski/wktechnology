@@ -275,7 +275,7 @@
         "system.communication.subscription_types.update.workspace",
         "system.communication.subscription_types.view.workspace"
       ],
-      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations.",
+      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 05/11/2026: header gains the Help '?' button (HelpButton), which only reads help articles through help.functions (help-center contract); no access change to existing routes.",
       "database": [
         {
           "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
@@ -325,7 +325,7 @@
       "files": {
         "src/lib/access-control/sales-route-map.ts": "3251202b005a6ca122893b220b9aed1a6c3772aad40d9651fb2219ce64ce4dc6",
         "src/routes/_authenticated/settings.tsx": "d887a815faf57f0d91dc5ff31cc9f0529ba0ff0a29e289875900e7cff326350a",
-        "src/routes/_authenticated.tsx": "8ea21df8f99b5fc40d0233fd06bbc11b5f462d398ded7f2c7182e4a98fa3d388",
+        "src/routes/_authenticated.tsx": "7a8c57f0ef160cc66068271b9fec9cd8129b36b2895978317c59885dad3fa296",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
       }
     },
@@ -2736,7 +2736,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 03/11/2026: generated declarations for whatsapp_number_suppressions and the wa_* suppression functions only; no runtime I/O, grants or policies.",
       "files": {
-        "src/integrations/supabase/types.ts": "2b852dcf2ab13c77dec3f73570e0e06e074002ce3ee369d3dc7788a119559136"
+        "src/integrations/supabase/types.ts": "92a35071f804aa137c730bfae58e3331077513ff62fcda53a13f19c6c70229f2"
       }
     },
     {
@@ -8643,6 +8643,138 @@
         "src/routes/_authenticated/projects.settings.imports.reconciliation.tsx": "966939ad5c3e5e554d04a0a7f93150c9204a96dff8b2e66383957ca049a03d1d",
         "src/components/projects/reconciliation/recon-links-tab.tsx": "50478ab8bad328d0bee3bff8155cb02d006482dfd90d0b6a535d850edc241672",
         "drizzle/migrations/0329_hiring_reconciliation_legacy_safety.sql": "5d790d2ea26ac1e2015bd63be2ea858d15288973a59dfbe8e25daddf1a7ed16d"
+      }
+    },
+    {
+      "id": "help-center",
+      "kind": "business",
+      "resources": [
+        "techservice.kb"
+      ],
+      "actions": [
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techservice.kb.manage.workspace",
+        "techservice.kb.update.workspace"
+      ],
+      "rationale": "Help and Training area (/ajuda, header '?' button, sidebar link). Global platform content without workspace_id. Read: active member of the active workspace, published internal article, module allowed by the same rule as the menu (license ∩ effective keys, workspace admin unrestricted, core = any active member, platform = platform admin) and optional min_permission effective key (deny wins); enforced in every server function by loadHelpAccessInput + canReadHelpModule/filterReadableArticles and in the database by help_can_read RLS. Edit: platform admin or active member with existing knowledge base keys (help_can_edit RLS); no edit UI in this phase. Feedback and route misses are own-row only. No new key, no grant to roles.",
+      "controls": [
+        {
+          "file": "src/lib/help/help-access.server.ts",
+          "symbol": "loadHelpAccessInput"
+        },
+        {
+          "file": "src/lib/help/help-access.ts",
+          "symbol": "canReadHelpModule"
+        },
+        {
+          "file": "src/lib/help/help-access.server.ts",
+          "symbol": "filterReadableArticles"
+        },
+        {
+          "file": "src/lib/help/help-access.ts",
+          "symbol": "canEditHelp"
+        },
+        {
+          "file": "src/lib/help/help.functions.ts",
+          "symbol": "getHelpHome"
+        },
+        {
+          "file": "src/lib/help/help.functions.ts",
+          "symbol": "getHelpModule"
+        },
+        {
+          "file": "src/lib/help/help.functions.ts",
+          "symbol": "getHelpArticle"
+        },
+        {
+          "file": "src/lib/help/help.functions.ts",
+          "symbol": "getHelpForRoute"
+        },
+        {
+          "file": "src/lib/help/help.functions.ts",
+          "symbol": "searchHelp"
+        },
+        {
+          "file": "src/lib/help/help.functions.ts",
+          "symbol": "submitHelpFeedback"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/help/help-access.ts",
+          "symbol": "isHelpModuleKey"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0306_help_center.sql",
+          "symbol": "help_can_read"
+        },
+        {
+          "file": "drizzle/migrations/0306_help_center.sql",
+          "symbol": "help_can_edit"
+        },
+        {
+          "file": "drizzle/migrations/0307_help_seed_crm.sql",
+          "symbol": "help_articles"
+        },
+        {
+          "file": "drizzle/migrations/0308_help_seed_contracts.sql",
+          "symbol": "help_articles"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/help/help-access.test.ts",
+          "name": "allows active member with module key to read help"
+        },
+        "missing_permission": {
+          "file": "src/lib/help/help-access.test.ts",
+          "name": "denies help module without module key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/help/help-access.test.ts",
+          "name": "denies help when explicit deny overrides grant"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/help/help-access.test.ts",
+          "name": "ignores help grants from foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/help/help-access.test.ts",
+          "name": "denies help for inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0306_help_center.sql": "cca26ff8086c7ed3a1cc551edc2d837565381dd318a2a07c534e2ad6da8034dd",
+        "drizzle/migrations/0307_help_seed_crm.sql": "04af96f7572e80fef5c5776afab4c0b0407c0ceb6841f9aefce9f31d04b4f9df",
+        "src/components/app-sidebar.tsx": "6de836dcf48268152c689187ee93a8004767d447ad1f72729df3232e32630ce5",
+        "src/components/help/help-button.tsx": "2b268ebe99b3235468f0049cb9e1d33fe2339b72557ba964e10a4c524318462e",
+        "src/lib/help/help-access.server.ts": "79d713e8056a7cb37e13076ff21c637ae056da1f913cdc7e7cee063ae24bd88e",
+        "src/lib/help/help-access.ts": "1ae9593cb60c3aac19b401fdf0a5b0f7334c27e1f63ab7dfceb21ee272bfe5dd",
+        "src/lib/help/help.functions.ts": "b30c3161b92d49b5f9b0f6912c0be9017ae1593ef4a6472d2d5ec2f0db7b6aa1",
+        "src/routes/_authenticated/ajuda.$module.$slug.tsx": "6248f72c7387f4fdfcafae3a01f142f747c86e587b51710135b3b507f23d6b6d",
+        "src/routes/_authenticated/ajuda.$module.index.tsx": "017f84e9351276c27397edd536205a8f03be2f928a855921a02e4813fbef048b",
+        "src/routes/_authenticated/ajuda.index.tsx": "a2cfeaadf0c27d64cb7247ef9be61dc7b93dda01f9f2564cd4362bfe209b79a9",
+        "drizzle/migrations/0308_help_seed_contracts.sql": "8ab1cb5450bcebb357720b90a43d866559b72ab65fe89e2eb4decf6be831ff6b"
+      }
+    },
+    {
+      "id": "help-center-presentation",
+      "kind": "presentation",
+      "rationale": "Pure helpers of the Help area: Markdown rendering without raw HTML, route_pattern matching and table-of-contents/highlight parsing. No I/O, routes, actions, grants or data access; data comes only from help.functions under the help-center contract.",
+      "files": {
+        "src/components/help/help-markdown.tsx": "d2d110950c73b7e155cd05c1408bd06495f0c628372c7ca01f2ae1ca584e20b0",
+        "src/lib/help/help-route-match.ts": "54516dc383febca2ae1478daf2040cd794febefb2eb76729bfb6fb7ba9281ba8",
+        "src/lib/help/help-toc.ts": "da95180b180a9537c4be0d6f096419d10619050fc4f70bf26a2c52787de66207"
       }
     }
   ],
