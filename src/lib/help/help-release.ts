@@ -1,7 +1,11 @@
 import { canEditHelp, type HelpAccessInput } from "./help-access";
 
+export function assertHelpReleaseAllowed(allowed: boolean): void {
+  if (!allowed) throw new Error("Sem permissão para atualizar a Ajuda oficial.");
+}
+
 export function assertHelpReleaseAccess(input: HelpAccessInput): void {
-  if (!canEditHelp(input)) throw new Error("Sem permissão para atualizar a Ajuda oficial.");
+  assertHelpReleaseAllowed(canEditHelp(input));
 }
 
 export function shouldReleaseArticle(

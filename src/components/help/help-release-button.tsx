@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { releaseOfficialHelp } from "@/lib/help/help-release.functions";
+import { assertHelpReleaseAllowed } from "@/lib/help/help-release";
 
 export function HelpReleaseButton({ allowed }: { allowed: boolean }) {
   const fn = useServerFn(releaseOfficialHelp);
@@ -11,7 +12,7 @@ export function HelpReleaseButton({ allowed }: { allowed: boolean }) {
   const [result, setResult] = useState("");
   const mutation = useMutation({
     mutationFn: () => {
-      if (!allowed) throw new Error("Sem permissão para atualizar a Ajuda oficial.");
+      assertHelpReleaseAllowed(allowed);
       return fn();
     },
     onSuccess: async (data) => {
