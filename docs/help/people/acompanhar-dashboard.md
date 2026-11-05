@@ -8,7 +8,7 @@ route_pattern: /people/dashboard
 min_permission: 
 audience: internal
 sort_order: 5
-version: 1
+version: 2
 is_published: true
 ---
 # Acompanhar o dashboard do TechPeople
@@ -32,6 +32,7 @@ Os indicadores aparecem conforme seu acesso.
 - "Documentos a vencer" inclui vencidos e os dos próximos 30 dias.
 - A margem estima 160 horas por mês vezes o percentual de alocação.
 - Sem acesso financeiro, aparece "Restrito".
+- Há uma inconsistência conhecida: planos cancelados podem entrar nos indicadores de jornadas em andamento e atrasadas. Confira o status na lista de Onboarding/Offboarding antes de usar esses totais.
 
 ## Erros comuns
 - "Não foi possível carregar o dashboard": clique em "Tentar novamente".

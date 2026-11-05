@@ -28,13 +28,13 @@ comportamento pretendido e registre a divergência em `docs/help/divergencias.md
 
 | Peça | Local |
 |---|---|
-| Tabelas | `help_articles`, `help_feedback`, `help_route_misses` (migration `0305_help_center.sql`) |
+| Tabelas | `help_articles`, `help_feedback`, `help_route_misses` (migration `0306_help_center.sql`) |
 | Regras de acesso | `src/lib/help/help-access.ts` (puro) e `help-access.server.ts` |
 | Server functions | `src/lib/help/help.functions.ts` |
 | Telas | `/ajuda`, `/ajuda/$module`, `/ajuda/$module/$slug` |
 | Botão "?" | `src/components/help/help-button.tsx` no cabeçalho autenticado |
 | Fonte versionada | `docs/help/<módulo>/<slug>.md` |
-| Gravação no banco | migration de seed idempotente `INSERT … ON CONFLICT (module_key, slug) DO UPDATE` |
+| Gravação no banco | Migrations de conteúdo já registradas são imutáveis; conteúdo posterior vai pelo lote editorial autorizado, idempotente, gerado de Markdown e conferido por versão/hash antes de aplicar |
 | Cobertura | `bun run help:coverage` (`tests/help-coverage/`) |
 | Auditoria de acesso | `tests/access-audit/access-audit.sql` |
 

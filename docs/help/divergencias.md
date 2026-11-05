@@ -21,7 +21,7 @@ A Ajuda documenta o comportamento pretendido; o item fica aqui até ser corrigid
 - **Sem permissão própria na tela/servidor:** Dashboard, Briefing, Copilot, DEI Analytics, Flags de risco, Match Scores, Insights, todo o Hunting, todo o Sourcing (exceto Multi-posting) e E-mails por etapa conferem só login e workspace (RLS por pertencimento). Pela doutrina de `security-rbac.md`, cada tela deveria ter recurso/ação `techhire.*` próprio. A Ajuda documenta o acesso atual e o marca como divergência.
 - **Inbox de sourcing:** o botão "Pausar" envia `stopped` e encerra a inscrição, em vez de pausar.
 - **Indicações:** status e bônus aparecem em inglês (`submitted`, `under_review`…), contrariando a regra de idioma PT-BR.
-- **Multi-posting:** os três sites estão fixos em modo simulado (`isMock: true`), não por detecção de credenciais.
+- **Multi-posting (revisado):** LinkedIn possui caminho real. Indeed e Vagas.com retornam simulação mesmo com configuração; a detecção `is_mock` pode indicar publicação real sem realizá-la. Não usar o selo como certificação do envio externo.
 - **Sequências de outreach:** o status das inscrições aparece sem tradução; "Aguardar aceite do convite" não é validado como posterior a um convite.
 - **E-mails por etapa:** a descrição usa `{{candidate_name}}`/`{{job_title}}`, e os botões inserem `{{candidate.first_name}}`/`{{job.title}}`.
 - **Talent Pools:** o tipo "Smart" está marcado "em breve", mas pode ser selecionado e salvo.

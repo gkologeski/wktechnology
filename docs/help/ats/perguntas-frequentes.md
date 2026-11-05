@@ -8,7 +8,7 @@ route_pattern:
 min_permission: 
 audience: internal
 sort_order: 6
-version: 1
+version: 2
 is_published: true
 ---
 # Perguntas frequentes do TechHire
@@ -17,7 +17,7 @@ is_published: true
 
 **Contratar no TechHire cria a pessoa no TechPeople?** Sim, pela ação "Contratar" na ficha do candidato.
 
-**O multi-posting já publica nos sites?** Ainda não. Os sites estão em modo simulado.
+**O multi-posting já publica nos sites?** LinkedIn possui caminho de publicação real, condicionado à conta e à configuração. Indeed e Vagas.com ainda usam retorno simulado. Confira o destino externo antes de considerar a vaga publicada.
 
 **Anonimizar pode ser desfeito?** Não.
 
