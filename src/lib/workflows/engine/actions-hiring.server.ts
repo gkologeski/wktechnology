@@ -143,6 +143,16 @@ export async function handleHiringAction(
 ): Promise<LogStep | null> {
   if (!HIRING_TYPES.has(action.type)) return null;
   if (!ctx.workspaceId) throw new Error("Workspace do registro não identificado.");
+  if (
+    ctx.entity === "ats_applications" &&
+    ["create_payable_schedule", "create_receivable_invoice"].includes(action.type)
+  ) {
+    await workRpc(supabase, "hiring_workflow_finance_guard", {
+      w: ctx.workspaceId,
+      p_application: ctx.entityId,
+      p_actor: ctx.ownerId,
+    });
+  }
   const h = hiringVars(ctx);
   if (
     ctx.entity === "ats_applications" &&

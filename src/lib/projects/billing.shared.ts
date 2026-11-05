@@ -11,6 +11,18 @@ export const BILLING_MODELS = [
 ] as const;
 export type BillingModel = (typeof BILLING_MODELS)[number];
 
+/** Suggests a mapping only; ambiguous one-time/unit services require an explicit choice. */
+export function suggestMeasurementModel(
+  source: string | null,
+  cadence: string | null,
+): BillingModel | null {
+  if (source === "per_hour") return "per_hour";
+  if (source === "percent_of_base") return "percent";
+  if (source === "per_headcount_month" || (source === "fixed" && cadence === "monthly"))
+    return "fixed_recurring";
+  return null;
+}
+
 export const BILLING_MODEL_LABEL: Record<BillingModel, string> = {
   per_hour: "Por hora (tempo aprovado)",
   fixed_recurring: "Mensalidade / preço fixo",
@@ -52,6 +64,7 @@ export function measurementStatusVariant(
 
 /** Códigos de pendência/aviso devolvidos pelo banco → texto em PT-BR. */
 export const ISSUE_LABEL: Record<string, string> = {
+  delivery_acceptance_missing: "Entregável concluído sem evidência de aceite vigente",
   rate_missing: "Sem tarifa vigente (valor desconhecido)",
   rate_ambiguous: "Mais de uma tarifa no mesmo nível (ambígua)",
   amount_missing: "Valor não definido",

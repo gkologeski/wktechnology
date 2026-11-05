@@ -29,6 +29,7 @@ import {
 } from "@/lib/projects/billing-rates.functions";
 import {
   BILLING_MODELS,
+  suggestMeasurementModel,
   BILLING_MODEL_LABEL,
   formatMoney,
   hoursToSeconds,
@@ -119,6 +120,10 @@ export function BillingConfigCard({ contractId }: { contractId: string }) {
   const [percent, setPercent] = useState("");
   const cur = ctx.data?.contract.currency ?? "BRL";
   const isProvider = ctx.data?.contract.role === "provider";
+  const sourceService = ctx.data?.services.find((s) => s.id === serviceId);
+  const suggested = sourceService
+    ? suggestMeasurementModel(sourceService.billing_model ?? null, sourceService.cadence ?? null)
+    : null;
 
   const buildParams = () => {
     const p: Record<string, string | number | boolean> = { rounding };
@@ -242,6 +247,18 @@ export function BillingConfigCard({ contractId }: { contractId: string }) {
         (isProvider ? (
           <div className="space-y-3 rounded-md border p-3">
             <p className="text-sm font-medium">Novo modelo / nova versão</p>
+            {sourceService && (
+              <p className="text-sm text-muted-foreground">
+                Forma comercial: {sourceService.billing_model ?? "não definida"}.{" "}
+                {suggested ? (
+                  <Button size="sm" variant="link" onClick={() => setModel(suggested)}>
+                    Usar sugestão: {BILLING_MODEL_LABEL[suggested]}
+                  </Button>
+                ) : (
+                  "Escolha explicitamente mensalidade, pacote, marco ou percentual conforme o contrato; valores únicos não são mensalidades automáticas."
+                )}
+              </p>
+            )}
             <div className="grid gap-3 md:grid-cols-3">
               <div className="grid gap-1">
                 <Label htmlFor="bc-svc">Escopo</Label>

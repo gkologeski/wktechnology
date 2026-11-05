@@ -50,3 +50,27 @@ it("governed worker stops before any side effect when current employment authori
   ).rejects.toThrow("Sem permissão");
   expect(from).not.toHaveBeenCalled();
 });
+
+it.each(["create_payable_schedule", "create_receivable_invoice"] as const)(
+  "governed finance worker blocks %s before a legacy obligation",
+  async (type) => {
+    const from = vi.fn(),
+      rpc = vi.fn().mockResolvedValue({
+        data: null,
+        error: { message: "FINANCE_MONTHLY_FLOW: use provisão e medição" },
+      });
+    await expect(
+      handleHiringAction(
+        { rpc, from } as unknown as SupabaseClient,
+        { type, amount: "100" },
+        ctx(),
+        "now",
+      ),
+    ).rejects.toThrow("FINANCE_MONTHLY_FLOW");
+    expect(rpc).toHaveBeenCalledWith(
+      "hiring_workflow_finance_guard",
+      expect.objectContaining({ w: "workspace", p_application: "application", p_actor: "actor" }),
+    );
+    expect(from).not.toHaveBeenCalled();
+  },
+);

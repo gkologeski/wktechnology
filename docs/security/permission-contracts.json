@@ -8231,7 +8231,7 @@
         "src/components/people/hire-candidate-dialog.tsx": "569ca07ac1070a7c406ee5edffa0984f7eab9cb9040294f776fd776a6eab886e",
         "src/components/workflows/builder/step-forms/hiring-forms.tsx": "44a2c2bb31142f6b56a79220856e21a5743e81ce281506fe02adb66c70c868ad",
         "src/lib/people/allocations.functions.ts": "462fc4923d9722430e112cd51965545af07896ee2bed5f14632051cf221c5053",
-        "src/lib/workflows/engine/actions-hiring.server.ts": "d6216d8399b2088835e7fcf0895da1c5fa4cc0abadeadcb5eecb8c94ea14d437",
+        "src/lib/workflows/engine/actions-hiring.server.ts": "ea623a453c25411c96888d09eae78cbe9da9d0e8f07ad4ec40ab32649c44f0a8",
         "src/lib/workspace-invites.functions.ts": "52e030eabd06550afc8394401ecfa4df89e91ac8f3ffbe73ebc78fbc0e37f888",
         "src/routes/_authenticated/people.$id.tsx": "61de356c10b08601da2c739bfcbf2457524ac5bb55aec745fc72272df625457c",
         "src/routes/_authenticated/settings.permissions.tsx": "a0950fe8296a5573020ae903b29b3db04c115de817a5635b71e154a024fd3b68",
@@ -8265,6 +8265,105 @@
         "src/lib/workflows/types.ts": "3fcff34ea2c823b601ec567982d5e42c423ac2e82cf89b250bcca9985def5896",
         "src/lib/workflows/schemas.ts": "8e733227e0eb43261016eb4ed7a351b33ba959b449465bd17ff062c460998ce3",
         "src/lib/workflows/hiring-templates.ts": "7f64232a069ccbf0f41ec7dc146389e7e77e1bf60f988f836fa857d68f570d76"
+      }
+    },
+    {
+      "id": "hiring-stage5-monthly-finance",
+      "kind": "business",
+      "resources": [
+        "techfinance.provisions",
+        "techprojects.measurements",
+        "techprojects.billing_acceptance",
+        "techcontracts.contracts",
+        "system.workflows"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "approve",
+        "create"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techfinance.provisions.view.workspace",
+        "techfinance.provisions.manage.workspace",
+        "techfinance.provisions.approve.workspace",
+        "techprojects.billing_acceptance.approve.workspace"
+      ],
+      "rationale": "Immutable monthly management estimates separated from obligations. Active selected workspace, deny and contract scope; cost permission and field restrictions required. Source hash and CAS revision, monthly close, no financial entries or external sends from provisions. Existing measurement path retains segregation, closed approved hours, delivery acceptance, current signature and canonical hiring success, legacy ownership and reversals. Service-only workflow guard blocks premature governed obligations; historical data unconverted.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkRecordAccess"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0316_hiring_monthly_provisions.sql",
+          "symbol": "hiring_provision_access"
+        },
+        {
+          "file": "drizzle/migrations/0317_hiring_billing_boundaries.sql",
+          "symbol": "hiring_milestone_accept"
+        },
+        {
+          "file": "drizzle/migrations/0318_hiring_internal_cost_provisions.sql",
+          "symbol": "hiring_cost_provision_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/finance-postgres.test.ts",
+          "name": "finance allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/finance-postgres.test.ts",
+          "name": "finance rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/finance-postgres.test.ts",
+          "name": "finance rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/finance-postgres.test.ts",
+          "name": "finance rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/finance-postgres.test.ts",
+          "name": "finance rejects inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0316_hiring_monthly_provisions.sql": "1b710be448c29a7d67815f3c6a5a8edd5e61be30430ea6911c6ea897ce820bdb",
+        "drizzle/migrations/0317_hiring_billing_boundaries.sql": "18fa6f2860338bd9b01b24889169dba19c1fce0ae7cd76f1e57c2410c8314a81",
+        "src/components/projects/billing/billing-config-card.tsx": "d94765148ae5ce4f0a223e3bc3ec0fd57f0739faf0a7ca685162b4869b71cb2b",
+        "src/components/projects/billing/measurement-detail-dialog.tsx": "1ee19126c89a7bd412f2715f2baf5e1f08f981bfc0106565a9d2d8c2ebf767ab",
+        "src/routes/_authenticated/contracts.$id_.medicoes.tsx": "a30bdea79d4209cc08f18d00e1ad2db2f006d53af4f80cd485dd48db99046be1",
+        "src/components/projects/billing/provisions-panel.tsx": "3e3cbb25bd8ccebc0e63a64577c712f5a70bf537a114dc5ef1f6771c7f441bda",
+        "src/lib/hiring/finance.functions.ts": "716a7bc79b0961288473be01fddd3c9979947234e06e0076c039f554fcbaaf73",
+        "drizzle/migrations/0318_hiring_internal_cost_provisions.sql": "467b739e56392b14f739bb315eb12923e2f105b146d12cc575fd9e07fb711779"
+      }
+    },
+    {
+      "id": "hiring-stage5-presentation",
+      "kind": "presentation",
+      "rationale": "Pure billing labels, formatting and explicit mapping suggestion; no I/O, execution or permission decision. SQL and authenticated handlers own authorization.",
+      "files": {
+        "src/lib/projects/billing.shared.ts": "e62f40d357dc3ef440cc27a7ead3cc17fff83dd72da0142a8a60763395ad2c9e"
       }
     }
   ],

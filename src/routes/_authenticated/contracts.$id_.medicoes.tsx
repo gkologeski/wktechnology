@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { BillingConfigCard } from "@/components/projects/billing/billing-config-card";
 import { MeasurementsPanel } from "@/components/projects/billing/measurements-panel";
 import { ProfitabilityPanel } from "@/components/projects/billing/profitability-panel";
+import { ProvisionsPanel } from "@/components/projects/billing/provisions-panel";
 
 export const Route = createFileRoute("/_authenticated/contracts/$id_/medicoes")({
   head: () => ({
@@ -55,6 +56,7 @@ function ContractMeasurementsPage() {
       <Order3ScreenAccess resources={["techprojects.measurements"]}>
         <MeasurementsPanel contractId={id} />
       </Order3ScreenAccess>
+      <ProvisionsPanel contractId={id} />
       <Order3ScreenAccess resources={["techprojects.profitability"]}>
         <ProfitabilityPanel contractId={id} />
       </Order3ScreenAccess>
@@ -72,6 +74,7 @@ function Order3RouteAccess() {
           "techprojects.billing_config",
           "techprojects.measurements",
           "techprojects.profitability",
+          "techfinance.provisions",
         ]}
       >
         <Order3Page />

@@ -63,6 +63,7 @@ import { formatSeconds } from "@/lib/projects/time-entry.shared";
 import type { IssueItem } from "@/lib/projects/billing.types";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { acceptBillingMilestone } from "@/lib/hiring/finance.functions";
 const br = (iso: string | null) => (iso ? iso.slice(0, 10).split("-").reverse().join("/") : "—");
 const P = "techprojects.";
 
@@ -120,6 +121,7 @@ export function MeasurementDetailDialog({
     adjust: useServerFn(addMeasurementAdjustment),
     success: useServerFn(addMeasurementSuccessEvent),
     remove: useServerFn(removeMeasurementLine),
+    acceptMilestone: useServerFn(acceptBillingMilestone),
   };
   const [reason, setReason] = useState("");
   const [due, setDue] = useState("");
@@ -273,6 +275,27 @@ export function MeasurementDetailDialog({
                       <TableCell className="text-xs">
                         {l.issue ? issueLabel(l.issue) : "Incluído"}
                         {l.reason ? ` · ${l.reason}` : ""}
+                        {m.status === "draft" &&
+                          l.source_type === "milestone" &&
+                          l.source_id &&
+                          l.issue === "excluded:delivery_acceptance_missing" &&
+                          can("techprojects.billing_acceptance.approve.workspace") && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={busy || !reasonOk}
+                              onClick={() =>
+                                run(async () => {
+                                  await fns.acceptMilestone({
+                                    data: { milestoneId: l.source_id!, reference: reason.trim() },
+                                  });
+                                  await fns.refresh({ data: { id: m.id } });
+                                })
+                              }
+                            >
+                              Registrar aceite com a justificativa informada
+                            </Button>
+                          )}
                         {m.status === "draft" &&
                           (l.source_type === "adjustment" || l.source_type === "success_event") &&
                           can(`${P}measurements.manage.workspace`) && (

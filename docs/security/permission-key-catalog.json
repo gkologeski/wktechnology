@@ -895,6 +895,9 @@
     "techfinance.payments.view.workspace",
     "techfinance.payments_settings.manage.workspace",
     "techfinance.payments_settings.view.workspace",
+    "techfinance.provisions.approve.workspace",
+    "techfinance.provisions.manage.workspace",
+    "techfinance.provisions.view.workspace",
     "techfinance.recurrences.create.own",
     "techfinance.recurrences.create.workspace",
     "techfinance.recurrences.delete.own",
@@ -1527,6 +1530,7 @@
     "techprojects.alerts.view.workspace",
     "techprojects.approvers.manage.workspace",
     "techprojects.approvers.view.workspace",
+    "techprojects.billing_acceptance.approve.workspace",
     "techprojects.billing_config.manage.workspace",
     "techprojects.billing_config.view.workspace",
     "techprojects.clickup_import.manage.workspace",
@@ -2896,6 +2900,18 @@
     },
     "system.hiring_access.manage.workspace": {
       "migration": "drizzle/migrations/0311_hiring_employment_and_access_models.sql"
+    },
+    "techfinance.provisions.view.workspace": {
+      "migration": "drizzle/migrations/0316_hiring_monthly_provisions.sql"
+    },
+    "techfinance.provisions.manage.workspace": {
+      "migration": "drizzle/migrations/0316_hiring_monthly_provisions.sql"
+    },
+    "techfinance.provisions.approve.workspace": {
+      "migration": "drizzle/migrations/0316_hiring_monthly_provisions.sql"
+    },
+    "techprojects.billing_acceptance.approve.workspace": {
+      "migration": "drizzle/migrations/0317_hiring_billing_boundaries.sql"
     }
   }
 }
