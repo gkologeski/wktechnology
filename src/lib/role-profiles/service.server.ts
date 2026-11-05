@@ -131,7 +131,7 @@ export async function loadDealLines(ctx: Ctx, dealId: string): Promise<PrefillLi
   const { data, error } = await ctx.supabase
     .from("deal_line_items")
     .select(
-      "id, name, quantity, seniority, service_catalog_id, contracting_preset_id, job_profile_id, service_catalog:service_catalog_id(name), preset:contracting_preset_id(name, seniority, job_profile_id), job_profile:job_profile_id(name, seniority)",
+      "id, name, quantity, seniority, service_catalog_id, contracting_preset_id, job_profile_id, service_catalog:service_catalog_id(name, active, staffing_kind), preset:contracting_preset_id(name, seniority, job_profile_id), job_profile:job_profile_id(name, seniority)",
     )
     .eq("deal_id", dealId)
     .eq("workspace_id", ctx.workspaceId)
@@ -145,7 +145,11 @@ export async function loadDealLines(ctx: Ctx, dealId: string): Promise<PrefillLi
     service_catalog_id: string | null;
     contracting_preset_id: string | null;
     job_profile_id: string | null;
-    service_catalog: { name: string } | null;
+    service_catalog: {
+      name: string;
+      active: boolean;
+      staffing_kind: PrefillLine["catalogStaffingKind"];
+    } | null;
     preset: { name: string; seniority: string | null; job_profile_id: string | null } | null;
     job_profile: { name: string; seniority: string | null } | null;
   }>;
@@ -172,6 +176,8 @@ export async function loadDealLines(ctx: Ctx, dealId: string): Promise<PrefillLi
     seniority: r.seniority,
     service_catalog_id: r.service_catalog_id,
     catalogName: r.service_catalog?.name ?? null,
+    catalogActive: r.service_catalog?.active,
+    catalogStaffingKind: r.service_catalog?.staffing_kind,
     contracting_preset_id: r.contracting_preset_id,
     job_profile_id: r.job_profile_id,
     preset: r.preset,

@@ -1,3 +1,4 @@
+import { HiringDemandPanel } from "@/components/hiring/hiring-demand-panel";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { HrScreenAccess, HrRecordAccess, HrAccessError } from "@/components/hr-access";
 import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
@@ -55,6 +56,9 @@ import {
 } from "@/components/ats/jobs/hiring-outcome-dialog";
 
 export const Route = createFileRoute("/_authenticated/(ats)/jobs/$id")({
+  validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
+    tab: typeof search.tab === "string" ? search.tab : undefined,
+  }),
   component: JobDetailPage,
 });
 
@@ -101,7 +105,9 @@ function JobDetailContent() {
     {},
   );
   const [evalApp, setEvalApp] = useState<App | null>(null);
-  const [tab, setTab] = useState<string>("pipeline");
+  const [tab, setTab] = useState<string>(
+    Route.useSearch().tab === "hiring" ? "hiring" : "pipeline",
+  );
   const [scheduleApp, setScheduleApp] = useState<App | null>(null);
   // Fase 2: mover para etapa de desfecho "ganho" abre o diálogo de contratação.
   const [hiringMove, setHiringMove] = useState<{ app: App; toStage: string } | null>(null);
@@ -477,6 +483,9 @@ function JobDetailContent() {
         center={
           <Tabs value={tab} onValueChange={setTab} className="space-y-4">
             <TabsList>
+              {can("techhire.hiring_demands.view.workspace") && (
+                <TabsTrigger value="hiring">Demanda e aprovações</TabsTrigger>
+              )}
               <TabsTrigger value="overview">Visão geral</TabsTrigger>
               <TabsTrigger value="pipeline">
                 Pipeline <span className="ml-1 text-[10px] text-text-tertiary">({totalApps})</span>
@@ -489,6 +498,11 @@ function JobDetailContent() {
               <TabsTrigger value="activity">Atividade</TabsTrigger>
             </TabsList>
 
+            {can("techhire.hiring_demands.view.workspace") && (
+              <TabsContent value="hiring">
+                <HiringDemandPanel jobId={id} />
+              </TabsContent>
+            )}
             <TabsContent value="overview" className="mt-0">
               <JobOverviewPanel
                 description={jobAny.description ?? null}

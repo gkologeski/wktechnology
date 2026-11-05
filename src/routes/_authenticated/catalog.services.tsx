@@ -6,6 +6,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useAuth } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -56,6 +57,7 @@ type ServiceCatalog = {
   competencies: string[];
   tags: string[];
   active: boolean;
+  staffing_kind: "none" | "hunting" | "outsourcing" | "squad" | null;
 };
 
 type Draft = Partial<ServiceCatalog>;
@@ -88,6 +90,8 @@ function unitLabel(v: string) {
 
 function ServiceCatalogPage() {
   const { user } = useAuth();
+  const { can } = usePermissions();
+  const canClassify = can("techsales.catalog.services.update.workspace");
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<ServiceCatalog | null>(null);
@@ -172,6 +176,7 @@ function ServiceCatalogPage() {
       competencies: draft.competencies ?? [],
       tags: draft.tags ?? [],
       active: draft.active ?? true,
+      ...(canClassify ? { staffing_kind: draft.staffing_kind ?? null } : {}),
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const sb = supabase as any;
@@ -495,6 +500,34 @@ function ServiceCatalogPage() {
                   }
                 />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Integração com recrutamento</Label>
+              <Select
+                value={draft.staffing_kind ?? "legacy"}
+                disabled={!canClassify}
+                onValueChange={(v) =>
+                  setDraft({
+                    ...draft,
+                    staffing_kind: v === "legacy" ? null : (v as ServiceCatalog["staffing_kind"]),
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="legacy">Compatibilidade pelo catálogo</SelectItem>
+                  <SelectItem value="none">Sem recrutamento</SelectItem>
+                  <SelectItem value="hunting">Hunting</SelectItem>
+                  <SelectItem value="outsourcing">Outsourcing</SelectItem>
+                  <SelectItem value="squad">Squad</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Classificação explícita prevalece sobre o nome do serviço. Exige edição do catálogo
+                no workspace.
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <Switch

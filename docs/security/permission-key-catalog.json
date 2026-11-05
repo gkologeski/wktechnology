@@ -621,6 +621,7 @@
     "system.whatsapp.view.own",
     "system.whatsapp.view.team",
     "system.whatsapp.view.workspace",
+    "system.whatsapp_suppressions.manage.workspace",
     "system.widget.create.own",
     "system.widget.create.workspace",
     "system.widget.delete.own",
@@ -1003,6 +1004,11 @@
     "techhire.fraud_flags.view.team",
     "techhire.fraud_flags.view.workspace",
     "techhire.hiring.approve.workspace",
+    "techhire.hiring_demands.approve.workspace",
+    "techhire.hiring_demands.create.workspace",
+    "techhire.hiring_demands.update.workspace",
+    "techhire.hiring_demands.view.workspace",
+    "techhire.hiring_policies.manage.workspace",
     "techhire.hiring_reversal.manage.workspace",
     "techhire.hiring_terms.update.own",
     "techhire.hiring_terms.update.team",
@@ -2768,8 +2774,7 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace",
-    "system.whatsapp_suppressions.manage.workspace"
+    "techservice.tickets.view.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -2852,6 +2857,21 @@
     },
     "system.whatsapp_suppressions.manage.workspace": {
       "migration": "drizzle/migrations/0302_whatsapp_suppression_release_permission.sql"
+    },
+    "techhire.hiring_demands.view.workspace": {
+      "migration": "drizzle/migrations/0308_hiring_demands_and_approvals.sql"
+    },
+    "techhire.hiring_demands.update.workspace": {
+      "migration": "drizzle/migrations/0308_hiring_demands_and_approvals.sql"
+    },
+    "techhire.hiring_demands.create.workspace": {
+      "migration": "drizzle/migrations/0308_hiring_demands_and_approvals.sql"
+    },
+    "techhire.hiring_demands.approve.workspace": {
+      "migration": "drizzle/migrations/0308_hiring_demands_and_approvals.sql"
+    },
+    "techhire.hiring_policies.manage.workspace": {
+      "migration": "drizzle/migrations/0308_hiring_demands_and_approvals.sql"
     }
   }
 }

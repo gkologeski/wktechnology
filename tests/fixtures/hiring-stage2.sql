@@ -1,0 +1,22 @@
+
+CREATE ROLE authenticated NOLOGIN NOBYPASSRLS; CREATE ROLE anon NOLOGIN; CREATE ROLE service_role NOLOGIN BYPASSRLS; CREATE SCHEMA auth;
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT nullif(current_setting('request.uid',true),'')::uuid $$;
+CREATE TABLE workspaces(id uuid PRIMARY KEY);
+CREATE TABLE profiles(id uuid PRIMARY KEY,active_workspace_id uuid,full_name text);
+CREATE TABLE workspace_members(workspace_id uuid,user_id uuid,status text DEFAULT 'active',role text DEFAULT 'admin');
+CREATE TABLE permissions(key text PRIMARY KEY,module text,resource text,action text,scope text,label_pt text,description text,is_system boolean);
+CREATE TABLE grants(user_id uuid,key text,effect text);
+CREATE TABLE user_groups(id uuid PRIMARY KEY,workspace_id uuid,name text);
+CREATE TABLE service_catalog(id uuid PRIMARY KEY,workspace_id uuid,active boolean DEFAULT true,name text);
+CREATE TABLE deal_line_items(id uuid PRIMARY KEY,workspace_id uuid,service_catalog_id uuid,deal_id uuid);
+CREATE TABLE deal_role_profiles(id uuid PRIMARY KEY,workspace_id uuid,deal_id uuid);
+CREATE TABLE quote_line_items(LIKE deal_line_items);
+CREATE TABLE deals(id uuid PRIMARY KEY,workspace_id uuid,deleted_at timestamptz);
+CREATE TABLE ats_jobs(id uuid PRIMARY KEY,workspace_id uuid,title text,status text DEFAULT 'draft',employment_type text,deal_id uuid,updated_at timestamptz);
+CREATE TABLE notifications(id uuid DEFAULT gen_random_uuid(),workspace_id uuid,owner_id uuid,user_id uuid,type text,title text,body text,link text,entity text,entity_id uuid,dedupe_key text UNIQUE);
+CREATE FUNCTION is_workspace_member(w uuid,u uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT EXISTS(SELECT 1 FROM workspace_members WHERE workspace_id=w AND user_id=u AND status='active') $$;
+CREATE FUNCTION user_has_permission(u uuid,w uuid,k text) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT EXISTS(SELECT 1 FROM grants WHERE user_id=u AND key=k AND effect='grant') AND NOT EXISTS(SELECT 1 FROM grants WHERE user_id=u AND key=k AND effect='deny') $$;
+CREATE FUNCTION is_read_only_view() RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT false $$;
+CREATE FUNCTION hr_record_access(r text,a text,j uuid) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT EXISTS(SELECT 1 FROM ats_jobs JOIN profiles p ON p.id=auth.uid() WHERE ats_jobs.id=j AND ats_jobs.workspace_id=p.active_workspace_id) $$;
+GRANT USAGE ON SCHEMA public,auth TO authenticated;
+GRANT SELECT,INSERT,UPDATE ON ats_jobs TO authenticated;

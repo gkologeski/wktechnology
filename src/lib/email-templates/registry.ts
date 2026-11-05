@@ -23,10 +23,13 @@ import { template as dunningNotice } from "./dunning-notice";
 import { template as activityReminder } from "./activity-reminder";
 import { template as roleProfileApproval } from "./role-profile-approval";
 
+import { template as hiringDemandApproval } from "./hiring-demand-approval";
+
 export const TEMPLATES: Record<string, TemplateEntry> = {
   "mention-notification": mentionNotification,
   "workspace-invite": workspaceInvite,
   "dunning-notice": dunningNotice,
   "activity-reminder": activityReminder,
   "role-profile-approval": roleProfileApproval,
+  "hiring-demand-approval": hiringDemandApproval,
 };

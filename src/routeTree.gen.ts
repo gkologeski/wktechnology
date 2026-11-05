@@ -350,6 +350,7 @@ import { Route as ApiPublicHooksContaazulTickRouteImport } from './routes/api/pu
 import { Route as ApiPublicHooksDunningTickRouteImport } from './routes/api/public/hooks/dunning-tick'
 import { Route as ApiPublicHooksEmailBroadcastTickRouteImport } from './routes/api/public/hooks/email-broadcast-tick'
 import { Route as ApiPublicHooksEmailSyncTickRouteImport } from './routes/api/public/hooks/email-sync-tick'
+import { Route as ApiPublicHooksHiringApprovalsTickRouteImport } from './routes/api/public/hooks/hiring-approvals-tick'
 import { Route as ApiPublicHooksHubspotTickRouteImport } from './routes/api/public/hooks/hubspot-tick'
 import { Route as ApiPublicHooksLinkedinApplicantsSyncRouteImport } from './routes/api/public/hooks/linkedin-applicants-sync'
 import { Route as ApiPublicHooksMeetingRemindersTickRouteImport } from './routes/api/public/hooks/meeting-reminders-tick'
@@ -2388,6 +2389,12 @@ const ApiPublicHooksEmailSyncTickRoute =
     path: '/api/public/hooks/email-sync-tick',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksHiringApprovalsTickRoute =
+  ApiPublicHooksHiringApprovalsTickRouteImport.update({
+    id: '/api/public/hooks/hiring-approvals-tick',
+    path: '/api/public/hooks/hiring-approvals-tick',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksHubspotTickRoute =
   ApiPublicHooksHubspotTickRouteImport.update({
     id: '/api/public/hooks/hubspot-tick',
@@ -3185,6 +3192,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
+  '/api/public/hooks/hiring-approvals-tick': typeof ApiPublicHooksHiringApprovalsTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/meeting-reminders-tick': typeof ApiPublicHooksMeetingRemindersTickRoute
@@ -3602,6 +3610,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
+  '/api/public/hooks/hiring-approvals-tick': typeof ApiPublicHooksHiringApprovalsTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/meeting-reminders-tick': typeof ApiPublicHooksMeetingRemindersTickRoute
@@ -4028,6 +4037,7 @@ export interface FileRoutesById {
   '/api/public/hooks/dunning-tick': typeof ApiPublicHooksDunningTickRoute
   '/api/public/hooks/email-broadcast-tick': typeof ApiPublicHooksEmailBroadcastTickRoute
   '/api/public/hooks/email-sync-tick': typeof ApiPublicHooksEmailSyncTickRoute
+  '/api/public/hooks/hiring-approvals-tick': typeof ApiPublicHooksHiringApprovalsTickRoute
   '/api/public/hooks/hubspot-tick': typeof ApiPublicHooksHubspotTickRoute
   '/api/public/hooks/linkedin-applicants-sync': typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   '/api/public/hooks/meeting-reminders-tick': typeof ApiPublicHooksMeetingRemindersTickRoute
@@ -4454,6 +4464,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
+    | '/api/public/hooks/hiring-approvals-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/meeting-reminders-tick'
@@ -4871,6 +4882,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
+    | '/api/public/hooks/hiring-approvals-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/meeting-reminders-tick'
@@ -5296,6 +5308,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/dunning-tick'
     | '/api/public/hooks/email-broadcast-tick'
     | '/api/public/hooks/email-sync-tick'
+    | '/api/public/hooks/hiring-approvals-tick'
     | '/api/public/hooks/hubspot-tick'
     | '/api/public/hooks/linkedin-applicants-sync'
     | '/api/public/hooks/meeting-reminders-tick'
@@ -5460,6 +5473,7 @@ export interface RootRouteChildren {
   ApiPublicHooksDunningTickRoute: typeof ApiPublicHooksDunningTickRoute
   ApiPublicHooksEmailBroadcastTickRoute: typeof ApiPublicHooksEmailBroadcastTickRoute
   ApiPublicHooksEmailSyncTickRoute: typeof ApiPublicHooksEmailSyncTickRoute
+  ApiPublicHooksHiringApprovalsTickRoute: typeof ApiPublicHooksHiringApprovalsTickRoute
   ApiPublicHooksHubspotTickRoute: typeof ApiPublicHooksHubspotTickRoute
   ApiPublicHooksLinkedinApplicantsSyncRoute: typeof ApiPublicHooksLinkedinApplicantsSyncRoute
   ApiPublicHooksMeetingRemindersTickRoute: typeof ApiPublicHooksMeetingRemindersTickRoute
@@ -7919,6 +7933,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEmailSyncTickRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/hiring-approvals-tick': {
+      id: '/api/public/hooks/hiring-approvals-tick'
+      path: '/api/public/hooks/hiring-approvals-tick'
+      fullPath: '/api/public/hooks/hiring-approvals-tick'
+      preLoaderRoute: typeof ApiPublicHooksHiringApprovalsTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/hubspot-tick': {
       id: '/api/public/hooks/hubspot-tick'
       path: '/api/public/hooks/hubspot-tick'
@@ -9485,6 +9506,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksDunningTickRoute: ApiPublicHooksDunningTickRoute,
   ApiPublicHooksEmailBroadcastTickRoute: ApiPublicHooksEmailBroadcastTickRoute,
   ApiPublicHooksEmailSyncTickRoute: ApiPublicHooksEmailSyncTickRoute,
+  ApiPublicHooksHiringApprovalsTickRoute:
+    ApiPublicHooksHiringApprovalsTickRoute,
   ApiPublicHooksHubspotTickRoute: ApiPublicHooksHubspotTickRoute,
   ApiPublicHooksLinkedinApplicantsSyncRoute:
     ApiPublicHooksLinkedinApplicantsSyncRoute,

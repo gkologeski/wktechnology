@@ -139,3 +139,25 @@ describe("despacho de avisos", () => {
     expect(d.claim).not.toHaveBeenCalled();
   });
 });
+
+it("accepts Squad catalog and honors explicit classification and inactive services", () => {
+  expect(
+    computeEligibility([{ service_catalog_id: "catalog", catalogName: "Alocação de Squad" }])
+      .eligible,
+  ).toBe(true);
+  expect(
+    computeEligibility([
+      { service_catalog_id: "catalog", catalogName: "Outsourcing", catalogStaffingKind: "none" },
+    ]).eligible,
+  ).toBe(false);
+  expect(
+    computeEligibility([
+      { service_catalog_id: "catalog", catalogName: "Squad", catalogActive: false },
+    ]).eligible,
+  ).toBe(false);
+  expect(
+    computeEligibility([
+      { service_catalog_id: "catalog", catalogName: "Equipe", catalogStaffingKind: "squad" },
+    ]).kinds,
+  ).toEqual(["outsourcing"]);
+});

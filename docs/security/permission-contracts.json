@@ -7762,6 +7762,172 @@
       "files": {
         "src/lib/forms/public-form-gate.ts": "7f3204e939f24ee33c54b39910c7a370ba0861d8f322b1c50fa718ff09684ea0"
       }
+    },
+    {
+      "id": "hiring-stage2-demand-approval",
+      "kind": "business",
+      "resources": [
+        "techhire.hiring_demands",
+        "techhire.hiring_policies",
+        "techsales.catalog.services"
+      ],
+      "actions": [
+        "view",
+        "update",
+        "create",
+        "approve",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techhire.hiring_demands.view.workspace",
+        "techhire.hiring_demands.update.workspace",
+        "techhire.hiring_demands.create.workspace",
+        "techhire.hiring_demands.approve.workspace",
+        "techhire.hiring_policies.manage.workspace",
+        "techsales.catalog.services.update.workspace"
+      ],
+      "rationale": "Caller-authenticated RPCs enforce active workspace membership, effective keys with deny, HR record visibility, named approvers, requester exclusion and revision locks. No new grants to all roles. Historical jobs remain outside governance; configured workspaces govern new demands. Catalog classification preserves canonical none and inactive excludes new role profiles.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "can"
+        },
+        {
+          "file": "src/components/hiring/hiring-demand-panel.tsx",
+          "symbol": "HiringDemandPanel"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0308_hiring_demands_and_approvals.sql",
+          "symbol": "hiring_demand_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/hiring-postgres.test.ts",
+          "name": "hiring allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/hiring-postgres.test.ts",
+          "name": "hiring rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/hiring-postgres.test.ts",
+          "name": "hiring rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/hiring-postgres.test.ts",
+          "name": "hiring rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/hiring-postgres.test.ts",
+          "name": "hiring rejects inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0308_hiring_demands_and_approvals.sql": "bda3034b719861a0ad28eeabc732934a730638c2d1e563ad46e81d9cf451437a",
+        "src/lib/hiring/hiring.functions.ts": "2f25c0dee65152cf990f4a6500f26b0af5f34c285d6d619f46d87ec237b024df",
+        "src/components/hiring/hiring-demand-panel.tsx": "030c931bfe136732be9b5688bc60d2b3c292a1372b9a80e4000a1a37a356f55e",
+        "src/routes/_authenticated/(ats)/jobs.$id.tsx": "79e1d5ab71442f45778f1e5682754f6c4b31d54d397aa893699da8ee7a3f99e4",
+        "src/lib/role-profiles/service.server.ts": "ecb16e162437e63ab9f458f131bf1a664faa08c648989b79e5592e8c210976f5",
+        "src/routes/_authenticated/catalog.services.tsx": "1c74fdb8057b7e7cf742c694756605fd3214024bf141a16dfafac82bad4f5f11"
+      }
+    },
+    {
+      "id": "hiring-stage2-classification",
+      "kind": "presentation",
+      "rationale": "Pure catalog classification only, no database access or mutation. Canonical none and inactive exclude; Squad maps to existing Outsourcing modality. Server role-profile authorization remains unchanged.",
+      "files": {
+        "src/lib/role-profiles/eligibility.ts": "fb933ff1c2c4b83c1d004e99b95370f92d1cbd6af05c0a46a0fec09b8856387e"
+      }
+    },
+    {
+      "id": "hiring-approval-email-worker",
+      "kind": "service",
+      "rationale": "Cron bearer secret only; service_role-only claim resolves recipients from current pending approved-chain rows, active members and effective view/approve permissions. No input workspace or email, five attempts, provider idempotency; notification contains link only.",
+      "files": {
+        "src/lib/hiring/hiring-email.server.ts": "41d3123e410391f08050bed5d04b447ccd8918a01fd196836f55b26a752fea4e",
+        "src/routes/api/public/hooks/hiring-approvals-tick.ts": "f7a48618567b59fcc17dd33ff2b8a303995a660bd255fe173cdd18de2765a7f8"
+      },
+      "resources": [
+        "techhire.hiring_demands"
+      ],
+      "actions": [
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [],
+      "controls": [
+        {
+          "file": "src/lib/cron-auth.server.ts",
+          "symbol": "requireCronAuth"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0308_hiring_demands_and_approvals.sql",
+          "symbol": "hiring_email_claim"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/hiring-postgres.test.ts",
+          "name": "hiring allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/hiring-postgres.test.ts",
+          "name": "hiring rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/hiring-postgres.test.ts",
+          "name": "hiring rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/hiring-postgres.test.ts",
+          "name": "hiring rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/hiring-postgres.test.ts",
+          "name": "hiring rejects inactive member"
+        }
+      },
+      "exception": {
+        "mechanism": "Server-only CRON_SECRET; private service-role claim with SKIP LOCKED and current named approvers.",
+        "boundary": "No caller parameters. Database resolves workspace and recipients from the locked demand revision; membership and effective permissions checked at claim.",
+        "revocation": "Revoked permission, inactive membership or superseded revision excludes queued deliveries; rotating CRON_SECRET revokes trigger access.",
+        "review_by": "2027-05-05"
+      }
+    },
+    {
+      "id": "hiring-approval-email-template",
+      "kind": "presentation",
+      "rationale": "Email presentation and template registry only; no data reads, writes, credentials or recipients resolved here.",
+      "files": {
+        "src/lib/email-templates/hiring-demand-approval.tsx": "1ec191604ab92237bfee6311fe6c5f852409bf1d6310850dabc1f8368945f3b7",
+        "src/lib/email-templates/registry.ts": "c0624fef520c91f974889de81cbb3ba73742ed22176126bf3f21c4d8f8f71169"
+      }
     }
   ],
   "retired": {}

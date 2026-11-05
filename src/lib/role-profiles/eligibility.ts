@@ -17,21 +17,29 @@ export type StaffingKind = "hunting" | "outsourcing";
 export function staffingKindOf(catalogName: string | null | undefined): StaffingKind | null {
   const n = normalizeText(catalogName);
   if (n.includes("hunting")) return "hunting";
-  if (n.includes("outsourcing")) return "outsourcing";
+  if (n.includes("outsourcing") || n.includes("squad")) return "outsourcing";
   return null;
 }
 
 export type EligibilityLine = {
   service_catalog_id: string | null;
   catalogName: string | null;
+  catalogActive?: boolean;
+  catalogStaffingKind?: "none" | "hunting" | "outsourcing" | "squad" | null;
 };
+
+export function lineStaffingKind(l: EligibilityLine): StaffingKind | null {
+  if (l.catalogActive === false || l.catalogStaffingKind === "none") return null;
+  if (l.catalogStaffingKind === "squad") return "outsourcing";
+  return l.catalogStaffingKind ?? staffingKindOf(l.catalogName);
+}
 
 export function computeEligibility(lines: EligibilityLine[]) {
   const services = new Set<string>();
   const kinds = new Set<StaffingKind>();
   for (const l of lines) {
     if (!l.service_catalog_id) continue;
-    const k = staffingKindOf(l.catalogName);
+    const k = lineStaffingKind(l);
     if (!k) continue;
     kinds.add(k);
     services.add(l.catalogName!);
@@ -64,6 +72,8 @@ export type PrefillLine = {
   seniority: string | null;
   service_catalog_id: string | null;
   catalogName: string | null;
+  catalogActive?: boolean;
+  catalogStaffingKind?: "none" | "hunting" | "outsourcing" | "squad" | null;
   contracting_preset_id: string | null;
   job_profile_id: string | null;
   preset: { name: string; seniority: string | null; job_profile_id: string | null } | null;
@@ -88,7 +98,7 @@ export type PrefillSuggestion = {
  * preset > cargo. Só itens de Hunting/Outsourcing com cargo ou preset entram.
  */
 export function suggestionFromLine(l: PrefillLine): PrefillSuggestion | null {
-  const kind = l.service_catalog_id ? staffingKindOf(l.catalogName) : null;
+  const kind = l.service_catalog_id ? lineStaffingKind(l) : null;
   if (!kind) return null;
   const jobProfileId = l.job_profile_id ?? l.preset?.job_profile_id ?? null;
   if (!jobProfileId && !l.contracting_preset_id) return null;
