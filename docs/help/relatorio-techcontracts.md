@@ -8,7 +8,7 @@ Somente Ajuda e Treinamento. Nenhuma funcionalidade de contratos, assinatura, co
 
 ## 3. Arquivos criados
 - `docs/help/contracts/*.md`: 52 artigos.
-- `drizzle/migrations/0307_help_seed_contracts.sql`: conteúdo idempotente para aceite.
+- `drizzle/migrations/0308_help_seed_contracts.sql`: conteúdo idempotente para aceite, após conciliação do histórico.
 - `db/seed.sql`: artigos novos reaplicáveis em futuros rascunhos, sem dados pessoais ou contas.
 - `src/lib/help/help-contracts-access.test.ts`: cinco cenários de leitura.
 - Este relatório.
@@ -47,7 +47,7 @@ A aplicação inicial recusou UPDATE pelo papel de execução do rascunho. `db/s
 Cinco novos testes exercitam o controle real de leitura de artigos do TechContracts: permitido, ausência de chave do módulo, deny, outro workspace e membro inativo. Oito testes existentes da Ajuda preservados.
 
 ## 10. Banco e migrations
-Somente artigos adicionados neste rascunho. Nenhuma tabela, policy, GRANT ou registro operacional alterado. Nova migration registrada no journal, sem editar migrations anteriores. O nome completo é distinto, mas prefixo 0307 coexiste com uma migration concorrente; gerador e drizzle-kit check aceitam a sequência. Tentativa de renumeração do journal protegido foi recusada; conferir concorrência no aceite. Aceitar leva as mudanças registradas para o app; dados próprios do rascunho não são copiados.
+Somente artigos adicionados neste rascunho. Nenhuma tabela, policy, GRANT ou registro operacional alterado. Histórico conciliado: `0306_help_center`, `0307_help_seed_crm` e `0308_help_seed_contracts`. Aceitar leva as mudanças registradas para o app; dados próprios do rascunho não são copiados.
 
 ## 11. Segurança e privacidade
 Nenhum segredo, credencial, dado real de cliente ou conta de exemplo incluído nos artigos. Mesmas barreiras da Ajuda. Nenhuma concessão de permissão e nenhum efeito externo.
