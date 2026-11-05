@@ -28,7 +28,7 @@ describe("Publicação editorial da Ajuda", () => {
     expect(() =>
       assertHelpReleaseAccess({
         ...input,
-        grants: [...input.grants, { ...input.grants[0], effect: "deny" }],
+        grants: [...input.grants, { workspaceId: input.activeWorkspaceId ?? "", key: "techservice.kb.update.workspace", effect: "deny" }],
       }),
     ).toThrow();
   });
@@ -36,7 +36,7 @@ describe("Publicação editorial da Ajuda", () => {
     expect(() =>
       assertHelpReleaseAccess({
         ...input,
-        grants: [{ ...input.grants[0], workspaceId: "22222222-2222-2222-2222-222222222222" }],
+        grants: [{ key: "techservice.kb.update.workspace", effect: "allow", workspaceId: "22222222-2222-2222-2222-222222222222" }],
       }),
     ).toThrow();
   });

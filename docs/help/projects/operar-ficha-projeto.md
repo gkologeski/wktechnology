@@ -7,7 +7,7 @@ article_type: howto
 route_pattern: /projects/$id
 min_permission: techprojects.projects.view.own
 audience: internal
-sort_order: 
+sort_order: 10
 version: 1
 is_published: true
 ---

@@ -32,7 +32,7 @@ banking_sync.manage.workspace; bank_charge_issuance.manage.workspace; bank_charg
 finance_entry_access, finance_payment_access, finance_recurrence_access/capabilities e finance_business_authorize limitam ações de registro. RLS e RPCs completam os controles do cliente. Não orientar concessão automática para todos os cargos.
 
 ## Limite da Ajuda
-`min_permission` admite uma chave, mas vários menus aceitam qualquer chave de uma lista. Os howtos usam uma chave real dessa lista;
+`min_permission` admite uma chave exata, mas vários menus aceitam qualquer chave de uma lista. Um artigo pode ficar indisponível para um escopo alternativo legítimo. A Ajuda não altera suas permissões; solicite revisão editorial se o material não aparecer.
 
 ## Para solicitar acesso
 Informe tela, ação desejada e contexto sem dados privados. O administrador deve revisar cargo, deny, membership, licença e escopo. Não conceda manage apenas para liberar leitura.

@@ -17,7 +17,7 @@ is_published: true
 Não. Cadastro de título é interno. Cobrança bancária e emissão fiscal são fluxos separados; o adaptador NFS-e atual está indisponível.
 
 ## Dar baixa transfere dinheiro?
-Não necessariamente. A baixa manual registra o fato financeiro; execução bancária é operação separada.
+Não. A baixa manual registra o fato financeiro; execução bancária é operação separada.
 
 ## Posso quitar arrastando o Kanban?
 Não. O status dos títulos deriva de pagamentos; Kanban é somente leitura para essa finalidade.
@@ -35,7 +35,7 @@ O regime muda o critério temporal: competência do título ou data de pagamento
 Não necessariamente. O consolidado pode eliminar lançamentos intercompany entre seus CNPJs.
 
 ## Centro de custo tem cadastro nesta tela?
-Não foi confirmado. A rota atual é de consulta de estrutura e vínculos.
+Não. A rota atual é de consulta de estrutura e vínculos.
 
 ## Posso editar venda importada nesta listagem?
 Não. Vendas importadas é somente leitura.
@@ -53,3 +53,4 @@ Não. É configuração; envio depende de execução e canal. Um template intern
 Não. É configuração financeira, não autorização RBAC.
 
 ## Por que tenho acesso à tela, mas não ao artigo?
+O artigo pode exigir uma chave exata diferente do seu escopo de leitura. Solicite revisão editorial; acesso ao material nunca concede acesso aos dados.
