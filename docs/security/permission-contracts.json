@@ -8719,6 +8719,10 @@
         {
           "file": "src/lib/help/help-release.functions.ts",
           "symbol": "releaseOfficialHelp"
+        },
+        {
+          "file": "src/components/help/help-release-button.tsx",
+          "symbol": "HelpReleaseButton"
         }
       ],
       "database": [
@@ -8771,12 +8775,11 @@
         "src/lib/help/help.functions.ts": "0260dd4f828edd828081c573d690b89972683bea105c1c5eef9302cd4a85e5fe",
         "src/routes/_authenticated/ajuda.$module.$slug.tsx": "6248f72c7387f4fdfcafae3a01f142f747c86e587b51710135b3b507f23d6b6d",
         "src/routes/_authenticated/ajuda.$module.index.tsx": "017f84e9351276c27397edd536205a8f03be2f928a855921a02e4813fbef048b",
-        "src/routes/_authenticated/ajuda.index.tsx": "d28391b5c8cdb94c649b35bcc5f4606e23b12ea003d1472da38fbd1b3956dac3",
+        "src/routes/_authenticated/ajuda.index.tsx": "8251226247e0fe0de98ce845035b27afa54b61bd41d8db1276a968d6563ebc63",
         "drizzle/migrations/0308_help_seed_contracts.sql": "8ab1cb5450bcebb357720b90a43d866559b72ab65fe89e2eb4decf6be831ff6b",
-        "src/lib/help/help-release.functions.ts": "893c44b4acfa633340ceddda752ae7c58d8cb87304e8747ef69f0a777bf7bd38",
+        "src/lib/help/help-release.functions.ts": "1e0ee0198ba91c400c61bfa9f39e947c10688a6a2942a61918a49733f03aba89",
         "src/lib/help/help-release.ts": "9b4053883f951d96ab109914f379cec68e17e8a739dacb99151d08dbc8465a49",
-        "src/lib/help/official-catalogue.json": "c82f7d9a620734ca40be0197b38ec67928648735770fede3fa105a865b62e311",
-        "src/components/help/help-release-button.tsx": "9bf21b6d6f22a3c5e4c433eeb247340e8d13c71591ef42d388c711ea66b809e5"
+        "src/components/help/help-release-button.tsx": "0285a39975519e3f72429053954fffce35ba6dd7e50afaf77997097dc516ed78"
       }
     },
     {
