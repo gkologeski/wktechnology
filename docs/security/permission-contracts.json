@@ -8773,7 +8773,7 @@
       "rationale": "Pure helpers of the Help area: Markdown rendering without raw HTML, route_pattern matching and table-of-contents/highlight parsing. No I/O, routes, actions, grants or data access; data comes only from help.functions under the help-center contract.",
       "files": {
         "src/components/help/help-markdown.tsx": "d2d110950c73b7e155cd05c1408bd06495f0c628372c7ca01f2ae1ca584e20b0",
-        "src/lib/help/help-route-match.ts": "54516dc383febca2ae1478daf2040cd794febefb2eb76729bfb6fb7ba9281ba8",
+        "src/lib/help/help-route-match.ts": "a7d082b67a754023df5f534e4f3a599ff1bc2df18d6637c3b0a2f0d9134de7b9",
         "src/lib/help/help-toc.ts": "da95180b180a9537c4be0d6f096419d10619050fc4f70bf26a2c52787de66207"
       }
     }

@@ -53,8 +53,18 @@ describe.each([
 
 describe("Ajuda — caminhos oficiais do roteador", () => {
   it("escolhe prioridade editorial estável mesmo quando a ordem da consulta muda", () => {
-    const first = { route_pattern: "/contracts", article_type: "howto", sort_order: 10, slug: "consultar" };
-    const second = { route_pattern: "/contracts", article_type: "howto", sort_order: 20, slug: "editar" };
+    const first = {
+      route_pattern: "/contracts",
+      article_type: "howto",
+      sort_order: 10,
+      slug: "consultar",
+    };
+    const second = {
+      route_pattern: "/contracts",
+      article_type: "howto",
+      sort_order: 20,
+      slug: "editar",
+    };
     expect(pickRouteArticle([second, first], "/contracts")).toEqual(first);
     expect(pickRouteArticle([first, second], "/contracts")).toEqual(first);
   });
