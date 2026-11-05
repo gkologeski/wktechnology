@@ -28,11 +28,11 @@ Custos por hora mantêm origem; mensais são contabilizados uma vez por alocaç�
 
 ## Segurança e rollout
 
-Migrações 0316–0319 aditivas, flag `finance_gate_enabled` desligada por padrão. Ativar somente WK após verificar commit/CI/hash publicado. Nenhuma configuração, provisão, aceite ou título de cliente é criado automaticamente pela migração. Modelos nativos e históricos não são ativados em massa. Leitura não grava.
+Migrações 0316–0320 aditivas, flag `finance_gate_enabled` desligada por padrão. Ativar somente WK após verificar commit/CI/hash publicado. Nenhuma configuração, provisão, aceite ou título de cliente é criado automaticamente pela migração. Modelos nativos e históricos não são ativados em massa. Leitura não grava.
 
 Permissões gerenciáveis: `techfinance.provisions.view/manage/approve.workspace` e `techprojects.billing_acceptance.approve.workspace`. Provisões também exigem tarifa/custo visível e contrato acessível; regras de campo hidden/masked bloqueiam o snapshot sensível. Membership ativo, workspace selecionado, deny e Ver Como somente leitura são conferidos na fronteira SQL e nos handlers. Tabela de provisão permite só SELECT autenticado sob RLS; escrita pelas RPCs, revisões imutáveis. Funções internas e guard de worker não são APIs públicas.
 
-A geração financeira revalida o contrato assinado na versão atual e segura seu registro durante a criação. Contrato encerrado pode acertar competência dentro da vigência; mês posterior não pode ser cobrado. Isso não reabre recrutamento nem permite nova alocação após o encerramento. Workflows governados não geram parcelas antecipadas e workers legados cedem quando a medição já é dona da cobrança do negócio: usar provisão e medição; há guarda no worker antes do efeito e gatilho de banco para títulos legados dessa origem.
+A geração financeira revalida o contrato assinado na versão atual e segura seu registro durante a criação. Contrato encerrado pode acertar competência dentro da vigência; mês posterior não pode ser cobrado. Evento confirmado de Hunting na competência pode ser medido após o encerramento, sem exigir autorização atual para novo recrutamento. Isso não reabre recrutamento nem permite nova alocação após o encerramento. Workflows governados não geram parcelas antecipadas e workers legados cedem quando a medição já é dona da cobrança do negócio: usar provisão e medição; há guarda no worker antes do efeito e gatilho de banco para títulos legados dessa origem.
 
 ## Validação
 

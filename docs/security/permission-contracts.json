@@ -8327,6 +8327,10 @@
         {
           "file": "drizzle/migrations/0319_hiring_legacy_billing_ownership.sql",
           "symbol": "hiring_financial_entry_guard"
+        },
+        {
+          "file": "drizzle/migrations/0320_hiring_completed_success_settlement.sql",
+          "symbol": "project_measurement_add_success_event"
         }
       ],
       "tests": {
@@ -8360,7 +8364,8 @@
         "src/components/projects/billing/provisions-panel.tsx": "45d3c4a8a3f32c87ec32515474d0625b59b60bcbd7878a1df59b9b3af90394af",
         "src/lib/hiring/finance.functions.ts": "716a7bc79b0961288473be01fddd3c9979947234e06e0076c039f554fcbaaf73",
         "drizzle/migrations/0318_hiring_internal_cost_provisions.sql": "467b739e56392b14f739bb315eb12923e2f105b146d12cc575fd9e07fb711779",
-        "drizzle/migrations/0319_hiring_legacy_billing_ownership.sql": "c06bb6598ca2da08d091460a01e23e91e0dd60012105977b0ed0291363fdb348"
+        "drizzle/migrations/0319_hiring_legacy_billing_ownership.sql": "c06bb6598ca2da08d091460a01e23e91e0dd60012105977b0ed0291363fdb348",
+        "drizzle/migrations/0320_hiring_completed_success_settlement.sql": "c570822010db3f73502e97a1fa8b121d51142979f514c4f40eebc1ac63ffb5b5"
       }
     },
     {

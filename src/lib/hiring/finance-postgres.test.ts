@@ -169,6 +169,7 @@ beforeAll(async () => {
     "0317_hiring_billing_boundaries.sql",
     "0318_hiring_internal_cost_provisions.sql",
     "0319_hiring_legacy_billing_ownership.sql",
+    "0320_hiring_completed_success_settlement.sql",
   ])
     await db.unsafe(readFileSync("drizzle/migrations/" + f, "utf8"));
 }, 120000);
@@ -642,4 +643,25 @@ it("existing legacy success title becomes a gate, never a duplicate invoice", as
     "hiring_legacy_success_exists",
   );
   expect((await db`select count(*) n from financial_entries`)[0].n).toBe("1");
+});
+
+it("completed governed Hunting settles its valid final month without reopening recruitment", async () => {
+  const id = await hunting();
+  await db`update contracts set ends_at='2026-10-31' where id=${K}`;
+  await seal();
+  await db`update contracts set status='ended' where id=${K}`;
+  await db`update hiring_workspace_settings set signature_gate_enabled=true where workspace_id=${W}`;
+  await db`select set_config('app.hiring_stage2','on',false)`;
+  await db`select set_config('app.hiring_contract_link','on',false)`;
+  await db`update ats_jobs set hiring_governed=true,hiring_purpose='client',hiring_approval_status='approved',hiring_contract_id=${K} where id=${J}`;
+  await db`select set_config('app.hiring_stage2','off',false)`;
+  await db`select set_config('app.hiring_contract_link','off',false)`;
+  await db`insert into ats_hiring_decisions(workspace_id,application_id,event,created_at) values(${W},${APP},'confirmed','2026-10-15')`;
+  expect((await db`select hiring_workflow_recruitment_check(${W},${APP}) v`)[0].v.ready).toBe(
+    false,
+  );
+  await db`select project_measurement_add_success_event(${id},'ats_application',${APP},null,'Contratação confirmada na competência')`;
+  expect(
+    (await db`select total_amount from project_measurements where id=${id}`)[0].total_amount,
+  ).toBe("200.00");
 });
