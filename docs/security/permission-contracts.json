@@ -8723,6 +8723,10 @@
         {
           "file": "src/components/help/help-release-button.tsx",
           "symbol": "HelpReleaseButton"
+        },
+        {
+          "file": "src/lib/help/help-release.ts",
+          "symbol": "assertHelpReleaseAllowed"
         }
       ],
       "database": [
@@ -8778,8 +8782,8 @@
         "src/routes/_authenticated/ajuda.index.tsx": "8251226247e0fe0de98ce845035b27afa54b61bd41d8db1276a968d6563ebc63",
         "drizzle/migrations/0308_help_seed_contracts.sql": "8ab1cb5450bcebb357720b90a43d866559b72ab65fe89e2eb4decf6be831ff6b",
         "src/lib/help/help-release.functions.ts": "1e0ee0198ba91c400c61bfa9f39e947c10688a6a2942a61918a49733f03aba89",
-        "src/lib/help/help-release.ts": "9b4053883f951d96ab109914f379cec68e17e8a739dacb99151d08dbc8465a49",
-        "src/components/help/help-release-button.tsx": "0285a39975519e3f72429053954fffce35ba6dd7e50afaf77997097dc516ed78"
+        "src/lib/help/help-release.ts": "a7d5e01443260020c759ce52fb9575f28ac4cd21c69f218583a56faefe5969a4",
+        "src/components/help/help-release-button.tsx": "9637691fbfd7d02d327e658c457d98fec5601139570ced6eb03aa9e4d3af16e1"
       }
     },
     {
