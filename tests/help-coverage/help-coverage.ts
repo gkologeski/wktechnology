@@ -35,7 +35,10 @@ function walk(dir: string): string[] {
 }
 
 export function normalizeRoutePath(raw: string): string {
-  const segs = raw.split("/").filter((s) => s && !s.startsWith("_") && !/^\(.*\)$/.test(s));
+  const segs = raw
+    .split("/")
+    .filter((s) => s && !s.startsWith("_") && !/^\(.*\)$/.test(s))
+    .map((s) => s.replace(/_$/, ""));
   return "/" + segs.join("/");
 }
 
