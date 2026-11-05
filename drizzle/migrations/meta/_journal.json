@@ -2136,6 +2136,13 @@
       "when": 1793762277004,
       "tag": "0304_forms_assignment_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 305,
+      "version": "7",
+      "when": 1793908404650,
+      "tag": "0305_hiring_lifecycle_governance",
+      "breakpoints": true
     }
   ]
 }

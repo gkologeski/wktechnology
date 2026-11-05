@@ -1381,6 +1381,14 @@
     "techpeople.incidents.view.own",
     "techpeople.incidents.view.team",
     "techpeople.incidents.view.workspace",
+    "techpeople.lifecycle.approve.workspace",
+    "techpeople.lifecycle.end_allocation.workspace",
+    "techpeople.lifecycle.end_employment.workspace",
+    "techpeople.lifecycle.execute.workspace",
+    "techpeople.lifecycle.manage.workspace",
+    "techpeople.lifecycle.renew.workspace",
+    "techpeople.lifecycle.replace.workspace",
+    "techpeople.lifecycle.view.workspace",
     "techpeople.my_team.create.own",
     "techpeople.my_team.create.workspace",
     "techpeople.my_team.delete.own",
@@ -2784,10 +2792,7 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace",
-    "techpeople.lifecycle.view.workspace",
-    "techpeople.lifecycle.manage.workspace",
-    "techpeople.lifecycle.approve.workspace"
+    "techservice.tickets.view.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -2919,10 +2924,25 @@
     "techpeople.lifecycle.view.workspace": {
       "migration": "drizzle/migrations/0321_hiring_lifecycle.sql"
     },
-    "techpeople.lifecycle.manage.workspace": {
-      "migration": "drizzle/migrations/0321_hiring_lifecycle.sql"
+    "techpeople.lifecycle.renew.workspace": {
+      "migration": "drizzle/migrations/0305_hiring_lifecycle_governance.sql"
+    },
+    "techpeople.lifecycle.replace.workspace": {
+      "migration": "drizzle/migrations/0305_hiring_lifecycle_governance.sql"
+    },
+    "techpeople.lifecycle.end_allocation.workspace": {
+      "migration": "drizzle/migrations/0305_hiring_lifecycle_governance.sql"
+    },
+    "techpeople.lifecycle.end_employment.workspace": {
+      "migration": "drizzle/migrations/0305_hiring_lifecycle_governance.sql"
     },
     "techpeople.lifecycle.approve.workspace": {
+      "migration": "drizzle/migrations/0321_hiring_lifecycle.sql"
+    },
+    "techpeople.lifecycle.execute.workspace": {
+      "migration": "drizzle/migrations/0305_hiring_lifecycle_governance.sql"
+    },
+    "techpeople.lifecycle.manage.workspace": {
       "migration": "drizzle/migrations/0321_hiring_lifecycle.sql"
     }
   }

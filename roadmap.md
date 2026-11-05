@@ -1,3 +1,11 @@
+# Roadmap — Contratação etapa 6A (porte G)
+
+- [x] Prévia, aprovação gestor → CEO e execução idempotente de renovação/substituição/encerramento por origem
+- [x] Gate opt-in false, documentos/vigência, CAS, acesso por datas e bloqueio de atalhos legados
+- [x] Painel existente, catálogo/contratos de permissão e testes isolados de cinco cenários
+- [x] Proteção financeira: bloquear cancelamento amplo e orientar revisão explícita separada
+- [ ] Gate global e validação visual transacional ainda não certificados; perf depende de .verification/build.json. Numeração 0321+ não atendida pelo gerador (0305), requer reparo de histórico autorizado. Sem operações reais; publicação aguarda usuário após 6B.
+
 # Roadmap — Importação do ClickUp para o TechProjects (porte G)
 
 - [x] Leitura completa do ClickUp (11 workspaces, 16.477 tarefas) e proposta de organização

@@ -1,0 +1,2 @@
+- Governed lifecycle mutations use revisioned hiring_lifecycle RPCs and source-scoped dated effects; legacy end/offboarding paths fail closed when the opt-in gate is enabled, so approvals and historical allocations cannot be bypassed.
+- Lifecycle financial cancellation stays blocked until a separately reviewed Finance-manager/CEO plan uses explicit eligible commitment IDs; due dates never establish unworked competence.

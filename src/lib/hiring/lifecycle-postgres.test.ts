@@ -197,7 +197,9 @@ describe.each(["fresh", "prototype"])("lifecycle schema %s", (mode) => {
     ])
       await db.unsafe(sourceFunction("drizzle/migrations/0210_finance_core_actions.sql", name));
     if (mode === "prototype")
-      await db.unsafe(readFileSync("tests/fixtures/hiring-stage6-remote.sql", "utf8"));
+      await db.unsafe(
+        readFileSync("drizzle/migrations/0305_hiring_lifecycle_governance.sql", "utf8"),
+      );
     await db.unsafe(readFileSync("drizzle/migrations/0321_hiring_lifecycle.sql", "utf8"));
   }, 120000);
   afterAll(async () => {

@@ -8534,6 +8534,105 @@
         "src/components/projects/reconciliation/reconciliation-page.tsx": "25da7387addc4932229b40d328440a7bc5b2eb79b7590f7c1cc613e59504702c",
         "src/routes/_authenticated/projects.settings.imports.reconciliation.tsx": "966939ad5c3e5e554d04a0a7f93150c9204a96dff8b2e66383957ca049a03d1d"
       }
+    },
+    {
+      "id": "hiring-stage6a-lifecycle",
+      "kind": "business",
+      "resources": [
+        "techpeople.lifecycle",
+        "techpeople.allocations",
+        "techpeople.people",
+        "techcontracts.contracts",
+        "techfinance.entries"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "approve",
+        "renew",
+        "replace",
+        "end_allocation",
+        "end_employment",
+        "execute"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techpeople.lifecycle.view.workspace",
+        "techpeople.lifecycle.renew.workspace",
+        "techpeople.lifecycle.replace.workspace",
+        "techpeople.lifecycle.end_allocation.workspace",
+        "techpeople.lifecycle.end_employment.workspace",
+        "techpeople.lifecycle.approve.workspace",
+        "techpeople.lifecycle.execute.workspace"
+      ],
+      "rationale": "Immutable, disabled historical prototype. Migration 0321 archives its empty tables and revokes all endpoints; final adoption SQL tests exercise current permissions and preserve the historical migration bytes. Not a live competing engine.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/components/hiring/lifecycle-panel.tsx",
+          "symbol": "LifecyclePanel"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0305_hiring_lifecycle_governance.sql",
+          "symbol": "hiring_lifecycle_access"
+        },
+        {
+          "file": "drizzle/migrations/0305_hiring_lifecycle_governance.sql",
+          "symbol": "hiring_lifecycle_execute"
+        },
+        {
+          "file": "drizzle/migrations/0305_hiring_lifecycle_governance.sql",
+          "symbol": "hiring_lifecycle_financial_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0305_hiring_lifecycle_governance.sql": "c64cc950b1be0e8e9e472e04746c2b21b24fc4f796d07e93705b613eaf66e98c"
+      }
+    },
+    {
+      "id": "hiring-stage6a-types",
+      "kind": "presentation",
+      "rationale": "Type-only DTO declarations; no IO or actions.",
+      "files": {
+        "src/lib/hiring/lifecycle.types.ts": "8259f54fd978d979b4dfa7f136bd8bb6c9724e829ffcb440a40250cc9969d6ea"
+      }
     }
   ],
   "retired": {}
