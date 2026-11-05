@@ -4,6 +4,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type AnyRow, type LogStep, renderTokens } from "../engine-shared.server";
 import type { RunCtx, RunnableAction } from "./run-context";
+import { workRpc } from "@/lib/access-control/work-core.server";
 
 const OFFBOARDING_TYPES = new Set([
   "terminate_contracts",
@@ -46,7 +47,6 @@ async function personContractIds(
   ctx: RunCtx,
   personId: string,
 ): Promise<string[]> {
-  const { workRpc } = await import("@/lib/access-control/work-core.server");
   if (
     !(await workRpc<boolean>(supabase, "work_delegated_authorize", {
       p_ws: ctx.workspaceId,
@@ -75,7 +75,6 @@ export async function handleOffboardingAction(
   if (!ctx.workspaceId) throw new Error("Workspace do registro não identificado.");
   const personId = personIdFor(ctx, (action as { person_id?: string }).person_id);
   if (!personId) throw new Error("Pessoa do desligamento não identificada.");
-  const { workRpc } = await import("@/lib/access-control/work-core.server");
   await workRpc<boolean>(supabase, "hiring_offboarding_guard", {
     w: ctx.workspaceId,
     p_person: personId,
@@ -87,7 +86,6 @@ export async function handleOffboardingAction(
 
   switch (action.type) {
     case "terminate_contracts": {
-      const { workRpc } = await import("@/lib/access-control/work-core.server");
       const result = await workRpc<{ contracts: number }>(supabase, "contract_workflow_terminate", {
         p_person: personId,
         p_actor: ctx.ownerId,
