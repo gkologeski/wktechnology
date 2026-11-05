@@ -1,10 +1,14 @@
-# Roadmap — Contratação etapa 6A (porte G)
+# Roadmap — Contratação etapa 6 (registro consolidado)
 
-- [x] Prévia, aprovação gestor → CEO e execução idempotente de renovação/substituição/encerramento por origem
-- [x] Gate opt-in false, documentos/vigência, CAS, acesso por datas e bloqueio de atalhos legados
-- [x] Painel existente, catálogo/contratos de permissão e testes isolados de cinco cenários
-- [x] Proteção financeira: bloquear cancelamento amplo e orientar revisão explícita separada
-- [ ] Gate global e validação visual transacional ainda não certificados; perf depende de .verification/build.json. Numeração 0321+ não atendida pelo gerador (0305), requer reparo de histórico autorizado. Sem operações reais; publicação aguarda usuário após 6B.
+- [x] Prévia versionada, aprovação gestor → CEO e execução por origem para renovação, substituição e encerramento.
+- [x] Controle de documentos, vigência, acesso por datas, escopo e bloqueio dos atalhos legados.
+- [x] Plano financeiro separado com seleção explícita de compromissos futuros; pagos, cobranças, medições e competências trabalhadas protegidos.
+- [x] Conciliação assistida em lotes e reversão que preserva edições posteriores.
+- [x] Migração preliminar preservada; adoção aditiva 0321/0328 aplicada sem operações reais.
+- [x] Verificação global integrada: 2.741 testes, tipos e lint sem erros.
+- [ ] Aceite visual transacional com sessão real: não executado; cenários operacionais exercitados em PostgreSQL descartável.
+
+Arquitetura e limites: `docs/architecture/hiring-integration-stage6.md`. A publicação e a conferência dos domínios são registradas no relatório de entrega da etapa 6.
 
 # Roadmap — Importação do ClickUp para o TechProjects (porte G)
 
