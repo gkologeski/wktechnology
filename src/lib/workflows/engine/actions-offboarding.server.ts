@@ -75,6 +75,13 @@ export async function handleOffboardingAction(
   if (!ctx.workspaceId) throw new Error("Workspace do registro não identificado.");
   const personId = personIdFor(ctx, (action as { person_id?: string }).person_id);
   if (!personId) throw new Error("Pessoa do desligamento não identificada.");
+  const { workRpc } = await import("@/lib/access-control/work-core.server");
+  await workRpc<boolean>(supabase, "hiring_offboarding_guard", {
+    w: ctx.workspaceId,
+    p_person: personId,
+    p_actor: ctx.ownerId,
+    p_action: action.type,
+  });
   const person = await loadPerson(supabase, ctx, personId);
   const endDate = person.termination_date ?? new Date().toISOString().slice(0, 10);
 
