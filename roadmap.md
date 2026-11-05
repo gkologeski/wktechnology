@@ -1,10 +1,12 @@
 # Roadmap — Fase 2 integral da Ajuda (porte G, 12–18 horas)
 
-- [ ] Auditar e redigir TechProjects, TechFinance, Core e Administração; preservar 208 artigos existentes
-- [ ] Revisar fatos, permissões, vínculos, cobertura integral e divergências sem alterar funcionalidades
-- [ ] Disponibilizar artigos oficiais de forma idempotente e validar leitura/busca autenticadas
-- [ ] Executar auditoria de acesso, testes, permissões, lint e validar sinais automáticos
-- [ ] Revisar entrega, aceitar o rascunho e publicar; confirmar versão publicada
+- [x] Auditar e redigir TechProjects, TechFinance, Core e Administração; preservar 208 artigos existentes
+- [x] Revisar fatos, permissões, vínculos, cobertura 244/244 e divergências sem alterar funcionalidades
+- [x] Disponibilizar 424 artigos neste rascunho e validar aplicação editorial, repetição, leitura/busca autenticadas
+- [x] Executar auditoria de acesso inalterada, permissões, lint dirigido e testes da Ajuda; suíte global: 2556 aprovados, 7 arquivos bloqueados por Docker ausente
+- [ ] Validação SQL completa/CI e fluxos complexos: ambiente sem Docker; auditoria funcional por rota não certifica cada operação
+- [ ] Capturas operacionais definitivas e revisão de permissões alternativas: sem exemplos operacionais preparados; min_permission escalar preservado
+- [ ] Aceitar o rascunho e publicar: exige revisão/aprovação de aceite em outra interação; após aceite aplicar catálogo editorial no app e confirmar publicação
 
 # Roadmap — Ajuda do TechContracts (porte G, 4–6 horas)
 
