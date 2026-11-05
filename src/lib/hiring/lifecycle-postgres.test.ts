@@ -116,7 +116,13 @@ beforeAll(async () => {
   ])
     await db.unsafe(readFileSync("drizzle/migrations/" + file, "utf8"));
   await db.unsafe(readFileSync("tests/fixtures/hiring-stage6.sql", "utf8"));
-  await db.unsafe(readFileSync(process.env.HIRING_STAGE6_CANDIDATE ?? "drizzle/migrations/0321_hiring_lifecycle_governance.sql", "utf8"));
+  await db.unsafe(
+    readFileSync(
+      process.env.HIRING_STAGE6_CANDIDATE ??
+        "drizzle/migrations/0321_hiring_lifecycle_governance.sql",
+      "utf8",
+    ),
+  );
 }, 60000);
 afterAll(async () => {
   if (db) await db.end();
@@ -301,47 +307,86 @@ async function allocation() {
 }
 it("lifecycle renewal creates new period and allocation preserving prior prices", async () => {
   await allocation();
-  const p=(await db`select hiring_lifecycle_preview(${W},${E},${A},'renew',current_date+30,current_date+31,current_date+60,null,false,'Novo período aprovado isolado') v`)[0].v;
-  const r=(await db`select hiring_lifecycle_request(${W},${E},${A},'renew',current_date+30,current_date+31,current_date+60,null,false,'Novo período aprovado isolado',${p.hash}) v`)[0].v;
+  const p = (
+    await db`select hiring_lifecycle_preview(${W},${E},${A},'renew',current_date+30,current_date+31,current_date+60,null,false,'Novo período aprovado isolado') v`
+  )[0].v;
+  const r = (
+    await db`select hiring_lifecycle_request(${W},${E},${A},'renew',current_date+30,current_date+31,current_date+60,null,false,'Novo período aprovado isolado',${p.hash}) v`
+  )[0].v;
   await approve(r);
-  const result=(await db`select hiring_lifecycle_execute(${W},${r},3) v`)[0].v;
+  const result = (await db`select hiring_lifecycle_execute(${W},${r},3) v`)[0].v;
   expect(result.engagement_id).not.toBe(E);
   expect((await db`select count(*)::int n from hiring_engagements`)[0].n).toBe(2);
-  expect((await db`select ends_at=current_date+30 v,billable_rate,cost_rate from people_allocations where id=${A}`)[0]).toMatchObject({v:true,billable_rate:"150",cost_rate:"75"});
-  expect((await db`select starts_at=current_date+31 v,lifecycle_predecessor_id,billable_rate,cost_rate from people_allocations where id=${result.allocation_id}`)[0]).toMatchObject({v:true,lifecycle_predecessor_id:A,billable_rate:"150",cost_rate:"75"});
+  expect(
+    (
+      await db`select ends_at=current_date+30 v,billable_rate,cost_rate from people_allocations where id=${A}`
+    )[0],
+  ).toMatchObject({ v: true, billable_rate: "150", cost_rate: "75" });
+  expect(
+    (
+      await db`select starts_at=current_date+31 v,lifecycle_predecessor_id,billable_rate,cost_rate from people_allocations where id=${result.allocation_id}`
+    )[0],
+  ).toMatchObject({ v: true, lifecycle_predecessor_id: A, billable_rate: "150", cost_rate: "75" });
   expect((await db`select count(*)::int n from people`)[0].n).toBe(1);
 });
 it("lifecycle replacement requires admitted same context and explicit overlap", async () => {
   await allocation();
-  const person="60000000-0000-4000-8000-000000000002", eng="80000000-0000-4000-8000-000000000003", pc="90000000-0000-4000-8000-000000000003";
+  const person = "60000000-0000-4000-8000-000000000002",
+    eng = "80000000-0000-4000-8000-000000000003",
+    pc = "90000000-0000-4000-8000-000000000003";
   await db`insert into people(id,workspace_id,full_name,employment_type,hire_date) values(${person},${W},'Substituto fixture','pj',current_date-10)`;
-  await signedPurchase(person,pc);
+  await signedPurchase(person, pc);
   await db`insert into hiring_engagements(id,workspace_id,person_id,job_id,purpose,employment_type,legal_entity_id,model_version_id,purchase_contract_id,starts_at,ends_at,created_by) values(${eng},${W},${person},${J},'internal','pj',${L},${V},${pc},current_date-10,current_date+60,${U})`;
-  await expect(db`select hiring_lifecycle_preview(${W},${E},${A},'replace',current_date+5,current_date+3,current_date+30,${eng},false,'Substituição isolada aprovada')`).rejects.toThrow("Sobreposição");
-  const p=(await db`select hiring_lifecycle_preview(${W},${E},${A},'replace',current_date+5,current_date+3,current_date+30,${eng},true,'Substituição isolada aprovada') v`)[0].v;
-  const r=(await db`select hiring_lifecycle_request(${W},${E},${A},'replace',current_date+5,current_date+3,current_date+30,${eng},true,'Substituição isolada aprovada',${p.hash}) v`)[0].v;
-  await approve(r);const result=(await db`select hiring_lifecycle_execute(${W},${r},3) v`)[0].v;
-  expect((await db`select person_id,hiring_engagement_id from people_allocations where id=${result.allocation_id}`)[0]).toMatchObject({person_id:person,hiring_engagement_id:eng});
-  expect((await db`select ends_at=current_date+5 v from people_allocations where id=${A}`)[0].v).toBe(true);
+  await expect(
+    db`select hiring_lifecycle_preview(${W},${E},${A},'replace',current_date+5,current_date+3,current_date+30,${eng},false,'Substituição isolada aprovada')`,
+  ).rejects.toThrow("Sobreposição");
+  const p = (
+    await db`select hiring_lifecycle_preview(${W},${E},${A},'replace',current_date+5,current_date+3,current_date+30,${eng},true,'Substituição isolada aprovada') v`
+  )[0].v;
+  const r = (
+    await db`select hiring_lifecycle_request(${W},${E},${A},'replace',current_date+5,current_date+3,current_date+30,${eng},true,'Substituição isolada aprovada',${p.hash}) v`
+  )[0].v;
+  await approve(r);
+  const result = (await db`select hiring_lifecycle_execute(${W},${r},3) v`)[0].v;
+  expect(
+    (
+      await db`select person_id,hiring_engagement_id from people_allocations where id=${result.allocation_id}`
+    )[0],
+  ).toMatchObject({ person_id: person, hiring_engagement_id: eng });
+  expect(
+    (await db`select ends_at=current_date+5 v from people_allocations where id=${A}`)[0].v,
+  ).toBe(true);
   expect((await db`select count(*)::int n from people`)[0].n).toBe(2);
 });
 it("lifecycle ending allocation rejects future worked hours and preserves other source", async () => {
   await allocation();
   await db`insert into project_time_entries(id,workspace_id,project_id,allocation_id,entry_date) values('90000000-0000-4000-8000-000000000004',${W},'90000000-0000-4000-8000-000000000002',${A},current_date+6)`;
-  await expect(preview('end_allocation',A)).rejects.toThrow("horas posteriores");
+  await expect(preview("end_allocation", A)).rejects.toThrow("horas posteriores");
   await db`delete from project_time_entries`;
-  const p=await preview('end_allocation',A);
-  const r=(await db`select hiring_lifecycle_request(${W},${E},${A},'end_allocation',current_date+5,null,null,null,false,'Corte conferido em teste isolado',${p.hash}) v`)[0].v;
-  await approve(r);await db`select hiring_lifecycle_execute(${W},${r},3)`;
-  await expect(db`insert into project_time_entries(id,workspace_id,project_id,allocation_id,entry_date) values('90000000-0000-4000-8000-000000000004',${W},'90000000-0000-4000-8000-000000000002',${A},current_date+6)`).rejects.toThrow("fora do período");
+  const p = await preview("end_allocation", A);
+  const r = (
+    await db`select hiring_lifecycle_request(${W},${E},${A},'end_allocation',current_date+5,null,null,null,false,'Corte conferido em teste isolado',${p.hash}) v`
+  )[0].v;
+  await approve(r);
+  await db`select hiring_lifecycle_execute(${W},${r},3)`;
+  await expect(
+    db`insert into project_time_entries(id,workspace_id,project_id,allocation_id,entry_date) values('90000000-0000-4000-8000-000000000004',${W},'90000000-0000-4000-8000-000000000002',${A},current_date+6)`,
+  ).rejects.toThrow("fora do período");
   await db`insert into project_time_entries(id,workspace_id,project_id,allocation_id,entry_date) values('90000000-0000-4000-8000-000000000004',${W},'90000000-0000-4000-8000-000000000002',${A},current_date+5)`;
-  expect((await db`select ends_at=current_date+30 v from hiring_engagements where id=${E}`)[0].v).toBe(true);
+  expect(
+    (await db`select ends_at=current_date+30 v from hiring_engagements where id=${E}`)[0].v,
+  ).toBe(true);
 });
 it("lifecycle revalidates signed document content at execution", async () => {
   await allocation();
-  const p=(await db`select hiring_lifecycle_preview(${W},${E},${A},'renew',current_date+30,current_date+31,current_date+60,null,false,'Novo período aprovado isolado') v`)[0].v;
-  const r=(await db`select hiring_lifecycle_request(${W},${E},${A},'renew',current_date+30,current_date+31,current_date+60,null,false,'Novo período aprovado isolado',${p.hash}) v`)[0].v;
-  await approve(r);await db`update contracts set body_html='Conteúdo alterado após assinatura' where id=${K}`;
+  const p = (
+    await db`select hiring_lifecycle_preview(${W},${E},${A},'renew',current_date+30,current_date+31,current_date+60,null,false,'Novo período aprovado isolado') v`
+  )[0].v;
+  const r = (
+    await db`select hiring_lifecycle_request(${W},${E},${A},'renew',current_date+30,current_date+31,current_date+60,null,false,'Novo período aprovado isolado',${p.hash}) v`
+  )[0].v;
+  await approve(r);
+  await db`update contracts set body_html='Conteúdo alterado após assinatura' where id=${K}`;
   await expect(db`select hiring_lifecycle_execute(${W},${r},3)`).rejects.toThrow("Assinatura");
   expect((await db`select count(*)::int n from hiring_engagements`)[0].n).toBe(1);
 });
