@@ -1,3 +1,11 @@
+# Roadmap — Fase 2 integral da Ajuda (porte G, 12–18 horas)
+
+- [ ] Auditar e redigir TechProjects, TechFinance, Core e Administração; preservar 208 artigos existentes
+- [ ] Revisar fatos, permissões, vínculos, cobertura integral e divergências sem alterar funcionalidades
+- [ ] Disponibilizar artigos oficiais de forma idempotente e validar leitura/busca autenticadas
+- [ ] Executar auditoria de acesso, testes, permissões, lint e validar sinais automáticos
+- [ ] Revisar entrega, aceitar o rascunho e publicar; confirmar versão publicada
+
 # Roadmap — Ajuda do TechContracts (porte G, 4–6 horas)
 
 - [x] Auditar telas oficiais, funcionalidades, permissões e divergências sem alterar operação
