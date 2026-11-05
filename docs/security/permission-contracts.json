@@ -8375,6 +8375,86 @@
       "files": {
         "src/lib/projects/billing.shared.ts": "483b21d1e85a818c27fe2e656f324fd2265f9299f15b6fed8d2ccc850fdee302"
       }
+    },
+    {
+      "id": "hiring-stage6-reviewed-links",
+      "kind": "business",
+      "resources": [
+        "techprojects.reconciliation"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techprojects.reconciliation.view.workspace",
+        "techprojects.reconciliation.manage.workspace"
+      ],
+      "rationale": "Finite explicit exact-evidence batches; active admin in selected workspace and current keys/deny. Read-only preview, CAS on source and xmin, immutable journal, reversal preserves subsequent edits including ABA. No source/time/billing/status/identity mutation. Existing commercial linkage remains native Deals tab.",
+      "controls": [
+        {
+          "file": "src/components/projects/reconciliation/recon-review-tab.tsx",
+          "symbol": "ReconReviewTab"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/projects/reconciliation.server.ts",
+          "symbol": "requireReconAdmin"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/components/hr-access.tsx",
+          "symbol": "HrScreenAccess"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0328_hiring_assisted_reconciliation.sql",
+          "symbol": "project_link_review_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/projects/reconciliation-review-postgres.test.ts",
+          "name": "review allowed active admin applies explicit exact rows and idempotent batch"
+        },
+        "missing_permission": {
+          "file": "src/lib/projects/reconciliation-review-postgres.test.ts",
+          "name": "review missing key is denied in database RPC"
+        },
+        "explicit_deny": {
+          "file": "src/lib/projects/reconciliation-review-postgres.test.ts",
+          "name": "review explicit deny wins in database RPC"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/projects/reconciliation-review-postgres.test.ts",
+          "name": "review foreign workspace is denied in database RPC"
+        },
+        "inactive_member": {
+          "file": "src/lib/projects/reconciliation-review-postgres.test.ts",
+          "name": "review inactive member is denied in database RPC"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0328_hiring_assisted_reconciliation.sql": "eed5485bf28f7664825301dc63070b0264b8ec658faac1072d71710387fd5bf8",
+        "src/lib/projects/reconciliation-review.functions.ts": "35a983decf3a24f7ba032f9d712f96fa872ae74584023feaec1af1cbc93ccf61",
+        "src/components/projects/reconciliation/recon-review-tab.tsx": "71991c8f9a5d31a7cf1a7ee13f1197fc4f083ab3a75e02873425416886c89aa1",
+        "src/components/projects/reconciliation/reconciliation-page.tsx": "25da7387addc4932229b40d328440a7bc5b2eb79b7590f7c1cc613e59504702c",
+        "src/routes/_authenticated/projects.settings.imports.reconciliation.tsx": "966939ad5c3e5e554d04a0a7f93150c9204a96dff8b2e66383957ca049a03d1d"
+      }
     }
   ],
   "retired": {}

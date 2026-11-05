@@ -4,12 +4,13 @@ import { PageHeader } from "@/components/techhire/ui";
 import { ReconOverviewTab } from "./recon-overview-tab";
 import { ReconBreakdownTab } from "./recon-breakdown-tab";
 import { ReconIssuesTab } from "./recon-issues-tab";
+import { ReconReviewTab } from "./recon-review-tab";
 import { ReconLinksTab } from "./recon-links-tab";
 import { ReconDealsTab } from "./recon-deals-tab";
 import { ReconJibbleHoursTab } from "./recon-jibble-hours-tab";
 
 export type ReconSearch = {
-  tab?: "overview" | "breakdown" | "issues" | "links" | "deals" | "jibble-hours";
+  tab?: "overview" | "breakdown" | "issues" | "links" | "deals" | "jibble-hours" | "review";
   from?: string;
   to?: string;
 };
@@ -34,6 +35,7 @@ export function ReconciliationPage({
           <TabsTrigger value="overview">Cobertura</TabsTrigger>
           <TabsTrigger value="breakdown">Conferência</TabsTrigger>
           <TabsTrigger value="issues">Pendências</TabsTrigger>
+          <TabsTrigger value="review">Lotes assistidos</TabsTrigger>
           <TabsTrigger value="links">Vínculos</TabsTrigger>
           <TabsTrigger value="deals">Negócios</TabsTrigger>
           <TabsTrigger value="jibble-hours">Horas sem horário</TabsTrigger>
@@ -54,6 +56,9 @@ export function ReconciliationPage({
             to={search.to}
             onPeriod={(from, to) => onSearch({ from, to })}
           />
+        </TabsContent>
+        <TabsContent value="review" className="mt-4">
+          <ReconReviewTab />
         </TabsContent>
         <TabsContent value="links" className="mt-4">
           <ReconLinksTab />
