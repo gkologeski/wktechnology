@@ -14,7 +14,12 @@ export function matchesRoutePattern(pattern: string, path: string): boolean {
 }
 
 /** Escolhe o padrão mais específico (mais segmentos literais) que casa com a rota. */
-export function pickRouteArticle<T extends { route_pattern: string | null; article_type: string }>(
+export function pickRouteArticle<T extends {
+  route_pattern: string | null;
+  article_type: string;
+  sort_order?: number;
+  slug?: string;
+}>(
   articles: T[],
   path: string,
 ): T | null {
@@ -28,5 +33,9 @@ export function pickRouteArticle<T extends { route_pattern: string | null; artic
     (a) => a.route_pattern && matchesRoutePattern(a.route_pattern, path),
   );
   if (hits.length === 0) return null;
-  return hits.sort((a, b) => score(b) - score(a))[0];
+  return hits.sort((a, b) =>
+    score(b) - score(a) ||
+    (a.sort_order ?? 0) - (b.sort_order ?? 0) ||
+    (a.slug ?? "").localeCompare(b.slug ?? ""),
+  )[0];
 }
