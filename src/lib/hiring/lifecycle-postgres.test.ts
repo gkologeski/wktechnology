@@ -291,7 +291,7 @@ async function signedPurchase(person = P, contract = K) {
   await db`select set_config('app.hiring_purchase','off',false)`;
   const evidence = crypto.randomUUID();
   await db`insert into storage.objects(bucket_id,name,user_metadata) values('contract-signature-evidence',${evidence},jsonb_build_object('sha256','fixturehash'))`;
-  await db`insert into hiring_contract_evidence(workspace_id,contract_id,kind,file_path,file_hash,signed_on,created_by,contract_hash) values(${W},${contract},'external',${evidence},'fixturehash',current_date,${U},hiring_contract_fingerprint(${contract}))`;
+  await db`insert into hiring_contract_evidence(workspace_id,contract_id,kind,file_path,file_hash,signed_on,recorded_by,reference,note,contract_hash) values(${W},${contract},'external',${evidence},'fixturehash',current_date,${U},'fixture','Assinatura fictícia',hiring_contract_fingerprint(${contract}))`;
 }
 async function allocation() {
   await signedPurchase();
