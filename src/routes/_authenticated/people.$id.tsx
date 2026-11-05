@@ -1,3 +1,4 @@
+import { EmploymentPanel } from "@/components/hiring/employment-panel";
 import { usePersonResourceAccess } from "@/lib/access-control/use-person-resource-access";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { HrScreenAccess, HrRecordAccess, HrAccessError } from "@/components/hr-access";
@@ -650,7 +651,8 @@ function PersonForm({
           </Card>
         </TabsContent>
 
-        <TabsContent value="allocations" className="pt-4">
+        <TabsContent value="allocations" className="pt-4 space-y-4">
+          <EmploymentPanel personId={p.id} />
           <HrScreenAccess resources={["techpeople.allocations"]}>
             <AllocationsPanel
               personId={p.id}

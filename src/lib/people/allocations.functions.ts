@@ -1,3 +1,4 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
 import { PEOPLE_ALLOCATIONS_PUBLIC_COLUMNS } from "@/lib/access-control/hr-private-columns";
 import { mergeHrPrivate, protectHrPrivatePayload } from "@/lib/access-control/hr-private.server";
 import {
@@ -26,6 +27,8 @@ export type AllocationRow = {
   workspace_id: string;
   owner_id: string;
   person_id: string;
+  hiring_engagement_id?: string | null;
+  period_override_reason?: string | null;
   contract_id: string | null;
   purchase_contract_id: string | null;
 
@@ -79,6 +82,8 @@ async function resolveWorkspaceId(supabase: MinimalClient, userId: string): Prom
 const allocationSchema = z.object({
   id: z.string().uuid().nullable().optional(),
   person_id: z.string().uuid(),
+  hiring_engagement_id: z.string().uuid().nullable().optional(),
+  period_override_reason: z.string().trim().max(2000).nullable().optional(),
   contract_id: z.string().uuid().nullable().optional(),
   purchase_contract_id: z.string().uuid().nullable().optional(),
 
@@ -133,6 +138,15 @@ export const listContractRoleSuggestions = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ contract_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    if (
+      !(await workRpc<boolean>(context.supabase, "work_record_access", {
+        r: "techcontracts.contracts",
+        i: data.contract_id,
+        a: "view",
+      }))
+    )
+      throw new Error("Contrato indisponível.");
+
     const { data: rows, error } = await context.supabase
       .from("services")
       .select("id, name, seniority, competencies, job_profile_id, job_profiles(id, name)")
@@ -206,10 +220,12 @@ export const listAllocationsByPerson = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ person_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "person_allocations", "view", data.person_id);
+
     const { data: rows, error } = await context.supabase
       .from("people_allocations")
       .select(
-        `${PEOPLE_ALLOCATIONS_PUBLIC_COLUMNS}, contract:contracts!people_allocations_contract_id_fkey(id,title,number), purchase_contract:contracts!people_allocations_purchase_contract_id_fkey(id,title,number), projects(id,name), manager:people!people_allocations_manager_id_fkey(id,full_name)`,
+        `${PEOPLE_ALLOCATIONS_PUBLIC_COLUMNS},hiring_engagement_id,period_override_reason, contract:contracts!people_allocations_contract_id_fkey(id,title,number), purchase_contract:contracts!people_allocations_purchase_contract_id_fkey(id,title,number), projects(id,name), manager:people!people_allocations_manager_id_fkey(id,full_name)`,
       )
       .eq("person_id", data.person_id)
       .order("starts_at", { ascending: false });
@@ -245,6 +261,8 @@ export const listAllocationSplits = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ allocation_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "allocations", "view", data.allocation_id);
+
     const { data: rows, error } = await (
       context.supabase as unknown as { from: (n: string) => any }
     )
@@ -274,10 +292,19 @@ export const listAllocationsByContract = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ contract_id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
+    if (
+      !(await workRpc<boolean>(context.supabase, "work_record_access", {
+        r: "techcontracts.contracts",
+        i: data.contract_id,
+        a: "view",
+      }))
+    )
+      throw new Error("Contrato indisponível.");
+
     const { data: rows, error } = await context.supabase
       .from("people_allocations")
       .select(
-        `${PEOPLE_ALLOCATIONS_PUBLIC_COLUMNS}, person:people!people_allocations_person_id_fkey(id,full_name), manager:people!people_allocations_manager_id_fkey(id,full_name)`,
+        `${PEOPLE_ALLOCATIONS_PUBLIC_COLUMNS},hiring_engagement_id,period_override_reason, person:people!people_allocations_person_id_fkey(id,full_name), manager:people!people_allocations_manager_id_fkey(id,full_name)`,
       )
       .eq("contract_id", data.contract_id)
       .order("starts_at", { ascending: false });
@@ -353,6 +380,12 @@ export const upsertAllocation = createServerFn({ method: "POST" })
     }
     const payload: Record<string, unknown> = {
       person_id: data.person_id,
+      ...(data.hiring_engagement_id !== undefined
+        ? { hiring_engagement_id: data.hiring_engagement_id }
+        : {}),
+      ...(data.period_override_reason !== undefined
+        ? { period_override_reason: data.period_override_reason }
+        : {}),
       contract_id: data.contract_id ?? null,
       purchase_contract_id: data.purchase_contract_id ?? null,
 
@@ -455,6 +488,8 @@ export const getAllocationCapacity = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    await assertHrRecordAccess(context.supabase, "person_allocations", "view", data.person_id);
+
     const { data: row, error } = await context.supabase.rpc("people_allocation_capacity", {
       p_person: data.person_id,
       p_from: data.from,

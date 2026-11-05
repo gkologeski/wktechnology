@@ -1,3 +1,4 @@
+import { EmploymentPanel } from "@/components/hiring/employment-panel";
 // Dialog "Contratar candidato" — promove um candidato do ATS a pessoa no TechPeople.
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
@@ -77,7 +78,7 @@ export function HireCandidateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Contratar {candidateName}</DialogTitle>
           <DialogDescription>
@@ -86,60 +87,65 @@ export function HireCandidateDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-2">
-          <div className="space-y-2">
-            <Label>Vínculo</Label>
-            <Select
-              value={employment}
-              onValueChange={(v) => setEmployment(v as PeopleEmploymentType)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {PEOPLE_EMPLOYMENT_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {PEOPLE_EMPLOYMENT_LABELS[t]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Cargo</Label>
-            <Input value={roleTitle} onChange={(e) => setRoleTitle(e.target.value)} />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
+        <EmploymentPanel candidateId={candidateId} />
+        <details>
+          <summary className="text-sm cursor-pointer">
+            Promoção de cadastro legado (sem candidatura governada)
+          </summary>
+          <div className="grid gap-4 py-2">
             <div className="space-y-2">
-              <Label>Data de início</Label>
-              <IsoDatePicker
-                ariaLabel="Data de início"
-                value={hireDate}
-                onChange={(v) => setHireDate(v ?? "")}
-              />
+              <Label>Vínculo</Label>
+              <Select
+                value={employment}
+                onValueChange={(v) => setEmployment(v as PeopleEmploymentType)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PEOPLE_EMPLOYMENT_TYPES.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {PEOPLE_EMPLOYMENT_LABELS[t]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+
             <div className="space-y-2">
-              <Label>Custo/hora (R$)</Label>
-              <Input
-                type="number"
-                step="0.01"
-                min="0"
-                value={costHour}
-                onChange={(e) => setCostHour(e.target.value)}
-              />
+              <Label>Cargo</Label>
+              <Input value={roleTitle} onChange={(e) => setRoleTitle(e.target.value)} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label>Data de início</Label>
+                <IsoDatePicker
+                  ariaLabel="Data de início"
+                  value={hireDate}
+                  onChange={(v) => setHireDate(v ?? "")}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Custo/hora (R$)</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={costHour}
+                  onChange={(e) => setCostHour(e.target.value)}
+                />
+              </div>
             </div>
           </div>
-        </div>
-
+        </details>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={mut.isPending}>
             Cancelar
           </Button>
           <Button onClick={() => mut.mutate()} disabled={mut.isPending}>
             <UserPlus className="h-4 w-4 mr-2" />
-            {mut.isPending ? "Contratando..." : "Contratar"}
+            {mut.isPending ? "Contratando..." : "Promover cadastro legado"}
           </Button>
         </DialogFooter>
       </DialogContent>

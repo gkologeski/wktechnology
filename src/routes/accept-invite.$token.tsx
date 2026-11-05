@@ -1,3 +1,4 @@
+import { useAuth } from "@/lib/auth";
 // Página pública /accept-invite/$token — convidado define senha e entra no workspace.
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
@@ -44,10 +45,12 @@ type InviteInfo = {
   };
   product_name?: string;
   user_exists: boolean;
+  hiring?: boolean;
 };
 
 function AcceptInviteTokenPage() {
   const { token } = Route.useParams();
+  const { user: sessionUser } = useAuth();
   const navigate = useNavigate();
   const lookupFn = useServerFn(lookupInviteByToken);
   const consumeFn = useServerFn(consumeInvite);
@@ -117,7 +120,8 @@ function AcceptInviteTokenPage() {
       });
       if (signErr) throw new Error(signErr.message);
       toast.success(`Bem-vindo(a) ao workspace ${info.workspace.name}!`);
-      navigate({ to: "/dashboard" });
+      if (info.hiring) navigate({ to: "/accept-employment/$token", params: { token } });
+      else navigate({ to: "/dashboard" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao aceitar convite");
     } finally {
@@ -172,6 +176,24 @@ function AcceptInviteTokenPage() {
               <Link to="/login" className="text-primary hover:underline">
                 Ir para o login
               </Link>
+            </div>
+          ) : info.hiring && sessionUser?.email?.toLowerCase() === info.email.toLowerCase() ? (
+            <Button asChild>
+              <Link to="/accept-employment/$token" params={{ token }}>
+                Aceitar acesso com minha conta
+              </Link>
+            </Button>
+          ) : info.hiring && info.user_exists ? (
+            <div className="space-y-3">
+              <p>
+                Você já tem conta. Entre com o e-mail convidado para aceitar o modelo de acesso do
+                vínculo.
+              </p>
+              <Button asChild>
+                <Link to="/login" search={{ next: `/accept-employment/${token}` }}>
+                  Entrar e aceitar
+                </Link>
+              </Button>
             </div>
           ) : (
             <form onSubmit={submit} className="space-y-4">

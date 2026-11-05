@@ -7843,7 +7843,7 @@
       "files": {
         "drizzle/migrations/0308_hiring_demands_and_approvals.sql": "bda3034b719861a0ad28eeabc732934a730638c2d1e563ad46e81d9cf451437a",
         "src/lib/hiring/hiring.functions.ts": "2f25c0dee65152cf990f4a6500f26b0af5f34c285d6d619f46d87ec237b024df",
-        "src/components/hiring/hiring-demand-panel.tsx": "06529fcd52fddc39f4efce37f1da2e3ae2bba9ce157b26c430bcabae9930f660",
+        "src/components/hiring/hiring-demand-panel.tsx": "e5f8613c5399cb67753dcf62e043664906c096df6955eb43dcceb8c575ed5a70",
         "src/routes/_authenticated/(ats)/jobs.$id.tsx": "aa7ddaaa13f428ca1e44a7c02b989304628327b9b893ceb8507ea894896af805",
         "src/lib/role-profiles/service.server.ts": "d49a3f0eac2b632670f3c716622ef7f24fe9764cbf1be89fa0c05d6146a151a5",
         "src/routes/_authenticated/catalog.services.tsx": "1c74fdb8057b7e7cf742c694756605fd3214024bf141a16dfafac82bad4f5f11"
@@ -8065,6 +8065,206 @@
       "rationale": "Type-only DTO declarations; no IO, actions or values.",
       "files": {
         "src/lib/hiring/signature.types.ts": "de3403e80787df8cc9bd3f7b5257682ce251e5f5c0277d7eaf613a5f4217081f"
+      }
+    },
+    {
+      "id": "hiring-stage4-employment-models",
+      "kind": "business",
+      "resources": [
+        "techpeople.employment",
+        "system.hiring_access",
+        "techpeople.people",
+        "techpeople.allocations",
+        "techcontracts.contracts",
+        "techprojects.projects",
+        "techprojects.time_entries",
+        "system.roles",
+        "system.workflows",
+        "system.members",
+        "techhire.hiring_demands",
+        "techcontracts.contract_templates"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "assign",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techpeople.employment.view.workspace",
+        "techpeople.employment.manage.workspace",
+        "system.hiring_access.view.workspace",
+        "system.hiring_access.manage.workspace",
+        "system.roles.manage.workspace",
+        "techpeople.people.create.workspace",
+        "techcontracts.contracts.create.workspace",
+        "system.members.manage.workspace",
+        "system.members.view.workspace",
+        "techhire.hiring_demands.view.workspace",
+        "techhire.hiring_demands.update.workspace"
+      ],
+      "rationale": "Stage 4: immutable per-engagement access snapshots; administrator plus IAM manage for model publication and invites; HR/ATS row scope and current hiring approval/signature for transactional admission. Explicit existing-person choice, stable employment/legal entity and term inheritance, purchase role client and same WK entity; allocation guarded on every SQL writer. Recipient acceptance is intentionally authenticated capability: exact auth.users email plus random 256-bit invite, current unexpired engagement and active person; it cannot reset an existing password, broaden workspace role, add Sales role or consume generic permission sets. New-account public registration remains in existing token boundary, and access only follows authenticated recipient acceptance. Own grant sets are immutable and filtered by live engagement in existing canonical permission resolver; deny and active membership preserved. Restrictive project/task/time policies constrain allocation-only snapshots, and end removes only its assignment. Historical rows, manual permissions, unrelated memberships and other engagements remain intact. No invite is sent automatically. Role selection is part of the approved demand revision and admission checks the exact model role; changing model revokes only that origin and records its previous immutable snapshot. Commercial signature hash excludes schema-only professional-origin metadata, preserving pre-existing evidence. Directory pickers return only names to ordinary active members; contact details/pending invites need IAM view; mutations require active owner/admin plus effective IAM manage. Existing field-rule triggers remain authoritative for draft contract amounts. The approved model role contributes current deny overrides and field restrictions via private hiring_restricted_roles, never its implicit grants or permission sets. Restriction provenance survives until the engagement/grant is ended or explicitly revised.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertPermission"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/hr-private.server.ts",
+          "symbol": "protectHrPrivatePayload"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrChildMutation"
+        },
+        {
+          "file": "src/lib/workspace-invites.functions.ts",
+          "symbol": "resolveActiveWorkspace"
+        },
+        {
+          "file": "src/lib/workspace-invites.functions.ts",
+          "symbol": "assertWorkspaceAdmin"
+        },
+        {
+          "file": "src/lib/workspace-invites.functions.ts",
+          "symbol": "isLiveWorkspaceInvite"
+        },
+        {
+          "file": "src/components/hiring/employment-panel.tsx",
+          "symbol": "EmploymentPanel"
+        },
+        {
+          "file": "src/components/hiring/access-models-panel.tsx",
+          "symbol": "HiringAccessModelsPanel"
+        },
+        {
+          "file": "src/components/hiring/workflow-model-fields.tsx",
+          "symbol": "HiringWorkflowModelFields"
+        },
+        {
+          "file": "src/lib/workspace-invites.functions.ts",
+          "symbol": "lookupInviteByToken"
+        },
+        {
+          "file": "src/lib/workspace-invites.functions.ts",
+          "symbol": "consumeInvite"
+        },
+        {
+          "file": "src/lib/hiring/employment.functions.ts",
+          "symbol": "acceptEmploymentInvite"
+        },
+        {
+          "file": "src/lib/auth.tsx",
+          "symbol": "useAuth"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0311_hiring_employment_and_access_models.sql",
+          "symbol": "hiring_employment_access"
+        },
+        {
+          "file": "drizzle/migrations/0312_hiring_allocation_access_and_invites.sql",
+          "symbol": "hiring_allocation_guard"
+        },
+        {
+          "file": "drizzle/migrations/0312_hiring_allocation_access_and_invites.sql",
+          "symbol": "hiring_accept_invite"
+        },
+        {
+          "file": "drizzle/migrations/0313_hiring_contract_owner_boundary.sql",
+          "symbol": "hiring_employment_contract"
+        },
+        {
+          "file": "drizzle/migrations/0314_hiring_invite_reissue_boundary.sql",
+          "symbol": "hiring_accept_invite"
+        },
+        {
+          "file": "drizzle/migrations/0315_hiring_role_restrictions.sql",
+          "symbol": "hiring_restricted_roles"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/employment-postgres.test.ts",
+          "name": "employment allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/employment-postgres.test.ts",
+          "name": "employment rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/employment-postgres.test.ts",
+          "name": "employment rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/employment-postgres.test.ts",
+          "name": "employment rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/employment-postgres.test.ts",
+          "name": "employment rejects inactive member"
+        }
+      },
+      "files": {
+        "src/components/people/allocations-panel.tsx": "077c7d448ad7418308bf463e87c8420f57b330a3ecf4503392c53ed02f1eaeeb",
+        "src/components/people/hire-candidate-dialog.tsx": "569ca07ac1070a7c406ee5edffa0984f7eab9cb9040294f776fd776a6eab886e",
+        "src/components/workflows/builder/step-forms/hiring-forms.tsx": "44a2c2bb31142f6b56a79220856e21a5743e81ce281506fe02adb66c70c868ad",
+        "src/lib/people/allocations.functions.ts": "462fc4923d9722430e112cd51965545af07896ee2bed5f14632051cf221c5053",
+        "src/lib/workflows/engine/actions-hiring.server.ts": "d6216d8399b2088835e7fcf0895da1c5fa4cc0abadeadcb5eecb8c94ea14d437",
+        "src/lib/workspace-invites.functions.ts": "52e030eabd06550afc8394401ecfa4df89e91ac8f3ffbe73ebc78fbc0e37f888",
+        "src/routes/_authenticated/people.$id.tsx": "61de356c10b08601da2c739bfcbf2457524ac5bb55aec745fc72272df625457c",
+        "src/routes/_authenticated/settings.permissions.tsx": "a0950fe8296a5573020ae903b29b3db04c115de817a5635b71e154a024fd3b68",
+        "src/routes/accept-invite.$token.tsx": "b9b9124eae7d92cd6463124ccfe75437e79df757c2e5de72be6fca6da10d31af",
+        "drizzle/migrations/0311_hiring_employment_and_access_models.sql": "d32fedece1e49576737df425c0d42a3af7a827bc0599d914a8620a9686b33783",
+        "drizzle/migrations/0312_hiring_allocation_access_and_invites.sql": "ddae8cf9a7d6c0c18ad6fc97882d5bf353f2e595b095766f1e7a94f483adc767",
+        "src/components/hiring/access-models-panel.tsx": "4a02c2413f41fce297d940482138464a5f9b5ef41bf0f7e04df5a7eedb9c7d94",
+        "src/components/hiring/employment-panel.tsx": "a3b8aabda3fef91307f7cb64380ad9c69fbddb1d7d429b95d0e902c342639af7",
+        "src/components/hiring/workflow-model-fields.tsx": "17da488a6cbcec880d14459d62038a166d60e5be173a614da8d892a6d62a5e29",
+        "src/lib/hiring/employment.functions.ts": "a2cbfd29bdcf92a92987c0e5a4831e5329b61b1e169f4f4d6b3c23c8a336f3b7",
+        "src/routes/accept-employment.$token.tsx": "54c14fe6764b1e318f636250eacbf25ed0a14ad23827441f1cdcd2fa8df3a2fe",
+        "src/components/hiring/demand-access-role-panel.tsx": "b2e98799f4c3fa3ac0550a983d13fb1006cf252e6801b8ce33517a965f216acb",
+        "drizzle/migrations/0313_hiring_contract_owner_boundary.sql": "537070015fa9180d114ee746770153cccaf04ed00e7a6bd4f97c77ea5e207a91",
+        "drizzle/migrations/0314_hiring_invite_reissue_boundary.sql": "5a7d7e936cfdc6710c8430c090a8d551954565f7280ed29419a6b32bd8b360c0",
+        "drizzle/migrations/0315_hiring_role_restrictions.sql": "3ecb4dde8ce59a3d34da0edf985df2897d876a1475b84de683c16ece28baafbe"
+      }
+    },
+    {
+      "id": "hiring-stage4-types",
+      "kind": "presentation",
+      "rationale": "Type-only contracts; no values, IO, routes or actions.",
+      "files": {
+        "src/lib/hiring/employment.types.ts": "b6dae68f2e37651ed1d3eadf6133eb2bccaa8d0be35d48b4745bc4094fd11b2b"
+      }
+    },
+    {
+      "id": "hiring-stage4-declarative",
+      "kind": "presentation",
+      "rationale": "Pure declarative workflow types, validation schemas and UI draft-template definitions; no IO, route or execution. Hiring templates remain unpublished drafts. Runtime actions and persisted permissions are independently guarded by stage4 business contract.",
+      "files": {
+        "src/lib/workflows/types.ts": "3fcff34ea2c823b601ec567982d5e42c423ac2e82cf89b250bcca9985def5896",
+        "src/lib/workflows/schemas.ts": "8e733227e0eb43261016eb4ed7a351b33ba959b449465bd17ff062c460998ce3",
+        "src/lib/workflows/hiring-templates.ts": "7f64232a069ccbf0f41ec7dc146389e7e77e1bf60f988f836fa857d68f570d76"
       }
     }
   ],

@@ -1,3 +1,5 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { assertPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import { emailSchema } from "@/lib/email-schema";
 import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
 // Server fns para convites do workspace (token-based, gerenciados pelo admin do workspace).
@@ -163,33 +165,31 @@ const Role = z.enum(["admin", "manager", "member"]);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function resolveActiveWorkspace(supabase: any, userId: string): Promise<string> {
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("active_workspace_id")
-    .eq("id", userId)
-    .maybeSingle();
-  if (profile?.active_workspace_id) return profile.active_workspace_id as string;
-  const { data: m } = await supabase
+  const ws = await getActiveWorkspaceId(supabase, userId);
+  const { data: membership, error } = await supabase
     .from("workspace_members")
-    .select("workspace_id")
+    .select("status")
+    .eq("workspace_id", ws)
     .eq("user_id", userId)
-    .limit(1)
     .maybeSingle();
-  if (!m?.workspace_id) throw new Error("Usuário não pertence a nenhum workspace.");
-  return m.workspace_id as string;
+  if (error || membership?.status !== "active") throw new Error("Membership ativo obrigatório.");
+  return ws;
 }
 
-async function assertWorkspaceAdmin(workspaceId: string, userId: string) {
+async function assertWorkspaceAdmin(client: SupabaseClient, workspaceId: string, userId: string) {
+  const { data: readOnly, error: readError } = await client.rpc("is_read_only_view");
+  if (readError || readOnly) throw new Error("A sessão de visualização não pode alterar acessos.");
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data, error } = await supabaseAdmin
     .from("workspace_members")
-    .select("role")
+    .select("role,status")
     .eq("workspace_id", workspaceId)
     .eq("user_id", userId)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!data || data.role !== "admin")
+  if (!data || data.status !== "active" || !["owner", "admin"].includes(data.role))
     throw new Error("Apenas admins do workspace podem fazer isso.");
+  await assertPermission(client, userId, workspaceId, "system.members.manage.workspace");
 }
 
 function randomToken(): string {
@@ -216,6 +216,11 @@ export const listWorkspaceTeam = createServerFn({ method: "GET" })
       .select("user_id, role, joined_at")
       .eq("workspace_id", workspaceId);
 
+    const { data: mayInspect } = await supabase.rpc("user_has_permission", {
+      _user_id: userId,
+      _workspace_id: workspaceId,
+      _permission_key: "system.members.view.workspace",
+    } as never);
     const ids = (members ?? []).map((m) => m.user_id as string);
     const profileMap = new Map<string, { name: string; phone: string }>();
     const emailMap = new Map<string, string>();
@@ -227,19 +232,20 @@ export const listWorkspaceTeam = createServerFn({ method: "GET" })
       for (const p of profs ?? []) {
         profileMap.set(p.id as string, {
           name: (p.full_name as string) ?? "",
-          phone: ((p as { phone?: string | null }).phone ?? "") as string,
+          phone: mayInspect ? (((p as { phone?: string | null }).phone ?? "") as string) : "",
         });
       }
-      await Promise.all(
-        ids.map(async (id) => {
-          try {
-            const { data: u } = await supabaseAdmin.auth.admin.getUserById(id);
-            if (u.user?.email) emailMap.set(id, u.user.email);
-          } catch {
-            /* ignore */
-          }
-        }),
-      );
+      if (mayInspect)
+        await Promise.all(
+          ids.map(async (id) => {
+            try {
+              const { data: u } = await supabaseAdmin.auth.admin.getUserById(id);
+              if (u.user?.email) emailMap.set(id, u.user.email);
+            } catch {
+              /* ignore */
+            }
+          }),
+        );
     }
 
     const { data: invites } = await supabaseAdmin
@@ -259,7 +265,7 @@ export const listWorkspaceTeam = createServerFn({ method: "GET" })
         phone: profileMap.get(m.user_id as string)?.phone ?? "",
         email: emailMap.get(m.user_id as string) ?? "",
       })),
-      invites: (invites ?? []).map((i) => ({
+      invites: (mayInspect ? (invites ?? []) : []).map((i) => ({
         id: i.id as string,
         email: i.email as string,
         role: i.role as "admin" | "manager" | "member",
@@ -288,7 +294,7 @@ export const createWorkspaceInvite = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
-    await assertWorkspaceAdmin(workspaceId, userId);
+    await assertWorkspaceAdmin(supabase, workspaceId, userId);
 
     const email = data.email.toLowerCase();
     const token = randomToken();
@@ -397,7 +403,7 @@ export const resendWorkspaceInvite = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
-    await assertWorkspaceAdmin(workspaceId, userId);
+    await assertWorkspaceAdmin(supabase, workspaceId, userId);
 
     const { data: inv, error } = await supabaseAdmin
       .from("workspace_invites")
@@ -448,7 +454,7 @@ export const revokeWorkspaceInvite = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
-    await assertWorkspaceAdmin(workspaceId, userId);
+    await assertWorkspaceAdmin(supabase, workspaceId, userId);
     const { data: invRow } = await supabaseAdmin
       .from("workspace_invites")
       .select("id, email, role")
@@ -482,7 +488,7 @@ export const countAssignedToMember = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
-    await assertWorkspaceAdmin(workspaceId, userId);
+    await assertWorkspaceAdmin(supabase, workspaceId, userId);
     const counts: Record<string, number> = {};
     for (const t of ASSIGNED_TABLES) {
       const { count } = await supabaseAdmin
@@ -511,7 +517,7 @@ export const removeWorkspaceMemberFn = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
-    await assertWorkspaceAdmin(workspaceId, userId);
+    await assertWorkspaceAdmin(supabase, workspaceId, userId);
     if (data.user_id === userId) throw new Error("Você não pode remover a si mesmo.");
 
     const reassignTo = data.reassign_to ?? null;
@@ -555,7 +561,7 @@ export const updateWorkspaceMemberRole = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
-    await assertWorkspaceAdmin(workspaceId, userId);
+    await assertWorkspaceAdmin(supabase, workspaceId, userId);
     const { error } = await supabaseAdmin
       .from("workspace_members")
       .update({ role: data.role } as never)
@@ -565,20 +571,37 @@ export const updateWorkspaceMemberRole = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+function isLiveWorkspaceInvite(inv: { accepted_at: unknown; expires_at: unknown } | null): boolean {
+  return (
+    !!inv &&
+    !inv.accepted_at &&
+    Number.isFinite(new Date(String(inv.expires_at)).getTime()) &&
+    new Date(String(inv.expires_at)).getTime() > Date.now()
+  );
+}
 /** PÚBLICA: lê convite por token (sem auth). Retorna dados básicos do workspace. */
 export const lookupInviteByToken = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ token: z.string().min(10).max(200) }).parse(i))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: inv } = await supabaseAdmin
+    const { data: rawInvite } = await supabaseAdmin
       .from("workspace_invites")
-      .select("id, workspace_id, email, role, expires_at, accepted_at")
+      .select("id, workspace_id, email, role, expires_at, accepted_at, hiring_engagement_id")
       .eq("token", data.token)
       .maybeSingle();
+    const inv = rawInvite as unknown as {
+      id: string;
+      workspace_id: string;
+      email: string;
+      role: string;
+      expires_at: string;
+      accepted_at: string | null;
+      permission_set_id?: string | null;
+      hiring_engagement_id?: string | null;
+    } | null;
     if (!inv) return { valid: false as const, reason: "not_found" as const };
     if (inv.accepted_at) return { valid: false as const, reason: "accepted" as const };
-    if (new Date(inv.expires_at as string).getTime() < Date.now())
-      return { valid: false as const, reason: "expired" as const };
+    if (!isLiveWorkspaceInvite(inv)) return { valid: false as const, reason: "expired" as const };
 
     const [{ data: ws }, { data: branding }, { data: settings }] = await Promise.all([
       supabaseAdmin
@@ -632,6 +655,7 @@ export const lookupInviteByToken = createServerFn({ method: "POST" })
       },
       product_name: (settings?.product_name as string) ?? "TechERP",
       user_exists: userExists,
+      hiring: !!(inv as { hiring_engagement_id?: string }).hiring_engagement_id,
     };
   });
 
@@ -649,15 +673,26 @@ export const consumeInvite = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: inv } = await supabaseAdmin
+    const { data: rawInvite } = await supabaseAdmin
       .from("workspace_invites")
-      .select("id, workspace_id, email, role, expires_at, accepted_at, permission_set_id")
+      .select(
+        "id, workspace_id, email, role, expires_at, accepted_at, permission_set_id, hiring_engagement_id",
+      )
       .eq("token", data.token)
       .maybeSingle();
+    const inv = rawInvite as unknown as {
+      id: string;
+      workspace_id: string;
+      email: string;
+      role: string;
+      expires_at: string;
+      accepted_at: string | null;
+      permission_set_id?: string | null;
+      hiring_engagement_id?: string | null;
+    } | null;
     if (!inv) throw new Error("Convite não encontrado.");
     if (inv.accepted_at) throw new Error("Este convite já foi utilizado.");
-    if (new Date(inv.expires_at as string).getTime() < Date.now())
-      throw new Error("Convite expirado.");
+    if (!isLiveWorkspaceInvite(inv)) throw new Error("Convite expirado.");
 
     const email = (inv.email as string).toLowerCase();
 
@@ -679,6 +714,11 @@ export const consumeInvite = createServerFn({ method: "POST" })
       page++;
     }
 
+    const hiringInvite = !!(inv as { hiring_engagement_id?: string }).hiring_engagement_id;
+    if (hiringInvite && userId)
+      throw new Error(
+        "Esta conta já existe. Entre nela e aceite o convite de contratação; a senha existente não será alterada.",
+      );
     if (!userId) {
       const { data: created, error: cErr } = await supabaseAdmin.auth.admin.createUser({
         email,
@@ -710,6 +750,8 @@ export const consumeInvite = createServerFn({ method: "POST" })
       { onConflict: "id" },
     );
 
+    // New hiring accounts must authenticate before the transactional recipient-only acceptance.
+    if (hiringInvite) return { ok: true, email, hiring: true };
     // Adiciona como membro
     const { error: mErr } = await supabaseAdmin.from("workspace_members").insert({
       workspace_id: inv.workspace_id,
@@ -779,7 +821,7 @@ export const bulkRevokeInvalidWorkspaceInvites = createServerFn({ method: "POST"
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(supabase, userId);
-    await assertWorkspaceAdmin(workspaceId, userId);
+    await assertWorkspaceAdmin(supabase, workspaceId, userId);
 
     const { data: rows, error: selErr } = await supabaseAdmin
       .from("workspace_invites")

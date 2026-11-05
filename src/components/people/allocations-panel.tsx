@@ -1,3 +1,4 @@
+import { loadEmploymentContext } from "@/lib/hiring/employment.functions";
 import { useHrPrivateAccess } from "@/lib/access-control/use-hr-private-access";
 import { HrScreenAccess, HrAccessError } from "@/components/hr-access";
 import { usePersonResourceAccess } from "@/lib/access-control/use-person-resource-access";
@@ -259,7 +260,12 @@ function AllocationsPanelContent({
                         <Button
                           size="icon"
                           variant="ghost"
-                          disabled={!access.canDelete(r.id)}
+                          disabled={!access.canDelete(r.id) || !!r.hiring_engagement_id}
+                          title={
+                            r.hiring_engagement_id
+                              ? "Encerre a alocação para preservar o histórico"
+                              : undefined
+                          }
                           onClick={async () => {
                             if (await confirmDialog("Remover esta alocação?")) delMut.mutate(r.id);
                           }}
@@ -337,6 +343,16 @@ function AllocationDialog({
   onSaved: () => void;
 }) {
   const upsertFn = useServerFn(upsertAllocation);
+  const { can: canEmployment } = usePermissions();
+  const employmentLoad = useServerFn(loadEmploymentContext);
+  const employmentQuery = useQuery({
+    queryKey: ["hiring-employment", personId, ""],
+    queryFn: () => employmentLoad({ data: { personId } }),
+    enabled: canEmployment("techpeople.employment.view.workspace"),
+    retry: false,
+  });
+  const [engagement, setEngagement] = useState(editing?.hiring_engagement_id ?? "");
+  const [periodReason, setPeriodReason] = useState(editing?.period_override_reason ?? "");
   const privateAccess = useHrPrivateAccess(
     "allocations_financial",
     editing?.id ?? personId,
@@ -431,6 +447,8 @@ function AllocationDialog({
         data: {
           id: editing?.id ?? null,
           person_id: personId,
+          hiring_engagement_id: engagement || undefined,
+          period_override_reason: periodReason || null,
           contract_id: contractId,
           purchase_contract_id: purchaseContractId,
 
@@ -493,6 +511,51 @@ function AllocationDialog({
             </p>
           </div>
 
+          <div className="space-y-2 md:col-span-2">
+            <Label>Vínculo de contratação (novas alocações governadas)</Label>
+            <Select
+              value={engagement || undefined}
+              disabled={!!editing?.id}
+              onValueChange={(v) => {
+                setEngagement(v);
+                const e = employmentQuery.data?.engagements.find((x) => x.id === v);
+                if (e) {
+                  setContractId(e.commercial_contract_id);
+                  setPurchaseContractId(e.purchase_contract_id);
+                  setStartsAt(e.starts_at);
+                  setEndsAt(e.ends_at ?? "");
+                }
+              }}
+            >
+              <SelectTrigger aria-label="Vínculo da alocação">
+                <SelectValue placeholder="Selecione vínculo ativo" />
+              </SelectTrigger>
+              <SelectContent>
+                {employmentQuery.data?.engagements
+                  .filter((e) => e.status === "active")
+                  .map((e) => (
+                    <SelectItem key={e.id} value={e.id}>
+                      {e.model_name} · {e.starts_at}
+                    </SelectItem>
+                  ))}
+              </SelectContent>
+            </Select>
+            {employmentQuery.error && (
+              <p role="alert" className="text-sm text-destructive">
+                {employmentQuery.error.message}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Registre a admissão na candidatura ou no quadro de contratação integrada. Alocações
+              históricas mantêm sua origem.
+            </p>
+            {engagement && (
+              <>
+                <Label>Justificativa de período diferente do vínculo</Label>
+                <Textarea value={periodReason} onChange={(e) => setPeriodReason(e.target.value)} />
+              </>
+            )}
+          </div>
           <div className="space-y-2 md:col-span-2">
             <Label>Projeto (opcional)</Label>
             <ProjectSelect value={projectId} onChange={setProjectId} contractId={contractId} />

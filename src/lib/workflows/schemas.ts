@@ -402,6 +402,10 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
   // Contratação e desligamento — Fase 1
   z.object({
     type: z.literal("create_person_from_candidate"),
+    access_model_id: z.string().uuid().optional(),
+    entity_id: z.string().uuid().optional(),
+    ends_at: z.string().optional(),
+    reason: z.string().max(2000).optional(),
     employment_type: z.enum(["pj", "clt", "contractor", "intern", "other"]).optional(),
     department: z.string().max(80).optional(),
     role_title: z.string().max(200).optional(),

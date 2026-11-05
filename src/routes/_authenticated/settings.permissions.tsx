@@ -1,3 +1,4 @@
+import { HiringAccessModelsPanel } from "@/components/hiring/access-models-panel";
 import { FieldRulesPanel } from "@/components/access-control/field-rules-panel";
 // /settings/permissions — Área unificada de Gestão de Permissões.
 // Matriz Cargo × Recurso × Ação × Escopo aplicada a todos os módulos PSA.
@@ -29,6 +30,7 @@ function PermissionsPage() {
         title="Permissões"
         description="Configure quem pode ver, criar, editar e gerenciar recursos em cada módulo (TechSales, TechHire, TechPeople, TechContracts, TechFinance e TechProjects), além de atendimento e serviços."
       />
+      <HiringAccessModelsPanel />
       <PermissionsMatrix />
       <EffectivePermissionsPanel />
       <FieldRulesPanel />

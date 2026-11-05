@@ -1,3 +1,4 @@
+import { HiringWorkflowModelFields } from "@/components/hiring/workflow-model-fields";
 // Formulários das ações de contratação e desligamento (Fase 1).
 // Todos os valores aceitam variáveis; identificadores criados por passos
 // anteriores ficam disponíveis em {{vars.contratacao.person_id}} etc.
@@ -126,6 +127,11 @@ export function HiringActionForm({
           <p className="text-xs text-muted-foreground">
             Cria a pessoa no TechPeople com os dados do candidato. Não duplica se já existir.
           </p>
+          <HiringWorkflowModelFields
+            modelId={action.access_model_id ?? ""}
+            entityId={action.entity_id ?? ""}
+            onChange={set}
+          />
           <div className="grid grid-cols-2 gap-2">
             <Field label="Área">
               <Select
@@ -199,17 +205,11 @@ export function HiringActionForm({
     case "create_contract_document":
       return (
         <div className="space-y-3">
-          <Field label="Tipo de contrato">
-            <Select value={action.kind ?? "client"} onValueChange={(v) => set({ kind: v })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="client">Compra — contratamos a PJ do profissional</SelectItem>
-                <SelectItem value="provider">Prestação — prestamos serviço ao cliente</SelectItem>
-              </SelectContent>
-            </Select>
-          </Field>
+          <p className="text-sm text-muted-foreground">
+            Contrato de compra/contratação: a WK contrata o profissional. O papel de prestação ao
+            cliente pertence ao contrato comercial e não é usado aqui. No fluxo governado, o
+            documento nasce em rascunho para revisão.
+          </p>
           <Field label="Título" hint="Vazio = “Contrato PJ — nome do profissional”.">
             <Tok value={action.title} onChange={(v) => set({ title: v })} />
           </Field>

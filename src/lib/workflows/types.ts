@@ -449,6 +449,10 @@ export type WorkflowAction =
   // Contratação e desligamento — Fase 1 (valores aceitam tokens)
   | {
       type: "create_person_from_candidate";
+      access_model_id?: string;
+      entity_id?: string;
+      ends_at?: string;
+      reason?: string;
       employment_type?: "pj" | "clt" | "contractor" | "intern" | "other";
       /** Área: Comercial, Técnica, RH, Financeiro, Administrativo… */
       department?: string;

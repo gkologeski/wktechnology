@@ -281,6 +281,8 @@
     "system.files_share.view.own",
     "system.files_share.view.team",
     "system.files_share.view.workspace",
+    "system.hiring_access.manage.workspace",
+    "system.hiring_access.view.workspace",
     "system.home.create.own",
     "system.home.create.workspace",
     "system.home.delete.own",
@@ -1337,6 +1339,8 @@
     "techpeople.documents.view.own",
     "techpeople.documents.view.team",
     "techpeople.documents.view.workspace",
+    "techpeople.employment.manage.workspace",
+    "techpeople.employment.view.workspace",
     "techpeople.events.view.own",
     "techpeople.events.view.team",
     "techpeople.events.view.workspace",
@@ -2880,6 +2884,18 @@
     },
     "techcontracts.signature_evidence.manage.workspace": {
       "migration": "drizzle/migrations/0309_hiring_signature_evidence.sql"
+    },
+    "techpeople.employment.view.workspace": {
+      "migration": "drizzle/migrations/0311_hiring_employment_and_access_models.sql"
+    },
+    "techpeople.employment.manage.workspace": {
+      "migration": "drizzle/migrations/0311_hiring_employment_and_access_models.sql"
+    },
+    "system.hiring_access.view.workspace": {
+      "migration": "drizzle/migrations/0311_hiring_employment_and_access_models.sql"
+    },
+    "system.hiring_access.manage.workspace": {
+      "migration": "drizzle/migrations/0311_hiring_employment_and_access_models.sql"
     }
   }
 }

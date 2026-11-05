@@ -1,3 +1,4 @@
+import { DemandAccessRolePanel } from "@/components/hiring/demand-access-role-panel";
 import { RecruitmentAuthorizationPanel } from "./recruitment-authorization-panel";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -89,6 +90,7 @@ export function HiringDemandPanel({
   return data ? (
     <div className="space-y-4">
       <RecruitmentAuthorizationPanel jobId={jobId} onChanged={onChanged} />
+      <DemandAccessRolePanel jobId={jobId} onChanged={onChanged} />
       <DemandForm
         key={data.job.revision + ":" + data.job.status}
         data={data}

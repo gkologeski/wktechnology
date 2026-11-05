@@ -52,6 +52,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedSurveysRouteImport } from './routes/_authenticated/surveys'
 import { Route as AuthenticatedTasksRouteImport } from './routes/_authenticated/tasks'
 import { Route as AuthenticatedTicketsRouteImport } from './routes/_authenticated/tickets'
+import { Route as AcceptEmploymentTokenRouteImport } from './routes/accept-employment.$token'
 import { Route as AcceptInviteIndexRouteImport } from './routes/accept-invite.index'
 import { Route as AcceptInviteTokenRouteImport } from './routes/accept-invite.$token'
 import { Route as BookSlugRouteImport } from './routes/book.$slug'
@@ -656,6 +657,11 @@ const AuthenticatedTicketsRoute = AuthenticatedTicketsRouteImport.update({
   id: '/tickets',
   path: '/tickets',
   getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AcceptEmploymentTokenRoute = AcceptEmploymentTokenRouteImport.update({
+  id: '/accept-employment/$token',
+  path: '/accept-employment/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AcceptInviteIndexRoute = AcceptInviteIndexRouteImport.update({
   id: '/accept-invite/',
@@ -2906,6 +2912,7 @@ export interface FileRoutesByFullPath {
   '/surveys': typeof AuthenticatedSurveysRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
+  '/accept-employment/$token': typeof AcceptEmploymentTokenRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
@@ -3326,6 +3333,7 @@ export interface FileRoutesByTo {
   '/surveys': typeof AuthenticatedSurveysRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/tickets': typeof AuthenticatedTicketsRouteWithChildren
+  '/accept-employment/$token': typeof AcceptEmploymentTokenRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
@@ -3751,6 +3759,7 @@ export interface FileRoutesById {
   '/_authenticated/surveys': typeof AuthenticatedSurveysRoute
   '/_authenticated/tasks': typeof AuthenticatedTasksRouteWithChildren
   '/_authenticated/tickets': typeof AuthenticatedTicketsRouteWithChildren
+  '/accept-employment/$token': typeof AcceptEmploymentTokenRoute
   '/accept-invite/$token': typeof AcceptInviteTokenRoute
   '/book/$slug': typeof BookSlugRoute
   '/careers/$slug': typeof CareersSlugRoute
@@ -4178,6 +4187,7 @@ export interface FileRouteTypes {
     | '/surveys'
     | '/tasks'
     | '/tickets'
+    | '/accept-employment/$token'
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/careers/$slug'
@@ -4598,6 +4608,7 @@ export interface FileRouteTypes {
     | '/surveys'
     | '/tasks'
     | '/tickets'
+    | '/accept-employment/$token'
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/careers/$slug'
@@ -5022,6 +5033,7 @@ export interface FileRouteTypes {
     | '/_authenticated/surveys'
     | '/_authenticated/tasks'
     | '/_authenticated/tickets'
+    | '/accept-employment/$token'
     | '/accept-invite/$token'
     | '/book/$slug'
     | '/careers/$slug'
@@ -5422,6 +5434,7 @@ export interface RootRouteChildren {
   UnsubscribeRoute: typeof UnsubscribeRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  AcceptEmploymentTokenRoute: typeof AcceptEmploymentTokenRoute
   AcceptInviteTokenRoute: typeof AcceptInviteTokenRoute
   BookSlugRoute: typeof BookSlugRoute
   CareersSlugRoute: typeof CareersSlugRoute
@@ -5846,6 +5859,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tickets'
       preLoaderRoute: typeof AuthenticatedTicketsRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/accept-employment/$token': {
+      id: '/accept-employment/$token'
+      path: '/accept-employment/$token'
+      fullPath: '/accept-employment/$token'
+      preLoaderRoute: typeof AcceptEmploymentTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/accept-invite/': {
       id: '/accept-invite/'
@@ -9452,6 +9472,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  AcceptEmploymentTokenRoute: AcceptEmploymentTokenRoute,
   AcceptInviteTokenRoute: AcceptInviteTokenRoute,
   BookSlugRoute: BookSlugRoute,
   CareersSlugRoute: CareersSlugRoute,

@@ -1,3 +1,4 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
 import { isEmailAddress } from "@/lib/email-address";
 // Ações do ciclo de contratação (Fase 1 do plano de contratação via Workflows).
 // Cada ação é um passo isolado, idempotente e restrito ao workspace do run:
@@ -8,7 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sourcePhone } from "@/lib/phone/phone-boundary";
 import { type AnyRow, type LogStep, renderTokens } from "../engine-shared.server";
 import { createContractShared } from "@/lib/contracts/contract-create.server";
-import { isContractKind, kindToColumns, type ContractKind } from "@/lib/contracts/contract-kinds";
+import { kindToColumns, type ContractKind } from "@/lib/contracts/contract-kinds";
 import type { RunCtx, RunnableAction } from "./run-context";
 
 const HIRING_TYPES = new Set([
@@ -143,6 +144,65 @@ export async function handleHiringAction(
   if (!HIRING_TYPES.has(action.type)) return null;
   if (!ctx.workspaceId) throw new Error("Workspace do registro não identificado.");
   const h = hiringVars(ctx);
+  if (
+    ctx.entity === "ats_applications" &&
+    [
+      "create_person_from_candidate",
+      "create_contract_document",
+      "create_allocation",
+      "provision_workspace_user",
+    ].includes(action.type)
+  ) {
+    const raw = { ...(action as unknown as Record<string, unknown>) };
+    if (action.type === "create_contract_document" && action.template_id) {
+      const { data: tpl, error } = await supabase
+        .from("contract_templates")
+        .select("body_html")
+        .eq("id", action.template_id)
+        .eq("workspace_id", ctx.workspaceId)
+        .maybeSingle();
+      if (error || !tpl) throw new Error("Modelo de contrato indisponível neste workspace.");
+      raw.body_html = String(
+        renderTokens((tpl as { body_html: string | null }).body_html ?? "", ctx.after, ctx.vars),
+      );
+    }
+    const result = await workRpc<{
+      handled: boolean;
+      id: string;
+      person_id: string;
+      engagement_id: string;
+    }>(supabase, "hiring_workflow_employment", {
+      w: ctx.workspaceId,
+      p_application: ctx.entityId,
+      p_actor: ctx.ownerId,
+      p_step: action.type,
+      p_payload: {
+        ...Object.fromEntries(
+          Object.entries(raw).map(([k, v]) => [k, typeof v === "string" ? txt(ctx, v) : v]),
+        ),
+        starts_at: txt(
+          ctx,
+          String(raw.starts_at ?? raw.hire_date ?? hiringDetails(ctx).start_date ?? ""),
+        ),
+      },
+    });
+    if (result.handled) {
+      h.person_id = result.person_id;
+      if (action.type === "create_contract_document") h.contract_id = result.id;
+      if (action.type === "create_allocation") h.allocation_id = result.id;
+      return {
+        at,
+        ok: true,
+        action: action.type,
+        detail: {
+          id: result.id,
+          engagement_id: result.engagement_id,
+          person_id: result.person_id,
+          origin: "integrated_hiring",
+        },
+      };
+    }
+  }
 
   switch (action.type) {
     case "create_person_from_candidate": {
@@ -245,7 +305,7 @@ export async function handleHiringAction(
         throw new Error(
           "Pessoa não encontrada. Inclua antes o passo “Criar pessoa a partir do candidato”.",
         );
-      const kind: ContractKind = isContractKind(action.kind) ? action.kind : "client";
+      const kind: ContractKind = "client";
       const { document_kind, role } = kindToColumns(kind, null);
 
       const { workRpc } = await import("@/lib/access-control/work-core.server");

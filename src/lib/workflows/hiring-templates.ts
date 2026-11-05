@@ -38,7 +38,7 @@ export const HIRING_TEMPLATES: HiringTemplate[] = [
     trigger: hiredAs("internal"),
     actions: [
       { type: "create_person_from_candidate", employment_type: "pj" },
-      { type: "create_contract_document", kind: "provider", person_id: PERSON },
+      { type: "create_contract_document", kind: "client", person_id: PERSON },
       {
         type: "create_payable_schedule",
         person_id: PERSON,
@@ -68,7 +68,7 @@ export const HIRING_TEMPLATES: HiringTemplate[] = [
         employment_type: "contractor",
         cost_hour: "{{hiring_details.hourly_rate}}",
       },
-      { type: "create_contract_document", kind: "provider", person_id: PERSON },
+      { type: "create_contract_document", kind: "client", person_id: PERSON },
     ] as WorkflowAction[],
   },
   {
@@ -79,7 +79,7 @@ export const HIRING_TEMPLATES: HiringTemplate[] = [
     trigger: hiredAs("outsourcing"),
     actions: [
       { type: "create_person_from_candidate" },
-      { type: "create_contract_document", kind: "provider", person_id: PERSON },
+      { type: "create_contract_document", kind: "client", person_id: PERSON },
       {
         type: "create_allocation",
         person_id: PERSON,
