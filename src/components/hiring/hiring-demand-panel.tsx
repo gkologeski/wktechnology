@@ -62,10 +62,19 @@ function Choice({
     </div>
   );
 }
-export function HiringDemandPanel({ jobId }: { jobId: string }) {
+export function HiringDemandPanel({
+  jobId,
+  onChanged,
+}: {
+  jobId: string;
+  onChanged: () => Promise<void>;
+}) {
   const load = useServerFn(getHiringDemand);
   const { data, error, isLoading } = useQuery({
     queryKey: ["hiring-demand", jobId],
+    // Properties can invalidate a decision outside this tab; never reuse the global 1-minute freshness.
+    staleTime: 0,
+    refetchOnMount: "always",
     queryFn: () => load({ data: { jobId } }),
     retry: false,
   });
@@ -76,9 +85,11 @@ export function HiringDemandPanel({ jobId }: { jobId: string }) {
         {error.message}
       </p>
     );
-  return data ? <DemandForm key={data.job.revision + ":" + data.job.status} data={data} /> : null;
+  return data ? (
+    <DemandForm key={data.job.revision + ":" + data.job.status} data={data} onChanged={onChanged} />
+  ) : null;
 }
-function DemandForm({ data }: { data: HiringContext }) {
+function DemandForm({ data, onChanged }: { data: HiringContext; onChanged: () => Promise<void> }) {
   const { can } = usePermissions();
   const qc = useQueryClient();
   const save = useServerFn(saveHiringDemand),
@@ -118,6 +129,7 @@ function DemandForm({ data }: { data: HiringContext }) {
     try {
       await fn();
       await qc.invalidateQueries({ queryKey: ["hiring-demand", data.job.id] });
+      await onChanged();
       toast.success("Operação registrada.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Não foi possível concluir.");

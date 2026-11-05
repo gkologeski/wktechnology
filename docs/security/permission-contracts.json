@@ -7843,8 +7843,8 @@
       "files": {
         "drizzle/migrations/0308_hiring_demands_and_approvals.sql": "bda3034b719861a0ad28eeabc732934a730638c2d1e563ad46e81d9cf451437a",
         "src/lib/hiring/hiring.functions.ts": "2f25c0dee65152cf990f4a6500f26b0af5f34c285d6d619f46d87ec237b024df",
-        "src/components/hiring/hiring-demand-panel.tsx": "030c931bfe136732be9b5688bc60d2b3c292a1372b9a80e4000a1a37a356f55e",
-        "src/routes/_authenticated/(ats)/jobs.$id.tsx": "79e1d5ab71442f45778f1e5682754f6c4b31d54d397aa893699da8ee7a3f99e4",
+        "src/components/hiring/hiring-demand-panel.tsx": "7ba4980893dc1dc0b572f8e2c6fbb70fedee789c948fb04c3ba213c2df86e26e",
+        "src/routes/_authenticated/(ats)/jobs.$id.tsx": "aa7ddaaa13f428ca1e44a7c02b989304628327b9b893ceb8507ea894896af805",
         "src/lib/role-profiles/service.server.ts": "ecb16e162437e63ab9f458f131bf1a664faa08c648989b79e5592e8c210976f5",
         "src/routes/_authenticated/catalog.services.tsx": "1c74fdb8057b7e7cf742c694756605fd3214024bf141a16dfafac82bad4f5f11"
       }

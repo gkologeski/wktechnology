@@ -500,7 +500,7 @@ function JobDetailContent() {
 
             {can("techhire.hiring_demands.view.workspace") && (
               <TabsContent value="hiring">
-                <HiringDemandPanel jobId={id} />
+                <HiringDemandPanel jobId={id} onChanged={refresh} />
               </TabsContent>
             )}
             <TabsContent value="overview" className="mt-0">
