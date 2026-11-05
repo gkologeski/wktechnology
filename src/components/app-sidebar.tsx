@@ -2,7 +2,7 @@ import { salesRouteResources, canViewSalesRoute } from "@/lib/access-control/sal
 import { canSeeHrMenu } from "@/lib/access-control/hr-menu-access";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronDown, Search, Shield } from "lucide-react";
+import { ChevronDown, GraduationCap, Search, Shield } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -300,6 +300,23 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="gap-1 border-t border-sidebar-border/60 px-2 pt-2">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              tooltip="Ajuda e Treinamento"
+              isActive={path === "/ajuda" || path.startsWith("/ajuda/")}
+              className="h-auto rounded-xl px-2 py-2"
+            >
+              <Link to="/ajuda" className="flex items-center gap-2.5">
+                <span className="grid h-7 w-7 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                  <GraduationCap className="h-3.5 w-3.5" />
+                </span>
+                {!collapsed && <span className="truncate">Ajuda e Treinamento</span>}
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
         <PlatformSection items={platformItems} isActive={isActive} collapsed={collapsed} />
       </SidebarFooter>
     </Sidebar>

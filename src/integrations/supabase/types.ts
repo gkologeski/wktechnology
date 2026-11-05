@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       ab_test_events: {
@@ -2440,7 +2435,15 @@ export type Database = {
           description: string | null
           employment_type: string | null
           filled_at: string | null
+          hiring_approval_status: string
+          hiring_area_id: string | null
+          hiring_billing_model: string | null
+          hiring_contract_id: string | null
+          hiring_governed: boolean
           hiring_manager_id: string | null
+          hiring_purpose: string | null
+          hiring_revision: number
+          hiring_role_id: string | null
           id: string
           linkedin_apply_type: string | null
           linkedin_apply_url: string | null
@@ -2481,7 +2484,15 @@ export type Database = {
           description?: string | null
           employment_type?: string | null
           filled_at?: string | null
+          hiring_approval_status?: string
+          hiring_area_id?: string | null
+          hiring_billing_model?: string | null
+          hiring_contract_id?: string | null
+          hiring_governed?: boolean
           hiring_manager_id?: string | null
+          hiring_purpose?: string | null
+          hiring_revision?: number
+          hiring_role_id?: string | null
           id?: string
           linkedin_apply_type?: string | null
           linkedin_apply_url?: string | null
@@ -2522,7 +2533,15 @@ export type Database = {
           description?: string | null
           employment_type?: string | null
           filled_at?: string | null
+          hiring_approval_status?: string
+          hiring_area_id?: string | null
+          hiring_billing_model?: string | null
+          hiring_contract_id?: string | null
+          hiring_governed?: boolean
           hiring_manager_id?: string | null
+          hiring_purpose?: string | null
+          hiring_revision?: number
+          hiring_role_id?: string | null
           id?: string
           linkedin_apply_type?: string | null
           linkedin_apply_url?: string | null
@@ -2556,6 +2575,27 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ats_jobs_hiring_area_id_fkey"
+            columns: ["hiring_area_id"]
+            isOneToOne: false
+            referencedRelation: "user_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_jobs_hiring_contract_id_fkey"
+            columns: ["hiring_contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_jobs_hiring_role_id_fkey"
+            columns: ["hiring_role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ats_jobs_pipeline_id_fkey"
             columns: ["pipeline_id"]
@@ -6970,6 +7010,7 @@ export type Database = {
           ends_at: string | null
           expense_reimbursement_days: number | null
           governing_law: string | null
+          hiring_person_id: string | null
           hours_per_month: number | null
           id: string
           import_confidence: number | null
@@ -7029,6 +7070,7 @@ export type Database = {
           ends_at?: string | null
           expense_reimbursement_days?: number | null
           governing_law?: string | null
+          hiring_person_id?: string | null
           hours_per_month?: number | null
           id?: string
           import_confidence?: number | null
@@ -7088,6 +7130,7 @@ export type Database = {
           ends_at?: string | null
           expense_reimbursement_days?: number | null
           governing_law?: string | null
+          hiring_person_id?: string | null
           hours_per_month?: number | null
           id?: string
           import_confidence?: number | null
@@ -7164,6 +7207,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "shared_fields_deals"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_hiring_person_id_fkey"
+            columns: ["hiring_person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contracts_hiring_person_id_fkey"
+            columns: ["hiring_person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
           },
           {
             foreignKeyName: "contracts_parent_contract_id_fkey"
@@ -11769,6 +11826,955 @@ export type Database = {
           },
         ]
       }
+      help_articles: {
+        Row: {
+          article_type: string
+          audience: string
+          body_md: string
+          created_at: string
+          id: string
+          is_published: boolean
+          min_permission: string | null
+          module_key: string
+          route_pattern: string | null
+          search_vector: unknown
+          slug: string
+          sort_order: number
+          summary: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+          version: number
+        }
+        Insert: {
+          article_type: string
+          audience?: string
+          body_md?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          min_permission?: string | null
+          module_key: string
+          route_pattern?: string | null
+          search_vector?: unknown
+          slug: string
+          sort_order?: number
+          summary?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Update: {
+          article_type?: string
+          audience?: string
+          body_md?: string
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          min_permission?: string | null
+          module_key?: string
+          route_pattern?: string | null
+          search_vector?: unknown
+          slug?: string
+          sort_order?: number
+          summary?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
+      help_feedback: {
+        Row: {
+          article_id: string
+          comment: string | null
+          created_at: string
+          id: string
+          useful: boolean
+          user_id: string
+        }
+        Insert: {
+          article_id: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          useful: boolean
+          user_id: string
+        }
+        Update: {
+          article_id?: string
+          comment?: string | null
+          created_at?: string
+          id?: string
+          useful?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_feedback_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "help_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_route_misses: {
+        Row: {
+          created_at: string
+          id: string
+          route: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          route: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          route?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hiring_access_grants: {
+        Row: {
+          assignment_id: string | null
+          created_at: string
+          engagement_id: string
+          id: string
+          revoked_at: string | null
+          set_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          assignment_id?: string | null
+          created_at?: string
+          engagement_id: string
+          id?: string
+          revoked_at?: string | null
+          set_id: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          assignment_id?: string | null
+          created_at?: string
+          engagement_id?: string
+          id?: string
+          revoked_at?: string | null
+          set_id?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_access_grants_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: true
+            referencedRelation: "user_permission_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_access_grants_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_access_grants_set_id_fkey"
+            columns: ["set_id"]
+            isOneToOne: true
+            referencedRelation: "permission_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_access_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_access_model_versions: {
+        Row: {
+          allocation_only: boolean
+          created_at: string
+          created_by: string
+          id: string
+          model_id: string
+          name: string
+          permission_keys: string[]
+          revision: number
+          role_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          allocation_only: boolean
+          created_at?: string
+          created_by: string
+          id?: string
+          model_id: string
+          name: string
+          permission_keys: string[]
+          revision: number
+          role_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          allocation_only?: boolean
+          created_at?: string
+          created_by?: string
+          id?: string
+          model_id?: string
+          name?: string
+          permission_keys?: string[]
+          revision?: number
+          role_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_access_model_versions_model_id_fkey"
+            columns: ["model_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_access_models"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_access_models: {
+        Row: {
+          active: boolean
+          allocation_only: boolean
+          id: string
+          name: string
+          permission_keys: string[]
+          revision: number
+          role_id: string | null
+          updated_at: string
+          updated_by: string
+          workspace_id: string
+        }
+        Insert: {
+          active?: boolean
+          allocation_only?: boolean
+          id?: string
+          name: string
+          permission_keys?: string[]
+          revision?: number
+          role_id?: string | null
+          updated_at?: string
+          updated_by: string
+          workspace_id: string
+        }
+        Update: {
+          active?: boolean
+          allocation_only?: boolean
+          id?: string
+          name?: string
+          permission_keys?: string[]
+          revision?: number
+          role_id?: string | null
+          updated_at?: string
+          updated_by?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_access_models_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_access_models_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_area_policies: {
+        Row: {
+          area_id: string
+          ceo_delegate_id: string | null
+          ceo_id: string
+          manager_delegate_id: string | null
+          manager_id: string
+          revision: number
+          updated_at: string
+          updated_by: string
+          workspace_id: string
+        }
+        Insert: {
+          area_id: string
+          ceo_delegate_id?: string | null
+          ceo_id: string
+          manager_delegate_id?: string | null
+          manager_id: string
+          revision?: number
+          updated_at?: string
+          updated_by: string
+          workspace_id: string
+        }
+        Update: {
+          area_id?: string
+          ceo_delegate_id?: string | null
+          ceo_id?: string
+          manager_delegate_id?: string | null
+          manager_id?: string
+          revision?: number
+          updated_at?: string
+          updated_by?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_area_policies_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: true
+            referencedRelation: "user_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_area_policies_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_commercial_contracts: {
+        Row: {
+          contract_id: string
+          deal_id: string
+          selected_at: string
+          selected_by: string
+          workspace_id: string
+        }
+        Insert: {
+          contract_id: string
+          deal_id: string
+          selected_at?: string
+          selected_by: string
+          workspace_id: string
+        }
+        Update: {
+          contract_id?: string
+          deal_id?: string
+          selected_at?: string
+          selected_by?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_commercial_contracts_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_commercial_contracts_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_commercial_contracts_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "shared_fields_deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_commercial_contracts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_contract_evidence: {
+        Row: {
+          contract_hash: string
+          contract_id: string
+          customer_signer_id: string | null
+          document_hash: string | null
+          document_id: string | null
+          file_hash: string | null
+          file_path: string | null
+          id: string
+          issuer_signer_id: string | null
+          kind: string
+          note: string
+          recorded_at: string
+          recorded_by: string
+          reference: string | null
+          revocation_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          signed_on: string | null
+          workspace_id: string
+        }
+        Insert: {
+          contract_hash: string
+          contract_id: string
+          customer_signer_id?: string | null
+          document_hash?: string | null
+          document_id?: string | null
+          file_hash?: string | null
+          file_path?: string | null
+          id?: string
+          issuer_signer_id?: string | null
+          kind: string
+          note: string
+          recorded_at?: string
+          recorded_by: string
+          reference?: string | null
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          signed_on?: string | null
+          workspace_id: string
+        }
+        Update: {
+          contract_hash?: string
+          contract_id?: string
+          customer_signer_id?: string | null
+          document_hash?: string | null
+          document_id?: string | null
+          file_hash?: string | null
+          file_path?: string | null
+          id?: string
+          issuer_signer_id?: string | null
+          kind?: string
+          note?: string
+          recorded_at?: string
+          recorded_by?: string
+          reference?: string | null
+          revocation_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          signed_on?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_contract_evidence_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_contract_evidence_customer_signer_id_fkey"
+            columns: ["customer_signer_id"]
+            isOneToOne: false
+            referencedRelation: "esign_signers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_contract_evidence_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "esign_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_contract_evidence_issuer_signer_id_fkey"
+            columns: ["issuer_signer_id"]
+            isOneToOne: false
+            referencedRelation: "esign_signers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_contract_evidence_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_demand_events: {
+        Row: {
+          actor_id: string
+          created_at: string
+          detail: Json
+          id: string
+          job_id: string
+          kind: string
+          request_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          job_id: string
+          kind: string
+          request_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          job_id?: string
+          kind?: string
+          request_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_demand_events_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_demand_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_demand_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_demand_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_demand_requests: {
+        Row: {
+          created_at: string
+          id: string
+          job_id: string
+          policy_revision: number
+          requested_by: string
+          revision: number
+          snapshot: Json
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          job_id: string
+          policy_revision: number
+          requested_by: string
+          revision: number
+          snapshot: Json
+          status: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          job_id?: string
+          policy_revision?: number
+          requested_by?: string
+          revision?: number
+          snapshot?: Json
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_demand_requests_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_demand_requests_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_demand_steps: {
+        Row: {
+          approver_id: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          note: string | null
+          position: number
+          request_id: string
+          stage: string
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          approver_id: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          note?: string | null
+          position: number
+          request_id: string
+          stage: string
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          approver_id?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          note?: string | null
+          position?: number
+          request_id?: string
+          stage?: string
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_demand_steps_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_demand_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_demand_steps_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_email_outbox: {
+        Row: {
+          attempts: number
+          last_error: string | null
+          next_attempt_at: string
+          status: string
+          step_id: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          attempts?: number
+          last_error?: string | null
+          next_attempt_at?: string
+          status?: string
+          step_id: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          attempts?: number
+          last_error?: string | null
+          next_attempt_at?: string
+          status?: string
+          step_id?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_email_outbox_step_id_fkey"
+            columns: ["step_id"]
+            isOneToOne: true
+            referencedRelation: "hiring_demand_steps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_employment_events: {
+        Row: {
+          actor_id: string
+          created_at: string
+          detail: Json
+          engagement_id: string
+          id: string
+          kind: string
+          workspace_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          detail?: Json
+          engagement_id: string
+          id?: string
+          kind: string
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          detail?: Json
+          engagement_id?: string
+          id?: string
+          kind?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_employment_events_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_engagements"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_engagements: {
+        Row: {
+          application_id: string | null
+          commercial_contract_id: string | null
+          created_at: string
+          created_by: string
+          employment_type: Database["public"]["Enums"]["people_employment_type"]
+          end_reason: string | null
+          ended_at: string | null
+          ended_by: string | null
+          ends_at: string | null
+          id: string
+          job_id: string
+          legal_entity_id: string
+          model_version_id: string
+          person_id: string
+          purchase_contract_id: string | null
+          purpose: string
+          revision: number
+          starts_at: string
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          application_id?: string | null
+          commercial_contract_id?: string | null
+          created_at?: string
+          created_by: string
+          employment_type: Database["public"]["Enums"]["people_employment_type"]
+          end_reason?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
+          ends_at?: string | null
+          id?: string
+          job_id: string
+          legal_entity_id: string
+          model_version_id: string
+          person_id: string
+          purchase_contract_id?: string | null
+          purpose: string
+          revision?: number
+          starts_at: string
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          application_id?: string | null
+          commercial_contract_id?: string | null
+          created_at?: string
+          created_by?: string
+          employment_type?: Database["public"]["Enums"]["people_employment_type"]
+          end_reason?: string | null
+          ended_at?: string | null
+          ended_by?: string | null
+          ends_at?: string | null
+          id?: string
+          job_id?: string
+          legal_entity_id?: string
+          model_version_id?: string
+          person_id?: string
+          purchase_contract_id?: string | null
+          purpose?: string
+          revision?: number
+          starts_at?: string
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_engagements_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: true
+            referencedRelation: "ats_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_engagements_commercial_contract_id_fkey"
+            columns: ["commercial_contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_engagements_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "ats_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_engagements_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_engagements_model_version_id_fkey"
+            columns: ["model_version_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_access_model_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_engagements_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_engagements_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
+          },
+          {
+            foreignKeyName: "hiring_engagements_purchase_contract_id_fkey"
+            columns: ["purchase_contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_engagements_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_policy_versions: {
+        Row: {
+          actor_id: string
+          area_id: string
+          created_at: string
+          id: string
+          revision: number
+          snapshot: Json
+          workspace_id: string
+        }
+        Insert: {
+          actor_id: string
+          area_id: string
+          created_at?: string
+          id?: string
+          revision: number
+          snapshot: Json
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string
+          area_id?: string
+          created_at?: string
+          id?: string
+          revision?: number
+          snapshot?: Json
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      hiring_signature_events: {
+        Row: {
+          actor_id: string
+          contract_id: string
+          created_at: string
+          details: Json
+          id: string
+          kind: string
+          workspace_id: string
+        }
+        Insert: {
+          actor_id: string
+          contract_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          kind: string
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string
+          contract_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          kind?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      hiring_workspace_settings: {
+        Row: {
+          employment_gate_enabled: boolean
+          enabled: boolean
+          signature_gate_enabled: boolean
+          updated_at: string
+          updated_by: string
+          workspace_id: string
+        }
+        Insert: {
+          employment_gate_enabled?: boolean
+          enabled?: boolean
+          signature_gate_enabled?: boolean
+          updated_at?: string
+          updated_by: string
+          workspace_id: string
+        }
+        Update: {
+          employment_gate_enabled?: boolean
+          enabled?: boolean
+          signature_gate_enabled?: boolean
+          updated_at?: string
+          updated_by?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_workspace_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hubspot_owners: {
         Row: {
           archived: boolean
@@ -14510,6 +15516,7 @@ export type Database = {
           employment_type: Database["public"]["Enums"]["people_employment_type"]
           full_name: string
           hire_date: string | null
+          hiring_legal_entity_id: string | null
           id: string
           legal_entity_name: string | null
           location: string | null
@@ -14558,6 +15565,7 @@ export type Database = {
           employment_type?: Database["public"]["Enums"]["people_employment_type"]
           full_name: string
           hire_date?: string | null
+          hiring_legal_entity_id?: string | null
           id?: string
           legal_entity_name?: string | null
           location?: string | null
@@ -14606,6 +15614,7 @@ export type Database = {
           employment_type?: Database["public"]["Enums"]["people_employment_type"]
           full_name?: string
           hire_date?: string | null
+          hiring_legal_entity_id?: string | null
           id?: string
           legal_entity_name?: string | null
           location?: string | null
@@ -14647,6 +15656,13 @@ export type Database = {
             columns: ["candidate_id"]
             isOneToOne: false
             referencedRelation: "shared_fields_ats_candidates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_hiring_legal_entity_id_fkey"
+            columns: ["hiring_legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
@@ -14731,6 +15747,7 @@ export type Database = {
           created_at: string
           currency: string
           ends_at: string | null
+          hiring_engagement_id: string | null
           hours_per_month: number | null
           hours_per_week: number | null
           id: string
@@ -14738,6 +15755,7 @@ export type Database = {
           notes: string | null
           overbook_justification: string | null
           owner_id: string
+          period_override_reason: string | null
           person_id: string
           project_id: string | null
           purchase_contract_id: string | null
@@ -14761,6 +15779,7 @@ export type Database = {
           created_at?: string
           currency?: string
           ends_at?: string | null
+          hiring_engagement_id?: string | null
           hours_per_month?: number | null
           hours_per_week?: number | null
           id?: string
@@ -14768,6 +15787,7 @@ export type Database = {
           notes?: string | null
           overbook_justification?: string | null
           owner_id?: string
+          period_override_reason?: string | null
           person_id: string
           project_id?: string | null
           purchase_contract_id?: string | null
@@ -14791,6 +15811,7 @@ export type Database = {
           created_at?: string
           currency?: string
           ends_at?: string | null
+          hiring_engagement_id?: string | null
           hours_per_month?: number | null
           hours_per_week?: number | null
           id?: string
@@ -14798,6 +15819,7 @@ export type Database = {
           notes?: string | null
           overbook_justification?: string | null
           owner_id?: string
+          period_override_reason?: string | null
           person_id?: string
           project_id?: string | null
           purchase_contract_id?: string | null
@@ -14821,6 +15843,13 @@ export type Database = {
             columns: ["contracting_preset_id"]
             isOneToOne: false
             referencedRelation: "contracting_presets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_allocations_hiring_engagement_id_fkey"
+            columns: ["hiring_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_engagements"
             referencedColumns: ["id"]
           },
           {
@@ -19665,6 +20694,7 @@ export type Database = {
           progress: number
           role: Database["public"]["Enums"]["contract_role"]
           service_id: string | null
+          signature_gate_governed: boolean
           source_line_item_id: string | null
           starts_at: string | null
           status: Database["public"]["Enums"]["project_status"]
@@ -19695,6 +20725,7 @@ export type Database = {
           progress?: number
           role?: Database["public"]["Enums"]["contract_role"]
           service_id?: string | null
+          signature_gate_governed?: boolean
           source_line_item_id?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["project_status"]
@@ -19725,6 +20756,7 @@ export type Database = {
           progress?: number
           role?: Database["public"]["Enums"]["contract_role"]
           service_id?: string | null
+          signature_gate_governed?: boolean
           source_line_item_id?: string | null
           starts_at?: string | null
           status?: Database["public"]["Enums"]["project_status"]
@@ -24791,6 +25823,7 @@ export type Database = {
           owner_id: string
           percent_base_label: string | null
           service_type: string
+          staffing_kind: string | null
           tags: string[]
           tax_rate: number
           unit: string
@@ -24818,6 +25851,7 @@ export type Database = {
           owner_id: string
           percent_base_label?: string | null
           service_type?: string
+          staffing_kind?: string | null
           tags?: string[]
           tax_rate?: number
           unit?: string
@@ -24845,6 +25879,7 @@ export type Database = {
           owner_id?: string
           percent_base_label?: string | null
           service_type?: string
+          staffing_kind?: string | null
           tags?: string[]
           tax_rate?: number
           unit?: string
@@ -29350,6 +30385,7 @@ export type Database = {
           created_at: string
           email: string
           expires_at: string
+          hiring_engagement_id: string | null
           id: string
           invited_by: string
           permission_set_id: string | null
@@ -29362,6 +30398,7 @@ export type Database = {
           created_at?: string
           email: string
           expires_at?: string
+          hiring_engagement_id?: string | null
           id?: string
           invited_by: string
           permission_set_id?: string | null
@@ -29374,6 +30411,7 @@ export type Database = {
           created_at?: string
           email?: string
           expires_at?: string
+          hiring_engagement_id?: string | null
           id?: string
           invited_by?: string
           permission_set_id?: string | null
@@ -29382,6 +30420,13 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "workspace_invites_hiring_engagement_id_fkey"
+            columns: ["hiring_engagement_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_engagements"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "workspace_invites_permission_set_id_fkey"
             columns: ["permission_set_id"]
@@ -31370,6 +32415,286 @@ export type Database = {
           _workspace: string
         }
         Returns: boolean
+      }
+      help_can_edit: { Args: never; Returns: boolean }
+      help_can_read: {
+        Args: { _min_permission: string; _module: string }
+        Returns: boolean
+      }
+      help_is_active_member: { Args: { _user: string }; Returns: boolean }
+      help_search: {
+        Args: { _limit?: number; _q: string }
+        Returns: {
+          article_type: string
+          id: string
+          module_key: string
+          rank: number
+          slug: string
+          snippet: string
+          summary: string
+          title: string
+        }[]
+      }
+      hiring_accept_invite: { Args: { p_token: string }; Returns: string }
+      hiring_allocate: {
+        Args: {
+          p_end: string
+          p_engagement: string
+          p_pct: number
+          p_project: string
+          p_reason: string
+          p_start: string
+          w: string
+        }
+        Returns: string
+      }
+      hiring_allocation_scope: {
+        Args: { p: string; w: string }
+        Returns: boolean
+      }
+      hiring_area_policy_save: {
+        Args: {
+          p_area: string
+          p_ceo: string
+          p_ceo_delegate?: string
+          p_manager: string
+          p_manager_delegate?: string
+          p_ws: string
+        }
+        Returns: undefined
+      }
+      hiring_contract_evidence_revoke: {
+        Args: { p_evidence: string; p_note: string; p_ws: string }
+        Returns: undefined
+      }
+      hiring_contract_external_attest: {
+        Args: {
+          p_contract: string
+          p_file_hash: string
+          p_hash: string
+          p_note: string
+          p_path: string
+          p_reference: string
+          p_signed_on: string
+          p_ws: string
+        }
+        Returns: string
+      }
+      hiring_contract_fingerprint: {
+        Args: { p_contract: string }
+        Returns: string
+      }
+      hiring_contract_native_prepare: {
+        Args: {
+          p_contract: string
+          p_customer_email: string
+          p_customer_name: string
+          p_hash: string
+          p_issuer_email: string
+          p_issuer_name: string
+          p_ws: string
+        }
+        Returns: string
+      }
+      hiring_contract_origin_save: {
+        Args: {
+          p_contract: string
+          p_deal: string
+          p_entity: string
+          p_hash: string
+          p_ws: string
+        }
+        Returns: undefined
+      }
+      hiring_contract_select_commercial: {
+        Args: { p_contract: string; p_ws: string }
+        Returns: undefined
+      }
+      hiring_contract_signature_context: {
+        Args: { p_contract: string; p_ws: string }
+        Returns: Json
+      }
+      hiring_contract_signature_reason: {
+        Args: { p_contract: string; p_deal?: string; p_ws: string }
+        Returns: string
+      }
+      hiring_deal_signature_contract: {
+        Args: { p_deal: string; p_ws: string }
+        Returns: string
+      }
+      hiring_demand_decide: {
+        Args: {
+          p_decision: string
+          p_note?: string
+          p_request: string
+          p_ws: string
+        }
+        Returns: undefined
+      }
+      hiring_demand_notify: { Args: { p_request: string }; Returns: undefined }
+      hiring_demand_request: {
+        Args: { p_job: string; p_revision: number; p_ws: string }
+        Returns: string
+      }
+      hiring_demand_save: {
+        Args: {
+          p_area: string
+          p_billing: string
+          p_job: string
+          p_purpose: string
+          p_regime: string
+          p_revision: number
+          p_ws: string
+        }
+        Returns: undefined
+      }
+      hiring_email_claim: {
+        Args: never
+        Returns: {
+          job_id: string
+          recipient_id: string
+          step_id: string
+          workspace_id: string
+        }[]
+      }
+      hiring_employment_access: {
+        Args: { k: string; w: string }
+        Returns: boolean
+      }
+      hiring_employment_admit: {
+        Args: {
+          p_application: string
+          p_employment: string
+          p_end: string
+          p_entity: string
+          p_hire_date?: string
+          p_model: string
+          p_person: string
+          p_reason: string
+          p_start: string
+          w: string
+        }
+        Returns: string
+      }
+      hiring_employment_context: {
+        Args: {
+          p_candidate?: string
+          p_person: string
+          p_search?: string
+          w: string
+        }
+        Returns: Json
+      }
+      hiring_employment_contract: {
+        Args: {
+          p_contract: string
+          p_engagement: string
+          p_options?: Json
+          w: string
+        }
+        Returns: string
+      }
+      hiring_employment_end: {
+        Args: { p_engagement: string; p_reason: string; w: string }
+        Returns: undefined
+      }
+      hiring_employment_invite: {
+        Args: { p_engagement: string; w: string }
+        Returns: string
+      }
+      hiring_employment_model_change: {
+        Args: {
+          p_engagement: string
+          p_model: string
+          p_reason: string
+          p_revision: number
+          w: string
+        }
+        Returns: undefined
+      }
+      hiring_job_contract_link: {
+        Args: {
+          p_contract: string
+          p_job: string
+          p_revision: number
+          p_ws: string
+        }
+        Returns: undefined
+      }
+      hiring_job_role_context: {
+        Args: { p_job: string; w: string }
+        Returns: Json
+      }
+      hiring_job_role_set: {
+        Args: { p_job: string; p_revision: number; p_role: string; w: string }
+        Returns: undefined
+      }
+      hiring_model_context: { Args: { w: string }; Returns: Json }
+      hiring_model_save: {
+        Args: {
+          p_active: boolean
+          p_allocation: boolean
+          p_id: string
+          p_keys: string[]
+          p_name: string
+          p_revision: number
+          p_role: string
+          w: string
+        }
+        Returns: string
+      }
+      hiring_profile_recruitment_status: {
+        Args: { p_deal: string; p_ws: string }
+        Returns: Json
+      }
+      hiring_recruitment_check: {
+        Args: { p_job: string; p_ws: string }
+        Returns: Json
+      }
+      hiring_recruitment_preflight: {
+        Args: { p_job: string; p_ws: string }
+        Returns: Json
+      }
+      hiring_recruitment_reason: {
+        Args: { p_job: string; p_ws: string }
+        Returns: string
+      }
+      hiring_restricted_roles: {
+        Args: { u: string; w: string }
+        Returns: {
+          role_id: string
+        }[]
+      }
+      hiring_scoped_workspaces: { Args: never; Returns: string[] }
+      hiring_set_live: {
+        Args: { s: string; u: string; w: string }
+        Returns: boolean
+      }
+      hiring_signature_access: {
+        Args: { p_action: string; p_contract: string; p_ws: string }
+        Returns: boolean
+      }
+      hiring_stage2_access: {
+        Args: { p_action: string; p_job?: string; p_ws: string }
+        Returns: boolean
+      }
+      hiring_stage2_context: {
+        Args: { p_job: string; p_ws: string }
+        Returns: Json
+      }
+      hiring_workflow_employment: {
+        Args: {
+          p_actor: string
+          p_application: string
+          p_payload: Json
+          p_step: string
+          w: string
+        }
+        Returns: Json
+      }
+      hiring_workflow_recruitment_check: {
+        Args: { p_application: string; p_ws: string }
+        Returns: Json
       }
       hr_child_record_access: {
         Args: { _action: string; _id: string; _resource: string }
@@ -34856,3 +36181,4 @@ export const Constants = {
     },
   },
 } as const
+

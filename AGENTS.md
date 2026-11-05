@@ -7,6 +7,7 @@
 - Cada módulo abre com grupo "Visão geral" › "Dashboard"; listagens ficam em rotas próprias.
 - Seis módulos verticais (crm, ats, people, contracts, projects, finance); `services` é id legado do TechContracts; UI usa `VERTICAL_MODULE_LIST`.
 - Redesigns relevantes exigem mockup aprovado; a Inbox usa casco compartilhado que herda o White Label.
+- Telas/funcionalidades novas ou alteradas só concluem com o artigo da Ajuda (`help_articles` + `docs/help/<módulo>/<slug>.md`, `route_pattern`, permissões, bump de `version`) na mesma entrega; leitura filtrada por módulo/`min_permission` no servidor e RLS. Guia e DoD: `docs/architecture/help-center.md`; gate `bun run help:coverage`.
 - Agent prototypes use separate layouts over shared local demo state and a draggable canvas; the prototype parent renders Outlet so direct child URLs work without altering production agents.
 - Valores fixos seguem docs/architecture/hardcoded-values.md, barrados por src/lib/hardcode-guard.test.ts.
 - `workspace_members.status` inactive tira acesso (is_workspace_member + banimento) mas preserva o nome — importa responsáveis HubSpot sem liberar acesso.

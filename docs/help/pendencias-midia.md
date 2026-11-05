@@ -1,0 +1,147 @@
+# Pendências de mídia da Ajuda
+
+Lista das capturas e vídeos indicados por `<!-- screenshot: … -->` nos artigos.
+Preenchida a cada módulo da Fase 2.
+
+| Módulo | Artigo | Etapa | O que capturar |
+|---|---|---|---|
+
+## TechSales (crm) — Fase 2
+
+- acompanhar-negocios.md:screenshot: cabeçalho de Negócios com visualizações, filtros, Criar negócio e Iniciar fila --
+- acompanhar-ticket.md:screenshot: cabeçalho, etapas e propriedades do ticket --
+- atender-chat-ao-vivo.md:screenshot: Chat com abas, responsável e ações Ticket e Encerrar --
+- atender-conversas-whatsapp.md:screenshot: Inbox WhatsApp com aviso de janela e compositor --
+- atender-inbox-unificada.md:screenshot: Inbox unificada com filtro de canal e Abrir no canal --
+- atribuir-responsavel-a-contatos-em-massa.md:screenshot: Atribuir responsável a contatos em massa: capturar a tela após o último passo, sem dados pessoais reais. --
+- atribuir-responsavel-a-empresas-em-massa.md:screenshot: Atribuir responsável a empresas em massa: capturar a tela após o último passo, sem dados pessoais reais. --
+- atribuir-responsavel-a-leads-em-massa.md:screenshot: Atribuir responsável a leads em massa: capturar a tela após o último passo, sem dados pessoais reais. --
+- atualizar-negocio.md:screenshot: detalhe do negócio com seletor de funil e áreas Cotações, Propostas e Contratos --
+- concluir-atribuir-tarefa.md:screenshot: detalhe da tarefa com Descrição, responsável e ação de exclusão --
+- conectar-gerenciar-calendarios.md:screenshot: conta de calendário com Sync e Meet automático --
+- conectar-sincronizar-gmail.md:screenshot: contas conectadas e assinatura --
+- configurar-campanha-de-prospeccao.md:screenshot: configuração da campanha com janela, público e variantes de script --
+- configurar-canais-planejamento-de-sequencia.md:screenshot: abas Canais e regras e Limites e planejamento, com simulador --
+- configurar-duplicar-auditar-agente-sdr.md:screenshot: áreas Operação, Estúdio e Resultados e ação Duplicar --
+- configurar-sla-por-etapa.md:screenshot: pipeline com prazos e Salvar SLA --
+- construir-pesquisas.md:screenshot: construtor com campo selecionado --
+- consultar-analytics.md:screenshot: filtros e abas de Analytics --
+- consultar-organizar-tickets.md:screenshot: filtros e formulário de ticket --
+- consultar-painel-de-vendas.md:screenshot: filtros do painel e indicadores --
+- consultar-reunioes.md:screenshot: biblioteca de reuniões e detalhe com Gravação, Resumo & transcrição e Participantes --
+- consultar-timeline-de-contato.md:screenshot: Consultar timeline de contato: capturar a tela após o último passo, sem dados pessoais reais. --
+- consultar-timeline-de-empresa.md:screenshot: Consultar timeline de empresa: capturar a tela após o último passo, sem dados pessoais reais. --
+- consultar-timeline-de-lead.md:screenshot: Consultar timeline de lead: capturar a tela após o último passo, sem dados pessoais reais. --
+- controlar-agente-atendimento.md:screenshot: painel Agente deste atendimento --
+- controlar-campanhas-bloqueios-whatsapp.md:screenshot: campanha com contadores e ações --
+- controlar-campanhas-email.md:screenshot: lista de campanhas de e-mail com contadores --
+- criar-campanha-email.md:screenshot: formulário de campanha de e-mail --
+- criar-campanha-whatsapp.md:screenshot: campanha WhatsApp com remetente, template e distribuição --
+- criar-contato.md:screenshot: Criar contato: capturar a tela após o último passo, sem dados pessoais reais. --
+- criar-editar-roteiros-de-ligacao.md:screenshot: formulário do script e lista com Mostrar arquivados --
+- criar-empresa.md:screenshot: Criar empresa: capturar a tela após o último passo, sem dados pessoais reais. --
+- criar-filas-tarefas.md:screenshot: Nova fila com Nome, Descrição (opcional) e uma fila cadastrada --
+- criar-fluxo-de-sequencia.md:screenshot: aba Fluxo com etapas e configuração da etapa selecionada --
+- criar-gerenciar-campanhas-de-prospeccao.md:screenshot: lista de campanhas com status e ícones de reprodução, pausa e exclusão --
+- criar-gerenciar-paginas-agendamento.md:screenshot: formulário de página de agendamento --
+- criar-landing-pages.md:screenshot: lista de landing pages --
+- criar-lead.md:screenshot: Criar lead: capturar a tela após o último passo, sem dados pessoais reais. --
+- criar-publicar-workflows.md:screenshot: abas Workflows, Execuções recentes e Política de envio --
+- criar-regras-de-distribuicao.md:screenshot: formulário de distribuição com estratégia e responsáveis --
+- criar-relatorios-personalizados.md:screenshot: configuração de entidade, métrica e visualização --
+- editar-contato.md:screenshot: Editar contato: capturar a tela após o último passo, sem dados pessoais reais. --
+- editar-contatos-em-massa.md:screenshot: Editar campos de contatos em massa: capturar a tela após o último passo, sem dados pessoais reais. --
+- editar-empresa.md:screenshot: Editar empresa: capturar a tela após o último passo, sem dados pessoais reais. --
+- editar-empresas-em-massa.md:screenshot: Editar campos de empresas em massa: capturar a tela após o último passo, sem dados pessoais reais. --
+- editar-enviar-proposta.md:screenshot: proposta com status, versão, Editar, Copiar link, Baixar PDF e Enviar ao cliente --
+- editar-lead.md:screenshot: Editar lead: capturar a tela após o último passo, sem dados pessoais reais. --
+- editar-leads-em-massa.md:screenshot: Editar campos de leads em massa: capturar a tela após o último passo, sem dados pessoais reais. --
+- editar-publicar-landing-pages.md:screenshot: editor com bloco selecionado e SEO --
+- enviar-modelo-aprovado-whatsapp.md:screenshot: modelo selecionado com variáveis --
+- excluir-contato.md:screenshot: Excluir contato: capturar a tela após o último passo, sem dados pessoais reais. --
+- excluir-contatos-em-massa.md:screenshot: Excluir contatos em massa: capturar a tela após o último passo, sem dados pessoais reais. --
+- excluir-empresa.md:screenshot: Excluir empresa: capturar a tela após o último passo, sem dados pessoais reais. --
+- excluir-empresas-em-massa.md:screenshot: Excluir empresas em massa: capturar a tela após o último passo, sem dados pessoais reais. --
+- excluir-lead.md:screenshot: Excluir lead: capturar a tela após o último passo, sem dados pessoais reais. --
+- excluir-leads-em-massa.md:screenshot: Excluir leads em massa: capturar a tela após o último passo, sem dados pessoais reais. --
+- executar-fila-de-prospeccao.md:screenshot: escolha de questionário e item da fila --
+- executar-fila-tarefas.md:screenshot: item da fila com Email, Ligar, Anotações, Pular (S) e Concluir (C) --
+- exportar-contatos.md:screenshot: Exportar contatos: capturar a tela após o último passo, sem dados pessoais reais. --
+- exportar-empresas.md:screenshot: Exportar empresas: capturar a tela após o último passo, sem dados pessoais reais. --
+- exportar-leads.md:screenshot: Exportar leads: capturar a tela após o último passo, sem dados pessoais reais. --
+- filtrar-contatos.md:screenshot: Filtrar contatos: capturar a tela após o último passo, sem dados pessoais reais. --
+- filtrar-empresas.md:screenshot: Filtrar empresas: capturar a tela após o último passo, sem dados pessoais reais. --
+- filtrar-leads.md:screenshot: Filtrar leads: capturar a tela após o último passo, sem dados pessoais reais. --
+- gerenciar-base-de-conhecimento.md:screenshot: abas Artigos e Categorias --
+- gerenciar-cotacoes.md:screenshot: cotação na lista com Gerar proposta, geração de contrato e ícones de compartilhamento --
+- gerenciar-faturas.md:screenshot: filtros e formulário Nova fatura --
+- gerenciar-formularios-publicos.md:screenshot: edição do formulário com campos e distribuição --
+- gerenciar-macros.md:screenshot: edição de macro --
+- gerenciar-paineis.md:screenshot: painel selecionado e formulário de widget --
+- gerenciar-pesquisas.md:screenshot: abas de pesquisas e indicadores --
+- gerenciar-propostas.md:screenshot: Nova proposta com Título e Valor (BRL), seguida da lista com filtros --
+- gerenciar-sequencias-automaticas.md:screenshot: lista de sequências, interruptor e aba Inscrições --
+- habilitar-portal-do-cliente.md:screenshot: contato com acesso ativo e ações do link --
+- iniciar-pausar-sequencia.md:screenshot: confirmação de início e acompanhamento das execuções --
+- navegar-na-prospeccao.md:screenshot: navegação principal da Prospecção e seções disponíveis --
+- organizar-lista-comunicacoes.md:screenshot: grade com filtro Tipo e barra de seleção --
+- organizar-tarefas.md:screenshot: Tarefas com busca, filtros, visualizações e seleção de registros --
+- registrar-atividade-de-contato.md:screenshot: Registrar atividade de contato: capturar a tela após o último passo, sem dados pessoais reais. --
+- registrar-atividade-de-empresa.md:screenshot: Registrar atividade de empresa: capturar a tela após o último passo, sem dados pessoais reais. --
+- registrar-atividade-de-lead.md:screenshot: Registrar atividade de lead: capturar a tela após o último passo, sem dados pessoais reais. --
+- registrar-comunicacoes.md:screenshot: formulário de comunicação --
+- registrar-notas.md:screenshot: formulário de nota com Assunto e Conteúdo e colunas da lista --
+- reservar-publico-de-sequencia.md:screenshot: versão para inscrição, evidência de autorização e resumo do público --
+- responder-emails-inbox.md:screenshot: conversa de e-mail com editor de resposta --
+- salvar-visao-de-leads.md:screenshot: Salvar visualização de leads: capturar a tela após o último passo, sem dados pessoais reais. --
+- validar-versionar-sequencia.md:screenshot: validação aprovada e histórico de versões --
+
+
+## TechContracts — Fase 2
+
+- acompanhar-dashboard.md: Consultar o Dashboard de contratos, sem dados pessoais reais
+- alterar-em-massa.md: Alterar status, responsável e campos em massa, sem dados pessoais reais
+- alterar-status.md: Alterar o status de um contrato, sem dados pessoais reais
+- analisar-vinculos-ia.md: Revisar e aplicar sugestões de vínculo da IA, sem dados pessoais reais
+- aninhar-contratos.md: Aninhar contratos de compra sob uma prestação, sem dados pessoais reais
+- aprovar-medicao.md: Aprovar e reverificar uma medição, sem dados pessoais reais
+- assinar-por-link.md: Assinar ou recusar um documento por link, sem dados pessoais reais
+- associar-servico.md: Associar serviço do catálogo ao contrato, sem dados pessoais reais
+- ativar-servico.md: Ativar um serviço, sem dados pessoais reais
+- configurar-cobranca.md: Configurar e versionar o modelo de cobrança, sem dados pessoais reais
+- configurar-padroes.md: Configurar padrões de contrato, sem dados pessoais reais
+- consultar-contratos.md: Consultar, filtrar e agrupar contratos, sem dados pessoais reais
+- consultar-fluxo.md: Consultar o fluxo do contrato, sem dados pessoais reais
+- consultar-historicos.md: Consultar histórico de vínculos e sugestões de IA, sem dados pessoais reais
+- consultar-rentabilidade.md: Consultar e exportar rentabilidade do contrato, sem dados pessoais reais
+- consultar-servicos.md: Consultar serviços em execução, sem dados pessoais reais
+- criar-contrato.md: Criar contrato em branco pelo assistente, sem dados pessoais reais
+- criar-da-origem-comercial.md: Criar contrato a partir de cotação, proposta ou modelo, sem dados pessoais reais
+- decidir-aprovacao.md: Aprovar ou rejeitar uma etapa de contrato, sem dados pessoais reais
+- editar-contrato.md: Editar a ficha de um contrato, sem dados pessoais reais
+- editar-publicar-modelo.md: Editar e publicar um modelo de contrato, sem dados pessoais reais
+- editar-servico.md: Editar a ficha de um serviço, sem dados pessoais reais
+- estornar-medicao.md: Devolver, cancelar ou estornar uma medição, sem dados pessoais reais
+- excluir-contrato.md: Excluir um contrato, sem dados pessoais reais
+- excluir-em-massa.md: Excluir contratos em massa, sem dados pessoais reais
+- excluir-servico.md: Excluir um serviço, sem dados pessoais reais
+- exportar-contratos.md: Exportar contratos selecionados, sem dados pessoais reais
+- fechar-provisao.md: Calcular, fechar e revisar provisão mensal, sem dados pessoais reais
+- gerar-de-modelo.md: Gerar contrato pelo diálogo de modelo publicado, sem dados pessoais reais
+- gerar-medicao-financeiro.md: Gerar título financeiro ou vincular título legado da medição, sem dados pessoais reais
+- gerenciar-documentos-assinatura.md: Preparar documentos para assinatura eletrônica, sem dados pessoais reais
+- gerenciar-modelos.md: Criar e organizar modelos de contrato, sem dados pessoais reais
+- importar-contrato.md: Importar e revisar um contrato PDF ou DOCX, sem dados pessoais reais
+- importar-em-lote.md: Importar contratos em lote e revisar resultados, sem dados pessoais reais
+- importar-modelo.md: Importar um modelo de contrato, sem dados pessoais reais
+- iniciar-aprovacoes.md: Iniciar e reiniciar aprovações de contrato, sem dados pessoais reais
+- padronizar-titulos.md: Revisar e padronizar títulos de contratos, sem dados pessoais reais
+- preparar-medicao.md: Preparar e consultar medições do contrato, sem dados pessoais reais
+- recalcular-papeis.md: Revisar e recalcular Prestação ou Compra, sem dados pessoais reais
+- registrar-assinatura.md: Preparar e registrar evidência de assinatura no contrato, sem dados pessoais reais
+- registrar-origem-comercial.md: Salvar origem comercial e definir origem do recrutamento, sem dados pessoais reais
+- revisar-medicao.md: Revisar, ajustar e enviar uma medição para revisão, sem dados pessoais reais
+- revisar-tipo-documento.md: Revisar contratos principais que parecem aditivos, sem dados pessoais reais
+- revisar-vinculacao.md: Vincular contratos e remover pendências da fila, sem dados pessoais reais
+- revogar-evidencia.md: Consultar comprovante e revogar evidência de assinatura, sem dados pessoais reais
+- vincular-aditivo.md: Vincular e desvincular aditivos, sem dados pessoais reais
