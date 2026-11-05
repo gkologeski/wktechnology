@@ -29,7 +29,7 @@ Em Novo lançamento, informe descrição e valor positivo, confira tipo e datas.
 Consulte os pagamentos na ficha, a DRE e o Fluxo de caixa. Alterne competência/caixa na DRE antes de comparar valores.
 
 ## Atenção
-Não teste cobrança, transferência ou importação com dados reais. Banco Inter pode apresentar operações mock, dependentes de habilitação. A emissão NFS-e retorna indisponibilidade no código atual.
+Não teste cobrança, transferência ou importação com dados reais. O único adaptador Banco Inter implementado é simulado, condicionado à habilitação de simulações; os modos sandbox e produção não estão implementados. A emissão NFS-e retorna indisponibilidade no código atual.
 
 ## Relacionados
 [Consultar títulos](/ajuda/finance/consultar-contas-a-receber) · [Registrar baixa](/ajuda/finance/registrar-baixa)

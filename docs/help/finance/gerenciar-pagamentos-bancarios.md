@@ -29,7 +29,7 @@ is_published: true
 5. Cancele ou simule liquidação somente quando a ação correspondente estiver disponível.
 
 ## Resultado esperado
-Pagamento percorre os estados permitidos; aprovação não equivale a execução e execução registrada não garante liquidação.
+No único adaptador atual (Inter simulado habilitado), o pagamento percorre estados simulados, sem transferência bancária real. Aprovação, execução e liquidação são etapas distintas.
 
 ## Regras e limites
 - Criar usa `techfinance.bank_payment_drafts.create.workspace`.

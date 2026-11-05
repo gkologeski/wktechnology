@@ -15,7 +15,7 @@ is_published: true
 
 **Para que serve:** Consultar e operar serviço faturável, usando os controles disponíveis nesta tela.
 
-**Quem pode fazer:** Membro ativo no workspace, com módulo liberado e acesso de leitura ao recurso `techfinance.entries`. Ações de escrita exigem a permissão específica e, quando aplicável, autorização sobre cada registro; ver [Permissões](/ajuda/finance/permissoes).
+**Quem pode fazer:** Membro autorizado a consultar `techservice.services` (view.own, view.team ou view.workspace), sujeito ao módulo e às políticas próprias de serviços. A permissão `techfinance.entries.view` controla o atalho financeiro, mas não autoriza esta consulta. Ações exigem capacidade específica; ver [Permissões](/ajuda/finance/permissoes).
 
 **Onde fica:** TechFinance > Financeiro > Consultar e operar serviço faturável (`/services/$id`).
 

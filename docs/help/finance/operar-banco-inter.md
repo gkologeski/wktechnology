@@ -32,7 +32,7 @@ is_published: true
 Conexão e movimentações consultadas segundo o modo efetivamente habilitado.
 
 ## Regras e limites
-- A interface contém conexão e liquidações mock: simulação não é operação bancária real.
+- O resolvedor atual só implementa Inter simulado e exige simulação habilitada; os modos sandbox e produção são rejeitados. Conectar e desconectar exigem `techfinance.banking.manage.workspace` além de `techfinance.banking.view.workspace`. Simulação não é operação bancária real.
 - Não documentar habilitação de produção como concluída.
 - Sincronizar exige `techfinance.banking_sync.manage.workspace`; demais ações usam os recursos específicos indicados no código.
 - Credenciais e tokens nunca devem ser copiados para chamados ou artigos.

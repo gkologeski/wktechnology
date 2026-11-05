@@ -37,6 +37,7 @@ Agenda recorrente cadastrada, com geração condicionada à data e aos limites.
 - Intervalo personalizado: 1–365 dias; dia do mês: 1–31; máximo de ocorrências: 1–1000.
 - Pausar agenda não estorna pagamentos existentes.
 - Capacidades de atualizar, excluir e gerar são retornadas por registro.
+- Gerar exige leitura e atualização da recorrência e criação de lançamentos no escopo do responsável. Cada chamada avança no máximo 24 períodos por agenda. A exclusão só é permitida antes da primeira ocorrência gerada; pausar não apaga títulos já gerados.
 - Não presuma execução automática do cron sem configuração validada.
 
 ### Campos e controles

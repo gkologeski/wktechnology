@@ -29,7 +29,7 @@ is_published: true
 5. Simule liquidação apenas se a conexão for mock e a simulação estiver habilitada.
 
 ## Resultado esperado
-Cobrança registrada conforme o modo e adaptador; não comprova recebimento real.
+Quando habilitado, o único adaptador atual gera cobranças simuladas Inter. Não há emissão bancária real implementada nem comprovação de recebimento real.
 
 ## Regras e limites
 - Emissão usa `techfinance.bank_charge_issuance.manage.workspace`; cancelamento usa `techfinance.bank_charge_cancellation.manage.workspace`.

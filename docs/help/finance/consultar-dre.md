@@ -31,7 +31,7 @@ is_published: true
 Demonstrativo gerencial no regime, período e escopo selecionados.
 
 ## Regras e limites
-- Competência usa competência; Caixa usa a data de pagamento.
+- Competência soma o valor integral dos títulos não cancelados pela data de competência; Caixa soma as baixas pela data de pagamento, desconsiderando títulos cancelados. Baixas parciais entram pelo valor pago. Ao selecionar dois ou mais CNPJs, elimina registros cuja contraparte pertence ao conjunto selecionado; no regime Caixa o contador de eliminações conta baixas, não necessariamente títulos distintos.
 - Exportação exige `techfinance.reports.export.workspace` e autorização do servidor.
 - Não há importação de DRE confirmada nesta tela.
 - Consolidação por grupo pode eliminar intercompany; confira a indicação da tela.

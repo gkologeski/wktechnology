@@ -35,7 +35,7 @@ Grupo de parcelas cujo somatório corresponde ao total.
 - Parcelamento reparte um total; recorrência repete uma agenda.
 - Intervalo personalizado no servidor: 1 a 365 dias.
 - Mensal ajusta o vencimento ao último dia válido quando necessário.
-- A ficha oferece exclusão das parcelas em aberto conforme autorização, preservando parcelas que não podem ser excluídas.
+- A exclusão exige autorização de exclusão em todas as parcelas reais do grupo; sem essa autorização, toda a operação falha. No modo somente em aberto, parcelas fora de Em aberto/Vencido são mantidas; a âncora também pode ser mantida para preservar o grupo.
 
 ### Campos e controles
 Número de parcelas; cadência; intervalo; ajuste de centavos; prévia de valores e datas.
