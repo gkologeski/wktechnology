@@ -168,6 +168,7 @@ beforeAll(async () => {
     "0316_hiring_monthly_provisions.sql",
     "0317_hiring_billing_boundaries.sql",
     "0318_hiring_internal_cost_provisions.sql",
+    "0319_hiring_legacy_billing_ownership.sql",
   ])
     await db.unsafe(readFileSync("drizzle/migrations/" + f, "utf8"));
 }, 120000);
@@ -615,4 +616,30 @@ it("shared management does not require a fabricated sales contract", async () =>
   const v = (await db`select hiring_provision_preview(${W},${K},'2026-10-01') v`)[0].v;
   expect(v.model).toBe("cost_monthly");
   expect(v.totals.known_estimated_cost).toBe(10000);
+});
+it("legacy hiring workers yield when a measurement already owns the deal", async () => {
+  await hunting();
+  await expect(db`select hiring_workflow_finance_guard(${W},${APP},${U})`).rejects.toThrow(
+    "FINANCE_MONTHLY_FLOW",
+  );
+  await expect(
+    db`insert into financial_entries(workspace_id,owner_id,direction,origin_type,description,amount,currency,competence_date,due_date,status,metadata) values(${W},${U},'receivable','manual','Duplicação legada',200,'BRL',current_date,current_date,'open',${db.json({ origin: "workflow_hiring", source_id: APP })})`,
+  ).rejects.toThrow("FINANCE_MONTHLY_FLOW");
+  expect((await db`select count(*) n from financial_entries`)[0].n).toBe("0");
+});
+it("existing legacy success title becomes a gate, never a duplicate invoice", async () => {
+  const id = await hunting();
+  await db`update hiring_workspace_settings set finance_gate_enabled=false where workspace_id=${W}`;
+  await db`insert into financial_entries(workspace_id,owner_id,direction,origin_type,description,amount,currency,competence_date,due_date,status,metadata) values(${W},${U},'receivable','manual','Título anterior à implantação',200,'BRL','2026-10-01','2026-11-15','open',${db.json({ origin: "workflow_hiring", source_id: APP })})`;
+  await db`update hiring_workspace_settings set finance_gate_enabled=true where workspace_id=${W}`;
+  await db`insert into ats_hiring_decisions(workspace_id,application_id,event,created_at) values(${W},${APP},'confirmed','2026-10-15')`;
+  await db`select project_measurement_add_success_event(${id},'ats_application',${APP},null,'Evento comercial conferido')`;
+  const hash = (await db`select lines_hash from project_measurements where id=${id}`)[0].lines_hash;
+  await db`select project_measurement_submit(${id},${hash})`;
+  await db`select set_config('request.uid',${O},false)`;
+  expect((await db`select project_measurement_approve(${id},${hash}) v`)[0].v).toBe("approved");
+  await expect(db`select project_measurement_generate(${id},${hash},'2026-11-15')`).rejects.toThrow(
+    "hiring_legacy_success_exists",
+  );
+  expect((await db`select count(*) n from financial_entries`)[0].n).toBe("1");
 });

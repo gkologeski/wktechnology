@@ -198,7 +198,7 @@ function ProvisionsContent({ contractId }: { contractId: string }) {
             <div className="grid gap-3 sm:grid-cols-3">
               {shown.model !== "cost_monthly" && (
                 <Metric
-                  title="Receita elegível na medição"
+                  title="Receita calculada (sem cobrança)"
                   value={formatMoney(shown.totals.eligible_revenue, shown.currency)}
                 />
               )}

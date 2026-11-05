@@ -64,6 +64,8 @@ export function measurementStatusVariant(
 
 /** Códigos de pendência/aviso devolvidos pelo banco → texto em PT-BR. */
 export const ISSUE_LABEL: Record<string, string> = {
+  hiring_legacy_success_exists:
+    "Já existe título legado desta contratação; revise no Financeiro antes de gerar outro",
   delivery_acceptance_missing: "Entregável concluído sem evidência de aceite vigente",
   rate_missing: "Sem tarifa vigente (valor desconhecido)",
   rate_ambiguous: "Mais de uma tarifa no mesmo nível (ambígua)",

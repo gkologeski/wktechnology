@@ -8323,6 +8323,10 @@
         {
           "file": "drizzle/migrations/0318_hiring_internal_cost_provisions.sql",
           "symbol": "hiring_cost_provision_access"
+        },
+        {
+          "file": "drizzle/migrations/0319_hiring_legacy_billing_ownership.sql",
+          "symbol": "hiring_financial_entry_guard"
         }
       ],
       "tests": {
@@ -8353,9 +8357,10 @@
         "src/components/projects/billing/billing-config-card.tsx": "d94765148ae5ce4f0a223e3bc3ec0fd57f0739faf0a7ca685162b4869b71cb2b",
         "src/components/projects/billing/measurement-detail-dialog.tsx": "1ee19126c89a7bd412f2715f2baf5e1f08f981bfc0106565a9d2d8c2ebf767ab",
         "src/routes/_authenticated/contracts.$id_.medicoes.tsx": "a30bdea79d4209cc08f18d00e1ad2db2f006d53af4f80cd485dd48db99046be1",
-        "src/components/projects/billing/provisions-panel.tsx": "3e3cbb25bd8ccebc0e63a64577c712f5a70bf537a114dc5ef1f6771c7f441bda",
+        "src/components/projects/billing/provisions-panel.tsx": "45d3c4a8a3f32c87ec32515474d0625b59b60bcbd7878a1df59b9b3af90394af",
         "src/lib/hiring/finance.functions.ts": "716a7bc79b0961288473be01fddd3c9979947234e06e0076c039f554fcbaaf73",
-        "drizzle/migrations/0318_hiring_internal_cost_provisions.sql": "467b739e56392b14f739bb315eb12923e2f105b146d12cc575fd9e07fb711779"
+        "drizzle/migrations/0318_hiring_internal_cost_provisions.sql": "467b739e56392b14f739bb315eb12923e2f105b146d12cc575fd9e07fb711779",
+        "drizzle/migrations/0319_hiring_legacy_billing_ownership.sql": "c06bb6598ca2da08d091460a01e23e91e0dd60012105977b0ed0291363fdb348"
       }
     },
     {
@@ -8363,7 +8368,7 @@
       "kind": "presentation",
       "rationale": "Pure billing labels, formatting and explicit mapping suggestion; no I/O, execution or permission decision. SQL and authenticated handlers own authorization.",
       "files": {
-        "src/lib/projects/billing.shared.ts": "e62f40d357dc3ef440cc27a7ead3cc17fff83dd72da0142a8a60763395ad2c9e"
+        "src/lib/projects/billing.shared.ts": "483b21d1e85a818c27fe2e656f324fd2265f9299f15b6fed8d2ccc850fdee302"
       }
     }
   ],
