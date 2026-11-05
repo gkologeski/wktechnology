@@ -34,7 +34,8 @@ export const getHelpHome = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const access = await loadHelpAccessInput(context.supabase, context.userId);
     const modules = readableHelpModules(access);
-    if (modules.length === 0) return { modules, recent: [], quickstarts: [], counts: {}, canEdit: canEditHelp(access) };
+    if (modules.length === 0)
+      return { modules, recent: [], quickstarts: [], counts: {}, canEdit: canEditHelp(access) };
     const { data, error } = await context.supabase
       .from("help_articles")
       .select(ARTICLE_COLUMNS)
