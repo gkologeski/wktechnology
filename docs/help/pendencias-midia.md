@@ -145,3 +145,161 @@ Preenchida a cada módulo da Fase 2.
 - revisar-vinculacao.md: Vincular contratos e remover pendências da fila, sem dados pessoais reais
 - revogar-evidencia.md: Consultar comprovante e revogar evidência de assinatura, sem dados pessoais reais
 - vincular-aditivo.md: Vincular e desvincular aditivos, sem dados pessoais reais
+
+## Complemento da Fase 2 integral
+
+Capturas de leitura autenticada estão registradas no relatório; imagens definitivas das telas operacionais permanecem pendentes. Não capturar dados reais nem prometer fluxos externos.
+
+### projects
+
+- abrir-configuracoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-projetos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- copiar-semana.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- editar-detalhes-tarefa.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- enviar-periodo.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- gerenciar-campos-lista.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-dashboard.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-delivery.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-ficha-projeto.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-hours-review.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-imports-clickup.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-imports-clockify.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-imports-jibble.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-imports-reconciliation.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-imports.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-my-hours.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-my-work.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-operations.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-projeto-entrega.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-projeto-financeiro.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-projeto-horas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-rates.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-spaces.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-tasks.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-time.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-timesheet.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- primeiros-15-minutos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- reutilizar-template-lista.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- sincronizar-fila-local.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- trabalhar-lista.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+### finance
+
+- cadastrar-conta-bancaria.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- conciliar-transacoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- configurar-emissao-de-nfs-e.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- configurar-o-gateway-de-pagamentos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- configurar-regua-cobranca.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-assinaturas-recorrentes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-auditoria.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-centros-custo.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-contas-a-pagar.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-contas-a-receber.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-dashboard.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-dre.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-faturamento-servicos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-lancamento.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-notas-fiscais.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-vendas-importadas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- criar-lancamento.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- estornar-baixa.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- gerenciar-cobrancas-bancarias.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- gerenciar-empresas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- gerenciar-faturas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- gerenciar-grupos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- gerenciar-pagamentos-bancarios.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- gerenciar-plano-contas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- gerenciar-recorrencias.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- gerenciar-templates-cobranca.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-banco-inter.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- operar-servico.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- parcelar-lancamento.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- registrar-baixa.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- revisar-a-integracao-conta-azul.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- simular-fluxo-caixa.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+### core
+
+- abrir-o-widget-publico-de-atendimento.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- aceitar-convite-com-token.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- aceitar-um-convite-recebido.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- acompanhar-meus-chamados-de-suporte.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- administrar-canais-de-atendimento.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- administrar-membros-do-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- atualizar-o-perfil-da-conta.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- concluir-o-retorno-de-conexao-unipile.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- configurar-a-identidade-visual.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- configurar-notificacoes-no-slack.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- configurar-o-provedor-de-ia-do-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- configurar-propriedades-personalizadas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-a-apresentacao-comercial.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-a-base-de-conhecimento-publica.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-a-biblioteca-de-midia.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-a-conexao-do-whatsapp.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-a-configuracao-do-zapier.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-a-politica-de-privacidade.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-a-politica-de-reembolso.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-assinaturas-de-workflow.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-conexoes-de-anuncios.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-e-administrar-permissoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-e-organizar-arquivos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-exportacoes-e-relatorios.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-minhas-permissoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-o-acordo-de-processamento-de-dados.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-o-cancelamento-de-comunicacoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-o-catalogo-de-integracoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-o-dashboard-do-erp.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-o-detalhe-de-uma-integracao.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-o-log-de-auditoria.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-o-marketplace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-o-painel-de-ia.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-orientacoes-de-sso.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-os-termos-de-servico.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-planos-e-cobranca.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-presets-e-cargos-de-contratacao.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-privacidade-e-meus-dados.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-um-aplicativo-do-marketplace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- definir-a-preferencia-de-regiao.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- diagnosticar-o-acesso-de-um-membro.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- entender-o-acesso-por-convite.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- entrar-na-conta.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- escolher-o-idioma-da-interface.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- escolher-uma-origem-de-importacao.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- explorar-os-modulos-do-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- gerar-e-revogar-tokens-scim.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- gerenciar-chaves-de-api.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- importar-uma-planilha-csv.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- ler-um-artigo-da-base-publica.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- manter-empresas-e-cnpjs-do-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- manter-grupos-empresariais.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- manter-modelos-de-onboarding-por-entidade.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- manter-o-catalogo-de-servicos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- manter-objetos-personalizados.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- manter-respostas-prontas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- manter-tipos-de-assinatura-de-comunicacao.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- manter-webhooks-de-integracao.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- organizar-grupos-de-propriedades.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- organizar-times-do-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- preparar-a-impressao-do-dashboard.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- recuperar-a-senha-da-conta.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- revisar-a-conexao-linkedin.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- revisar-a-politica-de-acesso.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- revisar-a-seguranca-da-minha-conta.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- revisar-exportacao-de-audit-logs.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- revisar-layouts-de-fichas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- revisar-modulos-do-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- revisar-o-widget-do-site.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- revisar-pais-padrao-e-telefones-legados.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- revisar-preferencias-de-notificacoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- revisar-responsaveis-importados-do-hubspot.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- usar-instalacao-pwa-e-notificacoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- usar-o-onboarding-guiado-de-uma-entidade.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- vincular-a-extensao-do-techhire.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+### platform
+
+- administrar-sandboxes-da-plataforma.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- administrar-workspaces-da-plataforma.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-e-configurar-alertas-da-plataforma.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-quotas-por-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-status-e-manutencao-da-plataforma.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- consultar-varreduras-de-seguranca.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- revisar-um-workspace-e-seus-membros.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- tratar-chamados-da-plataforma.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.

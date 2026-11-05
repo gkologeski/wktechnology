@@ -107,3 +107,7 @@ e FAQ. Marcadores de captura vão também para `docs/help/pendencias-midia.md`.
 - [ ] `[CONFIRMAR]` e divergências RBAC registrados.
 - [ ] `bun run help:coverage` sem novas telas descobertas.
 - [ ] `psql -f tests/access-audit/access-audit.sql` sem categoria nova frente ao baseline.
+
+## Aplicação editorial após o aceite
+
+`releaseOfficialHelp` aplica o catálogo fixo gerado das fontes Markdown após autenticação e `canEditHelp`, com o cliente do usuário/RLS. O botão “Atualizar Ajuda oficial” aparece somente para editor autorizado. Nenhum corpo de artigo ou destino vem do navegador; versões iguais/mais recentes são preservadas. `updated_by` e `updated_at` registram a autoria/data. Não é uma migration de estrutura nem execução automática ao abrir a página. Aceitar não copia os artigos desta base separada: a aplicação editorial precisa ocorrer no app depois do aceite.
