@@ -30,6 +30,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { LifecyclePanel } from "./lifecycle-panel";
 export function EmploymentPanel({
   personId,
   candidateId,
@@ -207,6 +208,7 @@ export function EmploymentPanel({
                     </>
                   )}
                 </div>
+                <LifecyclePanel engagementId={e.id} />
               </section>
             ))}
             {inviteUrl && (

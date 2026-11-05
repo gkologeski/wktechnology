@@ -2734,9 +2734,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 03/11/2026: generated declarations for whatsapp_number_suppressions and the wa_* suppression functions only; no runtime I/O, grants or policies.",
+      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 03/11/2026: generated declarations for whatsapp_number_suppressions and the wa_* suppression functions only; no runtime I/O, grants or policies. Review 05/11/2026: generated lifecycle schema declarations only, no runtime code.",
       "files": {
-        "src/integrations/supabase/types.ts": "2b852dcf2ab13c77dec3f73570e0e06e074002ce3ee369d3dc7788a119559136"
+        "src/integrations/supabase/types.ts": "03ffbb17704870761a5971a3aa82aae1341e80abd27349519489fbafd90d8499"
       }
     },
     {
@@ -8239,7 +8239,6 @@
         "drizzle/migrations/0311_hiring_employment_and_access_models.sql": "d32fedece1e49576737df425c0d42a3af7a827bc0599d914a8620a9686b33783",
         "drizzle/migrations/0312_hiring_allocation_access_and_invites.sql": "ddae8cf9a7d6c0c18ad6fc97882d5bf353f2e595b095766f1e7a94f483adc767",
         "src/components/hiring/access-models-panel.tsx": "4a02c2413f41fce297d940482138464a5f9b5ef41bf0f7e04df5a7eedb9c7d94",
-        "src/components/hiring/employment-panel.tsx": "a3b8aabda3fef91307f7cb64380ad9c69fbddb1d7d429b95d0e902c342639af7",
         "src/components/hiring/workflow-model-fields.tsx": "17da488a6cbcec880d14459d62038a166d60e5be173a614da8d892a6d62a5e29",
         "src/lib/hiring/employment.functions.ts": "a2cbfd29bdcf92a92987c0e5a4831e5329b61b1e169f4f4d6b3c23c8a336f3b7",
         "src/routes/accept-employment.$token.tsx": "54c14fe6764b1e318f636250eacbf25ed0a14ad23827441f1cdcd2fa8df3a2fe",
@@ -8374,6 +8373,109 @@
       "rationale": "Pure billing labels, formatting and explicit mapping suggestion; no I/O, execution or permission decision. SQL and authenticated handlers own authorization.",
       "files": {
         "src/lib/projects/billing.shared.ts": "483b21d1e85a818c27fe2e656f324fd2265f9299f15b6fed8d2ccc850fdee302"
+      }
+    },
+    {
+      "id": "hiring-stage6a-lifecycle",
+      "kind": "business",
+      "resources": [
+        "techpeople.lifecycle",
+        "techpeople.allocations",
+        "techpeople.people",
+        "techcontracts.contracts",
+        "techfinance.entries"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "approve",
+        "renew",
+        "replace",
+        "end_allocation",
+        "end_employment",
+        "execute"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techpeople.lifecycle.view.workspace",
+        "techpeople.lifecycle.renew.workspace",
+        "techpeople.lifecycle.replace.workspace",
+        "techpeople.lifecycle.end_allocation.workspace",
+        "techpeople.lifecycle.end_employment.workspace",
+        "techpeople.lifecycle.approve.workspace",
+        "techpeople.lifecycle.execute.workspace"
+      ],
+      "rationale": "Opt-in lifecycle with source CAS, active actor row scope, named independent manager then CEO. No implicit admission, manual membership revocation or financial cancellation. Finance remains blocked pending explicit separately approved plan. Private snapshot has no authenticated SELECT grant.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/components/hiring/lifecycle-panel.tsx",
+          "symbol": "LifecyclePanel"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0305_hiring_lifecycle_governance.sql",
+          "symbol": "hiring_lifecycle_access"
+        },
+        {
+          "file": "drizzle/migrations/0305_hiring_lifecycle_governance.sql",
+          "symbol": "hiring_lifecycle_execute"
+        },
+        {
+          "file": "drizzle/migrations/0305_hiring_lifecycle_governance.sql",
+          "symbol": "hiring_lifecycle_financial_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects inactive member"
+        }
+      },
+      "files": {
+        "src/lib/hiring/lifecycle.functions.ts": "7c4144ed571f24fd799536b01e6037a2958e49bc2d3ab78cb832f3a6de14cb2b",
+        "src/components/hiring/lifecycle-panel.tsx": "f27f51a237ad62e94d5e039fbe931657393aa7e55cc34665dd8b0a9f7b168baf",
+        "src/components/hiring/employment-panel.tsx": "2dabc8b220597278045ecd680fa2783c37f88ef02ae89ffa5cb5dae1d5ae2d28",
+        "src/lib/workflows/engine/actions-offboarding.server.ts": "9a17d4df8f23d229a6d84c64c3e1b3fdbb286fea9f70aabb5e6a687db3fb4e60",
+        "drizzle/migrations/0305_hiring_lifecycle_governance.sql": "c64cc950b1be0e8e9e472e04746c2b21b24fc4f796d07e93705b613eaf66e98c"
+      }
+    },
+    {
+      "id": "hiring-stage6a-types",
+      "kind": "presentation",
+      "rationale": "Type-only DTO declarations; no IO or actions.",
+      "files": {
+        "src/lib/hiring/lifecycle.types.ts": "2ce13be184a60f9ea1d8bd837a31f7b5a347e5cee75c921b105b123081c70473"
       }
     }
   ],

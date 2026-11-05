@@ -1381,6 +1381,13 @@
     "techpeople.incidents.view.own",
     "techpeople.incidents.view.team",
     "techpeople.incidents.view.workspace",
+    "techpeople.lifecycle.approve.workspace",
+    "techpeople.lifecycle.end_allocation.workspace",
+    "techpeople.lifecycle.end_employment.workspace",
+    "techpeople.lifecycle.execute.workspace",
+    "techpeople.lifecycle.renew.workspace",
+    "techpeople.lifecycle.replace.workspace",
+    "techpeople.lifecycle.view.workspace",
     "techpeople.my_team.create.own",
     "techpeople.my_team.create.workspace",
     "techpeople.my_team.delete.own",
@@ -2912,6 +2919,27 @@
     },
     "techprojects.billing_acceptance.approve.workspace": {
       "migration": "drizzle/migrations/0317_hiring_billing_boundaries.sql"
+    },
+    "techpeople.lifecycle.view.workspace": {
+      "migration": "drizzle/migrations/0305_hiring_lifecycle_governance.sql"
+    },
+    "techpeople.lifecycle.renew.workspace": {
+      "migration": "drizzle/migrations/0305_hiring_lifecycle_governance.sql"
+    },
+    "techpeople.lifecycle.replace.workspace": {
+      "migration": "drizzle/migrations/0305_hiring_lifecycle_governance.sql"
+    },
+    "techpeople.lifecycle.end_allocation.workspace": {
+      "migration": "drizzle/migrations/0305_hiring_lifecycle_governance.sql"
+    },
+    "techpeople.lifecycle.end_employment.workspace": {
+      "migration": "drizzle/migrations/0305_hiring_lifecycle_governance.sql"
+    },
+    "techpeople.lifecycle.approve.workspace": {
+      "migration": "drizzle/migrations/0305_hiring_lifecycle_governance.sql"
+    },
+    "techpeople.lifecycle.execute.workspace": {
+      "migration": "drizzle/migrations/0305_hiring_lifecycle_governance.sql"
     }
   }
 }
