@@ -1,3 +1,4 @@
+import { LifecyclePanel } from "./lifecycle-panel";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -201,11 +202,14 @@ export function EmploymentPanel({
                               : "Preparar convite de acesso"}
                         </Button>
                       )}
-                      <Button variant="outline" disabled={busy} onClick={() => open(e, "end")}>
-                        Encerrar este vínculo
-                      </Button>
+                      {!data?.lifecycle_enabled && (
+                        <Button variant="outline" disabled={busy} onClick={() => open(e, "end")}>
+                          Encerrar este vínculo
+                        </Button>
+                      )}
                     </>
                   )}
+                  {data?.lifecycle_enabled && <LifecyclePanel engagementId={e.id} />}
                 </div>
               </section>
             ))}

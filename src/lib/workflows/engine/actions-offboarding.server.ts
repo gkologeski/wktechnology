@@ -1,3 +1,4 @@
+import { workRpc } from "@/lib/access-control/work-core.server";
 // Ações do ciclo de desligamento (Fase 4 do plano de contratação via Workflows).
 // Atuam na pessoa do gatilho (Pessoas) ou na criada no fluxo, sempre restritas
 // ao workspace do run. Idempotentes: reexecutar não altera o que já foi encerrado.
@@ -46,7 +47,6 @@ async function personContractIds(
   ctx: RunCtx,
   personId: string,
 ): Promise<string[]> {
-  const { workRpc } = await import("@/lib/access-control/work-core.server");
   if (
     !(await workRpc<boolean>(supabase, "work_delegated_authorize", {
       p_ws: ctx.workspaceId,
@@ -75,12 +75,16 @@ export async function handleOffboardingAction(
   if (!ctx.workspaceId) throw new Error("Workspace do registro não identificado.");
   const personId = personIdFor(ctx, (action as { person_id?: string }).person_id);
   if (!personId) throw new Error("Pessoa do desligamento não identificada.");
+  await workRpc(supabase, "hiring_lifecycle_legacy_block", {
+    w: ctx.workspaceId,
+    person: personId,
+    operation: action.type,
+  });
   const person = await loadPerson(supabase, ctx, personId);
   const endDate = person.termination_date ?? new Date().toISOString().slice(0, 10);
 
   switch (action.type) {
     case "terminate_contracts": {
-      const { workRpc } = await import("@/lib/access-control/work-core.server");
       const result = await workRpc<{ contracts: number }>(supabase, "contract_workflow_terminate", {
         p_person: personId,
         p_actor: ctx.ownerId,

@@ -14,7 +14,7 @@ ALTER TABLE public.project_link_review_rows ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.project_link_review_rows FROM PUBLIC,anon,authenticated;
 
 CREATE OR REPLACE FUNCTION public.project_link_review_access(w uuid,writing boolean)
-RETURNS void LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
+RETURNS void LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
 BEGIN
   IF auth.uid() IS NULL OR NOT public.is_workspace_member(w,auth.uid())
     OR NOT public.user_has_permission(auth.uid(),w,'techprojects.reconciliation.'||CASE WHEN writing THEN 'manage' ELSE 'view' END||'.workspace')
@@ -24,7 +24,7 @@ END $$;
 
 -- Internal, exact evidence for ONE locked row. Never match approximate names.
 CREATE OR REPLACE FUNCTION public.project_link_review_candidate(w uuid,k text,target uuid)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
 DECLARE p public.projects; e public.project_time_entries; person uuid; allocation uuid;
   companies uuid[]; v_email text; label text; token text; n int; before_values jsonb; after_values jsonb;
 BEGIN
@@ -69,7 +69,7 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.project_link_review_preview(w uuid,k text,d1 date,d2 date,cursor_id uuid DEFAULT NULL)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public SET statement_timeout='15s' AS $$
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,pg_temp SET statement_timeout='15s' AS $$
 DECLARE result jsonb; last_id uuid;
 BEGIN
   PERFORM public.project_link_review_access(w,false);
@@ -85,7 +85,7 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.project_link_review_apply(w uuid,batch uuid,reviewed jsonb)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public SET statement_timeout='15s' AS $$
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp SET statement_timeout='15s' AS $$
 DECLARE item jsonb; actual jsonb; token text; changed int:=0; field text; target uuid; kind text; prior jsonb;
 BEGIN
   PERFORM public.project_link_review_access(w,true);
@@ -125,7 +125,7 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.project_link_review_revert(w uuid,batch uuid)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
 DECLARE r public.project_link_review_rows; token text; values_now jsonb; undone int:=0; skipped int:=0; rb uuid;
 BEGIN
   PERFORM public.project_link_review_access(w,true);
@@ -152,7 +152,7 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION public.project_link_review_history(w uuid)
-RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public AS $$
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
 DECLARE result jsonb;
 BEGIN
   PERFORM public.project_link_review_access(w,false);
@@ -171,7 +171,7 @@ GRANT EXECUTE ON FUNCTION public.project_link_review_history(uuid) TO authentica
 ALTER FUNCTION public.project_links_revert(uuid,text,uuid[],uuid) RENAME TO project_links_revert_before_review;
 REVOKE ALL ON FUNCTION public.project_links_revert_before_review(uuid,text,uuid[],uuid) FROM PUBLIC,anon,authenticated,service_role;
 CREATE FUNCTION public.project_links_revert(p_ws uuid,p_kind text,p_subject_ids uuid[],p_batch uuid DEFAULT NULL)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
 BEGIN
   PERFORM public.project_link_review_access(p_ws,true);
   IF p_kind='batch' AND EXISTS(SELECT 1 FROM public.project_link_batches WHERE workspace_id=p_ws AND id=p_batch AND counts->>'mode'='reviewed') THEN RETURN public.project_link_review_revert(p_ws,p_batch); END IF;

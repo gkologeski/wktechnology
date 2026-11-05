@@ -2784,7 +2784,10 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace"
+    "techservice.tickets.view.workspace",
+    "techpeople.lifecycle.view.workspace",
+    "techpeople.lifecycle.manage.workspace",
+    "techpeople.lifecycle.approve.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -2912,6 +2915,15 @@
     },
     "techprojects.billing_acceptance.approve.workspace": {
       "migration": "drizzle/migrations/0317_hiring_billing_boundaries.sql"
+    },
+    "techpeople.lifecycle.view.workspace": {
+      "migration": "drizzle/migrations/0321_hiring_lifecycle.sql"
+    },
+    "techpeople.lifecycle.manage.workspace": {
+      "migration": "drizzle/migrations/0321_hiring_lifecycle.sql"
+    },
+    "techpeople.lifecycle.approve.workspace": {
+      "migration": "drizzle/migrations/0321_hiring_lifecycle.sql"
     }
   }
 }

@@ -8239,7 +8239,7 @@
         "drizzle/migrations/0311_hiring_employment_and_access_models.sql": "d32fedece1e49576737df425c0d42a3af7a827bc0599d914a8620a9686b33783",
         "drizzle/migrations/0312_hiring_allocation_access_and_invites.sql": "ddae8cf9a7d6c0c18ad6fc97882d5bf353f2e595b095766f1e7a94f483adc767",
         "src/components/hiring/access-models-panel.tsx": "4a02c2413f41fce297d940482138464a5f9b5ef41bf0f7e04df5a7eedb9c7d94",
-        "src/components/hiring/employment-panel.tsx": "a3b8aabda3fef91307f7cb64380ad9c69fbddb1d7d429b95d0e902c342639af7",
+        "src/components/hiring/employment-panel.tsx": "26409b6ca1ca1eef00fd19bf9961e419de9964f9bb281acffb2c3c84cf2a7462",
         "src/components/hiring/workflow-model-fields.tsx": "17da488a6cbcec880d14459d62038a166d60e5be173a614da8d892a6d62a5e29",
         "src/lib/hiring/employment.functions.ts": "a2cbfd29bdcf92a92987c0e5a4831e5329b61b1e169f4f4d6b3c23c8a336f3b7",
         "src/routes/accept-employment.$token.tsx": "54c14fe6764b1e318f636250eacbf25ed0a14ad23827441f1cdcd2fa8df3a2fe",
@@ -8254,7 +8254,7 @@
       "kind": "presentation",
       "rationale": "Type-only contracts; no values, IO, routes or actions.",
       "files": {
-        "src/lib/hiring/employment.types.ts": "b6dae68f2e37651ed1d3eadf6133eb2bccaa8d0be35d48b4745bc4094fd11b2b"
+        "src/lib/hiring/employment.types.ts": "eeb6e4ed022f434075be7cee3fe15f727b7b822e8a90c4222d40198fc033b1be"
       }
     },
     {
@@ -8377,6 +8377,85 @@
       }
     },
     {
+      "id": "hiring-stage6-lifecycle",
+      "kind": "business",
+      "resources": [
+        "techpeople.lifecycle",
+        "techpeople.employment",
+        "techfinance.entry_cancellation"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techpeople.lifecycle.view.workspace",
+        "techpeople.lifecycle.manage.workspace",
+        "techpeople.lifecycle.approve.workspace"
+      ],
+      "rationale": "Opt-in scoped lifecycle proposals with exact source snapshots, named area manager and CEO, no self approval, active selected membership/deny, revision/CAS and current documents. Renewals append allocation periods; ending affects only own origin. Financial selection separately requires finance record cancellation and unmasked amount; paid/worked/banked/measured obligations preserved. Legacy broad offboarding blocked for governed origins. No automatic business data conversion.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0321_hiring_lifecycle.sql",
+          "symbol": "hiring_lifecycle_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0321_hiring_lifecycle.sql": "e0265dce2a74f99ffbc835094294378422f28b276fb64d408fea7fee1cfd8aa9",
+        "src/lib/hiring/lifecycle.functions.ts": "a6729402563f85e696c60a2cf79bc750b7239b7aad159264227272e6dcdf5cbd",
+        "src/components/hiring/lifecycle-panel.tsx": "15f58f1c8896d64403391b6463740ee89534f9ae3df2f6eaabc80039c0968fae",
+        "src/lib/workflows/engine/actions-offboarding.server.ts": "73032793a5f15650bac034d1e3c85b3bb8383c348e82fdb2873d13775d4a6b09"
+      }
+    },
+    {
+      "id": "hiring-stage6-summary",
+      "kind": "presentation",
+      "rationale": "Read-only rendering of already authorized snapshot properties; no actions, I/O or permission decision.",
+      "files": {
+        "src/components/hiring/lifecycle-review.tsx": "f4d338e9260b43f715c343406dd7139ff3763652f43961126f8cc5e98d6b9a3d"
+      }
+    },
+    {
       "id": "hiring-stage6-reviewed-links",
       "kind": "business",
       "resources": [
@@ -8449,7 +8528,7 @@
         }
       },
       "files": {
-        "drizzle/migrations/0328_hiring_assisted_reconciliation.sql": "eed5485bf28f7664825301dc63070b0264b8ec658faac1072d71710387fd5bf8",
+        "drizzle/migrations/0328_hiring_assisted_reconciliation.sql": "dc638e9285a254349d172ebe29c29a4774e55a7ec9661d19580a1801c8fa3307",
         "src/lib/projects/reconciliation-review.functions.ts": "35a983decf3a24f7ba032f9d712f96fa872ae74584023feaec1af1cbc93ccf61",
         "src/components/projects/reconciliation/recon-review-tab.tsx": "71991c8f9a5d31a7cf1a7ee13f1197fc4f083ab3a75e02873425416886c89aa1",
         "src/components/projects/reconciliation/reconciliation-page.tsx": "25da7387addc4932229b40d328440a7bc5b2eb79b7590f7c1cc613e59504702c",

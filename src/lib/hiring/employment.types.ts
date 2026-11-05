@@ -34,6 +34,7 @@ export type HiringEngagement = {
   access_active: boolean;
 };
 export type HiringEmploymentContext = {
+  lifecycle_enabled?: boolean;
   engagements: HiringEngagement[];
   models: { id: string; name: string }[];
   entities: { id: string; name: string }[];
