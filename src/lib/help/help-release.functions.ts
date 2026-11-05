@@ -12,9 +12,7 @@ export const releaseOfficialHelp = createServerFn({ method: "POST" })
       .from("help_articles")
       .select("module_key, slug, version");
     if (readError) throw new Error("Não foi possível conferir as versões da Ajuda.");
-    const versions = new Map(
-      (existing ?? []).map((a) => [`${a.module_key}/${a.slug}`, a]),
-    );
+    const versions = new Map((existing ?? []).map((a) => [`${a.module_key}/${a.slug}`, a]));
     const updates = catalogue.filter((a) =>
       shouldReleaseArticle(versions.get(`${a.module_key}/${a.slug}`), a),
     );
@@ -26,7 +24,9 @@ export const releaseOfficialHelp = createServerFn({ method: "POST" })
         .upsert(batch, { onConflict: "module_key,slug" })
         .select("module_key,slug,version");
       if (error || data?.length !== batch.length)
-        throw new Error(`Atualização interrompida após ${applied} artigos. Tente novamente; as versões aplicadas serão preservadas.`);
+        throw new Error(
+          `Atualização interrompida após ${applied} artigos. Tente novamente; as versões aplicadas serão preservadas.`,
+        );
       applied += data.length;
     }
     return { applied, preserved: catalogue.length - updates.length, total: catalogue.length };

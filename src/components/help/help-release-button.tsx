@@ -13,7 +13,9 @@ export function HelpReleaseButton() {
     mutationFn: () => fn(),
     onSuccess: async (data) => {
       setResult(`${data.applied} artigos atualizados; ${data.preserved} versões preservadas.`);
-      await client.invalidateQueries({ predicate: (query) => String(query.queryKey[0]).startsWith("help-") });
+      await client.invalidateQueries({
+        predicate: (query) => String(query.queryKey[0]).startsWith("help-"),
+      });
     },
   });
   return (
@@ -22,8 +24,16 @@ export function HelpReleaseButton() {
         <RefreshCw className="mr-2 h-4 w-4" />
         {mutation.isPending ? "Atualizando…" : "Atualizar Ajuda oficial"}
       </Button>
-      {result && <p role="status" className="text-sm text-muted-foreground">{result}</p>}
-      {mutation.isError && <p role="alert" className="text-sm text-destructive">{mutation.error.message}</p>}
+      {result && (
+        <p role="status" className="text-sm text-muted-foreground">
+          {result}
+        </p>
+      )}
+      {mutation.isError && (
+        <p role="alert" className="text-sm text-destructive">
+          {mutation.error.message}
+        </p>
+      )}
     </div>
   );
 }

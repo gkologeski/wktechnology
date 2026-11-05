@@ -8,7 +8,13 @@ const input: HelpAccessInput = {
   isPlatformAdmin: false,
   isWorkspaceAdmin: false,
   licensedModules: null,
-  grants: [{ workspaceId: "11111111-1111-1111-1111-111111111111", key: "techservice.kb.update.workspace", effect: "allow" }],
+  grants: [
+    {
+      workspaceId: "11111111-1111-1111-1111-111111111111",
+      key: "techservice.kb.update.workspace",
+      effect: "allow",
+    },
+  ],
 };
 
 describe("Publicação editorial da Ajuda", () => {
@@ -19,10 +25,20 @@ describe("Publicação editorial da Ajuda", () => {
     expect(() => assertHelpReleaseAccess({ ...input, grants: [] })).toThrow();
   });
   it("nega deny explícito", () => {
-    expect(() => assertHelpReleaseAccess({ ...input, grants: [...input.grants, { ...input.grants[0], effect: "deny" }] })).toThrow();
+    expect(() =>
+      assertHelpReleaseAccess({
+        ...input,
+        grants: [...input.grants, { ...input.grants[0], effect: "deny" }],
+      }),
+    ).toThrow();
   });
   it("nega chave de outro workspace", () => {
-    expect(() => assertHelpReleaseAccess({ ...input, grants: [{ ...input.grants[0], workspaceId: "22222222-2222-2222-2222-222222222222" }] })).toThrow();
+    expect(() =>
+      assertHelpReleaseAccess({
+        ...input,
+        grants: [{ ...input.grants[0], workspaceId: "22222222-2222-2222-2222-222222222222" }],
+      }),
+    ).toThrow();
   });
   it("nega membro inativo", () => {
     expect(() => assertHelpReleaseAccess({ ...input, membershipStatus: "inactive" })).toThrow();

@@ -49,7 +49,8 @@ export function listScreenRoutes(): string[] {
     const rel = relative(ROUTES_DIR, file);
     if (rel.startsWith("api") || !rel.startsWith("_authenticated")) continue;
     const src = readFileSync(file, "utf8");
-    if (/throw\s+redirect\s*\(/.test(src) || /component\s*:\s*\(\)\s*=>\s*<Navigate\b/.test(src)) continue;
+    if (/throw\s+redirect\s*\(/.test(src) || /component\s*:\s*\(\)\s*=>\s*<Navigate\b/.test(src))
+      continue;
     const m = /createFileRoute\(\s*["'`]([^"'`]+)["'`]\s*\)/.exec(src);
     if (!m || !/component\s*:/.test(src)) continue; // redirecionamentos e layouts puros
     if (/<Outlet\s*\/>/.test(src) && !/useQuery|useSuspenseQuery|<form|<table/i.test(src)) continue;
