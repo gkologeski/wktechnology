@@ -237,10 +237,28 @@ export function LifecyclePanel({ engagementId }: { engagementId: string }) {
               </p>
               <p className="text-sm text-muted-foreground">{preview.financial_review}</p>
               <dl className="grid gap-2 text-sm sm:grid-cols-2">
-                <div><dt className="text-muted-foreground">Alocações afetadas</dt><dd>{preview.effects.allocation_count}</dd></div>
-                <div><dt className="text-muted-foreground">Corte inclusivo</dt><dd>{preview.effects.effective_date}</dd></div>
-                {preview.effects.new_start && <div><dt className="text-muted-foreground">Novo período</dt><dd>{preview.effects.new_start} → {preview.effects.new_end}</dd></div>}
-                <div><dt className="text-muted-foreground">Sobreposição</dt><dd>{preview.effects.overlap ? "Solicitada explicitamente" : "Sem sobreposição"}</dd></div>
+                <div>
+                  <dt className="text-muted-foreground">Alocações afetadas</dt>
+                  <dd>{preview.effects.allocation_count}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Corte inclusivo</dt>
+                  <dd>{preview.effects.effective_date}</dd>
+                </div>
+                {preview.effects.new_start && (
+                  <div>
+                    <dt className="text-muted-foreground">Novo período</dt>
+                    <dd>
+                      {preview.effects.new_start} → {preview.effects.new_end}
+                    </dd>
+                  </div>
+                )}
+                <div>
+                  <dt className="text-muted-foreground">Sobreposição</dt>
+                  <dd>
+                    {preview.effects.overlap ? "Solicitada explicitamente" : "Sem sobreposição"}
+                  </dd>
+                </div>
               </dl>
               <label className="flex gap-2 items-center">
                 <Checkbox checked={reviewed} onCheckedChange={(v) => setReviewed(v === true)} />
