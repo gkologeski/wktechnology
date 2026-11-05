@@ -43,6 +43,8 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-eslint-${{ hashFiles('bun.lock', 'eslint*.config.*', 'eslint-rules/**', '.prettierrc*', '.prettierignore') }}-
       - name: Permission contracts and denial evidence
         run: bun run permissions:check
+      - name: Official help coverage
+        run: bun run help:coverage
       - run: bun run verify
       - run: bun run build
       - run: bun run perf:check

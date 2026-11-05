@@ -1,0 +1,44 @@
+---
+module_key: core
+slug: consultar-um-aplicativo-do-marketplace
+title: Consultar um aplicativo do Marketplace
+summary: Consultar um aplicativo do Marketplace.
+article_type: howto
+route_pattern: /settings/marketplace/$slug
+min_permission: 
+audience: internal
+sort_order: 141
+version: 1
+is_published: true
+---
+# Consultar um aplicativo do Marketplace
+
+**Para que serve:** Consultar um aplicativo do Marketplace, no contexto da tela `/settings/marketplace/$slug`.
+
+**Quem pode fazer:** Membro ativo do workspace, com as permissões efetivas da tela e da ação. O gate de rota referencia `system.integrations`.
+
+**Onde fica:** Configurações ou navegação do workspace > `/settings/marketplace/$slug`.
+
+**Antes de começar:** Confirme o workspace e o contexto corretos. Tenha autorização para a operação, e não apenas para consultar a tela.
+
+## Passo a passo
+1. Abra o aplicativo pelo Marketplace.
+2. Confira o detalhe e as opções apresentadas.
+3. Revise os requisitos antes de usar uma ação de instalação ou conexão disponível.
+
+## Resultado esperado
+A tela apresenta o resultado da consulta ou da ação descrita. Confira a confirmação e o estado exibidos; uma configuração gravada não prova execução no provedor externo.
+
+## Regras e limites
+O slug identifica o app; não presuma que todos ofereçam as mesmas ações ou que instalação inclua licença. Há divergência menu/gate: system.marketplace versus system.integrations.
+
+## Erros comuns
+- Se houver acesso negado, confira membership ativo, workspace e permissões da ação; não tente contornar por URL direta.
+- Se o link ou registro estiver indisponível, retorne à origem para verificar o contexto; não altere tokens para procurar outros registros.
+- Em falha de gravação ou integração, verifique a mensagem antes de repetir. Não compartilhe senha, token ou dados pessoais em chamados.
+
+## Relacionados
+- [Visão geral do Core](/ajuda/core/visao-geral)
+- [Permissões do Core](/ajuda/core/permissoes)
+
+<!-- screenshot: capturar /settings/marketplace/$slug com dados fictícios, ocultando tokens, segredos e dados pessoais. -->

@@ -25,7 +25,7 @@ const HOWTO_SECTIONS = [
   "## Relacionados",
 ];
 // Somente o que é oficial entra na Ajuda: protótipos ficam fora (decisão de 05/11/2026).
-const EXCLUDED = [/\/prototype(\/|$)/];
+const EXCLUDED = [/\/prototype(\/|$)/, /^\/qa\/test-cases$/];
 
 function walk(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -35,7 +35,10 @@ function walk(dir: string): string[] {
 }
 
 export function normalizeRoutePath(raw: string): string {
-  const segs = raw.split("/").filter((s) => s && !s.startsWith("_") && !/^\(.*\)$/.test(s));
+  const segs = raw
+    .split("/")
+    .filter((s) => s && !s.startsWith("_") && !/^\(.*\)$/.test(s))
+    .map((s) => s.replace(/_$/, ""));
   return "/" + segs.join("/");
 }
 
@@ -46,6 +49,8 @@ export function listScreenRoutes(): string[] {
     const rel = relative(ROUTES_DIR, file);
     if (rel.startsWith("api") || !rel.startsWith("_authenticated")) continue;
     const src = readFileSync(file, "utf8");
+    if (/throw\s+redirect\s*\(/.test(src) || /component\s*:\s*\(\)\s*=>\s*<Navigate\b/.test(src))
+      continue;
     const m = /createFileRoute\(\s*["'`]([^"'`]+)["'`]\s*\)/.exec(src);
     if (!m || !/component\s*:/.test(src)) continue; // redirecionamentos e layouts puros
     if (/<Outlet\s*\/>/.test(src) && !/useQuery|useSuspenseQuery|<form|<table/i.test(src)) continue;

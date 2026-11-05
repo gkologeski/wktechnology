@@ -17,5 +17,5 @@ com `component`, exceto redirecionamentos, layouts puros e protótipos.
 Artigos: `docs/help/<módulo>/<slug>.md` com cabeçalho YAML (mesmo conteúdo da
 migration de seed). Regra e template: `docs/architecture/help-center.md`.
 
-Enquanto a Fase 2 não terminar, o comando acusa as telas ainda sem artigo e
-por isso ainda não está em `verify`/CI; entra no gate ao fim da Fase 2.
+O comando integra a CI após a verificação de permissões. A cobertura identifica
+telas, mas não substitui a auditoria factual das ações, permissões e limites.

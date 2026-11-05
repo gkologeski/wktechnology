@@ -8,7 +8,7 @@ route_pattern: /sourcing/multi-posting
 min_permission: techhire.jobs.view.own
 audience: internal
 sort_order: 66
-version: 1
+version: 2
 is_published: true
 ---
 # Acompanhar o multi-posting
@@ -26,7 +26,7 @@ is_published: true
 "Publicação atualizada" ou "Publicação encerrada".
 
 ## Regras e limites
-- Hoje os sites estão em modo simulado: nada é publicado de fato.
+- O modo depende do provedor. LinkedIn possui caminho de publicação real quando há conta conectada e configuração válida. Indeed e Vagas.com ainda retornam publicações simuladas no código atual. Nesses dois sites, o status ou a ausência do selo de simulação não comprova publicação; confira o destino externo.
 - Mostra até 200 publicações.
 
 ## Erros comuns

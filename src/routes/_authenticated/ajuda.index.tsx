@@ -13,6 +13,7 @@ import {
   isHelpModuleKey,
 } from "@/lib/help/help-access";
 import { splitHighlight } from "@/lib/help/help-toc";
+import { HelpReleaseButton } from "@/components/help/help-release-button";
 
 export const Route = createFileRoute("/_authenticated/ajuda/")({
   head: () => ({
@@ -58,6 +59,8 @@ function HelpHome() {
         title="Ajuda e Treinamento"
         description="Aprenda a operar cada módulo do TechERP. Você vê apenas o material dos módulos que pode acessar."
       />
+
+      <HelpReleaseButton allowed={home.data?.canEdit === true} />
 
       <form
         role="search"

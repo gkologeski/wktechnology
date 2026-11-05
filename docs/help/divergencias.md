@@ -21,7 +21,7 @@ A Ajuda documenta o comportamento pretendido; o item fica aqui até ser corrigid
 - **Sem permissão própria na tela/servidor:** Dashboard, Briefing, Copilot, DEI Analytics, Flags de risco, Match Scores, Insights, todo o Hunting, todo o Sourcing (exceto Multi-posting) e E-mails por etapa conferem só login e workspace (RLS por pertencimento). Pela doutrina de `security-rbac.md`, cada tela deveria ter recurso/ação `techhire.*` próprio. A Ajuda documenta o acesso atual e o marca como divergência.
 - **Inbox de sourcing:** o botão "Pausar" envia `stopped` e encerra a inscrição, em vez de pausar.
 - **Indicações:** status e bônus aparecem em inglês (`submitted`, `under_review`…), contrariando a regra de idioma PT-BR.
-- **Multi-posting:** os três sites estão fixos em modo simulado (`isMock: true`), não por detecção de credenciais.
+- **Multi-posting (revisado):** LinkedIn possui caminho real. Indeed e Vagas.com retornam simulação mesmo com configuração; a detecção `is_mock` pode indicar publicação real sem realizá-la. Não usar o selo como certificação do envio externo.
 - **Sequências de outreach:** o status das inscrições aparece sem tradução; "Aguardar aceite do convite" não é validado como posterior a um convite.
 - **E-mails por etapa:** a descrição usa `{{candidate_name}}`/`{{job_title}}`, e os botões inserem `{{candidate.first_name}}`/`{{job.title}}`.
 - **Talent Pools:** o tipo "Smart" está marcado "em breve", mas pode ser selecionado e salvo.
@@ -56,3 +56,13 @@ A Ajuda documenta o comportamento pretendido; o item fica aqui até ser corrigid
 - Margem do card de compras aninhadas é diferença de valores totais, sem conversão monetária, rateio por vigência ou pagamentos. Rentabilidade é estimada, não lucro realizado.
 - A auditoria de acesso foi repetida nesta etapa: mesmos 39 apontamentos preexistentes; nenhuma categoria nova e nenhum apontamento nas tabelas da Ajuda. Nenhuma correção de RBAC realizada nesta frente documental.
 - A geração automática da migration de conteúdo escolheu `0307_help_seed_contracts`, coexistindo com `0307_shared_audience_company_catalog`; nomes completos distintos e journal sequencial válido (`drizzle-kit check`). O journal é protegido pelo ambiente; tentativa de renumerar para prefixo livre foi recusada, sem alteração. Revalidar concorrência antes do aceite.
+
+## Fase 2 integral — revisão de 05/11/2026
+
+- TechProjects: comentário de edição de horas diverge do corpo executável: enviado sem fechamento pode voltar a rascunho. Artigos seguem o código executável. Ver `auditoria-projects-fase2.md`.
+- TechFinance: Banco Inter implementa somente simulação; modos sandbox/produção são rejeitados. NFS-e não emite nota. Centro de custo é consulta. Baixa manual não transfere dinheiro. Serviços exigem também permissões próprias de serviços. Ver `auditoria-finance-fase2.md`.
+- Compartilhado: telefones, marketplace e IA têm diferenças entre chave do menu e gate da página. Preferência de residência não comprova mudança física; SSO informativo não comprova integração ativa. Allow-list não implementa CIDR genérico. Ver `auditoria-core-fase2.md`.
+- Ajuda: `min_permission` é uma chave exata, sem OR nem herança automática own/team/workspace. Artigos restritos podem não aparecer para outro escopo legítimo. Mantida a regra existente, sem ampliar acesso nesta entrega.
+- Fontes de incerteza operacional: conexão/credenciais/cron externos não foram validados nem presumidos. Dúvidas permanecem nos relatórios de auditoria, não como promessa no artigo.
+- Inventário de cobertura atualizado: 244 telas autenticadas oficiais, excluindo protótipos, ferramenta interna QA e atalhos de redirecionamento. Há também guias internos de páginas públicas; público do artigo continua interno.
+- Histórico da Ajuda foi conciliado para 0306/0307/0308. A observação anterior sobre prefixo concorrente descreve a tentativa inicial, não o estado atual.

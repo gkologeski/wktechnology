@@ -8662,7 +8662,7 @@
         "techservice.kb.manage.workspace",
         "techservice.kb.update.workspace"
       ],
-      "rationale": "Help and Training area (/ajuda, header '?' button, sidebar link). Global platform content without workspace_id. Read: active member of the active workspace, published internal article, module allowed by the same rule as the menu (license ∩ effective keys, workspace admin unrestricted, core = any active member, platform = platform admin) and optional min_permission effective key (deny wins); enforced in every server function by loadHelpAccessInput + canReadHelpModule/filterReadableArticles and in the database by help_can_read RLS. Edit: platform admin or active member with existing knowledge base keys (help_can_edit RLS); no edit UI in this phase. Feedback and route misses are own-row only. No new key, no grant to roles.",
+      "rationale": "Help and Training area (/ajuda, header '?' button, sidebar link). Global platform content without workspace_id. Read: active member of the active workspace, published internal article, module allowed by the same rule as the menu (license ∩ effective keys, workspace admin unrestricted, core = any active member, platform = platform admin) and optional min_permission effective key (deny wins); enforced in every server function by loadHelpAccessInput + canReadHelpModule/filterReadableArticles and in the database by help_can_read RLS. Edit: platform admin or active member with existing knowledge base keys (help_can_edit RLS); no edit UI in this phase. Feedback and route misses are own-row only. No new key, no grant to roles. Official fixed-catalogue release is editor-authorized before dynamic import; user client/RLS only, no arbitrary input or admin client. Strictly higher versions replace existing content; repeat preserves applied versions. No schema/grant change.",
       "controls": [
         {
           "file": "src/lib/help/help-access.server.ts",
@@ -8711,6 +8711,22 @@
         {
           "file": "src/lib/help/help-access.ts",
           "symbol": "isHelpModuleKey"
+        },
+        {
+          "file": "src/lib/help/help-release.ts",
+          "symbol": "assertHelpReleaseAccess"
+        },
+        {
+          "file": "src/lib/help/help-release.functions.ts",
+          "symbol": "releaseOfficialHelp"
+        },
+        {
+          "file": "src/components/help/help-release-button.tsx",
+          "symbol": "HelpReleaseButton"
+        },
+        {
+          "file": "src/lib/help/help-release.ts",
+          "symbol": "assertHelpReleaseAllowed"
         }
       ],
       "database": [
@@ -8733,24 +8749,24 @@
       ],
       "tests": {
         "allowed": {
-          "file": "src/lib/help/help-access.test.ts",
-          "name": "allows active member with module key to read help"
+          "file": "src/lib/help/help-release.test.ts",
+          "name": "permite editor ativo autorizado"
         },
         "missing_permission": {
-          "file": "src/lib/help/help-access.test.ts",
-          "name": "denies help module without module key"
+          "file": "src/lib/help/help-release.test.ts",
+          "name": "nega sem chave"
         },
         "explicit_deny": {
-          "file": "src/lib/help/help-access.test.ts",
-          "name": "denies help when explicit deny overrides grant"
+          "file": "src/lib/help/help-release.test.ts",
+          "name": "nega deny explícito"
         },
         "foreign_workspace": {
-          "file": "src/lib/help/help-access.test.ts",
-          "name": "ignores help grants from foreign workspace"
+          "file": "src/lib/help/help-release.test.ts",
+          "name": "nega chave de outro workspace"
         },
         "inactive_member": {
-          "file": "src/lib/help/help-access.test.ts",
-          "name": "denies help for inactive member"
+          "file": "src/lib/help/help-release.test.ts",
+          "name": "nega membro inativo"
         }
       },
       "files": {
@@ -8760,11 +8776,14 @@
         "src/components/help/help-button.tsx": "2b268ebe99b3235468f0049cb9e1d33fe2339b72557ba964e10a4c524318462e",
         "src/lib/help/help-access.server.ts": "79d713e8056a7cb37e13076ff21c637ae056da1f913cdc7e7cee063ae24bd88e",
         "src/lib/help/help-access.ts": "1ae9593cb60c3aac19b401fdf0a5b0f7334c27e1f63ab7dfceb21ee272bfe5dd",
-        "src/lib/help/help.functions.ts": "b30c3161b92d49b5f9b0f6912c0be9017ae1593ef4a6472d2d5ec2f0db7b6aa1",
+        "src/lib/help/help.functions.ts": "0260dd4f828edd828081c573d690b89972683bea105c1c5eef9302cd4a85e5fe",
         "src/routes/_authenticated/ajuda.$module.$slug.tsx": "6248f72c7387f4fdfcafae3a01f142f747c86e587b51710135b3b507f23d6b6d",
         "src/routes/_authenticated/ajuda.$module.index.tsx": "017f84e9351276c27397edd536205a8f03be2f928a855921a02e4813fbef048b",
-        "src/routes/_authenticated/ajuda.index.tsx": "a2cfeaadf0c27d64cb7247ef9be61dc7b93dda01f9f2564cd4362bfe209b79a9",
-        "drizzle/migrations/0308_help_seed_contracts.sql": "8ab1cb5450bcebb357720b90a43d866559b72ab65fe89e2eb4decf6be831ff6b"
+        "src/routes/_authenticated/ajuda.index.tsx": "8251226247e0fe0de98ce845035b27afa54b61bd41d8db1276a968d6563ebc63",
+        "drizzle/migrations/0308_help_seed_contracts.sql": "8ab1cb5450bcebb357720b90a43d866559b72ab65fe89e2eb4decf6be831ff6b",
+        "src/lib/help/help-release.functions.ts": "1e0ee0198ba91c400c61bfa9f39e947c10688a6a2942a61918a49733f03aba89",
+        "src/lib/help/help-release.ts": "a7d5e01443260020c759ce52fb9575f28ac4cd21c69f218583a56faefe5969a4",
+        "src/components/help/help-release-button.tsx": "9637691fbfd7d02d327e658c457d98fec5601139570ced6eb03aa9e4d3af16e1"
       }
     },
     {
@@ -8773,7 +8792,7 @@
       "rationale": "Pure helpers of the Help area: Markdown rendering without raw HTML, route_pattern matching and table-of-contents/highlight parsing. No I/O, routes, actions, grants or data access; data comes only from help.functions under the help-center contract.",
       "files": {
         "src/components/help/help-markdown.tsx": "d2d110950c73b7e155cd05c1408bd06495f0c628372c7ca01f2ae1ca584e20b0",
-        "src/lib/help/help-route-match.ts": "54516dc383febca2ae1478daf2040cd794febefb2eb76729bfb6fb7ba9281ba8",
+        "src/lib/help/help-route-match.ts": "a7d082b67a754023df5f534e4f3a599ff1bc2df18d6637c3b0a2f0d9134de7b9",
         "src/lib/help/help-toc.ts": "da95180b180a9537c4be0d6f096419d10619050fc4f70bf26a2c52787de66207"
       }
     }

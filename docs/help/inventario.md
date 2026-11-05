@@ -774,3 +774,10 @@ Além disso: 33 redirecionamentos/layouts e as rotas técnicas `src/routes/api/*
 ## Próximo passo
 
 Aguardando aprovação para a **Fase 1** (tabelas `help_articles`/`help_feedback`, rota `/ajuda`, botão "?", guia `help-center.md` e teste de cobertura).
+## Atualização Fase 2 — 05/11/2026
+
+O levantamento inicial acima fica preservado como histórico. A cobertura executável atual mede 244 telas autenticadas oficiais: exclui atalhos que só redirecionam, layouts, protótipos e `/qa/test-cases` (ferramenta de QA, fora do treinamento oficial). Dashboard do TechProjects: `/projects/dashboard`; `/projects` é a listagem.
+
+424 artigos preparados: TechSales 118, TechHire 46, TechPeople 31, TechContracts 56, TechProjects 35, TechFinance 39, Core 85 e Plataforma 14. Os guias de páginas públicas são internos; não há exposição pública da Ajuda. Matrizes complementares, componentes e funções estão em `auditoria-projects-fase2.md`, `auditoria-finance-fase2.md`, `auditoria-core-fase2.md` e `auditoria-people-extra-fase2.md`.
+
+`tests/help-coverage/module-routes.ts` consolida as rotas por módulo; `bun run help:coverage` mede todas as telas oficiais atuais, não apenas a lista histórica. Cobertura por rota não certifica integrações externas nem cada combinação de permissão operacional.
