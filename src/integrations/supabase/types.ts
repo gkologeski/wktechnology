@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   public: {
     Tables: {
       ab_test_events: {
@@ -12311,6 +12316,51 @@ export type Database = {
           },
         ]
       }
+      hiring_delivery_acceptances: {
+        Row: {
+          accepted_at: string
+          accepted_by: string
+          id: string
+          milestone_id: string
+          reference: string
+          source_hash: string
+          workspace_id: string
+        }
+        Insert: {
+          accepted_at?: string
+          accepted_by: string
+          id?: string
+          milestone_id: string
+          reference: string
+          source_hash: string
+          workspace_id: string
+        }
+        Update: {
+          accepted_at?: string
+          accepted_by?: string
+          id?: string
+          milestone_id?: string
+          reference?: string
+          source_hash?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_delivery_acceptances_milestone_id_fkey"
+            columns: ["milestone_id"]
+            isOneToOne: false
+            referencedRelation: "project_milestones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_delivery_acceptances_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hiring_demand_events: {
         Row: {
           actor_id: string
@@ -12561,6 +12611,8 @@ export type Database = {
           id: string
           job_id: string
           legal_entity_id: string
+          lifecycle_predecessor_id: string | null
+          lifecycle_request_id: string | null
           model_version_id: string
           person_id: string
           purchase_contract_id: string | null
@@ -12583,6 +12635,8 @@ export type Database = {
           id?: string
           job_id: string
           legal_entity_id: string
+          lifecycle_predecessor_id?: string | null
+          lifecycle_request_id?: string | null
           model_version_id: string
           person_id: string
           purchase_contract_id?: string | null
@@ -12605,6 +12659,8 @@ export type Database = {
           id?: string
           job_id?: string
           legal_entity_id?: string
+          lifecycle_predecessor_id?: string | null
+          lifecycle_request_id?: string | null
           model_version_id?: string
           person_id?: string
           purchase_contract_id?: string | null
@@ -12644,6 +12700,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "hiring_engagements_lifecycle_predecessor_id_fkey"
+            columns: ["lifecycle_predecessor_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_engagements"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "hiring_engagements_model_version_id_fkey"
             columns: ["model_version_id"]
             isOneToOne: false
@@ -12673,6 +12736,221 @@ export type Database = {
           },
           {
             foreignKeyName: "hiring_engagements_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_lifecycle_events: {
+        Row: {
+          actor: string
+          created_at: string
+          detail: Json
+          id: string
+          kind: string
+          request_id: string
+          workspace_id: string
+        }
+        Insert: {
+          actor: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind: string
+          request_id: string
+          workspace_id: string
+        }
+        Update: {
+          actor?: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          kind?: string
+          request_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_lifecycle_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_lifecycle_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_lifecycle_requests: {
+        Row: {
+          applied_at: string | null
+          area_id: string
+          ceo_at: string | null
+          ceo_by: string | null
+          ceo_id: string
+          created_at: string
+          engagement_id: string
+          id: string
+          kind: string
+          manager_at: string | null
+          manager_by: string | null
+          manager_id: string
+          note: string | null
+          payload: Json
+          policy_revision: number
+          requested_by: string
+          result: Json | null
+          snapshot: Json
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          applied_at?: string | null
+          area_id: string
+          ceo_at?: string | null
+          ceo_by?: string | null
+          ceo_id: string
+          created_at?: string
+          engagement_id: string
+          id?: string
+          kind: string
+          manager_at?: string | null
+          manager_by?: string | null
+          manager_id: string
+          note?: string | null
+          payload: Json
+          policy_revision: number
+          requested_by: string
+          result?: Json | null
+          snapshot: Json
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          applied_at?: string | null
+          area_id?: string
+          ceo_at?: string | null
+          ceo_by?: string | null
+          ceo_id?: string
+          created_at?: string
+          engagement_id?: string
+          id?: string
+          kind?: string
+          manager_at?: string | null
+          manager_by?: string | null
+          manager_id?: string
+          note?: string | null
+          payload?: Json
+          policy_revision?: number
+          requested_by?: string
+          result?: Json | null
+          snapshot?: Json
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_lifecycle_requests_engagement_id_fkey"
+            columns: ["engagement_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_lifecycle_requests_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_monthly_provisions: {
+        Row: {
+          closed_at: string
+          closed_by: string
+          config_id: string | null
+          contract_id: string
+          currency: string
+          id: string
+          kind: string
+          legal_entity_id: string
+          period_from: string
+          period_to: string
+          reason: string
+          revision: number
+          snapshot: Json
+          source_hash: string
+          supersedes_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          closed_at?: string
+          closed_by: string
+          config_id?: string | null
+          contract_id: string
+          currency: string
+          id?: string
+          kind?: string
+          legal_entity_id: string
+          period_from: string
+          period_to: string
+          reason: string
+          revision: number
+          snapshot: Json
+          source_hash: string
+          supersedes_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          closed_at?: string
+          closed_by?: string
+          config_id?: string | null
+          contract_id?: string
+          currency?: string
+          id?: string
+          kind?: string
+          legal_entity_id?: string
+          period_from?: string
+          period_to?: string
+          reason?: string
+          revision?: number
+          snapshot?: Json
+          source_hash?: string
+          supersedes_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_monthly_provisions_config_id_fkey"
+            columns: ["config_id"]
+            isOneToOne: false
+            referencedRelation: "project_billing_configs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_monthly_provisions_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_monthly_provisions_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_monthly_provisions_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_monthly_provisions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_monthly_provisions_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -12744,6 +13022,9 @@ export type Database = {
         Row: {
           employment_gate_enabled: boolean
           enabled: boolean
+          finance_gate_enabled: boolean
+          lifecycle_finance_area_id: string | null
+          lifecycle_gate_enabled: boolean
           signature_gate_enabled: boolean
           updated_at: string
           updated_by: string
@@ -12752,6 +13033,9 @@ export type Database = {
         Insert: {
           employment_gate_enabled?: boolean
           enabled?: boolean
+          finance_gate_enabled?: boolean
+          lifecycle_finance_area_id?: string | null
+          lifecycle_gate_enabled?: boolean
           signature_gate_enabled?: boolean
           updated_at?: string
           updated_by: string
@@ -12760,12 +13044,22 @@ export type Database = {
         Update: {
           employment_gate_enabled?: boolean
           enabled?: boolean
+          finance_gate_enabled?: boolean
+          lifecycle_finance_area_id?: string | null
+          lifecycle_gate_enabled?: boolean
           signature_gate_enabled?: boolean
           updated_at?: string
           updated_by?: string
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "hiring_workspace_settings_lifecycle_finance_area_id_fkey"
+            columns: ["lifecycle_finance_area_id"]
+            isOneToOne: false
+            referencedRelation: "user_groups"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "hiring_workspace_settings_workspace_id_fkey"
             columns: ["workspace_id"]
@@ -15751,6 +16045,8 @@ export type Database = {
           hours_per_month: number | null
           hours_per_week: number | null
           id: string
+          lifecycle_predecessor_id: string | null
+          lifecycle_request_id: string | null
           manager_id: string | null
           notes: string | null
           overbook_justification: string | null
@@ -15783,6 +16079,8 @@ export type Database = {
           hours_per_month?: number | null
           hours_per_week?: number | null
           id?: string
+          lifecycle_predecessor_id?: string | null
+          lifecycle_request_id?: string | null
           manager_id?: string | null
           notes?: string | null
           overbook_justification?: string | null
@@ -15815,6 +16113,8 @@ export type Database = {
           hours_per_month?: number | null
           hours_per_week?: number | null
           id?: string
+          lifecycle_predecessor_id?: string | null
+          lifecycle_request_id?: string | null
           manager_id?: string | null
           notes?: string | null
           overbook_justification?: string | null
@@ -15850,6 +16150,13 @@ export type Database = {
             columns: ["hiring_engagement_id"]
             isOneToOne: false
             referencedRelation: "hiring_engagements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_allocations_lifecycle_predecessor_id_fkey"
+            columns: ["lifecycle_predecessor_id"]
+            isOneToOne: false
+            referencedRelation: "people_allocations"
             referencedColumns: ["id"]
           },
           {
@@ -18209,6 +18516,54 @@ export type Database = {
           },
           {
             foreignKeyName: "project_link_changes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      project_link_review_rows: {
+        Row: {
+          after_values: Json
+          after_xmin: string
+          batch_id: string
+          before_values: Json
+          kind: string
+          reverted_at: string | null
+          target_id: string
+          workspace_id: string
+        }
+        Insert: {
+          after_values: Json
+          after_xmin: string
+          batch_id: string
+          before_values: Json
+          kind: string
+          reverted_at?: string | null
+          target_id: string
+          workspace_id: string
+        }
+        Update: {
+          after_values?: Json
+          after_xmin?: string
+          batch_id?: string
+          before_values?: Json
+          kind?: string
+          reverted_at?: string | null
+          target_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_link_review_rows_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "project_link_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "project_link_review_rows_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -32518,6 +32873,10 @@ export type Database = {
         Args: { p_contract: string; p_deal?: string; p_ws: string }
         Returns: string
       }
+      hiring_cost_provision_access: {
+        Args: { k: string; w: string }
+        Returns: boolean
+      }
       hiring_deal_signature_contract: {
         Args: { p_deal: string; p_ws: string }
         Returns: string
@@ -32612,6 +32971,14 @@ export type Database = {
         }
         Returns: undefined
       }
+      hiring_finance_contract_check: {
+        Args: { k: string; p_from?: string; p_to?: string; w: string }
+        Returns: undefined
+      }
+      hiring_finance_signature_reason: {
+        Args: { p_contract: string; p_deal?: string; p_ws: string }
+        Returns: string
+      }
       hiring_job_contract_link: {
         Args: {
           p_contract: string
@@ -32629,6 +32996,59 @@ export type Database = {
         Args: { p_job: string; p_revision: number; p_role: string; w: string }
         Returns: undefined
       }
+      hiring_lifecycle_access: {
+        Args: { action: string; eid: string; w: string }
+        Returns: undefined
+      }
+      hiring_lifecycle_apply: {
+        Args: { req: string; w: string }
+        Returns: Json
+      }
+      hiring_lifecycle_context: {
+        Args: { eid: string; search_text?: string; w: string }
+        Returns: Json
+      }
+      hiring_lifecycle_decide: {
+        Args: { accept: boolean; reason: string; req: string; w: string }
+        Returns: undefined
+      }
+      hiring_lifecycle_end_boundary: { Args: { day: string }; Returns: string }
+      hiring_lifecycle_legacy_block: {
+        Args: { operation: string; person: string; w: string }
+        Returns: undefined
+      }
+      hiring_lifecycle_notify: { Args: { req: string }; Returns: undefined }
+      hiring_lifecycle_preview: {
+        Args: { eid: string; k: string; p: Json; w: string }
+        Returns: Json
+      }
+      hiring_lifecycle_request: {
+        Args: {
+          eid: string
+          expected: Json
+          k: string
+          p: Json
+          request_id: string
+          w: string
+        }
+        Returns: string
+      }
+      hiring_lifecycle_snapshot: {
+        Args: { eid: string; k: string; p: Json; w: string }
+        Returns: Json
+      }
+      hiring_measurement_source_check: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      hiring_milestone_accept: {
+        Args: { p_id: string; p_reference: string; w: string }
+        Returns: string
+      }
+      hiring_milestone_accepted: {
+        Args: { p_id: string; w: string }
+        Returns: boolean
+      }
       hiring_model_context: { Args: { w: string }; Returns: Json }
       hiring_model_save: {
         Args: {
@@ -32645,6 +33065,38 @@ export type Database = {
       }
       hiring_profile_recruitment_status: {
         Args: { p_deal: string; p_ws: string }
+        Returns: Json
+      }
+      hiring_provision_access: {
+        Args: { k: string; p_key: string; p_write?: boolean; w: string }
+        Returns: boolean
+      }
+      hiring_provision_close: {
+        Args: {
+          p_cfg: string
+          p_hash: string
+          p_month: string
+          p_previous: string
+          p_reason: string
+          p_tz?: string
+          w: string
+        }
+        Returns: string
+      }
+      hiring_provision_compute: {
+        Args: { p_cfg: string; p_month: string; p_tz?: string }
+        Returns: Json
+      }
+      hiring_provision_context: {
+        Args: { k: string; p_cfg?: string; p_month: string; w: string }
+        Returns: Json
+      }
+      hiring_provision_preview: {
+        Args: { p_cfg: string; p_month: string; p_tz?: string; w: string }
+        Returns: Json
+      }
+      hiring_purchase_provision_compute: {
+        Args: { k: string; p_month: string; p_tz: string; w: string }
         Returns: Json
       }
       hiring_recruitment_check: {
@@ -32691,6 +33143,10 @@ export type Database = {
           w: string
         }
         Returns: Json
+      }
+      hiring_workflow_finance_guard: {
+        Args: { p_actor: string; p_application: string; w: string }
+        Returns: boolean
       }
       hiring_workflow_recruitment_check: {
         Args: { p_application: string; p_ws: string }
@@ -33447,6 +33903,33 @@ export type Database = {
           user_name: string
         }[]
       }
+      project_link_review_access: {
+        Args: { w: string; writing: boolean }
+        Returns: undefined
+      }
+      project_link_review_apply: {
+        Args: { batch: string; reviewed: Json; w: string }
+        Returns: Json
+      }
+      project_link_review_candidate: {
+        Args: { k: string; target: string; w: string }
+        Returns: Json
+      }
+      project_link_review_history: { Args: { w: string }; Returns: Json }
+      project_link_review_preview: {
+        Args: {
+          cursor_id?: string
+          d1: string
+          d2: string
+          k: string
+          w: string
+        }
+        Returns: Json
+      }
+      project_link_review_revert: {
+        Args: { batch: string; w: string }
+        Returns: Json
+      }
       project_link_suggestions_decide: {
         Args: {
           p_action: string
@@ -33458,6 +33941,15 @@ export type Database = {
       }
       project_links_apply_exact: { Args: { p_ws: string }; Returns: Json }
       project_links_revert: {
+        Args: {
+          p_batch?: string
+          p_kind: string
+          p_subject_ids: string[]
+          p_ws: string
+        }
+        Returns: Json
+      }
+      project_links_revert_before_review: {
         Args: {
           p_batch?: string
           p_kind: string
@@ -36181,4 +36673,3 @@ export const Constants = {
     },
   },
 } as const
-
