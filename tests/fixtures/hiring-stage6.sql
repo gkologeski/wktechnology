@@ -1,0 +1,4 @@
+-- Platform scaffold only. Production lifecycle functions run unchanged in a disposable DB.
+ALTER TABLE people_allocations ADD COLUMN billable_rate numeric,ADD COLUMN cost_rate numeric,ADD COLUMN currency text DEFAULT 'BRL',ADD COLUMN hours_per_week numeric,ADD COLUMN hours_per_month numeric,ADD COLUMN service_id uuid,ADD COLUMN role_title text,ADD COLUMN calendar jsonb,ADD COLUMN competencies text[] DEFAULT '{}',ADD COLUMN manager_id uuid,ADD COLUMN contracting_preset_id uuid,ADD COLUMN overbook_justification text;
+ALTER TABLE project_time_entries ADD COLUMN allocation_id uuid,ADD COLUMN user_id uuid,ADD COLUMN entry_date date;
+CREATE TABLE financial_entries(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,contract_id uuid,direction text,status text,metadata jsonb DEFAULT '{}');
