@@ -1,11 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { assertHelpReleaseAccess, shouldReleaseArticle } from "./help-release";
+import { loadHelpAccessInput } from "./help-access.server";
 
 export const releaseOfficialHelp = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { loadHelpAccessInput } = await import("./help-access.server");
-    const { assertHelpReleaseAccess, shouldReleaseArticle } = await import("./help-release");
     assertHelpReleaseAccess(await loadHelpAccessInput(context.supabase, context.userId));
     const { default: catalogue } = await import("./official-catalogue.json");
     const { data: existing, error: readError } = await context.supabase

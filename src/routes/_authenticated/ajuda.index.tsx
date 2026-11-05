@@ -60,7 +60,7 @@ function HelpHome() {
         description="Aprenda a operar cada módulo do TechERP. Você vê apenas o material dos módulos que pode acessar."
       />
 
-      {home.data?.canEdit && <HelpReleaseButton />}
+      <HelpReleaseButton allowed={home.data?.canEdit === true} />
 
       <form
         role="search"

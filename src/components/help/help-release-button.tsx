@@ -5,12 +5,15 @@ import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { releaseOfficialHelp } from "@/lib/help/help-release.functions";
 
-export function HelpReleaseButton() {
+export function HelpReleaseButton({ allowed }: { allowed: boolean }) {
   const fn = useServerFn(releaseOfficialHelp);
   const client = useQueryClient();
   const [result, setResult] = useState("");
   const mutation = useMutation({
-    mutationFn: () => fn(),
+    mutationFn: () => {
+      if (!allowed) throw new Error("Sem permissão para atualizar a Ajuda oficial.");
+      return fn();
+    },
     onSuccess: async (data) => {
       setResult(`${data.applied} artigos atualizados; ${data.preserved} versões preservadas.`);
       await client.invalidateQueries({
@@ -18,6 +21,7 @@ export function HelpReleaseButton() {
       });
     },
   });
+  if (!allowed) return null;
   return (
     <div className="space-y-2">
       <Button variant="outline" disabled={mutation.isPending} onClick={() => mutation.mutate()}>
