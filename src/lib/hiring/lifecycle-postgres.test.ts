@@ -116,13 +116,7 @@ beforeAll(async () => {
   ])
     await db.unsafe(readFileSync("drizzle/migrations/" + file, "utf8"));
   await db.unsafe(readFileSync("tests/fixtures/hiring-stage6.sql", "utf8"));
-  await db.unsafe(
-    readFileSync(
-      process.env.HIRING_STAGE6_CANDIDATE ??
-        "drizzle/migrations/0321_hiring_lifecycle_governance.sql",
-      "utf8",
-    ),
-  );
+  await db.unsafe(readFileSync("drizzle/migrations/0305_hiring_lifecycle_governance.sql", "utf8"));
 }, 60000);
 afterAll(async () => {
   if (db) await db.end();
