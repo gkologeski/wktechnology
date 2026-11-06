@@ -143,6 +143,35 @@ function CampaignsPage() {
 
   const selectedTpl = templates.find((t) => t.name === templateName);
   const isHsm = !!selectedTpl;
+  // Rodízio: modelos adicionais aprovados (máx. 4 + principal).
+  const [extraTpls, setExtraTpls] = useState<{ name: string; weight: number }[]>([]);
+  const [primaryWeight, setPrimaryWeight] = useState(1);
+  const [rotationMode, setRotationMode] = useState<"sequential" | "weighted">("sequential");
+  const extraSelected = extraTpls
+    .map((e) => ({ ...e, tpl: templates.find((t) => t.name === e.name) }))
+    .filter((e) => e.tpl && e.name !== templateName);
+  const varCount = Math.max(
+    selectedTpl?.variableCount ?? 0,
+    ...extraSelected.map((e) => e.tpl?.variableCount ?? 0),
+  );
+  const rotationPayload = isHsm
+    ? [
+        {
+          name: templateName,
+          language: selectedTpl?.language ?? null,
+          body: selectedTpl?.body ?? null,
+          variableCount: selectedTpl?.variableCount ?? 0,
+          weight: primaryWeight,
+        },
+        ...extraSelected.map((e) => ({
+          name: e.name,
+          language: e.tpl?.language ?? null,
+          body: e.tpl?.body ?? null,
+          variableCount: e.tpl?.variableCount ?? 0,
+          weight: e.weight,
+        })),
+      ]
+    : [];
   const isEditing = editingId !== null;
   // Estado da campanha em edição: rascunho troca o público; pausada só exibe.
   const [editStatus, setEditStatus] = useState<string>("");
@@ -161,6 +190,9 @@ function CampaignsPage() {
     setName("");
     setBody("");
     setTemplateName("__none__");
+    setExtraTpls([]);
+    setPrimaryWeight(1);
+    setRotationMode("sequential");
     setRate(10);
     setRecipientsRaw("");
     setAudience(EMPTY_AUDIENCE);
@@ -218,6 +250,19 @@ function CampaignsPage() {
         setSender(full.sender_phone_number_id || "lovable");
         setConsentEvidence(full.consent_evidence || "");
         setTemplateName(full.template_name || "__none__");
+        {
+          const rot = (Array.isArray(full.template_rotation) ? full.template_rotation : []) as {
+            name: string;
+            weight?: number;
+          }[];
+          setPrimaryWeight(rot.find((t) => t.name === full.template_name)?.weight ?? 1);
+          setExtraTpls(
+            rot
+              .filter((t) => t.name !== full.template_name)
+              .map((t) => ({ name: t.name, weight: t.weight ?? 1 })),
+          );
+          setRotationMode(full.rotation_mode === "weighted" ? "weighted" : "sequential");
+        }
         setMediaUrl(full.media_url ?? "");
         setSdrPlaybook(full.sdr_playbook_id ?? "__none__");
         setAssignMode((full.assignment_mode as AssignmentMode) ?? "auto");
@@ -256,7 +301,7 @@ function CampaignsPage() {
             throw new Error("Adicione pelo menos um destinatário");
           if (!manualE && !audE) throw new Error("Escolha o público da campanha");
           if (!manualE && isHsm) {
-            for (let i = 1; i <= (selectedTpl?.variableCount ?? 0); i++) {
+            for (let i = 1; i <= varCount; i++) {
               const b = audience.variableMap[String(i)];
               if (!b?.field) throw new Error(`Defina o campo da variável {{${i}}}`);
               if (b.field === "__free__" && !b.fallback?.trim())
@@ -288,6 +333,8 @@ function CampaignsPage() {
             consent_evidence: sender === "lovable" ? null : consentEvidence,
             template_language: selectedTpl?.language ?? null,
             content_variables_template,
+            template_rotation: rotationPayload,
+            rotation_mode: rotationMode,
             media_url: mediaUrl || null,
             rate_per_minute: rate,
             sdr_playbook_id: isHsm && sdrPlaybook !== "__none__" ? sdrPlaybook : null,
@@ -302,7 +349,7 @@ function CampaignsPage() {
       if (manual && recipients.length === 0) throw new Error("Adicione pelo menos um destinatário");
       if (!manual && !audiencePl) throw new Error("Escolha o público da campanha");
       if (!manual && isHsm) {
-        for (let i = 1; i <= (selectedTpl?.variableCount ?? 0); i++) {
+        for (let i = 1; i <= varCount; i++) {
           const b = audience.variableMap[String(i)];
           if (!b?.field) throw new Error(`Defina o campo da variável {{${i}}}`);
           if (b.field === "__free__" && !b.fallback?.trim())
@@ -328,6 +375,8 @@ function CampaignsPage() {
           consent_evidence: sender === "lovable" ? null : consentEvidence,
           template_language: selectedTpl?.language ?? undefined,
           content_variables_template,
+          template_rotation: rotationPayload,
+          rotation_mode: rotationMode,
           media_url: mediaUrl || undefined,
           rate_per_minute: rate,
           recipients,
@@ -521,6 +570,95 @@ function CampaignsPage() {
                     </div>
                   )}
                 </div>
+                {isHsm && (
+                  <div className="space-y-2 rounded-md border border-border p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-medium">Rodízio de modelos</p>
+                        <p className="text-xs text-muted-foreground">
+                          Adicione até 4 modelos aprovados. Cada contato recebe sempre o mesmo
+                          modelo.
+                        </p>
+                      </div>
+                      <Select
+                        value={rotationMode}
+                        onValueChange={(v) => setRotationMode(v as "sequential" | "weighted")}
+                      >
+                        <SelectTrigger className="w-48" aria-label="Modo de rodízio">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="sequential">Sequencial (A, B, C…)</SelectItem>
+                          <SelectItem value="weighted">Aleatório com peso</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <ul className="space-y-1">
+                      {[{ name: templateName, weight: primaryWeight, primary: true }, ...extraSelected.map((e) => ({ name: e.name, weight: e.weight, primary: false }))].map((t) => (
+                        <li key={t.name} className="flex items-center gap-2 text-sm">
+                          <span className="flex-1 truncate">
+                            {t.name}
+                            {t.primary && <span className="text-xs text-muted-foreground"> · principal</span>}
+                          </span>
+                          {rotationMode === "weighted" && (
+                            <Input
+                              type="number"
+                              min={1}
+                              max={100}
+                              className="h-8 w-20"
+                              aria-label={`Peso do modelo ${t.name}`}
+                              value={t.weight}
+                              onChange={(e) => {
+                                const w = Math.min(100, Math.max(1, Number(e.target.value) || 1));
+                                if (t.primary) setPrimaryWeight(w);
+                                else
+                                  setExtraTpls((xs) =>
+                                    xs.map((x) => (x.name === t.name ? { ...x, weight: w } : x)),
+                                  );
+                              }}
+                            />
+                          )}
+                          {!t.primary && (
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8"
+                              aria-label={`Remover modelo ${t.name}`}
+                              onClick={() => setExtraTpls((xs) => xs.filter((x) => x.name !== t.name))}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    {extraSelected.length < 4 && (
+                      <Select
+                        value=""
+                        onValueChange={(v) => setExtraTpls((xs) => [...xs, { name: v, weight: 1 }])}
+                      >
+                        <SelectTrigger aria-label="Adicionar modelo ao rodízio">
+                          <SelectValue placeholder="Adicionar modelo ao rodízio" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {templates
+                            .filter(
+                              (t) =>
+                                t.approved &&
+                                t.name !== templateName &&
+                                !extraSelected.some((e) => e.name === t.name),
+                            )
+                            .map((t) => (
+                              <SelectItem key={t.name} value={t.name}>
+                                {t.name} · {t.language} · {t.variableCount} variáveis
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
                 <div>
                   <label htmlFor="camp-body" className="text-xs text-muted-foreground">
                     Mensagem (use {`{{1}}, {{2}}`} para variáveis)
@@ -538,7 +676,7 @@ function CampaignsPage() {
                 {isHsm && (
                   <p id="camp-body-hint" className="text-xs text-muted-foreground">
                     Texto do modelo aprovado pela Meta ({selectedTpl?.language}) — não pode ser
-                    editado. Defina as {selectedTpl?.variableCount ?? 0} variáveis no quadro abaixo.
+                    editado. Defina as {varCount} variáveis no quadro abaixo.
                   </p>
                 )}
                 <div>
@@ -575,7 +713,7 @@ function CampaignsPage() {
                       setAudience(v);
                     }}
                     readOnly={isEditing && editStatus !== "draft"}
-                    variableCount={isHsm ? (selectedTpl?.variableCount ?? 0) : 0}
+                    variableCount={isHsm ? varCount : 0}
                     manualRaw={recipientsRaw}
                     onManualRaw={(r) => {
                       setAudienceTouched(true);
