@@ -68,7 +68,7 @@ function TrackPage() {
   if (q.isLoading)
     return (
       <div className="mx-auto max-w-4xl p-6">
-        <Skeletons.Cards count={3} />
+        <Skeletons.Card /><Skeletons.Card /><Skeletons.Card />
       </div>
     );
   if (q.isError || !q.data || !q.data.allowed)
@@ -95,7 +95,7 @@ function TrackPage() {
       <PageHeader
         title={d.track.title}
         description={`${d.track.role} · ${d.track.description}`}
-        actions={
+        secondaryActions={
           <Button variant="outline" asChild>
             <Link to="/ajuda/trilhas">Todas as trilhas</Link>
           </Button>
@@ -150,7 +150,7 @@ function TrackPage() {
           <SectionHeader
             title="Quiz do módulo"
             description={`5 perguntas. Aprovação com ${QUIZ_PASS_SCORE} acertos.`}
-            actions={d.quizPassed ? <Badge>Aprovado</Badge> : undefined}
+            action={d.quizPassed ? <Badge>Aprovado</Badge> : undefined}
           />
           <div className="space-y-4 rounded-lg border bg-card p-4">
             {d.quiz.map((question, i) => (

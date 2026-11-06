@@ -31,13 +31,13 @@ function TracksPage() {
       <PageHeader
         title="Trilhas de treinamento"
         description="Leia os artigos de cada trilha e faça o quiz de 5 perguntas para ganhar o selo do módulo."
-        actions={
+        secondaryActions={
           <Button variant="outline" asChild>
             <Link to="/ajuda">Voltar à Ajuda</Link>
           </Button>
         }
       />
-      {q.isLoading && <Skeletons.Cards count={4} />}
+      {q.isLoading && <div className="grid gap-4 sm:grid-cols-2"><Skeletons.Card /><Skeletons.Card /><Skeletons.Card /><Skeletons.Card /></div>}
       {q.isError && (
         <EmptyState
           title="Não foi possível carregar as trilhas"

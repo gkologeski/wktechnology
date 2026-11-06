@@ -180,6 +180,8 @@ export const MODULE_ROUTES: Record<string, string[]> = {
     "/ajuda",
     "/ajuda/$module",
     "/ajuda/$module/$slug",
+    "/ajuda/trilhas",
+    "/ajuda/trilhas/$track",
     "/auth/extension-link",
     "/catalog/contracting-presets",
     "/catalog/services",
