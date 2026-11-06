@@ -8,7 +8,7 @@ route_pattern: /people/$id
 min_permission: techpeople.employment.view.workspace
 audience: internal
 sort_order: 128
-version: 1
+version: 2
 is_published: true
 ---
 # Preparar acesso e encerrar vínculos pela ficha
@@ -25,6 +25,18 @@ is_published: true
 4. Para mudar o pacote, clique em "Revisar modelo de acesso", escolha um modelo ativo, registre o motivo e confirme no diálogo. A revisão substitui a concessão desse vínculo, preservando outras origens.
 5. Quando o fluxo de ciclo de vida integrado não estiver habilitado e o vínculo estiver ativo, para finalizar a relação, clique em "Encerrar este vínculo", revise o aviso, informe o motivo e confirme em "Encerrar vínculo e seus acessos".
 6. Aguarde "Operação concluída." e confira novamente a situação e as alocações do vínculo.
+
+## Renovar, substituir ou encerrar com aprovação
+
+Quando o ciclo de vida integrado estiver ativo, use **Renovação, substituição e encerramento** no vínculo correto. Ver o diálogo exige `techpeople.lifecycle.view.workspace`; preparar e executar exige `techpeople.lifecycle.manage.workspace`, além do acesso à pessoa e à alocação. Uma permissão de workspace não dispensa o escopo do registro.
+
+1. Escolha a operação e, quando aplicável, a alocação. Informe a data efetiva e uma justificativa; renovação também exige o novo término e contratos já revisados.
+2. Consulte a prévia e confira origens, vigência e impactos. Consultar não executa a mudança.
+3. Solicite aprovação. O gestor da área aprova primeiro e o CEO depois, com `techpeople.lifecycle.approve.workspace` e alçada vigente. O solicitante não aprova sua própria mudança.
+4. Execute a versão aprovada. Se a origem, o contrato ou a alçada mudarem, refaça a prévia e a aprovação.
+5. Confira o resultado e o histórico. Encerrar uma alocação preserva a pessoa, os outros vínculos e os acessos de outras origens; horas posteriores ao corte impedem o encerramento.
+
+A operação **Revisar compromissos futuros** exige também a permissão financeira correspondente, seleção explícita de compromissos elegíveis e aprovação do gestor Financeiro e CEO. Não cancela pagamentos, competências trabalhadas ou títulos protegidos automaticamente.
 
 ## Resultado esperado
 O contexto é recarregado após a operação; o convite preparado fica disponível como link. Encerrar afeta as alocações e o pacote de acesso originados naquele vínculo.
