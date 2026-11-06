@@ -94,3 +94,46 @@ export function positionalVariables(variableCount: number, vars: Record<string, 
   for (let i = 1; i <= variableCount; i++) out.push(vars[String(i)] ?? "");
   return out;
 }
+
+/**
+ * Chave da variável no mapa do público.
+ * O modelo principal usa "1".."N" (compatível com campanhas antigas);
+ * cada modelo adicional tem as próprias chaves "<nome>#1".."<nome>#N".
+ */
+export function rotationVariableKey(templateName: string, index: number, primary: boolean): string {
+  return primary ? String(index) : `${templateName}#${index}`;
+}
+
+/**
+ * Valores {{1}}..{{n}} do modelo sorteado para o destinatário.
+ * Modelo adicional sem mapeamento próprio (campanha antiga) usa os do principal.
+ */
+export function variablesForTemplate(
+  picked: RotationTemplate,
+  primaryName: string | null,
+  vars: Record<string, string>,
+): Record<string, string> {
+  const primary = picked.name === primaryName;
+  const out: Record<string, string> = {};
+  for (let i = 1; i <= picked.variableCount; i++) {
+    const own = vars[rotationVariableKey(picked.name, i, primary)];
+    out[String(i)] = own ?? vars[String(i)] ?? "";
+  }
+  return out;
+}
+
+/** Variáveis sem campo definido, por modelo do rodízio (vazio = tudo mapeado). */
+export function missingRotationVariables(
+  list: RotationTemplate[],
+  map: Record<string, { field?: string; fallback?: string } | undefined>,
+): string[] {
+  const out: string[] = [];
+  list.forEach((t, idx) => {
+    for (let i = 1; i <= t.variableCount; i++) {
+      const b = map[rotationVariableKey(t.name, i, idx === 0)];
+      if (!b?.field || (b.field === "__free__" && !b.fallback?.trim()))
+        out.push(`${t.name} {{${i}}}`);
+    }
+  });
+  return out;
+}
