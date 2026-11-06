@@ -19,7 +19,10 @@ export const getTrainingOverview = createServerFn({ method: "GET" })
         .select("module_key, slug, min_permission, is_published, audience")
         .in("module_key", modules)
         .eq("is_published", true),
-      context.supabase.from("help_progress").select("module_key, slug").eq("user_id", context.userId),
+      context.supabase
+        .from("help_progress")
+        .select("module_key, slug")
+        .eq("user_id", context.userId),
       context.supabase
         .from("help_quiz_attempts")
         .select("module_key, passed")
@@ -81,7 +84,8 @@ export const getTrainingTrack = createServerFn({ method: "GET" })
         .order("created_at", { ascending: false })
         .limit(5),
     ]);
-    if (arts.error || prog.error || quiz.error) throw new Error("Não foi possível carregar a trilha.");
+    if (arts.error || prog.error || quiz.error)
+      throw new Error("Não foi possível carregar a trilha.");
     const readable = filterReadableArticles(arts.data ?? [], access);
     const done = new Set((prog.data ?? []).map((p) => p.slug));
     const { publicQuiz } = await import("@/lib/help/training-quiz.server");
@@ -93,7 +97,13 @@ export const getTrainingTrack = createServerFn({ method: "GET" })
     const quizPassed = attempts.some((a) => a.passed);
     return {
       allowed: true as const,
-      track: { id: track.id, module: track.module, role: track.role, title: track.title, description: track.description },
+      track: {
+        id: track.id,
+        module: track.module,
+        role: track.role,
+        title: track.title,
+        description: track.description,
+      },
       articles,
       quiz: publicQuiz(track.module),
       attempts,
@@ -142,7 +152,10 @@ export const submitTrainingQuiz = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
     z
-      .object({ track: z.string().max(40), answers: z.array(z.number().int().min(0).max(9)).max(20) })
+      .object({
+        track: z.string().max(40),
+        answers: z.array(z.number().int().min(0).max(9)).max(20),
+      })
       .parse(i),
   )
   .handler(async ({ data, context }) => {

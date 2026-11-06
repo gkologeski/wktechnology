@@ -8886,10 +8886,10 @@
       },
       "files": {
         "drizzle/migrations/0309_help_training_progress.sql": "1f2797a1360d9f376a9bae5b08ccca7a2b726b5ea1689f6a1aa9e4309e4795eb",
-        "src/lib/help/training.functions.ts": "56237e171bca8d4f8e85691a0280a7f0a33ac9206fcdddd88592cbb88cb98dc3",
+        "src/lib/help/training.functions.ts": "075f85c3ae75fa1284fbdec2761676d42e0ac0a989740f09fcbbb1dd8d1eeb98",
         "src/lib/help/training-access.ts": "f3e5d07a9f1fd9c254b229eae5d45128decc4b6a554ed8f8e2545c920d6bca3c",
-        "src/routes/_authenticated/ajuda.trilhas.index.tsx": "b65bfd3ca6b59e4c13e5044d82d2403568666e1026ddeb4bcf71d400b9991902",
-        "src/routes/_authenticated/ajuda.trilhas.$track.tsx": "e203f0a99b3554e252c3b25f78ab23f6ffb8516aa705a65f3c2b41a2180ddaac"
+        "src/routes/_authenticated/ajuda.trilhas.index.tsx": "6a5b87aa3462099161b7c143f3ed2bd1a7b620b6ac7c10262e08a7ff04337ffa",
+        "src/routes/_authenticated/ajuda.trilhas.$track.tsx": "d5a1d74500ec69d48bce9be3aff0050bb417638db7264dee2b98cdc928d36756"
       }
     },
     {
@@ -8898,7 +8898,7 @@
       "rationale": "Static training track list and quiz question/answer data for the Help Phase 3. No I/O, routes, actions, grants or data access; answers are only imported dynamically inside help-training server handlers.",
       "files": {
         "src/lib/help/training-catalogue.ts": "d9848aae705784e21ec89fc2e5f74d2e0677ca7cc7e6e7da4316dbcf741bc052",
-        "src/lib/help/training-quiz.server.ts": "f24bc4b44907ce5490317c03819e5dd6d17d605b26170574525f4c96f40bd59c"
+        "src/lib/help/training-quiz.server.ts": "e1ec29b87c1cd9b2ce5a199b4ed9a8f45a06ae849db33d29bfe115872c68a5d6"
       }
     }
   ],

@@ -41,7 +41,9 @@ function TrackPage() {
   const readFn = useServerFn(setTrainingArticleRead);
   const quizFn = useServerFn(submitTrainingQuiz);
   const key = ["help-training-track", track];
-  const q = useQuery({ queryKey: key, queryFn: () => loadFn({ data: { track } }),
+  const q = useQuery({
+    queryKey: key,
+    queryFn: () => loadFn({ data: { track } }),
     enabled: isTrainingTrackId(track),
   });
   const [answers, setAnswers] = useState<Record<number, number>>({});
@@ -71,7 +73,9 @@ function TrackPage() {
   if (q.isLoading && isTrainingTrackId(track))
     return (
       <div className="mx-auto max-w-4xl p-6">
-        <Skeletons.Card /><Skeletons.Card /><Skeletons.Card />
+        <Skeletons.Card />
+        <Skeletons.Card />
+        <Skeletons.Card />
       </div>
     );
   if (q.isError || !q.data || !q.data.allowed)
@@ -105,18 +109,26 @@ function TrackPage() {
         }
       />
       {d.badge && (
-        <div className="flex items-center gap-3 rounded-lg border border-primary/40 bg-primary/5 p-4" role="status">
+        <div
+          className="flex items-center gap-3 rounded-lg border border-primary/40 bg-primary/5 p-4"
+          role="status"
+        >
           <Award className="h-8 w-8 text-primary" aria-hidden />
           <div>
             <p className="font-semibold">Selo de conclusão conquistado</p>
-            <p className="text-sm text-muted-foreground">Você leu todos os artigos e foi aprovado no quiz.</p>
+            <p className="text-sm text-muted-foreground">
+              Você leu todos os artigos e foi aprovado no quiz.
+            </p>
           </div>
         </div>
       )}
 
       <section className="space-y-3">
         <SectionHeader title="Artigos" description={`${read} de ${d.articles.length} lidos`} />
-        <Progress value={d.articles.length ? (read / d.articles.length) * 100 : 0} aria-label="Progresso de leitura" />
+        <Progress
+          value={d.articles.length ? (read / d.articles.length) * 100 : 0}
+          aria-label="Progresso de leitura"
+        />
         <ol className="divide-y rounded-lg border bg-card">
           {d.articles.map((a, i) => (
             <li key={a.slug} className="flex items-center gap-3 p-3">
@@ -139,7 +151,9 @@ function TrackPage() {
                 size="sm"
                 variant={a.read ? "ghost" : "outline"}
                 disabled={toggle.isPending}
-                onClick={() => toggle.mutate({ module: d.track.module, slug: a.slug, read: !a.read })}
+                onClick={() =>
+                  toggle.mutate({ module: d.track.module, slug: a.slug, read: !a.read })
+                }
               >
                 {a.read ? "Desmarcar" : "Marcar como lido"}
               </Button>
@@ -161,7 +175,13 @@ function TrackPage() {
                 <legend className="font-medium">
                   {i + 1}. {question.q}
                   {result && (
-                    <span className={result.correct[i] ? "ml-2 text-sm text-primary" : "ml-2 text-sm text-destructive"}>
+                    <span
+                      className={
+                        result.correct[i]
+                          ? "ml-2 text-sm text-primary"
+                          : "ml-2 text-sm text-destructive"
+                      }
+                    >
                       {result.correct[i] ? "Correta" : "Incorreta"}
                     </span>
                   )}

@@ -34,17 +34,26 @@ describe("Trilhas — autorização", () => {
   });
   it("nega trilha com chave de outro workspace", () => {
     expect(
-      canUseTraining("finance", { ...base, grants: [{ workspaceId: other, key, effect: "allow" }] }),
+      canUseTraining("finance", {
+        ...base,
+        grants: [{ workspaceId: other, key, effect: "allow" }],
+      }),
     ).toBe(false);
   });
   it("nega trilha a membro inativo", () => {
-    expect(() => assertTrainingAccess("finance", { ...base, membershipStatus: "inactive" })).toThrow();
+    expect(() =>
+      assertTrainingAccess("finance", { ...base, membershipStatus: "inactive" }),
+    ).toThrow();
   });
 });
 
 describe("Trilhas — quiz", () => {
   it("aprova com 4 de 5 e reprova com 3", () => {
-    expect(scoreQuiz([1, 1, 1, 1, 0], [1, 1, 1, 1, 1])).toEqual({ score: 4, total: 5, passed: true });
+    expect(scoreQuiz([1, 1, 1, 1, 0], [1, 1, 1, 1, 1])).toEqual({
+      score: 4,
+      total: 5,
+      passed: true,
+    });
     expect(scoreQuiz([1, 1, 1, 0, 0], [1, 1, 1, 1, 1]).passed).toBe(false);
   });
   it("exige todas as respostas", () => {
