@@ -2143,6 +2143,27 @@
       "when": 1793908404650,
       "tag": "0305_hiring_lifecycle_governance",
       "breakpoints": true
+    },
+    {
+      "idx": 306,
+      "version": "7",
+      "when": 1793917243678,
+      "tag": "0306_help_center",
+      "breakpoints": true
+    },
+    {
+      "idx": 307,
+      "version": "7",
+      "when": 1793917243679,
+      "tag": "0307_help_seed_crm",
+      "breakpoints": true
+    },
+    {
+      "idx": 308,
+      "version": "7",
+      "when": 1793917243680,
+      "tag": "0308_help_seed_contracts",
+      "breakpoints": true
     }
   ]
 }

@@ -1,0 +1,39 @@
+ACESSO_TRAVADO|api_rate_buckets|RLS sem políticas
+ACESSO_TRAVADO|clockify_connections|RLS sem políticas
+ACESSO_TRAVADO|contaazul_import_runs|RLS sem políticas
+ACESSO_TRAVADO|contaazul_record_links|RLS sem políticas
+ACESSO_TRAVADO|deal_delivery_worker_state|RLS sem políticas
+ACESSO_TRAVADO|finance_dunning_attempts|RLS sem políticas
+ACESSO_TRAVADO|finance_invoice_sequences|RLS sem políticas
+ACESSO_TRAVADO|hiring_commercial_contracts|RLS sem políticas
+ACESSO_TRAVADO|hiring_email_outbox|RLS sem políticas
+ACESSO_TRAVADO|hiring_policy_versions|RLS sem políticas
+ACESSO_TRAVADO|hiring_workspace_settings|RLS sem políticas
+ACESSO_TRAVADO|prospecting_sequence_reply_wakes|RLS sem políticas
+ACESSO_TRAVADO|prospecting_sequence_voice_events|RLS sem políticas
+ACESSO_TRAVADO|service_agent_inbound_events|RLS sem políticas
+ACESSO_TRAVADO|service_agent_ingest_errors|RLS sem políticas
+ACESSO_TRAVADO|shared_upload_receipts|RLS sem políticas
+ACESSO_TRAVADO|time_import_connections|RLS sem políticas
+ACESSO_TRAVADO|wa_cloud_connections|RLS sem políticas
+ACESSO_TRAVADO|work_resource_catalog|RLS sem políticas
+ANON_ESCRITA|app_settings|app_settings_deny_all
+POLITICA_SEM_ESCOPO|modules|Modules are readable by authenticated users
+POLITICA_SEM_ESCOPO|plan_entitlements|plan_entitlements readable by authenticated
+POLITICA_SEM_ESCOPO|plans|plans readable by authenticated
+POLITICA_SEM_ESCOPO|shared_field_catalog|shared_field_catalog_read
+TO_PUBLIC|ats_daily_briefings|Users manage own briefings
+TO_PUBLIC|email_send_log|Service role can insert send log
+TO_PUBLIC|email_send_log|Service role can read send log
+TO_PUBLIC|email_send_log|Service role can update send log
+TO_PUBLIC|email_send_state|Service role can manage send state
+TO_PUBLIC|email_unsubscribe_tokens|Service role can insert tokens
+TO_PUBLIC|email_unsubscribe_tokens|Service role can mark tokens as used
+TO_PUBLIC|email_unsubscribe_tokens|Service role can read tokens
+TO_PUBLIC|field_permission_rules|fpr_write
+TO_PUBLIC|job_roles|jr_write
+TO_PUBLIC|permission_sets|psets_write
+TO_PUBLIC|suppressed_emails|Service role can insert suppressed emails
+TO_PUBLIC|suppressed_emails|Service role can read suppressed emails
+TO_PUBLIC|unipile_rate_buckets|owner reads unipile_rate_buckets
+TO_PUBLIC|unipile_request_log|owner reads unipile_request_log

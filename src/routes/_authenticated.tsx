@@ -25,6 +25,7 @@ import { GlobalSearch } from "@/components/global-search/global-search";
 import { GlobalSearchTrigger } from "@/components/global-search-trigger";
 import { QuickCreateMenu } from "@/components/quick-create-menu";
 import { SettingsMenu } from "@/components/settings-menu";
+import { HelpButton } from "@/components/help/help-button";
 import { AccountMenu } from "@/components/account-menu";
 import { WorkspaceMenu } from "@/components/workspace-menu";
 import { RouteBreadcrumbs } from "@/components/route-breadcrumbs";
@@ -187,6 +188,7 @@ function AuthenticatedLayout() {
                   <ViewAsSwitcher />
                   <WorkspaceMenu />
                   <QuickCreateMenu />
+                  <HelpButton />
                   <SettingsMenu />
                   <NotificationsBell />
                   <AccountMenu />
