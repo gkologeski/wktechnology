@@ -52,6 +52,14 @@ export function HelpMarkdown({ body }: { body: string }) {
               {children}
             </h3>
           ),
+          img: ({ src, alt }) => (
+            <img
+              src={typeof src === "string" ? src : undefined}
+              alt={alt ?? ""}
+              loading="lazy"
+              className="w-full rounded-md border border-border shadow-sm"
+            />
+          ),
           blockquote: ({ children }) => (
             <blockquote className="border-l-2 border-border pl-3 text-muted-foreground">
               {children}
