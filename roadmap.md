@@ -2,7 +2,7 @@
 
 - [x] Trilhas por papel, progresso próprio, quiz de 5 perguntas por módulo e selo; tabelas com RLS do próprio usuário
 - [x] Artigo da Ajuda, cobertura 246/246, permissions:check, testes e publicação
-- [ ] Clicar em "Atualizar Ajuda oficial" no app para carregar os artigos (sem isso as trilhas mostram 0 artigos): depende de um editor da Ajuda
+- [x] Catálogo oficial aplicado no app pela sessão do editor (216 novos, 3 atualizados, 206 preservados; 425 artigos); trilhas com 6 artigos cada
 
 # Roadmap — Fase 2 integral da Ajuda (porte G, 12–18 horas)
 
@@ -10,9 +10,9 @@
 - [x] Revisar fatos, permissões, vínculos, cobertura 244/244 e divergências sem alterar funcionalidades
 - [x] Disponibilizar 424 artigos neste rascunho e validar aplicação editorial, repetição, leitura/busca autenticadas
 - [x] Executar auditoria de acesso inalterada, permissões, lint dirigido e testes da Ajuda; suíte global: 2556 aprovados, 7 arquivos bloqueados por Docker ausente
-- [ ] Validação SQL completa/CI e fluxos complexos: ambiente sem Docker; auditoria funcional por rota não certifica cada operação
+- [ ] Validação SQL completa/CI e fluxos complexos: bloqueado, ambiente sem Docker; auditoria funcional por rota não certifica cada operação
 - [ ] Capturas operacionais definitivas e revisão de permissões alternativas: sem exemplos operacionais preparados; min_permission escalar preservado
-- [ ] Aceitar o rascunho e publicar: exige revisão/aprovação de aceite em outra interação; após aceite aplicar catálogo editorial no app e confirmar publicação
+- [x] Rascunho aceito, catálogo aplicado e app publicado
 
 # Roadmap — Ajuda do TechContracts (porte G, 4–6 horas)
 
