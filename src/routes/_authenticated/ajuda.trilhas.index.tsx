@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { getTrainingOverview } from "@/lib/help/training.functions";
+import { isTrainingTrackId } from "@/lib/help/training-access";
 
 export const Route = createFileRoute("/_authenticated/ajuda/trilhas/")({
   head: () => ({
@@ -54,7 +55,7 @@ function TracksPage() {
       )}
       {q.data && q.data.tracks.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2">
-          {q.data.tracks.map((t) => (
+          {q.data.tracks.filter((t) => isTrainingTrackId(t.id)).map((t) => (
             <Link
               key={t.id}
               to="/ajuda/trilhas/$track"

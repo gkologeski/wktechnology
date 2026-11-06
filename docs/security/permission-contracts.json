@@ -2736,7 +2736,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 03/11/2026: generated declarations for whatsapp_number_suppressions and the wa_* suppression functions only; no runtime I/O, grants or policies.",
       "files": {
-        "src/integrations/supabase/types.ts": "92a35071f804aa137c730bfae58e3331077513ff62fcda53a13f19c6c70229f2"
+        "src/integrations/supabase/types.ts": "a452e0d43d2156be6e80487405b0edc1f63ffbf77a2745de00e79b092ce6e50d"
       }
     },
     {
@@ -8846,6 +8846,10 @@
         {
           "file": "src/lib/help/training.functions.ts",
           "symbol": "submitTrainingQuiz"
+        },
+        {
+          "file": "src/lib/help/training-access.ts",
+          "symbol": "isTrainingTrackId"
         }
       ],
       "database": [
@@ -8883,11 +8887,18 @@
       "files": {
         "drizzle/migrations/0309_help_training_progress.sql": "1f2797a1360d9f376a9bae5b08ccca7a2b726b5ea1689f6a1aa9e4309e4795eb",
         "src/lib/help/training.functions.ts": "56237e171bca8d4f8e85691a0280a7f0a33ac9206fcdddd88592cbb88cb98dc3",
-        "src/lib/help/training-access.ts": "9d9a95df552d471baa0035f8803c7f333c5ecdabd05198bb9b5aa4ec4d66c26e",
+        "src/lib/help/training-access.ts": "f3e5d07a9f1fd9c254b229eae5d45128decc4b6a554ed8f8e2545c920d6bca3c",
+        "src/routes/_authenticated/ajuda.trilhas.index.tsx": "b65bfd3ca6b59e4c13e5044d82d2403568666e1026ddeb4bcf71d400b9991902",
+        "src/routes/_authenticated/ajuda.trilhas.$track.tsx": "e203f0a99b3554e252c3b25f78ab23f6ffb8516aa705a65f3c2b41a2180ddaac"
+      }
+    },
+    {
+      "id": "help-training-data",
+      "kind": "presentation",
+      "rationale": "Static training track list and quiz question/answer data for the Help Phase 3. No I/O, routes, actions, grants or data access; answers are only imported dynamically inside help-training server handlers.",
+      "files": {
         "src/lib/help/training-catalogue.ts": "d9848aae705784e21ec89fc2e5f74d2e0677ca7cc7e6e7da4316dbcf741bc052",
-        "src/lib/help/training-quiz.server.ts": "f24bc4b44907ce5490317c03819e5dd6d17d605b26170574525f4c96f40bd59c",
-        "src/routes/_authenticated/ajuda.trilhas.index.tsx": "165acc1b7aeb30867c54000e046a871f2fd27758cb9222a85816c8ddbe5917d3",
-        "src/routes/_authenticated/ajuda.trilhas.$track.tsx": "fd35eb6071d8722790853d66d43b8e3bdbda8c774e2452634bd9a8973a4134db"
+        "src/lib/help/training-quiz.server.ts": "f24bc4b44907ce5490317c03819e5dd6d17d605b26170574525f4c96f40bd59c"
       }
     }
   ],

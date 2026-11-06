@@ -16,6 +16,7 @@ import {
   submitTrainingQuiz,
 } from "@/lib/help/training.functions";
 import { QUIZ_PASS_SCORE } from "@/lib/help/training-catalogue";
+import { isTrainingTrackId } from "@/lib/help/training-access";
 
 export const Route = createFileRoute("/_authenticated/ajuda/trilhas/$track")({
   head: () => ({
@@ -40,7 +41,9 @@ function TrackPage() {
   const readFn = useServerFn(setTrainingArticleRead);
   const quizFn = useServerFn(submitTrainingQuiz);
   const key = ["help-training-track", track];
-  const q = useQuery({ queryKey: key, queryFn: () => loadFn({ data: { track } }) });
+  const q = useQuery({ queryKey: key, queryFn: () => loadFn({ data: { track } }),
+    enabled: isTrainingTrackId(track),
+  });
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [result, setResult] = useState<QuizResult | null>(null);
 
@@ -65,7 +68,7 @@ function TrackPage() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  if (q.isLoading)
+  if (q.isLoading && isTrainingTrackId(track))
     return (
       <div className="mx-auto max-w-4xl p-6">
         <Skeletons.Card /><Skeletons.Card /><Skeletons.Card />
