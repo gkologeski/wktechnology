@@ -10,7 +10,10 @@ const list = buildRotation(p, [
 describe("rodízio de modelos", () => {
   it("sequencial alterna A, B, C e volta ao A", () => {
     expect([0, 1, 2, 3].map((s) => pickTemplate(list, "sequential", s, 0)?.name)).toEqual([
-      "a", "b", "c", "a",
+      "a",
+      "b",
+      "c",
+      "a",
     ]);
   });
   it("mantém o modelo já fixado no destinatário", () => {
@@ -30,7 +33,10 @@ describe("rodízio de modelos", () => {
     expect(pickTemplate(w, "weighted", 0, 0.81)?.name).toBe("c");
   });
   it("limita a 5 modelos e não duplica", () => {
-    const many = buildRotation(p, ["a", "b", "c", "d", "e", "f"].map((name) => ({ name })));
+    const many = buildRotation(
+      p,
+      ["a", "b", "c", "d", "e", "f"].map((name) => ({ name })),
+    );
     expect(many.map((t) => t.name)).toEqual(["a", "b", "c", "d", "e"]);
   });
   it("exige mapear o maior número de variáveis", () => {

@@ -594,11 +594,20 @@ function CampaignsPage() {
                       </Select>
                     </div>
                     <ul className="space-y-1">
-                      {[{ name: templateName, weight: primaryWeight, primary: true }, ...extraSelected.map((e) => ({ name: e.name, weight: e.weight, primary: false }))].map((t) => (
+                      {[
+                        { name: templateName, weight: primaryWeight, primary: true },
+                        ...extraSelected.map((e) => ({
+                          name: e.name,
+                          weight: e.weight,
+                          primary: false,
+                        })),
+                      ].map((t) => (
                         <li key={t.name} className="flex items-center gap-2 text-sm">
                           <span className="flex-1 truncate">
                             {t.name}
-                            {t.primary && <span className="text-xs text-muted-foreground"> · principal</span>}
+                            {t.primary && (
+                              <span className="text-xs text-muted-foreground"> · principal</span>
+                            )}
                           </span>
                           {rotationMode === "weighted" && (
                             <Input
@@ -625,7 +634,9 @@ function CampaignsPage() {
                               variant="ghost"
                               className="h-8 w-8"
                               aria-label={`Remover modelo ${t.name}`}
-                              onClick={() => setExtraTpls((xs) => xs.filter((x) => x.name !== t.name))}
+                              onClick={() =>
+                                setExtraTpls((xs) => xs.filter((x) => x.name !== t.name))
+                              }
                             >
                               <X className="h-4 w-4" />
                             </Button>

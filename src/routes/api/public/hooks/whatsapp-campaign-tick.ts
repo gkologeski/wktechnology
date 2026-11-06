@@ -277,14 +277,21 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
       picked && rotation.length > 1
         ? positionalVariables(picked.variableCount, vars)
         : templateVariables(camp, vars);
-    if (picked && rotation.length > 1 && (r as { template_name?: string | null }).template_name !== picked.name) {
+    if (
+      picked &&
+      rotation.length > 1 &&
+      (r as { template_name?: string | null }).template_name !== picked.name
+    ) {
       const fix = await supabaseAdmin
         .from("whatsapp_campaign_recipients")
         .update({ template_name: picked.name, template_language: picked.language })
         .eq("id", r.id);
       if (fix.error) throw new Error("Não foi possível fixar o modelo do destinatário.");
     }
-    const body = applyTemplate((picked && rotation.length > 1 ? picked.body : camp.body_template) ?? "", vars);
+    const body = applyTemplate(
+      (picked && rotation.length > 1 ? picked.body : camp.body_template) ?? "",
+      vars,
+    );
 
     try {
       await assertSalesWorker(
@@ -341,8 +348,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
             wa_phone_number_id: num.phoneNumberId,
             last_message_at: new Date().toISOString(),
             last_message_preview:
-              body.slice(0, 120) ||
-              (camp.media_url ? "[mídia]" : `[template ${tplName ?? ""}]`),
+              body.slice(0, 120) || (camp.media_url ? "[mídia]" : `[template ${tplName ?? ""}]`),
           },
           { onConflict: "contact_phone,twilio_number" },
         )

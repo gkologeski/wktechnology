@@ -17,7 +17,12 @@ export type RotationTemplate = {
 
 /** Junta o principal com os adicionais, sem duplicar nomes, limitado a 5. */
 export function buildRotation(
-  primary: { name: string | null; language: string | null; body: string | null; variableCount?: number },
+  primary: {
+    name: string | null;
+    language: string | null;
+    body: string | null;
+    variableCount?: number;
+  },
   extras: unknown,
 ): RotationTemplate[] {
   const out: RotationTemplate[] = [];
@@ -35,13 +40,14 @@ export function buildRotation(
       weight: Number.isFinite(w) && w > 0 ? w : 1,
     });
   };
-  if (primary.name) push({ ...primary, weight: undefined });
+  if (primary.name) push({ ...primary, name: primary.name });
   if (Array.isArray(extras)) for (const e of extras) push(e as Partial<RotationTemplate>);
   // peso do principal pode vir na lista de adicionais com o mesmo nome? não: mantém 1 se ausente.
   const primaryExtra = Array.isArray(extras)
     ? (extras as Partial<RotationTemplate>[]).find((e) => e?.name === primary.name)
     : undefined;
-  if (out[0] && primaryExtra && Number(primaryExtra.weight) > 0) out[0].weight = Number(primaryExtra.weight);
+  if (out[0] && primaryExtra && Number(primaryExtra.weight) > 0)
+    out[0].weight = Number(primaryExtra.weight);
   return out;
 }
 
@@ -83,9 +89,6 @@ export function maxVariableCount(list: RotationTemplate[]): number {
 }
 
 /** Variáveis posicionais {{1}}..{{n}} do modelo escolhido. */
-export function positionalVariables(
-  variableCount: number,
-  vars: Record<string, string>,
-): string[] {
+export function positionalVariables(variableCount: number, vars: Record<string, string>): string[] {
   return Array.from({ length: variableCount }, (_, i) => vars[String(i + 1)] ?? "");
 }
