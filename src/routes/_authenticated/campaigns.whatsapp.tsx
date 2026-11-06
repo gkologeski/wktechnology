@@ -172,6 +172,13 @@ function CampaignsPage() {
         })),
       ]
     : [];
+  // Um quadro de variáveis por modelo: cada modelo tem as próprias variáveis.
+  const variableGroups = rotationPayload.map((t, idx) => ({
+    label: t.name,
+    keys: Array.from({ length: t.variableCount }, (_, i) =>
+      rotationVariableKey(t.name, i + 1, idx === 0),
+    ),
+  }));
   const isEditing = editingId !== null;
   // Estado da campanha em edição: rascunho troca o público; pausada só exibe.
   const [editStatus, setEditStatus] = useState<string>("");
@@ -301,12 +308,9 @@ function CampaignsPage() {
             throw new Error("Adicione pelo menos um destinatário");
           if (!manualE && !audE) throw new Error("Escolha o público da campanha");
           if (!manualE && isHsm) {
-            for (let i = 1; i <= varCount; i++) {
-              const b = audience.variableMap[String(i)];
-              if (!b?.field) throw new Error(`Defina o campo da variável {{${i}}}`);
-              if (b.field === "__free__" && !b.fallback?.trim())
-                throw new Error(`Escreva o texto da variável {{${i}}}`);
-            }
+            const missing = missingRotationVariables(rotationPayload, audience.variableMap);
+            if (missing.length > 0)
+              throw new Error(`Defina as variáveis: ${missing.join(", ")}`);
           }
           replace_audience = {
             recipients: recipientsE,
