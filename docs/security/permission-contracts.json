@@ -8644,6 +8644,83 @@
         "src/components/projects/reconciliation/recon-links-tab.tsx": "50478ab8bad328d0bee3bff8155cb02d006482dfd90d0b6a535d850edc241672",
         "drizzle/migrations/0329_hiring_reconciliation_legacy_safety.sql": "5d790d2ea26ac1e2015bd63be2ea858d15288973a59dfbe8e25daddf1a7ed16d"
       }
+    },
+    {
+      "id": "hiring-stage7-integration-repairs",
+      "kind": "business",
+      "resources": [
+        "techpeople.lifecycle",
+        "techhire.hiring_demands",
+        "techpeople.people",
+        "techhire.candidates"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "approve",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techpeople.lifecycle.view.workspace",
+        "techpeople.lifecycle.manage.workspace",
+        "techpeople.lifecycle.approve.workspace"
+      ],
+      "rationale": "Additive maintenance of existing guarded paths: partial-index inference for deduplicated approval notifications and JSON-safe People-only shortcut in the shared HR trigger. Allocation child IDs use the existing child-record resolver, preserving row scope. No new grant, scope, endpoint or retroactive event. Private repair functions are revoked from PUBLIC/anon/authenticated/service_role. Current authorization remains in the original protected RPC/trigger paths; five final lifecycle scenarios and shared-trigger/partial-index regressions execute production SQL. Real GoTrue/PostgREST acceptance is separately recorded by the isolated harness.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0331_hiring_notification_conflict.sql",
+          "symbol": "hiring_notification_conflict_repair"
+        },
+        {
+          "file": "drizzle/migrations/0332_hiring_shared_record_guard.sql",
+          "symbol": "hiring_shared_record_guard_repair"
+        },
+        {
+          "file": "drizzle/migrations/0333_hiring_lifecycle_allocation_scope.sql",
+          "symbol": "hiring_lifecycle_allocation_scope_repair"
+        }
+      ],
+      "files": {
+        "drizzle/migrations/0331_hiring_notification_conflict.sql": "b618e6d0cf4fffef81d8a880112dc921b156061eb89eeb293f4b906ed848a16f",
+        "drizzle/migrations/0332_hiring_shared_record_guard.sql": "9d874b4a3ab9b6f44af1ec50bbc6a417d320c91a32375344402d6b2f7284ce15",
+        "drizzle/migrations/0333_hiring_lifecycle_allocation_scope.sql": "f97d08f9fea0d66ab41aedf46e0d25050db1b526d8e8a83fe7baea13c8c168bb"
+      },
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/lifecycle-postgres.test.ts",
+          "name": "lifecycle rejects inactive member"
+        }
+      }
     }
   ],
   "retired": {}

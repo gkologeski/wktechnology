@@ -115,8 +115,14 @@ describe.each(["fresh", "prototype"])("lifecycle schema %s", (mode) => {
     }
     if (!ready) throw Error("Disposable PostgreSQL did not become ready");
     await db.unsafe(readFileSync("tests/fixtures/hiring-stage2.sql", "utf8"));
+    await db.unsafe(
+      "ALTER TABLE notifications DROP CONSTRAINT notifications_dedupe_key_key; CREATE UNIQUE INDEX notifications_dedupe_key_uidx ON notifications(dedupe_key) WHERE dedupe_key IS NOT NULL",
+    );
     await db.unsafe(readFileSync("tests/fixtures/hiring-stage3.sql", "utf8"));
     await db.unsafe(readFileSync("tests/fixtures/hiring-stage4.sql", "utf8"));
+    await db.unsafe(
+      "ALTER TABLE ats_candidates ADD COLUMN owner_id uuid,ADD COLUMN assigned_to uuid,ADD COLUMN relationship_owner_id uuid; GRANT SELECT,INSERT,UPDATE ON ats_candidates TO authenticated",
+    );
     await db.unsafe(
       "CREATE TYPE allocation_status AS ENUM ('active','paused','ended'); ALTER TABLE people_allocations ALTER COLUMN status TYPE allocation_status USING status::allocation_status",
     );
@@ -204,6 +210,23 @@ describe.each(["fresh", "prototype"])("lifecycle schema %s", (mode) => {
     await db.unsafe(
       readFileSync("drizzle/migrations/0330_hiring_lifecycle_invite_timezone.sql", "utf8"),
     );
+    await db.unsafe(
+      readFileSync("drizzle/migrations/0331_hiring_notification_conflict.sql", "utf8"),
+    );
+    await db.unsafe(readFileSync("drizzle/migrations/0332_hiring_shared_record_guard.sql", "utf8"));
+    await db.unsafe(
+      readFileSync("drizzle/migrations/0333_hiring_lifecycle_allocation_scope.sql", "utf8"),
+    );
+    await db.unsafe(
+      "CREATE TRIGGER stage7_candidate_guard BEFORE INSERT OR UPDATE ON ats_candidates FOR EACH ROW EXECUTE FUNCTION hr_record_links_guard(); CREATE TRIGGER stage7_people_guard BEFORE INSERT OR UPDATE ON people FOR EACH ROW EXECUTE FUNCTION hr_record_links_guard()",
+    );
+    await db.unsafe(`CREATE OR REPLACE FUNCTION hr_record_access(r text,a text,j uuid) RETURNS boolean LANGUAGE sql STABLE AS $$
+     SELECT is_workspace_member((SELECT active_workspace_id FROM profiles WHERE id=auth.uid()),auth.uid())
+       AND EXISTS(SELECT 1 FROM grants WHERE user_id=auth.uid() AND key='fixture.hr' AND effect='grant')
+       AND NOT EXISTS(SELECT 1 FROM grants WHERE user_id=auth.uid() AND key='fixture.hr' AND effect='deny')
+       AND CASE WHEN r='person_allocations' THEN EXISTS(SELECT 1 FROM people WHERE id=j)
+                WHEN r='allocations' THEN EXISTS(SELECT 1 FROM people_allocations WHERE id=j)
+                ELSE true END $$`);
   }, 120000);
   afterAll(async () => {
     if (competitor) await competitor.end();
@@ -590,5 +613,31 @@ describe.each(["fresh", "prototype"])("lifecycle schema %s", (mode) => {
         await db`select to_char(expires_at AT TIME ZONE 'UTC','YYYY-MM-DD HH24:MI') v from workspace_invites where token=${token}`
       )[0].v,
     ).toBe("2027-02-01 03:00");
+  });
+  it("shared HR guard permits candidates without binding People-only profile fields", async () => {
+    await seed();
+    const id = randomUUID();
+    await actor(
+      U,
+      (tx) =>
+        tx`insert into ats_candidates(id,workspace_id,full_name) values(${id},${W},'Synthetic candidate')`,
+    );
+    await actor(
+      U,
+      (tx) => tx`update ats_candidates set full_name='Synthetic candidate revised' where id=${id}`,
+    );
+    expect((await db`select full_name from ats_candidates where id=${id}`)[0].full_name).toBe(
+      "Synthetic candidate revised",
+    );
+  });
+  it("approval notifications deduplicate against the actual partial unique index", async () => {
+    const a = await seed(),
+      req = await propose(a);
+    await approve(req);
+    expect(
+      (
+        await db`select count(*) n from notifications where dedupe_key like ${"hiring-lifecycle:" + req + ":%"}`
+      )[0].n,
+    ).toBe("2");
   });
 });
