@@ -26,12 +26,15 @@ export function FinanceAlertsPanel() {
     staleTime: 60_000,
   });
 
-  if (isError) return (
-    <div role="alert" className="space-y-3 border border-destructive rounded-lg p-4">
-      <p>Não foi possível carregar os alertas operacionais.</p>
-      <Button variant="outline" disabled={isFetching} onClick={() => void refetch()}>Tentar novamente</Button>
-    </div>
-  );
+  if (isError)
+    return (
+      <div role="alert" className="space-y-3 border border-destructive rounded-lg p-4">
+        <p>Não foi possível carregar os alertas operacionais.</p>
+        <Button variant="outline" disabled={isFetching} onClick={() => void refetch()}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
 
   if (isLoading) {
     return (
