@@ -8,7 +8,7 @@ Porte: M. Estimativa: 2h30–3h30 (prompt ~30 min; templates ~2h–3h).
 
 ## 2. Variáveis dos templates extras (ICP 012)
 Causa confirmada no código: a tela só monta campos de variáveis para o template principal; os templates adicionados na rotação reaproveitam as variáveis pela posição, então nenhum campo aparece para eles.
-- Cada template adicionado ganha o seu próprio quadro de variáveis ({{1}}..{{N}} lidos do template aprovado), com os mesmos seletores de campos da campanha.
+- Todos os templates adicionados aparecem na tela, cada um com o seu próprio quadro de variáveis ({{1}}..{{N}} lidos daquele template aprovado, pois a quantidade e o significado mudam por template), com os mesmos seletores de campos da campanha. O usuário escolhe as variáveis de cada um separadamente.
 - Salvar o mapeamento por template na rotação; o disparo usa as variáveis do template sorteado para aquele destinatário.
 - Servidor recusa salvar se faltar variável ou se o template não estiver APROVADO na Meta.
 - Campanhas antigas continuam funcionando (sem mapeamento próprio = usa o do principal).
