@@ -8,7 +8,7 @@ route_pattern: /landing-pages
 min_permission: techsales.marketing.landing_pages.view.workspace
 audience: internal
 sort_order: 505
-version: 2
+version: 3
 is_published: true
 ---
 # Criar landing pages
@@ -24,7 +24,7 @@ is_published: true
 4. Abra a edição pelo lápis.
 5. Monte e publique no editor.
 6. Para excluir, use a lixeira da lista.
-<!-- screenshot: lista de landing pages -->
+![Tela: lista de landing pages](/help-media/crm/criar-landing-pages.webp)
 
 ## Resultado esperado
 "Landing page criada". A página fica disponível para edição.

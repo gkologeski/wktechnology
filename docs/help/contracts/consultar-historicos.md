@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 46
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar histórico de vínculos e sugestões de IA
@@ -22,7 +22,7 @@ is_published: true
 2. Consulte "Histórico de vínculos" para revisar aninhamentos e desvinculações.
 3. Consulte "Histórico de sugestões da IA" para revisar propostas e decisões.
 4. Quando a consulta falhar, use a tentativa novamente disponível no card.
-<!-- screenshot: Consultar histórico de vínculos e sugestões de IA, sem dados pessoais reais -->
+![Tela: Consultar histórico de vínculos e sugestões de IA, sem dados pessoais reais](/help-media/contracts/consultar-historicos.webp)
 
 ## Resultado esperado
 Histórico apresentado para conferência, sem aplicar novo vínculo por simples leitura.

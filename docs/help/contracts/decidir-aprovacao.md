@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 33
-version: 1
+version: 2
 is_published: true
 ---
 # Aprovar ou rejeitar uma etapa de contrato
@@ -23,7 +23,7 @@ is_published: true
 3. Registre o comentário, obrigatório em rejeição.
 4. Clique em "Aprovar" ou "Rejeitar".
 5. Confira "Etapa aprovada" ou "Etapa rejeitada".
-<!-- screenshot: Aprovar ou rejeitar uma etapa de contrato, sem dados pessoais reais -->
+![Tela: Aprovar ou rejeitar uma etapa de contrato, sem dados pessoais reais](/help-media/contracts/decidir-aprovacao.webp)
 
 ## Resultado esperado
 Decisão registrada; rejeição leva a Em negociação e conclusão de todas as aprovações leva a Aguardando assinatura.

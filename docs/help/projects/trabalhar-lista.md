@@ -8,7 +8,7 @@ route_pattern: /projects/lists/$id
 min_permission: techprojects.spaces.view.team
 audience: internal
 sort_order: 40
-version: 1
+version: 2
 is_published: true
 ---
 # Trabalhar em uma lista
@@ -44,4 +44,4 @@ Gerenciar status, campos personalizados e templates não é a mesma permissão d
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Trabalhar em uma lista; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Trabalhar em uma lista](/help-media/projects/trabalhar-lista.webp)

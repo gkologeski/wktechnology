@@ -8,7 +8,7 @@ route_pattern: /ats-dashboard
 min_permission: 
 audience: internal
 sort_order: 10
-version: 1
+version: 2
 is_published: true
 ---
 # Acompanhar o dashboard do TechHire
@@ -23,7 +23,7 @@ is_published: true
 3. Veja o "Funil de candidaturas".
 4. Em "Próximas entrevistas (7 dias)", clique em "Agenda →".
 5. Use "Ir para Vagas" ou "Insights avançados" para aprofundar.
-<!-- screenshot: dashboard do TechHire -->
+![Tela: dashboard do TechHire](/help-media/ats/acompanhar-dashboard.webp)
 
 ## Resultado esperado
 Os indicadores do workspace aparecem atualizados.

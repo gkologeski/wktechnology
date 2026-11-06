@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 38
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar comprovante e revogar evidência de assinatura
@@ -23,7 +23,7 @@ is_published: true
 3. Quando necessário, clique em "Revogar evidência".
 4. Informe "Motivo" com pelo menos 10 caracteres.
 5. Clique em "Revogar" e confira o resultado.
-<!-- screenshot: Consultar comprovante e revogar evidência de assinatura, sem dados pessoais reais -->
+![Tela: Consultar comprovante e revogar evidência de assinatura, sem dados pessoais reais](/help-media/contracts/revogar-evidencia.webp)
 
 ## Resultado esperado
 Evidência revogada com motivo registrado; a revogação não deve ser confundida com exclusão do contrato.

@@ -8,7 +8,7 @@ route_pattern: /leads/$id
 min_permission:
 audience: internal
 sort_order: 103
-version: 1
+version: 2
 is_published: true
 ---
 # Editar lead
@@ -21,7 +21,7 @@ is_published: true
 2. No painel de propriedades, clique no campo que deseja alterar.
 3. Informe o novo valor e saia do campo para concluir a edição.
 4. Confira a mensagem "Atualizado".
-<!-- screenshot: Editar lead: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Editar lead](/help-media/crm/editar-lead.webp)
 ## Resultado esperado
 A propriedade editada aparece atualizada na ficha.
 ## Regras e limites

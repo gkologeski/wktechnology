@@ -8,7 +8,7 @@ route_pattern: /prospecting/campaigns/$id
 min_permission: techsales.prospecting_search.view.workspace
 audience: internal
 sort_order: 402
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar público e roteiros de uma campanha
@@ -26,7 +26,7 @@ is_published: true
 6. Configure as variantes em "Script" e o "Peso", se usar atribuição por peso.
 7. Salve e aguarde "Salvo".
 8. Revise tentativas e indicadores por variante.
-<!-- screenshot: configuração da campanha com janela, público e variantes de script -->
+![Tela: configuração da campanha com janela, público e variantes de script](/help-media/crm/configurar-campanha-de-prospeccao.webp)
 
 ## Resultado esperado
 A campanha usa a configuração salva. As tentativas alimentam os indicadores por variante.

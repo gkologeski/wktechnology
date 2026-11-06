@@ -8,7 +8,7 @@ route_pattern: /careers/$slug
 min_permission: 
 audience: internal
 sort_order: 194
-version: 1
+version: 2
 is_published: true
 ---
 # Candidatar-se a uma vaga pública
@@ -43,4 +43,4 @@ O formulário solicita link do currículo PDF; não presuma upload de arquivo. V
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `ats`; consulte os artigos desse módulo em `/ajuda/ats`.
 
-<!-- screenshot: capturar /careers/$slug com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /careers/$slug com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/ats/candidatar-se-a-uma-vaga-publica.webp)

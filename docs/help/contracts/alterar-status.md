@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 31
-version: 1
+version: 2
 is_published: true
 ---
 # Alterar o status de um contrato
@@ -22,7 +22,7 @@ is_published: true
 2. Escolha um status permitido no campo "Status".
 3. Clique em "Salvar".
 4. Para "Em revisão" ou "Aguardando assinatura", use o fluxo de aprovações em vez da mudança manual.
-<!-- screenshot: Alterar o status de um contrato, sem dados pessoais reais -->
+![Tela: Alterar o status de um contrato, sem dados pessoais reais](/help-media/contracts/alterar-status.webp)
 
 ## Resultado esperado
 Status atualizado somente quando autorizado pelas regras de transição.

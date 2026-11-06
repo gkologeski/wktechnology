@@ -8,7 +8,7 @@ route_pattern: /finance/nfse
 min_permission: techfinance.nfse.view.workspace
 audience: internal
 sort_order: 240
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar NFS-e e arquivos disponíveis
@@ -48,5 +48,5 @@ Status; RPS; número da nota; valor; código de serviço; erro; emissão; links 
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Consultar NFS-e e arquivos disponíveis; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Consultar NFS-e e arquivos disponíveis](/help-media/finance/consultar-notas-fiscais.webp)
 <!-- evidência: src/routes/_authenticated/finance.nfse.tsx; src/lib/nfse.functions.ts -->

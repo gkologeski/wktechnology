@@ -8,7 +8,7 @@ route_pattern: /deals
 min_permission:
 audience: internal
 sort_order: 200
-version: 2
+version: 3
 is_published: true
 ---
 # Acompanhar negócios
@@ -23,7 +23,7 @@ is_published: true
 3. Ajuste os filtros antes de trabalhar com os resultados.
 4. Para percorrer os resultados, clique em "Iniciar fila".
 5. Para cadastrar um registro, clique em "Criar negócio" e preencha o formulário. O botão só aparece para quem pode criar negócios.
-<!-- screenshot: cabeçalho de Negócios com visualizações, filtros, Criar negócio e Iniciar fila -->
+![Tela: cabeçalho de Negócios com visualizações, filtros, Criar negócio e Iniciar fila](/help-media/crm/acompanhar-negocios.webp)
 
 ## Resultado esperado
 Os negócios aparecem na visualização escolhida. A fila usa os negócios do filtro atual.

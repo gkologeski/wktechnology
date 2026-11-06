@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 23
-version: 1
+version: 2
 is_published: true
 ---
 # Importar e revisar um contrato PDF ou DOCX
@@ -23,7 +23,7 @@ is_published: true
 3. Clique em "Extrair com IA".
 4. Revise os campos extraídos no rascunho.
 5. Clique em "Finalizar" para atualizar o rascunho e abrir a ficha.
-<!-- screenshot: Importar e revisar um contrato PDF ou DOCX, sem dados pessoais reais -->
+![Tela: Importar e revisar um contrato PDF ou DOCX, sem dados pessoais reais](/help-media/contracts/importar-contrato.webp)
 
 ## Resultado esperado
 Rascunho criado na extração e atualizado após a finalização.

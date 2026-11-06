@@ -8,7 +8,7 @@ route_pattern: /settings/voice-agent
 min_permission: 
 audience: internal
 sort_order: 174
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o agente de voz
@@ -41,4 +41,4 @@ Recurso techsales.prospecting_voice; é recurso de prospecção do TechSales, n�
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/voice-agent com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/voice-agent com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/consultar-o-agente-de-voz.webp)

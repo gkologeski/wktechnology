@@ -8,7 +8,7 @@ route_pattern: /settings/calendars
 min_permission: system.calendars.view.workspace
 audience: internal
 sort_order: 313
-version: 2
+version: 3
 is_published: true
 ---
 # Conectar e gerenciar calendários
@@ -27,7 +27,7 @@ is_published: true
 7. Use "Sincronizar agora".
 8. Clique em "Sincronizar gravações".
 9. Para remover, desconecte e confirme "Desconectar calendário?".
-<!-- screenshot: conta de calendário com Sync e Meet automático -->
+![Tela: conta de calendário com Sync e Meet automático](/help-media/crm/conectar-gerenciar-calendarios.webp)
 
 ## Resultado esperado
 "Google Calendar conectado com sucesso"; teste mostra "Conexão funcionando" ou "Falha na conexão".

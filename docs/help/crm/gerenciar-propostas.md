@@ -8,7 +8,7 @@ route_pattern: /proposals
 min_permission:
 audience: internal
 sort_order: 202
-version: 2
+version: 3
 is_published: true
 ---
 # Gerenciar propostas
@@ -26,7 +26,7 @@ is_published: true
 6. Alterne entre tabela e quadro para acompanhar os registros.
 7. Abra uma proposta para editar seu conteúdo e preparar o envio.
 8. Para ações em massa, selecione os registros e use apenas as ações liberadas para toda a seleção.
-<!-- screenshot: Nova proposta com Título e Valor (BRL), seguida da lista com filtros -->
+![Tela: Nova proposta com Título e Valor (BRL), seguida da lista com filtros](/help-media/crm/gerenciar-propostas.webp)
 
 ## Resultado esperado
 A mensagem "Proposta criada" confirma o cadastro. A proposta fica disponível na carteira.

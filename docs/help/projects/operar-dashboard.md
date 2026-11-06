@@ -8,7 +8,7 @@ route_pattern: /projects/dashboard
 min_permission: techprojects.projects.view.own
 audience: internal
 sort_order: 10
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o Dashboard de projetos
@@ -44,4 +44,4 @@ As visões dependem de escopo, não do nome do cargo. Leitura não reavalia aler
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Consultar o Dashboard de projetos; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Consultar o Dashboard de projetos](/help-media/projects/operar-dashboard.webp)

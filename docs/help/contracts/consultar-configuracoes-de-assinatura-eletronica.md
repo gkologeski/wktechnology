@@ -8,7 +8,7 @@ route_pattern: /settings/esign
 min_permission: 
 audience: internal
 sort_order: 124
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar configurações de assinatura eletrônica
@@ -42,4 +42,4 @@ A rota utiliza techcontracts.esign e controles de acesso próprios; assinatura e
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `contracts`; consulte os artigos desse módulo em `/ajuda/contracts`.
 
-<!-- screenshot: capturar /settings/esign com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/esign com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/contracts/consultar-configuracoes-de-assinatura-eletronica.webp)

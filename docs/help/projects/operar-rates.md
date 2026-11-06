@@ -8,7 +8,7 @@ route_pattern: /projects/settings/rates
 min_permission: techprojects.rates.view.workspace
 audience: internal
 sort_order: 150
-version: 1
+version: 2
 is_published: true
 ---
 # Cadastrar e encerrar tarifas com vigência
@@ -44,4 +44,4 @@ Leitura: techprojects.rates.view.workspace; gestão: techprojects.rates.manage.w
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Cadastrar e encerrar tarifas com vigência; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Cadastrar e encerrar tarifas com vigência](/help-media/projects/operar-rates.webp)

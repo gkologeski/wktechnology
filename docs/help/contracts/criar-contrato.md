@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 21
-version: 1
+version: 2
 is_published: true
 ---
 # Criar contrato em branco pelo assistente
@@ -24,7 +24,7 @@ is_published: true
 4. Em "Dados", preencha o título e os campos disponibilizados.
 5. Em "Serviços", com negócio vinculado, revise "Copiar serviços do negócio para o contrato" e os itens. Sem negócio, associe serviços pela ficha depois.
 6. Em "Revisão", confira os dados e conclua a criação.
-<!-- screenshot: Criar contrato em branco pelo assistente, sem dados pessoais reais -->
+![Tela: Criar contrato em branco pelo assistente, sem dados pessoais reais](/help-media/contracts/criar-contrato.webp)
 
 ## Resultado esperado
 "Contrato criado." e abertura da ficha.

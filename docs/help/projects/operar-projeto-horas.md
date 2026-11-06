@@ -8,7 +8,7 @@ route_pattern: /projects/$id/horas
 min_permission: techprojects.projects.view.own
 audience: internal
 sort_order: 220
-version: 1
+version: 2
 is_published: true
 ---
 # Administrar horas e aprovação do projeto
@@ -44,4 +44,4 @@ Aceite é registro interno com evidência; não implica portal ou assinatura do 
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Administrar horas e aprovação do projeto; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Administrar horas e aprovação do projeto](/help-media/projects/operar-projeto-horas.webp)

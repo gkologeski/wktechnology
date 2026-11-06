@@ -8,7 +8,7 @@ route_pattern: /people/dashboard
 min_permission: 
 audience: internal
 sort_order: 5
-version: 2
+version: 3
 is_published: true
 ---
 # Acompanhar o dashboard do TechPeople
@@ -22,7 +22,7 @@ is_published: true
 2. Veja "Composição do quadro" e "Jornadas em andamento".
 3. Clique em "Atualizar" para recarregar.
 4. Use "Acessos rápidos" para ir a "Pessoas", "Onboarding" ou "Documentos".
-<!-- screenshot: dashboard people -->
+![Tela: dashboard people](/help-media/people/acompanhar-dashboard.webp)
 
 ## Resultado esperado
 Os indicadores aparecem conforme seu acesso.

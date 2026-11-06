@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 32
-version: 1
+version: 2
 is_published: true
 ---
 # Iniciar e reiniciar aprovações de contrato
@@ -22,7 +22,7 @@ is_published: true
 2. Clique em "Iniciar fluxo".
 3. Acompanhe as etapas pendentes.
 4. Quando precisar abrir uma nova cadeia, clique em "Reiniciar" e confirme a preservação das decisões anteriores no histórico.
-<!-- screenshot: Iniciar e reiniciar aprovações de contrato, sem dados pessoais reais -->
+![Tela: Iniciar e reiniciar aprovações de contrato, sem dados pessoais reais](/help-media/contracts/iniciar-aprovacoes.webp)
 
 ## Resultado esperado
 "Fluxo de aprovação iniciado" ou "Fluxo reiniciado"; contrato em revisão.

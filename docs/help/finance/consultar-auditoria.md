@@ -8,7 +8,7 @@ route_pattern: /finance/audit
 min_permission: techfinance.audit.view.workspace
 audience: internal
 sort_order: 250
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar auditoria financeira
@@ -42,5 +42,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Consultar auditoria financeira; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Consultar auditoria financeira](/help-media/finance/consultar-auditoria.webp)
 <!-- evidência: src/routes/_authenticated/finance.audit.tsx; src/lib/finance-audit.functions.ts -->

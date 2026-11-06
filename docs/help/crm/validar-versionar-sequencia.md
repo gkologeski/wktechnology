@@ -8,7 +8,7 @@ route_pattern: /prospecting/sequences
 min_permission: system.automation.sequences.view.workspace
 audience: internal
 sort_order: 406
-version: 1
+version: 2
 is_published: true
 ---
 # Validar e criar uma versão imutável de sequência
@@ -24,7 +24,7 @@ is_published: true
 4. Corrija as pendências indicadas.
 5. Ao ver "Configuração conferida para criar uma versão.", clique em "Criar versão imutável".
 6. Confira a revisão em "Versões de configuração".
-<!-- screenshot: validação aprovada e histórico de versões -->
+![Tela: validação aprovada e histórico de versões](/help-media/crm/validar-versionar-sequencia.webp)
 
 ## Resultado esperado
 A versão preserva a configuração. Criar versão não ativa a sequência nem inscreve pessoas.

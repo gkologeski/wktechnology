@@ -8,7 +8,7 @@ route_pattern: /pipelines
 min_permission: techhire.pipelines.view.own
 audience: internal
 sort_order: 31
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar pipelines de recrutamento
@@ -22,7 +22,7 @@ is_published: true
 2. Defina o tipo de cada etapa: "Em andamento", "Ganho (contratado)" ou "Perdido (rejeitado)".
 3. Clique em "Salvar pipeline".
 4. Use "Duplicar", "Tornar padrão" ou "Excluir".
-<!-- screenshot: pipelines -->
+![Tela: pipelines](/help-media/ats/configurar-pipelines.webp)
 
 ## Resultado esperado
 "Pipeline salvo".

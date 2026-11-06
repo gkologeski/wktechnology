@@ -8,7 +8,7 @@ route_pattern: /prospecting/queues/$queueId/play
 min_permission: techsales.prospecting_search.view.workspace
 audience: internal
 sort_order: 403
-version: 1
+version: 2
 is_published: true
 ---
 # Executar uma fila de prospecção
@@ -24,7 +24,7 @@ is_published: true
 4. Revise os dados, o histórico e o painel de qualificação.
 5. Avance pelos itens. Fora dos campos, S, N ou seta para a direita avançam.
 6. Ao terminar, clique em "Voltar para filas".
-<!-- screenshot: escolha de questionário e item da fila -->
+![Tela: escolha de questionário e item da fila](/help-media/crm/executar-fila-de-prospeccao.webp)
 
 ## Resultado esperado
 Ao fim, a tela mostra "Fila concluída 🎉".

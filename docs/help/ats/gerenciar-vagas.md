@@ -8,7 +8,7 @@ route_pattern: /jobs
 min_permission: techhire.jobs.view.own
 audience: internal
 sort_order: 22
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar vagas
@@ -23,7 +23,7 @@ is_published: true
 3. Preencha "Título *" e, se quiser, "Senioridade", "Vínculo", "Modalidade", "Localização", "Descrição", "Requisitos", "Status", "Pipeline" e "Negócio (opcional)".
 4. Clique em "Criar vaga".
 5. Para mudar o status, arraste a vaga ou use a alteração em lote.
-<!-- screenshot: lista de vagas -->
+![Tela: lista de vagas](/help-media/ats/gerenciar-vagas.webp)
 
 ## Resultado esperado
 "Vaga criada".

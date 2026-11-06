@@ -8,7 +8,7 @@ route_pattern: /sales
 min_permission: 
 audience: internal
 sort_order: 211
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar a apresentação comercial
@@ -41,4 +41,4 @@ Página comercial não é tela operacional dos módulos nem fluxo de cadastro p�
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /sales com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /sales com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-a-apresentacao-comercial.webp)

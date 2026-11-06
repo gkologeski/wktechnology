@@ -8,7 +8,7 @@ route_pattern: /sourcing/multi-posting
 min_permission: techhire.jobs.view.own
 audience: internal
 sort_order: 66
-version: 2
+version: 3
 is_published: true
 ---
 # Acompanhar o multi-posting
@@ -20,7 +20,7 @@ is_published: true
 ## Passo a passo
 1. Filtre por site ("LinkedIn Jobs", "Indeed", "Vagas.com") e status.
 2. Use "Abrir", "Republicar" ou "Encerrar".
-<!-- screenshot: multi-posting -->
+![Tela: multi-posting](/help-media/ats/acompanhar-multi-posting.webp)
 
 ## Resultado esperado
 "Publicação atualizada" ou "Publicação encerrada".

@@ -8,7 +8,7 @@ route_pattern: /prospecting/sequences
 min_permission: system.automation.sequences.view.workspace
 audience: internal
 sort_order: 405
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar canais e planejamento de uma sequência
@@ -30,7 +30,7 @@ is_published: true
 10. Use "4. Simulador de entrada diária" e ajuste "Novos contatos por dia".
 11. Revise "5. Transbordo quando o limite for atingido" (enfileirar ou passar para o próximo canal).
 12. Clique em "Salvar rascunho".
-<!-- screenshot: abas Canais e regras e Limites e planejamento, com simulador -->
+![Tela: abas Canais e regras e Limites e planejamento, com simulador](/help-media/crm/configurar-canais-planejamento-de-sequencia.webp)
 
 ## Resultado esperado
 As regras ficam no rascunho para validar e criar nova versão.

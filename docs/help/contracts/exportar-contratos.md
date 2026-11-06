@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 27
-version: 1
+version: 2
 is_published: true
 ---
 # Exportar contratos selecionados
@@ -21,7 +21,7 @@ is_published: true
 1. Selecione os contratos na tabela.
 2. Clique em "Exportar" na barra de seleção.
 3. Confira o arquivo recebido antes de compartilhar.
-<!-- screenshot: Exportar contratos selecionados, sem dados pessoais reais -->
+![Tela: Exportar contratos selecionados, sem dados pessoais reais](/help-media/contracts/exportar-contratos.webp)
 
 ## Resultado esperado
 Arquivo com número, título, tipo comercial, status, valor, início, término e criação dos selecionados.

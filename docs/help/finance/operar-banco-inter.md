@@ -8,7 +8,7 @@ route_pattern: /finance/banking
 min_permission: techfinance.banking.view.workspace
 audience: internal
 sort_order: 190
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar conexão e extrato do Banco Inter
@@ -45,5 +45,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Consultar conexão e extrato do Banco Inter; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Consultar conexão e extrato do Banco Inter](/help-media/finance/operar-banco-inter.webp)
 <!-- evidência: src/routes/_authenticated/finance.banking.tsx; src/lib/banking.functions.ts -->

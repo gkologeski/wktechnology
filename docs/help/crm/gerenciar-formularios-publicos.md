@@ -8,7 +8,7 @@ route_pattern: /forms
 min_permission: techsales.marketing.forms.view.workspace
 audience: internal
 sort_order: 504
-version: 2
+version: 3
 is_published: true
 ---
 # Gerenciar formulários públicos
@@ -27,7 +27,7 @@ is_published: true
 7. Para alterar, abra a edição e salve de novo.
 8. Para ver envios, use a ação de visualização.
 9. Para excluir, use a lixeira e confirme.
-<!-- screenshot: edição do formulário com campos e distribuição -->
+![Tela: edição do formulário com campos e distribuição](/help-media/crm/gerenciar-formularios-publicos.webp)
 
 ## Resultado esperado
 "Formulário salvo". Cada envio gera lead ou contato, e o responsável é avisado.

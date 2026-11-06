@@ -8,7 +8,7 @@ route_pattern: /settings/language
 min_permission: system.language.view.workspace
 audience: internal
 sort_order: 136
-version: 1
+version: 2
 is_published: true
 ---
 # Escolher o idioma da interface
@@ -41,4 +41,4 @@ A tela usa setLocale para a interface; não é tradução automática dos dados 
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/language com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/language com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/escolher-o-idioma-da-interface.webp)

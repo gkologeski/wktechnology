@@ -8,7 +8,7 @@ route_pattern: /leads
 min_permission:
 audience: internal
 sort_order: 105
-version: 1
+version: 2
 is_published: true
 ---
 # Excluir leads em massa
@@ -21,7 +21,7 @@ is_published: true
 2. Clique em "Excluir" na barra de seleção.
 3. Revise a quantidade e confirme.
 4. Confira se a mensagem informa exclusão completa ou parcial.
-<!-- screenshot: Excluir leads em massa: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Excluir leads em massa](/help-media/crm/excluir-leads-em-massa.webp)
 ## Resultado esperado
 Os registros autorizados são removidos e a listagem é atualizada.
 ## Regras e limites

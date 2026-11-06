@@ -8,7 +8,7 @@ route_pattern: /dpa
 min_permission: 
 audience: internal
 sort_order: 195
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o acordo de processamento de dados
@@ -41,4 +41,4 @@ Página informativa. Não é formulário de alteração de política, garantia c
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /dpa com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /dpa com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-o-acordo-de-processamento-de-dados.webp)

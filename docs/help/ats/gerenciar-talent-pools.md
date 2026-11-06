@@ -8,7 +8,7 @@ route_pattern: /sourcing/pools
 min_permission: 
 audience: internal
 sort_order: 62
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar talent pools
@@ -22,7 +22,7 @@ is_published: true
 2. Preencha "Nome" e "Descrição".
 3. Em "Tipo", escolha "Estático — adicionar manualmente".
 4. Clique em "Criar pool".
-<!-- screenshot: talent pools -->
+![Tela: talent pools](/help-media/ats/gerenciar-talent-pools.webp)
 
 ## Resultado esperado
 "Pool criado".

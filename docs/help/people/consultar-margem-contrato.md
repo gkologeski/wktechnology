@@ -8,7 +8,7 @@ route_pattern: /people/contract-margin
 min_permission: techpeople.allocations.view.own
 audience: internal
 sort_order: 82
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar margem por contrato
@@ -21,7 +21,7 @@ is_published: true
 1. Ajuste o "Período dos contratos" (padrão: início do mês até hoje).
 2. Confira "Horas totais", "Receita", "Custo" e "Margem".
 3. Na tabela "Contratos", clique no contrato para abri-lo.
-<!-- screenshot: margem por contrato -->
+![Tela: margem por contrato](/help-media/people/consultar-margem-contrato.webp)
 
 ## Resultado esperado
 Cada contrato mostra pessoas, horas, receita, custo, margem e %.

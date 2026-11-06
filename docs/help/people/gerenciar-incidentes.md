@@ -8,7 +8,7 @@ route_pattern: /people/incidents
 min_permission: techpeople.incidents.view.own
 audience: internal
 sort_order: 70
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar incidentes
@@ -22,7 +22,7 @@ is_published: true
 2. Alterne entre "Visualizar em tabela" e "Visualizar em kanban".
 3. No kanban, arraste o cartão para outra coluna ou use "Mover para outra etapa".
 4. Na tabela, marque linhas e clique em "Editar em massa" para mudar "Severidade" ou "Status". Clique em "Aplicar".
-<!-- screenshot: incidentes kanban -->
+![Tela: incidentes kanban](/help-media/people/gerenciar-incidentes.webp)
 
 ## Resultado esperado
 "Etapa atualizada" no kanban ou "{N} registro(s) atualizado(s)" na tabela.

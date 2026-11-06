@@ -8,7 +8,7 @@ route_pattern: /landing-pages/$id
 min_permission: techsales.marketing.landing_pages.view.workspace
 audience: internal
 sort_order: 506
-version: 1
+version: 2
 is_published: true
 ---
 # Editar e publicar landing pages
@@ -27,7 +27,7 @@ is_published: true
 7. Clique em "Preview".
 8. Clique em "Publicar".
 9. Para retirar do ar, clique em "Despublicar".
-<!-- screenshot: editor com bloco selecionado e SEO -->
+![Tela: editor com bloco selecionado e SEO](/help-media/crm/editar-publicar-landing-pages.webp)
 
 ## Resultado esperado
 A página fica publicada ou volta a rascunho.

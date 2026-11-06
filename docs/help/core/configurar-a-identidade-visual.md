@@ -8,7 +8,7 @@ route_pattern: /settings/branding
 min_permission: system.branding.view.workspace
 audience: internal
 sort_order: 116
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar a identidade visual
@@ -42,4 +42,4 @@ A identidade do workspace e a identidade por módulo são contextos diferentes. 
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/branding com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/branding com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/configurar-a-identidade-visual.webp)

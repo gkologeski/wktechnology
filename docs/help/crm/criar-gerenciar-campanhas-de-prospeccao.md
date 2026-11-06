@@ -8,7 +8,7 @@ route_pattern: /prospecting/campaigns
 min_permission: techsales.prospecting_search.view.workspace
 audience: internal
 sort_order: 401
-version: 1
+version: 2
 is_published: true
 ---
 # Criar e gerenciar campanhas de prospecção
@@ -25,7 +25,7 @@ is_published: true
 5. Use o botão de reprodução para iniciar (status running).
 6. Use o botão de pausa para pausar (status paused).
 7. Para remover, clique na lixeira e confirme "Remover?".
-<!-- screenshot: lista de campanhas com status e ícones de reprodução, pausa e exclusão -->
+![Tela: lista de campanhas com status e ícones de reprodução, pausa e exclusão](/help-media/crm/criar-gerenciar-campanhas-de-prospeccao.webp)
 
 ## Resultado esperado
 "Campanha criada" confirma. A tela abre os detalhes da campanha.

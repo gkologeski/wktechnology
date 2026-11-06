@@ -8,7 +8,7 @@ route_pattern: /interview-kits
 min_permission: techhire.interview_kits.view.own
 audience: internal
 sort_order: 30
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar kits de entrevista
@@ -24,7 +24,7 @@ is_published: true
 4. No vídeo, informe o tempo em segundos.
 5. Clique em "Salvar".
 6. Use "Duplicar", "Desativar"/"Ativar" ou a lixeira na lista.
-<!-- screenshot: kits de entrevista -->
+![Tela: kits de entrevista](/help-media/ats/gerenciar-kits-entrevista.webp)
 
 ## Resultado esperado
 "Kit salvo".

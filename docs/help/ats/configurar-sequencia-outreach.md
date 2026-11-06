@@ -8,7 +8,7 @@ route_pattern: /sourcing/sequences/$id
 min_permission: 
 audience: internal
 sort_order: 67
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar uma sequência de outreach
@@ -22,7 +22,7 @@ is_published: true
 2. Em "Adicionar step ou variante (A/B)", escolha "Posição", "Variante", "Peso", "Canal" e "Atraso (dias)".
 3. Preencha o conteúdo do canal (por exemplo "Assunto" e "Corpo").
 4. Clique em "Adicionar step".
-<!-- screenshot: configurar sequência -->
+![Tela: configurar sequência](/help-media/ats/configurar-sequencia-outreach.webp)
 
 ## Resultado esperado
 "Step adicionado" ou "Configurações salvas".

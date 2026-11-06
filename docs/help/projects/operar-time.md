@@ -8,7 +8,7 @@ route_pattern: /projects/settings/time
 min_permission: techprojects.time_policy.view.workspace
 audience: internal
 sort_order: 160
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar política de horas e modelos
@@ -43,4 +43,4 @@ Consultar política e gerenciar política são capacidades diferentes. Não assu
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Configurar política de horas e modelos; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Configurar política de horas e modelos](/help-media/projects/operar-time.webp)

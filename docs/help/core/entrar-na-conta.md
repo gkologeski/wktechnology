@@ -8,7 +8,7 @@ route_pattern: /login
 min_permission: 
 audience: internal
 sort_order: 199
-version: 1
+version: 2
 is_published: true
 ---
 # Entrar na conta
@@ -41,4 +41,4 @@ Ter conta não concede acesso automático a qualquer workspace; membership e per
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /login com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /login com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/entrar-na-conta.webp)

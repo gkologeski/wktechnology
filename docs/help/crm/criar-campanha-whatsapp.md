@@ -8,7 +8,7 @@ route_pattern: /campaigns/whatsapp
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 310
-version: 1
+version: 2
 is_published: true
 ---
 # Criar uma campanha de WhatsApp
@@ -29,7 +29,7 @@ is_published: true
 9. Para ativar o SDR, escolha um playbook.
 10. Ajuste velocidade e intervalos aleatórios.
 11. Clique em "Criar rascunho".
-<!-- screenshot: campanha WhatsApp com remetente, template e distribuição -->
+![Tela: campanha WhatsApp com remetente, template e distribuição](/help-media/crm/criar-campanha-whatsapp.webp)
 
 ## Resultado esperado
 "Campanha criada como rascunho". Ainda precisa ser iniciada.

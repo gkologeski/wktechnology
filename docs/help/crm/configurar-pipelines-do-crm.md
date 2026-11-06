@@ -8,7 +8,7 @@ route_pattern: /settings/pipelines
 min_permission: system.pipelines.view.workspace
 audience: internal
 sort_order: 154
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar pipelines do CRM
@@ -43,4 +43,4 @@ Recurso system.pipelines. Não é o pipeline de recrutamento do ATS em /pipeline
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/pipelines com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/pipelines com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/configurar-pipelines-do-crm.webp)

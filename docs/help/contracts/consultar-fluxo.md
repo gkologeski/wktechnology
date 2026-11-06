@@ -8,7 +8,7 @@ route_pattern: /contracts/$id/flow
 min_permission:
 audience: internal
 sort_order: 41
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o fluxo do contrato
@@ -23,7 +23,7 @@ is_published: true
 3. Leia a situação e os registros de cada etapa.
 4. Abra os vínculos de negócio ou contrato quando disponíveis.
 5. Use "Voltar ao contrato" para retornar.
-<!-- screenshot: Consultar o fluxo do contrato, sem dados pessoais reais -->
+![Tela: Consultar o fluxo do contrato, sem dados pessoais reais](/help-media/contracts/consultar-fluxo.webp)
 
 ## Resultado esperado
 Visão das etapas e documentos relacionados ao contrato.

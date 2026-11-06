@@ -8,7 +8,7 @@ route_pattern: /dashboard
 min_permission:
 audience: internal
 sort_order: 500
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o painel de vendas
@@ -24,7 +24,7 @@ is_published: true
 4. Use "Canal" ou mantenha "Todos os canais".
 5. Ajuste "Responsável", quando disponível.
 6. Consulte os indicadores.
-<!-- screenshot: filtros do painel e indicadores -->
+![Tela: filtros do painel e indicadores](/help-media/crm/consultar-painel-de-vendas.webp)
 
 ## Resultado esperado
 O painel mostra os dados do recorte escolhido.

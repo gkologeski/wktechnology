@@ -8,7 +8,7 @@ route_pattern: /settings/channels
 min_permission: system.channels.view.workspace
 audience: internal
 sort_order: 117
-version: 1
+version: 2
 is_published: true
 ---
 # Administrar canais de atendimento
@@ -41,4 +41,4 @@ A consulta exige system.channels.view.workspace; gerenciamento usa system.channe
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/channels com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/channels com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/administrar-canais-de-atendimento.webp)

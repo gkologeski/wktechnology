@@ -8,7 +8,7 @@ route_pattern: /projects/settings/imports
 min_permission: 
 audience: internal
 sort_order: 100
-version: 1
+version: 2
 is_published: true
 ---
 # Escolher uma fonte de importação
@@ -43,4 +43,4 @@ Cada fonte tem conexão, recursos e regras próprios. Não copie credenciais par
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Escolher uma fonte de importação; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Escolher uma fonte de importação](/help-media/projects/operar-imports.webp)

@@ -8,7 +8,7 @@ route_pattern: /projects/settings/imports/clickup
 min_permission: 
 audience: internal
 sort_order: 80
-version: 1
+version: 2
 is_published: true
 ---
 # Importar organização e tarefas do ClickUp
@@ -43,4 +43,4 @@ Leitura e importação são etapas separadas. Identidade inativa preserva atribu
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Importar organização e tarefas do ClickUp; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Importar organização e tarefas do ClickUp](/help-media/projects/operar-imports-clickup.webp)

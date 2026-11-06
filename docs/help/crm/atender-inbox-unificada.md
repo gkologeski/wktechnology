@@ -8,7 +8,7 @@ route_pattern: /inbox
 min_permission:
 audience: internal
 sort_order: 300
-version: 1
+version: 2
 is_published: true
 ---
 # Atender pela Inbox unificada
@@ -23,7 +23,7 @@ is_published: true
 3. Confira o destinatário e o resumo.
 4. Escreva a resposta no compositor.
 5. Para o histórico completo, clique em "Abrir no canal".
-<!-- screenshot: Inbox unificada com filtro de canal e Abrir no canal -->
+![Tela: Inbox unificada com filtro de canal e Abrir no canal](/help-media/crm/atender-inbox-unificada.webp)
 
 ## Resultado esperado
 A resposta sai pelo canal da conversa.

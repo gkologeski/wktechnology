@@ -8,7 +8,7 @@ route_pattern: /settings/platform/quotas
 min_permission: 
 audience: internal
 sort_order: 185
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar quotas por workspace
@@ -42,4 +42,4 @@ Limites PLAN_LIMITS são referências display-only por plano. O texto de alerta 
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `platform`; consulte os artigos desse módulo em `/ajuda/platform`.
 
-<!-- screenshot: capturar /settings/platform/quotas com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/platform/quotas com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/platform/consultar-quotas-por-workspace.webp)

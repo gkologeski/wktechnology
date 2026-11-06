@@ -8,7 +8,7 @@ route_pattern: /settings/billing
 min_permission: system.billing.view.workspace
 audience: internal
 sort_order: 115
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar planos e cobrança
@@ -41,4 +41,4 @@ O plano não concede automaticamente permissões de operação. Não use os núm
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/billing com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/billing com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-planos-e-cobranca.webp)

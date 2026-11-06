@@ -8,7 +8,7 @@ route_pattern: /campaigns/email
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 309
-version: 2
+version: 3
 is_published: true
 ---
 # Acompanhar e controlar campanhas de e-mail
@@ -24,7 +24,7 @@ is_published: true
 4. Para retomar, clique no ícone de reproduzir (▶) na linha da campanha pausada ou agendada.
 5. Para parar de vez, clique no ícone "X" na linha. Ele aparece para campanhas em envio, pausadas ou agendadas.
 6. Para remover, exclua e confirme.
-<!-- screenshot: lista de campanhas de e-mail com contadores -->
+![Tela: lista de campanhas de e-mail com contadores](/help-media/crm/controlar-campanhas-email.webp)
 
 ## Resultado esperado
 Estado e contadores atualizados.

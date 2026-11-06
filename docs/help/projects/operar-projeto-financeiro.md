@@ -8,7 +8,7 @@ route_pattern: /projects/$id/financeiro
 min_permission: techprojects.projects.view.own
 audience: internal
 sort_order: 210
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar medições e rentabilidade do projeto
@@ -43,4 +43,4 @@ As medições são preparadas no contrato. Medido, aprovado, lançado e recebido
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Consultar medições e rentabilidade do projeto; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Consultar medições e rentabilidade do projeto](/help-media/projects/operar-projeto-financeiro.webp)

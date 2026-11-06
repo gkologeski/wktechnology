@@ -8,7 +8,7 @@ route_pattern: /settings/import
 min_permission: system.import.view.workspace
 audience: internal
 sort_order: 129
-version: 1
+version: 2
 is_published: true
 ---
 # Escolher uma origem de importação
@@ -41,4 +41,4 @@ Recurso system.import. Importações específicas podem exigir permissões adici
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/import com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/import com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/escolher-uma-origem-de-importacao.webp)

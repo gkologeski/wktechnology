@@ -8,7 +8,7 @@ route_pattern: /inbox/whatsapp
 min_permission:
 audience: internal
 sort_order: 305
-version: 1
+version: 2
 is_published: true
 ---
 # Enviar um modelo aprovado no WhatsApp
@@ -24,7 +24,7 @@ is_published: true
 4. Preencha as variáveis do corpo e do cabeçalho.
 5. Se o modelo pedir mídia, anexe.
 6. Clique em "Enviar modelo".
-<!-- screenshot: modelo selecionado com variáveis -->
+![Tela: modelo selecionado com variáveis](/help-media/crm/enviar-modelo-aprovado-whatsapp.webp)
 
 ## Resultado esperado
 O servidor confirma a aprovação e envia.

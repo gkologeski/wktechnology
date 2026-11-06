@@ -8,7 +8,7 @@ route_pattern: /finance/banking/reconciliation
 min_permission: techfinance.banking.view.workspace
 audience: internal
 sort_order: 220
-version: 1
+version: 2
 is_published: true
 ---
 # Conciliar transações bancárias
@@ -45,5 +45,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Conciliar transações bancárias; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Conciliar transações bancárias](/help-media/finance/conciliar-transacoes.webp)
 <!-- evidência: src/routes/_authenticated/finance.banking.reconciliation.tsx -->

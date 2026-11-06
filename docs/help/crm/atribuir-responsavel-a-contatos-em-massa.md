@@ -8,7 +8,7 @@ route_pattern: /contacts
 min_permission:
 audience: internal
 sort_order: 116
-version: 2
+version: 3
 is_published: true
 ---
 # Atribuir responsável a contatos em massa
@@ -22,7 +22,7 @@ is_published: true
 3. Em "Propriedade a atualizar", escolha "Responsável" e selecione o usuário.
 4. Se necessário, clique em "Adicionar outra propriedade".
 5. Clique em "Atualizar" e depois em "Confirmar alteração".
-<!-- screenshot: Atribuir responsável a contatos em massa: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Atribuir responsável a contatos em massa](/help-media/crm/atribuir-responsavel-a-contatos-em-massa.webp)
 ## Resultado esperado
 A mensagem informa quantos registros foram atualizados.
 ## Regras e limites

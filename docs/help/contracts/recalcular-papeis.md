@@ -8,7 +8,7 @@ route_pattern: /contracts/links
 min_permission:
 audience: internal
 sort_order: 45
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar e recalcular Prestação ou Compra
@@ -22,7 +22,7 @@ is_published: true
 2. Revise o diagnóstico de Prestação/Compra.
 3. Selecione somente correções confirmadas e aplique.
 4. Confira o resultado.
-<!-- screenshot: Revisar e recalcular Prestação ou Compra, sem dados pessoais reais -->
+![Tela: Revisar e recalcular Prestação ou Compra, sem dados pessoais reais](/help-media/contracts/recalcular-papeis.webp)
 
 ## Resultado esperado
 Papel comercial corrigido nos registros selecionados.

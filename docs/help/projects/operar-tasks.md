@@ -8,7 +8,7 @@ route_pattern: /projects/tasks
 min_permission: techprojects.tasks.view.own
 audience: internal
 sort_order: 180
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar tarefas de projetos
@@ -43,4 +43,4 @@ Busca e seleção respeitam o escopo disponível. Ter acesso à listagem não ga
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Consultar tarefas de projetos; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Consultar tarefas de projetos](/help-media/projects/operar-tasks.webp)

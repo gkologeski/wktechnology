@@ -8,7 +8,7 @@ route_pattern: /contracts/$id/medicoes
 min_permission:
 audience: internal
 sort_order: 70
-version: 1
+version: 2
 is_published: true
 ---
 # Preparar e consultar medições do contrato
@@ -23,7 +23,7 @@ is_published: true
 3. Preencha "Competência" e escolha "Tipo": "Regular" ou "Complemento".
 4. Clique em "Preparar medição".
 5. Revise o detalhamento aberto após "Rascunho da medição pronto para revisão.".
-<!-- screenshot: Preparar e consultar medições do contrato, sem dados pessoais reais -->
+![Tela: Preparar e consultar medições do contrato, sem dados pessoais reais](/help-media/contracts/preparar-medicao.webp)
 
 ## Resultado esperado
 Rascunho de medição preparado para revisão, sem emissão ou envio automático ao cliente.

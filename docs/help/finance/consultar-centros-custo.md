@@ -8,7 +8,7 @@ route_pattern: /finance/cost-centers
 min_permission: techfinance.cost_centers.view.workspace
 audience: internal
 sort_order: 150
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar centros de custo
@@ -41,5 +41,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Consultar centros de custo; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Consultar centros de custo](/help-media/finance/consultar-centros-custo.webp)
 <!-- evidência: src/routes/_authenticated/finance.cost-centers.tsx -->

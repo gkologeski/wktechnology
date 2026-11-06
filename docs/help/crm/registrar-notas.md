@@ -8,7 +8,7 @@ route_pattern: /notes
 min_permission:
 audience: internal
 sort_order: 209
-version: 2
+version: 3
 is_published: true
 ---
 # Registrar notas
@@ -25,7 +25,7 @@ is_published: true
 5. Clique em "Salvar". "Conteúdo" é obrigatório.
 6. Localize a nota pelo assunto ou conteúdo.
 7. Para corrigir rápido, edite "Assunto" direto na lista, se tiver permissão.
-<!-- screenshot: formulário de nota com Assunto e Conteúdo e colunas da lista -->
+![Tela: formulário de nota com Assunto e Conteúdo e colunas da lista](/help-media/crm/registrar-notas.webp)
 
 ## Resultado esperado
 A nota aparece com "Assunto", prévia de "Conteúdo" e "Criada em".

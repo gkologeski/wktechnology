@@ -8,7 +8,7 @@ route_pattern: /companies
 min_permission:
 audience: internal
 sort_order: 127
-version: 1
+version: 2
 is_published: true
 ---
 # Filtrar empresas
@@ -21,7 +21,7 @@ is_published: true
 2. Use "Setor" e os demais filtros disponíveis.
 3. Use a busca da listagem para restringir os resultados.
 4. Revise os registros e ajuste a paginação.
-<!-- screenshot: Filtrar empresas: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Filtrar empresas](/help-media/crm/filtrar-empresas.webp)
 ## Resultado esperado
 A lista mostra apenas os resultados que atendem aos critérios e ao seu acesso.
 ## Regras e limites

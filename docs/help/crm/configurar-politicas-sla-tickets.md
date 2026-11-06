@@ -8,7 +8,7 @@ route_pattern: /settings/sla
 min_permission: system.automation.sla.view.workspace
 audience: internal
 sort_order: 515
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar políticas de SLA de tickets
@@ -26,7 +26,7 @@ is_published: true
 6. Deixe "Ativa" ligado e clique em "Salvar".
 7. Para editar, clique no lápis. Para excluir, clique na lixeira e confirme.
 8. Para marcar vencimentos na hora, clique em "Verificar agora".
-<!-- screenshot: janela Nova política de SLA -->
+![Tela: janela Nova política de SLA](/help-media/crm/configurar-politicas-sla-tickets.webp)
 
 ## Resultado esperado
 Aparece "Política salva". "Verificar agora" mostra "Checagem: N 1ª resp + N resolução".

@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 34
-version: 1
+version: 2
 is_published: true
 ---
 # Vincular e desvincular aditivos
@@ -23,7 +23,7 @@ is_published: true
 3. Selecione o contrato correspondente e informe "Número do aditivo" e "Vigência do aditivo" quando aplicável.
 4. Clique em "Vincular".
 5. Para desvincular, use a ação de remover vínculo e confirme "Remover o vínculo de aditivo deste contrato?".
-<!-- screenshot: Vincular e desvincular aditivos, sem dados pessoais reais -->
+![Tela: Vincular e desvincular aditivos, sem dados pessoais reais](/help-media/contracts/vincular-aditivo.webp)
 
 ## Resultado esperado
 "Aditivo vinculado." ou "Vínculo de aditivo removido.".

@@ -8,7 +8,7 @@ route_pattern: /offers
 min_permission: techhire.offers.view.own
 audience: internal
 sort_order: 50
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar ofertas
@@ -23,7 +23,7 @@ is_published: true
 3. Envie a oferta aprovada para assinatura.
 4. Para copiar o link, use a ação de link.
 5. Para cancelar, use "Cancelar oferta" e confirme.
-<!-- screenshot: ofertas -->
+![Tela: ofertas](/help-media/ats/gerenciar-ofertas.webp)
 
 ## Resultado esperado
 "Oferta disponível para assinatura. O envio por e-mail deve ser realizado pelo canal configurado."

@@ -8,7 +8,7 @@ route_pattern: /invoices
 min_permission:
 audience: internal
 sort_order: 515
-version: 2
+version: 3
 is_published: true
 ---
 # Gerenciar faturas
@@ -26,7 +26,7 @@ is_published: true
 6. Para pagamento manual, use "Marcar como paga".
 7. Para excluir, use a lixeira e confirme "Excluir fatura?".
 8. O botão "NFS-e" fica desabilitado enquanto o adaptador de NFS-e não estiver habilitado ("Adaptador NFS-e não habilitado"). Quando habilitado, a emissão mostra "Emissão de NFS-e iniciada".
-<!-- screenshot: filtros e formulário Nova fatura -->
+![Tela: filtros e formulário Nova fatura](/help-media/crm/gerenciar-faturas.webp)
 
 ## Resultado esperado
 "Fatura criada" ou "Marcada como paga".

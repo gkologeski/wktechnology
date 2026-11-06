@@ -8,7 +8,7 @@ route_pattern: /invoices
 min_permission: techfinance.invoices.view.workspace
 audience: internal
 sort_order: 260
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar faturas
@@ -47,5 +47,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Gerenciar faturas; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Gerenciar faturas](/help-media/finance/gerenciar-faturas.webp)
 <!-- evidência: src/routes/_authenticated/invoices.tsx; src/lib/access-control/use-finance-business-capabilities.ts -->

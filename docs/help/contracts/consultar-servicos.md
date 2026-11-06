@@ -8,7 +8,7 @@ route_pattern: /services
 min_permission:
 audience: internal
 sort_order: 80
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar serviços em execução
@@ -23,7 +23,7 @@ is_published: true
 3. Filtre por "Tipo", "Status" e "Responsável".
 4. Alterne entre tabela e kanban. Configure as colunas da tabela conforme necessário.
 5. Clique no nome para abrir o serviço ou na coluna "Contrato" para abrir o contrato.
-<!-- screenshot: Consultar serviços em execução, sem dados pessoais reais -->
+![Tela: Consultar serviços em execução, sem dados pessoais reais](/help-media/contracts/consultar-servicos.webp)
 
 ## Resultado esperado
 Lista de serviços vinculados aos contratos.

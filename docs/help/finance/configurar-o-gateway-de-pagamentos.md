@@ -8,7 +8,7 @@ route_pattern: /settings/payments
 min_permission: 
 audience: internal
 sort_order: 151
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar o gateway de pagamentos
@@ -42,4 +42,4 @@ Consulta exige techfinance.payments_settings.view.workspace e alteração manage
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `finance`; consulte os artigos desse módulo em `/ajuda/finance`.
 
-<!-- screenshot: capturar /settings/payments com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/payments com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/finance/configurar-o-gateway-de-pagamentos.webp)

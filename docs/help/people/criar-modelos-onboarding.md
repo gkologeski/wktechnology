@@ -8,7 +8,7 @@ route_pattern: /people/onboarding-templates
 min_permission: techpeople.onboarding_templates.view.own
 audience: internal
 sort_order: 42
-version: 1
+version: 2
 is_published: true
 ---
 # Criar modelos de onboarding e offboarding
@@ -24,7 +24,7 @@ is_published: true
 4. Deixe "Modelo ativo" ligado.
 5. Em "Tarefas", clique em "Adicionar tarefa". Preencha "Título da tarefa", "Categoria" e "Dias" (prazo após o início do plano).
 6. Clique em "Salvar".
-<!-- screenshot: novo modelo -->
+![Tela: novo modelo](/help-media/people/criar-modelos-onboarding.webp)
 
 ## Resultado esperado
 "Modelo criado". Para editar, use o ícone "Editar modelo" ("Modelo atualizado").

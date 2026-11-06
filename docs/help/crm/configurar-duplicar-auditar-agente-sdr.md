@@ -8,7 +8,7 @@ route_pattern: /agents/sdr
 min_permission: techsales.marketing.sdr_agent.view.workspace
 audience: internal
 sort_order: 410
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar, duplicar e auditar o agente SDR
@@ -28,7 +28,7 @@ is_published: true
 8. Consulte "Habilidades e ferramentas", "Portfólio e materiais" e "Regras gerais".
 9. Para copiar, clique em "Duplicar" e confirme.
 10. Em "Resultados", veja conversas, qualificações e reuniões dos últimos 30 dias.
-<!-- screenshot: áreas Operação, Estúdio e Resultados e ação Duplicar -->
+![Tela: áreas Operação, Estúdio e Resultados e ação Duplicar](/help-media/crm/configurar-duplicar-auditar-agente-sdr.webp)
 
 ## Resultado esperado
 Rascunho salvo sem mudar a versão publicada. A cópia é um agente independente.

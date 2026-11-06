@@ -8,7 +8,7 @@ route_pattern: /finance/entries/$id
 min_permission: techfinance.entries.view.own
 audience: internal
 sort_order: 100
-version: 1
+version: 2
 is_published: true
 ---
 # Estornar baixa
@@ -42,5 +42,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Estornar baixa; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Estornar baixa](/help-media/finance/estornar-baixa.webp)
 <!-- evidência: src/routes/_authenticated/finance.entries.$id.tsx; src/lib/finance.functions.ts -->

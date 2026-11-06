@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 39
-version: 1
+version: 2
 is_published: true
 ---
 # Excluir um contrato
@@ -21,7 +21,7 @@ is_published: true
 1. Abra o contrato correto.
 2. Clique na ação "Excluir".
 3. Confirme "Excluir este contrato?" somente após revisar o impacto.
-<!-- screenshot: Excluir um contrato, sem dados pessoais reais -->
+![Tela: Excluir um contrato, sem dados pessoais reais](/help-media/contracts/excluir-contrato.webp)
 
 ## Resultado esperado
 "Contrato excluído." e retorno à lista.

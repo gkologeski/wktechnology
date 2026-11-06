@@ -8,7 +8,7 @@ route_pattern: /auth/extension-link
 min_permission: 
 audience: internal
 sort_order: 100
-version: 1
+version: 2
 is_published: true
 ---
 # Vincular a extensão do TechHire
@@ -41,4 +41,4 @@ Trate a API key como segredo; não a inclua em chamados, capturas ou artigos. Es
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /auth/extension-link com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /auth/extension-link com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/vincular-a-extensao-do-techhire.webp)

@@ -8,7 +8,7 @@ route_pattern: /hunting/search
 min_permission: 
 audience: internal
 sort_order: 42
-version: 1
+version: 2
 is_published: true
 ---
 # Buscar perfis no LinkedIn
@@ -23,7 +23,7 @@ is_published: true
 3. Clique em "Buscar". Use "Carregar mais" para ver outros.
 4. Marque os perfis e clique em "Importar selecionados".
 5. Acompanhe "Novos", "Já existiam", "Enriquecidos" e "Falhas".
-<!-- screenshot: busca no LinkedIn -->
+![Tela: busca no LinkedIn](/help-media/ats/buscar-perfis-linkedin.webp)
 
 ## Resultado esperado
 "Importação concluída · N novos · N já existiam · N enriquecidos".

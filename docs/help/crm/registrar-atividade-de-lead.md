@@ -8,7 +8,7 @@ route_pattern: /leads/$id
 min_permission:
 audience: internal
 sort_order: 111
-version: 1
+version: 2
 is_published: true
 ---
 # Registrar atividade de lead
@@ -21,7 +21,7 @@ is_published: true
 2. Na barra da timeline, clique em "Nota" ou "Tarefa". Use "Mais" para outras ações disponíveis.
 3. Preencha o conteúdo. Para tarefa, revise prazo e responsável.
 4. Clique em "Salvar Nota" ou "Salvar Tarefa", conforme a ação.
-<!-- screenshot: Registrar atividade de lead: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Registrar atividade de lead](/help-media/crm/registrar-atividade-de-lead.webp)
 ## Resultado esperado
 A atividade é registrada e a timeline é atualizada.
 ## Regras e limites

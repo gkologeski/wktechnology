@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 40
-version: 1
+version: 2
 is_published: true
 ---
 # Aninhar contratos de compra sob uma prestação
@@ -23,7 +23,7 @@ is_published: true
 3. Se ele já estiver vinculado a outro contrato, use "Mover" e confirme a troca de vínculo.
 4. Pela compra, também é possível usar "Aninhar sob contrato de prestação" ou "Alterar contrato principal".
 5. Para remover, use "Desaninhar" e confirme "Desaninhar este contrato de compra do contrato de prestação?".
-<!-- screenshot: Aninhar contratos de compra sob uma prestação, sem dados pessoais reais -->
+![Tela: Aninhar contratos de compra sob uma prestação, sem dados pessoais reais](/help-media/contracts/aninhar-contratos.webp)
 
 ## Resultado esperado
 Contrato de compra associado à prestação e apresentado sob ela na listagem.

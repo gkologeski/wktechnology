@@ -8,7 +8,7 @@ route_pattern: /contracts/dashboard
 min_permission:
 audience: internal
 sort_order: 10
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o Dashboard de contratos
@@ -22,7 +22,7 @@ is_published: true
 2. Consulte "Contratos ativos", "Valor contratado ativo", "Em aprovação ou assinatura" e "Vencem em 30 dias".
 3. Veja "Carteira por status", "Próximos vencimentos", "Precisam de atenção" e "Contratos recentes".
 4. Clique em um contrato para abrir sua ficha. Use "Atualizar" para consultar novamente ou "Ir para Contratos" para abrir a lista.
-<!-- screenshot: Consultar o Dashboard de contratos, sem dados pessoais reais -->
+![Tela: Consultar o Dashboard de contratos, sem dados pessoais reais](/help-media/contracts/acompanhar-dashboard.webp)
 
 ## Resultado esperado
 Indicadores e listas dos contratos acessíveis.

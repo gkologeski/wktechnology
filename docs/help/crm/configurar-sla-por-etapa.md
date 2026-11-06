@@ -8,7 +8,7 @@ route_pattern: /settings/sla
 min_permission: system.automation.sla.view.workspace
 audience: internal
 sort_order: 514
-version: 2
+version: 3
 is_published: true
 ---
 # Configurar SLA por etapa
@@ -24,7 +24,7 @@ is_published: true
 4. Deixe vazio para etapa sem prazo.
 5. Clique em "Salvar SLA".
 6. Confira "SLA atualizado".
-<!-- screenshot: pipeline com prazos e Salvar SLA -->
+![Tela: pipeline com prazos e Salvar SLA](/help-media/crm/configurar-sla-por-etapa.webp)
 
 ## Resultado esperado
 Prazos salvos e atrasos atualizados.

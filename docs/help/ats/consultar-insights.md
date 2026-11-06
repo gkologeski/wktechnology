@@ -8,7 +8,7 @@ route_pattern: /insights
 min_permission: 
 audience: internal
 sort_order: 81
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar insights de recrutamento
@@ -21,7 +21,7 @@ is_published: true
 1. Veja "Funil de candidaturas", "Fontes de candidatos" e "Tempo médio para fechar".
 2. Em "Saúde do funil", escolha o período (30 a 180 dias).
 3. Clique em "Analisar".
-<!-- screenshot: insights -->
+![Tela: insights](/help-media/ats/consultar-insights.webp)
 
 ## Resultado esperado
 A IA mostra a análise do período.

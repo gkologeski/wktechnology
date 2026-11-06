@@ -8,7 +8,7 @@ route_pattern: /settings/lead-sources
 min_permission: 
 audience: internal
 sort_order: 137
-version: 1
+version: 2
 is_published: true
 ---
 # Manter origens de leads
@@ -42,4 +42,4 @@ Recurso techsales.lead_sources; pertence ao TechSales.
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/lead-sources com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/lead-sources com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/manter-origens-de-leads.webp)

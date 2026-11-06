@@ -8,7 +8,7 @@ route_pattern: /settings/contract-defaults
 min_permission:
 audience: internal
 sort_order: 90
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar padrões de contrato
@@ -22,7 +22,7 @@ is_published: true
 2. Selecione "Todos os tipos" ou a aba do tipo desejado.
 3. Preencha os campos disponibilizados.
 4. Clique em "Salvar padrões".
-<!-- screenshot: Configurar padrões de contrato, sem dados pessoais reais -->
+![Tela: Configurar padrões de contrato, sem dados pessoais reais](/help-media/contracts/configurar-padroes.webp)
 
 ## Resultado esperado
 "Padrões salvos." confirma os valores de pré-preenchimento.

@@ -8,7 +8,7 @@ route_pattern: /home
 min_permission: 
 audience: internal
 sort_order: 104
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o dashboard do ERP
@@ -42,4 +42,4 @@ Exportação usa system.home/export. O painel agrega os módulos reais; não sub
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /home com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /home com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-o-dashboard-do-erp.webp)

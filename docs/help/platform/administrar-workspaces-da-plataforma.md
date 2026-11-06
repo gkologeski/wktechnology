@@ -8,7 +8,7 @@ route_pattern: /admin/workspaces
 min_permission: 
 audience: internal
 sort_order: 182
-version: 1
+version: 2
 is_published: true
 ---
 # Administrar workspaces da plataforma
@@ -43,4 +43,4 @@ Exclusivo de admin da plataforma; owner/admin de workspace não é super-admin. 
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `platform`; consulte os artigos desse módulo em `/ajuda/platform`.
 
-<!-- screenshot: capturar /admin/workspaces com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /admin/workspaces com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/platform/administrar-workspaces-da-plataforma.webp)

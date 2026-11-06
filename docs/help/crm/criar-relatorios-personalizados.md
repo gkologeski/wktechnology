@@ -8,7 +8,7 @@ route_pattern: /reports
 min_permission: system.analytics.reports.view.workspace
 audience: internal
 sort_order: 503
-version: 2
+version: 3
 is_published: true
 ---
 # Criar relatórios personalizados
@@ -28,7 +28,7 @@ is_published: true
 8. Clique em "Salvar".
 9. Para reabrir, clique no relatório em "Salvos".
 10. Use a estrela para favoritar ou a lixeira para excluir ("Excluir relatório?").
-<!-- screenshot: configuração de entidade, métrica e visualização -->
+![Tela: configuração de entidade, métrica e visualização](/help-media/crm/criar-relatorios-personalizados.webp)
 
 ## Resultado esperado
 O relatório aparece em "Salvos" e pode ir para um painel.

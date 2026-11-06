@@ -8,7 +8,7 @@ route_pattern: /people/billing
 min_permission: techpeople.timesheet.view.own
 audience: internal
 sort_order: 81
-version: 1
+version: 2
 is_published: true
 ---
 # Faturar horas aprovadas
@@ -23,7 +23,7 @@ is_published: true
 3. Se houver horas sem aprovação na alocação, clique em "Aprovar pendentes".
 4. Clique em "Faturar".
 5. Confira o resumo, escolha o "Vencimento" (padrão: hoje + 15 dias) e clique em "Gerar fatura".
-<!-- screenshot: faturamento de horas -->
+![Tela: faturamento de horas](/help-media/people/faturar-horas.webp)
 
 ## Resultado esperado
 "Fatura {número} criada — {N} apontamento(s) vinculado(s)." A fatura nasce em rascunho.

@@ -8,7 +8,7 @@ route_pattern: /projects/timesheet
 min_permission: techprojects.timesheet.view.team
 audience: internal
 sort_order: 190
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o timesheet da equipe
@@ -43,4 +43,4 @@ Meta depende da jornada configurada no People. Ausência de jornada não signifi
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Consultar o timesheet da equipe; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Consultar o timesheet da equipe](/help-media/projects/operar-timesheet.webp)

@@ -8,7 +8,7 @@ route_pattern: /settings/rbac-diagnostics
 min_permission: system.rbac_diagnostics.view.workspace
 audience: internal
 sort_order: 160
-version: 1
+version: 2
 is_published: true
 ---
 # Diagnosticar o acesso de um membro
@@ -42,4 +42,4 @@ Recurso system.rbac_diagnostics. Diagnóstico é diferente de editar concessões
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/rbac-diagnostics com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/rbac-diagnostics com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/diagnosticar-o-acesso-de-um-membro.webp)

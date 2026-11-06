@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/$slug
 min_permission: 
 audience: internal
 sort_order: 132
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o detalhe de uma integração
@@ -41,4 +41,4 @@ O slug seleciona o conector. Não aplique o procedimento de um conector a todos 
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/integrations/$slug com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/integrations/$slug com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-o-detalhe-de-uma-integracao.webp)

@@ -8,7 +8,7 @@ route_pattern: /settings/security
 min_permission: 
 audience: internal
 sort_order: 165
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar a segurança da minha conta
@@ -41,4 +41,4 @@ Segurança pessoal não substitui a política de acesso do workspace. Não publi
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/security com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/security com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/revisar-a-seguranca-da-minha-conta.webp)

@@ -8,7 +8,7 @@ route_pattern: /files
 min_permission: 
 audience: internal
 sort_order: 103
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar e organizar arquivos
@@ -41,4 +41,4 @@ O recurso de autorização é system.files. Sessões de “Ver como” podem ser
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /files com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /files com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-e-organizar-arquivos.webp)

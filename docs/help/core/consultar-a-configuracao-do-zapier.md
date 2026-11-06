@@ -8,7 +8,7 @@ route_pattern: /settings/zapier
 min_permission: 
 audience: internal
 sort_order: 179
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar a configuração do Zapier
@@ -41,4 +41,4 @@ Recurso de rota system.webhooks. Nunca inclua API keys, tokens ou URLs secretas 
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/zapier com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/zapier com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-a-configuracao-do-zapier.webp)

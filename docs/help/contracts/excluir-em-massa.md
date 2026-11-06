@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 28
-version: 1
+version: 2
 is_published: true
 ---
 # Excluir contratos em massa
@@ -22,7 +22,7 @@ is_published: true
 2. Clique em "Excluir" na barra de seleção.
 3. Confira a quantidade e confirme "Excluir N contrato(s)? Esta ação não pode ser desfeita.".
 4. Revise o resumo de sucessos e falhas.
-<!-- screenshot: Excluir contratos em massa, sem dados pessoais reais -->
+![Tela: Excluir contratos em massa, sem dados pessoais reais](/help-media/contracts/excluir-em-massa.webp)
 
 ## Resultado esperado
 Registros autorizados removidos; falhas podem permanecer sem impedir os demais.

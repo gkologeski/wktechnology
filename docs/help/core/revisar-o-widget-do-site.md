@@ -8,7 +8,7 @@ route_pattern: /settings/widget
 min_permission: system.widget.view.workspace
 audience: internal
 sort_order: 177
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar o widget do site
@@ -41,4 +41,4 @@ O widget público e a Inbox são superfícies diferentes. A configuração não 
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/widget com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/widget com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/revisar-o-widget-do-site.webp)

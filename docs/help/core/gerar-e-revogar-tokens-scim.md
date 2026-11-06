@@ -8,7 +8,7 @@ route_pattern: /settings/scim
 min_permission: 
 audience: internal
 sort_order: 163
-version: 1
+version: 2
 is_published: true
 ---
 # Gerar e revogar tokens SCIM
@@ -43,4 +43,4 @@ O valor completo do token aparece uma única vez. A existência dos endpoints na
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/scim com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/scim com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/gerar-e-revogar-tokens-scim.webp)

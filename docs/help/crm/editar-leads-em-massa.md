@@ -8,7 +8,7 @@ route_pattern: /leads
 min_permission:
 audience: internal
 sort_order: 106
-version: 1
+version: 2
 is_published: true
 ---
 # Editar campos de leads em massa
@@ -22,7 +22,7 @@ is_published: true
 3. Em "Propriedade a atualizar", escolha o campo e informe o novo valor.
 4. Se necessário, clique em "Adicionar outra propriedade".
 5. Clique em "Atualizar" e depois em "Confirmar alteração".
-<!-- screenshot: Editar campos de leads em massa: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Editar campos de leads em massa](/help-media/crm/editar-leads-em-massa.webp)
 ## Resultado esperado
 A mensagem informa quantos registros foram atualizados.
 ## Regras e limites

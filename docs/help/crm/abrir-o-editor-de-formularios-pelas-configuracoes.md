@@ -8,7 +8,7 @@ route_pattern: /settings/forms
 min_permission: 
 audience: internal
 sort_order: 126
-version: 1
+version: 2
 is_published: true
 ---
 # Abrir o editor de formulários pelas configurações
@@ -41,4 +41,4 @@ A rota renderiza FormsPage, como /forms; pertence ao marketing do TechSales. Nã
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/forms com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/forms com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/abrir-o-editor-de-formularios-pelas-configuracoes.webp)

@@ -8,7 +8,7 @@ route_pattern: /tasks/$id
 min_permission:
 audience: internal
 sort_order: 206
-version: 2
+version: 3
 is_published: true
 ---
 # Concluir e atribuir uma tarefa
@@ -23,7 +23,7 @@ is_published: true
 3. Clique em "Marcar concluída" na tarefa. Para várias tarefas selecionadas, use "Concluir". Para desfazer, use "Reabrir".
 4. Para remover o registro, clique em "Excluir tarefa".
 5. Confira o aviso "Excluir tarefa?" e confirme somente se deseja remover o registro.
-<!-- screenshot: detalhe da tarefa com Descrição, responsável e ação de exclusão -->
+![Tela: detalhe da tarefa com Descrição, responsável e ação de exclusão](/help-media/crm/concluir-atribuir-tarefa.webp)
 
 ## Resultado esperado
 A troca de responsável mostra "Responsável atualizado". A conclusão mostra "Concluída". A exclusão mostra "Excluída".

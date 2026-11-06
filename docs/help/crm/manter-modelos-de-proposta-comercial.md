@@ -8,7 +8,7 @@ route_pattern: /settings/proposal-templates
 min_permission: 
 audience: internal
 sort_order: 158
-version: 1
+version: 2
 is_published: true
 ---
 # Manter modelos de proposta comercial
@@ -42,4 +42,4 @@ Modelos de proposta são próprios e podem se vincular ao catálogo de serviços
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/proposal-templates com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/proposal-templates com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/manter-modelos-de-proposta-comercial.webp)

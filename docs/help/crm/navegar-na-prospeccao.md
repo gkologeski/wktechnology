@@ -8,7 +8,7 @@ route_pattern: /prospecting
 min_permission: techsales.prospecting_search.view.workspace
 audience: internal
 sort_order: 400
-version: 1
+version: 2
 is_published: true
 ---
 # Navegar na prospecção
@@ -23,7 +23,7 @@ is_published: true
 3. Abra "Campanhas" para as ferramentas de abordagem.
 4. Abra "Públicos" para "Base interna", "Busca de prospects (Apollo)" e "Enriquecimento", quando liberados.
 5. Abra "Resultados" para acompanhar por campanha, canal e agente.
-<!-- screenshot: navegação principal da Prospecção e seções disponíveis -->
+![Tela: navegação principal da Prospecção e seções disponíveis](/help-media/crm/navegar-na-prospeccao.webp)
 
 ## Resultado esperado
 Você encontra a área desejada. Links antigos com o parâmetro tab são convertidos para a navegação atual.

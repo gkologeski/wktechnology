@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/ai
 min_permission: 
 audience: internal
 sort_order: 133
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar o provedor de IA do workspace
@@ -41,4 +41,4 @@ Recurso system.ai_settings; o menu agrupa sob Integrações, mas o gate é espec
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/integrations/ai com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/integrations/ai com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/configurar-o-provedor-de-ia-do-workspace.webp)

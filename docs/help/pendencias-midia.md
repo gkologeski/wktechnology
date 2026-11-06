@@ -1,305 +1,42 @@
 # Pendências de mídia da Ajuda
 
-Lista das capturas e vídeos indicados por `<!-- screenshot: … -->` nos artigos.
-Preenchida a cada módulo da Fase 2.
+Capturas feitas em 06/11/2026 com os dados fictícios do workspace WK (328 artigos com imagem em `public/help-media/`).
 
-| Módulo | Artigo | Etapa | O que capturar |
-|---|---|---|---|
+## Ainda sem captura
 
-## TechSales (crm) — Fase 2
+Telas públicas que exigem link/token válido, ou artigos sem tela própria:
 
-- acompanhar-negocios.md:screenshot: cabeçalho de Negócios com visualizações, filtros, Criar negócio e Iniciar fila --
-- acompanhar-ticket.md:screenshot: cabeçalho, etapas e propriedades do ticket --
-- atender-chat-ao-vivo.md:screenshot: Chat com abas, responsável e ações Ticket e Encerrar --
-- atender-conversas-whatsapp.md:screenshot: Inbox WhatsApp com aviso de janela e compositor --
-- atender-inbox-unificada.md:screenshot: Inbox unificada com filtro de canal e Abrir no canal --
-- atribuir-responsavel-a-contatos-em-massa.md:screenshot: Atribuir responsável a contatos em massa: capturar a tela após o último passo, sem dados pessoais reais. --
-- atribuir-responsavel-a-empresas-em-massa.md:screenshot: Atribuir responsável a empresas em massa: capturar a tela após o último passo, sem dados pessoais reais. --
-- atribuir-responsavel-a-leads-em-massa.md:screenshot: Atribuir responsável a leads em massa: capturar a tela após o último passo, sem dados pessoais reais. --
-- atualizar-negocio.md:screenshot: detalhe do negócio com seletor de funil e áreas Cotações, Propostas e Contratos --
-- concluir-atribuir-tarefa.md:screenshot: detalhe da tarefa com Descrição, responsável e ação de exclusão --
-- conectar-gerenciar-calendarios.md:screenshot: conta de calendário com Sync e Meet automático --
-- conectar-sincronizar-gmail.md:screenshot: contas conectadas e assinatura --
-- configurar-campanha-de-prospeccao.md:screenshot: configuração da campanha com janela, público e variantes de script --
-- configurar-canais-planejamento-de-sequencia.md:screenshot: abas Canais e regras e Limites e planejamento, com simulador --
-- configurar-duplicar-auditar-agente-sdr.md:screenshot: áreas Operação, Estúdio e Resultados e ação Duplicar --
-- configurar-sla-por-etapa.md:screenshot: pipeline com prazos e Salvar SLA --
-- construir-pesquisas.md:screenshot: construtor com campo selecionado --
-- consultar-analytics.md:screenshot: filtros e abas de Analytics --
-- consultar-organizar-tickets.md:screenshot: filtros e formulário de ticket --
-- consultar-painel-de-vendas.md:screenshot: filtros do painel e indicadores --
-- consultar-reunioes.md:screenshot: biblioteca de reuniões e detalhe com Gravação, Resumo & transcrição e Participantes --
-- consultar-timeline-de-contato.md:screenshot: Consultar timeline de contato: capturar a tela após o último passo, sem dados pessoais reais. --
-- consultar-timeline-de-empresa.md:screenshot: Consultar timeline de empresa: capturar a tela após o último passo, sem dados pessoais reais. --
-- consultar-timeline-de-lead.md:screenshot: Consultar timeline de lead: capturar a tela após o último passo, sem dados pessoais reais. --
-- controlar-agente-atendimento.md:screenshot: painel Agente deste atendimento --
-- controlar-campanhas-bloqueios-whatsapp.md:screenshot: campanha com contadores e ações --
-- controlar-campanhas-email.md:screenshot: lista de campanhas de e-mail com contadores --
-- criar-campanha-email.md:screenshot: formulário de campanha de e-mail --
-- criar-campanha-whatsapp.md:screenshot: campanha WhatsApp com remetente, template e distribuição --
-- criar-contato.md:screenshot: Criar contato: capturar a tela após o último passo, sem dados pessoais reais. --
-- criar-editar-roteiros-de-ligacao.md:screenshot: formulário do script e lista com Mostrar arquivados --
-- criar-empresa.md:screenshot: Criar empresa: capturar a tela após o último passo, sem dados pessoais reais. --
-- criar-filas-tarefas.md:screenshot: Nova fila com Nome, Descrição (opcional) e uma fila cadastrada --
-- criar-fluxo-de-sequencia.md:screenshot: aba Fluxo com etapas e configuração da etapa selecionada --
-- criar-gerenciar-campanhas-de-prospeccao.md:screenshot: lista de campanhas com status e ícones de reprodução, pausa e exclusão --
-- criar-gerenciar-paginas-agendamento.md:screenshot: formulário de página de agendamento --
-- criar-landing-pages.md:screenshot: lista de landing pages --
-- criar-lead.md:screenshot: Criar lead: capturar a tela após o último passo, sem dados pessoais reais. --
-- criar-publicar-workflows.md:screenshot: abas Workflows, Execuções recentes e Política de envio --
-- criar-regras-de-distribuicao.md:screenshot: formulário de distribuição com estratégia e responsáveis --
-- criar-relatorios-personalizados.md:screenshot: configuração de entidade, métrica e visualização --
-- editar-contato.md:screenshot: Editar contato: capturar a tela após o último passo, sem dados pessoais reais. --
-- editar-contatos-em-massa.md:screenshot: Editar campos de contatos em massa: capturar a tela após o último passo, sem dados pessoais reais. --
-- editar-empresa.md:screenshot: Editar empresa: capturar a tela após o último passo, sem dados pessoais reais. --
-- editar-empresas-em-massa.md:screenshot: Editar campos de empresas em massa: capturar a tela após o último passo, sem dados pessoais reais. --
-- editar-enviar-proposta.md:screenshot: proposta com status, versão, Editar, Copiar link, Baixar PDF e Enviar ao cliente --
-- editar-lead.md:screenshot: Editar lead: capturar a tela após o último passo, sem dados pessoais reais. --
-- editar-leads-em-massa.md:screenshot: Editar campos de leads em massa: capturar a tela após o último passo, sem dados pessoais reais. --
-- editar-publicar-landing-pages.md:screenshot: editor com bloco selecionado e SEO --
-- enviar-modelo-aprovado-whatsapp.md:screenshot: modelo selecionado com variáveis --
-- excluir-contato.md:screenshot: Excluir contato: capturar a tela após o último passo, sem dados pessoais reais. --
-- excluir-contatos-em-massa.md:screenshot: Excluir contatos em massa: capturar a tela após o último passo, sem dados pessoais reais. --
-- excluir-empresa.md:screenshot: Excluir empresa: capturar a tela após o último passo, sem dados pessoais reais. --
-- excluir-empresas-em-massa.md:screenshot: Excluir empresas em massa: capturar a tela após o último passo, sem dados pessoais reais. --
-- excluir-lead.md:screenshot: Excluir lead: capturar a tela após o último passo, sem dados pessoais reais. --
-- excluir-leads-em-massa.md:screenshot: Excluir leads em massa: capturar a tela após o último passo, sem dados pessoais reais. --
-- executar-fila-de-prospeccao.md:screenshot: escolha de questionário e item da fila --
-- executar-fila-tarefas.md:screenshot: item da fila com Email, Ligar, Anotações, Pular (S) e Concluir (C) --
-- exportar-contatos.md:screenshot: Exportar contatos: capturar a tela após o último passo, sem dados pessoais reais. --
-- exportar-empresas.md:screenshot: Exportar empresas: capturar a tela após o último passo, sem dados pessoais reais. --
-- exportar-leads.md:screenshot: Exportar leads: capturar a tela após o último passo, sem dados pessoais reais. --
-- filtrar-contatos.md:screenshot: Filtrar contatos: capturar a tela após o último passo, sem dados pessoais reais. --
-- filtrar-empresas.md:screenshot: Filtrar empresas: capturar a tela após o último passo, sem dados pessoais reais. --
-- filtrar-leads.md:screenshot: Filtrar leads: capturar a tela após o último passo, sem dados pessoais reais. --
-- gerenciar-base-de-conhecimento.md:screenshot: abas Artigos e Categorias --
-- gerenciar-cotacoes.md:screenshot: cotação na lista com Gerar proposta, geração de contrato e ícones de compartilhamento --
-- gerenciar-faturas.md:screenshot: filtros e formulário Nova fatura --
-- gerenciar-formularios-publicos.md:screenshot: edição do formulário com campos e distribuição --
-- gerenciar-macros.md:screenshot: edição de macro --
-- gerenciar-paineis.md:screenshot: painel selecionado e formulário de widget --
-- gerenciar-pesquisas.md:screenshot: abas de pesquisas e indicadores --
-- gerenciar-propostas.md:screenshot: Nova proposta com Título e Valor (BRL), seguida da lista com filtros --
-- gerenciar-sequencias-automaticas.md:screenshot: lista de sequências, interruptor e aba Inscrições --
-- habilitar-portal-do-cliente.md:screenshot: contato com acesso ativo e ações do link --
-- iniciar-pausar-sequencia.md:screenshot: confirmação de início e acompanhamento das execuções --
-- navegar-na-prospeccao.md:screenshot: navegação principal da Prospecção e seções disponíveis --
-- organizar-lista-comunicacoes.md:screenshot: grade com filtro Tipo e barra de seleção --
-- organizar-tarefas.md:screenshot: Tarefas com busca, filtros, visualizações e seleção de registros --
-- registrar-atividade-de-contato.md:screenshot: Registrar atividade de contato: capturar a tela após o último passo, sem dados pessoais reais. --
-- registrar-atividade-de-empresa.md:screenshot: Registrar atividade de empresa: capturar a tela após o último passo, sem dados pessoais reais. --
-- registrar-atividade-de-lead.md:screenshot: Registrar atividade de lead: capturar a tela após o último passo, sem dados pessoais reais. --
-- registrar-comunicacoes.md:screenshot: formulário de comunicação --
-- registrar-notas.md:screenshot: formulário de nota com Assunto e Conteúdo e colunas da lista --
-- reservar-publico-de-sequencia.md:screenshot: versão para inscrição, evidência de autorização e resumo do público --
-- responder-emails-inbox.md:screenshot: conversa de e-mail com editor de resposta --
-- salvar-visao-de-leads.md:screenshot: Salvar visualização de leads: capturar a tela após o último passo, sem dados pessoais reais. --
-- validar-versionar-sequencia.md:screenshot: validação aprovada e histórico de versões --
-
-
-## TechContracts — Fase 2
-
-- acompanhar-dashboard.md: Consultar o Dashboard de contratos, sem dados pessoais reais
-- alterar-em-massa.md: Alterar status, responsável e campos em massa, sem dados pessoais reais
-- alterar-status.md: Alterar o status de um contrato, sem dados pessoais reais
-- analisar-vinculos-ia.md: Revisar e aplicar sugestões de vínculo da IA, sem dados pessoais reais
-- aninhar-contratos.md: Aninhar contratos de compra sob uma prestação, sem dados pessoais reais
-- aprovar-medicao.md: Aprovar e reverificar uma medição, sem dados pessoais reais
-- assinar-por-link.md: Assinar ou recusar um documento por link, sem dados pessoais reais
-- associar-servico.md: Associar serviço do catálogo ao contrato, sem dados pessoais reais
-- ativar-servico.md: Ativar um serviço, sem dados pessoais reais
-- configurar-cobranca.md: Configurar e versionar o modelo de cobrança, sem dados pessoais reais
-- configurar-padroes.md: Configurar padrões de contrato, sem dados pessoais reais
-- consultar-contratos.md: Consultar, filtrar e agrupar contratos, sem dados pessoais reais
-- consultar-fluxo.md: Consultar o fluxo do contrato, sem dados pessoais reais
-- consultar-historicos.md: Consultar histórico de vínculos e sugestões de IA, sem dados pessoais reais
-- consultar-rentabilidade.md: Consultar e exportar rentabilidade do contrato, sem dados pessoais reais
-- consultar-servicos.md: Consultar serviços em execução, sem dados pessoais reais
-- criar-contrato.md: Criar contrato em branco pelo assistente, sem dados pessoais reais
-- criar-da-origem-comercial.md: Criar contrato a partir de cotação, proposta ou modelo, sem dados pessoais reais
-- decidir-aprovacao.md: Aprovar ou rejeitar uma etapa de contrato, sem dados pessoais reais
-- editar-contrato.md: Editar a ficha de um contrato, sem dados pessoais reais
-- editar-publicar-modelo.md: Editar e publicar um modelo de contrato, sem dados pessoais reais
-- editar-servico.md: Editar a ficha de um serviço, sem dados pessoais reais
-- estornar-medicao.md: Devolver, cancelar ou estornar uma medição, sem dados pessoais reais
-- excluir-contrato.md: Excluir um contrato, sem dados pessoais reais
-- excluir-em-massa.md: Excluir contratos em massa, sem dados pessoais reais
-- excluir-servico.md: Excluir um serviço, sem dados pessoais reais
-- exportar-contratos.md: Exportar contratos selecionados, sem dados pessoais reais
-- fechar-provisao.md: Calcular, fechar e revisar provisão mensal, sem dados pessoais reais
-- gerar-de-modelo.md: Gerar contrato pelo diálogo de modelo publicado, sem dados pessoais reais
-- gerar-medicao-financeiro.md: Gerar título financeiro ou vincular título legado da medição, sem dados pessoais reais
-- gerenciar-documentos-assinatura.md: Preparar documentos para assinatura eletrônica, sem dados pessoais reais
-- gerenciar-modelos.md: Criar e organizar modelos de contrato, sem dados pessoais reais
-- importar-contrato.md: Importar e revisar um contrato PDF ou DOCX, sem dados pessoais reais
-- importar-em-lote.md: Importar contratos em lote e revisar resultados, sem dados pessoais reais
-- importar-modelo.md: Importar um modelo de contrato, sem dados pessoais reais
-- iniciar-aprovacoes.md: Iniciar e reiniciar aprovações de contrato, sem dados pessoais reais
-- padronizar-titulos.md: Revisar e padronizar títulos de contratos, sem dados pessoais reais
-- preparar-medicao.md: Preparar e consultar medições do contrato, sem dados pessoais reais
-- recalcular-papeis.md: Revisar e recalcular Prestação ou Compra, sem dados pessoais reais
-- registrar-assinatura.md: Preparar e registrar evidência de assinatura no contrato, sem dados pessoais reais
-- registrar-origem-comercial.md: Salvar origem comercial e definir origem do recrutamento, sem dados pessoais reais
-- revisar-medicao.md: Revisar, ajustar e enviar uma medição para revisão, sem dados pessoais reais
-- revisar-tipo-documento.md: Revisar contratos principais que parecem aditivos, sem dados pessoais reais
-- revisar-vinculacao.md: Vincular contratos e remover pendências da fila, sem dados pessoais reais
-- revogar-evidencia.md: Consultar comprovante e revogar evidência de assinatura, sem dados pessoais reais
-- vincular-aditivo.md: Vincular e desvincular aditivos, sem dados pessoais reais
-
-## Complemento da Fase 2 integral
-
-Capturas de leitura autenticada estão registradas no relatório; imagens definitivas das telas operacionais permanecem pendentes. Não capturar dados reais nem prometer fluxos externos.
-
-### projects
-
-- abrir-configuracoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-projetos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- copiar-semana.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- editar-detalhes-tarefa.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- enviar-periodo.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- gerenciar-campos-lista.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-dashboard.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-delivery.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-ficha-projeto.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-hours-review.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-imports-clickup.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-imports-clockify.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-imports-jibble.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-imports-reconciliation.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-imports.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-my-hours.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-my-work.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-operations.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-projeto-entrega.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-projeto-financeiro.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-projeto-horas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-rates.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-spaces.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-tasks.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-time.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-timesheet.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- primeiros-15-minutos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- reutilizar-template-lista.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- sincronizar-fila-local.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- trabalhar-lista.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-### finance
-
-- cadastrar-conta-bancaria.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- conciliar-transacoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- configurar-emissao-de-nfs-e.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- configurar-o-gateway-de-pagamentos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- configurar-regua-cobranca.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-assinaturas-recorrentes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-auditoria.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-centros-custo.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-contas-a-pagar.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-contas-a-receber.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-dashboard.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-dre.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-faturamento-servicos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-lancamento.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-notas-fiscais.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-vendas-importadas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- criar-lancamento.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- estornar-baixa.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- gerenciar-cobrancas-bancarias.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- gerenciar-empresas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- gerenciar-faturas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- gerenciar-grupos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- gerenciar-pagamentos-bancarios.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- gerenciar-plano-contas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- gerenciar-recorrencias.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- gerenciar-templates-cobranca.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-banco-inter.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- operar-servico.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- parcelar-lancamento.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- registrar-baixa.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- revisar-a-integracao-conta-azul.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- simular-fluxo-caixa.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-### core
-
-- abrir-o-widget-publico-de-atendimento.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- aceitar-convite-com-token.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- aceitar-um-convite-recebido.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- acompanhar-meus-chamados-de-suporte.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- administrar-canais-de-atendimento.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- administrar-membros-do-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- atualizar-o-perfil-da-conta.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- concluir-o-retorno-de-conexao-unipile.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- configurar-a-identidade-visual.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- configurar-notificacoes-no-slack.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- configurar-o-provedor-de-ia-do-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- configurar-propriedades-personalizadas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-a-apresentacao-comercial.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-a-base-de-conhecimento-publica.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-a-biblioteca-de-midia.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-a-conexao-do-whatsapp.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-a-configuracao-do-zapier.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-a-politica-de-privacidade.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-a-politica-de-reembolso.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-assinaturas-de-workflow.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-conexoes-de-anuncios.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-e-administrar-permissoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-e-organizar-arquivos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-exportacoes-e-relatorios.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-minhas-permissoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-o-acordo-de-processamento-de-dados.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-o-cancelamento-de-comunicacoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-o-catalogo-de-integracoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-o-dashboard-do-erp.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-o-detalhe-de-uma-integracao.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-o-log-de-auditoria.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-o-marketplace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-o-painel-de-ia.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-orientacoes-de-sso.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-os-termos-de-servico.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-planos-e-cobranca.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-presets-e-cargos-de-contratacao.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-privacidade-e-meus-dados.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-um-aplicativo-do-marketplace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- definir-a-preferencia-de-regiao.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- diagnosticar-o-acesso-de-um-membro.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- entender-o-acesso-por-convite.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- entrar-na-conta.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- escolher-o-idioma-da-interface.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- escolher-uma-origem-de-importacao.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- explorar-os-modulos-do-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- gerar-e-revogar-tokens-scim.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- gerenciar-chaves-de-api.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- importar-uma-planilha-csv.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- ler-um-artigo-da-base-publica.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- manter-empresas-e-cnpjs-do-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- manter-grupos-empresariais.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- manter-modelos-de-onboarding-por-entidade.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- manter-o-catalogo-de-servicos.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- manter-objetos-personalizados.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- manter-respostas-prontas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- manter-tipos-de-assinatura-de-comunicacao.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- manter-webhooks-de-integracao.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- organizar-grupos-de-propriedades.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- organizar-times-do-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- preparar-a-impressao-do-dashboard.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- recuperar-a-senha-da-conta.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- revisar-a-conexao-linkedin.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- revisar-a-politica-de-acesso.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- revisar-a-seguranca-da-minha-conta.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- revisar-exportacao-de-audit-logs.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- revisar-layouts-de-fichas.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- revisar-modulos-do-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- revisar-o-widget-do-site.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- revisar-pais-padrao-e-telefones-legados.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- revisar-preferencias-de-notificacoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- revisar-responsaveis-importados-do-hubspot.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- usar-instalacao-pwa-e-notificacoes.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- usar-o-onboarding-guiado-de-uma-entidade.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- vincular-a-extensao-do-techhire.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-### platform
-
-- administrar-sandboxes-da-plataforma.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- administrar-workspaces-da-plataforma.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-e-configurar-alertas-da-plataforma.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-quotas-por-workspace.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-status-e-manutencao-da-plataforma.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- consultar-varreduras-de-seguranca.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- revisar-um-workspace-e-seus-membros.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
-- tratar-chamados-da-plataforma.md: captura de tela demonstrativa, higienizada, conforme marcador do artigo.
+- `projects/copiar-semana` — sem rota própria
+- `projects/editar-detalhes-tarefa` — sem rota própria
+- `projects/enviar-periodo` — sem rota própria
+- `projects/gerenciar-campos-lista` — sem rota própria
+- `projects/primeiros-15-minutos` — sem rota própria
+- `projects/reutilizar-template-lista` — sem rota própria
+- `projects/sincronizar-fila-local` — sem rota própria
+- `ats/agendar-uma-entrevista-pelo-link` — /schedule/$token
+- `ats/consultar-uma-oferta-publica` — /offer/$token
+- `ats/consultar-um-link-publico-de-entrevista` — /interview/$token
+- `ats/indicar-talento-por-link-publico` — /refer/$slug
+- `ats/validar-um-perfil-de-vaga-pelo-link` — /role-profile/$token
+- `contracts/assinar-por-link` — /sign/$token
+- `contracts/consultar-o-fluxo-publico-de-assinatura` — /sign/$token
+- `ats/consultar-vagas-publicas` — /careers
+- `contracts/verificar-um-documento-pelo-hash` — /verify/$hash
+- `core/abrir-o-widget-publico-de-atendimento` — /widget/$workspaceId
+- `core/aceitar-convite-com-token` — /accept-invite/$token
+- `core/consultar-a-base-de-conhecimento-publica` — /kb
+- `core/consultar-o-cancelamento-de-comunicacoes` — /unsubscribe
+- `core/ler-um-artigo-da-base-publica` — /kb/$slug
+- `core/recuperar-a-senha-da-conta` — /reset-password
+- `core/revisar-pais-padrao-e-telefones-legados` — /settings/phones
+- `core/usar-o-onboarding-guiado-de-uma-entidade` — /onboarding/$entity
+- `crm/agendar-uma-reuniao-por-link` — /book/$slug
+- `crm/consultar-o-portal-do-cliente` — /portal/$token
+- `crm/consultar-uma-cotacao-publica` — /quote/$token
+- `crm/consultar-uma-proposta-comercial-publica` — /proposal/$token
+- `crm/entrar-em-uma-sala-publica-de-video` — /meet/$token
+- `crm/preencher-um-formulario-de-landing-page` — /lp/$slug
+- `crm/responder-uma-pesquisa-por-link` — /survey/$token
+- `people/aceitar-acesso-pelo-vinculo-de-contratacao` — /accept-employment/$token
+- `finance/operar-servico` — /services/$id
+- `platform/revisar-um-workspace-e-seus-membros` — /admin/workspaces/$id

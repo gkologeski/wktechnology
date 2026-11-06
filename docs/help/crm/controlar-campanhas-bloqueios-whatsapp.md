@@ -8,7 +8,7 @@ route_pattern: /campaigns/whatsapp
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 311
-version: 1
+version: 2
 is_published: true
 ---
 # Controlar campanhas e entender bloqueios de números
@@ -24,7 +24,7 @@ is_published: true
 4. Para reaproveitar, use "Duplicar".
 5. Para excluir, use "Excluir" e confira nome e quantidade.
 6. Confira enviadas, falhas e ignoradas por regras.
-<!-- screenshot: campanha com contadores e ações -->
+![Tela: campanha com contadores e ações](/help-media/crm/controlar-campanhas-bloqueios-whatsapp.webp)
 
 ## Resultado esperado
 A campanha muda de estado; "Duplicar" cria rascunho novo.

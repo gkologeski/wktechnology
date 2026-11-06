@@ -8,7 +8,7 @@ route_pattern: /settings/platform/alerts
 min_permission: 
 audience: internal
 sort_order: 184
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar e configurar alertas da plataforma
@@ -42,4 +42,4 @@ Exclusivo de admin da plataforma. A existência de regra não garante entrega ex
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `platform`; consulte os artigos desse módulo em `/ajuda/platform`.
 
-<!-- screenshot: capturar /settings/platform/alerts com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/platform/alerts com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/platform/consultar-e-configurar-alertas-da-plataforma.webp)

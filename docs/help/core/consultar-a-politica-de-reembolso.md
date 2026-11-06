@@ -8,7 +8,7 @@ route_pattern: /refund
 min_permission: 
 audience: internal
 sort_order: 208
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar a política de reembolso
@@ -41,4 +41,4 @@ Página informativa. Não é formulário de alteração de política, garantia c
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /refund com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /refund com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-a-politica-de-reembolso.webp)

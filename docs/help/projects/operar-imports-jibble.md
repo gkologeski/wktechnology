@@ -8,7 +8,7 @@ route_pattern: /projects/settings/imports/jibble
 min_permission: 
 audience: internal
 sort_order: 110
-version: 1
+version: 2
 is_published: true
 ---
 # Importar do Jibble
@@ -44,4 +44,4 @@ Ponto do Jibble não deve ser somado automaticamente a horas produtivas do Clock
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Importar do Jibble; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Importar do Jibble](/help-media/projects/operar-imports-jibble.webp)

@@ -8,7 +8,7 @@ route_pattern: /finance/entries/$id
 min_permission: techfinance.entries.view.own
 audience: internal
 sort_order: 80
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar lançamento e suas parcelas
@@ -47,5 +47,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Consultar lançamento e suas parcelas; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Consultar lançamento e suas parcelas](/help-media/finance/consultar-lancamento.webp)
 <!-- evidência: src/routes/_authenticated/finance.entries.$id.tsx -->

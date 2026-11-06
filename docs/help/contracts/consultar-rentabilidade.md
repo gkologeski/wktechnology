@@ -8,7 +8,7 @@ route_pattern: /contracts/$id/medicoes
 min_permission:
 audience: internal
 sort_order: 77
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar e exportar rentabilidade do contrato
@@ -22,7 +22,7 @@ is_published: true
 2. Compare "Receita aprovada (medida)", "Lançada no Financeiro", "Custo estimado" e "Margem estimada".
 3. Confira a cobertura de custos e esforço.
 4. Use "Exportar CSV" quando autorizado.
-<!-- screenshot: Consultar e exportar rentabilidade do contrato, sem dados pessoais reais -->
+![Tela: Consultar e exportar rentabilidade do contrato, sem dados pessoais reais](/help-media/contracts/consultar-rentabilidade.webp)
 
 ## Resultado esperado
 Consulta ou exportação de indicadores estimados; nenhuma geração ou cobrança executada.

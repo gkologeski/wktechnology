@@ -8,7 +8,7 @@ route_pattern: /finance/legal-entity-groups
 min_permission: techfinance.legal_entity_groups.view.workspace
 audience: internal
 sort_order: 170
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar grupos empresariais
@@ -47,5 +47,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Gerenciar grupos empresariais; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Gerenciar grupos empresariais](/help-media/finance/gerenciar-grupos.webp)
 <!-- evidência: src/components/finance/legal-entity-groups-page.tsx; src/components/finance/legal-entity-select.tsx -->

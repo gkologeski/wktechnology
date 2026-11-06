@@ -8,7 +8,7 @@ route_pattern: /finance/banking
 min_permission: techfinance.banking.view.workspace
 audience: internal
 sort_order: 200
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar cobranças bancárias
@@ -47,5 +47,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Gerenciar cobranças bancárias; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Gerenciar cobranças bancárias](/help-media/finance/gerenciar-cobrancas-bancarias.webp)
 <!-- evidência: src/routes/_authenticated/finance.banking.tsx -->

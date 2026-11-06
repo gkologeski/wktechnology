@@ -8,7 +8,7 @@ route_pattern: /settings/audit-log
 min_permission: 
 audience: internal
 sort_order: 114
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o log de auditoria
@@ -41,4 +41,4 @@ A rota usa system.audit. Eventos de auditoria não devem ser confundidos com tod
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/audit-log com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/audit-log com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-o-log-de-auditoria.webp)

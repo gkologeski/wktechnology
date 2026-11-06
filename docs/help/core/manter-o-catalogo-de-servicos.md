@@ -8,7 +8,7 @@ route_pattern: /catalog/services
 min_permission: 
 audience: internal
 sort_order: 102
-version: 1
+version: 2
 is_published: true
 ---
 # Manter o catálogo de serviços
@@ -42,4 +42,4 @@ A rota verifica techsales.catalog.services.update.workspace. A seção Integraç
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /catalog/services com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /catalog/services com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/manter-o-catalogo-de-servicos.webp)

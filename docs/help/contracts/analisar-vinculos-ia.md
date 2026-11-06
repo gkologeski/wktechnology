@@ -8,7 +8,7 @@ route_pattern: /contracts/links
 min_permission:
 audience: internal
 sort_order: 44
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar e aplicar sugestões de vínculo da IA
@@ -23,7 +23,7 @@ is_published: true
 3. Use "Selecionar alta confiança" se adequado, sem dispensar a revisão.
 4. Clique em "Aplicar selecionadas" apenas para correspondências confirmadas.
 5. Revise sucessos/falhas e o histórico. Ignore sugestões incorretas.
-<!-- screenshot: Revisar e aplicar sugestões de vínculo da IA, sem dados pessoais reais -->
+![Tela: Revisar e aplicar sugestões de vínculo da IA, sem dados pessoais reais](/help-media/contracts/analisar-vinculos-ia.webp)
 
 ## Resultado esperado
 Vínculos escolhidos aplicados com possível resultado parcial; decisões registradas.

@@ -8,7 +8,7 @@ route_pattern: /services
 min_permission: techfinance.entries.view.own
 audience: internal
 sort_order: 270
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar faturamento de serviços
@@ -42,5 +42,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Consultar faturamento de serviços; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Consultar faturamento de serviços](/help-media/finance/consultar-faturamento-servicos.webp)
 <!-- evidência: src/routes/_authenticated/services.index.tsx; src/lib/menu-config-finance.ts -->

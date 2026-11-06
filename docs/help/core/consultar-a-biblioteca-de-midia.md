@@ -8,7 +8,7 @@ route_pattern: /settings/media
 min_permission: 
 audience: internal
 sort_order: 142
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar a biblioteca de mídia
@@ -41,4 +41,4 @@ Recurso system.media. Biblioteca de mídia não é sinônimo de Arquivos ou do b
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/media com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/media com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-a-biblioteca-de-midia.webp)

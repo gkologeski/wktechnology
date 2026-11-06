@@ -8,7 +8,7 @@ route_pattern: /candidates
 min_permission: techhire.candidates.view.own
 audience: internal
 sort_order: 20
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar candidatos
@@ -25,7 +25,7 @@ is_published: true
 5. LinkedIn: informe "URL do perfil no LinkedIn" e clique em "Buscar perfil". Revise e salve.
 6. CV: anexe o PDF ou use "Cole o texto do currículo" e clique em "Extrair e salvar".
 7. Para exportar, clique em "CSV".
-<!-- screenshot: lista de candidatos -->
+![Tela: lista de candidatos](/help-media/ats/gerenciar-candidatos.webp)
 
 ## Resultado esperado
 "Candidato salvo" ou "Candidato criado a partir do CV".

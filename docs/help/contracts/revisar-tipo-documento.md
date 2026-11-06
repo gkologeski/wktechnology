@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 42
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar contratos principais que parecem aditivos
@@ -23,7 +23,7 @@ is_published: true
 3. Selecione os registros e confira principal e número de aditivo.
 4. Aplique as correções selecionadas.
 5. Confira itens corrigidos, ignorados e eventuais falhas.
-<!-- screenshot: Revisar contratos principais que parecem aditivos, sem dados pessoais reais -->
+![Tela: Revisar contratos principais que parecem aditivos, sem dados pessoais reais](/help-media/contracts/revisar-tipo-documento.webp)
 
 ## Resultado esperado
 Contratos selecionados classificados como aditivo e vinculados ao principal indicado.

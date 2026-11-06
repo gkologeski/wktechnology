@@ -8,7 +8,7 @@ route_pattern: /services/$id
 min_permission:
 audience: internal
 sort_order: 82
-version: 1
+version: 2
 is_published: true
 ---
 # Ativar um serviço
@@ -22,7 +22,7 @@ is_published: true
 2. Confira valores e datas.
 3. Quando disponível, clique em "Ativar".
 4. Aguarde "Serviço ativado." e confira os lançamentos gerados.
-<!-- screenshot: Ativar um serviço, sem dados pessoais reais -->
+![Tela: Ativar um serviço, sem dados pessoais reais](/help-media/contracts/ativar-servico.webp)
 
 ## Resultado esperado
 O procedimento de ativação do serviço é executado com as verificações de cobrança.

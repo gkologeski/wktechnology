@@ -8,7 +8,7 @@ route_pattern: /projects
 min_permission: techprojects.projects.view.own
 audience: internal
 sort_order: 30
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar e criar projetos
@@ -42,4 +42,4 @@ O nome é obrigatório. Criar projeto exige capacidade de criação; consultar n
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Consultar e criar projetos; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Consultar e criar projetos](/help-media/projects/consultar-projetos.webp)

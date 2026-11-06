@@ -8,7 +8,7 @@ route_pattern: /projects/spaces
 min_permission: techprojects.spaces.view.team
 audience: internal
 sort_order: 170
-version: 1
+version: 2
 is_published: true
 ---
 # Organizar espaços, pastas e listas
@@ -43,4 +43,4 @@ Espaço, pasta e lista são recursos distintos com permissões próprias. A posi
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Organizar espaços, pastas e listas; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Organizar espaços, pastas e listas](/help-media/projects/operar-spaces.webp)

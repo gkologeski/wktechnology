@@ -8,7 +8,7 @@ route_pattern: /sourcing/sequences
 min_permission: 
 audience: internal
 sort_order: 64
-version: 1
+version: 2
 is_published: true
 ---
 # Criar sequências de outreach
@@ -22,7 +22,7 @@ is_published: true
 2. Preencha "Nome" e "Descrição" e clique em "Criar".
 3. Use "Abrir" para configurar os passos.
 4. Use o botão "Pausar"/"Ativar" da linha.
-<!-- screenshot: sequências de outreach -->
+![Tela: sequências de outreach](/help-media/ats/criar-sequencias-outreach.webp)
 
 ## Resultado esperado
 "Sequência criada".

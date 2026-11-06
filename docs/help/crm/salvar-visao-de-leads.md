@@ -8,7 +8,7 @@ route_pattern: /leads
 min_permission:
 audience: internal
 sort_order: 130
-version: 1
+version: 2
 is_published: true
 ---
 # Salvar visualização de leads
@@ -22,7 +22,7 @@ is_published: true
 3. No pedido "Nome da nova visualização", informe um nome e confirme.
 4. Clique na aba com o nome salvo para reaplicar os critérios.
 5. Para remover, use "Excluir visualização" e confirme "Excluir esta visualização?".
-<!-- screenshot: Salvar visualização de leads: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Salvar visualização de leads](/help-media/crm/salvar-visao-de-leads.webp)
 ## Resultado esperado
 A mensagem "Visualização salva" confirma o cadastro.
 ## Regras e limites

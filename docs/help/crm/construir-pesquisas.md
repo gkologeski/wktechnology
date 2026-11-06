@@ -8,7 +8,7 @@ route_pattern: /survey-builder/$id
 min_permission:
 audience: internal
 sort_order: 508
-version: 2
+version: 3
 is_published: true
 ---
 # Construir pesquisas
@@ -27,7 +27,7 @@ is_published: true
 7. Ajuste "Pesquisa com pontuação".
 8. Abra "Pré-visualizar".
 9. Salve após resolver as pendências.
-<!-- screenshot: construtor com campo selecionado -->
+![Tela: construtor com campo selecionado](/help-media/crm/construir-pesquisas.webp)
 
 ## Resultado esperado
 "Rascunho salvo".

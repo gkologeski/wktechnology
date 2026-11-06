@@ -8,7 +8,7 @@ route_pattern: /compliance
 min_permission: techhire.compliance.view.own
 audience: internal
 sort_order: 90
-version: 1
+version: 2
 is_published: true
 ---
 # Tratar solicitações LGPD (DSAR)
@@ -25,7 +25,7 @@ is_published: true
 5. Para anonimizar, clique em "Anonimizar", digite ANONIMIZAR e clique em "Confirmar".
 6. Para recusar, clique em "Rejeitar".
 7. Na aba "Retenção", revise os candidatos vencidos.
-<!-- screenshot: registrar DSAR -->
+![Tela: registrar DSAR](/help-media/ats/tratar-solicitacoes-lgpd.webp)
 
 ## Resultado esperado
 "Solicitação registrada", "Exportação concluída" ou "Candidato anonimizado".

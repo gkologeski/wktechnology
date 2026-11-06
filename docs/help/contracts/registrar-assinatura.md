@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 37
-version: 1
+version: 2
 is_published: true
 ---
 # Preparar e registrar evidência de assinatura no contrato
@@ -23,7 +23,7 @@ is_published: true
 3. Conclua a preparação; siga depois o envio e assinatura do documento preparado.
 4. Para assinatura externa, clique em "Registrar assinatura externa".
 5. Informe "PDF assinado (até 5 MB)", "Data da assinatura", "Referência do provedor ou certificado" e "Como foi conferido". Faça a confirmação explícita antes de concluir.
-<!-- screenshot: Preparar e registrar evidência de assinatura no contrato, sem dados pessoais reais -->
+![Tela: Preparar e registrar evidência de assinatura no contrato, sem dados pessoais reais](/help-media/contracts/registrar-assinatura.webp)
 
 ## Resultado esperado
 Documento preparado aguardando envio/conclusão, ou evidência externa registrada para a versão conferida.

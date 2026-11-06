@@ -8,7 +8,7 @@ route_pattern: /hunting/install
 min_permission: 
 audience: internal
 sort_order: 45
-version: 1
+version: 2
 is_published: true
 ---
 # Instalar a extensão TechHire Hunter
@@ -22,7 +22,7 @@ is_published: true
 2. No navegador, ative o modo do desenvolvedor e carregue a pasta sem compactação.
 3. No painel "Status do pareamento", clique em "Parear agora".
 4. Clique em "Verificar novamente" para conferir.
-<!-- screenshot: instalar extensão -->
+![Tela: instalar extensão](/help-media/ats/instalar-extensao-hunter.webp)
 
 ## Resultado esperado
 O status muda para "Pareado".

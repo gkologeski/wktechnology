@@ -8,7 +8,7 @@ route_pattern: /finance/categories
 min_permission: techfinance.categories.view.workspace
 audience: internal
 sort_order: 140
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar plano de contas
@@ -45,5 +45,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Gerenciar plano de contas; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Gerenciar plano de contas](/help-media/finance/gerenciar-plano-contas.webp)
 <!-- evidência: src/routes/_authenticated/finance.categories.tsx; src/lib/finance.functions.ts -->

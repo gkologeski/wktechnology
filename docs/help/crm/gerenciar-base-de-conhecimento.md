@@ -8,7 +8,7 @@ route_pattern: /settings/kb
 min_permission: system.kb.articles.view.workspace
 audience: internal
 sort_order: 512
-version: 2
+version: 3
 is_published: true
 ---
 # Gerenciar a base de conhecimento
@@ -24,7 +24,7 @@ is_published: true
 4. Preencha conteúdo, categoria e publicação e clique em "Salvar".
 5. Para revisar, use o lápis.
 6. Para remover, use a lixeira.
-<!-- screenshot: abas Artigos e Categorias -->
+![Tela: abas Artigos e Categorias](/help-media/crm/gerenciar-base-de-conhecimento.webp)
 
 ## Resultado esperado
 Categorias e artigos ficam disponíveis na base.

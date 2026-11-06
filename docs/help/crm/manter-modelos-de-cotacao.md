@@ -8,7 +8,7 @@ route_pattern: /settings/quote-templates
 min_permission: 
 audience: internal
 sort_order: 159
-version: 1
+version: 2
 is_published: true
 ---
 # Manter modelos de cotação
@@ -42,4 +42,4 @@ Modelos de cotação não são modelos de proposta nem de contrato; a conversão
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/quote-templates com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/quote-templates com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/manter-modelos-de-cotacao.webp)

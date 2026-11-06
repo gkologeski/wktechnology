@@ -8,7 +8,7 @@ route_pattern: /projects/settings/delivery
 min_permission: 
 audience: internal
 sort_order: 70
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar a entrega de negócios ganhos
@@ -43,4 +43,4 @@ Não reprocessa automaticamente o histórico anterior à ativação. Ganho é de
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Configurar a entrega de negócios ganhos; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Configurar a entrega de negócios ganhos](/help-media/projects/operar-delivery.webp)

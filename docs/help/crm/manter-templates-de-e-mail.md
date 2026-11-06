@@ -8,7 +8,7 @@ route_pattern: /settings/email-templates
 min_permission: 
 audience: internal
 sort_order: 122
-version: 1
+version: 2
 is_published: true
 ---
 # Manter templates de e-mail
@@ -42,4 +42,4 @@ Usa system.automation.email_templates. Um modelo salvo não configura a conexão
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/email-templates com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/email-templates com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/manter-templates-de-e-mail.webp)

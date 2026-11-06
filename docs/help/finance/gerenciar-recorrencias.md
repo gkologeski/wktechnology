@@ -8,7 +8,7 @@ route_pattern: /finance/recurrences
 min_permission: techfinance.recurrences.view.own
 audience: internal
 sort_order: 110
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar recorrências financeiras
@@ -51,5 +51,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Gerenciar recorrências financeiras; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Gerenciar recorrências financeiras](/help-media/finance/gerenciar-recorrencias.webp)
 <!-- evidência: src/routes/_authenticated/finance.recurrences.tsx; src/lib/finance-recurrences.functions.ts; src/lib/finance-recurrences.server.ts -->

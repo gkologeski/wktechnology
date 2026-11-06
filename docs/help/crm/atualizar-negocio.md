@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 201
-version: 1
+version: 2
 is_published: true
 ---
 # Atualizar um negócio
@@ -24,7 +24,7 @@ is_published: true
 4. Consulte as áreas "Cotações", "Propostas" e "Contratos".
 5. Para criar uma cotação, adicione primeiro itens de linha ao negócio. Depois, na área "Cotações", clique em "Adicionar".
 6. Para excluir o negócio, use a ação de exclusão apenas se tiver permissão e confirme a solicitação.
-<!-- screenshot: detalhe do negócio com seletor de funil e áreas Cotações, Propostas e Contratos -->
+![Tela: detalhe do negócio com seletor de funil e áreas Cotações, Propostas e Contratos](/help-media/crm/atualizar-negocio.webp)
 
 ## Resultado esperado
 O negócio passa a refletir o funil atualizado. Os documentos vinculados podem ser consultados no mesmo detalhe.

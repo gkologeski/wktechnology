@@ -8,7 +8,7 @@ route_pattern: /settings/dunning
 min_permission: techfinance.dunning.view.workspace
 audience: internal
 sort_order: 290
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar régua de cobrança
@@ -47,5 +47,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Configurar régua de cobrança; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Configurar régua de cobrança](/help-media/finance/configurar-regua-cobranca.webp)
 <!-- evidência: src/routes/_authenticated/settings.dunning.tsx; src/lib/dunning.functions.ts -->

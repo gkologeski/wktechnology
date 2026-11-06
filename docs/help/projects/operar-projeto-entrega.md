@@ -8,7 +8,7 @@ route_pattern: /projects/$id/entrega
 min_permission: techprojects.projects.view.own
 audience: internal
 sort_order: 200
-version: 1
+version: 2
 is_published: true
 ---
 # Publicar acompanhamento de entrega
@@ -43,4 +43,4 @@ Farol: Verde, Atenção ou Crítico. Visibilidade: Interno ou Visível ao comerc
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Publicar acompanhamento de entrega; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Publicar acompanhamento de entrega](/help-media/projects/operar-projeto-entrega.webp)

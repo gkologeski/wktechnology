@@ -8,7 +8,7 @@ route_pattern: /settings/marketplace
 min_permission: 
 audience: internal
 sort_order: 140
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o Marketplace
@@ -40,4 +40,4 @@ O menu cita system.marketplace, enquanto o gate de rota aponta system.integratio
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/marketplace com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/marketplace com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-o-marketplace.webp)

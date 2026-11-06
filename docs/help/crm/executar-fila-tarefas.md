@@ -8,7 +8,7 @@ route_pattern: /tasks/queues/$queueId/play
 min_permission:
 audience: internal
 sort_order: 208
-version: 2
+version: 3
 is_published: true
 ---
 # Executar uma fila de tarefas
@@ -26,7 +26,7 @@ is_published: true
 6. Clique em "Concluir (C)" para concluir o item ou em "Pular (S)" para pulá-lo.
 7. Continue até aparecer "Fila concluída 🎉".
 8. Clique em "Voltar para filas".
-<!-- screenshot: item da fila com Email, Ligar, Anotações, Pular (S) e Concluir (C) -->
+![Tela: item da fila com Email, Ligar, Anotações, Pular (S) e Concluir (C)](/help-media/crm/executar-fila-tarefas.webp)
 
 ## Resultado esperado
 A ação salva as anotações do item e avança para o próximo pendente. Ao terminar, aparece "Todos os itens foram tratados.".

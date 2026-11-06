@@ -8,7 +8,7 @@ route_pattern: /contracts/$id/medicoes
 min_permission:
 audience: internal
 sort_order: 72
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar, ajustar e enviar uma medição para revisão
@@ -24,7 +24,7 @@ is_published: true
 4. Para sucesso/Hunting, use "Adicionar evento" e escolha proposta ou candidatura do TechHire com identificador/base exigidos.
 5. Resolva "Pendências (impedem envio e aprovação)".
 6. Clique em "Enviar para revisão".
-<!-- screenshot: Revisar, ajustar e enviar uma medição para revisão, sem dados pessoais reais -->
+![Tela: Revisar, ajustar e enviar uma medição para revisão, sem dados pessoais reais](/help-media/contracts/revisar-medicao.webp)
 
 ## Resultado esperado
 Medição em revisão; nenhum documento ou cobrança enviado ao cliente.

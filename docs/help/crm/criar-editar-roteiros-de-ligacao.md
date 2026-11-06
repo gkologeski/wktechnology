@@ -8,7 +8,7 @@ route_pattern: /prospecting
 min_permission: techsales.prospecting_search.view.workspace
 audience: internal
 sort_order: 409
-version: 1
+version: 2
 is_published: true
 ---
 # Criar e editar roteiros de ligação
@@ -28,7 +28,7 @@ is_published: true
 8. Para retirar um roteiro usado, clique em "Arquivar roteiro".
 9. Ative "Mostrar arquivados" e use "Restaurar roteiro" quando precisar.
 10. Roteiro sem uso: "Excluir roteiro" e confirme.
-<!-- screenshot: formulário do script e lista com Mostrar arquivados -->
+![Tela: formulário do script e lista com Mostrar arquivados](/help-media/crm/criar-editar-roteiros-de-ligacao.webp)
 
 ## Resultado esperado
 "Script salvo", "Roteiro arquivado", "Roteiro restaurado" ou "Roteiro excluído".

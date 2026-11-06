@@ -8,7 +8,7 @@ route_pattern: /finance/legal-entities
 min_permission: techfinance.legal_entities.view.workspace
 audience: internal
 sort_order: 160
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar empresas e CNPJs
@@ -48,5 +48,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Gerenciar empresas e CNPJs; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Gerenciar empresas e CNPJs](/help-media/finance/gerenciar-empresas.webp)
 <!-- evidência: src/components/finance/legal-entities-page.tsx; src/components/finance/legal-entity-cnpj-fill-dialog.tsx -->

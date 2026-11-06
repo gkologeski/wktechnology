@@ -8,7 +8,7 @@ route_pattern: /settings/nfse
 min_permission: 
 audience: internal
 sort_order: 147
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar emissão de NFS-e
@@ -42,4 +42,4 @@ Consulta exige techfinance.nfse_settings.view.workspace; mudança exige manage.w
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `finance`; consulte os artigos desse módulo em `/ajuda/finance`.
 
-<!-- screenshot: capturar /settings/nfse com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/nfse com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/finance/configurar-emissao-de-nfs-e.webp)

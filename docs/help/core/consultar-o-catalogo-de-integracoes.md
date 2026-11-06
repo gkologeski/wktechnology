@@ -8,7 +8,7 @@ route_pattern: /settings/integrations
 min_permission: system.integrations.view.workspace
 audience: internal
 sort_order: 131
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o catálogo de integrações
@@ -41,4 +41,4 @@ Cada integração tem requisitos próprios; aparecer no catálogo não significa
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/integrations com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/integrations com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-o-catalogo-de-integracoes.webp)

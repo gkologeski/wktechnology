@@ -8,7 +8,7 @@ route_pattern: /settings/email
 min_permission:
 audience: internal
 sort_order: 312
-version: 1
+version: 2
 is_published: true
 ---
 # Conectar e sincronizar o Gmail
@@ -26,7 +26,7 @@ is_published: true
 6. Clique em "Salvar assinatura".
 7. Para redigir, "Novo email".
 8. Para remover, "Desconectar".
-<!-- screenshot: contas conectadas e assinatura -->
+![Tela: contas conectadas e assinatura](/help-media/crm/conectar-sincronizar-gmail.webp)
 
 ## Resultado esperado
 "Gmail conectado com sucesso" e "Assinatura salva".

@@ -8,7 +8,7 @@ route_pattern: /settings/enrichment
 min_permission: techsales.prospecting_enrichment.view.own
 audience: internal
 sort_order: 161
-version: 1
+version: 2
 is_published: true
 ---
 # Enriquecer contatos, leads e empresas
@@ -25,7 +25,7 @@ is_published: true
 5. Confirme e acompanhe o resumo: atualizados, sem mudanças, falhas e créditos.
 6. Para empresa, abra a ficha e clique em "Enriquecer via CNPJ".
 7. No Lead, salve uma nova URL de LinkedIn. O sistema reenriquece sozinho.
-<!-- screenshot: janela Enriquecer na lista de leads -->
+![Tela: janela Enriquecer na lista de leads](/help-media/crm/enriquecer-cadastros.webp)
 
 ## Resultado esperado
 Os campos são preenchidos conforme o modo escolhido. Telefones pedidos ao Apollo podem chegar alguns minutos depois.

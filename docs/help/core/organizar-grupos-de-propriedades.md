@@ -8,7 +8,7 @@ route_pattern: /settings/property-groups
 min_permission: 
 audience: internal
 sort_order: 157
-version: 1
+version: 2
 is_published: true
 ---
 # Organizar grupos de propriedades
@@ -41,4 +41,4 @@ Grupos organizam propriedades; não são grupos de usuários e não concedem per
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/property-groups com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/property-groups com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/organizar-grupos-de-propriedades.webp)

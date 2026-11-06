@@ -8,7 +8,7 @@ route_pattern: /candidates/$id
 min_permission: techhire.candidates.view.own
 audience: internal
 sort_order: 21
-version: 1
+version: 2
 is_published: true
 ---
 # Editar a ficha do candidato
@@ -24,7 +24,7 @@ is_published: true
 4. Para falar pelo LinkedIn, use "Contato LinkedIn": aba "Mensagem" ou "Convite".
 5. Para contratar, clique em "Contratar" e preencha "Vínculo", "Cargo", "Data de início" e "Custo/hora (R$)".
 6. Para excluir, clique em "Excluir" e confirme.
-<!-- screenshot: ficha do candidato -->
+![Tela: ficha do candidato](/help-media/ats/editar-ficha-candidato.webp)
 
 ## Resultado esperado
 "Atualizado" ao salvar; "Candidato contratado" ao contratar.

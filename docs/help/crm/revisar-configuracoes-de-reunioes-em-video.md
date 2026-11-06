@@ -8,7 +8,7 @@ route_pattern: /settings/video
 min_permission: 
 audience: internal
 sort_order: 173
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar configurações de reuniões em vídeo
@@ -42,4 +42,4 @@ Usa techsales.meeting_settings.view.workspace e manage.workspace. Pertence às r
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/video com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/video com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/revisar-configuracoes-de-reunioes-em-video.webp)

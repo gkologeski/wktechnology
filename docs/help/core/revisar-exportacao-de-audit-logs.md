@@ -8,7 +8,7 @@ route_pattern: /settings/audit-export
 min_permission: 
 audience: internal
 sort_order: 113
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar exportação de audit logs
@@ -41,4 +41,4 @@ Recurso de rota system.audit_exports. Destinos e credenciais de exportação sã
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/audit-export com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/audit-export com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/revisar-exportacao-de-audit-logs.webp)
