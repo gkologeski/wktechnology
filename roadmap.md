@@ -1,13 +1,15 @@
 # Roadmap — Complementos sem disparos (06/11/2026, porte G, previsão 4–6 h)
 
 - [x] Auditar integração: etapa 6B e artigo People versão 2 já presentes; não duplicar ou reaplicar migrations.
-- [ ] Remover dependência DNS indisponível dos avatares sem alterar logos manuais.
-- [ ] Paralelizar alertas financeiros e exibir falhas sem confundi-las com lista vazia.
-- [ ] Conferir novos números pelo fluxo oficial sem revelar credenciais ou enviar mensagens.
-- [ ] Validar distribuição em testes isolados, sem criar Leads/Contatos reais.
-- [ ] Conferir trilhas/quiz e reconciliação com sessão autorizada; capturas higienizadas e revisão editorial.
+- [x] Remover dependência DNS indisponível dos avatares sem alterar logos manuais.
+- [x] Paralelizar alertas financeiros e exibir falhas sem confundi-las com lista vazia; navegador confirmou 21 alertas.
+- [x] Conferir novos números pelo fluxo oficial sem revelar credenciais ou enviar mensagens: ambas as WABAs recusadas pela Meta (400/100), sem cadastro persistido.
+- [x] Validar distribuição em testes isolados, sem criar Leads/Contatos reais: testes de regras, autorização e guarda de submissão aprovados.
+- [x] Conferir trilhas e reconciliação com sessão autorizada: sete trilhas com seis artigos e painel Lotes assistidos renderizados.
+- [ ] Quiz completo e capturas higienizadas definitivas: ainda não executados; não usar dados comerciais para fabricar evidências.
 - [ ] Validar permissões, testes e cobertura; publicar e conferir a versão servida.
 - [ ] Revisão final por lideranças e eventos assinados dos novos números: dependem de responsáveis externos.
+- [ ] Desempenho global/SQL: perf:check bloqueado por .verification/build.json ausente; Docker não disponível para PostgreSQL descartável. Validação automática atual: build OK; 69 testes direcionados, ESLint e permissions:check aprovados; ajuda 246/246.
 
 # Roadmap — Ajuda Fase 3: trilhas, quiz e selo (porte M)
 
