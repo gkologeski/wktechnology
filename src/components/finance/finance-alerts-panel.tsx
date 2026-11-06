@@ -17,6 +17,10 @@ function daysUntil(dateIso: string): number {
   return Math.round((d.getTime() - now.getTime()) / 86400000);
 }
 
+function relatedName(value: { name: string | null } | { name: string | null }[] | null): string {
+  return (Array.isArray(value) ? value[0]?.name : value?.name) ?? "—";
+}
+
 export function FinanceAlertsPanel() {
   const fetch = useServerFn(getOperationalAlerts);
   const permissions = usePermissions();
@@ -93,7 +97,7 @@ export function FinanceAlertsPanel() {
                     >
                       {e.description}
                       <span className="text-xs text-muted-foreground ml-1">
-                        · {e.companies?.name ?? "—"}
+                        · {relatedName(e.companies)}
                       </span>
                     </Link>
                     <span className="shrink-0 tabular-nums text-rose-600 dark:text-rose-400 font-medium">
@@ -153,7 +157,7 @@ export function FinanceAlertsPanel() {
                   >
                     {m.name}
                     <span className="text-xs text-muted-foreground ml-1">
-                      · {m.projects?.name ?? "—"}
+                      · {relatedName(m.projects)}
                     </span>
                   </Link>
                   {m.bill_amount != null && (
