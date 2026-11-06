@@ -2549,6 +2549,20 @@
   },
   {
     "module_key": "core",
+    "slug": "trilhas-de-treinamento",
+    "title": "Fazer as trilhas de treinamento",
+    "summary": "Siga a trilha do seu papel, marque os artigos lidos, faça o quiz e ganhe o selo do módulo.",
+    "article_type": "howto",
+    "route_pattern": "/ajuda/trilhas",
+    "min_permission": null,
+    "audience": "internal",
+    "sort_order": 90,
+    "version": 1,
+    "is_published": true,
+    "body_md": "# Fazer as trilhas de treinamento\n**Para que serve:** Aprender um módulo do TechERP em sequência, acompanhar seu progresso e comprovar o aprendizado com um quiz.\n**Quem pode fazer:** Todo membro ativo. Você só vê trilhas dos módulos que seu acesso libera na Ajuda.\n**Onde fica:** Menu > Ajuda e Treinamento > Trilhas de treinamento (/ajuda/trilhas).\n**Antes de começar:** Nenhum pré-requisito.\n\n## Passo a passo\n1. Abra **Ajuda e Treinamento** e clique em **Trilhas de treinamento**.\n2. Clique na trilha do seu papel, por exemplo \"Operar o TechSales\".\n3. Abra cada artigo da lista e, ao terminar, clique em **Marcar como lido**.\n4. No fim da página, responda as 5 perguntas do **Quiz do módulo**.\n5. Clique em **Enviar respostas**.\n\n## Resultado esperado\nCada pergunta mostra \"Correta\" ou \"Incorreta\". Com 4 acertos ou mais o quiz fica **Aprovado**. Quando todos os artigos estão lidos e o quiz está aprovado, aparece o **Selo de conclusão** e a trilha mostra **Concluída**.\n\n## Regras e limites\n- O progresso e as notas são só seus; ninguém mais vê.\n- A nota é calculada pelo sistema; você pode refazer o quiz quantas vezes quiser.\n- **Desmarcar** tira o artigo dos lidos e o selo deixa de aparecer até você marcar de novo.\n- A trilha conta só os artigos que seu acesso permite ler.\n\n## Erros comuns\n- **\"Trilha indisponível\"**: seu acesso atual não libera o módulo da trilha. Peça revisão ao administrador.\n- **\"Enviar respostas\" desabilitado**: responda todas as perguntas.\n\n## Relacionados\n- [Visão geral](/ajuda/core/visao-geral)\n- [Perguntas frequentes](/ajuda/core/perguntas-frequentes)\n<!-- screenshot: lista de trilhas com barra de progresso e selo de conclusão -->"
+  },
+  {
+    "module_key": "core",
     "slug": "usar-ajuda",
     "title": "Usar a Ajuda e Treinamento",
     "summary": "Usar a Ajuda e Treinamento com os controles disponíveis no TechERP.",

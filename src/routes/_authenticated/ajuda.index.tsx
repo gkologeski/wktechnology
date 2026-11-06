@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { BookOpen, Clock, Rocket, Search } from "lucide-react";
+import { BookOpen, Clock, GraduationCap, Rocket, Search } from "lucide-react";
 import { EmptyState, PageHeader, Skeletons, SectionHeader } from "@/components/techhire/ui";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -59,6 +59,15 @@ function HelpHome() {
         title="Ajuda e Treinamento"
         description="Aprenda a operar cada módulo do TechERP. Você vê apenas o material dos módulos que pode acessar."
       />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <Button variant="outline" asChild>
+          <Link to="/ajuda/trilhas">
+            <GraduationCap className="mr-2 h-4 w-4" aria-hidden />
+            Trilhas de treinamento
+          </Link>
+        </Button>
+      </div>
 
       <HelpReleaseButton allowed={home.data?.canEdit === true} />
 
