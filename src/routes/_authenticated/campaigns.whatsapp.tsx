@@ -179,6 +179,7 @@ function CampaignsPage() {
   // Um quadro de variáveis por modelo: cada modelo tem as próprias variáveis.
   const variableGroups = rotationPayload.map((t, idx) => ({
     label: t.name,
+    body: t.body ?? undefined,
     keys: Array.from({ length: t.variableCount }, (_, i) =>
       rotationVariableKey(t.name, i + 1, idx === 0),
     ),

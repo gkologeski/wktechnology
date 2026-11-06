@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { splitTemplateBody, variableSnippet } from "@/lib/whatsapp/template-variable-context";
 import { listQueues } from "@/lib/prospecting/queues.functions";
 import { listSegments, upsertSegment } from "@/lib/segments.functions";
 import { previewCampaignAudience } from "@/lib/whatsapp-campaigns.functions";
@@ -113,6 +114,8 @@ function segmentGroupsLogic(raw: unknown): "and" | "or" {
 export type VariableGroup = {
   /** Nome do modelo exibido no título do quadro. */
   label: string;
+  /** Texto do corpo do modelo, para dar contexto às variáveis. */
+  body?: string;
   /** Chaves das variáveis {{1}}..{{N}} deste modelo no mapa do público. */
   keys: string[];
 };
@@ -637,20 +640,49 @@ export function CampaignAudiencePanel({
           ) : (
             groupsToShow.map((g, gi) => (
               <div key={g.label + gi} className="space-y-2">
-                {groupsToShow.length > 1 && (
+                {(groupsToShow.length > 1 || g.label) && (
                   <p className="text-xs font-medium">
                     Modelo: {g.label}
-                    {gi === 0 && <span className="text-muted-foreground"> · principal</span>}
+                    {gi === 0 && groupsToShow.length > 1 && (
+                      <span className="text-muted-foreground"> · principal</span>
+                    )}
+                  </p>
+                )}
+                {g.body && (
+                  <p
+                    className="whitespace-pre-wrap rounded-md bg-muted p-2 text-xs text-muted-foreground"
+                    aria-label={`Texto do modelo ${g.label}`}
+                  >
+                    {splitTemplateBody(g.body).map((part, pi) =>
+                      part.variable ? (
+                        <mark
+                          key={pi}
+                          className="rounded bg-primary/15 px-0.5 font-mono font-medium text-foreground"
+                        >
+                          {part.text}
+                        </mark>
+                      ) : (
+                        <span key={pi}>{part.text}</span>
+                      ),
+                    )}
                   </p>
                 )}
                 {g.keys.map((k, ki) => {
                   const n = String(ki + 1);
+                  const snippet = g.body ? variableSnippet(g.body, ki + 1) : null;
                   return (
                     <div
                       key={k}
                       className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[3rem_1fr_1fr]"
                     >
-                      <span className="font-mono text-xs">{`{{${n}}}`}</span>
+                      <span className="font-mono text-xs" title={snippet ?? undefined}>
+                        {`{{${n}}}`}
+                        {snippet && (
+                          <span className="block font-sans text-[10px] leading-tight text-muted-foreground sm:hidden">
+                            {snippet}
+                          </span>
+                        )}
+                      </span>
                       <Select
                         value={value.variableMap[k]?.field ?? ""}
                         onValueChange={(field) => setVar(k, { field })}
