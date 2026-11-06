@@ -8,7 +8,7 @@ route_pattern: /campaigns/email
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 308
-version: 1
+version: 2
 is_published: true
 ---
 # Criar e agendar uma campanha de e-mail
@@ -27,7 +27,7 @@ is_published: true
 7. Em "Enviar email de teste", envie para você.
 8. Em "Agendamento", escolha "Enviar agora" ou "Agendar" e a "Data e hora".
 9. Clique em "Agendar".
-<!-- screenshot: formulário de campanha de e-mail -->
+![Tela: formulário de campanha de e-mail](/help-media/crm/criar-campanha-email.webp)
 
 ## Resultado esperado
 "Campanha agendada".

@@ -8,7 +8,7 @@ route_pattern: /people/onboarding
 min_permission: techpeople.onboarding.view.own
 audience: internal
 sort_order: 40
-version: 1
+version: 2
 is_published: true
 ---
 # Acompanhar onboarding
@@ -21,7 +21,7 @@ is_published: true
 1. Abra a tela.
 2. Confira "Status", "Progresso", "Início" e "Alvo".
 3. Clique em "Abrir" para ir à ficha e marcar as tarefas.
-<!-- screenshot: onboarding -->
+![Tela: onboarding](/help-media/people/acompanhar-onboarding.webp)
 
 ## Resultado esperado
 Você vê quanto do checklist já foi feito.

@@ -8,7 +8,7 @@ route_pattern: /accept-invite
 min_permission: 
 audience: internal
 sort_order: 190
-version: 1
+version: 2
 is_published: true
 ---
 # Aceitar um convite recebido
@@ -41,4 +41,4 @@ Use o link original. Convite inválido ou conta incompatível exige revisão pel
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /accept-invite com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /accept-invite com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/aceitar-um-convite-recebido.webp)

@@ -8,7 +8,7 @@ route_pattern: /scorecards
 min_permission: techhire.scorecards.view.own
 audience: internal
 sort_order: 33
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar scorecards
@@ -22,7 +22,7 @@ is_published: true
 2. Preencha "Nome" e "Descrição".
 3. Em "Critérios (escala 0–5)", clique em "Critério" para adicionar e defina chave, rótulo e peso.
 4. Clique em "Salvar".
-<!-- screenshot: scorecards -->
+![Tela: scorecards](/help-media/ats/gerenciar-scorecards.webp)
 
 ## Resultado esperado
 "Scorecard salvo".

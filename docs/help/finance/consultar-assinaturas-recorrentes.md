@@ -8,7 +8,7 @@ route_pattern: /settings/recurring
 min_permission: 
 audience: internal
 sort_order: 162
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar assinaturas recorrentes
@@ -42,4 +42,4 @@ O mapa de rota usa techfinance.recurrences ou techfinance.invoices. Não confund
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `finance`; consulte os artigos desse módulo em `/ajuda/finance`.
 
-<!-- screenshot: capturar /settings/recurring com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/recurring com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/finance/consultar-assinaturas-recorrentes.webp)

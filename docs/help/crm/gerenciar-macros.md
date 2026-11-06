@@ -8,7 +8,7 @@ route_pattern: /settings/macros
 min_permission: system.automation.macros.view.workspace
 audience: internal
 sort_order: 513
-version: 2
+version: 3
 is_published: true
 ---
 # Gerenciar macros
@@ -26,7 +26,7 @@ is_published: true
 6. Ajuste "Ativa" e salve.
 7. Para alterar, abra a edição e salve.
 8. Para excluir, use a lixeira e confirme "Excluir esta macro?".
-<!-- screenshot: edição de macro -->
+![Tela: edição de macro](/help-media/crm/gerenciar-macros.webp)
 
 ## Resultado esperado
 "Macro criada." ou "Macro atualizada.".

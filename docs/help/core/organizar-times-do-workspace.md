@@ -8,7 +8,7 @@ route_pattern: /settings/user-groups
 min_permission: 
 audience: internal
 sort_order: 172
-version: 1
+version: 2
 is_published: true
 ---
 # Organizar times do workspace
@@ -42,4 +42,4 @@ Times organizam usuários; não são empresas, cargos de contratação ou módul
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/user-groups com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/user-groups com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/organizar-times-do-workspace.webp)

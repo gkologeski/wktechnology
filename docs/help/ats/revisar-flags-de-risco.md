@@ -8,7 +8,7 @@ route_pattern: /fraud-flags
 min_permission: 
 audience: internal
 sort_order: 13
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar flags de risco
@@ -21,7 +21,7 @@ is_published: true
 1. Clique em "Rodar scan agora".
 2. Revise as colunas "Candidato", "Tipo", "Severidade" e "Status".
 3. Depois de tratar, clique em "Marcar resolvido".
-<!-- screenshot: flags de risco -->
+![Tela: flags de risco](/help-media/ats/revisar-flags-de-risco.webp)
 
 ## Resultado esperado
 O status passa de "Aberto" para "Resolvido".

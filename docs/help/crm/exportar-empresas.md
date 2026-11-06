@@ -8,7 +8,7 @@ route_pattern: /companies
 min_permission:
 audience: internal
 sort_order: 126
-version: 1
+version: 2
 is_published: true
 ---
 # Exportar empresas
@@ -20,7 +20,7 @@ is_published: true
 1. Ajuste os filtros e confira a página exibida.
 2. Clique em "Exportar" e escolha o formato desejado.
 3. Salve o arquivo gerado e confira seu conteúdo.
-<!-- screenshot: Exportar empresas: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Exportar empresas](/help-media/crm/exportar-empresas.webp)
 ## Resultado esperado
 Um arquivo é gerado com os registros carregados na página.
 ## Regras e limites

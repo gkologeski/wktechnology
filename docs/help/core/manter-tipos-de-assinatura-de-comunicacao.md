@@ -8,7 +8,7 @@ route_pattern: /settings/subscriptions
 min_permission: 
 audience: internal
 sort_order: 169
-version: 1
+version: 2
 is_published: true
 ---
 # Manter tipos de assinatura de comunicação
@@ -41,4 +41,4 @@ Recurso system.communication.subscription_types. São preferências/tipos de com
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/subscriptions com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/subscriptions com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/manter-tipos-de-assinatura-de-comunicacao.webp)

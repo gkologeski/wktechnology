@@ -8,7 +8,7 @@ route_pattern: /contacts
 min_permission:
 audience: internal
 sort_order: 118
-version: 1
+version: 2
 is_published: true
 ---
 # Filtrar contatos
@@ -21,7 +21,7 @@ is_published: true
 2. Use "Etapa do ciclo" e "Responsável".
 3. Use a busca da listagem para restringir os resultados.
 4. Revise os registros e ajuste a paginação.
-<!-- screenshot: Filtrar contatos: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Filtrar contatos](/help-media/crm/filtrar-contatos.webp)
 ## Resultado esperado
 A lista mostra apenas os resultados que atendem aos critérios e ao seu acesso.
 ## Regras e limites

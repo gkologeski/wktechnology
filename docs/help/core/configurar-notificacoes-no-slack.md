@@ -8,7 +8,7 @@ route_pattern: /settings/notifications/slack
 min_permission: 
 audience: internal
 sort_order: 149
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar notificações no Slack
@@ -41,4 +41,4 @@ O recurso da rota é system.integrations. Webhook URL é segredo; não a coloque
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/notifications/slack com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/notifications/slack com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/configurar-notificacoes-no-slack.webp)

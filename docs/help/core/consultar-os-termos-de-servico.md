@@ -8,7 +8,7 @@ route_pattern: /terms
 min_permission: 
 audience: internal
 sort_order: 216
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar os termos de serviço
@@ -41,4 +41,4 @@ Página informativa. Não é formulário de alteração de política, garantia c
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /terms com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /terms com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-os-termos-de-servico.webp)

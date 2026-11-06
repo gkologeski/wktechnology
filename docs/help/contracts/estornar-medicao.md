@@ -8,7 +8,7 @@ route_pattern: /contracts/$id/medicoes
 min_permission:
 audience: internal
 sort_order: 75
-version: 1
+version: 2
 is_published: true
 ---
 # Devolver, cancelar ou estornar uma medição
@@ -23,7 +23,7 @@ is_published: true
 3. Para cancelar uma medição ainda não gerada, use o cancelamento permitido para a situação.
 4. Para medição gerada, use o estorno e informe motivo com pelo menos 10 caracteres.
 5. Confira a situação e o vínculo financeiro após a operação.
-<!-- screenshot: Devolver, cancelar ou estornar uma medição, sem dados pessoais reais -->
+![Tela: Devolver, cancelar ou estornar uma medição, sem dados pessoais reais](/help-media/contracts/estornar-medicao.webp)
 
 ## Resultado esperado
 Devolução retorna a Rascunho; estorno termina em Estornada, conforme a ação e suas regras.

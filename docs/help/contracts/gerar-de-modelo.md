@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 25
-version: 1
+version: 2
 is_published: true
 ---
 # Gerar contrato pelo diálogo de modelo publicado
@@ -23,7 +23,7 @@ is_published: true
 3. Preencha "Serviço (opcional)" e "Título do contrato (opcional)" se necessário.
 4. Use "Pré-visualizar" para revisar o texto mesclado.
 5. Clique em "Gerar contrato".
-<!-- screenshot: Gerar contrato pelo diálogo de modelo publicado, sem dados pessoais reais -->
+![Tela: Gerar contrato pelo diálogo de modelo publicado, sem dados pessoais reais](/help-media/contracts/gerar-de-modelo.webp)
 
 ## Resultado esperado
 "Contrato gerado em rascunho." e abertura da ficha.

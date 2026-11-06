@@ -8,7 +8,7 @@ route_pattern: /people/psychosocial
 min_permission: techpeople.wellbeing.assessments.view.own
 audience: internal
 sort_order: 71
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar riscos psicossociais
@@ -21,7 +21,7 @@ is_published: true
 1. Em "Nível de risco", escolha "Todos os níveis", "Baixo", "Moderado", "Alto" ou "Crítico".
 2. Confira "Data", "Risco", "Sinais", "Status" e "Follow-up".
 3. Clique no nome da pessoa para abrir a ficha.
-<!-- screenshot: riscos psicossociais -->
+![Tela: riscos psicossociais](/help-media/people/consultar-riscos-psicossociais.webp)
 
 ## Resultado esperado
 A lista mostra as avaliações do nível escolhido.

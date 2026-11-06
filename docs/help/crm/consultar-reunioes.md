@@ -8,7 +8,7 @@ route_pattern: /meetings
 min_permission:
 audience: internal
 sort_order: 210
-version: 2
+version: 3
 is_published: true
 ---
 # Consultar reuniões
@@ -24,7 +24,7 @@ is_published: true
 4. Confira "Participantes" e, quando houver, "Gravação" e "Resumo & transcrição".
 5. Confira os encaminhamentos em "Action items".
 6. Para iniciar um encontro, clique em "Vídeo". Na janela "Iniciar reunião por vídeo", preencha "Título", marque ou desmarque "Permitir gravação" e clique em "Criar e abrir sala". O Jitsi pede o consentimento dos participantes ao iniciar a gravação.
-<!-- screenshot: biblioteca de reuniões e detalhe com Gravação, Resumo & transcrição e Participantes -->
+![Tela: biblioteca de reuniões e detalhe com Gravação, Resumo & transcrição e Participantes](/help-media/crm/consultar-reunioes.webp)
 
 ## Resultado esperado
 A reunião mostra seus dados e os materiais disponíveis.

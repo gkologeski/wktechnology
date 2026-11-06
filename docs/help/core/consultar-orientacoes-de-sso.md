@@ -8,7 +8,7 @@ route_pattern: /settings/sso
 min_permission: 
 audience: internal
 sort_order: 168
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar orientações de SSO
@@ -41,4 +41,4 @@ A tela é informativa: não contém formulário de cadastro de IdP. Os badges de
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/sso com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/sso com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-orientacoes-de-sso.webp)

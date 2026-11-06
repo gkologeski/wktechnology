@@ -8,7 +8,7 @@ route_pattern: /settings/api-keys
 min_permission: 
 audience: internal
 sort_order: 112
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar chaves de API
@@ -42,4 +42,4 @@ As permissões de system.api_keys possuem escopo próprio no catálogo. Não cop
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/api-keys com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/api-keys com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/gerenciar-chaves-de-api.webp)

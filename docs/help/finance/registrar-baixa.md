@@ -8,7 +8,7 @@ route_pattern: /finance/entries/$id
 min_permission: techfinance.entries.view.own
 audience: internal
 sort_order: 90
-version: 1
+version: 2
 is_published: true
 ---
 # Registrar baixa parcial ou total
@@ -46,5 +46,5 @@ Valor positivo até o saldo; data; método (Pix, Boleto, Cartão, Transferência
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Registrar baixa parcial ou total; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Registrar baixa parcial ou total](/help-media/finance/registrar-baixa.webp)
 <!-- evidência: src/components/finance/register-payment-dialog.tsx; src/lib/access-control/finance-records.server.ts -->

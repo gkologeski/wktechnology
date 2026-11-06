@@ -8,7 +8,7 @@ route_pattern: /people/benefits
 min_permission: techpeople.benefits.view.own
 audience: internal
 sort_order: 60
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar benefícios e custos
@@ -23,7 +23,7 @@ is_published: true
 3. Clique no nome em "Pessoa" para abrir a ficha.
 4. Para alterar vários: marque as linhas, clique em "Editar em massa", marque "Provedor", "Plano" ou "Término", preencha e clique em "Aplicar".
 5. Para exportar: "Exportar" e escolha CSV, JSON ou Excel (XLSX).
-<!-- screenshot: benefícios -->
+![Tela: benefícios](/help-media/people/consultar-beneficios.webp)
 
 ## Resultado esperado
 "{N} registro(s) atualizado(s)" ou o arquivo exportado.

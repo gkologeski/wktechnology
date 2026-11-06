@@ -8,7 +8,7 @@ route_pattern: /inbox/whatsapp
 min_permission:
 audience: internal
 sort_order: 304
-version: 1
+version: 2
 is_published: true
 ---
 # Atender conversas de WhatsApp
@@ -25,7 +25,7 @@ is_published: true
 5. Para enviar arquivo, use "Anexar mídia".
 6. Para iniciar outro atendimento, clique em "Nova conversa".
 7. Com a janela fechada, envie um modelo aprovado.
-<!-- screenshot: Inbox WhatsApp com aviso de janela e compositor -->
+![Tela: Inbox WhatsApp com aviso de janela e compositor](/help-media/crm/atender-conversas-whatsapp.webp)
 
 ## Resultado esperado
 A mensagem fica registrada na conversa.

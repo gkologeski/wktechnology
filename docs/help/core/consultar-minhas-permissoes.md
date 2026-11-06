@@ -8,7 +8,7 @@ route_pattern: /settings/my-permissions
 min_permission: 
 audience: internal
 sort_order: 145
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar minhas permissões
@@ -41,4 +41,4 @@ Esta tela é de consulta; não permite conceder permissões a si próprio. O ace
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/my-permissions com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/my-permissions com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-minhas-permissoes.webp)

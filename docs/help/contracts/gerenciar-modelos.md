@@ -8,7 +8,7 @@ route_pattern: /contracts/templates
 min_permission:
 audience: internal
 sort_order: 60
-version: 1
+version: 2
 is_published: true
 ---
 # Criar e organizar modelos de contrato
@@ -23,7 +23,7 @@ is_published: true
 3. Abra o modelo para editar seu conteúdo.
 4. Na lista, use a ação de duplicação quando quiser reutilizar um modelo. Aguarde "Modelo duplicado.".
 5. Para remover um modelo, use a ação de exclusão e confirme apenas após conferir o item.
-<!-- screenshot: Criar e organizar modelos de contrato, sem dados pessoais reais -->
+![Tela: Criar e organizar modelos de contrato, sem dados pessoais reais](/help-media/contracts/gerenciar-modelos.webp)
 
 ## Resultado esperado
 Modelo disponível na lista; a criação não substitui a revisão do texto.

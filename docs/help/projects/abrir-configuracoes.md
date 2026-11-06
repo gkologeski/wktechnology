@@ -8,7 +8,7 @@ route_pattern: /projects/settings
 min_permission: 
 audience: internal
 sort_order: 130
-version: 1
+version: 2
 is_published: true
 ---
 # Abrir configurações do TechProjects
@@ -42,4 +42,4 @@ A rota de configurações abre o hub de importações.
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Abrir configurações do TechProjects; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Abrir configurações do TechProjects](/help-media/projects/abrir-configuracoes.webp)

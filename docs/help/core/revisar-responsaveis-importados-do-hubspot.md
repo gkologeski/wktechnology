@@ -8,7 +8,7 @@ route_pattern: /settings/hubspot-users
 min_permission: 
 audience: internal
 sort_order: 128
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar responsáveis importados do HubSpot
@@ -41,4 +41,4 @@ Responsável importado não recebe automaticamente acesso: membership inactive p
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/hubspot-users com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/hubspot-users com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/revisar-responsaveis-importados-do-hubspot.webp)

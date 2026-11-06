@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/linkedin
 min_permission: system.linkedin.view.workspace
 audience: internal
 sort_order: 135
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar a conexão LinkedIn
@@ -41,4 +41,4 @@ Os limites exibidos dependem da conta e do provedor; conexão não autoriza envi
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/integrations/linkedin com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/integrations/linkedin com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/revisar-a-conexao-linkedin.webp)

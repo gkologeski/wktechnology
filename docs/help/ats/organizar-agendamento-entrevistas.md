@@ -8,7 +8,7 @@ route_pattern: /scheduling
 min_permission: techhire.interviews.view.own
 audience: internal
 sort_order: 32
-version: 1
+version: 2
 is_published: true
 ---
 # Organizar o agendamento de entrevistas
@@ -22,7 +22,7 @@ is_published: true
 2. Use "Adicionar membro…" e "Atribuir próximo".
 3. Em "Disponibilidade semanal", clique em "Nova janela" e informe "Entrevistador", "Dia", "Início" e "Fim".
 4. Em "Encontrar slots em comum", escolha os entrevistadores, "De", "Até", "Duração (min)" e "Passo (min)".
-<!-- screenshot: scheduling -->
+![Tela: scheduling](/help-media/ats/organizar-agendamento-entrevistas.webp)
 
 ## Resultado esperado
 "Pool criada" ou "Janela adicionada".

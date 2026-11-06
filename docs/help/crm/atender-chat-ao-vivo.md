@@ -8,7 +8,7 @@ route_pattern: /inbox/chat
 min_permission:
 audience: internal
 sort_order: 301
-version: 1
+version: 2
 is_published: true
 ---
 # Atender o chat ao vivo
@@ -25,7 +25,7 @@ is_published: true
 5. Preencha "Responder…" e clique em "Enviar".
 6. Para continuar como ticket, clique em "Ticket".
 7. Para finalizar, clique em "Encerrar".
-<!-- screenshot: Chat com abas, responsável e ações Ticket e Encerrar -->
+![Tela: Chat com abas, responsável e ações Ticket e Encerrar](/help-media/crm/atender-chat-ao-vivo.webp)
 
 ## Resultado esperado
 "Ticket criado" ou "Encerrada.".

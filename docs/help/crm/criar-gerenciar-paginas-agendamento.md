@@ -8,7 +8,7 @@ route_pattern: /settings/booking
 min_permission: system.booking.view.workspace
 audience: internal
 sort_order: 314
-version: 1
+version: 2
 is_published: true
 ---
 # Criar e gerenciar páginas de agendamento
@@ -30,7 +30,7 @@ is_published: true
 10. Copie o link ou abra a página pública pelos ícones.
 11. Use o olho para ver "Reservas".
 12. Edite pelo lápis; exclua pela lixeira ("Excluir página?").
-<!-- screenshot: formulário de página de agendamento -->
+![Tela: formulário de página de agendamento](/help-media/crm/criar-gerenciar-paginas-agendamento.webp)
 
 ## Resultado esperado
 "Página salva". Endereço público: `/book/<slug>`.

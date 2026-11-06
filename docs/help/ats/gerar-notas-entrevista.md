@@ -8,7 +8,7 @@ route_pattern: /notetaker
 min_permission: techhire.interviews.view.own
 audience: internal
 sort_order: 15
-version: 1
+version: 2
 is_published: true
 ---
 # Gerar notas de entrevista com IA
@@ -22,7 +22,7 @@ is_published: true
 2. Cole o texto em "Transcrição / anotações".
 3. Clique em "Gerar notas com IA".
 4. Revise "Resumo", "Pontos fortes", "Preocupações" e "Follow-ups sugeridos".
-<!-- screenshot: notetaker -->
+![Tela: notetaker](/help-media/ats/gerar-notas-entrevista.webp)
 
 ## Resultado esperado
 "Notas geradas pela IA."

@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 30
-version: 1
+version: 2
 is_published: true
 ---
 # Editar a ficha de um contrato
@@ -24,7 +24,7 @@ is_published: true
 4. Em "Cláusulas / corpo do contrato", edite o texto quando necessário.
 5. Clique em "Salvar" e aguarde "Contrato atualizado.".
 6. Use "Visualizar" para abrir o arquivo original quando essa ação estiver disponível.
-<!-- screenshot: Editar a ficha de um contrato, sem dados pessoais reais -->
+![Tela: Editar a ficha de um contrato, sem dados pessoais reais](/help-media/contracts/editar-contrato.webp)
 
 ## Resultado esperado
 Alterações persistidas na ficha.

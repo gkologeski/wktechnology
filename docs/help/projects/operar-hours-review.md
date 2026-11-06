@@ -8,7 +8,7 @@ route_pattern: /projects/hours-review
 min_permission: techprojects.time_entries.approve.workspace
 audience: internal
 sort_order: 20
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar e decidir horas
@@ -44,4 +44,4 @@ A fila é limitada ao que o usuário pode decidir. Ser gestor ou enxergar o menu
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Revisar e decidir horas; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Revisar e decidir horas](/help-media/projects/operar-hours-review.webp)

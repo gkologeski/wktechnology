@@ -8,7 +8,7 @@ route_pattern: /modules
 min_permission: 
 audience: internal
 sort_order: 106
-version: 1
+version: 2
 is_published: true
 ---
 # Explorar os módulos do workspace
@@ -41,4 +41,4 @@ Os seis módulos são crm, ats, people, contracts, projects e finance. Licença 
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /modules com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /modules com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/explorar-os-modulos-do-workspace.webp)

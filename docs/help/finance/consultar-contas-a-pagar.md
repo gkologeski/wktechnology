@@ -8,7 +8,7 @@ route_pattern: /finance/payable
 min_permission: techfinance.entries.view.own
 audience: internal
 sort_order: 50
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar contas a pagar
@@ -48,5 +48,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Consultar contas a pagar; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Consultar contas a pagar](/help-media/finance/consultar-contas-a-pagar.webp)
 <!-- evidência: src/components/finance/entries-list-page.tsx; src/lib/finance.functions.ts -->

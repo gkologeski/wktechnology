@@ -8,7 +8,7 @@ route_pattern: /finance/bank-accounts
 min_permission: techfinance.bank_accounts.view.workspace
 audience: internal
 sort_order: 180
-version: 1
+version: 2
 is_published: true
 ---
 # Cadastrar e consultar contas bancárias
@@ -47,5 +47,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Cadastrar e consultar contas bancárias; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Cadastrar e consultar contas bancárias](/help-media/finance/cadastrar-conta-bancaria.webp)
 <!-- evidência: src/routes/_authenticated/finance.bank-accounts.tsx -->

@@ -8,7 +8,7 @@ route_pattern: /companies/$id
 min_permission:
 audience: internal
 sort_order: 128
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar timeline de empresa
@@ -22,7 +22,7 @@ is_published: true
 3. Ajuste os filtros da timeline e o período.
 4. Expanda os itens para conferir detalhes.
 5. Se nenhum item aparecer com os filtros, clique em "Limpar filtros".
-<!-- screenshot: Consultar timeline de empresa: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Consultar timeline de empresa](/help-media/crm/consultar-timeline-de-empresa.webp)
 ## Resultado esperado
 O histórico disponível fica organizado na timeline do registro.
 ## Regras e limites

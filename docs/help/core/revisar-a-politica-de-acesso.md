@@ -8,7 +8,7 @@ route_pattern: /settings/access-policy
 min_permission: 
 audience: internal
 sort_order: 109
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar a política de acesso
@@ -42,4 +42,4 @@ Timeout validado entre 15 e 1440 minutos; lista limitada a 50 entradas. O helper
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/access-policy com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/access-policy com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/revisar-a-politica-de-acesso.webp)

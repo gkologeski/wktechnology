@@ -8,7 +8,7 @@ route_pattern: /settings/record-layouts
 min_permission: 
 audience: internal
 sort_order: 161
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar layouts de fichas
@@ -41,4 +41,4 @@ O layout organiza a apresentação; não redefine as permissões de acesso a dad
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/record-layouts com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/record-layouts com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/revisar-layouts-de-fichas.webp)

@@ -8,7 +8,7 @@ route_pattern: /contracts/links
 min_permission:
 audience: internal
 sort_order: 43
-version: 1
+version: 2
 is_published: true
 ---
 # Vincular contratos e remover pendências da fila
@@ -23,7 +23,7 @@ is_published: true
 3. Clique em "Vincular" no registro, escolha o destino e confirme.
 4. Compra deve apontar para prestação; aditivo deve apontar para principal do mesmo papel.
 5. Se a pendência não exigir vínculo, use "Remover da fila".
-<!-- screenshot: Vincular contratos e remover pendências da fila, sem dados pessoais reais -->
+![Tela: Vincular contratos e remover pendências da fila, sem dados pessoais reais](/help-media/contracts/revisar-vinculacao.webp)
 
 ## Resultado esperado
 "Contratos vinculados.", "Aditivo vinculado." ou "Contrato removido da fila de vinculação.", conforme ação.

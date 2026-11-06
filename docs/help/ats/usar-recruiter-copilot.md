@@ -8,7 +8,7 @@ route_pattern: /copilot
 min_permission: 
 audience: internal
 sort_order: 12
-version: 1
+version: 2
 is_published: true
 ---
 # Usar o Recruiter Copilot
@@ -21,7 +21,7 @@ is_published: true
 1. Clique em uma sugestão, como "Onde está o maior gargalo do funil?".
 2. Ou escreva sua pergunta e envie.
 3. Aguarde "Pensando..." e leia a resposta.
-<!-- screenshot: recruiter copilot -->
+![Tela: recruiter copilot](/help-media/ats/usar-recruiter-copilot.webp)
 
 ## Resultado esperado
 A resposta aparece na conversa.

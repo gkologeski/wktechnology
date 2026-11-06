@@ -8,7 +8,7 @@ route_pattern: /dashboards
 min_permission: system.analytics.dashboards.view.workspace
 audience: internal
 sort_order: 501
-version: 2
+version: 3
 is_published: true
 ---
 # Gerenciar painéis de relatórios
@@ -28,7 +28,7 @@ is_published: true
 8. Para alterar o painel, use o lápis e "Salvar".
 9. Para favoritar, clique na estrela.
 10. Para excluir, use a lixeira e confirme.
-<!-- screenshot: painel selecionado e formulário de widget -->
+![Tela: painel selecionado e formulário de widget](/help-media/crm/gerenciar-paineis.webp)
 
 ## Resultado esperado
 O painel aparece na lista e o widget mostra o relatório.

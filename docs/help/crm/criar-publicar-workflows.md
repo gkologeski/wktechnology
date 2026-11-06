@@ -8,7 +8,7 @@ route_pattern: /settings/workflows
 min_permission: system.workflows.manage.workspace
 audience: internal
 sort_order: 413
-version: 2
+version: 3
 is_published: true
 ---
 # Criar e publicar workflows
@@ -26,7 +26,7 @@ is_published: true
 6. Abra "Execuções recentes".
 7. Abra "Política de envio" para revisar regras de envio.
 8. Em decisão pendente, preencha "Comentário da decisão (opcional)" e aprove ou rejeite.
-<!-- screenshot: abas Workflows, Execuções recentes e Política de envio -->
+![Tela: abas Workflows, Execuções recentes e Política de envio](/help-media/crm/criar-publicar-workflows.webp)
 
 ## Resultado esperado
 "Rascunho salvo — publique para ativar"; "Publicado — v…"; "Aprovado — retomada enfileirada".

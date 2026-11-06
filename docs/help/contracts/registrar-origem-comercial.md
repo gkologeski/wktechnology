@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 36
-version: 1
+version: 2
 is_published: true
 ---
 # Salvar origem comercial e definir origem do recrutamento
@@ -22,7 +22,7 @@ is_published: true
 2. Escolha "Negócio" e "Entidade WK prestadora" em "Selecione o CNPJ".
 3. Clique em "Salvar origem".
 4. Quando adequado, clique em "Definir como origem do recrutamento".
-<!-- screenshot: Salvar origem comercial e definir origem do recrutamento, sem dados pessoais reais -->
+![Tela: Salvar origem comercial e definir origem do recrutamento, sem dados pessoais reais](/help-media/contracts/registrar-origem-comercial.webp)
 
 ## Resultado esperado
 Origem comercial salva; definição da origem do recrutamento é uma ação separada.

@@ -8,7 +8,7 @@ route_pattern: /ajuda/trilhas
 min_permission:
 audience: internal
 sort_order: 90
-version: 1
+version: 2
 is_published: true
 ---
 # Fazer as trilhas de treinamento
@@ -40,4 +40,4 @@ Cada pergunta mostra "Correta" ou "Incorreta". Com 4 acertos ou mais o quiz fica
 ## Relacionados
 - [Visão geral](/ajuda/core/visao-geral)
 - [Perguntas frequentes](/ajuda/core/perguntas-frequentes)
-<!-- screenshot: lista de trilhas com barra de progresso e selo de conclusão -->
+![Tela: lista de trilhas com barra de progresso e selo de conclusão](/help-media/core/trilhas-de-treinamento.webp)

@@ -8,7 +8,7 @@ route_pattern: /settings/playbooks
 min_permission: 
 audience: internal
 sort_order: 155
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar playbooks de prospecção
@@ -41,4 +41,4 @@ Recurso techsales.prospecting_playbooks; pertence ao TechSales.
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/playbooks com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/playbooks com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/consultar-playbooks-de-prospeccao.webp)

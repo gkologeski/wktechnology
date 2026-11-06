@@ -8,7 +8,7 @@ route_pattern: /companies/$id
 min_permission:
 audience: internal
 sort_order: 129
-version: 1
+version: 2
 is_published: true
 ---
 # Registrar atividade de empresa
@@ -21,7 +21,7 @@ is_published: true
 2. Na barra da timeline, clique em "Nota" ou "Tarefa". Use "Mais" para outras ações disponíveis.
 3. Preencha o conteúdo. Para tarefa, revise prazo e responsável.
 4. Clique em "Salvar Nota" ou "Salvar Tarefa", conforme a ação.
-<!-- screenshot: Registrar atividade de empresa: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Registrar atividade de empresa](/help-media/crm/registrar-atividade-de-empresa.webp)
 ## Resultado esperado
 A atividade é registrada e a timeline é atualizada.
 ## Regras e limites

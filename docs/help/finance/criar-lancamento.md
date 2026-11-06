@@ -8,7 +8,7 @@ route_pattern: /finance/receivable
 min_permission: techfinance.entries.view.own
 audience: internal
 sort_order: 60
-version: 1
+version: 2
 is_published: true
 ---
 # Criar lançamento financeiro
@@ -48,5 +48,5 @@ Tipo; descrição; valor total (R$); categoria; competência; vencimento; empres
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Criar lançamento financeiro; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Criar lançamento financeiro](/help-media/finance/criar-lancamento.webp)
 <!-- evidência: src/components/finance/quick-create-entry-dialog.tsx -->

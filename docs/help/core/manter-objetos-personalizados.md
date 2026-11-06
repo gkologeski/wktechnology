@@ -8,7 +8,7 @@ route_pattern: /settings/custom-objects
 min_permission: system.custom_objects.view.workspace
 audience: internal
 sort_order: 119
-version: 1
+version: 2
 is_published: true
 ---
 # Manter objetos personalizados
@@ -41,4 +41,4 @@ Criação, atualização e exclusão verificam ações distintas de system.custo
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/custom-objects com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/custom-objects com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/manter-objetos-personalizados.webp)

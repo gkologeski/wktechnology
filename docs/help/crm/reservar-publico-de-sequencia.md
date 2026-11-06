@@ -8,7 +8,7 @@ route_pattern: /prospecting/sequences
 min_permission: system.automation.sequences.view.workspace
 audience: internal
 sort_order: 407
-version: 2
+version: 3
 is_published: true
 ---
 # Reservar o público de uma sequência
@@ -25,7 +25,7 @@ is_published: true
 5. Registre a origem da lista e a evidência de autorização no campo indicado.
 6. Clique em "Reservar público sem iniciar disparos". Durante o processamento aparece "Calculando e reservando…". O botão fica desabilitado sem versão escolhida ou com justificativa de menos de 10 caracteres.
 7. Confira o resumo e as exclusões.
-<!-- screenshot: versão para inscrição, evidência de autorização e resumo do público -->
+![Tela: versão para inscrição, evidência de autorização e resumo do público](/help-media/crm/reservar-publico-de-sequencia.webp)
 
 ## Resultado esperado
 "Público reservado. Nenhum disparo iniciado."

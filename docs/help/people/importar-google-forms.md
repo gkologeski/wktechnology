@@ -8,7 +8,7 @@ route_pattern: /people/import-forms
 min_permission: techpeople.people.create.own
 audience: internal
 sort_order: 13
-version: 1
+version: 2
 is_published: true
 ---
 # Importar prestadores do Google Forms
@@ -23,7 +23,7 @@ is_published: true
 3. Confira "Pessoas únicas" e a prévia.
 4. Clique em "Executar importação" e confirme.
 5. Acompanhe "Progresso": criadas, atualizadas, sem alteração e anexos.
-<!-- screenshot: importar forms -->
+![Tela: importar forms](/help-media/people/importar-google-forms.webp)
 
 ## Resultado esperado
 "Importação concluída". As pessoas recebem a tag `form-import`.

@@ -8,7 +8,7 @@ route_pattern: /settings/charging-templates
 min_permission: techfinance.charging_templates.view.workspace
 audience: internal
 sort_order: 300
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar templates de cobrança
@@ -47,5 +47,5 @@ Nome; canal; ativo; assunto; mensagem. Exemplos exibidos: {customer_name}, {invo
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Gerenciar templates de cobrança; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Gerenciar templates de cobrança](/help-media/finance/gerenciar-templates-cobranca.webp)
 <!-- evidência: src/routes/_authenticated/settings.charging-templates.tsx; src/lib/charging-templates.functions.ts -->

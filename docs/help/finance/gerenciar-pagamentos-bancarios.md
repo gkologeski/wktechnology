@@ -8,7 +8,7 @@ route_pattern: /finance/banking
 min_permission: techfinance.banking.view.workspace
 audience: internal
 sort_order: 210
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar rascunhos, aprovação e execução bancária
@@ -45,5 +45,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Gerenciar rascunhos, aprovação e execução bancária; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Gerenciar rascunhos, aprovação e execução bancária](/help-media/finance/gerenciar-pagamentos-bancarios.webp)
 <!-- evidência: src/routes/_authenticated/finance.banking.tsx; src/lib/banking.functions.ts -->

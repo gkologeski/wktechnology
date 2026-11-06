@@ -8,7 +8,7 @@ route_pattern: /sourcing
 min_permission: 
 audience: internal
 sort_order: 60
-version: 1
+version: 2
 is_published: true
 ---
 # Usar o Sourcing & Talent CRM
@@ -19,7 +19,7 @@ is_published: true
 
 ## Passo a passo
 1. Escolha "Inbox", "Talent Pools", "Sequências", "Indicações" ou "Analytics".
-<!-- screenshot: sourcing -->
+![Tela: sourcing](/help-media/ats/usar-sourcing.webp)
 
 ## Resultado esperado
 A ferramenta escolhida abre.

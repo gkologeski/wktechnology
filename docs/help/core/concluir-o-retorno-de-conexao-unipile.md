@@ -8,7 +8,7 @@ route_pattern: /unipile-connected
 min_permission: 
 audience: internal
 sort_order: 217
-version: 1
+version: 2
 is_published: true
 ---
 # Concluir o retorno de conexão Unipile
@@ -41,4 +41,4 @@ Callback não é prova de capacidade de envio; confira a conta no workspace corr
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /unipile-connected com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /unipile-connected com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/concluir-o-retorno-de-conexao-unipile.webp)

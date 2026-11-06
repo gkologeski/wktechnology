@@ -8,7 +8,7 @@ route_pattern: /people/offboarding
 min_permission: techpeople.offboarding.view.own
 audience: internal
 sort_order: 41
-version: 1
+version: 2
 is_published: true
 ---
 # Acompanhar offboarding
@@ -21,7 +21,7 @@ is_published: true
 1. Abra a tela.
 2. Confira "Status", "Progresso", "Início" e "Alvo".
 3. Clique em "Abrir" para ir à ficha.
-<!-- screenshot: offboarding -->
+![Tela: offboarding](/help-media/people/acompanhar-offboarding.webp)
 
 ## Resultado esperado
 Você vê o andamento de cada desligamento.

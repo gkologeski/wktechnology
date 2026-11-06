@@ -8,7 +8,7 @@ route_pattern: /settings/legal-entities
 min_permission: system.legal_entities.view.workspace
 audience: internal
 sort_order: 138
-version: 1
+version: 2
 is_published: true
 ---
 # Manter empresas e CNPJs do workspace
@@ -41,4 +41,4 @@ Cadastro compartilhado de pessoas jurídicas com componente da área financeira;
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/legal-entities com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/legal-entities com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/manter-empresas-e-cnpjs-do-workspace.webp)

@@ -8,7 +8,7 @@ route_pattern: /contracts/$id/medicoes
 min_permission:
 audience: internal
 sort_order: 71
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar e versionar o modelo de cobrança
@@ -24,7 +24,7 @@ is_published: true
 4. Revise as opções do modelo: horas fechadas, aceite do cliente, franquia, valores, saldo, pró-rata ou percentual, conforme disponibilizado.
 5. Preencha "Motivo (mín. 10 caracteres)".
 6. Clique em "Ativar modelo" e confirme "Ativar".
-<!-- screenshot: Configurar e versionar o modelo de cobrança, sem dados pessoais reais -->
+![Tela: Configurar e versionar o modelo de cobrança, sem dados pessoais reais](/help-media/contracts/configurar-cobranca.webp)
 
 ## Resultado esperado
 Modelo versionado e ativo a partir da competência escolhida; sem criação de medição ou título.

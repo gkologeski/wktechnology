@@ -8,7 +8,7 @@ route_pattern: /companies
 min_permission:
 audience: internal
 sort_order: 123
-version: 1
+version: 2
 is_published: true
 ---
 # Excluir empresas em massa
@@ -21,7 +21,7 @@ is_published: true
 2. Clique em "Excluir" na barra de seleção.
 3. Revise a quantidade e confirme.
 4. Confira se a mensagem informa exclusão completa ou parcial.
-<!-- screenshot: Excluir empresas em massa: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Excluir empresas em massa](/help-media/crm/excluir-empresas-em-massa.webp)
 ## Resultado esperado
 Os registros autorizados são removidos e a listagem é atualizada.
 ## Regras e limites

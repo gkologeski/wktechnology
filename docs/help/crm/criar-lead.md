@@ -8,7 +8,7 @@ route_pattern: /leads
 min_permission:
 audience: internal
 sort_order: 100
-version: 1
+version: 2
 is_published: true
 ---
 # Criar lead
@@ -23,7 +23,7 @@ is_published: true
 4. Se informar "Empresa", selecione o resultado ou crie a empresa antes de continuar.
 5. Opcionalmente, informe "LinkedIn" e clique em "Buscar". Revise os dados preenchidos.
 6. Clique em "Criar lead".
-<!-- screenshot: Criar lead: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Criar lead](/help-media/crm/criar-lead.webp)
 ## Resultado esperado
 O lead é criado com status inicial new e relações de empresa e contato processadas pelo sistema.
 ## Regras e limites

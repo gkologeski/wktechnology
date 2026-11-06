@@ -8,7 +8,7 @@ route_pattern: /projects/$id
 min_permission: techprojects.projects.view.own
 audience: internal
 sort_order: 10
-version: 1
+version: 2
 is_published: true
 ---
 # Operar a ficha do projeto
@@ -44,4 +44,4 @@ Tarefas, marcos e membros têm controles próprios. Custo/h e Bill/h são dados 
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Operar a ficha do projeto; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Operar a ficha do projeto](/help-media/projects/operar-ficha-projeto.webp)

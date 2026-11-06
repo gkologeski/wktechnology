@@ -8,7 +8,7 @@ route_pattern: /hunting
 min_permission: 
 audience: internal
 sort_order: 40
-version: 1
+version: 2
 is_published: true
 ---
 # Usar o hub de hunting
@@ -20,7 +20,7 @@ is_published: true
 ## Passo a passo
 1. Veja "Capturados hoje", "Últimos 7 dias" e "Total no banco".
 2. Escolha "Buscar no LinkedIn", "Capturados", "Execuções & métricas" ou "Templates de mensagem".
-<!-- screenshot: hub de hunting -->
+![Tela: hub de hunting](/help-media/ats/usar-hub-de-hunting.webp)
 
 ## Resultado esperado
 Você abre a ferramenta escolhida.

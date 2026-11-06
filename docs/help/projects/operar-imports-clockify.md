@@ -8,7 +8,7 @@ route_pattern: /projects/settings/imports/clockify
 min_permission: 
 audience: internal
 sort_order: 90
-version: 1
+version: 2
 is_published: true
 ---
 # Importar do Clockify
@@ -44,4 +44,4 @@ Prévia não equivale a importação. Identidades criadas sem acesso não recebe
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Importar do Clockify; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Importar do Clockify](/help-media/projects/operar-imports-clockify.webp)

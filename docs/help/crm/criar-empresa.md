@@ -8,7 +8,7 @@ route_pattern: /companies
 min_permission:
 audience: internal
 sort_order: 102
-version: 1
+version: 2
 is_published: true
 ---
 # Criar empresa
@@ -21,7 +21,7 @@ is_published: true
 2. Preencha "Nome *".
 3. Opcionalmente, preencha "Domínio" e "CNPJ".
 4. Clique em "Criar".
-<!-- screenshot: Criar empresa: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Criar empresa](/help-media/crm/criar-empresa.webp)
 ## Resultado esperado
 A empresa passa a integrar a base.
 ## Regras e limites

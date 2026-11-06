@@ -8,7 +8,7 @@ route_pattern: /admin/bug-reports
 min_permission: 
 audience: internal
 sort_order: 181
-version: 1
+version: 2
 is_published: true
 ---
 # Tratar chamados da plataforma
@@ -43,4 +43,4 @@ Exclusivo de admin da plataforma. A análise por IA auxilia a triagem, não comp
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `platform`; consulte os artigos desse módulo em `/ajuda/platform`.
 
-<!-- screenshot: capturar /admin/bug-reports com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /admin/bug-reports com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/platform/tratar-chamados-da-plataforma.webp)

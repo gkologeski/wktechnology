@@ -8,7 +8,7 @@ route_pattern: /services/$id
 min_permission:
 audience: internal
 sort_order: 83
-version: 1
+version: 2
 is_published: true
 ---
 # Excluir um serviço
@@ -21,7 +21,7 @@ is_published: true
 1. Abra o serviço.
 2. Acione "Excluir serviço".
 3. Confirme "Excluir este serviço?" somente se a remoção estiver correta.
-<!-- screenshot: Excluir um serviço, sem dados pessoais reais -->
+![Tela: Excluir um serviço, sem dados pessoais reais](/help-media/contracts/excluir-servico.webp)
 
 ## Resultado esperado
 "Serviço excluído." e retorno à listagem.

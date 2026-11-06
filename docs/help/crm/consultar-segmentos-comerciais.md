@@ -8,7 +8,7 @@ route_pattern: /settings/segments
 min_permission: 
 audience: internal
 sort_order: 166
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar segmentos comerciais
@@ -41,4 +41,4 @@ Recurso techsales.segments; pertence ao TechSales, não é segmentação de todo
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/segments com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/segments com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/consultar-segmentos-comerciais.webp)

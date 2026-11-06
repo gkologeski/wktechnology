@@ -8,7 +8,7 @@ route_pattern: /leads
 min_permission:
 audience: internal
 sort_order: 109
-version: 1
+version: 2
 is_published: true
 ---
 # Filtrar leads
@@ -21,7 +21,7 @@ is_published: true
 2. Use "Etapa do lead", "Responsável", "Origem", "Score" ou "Data de criação".
 3. Use a busca da listagem para restringir os resultados.
 4. Revise os registros e ajuste a paginação.
-<!-- screenshot: Filtrar leads: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Filtrar leads](/help-media/crm/filtrar-leads.webp)
 ## Resultado esperado
 A lista mostra apenas os resultados que atendem aos critérios e ao seu acesso.
 ## Regras e limites

@@ -8,7 +8,7 @@ route_pattern: /services/$id
 min_permission:
 audience: internal
 sort_order: 81
-version: 1
+version: 2
 is_published: true
 ---
 # Editar a ficha de um serviço
@@ -23,7 +23,7 @@ is_published: true
 3. Para serviço recorrente, escolha "Cadência": Mensal, Trimestral ou Anual.
 4. Clique em "Salvar".
 5. Consulte "Valor por ciclo", "Próxima cobrança", "Direção" e "Lançamentos gerados".
-<!-- screenshot: Editar a ficha de um serviço, sem dados pessoais reais -->
+![Tela: Editar a ficha de um serviço, sem dados pessoais reais](/help-media/contracts/editar-servico.webp)
 
 ## Resultado esperado
 A mensagem "Alterações salvas." confirma a gravação.

@@ -8,7 +8,7 @@ route_pattern: /settings/goals
 min_permission: 
 audience: internal
 sort_order: 127
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar metas comerciais
@@ -42,4 +42,4 @@ A autorização é techsales.goals; metas comerciais pertencem ao TechSales.
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/goals com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/goals com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/configurar-metas-comerciais.webp)

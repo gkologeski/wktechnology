@@ -8,7 +8,7 @@ route_pattern: /settings/notifications
 min_permission: 
 audience: internal
 sort_order: 148
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar preferências de notificações
@@ -41,4 +41,4 @@ Preferência de notificação não altera a responsabilidade dos registros nem c
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/notifications com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/notifications com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/revisar-preferencias-de-notificacoes.webp)

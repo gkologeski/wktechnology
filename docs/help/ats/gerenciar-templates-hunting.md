@@ -8,7 +8,7 @@ route_pattern: /hunting/templates
 min_permission: 
 audience: internal
 sort_order: 43
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar templates de hunting
@@ -24,7 +24,7 @@ is_published: true
 4. Escreva a "Mensagem" com variáveis como {{primeiro_nome}}.
 5. Clique em "Salvar".
 6. Para remover, use a lixeira e confirme.
-<!-- screenshot: templates de hunting -->
+![Tela: templates de hunting](/help-media/ats/gerenciar-templates-hunting.webp)
 
 ## Resultado esperado
 "Template salvo".

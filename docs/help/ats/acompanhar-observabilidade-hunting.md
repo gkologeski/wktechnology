@@ -8,7 +8,7 @@ route_pattern: /hunting/observability
 min_permission: 
 audience: internal
 sort_order: 44
-version: 1
+version: 2
 is_published: true
 ---
 # Acompanhar a observabilidade do hunting
@@ -21,7 +21,7 @@ is_published: true
 1. Confira "Requisições · 24h", "Taxa de sucesso", "Latência média" e "Erros · 24h".
 2. Em "Budgets diários por endpoint (UTC)", veja quanto já foi usado.
 3. Clique em "Atualizar" para recarregar.
-<!-- screenshot: observabilidade -->
+![Tela: observabilidade](/help-media/ats/acompanhar-observabilidade-hunting.webp)
 
 ## Resultado esperado
 Os números das últimas 24 horas aparecem.

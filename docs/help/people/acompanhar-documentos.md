@@ -8,7 +8,7 @@ route_pattern: /people/documents
 min_permission: techpeople.documents.view.own
 audience: internal
 sort_order: 30
-version: 1
+version: 2
 is_published: true
 ---
 # Acompanhar documentos a vencer
@@ -22,7 +22,7 @@ is_published: true
 2. Clique no nome da pessoa para abrir a ficha.
 3. Para ver o arquivo, clique no ícone "Baixar". Ele abre em nova aba.
 4. Para ações em massa, marque as linhas e use "Exportar selecionados", "Responsável" ou "Excluir".
-<!-- screenshot: documentos a vencer -->
+![Tela: documentos a vencer](/help-media/people/acompanhar-documentos.webp)
 
 ## Resultado esperado
 O arquivo abre em nova aba ou a ação em massa confirma o total.

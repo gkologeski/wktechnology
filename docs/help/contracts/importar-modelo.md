@@ -8,7 +8,7 @@ route_pattern: /contracts/templates
 min_permission:
 audience: internal
 sort_order: 62
-version: 1
+version: 2
 is_published: true
 ---
 # Importar um modelo de contrato
@@ -23,7 +23,7 @@ is_published: true
 3. Selecione o arquivo PDF ou DOCX.
 4. Aguarde a extração e a sugestão de variáveis.
 5. Abra o rascunho criado e revise seu conteúdo antes de publicar.
-<!-- screenshot: Importar um modelo de contrato, sem dados pessoais reais -->
+![Tela: Importar um modelo de contrato, sem dados pessoais reais](/help-media/contracts/importar-modelo.webp)
 
 ## Resultado esperado
 "Modelo criado como rascunho. Revise as variáveis sugeridas."

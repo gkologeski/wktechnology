@@ -8,7 +8,7 @@ route_pattern: /settings/surveys
 min_permission: 
 audience: internal
 sort_order: 170
-version: 1
+version: 2
 is_published: true
 ---
 # Abrir pesquisas pelas configurações
@@ -41,4 +41,4 @@ Renderiza SurveysPage; pertence às pesquisas do TechSales, como /surveys.
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/surveys com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/surveys com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/abrir-pesquisas-pelas-configuracoes.webp)

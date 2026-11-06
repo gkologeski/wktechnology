@@ -8,7 +8,7 @@ route_pattern: /finance/sales
 min_permission: techfinance.sales.view.workspace
 audience: internal
 sort_order: 230
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar vendas importadas
@@ -43,5 +43,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Consultar vendas importadas; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Consultar vendas importadas](/help-media/finance/consultar-vendas-importadas.webp)
 <!-- evidência: src/routes/_authenticated/finance.sales.tsx; src/lib/finance-sales.functions.ts -->

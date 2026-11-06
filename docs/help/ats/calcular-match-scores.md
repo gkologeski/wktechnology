@@ -8,7 +8,7 @@ route_pattern: /match-scores
 min_permission: 
 audience: internal
 sort_order: 14
-version: 1
+version: 2
 is_published: true
 ---
 # Calcular match scores
@@ -20,7 +20,7 @@ is_published: true
 ## Passo a passo
 1. Veja "Vaga", "Candidato", "Score" e "Resumo".
 2. Clique em "Recalcular" para atualizar.
-<!-- screenshot: match scores -->
+![Tela: match scores](/help-media/ats/calcular-match-scores.webp)
 
 ## Resultado esperado
 A nota de 0 a 100 é atualizada.

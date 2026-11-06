@@ -8,7 +8,7 @@ route_pattern: /hunting/captures
 min_permission: 
 audience: internal
 sort_order: 41
-version: 1
+version: 2
 is_published: true
 ---
 # Tratar candidatos capturados
@@ -22,7 +22,7 @@ is_published: true
 2. Marque as linhas ou "Selecionar todos".
 3. Clique em "Enriquecer com IA (n)".
 4. Para distribuir, use "Definir responsável" e escolha um membro ou "Sem responsável".
-<!-- screenshot: candidatos capturados -->
+![Tela: candidatos capturados](/help-media/ats/tratar-candidatos-capturados.webp)
 
 ## Resultado esperado
 Aparece "Enriquecidos: N · falhas: N" ou "Responsável atualizado em N candidato(s).".

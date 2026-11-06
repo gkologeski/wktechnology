@@ -8,7 +8,7 @@ route_pattern: /projects/settings/operations
 min_permission: 
 audience: internal
 sort_order: 140
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar operação e saúde do TechProjects
@@ -43,4 +43,4 @@ Tela somente leitura para administrador ativo. Não fornece comando nem segredo 
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Consultar operação e saúde do TechProjects; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Consultar operação e saúde do TechProjects](/help-media/projects/operar-operations.webp)

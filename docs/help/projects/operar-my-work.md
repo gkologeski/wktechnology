@@ -8,7 +8,7 @@ route_pattern: /projects/my-work
 min_permission: techprojects.my_work.view.own
 audience: internal
 sort_order: 60
-version: 1
+version: 2
 is_published: true
 ---
 # Organizar o My Work
@@ -42,4 +42,4 @@ A visão pessoal não concede acesso a projetos de outros usuários. Prazo e res
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Organizar o My Work; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Organizar o My Work](/help-media/projects/operar-my-work.webp)

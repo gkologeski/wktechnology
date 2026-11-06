@@ -8,7 +8,7 @@ route_pattern: /settings/scoring
 min_permission: 
 audience: internal
 sort_order: 164
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar scoring de prospecção
@@ -41,4 +41,4 @@ Recurso techsales.prospecting_scoring. Não é o match-score de candidatos do Te
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/scoring com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/scoring com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/consultar-scoring-de-prospeccao.webp)

@@ -8,7 +8,7 @@ route_pattern: /settings/esign
 min_permission:
 audience: internal
 sort_order: 95
-version: 1
+version: 2
 is_published: true
 ---
 # Preparar documentos para assinatura eletrônica
@@ -23,7 +23,7 @@ is_published: true
 3. Informe os signatários, nome, e-mail e ordem. Configure assinatura ordenada quando necessário.
 4. Revise o documento e os signatários antes de enviar para assinatura.
 5. Use o compartilhamento/cópia do link individual para encaminhá-lo ao signatário.
-<!-- screenshot: Preparar documentos para assinatura eletrônica, sem dados pessoais reais -->
+![Tela: Preparar documentos para assinatura eletrônica, sem dados pessoais reais](/help-media/contracts/gerenciar-documentos-assinatura.webp)
 
 ## Resultado esperado
 Documento preparado e, após envio, disponibilizado para assinatura conforme sua validade e ordem.

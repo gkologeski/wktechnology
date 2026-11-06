@@ -8,7 +8,7 @@ route_pattern: /settings
 min_permission: 
 audience: internal
 sort_order: 108
-version: 1
+version: 2
 is_published: true
 ---
 # Atualizar o perfil da conta
@@ -41,4 +41,4 @@ O layout /settings não é uma segunda tela de perfil. Alterar o perfil não con
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/atualizar-o-perfil-da-conta.webp)

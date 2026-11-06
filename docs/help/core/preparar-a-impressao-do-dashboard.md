@@ -8,7 +8,7 @@ route_pattern: /home/print
 min_permission: 
 audience: internal
 sort_order: 105
-version: 1
+version: 2
 is_published: true
 ---
 # Preparar a impressão do dashboard
@@ -41,4 +41,4 @@ A rota verifica a ação de exportação de system.home. A impressão não deve 
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /home/print com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /home/print com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/preparar-a-impressao-do-dashboard.webp)

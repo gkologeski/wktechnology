@@ -8,7 +8,7 @@ route_pattern: /dei-analytics
 min_permission: 
 audience: internal
 sort_order: 80
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar DEI Analytics
@@ -20,7 +20,7 @@ is_published: true
 ## Passo a passo
 1. Abra "DEI Analytics".
 2. Veja "Gênero", "Raça/Cor", "Pessoa com deficiência" e "LGBTQIA+".
-<!-- screenshot: DEI analytics -->
+![Tela: DEI analytics](/help-media/ats/consultar-dei-analytics.webp)
 
 ## Resultado esperado
 Os gráficos mostram o total de candidatos e a distribuição.

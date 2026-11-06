@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 29
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar e padronizar títulos de contratos
@@ -23,7 +23,7 @@ is_published: true
 3. Selecione os registros desejados; no diálogo geral, use "Selecionar todos" quando adequado.
 4. Confirme a aplicação. A barra de seleção mostra exemplos antes de aplicar.
 5. Revise o resultado e as falhas.
-<!-- screenshot: Revisar e padronizar títulos de contratos, sem dados pessoais reais -->
+![Tela: Revisar e padronizar títulos de contratos, sem dados pessoais reais](/help-media/contracts/padronizar-titulos.webp)
 
 ## Resultado esperado
 Títulos atualizados nos contratos selecionados, sem modificar seu papel por esse procedimento.

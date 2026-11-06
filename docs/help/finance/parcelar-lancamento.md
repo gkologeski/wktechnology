@@ -8,7 +8,7 @@ route_pattern: /finance/payable
 min_permission: techfinance.entries.view.own
 audience: internal
 sort_order: 70
-version: 1
+version: 2
 is_published: true
 ---
 # Parcelar lançamento
@@ -48,5 +48,5 @@ Soma das parcelas diferente do total: revise valores e arredondamento. Intervalo
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Parcelar lançamento; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Parcelar lançamento](/help-media/finance/parcelar-lancamento.webp)
 <!-- evidência: src/components/finance/quick-create-entry-dialog.tsx; src/lib/finance.functions.ts -->

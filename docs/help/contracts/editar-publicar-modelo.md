@@ -8,7 +8,7 @@ route_pattern: /contracts/templates/$id
 min_permission:
 audience: internal
 sort_order: 61
-version: 1
+version: 2
 is_published: true
 ---
 # Editar e publicar um modelo de contrato
@@ -23,7 +23,7 @@ is_published: true
 3. Revise "Corpo do contrato" e suas variáveis.
 4. Salve para manter a edição.
 5. Após a revisão, clique em "Publicar".
-<!-- screenshot: Editar e publicar um modelo de contrato, sem dados pessoais reais -->
+![Tela: Editar e publicar um modelo de contrato, sem dados pessoais reais](/help-media/contracts/editar-publicar-modelo.webp)
 
 ## Resultado esperado
 "Modelo salvo." ou "Modelo publicado.", conforme a ação escolhida.

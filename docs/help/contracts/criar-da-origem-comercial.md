@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 22
-version: 1
+version: 2
 is_published: true
 ---
 # Criar contrato a partir de cotação, proposta ou modelo
@@ -23,7 +23,7 @@ is_published: true
 3. Para cotação/proposta, escolha "Novo contrato independente" ou "Termo aditivo de: …".
 4. Se for aditivo, selecione um contrato principal ativo disponível.
 5. Confira "Dados", "Serviços" e "Revisão" antes de concluir.
-<!-- screenshot: Criar contrato a partir de cotação, proposta ou modelo, sem dados pessoais reais -->
+![Tela: Criar contrato a partir de cotação, proposta ou modelo, sem dados pessoais reais](/help-media/contracts/criar-da-origem-comercial.webp)
 
 ## Resultado esperado
 Contrato criado com a origem comercial registrada; caso a origem já tenha gerado contrato, o existente é aberto.

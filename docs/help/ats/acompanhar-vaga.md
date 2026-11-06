@@ -8,7 +8,7 @@ route_pattern: /jobs/$id
 min_permission: techhire.jobs.view.own
 audience: internal
 sort_order: 23
-version: 1
+version: 2
 is_published: true
 ---
 # Acompanhar uma vaga
@@ -23,7 +23,7 @@ is_published: true
 3. Edite o painel "Propriedades".
 4. Ao contratar, preencha "Registrar contratação": modelo "Interna", "Outsourcing" ou "Hunting".
 5. Para exportar, clique em "CSV".
-<!-- screenshot: detalhe da vaga -->
+![Tela: detalhe da vaga](/help-media/ats/acompanhar-vaga.webp)
 
 ## Resultado esperado
 "Candidato adicionado à vaga" ou "Contratação registrada".

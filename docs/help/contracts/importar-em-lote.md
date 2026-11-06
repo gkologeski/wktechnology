@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 24
-version: 1
+version: 2
 is_published: true
 ---
 # Importar contratos em lote e revisar resultados
@@ -23,7 +23,7 @@ is_published: true
 3. Escolha "Principal" ou "Aditivo". Para aditivo, indique principal existente ou principal do lote, número e vigência quando aplicável.
 4. Clique em "Processar".
 5. Confira o resultado de cada item e seus vínculos. Use "Abrir" para revisar rascunhos criados.
-<!-- screenshot: Importar contratos em lote e revisar resultados, sem dados pessoais reais -->
+![Tela: Importar contratos em lote e revisar resultados, sem dados pessoais reais](/help-media/contracts/importar-em-lote.webp)
 
 ## Resultado esperado
 Arquivos processados sequencialmente, com principais antes dos aditivos; resultados podem ser parciais.

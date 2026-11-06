@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/contaazul
 min_permission: 
 audience: internal
 sort_order: 134
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar a integração Conta Azul
@@ -42,4 +42,4 @@ Integração do TechFinance: registros existentes recebem vínculos; correspond�
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `finance`; consulte os artigos desse módulo em `/ajuda/finance`.
 
-<!-- screenshot: capturar /settings/integrations/contaazul com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/integrations/contaazul com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/finance/revisar-a-integracao-conta-azul.webp)

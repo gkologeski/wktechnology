@@ -8,7 +8,7 @@ route_pattern: /settings/workflow-subscriptions
 min_permission: 
 audience: internal
 sort_order: 178
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar assinaturas de workflow
@@ -41,4 +41,4 @@ Recurso system.workflows. Não confunda assinatura de workflow com assinatura el
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/workflow-subscriptions com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/workflow-subscriptions com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-assinaturas-de-workflow.webp)

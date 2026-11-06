@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 26
-version: 1
+version: 2
 is_published: true
 ---
 # Alterar status, responsável e campos em massa
@@ -22,7 +22,7 @@ is_published: true
 2. Para status, escolha "Alterar status"; para atribuição, use "Definir responsável" ou "Sem responsável".
 3. Para outros campos, clique em "Editar em massa" e use os campos disponibilizados pelo diálogo.
 4. Confira o resumo de sucessos e falhas por contrato.
-<!-- screenshot: Alterar status, responsável e campos em massa, sem dados pessoais reais -->
+![Tela: Alterar status, responsável e campos em massa, sem dados pessoais reais](/help-media/contracts/alterar-em-massa.webp)
 
 ## Resultado esperado
 Alterações feitas nos registros autorizados; pode haver resultado parcial.

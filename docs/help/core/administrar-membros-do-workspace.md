@@ -8,7 +8,7 @@ route_pattern: /settings/teams
 min_permission: system.members.view.workspace
 audience: internal
 sort_order: 171
-version: 1
+version: 2
 is_published: true
 ---
 # Administrar membros do workspace
@@ -42,4 +42,4 @@ Membro inativo perde acesso mas permanece identificável como responsável. Não
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/teams com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/teams com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/administrar-membros-do-workspace.webp)

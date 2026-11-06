@@ -8,7 +8,7 @@ route_pattern: /communications
 min_permission:
 audience: internal
 sort_order: 306
-version: 1
+version: 2
 is_published: true
 ---
 # Registrar e editar comunicações
@@ -26,7 +26,7 @@ is_published: true
 6. Clique em "Salvar".
 7. Para corrigir, edite e salve.
 8. Para remover, exclua e confirme "Excluir este registro?".
-<!-- screenshot: formulário de comunicação -->
+![Tela: formulário de comunicação](/help-media/crm/registrar-comunicacoes.webp)
 
 ## Resultado esperado
 A comunicação aparece com tipo, assunto, resultado, duração e data.

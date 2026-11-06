@@ -8,7 +8,7 @@ route_pattern: /inbox/chat
 min_permission:
 audience: internal
 sort_order: 303
-version: 1
+version: 2
 is_published: true
 ---
 # Controlar o agente no atendimento
@@ -24,7 +24,7 @@ is_published: true
 4. Se houver entrega incerta, faça a revisão pedida.
 5. Para retomar, clique em "Devolver ao agente".
 6. Após verificar a pessoa, clique em "Confirmar identidade da pessoa associada".
-<!-- screenshot: painel Agente deste atendimento -->
+![Tela: painel Agente deste atendimento](/help-media/crm/controlar-agente-atendimento.webp)
 
 ## Resultado esperado
 O painel mostra quem atende. "Identidade confirmada para este atendimento.".

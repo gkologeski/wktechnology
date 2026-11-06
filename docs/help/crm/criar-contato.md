@@ -8,7 +8,7 @@ route_pattern: /contacts
 min_permission:
 audience: internal
 sort_order: 101
-version: 1
+version: 2
 is_published: true
 ---
 # Criar contato
@@ -21,7 +21,7 @@ is_published: true
 2. Preencha "Nome *" e, se necessário, "Sobrenome", "Email", "Telefone", "WhatsApp (celular)" e "Cargo".
 3. Em "Empresa", selecione uma empresa existente ou conclua a criação da empresa.
 4. Clique em "Criar contato".
-<!-- screenshot: Criar contato: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Criar contato](/help-media/crm/criar-contato.webp)
 ## Resultado esperado
 A mensagem "Contato criado" permite usar "Ir para o contato".
 ## Regras e limites

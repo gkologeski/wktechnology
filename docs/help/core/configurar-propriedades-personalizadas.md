@@ -8,7 +8,7 @@ route_pattern: /settings/custom-properties
 min_permission: system.custom_properties.view.workspace
 audience: internal
 sort_order: 120
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar propriedades personalizadas
@@ -42,4 +42,4 @@ A chave é apresentada como sem espaços. Campo de prompt não garante enriqueci
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/custom-properties com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/custom-properties com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/configurar-propriedades-personalizadas.webp)

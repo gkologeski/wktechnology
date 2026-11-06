@@ -8,7 +8,7 @@ route_pattern: /prospecting/sequences
 min_permission: system.automation.sequences.view.workspace
 audience: internal
 sort_order: 408
-version: 2
+version: 3
 is_published: true
 ---
 # Iniciar e pausar execuções de sequência
@@ -26,7 +26,7 @@ is_published: true
 6. Para pausar, clique em "Pausar" (execuções ativas ou aguardando tarefa). Para retomar, clique em "Retomar" (execuções pausadas). Em execuções bloqueadas use "Revalidar e tentar novamente"; em incertas, "Conferir recibo existente".
 7. Para cancelar, clique em "Cancelar inscrição e liberar reservas seguras".
 8. Clique em "Confirmar cancelamento da inscrição".
-<!-- screenshot: confirmação de início e acompanhamento das execuções -->
+![Tela: confirmação de início e acompanhamento das execuções](/help-media/crm/iniciar-pausar-sequencia.webp)
 
 ## Resultado esperado
 Os contatos seguem as etapas conforme horários e limites da versão.

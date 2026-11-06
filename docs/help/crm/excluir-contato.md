@@ -8,7 +8,7 @@ route_pattern: /contacts/$id
 min_permission:
 audience: internal
 sort_order: 113
-version: 1
+version: 2
 is_published: true
 ---
 # Excluir contato
@@ -20,7 +20,7 @@ is_published: true
 1. Abra a ficha do registro.
 2. Clique no ícone "Excluir contato".
 3. Revise a confirmação e confirme a exclusão.
-<!-- screenshot: Excluir contato: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Excluir contato](/help-media/crm/excluir-contato.webp)
 ## Resultado esperado
 A mensagem "Excluído" aparece e a navegação volta à listagem.
 ## Regras e limites

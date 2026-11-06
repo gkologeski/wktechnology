@@ -8,7 +8,7 @@ route_pattern: /prospecting/sequences
 min_permission: system.automation.sequences.view.workspace
 audience: internal
 sort_order: 404
-version: 1
+version: 2
 is_published: true
 ---
 # Criar o fluxo de uma sequência multicanal
@@ -27,7 +27,7 @@ is_published: true
 7. Nas condições, revise "Critério", "Caminho Sim" e "Caminho Não".
 8. Nas chamadas, revise "Modo de chamada" e "Roteiro da telefonia".
 9. Clique em "Salvar rascunho".
-<!-- screenshot: aba Fluxo com etapas e configuração da etapa selecionada -->
+![Tela: aba Fluxo com etapas e configuração da etapa selecionada](/help-media/crm/criar-fluxo-de-sequencia.webp)
 
 ## Resultado esperado
 "Rascunho salvo. Nenhuma execução foi iniciada."

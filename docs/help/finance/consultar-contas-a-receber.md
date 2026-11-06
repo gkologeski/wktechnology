@@ -8,7 +8,7 @@ route_pattern: /finance/receivable
 min_permission: techfinance.entries.view.own
 audience: internal
 sort_order: 40
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar contas a receber
@@ -48,5 +48,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Consultar contas a receber; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Consultar contas a receber](/help-media/finance/consultar-contas-a-receber.webp)
 <!-- evidência: src/components/finance/entries-list-page.tsx; src/lib/finance.functions.ts -->

@@ -8,7 +8,7 @@ route_pattern: /finance
 min_permission: techfinance.entries.view.own
 audience: internal
 sort_order: 30
-version: 2
+version: 3
 is_published: true
 ---
 # Consultar o Dashboard
@@ -45,5 +45,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Consultar o Dashboard; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Consultar o Dashboard](/help-media/finance/consultar-dashboard.webp)
 <!-- evidência: src/routes/_authenticated/finance.index.tsx; src/components/finance/finance-alerts-panel.tsx -->

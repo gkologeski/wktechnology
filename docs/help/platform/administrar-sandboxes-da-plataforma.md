@@ -8,7 +8,7 @@ route_pattern: /settings/platform/sandbox
 min_permission: 
 audience: internal
 sort_order: 186
-version: 1
+version: 2
 is_published: true
 ---
 # Administrar sandboxes da plataforma
@@ -43,4 +43,4 @@ Exclusivo de admin da plataforma. Não presuma anonimização, isolamento integr
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `platform`; consulte os artigos desse módulo em `/ajuda/platform`.
 
-<!-- screenshot: capturar /settings/platform/sandbox com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/platform/sandbox com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/platform/administrar-sandboxes-da-plataforma.webp)

@@ -8,7 +8,7 @@ route_pattern: /settings/permissions
 min_permission: system.roles.view.workspace
 audience: internal
 sort_order: 152
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar e administrar permissões
@@ -42,4 +42,4 @@ Recurso system.roles. A permissão efetiva exige membership ativo, escopo corret
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/permissions com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/permissions com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-e-administrar-permissoes.webp)

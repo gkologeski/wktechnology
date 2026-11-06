@@ -8,7 +8,7 @@ route_pattern: /settings/marketplace/$slug
 min_permission: 
 audience: internal
 sort_order: 141
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar um aplicativo do Marketplace
@@ -41,4 +41,4 @@ O slug identifica o app; não presuma que todos ofereçam as mesmas ações ou q
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/marketplace/$slug com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/marketplace/$slug com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-um-aplicativo-do-marketplace.webp)

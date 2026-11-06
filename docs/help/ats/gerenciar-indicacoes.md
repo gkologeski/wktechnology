@@ -8,7 +8,7 @@ route_pattern: /sourcing/referrals
 min_permission: 
 audience: internal
 sort_order: 63
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar indicações
@@ -24,7 +24,7 @@ is_published: true
 4. Na aba "Programas", clique em "Novo programa" e preencha "Nome *", "Bônus (centavos)", "Moeda" e "URL dos termos".
 5. Configure o portal público e use "Copiar link".
 6. Veja a aba "Ranking".
-<!-- screenshot: indicações -->
+![Tela: indicações](/help-media/ats/gerenciar-indicacoes.webp)
 
 ## Resultado esperado
 "Indicação enviada" ou "Programa criado".

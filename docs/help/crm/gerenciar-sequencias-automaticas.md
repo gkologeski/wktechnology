@@ -8,7 +8,7 @@ route_pattern: /settings/sequences
 min_permission: system.automation.sequences.view.workspace
 audience: internal
 sort_order: 411
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar sequências automáticas
@@ -26,7 +26,7 @@ is_published: true
 6. Abra "Inscrições" para ver os inscritos.
 7. Pause, retome ou remova inscrições pelos controles da linha.
 8. Clique em "Rodar agora" para processar.
-<!-- screenshot: lista de sequências, interruptor e aba Inscrições -->
+![Tela: lista de sequências, interruptor e aba Inscrições](/help-media/crm/gerenciar-sequencias-automaticas.webp)
 
 ## Resultado esperado
 "Sequência salva". "Rodar agora" mostra quantas inscrições foram processadas.

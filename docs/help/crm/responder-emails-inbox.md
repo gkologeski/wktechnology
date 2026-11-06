@@ -8,7 +8,7 @@ route_pattern: /inbox/email
 min_permission:
 audience: internal
 sort_order: 302
-version: 1
+version: 2
 is_published: true
 ---
 # Responder e-mails na Inbox
@@ -25,7 +25,7 @@ is_published: true
 5. Escreva a resposta.
 6. Clique em "Enviar resposta".
 7. Para nova mensagem, clique em "Novo email".
-<!-- screenshot: conversa de e-mail com editor de resposta -->
+![Tela: conversa de e-mail com editor de resposta](/help-media/crm/responder-emails-inbox.webp)
 
 ## Resultado esperado
 A resposta vai ao remetente e o histórico é atualizado.

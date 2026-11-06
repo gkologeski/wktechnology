@@ -8,7 +8,7 @@ route_pattern: /settings/quotes
 min_permission:
 audience: internal
 sort_order: 204
-version: 1
+version: 2
 is_published: true
 ---
 # Gerenciar cotações e gerar propostas
@@ -28,7 +28,7 @@ is_published: true
 8. Para gerar um contrato direto da cotação, use a ação de geração de contrato. A mesma ação existe no detalhe da proposta.
 9. Para compartilhar a cotação, use os ícones de abrir ou copiar o link.
 10. Para excluir, clique no ícone de lixeira e confirme "Excluir esta cotação?".
-<!-- screenshot: cotação na lista com Gerar proposta, geração de contrato e ícones de compartilhamento -->
+![Tela: cotação na lista com Gerar proposta, geração de contrato e ícones de compartilhamento](/help-media/crm/gerenciar-cotacoes.webp)
 
 ## Resultado esperado
 A proposta reaproveita os vínculos e dados comerciais da cotação. O contrato é criado ou o registro já existente é reutilizado.

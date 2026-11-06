@@ -8,7 +8,7 @@ route_pattern: /settings/exports
 min_permission: 
 audience: internal
 sort_order: 125
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar exportações e relatórios
@@ -41,4 +41,4 @@ O mapa de rota usa system.analytics.reports. Não confunda configurar uma export
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/exports com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/exports com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-exportacoes-e-relatorios.webp)

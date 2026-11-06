@@ -8,7 +8,7 @@ route_pattern: /settings/enrichment
 min_permission: 
 audience: internal
 sort_order: 123
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o histórico de enriquecimento
@@ -42,4 +42,4 @@ Recurso techsales.prospecting_enrichment; pertence à prospecção do TechSales,
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/enrichment com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/enrichment com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/consultar-o-historico-de-enriquecimento.webp)

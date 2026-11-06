@@ -8,7 +8,7 @@ route_pattern: /settings/portal
 min_permission: system.portal.view.workspace
 audience: internal
 sort_order: 509
-version: 1
+version: 2
 is_published: true
 ---
 # Habilitar o portal do cliente
@@ -24,7 +24,7 @@ is_published: true
 4. Envie o link só ao cliente correspondente.
 5. Para trocar o endereço, use "Gerar novo token".
 6. Para desabilitar, desligue "Ativo".
-<!-- screenshot: contato com acesso ativo e ações do link -->
+![Tela: contato com acesso ativo e ações do link](/help-media/crm/habilitar-portal-do-cliente.webp)
 
 ## Resultado esperado
 "Link copiado!". Regerar mostra "Token regenerado.".

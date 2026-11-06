@@ -8,7 +8,7 @@ route_pattern: /sourcing/inbox
 min_permission: 
 audience: internal
 sort_order: 61
-version: 1
+version: 2
 is_published: true
 ---
 # Triar a inbox de sourcing
@@ -21,7 +21,7 @@ is_published: true
 1. Na aba "Tarefas manuais", faça a tarefa e clique em "Concluí". Se o candidato respondeu, clique em "Respondeu".
 2. Na aba "Falhas", clique em "Retomar" ou "Encerrar".
 3. Na aba "Aguardando decisão", decida entre "Retomar" e "Encerrar".
-<!-- screenshot: inbox de sourcing -->
+![Tela: inbox de sourcing](/help-media/ats/triar-inbox-sourcing.webp)
 
 ## Resultado esperado
 "Tarefa marcada como concluída", "Sequência retomada" ou "Sequência encerrada".

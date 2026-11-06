@@ -8,7 +8,7 @@ route_pattern: /tickets
 min_permission:
 audience: internal
 sort_order: 510
-version: 2
+version: 3
 is_published: true
 ---
 # Consultar e organizar tickets
@@ -28,7 +28,7 @@ is_published: true
 8. Vincule "Contato", "Empresa" e "Negócio".
 9. Salve.
 10. Para ações em massa, selecione os tickets e escolha a ação.
-<!-- screenshot: filtros e formulário de ticket -->
+![Tela: filtros e formulário de ticket](/help-media/crm/consultar-organizar-tickets.webp)
 
 ## Resultado esperado
 "Ticket criado." ou "Ticket atualizado.".

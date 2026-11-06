@@ -8,7 +8,7 @@ route_pattern: /communications
 min_permission:
 audience: internal
 sort_order: 307
-version: 1
+version: 2
 is_published: true
 ---
 # Organizar a lista de comunicações
@@ -26,7 +26,7 @@ is_published: true
 6. Marque registros.
 7. Use "Editar em massa" ou "Excluir".
 8. Use "Exportar selecionados".
-<!-- screenshot: grade com filtro Tipo e barra de seleção -->
+![Tela: grade com filtro Tipo e barra de seleção](/help-media/crm/organizar-lista-comunicacoes.webp)
 
 ## Resultado esperado
 A grade mostra o recorte escolhido.

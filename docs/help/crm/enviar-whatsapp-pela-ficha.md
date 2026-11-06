@@ -8,7 +8,7 @@ route_pattern: /contacts/$id
 min_permission: techsales.inbox.whatsapp.view.own
 audience: internal
 sort_order: 160
-version: 1
+version: 2
 is_published: true
 ---
 # Enviar WhatsApp pela ficha
@@ -25,7 +25,7 @@ is_published: true
 5. Fora da janela, escolha um "Modelo aprovado pela Meta" e preencha as variáveis.
 6. Se quiser, anexe um arquivo em "Mídia (opcional)".
 7. Clique em "Enviar".
-<!-- screenshot: janela Enviar WhatsApp na ficha do contato -->
+![Tela: janela Enviar WhatsApp na ficha do contato](/help-media/crm/enviar-whatsapp-pela-ficha.webp)
 
 ## Resultado esperado
 A mensagem é enviada e aparece na conversa e na timeline do cadastro.

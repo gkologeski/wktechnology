@@ -8,7 +8,7 @@ route_pattern: /tickets/$id
 min_permission:
 audience: internal
 sort_order: 511
-version: 2
+version: 3
 is_published: true
 ---
 # Acompanhar um ticket
@@ -24,7 +24,7 @@ is_published: true
 4. Selecione a etapa no indicador de andamento.
 5. Clique em "Aplicar macro" e escolha uma macro na lista "Macros".
 6. Para excluir, use "Excluir ticket" e confirme.
-<!-- screenshot: cabeçalho, etapas e propriedades do ticket -->
+![Tela: cabeçalho, etapas e propriedades do ticket](/help-media/crm/acompanhar-ticket.webp)
 
 ## Resultado esperado
 O detalhe mostra o estado atual. Exclusão mostra "Excluído".

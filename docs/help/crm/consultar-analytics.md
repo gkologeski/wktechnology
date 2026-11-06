@@ -8,7 +8,7 @@ route_pattern: /analytics
 min_permission: system.analytics.insights.view.workspace
 audience: internal
 sort_order: 502
-version: 2
+version: 3
 is_published: true
 ---
 # Consultar Analytics
@@ -25,7 +25,7 @@ is_published: true
 5. Abra "Sentimento".
 6. Abra "E-mails 1:1".
 7. Abra "SLA".
-<!-- screenshot: filtros e abas de Analytics -->
+![Tela: filtros e abas de Analytics](/help-media/crm/consultar-analytics.webp)
 
 ## Resultado esperado
 A aba mostra seus indicadores.

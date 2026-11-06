@@ -8,7 +8,7 @@ route_pattern: /signup
 min_permission: 
 audience: internal
 sort_order: 214
-version: 1
+version: 2
 is_published: true
 ---
 # Entender o acesso por convite
@@ -41,4 +41,4 @@ Cadastro público está desativado. Esta página não cria conta ou workspace po
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /signup com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /signup com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/entender-o-acesso-por-convite.webp)

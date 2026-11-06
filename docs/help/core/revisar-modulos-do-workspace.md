@@ -8,7 +8,7 @@ route_pattern: /workspace/modules
 min_permission: 
 audience: internal
 sort_order: 180
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar módulos do workspace
@@ -41,4 +41,4 @@ Os seis módulos verticais são distintos do Core e da administração de plataf
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /workspace/modules com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /workspace/modules com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/revisar-modulos-do-workspace.webp)

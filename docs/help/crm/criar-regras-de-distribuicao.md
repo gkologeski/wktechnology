@@ -8,7 +8,7 @@ route_pattern: /settings/rotation
 min_permission: system.automation.rotation.view.workspace
 audience: internal
 sort_order: 412
-version: 1
+version: 2
 is_published: true
 ---
 # Criar regras de distribuição
@@ -28,7 +28,7 @@ is_published: true
 8. Clique em "copiar para usar no Workflow".
 9. Use o identificador na ação "Distribuir via regra".
 10. Para editar ou excluir, use lápis ou lixeira.
-<!-- screenshot: formulário de distribuição com estratégia e responsáveis -->
+![Tela: formulário de distribuição com estratégia e responsáveis](/help-media/crm/criar-regras-de-distribuicao.webp)
 
 ## Resultado esperado
 "Regra salva" e "ID copiado".

@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 35
-version: 1
+version: 2
 is_published: true
 ---
 # Associar serviço do catálogo ao contrato
@@ -24,7 +24,7 @@ is_published: true
 4. Revise "Cargo / perfil contratado", "Senioridade" e "Stack / competências".
 5. Preencha "Tipo de cobrança", "Cadência", "Quantidade", "Preço unitário", "Início" e "Fim".
 6. Conclua a associação e confira "Serviço associado ao contrato.".
-<!-- screenshot: Associar serviço do catálogo ao contrato, sem dados pessoais reais -->
+![Tela: Associar serviço do catálogo ao contrato, sem dados pessoais reais](/help-media/contracts/associar-servico.webp)
 
 ## Resultado esperado
 Serviço operacional associado ao contrato; seu nome abre a ficha do serviço.

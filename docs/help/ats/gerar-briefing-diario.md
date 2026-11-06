@@ -8,7 +8,7 @@ route_pattern: /briefing
 min_permission: 
 audience: internal
 sort_order: 11
-version: 1
+version: 2
 is_published: true
 ---
 # Gerar o briefing diário
@@ -21,7 +21,7 @@ is_published: true
 1. Abra "Briefing diário".
 2. Leia "Resumo", "Prioridades", "Riscos" e "Recomendações".
 3. Para atualizar, clique em "Gerar novo briefing".
-<!-- screenshot: briefing diário -->
+![Tela: briefing diário](/help-media/ats/gerar-briefing-diario.webp)
 
 ## Resultado esperado
 "Briefing gerado." e o novo resumo na tela.

@@ -8,7 +8,7 @@ route_pattern: /finance/cash-flow
 min_permission: techfinance.reports.view.workspace
 audience: internal
 sort_order: 130
-version: 1
+version: 2
 is_published: true
 ---
 # Simular fluxo de caixa
@@ -44,5 +44,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Simular fluxo de caixa; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Simular fluxo de caixa](/help-media/finance/simular-fluxo-caixa.webp)
 <!-- evidência: src/routes/_authenticated/finance.cash-flow.tsx; src/lib/finance.functions.ts -->

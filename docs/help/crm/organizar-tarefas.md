@@ -8,7 +8,7 @@ route_pattern: /tasks
 min_permission:
 audience: internal
 sort_order: 205
-version: 2
+version: 3
 is_published: true
 ---
 # Organizar tarefas
@@ -26,7 +26,7 @@ is_published: true
 6. Selecione tarefas para executar as ações em massa disponíveis.
 7. Use o botão de exportação e escolha "Exportar CSV" ou "Exportar Excel (XLSX)". São exportadas as tarefas exibidas no resultado atual. Sem registros, aparece "Nenhum registro para exportar".
 8. Clique em "Queues" para organizar uma fila.
-<!-- screenshot: Tarefas com busca, filtros, visualizações e seleção de registros -->
+![Tela: Tarefas com busca, filtros, visualizações e seleção de registros](/help-media/crm/organizar-tarefas.webp)
 
 ## Resultado esperado
 A lista apresenta as tarefas filtradas. Uma visualização salva mostra "Visualização salva". Concluir ou reabrir uma tarefa mostra "Concluída" ou "Reaberta".

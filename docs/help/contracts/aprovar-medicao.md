@@ -8,7 +8,7 @@ route_pattern: /contracts/$id/medicoes
 min_permission:
 audience: internal
 sort_order: 73
-version: 1
+version: 2
 is_published: true
 ---
 # Aprovar e reverificar uma medição
@@ -22,7 +22,7 @@ is_published: true
 2. Confira a prévia, linhas e pendências.
 3. Clique em "Aprovar medição".
 4. Se houver pendências financeiras após aprovação, resolva-as e clique em "Reverificar pendências".
-<!-- screenshot: Aprovar e reverificar uma medição, sem dados pessoais reais -->
+![Tela: Aprovar e reverificar uma medição, sem dados pessoais reais](/help-media/contracts/aprovar-medicao.webp)
 
 ## Resultado esperado
 Aprovada com pendências financeiras ou pronta para o Financeiro; nenhum título criado pela aprovação.

@@ -8,7 +8,7 @@ route_pattern: /people
 min_permission: techpeople.people.view.own
 audience: internal
 sort_order: 10
-version: 1
+version: 2
 is_published: true
 ---
 # Cadastrar e gerenciar pessoas
@@ -23,7 +23,7 @@ is_published: true
 3. Em "Trabalho", escolha "Cargo / posição", "Senioridade", "Vínculo" e "Status".
 4. Se tiver, preencha "Dados legais", "Financeiro" e "Notas & tags".
 5. Clique em "Cadastrar".
-<!-- screenshot: nova pessoa -->
+![Tela: nova pessoa](/help-media/people/gerenciar-pessoas.webp)
 
 ## Resultado esperado
 "Pessoa cadastrada". A pessoa aparece na lista.

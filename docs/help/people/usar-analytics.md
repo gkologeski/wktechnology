@@ -8,7 +8,7 @@ route_pattern: /people/analytics
 min_permission: techpeople.allocations.view.own
 audience: internal
 sort_order: 80
-version: 1
+version: 2
 is_published: true
 ---
 # Usar o Analytics e sincronizar a folha
@@ -23,7 +23,7 @@ is_published: true
 3. Para enviar a folha ao financeiro, clique em "Sincronizar folha". Abre a prévia; nada é gravado.
 4. Confira "Criadas", "Atualizadas", "Desativadas" e "Total mensal a materializar:".
 5. Clique em "Aplicar".
-<!-- screenshot: analytics -->
+![Tela: analytics](/help-media/people/usar-analytics.webp)
 
 ## Resultado esperado
 "Folha sincronizada". Cada pessoa ativa ganha uma conta a pagar mensal no TechFinance.

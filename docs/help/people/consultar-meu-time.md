@@ -8,7 +8,7 @@ route_pattern: /people/my-team
 min_permission: 
 audience: internal
 sort_order: 12
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar meu time
@@ -21,7 +21,7 @@ is_published: true
 1. Confira os cartões "Time", "Horas no mês", "Aprovação pendente" e "Docs a vencer (30d)".
 2. Na tabela "Liderados", veja alocações, horas, "A aprovar", documentos e "Próxima 1:1".
 3. Clique no nome para abrir a ficha e aprovar horas.
-<!-- screenshot: meu time -->
+![Tela: meu time](/help-media/people/consultar-meu-time.webp)
 
 ## Resultado esperado
 Você vê seus liderados e o que está pendente.

@@ -8,7 +8,7 @@ route_pattern: /settings/ads-sync
 min_permission: 
 audience: internal
 sort_order: 110
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar conexões de anúncios
@@ -42,4 +42,4 @@ Registrar uma conexão na tela não prova execução de sincronização no prove
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/ads-sync com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/ads-sync com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-conexoes-de-anuncios.webp)

@@ -8,7 +8,7 @@ route_pattern: /projects/settings/imports/reconciliation
 min_permission: 
 audience: internal
 sort_order: 120
-version: 1
+version: 2
 is_published: true
 ---
 # Conciliar horas e vínculos importados
@@ -44,4 +44,4 @@ Somente administrador ativo do workspace ativo; Ver Como não pode gravar. Vínc
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Conciliar horas e vínculos importados; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Conciliar horas e vínculos importados](/help-media/projects/operar-imports-reconciliation.webp)

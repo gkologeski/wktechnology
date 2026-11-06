@@ -8,7 +8,7 @@ route_pattern: /leads/$id
 min_permission:
 audience: internal
 sort_order: 104
-version: 1
+version: 2
 is_published: true
 ---
 # Excluir lead
@@ -20,7 +20,7 @@ is_published: true
 1. Abra a ficha do registro.
 2. Clique no ícone "Excluir lead".
 3. Revise a confirmação e confirme a exclusão.
-<!-- screenshot: Excluir lead: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Excluir lead](/help-media/crm/excluir-lead.webp)
 ## Resultado esperado
 A mensagem "Excluído" aparece e a navegação volta à listagem.
 ## Regras e limites

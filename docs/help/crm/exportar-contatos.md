@@ -8,7 +8,7 @@ route_pattern: /contacts
 min_permission:
 audience: internal
 sort_order: 117
-version: 1
+version: 2
 is_published: true
 ---
 # Exportar contatos
@@ -20,7 +20,7 @@ is_published: true
 1. Ajuste os filtros e confira a página exibida.
 2. Clique em "Exportar" e escolha o formato desejado.
 3. Salve o arquivo gerado e confira seu conteúdo.
-<!-- screenshot: Exportar contatos: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Exportar contatos](/help-media/crm/exportar-contatos.webp)
 ## Resultado esperado
 Um arquivo é gerado com os registros carregados na página.
 ## Regras e limites

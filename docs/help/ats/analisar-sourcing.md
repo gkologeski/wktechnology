@@ -8,7 +8,7 @@ route_pattern: /sourcing/analytics
 min_permission: 
 audience: internal
 sort_order: 65
-version: 1
+version: 2
 is_published: true
 ---
 # Analisar o sourcing
@@ -21,7 +21,7 @@ is_published: true
 1. Escolha "7 dias", "30 dias" ou "90 dias".
 2. Veja "Performance por sequência", "Por canal", "Funil por step" e "A/B por variante".
 3. Clique em "CSV" para exportar.
-<!-- screenshot: analytics de sourcing -->
+![Tela: analytics de sourcing](/help-media/ats/analisar-sourcing.webp)
 
 ## Resultado esperado
 As métricas do período aparecem.

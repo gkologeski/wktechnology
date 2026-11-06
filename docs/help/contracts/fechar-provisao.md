@@ -8,7 +8,7 @@ route_pattern: /contracts/$id/medicoes
 min_permission:
 audience: internal
 sort_order: 76
-version: 1
+version: 2
 is_published: true
 ---
 # Calcular, fechar e revisar provisão mensal
@@ -24,7 +24,7 @@ is_published: true
 4. Preencha "Justificativa do fechamento ou da revisão".
 5. Clique em "Fechar provisão mensal" ou, se já houver fechamento, "Registrar revisão".
 6. Consulte "Histórico da competência".
-<!-- screenshot: Calcular, fechar e revisar provisão mensal, sem dados pessoais reais -->
+![Tela: Calcular, fechar e revisar provisão mensal, sem dados pessoais reais](/help-media/contracts/fechar-provisao.webp)
 
 ## Resultado esperado
 Snapshot gerencial registrado; nenhum título, obrigação, cobrança ou pagamento criado.

@@ -8,7 +8,7 @@ route_pattern: /surveys
 min_permission:
 audience: internal
 sort_order: 507
-version: 2
+version: 3
 is_published: true
 ---
 # Gerenciar pesquisas
@@ -25,7 +25,7 @@ is_published: true
 5. Clique em "Nova no construtor" para criar no editor.
 6. Ou clique em "Nova pesquisa".
 7. Para importar, clique em "Importar pesquisa com IA". Envie um "Arquivo da pesquisa" ou informe o "Endereço da página", revise o "Título" e confirme.
-<!-- screenshot: abas de pesquisas e indicadores -->
+![Tela: abas de pesquisas e indicadores](/help-media/crm/gerenciar-pesquisas.webp)
 
 ## Resultado esperado
 Mostra modelos e resultados. "Nova no construtor" abre o editor.

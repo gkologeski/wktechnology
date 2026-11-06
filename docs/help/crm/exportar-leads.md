@@ -8,7 +8,7 @@ route_pattern: /leads
 min_permission:
 audience: internal
 sort_order: 108
-version: 1
+version: 2
 is_published: true
 ---
 # Exportar leads
@@ -20,7 +20,7 @@ is_published: true
 1. Ajuste os filtros e confira a página exibida.
 2. Clique em "Exportar".
 3. Salve o arquivo gerado e confira seu conteúdo.
-<!-- screenshot: Exportar leads: capturar a tela após o último passo, sem dados pessoais reais. -->
+![Tela: Exportar leads](/help-media/crm/exportar-leads.webp)
 ## Resultado esperado
 Um arquivo é gerado com os registros carregados na página.
 ## Regras e limites

@@ -8,7 +8,7 @@ route_pattern: /projects/my-hours
 min_permission: techprojects.time_entries.view.own
 audience: internal
 sort_order: 50
-version: 1
+version: 2
 is_published: true
 ---
 # Registrar e acompanhar minhas horas
@@ -44,4 +44,4 @@ Duração manual: mínimo de 1 minuto e máximo de 24 horas. No intervalo, térm
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
-<!-- screenshot: Registrar e acompanhar minhas horas; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+![Tela: Registrar e acompanhar minhas horas](/help-media/projects/operar-my-hours.webp)

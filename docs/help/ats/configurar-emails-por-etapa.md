@@ -8,7 +8,7 @@ route_pattern: /stage-emails
 min_permission: 
 audience: internal
 sort_order: 70
-version: 1
+version: 2
 is_published: true
 ---
 # Configurar e-mails por etapa
@@ -23,7 +23,7 @@ is_published: true
 3. Preencha "Assunto" e "Corpo do e-mail". Use os botões de variáveis.
 4. Clique em "Salvar template".
 5. Para apagar, clique em "Remover".
-<!-- screenshot: e-mails por etapa -->
+![Tela: e-mails por etapa](/help-media/ats/configurar-emails-por-etapa.webp)
 
 ## Resultado esperado
 "Template salvo".

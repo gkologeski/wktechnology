@@ -8,7 +8,7 @@ route_pattern: /catalog/contracting-presets
 min_permission: 
 audience: internal
 sort_order: 101
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar presets e cargos de contratação
@@ -41,4 +41,4 @@ O cadastro é compartilhado pelos módulos consumidores; o TechHire possui catá
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /catalog/contracting-presets com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /catalog/contracting-presets com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-presets-e-cargos-de-contratacao.webp)

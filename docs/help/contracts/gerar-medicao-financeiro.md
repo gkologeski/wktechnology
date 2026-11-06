@@ -8,7 +8,7 @@ route_pattern: /contracts/$id/medicoes
 min_permission:
 audience: internal
 sort_order: 74
-version: 1
+version: 2
 is_published: true
 ---
 # Gerar título financeiro ou vincular título legado da medição
@@ -22,7 +22,7 @@ is_published: true
 2. Se pronta, preencha "Vencimento" e clique em "Gerar no Financeiro".
 3. Quando o fluxo oferecer vínculo legado, selecione o título existente correspondente em vez de criar outro.
 4. Confira o vínculo financeiro e o resultado da operação.
-<!-- screenshot: Gerar título financeiro ou vincular título legado da medição, sem dados pessoais reais -->
+![Tela: Gerar título financeiro ou vincular título legado da medição, sem dados pessoais reais](/help-media/contracts/gerar-medicao-financeiro.webp)
 
 ## Resultado esperado
 Título interno a receber criado ou título legado vinculado, sem emissão de nota fiscal, boleto ou envio de cobrança.

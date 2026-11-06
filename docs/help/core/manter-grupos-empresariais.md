@@ -8,7 +8,7 @@ route_pattern: /settings/legal-entity-groups
 min_permission: system.legal_entity_groups.view.workspace
 audience: internal
 sort_order: 139
-version: 1
+version: 2
 is_published: true
 ---
 # Manter grupos empresariais
@@ -41,4 +41,4 @@ Grupo empresarial não é time de usuários, cargo de acesso nem agrupamento de 
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/legal-entity-groups com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/legal-entity-groups com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/manter-grupos-empresariais.webp)

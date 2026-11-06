@@ -8,7 +8,7 @@ route_pattern: /proposals/$id
 min_permission:
 audience: internal
 sort_order: 203
-version: 1
+version: 2
 is_published: true
 ---
 # Editar e enviar uma proposta
@@ -26,7 +26,7 @@ is_published: true
 6. Escolha "Revisor", preencha "Comentário" se necessário e clique em "Enviar para revisão".
 7. Quando a ação estiver disponível, clique em "Enviar ao cliente".
 8. Use "Copiar link" para compartilhar o endereço público ou "Baixar PDF" para obter o documento.
-<!-- screenshot: proposta com status, versão, Editar, Copiar link, Baixar PDF e Enviar ao cliente -->
+![Tela: proposta com status, versão, Editar, Copiar link, Baixar PDF e Enviar ao cliente](/help-media/crm/editar-enviar-proposta.webp)
 
 ## Resultado esperado
 A edição atualiza a proposta. A solicitação de revisão mostra "Aprovação solicitada.". O envio mostra "Proposta enviada e selada.". A cópia mostra "Link copiado.".

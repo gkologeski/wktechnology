@@ -8,7 +8,7 @@ route_pattern: /tasks/queues
 min_permission:
 audience: internal
 sort_order: 207
-version: 2
+version: 3
 is_published: true
 ---
 # Criar filas de tarefas
@@ -24,7 +24,7 @@ is_published: true
 4. Clique em "Adicionar". Na janela "Adicionar contatos à fila", selecione os registros e clique em "Adicionar (N)".
 5. Use a ação de execução da fila para começar o atendimento sequencial.
 6. Para remover uma fila, use sua ação de exclusão.
-<!-- screenshot: Nova fila com Nome, Descrição (opcional) e uma fila cadastrada -->
+![Tela: Nova fila com Nome, Descrição (opcional) e uma fila cadastrada](/help-media/crm/criar-filas-tarefas.webp)
 
 ## Resultado esperado
 O cadastro mostra "Fila criada". A fila fica disponível para receber itens e ser executada.

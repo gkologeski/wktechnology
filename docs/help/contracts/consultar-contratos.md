@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 20
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar, filtrar e agrupar contratos
@@ -23,7 +23,7 @@ is_published: true
 3. Use "Buscar por título ou número…" e combine "Tipo", "Status", "Empresa (contraparte)", "Contratante", "Vigência", "Período de início" e "Período de término".
 4. Se desejar, agrupe por "Empresa", "Serviço", "Cargo" ou "Senioridade". "Nenhum" remove o agrupamento.
 5. Abra o contrato desejado. Use "Limpar filtros" para remover os filtros.
-<!-- screenshot: Consultar, filtrar e agrupar contratos, sem dados pessoais reais -->
+![Tela: Consultar, filtrar e agrupar contratos, sem dados pessoais reais](/help-media/contracts/consultar-contratos.webp)
 
 ## Resultado esperado
 Lista de contratos conforme filtros e acesso.

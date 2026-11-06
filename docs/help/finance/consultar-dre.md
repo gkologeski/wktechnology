@@ -8,7 +8,7 @@ route_pattern: /finance/dre
 min_permission: techfinance.reports.view.workspace
 audience: internal
 sort_order: 120
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar e exportar a DRE gerencial
@@ -45,5 +45,5 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 - [Permissões](/ajuda/finance/permissoes)
 - [Erros comuns](/ajuda/finance/erros-comuns)
 
-<!-- screenshot: Consultar e exportar a DRE gerencial; capturar apenas ambiente demonstrativo sem dados pessoais ou credenciais. -->
+![Tela: Consultar e exportar a DRE gerencial](/help-media/finance/consultar-dre.webp)
 <!-- evidência: src/routes/_authenticated/finance.dre.tsx; src/lib/finance.functions.ts -->

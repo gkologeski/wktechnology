@@ -8,7 +8,7 @@ route_pattern: /settings/my-tickets
 min_permission: 
 audience: internal
 sort_order: 146
-version: 1
+version: 2
 is_published: true
 ---
 # Acompanhar meus chamados de suporte
@@ -41,4 +41,4 @@ Renderiza MyBugReportsPage. Não confunda chamados de produto com tickets de ate
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/my-tickets com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/my-tickets com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/acompanhar-meus-chamados-de-suporte.webp)

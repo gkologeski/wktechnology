@@ -8,7 +8,7 @@ route_pattern: /settings/ai-panel
 min_permission: 
 audience: internal
 sort_order: 111
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar o painel de IA
@@ -41,4 +41,4 @@ O mapeamento de rota usa system.ai_settings. O painel não é um módulo vertica
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/ai-panel com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/ai-panel com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-o-painel-de-ia.webp)

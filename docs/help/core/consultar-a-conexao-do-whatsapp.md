@@ -8,7 +8,7 @@ route_pattern: /settings/whatsapp
 min_permission: system.whatsapp.view.workspace
 audience: internal
 sort_order: 176
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar a conexão do WhatsApp
@@ -41,4 +41,4 @@ Estar conectado não libera envio irrestrito. Fora das 24 horas desde a última 
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 
-<!-- screenshot: capturar /settings/whatsapp com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/whatsapp com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/consultar-a-conexao-do-whatsapp.webp)

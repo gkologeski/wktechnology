@@ -8,7 +8,7 @@ route_pattern: /settings/platform/status
 min_permission: 
 audience: internal
 sort_order: 188
-version: 1
+version: 2
 is_published: true
 ---
 # Consultar status e manutenção da plataforma
@@ -43,4 +43,4 @@ Atualização de consulta a cada 30 segundos. O backfill cria atividade Pesquisa
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `platform`; consulte os artigos desse módulo em `/ajuda/platform`.
 
-<!-- screenshot: capturar /settings/platform/status com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/platform/status com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/platform/consultar-status-e-manutencao-da-plataforma.webp)

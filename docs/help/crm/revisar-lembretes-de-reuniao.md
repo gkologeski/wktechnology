@@ -8,7 +8,7 @@ route_pattern: /settings/meeting-reminders
 min_permission: 
 audience: internal
 sort_order: 143
-version: 1
+version: 2
 is_published: true
 ---
 # Revisar lembretes de reunião
@@ -42,4 +42,4 @@ Recurso techsales.meeting_settings. Envio WhatsApp continua sujeito à janela de
 - [Permissões do Core](/ajuda/core/permissoes)
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
-<!-- screenshot: capturar /settings/meeting-reminders com dados fictícios, ocultando tokens, segredos e dados pessoais. -->
+![Tela: capturar /settings/meeting-reminders com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/revisar-lembretes-de-reuniao.webp)
