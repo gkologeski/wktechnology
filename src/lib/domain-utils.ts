@@ -63,8 +63,5 @@ export function logoDomain(...candidates: Array<string | null | undefined>): str
 /** URLs automáticas em ordem de preferência. */
 export function autoLogoUrls(domain: string | null): string[] {
   if (!domain) return [];
-  return [
-    `https://logo.clearbit.com/${domain}`,
-    `https://www.google.com/s2/favicons?domain=${domain}&sz=128`,
-  ];
+  return [`https://www.google.com/s2/favicons?domain=${encodeURIComponent(domain)}&sz=128`];
 }

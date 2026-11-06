@@ -34,8 +34,10 @@ describe("logoDomain", () => {
     expect(corporateDomainFromEmail("contato@acme.com.br")).toBe("acme.com.br");
     expect(corporateDomainFromEmail("x@gmail.com")).toBeNull();
   });
-  it("gera cascata Clearbit → Google", () => {
-    expect(autoLogoUrls("acme.com")).toHaveLength(2);
+  it("usa o favicon sem consultar o provedor de logos indisponível", () => {
+    expect(autoLogoUrls("acme.com")).toEqual([
+      "https://www.google.com/s2/favicons?domain=acme.com&sz=128",
+    ]);
     expect(autoLogoUrls(null)).toEqual([]);
   });
 });
