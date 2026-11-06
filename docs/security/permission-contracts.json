@@ -2273,7 +2273,7 @@
         "src/lib/whatsapp-campaigns.functions.ts": "3cbc558ef27809a083435fdd1621432e462b9a78d20efbf5df754d9a479d3d3f",
         "src/routes/_authenticated/inbox.index.tsx": "6871432118a6bd8ef6477bf0ca6ef3bd14a00e7fbec3beef7bb955f610daee80",
         "src/routes/_authenticated/inbox.whatsapp.tsx": "165ac43240712c3713a9b7daec6a059aad630a3a309ae77dd3f38ccd7aa8ea94",
-        "src/routes/_authenticated/campaigns.whatsapp.tsx": "4f967b5c68eee9e1e39fe8313ed74a7bb2ce5158de887b9348d8050a5f2480db",
+        "src/routes/_authenticated/campaigns.whatsapp.tsx": "c6eae748917f5de80b79433c10fa21aaacc17fa7f172e8a46589aa907dd148be",
         "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9",
         "drizzle/migrations/0263_wa_outbound_activity_trigger.sql": "6c6a9521a5cfa09cd1724061fd78939fa94d56344ccb8c3052418ea9426a96e0",
         "drizzle/migrations/0264_wa_outbound_activity_fast_lookup.sql": "120f2512f182b4b1f4a0f89489dbe4cff8c00f7be3be5f31ff9b5b5ccea6a53a",
@@ -2290,8 +2290,9 @@
         "drizzle/migrations/0288_wa_campaign_audience_ids_array.sql": "11ee5282e7d64a30bd16f340a6566076a3d3cefc555fcd01d6732c49ba81ae93",
         "drizzle/migrations/0289_sales_row_guard_child_skip_context.sql": "7dc5c38b2dac757557e99dec6373570dc37b96cedb5ffb8e57ec55b63a59ae0e",
         "src/lib/whatsapp/campaign-audience.ts": "b68288dd8a47d5e121fb0dca43b3c9ee51b74ca9e715cedd5df3d6d17f0801b3",
-        "src/components/whatsapp/campaign-audience-panel.tsx": "2d132cabeeaf08f897989ea16cb41e7642aaeaed7dfc2c5bd519d8c8386ccecf",
-        "src/lib/whatsapp/campaign-rotation-guard.server.ts": "95cce5544afd6ea49a5f7beafec341d94bded38c22999b88c6e2aca2976c9476"
+        "src/components/whatsapp/campaign-audience-panel.tsx": "b1a843536687e1c44d6cf1ebb45e477d7839d7d5d66434716fd635439638f811",
+        "src/lib/whatsapp/campaign-rotation-guard.server.ts": "95cce5544afd6ea49a5f7beafec341d94bded38c22999b88c6e2aca2976c9476",
+        "src/lib/whatsapp/template-variable-context.ts": "74a6bf0eb88a7cb11ad2ded8d85c7c9dac9353bb6b5f07480e35f0dd2eae784a"
       }
     },
     {
