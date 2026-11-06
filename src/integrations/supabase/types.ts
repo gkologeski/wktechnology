@@ -33054,6 +33054,10 @@ export type Database = {
         Args: { action: string; eid: string; w: string }
         Returns: undefined
       }
+      hiring_lifecycle_allocation_scope_repair: {
+        Args: never
+        Returns: undefined
+      }
       hiring_lifecycle_apply: {
         Args: { req: string; w: string }
         Returns: Json
@@ -33117,6 +33121,7 @@ export type Database = {
         }
         Returns: string
       }
+      hiring_notification_conflict_repair: { Args: never; Returns: undefined }
       hiring_profile_recruitment_status: {
         Args: { p_deal: string; p_ws: string }
         Returns: Json
@@ -33176,6 +33181,7 @@ export type Database = {
         Args: { s: string; u: string; w: string }
         Returns: boolean
       }
+      hiring_shared_record_guard_repair: { Args: never; Returns: undefined }
       hiring_signature_access: {
         Args: { p_action: string; p_contract: string; p_ws: string }
         Returns: boolean
