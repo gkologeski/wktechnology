@@ -51,7 +51,7 @@ sql(guard);
 if (process.argv.includes("--migrate")) {
   const { readdirSync } = await import("node:fs");
   const files = readdirSync("drizzle/migrations")
-    .filter((f) => f >= "0308_" && f < "0334_" && f.endsWith(".sql"))
+    .filter((f) => f >= "0308_" && f < "0334_" && f.includes("_hiring_") && f.endsWith(".sql"))
     .sort();
   sql(
     "BEGIN;" +
