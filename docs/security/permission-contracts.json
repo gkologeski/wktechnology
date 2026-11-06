@@ -2531,7 +2531,7 @@
         },
         {
           "file": "drizzle/migrations/0310_wa_campaign_template_rotation.sql",
-          "symbol": "template_rotation"
+          "symbol": "whatsapp_campaigns"
         }
       ],
       "tests": {
@@ -9076,7 +9076,7 @@
       "kind": "presentation",
       "rationale": "Pure template rotation helper (sequential/weighted pick, max 5). No I/O, routes, actions, grants or data access; callers stay under whatsapp-cloud-authenticated-routing and whatsapp-cloud-workers.",
       "files": {
-        "src/lib/whatsapp/campaign-template-rotation.ts": "3551f0105f15b2a2b213cbcfdded11c05630117897ebecdbadc28821c05a7436"
+        "src/lib/whatsapp/campaign-template-rotation.ts": "8704e882fe2cc2b6b8e0ed79dba72ee55812c5e4ecd65178b9526d8938746e5f"
       }
     }
   ],

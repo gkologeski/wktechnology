@@ -90,5 +90,7 @@ export function maxVariableCount(list: RotationTemplate[]): number {
 
 /** Variáveis posicionais {{1}}..{{n}} do modelo escolhido. */
 export function positionalVariables(variableCount: number, vars: Record<string, string>): string[] {
-  return Array.from({ length: variableCount }, (_, i) => vars[String(i + 1)] ?? "");
+  const out: string[] = [];
+  for (let i = 1; i <= variableCount; i++) out.push(vars[String(i)] ?? "");
+  return out;
 }
