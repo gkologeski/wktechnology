@@ -2291,8 +2291,7 @@
         "drizzle/migrations/0289_sales_row_guard_child_skip_context.sql": "7dc5c38b2dac757557e99dec6373570dc37b96cedb5ffb8e57ec55b63a59ae0e",
         "src/lib/whatsapp/campaign-audience.ts": "b68288dd8a47d5e121fb0dca43b3c9ee51b74ca9e715cedd5df3d6d17f0801b3",
         "src/components/whatsapp/campaign-audience-panel.tsx": "b1a843536687e1c44d6cf1ebb45e477d7839d7d5d66434716fd635439638f811",
-        "src/lib/whatsapp/campaign-rotation-guard.server.ts": "95cce5544afd6ea49a5f7beafec341d94bded38c22999b88c6e2aca2976c9476",
-        "src/lib/whatsapp/template-variable-context.ts": "74a6bf0eb88a7cb11ad2ded8d85c7c9dac9353bb6b5f07480e35f0dd2eae784a"
+        "src/lib/whatsapp/campaign-rotation-guard.server.ts": "95cce5544afd6ea49a5f7beafec341d94bded38c22999b88c6e2aca2976c9476"
       }
     },
     {
@@ -3924,6 +3923,14 @@
         "src/lib/projects/public-api.server.ts": "6cc142c7f964e8d7cb5fad333f932b527696191a9d95156d025412b1f7b506a1",
         "src/lib/projects/time-offline.functions.ts": "31355596598af5b4c5a7e0019f705d1994369c740f338b422ccceef9f9a66354",
         "src/lib/projects/ops.functions.ts": "d148ab12dfb46e5c57432400cbfab8f54914065fcefc9d2af3efc31a6444a703"
+      }
+    },
+    {
+      "id": "whatsapp-template-variable-context-presentation",
+      "kind": "presentation",
+      "rationale": "Pure helpers that split an already loaded template body and extract text around {{n}} for display; no I/O, actions, permissions, or data access.",
+      "files": {
+        "src/lib/whatsapp/template-variable-context.ts": "74a6bf0eb88a7cb11ad2ded8d85c7c9dac9353bb6b5f07480e35f0dd2eae784a"
       }
     },
     {
