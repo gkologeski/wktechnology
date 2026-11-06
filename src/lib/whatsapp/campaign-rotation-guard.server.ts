@@ -1,5 +1,6 @@
 // Validação server-side do rodízio de modelos e atualização das variáveis
 // dos destinatários pendentes quando o mapeamento muda.
+import { buildAudience, fieldsForBase } from "./campaign-audience";
 import { countTemplateVariables } from "./meeting-reminders";
 import { loadApprovedTemplates } from "./templates.server";
 
@@ -38,7 +39,6 @@ export async function refreshPendingVariables(
   audience: any,
   variableMap: Record<string, { field: string; fallback?: string }>,
 ): Promise<number> {
-  const { buildAudience, fieldsForBase } = await import("./campaign-audience");
   const { loadAudienceRows, loadOptedOutPhones, loadSuppressedPhones } =
     await import("./campaign-audience.server");
   const { base, rows } = await loadAudienceRows(supabase, workspaceId, audience, userId);
