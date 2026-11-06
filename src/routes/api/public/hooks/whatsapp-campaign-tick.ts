@@ -24,6 +24,11 @@ import {
   type PacingInterval,
 } from "@/lib/whatsapp/campaign-pacing";
 import { z } from "zod";
+import {
+  buildRotation,
+  pickTemplate,
+  positionalVariables,
+} from "@/lib/whatsapp/campaign-template-rotation";
 
 function applyTemplate(body: string, vars: Record<string, string>): string {
   return body.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? "");
@@ -52,6 +57,8 @@ type Campaign = {
   exclude_customers?: boolean | null;
   exclude_open_deals?: boolean | null;
   assignment_mode?: string | null;
+  template_rotation?: unknown;
+  rotation_mode?: string | null;
 };
 
 /** Variáveis posicionais do template, renderizadas com os dados do destinatário. */
@@ -78,7 +85,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
   const batch = Math.min(allowed, batchOverride ?? 20);
   const { data: recips } = await supabaseAdmin
     .from("whatsapp_campaign_recipients")
-    .select("id, phone, variables, contact_id, override_recent, override_commercial")
+    .select("id, phone, variables, contact_id, override_recent, override_commercial, template_name")
     .eq("campaign_id", camp.id)
     .eq("status", "pending")
     .limit(batch);
@@ -112,6 +119,15 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
     return { processed: 0, error: message };
   }
 
+  const rotation = buildRotation(
+    {
+      name: camp.template_name,
+      language: camp.template_language,
+      body: camp.body_template,
+      variableCount: Object.keys(camp.content_variables_template ?? {}).length,
+    },
+    camp.template_rotation,
+  );
   let sentInc = 0;
   let failedInc = 0;
   // Destinatários que chegaram a um desfecho (ignorado, enviado ou falha).
@@ -247,7 +263,35 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
       }
     }
     const vars = (r.variables ?? {}) as Record<string, string>;
-    const body = applyTemplate(camp.body_template ?? "", vars);
+    // Rodízio de modelos: fixa o modelo do destinatário no primeiro envio.
+    const picked = pickTemplate(
+      rotation,
+      camp.rotation_mode === "weighted" ? "weighted" : "sequential",
+      (camp.sent ?? 0) + (camp.failed ?? 0) + sentInc + failedInc,
+      Math.random(),
+      (r as { template_name?: string | null }).template_name ?? null,
+    );
+    const tplName = picked?.name ?? camp.template_name;
+    const tplLang = picked?.language ?? camp.template_language;
+    const tplVars =
+      picked && rotation.length > 1
+        ? positionalVariables(picked.variableCount, vars)
+        : templateVariables(camp, vars);
+    if (
+      picked &&
+      rotation.length > 1 &&
+      (r as { template_name?: string | null }).template_name !== picked.name
+    ) {
+      const fix = await supabaseAdmin
+        .from("whatsapp_campaign_recipients")
+        .update({ template_name: picked.name, template_language: picked.language })
+        .eq("id", r.id);
+      if (fix.error) throw new Error("Não foi possível fixar o modelo do destinatário.");
+    }
+    const body = applyTemplate(
+      (picked && rotation.length > 1 ? picked.body : camp.body_template) ?? "",
+      vars,
+    );
 
     try {
       await assertSalesWorker(
@@ -258,14 +302,14 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
       );
       const { wamid, raw } = await metaSend(num, {
         to: toBare,
-        body: camp.template_name ? "" : body,
-        mediaUrl: camp.template_name ? null : camp.media_url,
+        body: tplName ? "" : body,
+        mediaUrl: tplName ? null : camp.media_url,
         mediaContentType: camp.media_content_type,
-        template: camp.template_name
+        template: tplName
           ? {
-              name: camp.template_name,
-              language: camp.template_language ?? undefined,
-              variables: templateVariables(camp, vars),
+              name: tplName as string,
+              language: tplLang ?? undefined,
+              variables: tplVars,
             }
           : null,
       });
@@ -304,8 +348,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
             wa_phone_number_id: num.phoneNumberId,
             last_message_at: new Date().toISOString(),
             last_message_preview:
-              body.slice(0, 120) ||
-              (camp.media_url ? "[mídia]" : `[template ${camp.template_name ?? ""}]`),
+              body.slice(0, 120) || (camp.media_url ? "[mídia]" : `[template ${tplName ?? ""}]`),
           },
           { onConflict: "contact_phone,twilio_number" },
         )
@@ -324,15 +367,15 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
           workspace_id: camp.workspace_id,
           direction: "outbound",
           body,
-          media_url: camp.template_name ? null : camp.media_url,
+          media_url: tplName ? null : camp.media_url,
           media_content_type: camp.media_content_type,
           from_number: num.displayPhoneNumber,
           to_number: toBare,
           provider: "meta",
           wa_message_id: wamid,
           status: "accepted",
-          template_name: camp.template_name,
-          is_template: !!camp.template_name,
+          template_name: tplName,
+          is_template: !!tplName,
           sent_by: camp.owner_id,
           sent_at: new Date().toISOString(),
           raw,
@@ -358,7 +401,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
             .from("whatsapp_conversations")
             .update({
               origin_campaign_id: camp.id,
-              origin_template_name: camp.template_name,
+              origin_template_name: tplName,
               origin_wa_message_id: wamid,
               conversation_origin: "campaign",
             })
@@ -380,7 +423,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
                 id: camp.id,
                 sdr_enabled: true,
                 sdr_playbook_id: sdrCfg.sdr_playbook_id,
-                template_name: camp.template_name,
+                template_name: tplName,
               },
               conversationId: conv.id,
               phone: toBare,
@@ -442,7 +485,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 const CAMPAIGN_COLUMNS =
-  "id, owner_id, body_template, template_name, sender_phone_number_id, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, dispatch_lease_until, recent_contact_days, exclude_customers, exclude_open_deals, assignment_mode";
+  "id, owner_id, body_template, template_name, sender_phone_number_id, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, dispatch_lease_until, recent_contact_days, exclude_customers, exclude_open_deals, assignment_mode, template_rotation, rotation_mode";
 
 type PacedRun = { budgetMs: number; idle: boolean; hop: number };
 

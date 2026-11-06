@@ -29478,6 +29478,8 @@ export type Database = {
           quota_reserved_until: string | null
           sent_at: string | null
           status: string
+          template_language: string | null
+          template_name: string | null
           twilio_sid: string | null
           variables: Json
           wa_message_id: string | null
@@ -29496,6 +29498,8 @@ export type Database = {
           quota_reserved_until?: string | null
           sent_at?: string | null
           status?: string
+          template_language?: string | null
+          template_name?: string | null
           twilio_sid?: string | null
           variables?: Json
           wa_message_id?: string | null
@@ -29514,6 +29518,8 @@ export type Database = {
           quota_reserved_until?: string | null
           sent_at?: string | null
           status?: string
+          template_language?: string | null
+          template_name?: string | null
           twilio_sid?: string | null
           variables?: Json
           wa_message_id?: string | null
@@ -29561,6 +29567,7 @@ export type Database = {
           owner_id: string
           rate_per_minute: number
           recent_contact_days: number
+          rotation_mode: string
           scheduled_at: string | null
           sdr_enabled: boolean
           sdr_playbook_id: string | null
@@ -29572,6 +29579,7 @@ export type Database = {
           status: string
           template_language: string | null
           template_name: string | null
+          template_rotation: Json
           total: number
           updated_at: string
           workspace_id: string
@@ -29600,6 +29608,7 @@ export type Database = {
           owner_id: string
           rate_per_minute?: number
           recent_contact_days?: number
+          rotation_mode?: string
           scheduled_at?: string | null
           sdr_enabled?: boolean
           sdr_playbook_id?: string | null
@@ -29611,6 +29620,7 @@ export type Database = {
           status?: string
           template_language?: string | null
           template_name?: string | null
+          template_rotation?: Json
           total?: number
           updated_at?: string
           workspace_id?: string
@@ -29639,6 +29649,7 @@ export type Database = {
           owner_id?: string
           rate_per_minute?: number
           recent_contact_days?: number
+          rotation_mode?: string
           scheduled_at?: string | null
           sdr_enabled?: boolean
           sdr_playbook_id?: string | null
@@ -29650,6 +29661,7 @@ export type Database = {
           status?: string
           template_language?: string | null
           template_name?: string | null
+          template_rotation?: Json
           total?: number
           updated_at?: string
           workspace_id?: string

@@ -25,6 +25,19 @@ const CreateInput = z.object({
   consent_evidence: z.string().trim().min(10).max(2000).nullable().optional(),
   template_language: z.string().max(10).optional(),
   content_variables_template: z.record(z.string(), z.string()).optional(),
+  template_rotation: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(60),
+        language: z.string().max(10).nullable().optional(),
+        body: z.string().max(1600).nullable().optional(),
+        variableCount: z.number().int().min(0).max(20),
+        weight: z.number().min(1).max(100),
+      }),
+    )
+    .max(5)
+    .optional(),
+  rotation_mode: z.enum(["sequential", "weighted"]).optional(),
   media_url: z.string().url().optional().or(z.literal("")),
   media_content_type: z.string().max(120).optional(),
   rate_per_minute: z.number().int().min(1).max(120).default(10),
@@ -338,6 +351,8 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         consent_evidence: data.consent_evidence ?? null,
         template_language: data.template_language || null,
         content_variables_template: data.content_variables_template ?? {},
+        template_rotation: data.template_name ? (data.template_rotation ?? []) : [],
+        rotation_mode: data.rotation_mode ?? "sequential",
         media_url: data.media_url || null,
         media_content_type: data.media_content_type || null,
         rate_per_minute: data.rate_per_minute,
@@ -482,6 +497,19 @@ const UpdateInput = z.object({
   consent_evidence: z.string().trim().min(10).max(2000).nullable().optional(),
   template_language: z.string().max(10).nullable().optional(),
   content_variables_template: z.record(z.string(), z.string()).optional(),
+  template_rotation: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(60),
+        language: z.string().max(10).nullable().optional(),
+        body: z.string().max(1600).nullable().optional(),
+        variableCount: z.number().int().min(0).max(20),
+        weight: z.number().min(1).max(100),
+      }),
+    )
+    .max(5)
+    .optional(),
+  rotation_mode: z.enum(["sequential", "weighted"]).optional(),
   media_url: z.string().url().nullable().optional().or(z.literal("")),
   media_content_type: z.string().max(120).nullable().optional(),
   rate_per_minute: z.number().int().min(1).max(120).optional(),
@@ -530,6 +558,9 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
       patch.template_language = data.template_language || null;
     if (data.content_variables_template !== undefined)
       patch.content_variables_template = data.content_variables_template;
+    if (data.template_rotation !== undefined)
+      patch.template_rotation = data.template_name === null ? [] : data.template_rotation;
+    if (data.rotation_mode !== undefined) patch.rotation_mode = data.rotation_mode;
     if (data.media_url !== undefined) patch.media_url = data.media_url || null;
     if (data.media_content_type !== undefined)
       patch.media_content_type = data.media_content_type || null;
@@ -839,7 +870,7 @@ export const getWhatsAppCampaignForEdit = createServerFn({ method: "POST" })
     const { data: camp, error } = await context.supabase
       .from("whatsapp_campaigns")
       .select(
-        "id, status, total, body_template, template_name, sender_phone_number_id, consent_evidence, media_url, sdr_playbook_id, recent_contact_days, exclude_customers, exclude_open_deals, audience_config, assignment_mode, assignment_member_ids",
+        "id, status, total, body_template, template_name, sender_phone_number_id, consent_evidence, media_url, sdr_playbook_id, recent_contact_days, exclude_customers, exclude_open_deals, audience_config, assignment_mode, assignment_member_ids, template_rotation, rotation_mode",
       )
       .eq("id", data.id)
       .single();
