@@ -8779,7 +8779,7 @@
         "src/lib/help/help.functions.ts": "0260dd4f828edd828081c573d690b89972683bea105c1c5eef9302cd4a85e5fe",
         "src/routes/_authenticated/ajuda.$module.$slug.tsx": "6248f72c7387f4fdfcafae3a01f142f747c86e587b51710135b3b507f23d6b6d",
         "src/routes/_authenticated/ajuda.$module.index.tsx": "017f84e9351276c27397edd536205a8f03be2f928a855921a02e4813fbef048b",
-        "src/routes/_authenticated/ajuda.index.tsx": "8251226247e0fe0de98ce845035b27afa54b61bd41d8db1276a968d6563ebc63",
+        "src/routes/_authenticated/ajuda.index.tsx": "c0ad38dd75760dc2eb71b71e91f303eec67b3b7cdf98dc99a050a789d7c5b432",
         "drizzle/migrations/0308_help_seed_contracts.sql": "8ab1cb5450bcebb357720b90a43d866559b72ab65fe89e2eb4decf6be831ff6b",
         "src/lib/help/help-release.functions.ts": "1e0ee0198ba91c400c61bfa9f39e947c10688a6a2942a61918a49733f03aba89",
         "src/lib/help/help-release.ts": "a7d5e01443260020c759ce52fb9575f28ac4cd21c69f218583a56faefe5969a4",
@@ -8794,6 +8794,100 @@
         "src/components/help/help-markdown.tsx": "d2d110950c73b7e155cd05c1408bd06495f0c628372c7ca01f2ae1ca584e20b0",
         "src/lib/help/help-route-match.ts": "a7d082b67a754023df5f534e4f3a599ff1bc2df18d6637c3b0a2f0d9134de7b9",
         "src/lib/help/help-toc.ts": "da95180b180a9537c4be0d6f096419d10619050fc4f70bf26a2c52787de66207"
+      }
+    },
+    {
+      "id": "help-training",
+      "kind": "business",
+      "resources": [
+        "techservice.kb"
+      ],
+      "actions": [
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techservice.kb.manage.workspace",
+        "techservice.kb.update.workspace"
+      ],
+      "rationale": "Help Phase 3 training tracks, own reading progress, module quizzes and completion badges. No new key and no grant to roles: each track/quiz is available only when the Help module is readable for an active member (loadHelpAccessInput + canUseTraining/assertTrainingAccess, deny wins, active workspace only); articles filtered by filterReadableArticles. Progress is own-row only via user client and RLS (user_id = auth.uid(), active member, readable published article). Quiz answers stay server-only; the score is computed in submitTrainingQuiz after authentication and access checks and inserted with the admin client because help_quiz_attempts grants authenticated SELECT only (own rows). Listed keys are the existing Help editor keys inherited from help-center; editors get no extra power here.",
+      "controls": [
+        {
+          "file": "src/lib/help/help-access.server.ts",
+          "symbol": "loadHelpAccessInput"
+        },
+        {
+          "file": "src/lib/help/training-access.ts",
+          "symbol": "canUseTraining"
+        },
+        {
+          "file": "src/lib/help/training-access.ts",
+          "symbol": "assertTrainingAccess"
+        },
+        {
+          "file": "src/lib/help/help-access.server.ts",
+          "symbol": "filterReadableArticles"
+        },
+        {
+          "file": "src/lib/help/training.functions.ts",
+          "symbol": "getTrainingOverview"
+        },
+        {
+          "file": "src/lib/help/training.functions.ts",
+          "symbol": "getTrainingTrack"
+        },
+        {
+          "file": "src/lib/help/training.functions.ts",
+          "symbol": "setTrainingArticleRead"
+        },
+        {
+          "file": "src/lib/help/training.functions.ts",
+          "symbol": "submitTrainingQuiz"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0309_help_training_progress.sql",
+          "symbol": "help_progress"
+        },
+        {
+          "file": "drizzle/migrations/0309_help_training_progress.sql",
+          "symbol": "help_quiz_attempts"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/help/training-access.test.ts",
+          "name": "permite trilha a membro ativo autorizado"
+        },
+        "missing_permission": {
+          "file": "src/lib/help/training-access.test.ts",
+          "name": "nega trilha sem chave"
+        },
+        "explicit_deny": {
+          "file": "src/lib/help/training-access.test.ts",
+          "name": "nega trilha com deny explícito"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/help/training-access.test.ts",
+          "name": "nega trilha com chave de outro workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/help/training-access.test.ts",
+          "name": "nega trilha a membro inativo"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0309_help_training_progress.sql": "1f2797a1360d9f376a9bae5b08ccca7a2b726b5ea1689f6a1aa9e4309e4795eb",
+        "src/lib/help/training.functions.ts": "56237e171bca8d4f8e85691a0280a7f0a33ac9206fcdddd88592cbb88cb98dc3",
+        "src/lib/help/training-access.ts": "9d9a95df552d471baa0035f8803c7f333c5ecdabd05198bb9b5aa4ec4d66c26e",
+        "src/lib/help/training-catalogue.ts": "d9848aae705784e21ec89fc2e5f74d2e0677ca7cc7e6e7da4316dbcf741bc052",
+        "src/lib/help/training-quiz.server.ts": "f24bc4b44907ce5490317c03819e5dd6d17d605b26170574525f4c96f40bd59c",
+        "src/routes/_authenticated/ajuda.trilhas.index.tsx": "165acc1b7aeb30867c54000e046a871f2fd27758cb9222a85816c8ddbe5917d3",
+        "src/routes/_authenticated/ajuda.trilhas.$track.tsx": "fd35eb6071d8722790853d66d43b8e3bdbda8c774e2452634bd9a8973a4134db"
       }
     }
   ],
