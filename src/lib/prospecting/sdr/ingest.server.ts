@@ -151,6 +151,15 @@ export async function linkCampaignSend(
     else enr = created;
   }
   if (!enr) return null;
+  // Campanha que trocou número/agente reaproveita a inscrição: aponta-a para a
+  // conversa e o agente atuais, senão a resposta é recusada como "not_sdr".
+  const relink = await admin
+    .from("sdr_enrollments")
+    .update({ conversation_id: p.conversationId, playbook_id: playbook.id })
+    .eq("id", enr.id)
+    .eq("workspace_id", p.workspaceId)
+    .or(`conversation_id.is.null,conversation_id.neq.${p.conversationId},playbook_id.neq.${playbook.id}`);
+  if (relink.error) throw new Error("Não foi possível atualizar a inscrição da campanha.");
 
   const { data: conv } = await admin
     .from("whatsapp_conversations")
