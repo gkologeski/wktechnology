@@ -38,12 +38,15 @@ export async function refreshPendingVariables(
   audience: any,
   variableMap: Record<string, { field: string; fallback?: string }>,
 ): Promise<number> {
-  const { buildAudience, isAllowedField } = await import("./campaign-audience");
+  const { buildAudience, fieldsForBase } = await import("./campaign-audience");
   const { loadAudienceRows, loadOptedOutPhones, loadSuppressedPhones } =
     await import("./campaign-audience.server");
   const { base, rows } = await loadAudienceRows(supabase, workspaceId, audience, userId);
+  // Mesma lista branca do público (texto livre sempre permitido).
+  const allowed = new Set(fieldsForBase(base).map((f) => f.key));
   for (const b of Object.values(variableMap))
-    if (!isAllowedField(base, b.field)) throw new Error("Campo de variável não permitido.");
+    if (b.field !== "__free__" && !allowed.has(b.field))
+      throw new Error("Campo de variável não permitido.");
   const s = buildAudience(
     rows,
     variableMap,
