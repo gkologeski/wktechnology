@@ -267,11 +267,11 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
     const picked = pickTemplate(
       rotation,
       camp.rotation_mode === "weighted" ? "weighted" : "sequential",
-      (camp.sent ?? 0) + (camp.failed ?? 0) + sentInc + failInc,
+      (camp.sent ?? 0) + (camp.failed ?? 0) + sentInc + failedInc,
       Math.random(),
       (r as { template_name?: string | null }).template_name ?? null,
     );
-    const tplName = picked?.name ?? tplName;
+    const tplName = picked?.name ?? camp.template_name;
     const tplLang = picked?.language ?? camp.template_language;
     const tplVars =
       picked && rotation.length > 1
