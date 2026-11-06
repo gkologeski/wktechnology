@@ -2734,9 +2734,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 03/11/2026: generated declarations for whatsapp_number_suppressions and the wa_* suppression functions only; no runtime I/O, grants or policies. Review 05/11/2026: upstream generated catalogue refresh for existing hiring, lifecycle, reconciliation and help objects; declarations and static schema constants only, no queries, grants, policy or endpoint implementation. Runtime authorization remains in registered server/SQL contracts.",
+      "rationale": "Generated database type declarations only; new nullable campaign sender and consent evidence fields. No runtime access or authorization change. Reviewed upstream generated-type refresh: additional shared-fields view relationships and declaration ordering only; this file has no runtime I/O, permission grants or database policy changes. Reviewed generated refresh of 27/10/2026: declarations for existing tables/views (e.g. ats_hiring_decisions, shared_fields_* relationships) and column ordering; type declarations only, no runtime I/O, grants or policies. Reviewed generated refresh of 31/10/2026: adds the wa_campaign_audience_ids function signature only. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 03/11/2026: generated declarations for whatsapp_number_suppressions and the wa_* suppression functions only; no runtime I/O, grants or policies. Review 05/11/2026: upstream generated catalogue refresh for existing hiring, lifecycle, reconciliation and help objects; declarations and static schema constants only, no queries, grants, policy or endpoint implementation. Runtime authorization remains in registered server/SQL contracts. Includes the concurrent training progress/quiz/help declarations from lovable-sync; static generated declarations only.",
       "files": {
-        "src/integrations/supabase/types.ts": "5a362efcea5fbc3b44a8fca1b8e45b5d6f4709a850fe56163272e293c1a3ef78"
+        "src/integrations/supabase/types.ts": "a452e0d43d2156be6e80487405b0edc1f63ffbf77a2745de00e79b092ce6e50d"
       }
     },
     {
@@ -8779,7 +8779,7 @@
         "src/lib/help/help.functions.ts": "0260dd4f828edd828081c573d690b89972683bea105c1c5eef9302cd4a85e5fe",
         "src/routes/_authenticated/ajuda.$module.$slug.tsx": "6248f72c7387f4fdfcafae3a01f142f747c86e587b51710135b3b507f23d6b6d",
         "src/routes/_authenticated/ajuda.$module.index.tsx": "017f84e9351276c27397edd536205a8f03be2f928a855921a02e4813fbef048b",
-        "src/routes/_authenticated/ajuda.index.tsx": "8251226247e0fe0de98ce845035b27afa54b61bd41d8db1276a968d6563ebc63",
+        "src/routes/_authenticated/ajuda.index.tsx": "c0ad38dd75760dc2eb71b71e91f303eec67b3b7cdf98dc99a050a789d7c5b432",
         "drizzle/migrations/0308_help_seed_contracts.sql": "8ab1cb5450bcebb357720b90a43d866559b72ab65fe89e2eb4decf6be831ff6b",
         "src/lib/help/help-release.functions.ts": "1e0ee0198ba91c400c61bfa9f39e947c10688a6a2942a61918a49733f03aba89",
         "src/lib/help/help-release.ts": "a7d5e01443260020c759ce52fb9575f28ac4cd21c69f218583a56faefe5969a4",
@@ -8794,6 +8794,111 @@
         "src/components/help/help-markdown.tsx": "d2d110950c73b7e155cd05c1408bd06495f0c628372c7ca01f2ae1ca584e20b0",
         "src/lib/help/help-route-match.ts": "a7d082b67a754023df5f534e4f3a599ff1bc2df18d6637c3b0a2f0d9134de7b9",
         "src/lib/help/help-toc.ts": "da95180b180a9537c4be0d6f096419d10619050fc4f70bf26a2c52787de66207"
+      }
+    },
+    {
+      "id": "help-training",
+      "kind": "business",
+      "resources": [
+        "techservice.kb"
+      ],
+      "actions": [
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techservice.kb.manage.workspace",
+        "techservice.kb.update.workspace"
+      ],
+      "rationale": "Help Phase 3 training tracks, own reading progress, module quizzes and completion badges. No new key and no grant to roles: each track/quiz is available only when the Help module is readable for an active member (loadHelpAccessInput + canUseTraining/assertTrainingAccess, deny wins, active workspace only); articles filtered by filterReadableArticles. Progress is own-row only via user client and RLS (user_id = auth.uid(), active member, readable published article). Quiz answers stay server-only; the score is computed in submitTrainingQuiz after authentication and access checks and inserted with the admin client because help_quiz_attempts grants authenticated SELECT only (own rows). Listed keys are the existing Help editor keys inherited from help-center; editors get no extra power here.",
+      "controls": [
+        {
+          "file": "src/lib/help/help-access.server.ts",
+          "symbol": "loadHelpAccessInput"
+        },
+        {
+          "file": "src/lib/help/training-access.ts",
+          "symbol": "canUseTraining"
+        },
+        {
+          "file": "src/lib/help/training-access.ts",
+          "symbol": "assertTrainingAccess"
+        },
+        {
+          "file": "src/lib/help/help-access.server.ts",
+          "symbol": "filterReadableArticles"
+        },
+        {
+          "file": "src/lib/help/training.functions.ts",
+          "symbol": "getTrainingOverview"
+        },
+        {
+          "file": "src/lib/help/training.functions.ts",
+          "symbol": "getTrainingTrack"
+        },
+        {
+          "file": "src/lib/help/training.functions.ts",
+          "symbol": "setTrainingArticleRead"
+        },
+        {
+          "file": "src/lib/help/training.functions.ts",
+          "symbol": "submitTrainingQuiz"
+        },
+        {
+          "file": "src/lib/help/training-access.ts",
+          "symbol": "isTrainingTrackId"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0309_help_training_progress.sql",
+          "symbol": "help_progress"
+        },
+        {
+          "file": "drizzle/migrations/0309_help_training_progress.sql",
+          "symbol": "help_quiz_attempts"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/help/training-access.test.ts",
+          "name": "permite trilha a membro ativo autorizado"
+        },
+        "missing_permission": {
+          "file": "src/lib/help/training-access.test.ts",
+          "name": "nega trilha sem chave"
+        },
+        "explicit_deny": {
+          "file": "src/lib/help/training-access.test.ts",
+          "name": "nega trilha com deny explícito"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/help/training-access.test.ts",
+          "name": "nega trilha com chave de outro workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/help/training-access.test.ts",
+          "name": "nega trilha a membro inativo"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0309_help_training_progress.sql": "1f2797a1360d9f376a9bae5b08ccca7a2b726b5ea1689f6a1aa9e4309e4795eb",
+        "src/lib/help/training.functions.ts": "075f85c3ae75fa1284fbdec2761676d42e0ac0a989740f09fcbbb1dd8d1eeb98",
+        "src/lib/help/training-access.ts": "f3e5d07a9f1fd9c254b229eae5d45128decc4b6a554ed8f8e2545c920d6bca3c",
+        "src/routes/_authenticated/ajuda.trilhas.index.tsx": "6a5b87aa3462099161b7c143f3ed2bd1a7b620b6ac7c10262e08a7ff04337ffa",
+        "src/routes/_authenticated/ajuda.trilhas.$track.tsx": "d5a1d74500ec69d48bce9be3aff0050bb417638db7264dee2b98cdc928d36756"
+      }
+    },
+    {
+      "id": "help-training-data",
+      "kind": "presentation",
+      "rationale": "Static training track list and quiz question/answer data for the Help Phase 3. No I/O, routes, actions, grants or data access; answers are only imported dynamically inside help-training server handlers.",
+      "files": {
+        "src/lib/help/training-catalogue.ts": "d9848aae705784e21ec89fc2e5f74d2e0677ca7cc7e6e7da4316dbcf741bc052",
+        "src/lib/help/training-quiz.server.ts": "e1ec29b87c1cd9b2ce5a199b4ed9a8f45a06ae849db33d29bfe115872c68a5d6"
       }
     },
     {

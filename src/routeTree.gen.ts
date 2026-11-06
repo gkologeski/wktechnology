@@ -297,6 +297,8 @@ import { Route as AuthenticatedAgentsPrototype2RouteImport } from './routes/_aut
 import { Route as AuthenticatedAgentsPrototype3RouteImport } from './routes/_authenticated/agents.prototype.3'
 import { Route as AuthenticatedAjudaModuleIndexRouteImport } from './routes/_authenticated/ajuda.$module.index'
 import { Route as AuthenticatedAjudaModuleSlugRouteImport } from './routes/_authenticated/ajuda.$module.$slug'
+import { Route as AuthenticatedAjudaTrilhasIndexRouteImport } from './routes/_authenticated/ajuda.trilhas.index'
+import { Route as AuthenticatedAjudaTrilhasTrackRouteImport } from './routes/_authenticated/ajuda.trilhas.$track'
 import { Route as AuthenticatedAtsJobsIdRouteImport } from './routes/_authenticated/ats.jobs.$id'
 import { Route as AuthenticatedContractsIdFlowRouteImport } from './routes/_authenticated/contracts.$id_.flow'
 import { Route as AuthenticatedContractsIdMedicoesRouteImport } from './routes/_authenticated/contracts.$id_.medicoes'
@@ -2080,6 +2082,18 @@ const AuthenticatedAjudaModuleSlugRoute =
     path: '/ajuda/$module/$slug',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAjudaTrilhasIndexRoute =
+  AuthenticatedAjudaTrilhasIndexRouteImport.update({
+    id: '/ajuda/trilhas/',
+    path: '/ajuda/trilhas/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAjudaTrilhasTrackRoute =
+  AuthenticatedAjudaTrilhasTrackRouteImport.update({
+    id: '/ajuda/trilhas/$track',
+    path: '/ajuda/trilhas/$track',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAtsJobsIdRoute = AuthenticatedAtsJobsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -3171,6 +3185,7 @@ export interface FileRoutesByFullPath {
   '/agents/prototype/2': typeof AuthenticatedAgentsPrototype2Route
   '/agents/prototype/3': typeof AuthenticatedAgentsPrototype3Route
   '/ajuda/$module/$slug': typeof AuthenticatedAjudaModuleSlugRoute
+  '/ajuda/trilhas/$track': typeof AuthenticatedAjudaTrilhasTrackRoute
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/contracts/$id/flow': typeof AuthenticatedContractsIdFlowRoute
   '/contracts/$id/medicoes': typeof AuthenticatedContractsIdMedicoesRoute
@@ -3282,6 +3297,7 @@ export interface FileRoutesByFullPath {
   '/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/agents/prototype/': typeof AuthenticatedAgentsPrototypeIndexRoute
   '/ajuda/$module/': typeof AuthenticatedAjudaModuleIndexRoute
+  '/ajuda/trilhas/': typeof AuthenticatedAjudaTrilhasIndexRoute
   '/contracts/templates/': typeof AuthenticatedContractsTemplatesIndexRoute
   '/projects/settings/': typeof AuthenticatedProjectsSettingsIndexRoute
   '/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
@@ -3593,6 +3609,7 @@ export interface FileRoutesByTo {
   '/agents/prototype/2': typeof AuthenticatedAgentsPrototype2Route
   '/agents/prototype/3': typeof AuthenticatedAgentsPrototype3Route
   '/ajuda/$module/$slug': typeof AuthenticatedAjudaModuleSlugRoute
+  '/ajuda/trilhas/$track': typeof AuthenticatedAjudaTrilhasTrackRoute
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/contracts/$id/flow': typeof AuthenticatedContractsIdFlowRoute
   '/contracts/$id/medicoes': typeof AuthenticatedContractsIdMedicoesRoute
@@ -3704,6 +3721,7 @@ export interface FileRoutesByTo {
   '/sourcing': typeof AuthenticatedatsSourcingIndexRoute
   '/agents/prototype': typeof AuthenticatedAgentsPrototypeIndexRoute
   '/ajuda/$module': typeof AuthenticatedAjudaModuleIndexRoute
+  '/ajuda/trilhas': typeof AuthenticatedAjudaTrilhasIndexRoute
   '/contracts/templates': typeof AuthenticatedContractsTemplatesIndexRoute
   '/projects/settings': typeof AuthenticatedProjectsSettingsIndexRoute
   '/prospecting/campaigns': typeof AuthenticatedProspectingCampaignsIndexRoute
@@ -4024,6 +4042,7 @@ export interface FileRoutesById {
   '/_authenticated/agents/prototype/2': typeof AuthenticatedAgentsPrototype2Route
   '/_authenticated/agents/prototype/3': typeof AuthenticatedAgentsPrototype3Route
   '/_authenticated/ajuda/$module/$slug': typeof AuthenticatedAjudaModuleSlugRoute
+  '/_authenticated/ajuda/trilhas/$track': typeof AuthenticatedAjudaTrilhasTrackRoute
   '/_authenticated/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/_authenticated/contracts/$id_/flow': typeof AuthenticatedContractsIdFlowRoute
   '/_authenticated/contracts/$id_/medicoes': typeof AuthenticatedContractsIdMedicoesRoute
@@ -4135,6 +4154,7 @@ export interface FileRoutesById {
   '/_authenticated/(ats)/sourcing/': typeof AuthenticatedatsSourcingIndexRoute
   '/_authenticated/agents/prototype/': typeof AuthenticatedAgentsPrototypeIndexRoute
   '/_authenticated/ajuda/$module/': typeof AuthenticatedAjudaModuleIndexRoute
+  '/_authenticated/ajuda/trilhas/': typeof AuthenticatedAjudaTrilhasIndexRoute
   '/_authenticated/contracts/templates/': typeof AuthenticatedContractsTemplatesIndexRoute
   '/_authenticated/projects/settings/': typeof AuthenticatedProjectsSettingsIndexRoute
   '/_authenticated/prospecting/campaigns/': typeof AuthenticatedProspectingCampaignsIndexRoute
@@ -4455,6 +4475,7 @@ export interface FileRouteTypes {
     | '/agents/prototype/2'
     | '/agents/prototype/3'
     | '/ajuda/$module/$slug'
+    | '/ajuda/trilhas/$track'
     | '/ats/jobs/$id'
     | '/contracts/$id/flow'
     | '/contracts/$id/medicoes'
@@ -4566,6 +4587,7 @@ export interface FileRouteTypes {
     | '/sourcing/'
     | '/agents/prototype/'
     | '/ajuda/$module/'
+    | '/ajuda/trilhas/'
     | '/contracts/templates/'
     | '/projects/settings/'
     | '/prospecting/campaigns/'
@@ -4877,6 +4899,7 @@ export interface FileRouteTypes {
     | '/agents/prototype/2'
     | '/agents/prototype/3'
     | '/ajuda/$module/$slug'
+    | '/ajuda/trilhas/$track'
     | '/ats/jobs/$id'
     | '/contracts/$id/flow'
     | '/contracts/$id/medicoes'
@@ -4988,6 +5011,7 @@ export interface FileRouteTypes {
     | '/sourcing'
     | '/agents/prototype'
     | '/ajuda/$module'
+    | '/ajuda/trilhas'
     | '/contracts/templates'
     | '/projects/settings'
     | '/prospecting/campaigns'
@@ -5307,6 +5331,7 @@ export interface FileRouteTypes {
     | '/_authenticated/agents/prototype/2'
     | '/_authenticated/agents/prototype/3'
     | '/_authenticated/ajuda/$module/$slug'
+    | '/_authenticated/ajuda/trilhas/$track'
     | '/_authenticated/ats/jobs/$id'
     | '/_authenticated/contracts/$id_/flow'
     | '/_authenticated/contracts/$id_/medicoes'
@@ -5418,6 +5443,7 @@ export interface FileRouteTypes {
     | '/_authenticated/(ats)/sourcing/'
     | '/_authenticated/agents/prototype/'
     | '/_authenticated/ajuda/$module/'
+    | '/_authenticated/ajuda/trilhas/'
     | '/_authenticated/contracts/templates/'
     | '/_authenticated/projects/settings/'
     | '/_authenticated/prospecting/campaigns/'
@@ -7613,6 +7639,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAjudaModuleSlugRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/ajuda/trilhas/': {
+      id: '/_authenticated/ajuda/trilhas/'
+      path: '/ajuda/trilhas'
+      fullPath: '/ajuda/trilhas/'
+      preLoaderRoute: typeof AuthenticatedAjudaTrilhasIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/ajuda/trilhas/$track': {
+      id: '/_authenticated/ajuda/trilhas/$track'
+      path: '/ajuda/trilhas/$track'
+      fullPath: '/ajuda/trilhas/$track'
+      preLoaderRoute: typeof AuthenticatedAjudaTrilhasTrackRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/ats/jobs/$id': {
       id: '/_authenticated/ats/jobs/$id'
       path: '/$id'
@@ -9230,6 +9270,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsSourcingReferralsRoute: typeof AuthenticatedatsSourcingReferralsRoute
   AuthenticatedatsSourcingSequencesRoute: typeof AuthenticatedatsSourcingSequencesRoute
   AuthenticatedAjudaModuleSlugRoute: typeof AuthenticatedAjudaModuleSlugRoute
+  AuthenticatedAjudaTrilhasTrackRoute: typeof AuthenticatedAjudaTrilhasTrackRoute
   AuthenticatedContractsIdFlowRoute: typeof AuthenticatedContractsIdFlowRoute
   AuthenticatedContractsIdMedicoesRoute: typeof AuthenticatedContractsIdMedicoesRoute
   AuthenticatedContractsTemplatesIdRoute: typeof AuthenticatedContractsTemplatesIdRoute
@@ -9247,6 +9288,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedatsJobsIndexRoute: typeof AuthenticatedatsJobsIndexRoute
   AuthenticatedatsSourcingIndexRoute: typeof AuthenticatedatsSourcingIndexRoute
   AuthenticatedAjudaModuleIndexRoute: typeof AuthenticatedAjudaModuleIndexRoute
+  AuthenticatedAjudaTrilhasIndexRoute: typeof AuthenticatedAjudaTrilhasIndexRoute
   AuthenticatedContractsTemplatesIndexRoute: typeof AuthenticatedContractsTemplatesIndexRoute
   AuthenticatedProjectsSettingsIndexRoute: typeof AuthenticatedProjectsSettingsIndexRoute
   AuthenticatedatsSourcingSequencesIdRoute: typeof AuthenticatedatsSourcingSequencesIdRoute
@@ -9402,6 +9444,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedatsSourcingSequencesRoute:
     AuthenticatedatsSourcingSequencesRoute,
   AuthenticatedAjudaModuleSlugRoute: AuthenticatedAjudaModuleSlugRoute,
+  AuthenticatedAjudaTrilhasTrackRoute: AuthenticatedAjudaTrilhasTrackRoute,
   AuthenticatedContractsIdFlowRoute: AuthenticatedContractsIdFlowRoute,
   AuthenticatedContractsIdMedicoesRoute: AuthenticatedContractsIdMedicoesRoute,
   AuthenticatedContractsTemplatesIdRoute:
@@ -9425,6 +9468,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedatsJobsIndexRoute: AuthenticatedatsJobsIndexRoute,
   AuthenticatedatsSourcingIndexRoute: AuthenticatedatsSourcingIndexRoute,
   AuthenticatedAjudaModuleIndexRoute: AuthenticatedAjudaModuleIndexRoute,
+  AuthenticatedAjudaTrilhasIndexRoute: AuthenticatedAjudaTrilhasIndexRoute,
   AuthenticatedContractsTemplatesIndexRoute:
     AuthenticatedContractsTemplatesIndexRoute,
   AuthenticatedProjectsSettingsIndexRoute:

@@ -111,3 +111,7 @@ e FAQ. Marcadores de captura vão também para `docs/help/pendencias-midia.md`.
 ## Aplicação editorial após o aceite
 
 `releaseOfficialHelp` aplica o catálogo fixo gerado das fontes Markdown após autenticação e `canEditHelp`, com o cliente do usuário/RLS. O botão “Atualizar Ajuda oficial” aparece somente para editor autorizado. Nenhum corpo de artigo ou destino vem do navegador; versões iguais/mais recentes são preservadas. `updated_by` e `updated_at` registram a autoria/data. Não é uma migration de estrutura nem execução automática ao abrir a página. Aceitar não copia os artigos desta base separada: a aplicação editorial precisa ocorrer no app depois do aceite.
+
+## Trilhas e quiz (Fase 3)
+
+Trilhas fixas em `training-catalogue.ts`, gabarito só no servidor (`training-quiz.server.ts`). Progresso em `help_progress` (linha própria, RLS) e tentativas em `help_quiz_attempts` (leitura própria; gravação só pelo servidor após checar acesso). Selo = todos os artigos legíveis da trilha lidos + quiz aprovado (4/5).

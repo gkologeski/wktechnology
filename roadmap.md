@@ -1,3 +1,9 @@
+# Roadmap — Ajuda Fase 3: trilhas, quiz e selo (porte M)
+
+- [x] Trilhas por papel, progresso próprio, quiz de 5 perguntas por módulo e selo; tabelas com RLS do próprio usuário
+- [x] Artigo da Ajuda, cobertura 246/246, permissions:check, testes e publicação
+- [ ] Clicar em "Atualizar Ajuda oficial" no app para carregar os artigos (sem isso as trilhas mostram 0 artigos): depende de um editor da Ajuda
+
 # Roadmap — Fase 2 integral da Ajuda (porte G, 12–18 horas)
 
 - [x] Auditar e redigir TechProjects, TechFinance, Core e Administração; preservar 208 artigos existentes

@@ -11926,6 +11926,60 @@ export type Database = {
           },
         ]
       }
+      help_progress: {
+        Row: {
+          completed_at: string
+          id: string
+          module_key: string
+          slug: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          module_key: string
+          slug: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          module_key?: string
+          slug?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      help_quiz_attempts: {
+        Row: {
+          created_at: string
+          id: string
+          module_key: string
+          passed: boolean
+          score: number
+          total: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module_key: string
+          passed: boolean
+          score: number
+          total: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module_key?: string
+          passed?: boolean
+          score?: number
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       help_route_misses: {
         Row: {
           created_at: string
