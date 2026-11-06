@@ -110,6 +110,13 @@ function segmentGroupsLogic(raw: unknown): "and" | "or" {
   return nested && root.op === "and" ? "and" : "or";
 }
 
+export type VariableGroup = {
+  /** Nome do modelo exibido no título do quadro. */
+  label: string;
+  /** Chaves das variáveis {{1}}..{{N}} deste modelo no mapa do público. */
+  keys: string[];
+};
+
 export type AudienceMode = "queue" | "filter" | "manual";
 export type AudienceState = {
   mode: AudienceMode;
@@ -198,8 +205,11 @@ export function CampaignAudiencePanel({
   onManualRaw,
   manualCount,
   readOnly = false,
+  variableGroups,
 }: {
   readOnly?: boolean;
+  /** Um quadro por modelo do rodízio; cada um com as próprias chaves de variável. */
+  variableGroups?: VariableGroup[];
   value: AudienceState;
   onChange: (v: AudienceState) => void;
   variableCount: number;
@@ -260,6 +270,15 @@ export function CampaignAudiencePanel({
     });
 
   const groups = [...new Set(fields.map((f) => f.group))] as FieldGroup[];
+  const groupsToShow: VariableGroup[] =
+    variableGroups && variableGroups.length > 0
+      ? variableGroups.filter((g) => g.keys.length > 0)
+      : [
+          {
+            label: "",
+            keys: Array.from({ length: variableCount }, (_, i) => String(i + 1)),
+          },
+        ];
   const p = previewQ.data;
 
   return (
@@ -605,56 +624,69 @@ export function CampaignAudiencePanel({
               Escolha o público para definir as variáveis.
             </p>
           ) : (
-            Array.from({ length: variableCount }, (_, i) => String(i + 1)).map((k) => (
-              <div
-                key={k}
-                className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[3rem_1fr_1fr]"
-              >
-                <span className="font-mono text-xs">{`{{${k}}}`}</span>
-                <Select
-                  value={value.variableMap[k]?.field ?? ""}
-                  onValueChange={(field) => setVar(k, { field })}
-                >
-                  <SelectTrigger aria-label={`Campo da variável ${k}`}>
-                    <SelectValue placeholder="Escolha o campo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectLabel>Livre</SelectLabel>
-                      <SelectItem value={FREE_TEXT_FIELD}>Texto livre</SelectItem>
-                    </SelectGroup>
-                    {groups.map((g) => (
-                      <SelectGroup key={g}>
-                        <SelectLabel>{GROUP_LABEL[g]}</SelectLabel>
-                        {fields
-                          .filter((f) => f.group === g)
-                          .map((f) => (
-                            <SelectItem key={f.key} value={f.key}>
-                              {f.label}
-                            </SelectItem>
-                          ))}
-                      </SelectGroup>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {value.variableMap[k]?.field === FREE_TEXT_FIELD ? (
-                  <Input
-                    aria-label={`Texto da variável ${k}`}
-                    placeholder="Texto da variável (obrigatório)"
-                    maxLength={FREE_TEXT_MAX}
-                    value={value.variableMap[k]?.fallback ?? ""}
-                    onChange={(e) =>
-                      setVar(k, { fallback: e.target.value.replace(/[\r\n]+/g, " ") })
-                    }
-                  />
-                ) : (
-                  <Input
-                    aria-label={`Valor se vazio para a variável ${k}`}
-                    placeholder="Valor se vazio (opcional)"
-                    value={value.variableMap[k]?.fallback ?? ""}
-                    onChange={(e) => setVar(k, { fallback: e.target.value })}
-                  />
+            groupsToShow.map((g, gi) => (
+              <div key={g.label + gi} className="space-y-2">
+                {groupsToShow.length > 1 && (
+                  <p className="text-xs font-medium">
+                    Modelo: {g.label}
+                    {gi === 0 && <span className="text-muted-foreground"> · principal</span>}
+                  </p>
                 )}
+                {g.keys.map((k, ki) => {
+                  const n = String(ki + 1);
+                  return (
+                    <div
+                      key={k}
+                      className="grid grid-cols-1 items-center gap-2 sm:grid-cols-[3rem_1fr_1fr]"
+                    >
+                      <span className="font-mono text-xs">{`{{${n}}}`}</span>
+                      <Select
+                        value={value.variableMap[k]?.field ?? ""}
+                        onValueChange={(field) => setVar(k, { field })}
+                      >
+                        <SelectTrigger aria-label={`Campo da variável ${n} do modelo ${g.label}`}>
+                          <SelectValue placeholder="Escolha o campo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>Livre</SelectLabel>
+                            <SelectItem value={FREE_TEXT_FIELD}>Texto livre</SelectItem>
+                          </SelectGroup>
+                          {groups.map((g) => (
+                            <SelectGroup key={g}>
+                              <SelectLabel>{GROUP_LABEL[g]}</SelectLabel>
+                              {fields
+                                .filter((f) => f.group === g)
+                                .map((f) => (
+                                  <SelectItem key={f.key} value={f.key}>
+                                    {f.label}
+                                  </SelectItem>
+                                ))}
+                            </SelectGroup>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {value.variableMap[k]?.field === FREE_TEXT_FIELD ? (
+                        <Input
+                          aria-label={`Texto da variável ${n} do modelo ${g.label}`}
+                          placeholder="Texto da variável (obrigatório)"
+                          maxLength={FREE_TEXT_MAX}
+                          value={value.variableMap[k]?.fallback ?? ""}
+                          onChange={(e) =>
+                            setVar(k, { fallback: e.target.value.replace(/[\r\n]+/g, " ") })
+                          }
+                        />
+                      ) : (
+                        <Input
+                          aria-label={`Valor se vazio para a variável ${n} do modelo ${g.label}`}
+                          placeholder="Valor se vazio (opcional)"
+                          value={value.variableMap[k]?.fallback ?? ""}
+                          onChange={(e) => setVar(k, { fallback: e.target.value })}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             ))
           )}
