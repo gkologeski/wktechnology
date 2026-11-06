@@ -24,7 +24,7 @@ type Props = {
 };
 
 /**
- * Logotipo da empresa em cascata: logo manual → favicon do domínio → iniciais.
+ * Logotipo da empresa em cascata: logo manual → Clearbit → Google Favicon → iniciais.
  * Falhas de carregamento avançam para a próxima fonte sem quebrar o layout.
  */
 export function CompanyAvatar({
