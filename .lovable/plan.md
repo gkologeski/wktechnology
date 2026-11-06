@@ -1,34 +1,19 @@
-# Fluxo de contratação integrado (TechSales → TechHire → TechPeople → TechContracts → TechProjects → TechFinance)
+# Etapa 7: gravar um artigo da Ajuda e conferir os Alertas do Financeiro
 
-Porte: G (épico) — estimativa total 14–20 h, entregue em 5 pacotes P/M. Cada pacote é testado e relatado antes do próximo.
+Porte P, cerca de 5 a 10 minutos. Nada de código, migrations, rascunho, outros artigos ou publicação.
 
-## Regras de negócio (do pedido)
+## O que será feito
+1. Abrir https://app.wktechnology.com.br usando só a sessão autorizada que já está injetada no navegador. Não crio sessão nem credencial. Se não houver sessão, paro e informo que está bloqueado.
+2. No navegador, como o próprio usuário e sob as regras de acesso do banco, conferir se a conta pode editar a Ajuda (`help_can_edit`). Se não puder, paro sem gravar.
+3. Ler o artigo `people/gerenciar-acessos-vinculo-na-ficha`:
+   - se não existir, crio o artigo com o conteúdo fixo enviado, na versão 2;
+   - se existir com versão menor que 2, atualizo só esse artigo, e só se a versão ainda for a que eu li (assim não sobrescrevo uma edição feita ao mesmo tempo);
+   - se a versão for 2 ou maior, não gravo nada.
+   O próprio banco registra o usuário autenticado como autor da mudança.
+4. Ler o artigo de novo e conferir versão, autor, título e se o texto bate com o enviado.
+5. Abrir /finance só para leitura e observar o bloco "Alertas" por até 45 segundos. Anoto se ele termina de carregar, o tempo que levou, os erros e uma captura.
 
-1. **Origem do fluxo**
-   - Profissional que atende cliente (CLT, PJ ou Freelance): começa no **TechSales**, a partir de um negócio ganho com serviço de Hunting/Outsourcing.
-   - Time interno (administrativo, marketing, financeiro) e cargos técnicos de gestão compartilháveis entre projetos/contratos: começam direto no **TechHire/TechPeople**, sem negócio.
-2. **Vínculo de CNPJ (Outsourcing)**: ao contratar, o prestador e o cliente ficam ligados ao **mesmo CNPJ da WK** escolhido no negócio. O sistema bloqueia CNPJs diferentes.
-3. **Período**: o período de alocação/provisionamento vem por padrão das datas do contrato de venda do serviço; pode ser alterado manualmente, com registro de quem alterou e por quê.
-4. **Modelo de acesso por área e cargo**: cada cargo tem um modelo de acesso. Ao admitir, o usuário recebe o modelo do cargo (nunca acesso automático além dele).
-   - Ex.: Desenvolvedor de Outsourcing → apontar horas só no projeto alocado + seus dados pessoais.
-   - Ex.: Assistente Financeiro → acesso controlado a TechFinance, TechSales, TechPeople e TechProjects.
-
-## Pacotes
-
-1. **Auditoria e desenho (P, 1–1,5 h)** — mapear o que já existe: perfis de vaga do negócio, requisição TechHire, admissão TechPeople, CNPJs WK (`legal_entities`), alocações, cargos (`job_roles`) e pacotes de permissão. Entrega: matriz do que reaproveitar e lacunas. Nenhuma alteração.
-2. **Origem e tipo de contratação (M, 3–4 h)** — campo "tipo" (Cliente: CLT/PJ/Freelance | Interno | Gestão compartilhada) na requisição; exigir negócio ganho para tipo Cliente; caminho direto para Interno/Gestão.
-3. **CNPJ WK único + período (M, 3–4 h)** — CNPJ WK escolhido no negócio é herdado pela requisição, contrato do prestador e contrato do cliente, com trava no banco; período padrão do contrato de venda, editável com auditoria.
-4. **Modelos de acesso por cargo (M, 4–6 h)** — tela em Configurações → Permissões para associar cargo → modelo; aplicação automática na admissão e remoção no desligamento; dois modelos iniciais (Desenvolvedor de Outsourcing, Assistente Financeiro) para você revisar antes de ativar.
-5. **Integração e testes ponta a ponta (M, 3–4 h)** — da venda ganha até o primeiro apontamento de horas e lançamento financeiro; testes de permissão (permitido, sem chave, negado, outro workspace, inativo); teste no navegador.
-
-## Detalhes técnicos
-
-- Reutilizar RPCs `role_profile_*` e a regra de 1 requisição TechHire por perfil (sem duplicar vagas).
-- Trava de CNPJ via gatilho de validação (não CHECK); migrations aditivas.
-- Modelos de acesso sobre `job_roles` + pacotes locais por workspace; deny prevalece; membership ativo obrigatório.
-- Novas ações cadastradas em `permissions` com contrato em `permission-contracts.json`; `permissions:check` antes de tipos/testes.
-
-## Dúvidas a confirmar durante o pacote 1
-
-- Freelance também usa o CNPJ WK do negócio ou contrato direto pessoa física?
-- Quem pode alterar o período e o modelo de acesso (admin, gestor do projeto, RH)?
+## Limites
+- Esta é a única gravação. Não clico em nada que altere dados.
+- Se a regra de acesso recusar a gravação, informo como bloqueado e não tento nenhum outro caminho.
+- O relatório trará o resultado real de cada passo e o que não foi possível verificar.
