@@ -55,6 +55,10 @@ import {
 import { toast } from "sonner";
 import { formatDateTime } from "@/lib/crm";
 import { estimateRemainingMs, validateInterval } from "@/lib/whatsapp/campaign-pacing";
+import {
+  missingRotationVariables,
+  rotationVariableKey,
+} from "@/lib/whatsapp/campaign-template-rotation";
 
 export const Route = createFileRoute("/_authenticated/campaigns/whatsapp")({
   component: CampaignsPage,
@@ -172,6 +176,13 @@ function CampaignsPage() {
         })),
       ]
     : [];
+  // Um quadro de variáveis por modelo: cada modelo tem as próprias variáveis.
+  const variableGroups = rotationPayload.map((t, idx) => ({
+    label: t.name,
+    keys: Array.from({ length: t.variableCount }, (_, i) =>
+      rotationVariableKey(t.name, i + 1, idx === 0),
+    ),
+  }));
   const isEditing = editingId !== null;
   // Estado da campanha em edição: rascunho troca o público; pausada só exibe.
   const [editStatus, setEditStatus] = useState<string>("");
@@ -301,12 +312,8 @@ function CampaignsPage() {
             throw new Error("Adicione pelo menos um destinatário");
           if (!manualE && !audE) throw new Error("Escolha o público da campanha");
           if (!manualE && isHsm) {
-            for (let i = 1; i <= varCount; i++) {
-              const b = audience.variableMap[String(i)];
-              if (!b?.field) throw new Error(`Defina o campo da variável {{${i}}}`);
-              if (b.field === "__free__" && !b.fallback?.trim())
-                throw new Error(`Escreva o texto da variável {{${i}}}`);
-            }
+            const missing = missingRotationVariables(rotationPayload, audience.variableMap);
+            if (missing.length > 0) throw new Error(`Defina as variáveis: ${missing.join(", ")}`);
           }
           replace_audience = {
             recipients: recipientsE,
@@ -321,10 +328,21 @@ function CampaignsPage() {
             audience_config: toAudienceConfig(audience, recipientsRaw),
           };
         }
+        // Campanha com público salvo (rascunho sem troca ou pausada): atualiza as
+        // variáveis dos pendentes para os modelos do rodízio.
+        let refresh_variables: Record<string, unknown> | undefined;
+        if (!replace_audience && isHsm && hasStoredAudience && audience.mode !== "manual") {
+          const audR = audiencePayload(audience);
+          const missing = missingRotationVariables(rotationPayload, audience.variableMap);
+          if (missing.length > 0) throw new Error(`Defina as variáveis: ${missing.join(", ")}`);
+          if (audR) refresh_variables = { audience: audR, variable_map: audience.variableMap };
+        }
         return updateFn({
           data: {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             replace_audience: replace_audience as any,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            refresh_variables: refresh_variables as any,
             id: editingId,
             name,
             body_template: selectedTpl?.body ?? body,
@@ -349,12 +367,8 @@ function CampaignsPage() {
       if (manual && recipients.length === 0) throw new Error("Adicione pelo menos um destinatário");
       if (!manual && !audiencePl) throw new Error("Escolha o público da campanha");
       if (!manual && isHsm) {
-        for (let i = 1; i <= varCount; i++) {
-          const b = audience.variableMap[String(i)];
-          if (!b?.field) throw new Error(`Defina o campo da variável {{${i}}}`);
-          if (b.field === "__free__" && !b.fallback?.trim())
-            throw new Error(`Escreva o texto da variável {{${i}}}`);
-        }
+        const missing = missingRotationVariables(rotationPayload, audience.variableMap);
+        if (missing.length > 0) throw new Error(`Defina as variáveis: ${missing.join(", ")}`);
       }
 
       // Para HSM monta content_variables_template a partir de {{1}}..{{N}}
@@ -725,6 +739,7 @@ function CampaignsPage() {
                     }}
                     readOnly={isEditing && editStatus !== "draft"}
                     variableCount={isHsm ? varCount : 0}
+                    variableGroups={isHsm ? variableGroups : undefined}
                     manualRaw={recipientsRaw}
                     onManualRaw={(r) => {
                       setAudienceTouched(true);

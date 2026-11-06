@@ -8,7 +8,7 @@ route_pattern: /campaigns/whatsapp
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 310
-version: 3
+version: 4
 is_published: true
 ---
 # Criar uma campanha de WhatsApp
@@ -22,7 +22,7 @@ is_published: true
 2. Preencha "Nome da campanha".
 3. Escolha o remetente.
 4. Em número oficial, preencha "Origem da autorização dos destinatários".
-5. Escolha "Template" e preencha as variáveis. Para rodízio, use "Adicionar modelo ao rodízio" (até 4 modelos extras) e escolha "Sequencial (A, B, C…)" ou "Aleatório com peso".
+5. Escolha "Template" e preencha as variáveis. Para rodízio, use "Adicionar modelo ao rodízio" (até 4 modelos extras) e escolha "Sequencial (A, B, C…)" ou "Aleatório com peso". Em "Variáveis do modelo", cada modelo do rodízio aparece com o próprio quadro: escolha o campo de cada variável de cada modelo.
 6. Defina o público.
 7. Escolha a distribuição: "Central de Distribuição (padrão)", "Membro específico", "Dividir entre membros da equipe" ou "Desatribuídas".
 8. "Membro específico": um membro; dividir: ao menos dois.
@@ -40,7 +40,7 @@ is_published: true
 - Números com qualidade `RED` ficam indisponíveis.
 - O remetente não muda depois de iniciar.
 - SDR só com template aprovado.
-- Rodízio: até 5 modelos aprovados; cada contato recebe sempre o mesmo modelo; as variáveis do público cobrem o modelo com mais variáveis.
+- Rodízio: até 5 modelos aprovados; cada contato recebe sempre o mesmo modelo; cada modelo tem as próprias variáveis, e só modelos aprovados na Meta para o número podem ser salvos. Em campanha pausada, ao salvar, as variáveis dos contatos ainda pendentes são atualizadas.
 - Disparo pode atrasar cerca de 1 minuto além do intervalo sorteado.
 
 ## Erros comuns

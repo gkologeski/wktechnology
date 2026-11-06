@@ -27,6 +27,7 @@ import { z } from "zod";
 import {
   buildRotation,
   pickTemplate,
+  variablesForTemplate,
   positionalVariables,
 } from "@/lib/whatsapp/campaign-template-rotation";
 
@@ -273,9 +274,12 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
     );
     const tplName = picked?.name ?? camp.template_name;
     const tplLang = picked?.language ?? camp.template_language;
+    // Cada modelo usa as próprias variáveis (sem mapeamento próprio = as do principal).
+    const pickedVars =
+      picked && rotation.length > 1 ? variablesForTemplate(picked, camp.template_name, vars) : vars;
     const tplVars =
       picked && rotation.length > 1
-        ? positionalVariables(picked.variableCount, vars)
+        ? positionalVariables(picked.variableCount, pickedVars)
         : templateVariables(camp, vars);
     if (
       picked &&
@@ -290,7 +294,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
     }
     const body = applyTemplate(
       (picked && rotation.length > 1 ? picked.body : camp.body_template) ?? "",
-      vars,
+      pickedVars,
     );
 
     try {

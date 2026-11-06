@@ -329,6 +329,16 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    {
+      const { assertRotationApproved } =
+        await import("@/lib/whatsapp/campaign-rotation-guard.server");
+      await assertRotationApproved(
+        supabase,
+        workspaceId,
+        data.template_name ? data.template_rotation : undefined,
+        data.sender_phone_number_id,
+      );
+    }
     const { guarded, recentDays, commercial } = await resolveCampaignRecipients(
       supabase,
       workspaceId,
@@ -518,6 +528,10 @@ const UpdateInput = z.object({
   send_interval_min_s: z.number().int().min(0).max(3600).nullable().optional(),
   send_interval_max_s: z.number().int().min(0).max(3600).nullable().optional(),
   assignment: AssignmentInput.optional(),
+  /** Recalcula as variáveis dos pendentes com o mapeamento atual (rascunho/pausada). */
+  refresh_variables: CreateInput.pick({ audience: true, variable_map: true })
+    .required({ audience: true, variable_map: true })
+    .optional(),
   /** Quando presente, refaz a lista de pendentes (só rascunho). */
   replace_audience: CreateInput.pick({
     recipients: true,
@@ -540,12 +554,34 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: existing, error: getErr } = await supabase
       .from("whatsapp_campaigns")
-      .select("id, status")
+      .select("id, status, sender_phone_number_id")
       .eq("id", data.id)
       .single();
     if (getErr) throw getErr;
     if (existing.status !== "draft" && existing.status !== "paused") {
       throw new Error("Apenas campanhas em rascunho ou pausadas podem ser editadas");
+    }
+    if (data.template_rotation !== undefined && data.template_name !== null) {
+      const { assertRotationApproved } =
+        await import("@/lib/whatsapp/campaign-rotation-guard.server");
+      await assertRotationApproved(
+        supabase,
+        await resolveActiveWorkspace(context.userId),
+        data.template_rotation,
+        data.sender_phone_number_id ?? existing.sender_phone_number_id,
+      );
+    }
+    if (data.refresh_variables && !data.replace_audience) {
+      const { refreshPendingVariables } =
+        await import("@/lib/whatsapp/campaign-rotation-guard.server");
+      await refreshPendingVariables(
+        supabase,
+        await resolveActiveWorkspace(context.userId),
+        context.userId,
+        data.id,
+        data.refresh_variables.audience,
+        data.refresh_variables.variable_map,
+      );
     }
     const patch: Record<string, unknown> = {};
     if (data.name !== undefined) patch.name = data.name;

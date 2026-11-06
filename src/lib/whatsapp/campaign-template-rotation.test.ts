@@ -43,3 +43,31 @@ describe("rodízio de modelos", () => {
     expect(maxVariableCount(list)).toBe(2);
   });
 });
+
+import {
+  missingRotationVariables as _missing,
+  variablesForTemplate as _varsFor,
+} from "./campaign-template-rotation";
+import { describe as _d, expect as _e, it as _i } from "vitest";
+
+_d("variáveis por modelo do rodízio", () => {
+  const prim = { name: "a", language: "pt_BR", body: "", variableCount: 1, weight: 1 };
+  const extra = { name: "b", language: "pt_BR", body: "", variableCount: 2, weight: 1 };
+  _i("modelo adicional usa as próprias variáveis", () => {
+    _e(_varsFor(extra, "a", { "1": "Ana", "b#1": "Empresa X", "b#2": "TI" })).toEqual({
+      "1": "Empresa X",
+      "2": "TI",
+    });
+  });
+  _i("principal continua usando {{1}}", () => {
+    _e(_varsFor(prim, "a", { "1": "Ana", "b#1": "X" })).toEqual({ "1": "Ana" });
+  });
+  _i("campanha antiga sem mapeamento próprio usa as do principal", () => {
+    _e(_varsFor(extra, "a", { "1": "Ana", "2": "Y" })).toEqual({ "1": "Ana", "2": "Y" });
+  });
+  _i("aponta variável sem campo em modelo adicional", () => {
+    _e(
+      _missing([prim, extra], { "1": { field: "first_name" }, "b#1": { field: "company" } }),
+    ).toEqual(["b {{2}}"]);
+  });
+});
