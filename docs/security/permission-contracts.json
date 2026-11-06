@@ -8977,6 +8977,94 @@
           "name": "lifecycle rejects inactive member"
         }
       }
+    },
+    {
+      "id": "company-domain-logo-source",
+      "kind": "presentation",
+      "rationale": "Pure domain URL selection; remove unavailable automatic logo source without changing manual uploads, permissions or data.",
+      "files": {
+        "src/lib/domain-utils.ts": "7d05d0057b5259d351dcdbbcdd9da50fe95bd552b3d35e972ac2c57d4b3afc33"
+      }
+    },
+    {
+      "id": "operational-alerts-parallel-user-reads",
+      "kind": "business",
+      "resources": [
+        "techfinance.entries",
+        "techcontracts.contracts",
+        "techprojects.projects",
+        "techprojects.milestones"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techfinance.entries.view.own",
+        "techfinance.entries.view.team",
+        "techfinance.entries.view.workspace",
+        "techcontracts.contracts.view.own",
+        "techcontracts.contracts.view.team",
+        "techcontracts.contracts.view.workspace",
+        "techprojects.projects.view.own",
+        "techprojects.projects.view.team",
+        "techprojects.projects.view.workspace",
+        "techprojects.milestones.view.own",
+        "techprojects.milestones.view.team",
+        "techprojects.milestones.view.workspace"
+      ],
+      "rationale": "Authenticated caller, active membership, effective permission and active-workspace gates before parallel user/RLS queries. UI retry repeats only these reads. No writes or privilege grants.",
+      "controls": [
+        {
+          "file": "src/lib/operational-alerts.server.ts",
+          "symbol": "loadOperationalAlerts"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workCanRead"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0211_finance_core_activation.sql",
+          "symbol": "finance_view"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/operational-alerts.test.ts",
+          "name": "alerts allow an authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/operational-alerts.test.ts",
+          "name": "alerts deny missing permission without querying protected rows"
+        },
+        "explicit_deny": {
+          "file": "src/lib/operational-alerts.test.ts",
+          "name": "alerts respect explicit deny without querying protected rows"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/operational-alerts.test.ts",
+          "name": "alerts reject another workspace before protected reads"
+        },
+        "inactive_member": {
+          "file": "src/lib/operational-alerts.test.ts",
+          "name": "alerts reject inactive membership before protected reads"
+        }
+      },
+      "files": {
+        "src/lib/alerts.functions.ts": "19edbcb9878a90b95f76bb39c16733b3b47e1f4b7a02e2f6479edfa2d986cbc7",
+        "src/lib/operational-alerts.server.ts": "5ec25c3615c5323f20239e291b4a824b512b287c82df643503e1caa79b49e930",
+        "src/components/finance/finance-alerts-panel.tsx": "1831d150063ca3de06b795b7e6f4a48e7510207e1dc22242f00d885c5e20b82b"
+      }
     }
   ],
   "retired": {}

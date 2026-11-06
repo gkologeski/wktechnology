@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { getOperationalAlerts } from "@/lib/alerts.functions";
 import { formatCurrency } from "@/lib/crm";
+import { Button } from "@/components/ui/button";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 function daysUntil(dateIso: string): number {
   const d = new Date(dateIso);
@@ -15,13 +17,28 @@ function daysUntil(dateIso: string): number {
   return Math.round((d.getTime() - now.getTime()) / 86400000);
 }
 
+function relatedName(value: { name: string | null } | { name: string | null }[] | null): string {
+  return (Array.isArray(value) ? value[0]?.name : value?.name) ?? "—";
+}
+
 export function FinanceAlertsPanel() {
   const fetch = useServerFn(getOperationalAlerts);
-  const { data, isLoading } = useQuery({
-    queryKey: ["operational-alerts"],
+  const permissions = usePermissions();
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+    queryKey: ["operational-alerts", permissions.workspaceId],
     queryFn: () => fetch(),
     staleTime: 60_000,
   });
+
+  if (isError)
+    return (
+      <div role="alert" className="space-y-3 border border-destructive rounded-lg p-4">
+        <p>Não foi possível carregar os alertas operacionais.</p>
+        <Button variant="outline" disabled={isFetching} onClick={() => void refetch()}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
 
   if (isLoading) {
     return (
@@ -80,7 +97,7 @@ export function FinanceAlertsPanel() {
                     >
                       {e.description}
                       <span className="text-xs text-muted-foreground ml-1">
-                        · {e.companies?.name ?? "—"}
+                        · {relatedName(e.companies)}
                       </span>
                     </Link>
                     <span className="shrink-0 tabular-nums text-rose-600 dark:text-rose-400 font-medium">
@@ -140,7 +157,7 @@ export function FinanceAlertsPanel() {
                   >
                     {m.name}
                     <span className="text-xs text-muted-foreground ml-1">
-                      · {m.projects?.name ?? "—"}
+                      · {relatedName(m.projects)}
                     </span>
                   </Link>
                   {m.bill_amount != null && (

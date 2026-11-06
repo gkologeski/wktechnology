@@ -8,7 +8,7 @@ route_pattern: /companies/$id
 min_permission:
 audience: internal
 sort_order: 121
-version: 1
+version: 2
 is_published: true
 ---
 # Editar empresa
@@ -26,6 +26,7 @@ is_published: true
 A propriedade editada aparece atualizada na ficha.
 ## Regras e limites
 A gravação ocorre por campo. Campos e opções dependem do catálogo da entidade e das permissões. Registros acessíveis apenas por vínculo podem mostrar somente um resumo, sem edição.
+O avatar preserva o logotipo manual. Sem imagem manual, tenta o favicon do domínio corporativo; se indisponível, mostra as iniciais. O serviço externo de logos descontinuado não é consultado automaticamente.
 ## Erros comuns
 "Email inválido.": revise o endereço. "CNPJ inválido.": revise o documento, quando o campo existir. "CEP inválido. Use 8 dígitos (99999-999).": corrija o CEP, quando disponível.
 ## Relacionados
