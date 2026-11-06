@@ -330,7 +330,8 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(context.userId);
     {
-      const { assertRotationApproved } = await import("@/lib/whatsapp/campaign-rotation-guard.server");
+      const { assertRotationApproved } =
+        await import("@/lib/whatsapp/campaign-rotation-guard.server");
       await assertRotationApproved(
         supabase,
         workspaceId,
@@ -561,7 +562,8 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
       throw new Error("Apenas campanhas em rascunho ou pausadas podem ser editadas");
     }
     if (data.template_rotation !== undefined && data.template_name !== null) {
-      const { assertRotationApproved } = await import("@/lib/whatsapp/campaign-rotation-guard.server");
+      const { assertRotationApproved } =
+        await import("@/lib/whatsapp/campaign-rotation-guard.server");
       await assertRotationApproved(
         supabase,
         await resolveActiveWorkspace(context.userId),
@@ -570,9 +572,8 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
       );
     }
     if (data.refresh_variables && !data.replace_audience) {
-      const { refreshPendingVariables } = await import(
-        "@/lib/whatsapp/campaign-rotation-guard.server"
-      );
+      const { refreshPendingVariables } =
+        await import("@/lib/whatsapp/campaign-rotation-guard.server");
       await refreshPendingVariables(
         supabase,
         await resolveActiveWorkspace(context.userId),

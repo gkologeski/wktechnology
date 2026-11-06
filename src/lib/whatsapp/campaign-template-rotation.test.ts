@@ -66,8 +66,8 @@ _d("variáveis por modelo do rodízio", () => {
     _e(_varsFor(extra, "a", { "1": "Ana", "2": "Y" })).toEqual({ "1": "Ana", "2": "Y" });
   });
   _i("aponta variável sem campo em modelo adicional", () => {
-    _e(_missing([prim, extra], { "1": { field: "first_name" }, "b#1": { field: "company" } })).toEqual([
-      "b {{2}}",
-    ]);
+    _e(
+      _missing([prim, extra], { "1": { field: "first_name" }, "b#1": { field: "company" } }),
+    ).toEqual(["b {{2}}"]);
   });
 });

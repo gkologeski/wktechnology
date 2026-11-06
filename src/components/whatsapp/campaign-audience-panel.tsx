@@ -282,340 +282,351 @@ export function CampaignAudiencePanel({
   const p = previewQ.data;
 
   return (
-    <fieldset disabled={readOnly} aria-readonly={readOnly} className="min-w-0 space-y-4">
-      {readOnly && (
-        <p className="text-xs text-muted-foreground">
-          Campanha pausada: o público e as variáveis ficam somente para leitura.
-        </p>
-      )}
-      <fieldset className="space-y-2 rounded-md border p-3">
-        <legend className="px-1 text-sm font-medium">Público</legend>
-        <Tabs value={value.mode} onValueChange={(m) => set({ mode: m as AudienceMode })}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="queue">Fila de prospecção</TabsTrigger>
-            <TabsTrigger value="filter">Criar público</TabsTrigger>
-            <TabsTrigger value="manual">Lista manual</TabsTrigger>
-          </TabsList>
+    <div className="min-w-0 space-y-4">
+      <fieldset disabled={readOnly} aria-readonly={readOnly} className="min-w-0 space-y-4">
+        {readOnly && (
+          <p className="text-xs text-muted-foreground">
+            Campanha pausada: o público e as variáveis ficam somente para leitura.
+          </p>
+        )}
+        <fieldset className="space-y-2 rounded-md border p-3">
+          <legend className="px-1 text-sm font-medium">Público</legend>
+          <Tabs value={value.mode} onValueChange={(m) => set({ mode: m as AudienceMode })}>
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="queue">Fila de prospecção</TabsTrigger>
+              <TabsTrigger value="filter">Criar público</TabsTrigger>
+              <TabsTrigger value="manual">Lista manual</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="queue" className="space-y-2">
-            <label htmlFor="aud-queue" className="text-xs text-muted-foreground">
-              Fila
-            </label>
-            {queuesQ.isError ? (
-              <p className="text-xs text-destructive">
-                Não foi possível carregar as filas.{" "}
-                <Button size="sm" variant="link" onClick={() => void queuesQ.refetch()}>
-                  Tentar de novo
-                </Button>
-              </p>
-            ) : (
-              <Select
-                value={value.queueId}
-                onValueChange={(id) => set({ queueId: id, variableMap: {} })}
-              >
-                <SelectTrigger id="aud-queue">
-                  <SelectValue
-                    placeholder={
-                      queuesQ.isLoading
-                        ? "Carregando filas…"
-                        : queues.length
-                          ? "Escolha uma fila"
-                          : "Nenhuma fila no workspace"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {queues.map((q) => (
-                    <SelectItem key={q.id} value={q.id}>
-                      {q.name} · {q.entity === "lead" ? "Leads" : "Contatos"} ·{" "}
-                      {q.kind === "manual" ? "estática" : "dinâmica"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </TabsContent>
-
-          <TabsContent value="filter" className="space-y-3">
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <div>
-                <label htmlFor="aud-base" className="text-xs text-muted-foreground">
-                  Base
-                </label>
+            <TabsContent value="queue" className="space-y-2">
+              <label htmlFor="aud-queue" className="text-xs text-muted-foreground">
+                Fila
+              </label>
+              {queuesQ.isError ? (
+                <p className="text-xs text-destructive">
+                  Não foi possível carregar as filas.{" "}
+                  <Button size="sm" variant="link" onClick={() => void queuesQ.refetch()}>
+                    Tentar de novo
+                  </Button>
+                </p>
+              ) : (
                 <Select
-                  value={value.base}
-                  onValueChange={(b) =>
-                    set({ base: b as AudienceBase, groups: [], groupsLogic: "or", variableMap: {} })
-                  }
+                  value={value.queueId}
+                  onValueChange={(id) => set({ queueId: id, variableMap: {} })}
                 >
-                  <SelectTrigger id="aud-base">
-                    <SelectValue />
+                  <SelectTrigger id="aud-queue">
+                    <SelectValue
+                      placeholder={
+                        queuesQ.isLoading
+                          ? "Carregando filas…"
+                          : queues.length
+                            ? "Escolha uma fila"
+                            : "Nenhuma fila no workspace"
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {(Object.keys(BASE_LABEL) as AudienceBase[]).map((b) => (
-                      <SelectItem key={b} value={b}>
-                        {BASE_LABEL[b]}
+                    {queues.map((q) => (
+                      <SelectItem key={q.id} value={q.id}>
+                        {q.name} · {q.entity === "lead" ? "Leads" : "Contatos"} ·{" "}
+                        {q.kind === "manual" ? "estática" : "dinâmica"}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div>
-                <label htmlFor="aud-seg" className="text-xs text-muted-foreground">
-                  Carregar segmento salvo
-                </label>
-                <Select
-                  value=""
-                  onValueChange={(id) => {
-                    const s = segments.find((x) => x.id === id);
-                    if (s)
+              )}
+            </TabsContent>
+
+            <TabsContent value="filter" className="space-y-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="aud-base" className="text-xs text-muted-foreground">
+                    Base
+                  </label>
+                  <Select
+                    value={value.base}
+                    onValueChange={(b) =>
                       set({
-                        groups: segmentToGroups(s.filters, value.base),
-                        groupsLogic: segmentGroupsLogic(s.filters),
+                        base: b as AudienceBase,
+                        groups: [],
+                        groupsLogic: "or",
+                        variableMap: {},
+                      })
+                    }
+                  >
+                    <SelectTrigger id="aud-base">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(BASE_LABEL) as AudienceBase[]).map((b) => (
+                        <SelectItem key={b} value={b}>
+                          {BASE_LABEL[b]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label htmlFor="aud-seg" className="text-xs text-muted-foreground">
+                    Carregar segmento salvo
+                  </label>
+                  <Select
+                    value=""
+                    onValueChange={(id) => {
+                      const s = segments.find((x) => x.id === id);
+                      if (s)
+                        set({
+                          groups: segmentToGroups(s.filters, value.base),
+                          groupsLogic: segmentGroupsLogic(s.filters),
+                        });
+                    }}
+                  >
+                    <SelectTrigger id="aud-seg">
+                      <SelectValue
+                        placeholder={segments.length ? "Escolher…" : "Nenhum segmento"}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {segments.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <AudienceGroupsEditor
+                base={value.base}
+                groups={value.groups}
+                onChange={(groups) => set({ groups })}
+                groupsLogic={value.groupsLogic}
+                fields={filterFields.fields}
+                onGroupsLogicChange={(groupsLogic) => set({ groupsLogic })}
+                members={(members.data ?? []).map((m) => ({
+                  value: m.user_id,
+                  label: m.full_name || "Sem nome",
+                }))}
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    const name = window.prompt("Nome do segmento");
+                    if (!name?.trim()) return;
+                    try {
+                      await saveSegFn({
+                        data: {
+                          name: name.trim(),
+                          entity: value.base,
+                          kind: "dynamic",
+                          filters: groupsToSegment(value.groups, value.base, value.groupsLogic),
+                        },
                       });
+                      toast.success("Segmento salvo");
+                      void segmentsQ.refetch();
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "Não foi possível salvar");
+                    }
                   }}
                 >
-                  <SelectTrigger id="aud-seg">
-                    <SelectValue placeholder={segments.length ? "Escolher…" : "Nenhum segmento"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {segments.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  Salvar como segmento
+                </Button>
               </div>
-            </div>
-            <AudienceGroupsEditor
-              base={value.base}
-              groups={value.groups}
-              onChange={(groups) => set({ groups })}
-              groupsLogic={value.groupsLogic}
-              fields={filterFields.fields}
-              onGroupsLogicChange={(groupsLogic) => set({ groupsLogic })}
-              members={(members.data ?? []).map((m) => ({
-                value: m.user_id,
-                label: m.full_name || "Sem nome",
-              }))}
-            />
-            <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={async () => {
-                  const name = window.prompt("Nome do segmento");
-                  if (!name?.trim()) return;
-                  try {
-                    await saveSegFn({
-                      data: {
-                        name: name.trim(),
-                        entity: value.base,
-                        kind: "dynamic",
-                        filters: groupsToSegment(value.groups, value.base, value.groupsLogic),
-                      },
-                    });
-                    toast.success("Segmento salvo");
-                    void segmentsQ.refetch();
-                  } catch (e) {
-                    toast.error(e instanceof Error ? e.message : "Não foi possível salvar");
-                  }
-                }}
-              >
-                Salvar como segmento
-              </Button>
-            </div>
-          </TabsContent>
+            </TabsContent>
 
-          <TabsContent value="manual" className="space-y-1">
-            <label htmlFor="aud-manual" className="text-xs text-muted-foreground">
-              Destinatários (um por linha: telefone,var1,var2,...)
+            <TabsContent value="manual" className="space-y-1">
+              <label htmlFor="aud-manual" className="text-xs text-muted-foreground">
+                Destinatários (um por linha: telefone,var1,var2,...)
+              </label>
+              <Textarea
+                id="aud-manual"
+                rows={5}
+                value={manualRaw}
+                onChange={(e) => onManualRaw(e.target.value)}
+                placeholder={"+5511999999999,João,14h\n+5511888888888,Maria,16h"}
+              />
+              <p className="text-xs text-muted-foreground">{manualCount} destinatário(s)</p>
+            </TabsContent>
+          </Tabs>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <label htmlFor="aud-recent-days" className="text-muted-foreground">
+              Não enviar para quem recebeu WhatsApp de outra campanha nos últimos
             </label>
-            <Textarea
-              id="aud-manual"
-              rows={5}
-              value={manualRaw}
-              onChange={(e) => onManualRaw(e.target.value)}
-              placeholder={"+5511999999999,João,14h\n+5511888888888,Maria,16h"}
+            <Input
+              id="aud-recent-days"
+              type="number"
+              min={0}
+              max={365}
+              className="h-8 w-20"
+              value={value.recentDays}
+              onChange={(e) =>
+                set({ recentDays: Math.max(0, Math.min(365, Number(e.target.value) || 0)) })
+              }
             />
-            <p className="text-xs text-muted-foreground">{manualCount} destinatário(s)</p>
-          </TabsContent>
-        </Tabs>
-
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <label htmlFor="aud-recent-days" className="text-muted-foreground">
-            Não enviar para quem recebeu WhatsApp de outra campanha nos últimos
-          </label>
-          <Input
-            id="aud-recent-days"
-            type="number"
-            min={0}
-            max={365}
-            className="h-8 w-20"
-            value={value.recentDays}
-            onChange={(e) =>
-              set({ recentDays: Math.max(0, Math.min(365, Number(e.target.value) || 0)) })
-            }
-          />
-          <span className="text-muted-foreground">dias (0 desliga)</span>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-4 text-xs">
-          <label htmlFor="aud-excl-customers" className="flex items-center gap-2">
-            <input
-              id="aud-excl-customers"
-              type="checkbox"
-              disabled={readOnly}
-              checked={value.excludeCustomers}
-              onChange={(e) => set({ excludeCustomers: e.target.checked })}
-            />
-            Não enviar a quem já é cliente (negócio ganho ou contrato ativo)
-          </label>
-          <label htmlFor="aud-excl-open" className="flex items-center gap-2">
-            <input
-              id="aud-excl-open"
-              type="checkbox"
-              disabled={readOnly}
-              checked={value.excludeOpenDeals}
-              onChange={(e) => set({ excludeOpenDeals: e.target.checked })}
-            />
-            Não enviar a quem está em negociação aberta
-          </label>
-        </div>
-
-        {payload && (
-          <div className="rounded-md bg-muted/50 p-2 text-xs" aria-live="polite">
-            {previewQ.isLoading || previewQ.isFetching ? (
-              <span className="text-muted-foreground">Calculando público…</span>
-            ) : previewQ.isError ? (
-              <span className="text-destructive">
-                {(previewQ.error as Error).message || "Não foi possível calcular o público."}
-              </span>
-            ) : p ? (
-              <div className="space-y-1">
-                <div>
-                  <strong>{p.included}</strong> destinatário(s) incluídos de {p.found} registro(s)
-                  {p.truncated ? " (acima do limite de 5.000)" : ""}.
-                </div>
-                <div className="text-muted-foreground">
-                  Fora: {p.excluded.no_phone} sem telefone · {p.excluded.invalid_phone} telefone
-                  inválido · {p.excluded.landline ?? 0} fixo, estrangeiro ou fora do padrão ·{" "}
-                  {p.excluded.duplicate} duplicado · {p.excluded.opted_out} descadastrado ·{" "}
-                  {p.excluded.no_whatsapp ?? 0} sem WhatsApp (recusado pela Meta) ·{" "}
-                  {p.excluded.engagement_limit ?? 0} aguardando nova tentativa (limite da Meta) ·{" "}
-                  {p.recentRemovedCount} por envio recente
-                  {p.recentOverriddenCount > 0
-                    ? ` · ${p.recentOverriddenCount} liberado(s) manualmente`
-                    : ""}{" "}
-                  · {p.commercialRemovedCount} cliente ou em negociação
-                  {p.commercialOverriddenCount > 0
-                    ? ` (${p.commercialOverriddenCount} liberado(s))`
-                    : ""}
-                </div>
-                {(p.excluded.no_whatsapp ?? 0) + (p.excluded.engagement_limit ?? 0) > 0 && (
-                  <p className="rounded border border-warning/40 bg-warning/10 p-2 text-muted-foreground">
-                    A Meta recusou recentemente{" "}
-                    {(p.excluded.no_whatsapp ?? 0) + (p.excluded.engagement_limit ?? 0)} número(s)
-                    deste público e eles ficaram de fora (já tentamos o próximo celular do
-                    cadastro). Quem está aguardando nova tentativa volta sozinho após o prazo; para
-                    diminuir essas recusas, prefira um modelo de Utilidade ou outro canal. Um número
-                    pode ser liberado na ficha do Contato/Lead.
-                  </p>
-                )}
-                {(p.commercialRemovedCount > 0 || value.commercialOverrides.length > 0) && (
-                  <details className="pt-1">
-                    <summary className="cursor-pointer font-medium">
-                      {p.commercialRemovedCount} contato(s) retirado(s) por ser cliente ou estar em
-                      negociação
-                    </summary>
-                    <ul className="mt-1 max-h-48 space-y-1 overflow-auto">
-                      {value.commercialOverrides.map((ph) => (
-                        <li key={`cov-${ph}`} className="flex items-center gap-2">
-                          <input
-                            id={`cov-${ph}`}
-                            type="checkbox"
-                            checked
-                            disabled={readOnly}
-                            onChange={() =>
-                              set({
-                                commercialOverrides: value.commercialOverrides.filter(
-                                  (x) => x !== ph,
-                                ),
-                              })
-                            }
-                          />
-                          <label htmlFor={`cov-${ph}`}>{ph} — liberado manualmente</label>
-                        </li>
-                      ))}
-                      {p.commercialRemoved.map((r) => (
-                        <li key={`cr-${r.phone}`} className="flex items-center gap-2">
-                          <input
-                            id={`cr-${r.phone}`}
-                            type="checkbox"
-                            checked={false}
-                            disabled={readOnly}
-                            onChange={() =>
-                              set({ commercialOverrides: [...value.commercialOverrides, r.phone] })
-                            }
-                          />
-                          <label htmlFor={`cr-${r.phone}`}>
-                            {r.label || r.phone} · {r.phone} — {r.reason}
-                          </label>
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-                {(p.recentRemovedCount > 0 || value.recentOverrides.length > 0) && (
-                  <details className="pt-1">
-                    <summary className="cursor-pointer font-medium">
-                      {p.recentRemovedCount} contato(s) retirado(s) por envio recente
-                    </summary>
-                    <ul className="mt-1 max-h-48 space-y-1 overflow-auto">
-                      {value.recentOverrides.map((ph) => (
-                        <li key={`ov-${ph}`} className="flex items-center gap-2">
-                          <input
-                            id={`ov-${ph}`}
-                            type="checkbox"
-                            checked
-                            onChange={() =>
-                              set({
-                                recentOverrides: value.recentOverrides.filter((x) => x !== ph),
-                              })
-                            }
-                          />
-                          <label htmlFor={`ov-${ph}`}>{ph} — liberado manualmente</label>
-                        </li>
-                      ))}
-                      {p.recentRemoved.map((r) => (
-                        <li key={r.phone} className="flex items-center gap-2">
-                          <input
-                            id={`rr-${r.phone}`}
-                            type="checkbox"
-                            checked={false}
-                            onChange={() =>
-                              set({ recentOverrides: [...value.recentOverrides, r.phone] })
-                            }
-                          />
-                          <label htmlFor={`rr-${r.phone}`}>
-                            {r.label || r.phone} · {r.phone} — {r.campaignName} em{" "}
-                            {new Date(r.at).toLocaleDateString("pt-BR")}
-                          </label>
-                        </li>
-                      ))}
-                    </ul>
-                    <p className="mt-1 text-muted-foreground">
-                      Marque para incluir mesmo assim; a liberação fica registrada no destinatário.
-                    </p>
-                  </details>
-                )}
-              </div>
-            ) : null}
+            <span className="text-muted-foreground">dias (0 desliga)</span>
           </div>
-        )}
-      </fieldset>
 
+          <div className="flex flex-wrap items-center gap-4 text-xs">
+            <label htmlFor="aud-excl-customers" className="flex items-center gap-2">
+              <input
+                id="aud-excl-customers"
+                type="checkbox"
+                disabled={readOnly}
+                checked={value.excludeCustomers}
+                onChange={(e) => set({ excludeCustomers: e.target.checked })}
+              />
+              Não enviar a quem já é cliente (negócio ganho ou contrato ativo)
+            </label>
+            <label htmlFor="aud-excl-open" className="flex items-center gap-2">
+              <input
+                id="aud-excl-open"
+                type="checkbox"
+                disabled={readOnly}
+                checked={value.excludeOpenDeals}
+                onChange={(e) => set({ excludeOpenDeals: e.target.checked })}
+              />
+              Não enviar a quem está em negociação aberta
+            </label>
+          </div>
+
+          {payload && (
+            <div className="rounded-md bg-muted/50 p-2 text-xs" aria-live="polite">
+              {previewQ.isLoading || previewQ.isFetching ? (
+                <span className="text-muted-foreground">Calculando público…</span>
+              ) : previewQ.isError ? (
+                <span className="text-destructive">
+                  {(previewQ.error as Error).message || "Não foi possível calcular o público."}
+                </span>
+              ) : p ? (
+                <div className="space-y-1">
+                  <div>
+                    <strong>{p.included}</strong> destinatário(s) incluídos de {p.found} registro(s)
+                    {p.truncated ? " (acima do limite de 5.000)" : ""}.
+                  </div>
+                  <div className="text-muted-foreground">
+                    Fora: {p.excluded.no_phone} sem telefone · {p.excluded.invalid_phone} telefone
+                    inválido · {p.excluded.landline ?? 0} fixo, estrangeiro ou fora do padrão ·{" "}
+                    {p.excluded.duplicate} duplicado · {p.excluded.opted_out} descadastrado ·{" "}
+                    {p.excluded.no_whatsapp ?? 0} sem WhatsApp (recusado pela Meta) ·{" "}
+                    {p.excluded.engagement_limit ?? 0} aguardando nova tentativa (limite da Meta) ·{" "}
+                    {p.recentRemovedCount} por envio recente
+                    {p.recentOverriddenCount > 0
+                      ? ` · ${p.recentOverriddenCount} liberado(s) manualmente`
+                      : ""}{" "}
+                    · {p.commercialRemovedCount} cliente ou em negociação
+                    {p.commercialOverriddenCount > 0
+                      ? ` (${p.commercialOverriddenCount} liberado(s))`
+                      : ""}
+                  </div>
+                  {(p.excluded.no_whatsapp ?? 0) + (p.excluded.engagement_limit ?? 0) > 0 && (
+                    <p className="rounded border border-warning/40 bg-warning/10 p-2 text-muted-foreground">
+                      A Meta recusou recentemente{" "}
+                      {(p.excluded.no_whatsapp ?? 0) + (p.excluded.engagement_limit ?? 0)} número(s)
+                      deste público e eles ficaram de fora (já tentamos o próximo celular do
+                      cadastro). Quem está aguardando nova tentativa volta sozinho após o prazo;
+                      para diminuir essas recusas, prefira um modelo de Utilidade ou outro canal. Um
+                      número pode ser liberado na ficha do Contato/Lead.
+                    </p>
+                  )}
+                  {(p.commercialRemovedCount > 0 || value.commercialOverrides.length > 0) && (
+                    <details className="pt-1">
+                      <summary className="cursor-pointer font-medium">
+                        {p.commercialRemovedCount} contato(s) retirado(s) por ser cliente ou estar
+                        em negociação
+                      </summary>
+                      <ul className="mt-1 max-h-48 space-y-1 overflow-auto">
+                        {value.commercialOverrides.map((ph) => (
+                          <li key={`cov-${ph}`} className="flex items-center gap-2">
+                            <input
+                              id={`cov-${ph}`}
+                              type="checkbox"
+                              checked
+                              disabled={readOnly}
+                              onChange={() =>
+                                set({
+                                  commercialOverrides: value.commercialOverrides.filter(
+                                    (x) => x !== ph,
+                                  ),
+                                })
+                              }
+                            />
+                            <label htmlFor={`cov-${ph}`}>{ph} — liberado manualmente</label>
+                          </li>
+                        ))}
+                        {p.commercialRemoved.map((r) => (
+                          <li key={`cr-${r.phone}`} className="flex items-center gap-2">
+                            <input
+                              id={`cr-${r.phone}`}
+                              type="checkbox"
+                              checked={false}
+                              disabled={readOnly}
+                              onChange={() =>
+                                set({
+                                  commercialOverrides: [...value.commercialOverrides, r.phone],
+                                })
+                              }
+                            />
+                            <label htmlFor={`cr-${r.phone}`}>
+                              {r.label || r.phone} · {r.phone} — {r.reason}
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                  {(p.recentRemovedCount > 0 || value.recentOverrides.length > 0) && (
+                    <details className="pt-1">
+                      <summary className="cursor-pointer font-medium">
+                        {p.recentRemovedCount} contato(s) retirado(s) por envio recente
+                      </summary>
+                      <ul className="mt-1 max-h-48 space-y-1 overflow-auto">
+                        {value.recentOverrides.map((ph) => (
+                          <li key={`ov-${ph}`} className="flex items-center gap-2">
+                            <input
+                              id={`ov-${ph}`}
+                              type="checkbox"
+                              checked
+                              onChange={() =>
+                                set({
+                                  recentOverrides: value.recentOverrides.filter((x) => x !== ph),
+                                })
+                              }
+                            />
+                            <label htmlFor={`ov-${ph}`}>{ph} — liberado manualmente</label>
+                          </li>
+                        ))}
+                        {p.recentRemoved.map((r) => (
+                          <li key={r.phone} className="flex items-center gap-2">
+                            <input
+                              id={`rr-${r.phone}`}
+                              type="checkbox"
+                              checked={false}
+                              onChange={() =>
+                                set({ recentOverrides: [...value.recentOverrides, r.phone] })
+                              }
+                            />
+                            <label htmlFor={`rr-${r.phone}`}>
+                              {r.label || r.phone} · {r.phone} — {r.campaignName} em{" "}
+                              {new Date(r.at).toLocaleDateString("pt-BR")}
+                            </label>
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="mt-1 text-muted-foreground">
+                        Marque para incluir mesmo assim; a liberação fica registrada no
+                        destinatário.
+                      </p>
+                    </details>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          )}
+        </fieldset>
+      </fieldset>
       {variableCount > 0 && value.mode !== "manual" && (
         <fieldset className="space-y-2 rounded-md border p-3">
           <legend className="px-1 text-sm font-medium">Variáveis do modelo</legend>
@@ -712,6 +723,6 @@ export function CampaignAudiencePanel({
           )}
         </fieldset>
       )}
-    </fieldset>
+    </div>
   );
 }

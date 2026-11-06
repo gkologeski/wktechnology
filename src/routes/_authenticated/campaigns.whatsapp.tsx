@@ -313,8 +313,7 @@ function CampaignsPage() {
           if (!manualE && !audE) throw new Error("Escolha o público da campanha");
           if (!manualE && isHsm) {
             const missing = missingRotationVariables(rotationPayload, audience.variableMap);
-            if (missing.length > 0)
-              throw new Error(`Defina as variáveis: ${missing.join(", ")}`);
+            if (missing.length > 0) throw new Error(`Defina as variáveis: ${missing.join(", ")}`);
           }
           replace_audience = {
             recipients: recipientsE,
