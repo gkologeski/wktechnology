@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { pendingEventsVisibleToCaller } from "./pending-events.server";
+import { pendingEventsVisibleToCaller } from "./caller-tick.server";
 
 function fakeClient(rows: { id: string }[], log: string[], name: string) {
   const q: Record<string, unknown> = {};
