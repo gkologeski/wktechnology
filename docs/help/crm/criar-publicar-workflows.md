@@ -8,7 +8,7 @@ route_pattern: /settings/workflows
 min_permission: system.workflows.manage.workspace
 audience: internal
 sort_order: 413
-version: 3
+version: 4
 is_published: true
 ---
 # Criar e publicar workflows
@@ -23,7 +23,7 @@ is_published: true
 3. Configure o gatilho e as etapas.
 4. Salve o rascunho.
 5. Clique em "Salvar rascunho" para guardar sem ativar, ou em "Salvar e publicar".
-6. Abra "Execuções recentes".
+6. Abra "Execuções recentes" para carregar o histórico, independente da lista de workflows.
 7. Abra "Política de envio" para revisar regras de envio.
 8. Em decisão pendente, preencha "Comentário da decisão (opcional)" e aprove ou rejeite.
 ![Tela: abas Workflows, Execuções recentes e Política de envio](/help-media/crm/criar-publicar-workflows.webp)
@@ -39,6 +39,9 @@ Salvar não é publicar. Aprovar ou rejeitar muda o andamento da execução.
 - "Erro ao publicar": confira a configuração.
 - "Erro no teste": revise o registro de teste.
 - "Erro ao remover": confira sua autorização.
+- "Não foi possível carregar os workflows": clique em "Tentar novamente"; a falha não significa que não existem automações.
+- "Não foi possível carregar as execuções recentes": tente novamente nessa aba. A lista e a edição dos workflows continuam disponíveis.
+- "Estatísticas indisponíveis": os totais de 24 horas não puderam ser consultados; não são apresentados como zero.
 
 ## Relacionados
 - [Criar regras de distribuição](/ajuda/crm/criar-regras-de-distribuicao)
