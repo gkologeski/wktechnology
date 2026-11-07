@@ -7598,7 +7598,7 @@
         "src/components/whatsapp/whatsapp-suppression-notice.tsx": "d182edffc770469e93d72228e935894c05fa33993d3a390c1cf3b5a8c775aa22",
         "src/components/whatsapp/use-whatsapp-suppression-stats.ts": "56df014da7f402b20f229a4a100a88e22b4a28a6e47de2cd9d1c4ce0150c3e64",
         "src/routes/_authenticated/contacts.$id.tsx": "ba10412db75fabbee1d5f06403ad4487ce9c2f46b9086c45750759cf47805ebd",
-        "src/routes/_authenticated/leads.$id.tsx": "c44c7772c785318462753b84710dcf1e537609eb60dc0551ba7bf3c6a260dae7",
+        "src/routes/_authenticated/leads.$id.tsx": "bd7a162a5df800436057b253c391f6c3f230306242d60a28114640b393139be0",
         "drizzle/migrations/0301_whatsapp_number_suppressions.sql": "da7b9b5e869f341e06426924b4b62611a0e063640956ab6d29ba704dfc3594d2",
         "drizzle/migrations/0302_whatsapp_suppression_release_permission.sql": "e12325911933e88f4d8f3bee3a673d42a5c4e0b82cf9c8a900c4d64a7070599a"
       }
@@ -9086,6 +9086,83 @@
       "rationale": "Pure template rotation helper (sequential/weighted pick, max 5). No I/O, routes, actions, grants or data access; callers stay under whatsapp-cloud-authenticated-routing and whatsapp-cloud-workers. Review 06/11/2026 (b): each rotation template has its own variable map keys (<template>#N) resolved by the same server allow-list; saving re-checks every rotation template is APPROVED for the sender and refreshes pending recipient variables through the user client (RLS, same update key); no new endpoint, grant or permission.",
       "files": {
         "src/lib/whatsapp/campaign-template-rotation.ts": "7c27418f7e565d6da6cc347adc9e46fb21ee2611e4ace03ae5a7c6d7dd825dd3"
+      }
+    },
+    {
+      "id": "lead-substatus-and-qualification-basic-fields",
+      "kind": "business",
+      "resources": [
+        "techsales.leads",
+        "techsales.contacts"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.leads.update.own",
+        "techsales.contacts.update.workspace"
+      ],
+      "rationale": "Review 07/11/2026: (1) setting a lead substatus also writes the default lead pipeline and the stage already shown when the lead row has none (buildLeadSubstatusPatch), through the same user client UPDATE on leads; the sync_stage_substatus trigger still validates pipeline/stage. (2) The qualification screen adds a fixed 'Dados básicos' lead block (first/last name, e-mail, phone, WhatsApp) saved by the existing saveAll user-client UPDATE on leads, and the same values seed the contact created by ensureLeadRelations; title fix 'Dados da Empresa'. No new endpoint, grant, policy or permission key; RLS on leads/contacts and deleteRow/rls-denied checks (assertAffected/deniedIfUnaffected) remain the boundary.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/rls-denied.ts",
+          "symbol": "deniedIfUnaffected"
+        },
+        {
+          "file": "src/lib/access-control/rls-denied.ts",
+          "symbol": "assertAffected"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "supabase/migrations/20260827184152_07f7e70e-ab4f-4df6-88ce-803cb1c4ab51.sql",
+          "symbol": "sync_stage_substatus"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      },
+      "files": {
+        "src/components/pipelines/substatus-quick-picker.tsx": "3c5eca53401fd6a76a93afc3f5d043e933845e80d67a938396c2bdbb47f04ace",
+        "src/components/prospecting/qualification-entity-fields.tsx": "d52ea12fad543ae61dcb44c2da1da8107fa968d015871f6157339adc979af910",
+        "src/components/prospecting/qualification-panel.tsx": "288c2e5fbcc481c26cd98136ed4722b4b0cacd50cbc587cdb77ce3cf099b02b1",
+        "src/components/surveys/survey-activity-dialog.tsx": "f5e2e4b9998634a10ac146cc396df9499a739882098703e6dfcd19469d99555d"
+      }
+    },
+    {
+      "id": "lead-stage-and-qualification-layout-helpers",
+      "kind": "presentation",
+      "rationale": "Pure helpers: buildLeadSubstatusPatch (builds the UPDATE payload, no I/O) and withBasicLeadBlock/defaultBlockTitle (adds the fixed 'Dados básicos' block and fixes block titles for display). The existing useLeadStages hook is unchanged. Writes stay in callers under lead-substatus-and-qualification-basic-fields.",
+      "files": {
+        "src/lib/leads/stages.ts": "687f278feee8e97ddc4dfe4e89c2c71853a7b8f2faa63d19347b92cc6161e7ac",
+        "src/lib/prospecting/field-layout.ts": "da29de69981ffa8d6a80791b378ce00a57a476e3da778a7d4c65a7b4ed10a04b"
       }
     }
   ],

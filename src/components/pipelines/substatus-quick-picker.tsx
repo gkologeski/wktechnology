@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { deniedIfUnaffected } from "@/lib/access-control/rls-denied";
 import { useStageSubstatuses } from "@/lib/pipelines/substatuses";
+import { buildLeadSubstatusPatch } from "@/lib/leads/stages";
 import { SubstatusBadge } from "./substatus-badge";
 import { SubstatusManageHint } from "./substatus-manage-hint";
 
@@ -43,7 +44,12 @@ export function SubstatusQuickPicker({
     try {
       const { data, error } = await supabase
         .from(table)
-        .update({ stage_substatus_id: next } as never)
+        .update(
+          (table === "leads"
+            ? // Card exibe a etapa deduzida; grava funil/etapa junto para leads antigos.
+              buildLeadSubstatusPatch({}, next, pipelineId, stageValue)
+            : { stage_substatus_id: next }) as never,
+        )
         .eq("id", rowId)
         .select("id");
       if (error) {

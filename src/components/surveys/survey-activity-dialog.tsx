@@ -37,7 +37,7 @@ import {
 } from "@/lib/surveys/survey-activity.functions";
 import type { RelatedKey } from "@/components/activity/timeline-shared";
 import type { SurveyKindTab } from "@/components/surveys/survey-type-picker-dialog";
-import { parseFieldLayout } from "@/lib/prospecting/field-layout";
+import { parseFieldLayout, withBasicLeadBlock } from "@/lib/prospecting/field-layout";
 import { Progress } from "@/components/ui/progress";
 import {
   computeQualificationScore,
@@ -283,7 +283,8 @@ export function SurveyActivityDialog({
   // Pesquisa de vendas em lead: usa a tela padrão de qualificação.
   const useQualificationScreen = isSalesLead && selection?.source === "prospecting_questionnaire";
   const fieldLayout = useMemo(
-    () => (isSalesLead ? parseFieldLayout(form.data?.field_layout ?? null) : []),
+    () =>
+      isSalesLead ? withBasicLeadBlock(parseFieldLayout(form.data?.field_layout ?? null)) : [],
     [isSalesLead, form.data],
   );
   const entityFields = useQualificationEntityFields(isSalesLead ? relatedId : "", fieldLayout);

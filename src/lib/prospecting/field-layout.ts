@@ -19,10 +19,13 @@ export type QualificationFieldPosition = "before" | "after";
 
 export type QualificationFieldType = "text" | "number" | "currency" | "date" | "select" | "boolean";
 
+/** Tipos usados só pelo bloco fixo de dados básicos (não são gravados no layout). */
+export type QualificationBasicFieldType = "email" | "phone";
+
 export type QualificationField = {
   key: string;
   label: string;
-  type: QualificationFieldType;
+  type: QualificationFieldType | QualificationBasicFieldType;
   required?: boolean;
   options?: { value: string; label: string }[];
 };
@@ -40,6 +43,49 @@ const TYPES = new Set<string>(["text", "number", "currency", "date", "select", "
 
 export function entityLabel(entity: QualificationFieldEntity): string {
   return QUALIFICATION_FIELD_ENTITIES.find((e) => e.value === entity)?.label ?? entity;
+}
+
+/** Título padrão de um bloco, com o artigo correto ("Dados da Empresa"). */
+export function defaultBlockTitle(entity: QualificationFieldEntity): string {
+  return `${entity === "companies" ? "Dados da" : "Dados do"} ${entityLabel(entity)}`;
+}
+
+export const BASIC_LEAD_BLOCK_ID = "basic-lead";
+
+const BASIC_LEAD_FIELDS: QualificationField[] = [
+  { key: "first_name", label: "Nome", type: "text" },
+  { key: "last_name", label: "Sobrenome", type: "text" },
+  { key: "email", label: "E-mail", type: "email" },
+  { key: "phone", label: "Telefone", type: "phone" },
+  { key: "whatsapp_e164", label: "WhatsApp", type: "phone" },
+];
+
+/**
+ * Acrescenta no topo o bloco fixo "Dados básicos" do Lead (nome, sobrenome,
+ * e-mail, telefone e WhatsApp), presente em todo questionário. Campos que o
+ * layout já mostra para o Lead não são repetidos.
+ */
+export function withBasicLeadBlock(blocks: QualificationFieldBlock[]): QualificationFieldBlock[] {
+  const leadKeys = new Set(
+    blocks.filter((b) => b.entity === "leads").flatMap((b) => b.fields.map((f) => f.key)),
+  );
+  const fields = BASIC_LEAD_FIELDS.filter((f) => !leadKeys.has(f.key));
+  const fixed = blocks.map((b) =>
+    b.entity === "companies" && b.title.trim() === "Dados do Empresa"
+      ? { ...b, title: "Dados da Empresa" }
+      : b,
+  );
+  if (fields.length === 0) return fixed;
+  return [
+    {
+      id: BASIC_LEAD_BLOCK_ID,
+      entity: "leads",
+      position: "before",
+      title: "Dados básicos",
+      fields,
+    },
+    ...fixed,
+  ];
 }
 
 /** Normaliza o JSON salvo no banco, descartando entradas inválidas. */
@@ -88,7 +134,7 @@ export function parseFieldLayout(raw: unknown): QualificationFieldBlock[] {
       title:
         typeof b.title === "string" && b.title
           ? b.title
-          : entityLabel(entity as QualificationFieldEntity),
+          : defaultBlockTitle(entity as QualificationFieldEntity),
       fields,
     });
   }
