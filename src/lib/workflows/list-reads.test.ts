@@ -68,8 +68,8 @@ it("keeps workflows available with unknown statistics on a run-query failure", a
   expect(rows).toEqual([expect.objectContaining({ id: "wf-a", runs_24h: null, errors_24h: null })]);
   expect(calls).toContainEqual({
     table: "workflow_runs",
-    method: "eq",
-    args: ["workflow_id", "wf-a"],
+    method: "in",
+    args: ["workflow_id", ["wf-a"]],
   });
 });
 it("merges indexed per-workflow reads into the globally newest requested runs", async () => {
@@ -97,8 +97,8 @@ it("restricts recent runs to active workspace and visible workflow ids", async (
   });
   expect(calls).toContainEqual({
     table: "workflow_runs",
-    method: "in",
-    args: ["workflow_id", ["wf-a"]],
+    method: "eq",
+    args: ["workflow_id", "wf-a"],
   });
 });
 it("does not read runs for a foreign or invisible workflow", async () => {
