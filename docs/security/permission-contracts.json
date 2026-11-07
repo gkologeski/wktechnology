@@ -9194,7 +9194,7 @@
       "database": [
         {
           "file": "drizzle/migrations/0223_order4_sales_activate.sql",
-          "symbol": "sales_event_reference_access"
+          "symbol": "workflow_events"
         }
       ],
       "tests": {
