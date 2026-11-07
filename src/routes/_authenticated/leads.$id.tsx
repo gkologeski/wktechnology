@@ -39,6 +39,7 @@ import {
 } from "@/lib/leads/deal-intent.functions";
 import { lastBusinessDayOfMonth } from "@/lib/date-business";
 import { triggerTickNow } from "@/lib/workflows.functions";
+import { listQuestionnaires, getQuestionnaire } from "@/lib/prospecting/questionnaires.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { StageTracker } from "@/components/stage-tracker";
 import { SubstatusSelect } from "@/components/pipelines/substatus-select";
@@ -111,6 +112,30 @@ function LeadDetail() {
   const pendingDealFn = useServerFn(getPendingDealIntent);
   const completeDealIntentFn = useServerFn(completeDealIntent);
   const tickWorkflows = useServerFn(triggerTickNow);
+  const listQuestionnairesFn = useServerFn(listQuestionnaires);
+  const getQuestionnaireFn = useServerFn(getQuestionnaire);
+
+  // Pré-carrega o questionário de qualificação para a janela abrir já preenchida.
+  useEffect(() => {
+    void qc
+      .fetchQuery({
+        queryKey: ["prospecting", "questionnaires"],
+        queryFn: () => listQuestionnairesFn(),
+        staleTime: 5 * 60_000,
+      })
+      .then((list) => {
+        const first = (list ?? []).find((q) => q.enabled);
+        if (!first) return;
+        return qc.prefetchQuery({
+          queryKey: ["prospecting", "questionnaire", first.id],
+          queryFn: () => getQuestionnaireFn({ data: { id: first.id } }),
+          staleTime: 5 * 60_000,
+        });
+      })
+      .catch(() => {
+        /* a janela carrega sozinha se o pré-carregamento falhar */
+      });
+  }, [qc, listQuestionnairesFn, getQuestionnaireFn]);
 
   /**
    * O LinkedIn é o sinal mais preciso da cascata Apollo. O hook abaixo dispara
