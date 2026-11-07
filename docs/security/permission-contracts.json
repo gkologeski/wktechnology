@@ -9304,6 +9304,10 @@
         {
           "file": "src/lib/workspace/admin-guard.server.ts",
           "symbol": "isWorkspaceAdmin"
+        },
+        {
+          "file": "src/lib/calendar.functions.ts",
+          "symbol": "pushActivityToCalendar"
         }
       ],
       "database": [
@@ -9336,7 +9340,8 @@
       },
       "files": {
         "src/lib/calendar.functions.ts": "086afe367d2540bf555e758904cc84645b529e71476bd6536988fc9511a90bf5",
-        "src/lib/meetings.functions.ts": "c48078ce38248c3901716db4357a562dfab399ae88bbb1418cab51f4602cd5b8"
+        "src/lib/meetings.functions.ts": "c48078ce38248c3901716db4357a562dfab399ae88bbb1418cab51f4602cd5b8",
+        "src/components/meetings/meeting-dialog.tsx": "14c7d109d7f7e8ee2c3329d037823b5c3684b3d55b213f5046f3697a9ceec56d"
       }
     },
     {
@@ -9344,10 +9349,62 @@
       "kind": "presentation",
       "rationale": "Plano DESLIGA-AGENDA: meeting dialog calendar selector and pure selection helpers (meeting-account.ts, no I/O); workflow builder icons/defaults/summaries for the two new offboarding actions. Enforcement stays in pushActivityToCalendar (meeting-calendar-account-owner-selection) and actions-offboarding (hiring-stage6-lifecycle).",
       "files": {
-        "src/components/meetings/meeting-dialog.tsx": "14c7d109d7f7e8ee2c3329d037823b5c3684b3d55b213f5046f3697a9ceec56d",
         "src/lib/calendar/meeting-account.ts": "00db4b590c7639fe1bfeb2c68b6ed07b4bc828b400e8ad5fedebf0f85b24a71f",
-        "src/components/workflows/builder/step-config-panel.tsx": "173e29a1b5a80a3f1df38b4c19da6e98e540f1f6108e839a77e0a4cb1c06407c",
         "src/components/workflows/builder/step-tree.ts": "e112692b30bf4bd7d1ffbcc5aa8fdd5675fae17f01e794c8d5bc403131a798dc"
+      }
+    },
+    {
+      "id": "workflow-builder-offboarding-actions",
+      "kind": "business",
+      "resources": [
+        "system.workflows"
+      ],
+      "actions": [
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.workflows.manage.workspace"
+      ],
+      "rationale": "DESLIGA-AGENDA: step config panel routes the two new offboarding actions to HiringActionForm; execution is enforced server-side in actions-offboarding (owner/admin, workspace, legacy block).",
+      "controls": [
+        {
+          "file": "src/components/workflows/builder/step-forms/hiring-forms.tsx",
+          "symbol": "HiringActionForm"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "workflow_events"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      },
+      "files": {
+        "src/components/workflows/builder/step-config-panel.tsx": "173e29a1b5a80a3f1df38b4c19da6e98e540f1f6108e839a77e0a4cb1c06407c"
       }
     }
   ],
