@@ -222,6 +222,8 @@ export function useQualificationEntityFields(leadId: string, blocks: Qualificati
       const contactVals = clean("contacts");
       const rel = await ensureLeadRelations(supabase, {
         ...(lead as LeadRelationsInput),
+        // Dados básicos editados na tela valem para o contato criado agora.
+        ...(clean("leads") as Partial<LeadRelationsInput>),
         company_name:
           (companyVals["name"] as string | undefined) ??
           (lead["company_name"] as string | null | undefined) ??
