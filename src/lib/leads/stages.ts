@@ -95,3 +95,21 @@ export function deriveLeadStatus(stage: LeadStage | undefined | null): LeadLegac
 export function findLeadStage(stages: LeadStage[], value: string): LeadStage | undefined {
   return stages.find((s) => s.value === value);
 }
+
+/**
+ * Patch para definir o substatus de um lead. Leads antigos podem não ter
+ * funil/etapa gravados (a tela deduz a etapa pelo status); o banco exige que
+ * o substatus pertença ao funil e à etapa do registro, então completamos os
+ * dois com o que a tela exibe, sem sobrescrever valores existentes.
+ */
+export function buildLeadSubstatusPatch(
+  lead: { pipeline_id?: string | null; stage_id?: string | null },
+  substatusId: string | null,
+  pipelineId: string | null | undefined,
+  stageValue: string | null | undefined,
+): Record<string, string | null> {
+  const patch: Record<string, string | null> = { stage_substatus_id: substatusId };
+  if (substatusId && !lead.pipeline_id && pipelineId) patch.pipeline_id = pipelineId;
+  if (substatusId && !lead.stage_id && stageValue) patch.stage_id = stageValue;
+  return patch;
+}
