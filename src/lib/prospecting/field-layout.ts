@@ -77,7 +77,13 @@ export function withBasicLeadBlock(blocks: QualificationFieldBlock[]): Qualifica
   );
   if (fields.length === 0) return fixed;
   return [
-    { id: BASIC_LEAD_BLOCK_ID, entity: "leads", position: "before", title: "Dados básicos", fields },
+    {
+      id: BASIC_LEAD_BLOCK_ID,
+      entity: "leads",
+      position: "before",
+      title: "Dados básicos",
+      fields,
+    },
     ...fixed,
   ];
 }
