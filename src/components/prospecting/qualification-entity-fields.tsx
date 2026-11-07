@@ -12,6 +12,8 @@ import { ensureLeadRelations, type LeadRelationsInput } from "@/lib/leads/lead-r
 import { assertAffected } from "@/lib/access-control/rls-denied";
 
 import { Input } from "@/components/ui/input";
+import { EmailInput } from "@/components/ui/email-input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { IsoDatePicker } from "@/components/iso-date-picker";
 import { CurrencyInput } from "@/components/ui/currency-input";
 import { formatMoney, isMoneyField } from "@/lib/format/money-fields";
@@ -399,6 +401,21 @@ function EntityFieldInput({
       <span className="truncate">Apollo: {suggestionLabel}</span>
     </Button>
   ) : null;
+
+  if (field.type === "email" || field.type === "phone") {
+    const str = typeof value === "string" ? value : "";
+    return (
+      <div className="space-y-1">
+        {label}
+        {field.type === "email" ? (
+          <EmailInput id={id} value={str} disabled={disabled} onChange={(v) => onChange(v)} />
+        ) : (
+          <PhoneInput id={id} value={str} disabled={disabled} onChange={(v) => onChange(v)} />
+        )}
+        {suggestionHint}
+      </div>
+    );
+  }
 
   if (field.type === "boolean") {
     return (

@@ -164,13 +164,15 @@ export function QualificationFieldLayoutDialog({
                       onValueChange={(v) => {
                         const entity = v as QualificationFieldEntity;
                         const wasDefaultTitle = QUALIFICATION_FIELD_ENTITIES.some(
-                          (e) => active.title.trim() === `Dados do ${e.label}`,
+                          (e) =>
+                            active.title.trim() === `Dados do ${e.label}` ||
+                            active.title.trim() === defaultBlockTitle(e.value),
                         );
                         updateActive({
                           entity,
                           fields: [],
                           ...(wasDefaultTitle || !active.title.trim()
-                            ? { title: `Dados do ${entityLabel(entity)}` }
+                            ? { title: defaultBlockTitle(entity) }
                             : {}),
                         });
                       }}
