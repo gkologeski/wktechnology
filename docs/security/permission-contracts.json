@@ -9306,8 +9306,8 @@
           "symbol": "isWorkspaceAdmin"
         },
         {
-          "file": "src/lib/calendar.functions.ts",
-          "symbol": "pushActivityToCalendar"
+          "file": "src/lib/calendar/meeting-account.ts",
+          "symbol": "selectableCalendarAccounts"
         }
       ],
       "database": [
