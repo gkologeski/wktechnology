@@ -59,7 +59,7 @@ import {
   nurtureLead,
 } from "@/lib/prospecting/qualifications.functions";
 import { getDealLossReasons } from "@/lib/deal-loss-reasons.functions";
-import { parseFieldLayout } from "@/lib/prospecting/field-layout";
+import { parseFieldLayout, withBasicLeadBlock } from "@/lib/prospecting/field-layout";
 import {
   QualificationEntityBlocks,
   useQualificationEntityFields,
@@ -222,9 +222,12 @@ export function QualificationPanel({
       ),
     [qData],
   );
-  const blocksBefore = fieldLayout.filter((b) => b.position === "before");
-  const blocksAfter = fieldLayout.filter((b) => b.position === "after");
-  const entityFields = useQualificationEntityFields(entityId, fieldLayout);
+  // Tela: bloco fixo "Dados básicos" + layout configurado (o diálogo de
+  // configuração continua recebendo apenas o layout salvo).
+  const displayLayout = useMemo(() => withBasicLeadBlock(fieldLayout), [fieldLayout]);
+  const blocksBefore = displayLayout.filter((b) => b.position === "before");
+  const blocksAfter = displayLayout.filter((b) => b.position === "after");
+  const entityFields = useQualificationEntityFields(entityId, displayLayout);
   const [layoutOpen, setLayoutOpen] = useState(false);
 
   // ---------- Enriquecimento Apollo.io (domínio → empresa → pessoa) ----------
