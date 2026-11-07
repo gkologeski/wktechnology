@@ -39,6 +39,7 @@ import {
 } from "@/lib/leads/deal-intent.functions";
 import { lastBusinessDayOfMonth } from "@/lib/date-business";
 import { triggerTickNow } from "@/lib/workflows.functions";
+import { listQuestionnaires, getQuestionnaire } from "@/lib/prospecting/questionnaires.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { StageTracker } from "@/components/stage-tracker";
 import { SubstatusSelect } from "@/components/pipelines/substatus-select";
@@ -111,6 +112,30 @@ function LeadDetail() {
   const pendingDealFn = useServerFn(getPendingDealIntent);
   const completeDealIntentFn = useServerFn(completeDealIntent);
   const tickWorkflows = useServerFn(triggerTickNow);
+  const listQuestionnairesFn = useServerFn(listQuestionnaires);
+  const getQuestionnaireFn = useServerFn(getQuestionnaire);
+
+  // Pré-carrega o questionário de qualificação para a janela abrir já preenchida.
+  useEffect(() => {
+    void qc
+      .fetchQuery({
+        queryKey: ["prospecting", "questionnaires"],
+        queryFn: () => listQuestionnairesFn(),
+        staleTime: 5 * 60_000,
+      })
+      .then((list) => {
+        const first = (list ?? []).find((q) => q.enabled);
+        if (!first) return;
+        return qc.prefetchQuery({
+          queryKey: ["prospecting", "questionnaire", first.id],
+          queryFn: () => getQuestionnaireFn({ data: { id: first.id } }),
+          staleTime: 5 * 60_000,
+        });
+      })
+      .catch(() => {
+        /* a janela carrega sozinha se o pré-carregamento falhar */
+      });
+  }, [qc, listQuestionnairesFn, getQuestionnaireFn]);
 
   /**
    * O LinkedIn é o sinal mais preciso da cascata Apollo. O hook abaixo dispara
@@ -249,6 +274,12 @@ function LeadDetail() {
     const stage = findLeadStage(stages, v);
     // A etapa é sempre gravada. A pesquisa de qualificação é gerada por
     // workflow (ação "Criar pesquisa") e aberta automaticamente abaixo.
+    // Etapa de qualificação: abre o questionário no clique, antes da gravação.
+    const isQualifying = v === "qualifying";
+    if (isQualifying) {
+      setPendingSurvey({ activity_id: null, source: "prospecting_questionnaire", source_id: null });
+      setSurveyOpen(true);
+    }
     const { data: affected, error } = await supabase
       .from("leads")
       .update({
@@ -258,21 +289,16 @@ function LeadDetail() {
       } as never)
       .eq("id", lead.id)
       .select("id");
-    if (error) {
-      toast.error(error.message);
+    if (error || deniedIfUnaffected(affected)) {
+      if (isQualifying) {
+        setSurveyOpen(false);
+        setPendingSurvey(null);
+      }
+      if (error) toast.error(error.message);
       return;
     }
-    if (deniedIfUnaffected(affected)) return;
 
     void load();
-
-    // Etapa de qualificação: abre o questionário na hora, sem esperar o
-    // processamento do workflow (a atividade é vinculada depois, em segundo plano).
-    const isQualifying = v === "qualifying";
-    if (isQualifying) {
-      setPendingSurvey({ activity_id: null, source: "prospecting_questionnaire", source_id: null });
-      setSurveyOpen(true);
-    }
 
     // Processa a fila em segundo plano e reconcilia pesquisa/oportunidade.
     void (async () => {

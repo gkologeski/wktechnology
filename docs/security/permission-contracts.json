@@ -7515,7 +7515,7 @@
       "permission_keys": [
         "system.whatsapp_suppressions.manage.workspace"
       ],
-      "rationale": "Numbers refused by Meta (131026 no WhatsApp: 90 days; 131049 engagement: 7 days, repeated within 30 days: 30 days) are recorded only by a SECURITY DEFINER trigger on whatsapp_messages (wa_record_suppression, EXECUTE service_role only) in the message workspace. Read: table SELECT policy is active workspace membership; record view loads only the phones of a Contact/Lead the caller can read by RLS and re-checks active membership (authorizeSuppressionRead); planning stats return totals only, without phones. Release (special action) requires active membership plus the new key system.whatsapp_suppressions.manage.workspace in the suppression workspace (authorizeSuppressionRelease, deny wins through user_effective_permissions), the UI hides the button without the effective key, and RPC wa_release_number_suppression re-checks session, membership, key and read-only \"view as\" in the database. The key is registered without automatic grant (owners/admins receive catalogue keys as today). Contact and Lead records only render the notice; their existing operations (properties, delete guard, timeline, associations) are unchanged.",
+      "rationale": "Numbers refused by Meta (131026 no WhatsApp: 90 days; 131049 engagement: 7 days, repeated within 30 days: 30 days) are recorded only by a SECURITY DEFINER trigger on whatsapp_messages (wa_record_suppression, EXECUTE service_role only) in the message workspace. Read: table SELECT policy is active workspace membership; record view loads only the phones of a Contact/Lead the caller can read by RLS and re-checks active membership (authorizeSuppressionRead); planning stats return totals only, without phones. Release (special action) requires active membership plus the new key system.whatsapp_suppressions.manage.workspace in the suppression workspace (authorizeSuppressionRelease, deny wins through user_effective_permissions), the UI hides the button without the effective key, and RPC wa_release_number_suppression re-checks session, membership, key and read-only \"view as\" in the database. The key is registered without automatic grant (owners/admins receive catalogue keys as today). Contact and Lead records only render the notice; their existing operations (properties, delete guard, timeline, associations) are unchanged. Review 07/11/2026: qualification dialog opens before the RLS-guarded stage update and closes on error/denial; no authorization change. Prefetches the questionnaire through the same authenticated server functions.",
       "controls": [
         {
           "file": "src/lib/whatsapp/whatsapp-suppression-access.ts",
@@ -7598,7 +7598,7 @@
         "src/components/whatsapp/whatsapp-suppression-notice.tsx": "d182edffc770469e93d72228e935894c05fa33993d3a390c1cf3b5a8c775aa22",
         "src/components/whatsapp/use-whatsapp-suppression-stats.ts": "56df014da7f402b20f229a4a100a88e22b4a28a6e47de2cd9d1c4ce0150c3e64",
         "src/routes/_authenticated/contacts.$id.tsx": "ba10412db75fabbee1d5f06403ad4487ce9c2f46b9086c45750759cf47805ebd",
-        "src/routes/_authenticated/leads.$id.tsx": "9ae6d44ceda5e7e02deb2a9f29076a4bd8dda9cfbcfcf4204f60be2e00e8a9af",
+        "src/routes/_authenticated/leads.$id.tsx": "207528bc26cf0ab4c743e21097e4dba332e97cb18aeadc37987f7fadd4c97a1f",
         "drizzle/migrations/0301_whatsapp_number_suppressions.sql": "da7b9b5e869f341e06426924b4b62611a0e063640956ab6d29ba704dfc3594d2",
         "drizzle/migrations/0302_whatsapp_suppression_release_permission.sql": "e12325911933e88f4d8f3bee3a673d42a5c4e0b82cf9c8a900c4d64a7070599a"
       }
@@ -9221,6 +9221,60 @@
       },
       "files": {
         "src/lib/workflows/caller-tick.server.ts": "83c9cf1bfbabe414f0d6285eca7dd80d1a90d6393e67a4b795b9fdbf20d21b3a"
+      }
+    },
+    {
+      "id": "calendar-google-refresh-revoked",
+      "kind": "business",
+      "resources": [
+        "system.workflows"
+      ],
+      "actions": [
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.workflows.manage.workspace"
+      ],
+      "rationale": "Review 07/11/2026: Google token refresh returning invalid_grant (account deleted/revoked) marks the existing calendar account last_status disconnected and returns a friendly reconnect message instead of a raw 400. Same service-side update of the same row already selected by the caller's flow; no new endpoint, grant, key or data exposure.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-account-job.server.ts",
+          "symbol": "assertSalesAccountJob"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "workflow_events"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      },
+      "files": {
+        "src/lib/calendar/engine.server.ts": "d61de904864cf686e6b955ddd06e03853b5c48eee19fadc6314a938dc814eec9"
       }
     }
   ],

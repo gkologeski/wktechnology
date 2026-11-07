@@ -41,11 +41,19 @@ async function refreshAccessToken(account: CalendarAccountRow): Promise<string> 
   });
   if (!res.ok) {
     const t = await res.text();
+    const revoked = t.includes("invalid_grant");
     await supabaseAdmin
       .from("calendar_accounts")
-      .update({ last_status: "error", last_error: `refresh failed: ${res.status} ${t}` })
+      .update({
+        last_status: revoked ? "disconnected" : "error",
+        last_error: `refresh failed: ${res.status} ${t}`,
+      })
       .eq("id", account.id);
-    throw new Error(`Falha ao renovar token: ${res.status}`);
+    throw new Error(
+      revoked
+        ? "A agenda Google foi desconectada (conta removida ou acesso revogado). Reconecte em Configurações → Calendário."
+        : `Falha ao renovar token: ${res.status}`,
+    );
   }
   const j = (await res.json()) as { access_token: string; expires_in: number };
   const expiresAt = new Date(Date.now() + (j.expires_in - 60) * 1000).toISOString();
