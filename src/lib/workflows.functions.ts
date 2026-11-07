@@ -358,17 +358,29 @@ export const listRecentRuns = createServerFn({ method: "GET" })
     const workflowIds = (workflows ?? []).map((workflow) => workflow.id);
     if (!workflowIds.length || (data.workflowId && !workflowIds.includes(data.workflowId)))
       return [];
-    let q = context.supabase
-      .from("workflow_runs")
-      .select("id, workflow_id, status, started_at, finished_at, error, log, created_at")
-      .eq("workspace_id", workspaceId)
-      .in("workflow_id", data.workflowId ? [data.workflowId] : workflowIds)
-      .order("created_at", { ascending: false })
-      .limit(data.limit);
-    if (data.workflowId) q = q.eq("workflow_id", data.workflowId);
-    const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
-    return rows ?? [];
+    // Equality uses workflow_runs_workflow_idx before applying source-record RLS.
+    // Merge each parent's top N to obtain the global top N without a workspace-wide sort.
+    const selectedIds = data.workflowId ? [data.workflowId] : workflowIds;
+    const rows: {
+      id: string; workflow_id: string; status: string; started_at: string | null;
+      finished_at: string | null; error: string | null; log: unknown; created_at: string;
+    }[] = [];
+    for (let offset = 0; offset < selectedIds.length; offset += 5) {
+      const batches = await Promise.all(selectedIds.slice(offset, offset + 5).map(async (id) => {
+        const { data: runs, error } = await context.supabase
+          .from("workflow_runs")
+          .select("id, workflow_id, status, started_at, finished_at, error, log, created_at")
+          .eq("workspace_id", workspaceId)
+          .eq("workflow_id", id)
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
+          .limit(data.limit);
+        if (error) throw new Error(error.message);
+        return runs ?? [];
+      }));
+      rows.push(...batches.flat());
+    }
+    return rows.sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id)).slice(0, data.limit);
   });
 
 // Fase 4 — histórico de enrollment por registro (ex: um lead específico).
