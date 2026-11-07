@@ -138,7 +138,7 @@ function WorkflowsPage() {
     enabled: !permissions.isLoading && workflowView && activeTab === "runs",
     retry: false,
   });
-  const rows: WorkflowRow[] = workflowView ? (workflowsQuery.data ?? []) : [];
+  const rows = workflowView ? ((workflowsQuery.data ?? []) as unknown as WorkflowRow[]) : [];
   const runs = workflowView ? (runsQuery.data ?? []) : [];
   const loading = permissions.isLoading || workflowsQuery.isLoading;
   const refresh = () => {
