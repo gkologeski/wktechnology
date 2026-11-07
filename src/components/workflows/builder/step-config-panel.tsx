@@ -1037,6 +1037,8 @@ function StepConfigForm({
     case "close_allocations":
     case "revoke_access":
     case "cancel_payable_schedules":
+    case "disconnect_integrations":
+    case "transfer_portfolio":
       return <HiringActionForm action={action} onChange={onChange} />;
     default: {
       const _exhaustive: never = action;

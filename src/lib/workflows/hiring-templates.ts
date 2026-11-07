@@ -106,13 +106,15 @@ export const HIRING_TEMPLATES: HiringTemplate[] = [
   {
     key: "offboarding",
     name: "Desligamento",
-    description: "Encerra contratos e alocações, revoga acesso e cancela parcelas futuras.",
+    description: "Encerra contratos e alocações, revoga acesso, desliga agendas/e-mails, transfere a carteira ao gestor e cancela parcelas futuras.",
     entity: terminated.entity,
     trigger: terminated.trigger,
     actions: [
       { type: "terminate_contracts" },
       { type: "close_allocations" },
       { type: "revoke_access" },
+      { type: "disconnect_integrations" },
+      { type: "transfer_portfolio" },
       { type: "cancel_payable_schedules" },
     ] as WorkflowAction[],
   },
