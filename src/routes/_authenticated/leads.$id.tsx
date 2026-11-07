@@ -224,7 +224,14 @@ function LeadDetail() {
   const setSubstatus = async (substatusId: string | null) => {
     const { data: affected, error } = await supabase
       .from("leads")
-      .update({ stage_substatus_id: substatusId } as never)
+      .update(
+        buildLeadSubstatusPatch(
+          lead as unknown as { pipeline_id?: string | null; stage_id?: string | null },
+          substatusId,
+          pipelineId,
+          currentStageValue,
+        ) as never,
+      )
       .eq("id", lead.id)
       .select("id");
     if (error) {
