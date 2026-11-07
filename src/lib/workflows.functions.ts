@@ -8,6 +8,7 @@ import { isLineItemField, lineItemCaseMatches } from "@/lib/workflows/line-items
 // Server functions para o builder de Workflows.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { Json } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tickWorkflows, processEvent } from "@/lib/workflows/engine.server";
 import {
@@ -368,7 +369,7 @@ export const listRecentRuns = createServerFn({ method: "GET" })
       started_at: string | null;
       finished_at: string | null;
       error: string | null;
-      log: unknown;
+      log: Json;
       created_at: string;
     }[] = [];
     for (let offset = 0; offset < selectedIds.length; offset += 5) {
