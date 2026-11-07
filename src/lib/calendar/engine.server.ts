@@ -41,10 +41,12 @@ async function refreshAccessToken(account: CalendarAccountRow): Promise<string> 
   });
   if (!res.ok) {
     const t = await res.text();
-    const revoked = t.includes("invalid_grant");
+    const revoked = isGoogleAccountGone(t);
     await supabaseAdmin
       .from("calendar_accounts")
       .update({
+        // Conta excluída/revogada: desliga a sincronização para não tentar de novo.
+        ...(revoked ? { sync_enabled: false } : {}),
         last_status: revoked ? "disconnected" : "error",
         last_error: `refresh failed: ${res.status} ${t}`,
       })

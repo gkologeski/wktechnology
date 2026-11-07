@@ -225,12 +225,32 @@ export const listCalendarAccounts = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("calendar_accounts")
       .select(
-        "id, provider, email, primary_calendar_id, sync_enabled, auto_create_meet_link, last_synced_at, last_status, last_error, created_at",
+        "id, owner_id, provider, email, primary_calendar_id, sync_enabled, auto_create_meet_link, last_synced_at, last_status, last_error, created_at",
       )
       .eq("workspace_id", ws)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return { items: data ?? [] };
+    const { isWorkspaceAdmin } = await import("@/lib/workspace/admin-guard.server");
+    const ownerIds = [...new Set((data ?? []).map((a) => a.owner_id).filter(Boolean))] as string[];
+    const { data: members } = ownerIds.length
+      ? await supabaseAdmin
+          .from("workspace_members")
+          .select("user_id, status")
+          .eq("workspace_id", ws)
+          .in("user_id", ownerIds)
+      : { data: [] as { user_id: string; status: string | null }[] };
+    const active = new Set(
+      (members ?? []).filter((m) => (m.status ?? "active") === "active").map((m) => m.user_id),
+    );
+    const items = (data ?? []).map((a) => ({
+      ...a,
+      owner_active: a.owner_id ? active.has(a.owner_id) : false,
+    }));
+    return {
+      items,
+      current_user_id: context.userId,
+      is_admin: await isWorkspaceAdmin(context.userId, ws),
+    };
   });
 
 export const setCalendarMeetEnabled = createServerFn({ method: "POST" })
@@ -350,11 +370,19 @@ export const pushActivityToCalendar = createServerFn({ method: "POST" })
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: acct, error: aErr } = await supabaseAdmin
       .from("calendar_accounts")
-      .select("id")
+      .select("id, owner_id, sync_enabled, last_status")
       .eq("id", data.account_id)
       .eq("workspace_id", ws)
       .maybeSingle();
     if (aErr || !acct) throw new Error("Calendário não encontrado");
+    // DESLIGA-AGENDA: só a própria agenda, ou qualquer uma se admin; nunca contas desconectadas.
+    if (acct.owner_id !== context.userId) {
+      const { isWorkspaceAdmin } = await import("@/lib/workspace/admin-guard.server");
+      if (!(await isWorkspaceAdmin(context.userId, ws)))
+        throw new Error("Você só pode sincronizar reuniões com a sua própria agenda.");
+    }
+    if (!acct.sync_enabled || acct.last_status === "disconnected")
+      throw new Error("Esta agenda está desconectada. Reconecte em Configurações → Calendário.");
     const { data: act, error: actErr } = await context.supabase
       .from("activities")
       .select("id")
