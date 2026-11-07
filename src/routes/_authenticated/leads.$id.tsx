@@ -58,6 +58,7 @@ import {
   resolveLeadStageValue,
   deriveLeadStatus,
   findLeadStage,
+  buildLeadSubstatusPatch,
 } from "@/lib/leads/stages";
 
 import type { Lead } from "@/lib/db-types";
