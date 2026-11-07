@@ -9276,6 +9276,131 @@
       "files": {
         "src/lib/calendar/engine.server.ts": "d61de904864cf686e6b955ddd06e03853b5c48eee19fadc6314a938dc814eec9"
       }
+    },
+    {
+      "id": "meeting-calendar-account-owner-selection",
+      "kind": "business",
+      "resources": [
+        "system.calendars"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.calendars.view.workspace",
+        "system.calendars.manage.workspace"
+      ],
+      "rationale": "Plano DESLIGA-AGENDA (07/11/2026): listCalendarAccounts and pushActivityToCalendar keep requireSalesPermission system.calendars + assertSalesRecord; push now also refuses another member's calendar unless isWorkspaceAdmin, and refuses disconnected accounts. Google refresh failures for deleted/revoked accounts turn sync_enabled off. Meeting dialog only offers own (or admin: workspace) usable accounts. No new endpoint, grant or key.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/workspace/admin-guard.server.ts",
+          "symbol": "isWorkspaceAdmin"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "workflow_events"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      },
+      "files": {
+        "src/lib/calendar.functions.ts": "086afe367d2540bf555e758904cc84645b529e71476bd6536988fc9511a90bf5",
+        "src/lib/calendar/engine.server.ts": "ec2426316904a285984189bfb316c972d9469953b1935badebc1711482915ab1",
+        "src/lib/meetings.functions.ts": "c48078ce38248c3901716db4357a562dfab399ae88bbb1418cab51f4602cd5b8",
+        "src/components/meetings/meeting-dialog.tsx": "14c7d109d7f7e8ee2c3329d037823b5c3684b3d55b213f5046f3697a9ceec56d",
+        "src/lib/calendar/meeting-account.ts": "00db4b590c7639fe1bfeb2c68b6ed07b4bc828b400e8ad5fedebf0f85b24a71f"
+      }
+    },
+    {
+      "id": "workflow-offboarding-integrations-portfolio",
+      "kind": "business",
+      "resources": [
+        "system.workflows"
+      ],
+      "actions": [
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.workflows.manage.workspace"
+      ],
+      "rationale": "Plano DESLIGA-AGENDA: new workflow actions disconnect_integrations and transfer_portfolio on the existing 'Pessoa desligada' trigger. Both require the workflow owner to be an active owner/admin member (assertOwnerAdmin), run through hiring_lifecycle_legacy_block via workRpc, are restricted to the run workspace, need a linked user (otherwise skipped for manual review) and an active target member. Builder/schema/template only expose them.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "workflow_events"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      },
+      "files": {
+        "src/lib/workflows/engine/actions-offboarding.server.ts": "8f1b63064e5c574f2d70f81b30634e586e9c201c1708ffe8441b5e71a5729c20",
+        "src/lib/workflows/hiring-templates.ts": "eb456d3ab72c162a952cb342612ad704cf2be8abf495547c142dd8f939691d3c",
+        "src/lib/workflows/schemas.ts": "d93fa0232f10c21d0dfb8becdb49ff0d4303ab076ed6ba8e78bfc028e8c22d38",
+        "src/lib/workflows/types.ts": "e12c954db4289432d27c6344f4a8f5347ae6ffc41c628ec2ba3fce30e1b52c7a",
+        "src/components/workflows/builder/step-config-panel.tsx": "173e29a1b5a80a3f1df38b4c19da6e98e540f1f6108e839a77e0a4cb1c06407c",
+        "src/components/workflows/builder/step-forms/hiring-forms.tsx": "3609246e0df6303db1051562d2609514236297d41b8a4c52b48e80764f0f9783",
+        "src/components/workflows/builder/step-tree.ts": "e112692b30bf4bd7d1ffbcc5aa8fdd5675fae17f01e794c8d5bc403131a798dc"
+      }
     }
   ],
   "retired": {}
