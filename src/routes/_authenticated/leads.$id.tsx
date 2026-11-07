@@ -279,11 +279,9 @@ function LeadDetail() {
       try {
         await tickWorkflows();
       } catch (error) {
-        if (!isQualifying) {
-          toast.error(
-            error instanceof Error ? error.message : "Não foi possível executar o workflow.",
-          );
-        }
+        // A etapa já foi salva; a fila é reprocessada pelo cron em instantes.
+        console.warn("[lead] execução imediata de workflows falhou", error);
+        if (!isQualifying) toast.info("Etapa salva. As automações serão executadas em instantes.");
       }
       if (isQualifying) {
         await pollPendingSurvey(true);
