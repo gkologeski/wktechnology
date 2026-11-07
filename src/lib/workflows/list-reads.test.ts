@@ -47,7 +47,13 @@ function client(
       }
       q.then = (resolve: (value: unknown) => void) =>
         resolve({
-          data: table === "workflows" ? workflows : runs.filter((r) => r.workflow_id === workflowId).sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, limit),
+          data:
+            table === "workflows"
+              ? workflows
+              : runs
+                  .filter((r) => r.workflow_id === workflowId)
+                  .sort((a, b) => b.created_at.localeCompare(a.created_at))
+                  .slice(0, limit),
           error: table === "workflow_runs" && statsError ? { message: "timeout" } : null,
         });
       return q;
@@ -74,11 +80,22 @@ it("keeps workflows available with unknown statistics on a run-query failure", a
 });
 it("merges indexed per-workflow reads into the globally newest requested runs", async () => {
   const rows = await (listRecentRuns as unknown as ReadHandler)({
-    context: { supabase: client(false, [{ id: "wf-a", actions: [], trigger: {}, goal_filters: [] }, { id: "wf-b", actions: [], trigger: {}, goal_filters: [] }], [
-      { id: "old", workflow_id: "wf-a", created_at: "2026-11-01" },
-      { id: "newest", workflow_id: "wf-b", created_at: "2026-11-07" },
-      { id: "middle", workflow_id: "wf-a", created_at: "2026-11-06" },
-    ]), userId: "actor" }, data: { limit: 2 },
+    context: {
+      supabase: client(
+        false,
+        [
+          { id: "wf-a", actions: [], trigger: {}, goal_filters: [] },
+          { id: "wf-b", actions: [], trigger: {}, goal_filters: [] },
+        ],
+        [
+          { id: "old", workflow_id: "wf-a", created_at: "2026-11-01" },
+          { id: "newest", workflow_id: "wf-b", created_at: "2026-11-07" },
+          { id: "middle", workflow_id: "wf-a", created_at: "2026-11-06" },
+        ],
+      ),
+      userId: "actor",
+    },
+    data: { limit: 2 },
   });
   expect(rows).toEqual([
     { id: "newest", workflow_id: "wf-b", created_at: "2026-11-07" },
