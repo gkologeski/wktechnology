@@ -1,3 +1,9 @@
+# FLUXO-VISIVEL — carregamento de workflows (porte P, 20–30 min)
+
+- [ ] Separar lista e histórico; exibir falha recuperável sem confundir com ausência de workflows.
+- [ ] Limitar consultas ao workspace ativo e workflows visíveis, preservando RLS.
+- [ ] Testar regressões, permissões e navegador autenticado; atualizar Ajuda.
+
 # Roadmap — Complementos sem disparos (06/11/2026, porte G, previsão 4–6 h)
 
 - [x] Auditar integração: etapa 6B e artigo People versão 2 já presentes; não duplicar ou reaplicar migrations.
