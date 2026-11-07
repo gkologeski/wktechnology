@@ -9241,12 +9241,8 @@
       "rationale": "Review 07/11/2026: Google token refresh returning invalid_grant (account deleted/revoked) marks the existing calendar account last_status disconnected and returns a friendly reconnect message instead of a raw 400. Same service-side update of the same row already selected by the caller's flow; no new endpoint, grant, key or data exposure.",
       "controls": [
         {
-          "file": "src/lib/access-control/enforce.server.ts",
-          "symbol": "getActiveWorkspaceId"
-        },
-        {
-          "file": "src/lib/access-control/work-core.server.ts",
-          "symbol": "workRpc"
+          "file": "src/lib/access-control/sales-account-job.server.ts",
+          "symbol": "assertSalesAccountJob"
         }
       ],
       "database": [
