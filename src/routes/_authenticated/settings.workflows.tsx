@@ -75,9 +75,15 @@ export const Route = createFileRoute("/_authenticated/settings/workflows")({
   head: () => ({
     meta: [
       { title: "Workflows e automações | TechERP" },
-      { name: "description", content: "Configure workflows e acompanhe suas execuções no TechERP." },
+      {
+        name: "description",
+        content: "Configure workflows e acompanhe suas execuções no TechERP.",
+      },
       { property: "og:title", content: "Workflows e automações | TechERP" },
-      { property: "og:description", content: "Configure workflows e acompanhe suas execuções no TechERP." },
+      {
+        property: "og:description",
+        content: "Configure workflows e acompanhe suas execuções no TechERP.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
@@ -133,7 +139,12 @@ function WorkflowsPage() {
     retry: false,
   });
   const runsQuery = useQuery({
-    queryKey: ["settings-workflow-runs", permissions.workspaceId, [...permissions.permissions].sort(), runsWorkflowId],
+    queryKey: [
+      "settings-workflow-runs",
+      permissions.workspaceId,
+      [...permissions.permissions].sort(),
+      runsWorkflowId,
+    ],
     queryFn: () => runsFn({ data: { limit: 20, workflowId: runsWorkflowId ?? undefined } }),
     enabled: !permissions.isLoading && workflowView && activeTab === "runs",
     retry: false,
@@ -385,7 +396,9 @@ function WorkflowsPage() {
           {workflowsQuery.isError && (
             <div role="alert" className="space-y-2">
               <p className="text-sm text-destructive">Não foi possível carregar os workflows.</p>
-              <Button variant="outline" onClick={refresh} disabled={workflowsQuery.isFetching}>Tentar novamente</Button>
+              <Button variant="outline" onClick={refresh} disabled={workflowsQuery.isFetching}>
+                Tentar novamente
+              </Button>
             </div>
           )}
           {!loading && !workflowsQuery.isError && rows.length === 0 && (
@@ -435,7 +448,10 @@ function WorkflowsPage() {
                     </CardTitle>
                     <p className="text-xs text-muted-foreground mt-1">
                       {ENTITY_LABELS[row.entity]} · {EVENT_LABELS[draftTrigger.event ?? "created"]}{" "}
-                      · {draftActions.length} ação(ões) · {row.runs_24h === null ? "Estatísticas indisponíveis" : `${row.runs_24h} exec / 24h`}
+                      · {draftActions.length} ação(ões) ·{" "}
+                      {row.runs_24h === null
+                        ? "Estatísticas indisponíveis"
+                        : `${row.runs_24h} exec / 24h`}
                     </p>
                     {!isPublished && (
                       <p className="text-xs text-muted-foreground mt-1">
@@ -524,13 +540,25 @@ function WorkflowsPage() {
             </div>
           )}
           {runsQuery.isLoading ? (
-            <p role="status" className="text-sm text-muted-foreground">Carregando execuções…</p>
+            <p role="status" className="text-sm text-muted-foreground">
+              Carregando execuções…
+            </p>
           ) : runsQuery.isError ? (
             <div role="alert" className="space-y-2">
-              <p className="text-sm text-destructive">Não foi possível carregar as execuções recentes. Os workflows continuam disponíveis.</p>
-              <Button variant="outline" onClick={() => void runsQuery.refetch()} disabled={runsQuery.isFetching}>Tentar novamente</Button>
+              <p className="text-sm text-destructive">
+                Não foi possível carregar as execuções recentes. Os workflows continuam disponíveis.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => void runsQuery.refetch()}
+                disabled={runsQuery.isFetching}
+              >
+                Tentar novamente
+              </Button>
             </div>
-          ) : <WorkflowRunsList runs={runs} namesById={namesById} />}
+          ) : (
+            <WorkflowRunsList runs={runs} namesById={namesById} />
+          )}
         </TabsContent>
 
         {workflowView && (
