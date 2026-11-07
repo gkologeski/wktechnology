@@ -509,7 +509,9 @@ export type WorkflowAction =
   | { type: "terminate_contracts"; person_id?: string }
   | { type: "close_allocations"; person_id?: string }
   | { type: "revoke_access"; person_id?: string }
-  | { type: "cancel_payable_schedules"; person_id?: string };
+  | { type: "cancel_payable_schedules"; person_id?: string }
+  | { type: "disconnect_integrations"; person_id?: string }
+  | { type: "transfer_portfolio"; person_id?: string; to_user_id?: string };
 
 export type WorkflowActionType = WorkflowAction["type"];
 
@@ -626,6 +628,8 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   close_allocations: "Encerrar alocações",
   revoke_access: "Revogar acesso de usuário",
   cancel_payable_schedules: "Cancelar parcelas futuras",
+  disconnect_integrations: "Desligar agendas e e-mails",
+  transfer_portfolio: "Transferir carteira",
 };
 
 // Categorias exibidas na biblioteca de ações do builder (estilo HubSpot).
@@ -714,6 +718,8 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
       "close_allocations",
       "revoke_access",
       "cancel_payable_schedules",
+      "disconnect_integrations",
+      "transfer_portfolio",
     ],
   },
   { label: "Utilitários", actions: ["format_data"] },

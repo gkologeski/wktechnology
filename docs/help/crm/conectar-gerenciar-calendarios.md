@@ -8,7 +8,7 @@ route_pattern: /settings/calendars
 min_permission: system.calendars.view.workspace
 audience: internal
 sort_order: 313
-version: 3
+version: 4
 is_published: true
 ---
 # Conectar e gerenciar calendários
@@ -40,6 +40,12 @@ is_published: true
 ## Erros comuns
 - "Falha na conexão": veja a etapa e refaça a autorização.
 - "Finalize a conexão do Google na nova aba.".
+
+## Qual agenda a reunião usa
+- Ao marcar uma reunião, o sistema escolhe a **sua** agenda Google conectada, nunca a de outra pessoa.
+- O campo "Agenda para sincronizar" mostra suas agendas ativas; administradores também veem as dos colegas ativos.
+- Agendas desconectadas, com erro ou de pessoas desligadas não aparecem.
+- Se o Google informar que a conta foi excluída ou o acesso revogado, a sincronização dessa agenda é desligada sozinha; reconecte para voltar a usar.
 
 ## Relacionados
 - [Criar e gerenciar páginas de agendamento](/ajuda/crm/criar-gerenciar-paginas-agendamento)

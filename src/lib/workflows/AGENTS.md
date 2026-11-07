@@ -3,3 +3,4 @@
 - Contratação/desligamento usa ações idempotentes em `engine/actions-hiring.server.ts` e eventos canônicos como gatilhos pré-configurados (`hiring-events.ts`) — fluxos seguem configuráveis por workspace.
 - Pausas dentro de caminhos sobem como quadros {caminho, passo} (`__wf_path`) e estado durável por posição (`__wf_state`) no evento de retomada; o caminho escolhido nunca é reavaliado ao retomar. Por quê: espera/aprovação em ramos sem repetir efeitos.
 - Envio de WhatsApp/e-mail dos fluxos passa sempre por `guardedDelivery` (reserva CAS em `workflow_deliveries`, política em `workflow_send_policies`); por quê: idempotência, cotas e envio incerto nunca reenviado.
+- Desligamento: `disconnect_integrations` e `transfer_portfolio` exigem dono do workflow admin ativo, usuário vinculado à pessoa e destino membro ativo; por quê: o RH não pode cortar acesso nem mover carteira sem governança.

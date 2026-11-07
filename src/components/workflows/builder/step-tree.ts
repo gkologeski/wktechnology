@@ -117,6 +117,8 @@ export const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   close_allocations: BriefcaseBusiness,
   revoke_access: KeySquare,
   cancel_payable_schedules: CalendarX2,
+  disconnect_integrations: CalendarX2,
+  transfer_portfolio: KeySquare,
 };
 
 export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
@@ -263,6 +265,8 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
     case "close_allocations":
     case "revoke_access":
     case "cancel_payable_schedules":
+    case "disconnect_integrations":
+    case "transfer_portfolio":
       return { type };
   }
 }
@@ -801,6 +805,10 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
       return "membro do workspace fica inativo";
     case "cancel_payable_schedules":
       return "parcelas após a data de desligamento";
+    case "disconnect_integrations":
+      return "agendas e caixas de e-mail da pessoa";
+    case "transfer_portfolio":
+      return a.to_user_id ? "carteira para o responsável escolhido" : "carteira para o gestor da pessoa";
     default:
       return "";
   }

@@ -2,6 +2,7 @@ import { assertSalesAccountJob } from "@/lib/access-control/sales-account-job.se
 import { workspaceOfSource } from "@/lib/workspace-source.server";
 // Server-only Google Calendar sync engine.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { isGoogleAccountGone } from "./meeting-account";
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const CAL_API = "https://www.googleapis.com/calendar/v3";
@@ -41,10 +42,12 @@ async function refreshAccessToken(account: CalendarAccountRow): Promise<string> 
   });
   if (!res.ok) {
     const t = await res.text();
-    const revoked = t.includes("invalid_grant");
+    const revoked = isGoogleAccountGone(t);
     await supabaseAdmin
       .from("calendar_accounts")
       .update({
+        // Conta excluída/revogada: desliga a sincronização para não tentar de novo.
+        ...(revoked ? { sync_enabled: false } : {}),
         last_status: revoked ? "disconnected" : "error",
         last_error: `refresh failed: ${res.status} ${t}`,
       })

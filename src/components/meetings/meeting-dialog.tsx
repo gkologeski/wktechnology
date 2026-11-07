@@ -23,6 +23,19 @@ import { CalendarDays, ExternalLink } from "lucide-react";
 import { AttendeePicker, type Attendee } from "./attendee-picker";
 import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
 import { roundActivityTime } from "@/lib/activity-date-time";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  defaultMeetingCalendarAccount,
+  selectableCalendarAccounts,
+} from "@/lib/calendar/meeting-account";
+
+const NO_SYNC = "__none__";
 
 type Props = {
   trigger?: ReactNode;
@@ -71,6 +84,9 @@ export function MeetingDialog({
   const [end, setEnd] = useState(toLocalInput(end0));
   const [busy, setBusy] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
+  const [accountOptions, setAccountOptions] = useState<
+    { id: string; email: string | null; mine: boolean }[]
+  >([]);
 
   const listAccounts = useServerFn(listCalendarAccounts);
   const pushToCalendar = useServerFn(pushActivityToCalendar);
@@ -81,14 +97,17 @@ export function MeetingDialog({
     setAttendees(defaultAttendee ? [{ email: defaultAttendee }] : []);
     void (async () => {
       try {
-        const { items } = await listAccounts();
-        const active = items?.find((a) => a.sync_enabled);
-        setAccountId(active?.id ?? null);
+        const res = await listAccounts();
+        const uid = res.current_user_id ?? user?.id ?? "";
+        const options = selectableCalendarAccounts(res.items ?? [], uid, !!res.is_admin);
+        setAccountOptions(options.map((a) => ({ id: a.id, email: a.email, mine: a.owner_id === uid })));
+        setAccountId(defaultMeetingCalendarAccount(res.items ?? [], uid));
       } catch {
+        setAccountOptions([]);
         setAccountId(null);
       }
     })();
-  }, [open, defaultAttendee, listAccounts]);
+  }, [open, defaultAttendee, listAccounts, user?.id]);
 
   const submit = async () => {
     if (!user) return;
@@ -236,10 +255,33 @@ export function MeetingDialog({
             <Label>Descrição</Label>
             <RichHtmlEditor value={description} onChange={setDescription} minHeight={120} />
           </div>
-          {!accountId && (
+          {accountOptions.length > 0 && (
+            <div>
+              <Label htmlFor="meeting-calendar-account">Agenda para sincronizar</Label>
+              <Select
+                value={accountId ?? NO_SYNC}
+                onValueChange={(v) => setAccountId(v === NO_SYNC ? null : v)}
+              >
+                <SelectTrigger id="meeting-calendar-account" aria-label="Agenda para sincronizar">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_SYNC}>Não sincronizar com o Google</SelectItem>
+                  {accountOptions.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.email ?? "Agenda Google"}
+                      {a.mine ? " (minha agenda)" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {accountOptions.length === 0 && (
             <div className="rounded-lg border border-amber-300/50 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs flex items-center justify-between gap-2">
               <span>
-                Nenhum Google Calendar conectado — um link de sala será gerado automaticamente.
+                Conecte sua agenda Google para sincronizar. Por enquanto, um link de sala será
+                gerado automaticamente.
               </span>
               <Button
                 size="sm"

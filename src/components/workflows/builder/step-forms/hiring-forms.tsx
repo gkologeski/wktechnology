@@ -30,12 +30,19 @@ type HiringAction = Extract<
       | "terminate_contracts"
       | "close_allocations"
       | "revoke_access"
-      | "cancel_payable_schedules";
+      | "cancel_payable_schedules"
+      | "disconnect_integrations"
+      | "transfer_portfolio";
   }
 >;
 
 const OFFBOARDING_HINTS: Record<
-  "terminate_contracts" | "close_allocations" | "revoke_access" | "cancel_payable_schedules",
+  | "terminate_contracts"
+  | "close_allocations"
+  | "revoke_access"
+  | "cancel_payable_schedules"
+  | "disconnect_integrations"
+  | "transfer_portfolio",
   string
 > = {
   terminate_contracts:
@@ -45,6 +52,10 @@ const OFFBOARDING_HINTS: Record<
     "Deixa o usuário da pessoa inativo no workspace: perde o acesso, mas o nome continua no histórico. Exige dono do workflow administrador.",
   cancel_payable_schedules:
     "Cancela as parcelas em aberto com vencimento depois da data de desligamento. Acertos finais continuam manuais.",
+  disconnect_integrations:
+    "Desliga a sincronização das agendas Google e desconecta as caixas de e-mail do usuário da pessoa. Exige dono do workflow administrador.",
+  transfer_portfolio:
+    "Passa leads, negócios, contatos, empresas e atividades do usuário da pessoa para o novo responsável. Vazio = gestor da pessoa; sem gestor, cria tarefa para o administrador escolher.",
 };
 
 const AREAS = ["Comercial", "Técnica", "RH", "Financeiro", "Administrativo"];
@@ -428,12 +439,19 @@ export function HiringActionForm({
     case "close_allocations":
     case "revoke_access":
     case "cancel_payable_schedules":
+    case "disconnect_integrations":
+    case "transfer_portfolio":
       return (
         <div className="space-y-3">
           <p className="text-xs text-muted-foreground">{OFFBOARDING_HINTS[action.type]}</p>
           <Field label="Pessoa" hint="Vazio = pessoa do gatilho (Pessoas) ou criada no fluxo.">
             <Tok value={action.person_id} onChange={(v) => set({ person_id: v })} />
           </Field>
+          {action.type === "transfer_portfolio" ? (
+            <Field label="Novo responsável (ID do usuário)" hint="Vazio = gestor da pessoa.">
+              <Tok value={action.to_user_id} onChange={(v) => set({ to_user_id: v })} />
+            </Field>
+          ) : null}
         </div>
       );
   }
