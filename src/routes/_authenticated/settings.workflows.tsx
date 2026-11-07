@@ -127,13 +127,13 @@ function WorkflowsPage() {
   const [activeTab, setActiveTab] = useState("list");
   const [runsWorkflowId, setRunsWorkflowId] = useState<string | null>(null);
   const workflowsQuery = useQuery({
-    queryKey: ["settings-workflows", permissions],
+    queryKey: ["settings-workflows", permissions.workspaceId, [...permissions.permissions].sort()],
     queryFn: () => listFn(),
     enabled: !permissions.isLoading && workflowView,
     retry: false,
   });
   const runsQuery = useQuery({
-    queryKey: ["settings-workflow-runs", permissions, runsWorkflowId],
+    queryKey: ["settings-workflow-runs", permissions.workspaceId, [...permissions.permissions].sort(), runsWorkflowId],
     queryFn: () => runsFn({ data: { limit: 20, workflowId: runsWorkflowId ?? undefined } }),
     enabled: !permissions.isLoading && workflowView && activeTab === "runs",
     retry: false,
