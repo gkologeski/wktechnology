@@ -249,6 +249,12 @@ function LeadDetail() {
     const stage = findLeadStage(stages, v);
     // A etapa é sempre gravada. A pesquisa de qualificação é gerada por
     // workflow (ação "Criar pesquisa") e aberta automaticamente abaixo.
+    // Etapa de qualificação: abre o questionário no clique, antes da gravação.
+    const isQualifying = v === "qualifying";
+    if (isQualifying) {
+      setPendingSurvey({ activity_id: null, source: "prospecting_questionnaire", source_id: null });
+      setSurveyOpen(true);
+    }
     const { data: affected, error } = await supabase
       .from("leads")
       .update({
@@ -258,21 +264,16 @@ function LeadDetail() {
       } as never)
       .eq("id", lead.id)
       .select("id");
-    if (error) {
-      toast.error(error.message);
+    if (error || deniedIfUnaffected(affected)) {
+      if (isQualifying) {
+        setSurveyOpen(false);
+        setPendingSurvey(null);
+      }
+      if (error) toast.error(error.message);
       return;
     }
-    if (deniedIfUnaffected(affected)) return;
 
     void load();
-
-    // Etapa de qualificação: abre o questionário na hora, sem esperar o
-    // processamento do workflow (a atividade é vinculada depois, em segundo plano).
-    const isQualifying = v === "qualifying";
-    if (isQualifying) {
-      setPendingSurvey({ activity_id: null, source: "prospecting_questionnaire", source_id: null });
-      setSurveyOpen(true);
-    }
 
     // Processa a fila em segundo plano e reconcilia pesquisa/oportunidade.
     void (async () => {
