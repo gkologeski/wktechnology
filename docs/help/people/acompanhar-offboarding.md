@@ -8,7 +8,7 @@ route_pattern: /people/offboarding
 min_permission: techpeople.offboarding.view.own
 audience: internal
 sort_order: 41
-version: 2
+version: 3
 is_published: true
 ---
 # Acompanhar offboarding
@@ -35,3 +35,10 @@ Você vê o andamento de cada desligamento.
 
 ## Relacionados
 - [Acompanhar onboarding](/ajuda/people/acompanhar-onboarding)
+
+## Automação de desligamento (Workflows)
+Em Workflows, o modelo **Desligamento** dispara quando a pessoa passa para "Desligado" e pode:
+- revogar o acesso do usuário (ele fica inativo, o nome continua no histórico);
+- **desligar agendas e e-mails** conectados dele;
+- **transferir a carteira** (leads, negócios, contatos, empresas e atividades) para o gestor da pessoa ou para quem você escolher. Sem gestor, cria uma tarefa para o administrador escolher.
+O fluxo vem desligado; ative e revise os passos. Só funciona com dono do workflow administrador e quando a ficha da pessoa está ligada a um usuário (pelo vínculo ou e-mail corporativo); sem vínculo, nada é feito e fica para revisão manual.
