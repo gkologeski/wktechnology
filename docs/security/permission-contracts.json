@@ -9455,6 +9455,14 @@
         {
           "file": "src/lib/access-control/sales-core.server.ts",
           "symbol": "assertSalesAnyArea"
+        },
+        {
+          "file": "src/lib/access-control/admin-gates.server.ts",
+          "symbol": "assertWorkflowsManage"
+        },
+        {
+          "file": "src/lib/active-workspace.server.ts",
+          "symbol": "resolveActiveWorkspace"
         }
       ],
       "database": [
