@@ -9193,8 +9193,8 @@
       ],
       "database": [
         {
-          "file": "supabase/migrations/20260827184152_07f7e70e-ab4f-4df6-88ce-803cb1c4ab51.sql",
-          "symbol": "sync_stage_substatus"
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "sales_event_reference_access"
         }
       ],
       "tests": {
