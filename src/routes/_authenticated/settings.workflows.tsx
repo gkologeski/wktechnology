@@ -8,6 +8,7 @@ import { UserPlus } from "lucide-react";
 import { HIRING_TEMPLATES } from "@/lib/workflows/hiring-templates";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
 import { useSalesCapabilities } from "@/lib/access-control/use-sales-capabilities";
@@ -71,6 +72,22 @@ import {
 } from "@/lib/workflows/types";
 
 export const Route = createFileRoute("/_authenticated/settings/workflows")({
+  head: () => ({
+    meta: [
+      { title: "Workflows e automações | TechERP" },
+      {
+        name: "description",
+        content: "Configure workflows e acompanhe suas execuções no TechERP.",
+      },
+      { property: "og:title", content: "Workflows e automações | TechERP" },
+      {
+        property: "og:description",
+        content: "Configure workflows e acompanhe suas execuções no TechERP.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: WorkflowsPage,
 });
 
@@ -87,8 +104,8 @@ type WorkflowRow = {
   draft_trigger: WorkflowTrigger;
   draft_actions: WorkflowAction[];
   updated_at: string;
-  runs_24h: number;
-  errors_24h: number;
+  runs_24h: number | null;
+  errors_24h: number | null;
 };
 
 function WorkflowsPage() {
@@ -106,10 +123,7 @@ function WorkflowsPage() {
   const testFn = useServerFn(testWorkflow);
   const bulkFn = useServerFn(bulkEnrollWorkflow);
 
-  const [rows, setRows] = useState<WorkflowRow[]>([]);
-  const [runs, setRuns] = useState<Awaited<ReturnType<typeof listRecentRuns>>>([]);
   const [draft, setDraft] = useState<WorkflowDraft | null>(null);
-  const [loading, setLoading] = useState(true);
   const [testTarget, setTestTarget] = useState<WorkflowRow | null>(null);
   const [testEntityId, setTestEntityId] = useState("");
   const [testResult, setTestResult] = useState<Awaited<ReturnType<typeof testWorkflow>> | null>(
@@ -118,27 +132,34 @@ function WorkflowsPage() {
   const [testing, setTesting] = useState(false);
   const [activeTab, setActiveTab] = useState("list");
   const [runsWorkflowId, setRunsWorkflowId] = useState<string | null>(null);
-
-  const refresh = async () => {
-    if (!workflowView) {
-      setRows([]);
-      setRuns([]);
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    try {
-      const [w, r] = await Promise.all([listFn(), runsFn({ data: { limit: 20 } })]);
-      setRows(w as unknown as WorkflowRow[]);
-      setRuns(r);
-    } finally {
-      setLoading(false);
-    }
+  const workflowsQuery = useQuery({
+    queryKey: ["settings-workflows", permissions.workspaceId, [...permissions.permissions].sort()],
+    queryFn: () => listFn(),
+    enabled: !permissions.isLoading && workflowView,
+    retry: false,
+  });
+  const runsQuery = useQuery({
+    queryKey: [
+      "settings-workflow-runs",
+      permissions.workspaceId,
+      [...permissions.permissions].sort(),
+      runsWorkflowId,
+    ],
+    queryFn: () => runsFn({ data: { limit: 20, workflowId: runsWorkflowId ?? undefined } }),
+    enabled: !permissions.isLoading && workflowView && activeTab === "runs",
+    retry: false,
+  });
+  const rows = workflowView ? ((workflowsQuery.data ?? []) as unknown as WorkflowRow[]) : [];
+  const runs = workflowView ? (runsQuery.data ?? []) : [];
+  const loading = permissions.isLoading || workflowsQuery.isLoading;
+  const refresh = () => {
+    if (!workflowView) return;
+    void workflowsQuery.refetch();
+    if (activeTab === "runs") void runsQuery.refetch();
   };
 
   useEffect(() => {
     if (!permissions.isLoading) {
-      void refresh();
       if (!workflowView) setActiveTab("approvals");
     } /* eslint-disable-next-line react-hooks/exhaustive-deps */
   }, [permissions.isLoading, workflowView]);
@@ -372,7 +393,15 @@ function WorkflowsPage() {
 
         <TabsContent value="list" className="space-y-3 mt-3">
           {loading && <p className="text-sm text-muted-foreground">Carregando…</p>}
-          {!loading && rows.length === 0 && (
+          {workflowsQuery.isError && (
+            <div role="alert" className="space-y-2">
+              <p className="text-sm text-destructive">Não foi possível carregar os workflows.</p>
+              <Button variant="outline" onClick={refresh} disabled={workflowsQuery.isFetching}>
+                Tentar novamente
+              </Button>
+            </div>
+          )}
+          {!loading && !workflowsQuery.isError && rows.length === 0 && (
             <Card>
               <CardContent className="py-12 text-center text-sm text-muted-foreground">
                 Nenhum workflow ainda. Crie o primeiro para começar a automatizar.
@@ -402,7 +431,7 @@ function WorkflowsPage() {
                       ) : (
                         <Badge variant="outline">Rascunho</Badge>
                       )}
-                      {row.errors_24h > 0 && (
+                      {row.errors_24h !== null && row.errors_24h > 0 && (
                         <Button
                           type="button"
                           variant="destructive"
@@ -419,7 +448,10 @@ function WorkflowsPage() {
                     </CardTitle>
                     <p className="text-xs text-muted-foreground mt-1">
                       {ENTITY_LABELS[row.entity]} · {EVENT_LABELS[draftTrigger.event ?? "created"]}{" "}
-                      · {draftActions.length} ação(ões) · {row.runs_24h} exec / 24h
+                      · {draftActions.length} ação(ões) ·{" "}
+                      {row.runs_24h === null
+                        ? "Estatísticas indisponíveis"
+                        : `${row.runs_24h} exec / 24h`}
                     </p>
                     {!isPublished && (
                       <p className="text-xs text-muted-foreground mt-1">
@@ -507,10 +539,26 @@ function WorkflowsPage() {
               </Button>
             </div>
           )}
-          <WorkflowRunsList
-            runs={runsWorkflowId ? runs.filter((run) => run.workflow_id === runsWorkflowId) : runs}
-            namesById={namesById}
-          />
+          {runsQuery.isLoading ? (
+            <p role="status" className="text-sm text-muted-foreground">
+              Carregando execuções…
+            </p>
+          ) : runsQuery.isError ? (
+            <div role="alert" className="space-y-2">
+              <p className="text-sm text-destructive">
+                Não foi possível carregar as execuções recentes. Os workflows continuam disponíveis.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => void runsQuery.refetch()}
+                disabled={runsQuery.isFetching}
+              >
+                Tentar novamente
+              </Button>
+            </div>
+          ) : (
+            <WorkflowRunsList runs={runs} namesById={namesById} />
+          )}
         </TabsContent>
 
         {workflowView && (

@@ -1,3 +1,9 @@
+# FLUXO-VISIVEL — carregamento de workflows (porte P, 20–30 min)
+
+- [x] Separar lista e histórico; exibir falha recuperável sem confundir com ausência de workflows.
+- [x] Limitar consultas ao workspace ativo e workflows visíveis, preservando RLS; histórico usa índice existente por workflow.
+- [x] 27 testes, permissions:check, cobertura 246/246 e navegador autenticado aprovados; Ajuda versão 4 aplicada e conferida. Build automático OK; lint sem erros (3 avisos). Sem alteração de automações, RLS, grants ou schema; não publicado. Perf:check indisponível por ausência de .verification/build.json.
+
 # Roadmap — Complementos sem disparos (06/11/2026, porte G, previsão 4–6 h)
 
 - [x] Auditar integração: etapa 6B e artigo People versão 2 já presentes; não duplicar ou reaplicar migrations.

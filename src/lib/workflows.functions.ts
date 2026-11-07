@@ -8,6 +8,7 @@ import { isLineItemField, lineItemCaseMatches } from "@/lib/workflows/line-items
 // Server functions para o builder de Workflows.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { Json } from "@/integrations/supabase/types";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { tickWorkflows, processEvent } from "@/lib/workflows/engine.server";
 import {
@@ -73,19 +74,26 @@ export const listWorkflows = createServerFn({ method: "GET" })
   .middleware([requireSalesPermission("system.workflows", "view")])
   .handler(async ({ context }) => {
     const { supabase } = context;
+    const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data, error } = await supabase
       .from("workflows")
       .select(
         "id, name, entity, enabled, status, published_version, last_published_at, trigger, actions, goal_filters, draft_trigger, draft_actions, draft_goal_filters, updated_at",
       )
+      .eq("workspace_id", workspaceId)
       .order("updated_at", { ascending: false });
     if (error) throw new Error(error.message);
 
     const since = new Date(Date.now() - 86_400_000).toISOString();
-    const { data: runs } = await supabase
-      .from("workflow_runs")
-      .select("workflow_id, status")
-      .gte("created_at", since);
+    const workflowIds = (data ?? []).map((w) => w.id);
+    const { data: runs, error: statsError } = workflowIds.length
+      ? await supabase
+          .from("workflow_runs")
+          .select("workflow_id, status")
+          .eq("workspace_id", workspaceId)
+          .in("workflow_id", workflowIds)
+          .gte("created_at", since)
+      : { data: [], error: null };
     const stats = new Map<string, { total: number; errors: number }>();
     for (const r of runs ?? []) {
       const s = stats.get(r.workflow_id as string) ?? { total: 0, errors: 0 };
@@ -108,8 +116,8 @@ export const listWorkflows = createServerFn({ method: "GET" })
         draft_trigger: draftTrigger,
         draft_goal_filters: draftGoal,
         has_draft_changes: hasDraftChanges,
-        runs_24h: stats.get(w.id)?.total ?? 0,
-        errors_24h: stats.get(w.id)?.errors ?? 0,
+        runs_24h: statsError ? null : (stats.get(w.id)?.total ?? 0),
+        errors_24h: statsError ? null : (stats.get(w.id)?.errors ?? 0),
       };
     });
   });
@@ -332,7 +340,7 @@ export const deleteWorkflow = createServerFn({ method: "POST" })
   });
 
 export const listRecentRuns = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSalesPermission("system.workflows", "view")])
   .inputValidator((i) =>
     z
       .object({
@@ -342,15 +350,48 @@ export const listRecentRuns = createServerFn({ method: "GET" })
       .parse(i ?? {}),
   )
   .handler(async ({ data, context }) => {
-    let q = context.supabase
-      .from("workflow_runs")
-      .select("id, workflow_id, status, started_at, finished_at, error, log, created_at")
-      .order("created_at", { ascending: false })
-      .limit(data.limit);
-    if (data.workflowId) q = q.eq("workflow_id", data.workflowId);
-    const { data: rows, error } = await q;
-    if (error) throw new Error(error.message);
-    return rows ?? [];
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const { data: workflows, error: workflowsError } = await context.supabase
+      .from("workflows")
+      .select("id")
+      .eq("workspace_id", workspaceId);
+    if (workflowsError) throw new Error(workflowsError.message);
+    const workflowIds = (workflows ?? []).map((workflow) => workflow.id);
+    if (!workflowIds.length || (data.workflowId && !workflowIds.includes(data.workflowId)))
+      return [];
+    // Equality uses workflow_runs_workflow_idx before applying source-record RLS.
+    // Merge each parent's top N to obtain the global top N without a workspace-wide sort.
+    const selectedIds = data.workflowId ? [data.workflowId] : workflowIds;
+    const rows: {
+      id: string;
+      workflow_id: string;
+      status: string;
+      started_at: string | null;
+      finished_at: string | null;
+      error: string | null;
+      log: Json;
+      created_at: string;
+    }[] = [];
+    for (let offset = 0; offset < selectedIds.length; offset += 5) {
+      const batches = await Promise.all(
+        selectedIds.slice(offset, offset + 5).map(async (id) => {
+          const { data: runs, error } = await context.supabase
+            .from("workflow_runs")
+            .select("id, workflow_id, status, started_at, finished_at, error, log, created_at")
+            .eq("workspace_id", workspaceId)
+            .eq("workflow_id", id)
+            .order("created_at", { ascending: false })
+            .order("id", { ascending: false })
+            .limit(data.limit);
+          if (error) throw new Error(error.message);
+          return runs ?? [];
+        }),
+      );
+      rows.push(...batches.flat());
+    }
+    return rows
+      .sort((a, b) => b.created_at.localeCompare(a.created_at) || b.id.localeCompare(a.id))
+      .slice(0, data.limit);
   });
 
 // Fase 4 — histórico de enrollment por registro (ex: um lead específico).
@@ -366,9 +407,11 @@ export const listRecordEnrollments = createServerFn({ method: "GET" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    const workspaceId = await resolveActiveWorkspace(context.userId);
     const { data: rows, error } = await context.supabase
       .from("workflow_runs")
       .select("id, workflow_id, status, started_at, finished_at, error, log, created_at, is_test")
+      .eq("workspace_id", workspaceId)
       .eq("entity", data.entity)
       .eq("entity_id", data.entityId)
       .order("created_at", { ascending: false })
