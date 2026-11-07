@@ -9406,6 +9406,85 @@
       "files": {
         "src/components/workflows/builder/step-config-panel.tsx": "173e29a1b5a80a3f1df38b4c19da6e98e540f1f6108e839a77e0a4cb1c06407c"
       }
+    },
+    {
+      "id": "workflow-list-history-isolation",
+      "kind": "business",
+      "resources": [
+        "system.workflows",
+        "system.workflow_approvals"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.workflows.view.workspace",
+        "system.workflows.manage.workspace"
+      ],
+      "rationale": "FLUXO-VISIVEL: existing endpoint and action gates preserved; recent history adds the workflow-view middleware. List, statistics, history and record enrollments use the user client/RLS narrowed by active workspace. Recent history narrows further to visible parent workflow ids. Independent query caches include workspace and effective permissions. No writes, execution, grants or policy changes. SQL sales_view and sales_run_source remain authoritative; unit denial evidence exercises sales_area_authorize boundary failures, not isolated PostgreSQL.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/use-sales-capabilities.ts",
+          "symbol": "useSalesCapabilities"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "workflows"
+        },
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "workflow_runs"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/workflows/list-reads.test.ts",
+          "name": "workflow view permits an authorized active actor"
+        },
+        "missing_permission": {
+          "file": "src/lib/workflows/list-reads.test.ts",
+          "name": "workflow view rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/workflows/list-reads.test.ts",
+          "name": "workflow view rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/workflows/list-reads.test.ts",
+          "name": "workflow view rejects a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/workflows/list-reads.test.ts",
+          "name": "workflow view rejects inactive membership"
+        }
+      },
+      "files": {
+        "src/lib/workflows.functions.ts": "1f806387c767cfbf77e5b047c5cd9d61023205e345ddb364ee65b940db7d3927",
+        "src/routes/_authenticated/settings.workflows.tsx": "b071ed2c8583011fd51d37ae703f13aa524b3bbcb5d40ecda4c3fae0b33039f4"
+      }
     }
   ],
   "retired": {}
