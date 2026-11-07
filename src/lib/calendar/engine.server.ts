@@ -2,6 +2,7 @@ import { assertSalesAccountJob } from "@/lib/access-control/sales-account-job.se
 import { workspaceOfSource } from "@/lib/workspace-source.server";
 // Server-only Google Calendar sync engine.
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { isGoogleAccountGone } from "./meeting-account";
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const CAL_API = "https://www.googleapis.com/calendar/v3";
