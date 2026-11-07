@@ -33,6 +33,7 @@ import { saveQuestionnaireFieldLayout } from "@/lib/prospecting/questionnaires.f
 import {
   QUALIFICATION_FIELD_ENTITIES,
   entityLabel,
+  defaultBlockTitle,
   type QualificationFieldBlock,
   type QualificationFieldEntity,
   type QualificationFieldType,
