@@ -9109,8 +9109,20 @@
       "rationale": "Review 07/11/2026: (1) setting a lead substatus also writes the default lead pipeline and the stage already shown when the lead row has none (buildLeadSubstatusPatch), through the same user client UPDATE on leads; the sync_stage_substatus trigger still validates pipeline/stage. (2) The qualification screen adds a fixed 'Dados básicos' lead block (first/last name, e-mail, phone, WhatsApp) saved by the existing saveAll user-client UPDATE on leads, and the same values seed the contact created by ensureLeadRelations; title fix 'Dados da Empresa'. No new endpoint, grant, policy or permission key; RLS on leads/contacts and deleteRow/rls-denied checks (assertAffected/deniedIfUnaffected) remain the boundary.",
       "controls": [
         {
-          "file": "src/lib/access-control/sales-core.server.ts",
-          "symbol": "assertSalesAnyArea"
+          "file": "src/lib/access-control/rls-denied.ts",
+          "symbol": "deniedIfUnaffected"
+        },
+        {
+          "file": "src/lib/access-control/rls-denied.ts",
+          "symbol": "assertAffected"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/prospecting/questionnaires.functions.ts",
+          "symbol": "saveQuestionnaireFieldLayout"
         }
       ],
       "database": [
@@ -9146,7 +9158,14 @@
         "src/components/prospecting/qualification-entity-fields.tsx": "d52ea12fad543ae61dcb44c2da1da8107fa968d015871f6157339adc979af910",
         "src/components/prospecting/qualification-field-layout-dialog.tsx": "4b00d59fa21b9c1610e73b74a60c5feb3b89bf34b932f1fdf28b8d67ff1e4b7b",
         "src/components/prospecting/qualification-panel.tsx": "288c2e5fbcc481c26cd98136ed4722b4b0cacd50cbc587cdb77ce3cf099b02b1",
-        "src/components/surveys/survey-activity-dialog.tsx": "f5e2e4b9998634a10ac146cc396df9499a739882098703e6dfcd19469d99555d",
+        "src/components/surveys/survey-activity-dialog.tsx": "f5e2e4b9998634a10ac146cc396df9499a739882098703e6dfcd19469d99555d"
+      }
+    },
+    {
+      "id": "lead-stage-and-qualification-layout-helpers",
+      "kind": "presentation",
+      "rationale": "Pure helpers: buildLeadSubstatusPatch (builds the UPDATE payload, no I/O) and withBasicLeadBlock/defaultBlockTitle (adds the fixed 'Dados básicos' block and fixes block titles for display). The existing useLeadStages hook is unchanged. Writes stay in callers under lead-substatus-and-qualification-basic-fields.",
+      "files": {
         "src/lib/leads/stages.ts": "687f278feee8e97ddc4dfe4e89c2c71853a7b8f2faa63d19347b92cc6161e7ac",
         "src/lib/prospecting/field-layout.ts": "da29de69981ffa8d6a80791b378ce00a57a476e3da778a7d4c65a7b4ed10a04b"
       }
