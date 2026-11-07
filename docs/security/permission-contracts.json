@@ -9119,10 +9119,6 @@
         {
           "file": "src/lib/access-control/use-permissions.tsx",
           "symbol": "usePermissions"
-        },
-        {
-          "file": "src/lib/prospecting/questionnaires.functions.ts",
-          "symbol": "saveQuestionnaireFieldLayout"
         }
       ],
       "database": [
@@ -9156,7 +9152,6 @@
       "files": {
         "src/components/pipelines/substatus-quick-picker.tsx": "3c5eca53401fd6a76a93afc3f5d043e933845e80d67a938396c2bdbb47f04ace",
         "src/components/prospecting/qualification-entity-fields.tsx": "d52ea12fad543ae61dcb44c2da1da8107fa968d015871f6157339adc979af910",
-        "src/components/prospecting/qualification-field-layout-dialog.tsx": "4b00d59fa21b9c1610e73b74a60c5feb3b89bf34b932f1fdf28b8d67ff1e4b7b",
         "src/components/prospecting/qualification-panel.tsx": "288c2e5fbcc481c26cd98136ed4722b4b0cacd50cbc587cdb77ce3cf099b02b1",
         "src/components/surveys/survey-activity-dialog.tsx": "f5e2e4b9998634a10ac146cc396df9499a739882098703e6dfcd19469d99555d"
       }

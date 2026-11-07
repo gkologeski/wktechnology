@@ -33,7 +33,6 @@ import { saveQuestionnaireFieldLayout } from "@/lib/prospecting/questionnaires.f
 import {
   QUALIFICATION_FIELD_ENTITIES,
   entityLabel,
-  defaultBlockTitle,
   type QualificationFieldBlock,
   type QualificationFieldEntity,
   type QualificationFieldType,
@@ -165,15 +164,13 @@ export function QualificationFieldLayoutDialog({
                       onValueChange={(v) => {
                         const entity = v as QualificationFieldEntity;
                         const wasDefaultTitle = QUALIFICATION_FIELD_ENTITIES.some(
-                          (e) =>
-                            active.title.trim() === `Dados do ${e.label}` ||
-                            active.title.trim() === defaultBlockTitle(e.value),
+                          (e) => active.title.trim() === `Dados do ${e.label}`,
                         );
                         updateActive({
                           entity,
                           fields: [],
                           ...(wasDefaultTitle || !active.title.trim()
-                            ? { title: defaultBlockTitle(entity) }
+                            ? { title: `Dados do ${entityLabel(entity)}` }
                             : {}),
                         });
                       }}
