@@ -8125,7 +8125,7 @@
         "techhire.hiring_demands.view.workspace",
         "techhire.hiring_demands.update.workspace"
       ],
-      "rationale": "Stage 4: immutable per-engagement access snapshots; administrator plus IAM manage for model publication and invites; HR/ATS row scope and current hiring approval/signature for transactional admission. Explicit existing-person choice, stable employment/legal entity and term inheritance, purchase role client and same WK entity; allocation guarded on every SQL writer. Recipient acceptance is intentionally authenticated capability: exact auth.users email plus random 256-bit invite, current unexpired engagement and active person; it cannot reset an existing password, broaden workspace role, add Sales role or consume generic permission sets. New-account public registration remains in existing token boundary, and access only follows authenticated recipient acceptance. Own grant sets are immutable and filtered by live engagement in existing canonical permission resolver; deny and active membership preserved. Restrictive project/task/time policies constrain allocation-only snapshots, and end removes only its assignment. Historical rows, manual permissions, unrelated memberships and other engagements remain intact. No invite is sent automatically. Role selection is part of the approved demand revision and admission checks the exact model role; changing model revokes only that origin and records its previous immutable snapshot. Commercial signature hash excludes schema-only professional-origin metadata, preserving pre-existing evidence. Directory pickers return only names to ordinary active members; contact details/pending invites need IAM view; mutations require active owner/admin plus effective IAM manage. Existing field-rule triggers remain authoritative for draft contract amounts. The approved model role contributes current deny overrides and field restrictions via private hiring_restricted_roles, never its implicit grants or permission sets. Restriction provenance survives until the engagement/grant is ended or explicitly revised.",
+      "rationale": "Stage 4: immutable per-engagement access snapshots; administrator plus IAM manage for model publication and invites; HR/ATS row scope and current hiring approval/signature for transactional admission. Explicit existing-person choice, stable employment/legal entity and term inheritance, purchase role client and same WK entity; allocation guarded on every SQL writer. Recipient acceptance is intentionally authenticated capability: exact auth.users email plus random 256-bit invite, current unexpired engagement and active person; it cannot reset an existing password, broaden workspace role, add Sales role or consume generic permission sets. New-account public registration remains in existing token boundary, and access only follows authenticated recipient acceptance. Own grant sets are immutable and filtered by live engagement in existing canonical permission resolver; deny and active membership preserved. Restrictive project/task/time policies constrain allocation-only snapshots, and end removes only its assignment. Historical rows, manual permissions, unrelated memberships and other engagements remain intact. No invite is sent automatically. Role selection is part of the approved demand revision and admission checks the exact model role; changing model revokes only that origin and records its previous immutable snapshot. Commercial signature hash excludes schema-only professional-origin metadata, preserving pre-existing evidence. Directory pickers return only names to ordinary active members; contact details/pending invites need IAM view; mutations require active owner/admin plus effective IAM manage. Existing field-rule triggers remain authoritative for draft contract amounts. The approved model role contributes current deny overrides and field restrictions via private hiring_restricted_roles, never its implicit grants or permission sets. Restriction provenance survives until the engagement/grant is ended or explicitly revised. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -8243,7 +8243,7 @@
       "files": {
         "src/components/people/allocations-panel.tsx": "077c7d448ad7418308bf463e87c8420f57b330a3ecf4503392c53ed02f1eaeeb",
         "src/components/people/hire-candidate-dialog.tsx": "569ca07ac1070a7c406ee5edffa0984f7eab9cb9040294f776fd776a6eab886e",
-        "src/components/workflows/builder/step-forms/hiring-forms.tsx": "44a2c2bb31142f6b56a79220856e21a5743e81ce281506fe02adb66c70c868ad",
+        "src/components/workflows/builder/step-forms/hiring-forms.tsx": "3609246e0df6303db1051562d2609514236297d41b8a4c52b48e80764f0f9783",
         "src/lib/people/allocations.functions.ts": "462fc4923d9722430e112cd51965545af07896ee2bed5f14632051cf221c5053",
         "src/lib/workflows/engine/actions-hiring.server.ts": "ea623a453c25411c96888d09eae78cbe9da9d0e8f07ad4ec40ab32649c44f0a8",
         "src/lib/workspace-invites.functions.ts": "52e030eabd06550afc8394401ecfa4df89e91ac8f3ffbe73ebc78fbc0e37f888",
@@ -8274,11 +8274,11 @@
     {
       "id": "hiring-stage4-declarative",
       "kind": "presentation",
-      "rationale": "Pure declarative workflow types, validation schemas and UI draft-template definitions; no IO, route or execution. Hiring templates remain unpublished drafts. Runtime actions and persisted permissions are independently guarded by stage4 business contract.",
+      "rationale": "Pure declarative workflow types, validation schemas and UI draft-template definitions; no IO, route or execution. Hiring templates remain unpublished drafts. Runtime actions and persisted permissions are independently guarded by stage4 business contract. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key.",
       "files": {
-        "src/lib/workflows/types.ts": "3fcff34ea2c823b601ec567982d5e42c423ac2e82cf89b250bcca9985def5896",
-        "src/lib/workflows/schemas.ts": "8e733227e0eb43261016eb4ed7a351b33ba959b449465bd17ff062c460998ce3",
-        "src/lib/workflows/hiring-templates.ts": "7f64232a069ccbf0f41ec7dc146389e7e77e1bf60f988f836fa857d68f570d76"
+        "src/lib/workflows/types.ts": "e12c954db4289432d27c6344f4a8f5347ae6ffc41c628ec2ba3fce30e1b52c7a",
+        "src/lib/workflows/schemas.ts": "d93fa0232f10c21d0dfb8becdb49ff0d4303ab076ed6ba8e78bfc028e8c22d38",
+        "src/lib/workflows/hiring-templates.ts": "eb456d3ab72c162a952cb342612ad704cf2be8abf495547c142dd8f939691d3c"
       }
     },
     {
@@ -8510,7 +8510,7 @@
         "techpeople.lifecycle.manage.workspace",
         "techpeople.lifecycle.approve.workspace"
       ],
-      "rationale": "Opt-in scoped lifecycle proposals with exact source snapshots, named area manager and CEO, no self approval, active selected membership/deny, revision/CAS and current documents. Renewals append allocation periods; ending affects only own origin. Financial selection separately requires finance record cancellation and unmasked amount; paid/worked/banked/measured obligations preserved. Legacy broad offboarding blocked for governed origins. No automatic business data conversion.",
+      "rationale": "Opt-in scoped lifecycle proposals with exact source snapshots, named area manager and CEO, no self approval, active selected membership/deny, revision/CAS and current documents. Renewals append allocation periods; ending affects only own origin. Financial selection separately requires finance record cancellation and unmasked amount; paid/worked/banked/measured obligations preserved. Legacy broad offboarding blocked for governed origins. No automatic business data conversion. | DESLIGA-AGENDA 07/11/2026: new offboarding actions disconnect_integrations and transfer_portfolio require active owner/admin workflow owner, pass hiring_lifecycle_legacy_block, stay in run workspace, skip without linked user and require active target member.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -8561,7 +8561,7 @@
         "drizzle/migrations/0321_hiring_lifecycle.sql": "e0265dce2a74f99ffbc835094294378422f28b276fb64d408fea7fee1cfd8aa9",
         "src/lib/hiring/lifecycle.functions.ts": "a6729402563f85e696c60a2cf79bc750b7239b7aad159264227272e6dcdf5cbd",
         "src/components/hiring/lifecycle-panel.tsx": "15f58f1c8896d64403391b6463740ee89534f9ae3df2f6eaabc80039c0968fae",
-        "src/lib/workflows/engine/actions-offboarding.server.ts": "73032793a5f15650bac034d1e3c85b3bb8383c348e82fdb2873d13775d4a6b09",
+        "src/lib/workflows/engine/actions-offboarding.server.ts": "8f1b63064e5c574f2d70f81b30634e586e9c201c1708ffe8441b5e71a5729c20",
         "drizzle/migrations/0330_hiring_lifecycle_invite_timezone.sql": "305b20cb2c00536ecc0d99f77a30e35a2362a39c98107be8bf881e7904a15690"
       }
     },
@@ -9238,7 +9238,7 @@
       "permission_keys": [
         "system.workflows.manage.workspace"
       ],
-      "rationale": "Review 07/11/2026: Google token refresh returning invalid_grant (account deleted/revoked) marks the existing calendar account last_status disconnected and returns a friendly reconnect message instead of a raw 400. Same service-side update of the same row already selected by the caller's flow; no new endpoint, grant, key or data exposure.",
+      "rationale": "Review 07/11/2026: Google token refresh returning invalid_grant (account deleted/revoked) marks the existing calendar account last_status disconnected and returns a friendly reconnect message instead of a raw 400. Same service-side update of the same row already selected by the caller's flow; no new endpoint, grant, key or data exposure. | DESLIGA-AGENDA 07/11/2026: deleted/revoked Google accounts (isGoogleAccountGone) also get sync_enabled=false.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-account-job.server.ts",
@@ -9274,7 +9274,7 @@
         }
       },
       "files": {
-        "src/lib/calendar/engine.server.ts": "d61de904864cf686e6b955ddd06e03853b5c48eee19fadc6314a938dc814eec9"
+        "src/lib/calendar/engine.server.ts": "ec2426316904a285984189bfb316c972d9469953b1935badebc1711482915ab1"
       }
     },
     {
@@ -9336,69 +9336,17 @@
       },
       "files": {
         "src/lib/calendar.functions.ts": "086afe367d2540bf555e758904cc84645b529e71476bd6536988fc9511a90bf5",
-        "src/lib/calendar/engine.server.ts": "ec2426316904a285984189bfb316c972d9469953b1935badebc1711482915ab1",
-        "src/lib/meetings.functions.ts": "c48078ce38248c3901716db4357a562dfab399ae88bbb1418cab51f4602cd5b8",
-        "src/components/meetings/meeting-dialog.tsx": "14c7d109d7f7e8ee2c3329d037823b5c3684b3d55b213f5046f3697a9ceec56d",
-        "src/lib/calendar/meeting-account.ts": "00db4b590c7639fe1bfeb2c68b6ed07b4bc828b400e8ad5fedebf0f85b24a71f"
+        "src/lib/meetings.functions.ts": "c48078ce38248c3901716db4357a562dfab399ae88bbb1418cab51f4602cd5b8"
       }
     },
     {
-      "id": "workflow-offboarding-integrations-portfolio",
-      "kind": "business",
-      "resources": [
-        "system.workflows"
-      ],
-      "actions": [
-        "manage"
-      ],
-      "scopes": [
-        "workspace"
-      ],
-      "permission_keys": [
-        "system.workflows.manage.workspace"
-      ],
-      "rationale": "Plano DESLIGA-AGENDA: new workflow actions disconnect_integrations and transfer_portfolio on the existing 'Pessoa desligada' trigger. Both require the workflow owner to be an active owner/admin member (assertOwnerAdmin), run through hiring_lifecycle_legacy_block via workRpc, are restricted to the run workspace, need a linked user (otherwise skipped for manual review) and an active target member. Builder/schema/template only expose them.",
-      "controls": [
-        {
-          "file": "src/lib/access-control/work-core.server.ts",
-          "symbol": "workRpc"
-        }
-      ],
-      "database": [
-        {
-          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
-          "symbol": "workflow_events"
-        }
-      ],
-      "tests": {
-        "allowed": {
-          "file": "src/lib/access-control/sales-area-ci.test.ts",
-          "name": "sales area permits the authorized action before work"
-        },
-        "missing_permission": {
-          "file": "src/lib/access-control/sales-area-ci.test.ts",
-          "name": "sales area refuses missing permission"
-        },
-        "explicit_deny": {
-          "file": "src/lib/access-control/sales-area-ci.test.ts",
-          "name": "sales area refuses an effective deny"
-        },
-        "foreign_workspace": {
-          "file": "src/lib/access-control/sales-area-ci.test.ts",
-          "name": "sales area refuses a foreign selected workspace"
-        },
-        "inactive_member": {
-          "file": "src/lib/access-control/sales-area-ci.test.ts",
-          "name": "sales area refuses an inactive execution actor"
-        }
-      },
+      "id": "desliga-agenda-presentation",
+      "kind": "presentation",
+      "rationale": "Plano DESLIGA-AGENDA: meeting dialog calendar selector and pure selection helpers (meeting-account.ts, no I/O); workflow builder icons/defaults/summaries for the two new offboarding actions. Enforcement stays in pushActivityToCalendar (meeting-calendar-account-owner-selection) and actions-offboarding (hiring-stage6-lifecycle).",
       "files": {
-        "src/lib/workflows/engine/actions-offboarding.server.ts": "8f1b63064e5c574f2d70f81b30634e586e9c201c1708ffe8441b5e71a5729c20",
-        "src/lib/workflows/hiring-templates.ts": "eb456d3ab72c162a952cb342612ad704cf2be8abf495547c142dd8f939691d3c",
-        "src/lib/workflows/schemas.ts": "d93fa0232f10c21d0dfb8becdb49ff0d4303ab076ed6ba8e78bfc028e8c22d38",
-        "src/lib/workflows/types.ts": "e12c954db4289432d27c6344f4a8f5347ae6ffc41c628ec2ba3fce30e1b52c7a",
+        "src/components/meetings/meeting-dialog.tsx": "14c7d109d7f7e8ee2c3329d037823b5c3684b3d55b213f5046f3697a9ceec56d",
+        "src/lib/calendar/meeting-account.ts": "00db4b590c7639fe1bfeb2c68b6ed07b4bc828b400e8ad5fedebf0f85b24a71f",
         "src/components/workflows/builder/step-config-panel.tsx": "173e29a1b5a80a3f1df38b4c19da6e98e540f1f6108e839a77e0a4cb1c06407c",
-        "src/components/workflows/builder/step-forms/hiring-forms.tsx": "3609246e0df6303db1051562d2609514236297d41b8a4c52b48e80764f0f9783",
         "src/components/workflows/builder/step-tree.ts": "e112692b30bf4bd7d1ffbcc5aa8fdd5675fae17f01e794c8d5bc403131a798dc"
       }
     }
