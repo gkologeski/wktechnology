@@ -787,7 +787,7 @@ function ReviewStep({
             <SelectContent>
               {SERVICE_LOCATIONS.map((s) => (
                 <SelectItem key={s} value={s}>
-                  {serviceTypeLabel(s)}
+                  {s}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -845,7 +845,7 @@ function ReviewStep({
             <SelectContent>
               {SIGNATURE_PROVIDERS.map((s) => (
                 <SelectItem key={s} value={s}>
-                  {serviceTypeLabel(s)}
+                  {s}
                 </SelectItem>
               ))}
             </SelectContent>
