@@ -52,7 +52,7 @@ Schema esperado (todos os campos podem ser null):
   "penalty_percent": number,
   "cure_period_days": number, "trial_period_days": number,
   "unilateral_termination_notice_days": number,
-  "service_type": "outsourcing" | "desenvolvimento" | "manutencao" | "consultoria" | "licenciamento" | "outros",
+  "service_type": "outsourcing" | "alocacao_squad" | "fabrica_software" | "desenvolvimento" | "consultoria" | "engenharia_ia" | "bpo" | "hunting" | "outros",
   "service_scope": string,
   "service_location": "remoto" | "presencial" | "hibrido",
   "governing_law": string, "jurisdiction": string,

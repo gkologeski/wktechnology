@@ -46,6 +46,7 @@ import {
   PAYMENT_METHODS,
   SERVICE_LOCATIONS,
   SERVICE_TYPES,
+  serviceTypeLabel,
   SIGNATURE_PROVIDERS,
 } from "@/lib/contracts/import-schemas";
 
@@ -767,7 +768,7 @@ function ReviewStep({
             <SelectContent>
               {SERVICE_TYPES.map((s) => (
                 <SelectItem key={s} value={s}>
-                  {s}
+                  {serviceTypeLabel(s)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -786,7 +787,7 @@ function ReviewStep({
             <SelectContent>
               {SERVICE_LOCATIONS.map((s) => (
                 <SelectItem key={s} value={s}>
-                  {s}
+                  {serviceTypeLabel(s)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -844,7 +845,7 @@ function ReviewStep({
             <SelectContent>
               {SIGNATURE_PROVIDERS.map((s) => (
                 <SelectItem key={s} value={s}>
-                  {s}
+                  {serviceTypeLabel(s)}
                 </SelectItem>
               ))}
             </SelectContent>
