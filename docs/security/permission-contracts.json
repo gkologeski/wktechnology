@@ -8488,14 +8488,19 @@
     {
       "id": "proposal-send-email",
       "kind": "business",
-      "resources": ["techsales.proposal_send", "techsales.inbox.email", "techsales.proposal_share"],
-      "actions": ["manage", "create"],
+      "resources": [
+        "techsales.proposal_send",
+        "techsales.inbox.email",
+        "techsales.proposal_share",
+        "techsales.email_accounts"
+      ],
+      "actions": ["manage", "create", "view"],
       "scopes": ["own", "team", "workspace"],
       "permission_keys": [
         "techsales.proposal_send.manage.workspace",
         "techsales.inbox.email.create.own"
       ],
-      "rationale": "PROPOSTA-EMAIL: UI composes existing gated server functions only. Email goes out through sendGmailEmail (techsales.inbox.email create, sender restricted to the caller's own Gmail account, assertSalesReferences on the deal); the public token through getSalesPublicToken (proposal_share manage); sealing through sendProposal (proposal_send manage). No new endpoint, grant, policy or schema change.",
+      "rationale": "PROPOSTA-EMAIL: UI composes existing gated server functions only. Email goes out through sendGmailEmail (techsales.inbox.email create, sender restricted to the caller's own Gmail account, assertSalesReferences on the deal); the public token through getSalesPublicToken (proposal_share manage); sealing through sendProposal (proposal_send manage). No new endpoint, grant, policy or schema change. listEmailAccounts additionally projects owner_id (same RLS rows) so the dialog offers only the caller's own accounts.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -8564,7 +8569,8 @@
       },
       "files": {
         "src/components/proposals/send-proposal-email-dialog.tsx": "daa13b46de45f713cc6d9ac211a74cbef063f2b1340c90074aa7492ad75659d6",
-        "src/routes/_authenticated/proposals.$id.tsx": "450853b0ef108d8a9e475b4cc09df0b46d979d6395a4ff6ec547d1025a8056a4"
+        "src/routes/_authenticated/proposals.$id.tsx": "450853b0ef108d8a9e475b4cc09df0b46d979d6395a4ff6ec547d1025a8056a4",
+        "src/lib/email-accounts.functions.ts": "5c6cb52bb68477a550dda2fe2242883e8b3805c6bab06cd91b107b27e148c877"
       }
     },
     {
