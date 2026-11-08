@@ -27,6 +27,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Textarea } from "@/components/ui/textarea";
 import { GenerateContractButton } from "@/components/contracts/generate-contract-button";
 import { ProposalDocument } from "@/components/proposals/proposal-document";
+import { SendProposalEmailDialog } from "@/components/proposals/send-proposal-email-dialog";
 import { ProposalWizard, type ProposalSource } from "@/components/proposals/proposal-wizard";
 import {
   getProposal,
@@ -80,6 +81,7 @@ function ProposalContent({ id }: { id: string }) {
   const decide = useServerFn(decideProposalApproval);
   const [comment, setComment] = useState("");
   const [wizard, setWizard] = useState<ProposalSource | null>(null);
+  const [emailOpen, setEmailOpen] = useState(false);
 
   const docQ = useQuery({
     queryKey: ["proposal-doc", id],
@@ -94,9 +96,24 @@ function ProposalContent({ id }: { id: string }) {
   };
 
   const sendM = useMutation({
-    mutationFn: () => send({ data: { id } }),
-    onSuccess: () => {
-      toast.success("Proposta enviada e selada.");
+    mutationFn: async () => {
+      // Gera o link antes de selar; o cliente só consegue aprovar após o selo.
+      const token = await sharedToken();
+      await send({ data: { id } });
+      const link = `${getPublicAppUrl()}/proposal/${token}`;
+      try {
+        await navigator.clipboard.writeText(link);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+    onSuccess: (copied) => {
+      toast.success(
+        copied
+          ? "Proposta selada e link para aprovação copiado."
+          : "Proposta selada. Use “Copiar link” para copiar o endereço.",
+      );
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -262,9 +279,23 @@ function ProposalContent({ id }: { id: string }) {
               action="manage"
               resource="techsales.proposal_send"
             >
-              <Button onClick={() => sendM.mutate()} disabled={sendM.isPending}>
-                <Send className="mr-2 h-4 w-4" /> Enviar ao cliente
+              <Button onClick={() => setEmailOpen(true)}>
+                <Send className="mr-2 h-4 w-4" /> Enviar ao cliente aprovar por e-mail
               </Button>
+              <Button variant="outline" onClick={() => sendM.mutate()} disabled={sendM.isPending}>
+                <Copy className="mr-2 h-4 w-4" /> Copiar link para cliente aprovar
+              </Button>
+              <SendProposalEmailDialog
+                open={emailOpen}
+                onOpenChange={setEmailOpen}
+                proposalId={id}
+                title={p.title}
+                dealId={p.deal_id}
+                company={doc.company}
+                contact={doc.contact}
+                contactEmail={doc.contactEmail}
+                onSent={refresh}
+              />
             </SalesAction>
           )}
           <GenerateContractButton source={{ proposalId: id }} size="default" />
