@@ -1,3 +1,4 @@
+import { serviceTypeLabel } from "@/lib/contracts/import-schemas";
 import { ContractSignatureCard } from "@/components/hiring/contract-signature-card";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { WorkScreenAccess, WorkRecordAccess } from "@/components/work-access";
