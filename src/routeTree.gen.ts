@@ -63,6 +63,7 @@ import { Route as KbIndexRouteImport } from './routes/kb.index'
 import { Route as KbSlugRouteImport } from './routes/kb.$slug'
 import { Route as LpSlugRouteImport } from './routes/lp.$slug'
 import { Route as MeetTokenRouteImport } from './routes/meet.$token'
+import { Route as MinutaTokenRouteImport } from './routes/minuta.$token'
 import { Route as OfferTokenRouteImport } from './routes/offer.$token'
 import { Route as PortalTokenRouteImport } from './routes/portal.$token'
 import { Route as ProposalTokenRouteImport } from './routes/proposal.$token'
@@ -718,6 +719,11 @@ const LpSlugRoute = LpSlugRouteImport.update({
 const MeetTokenRoute = MeetTokenRouteImport.update({
   id: '/meet/$token',
   path: '/meet/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MinutaTokenRoute = MinutaTokenRouteImport.update({
+  id: '/minuta/$token',
+  path: '/minuta/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfferTokenRoute = OfferTokenRouteImport.update({
@@ -2968,6 +2974,7 @@ export interface FileRoutesByFullPath {
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
+  '/minuta/$token': typeof MinutaTokenRoute
   '/offer/$token': typeof OfferTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/proposal/$token': typeof ProposalTokenRoute
@@ -3396,6 +3403,7 @@ export interface FileRoutesByTo {
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
+  '/minuta/$token': typeof MinutaTokenRoute
   '/offer/$token': typeof OfferTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/proposal/$token': typeof ProposalTokenRoute
@@ -3829,6 +3837,7 @@ export interface FileRoutesById {
   '/kb/$slug': typeof KbSlugRoute
   '/lp/$slug': typeof LpSlugRoute
   '/meet/$token': typeof MeetTokenRoute
+  '/minuta/$token': typeof MinutaTokenRoute
   '/offer/$token': typeof OfferTokenRoute
   '/portal/$token': typeof PortalTokenRoute
   '/proposal/$token': typeof ProposalTokenRoute
@@ -4264,6 +4273,7 @@ export interface FileRouteTypes {
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
+    | '/minuta/$token'
     | '/offer/$token'
     | '/portal/$token'
     | '/proposal/$token'
@@ -4692,6 +4702,7 @@ export interface FileRouteTypes {
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
+    | '/minuta/$token'
     | '/offer/$token'
     | '/portal/$token'
     | '/proposal/$token'
@@ -5124,6 +5135,7 @@ export interface FileRouteTypes {
     | '/kb/$slug'
     | '/lp/$slug'
     | '/meet/$token'
+    | '/minuta/$token'
     | '/offer/$token'
     | '/portal/$token'
     | '/proposal/$token'
@@ -5532,6 +5544,7 @@ export interface RootRouteChildren {
   KbSlugRoute: typeof KbSlugRoute
   LpSlugRoute: typeof LpSlugRoute
   MeetTokenRoute: typeof MeetTokenRoute
+  MinutaTokenRoute: typeof MinutaTokenRoute
   OfferTokenRoute: typeof OfferTokenRoute
   PortalTokenRoute: typeof PortalTokenRoute
   ProposalTokenRoute: typeof ProposalTokenRoute
@@ -6025,6 +6038,13 @@ declare module '@tanstack/react-router' {
       path: '/meet/$token'
       fullPath: '/meet/$token'
       preLoaderRoute: typeof MeetTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/minuta/$token': {
+      id: '/minuta/$token'
+      path: '/minuta/$token'
+      fullPath: '/minuta/$token'
+      preLoaderRoute: typeof MinutaTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offer/$token': {
@@ -9634,6 +9654,7 @@ const rootRouteChildren: RootRouteChildren = {
   KbSlugRoute: KbSlugRoute,
   LpSlugRoute: LpSlugRoute,
   MeetTokenRoute: MeetTokenRoute,
+  MinutaTokenRoute: MinutaTokenRoute,
   OfferTokenRoute: OfferTokenRoute,
   PortalTokenRoute: PortalTokenRoute,
   ProposalTokenRoute: ProposalTokenRoute,
