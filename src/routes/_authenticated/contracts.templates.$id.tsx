@@ -40,7 +40,7 @@ import {
   updateContractTemplate,
   listTemplateServiceOptions,
 } from "@/lib/contracts/templates.functions";
-import { SERVICE_TYPES } from "@/lib/contracts/import-schemas";
+import { SERVICE_TYPES, serviceTypeLabel } from "@/lib/contracts/import-schemas";
 
 export const Route = createFileRoute("/_authenticated/contracts/templates/$id")({
   head: () => ({
@@ -61,15 +61,6 @@ export const Route = createFileRoute("/_authenticated/contracts/templates/$id")(
   }),
   component: Order3RouteAccess,
 });
-
-const SERVICE_TYPE_LABEL: Record<string, string> = {
-  outsourcing: "Outsourcing",
-  desenvolvimento: "Desenvolvimento",
-  manutencao: "Manutenção",
-  consultoria: "Consultoria",
-  licenciamento: "Licenciamento",
-  outros: "Outros",
-};
 
 function ContractTemplateEditorPage() {
   const { id } = Route.useParams();
@@ -263,9 +254,13 @@ function ContractTemplateEditorPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Não definido</SelectItem>
+                  {serviceType !== "none" &&
+                    !(SERVICE_TYPES as readonly string[]).includes(serviceType) && (
+                      <SelectItem value={serviceType}>{serviceTypeLabel(serviceType)}</SelectItem>
+                    )}
                   {SERVICE_TYPES.map((s) => (
                     <SelectItem key={s} value={s}>
-                      {SERVICE_TYPE_LABEL[s] ?? s}
+                      {serviceTypeLabel(s)}
                     </SelectItem>
                   ))}
                 </SelectContent>

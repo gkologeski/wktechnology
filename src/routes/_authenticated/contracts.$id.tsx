@@ -1,3 +1,4 @@
+import { serviceTypeLabel } from "@/lib/contracts/import-schemas";
 import { ContractSignatureCard } from "@/components/hiring/contract-signature-card";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { WorkScreenAccess, WorkRecordAccess } from "@/components/work-access";
@@ -618,7 +619,7 @@ function ImportedFieldsCard({ contract }: { contract: ImportedFields }) {
         ? String(contract.unilateral_termination_notice_days)
         : null,
     ],
-    ["Tipo de serviço", contract.service_type ?? null],
+    ["Tipo de serviço", contract.service_type ? serviceTypeLabel(contract.service_type) : null],
     ["Local de execução", contract.service_location ?? null],
     ["Objeto / escopo", contract.service_scope ?? null],
     ["Lei aplicável", contract.governing_law ?? null],

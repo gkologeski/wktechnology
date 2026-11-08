@@ -29,7 +29,7 @@ Responda APENAS JSON válido, sem markdown, no formato:
 {
   "name": "nome sugerido para o modelo",
   "role": "provider" | "client" | null,
-  "service_type": "outsourcing" | "desenvolvimento" | "manutencao" | "consultoria" | "licenciamento" | "outros" | null,
+  "service_type": "outsourcing" | "alocacao_squad" | "fabrica_software" | "desenvolvimento" | "consultoria" | "engenharia_ia" | "bpo" | "hunting" | "outros" | null,
   "body_html": "<h1>...</h1><p>...</p>",
   "suggestions": [{ "original": "trecho original substituído", "token": "{{counterparty.name}}" }],
   "warnings": ["ambiguidades relevantes"]

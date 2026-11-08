@@ -2,14 +2,41 @@
 // Reflete a coluna correspondente em public.contracts.
 import { z } from "zod";
 
+/** Tipos de serviço selecionáveis, alinhados às categorias do Catálogo de Serviços. */
 export const SERVICE_TYPES = [
   "outsourcing",
+  "alocacao_squad",
+  "fabrica_software",
   "desenvolvimento",
-  "manutencao",
   "consultoria",
-  "licenciamento",
+  "engenharia_ia",
+  "bpo",
+  "hunting",
   "outros",
 ] as const;
+
+/** Valores antigos: continuam válidos para contratos já gravados, mas não são oferecidos. */
+export const LEGACY_SERVICE_TYPES = ["manutencao", "licenciamento"] as const;
+
+export const SERVICE_TYPE_LABELS: Record<string, string> = {
+  outsourcing: "Outsourcing",
+  alocacao_squad: "Alocação de Squad",
+  fabrica_software: "Fábrica de Software",
+  desenvolvimento: "Desenvolvimento",
+  consultoria: "Consultoria",
+  engenharia_ia: "Engenharia de IA",
+  bpo: "BPO",
+  hunting: "Hunting",
+  outros: "Outros",
+  manutencao: "Manutenção (legado)",
+  licenciamento: "Licenciamento (legado)",
+};
+
+/** Rótulo PT-BR de um tipo de serviço; valores desconhecidos aparecem como gravados. */
+export function serviceTypeLabel(value: string | null | undefined): string {
+  if (!value) return "Não definido";
+  return SERVICE_TYPE_LABELS[value.toLowerCase()] ?? value;
+}
 
 export const SERVICE_LOCATIONS = ["remoto", "presencial", "hibrido"] as const;
 
@@ -66,7 +93,7 @@ export const ExtractedContractSchema = z.object({
   trial_period_days: z.number().int().nonnegative().optional().nullable(),
   unilateral_termination_notice_days: z.number().int().nonnegative().optional().nullable(),
 
-  service_type: z.enum(SERVICE_TYPES).optional().nullable(),
+  service_type: z.enum([...SERVICE_TYPES, ...LEGACY_SERVICE_TYPES]).optional().nullable(),
   service_scope: z.string().optional().nullable(),
   service_location: z.enum(SERVICE_LOCATIONS).optional().nullable(),
 
