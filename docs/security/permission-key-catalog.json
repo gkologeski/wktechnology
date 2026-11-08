@@ -2792,7 +2792,10 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace"
+    "techservice.tickets.view.workspace",
+    "techcontracts.contract_drafts.view.workspace",
+    "techcontracts.contract_drafts.approve.workspace",
+    "techcontracts.contract_draft_approvers.manage.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -2944,6 +2947,15 @@
     },
     "techpeople.lifecycle.manage.workspace": {
       "migration": "drizzle/migrations/0321_hiring_lifecycle.sql"
+    },
+    "techcontracts.contract_drafts.view.workspace": {
+      "migration": "drizzle/migrations/0312_contract_draft_legal_review.sql"
+    },
+    "techcontracts.contract_drafts.approve.workspace": {
+      "migration": "drizzle/migrations/0312_contract_draft_legal_review.sql"
+    },
+    "techcontracts.contract_draft_approvers.manage.workspace": {
+      "migration": "drizzle/migrations/0312_contract_draft_legal_review.sql"
     }
   }
 }

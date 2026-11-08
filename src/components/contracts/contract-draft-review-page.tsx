@@ -40,8 +40,28 @@ import {
   isContractDraftReviewable,
   type ContractDraftStatus,
 } from "@/lib/contracts/contract-draft-status";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+
+const VIEW_KEY = "techcontracts.contract_drafts.view.workspace";
 
 export function ContractDraftReviewPage({ id }: { id: string }) {
+  const p = usePermissions();
+  if (p.isLoading)
+    return (
+      <p className="p-6" role="status">
+        Verificando acesso…
+      </p>
+    );
+  if (!p.can(VIEW_KEY))
+    return (
+      <p className="p-6" role="alert">
+        Você não tem permissão para consultar minutas de contrato.
+      </p>
+    );
+  return <DraftReview id={id} />;
+}
+
+function DraftReview({ id }: { id: string }) {
   const qc = useQueryClient();
   const getFn = useServerFn(getContractDraft);
   const bodyFn = useServerFn(getContractDraftTemplateBody);
