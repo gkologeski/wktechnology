@@ -31,7 +31,9 @@ export const getContractDraftApprovers = createServerFn({ method: "POST" })
     const { data: names } = ids.length
       ? await sb.from("profiles").select("id, full_name").in("id", ids)
       : { data: [] };
-    const nameOf = new Map((names ?? []).map((n: { id: string; full_name: string | null }) => [n.id, n.full_name]));
+    const nameOf = new Map(
+      (names ?? []).map((n: { id: string; full_name: string | null }) => [n.id, n.full_name]),
+    );
     return {
       members: (mem ?? [])
         .map((m: { user_id: string; role: string }) => ({
@@ -81,7 +83,11 @@ export const getContractDraft = createServerFn({ method: "POST" })
         ? sb.from("deals").select("id, name").eq("id", draft.deal_id).maybeSingle()
         : Promise.resolve({ data: null }),
     ]);
-    const actorIds = [...new Set((events ?? []).map((e: { actor_id: string | null }) => e.actor_id).filter(Boolean))];
+    const actorIds = [
+      ...new Set(
+        (events ?? []).map((e: { actor_id: string | null }) => e.actor_id).filter(Boolean),
+      ),
+    ];
     const { data: actors } = actorIds.length
       ? await sb.from("profiles").select("id, full_name").in("id", actorIds)
       : { data: [] };
@@ -90,7 +96,9 @@ export const getContractDraft = createServerFn({ method: "POST" })
       const { data: t } = await sb.rpc("contract_draft_templates", { p_draft: draft.id });
       templates = t ?? [];
     }
-    const actorName = new Map((actors ?? []).map((a: { id: string; full_name: string | null }) => [a.id, a.full_name]));
+    const actorName = new Map(
+      (actors ?? []).map((a: { id: string; full_name: string | null }) => [a.id, a.full_name]),
+    );
     return {
       draft,
       deal: (deal as { id: string; name: string | null } | null) ?? null,
@@ -98,19 +106,26 @@ export const getContractDraft = createServerFn({ method: "POST" })
       templates,
       events: (events ?? []).map((e: { actor_id: string | null }) => ({
         ...e,
-        actor_name: e.actor_id ? ((actorName.get(e.actor_id) as string | null) ?? "Usuário") : "Sistema",
+        actor_name: e.actor_id
+          ? ((actorName.get(e.actor_id) as string | null) ?? "Usuário")
+          : "Sistema",
       })),
     };
   });
 
 export const getContractDraftTemplateBody = createServerFn({ method: "POST" })
   .middleware([requireWorkPermission("techcontracts.contract_drafts", "approve")])
-  .inputValidator((i) => z.object({ draftId: z.string().uuid(), templateId: z.string().uuid() }).parse(i))
+  .inputValidator((i) =>
+    z.object({ draftId: z.string().uuid(), templateId: z.string().uuid() }).parse(i),
+  )
   .handler(async ({ data, context }) => {
-    const { data: body, error } = await (context.supabase as any).rpc("contract_draft_template_body", {
-      p_draft: data.draftId,
-      p_template: data.templateId,
-    });
+    const { data: body, error } = await (context.supabase as any).rpc(
+      "contract_draft_template_body",
+      {
+        p_draft: data.draftId,
+        p_template: data.templateId,
+      },
+    );
     if (error) throw new Error(error.message);
     return { body: (body as string) ?? "" };
   });

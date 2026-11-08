@@ -198,7 +198,11 @@ function DraftReview({ id }: { id: string }) {
         secondaryActions={
           editable ? (
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => review.mutate("save")} disabled={busy || !dirty}>
+              <Button
+                variant="outline"
+                onClick={() => review.mutate("save")}
+                disabled={busy || !dirty}
+              >
                 <Save className="mr-2 h-4 w-4" /> Salvar edição
               </Button>
               <Button variant="outline" onClick={() => setRejectOpen(true)} disabled={busy}>
@@ -210,7 +214,10 @@ function DraftReview({ id }: { id: string }) {
       />
 
       {!canReview && (
-        <p className="rounded-md border border-border bg-muted p-3 text-sm text-muted-foreground" role="note">
+        <p
+          className="rounded-md border border-border bg-muted p-3 text-sm text-muted-foreground"
+          role="note"
+        >
           Somente os aprovadores jurídicos configurados podem editar e aprovar esta minuta.
         </p>
       )}
@@ -219,8 +226,8 @@ function DraftReview({ id }: { id: string }) {
           className="flex items-center gap-2 rounded-md border border-border bg-muted p-3 text-sm"
           role="alert"
         >
-          <AlertTriangle className="h-4 w-4 text-destructive" aria-hidden />
-          O serviço da proposta não tem modelo padrão vinculado. Escolha um modelo abaixo.
+          <AlertTriangle className="h-4 w-4 text-destructive" aria-hidden />O serviço da proposta
+          não tem modelo padrão vinculado. Escolha um modelo abaixo.
         </p>
       )}
       {draft.decision_note && (
@@ -233,7 +240,11 @@ function DraftReview({ id }: { id: string }) {
           {editable && (
             <div className="max-w-sm space-y-1">
               <Label htmlFor="draft-template">Modelo de contrato</Label>
-              <Select value={templateId ?? undefined} onValueChange={switchTemplate} disabled={busy}>
+              <Select
+                value={templateId ?? undefined}
+                onValueChange={switchTemplate}
+                disabled={busy}
+              >
                 <SelectTrigger id="draft-template">
                   <SelectValue placeholder="Escolha um modelo" />
                 </SelectTrigger>
@@ -272,14 +283,16 @@ function DraftReview({ id }: { id: string }) {
             <p className="text-sm text-muted-foreground">Sem registros.</p>
           ) : (
             <ol className="space-y-3" aria-label="Histórico da minuta">
-              {events.map((e: { id: string; kind: string; actor_name: string; created_at: string }) => (
-                <li key={e.id} className="text-sm">
-                  <p className="font-medium">{CONTRACT_DRAFT_EVENT_LABEL[e.kind] ?? e.kind}</p>
-                  <p className="text-muted-foreground">
-                    {e.actor_name} · {new Date(e.created_at).toLocaleString("pt-BR")}
-                  </p>
-                </li>
-              ))}
+              {events.map(
+                (e: { id: string; kind: string; actor_name: string; created_at: string }) => (
+                  <li key={e.id} className="text-sm">
+                    <p className="font-medium">{CONTRACT_DRAFT_EVENT_LABEL[e.kind] ?? e.kind}</p>
+                    <p className="text-muted-foreground">
+                      {e.actor_name} · {new Date(e.created_at).toLocaleString("pt-BR")}
+                    </p>
+                  </li>
+                ),
+              )}
             </ol>
           )}
         </aside>
@@ -295,7 +308,12 @@ function DraftReview({ id }: { id: string }) {
           </AlertDialogHeader>
           <div className="space-y-1">
             <Label htmlFor="reject-note">Motivo</Label>
-            <Textarea id="reject-note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} />
+            <Textarea
+              id="reject-note"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={3}
+            />
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel>Voltar</AlertDialogCancel>

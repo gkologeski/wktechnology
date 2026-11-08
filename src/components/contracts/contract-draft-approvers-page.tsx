@@ -68,7 +68,10 @@ function ApproversForm() {
         title="Minuta de contrato"
         description="Quem revisa e aprova a minuta enviada ao cliente depois que ele aceita a proposta. Cada aprovador também precisa da permissão “Aprovar minuta de contrato” no cargo."
         primaryAction={
-          <Button onClick={() => save.mutate()} disabled={!changed || save.isPending || selected.size > 20}>
+          <Button
+            onClick={() => save.mutate()}
+            disabled={!changed || save.isPending || selected.size > 20}
+          >
             {save.isPending ? (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
@@ -80,7 +83,9 @@ function ApproversForm() {
       />
       {q.isLoading ? (
         <div role="status" aria-label="Carregando membros">
-          <Skeletons.Row /><Skeletons.Row /><Skeletons.Row />
+          <Skeletons.Row />
+          <Skeletons.Row />
+          <Skeletons.Row />
         </div>
       ) : q.isError ? (
         <div className="space-y-3" role="alert">

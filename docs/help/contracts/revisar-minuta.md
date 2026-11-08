@@ -23,8 +23,19 @@ is_published: true
 3. Ajuste o texto no editor e clique em "Salvar edição" para guardar sem aprovar.
 4. Clique em "Aprovar envio" para liberar a minuta. Para não enviar, use "Recusar" e informe o motivo.
 
-## Regras
+## Resultado esperado
+A alteração fica registrada e vale para as próximas minutas.
+
+## Regras e limites
 - Se outra pessoa salvou antes, a tela pede para recarregar: nada é sobrescrito.
 - Minuta aprovada ou recusada não pode mais ser editada.
 - Aprovar não envia e-mail ao cliente nesta versão; o envio e o aceite da minuta pelo cliente são a próxima etapa.
 - O workflow "Criar contrato" só deve iniciar depois do aceite da minuta.
+
+## Erros comuns
+- "Sem permissão para esta ação": peça ao administrador a permissão indicada em "Quem pode fazer".
+- "A minuta foi alterada por outra pessoa": recarregue a tela antes de salvar de novo.
+
+## Relacionados
+- [Revisar e aprovar a minuta de contrato](/help/contracts/revisar-minuta)
+- [Escolher os aprovadores jurídicos da minuta](/help/contracts/configurar-aprovadores-minuta)
