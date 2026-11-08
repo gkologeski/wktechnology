@@ -1,3 +1,9 @@
+# FLUXO-MODELOS — revisão dos alertas (porte P, 25–40 min)
+
+- [x] Conferir os alertas no código atual; workflows já corrigidos no pacote FLUXO-VISIVEL.
+- [x] Preservar escolhas de variáveis extras ao salvar campanha pausada, sem substituir público ou iniciar disparos.
+- [x] 25 testes direcionados, permissions:check e cobertura Ajuda 246/246 aprovados; lint 0 erros/8 avisos existentes, build automático OK, hash do contrato conferido. Navegador autenticado mostrou cinco workflows e histórico com 20 execuções, sem pageerror; campanhas renderizadas. Ajuda versão 5 aplicada com autorização editorial e leitura de confirmação. Alerta de workflows obsoleto; persistência corrigida e testada no handler sem editar campanhas reais. Não publicado; salvar/reabrir campanha real não executado para evitar mudanças nos destinatários.
+
 # FLUXO-VISIVEL — carregamento de workflows (porte P, 20–30 min)
 
 - [x] Separar lista e histórico; exibir falha recuperável sem confundir com ausência de workflows.
