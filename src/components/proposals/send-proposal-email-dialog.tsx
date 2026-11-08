@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EmailInput } from "@/components/ui/email-input";
+import { SalesAction } from "@/components/sales-access";
 import { listEmailAccounts } from "@/lib/email-accounts.functions";
 import { sendGmailEmail } from "@/lib/email-send.functions";
 import { getSalesPublicToken } from "@/lib/access-control/sales-sharing.functions";
@@ -209,17 +210,24 @@ export function SendProposalEmailDialog(props: Props) {
           <Button variant="outline" onClick={() => props.onOpenChange(false)} disabled={busy}>
             Cancelar
           </Button>
-          <Button
-            onClick={() => void submit()}
-            disabled={busy || noAccount || !accounts.length || !subject.trim() || !to.trim()}
+          <SalesAction
+            table="proposals"
+            id={props.proposalId}
+            action="manage"
+            resource="techsales.proposal_send"
           >
-            {busy ? (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Mail className="mr-2 h-4 w-4" aria-hidden="true" />
-            )}
-            Enviar
-          </Button>
+            <Button
+              onClick={() => void submit()}
+              disabled={busy || noAccount || !accounts.length || !subject.trim() || !to.trim()}
+            >
+              {busy ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Mail className="mr-2 h-4 w-4" aria-hidden="true" />
+              )}
+              Enviar
+            </Button>
+          </SalesAction>
         </DialogFooter>
       </DialogContent>
     </Dialog>

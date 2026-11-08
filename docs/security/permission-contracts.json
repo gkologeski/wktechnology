@@ -8563,7 +8563,7 @@
         }
       },
       "files": {
-        "src/components/proposals/send-proposal-email-dialog.tsx": "09e8b1b9c217620b81c46f21babacb30ba4c68802409605d7d5b9c194531467b",
+        "src/components/proposals/send-proposal-email-dialog.tsx": "ab94de16451efef68401d669e5d1a5d317bffde2f18279cc53fa0b79acb414c9",
         "src/routes/_authenticated/proposals.$id.tsx": "450853b0ef108d8a9e475b4cc09df0b46d979d6395a4ff6ec547d1025a8056a4"
       }
     },
