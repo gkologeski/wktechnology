@@ -30,36 +30,91 @@ function client(status = "paused") {
     from: (table: string) => {
       const q: Record<string, unknown> = {};
       for (const method of ["select", "eq", "range"]) q[method] = () => q;
-      q.update = (patch: Record<string, unknown>) => { patches.push(patch); Object.assign(stored, patch); return q; };
-      q.single = () => Promise.resolve({ data: { id: "campaign-a", status, ...stored }, error: null });
-      q.then = (resolve: (value: unknown) => void) => resolve({ data: table === "whatsapp_campaign_recipients" ? [] : stored, error: null });
+      q.update = (patch: Record<string, unknown>) => {
+        patches.push(patch);
+        Object.assign(stored, patch);
+        return q;
+      };
+      q.single = () =>
+        Promise.resolve({ data: { id: "campaign-a", status, ...stored }, error: null });
+      q.then = (resolve: (value: unknown) => void) =>
+        resolve({ data: table === "whatsapp_campaign_recipients" ? [] : stored, error: null });
       return q;
     },
   };
 }
-type Handler = (args: { context: { supabase: ReturnType<typeof client>; userId: string }; data: Record<string, unknown> }) => Promise<unknown>;
+type Handler = (args: {
+  context: { supabase: ReturnType<typeof client>; userId: string };
+  data: Record<string, unknown>;
+}) => Promise<unknown>;
 beforeEach(() => {
   vi.clearAllMocks();
   patches = [];
-  stored = { audience_config: { version: 1, manualRaw: "", state: { mode: "filter", base: "contacts", groups: [{ logic: "and", filters: [] }], variableMap: oldMap, recentDays: 7 } } };
+  stored = {
+    audience_config: {
+      version: 1,
+      manualRaw: "",
+      state: {
+        mode: "filter",
+        base: "contacts",
+        groups: [{ logic: "and", filters: [] }],
+        variableMap: oldMap,
+        recentDays: 7,
+      },
+    },
+  };
 });
-it.each(["paused", "draft"])("persists extra-template mappings when refreshing a %s campaign without replacing its audience", async (status) => {
-  const before = structuredClone(stored.audience_config);
-  await (updateWhatsAppCampaign as unknown as Handler)({
-    context: { supabase: client(status), userId: "actor" },
-    data: { id: "campaign-a", refresh_variables: { audience: { type: "filter", base: "contacts" }, variable_map: newMap } },
-  });
-  expect(stored.audience_config).toEqual({ ...before, state: { ...before.state, variableMap: newMap } });
-  expect(refreshPendingVariables).toHaveBeenCalledWith(expect.anything(), "workspace-a", "actor", "campaign-a", { type: "filter", base: "contacts" }, newMap);
-  expect(patches).toHaveLength(1);
-});
+it.each(["paused", "draft"])(
+  "persists extra-template mappings when refreshing a %s campaign without replacing its audience",
+  async (status) => {
+    const before = structuredClone(stored.audience_config);
+    await (updateWhatsAppCampaign as unknown as Handler)({
+      context: { supabase: client(status), userId: "actor" },
+      data: {
+        id: "campaign-a",
+        refresh_variables: { audience: { type: "filter", base: "contacts" }, variable_map: newMap },
+      },
+    });
+    expect(stored.audience_config).toEqual({
+      ...before,
+      state: { ...before.state, variableMap: newMap },
+    });
+    expect(refreshPendingVariables).toHaveBeenCalledWith(
+      expect.anything(),
+      "workspace-a",
+      "actor",
+      "campaign-a",
+      { type: "filter", base: "contacts" },
+      newMap,
+    );
+    expect(patches).toHaveLength(1);
+  },
+);
 it("does not persist mappings when pending-variable validation fails", async () => {
-  vi.mocked(refreshPendingVariables).mockRejectedValueOnce(new Error("Campo de variável não permitido."));
-  await expect((updateWhatsAppCampaign as unknown as Handler)({ context: { supabase: client(), userId: "actor" }, data: { id: "campaign-a", refresh_variables: { audience: { type: "filter", base: "contacts" }, variable_map: newMap } } })).rejects.toThrow("Campo de variável não permitido.");
+  vi.mocked(refreshPendingVariables).mockRejectedValueOnce(
+    new Error("Campo de variável não permitido."),
+  );
+  await expect(
+    (updateWhatsAppCampaign as unknown as Handler)({
+      context: { supabase: client(), userId: "actor" },
+      data: {
+        id: "campaign-a",
+        refresh_variables: { audience: { type: "filter", base: "contacts" }, variable_map: newMap },
+      },
+    }),
+  ).rejects.toThrow("Campo de variável não permitido.");
   expect(patches).toEqual([]);
 });
 it("rejects editing a running campaign without changing saved variables", async () => {
-  await expect((updateWhatsAppCampaign as unknown as Handler)({ context: { supabase: client("running"), userId: "actor" }, data: { id: "campaign-a", refresh_variables: { audience: { type: "filter", base: "contacts" }, variable_map: newMap } } })).rejects.toThrow("Apenas campanhas em rascunho ou pausadas");
+  await expect(
+    (updateWhatsAppCampaign as unknown as Handler)({
+      context: { supabase: client("running"), userId: "actor" },
+      data: {
+        id: "campaign-a",
+        refresh_variables: { audience: { type: "filter", base: "contacts" }, variable_map: newMap },
+      },
+    }),
+  ).rejects.toThrow("Apenas campanhas em rascunho ou pausadas");
   expect(patches).toEqual([]);
   expect(refreshPendingVariables).not.toHaveBeenCalled();
 });
