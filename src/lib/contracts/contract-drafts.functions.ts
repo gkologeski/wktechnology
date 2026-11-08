@@ -65,7 +65,7 @@ export const getContractDraft = createServerFn({ method: "POST" })
     const { data: draft, error } = await sb
       .from("contract_drafts")
       .select(
-        "id, workspace_id, deal_id, proposal_id, template_id, title, body_html, status, missing_template, decided_by, decided_at, decision_note, revision, created_at, updated_at",
+        "id, workspace_id, deal_id, proposal_id, template_id, title, body_html, status, missing_template, decided_by, decided_at, decision_note, revision, created_at, updated_at, sent_at, sent_to, client_decided_at, client_name, client_note",
       )
       .eq("id", data.id)
       .maybeSingle();
