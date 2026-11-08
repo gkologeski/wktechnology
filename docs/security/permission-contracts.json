@@ -8512,6 +8512,22 @@
         {
           "file": "src/lib/access-control/sales-core.server.ts",
           "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/components/sales-access.tsx",
+          "symbol": "SalesAction"
+        },
+        {
+          "file": "src/lib/email-send.functions.ts",
+          "symbol": "sendGmailEmail"
+        },
+        {
+          "file": "src/lib/proposals.functions.ts",
+          "symbol": "sendProposal"
+        },
+        {
+          "file": "src/lib/access-control/sales-sharing.functions.ts",
+          "symbol": "getSalesPublicToken"
         }
       ],
       "database": [
@@ -8548,8 +8564,15 @@
       },
       "files": {
         "src/components/proposals/send-proposal-email-dialog.tsx": "09e8b1b9c217620b81c46f21babacb30ba4c68802409605d7d5b9c194531467b",
-        "src/lib/proposals/proposal-email.ts": "90fc56549909737eb5861e199b0102d71d5ac2330a87f2b1241e888b5de04856",
         "src/routes/_authenticated/proposals.$id.tsx": "450853b0ef108d8a9e475b4cc09df0b46d979d6395a4ff6ec547d1025a8056a4"
+      }
+    },
+    {
+      "id": "proposal-email-body",
+      "kind": "presentation",
+      "rationale": "Pure subject/message/HTML builder for the proposal approval email (escapes user text). No I/O, routes, actions or data access; sending stays under proposal-send-email.",
+      "files": {
+        "src/lib/proposals/proposal-email.ts": "90fc56549909737eb5861e199b0102d71d5ac2330a87f2b1241e888b5de04856"
       }
     }
   ],

@@ -49,16 +49,24 @@ describe("permissão de envio da proposta", () => {
       i: null,
     });
   });
-  for (const [name, msg] of [
-    ["proposal send rejects missing permission", "missing permission"],
-    ["proposal send rejects explicit deny", "explicit deny"],
-    ["proposal send rejects a foreign workspace", "foreign workspace"],
-    ["proposal send rejects inactive membership", "inactive membership"],
-  ] as const) {
-    it(name, async () => {
-      await expect(
-        assertSalesAnyArea(authz(null, msg), "techsales.proposal_send", "manage"),
-      ).rejects.toThrow(msg);
-    });
-  }
+  it("proposal send rejects missing permission", async () => {
+    await expect(
+      assertSalesAnyArea(authz(null, "missing permission"), "techsales.proposal_send", "manage"),
+    ).rejects.toThrow("missing permission");
+  });
+  it("proposal send rejects explicit deny", async () => {
+    await expect(
+      assertSalesAnyArea(authz(null, "explicit deny"), "techsales.proposal_send", "manage"),
+    ).rejects.toThrow("explicit deny");
+  });
+  it("proposal send rejects a foreign workspace", async () => {
+    await expect(
+      assertSalesAnyArea(authz(null, "foreign workspace"), "techsales.proposal_send", "manage"),
+    ).rejects.toThrow("foreign workspace");
+  });
+  it("proposal send rejects inactive membership", async () => {
+    await expect(
+      assertSalesAnyArea(authz(null, "inactive membership"), "techsales.proposal_send", "manage"),
+    ).rejects.toThrow("inactive membership");
+  });
 });
