@@ -156,3 +156,37 @@ export const reviewContractDraft = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return res as { id: string; revision: number; status: string };
   });
+
+// ACEITE-MINUTA Entrega 3: link de aceite e marcação de envio (aprovador listado).
+export const issueContractDraftLink = createServerFn({ method: "POST" })
+  .middleware([requireWorkPermission("techcontracts.contract_drafts", "approve")])
+  .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const { data: token, error } = await (context.supabase as any).rpc(
+      "contract_draft_issue_link",
+      { p_draft: data.id },
+    );
+    if (error) throw new Error(error.message);
+    return { token: token as string };
+  });
+
+export const markContractDraftSent = createServerFn({ method: "POST" })
+  .middleware([requireWorkPermission("techcontracts.contract_drafts", "approve")])
+  .inputValidator((i) =>
+    z
+      .object({
+        id: z.string().uuid(),
+        to: z.string().max(500).nullable(),
+        channel: z.enum(["email", "link"]),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const { data: res, error } = await (context.supabase as any).rpc("contract_draft_mark_sent", {
+      p_draft: data.id,
+      p_to: data.to,
+      p_channel: data.channel,
+    });
+    if (error) throw new Error(error.message);
+    return res as { id: string; status: string };
+  });
