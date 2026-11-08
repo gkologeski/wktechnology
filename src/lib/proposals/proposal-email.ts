@@ -25,11 +25,7 @@ export function defaultProposalMessage(contact: string | null): string {
 }
 
 const esc = (s: string) =>
-  s
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 export function buildProposalEmail(input: ProposalEmailInput): { html: string; text: string } {
   const text = `${input.message.trim()}\n\nVer e aprovar proposta: ${input.link}\n`;

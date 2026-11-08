@@ -141,8 +141,8 @@ export function SendProposalEmailDialog(props: Props) {
         </DialogHeader>
         {accountsQ.isLoading ? (
           <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Carregando sua conta
-            de e-mail…
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> Carregando sua conta de
+            e-mail…
           </div>
         ) : accountsQ.isError ? (
           <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm">
