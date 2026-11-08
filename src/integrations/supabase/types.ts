@@ -6690,6 +6690,173 @@ export type Database = {
           },
         ]
       }
+      contract_draft_approvers: {
+        Row: {
+          created_at: string
+          created_by: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_draft_approvers_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_draft_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          detail: Json
+          draft_id: string
+          id: string
+          kind: string
+          workspace_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          draft_id: string
+          id?: string
+          kind: string
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          draft_id?: string
+          id?: string
+          kind?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_draft_events_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "contract_drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_draft_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_drafts: {
+        Row: {
+          body_html: string
+          created_at: string
+          created_by: string | null
+          deal_id: string | null
+          decided_at: string | null
+          decided_by: string | null
+          decision_note: string | null
+          id: string
+          missing_template: boolean
+          proposal_id: string | null
+          revision: number
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          body_html?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          missing_template?: boolean
+          proposal_id?: string | null
+          revision?: number
+          status?: string
+          template_id?: string | null
+          title: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          body_html?: string
+          created_at?: string
+          created_by?: string | null
+          deal_id?: string | null
+          decided_at?: string | null
+          decided_by?: string | null
+          decision_note?: string | null
+          id?: string
+          missing_template?: boolean
+          proposal_id?: string | null
+          revision?: number
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_drafts_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_drafts_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "shared_fields_deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_drafts_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_drafts_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "contract_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_drafts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_events: {
         Row: {
           actor_id: string | null
@@ -32201,6 +32368,41 @@ export type Database = {
         Returns: Json
       }
       contract_defaults_resolve: { Args: { p_ws: string }; Returns: Json }
+      contract_draft_is_approver: {
+        Args: { p_user: string; p_ws: string }
+        Returns: boolean
+      }
+      contract_draft_open: {
+        Args: { p_actor: string; p_proposal: string; p_ws: string }
+        Returns: Json
+      }
+      contract_draft_review: {
+        Args: {
+          p_body: string
+          p_decision: string
+          p_draft: string
+          p_note: string
+          p_revision: number
+          p_template: string
+        }
+        Returns: Json
+      }
+      contract_draft_set_approvers: {
+        Args: { p_users: string[] }
+        Returns: number
+      }
+      contract_draft_template_body: {
+        Args: { p_draft: string; p_template: string }
+        Returns: string
+      }
+      contract_draft_templates: {
+        Args: { p_draft: string }
+        Returns: {
+          id: string
+          is_default: boolean
+          name: string
+        }[]
+      }
       contract_esign_attachment: {
         Args: {
           p_action: string
