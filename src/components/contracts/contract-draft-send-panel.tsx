@@ -179,7 +179,7 @@ export function ContractDraftSendPanel(props: {
               </div>
               <div className="space-y-1">
                 <Label htmlFor="draft-to">Para</Label>
-                <EmailInput id="draft-to" value={to} onChange={(e) => setTo(e.target.value)} />
+                <EmailInput id="draft-to" value={to} onChange={setTo} multiple />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="draft-subject">Assunto</Label>
