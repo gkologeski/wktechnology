@@ -376,3 +376,9 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 ## PROPOSTA-EMAIL
 - [x] Envio da proposta por e-mail + botão copiar link para aprovar (preview)
 - [ ] Publicar; atualizar artigo Ajuda v3 no app
+
+## ACEITE-MINUTA
+- [x] Entrega 1: substatus "Enviar minuta de contrato"/"Minuta enviada" + workflow rascunho "Proposta aceita → Contratação"
+- [ ] Entrega 2: aprovadores jurídicos em Fluxos de aprovação, tela Revisar minuta, permissão nova
+- [ ] Entrega 3: envio automático pela conta do responsável, link público Aceitar/Pedir ajustes, gate do Gerar contrato
+- [ ] Decidir: workflow "Criar contrato" dispara ao entrar em Contratação (conflita com minuta)
