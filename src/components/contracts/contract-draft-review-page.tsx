@@ -36,10 +36,12 @@ import {
 import {
   CONTRACT_DRAFT_EVENT_LABEL,
   CONTRACT_DRAFT_STATUS_LABEL,
+  canSendContractDraft,
   contractDraftHasText,
   isContractDraftReviewable,
   type ContractDraftStatus,
 } from "@/lib/contracts/contract-draft-status";
+import { ContractDraftSendPanel } from "@/components/contracts/contract-draft-send-panel";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 
 const VIEW_KEY = "techcontracts.contract_drafts.view.workspace";
@@ -228,6 +230,25 @@ function DraftReview({ id }: { id: string }) {
         >
           <AlertTriangle className="h-4 w-4 text-destructive" aria-hidden />O serviço da proposta
           não tem modelo padrão vinculado. Escolha um modelo abaixo.
+        </p>
+      )}
+      {canReview && canSendContractDraft(status) && (
+        <section className="space-y-2" aria-label="Envio ao cliente">
+          <SectionHeader title="Enviar ao cliente" />
+          <ContractDraftSendPanel
+            draftId={draft.id}
+            title={draft.title}
+            dealId={draft.deal_id}
+            sent={status === "sent"}
+            onDone={() => q.refetch()}
+          />
+        </section>
+      )}
+      {draft.client_decided_at && (
+        <p className="rounded-md border border-border bg-muted p-3 text-sm" role="note">
+          {status === "accepted" ? "Aceita" : "Resposta"} por {draft.client_name ?? "cliente"} em{" "}
+          {new Date(draft.client_decided_at).toLocaleString("pt-BR")}
+          {draft.client_note ? ` — Ajustes pedidos: ${draft.client_note}` : ""}
         </p>
       )}
       {draft.decision_note && (

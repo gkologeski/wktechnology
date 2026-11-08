@@ -785,6 +785,20 @@
   },
   {
     "module_key": "contracts",
+    "slug": "configurar-aprovadores-minuta",
+    "title": "Escolher os aprovadores jurídicos da minuta",
+    "summary": "Definir quem revisa e aprova a minuta de contrato enviada após o aceite da proposta.",
+    "article_type": "howto",
+    "route_pattern": "/settings/contract-draft-approvers",
+    "min_permission": "techcontracts.contract_draft_approvers.manage.workspace",
+    "audience": "internal",
+    "sort_order": 41,
+    "version": 1,
+    "is_published": true,
+    "body_md": "# Escolher os aprovadores jurídicos da minuta\n**Para que serve:** Indicar quem recebe o aviso \"Minuta aguardando revisão\".\n**Quem pode fazer:** Quem tem \"Gerenciar aprovadores de minuta\" no cargo.\n**Onde fica:** TechContracts > Configurações > Aprovação de minuta (/settings/contract-draft-approvers).\n\n**Antes de começar:** Ter os aprovadores definidos com o jurídico.\n\n## Passo a passo\n1. Abra a tela e busque o membro pelo nome.\n2. Marque até 20 pessoas e clique em \"Salvar aprovadores\".\n3. Confira em Configurações > Permissões se cada uma tem \"Ver minutas de contrato\" e \"Aprovar minuta de contrato\".\n\n## Resultado esperado\nA alteração fica registrada e vale para as próximas minutas.\n\n## Regras e limites\n- Somente membros ativos do workspace podem ser escolhidos.\n- Sem aprovador configurado, o responsável do workflow é avisado para configurar.\n- Nenhuma permissão é dada automaticamente ao marcar a pessoa.\n\n## Erros comuns\n- \"Sem permissão para esta ação\": peça ao administrador a permissão indicada em \"Quem pode fazer\".\n- \"A minuta foi alterada por outra pessoa\": recarregue a tela antes de salvar de novo.\n\n## Relacionados\n- [Revisar e aprovar a minuta de contrato](/help/contracts/revisar-minuta)\n- [Escolher os aprovadores jurídicos da minuta](/help/contracts/configurar-aprovadores-minuta)"
+  },
+  {
+    "module_key": "contracts",
     "slug": "configurar-cobranca",
     "title": "Configurar e versionar o modelo de cobrança",
     "summary": "Configurar e versionar o modelo de cobrança no TechContracts, com as regras e limites disponíveis no sistema.",
@@ -1342,6 +1356,20 @@
     "version": 2,
     "is_published": true,
     "body_md": "# Revisar, ajustar e enviar uma medição para revisão\n**Para que serve:** Revisar, ajustar e enviar uma medição para revisão.\n**Quem pode fazer:** techprojects.measurements.view.workspace para consultar e manage.workspace para atualizar, ajustar e enviar.\n**Onde fica:** TechContracts > Contratos (/contracts/$id/medicoes).\n**Antes de começar:** Medição em rascunho e fontes disponíveis.\n\n## Passo a passo\n1. Abra o detalhe da medição.\n2. Clique em \"Atualizar prévia\" e confira linhas, itens excluídos e pendências.\n3. Quando necessário, use \"Adicionar ajuste\", informando descrição, valor e motivo. Valor negativo representa desconto.\n4. Para sucesso/Hunting, use \"Adicionar evento\" e escolha proposta ou candidatura do TechHire com identificador/base exigidos.\n5. Resolva \"Pendências (impedem envio e aprovação)\".\n6. Clique em \"Enviar para revisão\".\n![Tela: Revisar, ajustar e enviar uma medição para revisão, sem dados pessoais reais](/help-media/contracts/revisar-medicao.webp)\n\n## Resultado esperado\nMedição em revisão; nenhum documento ou cobrança enviado ao cliente.\n\n## Regras e limites\n- Ajuste: descrição de 3–200 caracteres, valor finito diferente de zero e motivo de 10–2.000 caracteres.\n- Evento exige UUID válido; o sistema não presume um evento de sucesso automaticamente.\n- Fontes alteradas exigem atualizar a prévia. Envio valida o hash.\n- Ajuste não é alteração silenciosa da tarifa.\n\n## Erros comuns\nSUBMIT_BLOCKED: resolva as pendências impeditivas. Prévia desatualizada: atualize antes de enviar.\n\n## Relacionados\n- [Aprovar medição](/ajuda/contracts/aprovar-medicao)\n- [Preparar medição](/ajuda/contracts/preparar-medicao)\n- [Permissões](/ajuda/contracts/permissoes)"
+  },
+  {
+    "module_key": "contracts",
+    "slug": "revisar-minuta",
+    "title": "Revisar e aprovar a minuta de contrato",
+    "summary": "Como o aprovador jurídico confere, troca o modelo, edita e aprova ou recusa a minuta gerada após o aceite da proposta.",
+    "article_type": "howto",
+    "route_pattern": "/contracts/drafts/$id",
+    "min_permission": "techcontracts.contract_drafts.view.workspace",
+    "audience": "internal",
+    "sort_order": 40,
+    "version": 2,
+    "is_published": true,
+    "body_md": "# Revisar e aprovar a minuta de contrato\n**Para que serve:** Conferir a minuta padrão do serviço antes de ela seguir para o cliente.\n**Quem pode fazer:** Consultar exige \"Ver minutas de contrato\". Editar, trocar o modelo, aprovar ou recusar exige estar na lista de aprovadores jurídicos e ter \"Aprovar minuta de contrato\".\n**Onde fica:** abra pela notificação \"Minuta aguardando revisão\" (/contracts/drafts/…).\n**Antes de começar:** A proposta precisa ter sido aceita pelo cliente e o workflow \"Proposta aceita → Contratação\" precisa estar publicado.\n\n## Passo a passo\n1. Abra a notificação. A tela mostra o negócio, a situação da minuta e o histórico.\n2. Em \"Modelo de contrato\", mantenha o modelo padrão ou escolha outro. Trocar o modelo substitui o texto.\n3. Ajuste o texto no editor e clique em \"Salvar edição\" para guardar sem aprovar.\n4. Clique em \"Aprovar envio\" para liberar a minuta. Para não enviar, use \"Recusar\" e informe o motivo.\n5. Com a minuta aprovada, use \"Enviar ao cliente por e-mail\" (sai da sua conta Gmail conectada) ou \"Copiar link para o cliente\".\n6. O cliente abre o link, informa o nome e clica em \"Aceitar minuta\" ou \"Pedir ajustes\". Os aprovadores recebem um aviso com a resposta.\n\n## Resultado esperado\nCada passo fica no histórico. Ao enviar, o negócio vai para \"Minuta enviada\". Quando o cliente aceita, o negócio vai para \"Contrato em elaboração\" e o workflow \"Criar contrato\" é liberado. Se o cliente pedir ajustes, a minuta volta a ser editável para nova aprovação.\n\n## Regras e limites\n- Se outra pessoa salvou antes, a tela pede para recarregar: nada é sobrescrito.\n- Minuta aprovada ou recusada não pode mais ser editada.\n- Só aprovadores jurídicos listados podem enviar a minuta, e somente depois de aprovada.\n- O link do cliente só funciona enquanto a minuta está enviada; depois da resposta ele mostra apenas o resultado.\n- O workflow \"Criar contrato\" só inicia depois do aceite da minuta.\n\n## Erros comuns\n- \"Sem permissão para esta ação\": peça ao administrador a permissão indicada em \"Quem pode fazer\".\n- \"A minuta foi alterada por outra pessoa\": recarregue a tela antes de salvar de novo.\n- \"Conecte sua conta Gmail\": conecte sua conta em Canais de atendimento ou use \"Copiar link para o cliente\".\n\n## Relacionados\n- [Revisar e aprovar a minuta de contrato](/help/contracts/revisar-minuta)\n- [Escolher os aprovadores jurídicos da minuta](/help/contracts/configurar-aprovadores-minuta)"
   },
   {
     "module_key": "contracts",

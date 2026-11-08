@@ -9618,7 +9618,7 @@
         "techcontracts.contract_drafts.approve.workspace",
         "techcontracts.contract_draft_approvers.manage.workspace"
       ],
-      "rationale": "ACEITE-MINUTA Entrega 2. New catalogue keys granted to no role. Tables contract_drafts/contract_draft_approvers/contract_draft_events: SELECT-only grants for authenticated under RLS (active member + effective key; approvers must be listed), writes only via SECURITY DEFINER RPCs. contract_draft_open is service_role only (workflow engine, after authorizeWorkflowStep). contract_draft_review/template_body/templates require contract_draft_is_approver (listed + active member + effective approve key, deny removed by user_effective_permissions); review is CAS by revision. contract_draft_set_approvers requires the manage key in work_access_context and active members. UI gates (menu + screen) mirror the keys only. 0311_0334 file is an accidental no-op (DO block) migration with no effect.",
+      "rationale": "ACEITE-MINUTA Entrega 2. New catalogue keys granted to no role. Tables contract_drafts/contract_draft_approvers/contract_draft_events: SELECT-only grants for authenticated under RLS (active member + effective key; approvers must be listed), writes only via SECURITY DEFINER RPCs. contract_draft_open is service_role only (workflow engine, after authorizeWorkflowStep). contract_draft_review/template_body/templates require contract_draft_is_approver (listed + active member + effective approve key, deny removed by user_effective_permissions); review is CAS by revision. contract_draft_set_approvers requires the manage key in work_access_context and active members. UI gates (menu + screen) mirror the keys only. 0311_0334 file is an accidental no-op (DO block) migration with no effect. Entrega 3: issue_link/mark_sent require contract_draft_is_approver and an approved draft; deal substatus move is best-effort under the caller's own row guard.",
       "controls": [
         {
           "file": "src/integrations/supabase/auth-middleware.ts",
@@ -9655,6 +9655,14 @@
         {
           "file": "src/lib/access-control/work-permission.middleware.ts",
           "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/contracts/contract-drafts.functions.ts",
+          "symbol": "markContractDraftSent"
+        },
+        {
+          "file": "src/lib/contracts/contract-drafts.functions.ts",
+          "symbol": "issueContractDraftLink"
         }
       ],
       "database": [
@@ -9673,6 +9681,18 @@
         {
           "file": "drizzle/migrations/0312_contract_draft_legal_review.sql",
           "symbol": "contract_draft_open"
+        },
+        {
+          "file": "drizzle/migrations/0313_contract_draft_client_acceptance.sql",
+          "symbol": "contract_draft_issue_link"
+        },
+        {
+          "file": "drizzle/migrations/0313_contract_draft_client_acceptance.sql",
+          "symbol": "contract_draft_mark_sent"
+        },
+        {
+          "file": "drizzle/migrations/0313_contract_draft_client_acceptance.sql",
+          "symbol": "contract_draft_set_deal_substatus"
         }
       ],
       "tests": {
@@ -9701,11 +9721,13 @@
         "drizzle/migrations/0311_0334_contract_draft_legal_review.sql": "34b15156ef6dd6be975fd1d42cfa7b47ef5fc1db73ab35486abe755b8a36a427",
         "drizzle/migrations/0312_contract_draft_legal_review.sql": "13ce7aa0ddad44bc26c81cccd662b1fb5a12f6cf606e87554beea542faed7e82",
         "src/components/contracts/contract-draft-approvers-page.tsx": "10912b5af48d1d3b83214d0d1bfbbf069cb636f1813a8eaa98cd6d1a72801f1f",
-        "src/components/contracts/contract-draft-review-page.tsx": "c1ec1d31211f95e51e9b03341b1860a058ef3ed8c37cc118bf64762e1df2b89d",
-        "src/lib/contracts/contract-drafts.functions.ts": "7c44c5b128dd61fdc06a8d87f305e7bf6fe250ecabdb6d278b686ba0996b48cf",
+        "src/components/contracts/contract-draft-review-page.tsx": "eea61d546dd02c931c3da8474db92533634d9260d044c33ab88204b7fec19e45",
+        "src/lib/contracts/contract-drafts.functions.ts": "b6194a8adbccbcd9d560abcf15b762014668afacab9b22fc55f8e6dca5b235cf",
         "src/lib/workflows/engine/actions-contracts.server.ts": "ce5d5e0cc220ecef2a3ce851f716ee1a89ab531e3ee319ca67ddae3ad2e73bf8",
         "src/routes/_authenticated/contracts.drafts.$id.tsx": "154ab4c2eb14d4003eadd589b90b7af808169de961cf7e5ac21554a8973daea2",
-        "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "b8d35e6adaa94ec01c69e35a1c1f734c2543a48097a60910f7484519e812688c"
+        "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "b8d35e6adaa94ec01c69e35a1c1f734c2543a48097a60910f7484519e812688c",
+        "src/components/contracts/contract-draft-send-panel.tsx": "78b10003e87264f75e375c8b2cc67c79e0a45b8625af89ab3abd4d5495462200",
+        "drizzle/migrations/0313_contract_draft_client_acceptance.sql": "64d071e18989e467bbd1814dc101de073e6e85ca5eb195867879f101b1943a33"
       }
     },
     {
@@ -9713,7 +9735,8 @@
       "kind": "presentation",
       "rationale": "Pure labels and the TS mirror of the SQL approver rule; no I/O.",
       "files": {
-        "src/lib/contracts/contract-draft-status.ts": "2e59417504de7d915718222438caa343775bd3484d3c3cd62b03bea36e5b2007"
+        "src/lib/contracts/contract-draft-status.ts": "0f1ac36b0159d22625e5d5fd5c72eb0e1c9569dbd20a02d7dc889f480f6da165",
+        "src/lib/contracts/contract-draft-public-rules.ts": "b0ba0ea6350890b9262061980ec7b66a72bd69ba0f97d254fab02a53c58a50b8"
       }
     },
     {
@@ -9721,7 +9744,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions.",
       "files": {
-        "src/integrations/supabase/types.ts": "fd57190087c7664453b185d767d50d1fac86c52a274ba654fb7268addee367e8"
+        "src/integrations/supabase/types.ts": "86aa3b81fd9b130d3d825baa7ce8937082ebb7ac845be2c3a3b54b3707e4f211"
       }
     },
     {
@@ -9730,6 +9753,77 @@
       "rationale": "Static TechContracts menu entry; visibility filtered by canSeeHrMenu with the manage key and the screen re-checks it; server functions use requireWorkPermission.",
       "files": {
         "src/lib/menu-config-contracts.ts": "8c9696342af468d764c38ed990a04c6acda131f0d14b4b99e0d2adcbc45d221c"
+      }
+    },
+    {
+      "id": "contract-draft-public-acceptance",
+      "kind": "public",
+      "resources": [
+        "techcontracts.contract_drafts"
+      ],
+      "actions": [
+        "view",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.contract_drafts.view.workspace",
+        "techcontracts.contract_drafts.approve.workspace"
+      ],
+      "rationale": "Client reads and accepts/requests changes to a sent contract draft via its capability link. Random uuid token issued only by a listed legal approver after approval; server-only RPCs (service_role) return/decide only drafts in status sent; one decision per send, no internal ids or other records exposed.",
+      "controls": [
+        {
+          "file": "src/lib/contracts/contract-draft-public-rules.ts",
+          "symbol": "clientDraftDecisionError"
+        },
+        {
+          "file": "src/lib/contracts/contract-draft-public-rules.ts",
+          "symbol": "isValidDraftToken"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0313_contract_draft_client_acceptance.sql",
+          "symbol": "contract_draft_public_get"
+        },
+        {
+          "file": "drizzle/migrations/0313_contract_draft_client_acceptance.sql",
+          "symbol": "contract_draft_public_decide"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/contract-draft-public-rules.test.ts",
+          "name": "client draft accepts a sent draft with a valid token and name"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/contract-draft-public-rules.test.ts",
+          "name": "client draft rejects a malformed token"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/contract-draft-public-rules.test.ts",
+          "name": "client draft rejects a draft not yet sent or already answered"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/contract-draft-public-rules.test.ts",
+          "name": "client draft rejects an unknown token"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/contract-draft-public-rules.test.ts",
+          "name": "client draft requires a reason when asking for changes"
+        }
+      },
+      "files": {
+        "src/lib/contracts/contract-draft-public.functions.ts": "65c3d4d40f49443ee2059e42ce9ad68d064e1950833130b674431d70998b326c",
+        "src/routes/minuta.$token.tsx": "391cb24639d037788282e4c43e0dc40a4d8ed8b3a0fe9f02c8a97769d8edf303"
+      },
+      "exception": {
+        "mechanism": "Random uuid token issued only by a listed legal approver after approval; server-only RPCs (service_role) return/decide only drafts in status sent; one decision per send, no internal ids or other records exposed.",
+        "boundary": "Token scopes access to a single draft; no session, no listing, no internal ids returned.",
+        "revocation": "Cancel or re-review the draft (status leaves sent) to invalidate the link.",
+        "review_by": "2027-01-25"
       }
     }
   ],

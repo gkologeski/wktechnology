@@ -24,7 +24,16 @@ export const CONTRACT_DRAFT_EVENT_LABEL: Record<string, string> = {
   edited: "Minuta editada",
   approved: "Envio aprovado",
   rejected: "Minuta recusada",
+  sent: "Minuta enviada ao cliente",
+  client_accepted: "Cliente aceitou a minuta",
+  client_changes: "Cliente pediu ajustes",
+  deal_update_failed: "Não foi possível atualizar o negócio",
 };
+
+/** Envio ao cliente só depois da aprovação jurídica (reenvio permitido). */
+export function canSendContractDraft(status: string): boolean {
+  return status === "approved" || status === "sent";
+}
 
 /** Só minutas aguardando o jurídico (ou com ajustes pedidos) aceitam revisão. */
 export function isContractDraftReviewable(status: string): boolean {
