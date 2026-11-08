@@ -2192,6 +2192,13 @@
       "when": 1794170609278,
       "tag": "0312_contract_draft_legal_review",
       "breakpoints": true
+    },
+    {
+      "idx": 313,
+      "version": "7",
+      "when": 1794172950388,
+      "tag": "0313_contract_draft_client_acceptance",
+      "breakpoints": true
     }
   ]
 }

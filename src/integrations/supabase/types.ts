@@ -6767,6 +6767,9 @@ export type Database = {
       contract_drafts: {
         Row: {
           body_html: string
+          client_decided_at: string | null
+          client_name: string | null
+          client_note: string | null
           created_at: string
           created_by: string | null
           deal_id: string | null
@@ -6776,7 +6779,11 @@ export type Database = {
           id: string
           missing_template: boolean
           proposal_id: string | null
+          public_token: string | null
           revision: number
+          sent_at: string | null
+          sent_by: string | null
+          sent_to: string | null
           status: string
           template_id: string | null
           title: string
@@ -6785,6 +6792,9 @@ export type Database = {
         }
         Insert: {
           body_html?: string
+          client_decided_at?: string | null
+          client_name?: string | null
+          client_note?: string | null
           created_at?: string
           created_by?: string | null
           deal_id?: string | null
@@ -6794,7 +6804,11 @@ export type Database = {
           id?: string
           missing_template?: boolean
           proposal_id?: string | null
+          public_token?: string | null
           revision?: number
+          sent_at?: string | null
+          sent_by?: string | null
+          sent_to?: string | null
           status?: string
           template_id?: string | null
           title: string
@@ -6803,6 +6817,9 @@ export type Database = {
         }
         Update: {
           body_html?: string
+          client_decided_at?: string | null
+          client_name?: string | null
+          client_note?: string | null
           created_at?: string
           created_by?: string | null
           deal_id?: string | null
@@ -6812,7 +6829,11 @@ export type Database = {
           id?: string
           missing_template?: boolean
           proposal_id?: string | null
+          public_token?: string | null
           revision?: number
+          sent_at?: string | null
+          sent_by?: string | null
+          sent_to?: string | null
           status?: string
           template_id?: string | null
           title?: string
@@ -32372,10 +32393,25 @@ export type Database = {
         Args: { p_user: string; p_ws: string }
         Returns: boolean
       }
+      contract_draft_issue_link: { Args: { p_draft: string }; Returns: string }
+      contract_draft_mark_sent: {
+        Args: { p_channel: string; p_draft: string; p_to: string }
+        Returns: Json
+      }
       contract_draft_open: {
         Args: { p_actor: string; p_proposal: string; p_ws: string }
         Returns: Json
       }
+      contract_draft_public_decide: {
+        Args: {
+          p_decision: string
+          p_name: string
+          p_note: string
+          p_token: string
+        }
+        Returns: Json
+      }
+      contract_draft_public_get: { Args: { p_token: string }; Returns: Json }
       contract_draft_review: {
         Args: {
           p_body: string
@@ -32390,6 +32426,10 @@ export type Database = {
       contract_draft_set_approvers: {
         Args: { p_users: string[] }
         Returns: number
+      }
+      contract_draft_set_deal_substatus: {
+        Args: { p_draft: string; p_name: string }
+        Returns: boolean
       }
       contract_draft_template_body: {
         Args: { p_draft: string; p_template: string }
