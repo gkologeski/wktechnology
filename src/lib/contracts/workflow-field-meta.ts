@@ -9,6 +9,7 @@ import {
   READJUSTMENT_INDEXES,
   SERVICE_LOCATIONS,
   SERVICE_TYPES,
+  SERVICE_TYPE_LABELS,
   SIGNATURE_PROVIDERS,
 } from "./import-schemas";
 
@@ -122,14 +123,7 @@ export const CONTRACT_FIELD_OPTIONS: Record<string, { value: string; label: stri
     { value: "mensal", label: "Mensal" },
     { value: "sem_reajuste", label: "Sem reajuste" },
   ],
-  service_type: label(SERVICE_TYPES, {
-    outsourcing: "Outsourcing",
-    desenvolvimento: "Desenvolvimento",
-    manutencao: "Manutenção",
-    consultoria: "Consultoria",
-    licenciamento: "Licenciamento",
-    outros: "Outros",
-  }),
+  service_type: label(SERVICE_TYPES, SERVICE_TYPE_LABELS),
   service_location: label(SERVICE_LOCATIONS, {
     remoto: "Remoto",
     presencial: "Presencial",
