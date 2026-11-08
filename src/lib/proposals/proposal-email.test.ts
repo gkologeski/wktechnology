@@ -26,3 +26,39 @@ describe("e-mail da proposta", () => {
     expect(r.text).toContain("https://app/proposal/abc");
   });
 });
+
+import { vi } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { assertSalesAnyArea } from "@/lib/access-control/sales-core.server";
+
+const authz = (data: unknown, message?: string) =>
+  ({
+    rpc: vi
+      .fn()
+      .mockResolvedValue(message ? { data: null, error: { message } } : { data, error: null }),
+  }) as unknown as SupabaseClient;
+
+describe("permissão de envio da proposta", () => {
+  it("proposal send permits an authorized active actor", async () => {
+    const c = authz({ workspace: "w", actor: "a" });
+    await assertSalesAnyArea(c, "techsales.proposal_send", "manage");
+    expect(c.rpc).toHaveBeenCalledWith("sales_area_authorize", {
+      r: "techsales.proposal_send",
+      a: "manage",
+      t: null,
+      i: null,
+    });
+  });
+  for (const [name, msg] of [
+    ["proposal send rejects missing permission", "missing permission"],
+    ["proposal send rejects explicit deny", "explicit deny"],
+    ["proposal send rejects a foreign workspace", "foreign workspace"],
+    ["proposal send rejects inactive membership", "inactive membership"],
+  ] as const) {
+    it(name, async () => {
+      await expect(
+        assertSalesAnyArea(authz(null, msg), "techsales.proposal_send", "manage"),
+      ).rejects.toThrow(msg);
+    });
+  }
+});
