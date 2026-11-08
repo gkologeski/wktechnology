@@ -554,7 +554,7 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: existing, error: getErr } = await supabase
       .from("whatsapp_campaigns")
-      .select("id, status, sender_phone_number_id")
+      .select("id, status, sender_phone_number_id, audience_config")
       .eq("id", data.id)
       .single();
     if (getErr) throw getErr;
@@ -584,6 +584,19 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
       );
     }
     const patch: Record<string, unknown> = {};
+    if (data.refresh_variables && !data.replace_audience) {
+      // Preserve the stored audience; only the validated variable bindings change.
+      const config = existing.audience_config;
+      if (config && typeof config === "object" && !Array.isArray(config)) {
+        const state = config.state;
+        if (state && typeof state === "object" && !Array.isArray(state)) {
+          patch.audience_config = {
+            ...config,
+            state: { ...state, variableMap: data.refresh_variables.variable_map },
+          };
+        }
+      }
+    }
     if (data.name !== undefined) patch.name = data.name;
     if (data.body_template !== undefined) patch.body_template = data.body_template || null;
     if (data.template_name !== undefined) patch.template_name = data.template_name || null;

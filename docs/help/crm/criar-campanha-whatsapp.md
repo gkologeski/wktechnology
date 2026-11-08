@@ -8,7 +8,7 @@ route_pattern: /campaigns/whatsapp
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 310
-version: 4
+version: 5
 is_published: true
 ---
 # Criar uma campanha de WhatsApp
@@ -40,7 +40,7 @@ is_published: true
 - Números com qualidade `RED` ficam indisponíveis.
 - O remetente não muda depois de iniciar.
 - SDR só com template aprovado.
-- Rodízio: até 5 modelos aprovados; cada contato recebe sempre o mesmo modelo; cada modelo tem as próprias variáveis, e só modelos aprovados na Meta para o número podem ser salvos. Em campanha pausada, ao salvar, as variáveis dos contatos ainda pendentes são atualizadas.
+- Rodízio: até 5 modelos aprovados; cada contato recebe sempre o mesmo modelo; cada modelo tem as próprias variáveis, e só modelos aprovados na Meta para o número podem ser salvos. Em campanha pausada, ao salvar, as variáveis dos contatos ainda pendentes são atualizadas e as escolhas ficam salvas para a próxima edição, sem trocar o público.
 - Disparo pode atrasar cerca de 1 minuto além do intervalo sorteado.
 
 ## Erros comuns

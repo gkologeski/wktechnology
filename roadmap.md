@@ -1,3 +1,9 @@
+# FLUXO-MODELOS — revisão dos alertas (porte P, 25–40 min)
+
+- [x] Conferir os alertas no código atual; workflows já corrigidos no pacote FLUXO-VISIVEL.
+- [x] Preservar escolhas de variáveis extras ao salvar campanha pausada, sem substituir público ou iniciar disparos.
+- [ ] Validar testes, permissões e navegador; registrar resultado dos alertas e atualizar Ajuda.
+
 # FLUXO-VISIVEL — carregamento de workflows (porte P, 20–30 min)
 
 - [x] Separar lista e histórico; exibir falha recuperável sem confundir com ausência de workflows.
