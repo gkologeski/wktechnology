@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SERVICE_TYPES, serviceTypeLabel, ExtractedContractSchema } from "./import-schemas";
+import { SERVICE_TYPES, serviceTypeLabel } from "./import-schemas";
 
 describe("tipos de serviço do contrato", () => {
   it("oferece Hunting e as categorias do catálogo", () => {
