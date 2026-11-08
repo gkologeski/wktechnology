@@ -8,7 +8,7 @@ route_pattern: /proposals/$id
 min_permission:
 audience: internal
 sort_order: 203
-version: 2
+version: 3
 is_published: true
 ---
 # Editar e enviar uma proposta
@@ -24,7 +24,8 @@ is_published: true
 4. Revise o modelo e o conteúdo. Avance pelas etapas e clique em "Salvar proposta".
 5. Para revisão interna de um rascunho, clique em "Enviar para aprovação".
 6. Escolha "Revisor", preencha "Comentário" se necessário e clique em "Enviar para revisão".
-7. Quando a ação estiver disponível, clique em "Enviar ao cliente".
+7. Para enviar ao cliente, clique em "Enviar ao cliente aprovar por e-mail": confira o remetente (sua conta conectada), o destinatário (preenchido com o contato da proposta e editável), Cc, assunto e mensagem, e clique em "Enviar". O e-mail leva o botão "Ver e aprovar proposta".
+   Alternativa: clique em "Copiar link para cliente aprovar" para selar a proposta e copiar o link (por exemplo, para WhatsApp).
 8. Use "Copiar link" para compartilhar o endereço público ou "Baixar PDF" para obter o documento.
 ![Tela: proposta com status, versão, Editar, Copiar link, Baixar PDF e Enviar ao cliente](/help-media/crm/editar-enviar-proposta.webp)
 
@@ -35,7 +36,8 @@ A edição atualiza a proposta. A solicitação de revisão mostra "Aprovação 
 - "Editar" não aparece para uma proposta travada.
 - A solicitação de aprovação fica disponível para rascunhos não travados.
 - O revisor precisa de permissão de aprovação. Você não pode aprovar a própria solicitação.
-- "Enviar ao cliente" aparece para propostas em rascunho ou aprovadas, conforme a permissão. A ação registra o envio e sela o documento; não confirma entrega de e-mail.
+- "Enviar ao cliente aprovar por e-mail" e "Copiar link para cliente aprovar" aparecem para propostas em rascunho ou aprovadas, conforme a permissão `techsales.proposal_send`. O e-mail sai pela sua conta de e-mail conectada e fica no histórico do negócio; só depois do envio a proposta é selada como "Enviada". Se o e-mail falhar, a proposta não muda de status. Sem conta conectada, a janela oferece o atalho para conectar.
+- O cliente só consegue aprovar ou recusar pelo link depois que a proposta estiver "Enviada".
 - Os itens não são alterados no assistente. Edite a cotação ou os itens de linha do negócio de origem.
 - Compartilhe o link público e o PDF apenas com os destinatários pretendidos.
 
