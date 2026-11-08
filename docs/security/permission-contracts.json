@@ -9663,10 +9663,6 @@
         {
           "file": "src/lib/contracts/contract-drafts.functions.ts",
           "symbol": "issueContractDraftLink"
-        },
-        {
-          "file": "src/components/contracts/contract-draft-send-panel.tsx",
-          "symbol": "ContractDraftSendPanel"
         }
       ],
       "database": [
@@ -9730,8 +9726,7 @@
         "src/lib/workflows/engine/actions-contracts.server.ts": "ce5d5e0cc220ecef2a3ce851f716ee1a89ab531e3ee319ca67ddae3ad2e73bf8",
         "src/routes/_authenticated/contracts.drafts.$id.tsx": "154ab4c2eb14d4003eadd589b90b7af808169de961cf7e5ac21554a8973daea2",
         "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "b8d35e6adaa94ec01c69e35a1c1f734c2543a48097a60910f7484519e812688c",
-        "src/lib/contracts/contract-draft-status.ts": "0f1ac36b0159d22625e5d5fd5c72eb0e1c9569dbd20a02d7dc889f480f6da165",
-        "src/components/contracts/contract-draft-send-panel.tsx": "26e0a17913d082ff146f55d5b7c9f5ed21137aed327c0726e70f47d4c5f0131e",
+        "src/components/contracts/contract-draft-send-panel.tsx": "78b10003e87264f75e375c8b2cc67c79e0a45b8625af89ab3abd4d5495462200",
         "drizzle/migrations/0313_contract_draft_client_acceptance.sql": "64d071e18989e467bbd1814dc101de073e6e85ca5eb195867879f101b1943a33"
       }
     },
@@ -9740,7 +9735,8 @@
       "kind": "presentation",
       "rationale": "Pure labels and the TS mirror of the SQL approver rule; no I/O.",
       "files": {
-        "src/lib/contracts/contract-draft-status.ts": "2e59417504de7d915718222438caa343775bd3484d3c3cd62b03bea36e5b2007"
+        "src/lib/contracts/contract-draft-status.ts": "0f1ac36b0159d22625e5d5fd5c72eb0e1c9569dbd20a02d7dc889f480f6da165",
+        "src/lib/contracts/contract-draft-public-rules.ts": "b0ba0ea6350890b9262061980ec7b66a72bd69ba0f97d254fab02a53c58a50b8"
       }
     },
     {
@@ -9748,7 +9744,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions.",
       "files": {
-        "src/integrations/supabase/types.ts": "fd57190087c7664453b185d767d50d1fac86c52a274ba654fb7268addee367e8"
+        "src/integrations/supabase/types.ts": "86aa3b81fd9b130d3d825baa7ce8937082ebb7ac845be2c3a3b54b3707e4f211"
       }
     },
     {
@@ -9781,6 +9777,10 @@
         {
           "file": "src/lib/contracts/contract-draft-public-rules.ts",
           "symbol": "clientDraftDecisionError"
+        },
+        {
+          "file": "src/lib/contracts/contract-draft-public-rules.ts",
+          "symbol": "isValidDraftToken"
         }
       ],
       "database": [
@@ -9816,9 +9816,8 @@
         }
       },
       "files": {
-        "src/lib/contracts/contract-draft-public.functions.ts": "f74960803bfbf85c113fce4e86c32b2fb3ffa9efefc42e4f5ce5d692e2d0c0f7",
-        "src/lib/contracts/contract-draft-public-rules.ts": "b95aa0322af9e921feef78ef7dd8cd99a2445494f36ebe31d6a68e921e706a7f",
-        "src/routes/minuta.$token.tsx": "af1fbcbbf1f5941845bd3819ef746d0b98fd51d4e61fce8d08f5eeb5ad4227ff"
+        "src/lib/contracts/contract-draft-public.functions.ts": "65c3d4d40f49443ee2059e42ce9ad68d064e1950833130b674431d70998b326c",
+        "src/routes/minuta.$token.tsx": "391cb24639d037788282e4c43e0dc40a4d8ed8b3a0fe9f02c8a97769d8edf303"
       },
       "exception": {
         "mechanism": "Random uuid token issued only by a listed legal approver after approval; server-only RPCs (service_role) return/decide only drafts in status sent; one decision per send, no internal ids or other records exposed.",

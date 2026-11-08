@@ -4,6 +4,10 @@ export type ClientDecision = "accept" | "changes";
 
 const TOKEN_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+export function isValidDraftToken(token: string): boolean {
+  return TOKEN_RE.test(token);
+}
+
 export function clientDraftDecisionError(input: {
   token: string;
   status: string | null;

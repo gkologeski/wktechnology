@@ -14,6 +14,7 @@ import {
   decidePublicContractDraft,
   getPublicContractDraft,
 } from "@/lib/contracts/contract-draft-public.functions";
+import { isValidDraftToken } from "@/lib/contracts/contract-draft-public-rules";
 
 export const Route = createFileRoute("/minuta/$token")({
   head: () => ({
@@ -46,7 +47,7 @@ function PublicContractDraftPage() {
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
   const [askChanges, setAskChanges] = useState(false);
-  const valid = /^[0-9a-f-]{36}$/i.test(token);
+  const valid = isValidDraftToken(token);
   const q = useQuery({
     queryKey: ["public-contract-draft", token],
     queryFn: () => fetchDoc({ data: { token } }),

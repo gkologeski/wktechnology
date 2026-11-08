@@ -26,6 +26,8 @@ import {
 } from "@/lib/contracts/contract-drafts.functions";
 import { getPublicAppUrl } from "@/lib/app-url";
 import { parseEmailList } from "@/lib/email-address";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { CONTRACT_DRAFT_APPROVE_KEY } from "@/lib/contracts/contract-draft-status";
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -132,6 +134,8 @@ export function ContractDraftSendPanel(props: {
   };
 
   const noAccount = accountsQ.isSuccess && accounts.length === 0;
+  const perms = usePermissions();
+  if (!perms.can(CONTRACT_DRAFT_APPROVE_KEY)) return null;
 
   return (
     <div className="flex flex-wrap gap-2">
