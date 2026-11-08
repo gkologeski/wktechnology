@@ -79,7 +79,7 @@ function ApproversForm() {
       />
       {q.isLoading ? (
         <div role="status" aria-label="Carregando membros">
-          <Skeletons.List />
+          <Skeletons.Row /><Skeletons.Row /><Skeletons.Row />
         </div>
       ) : q.isError ? (
         <div className="space-y-3" role="alert">

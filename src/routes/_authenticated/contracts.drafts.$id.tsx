@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { ContractDraftReviewPage } from "@/components/contracts/contract-draft-review-page";
 
 export const Route = createFileRoute("/_authenticated/contracts/drafts/$id")({
@@ -8,12 +8,5 @@ export const Route = createFileRoute("/_authenticated/contracts/drafts/$id")({
 
 function DraftRoute() {
   const { id } = Route.useParams();
-  return (
-    <>
-      <ContractDraftReviewPage id={id} />
-      <span className="sr-only">
-        <Link to="/contracts">Contratos</Link>
-      </span>
-    </>
-  );
+  return <ContractDraftReviewPage id={id} />;
 }

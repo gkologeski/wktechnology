@@ -107,7 +107,7 @@ export function ContractDraftReviewPage({ id }: { id: string }) {
   if (q.isLoading)
     return (
       <div className="p-6" role="status" aria-label="Carregando minuta">
-        <Skeletons.Detail />
+        <Skeletons.Card />
       </div>
     );
   if (q.isError)
