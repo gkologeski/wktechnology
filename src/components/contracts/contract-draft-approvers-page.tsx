@@ -53,7 +53,8 @@ function ApproversForm() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Não foi possível salvar."),
   });
 
-  const members = (q.data?.members ?? []).filter((m) =>
+  type Member = { id: string; name: string; role: string };
+  const members = ((q.data?.members ?? []) as Member[]).filter((m) =>
     m.name.toLowerCase().includes(filter.trim().toLowerCase()),
   );
   const changed =

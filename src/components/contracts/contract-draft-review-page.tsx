@@ -137,7 +137,7 @@ export function ContractDraftReviewPage({ id }: { id: string }) {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-6">
       <Button asChild variant="ghost" size="sm">
-        <Link to="/contracts">
+        <Link to="/contracts" search={{} as never}>
           <ArrowLeft className="mr-2 h-4 w-4" /> Contratos
         </Link>
       </Button>
