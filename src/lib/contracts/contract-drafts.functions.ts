@@ -2,10 +2,10 @@
 // Leituras pelo cliente do usuário (RLS); escritas só pelas RPCs com checagem.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 
 export const getContractDraftApprovers = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contract_draft_approvers", "manage")])
   .handler(async ({ context }) => {
     const sb = context.supabase as any;
     const { data: prof, error: pe } = await sb
@@ -45,7 +45,7 @@ export const getContractDraftApprovers = createServerFn({ method: "POST" })
   });
 
 export const setContractDraftApprovers = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contract_draft_approvers", "manage")])
   .inputValidator((i) => z.object({ userIds: z.array(z.string().uuid()).max(20) }).parse(i))
   .handler(async ({ data, context }) => {
     const { data: n, error } = await (context.supabase as any).rpc("contract_draft_set_approvers", {
@@ -56,7 +56,7 @@ export const setContractDraftApprovers = createServerFn({ method: "POST" })
   });
 
 export const getContractDraft = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contract_drafts", "view")])
   .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const sb = context.supabase as any;
@@ -104,7 +104,7 @@ export const getContractDraft = createServerFn({ method: "POST" })
   });
 
 export const getContractDraftTemplateBody = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contract_drafts", "approve")])
   .inputValidator((i) => z.object({ draftId: z.string().uuid(), templateId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { data: body, error } = await (context.supabase as any).rpc("contract_draft_template_body", {
@@ -116,7 +116,7 @@ export const getContractDraftTemplateBody = createServerFn({ method: "POST" })
   });
 
 export const reviewContractDraft = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contract_drafts", "approve")])
   .inputValidator((i) =>
     z
       .object({

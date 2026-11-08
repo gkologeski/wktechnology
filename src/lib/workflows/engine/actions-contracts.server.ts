@@ -9,6 +9,7 @@ import { createContractShared, loadDealForContract } from "@/lib/contracts/contr
 import { isContractKind, kindToColumns, type ContractKind } from "@/lib/contracts/contract-kinds";
 import { coerceContractFields } from "@/lib/contracts/contract-field-coerce";
 import type { RunCtx, RunnableAction } from "./run-context";
+import { authorizeWorkflowStep } from "./authorization.server";
 
 /** Aceita tanto o novo formato (prestação/compra/aditivo) quanto o antigo. */
 function resolveKind(raw: string | null | undefined): ContractKind {
@@ -124,6 +125,8 @@ async function openContractDraft(
   if (ctx.entity !== "proposals")
     throw new Error("Esta ação só pode ser usada em workflows de Propostas.");
   if (!ctx.workspaceId || !ctx.ownerId) throw new Error("Origem ou responsável do workflow inválido.");
+  // Revalida a versão publicada do workflow antes da RPC de serviço.
+  await authorizeWorkflowStep(supabase, ctx);
   const { data, error } = await supabase.rpc(
     "contract_draft_open" as never,
     { p_ws: ctx.workspaceId, p_proposal: ctx.entityId, p_actor: ctx.ownerId } as never,

@@ -3,5 +3,9 @@ import { ContractDraftApproversPage } from "@/components/contracts/contract-draf
 
 export const Route = createFileRoute("/_authenticated/settings/contract-draft-approvers")({
   head: () => ({ meta: [{ title: "Fluxos de aprovação — Minuta de contrato" }] }),
-  component: ContractDraftApproversPage,
+  component: ApproversRoute,
 });
+
+function ApproversRoute() {
+  return <ContractDraftApproversPage />;
+}

@@ -9651,6 +9651,10 @@
         {
           "file": "src/components/contracts/contract-draft-approvers-page.tsx",
           "symbol": "ContractDraftApproversPage"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
         }
       ],
       "database": [
@@ -9698,11 +9702,10 @@
         "drizzle/migrations/0312_contract_draft_legal_review.sql": "13ce7aa0ddad44bc26c81cccd662b1fb5a12f6cf606e87554beea542faed7e82",
         "src/components/contracts/contract-draft-approvers-page.tsx": "6de9c1d6af128bba69f7ccaf4b18a0d3e32b46e6752a423a052947a8fcef66ac",
         "src/components/contracts/contract-draft-review-page.tsx": "14dc684f45a9f7c7dc544ce71fe835bf34b12c7765e0e087bcd2c97b452b63db",
-        "src/lib/contracts/contract-drafts.functions.ts": "ff709d2dd822f5e0278fdf717a374ac9e20744e0438b857bb995982129013293",
-        "src/lib/menu-config-contracts.ts": "8c9696342af468d764c38ed990a04c6acda131f0d14b4b99e0d2adcbc45d221c",
-        "src/lib/workflows/engine/actions-contracts.server.ts": "c35102cc1f3adde85841beeebdd913d9ccd9217ef69e4da7af835d11b8106fef",
+        "src/lib/contracts/contract-drafts.functions.ts": "e29105d71fbcba49b7dcfdd616839424349d80eac0580c3bc8482a8aa397987c",
+        "src/lib/workflows/engine/actions-contracts.server.ts": "ce5d5e0cc220ecef2a3ce851f716ee1a89ab531e3ee319ca67ddae3ad2e73bf8",
         "src/routes/_authenticated/contracts.drafts.$id.tsx": "154ab4c2eb14d4003eadd589b90b7af808169de961cf7e5ac21554a8973daea2",
-        "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "6158f34ea5a40eacdb1d0bfa8d3b03251bca67d4575c5482b35cb358fa0992b2"
+        "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "b8d35e6adaa94ec01c69e35a1c1f734c2543a48097a60910f7484519e812688c"
       }
     },
     {
@@ -9719,6 +9722,14 @@
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions.",
       "files": {
         "src/integrations/supabase/types.ts": "fd57190087c7664453b185d767d50d1fac86c52a274ba654fb7268addee367e8"
+      }
+    },
+    {
+      "id": "contract-draft-menu-entry",
+      "kind": "presentation",
+      "rationale": "Static TechContracts menu entry; visibility filtered by canSeeHrMenu with the manage key and the screen re-checks it; server functions use requireWorkPermission.",
+      "files": {
+        "src/lib/menu-config-contracts.ts": "8c9696342af468d764c38ed990a04c6acda131f0d14b4b99e0d2adcbc45d221c"
       }
     }
   ],
