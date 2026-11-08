@@ -67,7 +67,6 @@ beforeEach(() => {
 it.each(["paused", "draft"])(
   "persists extra-template mappings when refreshing a %s campaign without replacing its audience",
   async (status) => {
-    const before = structuredClone(stored.audience_config);
     await (updateWhatsAppCampaign as unknown as Handler)({
       context: { supabase: client(status), userId: "actor" },
       data: {
@@ -76,8 +75,15 @@ it.each(["paused", "draft"])(
       },
     });
     expect(stored.audience_config).toEqual({
-      ...before,
-      state: { ...before.state, variableMap: newMap },
+      version: 1,
+      manualRaw: "",
+      state: {
+        mode: "filter",
+        base: "contacts",
+        groups: [{ logic: "and", filters: [] }],
+        recentDays: 7,
+        variableMap: newMap,
+      },
     });
     expect(refreshPendingVariables).toHaveBeenCalledWith(
       expect.anything(),
