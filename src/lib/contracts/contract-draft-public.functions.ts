@@ -3,6 +3,7 @@
 // só aceitam minutas enviadas e só são executáveis pelo servidor.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { clientDraftDecisionError } from "@/lib/contracts/contract-draft-public-rules";
 
 export const getPublicContractDraft = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ token: z.string().uuid() }).parse(i))
@@ -35,6 +36,17 @@ export const decidePublicContractDraft = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: cur } = await (supabaseAdmin as any).rpc("contract_draft_public_get", {
+      p_token: data.token,
+    });
+    const pre = clientDraftDecisionError({
+      token: data.token,
+      status: (cur as { status?: string } | null)?.status ?? null,
+      decision: data.decision,
+      name: data.name,
+      note: data.note,
+    });
+    if (pre) throw new Error(pre);
     const { data: res, error } = await (supabaseAdmin as any).rpc("contract_draft_public_decide", {
       p_token: data.token,
       p_decision: data.decision,
