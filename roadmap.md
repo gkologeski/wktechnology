@@ -372,3 +372,7 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [x] Ajuste no prompt (classificação da indicação e não repetir retomada)
 - [x] Rodrigo Paiola: indicação do Bruno registrada (contato Bruno Silva já existia), sem novas retomadas
 - [ ] Publicação (aguarda aceite do usuário)
+
+## PROPOSTA-EMAIL
+- [x] Envio da proposta por e-mail + botão copiar link para aprovar (preview)
+- [ ] Publicar; atualizar artigo Ajuda v3 no app
