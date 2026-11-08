@@ -4203,7 +4203,8 @@
       "rationale": "PT-BR labels for the new techfinance.sales and contaazul_people resources and a sidebar entry for /finance/sales gated by techfinance.sales.view.workspace; menu visibility is cosmetic, the page and server function enforce the permission (contract finance-sales).",
       "files": {
         "src/lib/access-control/resource-labels.ts": "b9486bd90fbd4e5aa1cf7af67fbb77163e7c88ac9d2a95dffcd041df79abfcef",
-        "src/lib/menu-config-finance.ts": "634465260359b9d97cfd6a635ae5bd7ade12cb9ab9a83ec9e96e507d83194e1d"
+        "src/lib/menu-config-finance.ts": "634465260359b9d97cfd6a635ae5bd7ade12cb9ab9a83ec9e96e507d83194e1d",
+        "src/lib/breadcrumb-labels.ts": "42372092ce4d5124facf0fceaac05630ea9d5efff980ff7794ed57c96863821f"
       }
     },
     {
@@ -4312,7 +4313,8 @@
       "files": {
         "src/lib/integrations/clickup/clickup-plan.ts": "533a97467cf1f2c7b5da96d712d85d596da4bef664ea769de1e35051dc68918e",
         "src/components/projects/clockify-import/projects-imports-hub.tsx": "d27a05dc685ec8bcebe499543b467862fac4f823bef8e610fb88ca07351d558d",
-        "src/lib/menu-config-projects.ts": "1a9c9d12b840c50bcfb1911f9acc95372aece7baf8c3fc4b260007c66c62fc79"
+        "src/lib/menu-config-projects.ts": "1a9c9d12b840c50bcfb1911f9acc95372aece7baf8c3fc4b260007c66c62fc79",
+        "src/lib/access-control/hr-menu-access.ts": "e2627ae5b065c4a4c74d10a6f83387f8196f5e290631d661518e2a06174007a9"
       }
     },
     {
@@ -8266,7 +8268,9 @@
       "kind": "presentation",
       "rationale": "Pure declarative workflow types, validation schemas and UI draft-template definitions; no IO, route or execution. Hiring templates remain unpublished drafts. Runtime actions and persisted permissions are independently guarded by stage4 business contract. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key.",
       "files": {
-        "src/lib/workflows/hiring-templates.ts": "eb456d3ab72c162a952cb342612ad704cf2be8abf495547c142dd8f939691d3c"
+        "src/lib/workflows/hiring-templates.ts": "eb456d3ab72c162a952cb342612ad704cf2be8abf495547c142dd8f939691d3c",
+        "src/lib/workflows/types.ts": "882d84fdae3181e221b8b85ca77a021e3ad08668342fd197827cb2913fcd2c59",
+        "src/lib/workflows/schemas.ts": "56b6e6a2882c5cec2255202b5e8bbdeb7942eda6e4e45ff441f00f3996205b8a"
       }
     },
     {
@@ -9337,7 +9341,8 @@
       "kind": "presentation",
       "rationale": "Plano DESLIGA-AGENDA: meeting dialog calendar selector and pure selection helpers (meeting-account.ts, no I/O); workflow builder icons/defaults/summaries for the two new offboarding actions. Enforcement stays in pushActivityToCalendar (meeting-calendar-account-owner-selection) and actions-offboarding (hiring-stage6-lifecycle).",
       "files": {
-        "src/lib/calendar/meeting-account.ts": "00db4b590c7639fe1bfeb2c68b6ed07b4bc828b400e8ad5fedebf0f85b24a71f"
+        "src/lib/calendar/meeting-account.ts": "00db4b590c7639fe1bfeb2c68b6ed07b4bc828b400e8ad5fedebf0f85b24a71f",
+        "src/components/workflows/builder/step-tree.ts": "3bc2764e0497f9b14b8ab7cdebda7b98cd5e403dd5149d5a7ff635c078dd1053"
       }
     },
     {
@@ -9390,7 +9395,9 @@
           "name": "sales area refuses an inactive execution actor"
         }
       },
-      "files": {}
+      "files": {
+        "src/components/workflows/builder/step-config-panel.tsx": "a3ea5ca2f027d50b86a2d605658155e8c4a7fcf4e80400aede7b3e467f3baad9"
+      }
     },
     {
       "id": "workflow-list-history-isolation",
@@ -9632,6 +9639,18 @@
         {
           "file": "src/lib/workflows/engine/authorization.server.ts",
           "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/components/contracts/contract-draft-review-page.tsx",
+          "symbol": "ContractDraftReviewPage"
+        },
+        {
+          "file": "src/components/contracts/contract-draft-approvers-page.tsx",
+          "symbol": "ContractDraftApproversPage"
         }
       ],
       "database": [
@@ -9678,17 +9697,10 @@
         "drizzle/migrations/0311_0334_contract_draft_legal_review.sql": "34b15156ef6dd6be975fd1d42cfa7b47ef5fc1db73ab35486abe755b8a36a427",
         "drizzle/migrations/0312_contract_draft_legal_review.sql": "13ce7aa0ddad44bc26c81cccd662b1fb5a12f6cf606e87554beea542faed7e82",
         "src/components/contracts/contract-draft-approvers-page.tsx": "6de9c1d6af128bba69f7ccaf4b18a0d3e32b46e6752a423a052947a8fcef66ac",
-        "src/components/contracts/contract-draft-review-page.tsx": "691c9b3a0dc646cd155212e6eccbabb92259ec2413e2b10ff8a9e5f004eab711",
-        "src/components/workflows/builder/step-config-panel.tsx": "a3ea5ca2f027d50b86a2d605658155e8c4a7fcf4e80400aede7b3e467f3baad9",
-        "src/components/workflows/builder/step-tree.ts": "3bc2764e0497f9b14b8ab7cdebda7b98cd5e403dd5149d5a7ff635c078dd1053",
-        "src/integrations/supabase/types.ts": "fd57190087c7664453b185d767d50d1fac86c52a274ba654fb7268addee367e8",
-        "src/lib/access-control/hr-menu-access.ts": "e2627ae5b065c4a4c74d10a6f83387f8196f5e290631d661518e2a06174007a9",
-        "src/lib/breadcrumb-labels.ts": "42372092ce4d5124facf0fceaac05630ea9d5efff980ff7794ed57c96863821f",
+        "src/components/contracts/contract-draft-review-page.tsx": "14dc684f45a9f7c7dc544ce71fe835bf34b12c7765e0e087bcd2c97b452b63db",
         "src/lib/contracts/contract-drafts.functions.ts": "ff709d2dd822f5e0278fdf717a374ac9e20744e0438b857bb995982129013293",
         "src/lib/menu-config-contracts.ts": "8c9696342af468d764c38ed990a04c6acda131f0d14b4b99e0d2adcbc45d221c",
         "src/lib/workflows/engine/actions-contracts.server.ts": "c35102cc1f3adde85841beeebdd913d9ccd9217ef69e4da7af835d11b8106fef",
-        "src/lib/workflows/schemas.ts": "56b6e6a2882c5cec2255202b5e8bbdeb7942eda6e4e45ff441f00f3996205b8a",
-        "src/lib/workflows/types.ts": "882d84fdae3181e221b8b85ca77a021e3ad08668342fd197827cb2913fcd2c59",
         "src/routes/_authenticated/contracts.drafts.$id.tsx": "154ab4c2eb14d4003eadd589b90b7af808169de961cf7e5ac21554a8973daea2",
         "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "6158f34ea5a40eacdb1d0bfa8d3b03251bca67d4575c5482b35cb358fa0992b2"
       }
@@ -9699,6 +9711,14 @@
       "rationale": "Pure labels and the TS mirror of the SQL approver rule; no I/O.",
       "files": {
         "src/lib/contracts/contract-draft-status.ts": "2e59417504de7d915718222438caa343775bd3484d3c3cd62b03bea36e5b2007"
+      }
+    },
+    {
+      "id": "whatsapp-cloud-database-types",
+      "kind": "presentation",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions.",
+      "files": {
+        "src/integrations/supabase/types.ts": "fd57190087c7664453b185d767d50d1fac86c52a274ba654fb7268addee367e8"
       }
     }
   ],
