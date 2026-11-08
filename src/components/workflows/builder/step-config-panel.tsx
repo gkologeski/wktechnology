@@ -1040,6 +1040,13 @@ function StepConfigForm({
     case "disconnect_integrations":
     case "transfer_portfolio":
       return <HiringActionForm action={action} onChange={onChange} />;
+    case "open_contract_draft":
+      return (
+        <p className="text-sm text-muted-foreground">
+          Abre a minuta com o modelo padrão do serviço da proposta aceita e avisa os aprovadores
+          jurídicos configurados em Contratos → Aprovação de minuta.
+        </p>
+      );
     default: {
       const _exhaustive: never = action;
       void _exhaustive;

@@ -119,6 +119,7 @@ export const ACTION_ICONS: Record<WorkflowActionType, typeof Zap> = {
   cancel_payable_schedules: CalendarX2,
   disconnect_integrations: CalendarX2,
   transfer_portfolio: KeySquare,
+  open_contract_draft: FileSignature,
 };
 
 export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
@@ -267,6 +268,7 @@ export function defaultActionOfType(type: WorkflowActionType): WorkflowAction {
     case "cancel_payable_schedules":
     case "disconnect_integrations":
     case "transfer_portfolio":
+    case "open_contract_draft":
       return { type };
   }
 }
@@ -809,6 +811,8 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
       return "agendas e caixas de e-mail da pessoa";
     case "transfer_portfolio":
       return a.to_user_id ? "carteira para o responsável escolhido" : "carteira para o gestor da pessoa";
+    case "open_contract_draft":
+      return "minuta do modelo padrão para o jurídico";
     default:
       return "";
   }

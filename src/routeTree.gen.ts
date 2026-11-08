@@ -194,6 +194,7 @@ import { Route as AuthenticatedSettingsChannelsRouteImport } from './routes/_aut
 import { Route as AuthenticatedSettingsChargingTemplatesRouteImport } from './routes/_authenticated/settings.charging-templates'
 import { Route as AuthenticatedSettingsClausesRouteImport } from './routes/_authenticated/settings.clauses'
 import { Route as AuthenticatedSettingsContractDefaultsRouteImport } from './routes/_authenticated/settings.contract-defaults'
+import { Route as AuthenticatedSettingsContractDraftApproversRouteImport } from './routes/_authenticated/settings.contract-draft-approvers'
 import { Route as AuthenticatedSettingsCustomObjectsRouteImport } from './routes/_authenticated/settings.custom-objects'
 import { Route as AuthenticatedSettingsCustomPropertiesRouteImport } from './routes/_authenticated/settings.custom-properties'
 import { Route as AuthenticatedSettingsDataResidencyRouteImport } from './routes/_authenticated/settings.data-residency'
@@ -302,6 +303,7 @@ import { Route as AuthenticatedAjudaTrilhasTrackRouteImport } from './routes/_au
 import { Route as AuthenticatedAtsJobsIdRouteImport } from './routes/_authenticated/ats.jobs.$id'
 import { Route as AuthenticatedContractsIdFlowRouteImport } from './routes/_authenticated/contracts.$id_.flow'
 import { Route as AuthenticatedContractsIdMedicoesRouteImport } from './routes/_authenticated/contracts.$id_.medicoes'
+import { Route as AuthenticatedContractsDraftsIdRouteImport } from './routes/_authenticated/contracts.drafts.$id'
 import { Route as AuthenticatedContractsTemplatesIndexRouteImport } from './routes/_authenticated/contracts.templates.index'
 import { Route as AuthenticatedContractsTemplatesIdRouteImport } from './routes/_authenticated/contracts.templates.$id'
 import { Route as AuthenticatedFinanceBankingReconciliationRouteImport } from './routes/_authenticated/finance.banking.reconciliation'
@@ -1472,6 +1474,12 @@ const AuthenticatedSettingsContractDefaultsRoute =
     path: '/contract-defaults',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsContractDraftApproversRoute =
+  AuthenticatedSettingsContractDraftApproversRouteImport.update({
+    id: '/contract-draft-approvers',
+    path: '/contract-draft-approvers',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsCustomObjectsRoute =
   AuthenticatedSettingsCustomObjectsRouteImport.update({
     id: '/custom-objects',
@@ -2109,6 +2117,12 @@ const AuthenticatedContractsIdMedicoesRoute =
   AuthenticatedContractsIdMedicoesRouteImport.update({
     id: '/contracts/$id_/medicoes',
     path: '/contracts/$id/medicoes',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedContractsDraftsIdRoute =
+  AuthenticatedContractsDraftsIdRouteImport.update({
+    id: '/contracts/drafts/$id',
+    path: '/contracts/drafts/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedContractsTemplatesIndexRoute =
@@ -3072,6 +3086,7 @@ export interface FileRoutesByFullPath {
   '/settings/charging-templates': typeof AuthenticatedSettingsChargingTemplatesRoute
   '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/settings/contract-defaults': typeof AuthenticatedSettingsContractDefaultsRoute
+  '/settings/contract-draft-approvers': typeof AuthenticatedSettingsContractDraftApproversRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/data-residency': typeof AuthenticatedSettingsDataResidencyRoute
@@ -3189,6 +3204,7 @@ export interface FileRoutesByFullPath {
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/contracts/$id/flow': typeof AuthenticatedContractsIdFlowRoute
   '/contracts/$id/medicoes': typeof AuthenticatedContractsIdMedicoesRoute
+  '/contracts/drafts/$id': typeof AuthenticatedContractsDraftsIdRoute
   '/contracts/templates/$id': typeof AuthenticatedContractsTemplatesIdRoute
   '/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
@@ -3497,6 +3513,7 @@ export interface FileRoutesByTo {
   '/settings/charging-templates': typeof AuthenticatedSettingsChargingTemplatesRoute
   '/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/settings/contract-defaults': typeof AuthenticatedSettingsContractDefaultsRoute
+  '/settings/contract-draft-approvers': typeof AuthenticatedSettingsContractDraftApproversRoute
   '/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/settings/data-residency': typeof AuthenticatedSettingsDataResidencyRoute
@@ -3613,6 +3630,7 @@ export interface FileRoutesByTo {
   '/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/contracts/$id/flow': typeof AuthenticatedContractsIdFlowRoute
   '/contracts/$id/medicoes': typeof AuthenticatedContractsIdMedicoesRoute
+  '/contracts/drafts/$id': typeof AuthenticatedContractsDraftsIdRoute
   '/contracts/templates/$id': typeof AuthenticatedContractsTemplatesIdRoute
   '/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
@@ -3929,6 +3947,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/charging-templates': typeof AuthenticatedSettingsChargingTemplatesRoute
   '/_authenticated/settings/clauses': typeof AuthenticatedSettingsClausesRoute
   '/_authenticated/settings/contract-defaults': typeof AuthenticatedSettingsContractDefaultsRoute
+  '/_authenticated/settings/contract-draft-approvers': typeof AuthenticatedSettingsContractDraftApproversRoute
   '/_authenticated/settings/custom-objects': typeof AuthenticatedSettingsCustomObjectsRoute
   '/_authenticated/settings/custom-properties': typeof AuthenticatedSettingsCustomPropertiesRoute
   '/_authenticated/settings/data-residency': typeof AuthenticatedSettingsDataResidencyRoute
@@ -4046,6 +4065,7 @@ export interface FileRoutesById {
   '/_authenticated/ats/jobs/$id': typeof AuthenticatedAtsJobsIdRoute
   '/_authenticated/contracts/$id_/flow': typeof AuthenticatedContractsIdFlowRoute
   '/_authenticated/contracts/$id_/medicoes': typeof AuthenticatedContractsIdMedicoesRoute
+  '/_authenticated/contracts/drafts/$id': typeof AuthenticatedContractsDraftsIdRoute
   '/_authenticated/contracts/templates/$id': typeof AuthenticatedContractsTemplatesIdRoute
   '/_authenticated/finance/banking/reconciliation': typeof AuthenticatedFinanceBankingReconciliationRoute
   '/_authenticated/finance/entries/$id': typeof AuthenticatedFinanceEntriesIdRoute
@@ -4362,6 +4382,7 @@ export interface FileRouteTypes {
     | '/settings/charging-templates'
     | '/settings/clauses'
     | '/settings/contract-defaults'
+    | '/settings/contract-draft-approvers'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
     | '/settings/data-residency'
@@ -4479,6 +4500,7 @@ export interface FileRouteTypes {
     | '/ats/jobs/$id'
     | '/contracts/$id/flow'
     | '/contracts/$id/medicoes'
+    | '/contracts/drafts/$id'
     | '/contracts/templates/$id'
     | '/finance/banking/reconciliation'
     | '/finance/entries/$id'
@@ -4787,6 +4809,7 @@ export interface FileRouteTypes {
     | '/settings/charging-templates'
     | '/settings/clauses'
     | '/settings/contract-defaults'
+    | '/settings/contract-draft-approvers'
     | '/settings/custom-objects'
     | '/settings/custom-properties'
     | '/settings/data-residency'
@@ -4903,6 +4926,7 @@ export interface FileRouteTypes {
     | '/ats/jobs/$id'
     | '/contracts/$id/flow'
     | '/contracts/$id/medicoes'
+    | '/contracts/drafts/$id'
     | '/contracts/templates/$id'
     | '/finance/banking/reconciliation'
     | '/finance/entries/$id'
@@ -5218,6 +5242,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/charging-templates'
     | '/_authenticated/settings/clauses'
     | '/_authenticated/settings/contract-defaults'
+    | '/_authenticated/settings/contract-draft-approvers'
     | '/_authenticated/settings/custom-objects'
     | '/_authenticated/settings/custom-properties'
     | '/_authenticated/settings/data-residency'
@@ -5335,6 +5360,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ats/jobs/$id'
     | '/_authenticated/contracts/$id_/flow'
     | '/_authenticated/contracts/$id_/medicoes'
+    | '/_authenticated/contracts/drafts/$id'
     | '/_authenticated/contracts/templates/$id'
     | '/_authenticated/finance/banking/reconciliation'
     | '/_authenticated/finance/entries/$id'
@@ -6918,6 +6944,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsContractDefaultsRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/contract-draft-approvers': {
+      id: '/_authenticated/settings/contract-draft-approvers'
+      path: '/contract-draft-approvers'
+      fullPath: '/settings/contract-draft-approvers'
+      preLoaderRoute: typeof AuthenticatedSettingsContractDraftApproversRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/custom-objects': {
       id: '/_authenticated/settings/custom-objects'
       path: '/custom-objects'
@@ -7672,6 +7705,13 @@ declare module '@tanstack/react-router' {
       path: '/contracts/$id/medicoes'
       fullPath: '/contracts/$id/medicoes'
       preLoaderRoute: typeof AuthenticatedContractsIdMedicoesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/contracts/drafts/$id': {
+      id: '/_authenticated/contracts/drafts/$id'
+      path: '/contracts/drafts/$id'
+      fullPath: '/contracts/drafts/$id'
+      preLoaderRoute: typeof AuthenticatedContractsDraftsIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/contracts/templates/': {
@@ -8817,6 +8857,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsChargingTemplatesRoute: typeof AuthenticatedSettingsChargingTemplatesRoute
   AuthenticatedSettingsClausesRoute: typeof AuthenticatedSettingsClausesRoute
   AuthenticatedSettingsContractDefaultsRoute: typeof AuthenticatedSettingsContractDefaultsRoute
+  AuthenticatedSettingsContractDraftApproversRoute: typeof AuthenticatedSettingsContractDraftApproversRoute
   AuthenticatedSettingsCustomObjectsRoute: typeof AuthenticatedSettingsCustomObjectsRoute
   AuthenticatedSettingsCustomPropertiesRoute: typeof AuthenticatedSettingsCustomPropertiesRoute
   AuthenticatedSettingsDataResidencyRoute: typeof AuthenticatedSettingsDataResidencyRoute
@@ -8918,6 +8959,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsClausesRoute: AuthenticatedSettingsClausesRoute,
   AuthenticatedSettingsContractDefaultsRoute:
     AuthenticatedSettingsContractDefaultsRoute,
+  AuthenticatedSettingsContractDraftApproversRoute:
+    AuthenticatedSettingsContractDraftApproversRoute,
   AuthenticatedSettingsCustomObjectsRoute:
     AuthenticatedSettingsCustomObjectsRoute,
   AuthenticatedSettingsCustomPropertiesRoute:
@@ -9273,6 +9316,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAjudaTrilhasTrackRoute: typeof AuthenticatedAjudaTrilhasTrackRoute
   AuthenticatedContractsIdFlowRoute: typeof AuthenticatedContractsIdFlowRoute
   AuthenticatedContractsIdMedicoesRoute: typeof AuthenticatedContractsIdMedicoesRoute
+  AuthenticatedContractsDraftsIdRoute: typeof AuthenticatedContractsDraftsIdRoute
   AuthenticatedContractsTemplatesIdRoute: typeof AuthenticatedContractsTemplatesIdRoute
   AuthenticatedFinanceEntriesIdRoute: typeof AuthenticatedFinanceEntriesIdRoute
   AuthenticatedProjectsListsIdRoute: typeof AuthenticatedProjectsListsIdRoute
@@ -9447,6 +9491,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAjudaTrilhasTrackRoute: AuthenticatedAjudaTrilhasTrackRoute,
   AuthenticatedContractsIdFlowRoute: AuthenticatedContractsIdFlowRoute,
   AuthenticatedContractsIdMedicoesRoute: AuthenticatedContractsIdMedicoesRoute,
+  AuthenticatedContractsDraftsIdRoute: AuthenticatedContractsDraftsIdRoute,
   AuthenticatedContractsTemplatesIdRoute:
     AuthenticatedContractsTemplatesIdRoute,
   AuthenticatedFinanceEntriesIdRoute: AuthenticatedFinanceEntriesIdRoute,

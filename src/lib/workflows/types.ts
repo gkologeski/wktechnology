@@ -417,6 +417,8 @@ export type WorkflowAction =
       table: WorkflowWritableTable;
       target_id: string;
     }
+  // ACEITE-MINUTA: abre a minuta da proposta aceita para o aprovador jurídico.
+  | { type: "open_contract_draft" }
   // Contratos — criação a partir do negócio (configurada pelo usuário no workflow)
   | {
       type: "create_contract_from_deal";
@@ -617,6 +619,7 @@ export const ACTION_LABELS: Record<WorkflowActionType, string> = {
   update_record: "Atualizar registro (qualquer módulo)",
   delete_record: "Excluir registro (qualquer módulo)",
   create_contract_from_deal: "Criar contrato a partir do negócio",
+  open_contract_draft: "Abrir minuta para revisão jurídica",
   ensure_deal_delivery: "Criar ou vincular projeto de entrega",
   create_person_from_candidate: "Criar pessoa a partir do candidato",
   create_contract_document: "Gerar contrato do profissional",
@@ -703,7 +706,7 @@ export const ACTION_CATEGORIES: Array<{ label: string; actions: WorkflowActionTy
       "assign_recruiter",
     ],
   },
-  { label: "Contratos", actions: ["create_contract_from_deal"] },
+  { label: "Contratos", actions: ["create_contract_from_deal", "open_contract_draft"] },
   { label: "Projetos", actions: ["ensure_deal_delivery"] },
   {
     label: "Contratação e desligamento",

@@ -83,6 +83,8 @@ export const SEGMENT_LABELS: Record<string, string> = {
   payments: "Pagamentos",
   pipelines: "Funis",
   "contract-defaults": "Padrões de contrato",
+  "contract-draft-approvers": "Aprovação de minuta",
+  drafts: "Minutas",
   playbooks: "Playbooks",
   portal: "Portal",
   "property-groups: ": "Grupos de propriedades",

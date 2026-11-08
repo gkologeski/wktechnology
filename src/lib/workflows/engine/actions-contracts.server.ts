@@ -9,6 +9,7 @@ import { createContractShared, loadDealForContract } from "@/lib/contracts/contr
 import { isContractKind, kindToColumns, type ContractKind } from "@/lib/contracts/contract-kinds";
 import { coerceContractFields } from "@/lib/contracts/contract-field-coerce";
 import type { RunCtx, RunnableAction } from "./run-context";
+import { authorizeWorkflowStep } from "./authorization.server";
 
 /** Aceita tanto o novo formato (prestação/compra/aditivo) quanto o antigo. */
 function resolveKind(raw: string | null | undefined): ContractKind {
@@ -24,6 +25,7 @@ export async function handleContractAction(
   ctx: RunCtx,
   at: string,
 ): Promise<LogStep | null> {
+  if (action.type === "open_contract_draft") return openContractDraft(supabase, ctx, at);
   if (action.type !== "create_contract_from_deal") return null;
 
   if (ctx.entity !== "deals") {
@@ -109,4 +111,26 @@ export async function handleContractAction(
       ...(warnings.length > 0 ? { warnings } : {}),
     },
   };
+}
+
+/**
+ * ACEITE-MINUTA: abre a minuta da proposta aceita e avisa os aprovadores
+ * jurídicos. Só em workflows de Propostas; idempotente por proposta.
+ */
+async function openContractDraft(
+  supabase: SupabaseClient,
+  ctx: RunCtx,
+  at: string,
+): Promise<LogStep> {
+  if (ctx.entity !== "proposals")
+    throw new Error("Esta ação só pode ser usada em workflows de Propostas.");
+  if (!ctx.workspaceId || !ctx.ownerId) throw new Error("Origem ou responsável do workflow inválido.");
+  // Revalida a versão publicada do workflow antes da RPC de serviço.
+  await authorizeWorkflowStep(supabase, ctx);
+  const { data, error } = await supabase.rpc(
+    "contract_draft_open" as never,
+    { p_ws: ctx.workspaceId, p_proposal: ctx.entityId, p_actor: ctx.ownerId } as never,
+  );
+  if (error) throw new Error(error.message);
+  return { at, ok: true, action: "open_contract_draft", detail: (data ?? {}) as Record<string, unknown> };
 }

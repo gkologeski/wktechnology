@@ -387,6 +387,7 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     table: WritableTableEnum,
     target_id: z.string().min(1).max(200),
   }),
+  z.object({ type: z.literal("open_contract_draft") }),
   z.object({
     type: z.literal("create_contract_from_deal"),
     role: z.enum(["provider", "client"]).optional(),

@@ -2178,6 +2178,20 @@
       "when": 1793976507959,
       "tag": "0310_wa_campaign_template_rotation",
       "breakpoints": true
+    },
+    {
+      "idx": 311,
+      "version": "7",
+      "when": 1794170539889,
+      "tag": "0311_0334_contract_draft_legal_review",
+      "breakpoints": true
+    },
+    {
+      "idx": 312,
+      "version": "7",
+      "when": 1794170609278,
+      "tag": "0312_contract_draft_legal_review",
+      "breakpoints": true
     }
   ]
 }
