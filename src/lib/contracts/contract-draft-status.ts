@@ -35,3 +35,26 @@ export function isContractDraftReviewable(status: string): boolean {
 export function contractDraftHasText(html: string): boolean {
   return html.replace(/<[^>]*>/g, "").trim().length >= 20;
 }
+
+export interface ContractDraftReviewer {
+  workspaceId: string;
+  memberActive: boolean;
+  listedApprover: boolean;
+  /** Chaves efetivas (deny já removido). */
+  keys: ReadonlySet<string>;
+}
+
+export const CONTRACT_DRAFT_APPROVE_KEY = "techcontracts.contract_drafts.approve.workspace";
+
+/** Espelho da regra SQL `contract_draft_is_approver` (a decisão real é no banco). */
+export function canReviewContractDraft(
+  draftWorkspaceId: string,
+  r: ContractDraftReviewer,
+): boolean {
+  return (
+    r.workspaceId === draftWorkspaceId &&
+    r.memberActive &&
+    r.listedApprover &&
+    r.keys.has(CONTRACT_DRAFT_APPROVE_KEY)
+  );
+}
