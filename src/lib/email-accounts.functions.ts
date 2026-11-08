@@ -32,7 +32,7 @@ export const listEmailAccounts = createServerFn({ method: "GET" })
     const { data, error } = await context.supabase
       .from("email_accounts")
       .select(
-        "id, provider, email, status, scopes, last_sync_at, last_error, created_at, signature_html",
+        "id, owner_id, provider, email, status, scopes, last_sync_at, last_error, created_at, signature_html",
       )
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);

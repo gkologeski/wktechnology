@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { EmailInput } from "@/components/ui/email-input";
 import { SalesAction } from "@/components/sales-access";
+import { useCurrentUserId } from "@/hooks/use-current-user-id";
 import { listEmailAccounts } from "@/lib/email-accounts.functions";
 import { sendGmailEmail } from "@/lib/email-send.functions";
 import { getSalesPublicToken } from "@/lib/access-control/sales-sharing.functions";
@@ -49,13 +50,15 @@ export function SendProposalEmailDialog(props: Props) {
   const sendMail = useServerFn(sendGmailEmail);
   const share = useServerFn(getSalesPublicToken);
   const seal = useServerFn(sendProposal);
+  const userId = useCurrentUserId();
   const accountsQ = useQuery({
     queryKey: ["email-accounts", "mine"],
     queryFn: () => listAccounts(),
     enabled: props.open,
   });
   const accounts = (accountsQ.data?.items ?? []).filter(
-    (a) => a.provider === "gmail" && a.status !== "disconnected",
+    // O envio só aceita contas do próprio usuário logado.
+    (a) => a.provider === "gmail" && a.status !== "disconnected" && a.owner_id === userId,
   );
   const [accountId, setAccountId] = useState("");
   const [to, setTo] = useState("");
