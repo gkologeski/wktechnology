@@ -1,4 +1,5 @@
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
+import { Extension } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
 import Link from "@tiptap/extension-link";
@@ -16,6 +17,29 @@ const TextStyleWithSize = TextStyle.extend({
           attrs.fontSize ? { style: `font-size: ${attrs.fontSize}` } : {},
       },
     };
+  },
+});
+// Recuos e espaçamento de parágrafos (ex.: modelos importados do Word).
+const BLOCK_SPACING = ["margin-left", "text-indent", "margin-top", "margin-bottom", "line-height"];
+const BlockSpacing = Extension.create({
+  name: "blockSpacing",
+  addGlobalAttributes() {
+    return [
+      {
+        types: ["paragraph", "heading"],
+        attributes: Object.fromEntries(
+          BLOCK_SPACING.map((prop) => [
+            prop,
+            {
+              default: null as string | null,
+              parseHTML: (el: HTMLElement) => el.style.getPropertyValue(prop) || null,
+              renderHTML: (attrs: Record<string, string | null>) =>
+                attrs[prop] ? { style: `${prop}: ${attrs[prop]}` } : {},
+            },
+          ]),
+        ),
+      },
+    ];
   },
 });
 import { Color } from "@tiptap/extension-color";
@@ -232,6 +256,7 @@ export const WordEditor = forwardRef<WordEditorHandle, Props>(function WordEdito
           HTMLAttributes: { rel: "noopener noreferrer", target: "_blank" },
         }),
         TextAlign.configure({ types: ["heading", "paragraph"] }),
+        BlockSpacing,
         TextStyleWithSize,
         Color,
         Highlight.configure({ multicolor: true }),

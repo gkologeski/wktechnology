@@ -17,7 +17,7 @@ const TOKEN_LIST = CONTRACT_TEMPLATE_TOKENS.map((t) => `${t.token} — ${t.group
 const SYSTEM_PROMPT = `Você converte contratos brasileiros em MODELOS reutilizáveis de contrato.
 
 Sua tarefa:
-1. Reproduzir o texto do documento em HTML simples e limpo (use apenas <h1>-<h4>, <p>, <strong>, <em>, <u>, <ul>, <ol>, <li>, <table>, <tr>, <td>, <br>). Nunca use <script>, <style> ou atributos de estilo.
+1. Reproduzir o documento em HTML PRESERVANDO A FORMATAÇÃO ORIGINAL: use <h1>-<h4>, <p>, <strong>, <em>, <u>, <ul>, <ol>, <li>, <table>, <tr>, <td>, <br> e o atributo style SOMENTE com text-align (center/justify/right), margin-left, text-indent, margin-top, margin-bottom, line-height, font-size e border/padding em tabelas. Reproduza alinhamento (títulos centralizados, corpo justificado), recuos, numeração das cláusulas exatamente como no original e tabelas. Nunca use <script>, <style>, classes ou outros atributos.
 2. Substituir todo dado específico das partes/valores/datas pelo TOKEN correspondente da lista abaixo. Ex.: a razão social do cliente vira {{counterparty.name}}, o CNPJ vira {{counterparty.cnpj}}, o valor mensal vira {{contract.monthly_value}}.
 3. Preservar integralmente as cláusulas, numeração e ordem do documento. Não resuma, não reescreva juridicamente, não invente cláusulas.
 4. Se um dado variável não tiver token equivalente, mantenha o texto original.
@@ -32,6 +32,28 @@ Responda APENAS JSON válido, sem markdown, no formato:
   "service_type": "outsourcing" | "alocacao_squad" | "fabrica_software" | "desenvolvimento" | "consultoria" | "engenharia_ia" | "bpo" | "hunting" | "outros" | null,
   "body_html": "<h1>...</h1><p>...</p>",
   "suggestions": [{ "original": "trecho original substituído", "token": "{{counterparty.name}}" }],
+  "warnings": ["ambiguidades relevantes"]
+}`;
+
+const TOKENIZE_PROMPT = `Você analisa contratos brasileiros para transformá-los em MODELOS reutilizáveis.
+O documento será mantido EXATAMENTE como está (texto e formatação). Você NÃO reescreve o documento:
+apenas indica quais trechos específicos (nomes das partes, CNPJ/CPF, endereços, valores, datas, prazos, cargos/serviços)
+devem virar variáveis da lista abaixo.
+
+Regras:
+- "original" deve ser copiado LITERALMENTE do texto do documento (mesmas letras, acentos e pontuação), sem tags HTML.
+- Use somente tokens da lista. Se não houver token equivalente, não sugira.
+- Não sugira trechos genéricos que aparecem em cláusulas padrão.
+
+TOKENS DISPONÍVEIS:
+${TOKEN_LIST}
+
+Responda APENAS JSON válido, sem markdown:
+{
+  "name": "nome sugerido para o modelo",
+  "role": "provider" | "client" | null,
+  "service_type": "outsourcing" | "alocacao_squad" | "fabrica_software" | "desenvolvimento" | "consultoria" | "engenharia_ia" | "bpo" | "hunting" | "outros" | null,
+  "suggestions": [{ "original": "trecho literal", "token": "{{counterparty.name}}" }],
   "warnings": ["ambiguidades relevantes"]
 }`;
 
@@ -83,6 +105,7 @@ export function extractJsonObject(text: string): string {
 export async function convertTemplateWithAi(
   userContent: Array<Record<string, unknown>>,
   ctx: { userId: string; workspaceId: string },
+  opts: { preserveHtml?: string } = {},
 ): Promise<ImportedTemplate> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("Configuração de IA ausente no servidor.");
@@ -95,7 +118,7 @@ export async function convertTemplateWithAi(
         model: "google/gemini-2.5-flash",
         stream: true,
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: opts.preserveHtml ? TOKENIZE_PROMPT : SYSTEM_PROMPT },
           { role: "user", content: userContent },
         ],
         response_format: { type: "json_object" },
@@ -134,8 +157,21 @@ export async function convertTemplateWithAi(
   }
   const result = ImportedTemplateSchema.safeParse(parsed);
   if (!result.success) throw new Error("A IA retornou um formato inesperado. Tente novamente.");
+  const { sanitizeTemplateHtml, applyTokenSuggestions } = await import("./template-html-format");
+  if (opts.preserveHtml) {
+    const applied = applyTokenSuggestions(
+      sanitizeTemplateHtml(opts.preserveHtml),
+      result.data.suggestions ?? [],
+    );
+    const warnings = [...(result.data.warnings ?? [])];
+    if (applied.unmatched.length)
+      warnings.push(
+        `Trechos não localizados para variável: ${applied.unmatched.slice(0, 5).join("; ")}`,
+      );
+    return { ...result.data, body_html: applied.html, warnings };
+  }
   if (!result.data.body_html || result.data.body_html.trim().length < 40) {
     throw new Error("Não foi possível extrair o corpo do documento.");
   }
-  return result.data;
+  return { ...result.data, body_html: sanitizeTemplateHtml(result.data.body_html) };
 }

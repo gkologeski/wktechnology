@@ -13,6 +13,19 @@ const BodySchema = z.object({
   html: z.string().min(40).max(400_000).optional(),
 });
 
+/** Workspace ativo + permissão de criar modelo (own/workspace); lança se negado. */
+async function authorizeTemplateImport(
+  supabase: ReturnType<typeof createClient<Database>>,
+  userId: string,
+): Promise<string> {
+  const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+  const { assertAnyPermission } = await import("@/lib/access-control/enforce.server");
+  const { TEMPLATE_IMPORT_PERMISSIONS } = await import("@/lib/contracts/template-import.server");
+  const workspaceId = await resolveActiveWorkspace(userId);
+  await assertAnyPermission(supabase, userId, workspaceId, TEMPLATE_IMPORT_PERMISSIONS);
+  return workspaceId;
+}
+
 export const Route = createFileRoute("/api/contracts/template-import")({
   server: {
     handlers: {
@@ -35,19 +48,18 @@ export const Route = createFileRoute("/api/contracts/template-import")({
         const parsed = BodySchema.safeParse(await request.json().catch(() => null));
         if (!parsed.success) return new Response("Requisição inválida", { status: 400 });
         const data = parsed.data;
+        // .docx já convertido com a formatação original: o HTML é preservado e
+        // a IA apenas indica as variáveis.
+        const preserve = data.kind === "html" && !!data.html?.startsWith("<!--formato-original-->");
         if (data.kind === "pdf" && !data.base64)
           return new Response("Arquivo ausente", { status: 400 });
-        if (data.kind === "html" && !data.html)
+        if (data.kind !== "pdf" && !data.html)
           return new Response("Conteúdo ausente", { status: 400 });
 
-        const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
-        const { assertAnyPermission } = await import("@/lib/access-control/enforce.server");
-        const { convertTemplateWithAi, TEMPLATE_IMPORT_PERMISSIONS } =
-          await import("@/lib/contracts/template-import.server");
+        const { convertTemplateWithAi } = await import("@/lib/contracts/template-import.server");
         let workspaceId: string;
         try {
-          workspaceId = await resolveActiveWorkspace(userId);
-          await assertAnyPermission(supabase, userId, workspaceId, TEMPLATE_IMPORT_PERMISSIONS);
+          workspaceId = await authorizeTemplateImport(supabase, userId);
         } catch (e) {
           return new Response((e as Error).message || "Sem permissão", { status: 403 });
         }
@@ -67,12 +79,28 @@ export const Route = createFileRoute("/api/contracts/template-import")({
                   },
                 },
               ]
-            : [
-                {
-                  type: "text",
-                  text: `Converta o contrato "${data.filename}" em um modelo reutilizável conforme as regras. Conteúdo em HTML:\n\n${data.html}`,
-                },
-              ];
+            : preserve
+              ? [
+                  {
+                    type: "text",
+                    text: `Indique as variáveis do contrato "${data.filename}". Texto do documento:\n\n${(
+                      data.html ?? ""
+                    )
+                      .replace(/<\/(p|h[1-4]|tr|li)>/gi, "\n")
+                      .replace(/<[^>]+>/g, "")
+                      .replace(/&emsp;|&ensp;|&nbsp;/g, " ")
+                      .replace(/&lt;/g, "<")
+                      .replace(/&gt;/g, ">")
+                      .replace(/&quot;/g, '"')
+                      .replace(/&amp;/g, "&")}`,
+                  },
+                ]
+              : [
+                  {
+                    type: "text",
+                    text: `Converta o contrato "${data.filename}" em um modelo reutilizável conforme as regras. Conteúdo em HTML:\n\n${data.html}`,
+                  },
+                ];
 
         const enc = new TextEncoder();
         const stream = new ReadableStream({
@@ -81,7 +109,11 @@ export const Route = createFileRoute("/api/contracts/template-import")({
             const ping = setInterval(() => send({ type: "ping" }), 8000);
             try {
               send({ type: "ping" });
-              const result = await convertTemplateWithAi(content, { userId, workspaceId });
+              const result = await convertTemplateWithAi(
+                content,
+                { userId, workspaceId },
+                preserve ? { preserveHtml: data.html } : {},
+              );
               send({ type: "result", result });
             } catch (e) {
               send({ type: "error", message: (e as Error).message || "Falha na conversão" });

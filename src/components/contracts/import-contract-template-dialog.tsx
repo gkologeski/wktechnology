@@ -5,6 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { FileText, Sparkles, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,11 +50,31 @@ async function fileToBase64(file: File): Promise<string> {
   return btoa(binary);
 }
 
-async function docxToHtml(file: File): Promise<string> {
-  const mammoth = await import("mammoth/mammoth.browser");
+/** Lê o .docx preservando a formatação; se falhar, usa a conversão simples. */
+async function docxToHtml(file: File): Promise<{ html: string; formatted: boolean }> {
   const buf = await file.arrayBuffer();
+  try {
+    const [{ unzipSync, strFromU8 }, { docxXmlToHtml }] = await Promise.all([
+      import("fflate"),
+      import("@/lib/contracts/docx-formatted-html"),
+    ]);
+    const files = unzipSync(new Uint8Array(buf));
+    const read = (n: string) => (files[n] ? strFromU8(files[n]) : undefined);
+    const document = read("word/document.xml");
+    if (document) {
+      const html = docxXmlToHtml({
+        document,
+        numbering: read("word/numbering.xml"),
+        styles: read("word/styles.xml"),
+      });
+      if (html.replace(/<[^>]+>/g, "").trim().length >= 40) return { html, formatted: true };
+    }
+  } catch {
+    // segue para a conversão simples
+  }
+  const mammoth = await import("mammoth/mammoth.browser");
   const { value } = await mammoth.convertToHtml({ arrayBuffer: buf });
-  return value ?? "";
+  return { html: value ?? "", formatted: false };
 }
 
 export function ImportContractTemplateDialog({
@@ -63,6 +84,12 @@ export function ImportContractTemplateDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const permissions = usePermissions();
+  const canImport =
+    !permissions.isLoading &&
+    !permissions.isError &&
+    (permissions.can("techcontracts.contract_templates.create.workspace") ||
+      permissions.can("techcontracts.contract_templates.create.own"));
   const createTemplate = useServerFn(createContractTemplate);
   const navigate = useNavigate();
 
@@ -88,6 +115,10 @@ export function ImportContractTemplateDialog({
 
   const run = useCallback(async () => {
     if (!file || !kind) return;
+    if (!canImport) {
+      toast.error("Você não tem permissão para importar modelos.");
+      return;
+    }
     if (kind === "pdf" && file.size > MAX_PDF_BYTES) {
       toast.error("PDF maior que 15 MB. Envie um arquivo menor ou a versão .docx.");
       return;
@@ -106,10 +137,16 @@ export function ImportContractTemplateDialog({
         result = await convertTemplateStreaming({ filename: file.name, kind: "pdf", base64: b64 });
       } else {
         setProgress(progressFor("text"));
-        const html = await docxToHtml(file);
+        const { html, formatted } = await docxToHtml(file);
         if (html.trim().length < 40) throw new Error("Não foi possível extrair o texto do .docx.");
+        if (html.length > 400_000) throw new Error("Documento grande demais para importar.");
         setProgress(progressFor("ai"));
-        result = await convertTemplateStreaming({ filename: file.name, kind: "html", html });
+        result = await convertTemplateStreaming({
+          filename: file.name,
+          kind: "html",
+          // Marcador: o servidor preserva este HTML e só aplica as variáveis.
+          html: formatted ? `<!--formato-original-->${html}` : html,
+        });
       }
 
       setProgress(progressFor("draft"));
@@ -133,7 +170,7 @@ export function ImportContractTemplateDialog({
       setProgress(progressFor("error", msg));
       toast.error(msg);
     }
-  }, [file, kind, name, createTemplate, handleClose, navigate]);
+  }, [canImport, file, kind, name, createTemplate, handleClose, navigate]);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -143,7 +180,8 @@ export function ImportContractTemplateDialog({
             <Sparkles className="h-4 w-4 text-primary" /> Importar modelo de contrato
           </DialogTitle>
           <DialogDescription>
-            Envie um .docx ou .pdf. A IA converte o texto e sugere as variáveis automaticamente.
+            Envie um .docx ou .pdf. A formatação original é mantida e a IA sugere as variáveis. O
+            .docx preserva a formatação com mais fidelidade.
           </DialogDescription>
         </DialogHeader>
 
@@ -215,7 +253,7 @@ export function ImportContractTemplateDialog({
           <Button variant="outline" onClick={() => handleClose(false)} disabled={busy}>
             Cancelar
           </Button>
-          <Button onClick={run} disabled={!file || busy}>
+          <Button onClick={run} disabled={!canImport || !file || busy}>
             <Sparkles className="mr-1 h-4 w-4" /> Converter em modelo
           </Button>
         </DialogFooter>
