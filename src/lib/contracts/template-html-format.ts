@@ -68,7 +68,7 @@ export function applyTokenSuggestions(
     .filter((s) => s.original.length >= 2 && /^\{\{[\w.]+\}\}$/.test(s.token))
     .sort((a, b) => b.original.length - a.original.length);
   const hits = new Set<string>();
-  const out = html.replace(/>([^<]+)</g, (_m, text: string) => {
+  const out = `>${html}<`.replace(/>([^<]+)</g, (_m, text: string) => {
     let t = text;
     for (const s of valid) {
       const re = new RegExp(escRe(escText(s.original)), "g");
@@ -79,5 +79,5 @@ export function applyTokenSuggestions(
     }
     return `>${t}<`;
   });
-  return { html: out, unmatched: valid.filter((s) => !hits.has(s.original)).map((s) => s.original) };
+  return { html: out.slice(1, -1), unmatched: valid.filter((s) => !hits.has(s.original)).map((s) => s.original) };
 }

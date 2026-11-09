@@ -17,7 +17,7 @@ const TOKEN_LIST = CONTRACT_TEMPLATE_TOKENS.map((t) => `${t.token} — ${t.group
 const SYSTEM_PROMPT = `Você converte contratos brasileiros em MODELOS reutilizáveis de contrato.
 
 Sua tarefa:
-1. Reproduzir o texto do documento em HTML simples e limpo (use apenas <h1>-<h4>, <p>, <strong>, <em>, <u>, <ul>, <ol>, <li>, <table>, <tr>, <td>, <br>). Nunca use <script>, <style> ou atributos de estilo.
+1. Reproduzir o documento em HTML PRESERVANDO A FORMATAÇÃO ORIGINAL: use <h1>-<h4>, <p>, <strong>, <em>, <u>, <ul>, <ol>, <li>, <table>, <tr>, <td>, <br> e o atributo style SOMENTE com text-align (center/justify/right), margin-left, text-indent, margin-top, margin-bottom, line-height, font-size e border/padding em tabelas. Reproduza alinhamento (títulos centralizados, corpo justificado), recuos, numeração das cláusulas exatamente como no original e tabelas. Nunca use <script>, <style>, classes ou outros atributos.
 2. Substituir todo dado específico das partes/valores/datas pelo TOKEN correspondente da lista abaixo. Ex.: a razão social do cliente vira {{counterparty.name}}, o CNPJ vira {{counterparty.cnpj}}, o valor mensal vira {{contract.monthly_value}}.
 3. Preservar integralmente as cláusulas, numeração e ordem do documento. Não resuma, não reescreva juridicamente, não invente cláusulas.
 4. Se um dado variável não tiver token equivalente, mantenha o texto original.
@@ -32,6 +32,28 @@ Responda APENAS JSON válido, sem markdown, no formato:
   "service_type": "outsourcing" | "alocacao_squad" | "fabrica_software" | "desenvolvimento" | "consultoria" | "engenharia_ia" | "bpo" | "hunting" | "outros" | null,
   "body_html": "<h1>...</h1><p>...</p>",
   "suggestions": [{ "original": "trecho original substituído", "token": "{{counterparty.name}}" }],
+  "warnings": ["ambiguidades relevantes"]
+}`;
+
+const TOKENIZE_PROMPT = `Você analisa contratos brasileiros para transformá-los em MODELOS reutilizáveis.
+O documento será mantido EXATAMENTE como está (texto e formatação). Você NÃO reescreve o documento:
+apenas indica quais trechos específicos (nomes das partes, CNPJ/CPF, endereços, valores, datas, prazos, cargos/serviços)
+devem virar variáveis da lista abaixo.
+
+Regras:
+- "original" deve ser copiado LITERALMENTE do texto do documento (mesmas letras, acentos e pontuação), sem tags HTML.
+- Use somente tokens da lista. Se não houver token equivalente, não sugira.
+- Não sugira trechos genéricos que aparecem em cláusulas padrão.
+
+TOKENS DISPONÍVEIS:
+${TOKEN_LIST}
+
+Responda APENAS JSON válido, sem markdown:
+{
+  "name": "nome sugerido para o modelo",
+  "role": "provider" | "client" | null,
+  "service_type": "outsourcing" | "alocacao_squad" | "fabrica_software" | "desenvolvimento" | "consultoria" | "engenharia_ia" | "bpo" | "hunting" | "outros" | null,
+  "suggestions": [{ "original": "trecho literal", "token": "{{counterparty.name}}" }],
   "warnings": ["ambiguidades relevantes"]
 }`;
 
