@@ -9936,10 +9936,10 @@
         "src/lib/contracts/contract-create.server.ts": "83d6a2580954f05b3340a2404a75ab876669bf256965de4e203b8bfb5bf3d66b",
         "src/lib/contracts/template-merge.server.ts": "eb650683e4ec764600694cbbd69aacb894d5e55baa94a5fc60b875b61b04dae1",
         "src/lib/contracts/templates.functions.ts": "c237fa723b38ad1107fb831ea2fd8639ae3608237b047a59ab3fb315728d5b99",
-        "src/lib/proposals/proposal-document.server.ts": "f78745ff3cf231c449320320960acfb4b23133a313431bcfe494ba851ed45932",
+        "src/lib/proposals/proposal-document.server.ts": "a9ebcf566a3a5594f4b52dfb61d88c625bf9957b369ec8e23cdb0e0610315aa6",
         "src/lib/sales-flow.server.ts": "921ea47d0dc77de74958a21e27d57a62277650d59646e42005880d01e9f9aae0",
-        "src/lib/contracts/accepted-proposal.server.ts": "7495d892022a1aa1ffd3bb2a7bbcbefc00e8e3ada967f2a5bda4dbffda8b7667",
-        "drizzle/migrations/0334_contract_accepted_proposal.sql": "6d6fcad2c99be9fd7cb23c01990610f8caea45f4f2060f4fd4855d42ca1c2e7d",
+        "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
+        "drizzle/migrations/0334_contract_accepted_proposal.sql": "ef7f40a85ada3d2e2805588df0bc5a745cbed63eeaade1b185745acf9a9a57b1",
         "src/components/contracts/contract-wizard.tsx": "c9c665de9173cc914ba91b5890d881a29e4e3681feeebf05d846b05e4f9f513e",
         "src/lib/sales-flow.functions.ts": "ba9d014b9aff1352c7205b7f44b19d8b59874707f6ec48baee4e29222c6eb56f"
       }

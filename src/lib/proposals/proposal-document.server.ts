@@ -12,7 +12,7 @@ import {
 import type { ProposalDocumentData } from "./proposal-document-types";
 
 const PROPOSAL_COLUMNS =
-  "id, workspace_id, title, body, status, locked, version, total_amount, currency, expires_at, sent_at, decided_at, created_at, public_token, owner_id, company_id, contact_id, deal_id, quote_id";
+  "id, workspace_id, title, body, status, locked, version, total_amount, currency, expires_at, sent_at, decided_at, created_at, owner_id, company_id, contact_id, deal_id, quote_id";
 
 type ItemRow = DealLineItemRow & {
   service?: { name: string | null } | null;

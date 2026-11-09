@@ -279,3 +279,21 @@ it("accepted proposal SQL prevents forged snapshots and direct snapshot mutation
     }),
   ).rejects.toThrow("permission denied");
 });
+
+it("accepted proposal SQL rejects non-object metadata instead of weakening the seal", async () => {
+  for (const value of ["null", "[]"]) {
+    await expect(
+      subject(async (tx) => {
+        await tx`insert into contracts(id,workspace_id,owner_id,proposal_id,deal_id,status,metadata) values(${IDs[2]},${W},${U},${IDs[0]},${IDs[2]},'draft',${value}::jsonb)`;
+      }),
+    ).rejects.toThrow("Metadados do vínculo inválidos");
+  }
+});
+
+it("accepted proposal SQL never grants access to the private sharing token", async () => {
+  await expect(
+    subject(async (tx) => {
+      await tx`select public_token from proposals where id=${IDs[0]}`;
+    }),
+  ).rejects.toThrow("permission denied");
+});

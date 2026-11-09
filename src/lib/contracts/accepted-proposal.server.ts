@@ -29,7 +29,7 @@ export type AcceptedProposalSource = {
     first_name: string | null;
     last_name: string | null;
     email: string | null;
-    phone: string | null;
+    phone?: string | null;
   } | null;
   agent: string | null;
   items: DealLineItemRow[];

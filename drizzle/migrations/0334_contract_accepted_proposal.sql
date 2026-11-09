@@ -29,7 +29,7 @@ BEGIN
   FROM deal_line_items i LEFT JOIN service_catalog s ON s.id=i.service_catalog_id AND s.workspace_id=NEW.workspace_id LEFT JOIN contracting_presets c ON c.id=i.contracting_preset_id AND c.workspace_id=NEW.workspace_id WHERE i.deal_id=NEW.deal_id AND i.workspace_id=NEW.workspace_id;
  END IF;
  SELECT jsonb_build_object('id',id,'name',name,'cnpj',cnpj,'address',address,'city',city,'state',state) INTO client FROM companies WHERE id=NEW.company_id AND workspace_id=NEW.workspace_id;
- SELECT jsonb_build_object('first_name',first_name,'last_name',last_name,'email',email,'phone',phone) INTO person FROM contacts WHERE id=NEW.contact_id AND workspace_id=NEW.workspace_id;
+ SELECT jsonb_build_object('first_name',first_name,'last_name',last_name,'email',email) INTO person FROM contacts WHERE id=NEW.contact_id AND workspace_id=NEW.workspace_id;
  SELECT full_name INTO agent_name FROM profiles WHERE id=NEW.owner_id;
  INSERT INTO proposal_document_versions(proposal_id,version,workspace_id,document)
  VALUES(NEW.id,NEW.version,NEW.workspace_id,jsonb_build_object('proposal',jsonb_build_object('id',NEW.id,'title',NEW.title,'body',NEW.body,'version',NEW.version,'total_amount',NEW.total_amount,'currency',NEW.currency,'deal_id',NEW.deal_id,'quote_id',NEW.quote_id,'company_id',NEW.company_id,'assigned_to',NEW.assigned_to),'items',line_items,'company',client,'contact',person,'agent',agent_name));
@@ -41,9 +41,9 @@ CREATE TRIGGER capture_proposal_document_version AFTER INSERT OR UPDATE ON publi
 -- Invoker preserves proposal RLS, active membership, explicit deny and tenant scope.
 CREATE OR REPLACE FUNCTION public.proposal_contract_source(p_id uuid)
 RETURNS jsonb LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp AS $$
-DECLARE p public.proposals;s jsonb;
+DECLARE p record;s jsonb;
 BEGIN
- SELECT * INTO p FROM proposals WHERE id=p_id;
+ SELECT id,workspace_id,status,locked,decided_at,version INTO p FROM proposals WHERE id=p_id;
  IF p.id IS NULL OR p.status::text<>'accepted' OR NOT p.locked OR p.decided_at IS NULL THEN
   RAISE EXCEPTION 'Selecione uma Proposta Comercial aceita pelo cliente.' USING ERRCODE='42501';END IF;
  SELECT document INTO s FROM proposal_document_versions WHERE proposal_id=p.id AND version=p.version AND workspace_id=p.workspace_id;
