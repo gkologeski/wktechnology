@@ -13,6 +13,19 @@ const BodySchema = z.object({
   html: z.string().min(40).max(400_000).optional(),
 });
 
+/** Workspace ativo + permissão de criar modelo (own/workspace); lança se negado. */
+async function authorizeTemplateImport(
+  supabase: ReturnType<typeof createClient<Database>>,
+  userId: string,
+): Promise<string> {
+  const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+  const { assertAnyPermission } = await import("@/lib/access-control/enforce.server");
+  const { TEMPLATE_IMPORT_PERMISSIONS } = await import("@/lib/contracts/template-import.server");
+  const workspaceId = await resolveActiveWorkspace(userId);
+  await assertAnyPermission(supabase, userId, workspaceId, TEMPLATE_IMPORT_PERMISSIONS);
+  return workspaceId;
+}
+
 export const Route = createFileRoute("/api/contracts/template-import")({
   server: {
     handlers: {
@@ -40,14 +53,10 @@ export const Route = createFileRoute("/api/contracts/template-import")({
         if (data.kind !== "pdf" && !data.html)
           return new Response("Conteúdo ausente", { status: 400 });
 
-        const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
-        const { assertAnyPermission } = await import("@/lib/access-control/enforce.server");
-        const { convertTemplateWithAi, TEMPLATE_IMPORT_PERMISSIONS } =
-          await import("@/lib/contracts/template-import.server");
+        const { convertTemplateWithAi } = await import("@/lib/contracts/template-import.server");
         let workspaceId: string;
         try {
-          workspaceId = await resolveActiveWorkspace(userId);
-          await assertAnyPermission(supabase, userId, workspaceId, TEMPLATE_IMPORT_PERMISSIONS);
+          workspaceId = await authorizeTemplateImport(supabase, userId);
         } catch (e) {
           return new Response((e as Error).message || "Sem permissão", { status: 403 });
         }

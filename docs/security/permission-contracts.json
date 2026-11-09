@@ -10023,6 +10023,10 @@
         {
           "file": "src/lib/access-control/work-core.server.ts",
           "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/routes/api/contracts.template-import.ts",
+          "symbol": "authorizeTemplateImport"
         }
       ],
       "database": [
@@ -10065,13 +10069,10 @@
         "src/components/contracts/contract-form/contract-field-input.tsx": "5dfdf300f65db113dbae568d5e052d571495c348a48c9d7711960056f94d8aa4",
         "src/components/contracts/import-contract-file-dialog.tsx": "de587d00b80053847b7103f629fcb400accf5433e56cccf8d749e402f67ebb97",
         "src/components/contracts/import-contract-template-dialog.tsx": "4eb14e8e7e884d212fb2a4cd9913ae4e7b00ca4e8f9ffd7a6db9b262d1b7ec4f",
-        "src/components/contracts/template-import-client.ts": "0ebecac0a68d71219c07e84c1cbb420cfbd92fa244eeecea936f30cec6725a7d",
-        "src/lib/contracts/docx-formatted-html.ts": "1812070d57b63dd0a4eec377f0ea4a5549bbfd4fa7647c6791053b4cd5d0a15a",
         "src/lib/contracts/import.functions.ts": "776590dc6c20d2254a9558e3f2b413f848648fd7078f6247eff419c56338a4ef",
-        "src/lib/contracts/template-html-format.ts": "7bcb21740319d6871c8f8d9c5cd32a7b72203d8a049893985e4c05d6238ccc13",
         "src/lib/contracts/template-import.server.ts": "5c5d3a9ad8fc2ef9d2ffcfa801ed137918c8b8e87a24849a370683adafead285",
         "src/routes/_authenticated/contracts.templates.$id.tsx": "2cc457ee21c13d72e3596de8d6c6ca0042a5b279e0acf21b1ded5e41c686db52",
-        "src/routes/api/contracts.template-import.ts": "cb2ba3ca85e0115395cdd7a3da79233efba605cd345814f928a825e7ae917fca"
+        "src/routes/api/contracts.template-import.ts": "1f430bad9da00156af3d2a6df760fa366e194f4a931d0f8d14b1654058185ca2"
       }
     },
     {
@@ -10348,6 +10349,16 @@
       },
       "files": {
         "drizzle/migrations/0335_legal_entity_usage_permission.sql": "b466108f2045521ffffddf8114eff4617fced1e80d01dddaf33823a6f1e9e12f"
+      }
+    },
+    {
+      "id": "contract-template-format-preservation",
+      "kind": "presentation",
+      "rationale": "FORMATO-ORIGINAL: pure .docx XML to HTML conversion, HTML style allowlist and token replacement, plus the NDJSON client that posts to the authenticated template-import route. No routes, server functions, grants, actions or direct data access; authorization stays in contract-import-service-types (bearer auth, active workspace, assertAnyPermission).",
+      "files": {
+        "src/lib/contracts/docx-formatted-html.ts": "1812070d57b63dd0a4eec377f0ea4a5549bbfd4fa7647c6791053b4cd5d0a15a",
+        "src/lib/contracts/template-html-format.ts": "7bcb21740319d6871c8f8d9c5cd32a7b72203d8a049893985e4c05d6238ccc13",
+        "src/components/contracts/template-import-client.ts": "0ebecac0a68d71219c07e84c1cbb420cfbd92fa244eeecea936f30cec6725a7d"
       }
     }
   ],
