@@ -356,37 +356,7 @@ export const listLegalEntitiesSummary = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     await authorizeFinanceBusiness(context.supabase, "legal_entities", "view", undefined);
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    const { data: entities, error } = await supabase
-      .from("legal_entities")
-      .select("id, name, code, cnpj, is_default, active")
-      .eq("workspace_id", workspaceId)
-      .order("name");
+    const { data: entities, error } = await context.supabase.rpc("legal_entities_summary");
     if (error) throw error;
-    if (!entities || entities.length === 0) return [];
-
-    const ids = entities.map((e) => e.id);
-    const { data: agg } = await supabase
-      .from("financial_entries")
-      .select("legal_entity_id, direction, amount")
-      .eq("workspace_id", workspaceId)
-      .in("legal_entity_id", ids);
-
-    const bucket = new Map<string, { receivable: number; payable: number; count: number }>();
-    (agg ?? []).forEach((r) => {
-      const k = (r as { legal_entity_id: string }).legal_entity_id;
-      const b = bucket.get(k) ?? { receivable: 0, payable: 0, count: 0 };
-      b.count += 1;
-      if ((r as { direction: string }).direction === "receivable") {
-        b.receivable += Number((r as { amount: number }).amount) || 0;
-      } else {
-        b.payable += Number((r as { amount: number }).amount) || 0;
-      }
-      bucket.set(k, b);
-    });
-    return entities.map((e) => ({
-      ...e,
-      totals: bucket.get(e.id) ?? { receivable: 0, payable: 0, count: 0 },
-    }));
+    return entities ?? [];
   });
