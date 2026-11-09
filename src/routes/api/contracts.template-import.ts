@@ -71,7 +71,7 @@ export const Route = createFileRoute("/api/contracts/template-import")({
               ? [
                   {
                     type: "text",
-                    text: `Indique as variáveis do contrato "${data.filename}". Documento:\n\n${data.html}`,
+                    text: `Indique as variáveis do contrato "${data.filename}". Texto do documento:\n\n${(data.html ?? "").replace(/<\/(p|h[1-4]|tr|li)>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&emsp;|&ensp;|&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&amp;/g, "&")}`,
                   },
                 ]
               : [
