@@ -31,10 +31,7 @@ import {
 } from "@/components/ui/table";
 import { ImportContractTemplateDialog } from "@/components/contracts/import-contract-template-dialog";
 import { ContractTemplateActionsMenu } from "@/components/contracts/contract-template-actions-menu";
-import {
-  listContractTemplates,
-  createContractTemplate,
-} from "@/lib/contracts/templates.functions";
+import { listContractTemplates, createContractTemplate } from "@/lib/contracts/templates.functions";
 import { formatDateTime } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/contracts/templates/")({
@@ -274,7 +271,6 @@ function ContractTemplatesPage() {
                       </TableCell>
                       <TableCell className="text-right">
                         <ContractTemplateActionsMenu template={t} />
-                        
                       </TableCell>
                     </TableRow>
                   ))}

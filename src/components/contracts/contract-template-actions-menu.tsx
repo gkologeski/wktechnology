@@ -111,7 +111,11 @@ export function ContractTemplateActionsMenu({
       <DropdownMenuTrigger asChild>
         {variant === "list" ? (
           <Button variant="ghost" size="icon" aria-label={`Ações do modelo ${template.name}`}>
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+            {busy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <MoreHorizontal className="h-4 w-4" />
+            )}
           </Button>
         ) : (
           <Button variant="outline" aria-label="Mais ações do modelo">
