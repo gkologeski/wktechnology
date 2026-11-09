@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { WordEditor, type WordEditorHandle } from "@/components/word-editor-lazy";
 import { TokenPills } from "@/components/ui/token-pills";
+import { ContractTemplateActionsMenu } from "@/components/contracts/contract-template-actions-menu";
 import {
   CONTRACT_TEMPLATE_TOKENS,
   mergeTemplateBody,
@@ -187,6 +188,11 @@ function ContractTemplateEditorPage() {
           <Button variant="outline" onClick={() => setPreviewOpen(true)}>
             <Eye className="mr-1 h-4 w-4" /> Pré-visualizar
           </Button>
+          <ContractTemplateActionsMenu
+            template={{ id, name: template.name, status: template.status }}
+            variant="detail"
+            onDeleted={() => navigate({ to: "/contracts/templates" })}
+          />
           <WorkAction resource="techcontracts.contract_templates" action="update" id={id}>
             <Button variant="outline" onClick={() => save()} disabled={saving}>
               {saving ? (
