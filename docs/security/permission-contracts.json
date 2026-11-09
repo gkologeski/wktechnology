@@ -10354,10 +10354,11 @@
     {
       "id": "contract-template-format-preservation",
       "kind": "presentation",
-      "rationale": "FORMATO-ORIGINAL: pure .docx XML to HTML conversion, HTML style allowlist and token replacement, plus the NDJSON client that posts to the authenticated template-import route. No routes, server functions, grants, actions or direct data access; authorization stays in contract-import-service-types (bearer auth, active workspace, assertAnyPermission).",
+      "rationale": "FORMATO-ORIGINAL: pure .docx XML to HTML conversion, HTML style allowlist and token replacement, plus the NDJSON client that posts to the authenticated template-import route. No routes, server functions, grants, actions or direct data access; authorization stays in contract-import-service-types (bearer auth, active workspace, assertAnyPermission). The shared rich-text editor only gains paragraph/heading spacing attributes (indent, margins, line-height); no data, actions or controls change.",
       "files": {
         "src/lib/contracts/docx-formatted-html.ts": "1812070d57b63dd0a4eec377f0ea4a5549bbfd4fa7647c6791053b4cd5d0a15a",
-        "src/lib/contracts/template-html-format.ts": "7bcb21740319d6871c8f8d9c5cd32a7b72203d8a049893985e4c05d6238ccc13"
+        "src/lib/contracts/template-html-format.ts": "7bcb21740319d6871c8f8d9c5cd32a7b72203d8a049893985e4c05d6238ccc13",
+        "src/components/word-editor.tsx": "cb4a63a458f90dae2bcfc4d401f73893c951fbb284df75348143484ee9794576"
       }
     }
   ],
