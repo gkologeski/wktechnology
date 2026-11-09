@@ -85,7 +85,9 @@ function parseNumbering(xml?: string) {
   const abstract = new Map<string, Map<number, Level>>();
   const nums = new Map<string, string>();
   if (!xml) return { abstract, nums };
-  for (const a of xml.matchAll(/<w:abstractNum\b[^>]*w:abstractNumId="(\d+)"[^>]*>([\s\S]*?)<\/w:abstractNum>/g)) {
+  for (const a of xml.matchAll(
+    /<w:abstractNum\b[^>]*w:abstractNumId="(\d+)"[^>]*>([\s\S]*?)<\/w:abstractNum>/g,
+  )) {
     const levels = new Map<number, Level>();
     for (const l of a[2]!.matchAll(/<w:lvl\b[^>]*w:ilvl="(\d+)"[^>]*>([\s\S]*?)<\/w:lvl>/g)) {
       const body = l[2]!;
@@ -109,29 +111,55 @@ function parseNumbering(xml?: string) {
 
 function roman(n: number): string {
   const map: Array<[number, string]> = [
-    [1000, "m"], [900, "cm"], [500, "d"], [400, "cd"], [100, "c"], [90, "xc"],
-    [50, "l"], [40, "xl"], [10, "x"], [9, "ix"], [5, "v"], [4, "iv"], [1, "i"],
+    [1000, "m"],
+    [900, "cm"],
+    [500, "d"],
+    [400, "cd"],
+    [100, "c"],
+    [90, "xc"],
+    [50, "l"],
+    [40, "xl"],
+    [10, "x"],
+    [9, "ix"],
+    [5, "v"],
+    [4, "iv"],
+    [1, "i"],
   ];
   let r = "";
-  for (const [v, s] of map) while (n >= v) { r += s; n -= v; }
+  for (const [v, s] of map)
+    while (n >= v) {
+      r += s;
+      n -= v;
+    }
   return r;
 }
 
 function letter(n: number): string {
   let s = "";
-  while (n > 0) { n--; s = String.fromCharCode(97 + (n % 26)) + s; n = Math.floor(n / 26); }
+  while (n > 0) {
+    n--;
+    s = String.fromCharCode(97 + (n % 26)) + s;
+    n = Math.floor(n / 26);
+  }
   return s;
 }
 
 function fmtNum(n: number, fmt: string): string {
   switch (fmt) {
-    case "lowerLetter": return letter(n);
-    case "upperLetter": return letter(n).toUpperCase();
-    case "lowerRoman": return roman(n);
-    case "upperRoman": return roman(n).toUpperCase();
-    case "bullet": return "";
-    case "none": return "";
-    default: return String(n);
+    case "lowerLetter":
+      return letter(n);
+    case "upperLetter":
+      return letter(n).toUpperCase();
+    case "lowerRoman":
+      return roman(n);
+    case "upperRoman":
+      return roman(n).toUpperCase();
+    case "bullet":
+      return "";
+    case "none":
+      return "";
+    default:
+      return String(n);
   }
 }
 
@@ -139,7 +167,9 @@ function fmtNum(n: number, fmt: string): string {
 function headingStyles(stylesXml?: string): Map<string, number> {
   const map = new Map<string, number>();
   if (!stylesXml) return map;
-  for (const s of stylesXml.matchAll(/<w:style\b[^>]*w:styleId="([^"]+)"[^>]*>([\s\S]*?)<\/w:style>/g)) {
+  for (const s of stylesXml.matchAll(
+    /<w:style\b[^>]*w:styleId="([^"]+)"[^>]*>([\s\S]*?)<\/w:style>/g,
+  )) {
     const name = (attr(firstTag(s[2]!, "name") ?? "", "val") ?? "").toLowerCase();
     const m = /^(?:heading|título|titulo)\s*(\d)$/.exec(name);
     if (m) map.set(s[1]!, Math.min(4, Number(m[1])));
@@ -170,19 +200,27 @@ function runStyle(rPr: string): { key: string; open: string; close: string } {
   return {
     key: tags.join(",") + "|" + css.join(";"),
     open: span + tags.map((t) => `<${t}>`).join(""),
-    close: [...tags].reverse().map((t) => `</${t}>`).join("") + (span ? "</span>" : ""),
+    close:
+      [...tags]
+        .reverse()
+        .map((t) => `</${t}>`)
+        .join("") + (span ? "</span>" : ""),
   };
 }
 
 function paragraphRuns(pXml: string): string {
   const pieces: Array<{ key: string; open: string; close: string; text: string }> = [];
-  const body = pXml.replace(/<w:pPr\b[\s\S]*?<\/w:pPr>/, "").replace(/<w:del\b[\s\S]*?<\/w:del>/g, "");
+  const body = pXml
+    .replace(/<w:pPr\b[\s\S]*?<\/w:pPr>/, "")
+    .replace(/<w:del\b[\s\S]*?<\/w:del>/g, "");
   for (const r of body.matchAll(/<w:r(?=[\s>])[^>]*>([\s\S]*?)<\/w:r>/g)) {
     const inner = r[1]!;
     const rPr = /<w:rPr\b[\s\S]*?<\/w:rPr>/.exec(inner)?.[0] ?? "";
     const st = runStyle(rPr);
     let text = "";
-    for (const t of inner.matchAll(/<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>|<w:(tab|br|cr)\b[^>]*\/>/g)) {
+    for (const t of inner.matchAll(
+      /<w:t(?:\s[^>]*)?>([\s\S]*?)<\/w:t>|<w:(tab|br|cr)\b[^>]*\/>/g,
+    )) {
       if (t[2] === "tab") text += "&emsp;";
       else if (t[2]) text += "<br>";
       else text += esc(decodeXml(t[1]!));
@@ -205,8 +243,13 @@ export function docxXmlToHtml(parts: DocxParts): string {
     const css: string[] = [];
     const jc = attr(firstTag(pPr, "jc") ?? "", "val");
     const align =
-      jc === "center" ? "center" : jc === "both" || jc === "distribute" ? "justify"
-        : jc === "right" || jc === "end" ? "right" : null;
+      jc === "center"
+        ? "center"
+        : jc === "both" || jc === "distribute"
+          ? "justify"
+          : jc === "right" || jc === "end"
+            ? "right"
+            : null;
     if (align) css.push(`text-align: ${align}`);
 
     let prefix = "";
@@ -220,16 +263,18 @@ export function docxXmlToHtml(parts: DocxParts): string {
       const lvl = levels?.get(ilvl);
       if (lvl && numId !== "0") {
         const c = counters.get(numId) ?? [];
-        for (let i = 0; i <= ilvl; i++) if (c[i] === undefined) c[i] = (levels?.get(i)?.start ?? 1) - 1;
+        for (let i = 0; i <= ilvl; i++)
+          if (c[i] === undefined) c[i] = (levels?.get(i)?.start ?? 1) - 1;
         c[ilvl] = (c[ilvl] ?? 0) + 1;
         c.length = ilvl + 1;
         counters.set(numId, c);
-        prefix = lvl.fmt === "bullet"
-          ? "•"
-          : lvl.text.replace(/%(\d)/g, (_, d) => {
-              const i = Number(d) - 1;
-              return fmtNum(c[i] ?? 1, levels?.get(i)?.fmt ?? "decimal");
-            });
+        prefix =
+          lvl.fmt === "bullet"
+            ? "•"
+            : lvl.text.replace(/%(\d)/g, (_, d) => {
+                const i = Number(d) - 1;
+                return fmtNum(c[i] ?? 1, levels?.get(i)?.fmt ?? "decimal");
+              });
         left = lvl.indLeft;
         first = -lvl.hanging;
       }
@@ -283,7 +328,9 @@ export function docxXmlToHtml(parts: DocxParts): string {
   };
 
   const render = (xml: string): string =>
-    blocks(xml).map((b) => (b.kind === "p" ? renderParagraph(b.xml) : renderTable(b.xml))).join("");
+    blocks(xml)
+      .map((b) => (b.kind === "p" ? renderParagraph(b.xml) : renderTable(b.xml)))
+      .join("");
 
   const body = /<w:body\b[^>]*>([\s\S]*)<\/w:body>/.exec(parts.document)?.[1] ?? parts.document;
   return render(body.replace(/<w:sectPr\b[\s\S]*?<\/w:sectPr>/g, ""));

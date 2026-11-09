@@ -168,7 +168,8 @@ export function ImportContractTemplateDialog({
             <Sparkles className="h-4 w-4 text-primary" /> Importar modelo de contrato
           </DialogTitle>
           <DialogDescription>
-            Envie um .docx ou .pdf. A formatação original é mantida e a IA sugere as variáveis. O .docx preserva a formatação com mais fidelidade.
+            Envie um .docx ou .pdf. A formatação original é mantida e a IA sugere as variáveis. O
+            .docx preserva a formatação com mais fidelidade.
           </DialogDescription>
         </DialogHeader>
 

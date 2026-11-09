@@ -2,13 +2,51 @@
 // Mantém só tags e estilos de formatação seguros, preservando o layout original.
 
 const ALLOWED_TAGS = new Set([
-  "p", "br", "strong", "b", "em", "i", "u", "s", "sup", "sub", "span", "div",
-  "h1", "h2", "h3", "h4", "ul", "ol", "li", "table", "thead", "tbody", "tr", "td", "th",
+  "p",
+  "br",
+  "strong",
+  "b",
+  "em",
+  "i",
+  "u",
+  "s",
+  "sup",
+  "sub",
+  "span",
+  "div",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "ul",
+  "ol",
+  "li",
+  "table",
+  "thead",
+  "tbody",
+  "tr",
+  "td",
+  "th",
 ]);
 const ALLOWED_CSS = new Set([
-  "text-align", "margin-left", "margin-right", "margin-top", "margin-bottom", "text-indent",
-  "line-height", "font-size", "font-weight", "font-style", "text-decoration", "text-transform",
-  "color", "border", "border-collapse", "padding", "vertical-align", "width",
+  "text-align",
+  "margin-left",
+  "margin-right",
+  "margin-top",
+  "margin-bottom",
+  "text-indent",
+  "line-height",
+  "font-size",
+  "font-weight",
+  "font-style",
+  "text-decoration",
+  "text-transform",
+  "color",
+  "border",
+  "border-collapse",
+  "padding",
+  "vertical-align",
+  "width",
 ]);
 
 function cleanStyle(value: string): string {
@@ -33,23 +71,26 @@ export function sanitizeTemplateHtml(html: string): string {
   return html
     .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<\s*(script|style|iframe|object|embed|svg|math)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, "")
-    .replace(/<\s*(\/?)\s*([a-z0-9]+)\b([^>]*)>/gi, (_m, close: string, rawTag: string, attrs: string) => {
-      const tag = rawTag.toLowerCase();
-      if (!ALLOWED_TAGS.has(tag)) return "";
-      if (close) return `</${tag}>`;
-      const kept: string[] = [];
-      for (const a of attrs.matchAll(/([a-z-]+)\s*=\s*("([^"]*)"|'([^']*)')/gi)) {
-        const name = a[1]!.toLowerCase();
-        const value = a[3] ?? a[4] ?? "";
-        if (name === "style") {
-          const s = cleanStyle(value);
-          if (s) kept.push(`style="${s.replace(/"/g, "")}"`);
-        } else if ((name === "colspan" || name === "rowspan") && /^\d{1,2}$/.test(value)) {
-          kept.push(`${name}="${value}"`);
+    .replace(
+      /<\s*(\/?)\s*([a-z0-9]+)\b([^>]*)>/gi,
+      (_m, close: string, rawTag: string, attrs: string) => {
+        const tag = rawTag.toLowerCase();
+        if (!ALLOWED_TAGS.has(tag)) return "";
+        if (close) return `</${tag}>`;
+        const kept: string[] = [];
+        for (const a of attrs.matchAll(/([a-z-]+)\s*=\s*("([^"]*)"|'([^']*)')/gi)) {
+          const name = a[1]!.toLowerCase();
+          const value = a[3] ?? a[4] ?? "";
+          if (name === "style") {
+            const s = cleanStyle(value);
+            if (s) kept.push(`style="${s.replace(/"/g, "")}"`);
+          } else if ((name === "colspan" || name === "rowspan") && /^\d{1,2}$/.test(value)) {
+            kept.push(`${name}="${value}"`);
+          }
         }
-      }
-      return `<${tag}${kept.length ? " " + kept.join(" ") : ""}>`;
-    });
+        return `<${tag}${kept.length ? " " + kept.join(" ") : ""}>`;
+      },
+    );
 }
 
 const escText = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -79,5 +120,8 @@ export function applyTokenSuggestions(
     }
     return `>${t}<`;
   });
-  return { html: out.slice(1, -1), unmatched: valid.filter((s) => !hits.has(s.original)).map((s) => s.original) };
+  return {
+    html: out.slice(1, -1),
+    unmatched: valid.filter((s) => !hits.has(s.original)).map((s) => s.original),
+  };
 }

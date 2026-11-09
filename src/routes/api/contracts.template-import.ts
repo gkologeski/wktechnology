@@ -71,15 +71,24 @@ export const Route = createFileRoute("/api/contracts/template-import")({
               ? [
                   {
                     type: "text",
-                    text: `Indique as variáveis do contrato "${data.filename}". Texto do documento:\n\n${(data.html ?? "").replace(/<\/(p|h[1-4]|tr|li)>/gi, "\n").replace(/<[^>]+>/g, " ").replace(/&emsp;|&ensp;|&nbsp;/g, " ").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&amp;/g, "&")}`,
+                    text: `Indique as variáveis do contrato "${data.filename}". Texto do documento:\n\n${(
+                      data.html ?? ""
+                    )
+                      .replace(/<\/(p|h[1-4]|tr|li)>/gi, "\n")
+                      .replace(/<[^>]+>/g, "")
+                      .replace(/&emsp;|&ensp;|&nbsp;/g, " ")
+                      .replace(/&lt;/g, "<")
+                      .replace(/&gt;/g, ">")
+                      .replace(/&quot;/g, '"')
+                      .replace(/&amp;/g, "&")}`,
                   },
                 ]
               : [
-                {
-                  type: "text",
-                  text: `Converta o contrato "${data.filename}" em um modelo reutilizável conforme as regras. Conteúdo em HTML:\n\n${data.html}`,
-                },
-              ];
+                  {
+                    type: "text",
+                    text: `Converta o contrato "${data.filename}" em um modelo reutilizável conforme as regras. Conteúdo em HTML:\n\n${data.html}`,
+                  },
+                ];
 
         const enc = new TextEncoder();
         const stream = new ReadableStream({

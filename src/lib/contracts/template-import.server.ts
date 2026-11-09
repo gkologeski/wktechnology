@@ -165,7 +165,9 @@ export async function convertTemplateWithAi(
     );
     const warnings = [...(result.data.warnings ?? [])];
     if (applied.unmatched.length)
-      warnings.push(`Trechos não localizados para variável: ${applied.unmatched.slice(0, 5).join("; ")}`);
+      warnings.push(
+        `Trechos não localizados para variável: ${applied.unmatched.slice(0, 5).join("; ")}`,
+      );
     return { ...result.data, body_html: applied.html, warnings };
   }
   if (!result.data.body_html || result.data.body_html.trim().length < 40) {
