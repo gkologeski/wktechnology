@@ -1,0 +1,2 @@
+ALTER TABLE public.proposal_document_versions DROP CONSTRAINT proposal_document_versions_proposal_id_fkey;
+ALTER TABLE public.proposal_document_versions ADD CONSTRAINT proposal_document_versions_proposal_id_fkey FOREIGN KEY (proposal_id) REFERENCES public.proposals(id) ON DELETE CASCADE;
