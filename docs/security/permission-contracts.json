@@ -9979,7 +9979,7 @@
         "techcontracts.contracts.create.workspace",
         "techcontracts.links.manage.workspace"
       ],
-      "rationale": "Existing import endpoints enforce requireWorkPermission and assertAnyPermission; original file signing reads contract under user RLS first. Type options only changed in presentation and AI schema; legal-entity picker filters new assignments, label hydration retains saved value. Template editing retains WorkAction and HrScreenAccess; no grants changed. Merge review: the import UI checks its catalogue workspace key and fails closed while permissions load/fail; server middleware, creation scope checks, signed-file record access and active CNPJ assignment rules from main are preserved. Five import-boundary scenarios invoke the real work middleware. FORMATO-ORIGINAL: .docx formatting is parsed client-side (pure) and sent to the same authenticated template-import route, which keeps bearer auth, active workspace and assertAnyPermission(TEMPLATE_IMPORT_PERMISSIONS); the AI only returns variable suggestions applied to sanitized HTML. No new action, data or grant. The shared template body editor keeps its DOMPurify sanitizeRichHtml on load/update and only gains paragraph spacing attributes for imported formatting; editing and saving remain behind the template page WorkAction/HrScreenAccess and server update checks. ROLAGEM-CONTRATO: editor gains optional maxHeight with internal scroll; presentation only. ACOES-MODELO: list/detail share ContractTemplateActionsMenu (edit, duplicate, publish/draft/archive/reactivate, delete with confirmation); items are enabled only from usePermissions keys plus per-record work capabilities, disabled with a hint otherwise, and every action calls the existing server functions (contract_template_save_checked / assertAnyPermission + deleteByIdGuarded). No new action, key or grant.",
+      "rationale": "Existing import endpoints enforce requireWorkPermission and assertAnyPermission; original file signing reads contract under user RLS first. Type options only changed in presentation and AI schema; legal-entity picker filters new assignments, label hydration retains saved value. Template editing retains WorkAction and HrScreenAccess; no grants changed. Merge review: the import UI checks its catalogue workspace key and fails closed while permissions load/fail; server middleware, creation scope checks, signed-file record access and active CNPJ assignment rules from main are preserved. Five import-boundary scenarios invoke the real work middleware. FORMATO-ORIGINAL: .docx formatting is parsed client-side (pure) and sent to the same authenticated template-import route, which keeps bearer auth, active workspace and assertAnyPermission(TEMPLATE_IMPORT_PERMISSIONS); the AI only returns variable suggestions applied to sanitized HTML. No new action, data or grant. The shared template body editor keeps its DOMPurify sanitizeRichHtml on load/update and only gains paragraph spacing attributes for imported formatting; editing and saving remain behind the template page WorkAction/HrScreenAccess and server update checks. ROLAGEM-CONTRATO: editor gains optional maxHeight with internal scroll; presentation only. ACOES-MODELO: list/detail share ContractTemplateActionsMenu (edit, duplicate, publish/draft/archive/reactivate, delete with confirmation); items are enabled only from usePermissions keys plus per-record work capabilities, disabled with a hint otherwise, and every action calls the existing server functions (contract_template_save_checked / assertAnyPermission + deleteByIdGuarded). No new action, key or grant. The status CHECK now also accepts 'archived' (value already offered by the UI/server schema); no grant or RLS change.",
       "controls": [
         {
           "file": "src/lib/access-control/work-permission.middleware.ts",
@@ -10046,6 +10046,10 @@
         {
           "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
           "symbol": "work_area_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0322_contract_templates_allow_archived.sql",
+          "symbol": "contract_templates"
         }
       ],
       "tests": {
@@ -10080,7 +10084,8 @@
         "src/routes/api/contracts.template-import.ts": "e7df83c1225f941ccf71100af6fd0fb532206b0d1b3c4bd8e6efaafc783fd5d9",
         "src/components/word-editor.tsx": "635159803f5b02d857d1ca8accbaddb5b540f290a408dfc3f4f4006c2a25b1aa",
         "src/routes/_authenticated/contracts.templates.index.tsx": "804337a7c0fceceabd916f6a30232432d1c15efcf8edb84b2d006274002ce835",
-        "src/components/contracts/contract-template-actions-menu.tsx": "a4d89311fce43da22b7d356cdb3258210fe63da0f4071ec6b002103186d56fe9"
+        "src/components/contracts/contract-template-actions-menu.tsx": "a4d89311fce43da22b7d356cdb3258210fe63da0f4071ec6b002103186d56fe9",
+        "drizzle/migrations/0322_contract_templates_allow_archived.sql": "dbde6b67be72afbcfffeae038d38c5ca438bb430cab08d9010e1758856bf5e3c"
       }
     },
     {
