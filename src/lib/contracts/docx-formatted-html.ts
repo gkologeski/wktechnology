@@ -233,13 +233,42 @@ function paragraphRuns(pXml: string): string {
   return pieces.map((p) => p.open + p.text + p.close).join("");
 }
 
+/** pPr de cada estilo de parágrafo, seguindo a herança basedOn. */
+function stylePPr(stylesXml?: string): Map<string, string> {
+  const raw = new Map<string, { pPr: string; basedOn: string | null }>();
+  if (stylesXml)
+    for (const s of stylesXml.matchAll(
+      /<w:style\b[^>]*w:styleId="([^"]+)"[^>]*>([\s\S]*?)<\/w:style>/g,
+    ))
+      raw.set(s[1]!, {
+        pPr: /<w:pPr\b[\s\S]*?<\/w:pPr>/.exec(s[2]!)?.[0] ?? "",
+        basedOn: attr(firstTag(s[2]!, "basedOn") ?? "", "val"),
+      });
+  const out = new Map<string, string>();
+  for (const id of raw.keys()) {
+    let chain = "";
+    let cur: string | null = id;
+    for (let i = 0; cur && i < 10; i++) {
+      const r = raw.get(cur);
+      if (!r) break;
+      chain += r.pPr; // o mais próximo vem primeiro e vence em firstTag
+      cur = r.basedOn;
+    }
+    out.set(id, chain);
+  }
+  return out;
+}
+
 export function docxXmlToHtml(parts: DocxParts): string {
+  const styleProps = stylePPr(parts.styles);
   const numbering = parseNumbering(parts.numbering);
   const headings = headingStyles(parts.styles);
   const counters = new Map<string, number[]>();
 
   const renderParagraph = (pXml: string): string => {
-    const pPr = /<w:pPr\b[\s\S]*?<\/w:pPr>/.exec(pXml)?.[0] ?? "";
+    const ownPPr = /<w:pPr\b[\s\S]*?<\/w:pPr>/.exec(pXml)?.[0] ?? "";
+    const sid = attr(firstTag(ownPPr, "pStyle") ?? "", "val");
+    const pPr = ownPPr + (sid ? (styleProps.get(sid) ?? "") : "");
     const css: string[] = [];
     const jc = attr(firstTag(pPr, "jc") ?? "", "val");
     const align =
