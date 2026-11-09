@@ -9852,7 +9852,7 @@
         "techfinance.legal_entities.update.workspace",
         "techfinance.legal_entities.delete.workspace"
       ],
-      "rationale": "Active membership and effective record authorization through finance_business_authorize; RLS preserved. Lifecycle triggers prevent deletion with any legal-entity links and cross-workspace/inactive reassignment; unchanged historical assignments remain valid. Summary is invoker/RLS aggregate. Assignment filtering only removes inactive choices, not historical filters.",
+      "rationale": "Active membership and effective record authorization through finance_business_authorize; RLS preserved. Lifecycle triggers prevent deletion with any legal-entity links and cross-workspace/inactive reassignment; unchanged historical assignments remain valid. Summary resolves authoritative context once and applies the exact existing entity and financial-entry visibility predicates; no table policies or grants widened. Assignment filtering only removes inactive choices, not historical filters.",
       "controls": [
         {
           "file": "src/lib/access-control/finance-business.server.ts",
@@ -9891,6 +9891,10 @@
         {
           "file": "drizzle/migrations/0316_cnpj_operational_linkage_and_summary.sql",
           "symbol": "record_legal_entity_guard"
+        },
+        {
+          "file": "drizzle/migrations/0317_cnpj_summary_scoped_performance.sql",
+          "symbol": "legal_entities_summary"
         }
       ],
       "tests": {
@@ -9925,7 +9929,8 @@
         "src/components/finance/quick-create-entry-dialog.tsx": "85b6da26ac474b1c850a8931d3fc0b80a4d277b983b4d841118f0b4d48cf6fdd",
         "drizzle/migrations/0314_legal_entity_safe_lifecycle.sql": "5624b4a265dad5519d86675fada734cafc878beaf6a6f228035ea5a7b879212a",
         "drizzle/migrations/0315_legal_entity_guard_workspace_cascade.sql": "350b426fc8a8a038d3eb2cb3d0f4590dd3a378b0e5d74c557eba69fff60155d5",
-        "drizzle/migrations/0316_cnpj_operational_linkage_and_summary.sql": "e7f7e9845ed6834581f5fbca725a969a92ef561e5fef026e9759ec83ae7f5e75"
+        "drizzle/migrations/0316_cnpj_operational_linkage_and_summary.sql": "e7f7e9845ed6834581f5fbca725a969a92ef561e5fef026e9759ec83ae7f5e75",
+        "drizzle/migrations/0317_cnpj_summary_scoped_performance.sql": "bca8c025b20c50b562e6f58af90ce258ec4ca7c104961c46fb8d20b30d2b0991"
       }
     },
     {
