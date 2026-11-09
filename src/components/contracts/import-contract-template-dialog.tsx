@@ -5,6 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { FileText, Sparkles, Upload, X } from "lucide-react";
 import { toast } from "sonner";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,6 +84,12 @@ export function ImportContractTemplateDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
+  const permissions = usePermissions();
+  const canImport =
+    !permissions.isLoading &&
+    !permissions.isError &&
+    (permissions.can("techcontracts.contract_templates.create.workspace") ||
+      permissions.can("techcontracts.contract_templates.create.own"));
   const createTemplate = useServerFn(createContractTemplate);
   const navigate = useNavigate();
 
@@ -108,6 +115,10 @@ export function ImportContractTemplateDialog({
 
   const run = useCallback(async () => {
     if (!file || !kind) return;
+    if (!canImport) {
+      toast.error("Você não tem permissão para importar modelos.");
+      return;
+    }
     if (kind === "pdf" && file.size > MAX_PDF_BYTES) {
       toast.error("PDF maior que 15 MB. Envie um arquivo menor ou a versão .docx.");
       return;
@@ -158,7 +169,7 @@ export function ImportContractTemplateDialog({
       setProgress(progressFor("error", msg));
       toast.error(msg);
     }
-  }, [file, kind, name, createTemplate, handleClose, navigate]);
+  }, [canImport, file, kind, name, createTemplate, handleClose, navigate]);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -241,7 +252,7 @@ export function ImportContractTemplateDialog({
           <Button variant="outline" onClick={() => handleClose(false)} disabled={busy}>
             Cancelar
           </Button>
-          <Button onClick={run} disabled={!file || busy}>
+          <Button onClick={run} disabled={!canImport || !file || busy}>
             <Sparkles className="mr-1 h-4 w-4" /> Converter em modelo
           </Button>
         </DialogFooter>
