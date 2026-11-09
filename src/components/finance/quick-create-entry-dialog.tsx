@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { createFinancialEntry, createInstallments } from "@/lib/finance.functions";
 import { useLegalEntities } from "@/components/finance/legal-entity-select";
+import { legalEntityAssignmentOptions } from "@/lib/legal-entity-options";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
 import { formatIsoDate } from "@/lib/iso-date";
@@ -340,7 +341,7 @@ export function QuickCreateEntryDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Nenhuma</SelectItem>
-                  {(legalEntities as Array<{ id: string; code: string | null; name: string }>).map(
+                  {legalEntityAssignmentOptions(legalEntities).map(
                     (le) => (
                       <SelectItem key={le.id} value={le.id}>
                         {le.code ? `${le.code} · ${le.name}` : le.name}

@@ -28,6 +28,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { createCategory, deleteCategory, listCategories } from "@/lib/finance.functions";
+import { legalEntityAssignmentOptions } from "@/lib/legal-entity-options";
 import {
   ALL_LEGAL_ENTITIES,
   GROUP_PREFIX,
@@ -333,7 +334,7 @@ function CategoriesPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">— Não vincular —</SelectItem>
-                    {legalEntities.map((le) => (
+                    {legalEntityAssignmentOptions(legalEntities).map((le) => (
                       <SelectItem key={le.id} value={le.id}>
                         {le.code ? `${le.code} · ${le.name}` : le.name}
                       </SelectItem>
