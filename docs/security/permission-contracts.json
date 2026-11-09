@@ -9744,7 +9744,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions.",
       "files": {
-        "src/integrations/supabase/types.ts": "df112271fcbf99240bdaeaf66ee919864fd29d3e18e470a335f330ef404a469b"
+        "src/integrations/supabase/types.ts": "94f2fa6b298967caac89868e3d5de1157c8ab157837b4c7cba3a1c38d0f026b2"
       }
     },
     {
