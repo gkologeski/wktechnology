@@ -168,6 +168,10 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
   );
 
   const runExtraction = useCallback(async () => {
+    if (!permissions.can("techcontracts.imports.manage.workspace")) {
+      toast.error("Sem permissão para importar contratos.");
+      return;
+    }
     if (!file || !kind) return;
     if (kind === "pdf" && file.size > MAX_PDF_BYTES) {
       toast.error("PDF maior que 15 MB. Envie um arquivo menor ou a versão .docx.");

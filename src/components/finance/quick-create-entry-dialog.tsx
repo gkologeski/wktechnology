@@ -133,6 +133,10 @@ export function QuickCreateEntryDialog({
   }, [installments, count, amt, cadence, customDays, dueDate, splitMode]);
 
   async function submit() {
+    if (!permissions.canAny(["techfinance.entries.create.workspace", "techfinance.entries.create.own"])) {
+      toast.error("Sem permissão para criar lançamentos.");
+      return;
+    }
     if (!description.trim() || !amt || amt <= 0) {
       toast.error("Preencha descrição e valor.");
       return;
