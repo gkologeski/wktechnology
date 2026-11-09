@@ -31,7 +31,6 @@ Modelo disponível na lista; a criação não substitui a revisão do texto.
 
 ## Regras e limites
 - Criar, atualizar e excluir têm permissões distintas. Ações sem permissão aparecem desabilitadas com a indicação "Sem permissão".
-- Modelos arquivados deixam de ser usados para novos contratos até serem reativados.
 - Modelos de contrato não são os modelos de proposta do TechSales.
 
 ## Erros comuns
