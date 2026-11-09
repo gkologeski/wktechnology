@@ -83,6 +83,7 @@ export function LegalEntitiesPage() {
     "techfinance.legal_entities.create.own",
   ]);
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [cnpjFillOpen, setCnpjFillOpen] = useState(false);
   const [loadingEdit, setLoadingEdit] = useState<string | null>(null);
   const [form, setForm] = useState<{
@@ -126,10 +127,12 @@ export function LegalEntitiesPage() {
   }
 
   async function submit() {
+    if (saving) return;
     if (!form.name.trim()) {
       toast.error("Informe o nome");
       return;
     }
+    setSaving(true);
     try {
       await upsert({
         data: {
@@ -148,6 +151,8 @@ export function LegalEntitiesPage() {
       setOpen(false);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Falha");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -276,7 +281,7 @@ export function LegalEntitiesPage() {
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card">
+      <div className="overflow-x-auto rounded-lg border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-muted-foreground">
             <tr>
@@ -322,7 +327,7 @@ export function LegalEntitiesPage() {
                     )}
                     <span className="font-medium">{r.name}</span>
                     {r.is_default && (
-                      <Badge variant="outline" className="border-amber-500 text-amber-600">
+                      <Badge variant="outline" className="border-warning text-warning">
                         Padrão
                       </Badge>
                     )}
@@ -334,10 +339,10 @@ export function LegalEntitiesPage() {
                 </td>
 
                 <td className="px-4 py-2 text-right tabular-nums">{r.totals.count}</td>
-                <td className="px-4 py-2 text-right tabular-nums text-emerald-600">
+                <td className="px-4 py-2 text-right tabular-nums text-success">
                   {fmt(r.totals.receivable)}
                 </td>
-                <td className="px-4 py-2 text-right tabular-nums text-rose-600">
+                <td className="px-4 py-2 text-right tabular-nums text-destructive">
                   {fmt(r.totals.payable)}
                 </td>
                 <td className="px-4 py-2 text-right">
@@ -399,32 +404,36 @@ export function LegalEntitiesPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label>Código</Label>
+                <Label htmlFor="le-code">Código</Label>
                 <Input
+                  id="le-code"
                   value={form.code}
                   onChange={(e) => setForm({ ...form, code: e.target.value })}
                   placeholder="Ex: WK"
                 />
               </div>
               <div className="col-span-2 space-y-2">
-                <Label>Razão social *</Label>
+                <Label htmlFor="le-name">Razão social *</Label>
                 <Input
+                  id="le-name"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Nome fantasia</Label>
+              <Label htmlFor="le-trade">Nome fantasia</Label>
               <Input
+                id="le-trade"
                 value={form.trade_name}
                 onChange={(e) => setForm({ ...form, trade_name: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-2">
-                <Label>CNPJ</Label>
+                <Label htmlFor="le-cnpj">CNPJ</Label>
                 <Input
+                  id="le-cnpj"
                   value={form.cnpj}
                   placeholder="00.000.000/0000-00"
                   inputMode="numeric"
@@ -432,20 +441,21 @@ export function LegalEntitiesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>IE</Label>
-                <Input value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value })} />
+                <Label htmlFor="le-ie">IE</Label>
+                <Input id="le-ie" value={form.ie} onChange={(e) => setForm({ ...form, ie: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>IM</Label>
-                <Input value={form.im} onChange={(e) => setForm({ ...form, im: e.target.value })} />
+                <Label htmlFor="le-im">IM</Label>
+                <Input id="le-im" value={form.im} onChange={(e) => setForm({ ...form, im: e.target.value })} />
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Switch
+                id="le-active"
                 checked={form.active}
                 onCheckedChange={(v) => setForm({ ...form, active: v })}
               />
-              <Label>Ativa</Label>
+              <Label htmlFor="le-active">Ativa</Label>
             </div>
           </div>
           <DialogFooter>
@@ -453,10 +463,10 @@ export function LegalEntitiesPage() {
               Cancelar
             </Button>
             <Button
-              disabled={form.id ? !recordAccess.for(form.id).can_update : !canCreate}
+              disabled={saving || (form.id ? !recordAccess.for(form.id).can_update : !canCreate)}
               onClick={submit}
             >
-              {form.id ? "Salvar" : "Criar"}
+              {saving ? "Salvando…" : form.id ? "Salvar" : "Criar"}
             </Button>
           </DialogFooter>
         </DialogContent>
