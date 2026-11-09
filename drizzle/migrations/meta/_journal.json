@@ -2220,6 +2220,13 @@
       "when": 1794191194924,
       "tag": "0316_cnpj_operational_linkage_and_summary",
       "breakpoints": true
+    },
+    {
+      "idx": 317,
+      "version": "7",
+      "when": 1794193060994,
+      "tag": "0317_cnpj_summary_scoped_performance",
+      "breakpoints": true
     }
   ]
 }
