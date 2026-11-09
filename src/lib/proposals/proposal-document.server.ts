@@ -55,15 +55,16 @@ export async function loadProposalDocument(
   )
     throw new Error("Proposta ainda não disponível.");
 
-  const currency = p.currency ?? "BRL";
-  const fmt = (v: number) =>
-    new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(v);
   const preserved = p.locked
     ? await workRpc<AcceptedProposalSource | null>(sb, "proposal_document_snapshot", {
         p_id: p.id,
         p_version: p.version,
       })
     : null;
+  const content = preserved?.proposal ?? p;
+  const currency = content.currency ?? "BRL";
+  const fmt = (v: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(v);
   const [rows, company, contact, agent] = await Promise.all([
     preserved ? (preserved.items as ItemRow[]) : items(sb, p.quote_id, p.deal_id, p.workspace_id),
     preserved
@@ -99,20 +100,20 @@ export async function loadProposalDocument(
   return {
     proposal: {
       id: p.id,
-      title: p.title,
-      body: p.body ?? "",
+      title: content.title,
+      body: content.body ?? "",
       status: p.status,
       locked: !!p.locked,
-      version: p.version,
-      total_amount: p.total_amount != null ? Number(p.total_amount) : null,
+      version: content.version,
+      total_amount: content.total_amount != null ? Number(content.total_amount) : null,
       currency,
       expires_at: p.expires_at,
       sent_at: p.sent_at,
       decided_at: p.decided_at,
       created_at: p.created_at,
       public_token: "token" in by ? by.token : null,
-      deal_id: p.deal_id,
-      quote_id: p.quote_id,
+      deal_id: content.deal_id,
+      quote_id: content.quote_id,
     },
     items: rows.map((li) => ({
       id: li.id,

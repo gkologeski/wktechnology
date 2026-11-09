@@ -9936,7 +9936,7 @@
         "src/lib/contracts/contract-create.server.ts": "83d6a2580954f05b3340a2404a75ab876669bf256965de4e203b8bfb5bf3d66b",
         "src/lib/contracts/template-merge.server.ts": "eb650683e4ec764600694cbbd69aacb894d5e55baa94a5fc60b875b61b04dae1",
         "src/lib/contracts/templates.functions.ts": "c237fa723b38ad1107fb831ea2fd8639ae3608237b047a59ab3fb315728d5b99",
-        "src/lib/proposals/proposal-document.server.ts": "a9ebcf566a3a5594f4b52dfb61d88c625bf9957b369ec8e23cdb0e0610315aa6",
+        "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
         "src/lib/sales-flow.server.ts": "921ea47d0dc77de74958a21e27d57a62277650d59646e42005880d01e9f9aae0",
         "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "ef7f40a85ada3d2e2805588df0bc5a745cbed63eeaade1b185745acf9a9a57b1",

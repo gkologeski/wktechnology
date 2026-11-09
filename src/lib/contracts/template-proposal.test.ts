@@ -201,3 +201,63 @@ it("rejects a conflicting company before reading other merge sources", async () 
   ).rejects.toThrow("outra empresa");
   expect(from).not.toHaveBeenCalled();
 });
+
+it("renders the preserved proposal body and prices even if an upstream writer changes the live row", async () => {
+  const { loadProposalDocument } = await import("../proposals/proposal-document.server");
+  const select = vi.fn();
+  const row = {
+    id: "P",
+    workspace_id: "W",
+    title: "Alterado",
+    body: "Corpo alterado",
+    total_amount: 999,
+    currency: "USD",
+    version: 3,
+    status: "accepted",
+    locked: true,
+    sent_at: "2026-11-08T10:00:00Z",
+    decided_at: "2026-11-08T12:00:00Z",
+  };
+  const snapshot = {
+    proposal: {
+      id: "P",
+      title: "Título enviado",
+      body: "Condições aceitas",
+      version: 3,
+      total_amount: 12000,
+      currency: "BRL",
+      deal_id: "D",
+      quote_id: "Q",
+    },
+    items: [],
+    company: { name: "Cliente enviado" },
+    contact: null,
+    agent: "Emissor",
+  };
+  const chain = {
+    select: (columns: string) => {
+      select(columns);
+      return chain;
+    },
+    eq: () => chain,
+    maybeSingle: async () => ({ data: row, error: null }),
+  };
+  const from = vi.fn((table: string) => {
+    expect(table).toBe("proposals");
+    return chain;
+  });
+  const rpc = vi.fn().mockResolvedValue({ data: snapshot, error: null });
+  const doc = await loadProposalDocument({ from, rpc } as never, { id: "P" });
+  expect(doc.proposal).toMatchObject({
+    title: "Título enviado",
+    body: "Condições aceitas",
+    total_amount: 12000,
+    currency: "BRL",
+    deal_id: "D",
+    quote_id: "Q",
+    public_token: null,
+  });
+  expect(doc.company).toBe("Cliente enviado");
+  expect(from).toHaveBeenCalledTimes(1);
+  expect(select.mock.calls[0][0]).not.toContain("public_token");
+});
