@@ -125,6 +125,9 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const [assignee, setAssignee] = useState<string | null>(null);
   const [templateId, setTemplateId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [installments, setInstallments] = useState<number | null>(null);
+  const [dueDay, setDueDay] = useState<number | null>(null);
+  const [validityDays, setValidityDays] = useState<number>(DEFAULT_VALIDITY_DAYS);
 
   const res = draftQ.data;
   const draft: ProposalDraft | null = res && !res.reused ? res.draft : null;
@@ -154,6 +157,9 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
     setExpires(draft.expires_at ? draft.expires_at.slice(0, 10) : null);
     setAssignee(draft.assigned_to);
     setTemplateId(draft.proposal_template_id);
+    setInstallments(draft.installments_count ?? null);
+    setDueDay(draft.installments_due_day ?? null);
+    setValidityDays(draft.validity_days ?? DEFAULT_VALIDITY_DAYS);
   }, [draft]);
 
   const currency = draft?.currency ?? "BRL";
@@ -201,7 +207,13 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   async function afterSave(id: string) {
     await supabase
       .from("proposals")
-      .update({ assigned_to: assignee, proposal_template_id: templateId })
+      .update({
+        assigned_to: assignee,
+        proposal_template_id: templateId,
+        installments_count: installments,
+        installments_due_day: dueDay,
+        validity_days: validityDays,
+      })
       .eq("id", id);
     void qc.invalidateQueries({ queryKey: ["deal-proposals"] });
     void qc.invalidateQueries({ queryKey: ["proposal", id] });
@@ -369,6 +381,43 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                       className="w-full justify-start"
                     />
                   </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="pw-installments">Parcelas</Label>
+                    <Input
+                      id="pw-installments"
+                      type="number"
+                      min={1}
+                      max={120}
+                      placeholder="Ex.: 3"
+                      value={installments ?? ""}
+                      onChange={(e) => setInstallments(clampInt(e.target.value, 1, 120))}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="pw-due-day">Dia de vencimento</Label>
+                    <Input
+                      id="pw-due-day"
+                      type="number"
+                      min={1}
+                      max={31}
+                      placeholder="Ex.: 10"
+                      value={dueDay ?? ""}
+                      onChange={(e) => setDueDay(clampInt(e.target.value, 1, 31))}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="pw-validity">Vigência do contrato (dias)</Label>
+                    <Input
+                      id="pw-validity"
+                      type="number"
+                      min={1}
+                      max={3650}
+                      value={validityDays}
+                      onChange={(e) =>
+                        setValidityDays(clampInt(e.target.value, 1, 3650) ?? DEFAULT_VALIDITY_DAYS)
+                      }
+                    />
+                  </div>
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {[draft.company_name, draft.contact_name, draft.deal_name]
@@ -498,6 +547,18 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                   <div>
                     <dt className="text-xs text-muted-foreground">Validade</dt>
                     <dd>{expires ? format(parseISO(expires), "dd/MM/yyyy") : "Sem validade"}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Parcelamento</dt>
+                    <dd>
+                      {installments
+                        ? `${installments}x${dueDay ? ` · vence dia ${dueDay}` : ""}`
+                        : "Não informado"}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Vigência</dt>
+                    <dd>{validityDays} dias</dd>
                   </div>
                   <div>
                     <dt className="text-xs text-muted-foreground">Modelo</dt>
