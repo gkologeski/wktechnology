@@ -4,7 +4,7 @@ import type { ImportedTemplate } from "@/lib/contracts/template-import.functions
 
 type Input =
   | { filename: string; kind: "pdf"; base64: string }
-  | { filename: string; kind: "html" | "docx_formatted"; html: string };
+  | { filename: string; kind: "html"; html: string };
 
 export async function convertTemplateStreaming(input: Input): Promise<ImportedTemplate> {
   const { data } = await supabase.auth.getSession();
