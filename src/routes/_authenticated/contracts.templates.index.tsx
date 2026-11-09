@@ -29,14 +29,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { ImportContractTemplateDialog } from "@/components/contracts/import-contract-template-dialog";
-import {
-  listContractTemplates,
-  createContractTemplate,
-  deleteContractTemplate,
-  duplicateContractTemplate,
-} from "@/lib/contracts/templates.functions";
+import { ContractTemplateActionsMenu } from "@/components/contracts/contract-template-actions-menu";
+import { listContractTemplates, createContractTemplate } from "@/lib/contracts/templates.functions";
 import { formatDateTime } from "@/lib/crm";
 
 export const Route = createFileRoute("/_authenticated/contracts/templates/")({
@@ -78,8 +73,6 @@ function ContractTemplatesPage() {
   const navigate = useNavigate();
   const list = useServerFn(listContractTemplates);
   const createFn = useServerFn(createContractTemplate);
-  const removeFn = useServerFn(deleteContractTemplate);
-  const dupFn = useServerFn(duplicateContractTemplate);
 
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
@@ -277,55 +270,7 @@ function ContractTemplatesPage() {
                         {formatDateTime(t.updated_at)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <WorkAction resource="techcontracts.contract_templates" action="create">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Duplicar ${t.name}`}
-                              onClick={async () => {
-                                try {
-                                  await dupFn({ data: { id: t.id } });
-                                  toast.success("Modelo duplicado.");
-                                  qc.invalidateQueries({ queryKey: ["contract-templates"] });
-                                } catch (e) {
-                                  toast.error((e as Error).message);
-                                }
-                              }}
-                            >
-                              <Copy className="h-4 w-4" />
-                            </Button>
-                          </WorkAction>
-                          <WorkAction
-                            resource="techcontracts.contract_templates"
-                            action="delete"
-                            id={t.id}
-                          >
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              aria-label={`Excluir ${t.name}`}
-                              onClick={async () => {
-                                const ok = await confirmDialog({
-                                  title: "Excluir modelo",
-                                  description: `O modelo "${t.name}" será removido. Contratos já gerados não são afetados.`,
-                                  confirmLabel: "Excluir",
-                                  variant: "destructive",
-                                });
-                                if (!ok) return;
-                                try {
-                                  await removeFn({ data: { id: t.id } });
-                                  toast.success("Modelo excluído.");
-                                  qc.invalidateQueries({ queryKey: ["contract-templates"] });
-                                } catch (e) {
-                                  toast.error((e as Error).message);
-                                }
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </WorkAction>
-                        </div>
+                        <ContractTemplateActionsMenu template={t} />
                       </TableCell>
                     </TableRow>
                   ))}
