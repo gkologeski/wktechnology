@@ -8,7 +8,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 const BodySchema = z.object({
   filename: z.string().min(1).max(255),
-  kind: z.enum(["pdf", "html", "docx_formatted"]),
+  kind: z.enum(["pdf", "html"]),
   base64: z.string().min(20).max(30_000_000).optional(),
   html: z.string().min(40).max(400_000).optional(),
 });
@@ -48,6 +48,9 @@ export const Route = createFileRoute("/api/contracts/template-import")({
         const parsed = BodySchema.safeParse(await request.json().catch(() => null));
         if (!parsed.success) return new Response("Requisição inválida", { status: 400 });
         const data = parsed.data;
+        // .docx já convertido com a formatação original: o HTML é preservado e
+        // a IA apenas indica as variáveis.
+        const preserve = data.kind === "html" && !!data.html?.startsWith("<!--formato-original-->");
         if (data.kind === "pdf" && !data.base64)
           return new Response("Arquivo ausente", { status: 400 });
         if (data.kind !== "pdf" && !data.html)
@@ -76,7 +79,7 @@ export const Route = createFileRoute("/api/contracts/template-import")({
                   },
                 },
               ]
-            : data.kind === "docx_formatted"
+            : preserve
               ? [
                   {
                     type: "text",
@@ -109,7 +112,7 @@ export const Route = createFileRoute("/api/contracts/template-import")({
               const result = await convertTemplateWithAi(
                 content,
                 { userId, workspaceId },
-                data.kind === "docx_formatted" ? { preserveHtml: data.html } : {},
+                preserve ? { preserveHtml: data.html } : {},
               );
               send({ type: "result", result });
             } catch (e) {

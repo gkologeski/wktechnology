@@ -143,8 +143,9 @@ export function ImportContractTemplateDialog({
         setProgress(progressFor("ai"));
         result = await convertTemplateStreaming({
           filename: file.name,
-          kind: formatted ? "docx_formatted" : "html",
-          html,
+          kind: "html",
+          // Marcador: o servidor preserva este HTML e só aplica as variáveis.
+          html: formatted ? `<!--formato-original-->${html}` : html,
         });
       }
 
