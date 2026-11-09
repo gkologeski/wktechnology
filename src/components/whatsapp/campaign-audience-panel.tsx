@@ -289,7 +289,8 @@ export function CampaignAudiencePanel({
       <fieldset disabled={readOnly} aria-readonly={readOnly} className="min-w-0 space-y-4">
         {readOnly && (
           <p className="text-xs text-muted-foreground">
-            Campanha pausada: o público fica somente para leitura; as variáveis dos modelos podem ser ajustadas.
+            Campanha pausada: o público fica somente para leitura; as variáveis dos modelos podem
+            ser ajustadas.
           </p>
         )}
         <fieldset className="space-y-2 rounded-md border p-3">

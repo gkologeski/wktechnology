@@ -1,3 +1,4 @@
+import { assertWorkRecord } from "@/lib/access-control/work-core.server";
 import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // Server functions para importar contratos a partir de arquivos .pdf ou .docx.
 // A extração é feita via Lovable AI Gateway (Gemini 2.5 Flash) e devolve JSON estruturado.
@@ -405,6 +406,7 @@ export const getContractSourceFileUrl = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    await assertWorkRecord(supabase, "techcontracts.contracts", data.id, "view");
     const { data: row, error } = await supabase
       .from("contracts")
       .select("id, source_file_path, imported_from")

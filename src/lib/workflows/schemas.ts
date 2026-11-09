@@ -464,7 +464,10 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     type: z.literal("cancel_payable_schedules"),
     person_id: z.string().max(200).optional(),
   }),
-  z.object({ type: z.literal("disconnect_integrations"), person_id: z.string().max(200).optional() }),
+  z.object({
+    type: z.literal("disconnect_integrations"),
+    person_id: z.string().max(200).optional(),
+  }),
   z.object({
     type: z.literal("transfer_portfolio"),
     person_id: z.string().max(200).optional(),

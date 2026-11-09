@@ -2290,7 +2290,7 @@
         "drizzle/migrations/0288_wa_campaign_audience_ids_array.sql": "11ee5282e7d64a30bd16f340a6566076a3d3cefc555fcd01d6732c49ba81ae93",
         "drizzle/migrations/0289_sales_row_guard_child_skip_context.sql": "7dc5c38b2dac757557e99dec6373570dc37b96cedb5ffb8e57ec55b63a59ae0e",
         "src/lib/whatsapp/campaign-audience.ts": "b68288dd8a47d5e121fb0dca43b3c9ee51b74ca9e715cedd5df3d6d17f0801b3",
-        "src/components/whatsapp/campaign-audience-panel.tsx": "b1a843536687e1c44d6cf1ebb45e477d7839d7d5d66434716fd635439638f811",
+        "src/components/whatsapp/campaign-audience-panel.tsx": "48903a5c9ca251b51a339b8228149fa19014139cac7b0bfe0d127afa61e5753c",
         "src/lib/whatsapp/campaign-rotation-guard.server.ts": "95cce5544afd6ea49a5f7beafec341d94bded38c22999b88c6e2aca2976c9476"
       }
     },
@@ -2891,7 +2891,7 @@
       "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately.",
       "files": {
         "src/lib/menu-config.ts": "3670cfdaa470fe8bc1bd43d83db68a07fe02de22827314e6735f6f60c5e6a23d",
-        "src/lib/menu-resources.ts": "3b4ecd1b138bbbd4b1227cd841de990d347254f20163f090bc5ceaa8d99ccb22"
+        "src/lib/menu-resources.ts": "d44488e6d5be0fc4c4029fed522b367d6f598d65b70a01875f49efea1135aff1"
       }
     },
     {
@@ -2975,7 +2975,7 @@
       "files": {
         "src/lib/prospecting/sdr/channel-runtime.server.ts": "a1528c862f67ac28a1b664d975c6aaf7b534d280bc8345a66e861142a5fe12cf",
         "src/lib/prospecting/sdr/worker.server.ts": "ad6e2610dc288e3e6e6b089bfda9bcd3d4bccdeb546ae41620b13ccc74ed6d11",
-        "src/lib/prospecting/sdr/ingest.server.ts": "55dd49e929c1332398760f89ac843bdcdcb6604b7ccf82e61f476b96541a41ea",
+        "src/lib/prospecting/sdr/ingest.server.ts": "24e1313dca8653d5ec0ef15ebb200040ef92ac3189c90fbeee22bed508a93777",
         "src/lib/prospecting/sdr/tools/runtime.ts": "dcb7dd1240f535cf9ff084ad43989bafcd4db6d56f02ebb2c8efbc18965d4918",
         "drizzle/migrations/0257_service_channel_runtime_identity.sql": "2d829bed7441a6f7c8dc5c26f374ee4b66853f04a23caae6cd2d3e915815617f"
       }
@@ -8054,7 +8054,7 @@
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
         "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
-        "src/routes/_authenticated/contracts.$id.tsx": "48285d943b8f1067b3abe3ae9f25b7b437d4854bb596185588d7122c574e0e94",
+        "src/routes/_authenticated/contracts.$id.tsx": "f4dd8961a0c0a7faff760d09d55cb191b8d9da10158790ff43c0771e8d607c73",
         "src/routes/_authenticated/settings.esign.tsx": "3f34242a562fb3977f527789872cac53341b84205a943bf2c3fbcb884ce67e48",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
@@ -8268,9 +8268,9 @@
       "kind": "presentation",
       "rationale": "Pure declarative workflow types, validation schemas and UI draft-template definitions; no IO, route or execution. Hiring templates remain unpublished drafts. Runtime actions and persisted permissions are independently guarded by stage4 business contract. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key.",
       "files": {
-        "src/lib/workflows/hiring-templates.ts": "eb456d3ab72c162a952cb342612ad704cf2be8abf495547c142dd8f939691d3c",
+        "src/lib/workflows/hiring-templates.ts": "657b1ce58925d0169860c04affd0fc1033aa84ee51154ff3f01806d4419799ff",
         "src/lib/workflows/types.ts": "882d84fdae3181e221b8b85ca77a021e3ad08668342fd197827cb2913fcd2c59",
-        "src/lib/workflows/schemas.ts": "56b6e6a2882c5cec2255202b5e8bbdeb7942eda6e4e45ff441f00f3996205b8a"
+        "src/lib/workflows/schemas.ts": "fa39c3cd1dcddf417753124852c0cc5182e2f9eb273e5cd828948ef5639f42a5"
       }
     },
     {
@@ -8553,7 +8553,7 @@
         "drizzle/migrations/0321_hiring_lifecycle.sql": "e0265dce2a74f99ffbc835094294378422f28b276fb64d408fea7fee1cfd8aa9",
         "src/lib/hiring/lifecycle.functions.ts": "a6729402563f85e696c60a2cf79bc750b7239b7aad159264227272e6dcdf5cbd",
         "src/components/hiring/lifecycle-panel.tsx": "15f58f1c8896d64403391b6463740ee89534f9ae3df2f6eaabc80039c0968fae",
-        "src/lib/workflows/engine/actions-offboarding.server.ts": "8f1b63064e5c574f2d70f81b30634e586e9c201c1708ffe8441b5e71a5729c20",
+        "src/lib/workflows/engine/actions-offboarding.server.ts": "1ce1241e93969ce1700f9fbfb3552297f7252ab4c5bb015224529fdd185004d3",
         "drizzle/migrations/0330_hiring_lifecycle_invite_timezone.sql": "305b20cb2c00536ecc0d99f77a30e35a2362a39c98107be8bf881e7904a15690"
       }
     },
@@ -9332,8 +9332,8 @@
       },
       "files": {
         "src/lib/calendar.functions.ts": "086afe367d2540bf555e758904cc84645b529e71476bd6536988fc9511a90bf5",
-        "src/lib/meetings.functions.ts": "c48078ce38248c3901716db4357a562dfab399ae88bbb1418cab51f4602cd5b8",
-        "src/components/meetings/meeting-dialog.tsx": "14c7d109d7f7e8ee2c3329d037823b5c3684b3d55b213f5046f3697a9ceec56d"
+        "src/lib/meetings.functions.ts": "e5f265b9a765f90af5189563eb3da9cab65c9a7c7e64acb9a07fe06cd1a99fa6",
+        "src/components/meetings/meeting-dialog.tsx": "5975886c2de72e469aad6088fdbb7da988255d6e84adbf9138a91a6889d35f15"
       }
     },
     {
@@ -9341,8 +9341,8 @@
       "kind": "presentation",
       "rationale": "Plano DESLIGA-AGENDA: meeting dialog calendar selector and pure selection helpers (meeting-account.ts, no I/O); workflow builder icons/defaults/summaries for the two new offboarding actions. Enforcement stays in pushActivityToCalendar (meeting-calendar-account-owner-selection) and actions-offboarding (hiring-stage6-lifecycle).",
       "files": {
-        "src/lib/calendar/meeting-account.ts": "00db4b590c7639fe1bfeb2c68b6ed07b4bc828b400e8ad5fedebf0f85b24a71f",
-        "src/components/workflows/builder/step-tree.ts": "3bc2764e0497f9b14b8ab7cdebda7b98cd5e403dd5149d5a7ff635c078dd1053"
+        "src/lib/calendar/meeting-account.ts": "b9eed3ef5bc2b65fadd51d2f2e2fd31aa5f84beaffa3e417d09ac172a9592220",
+        "src/components/workflows/builder/step-tree.ts": "ad763d04f34e8c810c453afe6a84c848d32bb09954a6d77d3a17aab6a9f18c90"
       }
     },
     {
@@ -9723,7 +9723,7 @@
         "src/components/contracts/contract-draft-approvers-page.tsx": "10912b5af48d1d3b83214d0d1bfbbf069cb636f1813a8eaa98cd6d1a72801f1f",
         "src/components/contracts/contract-draft-review-page.tsx": "eea61d546dd02c931c3da8474db92533634d9260d044c33ab88204b7fec19e45",
         "src/lib/contracts/contract-drafts.functions.ts": "b6194a8adbccbcd9d560abcf15b762014668afacab9b22fc55f8e6dca5b235cf",
-        "src/lib/workflows/engine/actions-contracts.server.ts": "ce5d5e0cc220ecef2a3ce851f716ee1a89ab531e3ee319ca67ddae3ad2e73bf8",
+        "src/lib/workflows/engine/actions-contracts.server.ts": "8f9892132aafe489bd6a61b79fa342c84a74abd44307b0b0049f3147413a6574",
         "src/routes/_authenticated/contracts.drafts.$id.tsx": "154ab4c2eb14d4003eadd589b90b7af808169de961cf7e5ac21554a8973daea2",
         "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "b8d35e6adaa94ec01c69e35a1c1f734c2543a48097a60910f7484519e812688c",
         "src/components/contracts/contract-draft-send-panel.tsx": "78b10003e87264f75e375c8b2cc67c79e0a45b8625af89ab3abd4d5495462200",
@@ -9752,7 +9752,7 @@
       "kind": "presentation",
       "rationale": "Static TechContracts menu entry; visibility filtered by canSeeHrMenu with the manage key and the screen re-checks it; server functions use requireWorkPermission.",
       "files": {
-        "src/lib/menu-config-contracts.ts": "8c9696342af468d764c38ed990a04c6acda131f0d14b4b99e0d2adcbc45d221c"
+        "src/lib/menu-config-contracts.ts": "d53cdaa9cf8d0f09f3a6e5f7b952b50cdb4e24b6c30c30acc1966fc979a3a4e8"
       }
     },
     {
@@ -9816,8 +9816,8 @@
         }
       },
       "files": {
-        "src/lib/contracts/contract-draft-public.functions.ts": "65c3d4d40f49443ee2059e42ce9ad68d064e1950833130b674431d70998b326c",
-        "src/routes/minuta.$token.tsx": "391cb24639d037788282e4c43e0dc40a4d8ed8b3a0fe9f02c8a97769d8edf303"
+        "src/lib/contracts/contract-draft-public.functions.ts": "db1ca322097258d951dc3928838333ac82aeca99b9ae816a4d2b99bdb2e62e91",
+        "src/routes/minuta.$token.tsx": "5095aab02c1cf580bfdaa970a7037ef1089156e6448dce4b87b708b75b7ffbed"
       },
       "exception": {
         "mechanism": "Random uuid token issued only by a listed legal approver after approval; server-only RPCs (service_role) return/decide only drafts in status sent; one decision per send, no internal ids or other records exposed.",
@@ -9946,7 +9946,7 @@
       "kind": "presentation",
       "rationale": "Pure static value definitions and filtering only; no route, query, credentials or business action.",
       "files": {
-        "src/lib/contracts/import-schemas.ts": "b16382ddeaeef406dbee93e54ea9b5f4578c848198657a9433b958ed95a3f085",
+        "src/lib/contracts/import-schemas.ts": "1f6f7337a2d1b0aa73100261c3924a42c2b5015e8c180431bc7679f4cb1bd994",
         "src/lib/contracts/workflow-field-meta.ts": "417fd4f63e8139ec0702adbbd71ce04d0956d88aceedcb8d4bd79b6e6ff760c6"
       }
     },
@@ -9973,9 +9973,12 @@
       "permission_keys": [
         "techcontracts.imports.manage.workspace",
         "techcontracts.contract_templates.create.workspace",
-        "techcontracts.contracts.view.workspace"
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contract_templates.update.workspace",
+        "techcontracts.contracts.create.workspace",
+        "techcontracts.links.manage.workspace"
       ],
-      "rationale": "Existing import endpoints enforce requireWorkPermission and assertAnyPermission; original file signing reads contract under user RLS first. Type options only changed in presentation and AI schema; legal-entity picker filters new assignments, label hydration retains saved value. Template editing retains WorkAction and HrScreenAccess; no grants changed.",
+      "rationale": "Existing import endpoints enforce requireWorkPermission and assertAnyPermission; original file signing reads contract under user RLS first. Type options only changed in presentation and AI schema; legal-entity picker filters new assignments, label hydration retains saved value. Template editing retains WorkAction and HrScreenAccess; no grants changed. Merge review: the import UI checks its catalogue workspace key and fails closed while permissions load/fail; server middleware, creation scope checks, signed-file record access and active CNPJ assignment rules from main are preserved. Five import-boundary scenarios invoke the real work middleware.",
       "controls": [
         {
           "file": "src/lib/access-control/work-permission.middleware.ts",
@@ -10016,42 +10019,330 @@
         {
           "file": "src/lib/access-control/use-permissions.tsx",
           "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
         }
       ],
       "database": [
         {
           "file": "drizzle/migrations/0309_hiring_signature_evidence.sql",
           "symbol": "hiring_signature_access"
+        },
+        {
+          "file": "drizzle/migrations/0219_order3_completion_activate.sql",
+          "symbol": "work_contract_file_read"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_area_authorize"
         }
       ],
       "tests": {
         "allowed": {
-          "file": "src/lib/legal-entities-auth.test.ts",
-          "name": "CNPJ allows an authorized active member"
+          "file": "src/lib/contracts/template-work-boundary.test.ts",
+          "name": "template import boundary allows an authorized active member"
         },
         "missing_permission": {
-          "file": "src/lib/legal-entities-auth.test.ts",
-          "name": "CNPJ denies missing permission"
+          "file": "src/lib/contracts/template-work-boundary.test.ts",
+          "name": "template import boundary rejects missing permission"
         },
         "explicit_deny": {
-          "file": "src/lib/legal-entities-auth.test.ts",
-          "name": "CNPJ denies explicit deny"
+          "file": "src/lib/contracts/template-work-boundary.test.ts",
+          "name": "template import boundary respects explicit deny"
         },
         "foreign_workspace": {
-          "file": "src/lib/legal-entities-auth.test.ts",
-          "name": "CNPJ denies foreign workspace"
+          "file": "src/lib/contracts/template-work-boundary.test.ts",
+          "name": "template import boundary isolates foreign workspace"
         },
         "inactive_member": {
-          "file": "src/lib/legal-entities-auth.test.ts",
-          "name": "CNPJ denies inactive membership"
+          "file": "src/lib/contracts/template-work-boundary.test.ts",
+          "name": "template import boundary rejects inactive membership"
         }
       },
       "files": {
         "src/components/contracts/contract-form/contract-field-input.tsx": "5dfdf300f65db113dbae568d5e052d571495c348a48c9d7711960056f94d8aa4",
-        "src/components/contracts/import-contract-file-dialog.tsx": "bfa51aae64409a338ba782924641dbd9d2a845b0c91140908b9c802c82498ab8",
-        "src/lib/contracts/import.functions.ts": "7a8dcf2520b9acfebe4d846ad79a0783f11adeadc47eb9602ac53c357a2b9ff8",
+        "src/components/contracts/import-contract-file-dialog.tsx": "de587d00b80053847b7103f629fcb400accf5433e56cccf8d749e402f67ebb97",
+        "src/lib/contracts/import.functions.ts": "776590dc6c20d2254a9558e3f2b413f848648fd7078f6247eff419c56338a4ef",
         "src/lib/contracts/template-import.server.ts": "3ea192580eac934f5f4a3fec8ba0215c89be2b2f5931daa2d9de414d086c3e0b",
         "src/routes/_authenticated/contracts.templates.$id.tsx": "2cc457ee21c13d72e3596de8d6c6ca0042a5b279e0acf21b1ded5e41c686db52"
+      }
+    },
+    {
+      "id": "contract-accepted-proposal-mapping",
+      "kind": "business",
+      "resources": [
+        "techcontracts.contracts",
+        "techcontracts.contract_templates",
+        "techsales.proposals"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.contracts.create.own",
+        "techcontracts.contracts.create.workspace",
+        "techcontracts.contract_templates.view.own",
+        "techcontracts.contract_templates.view.workspace",
+        "techsales.proposals.view.workspace"
+      ],
+      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/db/delete-guarded.ts",
+          "symbol": "deleteByIdGuarded"
+        },
+        {
+          "file": "src/lib/contracts/accepted-proposal.server.ts",
+          "symbol": "loadAcceptedProposalSource"
+        },
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesReferences"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0334_contract_accepted_proposal.sql",
+          "symbol": "proposal_contract_source"
+        },
+        {
+          "file": "drizzle/migrations/0334_contract_accepted_proposal.sql",
+          "symbol": "contract_accepted_proposal_guard"
+        },
+        {
+          "file": "drizzle/migrations/0334_contract_accepted_proposal.sql",
+          "symbol": "proposal_document_version_read"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "contract_create_batch"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL allows an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL isolates foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL rejects inactive membership"
+        }
+      },
+      "files": {
+        "src/components/contracts/apply-contract-template-dialog.tsx": "f1b8f344a6a5bbc22cc7d8aa43c04bdd0b680fbf579de229b7da056b3025ef3c",
+        "src/lib/contracts/contract-create.server.ts": "83d6a2580954f05b3340a2404a75ab876669bf256965de4e203b8bfb5bf3d66b",
+        "src/lib/contracts/template-merge.server.ts": "eb650683e4ec764600694cbbd69aacb894d5e55baa94a5fc60b875b61b04dae1",
+        "src/lib/contracts/templates.functions.ts": "c237fa723b38ad1107fb831ea2fd8639ae3608237b047a59ab3fb315728d5b99",
+        "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
+        "src/lib/sales-flow.server.ts": "921ea47d0dc77de74958a21e27d57a62277650d59646e42005880d01e9f9aae0",
+        "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
+        "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
+        "src/components/contracts/contract-wizard.tsx": "fca40ccfa8137fb3f857f7412f7bef9bf132395a49f35c7a6ff692a978f2041b",
+        "src/lib/sales-flow.functions.ts": "ba9d014b9aff1352c7205b7f44b19d8b59874707f6ec48baee4e29222c6eb56f"
+      }
+    },
+    {
+      "id": "contract-template-token-formatting",
+      "kind": "internal",
+      "resources": [
+        "techcontracts.contract_templates"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [],
+      "rationale": "Pure client-safe token catalogue and HTML escaping, with strict completeness validation for accepted proposal templates; no storage, identity, permission decisions or network access. Authorization belongs to template server handlers, proposal source RPC and contract RLS.",
+      "controls": [
+        {
+          "file": "src/lib/message-tokens.ts",
+          "symbol": "renderTokensWith"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0334_contract_accepted_proposal.sql",
+          "symbol": "proposal_contract_source"
+        },
+        {
+          "file": "drizzle/migrations/0334_contract_accepted_proposal.sql",
+          "symbol": "contract_accepted_proposal_guard"
+        },
+        {
+          "file": "drizzle/migrations/0334_contract_accepted_proposal.sql",
+          "symbol": "proposal_document_version_read"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "contract_create_batch"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL allows an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL isolates foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL rejects inactive membership"
+        }
+      },
+      "exception": {
+        "mechanism": "Pure formatting from caller-provided values; no I/O or capability creation.",
+        "boundary": "Used only after user-client source authorization; strict merge prevents missing proposal and party fields.",
+        "revocation": "Access revoked by existing server gates and parent RLS; pure output does not grant access.",
+        "review_by": "2027-03-01"
+      },
+      "files": {
+        "src/lib/contracts/template-tokens.ts": "92657bab27b655d53568baf7a8c2143845e58a6a594470979386badbc8886357"
+      }
+    },
+    {
+      "id": "legal-entity-lifecycle-inherited-boundaries",
+      "kind": "business",
+      "resources": [
+        "techfinance.legal_entities"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techfinance.legal_entities.view.workspace",
+        "techfinance.legal_entities.create.workspace",
+        "techfinance.legal_entities.update.workspace",
+        "techfinance.legal_entities.delete.workspace"
+      ],
+      "rationale": "Additional direct usage RPC authorization following the current CNPJ lifecycle migrations 0316/0317. Main owns the existing lifecycle/UI files in cnpj-ativo-lifecycle. This migration preserves the private aggregate helper and checks active workspace membership, row scope and deny through finance_business_authorize; no business grants added. SQL tests load the current 0316 aggregate helper.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/finance-business.server.ts",
+          "symbol": "authorizeFinanceBusiness"
+        },
+        {
+          "file": "src/lib/access-control/finance-records.server.ts",
+          "symbol": "financeRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/use-finance-business-capabilities.ts",
+          "symbol": "useFinanceBusinessCapabilities"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0314_legal_entity_safe_lifecycle.sql",
+          "symbol": "_legal_entity_usage_counts"
+        },
+        {
+          "file": "drizzle/migrations/0315_legal_entity_guard_workspace_cascade.sql",
+          "symbol": "legal_entities_guard"
+        },
+        {
+          "file": "drizzle/migrations/0335_legal_entity_usage_permission.sql",
+          "symbol": "legal_entity_usage"
+        },
+        {
+          "file": "drizzle/migrations/0214_finance_business_prepare.sql",
+          "symbol": "finance_business_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "legal entity usage SQL allows an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "legal entity usage SQL rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "legal entity usage SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "legal entity usage SQL isolates foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "legal entity usage SQL rejects inactive membership"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0335_legal_entity_usage_permission.sql": "b466108f2045521ffffddf8114eff4617fced1e80d01dddaf33823a6f1e9e12f"
       }
     }
   ],

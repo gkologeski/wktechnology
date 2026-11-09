@@ -24,9 +24,7 @@ export function selectableCalendarAccounts(
   userId: string,
   isAdmin: boolean,
 ): MeetingCalendarAccount[] {
-  return items.filter(
-    (a) => isUsableCalendarAccount(a) && (isAdmin || a.owner_id === userId),
-  );
+  return items.filter((a) => isUsableCalendarAccount(a) && (isAdmin || a.owner_id === userId));
 }
 
 /** Padrão: a conta do próprio usuário; nunca a mais recente de outra pessoa. */

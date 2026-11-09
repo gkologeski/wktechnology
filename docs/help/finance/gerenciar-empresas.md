@@ -8,7 +8,7 @@ route_pattern: /finance/legal-entities
 min_permission: techfinance.legal_entities.view.workspace
 audience: internal
 sort_order: 160
-version: 3
+version: 4
 is_published: true
 ---
 # Gerenciar empresas e CNPJs
@@ -40,6 +40,8 @@ Empresa cadastrada ou atualizada no workspace, com identificadores revisados.
 - A empresa padrão não pode ser desativada ou excluída antes de escolher outra padrão ativa.
 - Novas atribuições recusam CNPJs inativos ou de outro workspace; edições que mantêm o vínculo histórico continuam permitidas.
 - Filtros históricos mostram também empresas inativas. Os totais são agregados no banco sob o acesso do usuário, sem truncar a lista de lançamentos.
+
+- A consulta de vínculos também exige leitura da pessoa jurídica pelo escopo autorizado no workspace ativo. Membro inativo, outro workspace ou deny explícito não recebem contagens por acesso direto à API.
 
 ### Campos e controles
 Código; razão social; nome fantasia; CNPJ; IE; IM; ativa.

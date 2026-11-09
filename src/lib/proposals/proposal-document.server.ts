@@ -1,6 +1,8 @@
 // Dados do documento da proposta (página, link público e PDF).
 // O chamador escolhe o cliente: o do usuário (RLS) na ficha interna, ou o
 // administrativo após validar o token público.
+import { workRpc } from "@/lib/access-control/work-core.server";
+import type { AcceptedProposalSource } from "@/lib/contracts/accepted-proposal.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describeBilling } from "@/lib/catalog/billing-model";
 import {
@@ -10,7 +12,7 @@ import {
 import type { ProposalDocumentData } from "./proposal-document-types";
 
 const PROPOSAL_COLUMNS =
-  "id, workspace_id, title, body, status, locked, version, total_amount, currency, expires_at, sent_at, decided_at, created_at, public_token, owner_id, company_id, contact_id, deal_id, quote_id";
+  "id, workspace_id, title, body, status, locked, version, total_amount, currency, expires_at, sent_at, decided_at, created_at, owner_id, company_id, contact_id, deal_id, quote_id";
 
 type ItemRow = DealLineItemRow & {
   service?: { name: string | null } | null;
@@ -53,28 +55,41 @@ export async function loadProposalDocument(
   )
     throw new Error("Proposta ainda não disponível.");
 
-  const currency = p.currency ?? "BRL";
+  const preserved = p.locked
+    ? await workRpc<AcceptedProposalSource | null>(sb, "proposal_document_snapshot", {
+        p_id: p.id,
+        p_version: p.version,
+      })
+    : null;
+  const content = preserved?.proposal ?? p;
+  const currency = content.currency ?? "BRL";
   const fmt = (v: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency }).format(v);
   const [rows, company, contact, agent] = await Promise.all([
-    items(sb, p.quote_id, p.deal_id, p.workspace_id),
-    p.company_id
-      ? sb
-          .from("companies")
-          .select("name")
-          .eq("id", p.company_id)
-          .eq("workspace_id", p.workspace_id)
-          .maybeSingle()
-      : null,
-    p.contact_id
-      ? sb
-          .from("contacts")
-          .select("first_name, last_name, email")
-          .eq("id", p.contact_id)
-          .eq("workspace_id", p.workspace_id)
-          .maybeSingle()
-      : null,
-    sb.from("profiles").select("full_name").eq("id", p.owner_id).maybeSingle(),
+    preserved ? (preserved.items as ItemRow[]) : items(sb, p.quote_id, p.deal_id, p.workspace_id),
+    preserved
+      ? { data: preserved.company }
+      : p.company_id
+        ? sb
+            .from("companies")
+            .select("name")
+            .eq("id", p.company_id)
+            .eq("workspace_id", p.workspace_id)
+            .maybeSingle()
+        : null,
+    preserved
+      ? { data: preserved.contact }
+      : p.contact_id
+        ? sb
+            .from("contacts")
+            .select("first_name, last_name, email")
+            .eq("id", p.contact_id)
+            .eq("workspace_id", p.workspace_id)
+            .maybeSingle()
+        : null,
+    preserved
+      ? { data: { full_name: preserved.agent } }
+      : sb.from("profiles").select("full_name").eq("id", p.owner_id).maybeSingle(),
   ]);
   const c = contact?.data as {
     first_name: string | null;
@@ -85,20 +100,20 @@ export async function loadProposalDocument(
   return {
     proposal: {
       id: p.id,
-      title: p.title,
-      body: p.body ?? "",
+      title: content.title,
+      body: content.body ?? "",
       status: p.status,
       locked: !!p.locked,
-      version: p.version,
-      total_amount: p.total_amount != null ? Number(p.total_amount) : null,
+      version: content.version,
+      total_amount: content.total_amount != null ? Number(content.total_amount) : null,
       currency,
       expires_at: p.expires_at,
       sent_at: p.sent_at,
       decided_at: p.decided_at,
       created_at: p.created_at,
       public_token: "token" in by ? by.token : null,
-      deal_id: p.deal_id,
-      quote_id: p.quote_id,
+      deal_id: content.deal_id,
+      quote_id: content.quote_id,
     },
     items: rows.map((li) => ({
       id: li.id,

@@ -243,7 +243,12 @@ export async function handleOffboardingAction(
       await assertOwnerAdmin(supabase, ctx, "desligar agendas e e-mails");
       const userId = await linkedUserId(supabase, ctx, person);
       if (!userId)
-        return { at, ok: true, action: action.type, detail: { skipped: true, reason: "pessoa sem usuário vinculado — revisar manualmente" } };
+        return {
+          at,
+          ok: true,
+          action: action.type,
+          detail: { skipped: true, reason: "pessoa sem usuário vinculado — revisar manualmente" },
+        };
       const { data: cal, error: e1 } = await supabase
         .from("calendar_accounts")
         .update({ sync_enabled: false, last_status: "disconnected" } as never)
@@ -258,21 +263,40 @@ export async function handleOffboardingAction(
         .eq("owner_id", userId)
         .select("id");
       if (e2) throw new Error(e2.message);
-      return { at, ok: true, action: action.type, detail: { calendars: (cal ?? []).length, mailboxes: (mail ?? []).length } };
+      return {
+        at,
+        ok: true,
+        action: action.type,
+        detail: { calendars: (cal ?? []).length, mailboxes: (mail ?? []).length },
+      };
     }
 
     case "transfer_portfolio": {
       await assertOwnerAdmin(supabase, ctx, "transferir carteira");
       const fromUser = await linkedUserId(supabase, ctx, person);
       if (!fromUser)
-        return { at, ok: true, action: action.type, detail: { skipped: true, reason: "pessoa sem usuário vinculado — revisar manualmente" } };
+        return {
+          at,
+          ok: true,
+          action: action.type,
+          detail: { skipped: true, reason: "pessoa sem usuário vinculado — revisar manualmente" },
+        };
       const explicit = (action as { to_user_id?: string }).to_user_id;
       let toUser = explicit ? String(renderTokens(explicit, ctx.after, ctx.vars) ?? "").trim() : "";
       if (!UUID.test(toUser)) {
-        const { data: me } = await supabase.from("people").select("manager_id").eq("id", person.id).maybeSingle();
+        const { data: me } = await supabase
+          .from("people")
+          .select("manager_id")
+          .eq("id", person.id)
+          .maybeSingle();
         const mgr = (me as { manager_id?: string | null } | null)?.manager_id;
         if (mgr) {
-          const { data: m } = await supabase.from("people").select("profile_id").eq("id", mgr).eq("workspace_id", ctx.workspaceId).maybeSingle();
+          const { data: m } = await supabase
+            .from("people")
+            .select("profile_id")
+            .eq("id", mgr)
+            .eq("workspace_id", ctx.workspaceId)
+            .maybeSingle();
           toUser = (m as { profile_id?: string | null } | null)?.profile_id ?? "";
         }
       }
@@ -285,7 +309,15 @@ export async function handleOffboardingAction(
           subject: `Escolher novo responsável pela carteira de ${person.full_name}`,
           body: "Desligamento sem gestor definido: transfira leads, negócios, contatos, empresas e atividades em Configurações → Equipe.",
         } as never);
-        return { at, ok: true, action: action.type, detail: { skipped: true, reason: "sem novo responsável — tarefa criada para o administrador" } };
+        return {
+          at,
+          ok: true,
+          action: action.type,
+          detail: {
+            skipped: true,
+            reason: "sem novo responsável — tarefa criada para o administrador",
+          },
+        };
       }
       const { data: target } = await supabase
         .from("workspace_members")
@@ -310,7 +342,12 @@ export async function handleOffboardingAction(
         }
         counts[table] = n;
       }
-      return { at, ok: true, action: action.type, detail: { from: fromUser, to: toUser, ...counts } };
+      return {
+        at,
+        ok: true,
+        action: action.type,
+        detail: { from: fromUser, to: toUser, ...counts },
+      };
     }
 
     case "cancel_payable_schedules": {

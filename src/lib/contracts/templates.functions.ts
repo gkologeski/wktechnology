@@ -201,7 +201,9 @@ export const duplicateContractTemplate = createServerFn({ method: "POST" })
 export const listTemplateServiceOptions = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, VIEW);
     const { data, error } = await supabase
       .from("service_catalog")
       .select("id, name, code, service_type, unit, base_price, currency, description, active")
@@ -220,6 +222,8 @@ const applyInput = z.object({
   companyId: z.string().uuid().optional(),
   serviceCatalogId: z.string().uuid().optional(),
   title: z.string().max(200).optional(),
+  proposalId: z.string().uuid().optional(),
+  contractingLegalEntityId: z.string().uuid().optional(),
 });
 
 /** Pré-visualização: devolve o corpo já mesclado sem criar contrato. */
@@ -239,7 +243,7 @@ export const previewContractFromTemplate = createServerFn({ method: "POST" })
     if (error) throw error;
     if (!template) throw new Error("Modelo não encontrado");
 
-    const { ctx, contract } = await buildMergeContext(
+    const { ctx, contract, source } = await buildMergeContext(
       supabase,
       workspaceId,
       userId,
@@ -248,7 +252,7 @@ export const previewContractFromTemplate = createServerFn({ method: "POST" })
     );
     return {
       title: contract.title,
-      body_html: mergeTemplateBody(template.body_html ?? "", ctx),
+      body_html: mergeTemplateBody(template.body_html ?? "", ctx, { strict: !!source }),
       template_name: template.name,
     };
   });
@@ -273,7 +277,10 @@ export const createContractFromTemplate = createServerFn({ method: "POST" })
     if (error) throw error;
     if (!template) throw new Error("Modelo não encontrado");
 
-    const { ctx, contract, company, deal } = await buildMergeContext(
+    if (template.status !== "published")
+      throw new Error("Publique o modelo antes de gerar o contrato.");
+
+    const { ctx, contract, company, deal, entity, source } = await buildMergeContext(
       supabase,
       workspaceId,
       userId,
@@ -292,6 +299,9 @@ export const createContractFromTemplate = createServerFn({ method: "POST" })
         counterparty_company_id: company?.id ?? null,
         deal_id: deal?.id ?? data.dealId ?? null,
         number: contract.number,
+        contracting_legal_entity_id: entity?.id ?? null,
+        proposal_id: source?.proposal.id ?? null,
+        quote_id: source?.proposal.quote_id ?? null,
         public_token: randomBytes(24).toString("hex"),
         status: "draft",
         starts_at: contract.starts_at,
@@ -309,11 +319,51 @@ export const createContractFromTemplate = createServerFn({ method: "POST" })
         service_location: contract.service_location,
         jurisdiction: contract.jurisdiction,
         governing_law: contract.governing_law,
-        body_html: mergeTemplateBody(template.body_html ?? "", ctx),
+        body_html: mergeTemplateBody(template.body_html ?? "", ctx, { strict: !!source }),
         metadata: { contract_template_id: template.id, contract_template_name: template.name },
       })
       .select("id, title, number")
       .single();
     if (iErr) throw iErr;
     return row;
+  });
+
+/** Selectors use user RLS; accepting internally never qualifies as customer acceptance. */
+export const listContractTemplateSources = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z
+      .object({ companyId: z.string().uuid().optional(), dealId: z.string().uuid().optional() })
+      .parse(input ?? {}),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.create.own",
+      "techcontracts.contracts.create.workspace",
+    ]);
+    let query = supabase
+      .from("proposals")
+      .select("id, title, version, decided_at, company_id, deal_id")
+      .eq("workspace_id", workspaceId)
+      .eq("status", "accepted")
+      .eq("locked", true)
+      .not("decided_at", "is", null)
+      .order("decided_at", { ascending: false })
+      .limit(200);
+    if (data.companyId) query = query.eq("company_id", data.companyId);
+    if (data.dealId) query = query.eq("deal_id", data.dealId);
+    const [proposals, entities] = await Promise.all([
+      query,
+      supabase
+        .from("legal_entities")
+        .select("id, name, cnpj")
+        .eq("workspace_id", workspaceId)
+        .eq("active", true)
+        .order("name"),
+    ]);
+    if (proposals.error) throw proposals.error;
+    if (entities.error) throw entities.error;
+    return { proposals: proposals.data ?? [], entities: entities.data ?? [] };
   });

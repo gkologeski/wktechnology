@@ -2,6 +2,7 @@
 // partir do negócio e pela ação de workflow. Concentra a leitura do negócio,
 // a aplicação dos padrões do workspace e a cópia dos itens de linha como
 // serviços do contrato (mantendo a cobrança).
+import { workRpc } from "@/lib/access-control/work-core.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   applyDefaults,
@@ -128,6 +129,8 @@ export function contractFieldsFromDeal(
 }
 
 export type CreateContractArgs = {
+  /** Must match the number already merged into the template body. */
+  number?: string;
   skipExisting?: boolean;
   /** Server-only proof for the source actor of an automated creation. */
   delegation?: {
@@ -249,7 +252,7 @@ export async function createContractShared(
     currency: (merged["currency"] as string) ?? "BRL",
     total_value: merged["total_value"] ?? 0,
     body_html: args.bodyHtml ?? null,
-    number: generateNumber(),
+    number: args.number ?? generateNumber(),
     public_token: tokenValue(),
     status: args.status ?? "draft",
   };
@@ -292,7 +295,6 @@ export async function createContractShared(
       },
     }));
   }
-  const { workRpc } = await import("@/lib/access-control/work-core.server");
   return workRpc<{
     contract: { id: string; number: string | null; title: string | null };
     servicesCreated: number;

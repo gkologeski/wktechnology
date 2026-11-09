@@ -23,6 +23,12 @@ export const CONTRACT_TEMPLATE_TOKENS: MessageToken[] = [
   { token: "{{contract.jurisdiction}}", label: "Foro", group: "Contrato" },
   { token: "{{contract.governing_law}}", label: "Lei aplicável", group: "Contrato" },
 
+  // Proposta Comercial aceita pelo cliente
+  { token: "{{proposal.id}}", label: "Identificador", group: "Proposta Comercial" },
+  { token: "{{proposal.title}}", label: "Título", group: "Proposta Comercial" },
+  { token: "{{proposal.version}}", label: "Versão aceita", group: "Proposta Comercial" },
+  { token: "{{proposal.decided_at}}", label: "Data do aceite", group: "Proposta Comercial" },
+
   // Contraparte (empresa do contrato)
   { token: "{{counterparty.name}}", label: "Razão social", group: "Contraparte" },
   { token: "{{counterparty.cnpj}}", label: "CNPJ", group: "Contraparte" },
@@ -65,8 +71,16 @@ export const TEMPLATE_TOKEN_KEYS = CONTRACT_TEMPLATE_TOKENS.map((t) =>
 export function mergeTemplateBody(
   html: string,
   ctx: Record<string, unknown>,
-  options?: { keepUnknown?: boolean },
+  options?: { keepUnknown?: boolean; strict?: boolean },
 ): string {
+  if (options?.strict) {
+    const missing = usedTokens(html).filter((key) => {
+      const value = getPath(ctx, key);
+      return !TEMPLATE_TOKEN_KEYS.includes(key) || value == null || String(value).trim() === "";
+    });
+    if (missing.length)
+      throw new Error(`Preencha os dados obrigatórios do modelo: ${missing.join(", ")}.`);
+  }
   return renderTokensWith(html, (key) => {
     const value = getPath(ctx, key);
     if (value == null || value === "") {
@@ -74,7 +88,12 @@ export function mergeTemplateBody(
       const label = CONTRACT_TEMPLATE_TOKENS.find((t) => t.token === `{{${key}}}`)?.label;
       return `[[${label ?? key}]]`;
     }
-    return String(value);
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   });
 }
 

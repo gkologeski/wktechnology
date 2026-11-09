@@ -1,0 +1,33 @@
+ALTER TABLE profiles ADD COLUMN full_name text;
+ALTER TABLE companies ADD COLUMN name text,ADD COLUMN cnpj text,ADD COLUMN address text,ADD COLUMN city text,ADD COLUMN state text;
+ALTER TABLE contacts ADD COLUMN first_name text,ADD COLUMN last_name text,ADD COLUMN email text,ADD COLUMN phone text;
+CREATE TABLE proposals(id uuid PRIMARY KEY,workspace_id uuid REFERENCES workspaces(id) ON DELETE CASCADE,owner_id uuid,assigned_to uuid,title text,body text,version integer,status text,locked boolean,sent_at timestamptz,decided_at timestamptz,deal_id uuid,quote_id uuid,company_id uuid,contact_id uuid,total_amount numeric,currency text);
+CREATE TABLE service_catalog(id uuid PRIMARY KEY,workspace_id uuid,name text);
+CREATE TABLE contracting_presets(id uuid PRIMARY KEY,workspace_id uuid,name text);
+CREATE TABLE deal_line_items(id uuid PRIMARY KEY,workspace_id uuid,deal_id uuid,name text,position integer,service_catalog_id uuid,contracting_preset_id uuid);
+ALTER TABLE deal_line_items ADD COLUMN description text,ADD COLUMN quantity numeric,ADD COLUMN unit_price numeric,ADD COLUMN discount_pct numeric,ADD COLUMN discount_amount numeric,ADD COLUMN discount_type text,ADD COLUMN tax_rate numeric,ADD COLUMN unit text,ADD COLUMN billing_model text,ADD COLUMN percent numeric,ADD COLUMN percent_base_amount numeric,ADD COLUMN cadence text,ADD COLUMN job_profile_id uuid,ADD COLUMN seniority text;
+CREATE TABLE quote_line_items(LIKE deal_line_items);
+ALTER TABLE quote_line_items ADD COLUMN quote_id uuid;
+CREATE TABLE contracts(id uuid PRIMARY KEY,workspace_id uuid REFERENCES workspaces(id) ON DELETE CASCADE,owner_id uuid,assigned_to uuid,proposal_id uuid REFERENCES proposals(id) ON DELETE SET NULL,quote_id uuid,counterparty_company_id uuid,deal_id uuid,status text,metadata jsonb DEFAULT '{}');
+ALTER TABLE proposals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE contracts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE proposals ADD COLUMN public_token text;
+GRANT UPDATE ON proposals TO authenticated;
+GRANT SELECT(id,workspace_id,owner_id,assigned_to,title,body,version,status,locked,sent_at,decided_at,deal_id,quote_id,company_id,contact_id,total_amount,currency) ON proposals TO authenticated;
+GRANT SELECT,INSERT,UPDATE ON contracts TO authenticated;
+CREATE POLICY contract_view ON contracts FOR SELECT TO authenticated USING(work_context_access((SELECT work_access_context()),workspace_id,'techcontracts.contracts','view',ARRAY[owner_id]));
+CREATE POLICY contract_insert ON contracts FOR INSERT TO authenticated WITH CHECK(work_context_access((SELECT work_access_context()),workspace_id,'techcontracts.contracts','create',ARRAY[owner_id]));
+CREATE POLICY contract_update ON contracts FOR UPDATE TO authenticated USING(work_context_access((SELECT work_access_context()),workspace_id,'techcontracts.contracts','update',ARRAY[owner_id]));
+
+-- Legal-entity lifecycle landed concurrently on main. Production resolvers and
+-- lifecycle guards are loaded by the suite; only the schema is synthetic.
+CREATE TABLE legal_entities(id uuid PRIMARY KEY,workspace_id uuid,created_by uuid,is_default boolean DEFAULT false,active boolean DEFAULT true);
+CREATE TABLE financial_entries(id uuid,legal_entity_id uuid);
+CREATE TABLE customer_invoices(legal_entity_id uuid);
+CREATE TABLE nfse_invoices(legal_entity_id uuid);
+CREATE TABLE financial_bank_accounts(legal_entity_id uuid);
+CREATE TABLE financial_categories(legal_entity_id uuid);
+CREATE TABLE financial_cost_centers(legal_entity_id uuid);
+CREATE TABLE hiring_engagements(legal_entity_id uuid);
+CREATE TABLE hiring_monthly_provisions(legal_entity_id uuid);
+CREATE TABLE legal_entity_group_members(legal_entity_id uuid);

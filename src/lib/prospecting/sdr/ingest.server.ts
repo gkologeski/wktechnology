@@ -158,7 +158,9 @@ export async function linkCampaignSend(
     .update({ conversation_id: p.conversationId, playbook_id: playbook.id })
     .eq("id", enr.id)
     .eq("workspace_id", p.workspaceId)
-    .or(`conversation_id.is.null,conversation_id.neq.${p.conversationId},playbook_id.neq.${playbook.id}`);
+    .or(
+      `conversation_id.is.null,conversation_id.neq.${p.conversationId},playbook_id.neq.${playbook.id}`,
+    );
   if (relink.error) throw new Error("Não foi possível atualizar a inscrição da campanha.");
 
   const { data: conv } = await admin

@@ -3,7 +3,10 @@
 // só aceitam minutas enviadas e só são executáveis pelo servidor.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { clientDraftDecisionError, isValidDraftToken } from "@/lib/contracts/contract-draft-public-rules";
+import {
+  clientDraftDecisionError,
+  isValidDraftToken,
+} from "@/lib/contracts/contract-draft-public-rules";
 
 export const getPublicContractDraft = createServerFn({ method: "POST" })
   .inputValidator((i) => z.object({ token: z.string().uuid() }).parse(i))

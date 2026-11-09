@@ -9,6 +9,10 @@ describe("template variable context", () => {
     expect(variableSnippet("Olá {{1}}", 2)).toBeNull();
   });
   it("marks variables when splitting", () => {
-    expect(splitTemplateBody("A {{2}} B").filter((p) => p.variable).map((p) => p.variable)).toEqual(["2"]);
+    expect(
+      splitTemplateBody("A {{2}} B")
+        .filter((p) => p.variable)
+        .map((p) => p.variable),
+    ).toEqual(["2"]);
   });
 });
