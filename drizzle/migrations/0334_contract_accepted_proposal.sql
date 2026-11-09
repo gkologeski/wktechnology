@@ -1,9 +1,9 @@
 -- Freeze the customer-facing specifications when the proposal is sent.
 -- Existing published proposals deliberately have no reconstructed historical snapshot.
 CREATE TABLE public.proposal_document_versions (
- proposal_id uuid NOT NULL REFERENCES public.proposals(id) ON DELETE RESTRICT,
+ proposal_id uuid NOT NULL REFERENCES public.proposals(id) DEFERRABLE INITIALLY DEFERRED,
  version integer NOT NULL,
- workspace_id uuid NOT NULL REFERENCES public.workspaces(id),
+ workspace_id uuid NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,
  document jsonb NOT NULL,
  captured_at timestamptz NOT NULL DEFAULT clock_timestamp(),
  PRIMARY KEY(proposal_id,version)
@@ -58,6 +58,11 @@ CREATE OR REPLACE FUNCTION public.contract_accepted_proposal_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp AS $$
 DECLARE s jsonb;previous jsonb;
 BEGIN
+ -- Only a trusted nested tenant purge may clear references while the entire
+ -- workspace is being removed; ordinary proposal deletion remains constrained.
+ IF current_user IN('postgres','supabase_admin','service_role') AND pg_trigger_depth()>1 THEN
+  IF NOT EXISTS(SELECT 1 FROM public.workspaces WHERE id=NEW.workspace_id) THEN RETURN NEW;END IF;
+ END IF;
  IF TG_OP='UPDATE' THEN
   previous:=OLD.metadata->'accepted_proposal';
   IF previous IS NOT NULL THEN

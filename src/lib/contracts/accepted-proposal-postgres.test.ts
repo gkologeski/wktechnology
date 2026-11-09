@@ -111,6 +111,9 @@ beforeAll(async () => {
     ["drizzle/migrations/0046_view_as_role_only_readonly.sql", "is_read_only_view"],
     ["drizzle/migrations/0216_work_core_prepare.sql", "work_access_context"],
     ["drizzle/migrations/0216_work_core_prepare.sql", "work_context_access"],
+    ["drizzle/migrations/0210_finance_core_actions.sql", "finance_access_context"],
+    ["drizzle/migrations/0214_finance_business_prepare.sql", "finance_business_access"],
+    ["drizzle/migrations/0214_finance_business_prepare.sql", "finance_business_authorize"],
     ["drizzle/migrations/0222_order4_sales_prepare.sql", "sales_access_context"],
     ["drizzle/migrations/0222_order4_sales_prepare.sql", "sales_context_access"],
   ])
@@ -122,7 +125,15 @@ beforeAll(async () => {
   if (!policy) throw new Error("Production proposal RLS policy missing");
   await db.unsafe(policy);
   await db.unsafe(readFileSync("drizzle/migrations/0334_contract_accepted_proposal.sql", "utf8"));
+  for (const file of [
+    "0314_legal_entity_safe_lifecycle",
+    "0315_legal_entity_guard_workspace_cascade",
+    "0335_legal_entity_usage_permission",
+  ])
+    await db.unsafe(readFileSync("drizzle/migrations/" + file + ".sql", "utf8"));
   await db`insert into workspaces(id) values(${W}),(${B})`;
+  await db`insert into legal_entities(id,workspace_id,created_by) values(${IDs[1]},${W},${U})`;
+  await db`insert into financial_entries(id,legal_entity_id) values(${IDs[2]},${IDs[1]})`;
   await db`insert into profiles(id,active_workspace_id) values(${U},${W})`;
   await db`insert into workspace_members(workspace_id,user_id) values(${W},${U})`;
   await db`insert into job_roles(id,workspace_id) values(${R},${W})`;
@@ -153,6 +164,7 @@ async function subject(
         "techcontracts.contracts.create.workspace",
         "techcontracts.contracts.view.workspace",
         "techcontracts.contracts.update.workspace",
+        "techfinance.legal_entities.view.workspace",
       ]) {
         if (options.keys !== false)
           await tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${R},${key},${options.deny ? "deny" : "grant"})`;
@@ -296,4 +308,74 @@ it("accepted proposal SQL never grants access to the private sharing token", asy
       await tx`select public_token from proposals where id=${IDs[0]}`;
     }),
   ).rejects.toThrow("permission denied");
+});
+
+it("legal entity usage SQL allows an authorized active member", async () => {
+  await subject(async (tx) => {
+    const [row] = await tx`select legal_entity_usage(${IDs[1]}) as usage`;
+    expect(row.usage).toEqual({ "Lançamentos financeiros": 1 });
+  });
+});
+it("legal entity usage SQL rejects missing permission", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select legal_entity_usage(${IDs[1]})`;
+      },
+      { keys: false },
+    ),
+  ).rejects.toThrow();
+});
+it("legal entity usage SQL respects explicit deny", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select legal_entity_usage(${IDs[1]})`;
+      },
+      { deny: true },
+    ),
+  ).rejects.toThrow();
+});
+it("legal entity usage SQL isolates foreign workspace", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select legal_entity_usage(${IDs[1]})`;
+      },
+      { workspace: B },
+    ),
+  ).rejects.toThrow();
+});
+it("legal entity usage SQL rejects inactive membership", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select legal_entity_usage(${IDs[1]})`;
+      },
+      { inactive: true },
+    ),
+  ).rejects.toThrow();
+});
+
+it("accepted proposal history allows a trusted complete workspace purge", async () => {
+  const rollback = new Error("purge fixture rollback");
+  try {
+    await db.begin(async (tx) => {
+      await bind(tx);
+      await tx`delete from workspaces where id=${W}`;
+      expect(
+        Number(
+          (
+            await tx`select count(*) as n from proposal_document_versions where workspace_id=${W}`
+          )[0].n,
+        ),
+      ).toBe(0);
+      expect(
+        Number((await tx`select count(*) as n from contracts where workspace_id=${W}`)[0].n),
+      ).toBe(0);
+      throw rollback;
+    });
+  } catch (error) {
+    if (error !== rollback) throw error;
+  }
 });

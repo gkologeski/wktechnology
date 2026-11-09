@@ -57,7 +57,12 @@ export function LegalEntitiesPage() {
   const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all">("all");
   const [search, setSearch] = useState("");
 
-  const { data: allRows = [], isLoading, isError, refetch } = useQuery({
+  const {
+    data: allRows = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useQuery({
     queryKey: ["legal-entities", financePermissions.workspaceId],
     queryFn: () => list() as Promise<LE[]>,
   });
@@ -214,7 +219,8 @@ export function LegalEntitiesPage() {
       }
       return;
     }
-    if (!(await confirmDialog(`Excluir ${row.name} definitivamente? Não há registros vinculados.`))) return;
+    if (!(await confirmDialog(`Excluir ${row.name} definitivamente? Não há registros vinculados.`)))
+      return;
     try {
       await del({ data: { id: row.id } });
       toast.success("Excluída");
@@ -309,7 +315,9 @@ export function LegalEntitiesPage() {
             {!isLoading && !isError && rows.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                  {allRows.length === 0 ? "Nenhuma empresa cadastrada." : "Nenhuma empresa encontrada com esses filtros."}
+                  {allRows.length === 0
+                    ? "Nenhuma empresa cadastrada."
+                    : "Nenhuma empresa encontrada com esses filtros."}
                 </td>
               </tr>
             )}

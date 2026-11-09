@@ -30,7 +30,7 @@ Na criação do contrato, `contract_accepted_proposal_guard` revalida workspace,
 
 ## Implantação e registros anteriores
 
-1. Aplicar a migration antes de disponibilizar o novo código. Ela está registrada no journal Drizzle.
+1. Aplicar a migration antes de disponibilizar o novo código. Ela está registrada no journal Drizzle. Na base que já inclui o ciclo de vida de CNPJs (0314/0315), aplicar também `0335_legal_entity_usage_permission`, que protege a consulta direta de vínculos pela mesma autorização Finance da tela.
 2. Importar/revisar/publicar o DOCX e conferir os 13 tokens no editor. O importador passa a reconhecer `proposal.*` pelo catálogo compartilhado.
 3. Enviar a Proposta Comercial e obter o aceite do cliente. Gerar o contrato selecionando a proposta e a prestadora no diálogo ou assistente.
 4. Publicar o conteúdo da Ajuda pelo fluxo editorial autorizado existente.

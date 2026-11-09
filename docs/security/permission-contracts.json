@@ -9744,7 +9744,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions.",
       "files": {
-        "src/integrations/supabase/types.ts": "86aa3b81fd9b130d3d825baa7ce8937082ebb7ac845be2c3a3b54b3707e4f211"
+        "src/integrations/supabase/types.ts": "1747e155406826263f88fd4098cd6b0df2ef3225fd16d1357c76b977f7678044"
       }
     },
     {
@@ -9939,7 +9939,7 @@
         "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
         "src/lib/sales-flow.server.ts": "921ea47d0dc77de74958a21e27d57a62277650d59646e42005880d01e9f9aae0",
         "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
-        "drizzle/migrations/0334_contract_accepted_proposal.sql": "ef7f40a85ada3d2e2805588df0bc5a745cbed63eeaade1b185745acf9a9a57b1",
+        "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "fca40ccfa8137fb3f857f7412f7bef9bf132395a49f35c7a6ff692a978f2041b",
         "src/lib/sales-flow.functions.ts": "ba9d014b9aff1352c7205b7f44b19d8b59874707f6ec48baee4e29222c6eb56f"
       }
@@ -10186,6 +10186,96 @@
       "files": {
         "src/lib/contracts/import-schemas.ts": "1f6f7337a2d1b0aa73100261c3924a42c2b5015e8c180431bc7679f4cb1bd994",
         "src/lib/contracts/workflow-field-meta.ts": "417fd4f63e8139ec0702adbbd71ce04d0956d88aceedcb8d4bd79b6e6ff760c6"
+      }
+    },
+    {
+      "id": "legal-entity-lifecycle-inherited-boundaries",
+      "kind": "business",
+      "resources": [
+        "techfinance.legal_entities"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techfinance.legal_entities.view.workspace",
+        "techfinance.legal_entities.create.workspace",
+        "techfinance.legal_entities.update.workspace",
+        "techfinance.legal_entities.delete.workspace"
+      ],
+      "rationale": "Review the CNPJ lifecycle changes landing concurrently on main. Existing Finance server authorizers, user RLS and record capabilities protect editing/deactivation/deletion; the additive 0335 migration also enforces active membership, selected tenant, effective view scope and explicit deny in the direct usage-count RPC before its private aggregate helper. No business grants added.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/finance-business.server.ts",
+          "symbol": "authorizeFinanceBusiness"
+        },
+        {
+          "file": "src/lib/access-control/finance-records.server.ts",
+          "symbol": "financeRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/use-finance-business-capabilities.ts",
+          "symbol": "useFinanceBusinessCapabilities"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0314_legal_entity_safe_lifecycle.sql",
+          "symbol": "_legal_entity_usage_counts"
+        },
+        {
+          "file": "drizzle/migrations/0315_legal_entity_guard_workspace_cascade.sql",
+          "symbol": "legal_entities_guard"
+        },
+        {
+          "file": "drizzle/migrations/0335_legal_entity_usage_permission.sql",
+          "symbol": "legal_entity_usage"
+        },
+        {
+          "file": "drizzle/migrations/0214_finance_business_prepare.sql",
+          "symbol": "finance_business_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "legal entity usage SQL allows an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "legal entity usage SQL rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "legal entity usage SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "legal entity usage SQL isolates foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "legal entity usage SQL rejects inactive membership"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0314_legal_entity_safe_lifecycle.sql": "5624b4a265dad5519d86675fada734cafc878beaf6a6f228035ea5a7b879212a",
+        "drizzle/migrations/0315_legal_entity_guard_workspace_cascade.sql": "350b426fc8a8a038d3eb2cb3d0f4590dd3a378b0e5d74c557eba69fff60155d5",
+        "drizzle/migrations/0335_legal_entity_usage_permission.sql": "b466108f2045521ffffddf8114eff4617fced1e80d01dddaf33823a6f1e9e12f",
+        "src/lib/legal-entities.functions.ts": "e32092d1ebde5b97e37aaba3d244ef47b4dbbf4d3660dbe3e55ccb452d622e73",
+        "src/components/finance/legal-entities-page.tsx": "ff79c76aca62837af849e49d597ba73162cab74a8da92bf4620b1a6a60b97bf6"
       }
     }
   ],

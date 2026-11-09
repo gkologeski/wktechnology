@@ -298,7 +298,9 @@ export const getLegalEntityUsage = createServerFn({ method: "POST" })
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }): Promise<Record<string, number>> => {
     await authorizeFinanceBusiness(context.supabase, "legal_entities", "view", data.id);
-    const { data: usage, error } = await context.supabase.rpc("legal_entity_usage", { _id: data.id });
+    const { data: usage, error } = await context.supabase.rpc("legal_entity_usage", {
+      _id: data.id,
+    });
     if (error) throw error;
     return (usage ?? {}) as Record<string, number>;
   });
@@ -306,9 +308,7 @@ export const getLegalEntityUsage = createServerFn({ method: "POST" })
 /** Desativa/reativa sem apagar nenhum registro vinculado. */
 export const setLegalEntityActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ id: z.string().uuid(), active: z.boolean() }).parse(input),
-  )
+  .inputValidator((input) => z.object({ id: z.string().uuid(), active: z.boolean() }).parse(input))
   .handler(async ({ data, context }) => {
     await authorizeFinanceBusiness(context.supabase, "legal_entities", "update", data.id);
     const workspaceId = await resolveActiveWorkspace(context.userId);
