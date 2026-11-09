@@ -30,7 +30,7 @@ Na criação do contrato, `contract_accepted_proposal_guard` revalida workspace,
 
 ## Implantação e registros anteriores
 
-1. Aplicar a migration antes de disponibilizar o novo código. Ela está registrada no journal Drizzle. Na base que já inclui o ciclo de vida de CNPJs (0314/0315), aplicar também `0335_legal_entity_usage_permission`, que protege a consulta direta de vínculos pela mesma autorização Finance da tela.
+1. Na futura implantação, aplicar as migrações antes de disponibilizar o novo código. O journal preserva a sequência já existente da `main` (até `0317_cnpj_summary_scoped_performance`) e acrescenta `0334_contract_accepted_proposal` e `0335_legal_entity_usage_permission` ao final, com timestamps posteriores. Não reaplicar as migrações de CNPJ que já estiverem instaladas. A `0335` mantém a autorização Finance da consulta direta de vínculos e usa o agregador privado atualizado pela `0316`.
 2. Importar/revisar/publicar o DOCX e conferir os 13 tokens no editor. O importador passa a reconhecer `proposal.*` pelo catálogo compartilhado.
 3. Enviar a Proposta Comercial e obter o aceite do cliente. Gerar o contrato selecionando a proposta e a prestadora no diálogo ou assistente.
 4. Publicar o conteúdo da Ajuda pelo fluxo editorial autorizado existente.
@@ -43,5 +43,6 @@ Um rollback de interface deve manter as versões preservadas e sua leitura nos d
 
 - `template-proposal.test.ts`: 13 variáveis, fontes reais do contexto, fuso, dados ausentes, origem conflitante, prestadora explícita e escape HTML.
 - `accepted-proposal-postgres.test.ts`: funções/gatilhos SQL reais em PostgreSQL descartável, RLS, cinco cenários de acesso, coluna privada sem grant, preservação de itens e resistência à adulteração.
+- A integração com a `main` também testa o agregador atual de vínculos e a coexistência do contrato aceito com o gatilho de CNPJ ativo: prestadora ativa é preservada e prestadora inativa é recusada.
 - `template-work-boundary.test.ts`: controles reais de importação/modelos antes da execução de handlers.
 - Aceite adicional local com GoTrue e SDK/PostgREST: merge das 13 variáveis, gravação da mesma versão, tentativa de adulteração e quatro identidades negadas. Relatório local em `.verification/contract-proposal-jwt.json`, sem credenciais.

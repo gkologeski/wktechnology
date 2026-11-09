@@ -7,7 +7,6 @@ import { aiChatFetch } from "@/lib/ai/provider-resolver.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { randomBytes } from "crypto";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 import {
@@ -403,7 +402,7 @@ export const createContractFromImport = createServerFn({ method: "POST" })
 // ============= VIEW ORIGINAL FILE =============
 // Gera URL assinada temporária do arquivo original importado (bucket `contract-imports`).
 export const getContractSourceFileUrl = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "view")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;

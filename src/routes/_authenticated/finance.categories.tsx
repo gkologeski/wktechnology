@@ -28,6 +28,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { createCategory, deleteCategory, listCategories } from "@/lib/finance.functions";
+import { legalEntityAssignmentOptions } from "@/lib/legal-entity-options";
 import {
   ALL_LEGAL_ENTITIES,
   GROUP_PREFIX,
@@ -126,7 +127,10 @@ function CategoriesPage() {
     setParentId(preset?.parent ?? "__root__");
     // Se um pai foi escolhido, herda a empresa dele; senão, usa o filtro ativo.
     const parent = preset?.parent ? rows.find((r) => r.id === preset.parent) : null;
-    setFormLegalEntity(parent?.legal_entity_id ?? filterLE ?? "__none__");
+    const candidate = parent?.legal_entity_id ?? filterLE;
+    setFormLegalEntity(
+      legalEntities.find((le) => le.id === candidate && le.active)?.id ?? "__none__",
+    );
     setOpen(true);
   }
 
@@ -333,7 +337,7 @@ function CategoriesPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">— Não vincular —</SelectItem>
-                    {legalEntities.map((le) => (
+                    {legalEntityAssignmentOptions(legalEntities).map((le) => (
                       <SelectItem key={le.id} value={le.id}>
                         {le.code ? `${le.code} · ${le.name}` : le.name}
                       </SelectItem>

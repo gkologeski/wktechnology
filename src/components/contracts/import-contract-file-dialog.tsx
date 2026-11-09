@@ -92,9 +92,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
   const canImport =
     !permissions.isLoading &&
     !permissions.isError &&
-    permissions.canAny(
-      ["own", "team", "workspace"].map((scope) => `techcontracts.imports.manage.${scope}`),
-    );
+    permissions.can("techcontracts.imports.manage.workspace");
   const parsePdf = useServerFn(parseContractPdf);
   const parseText = useServerFn(parseContractText);
   const createFromImport = useServerFn(createContractFromImport);

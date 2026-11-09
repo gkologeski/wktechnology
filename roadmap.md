@@ -1,3 +1,12 @@
+# CNPJ-ATIVO — conclusão e publicação (porte G, previsão 3–5 h)
+
+- [x] Correção pontual dos totais: migration 0317 aplicada sem alterar dados/RLS, contexto e visibilidade preservados; 11 testes unitários e cenários SQL isolados aprovados. Navegador autenticado mostrou sete empresas, totais completos e edição de Fluxo. permissions:check sem achados, Ajuda 248/248, build automático OK. perf:check indisponível por ausência de .verification/build.json.
+- [ ] Publicar a correção pontual e conferir a versão pública; isso não certifica as pendências gerais de vínculo universal abaixo.
+- [ ] Auditar controles e completar seleção de CNPJs ativos preservando históricos.
+- [ ] Completar vínculo por origem/padrão nos registros operacionais, sem substituir vínculos existentes.
+- [ ] Regularizar contratos de permissão, testes e artigos da Ajuda sem regenerar baseline.
+- [ ] Validar fluxo autenticado, segurança e publicação; conferir versão pública.
+
 # FLUXO-MODELOS — revisão dos alertas (porte P, 25–40 min)
 
 - [x] Conferir os alertas no código atual; workflows já corrigidos no pacote FLUXO-VISIVEL.

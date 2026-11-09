@@ -131,6 +131,21 @@ beforeAll(async () => {
     "0335_legal_entity_usage_permission",
   ])
     await db.unsafe(readFileSync("drizzle/migrations/" + file + ".sql", "utf8"));
+  // Keep the direct-API permission scenarios on main's current aggregate implementation.
+  await db.unsafe(
+    sourceFunction(
+      "drizzle/migrations/0316_cnpj_operational_linkage_and_summary.sql",
+      "_legal_entity_usage_counts",
+    ),
+  );
+  await db.unsafe(
+    sourceFunction(
+      "drizzle/migrations/0316_cnpj_operational_linkage_and_summary.sql",
+      "record_legal_entity_guard",
+    ),
+  );
+  await db.unsafe(`ALTER TABLE contracts ADD COLUMN contracting_legal_entity_id uuid;
+    CREATE TRIGGER cnpj_active_contracting_legal_entity_id BEFORE INSERT OR UPDATE OF contracting_legal_entity_id,workspace_id ON contracts FOR EACH ROW EXECUTE FUNCTION record_legal_entity_guard('contracting_legal_entity_id')`);
   await db`insert into workspaces(id) values(${W}),(${B})`;
   await db`insert into legal_entities(id,workspace_id,created_by) values(${IDs[1]},${W},${U})`;
   await db`insert into financial_entries(id,legal_entity_id) values(${IDs[2]},${IDs[1]})`;
@@ -313,7 +328,7 @@ it("accepted proposal SQL never grants access to the private sharing token", asy
 it("legal entity usage SQL allows an authorized active member", async () => {
   await subject(async (tx) => {
     const [row] = await tx`select legal_entity_usage(${IDs[1]}) as usage`;
-    expect(row.usage).toEqual({ "Lançamentos financeiros": 1 });
+    expect(row.usage).toEqual({ "financial_entries.legal_entity_id": 1 });
   });
 });
 it("legal entity usage SQL rejects missing permission", async () => {
@@ -377,5 +392,26 @@ it("accepted proposal history allows a trusted complete workspace purge", async 
     });
   } catch (error) {
     if (error !== rollback) throw error;
+  }
+});
+
+it("accepted proposal contract retains active CNPJ enforcement after integration", async () => {
+  await subject(async (tx) => {
+    const [row] =
+      await tx`insert into contracts(id,workspace_id,owner_id,proposal_id,deal_id,status,metadata,contracting_legal_entity_id) values(${IDs[2]},${W},${U},${IDs[0]},${IDs[2]},'draft','{}',${IDs[1]}) returning metadata,contracting_legal_entity_id`;
+    expect(row.contracting_legal_entity_id).toBe(IDs[1]);
+    expect(row.metadata.accepted_proposal.proposal.version).toBe(3);
+  });
+});
+it("accepted proposal contract rejects an inactive CNPJ after integration", async () => {
+  await db`update legal_entities set active=false where id=${IDs[1]}`;
+  try {
+    await expect(
+      subject(async (tx) => {
+        await tx`insert into contracts(id,workspace_id,owner_id,proposal_id,deal_id,status,metadata,contracting_legal_entity_id) values(${IDs[2]},${W},${U},${IDs[0]},${IDs[2]},'draft','{}',${IDs[1]})`;
+      }),
+    ).rejects.toThrow("inativa");
+  } finally {
+    await db`update legal_entities set active=true where id=${IDs[1]}`;
   }
 });
