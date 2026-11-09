@@ -2255,6 +2255,13 @@
       "when": 1794265451037,
       "tag": "0321_proposal_versions_cascade",
       "breakpoints": true
+    },
+    {
+      "idx": 322,
+      "version": "7",
+      "when": 1794266368569,
+      "tag": "0322_contract_templates_allow_archived",
+      "breakpoints": true
     }
   ]
 }

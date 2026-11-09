@@ -1,0 +1,2 @@
+ALTER TABLE public.contract_templates DROP CONSTRAINT contract_templates_status_check;
+ALTER TABLE public.contract_templates ADD CONSTRAINT contract_templates_status_check CHECK (status = ANY (ARRAY['draft'::text, 'published'::text, 'archived'::text]));
