@@ -21661,6 +21661,45 @@ export type Database = {
           },
         ]
       }
+      proposal_document_versions: {
+        Row: {
+          captured_at: string
+          document: Json
+          proposal_id: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          captured_at?: string
+          document: Json
+          proposal_id: string
+          version: number
+          workspace_id: string
+        }
+        Update: {
+          captured_at?: string
+          document?: Json
+          proposal_id?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_document_versions_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_document_versions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposal_template_services: {
         Row: {
           service_catalog_id: string
@@ -35193,6 +35232,11 @@ export type Database = {
           p_since?: string
         }
         Returns: number
+      }
+      proposal_contract_source: { Args: { p_id: string }; Returns: Json }
+      proposal_document_snapshot: {
+        Args: { p_id: string; p_version: number }
+        Returns: Json
       }
       proposal_publish_with_esign: {
         Args: { p_hash: string; p_id: string; p_sent_at: string }
