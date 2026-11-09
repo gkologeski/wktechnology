@@ -95,7 +95,7 @@ export function ContractWizard({
   const [entityId, setEntityId] = useState("none");
   const [templateProposalId, setTemplateProposalId] = useState("none");
   const sourcesQ = useQuery({
-    queryKey: ["contract-template-sources", source?.companyId, dealId],
+    queryKey: ["contract-template-sources", permissions.workspaceId, source?.companyId, dealId],
     enabled:
       open &&
       permissions.canAny([

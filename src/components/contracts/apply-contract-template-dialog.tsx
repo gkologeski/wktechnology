@@ -90,7 +90,7 @@ export function ApplyContractTemplateDialog({
   });
 
   const { data: sources, isError: sourcesError } = useQuery({
-    queryKey: ["contract-template-sources", companyId, dealId],
+    queryKey: ["contract-template-sources", permissions.workspaceId, companyId, dealId],
     queryFn: () =>
       listSources({ data: { companyId: companyId ?? undefined, dealId: dealId ?? undefined } }),
     enabled: open && canCreate,
