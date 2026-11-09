@@ -2213,6 +2213,13 @@
       "when": 1794189786001,
       "tag": "0315_legal_entity_guard_workspace_cascade",
       "breakpoints": true
+    },
+    {
+      "idx": 316,
+      "version": "7",
+      "when": 1794191194924,
+      "tag": "0316_cnpj_operational_linkage_and_summary",
+      "breakpoints": true
     }
   ]
 }
