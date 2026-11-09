@@ -396,6 +396,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                     <Label htmlFor="pw-installments">Parcelas</Label>
                     <Input
                       id="pw-installments"
+                      disabled={!canEditTerms}
                       type="number"
                       min={1}
                       max={120}
@@ -408,6 +409,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                     <Label htmlFor="pw-due-day">Dia de vencimento</Label>
                     <Input
                       id="pw-due-day"
+                      disabled={!canEditTerms}
                       type="number"
                       min={1}
                       max={31}
@@ -420,6 +422,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                     <Label htmlFor="pw-validity">Vigência do contrato (dias)</Label>
                     <Input
                       id="pw-validity"
+                      disabled={!canEditTerms}
                       type="number"
                       min={1}
                       max={3650}

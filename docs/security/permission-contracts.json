@@ -10107,7 +10107,7 @@
         "techcontracts.contract_templates.view.workspace",
         "techsales.proposals.view.workspace"
       ],
-      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written only through updateProposal (requireSalesPermission update + assertSalesRecord, locked proposals rejected); the edit draft now asserts sales update access before reading terms.",
+      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -10144,10 +10144,6 @@
         {
           "file": "src/lib/access-control/work-core.server.ts",
           "symbol": "assertWorkRecord"
-        },
-        {
-          "file": "src/lib/proposals.functions.ts",
-          "symbol": "updateProposal"
         },
         {
           "file": "src/lib/access-control/sales-core.server.ts",
@@ -10209,10 +10205,9 @@
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "fca40ccfa8137fb3f857f7412f7bef9bf132395a49f35c7a6ff692a978f2041b",
         "src/lib/sales-flow.functions.ts": "ba9d014b9aff1352c7205b7f44b19d8b59874707f6ec48baee4e29222c6eb56f",
-        "src/components/proposals/proposal-wizard.tsx": "cc8a0d026f3ae7f4055f77edac9c33873d13831f0537766c0b45738469b982b1",
+        "src/components/proposals/proposal-wizard.tsx": "c7958d093a50b4f1e5c36baf397772f48156c9a26e111c5a85fae2620969196f",
         "src/lib/proposals/proposal-draft.server.ts": "e11feeafb1f2b43928b2623315753716b8862647d8e3475873d13b8197f59f49",
-        "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
-        "src/lib/proposals.functions.ts": "bf9a48bcd714aabfa5687db86830d2c2b07ed2c55f706768ea4c090e9550c06c"
+        "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6"
       }
     },
     {
