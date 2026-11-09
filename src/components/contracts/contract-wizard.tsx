@@ -1,6 +1,14 @@
 // Assistente de criação de contrato (mesmo padrão do assistente de cotação):
 // Origem -> Tipo -> Dados -> Serviços -> Revisão. Nada é gravado antes de
 // "Criar contrato".
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -28,6 +36,7 @@ import { createContract } from "@/lib/contracts.functions";
 import {
   createContractFromTemplate,
   listContractTemplates,
+  listContractTemplateSources,
 } from "@/lib/contracts/templates.functions";
 import { createContractFromSales, listActiveContractsForSales } from "@/lib/sales-flow.functions";
 import { CONTRACT_KIND_LABEL, type ContractKind } from "@/lib/contracts/contract-kinds";
@@ -81,6 +90,24 @@ export function ContractWizard({
     initialDealId: dealId,
   });
 
+  const permissions = usePermissions();
+  const listSources = useServerFn(listContractTemplateSources);
+  const [entityId, setEntityId] = useState("none");
+  const [templateProposalId, setTemplateProposalId] = useState("none");
+  const sourcesQ = useQuery({
+    queryKey: ["contract-template-sources", source?.companyId, dealId],
+    enabled:
+      open &&
+      permissions.canAny([
+        "techcontracts.contracts.create.own",
+        "techcontracts.contracts.create.workspace",
+      ]),
+    queryFn: () =>
+      listSources({
+        data: { companyId: source?.companyId ?? undefined, dealId: dealId ?? undefined },
+      }),
+  });
+
   const [step, setStep] = useState(0);
   const [originKey, setOriginKey] = useState("blank");
   const [choice, setChoice] = useState("new");
@@ -98,11 +125,20 @@ export function ContractWizard({
       if (dealId) {
         const [q, p] = await Promise.all([
           supabase.from("quotes").select("id, number, title").eq("deal_id", dealId),
-          supabase.from("proposals").select("id, title").eq("deal_id", dealId),
+          supabase
+            .from("proposals")
+            .select("id, title, version")
+            .eq("deal_id", dealId)
+            .eq("status", "accepted")
+            .eq("locked", true),
         ]);
         for (const r of p.data ?? []) {
           propIds.add(r.id);
-          list.push({ type: "proposal", id: r.id, label: r.title || "Proposta" });
+          list.push({
+            type: "proposal",
+            id: r.id,
+            label: `${r.title || "Proposta Comercial"} — versão ${r.version}`,
+          });
         }
         for (const r of q.data ?? []) {
           quoteIds.add(r.id);
@@ -112,10 +148,17 @@ export function ContractWizard({
       if (source?.proposalId && !propIds.has(source.proposalId)) {
         const { data } = await supabase
           .from("proposals")
-          .select("id, title")
+          .select("id, title, version")
+          .eq("status", "accepted")
+          .eq("locked", true)
           .eq("id", source.proposalId)
           .maybeSingle();
-        if (data) list.push({ type: "proposal", id: data.id, label: data.title || "Proposta" });
+        if (data)
+          list.push({
+            type: "proposal",
+            id: data.id,
+            label: `${data.title || "Proposta Comercial"} — versão ${data.version}`,
+          });
       }
       if (source?.quoteId && !quoteIds.has(source.quoteId)) {
         const { data } = await supabase
@@ -155,6 +198,8 @@ export function ContractWizard({
   useEffect(() => {
     if (!open) return;
     setStep(0);
+    setEntityId("none");
+    setTemplateProposalId("none");
     setOriginKey(
       source?.proposalId
         ? `proposal:${source.proposalId}`
@@ -235,6 +280,8 @@ export function ContractWizard({
         const row = await fromTemplate({
           data: {
             templateId: origin.id,
+            proposalId: templateProposalId === "none" ? undefined : templateProposalId,
+            contractingLegalEntityId: entityId === "none" ? undefined : entityId,
             dealId: dealId ?? undefined,
             companyId: source?.companyId ?? undefined,
             title: templateTitle.trim(),
@@ -243,7 +290,11 @@ export function ContractWizard({
         id = row.id;
       } else {
         const r = await fromSales({
-          data: { ...salesSource!, mainContractId: choice === "new" ? null : choice },
+          data: {
+            ...salesSource!,
+            contractingLegalEntityId: entityId === "none" ? undefined : entityId,
+            mainContractId: choice === "new" ? null : choice,
+          },
         });
         if (r.reused) toast.info("Este documento já gerou um contrato — abrindo o existente.");
         id = r.contract.id;
@@ -420,11 +471,58 @@ export function ContractWizard({
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">
-                Empresa, contato, valores e vigência vêm da{" "}
-                {origin.type === "quote" ? "cotação" : "proposta"}. Você pode ajustar tudo na ficha
-                do contrato depois de criar.
+                {origin.type === "quote"
+                  ? "Dados provenientes da cotação de origem."
+                  : "Dados provenientes da versão da Proposta Comercial aceita pelo cliente. O vínculo dessa versão será preservado no contrato."}
               </p>
             ))}
+
+          {step === 2 && (origin.type === "template" || origin.type === "proposal") && (
+            <div className="space-y-4">
+              {sourcesQ.isError ? (
+                <p role="alert" className="text-sm text-destructive">
+                  Não foi possível carregar as propostas e pessoas jurídicas.
+                </p>
+              ) : null}
+              {origin.type === "template" && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="cw-proposal">Proposta Comercial aceita</Label>
+                  <Select value={templateProposalId} onValueChange={setTemplateProposalId}>
+                    <SelectTrigger id="cw-proposal">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        Selecione para modelos com Proposta Comercial
+                      </SelectItem>
+                      {sourcesQ.data?.proposals.map((p) => (
+                        <SelectItem key={p.id} value={p.id}>
+                          {p.title} — versão {p.version}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <Label htmlFor="cw-issuer">Pessoa jurídica prestadora</Label>
+                <Select value={entityId} onValueChange={setEntityId}>
+                  <SelectTrigger id="cw-issuer">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Selecione a pessoa jurídica</SelectItem>
+                    {sourcesQ.data?.entities.map((e) => (
+                      <SelectItem key={e.id} value={e.id}>
+                        {e.name}
+                        {e.cnpj ? ` — ${e.cnpj}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
 
           {step === 3 &&
             (origin.type === "blank" ? (
@@ -485,7 +583,7 @@ export function ContractWizard({
             ) : (
               <p className="text-sm text-muted-foreground">
                 {origin.type === "proposal"
-                  ? "Os serviços vêm dos itens da cotação de origem da proposta."
+                  ? "Os serviços vêm dos itens preservados no envio da Proposta Comercial aceita pelo cliente."
                   : "Os serviços vêm do modelo escolhido."}
               </p>
             ))}

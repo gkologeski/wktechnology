@@ -491,6 +491,39 @@ function ContractDetail() {
 
       <LinkedProjectsCard contractId={contract.id} />
 
+      {(() => {
+        const source = (
+          contract.metadata as {
+            accepted_proposal?: {
+              proposal?: { id?: string; title?: string; version?: number };
+              decided_at?: string;
+            };
+          } | null
+        )?.accepted_proposal;
+        return source?.proposal ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Proposta Comercial vinculada</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p>
+                {source.proposal.title} — versão {source.proposal.version}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Aceita em {formatDateTime(source.decided_at ?? null)}. Versão preservada no
+                contrato.
+              </p>
+              <Link
+                to="/proposals/$id"
+                params={{ id: source.proposal.id ?? "" }}
+                className="text-sm text-primary underline"
+              >
+                Abrir Proposta Comercial
+              </Link>
+            </CardContent>
+          </Card>
+        ) : null;
+      })()}
       <ContractLinksHistoryCard contractId={contract.id} />
 
       <AiLinkSuggestionsHistoryCard contractId={contract.id} />

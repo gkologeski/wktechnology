@@ -2,6 +2,9 @@
 // Server-only: usado pelos modelos e pela conversão Proposta/Cotação -> Contrato.
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { loadAcceptedProposalSource, legalEntityAddress } from "./accepted-proposal.server";
+import { usedTokens } from "./template-tokens";
+
 function generateNumber() {
   const yearMonth = new Date().toISOString().slice(0, 7).replace("-", "");
   return `C-${yearMonth}-${Math.floor(Math.random() * 9000 + 1000)}`;
@@ -13,6 +16,8 @@ export type MergeInput = {
   companyId?: string;
   serviceCatalogId?: string;
   title?: string;
+  proposalId?: string;
+  contractingLegalEntityId?: string;
 };
 
 export async function buildMergeContext(
@@ -24,19 +29,35 @@ export async function buildMergeContext(
 ) {
   const defaults = (template.defaults ?? {}) as Record<string, unknown>;
 
+  const requiresProposal = usedTokens(template.body_html).some((key) =>
+    key.startsWith("proposal."),
+  );
+  if (requiresProposal && !input.proposalId)
+    throw new Error("Selecione a Proposta Comercial aceita pelo cliente.");
+  const source = input.proposalId
+    ? await loadAcceptedProposalSource(supabase, workspaceId, input.proposalId)
+    : null;
+  if (
+    source &&
+    ((input.companyId && input.companyId !== source.proposal.company_id) ||
+      (input.dealId && input.dealId !== source.proposal.deal_id))
+  ) {
+    throw new Error("A Proposta Comercial pertence a outra empresa ou negócio.");
+  }
+  const dealId = source?.proposal.deal_id ?? input.dealId;
   let deal: any = null;
-  if (input.dealId) {
+  if (dealId) {
     const { data } = await supabase
       .from("deals")
       .select("id, name, value, currency, company_id")
       .eq("workspace_id", workspaceId)
-      .eq("id", input.dealId)
+      .eq("id", dealId)
       .maybeSingle();
     if (!data) throw new Error("Negócio indisponível neste workspace.");
     deal = data;
   }
 
-  const companyId = input.companyId ?? deal?.company_id ?? null;
+  const companyId = source?.proposal.company_id ?? input.companyId ?? deal?.company_id ?? null;
   let company: any = null;
   if (companyId) {
     const { data } = await supabase
@@ -49,8 +70,10 @@ export async function buildMergeContext(
     company = data;
   }
 
-  let contact: any = null;
-  if (companyId) {
+  if (source) company = source.company;
+
+  let contact: any = source?.contact ?? null;
+  if (companyId && !source) {
     const { data } = await supabase
       .from("contacts")
       .select("first_name, last_name, email, phone")
@@ -61,13 +84,20 @@ export async function buildMergeContext(
     contact = data?.[0] ?? null;
   }
 
-  const { data: entity } = await supabase
+  const entityId =
+    input.contractingLegalEntityId ?? (defaults.contracting_legal_entity_id as string | undefined);
+  if (requiresProposal && !entityId)
+    throw new Error("Selecione a pessoa jurídica prestadora do contrato.");
+  let entityQuery = supabase
     .from("legal_entities")
-    .select("id, name, cnpj")
+    .select("id, name, cnpj, address_json")
     .eq("workspace_id", workspaceId)
-    .order("is_default", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .eq("active", true);
+  if (entityId) entityQuery = entityQuery.eq("id", entityId);
+  else entityQuery = entityQuery.eq("is_default", true);
+  const { data: entity, error: entityError } = await entityQuery.maybeSingle();
+  if (entityError || (entityId && !entity))
+    throw new Error("Pessoa jurídica indisponível neste workspace.");
 
   let service: any = null;
   if (input.serviceCatalogId) {
@@ -102,9 +132,13 @@ export async function buildMergeContext(
     starts_at: (defaults.starts_at as string) ?? null,
     ends_at: (defaults.ends_at as string) ?? null,
     notice_days: (defaults.notice_days as number) ?? 30,
-    total_value: (defaults.total_value as number) ?? deal?.value ?? service?.base_price ?? 0,
+    total_value: source
+      ? (source.proposal.total_amount ?? 0)
+      : ((defaults.total_value as number) ?? deal?.value ?? service?.base_price ?? 0),
     monthly_value: (defaults.monthly_value as number) ?? null,
-    currency: (defaults.currency as string) ?? deal?.currency ?? service?.currency ?? "BRL",
+    currency: source
+      ? (source.proposal.currency ?? "BRL")
+      : ((defaults.currency as string) ?? deal?.currency ?? service?.currency ?? "BRL"),
     payment_day: (defaults.payment_day as number) ?? null,
     payment_method: (defaults.payment_method as string) ?? null,
     readjustment_index: (defaults.readjustment_index as string) ?? null,
@@ -118,6 +152,16 @@ export async function buildMergeContext(
 
   const ctx = {
     contract,
+    proposal: source
+      ? {
+          id: source.proposal.id,
+          title: source.proposal.title,
+          version: source.proposal.version,
+          decided_at: new Date(source.decided_at).toLocaleDateString("pt-BR", {
+            timeZone: "America/Sao_Paulo",
+          }),
+        }
+      : null,
     counterparty: {
       name: company?.name ?? null,
       cnpj: company?.cnpj ?? null,
@@ -125,7 +169,11 @@ export async function buildMergeContext(
       city: company?.city ?? null,
       state: company?.state ?? null,
     },
-    contracting: { name: entity?.name ?? null, cnpj: entity?.cnpj ?? null, address: null },
+    contracting: {
+      name: entity?.name ?? null,
+      cnpj: entity?.cnpj ?? null,
+      address: legalEntityAddress(entity?.address_json),
+    },
     contact: {
       full_name: contact ? [contact.first_name, contact.last_name].filter(Boolean).join(" ") : null,
       email: contact?.email ?? null,
@@ -143,5 +191,5 @@ export async function buildMergeContext(
     agent: { name: profile?.full_name ?? null, email: profile?.email ?? null },
   };
 
-  return { ctx, contract, company, deal, entity };
+  return { ctx, contract, company, deal, entity, source, requiresProposal };
 }

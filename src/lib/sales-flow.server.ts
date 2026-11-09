@@ -1,5 +1,6 @@
 // Conversões comerciais: Cotação -> Proposta -> Contrato.
 // Sempre com o cliente autenticado do usuário (RLS aplicada).
+import { loadAcceptedProposalSource } from "@/lib/contracts/accepted-proposal.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
@@ -216,12 +217,13 @@ async function findTemplateForServices(supabase: SupabaseClient, serviceIds: str
   const rank = (t: T) => (t.status === "published" ? 2 : 0) + (t.is_default ? 1 : 0);
   const list = ((data ?? []) as unknown as Array<{ template: T | null }>)
     .map((r) => r.template)
-    .filter((t): t is T => !!t && t.status !== "archived" && (t.role ?? "provider") === "provider")
+    .filter((t): t is T => !!t && t.status === "published" && (t.role ?? "provider") === "provider")
     .sort((x, y) => rank(y) - rank(x));
   return list[0] ?? null;
 }
 
 type ContractFromSalesInput = {
+  contractingLegalEntityId?: string;
   proposalId?: string;
   quoteId?: string;
   /** Quando informado, gera um termo aditivo deste contrato principal. */
@@ -239,9 +241,51 @@ export async function contractFromSales(
     "techcontracts.contracts.create.workspace",
   ]);
 
-  const proposal = input.proposalId ? await loadProposal(supabase, input.proposalId) : null;
+  if (input.proposalId) {
+    const { data: existing, error } = await supabase
+      .from("contracts")
+      .select("id")
+      .eq("workspace_id", workspaceId)
+      .eq("proposal_id", input.proposalId)
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (existing) return { contract: existing as { id: string }, reused: true, servicesCreated: 0 };
+  }
+  const source = input.proposalId
+    ? await loadAcceptedProposalSource(supabase, workspaceId, input.proposalId)
+    : null;
+  const proposal = source?.proposal ?? null;
+  if (proposal && input.quoteId && input.quoteId !== proposal.quote_id)
+    throw new Error("Cotação diferente da Proposta Comercial aceita.");
   const quoteId = input.quoteId ?? proposal?.quote_id ?? null;
-  const loaded = quoteId ? await loadQuote(supabase, quoteId) : null;
+  let loaded = quoteId ? await loadQuote(supabase, quoteId) : null;
+  if (source) {
+    const catalog = await resolveCatalog(
+      supabase,
+      source.items.map((i) => i.service_catalog_id),
+    );
+    loaded = {
+      quote: loaded?.quote ?? {
+        id: quoteId ?? "",
+        number: null,
+        title: proposal!.title,
+        deal_id: proposal!.deal_id,
+        company_id: proposal!.company_id,
+        contact_id: null,
+        currency: proposal!.currency,
+        total: proposal!.total_amount,
+        terms: null,
+        notes: null,
+        valid_until: null,
+        service_line: null,
+        assigned_to: proposal!.assigned_to,
+      },
+      items: source.items,
+      serviceIds: catalog.ids,
+      line: catalog.line,
+    };
+  }
 
   // Evita duplicar contrato/aditivo para a mesma origem.
   const origin = proposal
@@ -268,6 +312,7 @@ export async function contractFromSales(
     currency: proposal?.currency ?? quote?.currency ?? null,
     assigned_to: proposal?.assigned_to ?? quote?.assigned_to ?? null,
     service_type: serviceLineLabel(loaded?.line) ?? null,
+    contracting_legal_entity_id: input.contractingLegalEntityId ?? null,
     proposal_id: proposal?.id ?? null,
     quote_id: quoteId,
   };
@@ -317,29 +362,36 @@ export async function contractFromSales(
   // Contrato principal: usa o modelo vinculado ao serviço do catálogo.
   const template = await findTemplateForServices(supabase, loaded?.serviceIds ?? []);
   let bodyHtml: string | null = null;
+  let mergedNumber: string | undefined;
+  let entityId: string | null = input.contractingLegalEntityId ?? null;
   if (template) {
     const { buildMergeContext } = await import("@/lib/contracts/template-merge.server");
     const { mergeTemplateBody } = await import("@/lib/contracts/template-tokens");
-    const { ctx } = await buildMergeContext(
+    const { ctx, contract, entity } = await buildMergeContext(
       supabase,
       workspaceId,
       userId,
       {
         templateId: template.id,
+        proposalId: proposal?.id,
+        contractingLegalEntityId: input.contractingLegalEntityId,
         dealId: dealId ?? undefined,
         companyId: companyId ?? undefined,
         serviceCatalogId: loaded?.serviceIds[0],
       },
       template,
     );
-    bodyHtml = mergeTemplateBody(template.body_html ?? "", ctx);
+    bodyHtml = mergeTemplateBody(template.body_html ?? "", ctx, { strict: !!source });
+    mergedNumber = contract.number;
+    entityId = entity?.id ?? null;
   }
 
   const result = await createContractShared(supabase, {
     workspaceId,
     userId,
     kind: "provider",
-    fields: { ...common, title: `Contrato — ${baseTitle}` },
+    number: mergedNumber,
+    fields: { ...common, contracting_legal_entity_id: entityId, title: `Contrato — ${baseTitle}` },
     dealId,
     items: loaded ? loaded.items : null,
     bodyHtml,

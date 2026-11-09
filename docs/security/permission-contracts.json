@@ -8054,7 +8054,7 @@
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
         "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
-        "src/routes/_authenticated/contracts.$id.tsx": "4a3974c0d2200b03f55ed774bf38e37b3ef6bd2b1f199a868a33d8aa5cbfff67",
+        "src/routes/_authenticated/contracts.$id.tsx": "f4dd8961a0c0a7faff760d09d55cb191b8d9da10158790ff43c0771e8d607c73",
         "src/routes/_authenticated/settings.esign.tsx": "3f34242a562fb3977f527789872cac53341b84205a943bf2c3fbcb884ce67e48",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
@@ -9824,6 +9824,196 @@
         "boundary": "Token scopes access to a single draft; no session, no listing, no internal ids returned.",
         "revocation": "Cancel or re-review the draft (status leaves sent) to invalidate the link.",
         "review_by": "2027-01-25"
+      }
+    },
+    {
+      "id": "contract-accepted-proposal-mapping",
+      "kind": "business",
+      "resources": [
+        "techcontracts.contracts",
+        "techcontracts.contract_templates",
+        "techsales.proposals"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.contracts.create.own",
+        "techcontracts.contracts.create.workspace",
+        "techcontracts.contract_templates.view.own",
+        "techcontracts.contract_templates.view.workspace",
+        "techsales.proposals.view.workspace"
+      ],
+      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/db/delete-guarded.ts",
+          "symbol": "deleteByIdGuarded"
+        },
+        {
+          "file": "src/lib/contracts/accepted-proposal.server.ts",
+          "symbol": "loadAcceptedProposalSource"
+        },
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesReferences"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0334_contract_accepted_proposal.sql",
+          "symbol": "proposal_contract_source"
+        },
+        {
+          "file": "drizzle/migrations/0334_contract_accepted_proposal.sql",
+          "symbol": "contract_accepted_proposal_guard"
+        },
+        {
+          "file": "drizzle/migrations/0334_contract_accepted_proposal.sql",
+          "symbol": "proposal_document_version_read"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "contract_create_batch"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL allows an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL isolates foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL rejects inactive membership"
+        }
+      },
+      "files": {
+        "src/components/contracts/apply-contract-template-dialog.tsx": "a13cec11a103879a3985b084ccbfcfe50da231b25544d7bcd26289a27e1d8912",
+        "src/lib/contracts/contract-create.server.ts": "83d6a2580954f05b3340a2404a75ab876669bf256965de4e203b8bfb5bf3d66b",
+        "src/lib/contracts/template-merge.server.ts": "eb650683e4ec764600694cbbd69aacb894d5e55baa94a5fc60b875b61b04dae1",
+        "src/lib/contracts/templates.functions.ts": "c237fa723b38ad1107fb831ea2fd8639ae3608237b047a59ab3fb315728d5b99",
+        "src/lib/proposals/proposal-document.server.ts": "f78745ff3cf231c449320320960acfb4b23133a313431bcfe494ba851ed45932",
+        "src/lib/sales-flow.server.ts": "921ea47d0dc77de74958a21e27d57a62277650d59646e42005880d01e9f9aae0",
+        "src/lib/contracts/accepted-proposal.server.ts": "7495d892022a1aa1ffd3bb2a7bbcbefc00e8e3ada967f2a5bda4dbffda8b7667",
+        "drizzle/migrations/0334_contract_accepted_proposal.sql": "6d6fcad2c99be9fd7cb23c01990610f8caea45f4f2060f4fd4855d42ca1c2e7d",
+        "src/components/contracts/contract-wizard.tsx": "c9c665de9173cc914ba91b5890d881a29e4e3681feeebf05d846b05e4f9f513e",
+        "src/lib/sales-flow.functions.ts": "ba9d014b9aff1352c7205b7f44b19d8b59874707f6ec48baee4e29222c6eb56f"
+      }
+    },
+    {
+      "id": "contract-template-token-formatting",
+      "kind": "internal",
+      "resources": [
+        "techcontracts.contract_templates"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [],
+      "rationale": "Pure client-safe token catalogue and HTML escaping, with strict completeness validation for accepted proposal templates; no storage, identity, permission decisions or network access. Authorization belongs to template server handlers, proposal source RPC and contract RLS.",
+      "controls": [
+        {
+          "file": "src/lib/message-tokens.ts",
+          "symbol": "renderTokensWith"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0334_contract_accepted_proposal.sql",
+          "symbol": "proposal_contract_source"
+        },
+        {
+          "file": "drizzle/migrations/0334_contract_accepted_proposal.sql",
+          "symbol": "contract_accepted_proposal_guard"
+        },
+        {
+          "file": "drizzle/migrations/0334_contract_accepted_proposal.sql",
+          "symbol": "proposal_document_version_read"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "contract_create_batch"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL allows an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL isolates foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "accepted proposal SQL rejects inactive membership"
+        }
+      },
+      "exception": {
+        "mechanism": "Pure formatting from caller-provided values; no I/O or capability creation.",
+        "boundary": "Used only after user-client source authorization; strict merge prevents missing proposal and party fields.",
+        "revocation": "Access revoked by existing server gates and parent RLS; pure output does not grant access.",
+        "review_by": "2027-03-01"
+      },
+      "files": {
+        "src/lib/contracts/template-tokens.ts": "92657bab27b655d53568baf7a8c2143845e58a6a594470979386badbc8886357"
       }
     }
   ],
