@@ -15,6 +15,7 @@ type Props = {
   onChange: (html: string) => void;
   placeholder?: string;
   minHeight?: number;
+  maxHeight?: number | string;
   editable?: boolean;
 };
 
