@@ -341,13 +341,11 @@ export function QuickCreateEntryDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Nenhuma</SelectItem>
-                  {legalEntityAssignmentOptions(legalEntities).map(
-                    (le) => (
-                      <SelectItem key={le.id} value={le.id}>
-                        {le.code ? `${le.code} · ${le.name}` : le.name}
-                      </SelectItem>
-                    ),
-                  )}
+                  {legalEntityAssignmentOptions(legalEntities).map((le) => (
+                    <SelectItem key={le.id} value={le.id}>
+                      {le.code ? `${le.code} · ${le.name}` : le.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">

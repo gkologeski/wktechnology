@@ -128,7 +128,9 @@ function CategoriesPage() {
     // Se um pai foi escolhido, herda a empresa dele; senão, usa o filtro ativo.
     const parent = preset?.parent ? rows.find((r) => r.id === preset.parent) : null;
     const candidate = parent?.legal_entity_id ?? filterLE;
-    setFormLegalEntity(legalEntities.find((le) => le.id === candidate && le.active)?.id ?? "__none__");
+    setFormLegalEntity(
+      legalEntities.find((le) => le.id === candidate && le.active)?.id ?? "__none__",
+    );
     setOpen(true);
   }
 

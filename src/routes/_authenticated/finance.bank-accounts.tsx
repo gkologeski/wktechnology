@@ -107,7 +107,9 @@ function BankAccountsPage() {
     setInitial("0");
     setKind("checking");
     // Pré-seleciona a empresa do filtro ativo, se houver.
-    setFormLegalEntity(legalEntities.find((le) => le.id === filterLE && le.active)?.id ?? "__none__");
+    setFormLegalEntity(
+      legalEntities.find((le) => le.id === filterLE && le.active)?.id ?? "__none__",
+    );
     setOpen(true);
   }
 
