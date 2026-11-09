@@ -2241,6 +2241,13 @@
       "when": 1794193060996,
       "tag": "0335_legal_entity_usage_permission",
       "breakpoints": true
+    },
+    {
+      "idx": 320,
+      "version": "7",
+      "when": 1794254197678,
+      "tag": "0320_proposal_contract_terms",
+      "breakpoints": true
     }
   ]
 }

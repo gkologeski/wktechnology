@@ -21794,6 +21794,8 @@ export type Database = {
           esign_document_id: string | null
           expires_at: string | null
           id: string
+          installments_count: number | null
+          installments_due_day: number | null
           legal_entity_id: string | null
           locked: boolean
           owner_id: string
@@ -21805,6 +21807,7 @@ export type Database = {
           title: string
           total_amount: number | null
           updated_at: string
+          validity_days: number
           variables: Json
           version: number
           workspace_id: string
@@ -21821,6 +21824,8 @@ export type Database = {
           esign_document_id?: string | null
           expires_at?: string | null
           id?: string
+          installments_count?: number | null
+          installments_due_day?: number | null
           legal_entity_id?: string | null
           locked?: boolean
           owner_id: string
@@ -21832,6 +21837,7 @@ export type Database = {
           title: string
           total_amount?: number | null
           updated_at?: string
+          validity_days?: number
           variables?: Json
           version?: number
           workspace_id: string
@@ -21848,6 +21854,8 @@ export type Database = {
           esign_document_id?: string | null
           expires_at?: string | null
           id?: string
+          installments_count?: number | null
+          installments_due_day?: number | null
           legal_entity_id?: string | null
           locked?: boolean
           owner_id?: string
@@ -21859,6 +21867,7 @@ export type Database = {
           title?: string
           total_amount?: number | null
           updated_at?: string
+          validity_days?: number
           variables?: Json
           version?: number
           workspace_id?: string
