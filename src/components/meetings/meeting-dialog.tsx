@@ -100,7 +100,9 @@ export function MeetingDialog({
         const res = await listAccounts();
         const uid = res.current_user_id ?? user?.id ?? "";
         const options = selectableCalendarAccounts(res.items ?? [], uid, !!res.is_admin);
-        setAccountOptions(options.map((a) => ({ id: a.id, email: a.email, mine: a.owner_id === uid })));
+        setAccountOptions(
+          options.map((a) => ({ id: a.id, email: a.email, mine: a.owner_id === uid })),
+        );
         setAccountId(defaultMeetingCalendarAccount(res.items ?? [], uid));
       } catch {
         setAccountOptions([]);

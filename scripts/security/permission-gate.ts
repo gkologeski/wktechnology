@@ -511,10 +511,9 @@ export function checkCoverage(
       if (file.endsWith(".sql")) {
         // Exceção estreita: migração aplicada que é um bloco vazio (sem DDL/DML)
         // não expõe superfície; migrações são imutáveis e não podem ser reescritas.
-        const emptyNoop =
-          /^\s*(?:--[^\n]*\n\s*)*DO\s+\$\$\s*BEGIN\s+END\s*\$\$\s*;?\s*$/i.test(
-            readSource(root, file),
-          );
+        const emptyNoop = /^\s*(?:--[^\n]*\n\s*)*DO\s+\$\$\s*BEGIN\s+END\s*\$\$\s*;?\s*$/i.test(
+          readSource(root, file),
+        );
         if (!emptyNoop && !c.database?.some((ref) => ref.file === file))
           add(
             "database",

@@ -1,5 +1,6 @@
 // Wizard de importação de contrato (.pdf / .docx).
 // Fluxo: 1) Upload → 2) Revisão dos campos extraídos → 3) Cria contrato em draft.
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -87,6 +88,13 @@ async function docxToText(file: File): Promise<string> {
 }
 
 export function ImportContractFileDialog({ open, onOpenChange }: Props) {
+  const permissions = usePermissions();
+  const canImport =
+    !permissions.isLoading &&
+    !permissions.isError &&
+    permissions.canAny(
+      ["own", "team", "workspace"].map((scope) => `techcontracts.imports.manage.${scope}`),
+    );
   const parsePdf = useServerFn(parseContractPdf);
   const parseText = useServerFn(parseContractText);
   const createFromImport = useServerFn(createContractFromImport);
@@ -166,6 +174,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
   );
 
   const runExtraction = useCallback(async () => {
+    if (!canImport) return toast.error("Você não tem permissão para importar contratos.");
     if (!file || !kind) return;
     if (kind === "pdf" && file.size > MAX_PDF_BYTES) {
       toast.error("PDF maior que 15 MB. Envie um arquivo menor ou a versão .docx.");
@@ -217,7 +226,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
       setProgress(progressFor("error", msg));
       toast.error(msg);
     }
-  }, [file, kind, parsePdf, parseText, uploadOriginal, createFromImport]);
+  }, [canImport, file, kind, parsePdf, parseText, uploadOriginal, createFromImport]);
 
   const buildPatch = useCallback((f: ExtractedContract) => {
     const num = (v: unknown) =>
@@ -334,7 +343,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
             Cancelar
           </Button>
           {step === "upload" && (
-            <Button onClick={runExtraction} disabled={!file || parsing}>
+            <Button onClick={runExtraction} disabled={!canImport || !file || parsing}>
               {parsing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Extraindo…

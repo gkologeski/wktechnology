@@ -25,14 +25,21 @@ describe("agenda da reunião", () => {
     expect(selectableCalendarAccounts(accounts, me, false).map((a) => a.id)).toEqual(["mine"]);
   });
   it("admin vê contas válidas do workspace, sem desconectadas", () => {
-    expect(selectableCalendarAccounts(accounts, me, true).map((a) => a.id)).toEqual(["other", "mine"]);
+    expect(selectableCalendarAccounts(accounts, me, true).map((a) => a.id)).toEqual([
+      "other",
+      "mine",
+    ]);
   });
   it("conta de membro inativo fica fora", () => {
     const list = [{ ...accounts[1], owner_active: false }];
     expect(selectableCalendarAccounts(list, me, true)).toEqual([]);
   });
   it("reconhece conta Google excluída", () => {
-    expect(isGoogleAccountGone('{"error":"invalid_grant","error_description":"Account has been deleted"}')).toBe(true);
+    expect(
+      isGoogleAccountGone(
+        '{"error":"invalid_grant","error_description":"Account has been deleted"}',
+      ),
+    ).toBe(true);
     expect(isGoogleAccountGone("rate limit")).toBe(false);
   });
 });

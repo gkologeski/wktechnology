@@ -1,7 +1,14 @@
 // Menu lateral do módulo TechContracts.
 // Renderizado pelo AppSidebar quando `activeModule === 'contracts'`.
 // /services é uma visão de execução/faturamento consumida por Contratos.
-import { FileStack, FileText, LayoutDashboard, Package, Scale, SlidersHorizontal } from "lucide-react";
+import {
+  FileStack,
+  FileText,
+  LayoutDashboard,
+  Package,
+  Scale,
+  SlidersHorizontal,
+} from "lucide-react";
 import type { SidebarGroup } from "@/lib/menu-config";
 
 export const CONTRACTS_SIDEBAR_GROUPS: SidebarGroup[] = [

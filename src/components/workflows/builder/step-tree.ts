@@ -810,7 +810,9 @@ export function describeAction(a: WorkflowAction, labels?: DescribeLabels): stri
     case "disconnect_integrations":
       return "agendas e caixas de e-mail da pessoa";
     case "transfer_portfolio":
-      return a.to_user_id ? "carteira para o responsável escolhido" : "carteira para o gestor da pessoa";
+      return a.to_user_id
+        ? "carteira para o responsável escolhido"
+        : "carteira para o gestor da pessoa";
     case "open_contract_draft":
       return "minuta do modelo padrão para o jurídico";
     default:

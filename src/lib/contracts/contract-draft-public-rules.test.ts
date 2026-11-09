@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import { clientDraftDecisionError } from "./contract-draft-public-rules";
 
 const T = "6f1c2a4e-8b7d-4c3a-9e2f-1a2b3c4d5e6f";
-const base = { token: T, status: "sent", decision: "accept" as const, name: "Alan Fuentes", note: null };
+const base = {
+  token: T,
+  status: "sent",
+  decision: "accept" as const,
+  name: "Alan Fuentes",
+  note: null,
+};
 
 describe("contract draft client acceptance", () => {
   it("client draft accepts a sent draft with a valid token and name", () => {

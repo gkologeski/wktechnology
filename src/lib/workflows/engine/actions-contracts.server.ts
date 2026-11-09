@@ -124,7 +124,8 @@ async function openContractDraft(
 ): Promise<LogStep> {
   if (ctx.entity !== "proposals")
     throw new Error("Esta ação só pode ser usada em workflows de Propostas.");
-  if (!ctx.workspaceId || !ctx.ownerId) throw new Error("Origem ou responsável do workflow inválido.");
+  if (!ctx.workspaceId || !ctx.ownerId)
+    throw new Error("Origem ou responsável do workflow inválido.");
   // Revalida a versão publicada do workflow antes da RPC de serviço.
   await authorizeWorkflowStep(supabase, ctx);
   const { data, error } = await supabase.rpc(
@@ -132,5 +133,10 @@ async function openContractDraft(
     { p_ws: ctx.workspaceId, p_proposal: ctx.entityId, p_actor: ctx.ownerId } as never,
   );
   if (error) throw new Error(error.message);
-  return { at, ok: true, action: "open_contract_draft", detail: (data ?? {}) as Record<string, unknown> };
+  return {
+    at,
+    ok: true,
+    action: "open_contract_draft",
+    detail: (data ?? {}) as Record<string, unknown>,
+  };
 }

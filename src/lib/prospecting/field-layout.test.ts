@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { withBasicLeadBlock, defaultBlockTitle, type QualificationFieldBlock } from "./field-layout";
+import {
+  withBasicLeadBlock,
+  defaultBlockTitle,
+  type QualificationFieldBlock,
+} from "./field-layout";
 
 describe("withBasicLeadBlock", () => {
   it("adiciona nome, sobrenome, e-mail, telefone e WhatsApp no topo", () => {

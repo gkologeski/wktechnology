@@ -94,7 +94,10 @@ function PublicContractDraftPage() {
         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(d.body_html) }}
       />
       {open ? (
-        <section className="space-y-4 rounded-md border border-border bg-card p-6" aria-label="Sua resposta">
+        <section
+          className="space-y-4 rounded-md border border-border bg-card p-6"
+          aria-label="Sua resposta"
+        >
           <div className="space-y-1">
             <Label htmlFor="mn-name">Seu nome completo</Label>
             <Input id="mn-name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -102,17 +105,33 @@ function PublicContractDraftPage() {
           {askChanges && (
             <div className="space-y-1">
               <Label htmlFor="mn-note">Quais ajustes você precisa?</Label>
-              <Textarea id="mn-note" rows={4} value={note} onChange={(e) => setNote(e.target.value)} />
+              <Textarea
+                id="mn-note"
+                rows={4}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+              />
             </div>
           )}
           <div className="flex flex-wrap gap-2">
             {!askChanges ? (
               <>
-                <Button onClick={() => m.mutate("accept")} disabled={m.isPending || name.trim().length < 3}>
-                  {m.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                <Button
+                  onClick={() => m.mutate("accept")}
+                  disabled={m.isPending || name.trim().length < 3}
+                >
+                  {m.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Check className="mr-2 h-4 w-4" />
+                  )}
                   Aceitar minuta
                 </Button>
-                <Button variant="outline" onClick={() => setAskChanges(true)} disabled={m.isPending}>
+                <Button
+                  variant="outline"
+                  onClick={() => setAskChanges(true)}
+                  disabled={m.isPending}
+                >
                   <PencilLine className="mr-2 h-4 w-4" /> Pedir ajustes
                 </Button>
               </>
@@ -134,7 +153,10 @@ function PublicContractDraftPage() {
       ) : (
         <p className="text-sm text-muted-foreground" role="status">
           Resposta registrada{d.client_name ? ` por ${d.client_name}` : ""}
-          {d.client_decided_at ? ` em ${new Date(d.client_decided_at).toLocaleString("pt-BR")}` : ""}.
+          {d.client_decided_at
+            ? ` em ${new Date(d.client_decided_at).toLocaleString("pt-BR")}`
+            : ""}
+          .
         </p>
       )}
     </main>

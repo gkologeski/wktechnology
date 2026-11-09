@@ -93,7 +93,10 @@ export const ExtractedContractSchema = z.object({
   trial_period_days: z.number().int().nonnegative().optional().nullable(),
   unilateral_termination_notice_days: z.number().int().nonnegative().optional().nullable(),
 
-  service_type: z.enum([...SERVICE_TYPES, ...LEGACY_SERVICE_TYPES]).optional().nullable(),
+  service_type: z
+    .enum([...SERVICE_TYPES, ...LEGACY_SERVICE_TYPES])
+    .optional()
+    .nullable(),
   service_scope: z.string().optional().nullable(),
   service_location: z.enum(SERVICE_LOCATIONS).optional().nullable(),
 
