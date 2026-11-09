@@ -14,6 +14,9 @@ export const CONTRACT_TEMPLATE_TOKENS: MessageToken[] = [
   { token: "{{contract.monthly_value}}", label: "Valor mensal", group: "Contrato" },
   { token: "{{contract.currency}}", label: "Moeda", group: "Contrato" },
   { token: "{{contract.payment_day}}", label: "Dia de pagamento", group: "Contrato" },
+  { token: "{{contract.validity_days}}", label: "Vigência (dias)", group: "Contrato" },
+  { token: "{{contract.installments_count}}", label: "Quantidade de parcelas", group: "Contrato" },
+  { token: "{{contract.installments_due_day}}", label: "Dia de vencimento das parcelas", group: "Contrato" },
   { token: "{{contract.payment_method}}", label: "Forma de pagamento", group: "Contrato" },
   { token: "{{contract.readjustment_index}}", label: "Índice de reajuste", group: "Contrato" },
   { token: "{{contract.penalty_percent}}", label: "Multa (%)", group: "Contrato" },
@@ -35,6 +38,11 @@ export const CONTRACT_TEMPLATE_TOKENS: MessageToken[] = [
   { token: "{{counterparty.address}}", label: "Endereço", group: "Contraparte" },
   { token: "{{counterparty.city}}", label: "Cidade", group: "Contraparte" },
   { token: "{{counterparty.state}}", label: "Estado", group: "Contraparte" },
+
+  // Signatário legal da contraparte (contato marcado como signatário)
+  { token: "{{signer.full_name}}", label: "Nome do signatário", group: "Signatário" },
+  { token: "{{signer.cpf}}", label: "CPF do signatário", group: "Signatário" },
+  { token: "{{signer.email}}", label: "E-mail do signatário", group: "Signatário" },
 
   // Contratante (nossa PJ)
   { token: "{{contracting.name}}", label: "Razão social", group: "Contratante" },

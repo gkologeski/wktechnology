@@ -80,6 +80,18 @@ export async function buildMergeContext(
   }
 
   if (source) company = source.company;
+  // Contratante sem endereço: usa o endereço oficial do CNPJ só no documento (não grava cadastro).
+  if (company && shouldAutofillAddress(company.address)) {
+    const addr = await lookupCnpjAddress(company.cnpj);
+    if (addr) {
+      company = {
+        ...company,
+        address: legalEntityAddress(addr),
+        city: company.city ?? addr.city,
+        state: company.state ?? addr.state,
+      };
+    }
+  }
 
   let contact: any = source?.contact ?? null;
   if (companyId && !source) {
