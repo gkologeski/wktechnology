@@ -26,6 +26,10 @@ export type ProposalDraft = {
   deal_name: string | null;
   items: ProposalDraftItem[];
   items_origin: "quote" | "deal" | null;
+  /** Condições contratuais copiadas para o contrato (DADOS-CONTRATO). */
+  installments_count?: number | null;
+  installments_due_day?: number | null;
+  validity_days?: number | null;
 };
 
 export type ProposalDraftResult =

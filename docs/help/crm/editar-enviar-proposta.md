@@ -50,3 +50,8 @@ A edição atualiza a proposta. A solicitação de revisão mostra "Aprovação 
 ## Relacionados
 - [Gerenciar propostas](/ajuda/crm/gerenciar-propostas)
 - [Gerenciar cotações e gerar propostas](/ajuda/crm/gerenciar-cotacoes)
+
+
+## Condições para o contrato
+
+No passo **Dados** informe **Parcelas**, **Dia de vencimento** e **Vigência do contrato (dias)** — a vigência vem com 90 dias por padrão. Esses campos só ficam editáveis para quem pode alterar propostas. Ao gerar o contrato a partir da proposta aceita, eles são copiados automaticamente.

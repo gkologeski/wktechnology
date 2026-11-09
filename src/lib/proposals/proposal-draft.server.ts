@@ -3,6 +3,7 @@
 // o modelo de proposta. Usa o cliente do usuário (RLS aplicada). Não grava.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describeBilling } from "@/lib/catalog/billing-model";
+import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import {
   DEAL_LINE_ITEM_COLUMNS,
   type DealLineItemRow,
@@ -145,10 +146,12 @@ export async function buildProposalDraft(
   }
 
   if (src.proposalId) {
+    // Edição pelo assistente: exige permissão de alterar a proposta (inclui as condições contratuais).
+    await assertSalesRecord(supabase, "proposals", src.proposalId, "update");
     const { data: p, error } = await supabase
       .from("proposals")
       .select(
-        "id, title, body, total_amount, currency, expires_at, assigned_to, locked, company_id, contact_id, deal_id, quote_id, proposal_template_id",
+        "id, title, body, total_amount, currency, expires_at, assigned_to, locked, company_id, contact_id, deal_id, quote_id, proposal_template_id, installments_count, installments_due_day, validity_days",
       )
       .eq("id", src.proposalId)
       .maybeSingle();
@@ -172,6 +175,9 @@ export async function buildProposalDraft(
         quote_id: p.quote_id,
         quote_number: null,
         proposal_template_id: p.proposal_template_id,
+        installments_count: p.installments_count,
+        installments_due_day: p.installments_due_day,
+        validity_days: p.validity_days,
         items,
         items_origin: origin,
         ...(await names(supabase, {

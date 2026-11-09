@@ -51,3 +51,8 @@ No assistente **Novo contrato**, a etapa **Dados** também permite escolher a Pr
 
 ## Relacionados
 - [Editar e publicar modelo](/ajuda/contracts/editar-publicar-modelo)
+
+
+## Preenchimento automático
+
+Ao gerar um contrato a partir de uma proposta aceita, o sistema preenche: parcelas, dia de vencimento e vigência (padrão 90 dias, com fim calculado a partir do início); multa (padrão 2%) e foro (padrão Florianópolis-SC), salvo se o modelo definir outro valor; e o signatário da contratante (contato marcado como signatário legal, com CPF). Se houver mais de um signatário, nenhum é escolhido automaticamente. Endereço vazio da pessoa jurídica prestadora é completado pelos dados oficiais do CNPJ, sem sobrescrever endereço já cadastrado. Novas variáveis: `{{contract.validity_days}}`, `{{contract.installments_count}}`, `{{contract.installments_due_day}}`, `{{signer.full_name}}`, `{{signer.cpf}}`, `{{signer.email}}`.

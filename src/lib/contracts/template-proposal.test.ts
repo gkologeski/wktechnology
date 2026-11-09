@@ -142,6 +142,7 @@ it("builds the hunting context from the selected version and selected issuer", a
           filters.push([key, value]);
           return chain;
         },
+        limit: async () => ({ data: [], error: null }),
         maybeSingle: async () => ({ data: records[table], error: null }),
       };
       return chain;
@@ -163,10 +164,22 @@ it("builds the hunting context from the selected version and selected issuer", a
   expect(mergeTemplateBody(template.body_html, built.ctx, { strict: true })).toBe(
     "P Proposta aceita 3 07/11/2026 Cliente na versão aceita Rua WK, 10",
   );
-  expect(built.contract).toMatchObject({ total_value: 12000, starts_at: null, ends_at: null });
+  // DADOS-CONTRATO: sem vigência na proposta, aplica o padrão de 90 dias a partir de hoje.
+  expect(built.contract).toMatchObject({
+    total_value: 12000,
+    validity_days: 90,
+    penalty_percent: 2,
+    jurisdiction: "Florianópolis-SC",
+  });
+  expect(built.contract.starts_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(built.contract.ends_at).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   expect(built.entity.id).toBe("PJ");
   expect(queries.find((q) => q.table === "legal_entities")?.filters).toContainEqual(["id", "PJ"]);
-  expect(queries.some((q) => q.table === "contacts")).toBe(false);
+  // Só o signatário legal é lido, sempre restrito ao workspace.
+  expect(queries.find((q) => q.table === "contacts")?.filters).toContainEqual([
+    "custom_fields->>signatario_legal",
+    "true",
+  ]);
   expect(rpc).toHaveBeenCalledTimes(1);
 });
 it("requires an accepted proposal before any context query for the hunting model", async () => {
