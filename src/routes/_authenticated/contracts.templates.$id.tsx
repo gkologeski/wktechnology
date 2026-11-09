@@ -297,6 +297,7 @@ function ContractTemplateEditorPage() {
                 setDirty(true);
               }}
               minHeight={520}
+              maxHeight="70vh"
               placeholder="Digite ou cole o texto do contrato…"
             />
           </div>
