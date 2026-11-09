@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LegalEntitiesPage } from "@/components/finance/legal-entities-page";
+import { HrScreenAccess } from "@/components/hr-access";
 
 export const Route = createFileRoute("/_authenticated/settings/legal-entities")({
   head: () => ({
@@ -19,5 +20,9 @@ export const Route = createFileRoute("/_authenticated/settings/legal-entities")(
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: LegalEntitiesPage,
+  component: () => (
+    <HrScreenAccess resources={["techfinance.legal_entities"]}>
+      <LegalEntitiesPage />
+    </HrScreenAccess>
+  ),
 });
