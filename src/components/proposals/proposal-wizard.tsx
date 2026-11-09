@@ -208,14 +208,19 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   async function afterSave(id: string) {
     await supabase
       .from("proposals")
-      .update({
-        assigned_to: assignee,
-        proposal_template_id: templateId,
-        installments_count: installments,
-        installments_due_day: dueDay,
-        validity_days: validityDays,
-      })
+      .update({ assigned_to: assignee, proposal_template_id: templateId })
       .eq("id", id);
+    // Condições contratuais passam pela função de servidor com checagem de permissão.
+    await update({
+      data: {
+        id,
+        patch: {
+          installments_count: installments,
+          installments_due_day: dueDay,
+          validity_days: validityDays,
+        },
+      },
+    });
     void qc.invalidateQueries({ queryKey: ["deal-proposals"] });
     void qc.invalidateQueries({ queryKey: ["proposal", id] });
     void qc.invalidateQueries({ queryKey: ["proposal-doc", id] });
