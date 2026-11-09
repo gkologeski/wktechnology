@@ -9742,9 +9742,10 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions.",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic.",
       "files": {
-        "src/integrations/supabase/types.ts": "94f2fa6b298967caac89868e3d5de1157c8ab157837b4c7cba3a1c38d0f026b2"
+        "src/integrations/supabase/types.ts": "ef6679f31b35dcd428d6ab08d85591f8dfb33ddf8cf161538ed46eb6d8c9175f",
+        "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
     {
@@ -9978,7 +9979,7 @@
         "techcontracts.contracts.create.workspace",
         "techcontracts.links.manage.workspace"
       ],
-      "rationale": "Existing import endpoints enforce requireWorkPermission and assertAnyPermission; original file signing reads contract under user RLS first. Type options only changed in presentation and AI schema; legal-entity picker filters new assignments, label hydration retains saved value. Template editing retains WorkAction and HrScreenAccess; no grants changed. Merge review: the import UI checks its catalogue workspace key and fails closed while permissions load/fail; server middleware, creation scope checks, signed-file record access and active CNPJ assignment rules from main are preserved. Five import-boundary scenarios invoke the real work middleware. FORMATO-ORIGINAL: .docx formatting is parsed client-side (pure) and sent to the same authenticated template-import route, which keeps bearer auth, active workspace and assertAnyPermission(TEMPLATE_IMPORT_PERMISSIONS); the AI only returns variable suggestions applied to sanitized HTML. No new action, data or grant. The shared template body editor keeps its DOMPurify sanitizeRichHtml on load/update and only gains paragraph spacing attributes for imported formatting; editing and saving remain behind the template page WorkAction/HrScreenAccess and server update checks.",
+      "rationale": "Existing import endpoints enforce requireWorkPermission and assertAnyPermission; original file signing reads contract under user RLS first. Type options only changed in presentation and AI schema; legal-entity picker filters new assignments, label hydration retains saved value. Template editing retains WorkAction and HrScreenAccess; no grants changed. Merge review: the import UI checks its catalogue workspace key and fails closed while permissions load/fail; server middleware, creation scope checks, signed-file record access and active CNPJ assignment rules from main are preserved. Five import-boundary scenarios invoke the real work middleware. FORMATO-ORIGINAL: .docx formatting is parsed client-side (pure) and sent to the same authenticated template-import route, which keeps bearer auth, active workspace and assertAnyPermission(TEMPLATE_IMPORT_PERMISSIONS); the AI only returns variable suggestions applied to sanitized HTML. No new action, data or grant. The shared template body editor keeps its DOMPurify sanitizeRichHtml on load/update and only gains paragraph spacing attributes for imported formatting; editing and saving remain behind the template page WorkAction/HrScreenAccess and server update checks. ROLAGEM-CONTRATO: editor gains optional maxHeight with internal scroll; presentation only.",
       "controls": [
         {
           "file": "src/lib/access-control/work-permission.middleware.ts",
@@ -10075,9 +10076,10 @@
         "src/components/contracts/import-contract-template-dialog.tsx": "7df6975f4edea9277cdc7630c2e2e6ff9dbb8548443f51d56269d27f98f66aae",
         "src/lib/contracts/import.functions.ts": "776590dc6c20d2254a9558e3f2b413f848648fd7078f6247eff419c56338a4ef",
         "src/lib/contracts/template-import.server.ts": "5c5d3a9ad8fc2ef9d2ffcfa801ed137918c8b8e87a24849a370683adafead285",
-        "src/routes/_authenticated/contracts.templates.$id.tsx": "2cc457ee21c13d72e3596de8d6c6ca0042a5b279e0acf21b1ded5e41c686db52",
+        "src/routes/_authenticated/contracts.templates.$id.tsx": "955eec5b8d8196e333caca5662ee10a760ea34f5ad6dfd8a931fd54ec66ac845",
         "src/routes/api/contracts.template-import.ts": "e7df83c1225f941ccf71100af6fd0fb532206b0d1b3c4bd8e6efaafc783fd5d9",
-        "src/components/word-editor.tsx": "cb4a63a458f90dae2bcfc4d401f73893c951fbb284df75348143484ee9794576"
+        "src/components/word-editor.tsx": "635159803f5b02d857d1ca8accbaddb5b540f290a408dfc3f4f4006c2a25b1aa",
+        "src/components/word-editor-lazy.tsx": "4f6e7ef7880aa6b35c94c9bb6b2caacba43d380473fd193ab6adc1a0ed428e8d"
       }
     },
     {
@@ -10106,7 +10108,7 @@
         "techcontracts.contract_templates.view.workspace",
         "techsales.proposals.view.workspace"
       ],
-      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses.",
+      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -10188,14 +10190,20 @@
       "files": {
         "src/components/contracts/apply-contract-template-dialog.tsx": "f1b8f344a6a5bbc22cc7d8aa43c04bdd0b680fbf579de229b7da056b3025ef3c",
         "src/lib/contracts/contract-create.server.ts": "83d6a2580954f05b3340a2404a75ab876669bf256965de4e203b8bfb5bf3d66b",
-        "src/lib/contracts/template-merge.server.ts": "eb650683e4ec764600694cbbd69aacb894d5e55baa94a5fc60b875b61b04dae1",
+        "src/lib/contracts/template-merge.server.ts": "4f21f8885994c25815191728889723889482992052e46d01add609156119d64f",
         "src/lib/contracts/templates.functions.ts": "c237fa723b38ad1107fb831ea2fd8639ae3608237b047a59ab3fb315728d5b99",
         "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
         "src/lib/sales-flow.server.ts": "921ea47d0dc77de74958a21e27d57a62277650d59646e42005880d01e9f9aae0",
         "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "fca40ccfa8137fb3f857f7412f7bef9bf132395a49f35c7a6ff692a978f2041b",
-        "src/lib/sales-flow.functions.ts": "ba9d014b9aff1352c7205b7f44b19d8b59874707f6ec48baee4e29222c6eb56f"
+        "src/lib/sales-flow.functions.ts": "ba9d014b9aff1352c7205b7f44b19d8b59874707f6ec48baee4e29222c6eb56f",
+        "src/components/proposals/proposal-wizard.tsx": "5d5c45aeb14f4dc43f3b0875b196088b380a86eb5de7d7792fe1488db6a507d4",
+        "src/lib/proposals/proposal-draft.server.ts": "d8755fa07b732e89fd023189ace9d5977e3827795d114d70569f6f3da6a8af94",
+        "src/lib/proposals/proposal-draft-types.ts": "f923944f29a95e6de8c58486d90c3262d6bd14d6e563e5a46ea6f89fe89cf302",
+        "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
+        "src/lib/contracts/cnpj-address.server.ts": "d7a45271005988f784833809bae25383712908da24891734b6ed24c1791d4fcd",
+        "src/lib/contracts/contract-terms-defaults.ts": "7196abd6a9be2f603966ed949608197d33e409352b7302093e79c3fe8a0cf4d8"
       }
     },
     {
@@ -10213,7 +10221,7 @@
         "workspace"
       ],
       "permission_keys": [],
-      "rationale": "Pure client-safe token catalogue and HTML escaping, with strict completeness validation for accepted proposal templates; no storage, identity, permission decisions or network access. Authorization belongs to template server handlers, proposal source RPC and contract RLS.",
+      "rationale": "Pure client-safe token catalogue and HTML escaping, with strict completeness validation for accepted proposal templates; no storage, identity, permission decisions or network access. Authorization belongs to template server handlers, proposal source RPC and contract RLS. DADOS-CONTRATO: catalogue gains validity/installment and signer tokens; pure, no data access.",
       "controls": [
         {
           "file": "src/lib/message-tokens.ts",
@@ -10267,7 +10275,7 @@
         "review_by": "2027-03-01"
       },
       "files": {
-        "src/lib/contracts/template-tokens.ts": "92657bab27b655d53568baf7a8c2143845e58a6a594470979386badbc8886357"
+        "src/lib/contracts/template-tokens.ts": "0bee5f88a9f792f92a71368f43ec4ec32bcbcb0eead33061e457c1fb8be55bbb"
       }
     },
     {
