@@ -35,6 +35,7 @@ import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/crm";
 import { cn } from "@/lib/utils";
+import { DEFAULT_VALIDITY_DAYS, clampInt } from "@/lib/contracts/contract-terms-defaults";
 import { renderQuoteTemplate } from "@/lib/quote-template-renderer";
 import {
   itemsTableHtml,
