@@ -147,6 +147,7 @@ export function ContractFieldInput({
         return (
           <EntityCombobox
             entity="legal_entities"
+            filters={{ active: true }}
             select="id, name, cnpj"
             searchColumns={["name", "cnpj"]}
             labelFrom={(r) => String((r as { name?: string }).name ?? "")}

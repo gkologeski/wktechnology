@@ -39,6 +39,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/crm";
+import { legalEntityAssignmentOptions } from "@/lib/legal-entity-options";
 import { createBankAccount, listBankAccounts } from "@/lib/finance.functions";
 import {
   ALL_LEGAL_ENTITIES,
@@ -106,7 +107,9 @@ function BankAccountsPage() {
     setInitial("0");
     setKind("checking");
     // Pré-seleciona a empresa do filtro ativo, se houver.
-    setFormLegalEntity(filterLE ?? "__none__");
+    setFormLegalEntity(
+      legalEntities.find((le) => le.id === filterLE && le.active)?.id ?? "__none__",
+    );
     setOpen(true);
   }
 
@@ -244,7 +247,7 @@ function BankAccountsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">— Não vincular —</SelectItem>
-                    {legalEntities.map((le) => (
+                    {legalEntityAssignmentOptions(legalEntities).map((le) => (
                       <SelectItem key={le.id} value={le.id}>
                         {le.code ? `${le.code} · ${le.name}` : le.name}
                       </SelectItem>

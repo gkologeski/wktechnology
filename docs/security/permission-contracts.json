@@ -8054,7 +8054,7 @@
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
         "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
-        "src/routes/_authenticated/contracts.$id.tsx": "4a3974c0d2200b03f55ed774bf38e37b3ef6bd2b1f199a868a33d8aa5cbfff67",
+        "src/routes/_authenticated/contracts.$id.tsx": "48285d943b8f1067b3abe3ae9f25b7b437d4854bb596185588d7122c574e0e94",
         "src/routes/_authenticated/settings.esign.tsx": "3f34242a562fb3977f527789872cac53341b84205a943bf2c3fbcb884ce67e48",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
@@ -9744,7 +9744,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions.",
       "files": {
-        "src/integrations/supabase/types.ts": "86aa3b81fd9b130d3d825baa7ce8937082ebb7ac845be2c3a3b54b3707e4f211"
+        "src/integrations/supabase/types.ts": "df112271fcbf99240bdaeaf66ee919864fd29d3e18e470a335f330ef404a469b"
       }
     },
     {
@@ -9824,6 +9824,229 @@
         "boundary": "Token scopes access to a single draft; no session, no listing, no internal ids returned.",
         "revocation": "Cancel or re-review the draft (status leaves sent) to invalidate the link.",
         "review_by": "2027-01-25"
+      }
+    },
+    {
+      "id": "cnpj-ativo-lifecycle",
+      "kind": "business",
+      "resources": [
+        "techfinance.legal_entities",
+        "techfinance.categories",
+        "techfinance.bank_accounts",
+        "techfinance.entries"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techfinance.legal_entities.view.workspace",
+        "techfinance.legal_entities.create.workspace",
+        "techfinance.legal_entities.update.workspace",
+        "techfinance.legal_entities.delete.workspace"
+      ],
+      "rationale": "Active membership and effective record authorization through finance_business_authorize; RLS preserved. Lifecycle triggers prevent deletion with any legal-entity links and cross-workspace/inactive reassignment; unchanged historical assignments remain valid. Summary is invoker/RLS aggregate. Assignment filtering only removes inactive choices, not historical filters.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/finance-business.server.ts",
+          "symbol": "authorizeFinanceBusiness"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/components/hr-access.tsx",
+          "symbol": "HrScreenAccess"
+        },
+        {
+          "file": "src/components/finance/legal-entities-page.tsx",
+          "symbol": "LegalEntitiesPage"
+        },
+        {
+          "file": "src/lib/finance.functions.ts",
+          "symbol": "createFinancialEntry"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0214_finance_business_prepare.sql",
+          "symbol": "finance_business_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0314_legal_entity_safe_lifecycle.sql",
+          "symbol": "legal_entities_guard"
+        },
+        {
+          "file": "drizzle/migrations/0315_legal_entity_guard_workspace_cascade.sql",
+          "symbol": "legal_entities_guard"
+        },
+        {
+          "file": "drizzle/migrations/0316_cnpj_operational_linkage_and_summary.sql",
+          "symbol": "record_legal_entity_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/legal-entities-auth.test.ts",
+          "name": "CNPJ allows an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/legal-entities-auth.test.ts",
+          "name": "CNPJ denies missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/legal-entities-auth.test.ts",
+          "name": "CNPJ denies explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/legal-entities-auth.test.ts",
+          "name": "CNPJ denies foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/legal-entities-auth.test.ts",
+          "name": "CNPJ denies inactive membership"
+        }
+      },
+      "files": {
+        "src/components/finance/legal-entities-page.tsx": "aee0f89b818db062abde25e420ec517349b9a6fbf9598f13bda7cec60ab57a35",
+        "src/lib/legal-entities.functions.ts": "4ae1688e21ab98419a58ecb6bd14c82869d8d142d03d88a6aaaf784f7f7045d0",
+        "src/routes/_authenticated/finance.legal-entities.tsx": "c6db2c99bb89c7fc5261c1bcddce9dd2eb9c68b86a9180c479c477a0d99479fa",
+        "src/routes/_authenticated/settings.legal-entities.tsx": "1d148643b1e5845f2ed552ac156f3aeb9773902ab8079a1cdc0f539e7e32d8d6",
+        "src/routes/_authenticated/finance.bank-accounts.tsx": "7a5cc9a70366f0ff55126f8b199408dffd680a1b5555edd9536546ad2dd6a27e",
+        "src/routes/_authenticated/finance.categories.tsx": "d4d194671c4135213fd5a3e55cebfe276785351deb56298fcaec271f790f0a3e",
+        "src/components/finance/quick-create-entry-dialog.tsx": "85b6da26ac474b1c850a8931d3fc0b80a4d277b983b4d841118f0b4d48cf6fdd",
+        "drizzle/migrations/0314_legal_entity_safe_lifecycle.sql": "5624b4a265dad5519d86675fada734cafc878beaf6a6f228035ea5a7b879212a",
+        "drizzle/migrations/0315_legal_entity_guard_workspace_cascade.sql": "350b426fc8a8a038d3eb2cb3d0f4590dd3a378b0e5d74c557eba69fff60155d5",
+        "drizzle/migrations/0316_cnpj_operational_linkage_and_summary.sql": "e7f7e9845ed6834581f5fbca725a969a92ef561e5fef026e9759ec83ae7f5e75"
+      }
+    },
+    {
+      "id": "cnpj-ativo-assignment-rules",
+      "kind": "presentation",
+      "rationale": "Pure static value definitions and filtering only; no route, query, credentials or business action.",
+      "files": {
+        "src/lib/legal-entity-options.ts": "a448b9df60aa22196b765c1d0418e276aa92d13610de44a18b48d973f81c7b68"
+      }
+    },
+    {
+      "id": "service-type-static-options",
+      "kind": "presentation",
+      "rationale": "Pure static value definitions and filtering only; no route, query, credentials or business action.",
+      "files": {
+        "src/lib/contracts/import-schemas.ts": "b16382ddeaeef406dbee93e54ea9b5f4578c848198657a9433b958ed95a3f085",
+        "src/lib/contracts/workflow-field-meta.ts": "417fd4f63e8139ec0702adbbd71ce04d0956d88aceedcb8d4bd79b6e6ff760c6"
+      }
+    },
+    {
+      "id": "contract-import-service-types",
+      "kind": "business",
+      "resources": [
+        "techcontracts.contracts",
+        "techcontracts.contract_templates",
+        "techcontracts.imports",
+        "techcontracts.links"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.imports.manage.workspace",
+        "techcontracts.contract_templates.create.workspace",
+        "techcontracts.contracts.view.workspace"
+      ],
+      "rationale": "Existing import endpoints enforce requireWorkPermission and assertAnyPermission; original file signing reads contract under user RLS first. Type options only changed in presentation and AI schema; legal-entity picker filters new assignments, label hydration retains saved value. Template editing retains WorkAction and HrScreenAccess; no grants changed.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/components/ui/entity-combobox.tsx",
+          "symbol": "EntityCombobox"
+        },
+        {
+          "file": "src/lib/contracts/import.functions.ts",
+          "symbol": "parseContractPdf"
+        },
+        {
+          "file": "src/lib/ai/provider-resolver.server.ts",
+          "symbol": "aiChatFetch"
+        },
+        {
+          "file": "src/components/work-action.tsx",
+          "symbol": "WorkAction"
+        },
+        {
+          "file": "src/components/hr-access.tsx",
+          "symbol": "HrScreenAccess"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0309_hiring_signature_evidence.sql",
+          "symbol": "hiring_signature_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/legal-entities-auth.test.ts",
+          "name": "CNPJ allows an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/legal-entities-auth.test.ts",
+          "name": "CNPJ denies missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/legal-entities-auth.test.ts",
+          "name": "CNPJ denies explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/legal-entities-auth.test.ts",
+          "name": "CNPJ denies foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/legal-entities-auth.test.ts",
+          "name": "CNPJ denies inactive membership"
+        }
+      },
+      "files": {
+        "src/components/contracts/contract-form/contract-field-input.tsx": "5dfdf300f65db113dbae568d5e052d571495c348a48c9d7711960056f94d8aa4",
+        "src/components/contracts/import-contract-file-dialog.tsx": "bfa51aae64409a338ba782924641dbd9d2a845b0c91140908b9c802c82498ab8",
+        "src/lib/contracts/import.functions.ts": "7a8dcf2520b9acfebe4d846ad79a0783f11adeadc47eb9602ac53c357a2b9ff8",
+        "src/lib/contracts/template-import.server.ts": "3ea192580eac934f5f4a3fec8ba0215c89be2b2f5931daa2d9de414d086c3e0b",
+        "src/routes/_authenticated/contracts.templates.$id.tsx": "2cc457ee21c13d72e3596de8d6c6ca0042a5b279e0acf21b1ded5e41c686db52"
       }
     }
   ],

@@ -2450,6 +2450,7 @@ export type Database = {
           hiring_revision: number
           hiring_role_id: string | null
           id: string
+          legal_entity_id: string | null
           linkedin_apply_type: string | null
           linkedin_apply_url: string | null
           linkedin_budget_amount: number | null
@@ -2499,6 +2500,7 @@ export type Database = {
           hiring_revision?: number
           hiring_role_id?: string | null
           id?: string
+          legal_entity_id?: string | null
           linkedin_apply_type?: string | null
           linkedin_apply_url?: string | null
           linkedin_budget_amount?: number | null
@@ -2548,6 +2550,7 @@ export type Database = {
           hiring_revision?: number
           hiring_role_id?: string | null
           id?: string
+          legal_entity_id?: string | null
           linkedin_apply_type?: string | null
           linkedin_apply_url?: string | null
           linkedin_budget_amount?: number | null
@@ -2599,6 +2602,13 @@ export type Database = {
             columns: ["hiring_role_id"]
             isOneToOne: false
             referencedRelation: "job_roles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ats_jobs_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
@@ -6777,6 +6787,7 @@ export type Database = {
           decided_by: string | null
           decision_note: string | null
           id: string
+          legal_entity_id: string | null
           missing_template: boolean
           proposal_id: string | null
           public_token: string | null
@@ -6802,6 +6813,7 @@ export type Database = {
           decided_by?: string | null
           decision_note?: string | null
           id?: string
+          legal_entity_id?: string | null
           missing_template?: boolean
           proposal_id?: string | null
           public_token?: string | null
@@ -6827,6 +6839,7 @@ export type Database = {
           decided_by?: string | null
           decision_note?: string | null
           id?: string
+          legal_entity_id?: string | null
           missing_template?: boolean
           proposal_id?: string | null
           public_token?: string | null
@@ -6853,6 +6866,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "shared_fields_deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_drafts_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
@@ -7211,6 +7231,7 @@ export type Database = {
           jurisdiction: string | null
           late_fee_percent: number | null
           late_interest_monthly_percent: number | null
+          legal_entity_id: string | null
           metadata: Json
           monthly_value: number | null
           notice_days: number
@@ -7271,6 +7292,7 @@ export type Database = {
           jurisdiction?: string | null
           late_fee_percent?: number | null
           late_interest_monthly_percent?: number | null
+          legal_entity_id?: string | null
           metadata?: Json
           monthly_value?: number | null
           notice_days?: number
@@ -7331,6 +7353,7 @@ export type Database = {
           jurisdiction?: string | null
           late_fee_percent?: number | null
           late_interest_monthly_percent?: number | null
+          legal_entity_id?: string | null
           metadata?: Json
           monthly_value?: number | null
           notice_days?: number
@@ -7414,6 +7437,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "people_total_cost"
             referencedColumns: ["person_id"]
+          },
+          {
+            foreignKeyName: "contracts_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "contracts_parent_contract_id_fkey"
@@ -9501,6 +9531,7 @@ export type Database = {
           hubspot_owner_id: string | null
           id: string
           lead_id: string | null
+          legal_entity_id: string | null
           lost_at: string | null
           name: string
           notes: string | null
@@ -9541,6 +9572,7 @@ export type Database = {
           hubspot_owner_id?: string | null
           id?: string
           lead_id?: string | null
+          legal_entity_id?: string | null
           lost_at?: string | null
           name: string
           notes?: string | null
@@ -9581,6 +9613,7 @@ export type Database = {
           hubspot_owner_id?: string | null
           id?: string
           lead_id?: string | null
+          legal_entity_id?: string | null
           lost_at?: string | null
           name?: string
           notes?: string | null
@@ -9617,6 +9650,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "shared_fields_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
@@ -11767,6 +11807,7 @@ export type Database = {
           id: string
           interval_days: number | null
           last_generated_entry_id: string | null
+          legal_entity_id: string | null
           max_occurrences: number | null
           next_run_date: string
           occurrences_generated: number
@@ -11787,6 +11828,7 @@ export type Database = {
           id?: string
           interval_days?: number | null
           last_generated_entry_id?: string | null
+          legal_entity_id?: string | null
           max_occurrences?: number | null
           next_run_date: string
           occurrences_generated?: number
@@ -11807,6 +11849,7 @@ export type Database = {
           id?: string
           interval_days?: number | null
           last_generated_entry_id?: string | null
+          legal_entity_id?: string | null
           max_occurrences?: number | null
           next_run_date?: string
           occurrences_generated?: number
@@ -11822,6 +11865,13 @@ export type Database = {
             columns: ["last_generated_entry_id"]
             isOneToOne: false
             referencedRelation: "financial_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_recurrences_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
         ]
@@ -16054,6 +16104,7 @@ export type Database = {
           hire_date: string | null
           hiring_legal_entity_id: string | null
           id: string
+          legal_entity_id: string | null
           legal_entity_name: string | null
           location: string | null
           manager_id: string | null
@@ -16103,6 +16154,7 @@ export type Database = {
           hire_date?: string | null
           hiring_legal_entity_id?: string | null
           id?: string
+          legal_entity_id?: string | null
           legal_entity_name?: string | null
           location?: string | null
           manager_id?: string | null
@@ -16152,6 +16204,7 @@ export type Database = {
           hire_date?: string | null
           hiring_legal_entity_id?: string | null
           id?: string
+          legal_entity_id?: string | null
           legal_entity_name?: string | null
           location?: string | null
           manager_id?: string | null
@@ -16197,6 +16250,13 @@ export type Database = {
           {
             foreignKeyName: "people_hiring_legal_entity_id_fkey"
             columns: ["hiring_legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "people_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
             isOneToOne: false
             referencedRelation: "legal_entities"
             referencedColumns: ["id"]
@@ -21282,6 +21342,7 @@ export type Database = {
           description: string | null
           due_at: string | null
           id: string
+          legal_entity_id: string | null
           metadata: Json
           name: string
           origin: string | null
@@ -21313,6 +21374,7 @@ export type Database = {
           description?: string | null
           due_at?: string | null
           id?: string
+          legal_entity_id?: string | null
           metadata?: Json
           name: string
           origin?: string | null
@@ -21344,6 +21406,7 @@ export type Database = {
           description?: string | null
           due_at?: string | null
           id?: string
+          legal_entity_id?: string | null
           metadata?: Json
           name?: string
           origin?: string | null
@@ -21408,6 +21471,13 @@ export type Database = {
             columns: ["delivery_template_version_id"]
             isOneToOne: false
             referencedRelation: "project_delivery_template_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "projects_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
@@ -21685,6 +21755,7 @@ export type Database = {
           esign_document_id: string | null
           expires_at: string | null
           id: string
+          legal_entity_id: string | null
           locked: boolean
           owner_id: string
           proposal_template_id: string | null
@@ -21711,6 +21782,7 @@ export type Database = {
           esign_document_id?: string | null
           expires_at?: string | null
           id?: string
+          legal_entity_id?: string | null
           locked?: boolean
           owner_id: string
           proposal_template_id?: string | null
@@ -21737,6 +21809,7 @@ export type Database = {
           esign_document_id?: string | null
           expires_at?: string | null
           id?: string
+          legal_entity_id?: string | null
           locked?: boolean
           owner_id?: string
           proposal_template_id?: string | null
@@ -21792,6 +21865,13 @@ export type Database = {
             columns: ["esign_document_id"]
             isOneToOne: false
             referencedRelation: "esign_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
@@ -23731,6 +23811,7 @@ export type Database = {
           declined_at: string | null
           discount_total: number
           id: string
+          legal_entity_id: string | null
           notes: string | null
           number: string
           owner_id: string
@@ -23764,6 +23845,7 @@ export type Database = {
           declined_at?: string | null
           discount_total?: number
           id?: string
+          legal_entity_id?: string | null
           notes?: string | null
           number: string
           owner_id: string
@@ -23797,6 +23879,7 @@ export type Database = {
           declined_at?: string | null
           discount_total?: number
           id?: string
+          legal_entity_id?: string | null
           notes?: string | null
           number?: string
           owner_id?: string
@@ -23853,6 +23936,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "shared_fields_deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
@@ -26598,6 +26688,7 @@ export type Database = {
           ends_at: string | null
           id: string
           job_profile_id: string | null
+          legal_entity_id: string | null
           metadata: Json
           name: string
           next_billing_at: string | null
@@ -26629,6 +26720,7 @@ export type Database = {
           ends_at?: string | null
           id?: string
           job_profile_id?: string | null
+          legal_entity_id?: string | null
           metadata?: Json
           name: string
           next_billing_at?: string | null
@@ -26660,6 +26752,7 @@ export type Database = {
           ends_at?: string | null
           id?: string
           job_profile_id?: string | null
+          legal_entity_id?: string | null
           metadata?: Json
           name?: string
           next_billing_at?: string | null
@@ -26691,6 +26784,13 @@ export type Database = {
             columns: ["job_profile_id"]
             isOneToOne: false
             referencedRelation: "job_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "services_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
@@ -27116,6 +27216,7 @@ export type Database = {
           id: string
           interval: Database["public"]["Enums"]["billing_interval"]
           interval_count: number
+          legal_entity_id: string | null
           name: string
           next_billing_at: string | null
           notes: string | null
@@ -27139,6 +27240,7 @@ export type Database = {
           id?: string
           interval?: Database["public"]["Enums"]["billing_interval"]
           interval_count?: number
+          legal_entity_id?: string | null
           name: string
           next_billing_at?: string | null
           notes?: string | null
@@ -27162,6 +27264,7 @@ export type Database = {
           id?: string
           interval?: Database["public"]["Enums"]["billing_interval"]
           interval_count?: number
+          legal_entity_id?: string | null
           name?: string
           next_billing_at?: string | null
           notes?: string | null
@@ -27201,6 +27304,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "shared_fields_deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
             referencedColumns: ["id"]
           },
           {
@@ -33626,6 +33736,7 @@ export type Database = {
           value: string
         }[]
       }
+      legal_entities_summary: { Args: never; Returns: Json }
       legal_entity_usage: { Args: { _id: string }; Returns: Json }
       link_contacts_by_email_domain: {
         Args: { p_workspace: string }

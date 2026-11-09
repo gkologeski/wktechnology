@@ -8,7 +8,7 @@ route_pattern: /settings/legal-entities
 min_permission: system.legal_entities.view.workspace
 audience: internal
 sort_order: 138
-version: 2
+version: 3
 is_published: true
 ---
 # Manter empresas e CNPJs do workspace
@@ -23,14 +23,22 @@ is_published: true
 
 ## Passo a passo
 1. Abra Configurações > Workspace > Empresas (CNPJs).
-2. Consulte as empresas e selecione o cadastro desejado.
-3. Revise os campos do formulário antes de salvar.
+2. Busque por nome, código ou CNPJ e filtre Todas, Ativas ou Inativas.
+3. Use Nova empresa ou Editar para revisar razão social, nome fantasia, CNPJ, IE e IM; salve.
+4. Para desativar, use o ícone de energia e confirme: nenhum lançamento ou histórico é apagado.
+5. Para reativar, use o mesmo controle na empresa inativa.
+6. Para excluir, use a lixeira: o sistema confere todos os vínculos e recusa a exclusão quando há registros. Nesse caso, escolha desativar.
+7. Antes de desativar ou excluir a empresa padrão, defina outra empresa ativa como padrão.
 
 ## Resultado esperado
 A tela apresenta o resultado da consulta ou da ação descrita. Confira a confirmação e o estado exibidos; uma configuração gravada não prova execução no provedor externo.
 
 ## Regras e limites
 Cadastro compartilhado de pessoas jurídicas com componente da área financeira; não é a lista de empresas do CRM nem uma lista de workspaces.
+- Novos vínculos aceitam somente empresas ativas do mesmo workspace; filtros históricos continuam mostrando as inativas.
+- Negócios, cotações, propostas, contratos, serviços, projetos, pessoas, vagas, assinaturas e recorrências herdam o CNPJ da origem ou o padrão quando não informado.
+- Vínculos previamente preenchidos são preservados. A alteração não muda valores financeiros.
+- Leads, contatos e empresas da carteira têm contexto por seus negócios; não recebem um CNPJ próprio nesta entrega.
 
 ## Erros comuns
 - Se houver acesso negado, confira membership ativo, workspace e permissões da ação; não tente contornar por URL direta.

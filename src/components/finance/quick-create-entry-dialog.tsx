@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/select";
 import { createFinancialEntry, createInstallments } from "@/lib/finance.functions";
 import { useLegalEntities } from "@/components/finance/legal-entity-select";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { legalEntityAssignmentOptions } from "@/lib/legal-entity-options";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
 import { formatIsoDate } from "@/lib/iso-date";
@@ -60,6 +62,7 @@ export function QuickCreateEntryDialog({
   defaultDirection?: Direction;
   onCreated?: () => void;
 }) {
+  const permissions = usePermissions();
   const create = useServerFn(createFinancialEntry);
   const createParcels = useServerFn(createInstallments);
   const listCats = useServerFn(listCategories);
@@ -130,6 +133,15 @@ export function QuickCreateEntryDialog({
   }, [installments, count, amt, cadence, customDays, dueDate, splitMode]);
 
   async function submit() {
+    if (
+      !permissions.canAny([
+        "techfinance.entries.create.workspace",
+        "techfinance.entries.create.own",
+      ])
+    ) {
+      toast.error("Sem permissão para criar lançamentos.");
+      return;
+    }
     if (!description.trim() || !amt || amt <= 0) {
       toast.error("Preencha descrição e valor.");
       return;
@@ -340,13 +352,11 @@ export function QuickCreateEntryDialog({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Nenhuma</SelectItem>
-                  {(legalEntities as Array<{ id: string; code: string | null; name: string }>).map(
-                    (le) => (
-                      <SelectItem key={le.id} value={le.id}>
-                        {le.code ? `${le.code} · ${le.name}` : le.name}
-                      </SelectItem>
-                    ),
-                  )}
+                  {legalEntityAssignmentOptions(legalEntities).map((le) => (
+                    <SelectItem key={le.id} value={le.id}>
+                      {le.code ? `${le.code} · ${le.name}` : le.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <p className="text-xs text-muted-foreground">
