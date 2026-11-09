@@ -2199,6 +2199,20 @@
       "when": 1794172950388,
       "tag": "0313_contract_draft_client_acceptance",
       "breakpoints": true
+    },
+    {
+      "idx": 314,
+      "version": "7",
+      "when": 1794189630704,
+      "tag": "0314_legal_entity_safe_lifecycle",
+      "breakpoints": true
+    },
+    {
+      "idx": 315,
+      "version": "7",
+      "when": 1794189786001,
+      "tag": "0315_legal_entity_guard_workspace_cascade",
+      "breakpoints": true
     }
   ]
 }

@@ -292,6 +292,37 @@ export const setDefaultLegalEntity = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+/** Contagem de registros vinculados ao CNPJ, por área (para confirmar exclusão). */
+export const getLegalEntityUsage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }): Promise<Record<string, number>> => {
+    await authorizeFinanceBusiness(context.supabase, "legal_entities", "view", data.id);
+    const { data: usage, error } = await context.supabase.rpc("legal_entity_usage", { _id: data.id });
+    if (error) throw error;
+    return (usage ?? {}) as Record<string, number>;
+  });
+
+/** Desativa/reativa sem apagar nenhum registro vinculado. */
+export const setLegalEntityActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) =>
+    z.object({ id: z.string().uuid(), active: z.boolean() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    await authorizeFinanceBusiness(context.supabase, "legal_entities", "update", data.id);
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const { data: rows, error } = await context.supabase
+      .from("legal_entities")
+      .update({ active: data.active })
+      .eq("id", data.id)
+      .eq("workspace_id", workspaceId)
+      .select("id");
+    if (error) throw error;
+    if (!rows?.length) throw new Error("Sem permissão para alterar esta empresa.");
+    return { ok: true };
+  });
+
 export const deleteLegalEntity = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
@@ -309,12 +340,14 @@ export const deleteLegalEntity = createServerFn({ method: "POST" })
         `Não é possível excluir: existem ${count} lançamentos vinculados. Desative a empresa em vez de excluir.`,
       );
     }
-    const { error } = await supabase
+    const { data: deleted, error } = await supabase
       .from("legal_entities")
       .delete()
       .eq("id", data.id)
-      .eq("workspace_id", workspaceId);
+      .eq("workspace_id", workspaceId)
+      .select("id");
     if (error) throw error;
+    if (!deleted?.length) throw new Error("Sem permissão para excluir esta empresa.");
     return { ok: true };
   });
 

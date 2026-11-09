@@ -32036,6 +32036,7 @@ export type Database = {
         Args: { p_event_id: string }
         Returns: boolean
       }
+      _legal_entity_usage_counts: { Args: { _id: string }; Returns: Json }
       activity_body_plain: { Args: { _body: string }; Returns: string }
       activity_body_search_doc: { Args: { _body: string }; Returns: unknown }
       admin_setting_access: {
@@ -33625,6 +33626,7 @@ export type Database = {
           value: string
         }[]
       }
+      legal_entity_usage: { Args: { _id: string }; Returns: Json }
       link_contacts_by_email_domain: {
         Args: { p_workspace: string }
         Returns: number
