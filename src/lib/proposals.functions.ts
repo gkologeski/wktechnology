@@ -98,10 +98,6 @@ export const updateProposal = createServerFn({ method: "POST" })
           deal_id: z.string().uuid().nullable().optional(),
           contact_id: z.string().uuid().nullable().optional(),
           company_id: z.string().uuid().nullable().optional(),
-          // DADOS-CONTRATO: condições copiadas para o contrato.
-          installments_count: z.number().int().min(1).max(120).nullable().optional(),
-          installments_due_day: z.number().int().min(1).max(31).nullable().optional(),
-          validity_days: z.number().int().min(1).max(3650).optional(),
         }),
       })
       .parse(d),

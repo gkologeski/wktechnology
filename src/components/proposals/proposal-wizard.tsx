@@ -36,6 +36,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/crm";
 import { cn } from "@/lib/utils";
 import { DEFAULT_VALIDITY_DAYS, clampInt } from "@/lib/contracts/contract-terms-defaults";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { renderQuoteTemplate } from "@/lib/quote-template-renderer";
 import {
   itemsTableHtml,
@@ -129,6 +130,10 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const [installments, setInstallments] = useState<number | null>(null);
   const [dueDay, setDueDay] = useState<number | null>(null);
   const [validityDays, setValidityDays] = useState<number>(DEFAULT_VALIDITY_DAYS);
+  const { can } = usePermissions();
+  const canEditTerms = ["own", "team", "workspace"].some((s) =>
+    can(`techsales.proposals.update.${s}`),
+  );
 
   const res = draftQ.data;
   const draft: ProposalDraft | null = res && !res.reused ? res.draft : null;
@@ -208,19 +213,19 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   async function afterSave(id: string) {
     await supabase
       .from("proposals")
-      .update({ assigned_to: assignee, proposal_template_id: templateId })
+      .update({
+        assigned_to: assignee,
+        proposal_template_id: templateId,
+        // Condições contratuais: gravadas só por quem pode alterar propostas (RLS também valida).
+        ...(canEditTerms
+          ? {
+              installments_count: installments,
+              installments_due_day: dueDay,
+              validity_days: validityDays,
+            }
+          : {}),
+      })
       .eq("id", id);
-    // Condições contratuais passam pela função de servidor com checagem de permissão.
-    await update({
-      data: {
-        id,
-        patch: {
-          installments_count: installments,
-          installments_due_day: dueDay,
-          validity_days: validityDays,
-        },
-      },
-    });
     void qc.invalidateQueries({ queryKey: ["deal-proposals"] });
     void qc.invalidateQueries({ queryKey: ["proposal", id] });
     void qc.invalidateQueries({ queryKey: ["proposal-doc", id] });
