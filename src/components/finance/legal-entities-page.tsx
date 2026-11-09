@@ -3,7 +3,7 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
-import { Plus, Star, Trash2, Pencil, Wand2 } from "lucide-react";
+import { Plus, Star, Trash2, Pencil, Wand2, Power, PowerOff } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageHeader } from "@/components/page-header";
@@ -28,6 +28,8 @@ import {
   setDefaultLegalEntity,
   deleteLegalEntity,
   getLegalEntity,
+  getLegalEntityUsage,
+  setLegalEntityActive,
 } from "@/lib/legal-entities.functions";
 
 type LE = {
@@ -50,10 +52,26 @@ export function LegalEntitiesPage() {
   const setDefault = useServerFn(setDefaultLegalEntity);
   const del = useServerFn(deleteLegalEntity);
   const getEntity = useServerFn(getLegalEntity);
+  const getUsage = useServerFn(getLegalEntityUsage);
+  const setActive = useServerFn(setLegalEntityActive);
+  const [statusFilter, setStatusFilter] = useState<"active" | "inactive" | "all">("all");
+  const [search, setSearch] = useState("");
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: allRows = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["legal-entities", financePermissions.workspaceId],
     queryFn: () => list() as Promise<LE[]>,
+  });
+  const term = search.trim().toLowerCase();
+  const digits = term.replace(/\D/g, "");
+  const rows = allRows.filter((r) => {
+    if (statusFilter === "active" && !r.active) return false;
+    if (statusFilter === "inactive" && r.active) return false;
+    if (!term) return true;
+    return (
+      r.name.toLowerCase().includes(term) ||
+      (r.code ?? "").toLowerCase().includes(term) ||
+      (!!digits && (r.cnpj ?? "").includes(digits))
+    );
   });
 
   const recordAccess = useFinanceBusinessCapabilities(
@@ -143,14 +161,60 @@ export function LegalEntitiesPage() {
     }
   }
 
-  async function remove(row: LE) {
-    if (row.totals.count > 0) {
-      toast.error(
-        `Existem ${row.totals.count} lançamentos vinculados. Desative em vez de excluir.`,
-      );
+  async function toggleActive(row: LE) {
+    if (row.active && row.is_default) {
+      toast.error("Defina outra empresa como padrão antes de desativar esta.");
       return;
     }
-    if (!(await confirmDialog(`Excluir ${row.name}?`))) return;
+    const ok = await confirmDialog(
+      row.active
+        ? `Desativar ${row.name}? Lançamentos e registros vinculados são mantidos; a empresa só deixa de aparecer em novos cadastros.`
+        : `Reativar ${row.name}?`,
+    );
+    if (!ok) return;
+    try {
+      await setActive({ data: { id: row.id, active: !row.active } });
+      toast.success(row.active ? "Empresa desativada" : "Empresa reativada");
+      qc.invalidateQueries({ queryKey: ["legal-entities", financePermissions.workspaceId] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha");
+    }
+  }
+
+  async function remove(row: LE) {
+    if (row.is_default) {
+      toast.error("Defina outra empresa como padrão antes de excluir esta.");
+      return;
+    }
+    let usage: Record<string, number> = {};
+    try {
+      usage = await getUsage({ data: { id: row.id } });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao verificar vínculos");
+      return;
+    }
+    const linked = Object.entries(usage);
+    if (linked.length > 0) {
+      const detail = linked.map(([k, v]) => `${k}: ${v}`).join("; ");
+      if (
+        row.active &&
+        (await confirmDialog(
+          `${row.name} não pode ser excluída porque tem registros vinculados (${detail}). Deseja desativá-la em vez disso? Nada será apagado.`,
+        ))
+      ) {
+        try {
+          await setActive({ data: { id: row.id, active: false } });
+          toast.success("Empresa desativada");
+          qc.invalidateQueries({ queryKey: ["legal-entities", financePermissions.workspaceId] });
+        } catch (e) {
+          toast.error(e instanceof Error ? e.message : "Falha");
+        }
+      } else if (!row.active) {
+        toast.error(`Não é possível excluir: ${detail}.`);
+      }
+      return;
+    }
+    if (!(await confirmDialog(`Excluir ${row.name} definitivamente? Não há registros vinculados.`))) return;
     try {
       await del({ data: { id: row.id } });
       toast.success("Excluída");
@@ -183,6 +247,35 @@ export function LegalEntitiesPage() {
 
       {cnpjFillOpen && <LegalEntityCnpjFillDialog onOpenChange={setCnpjFillOpen} />}
 
+      <div className="flex flex-wrap items-center gap-2">
+        <Input
+          aria-label="Buscar empresa"
+          placeholder="Buscar por nome, código ou CNPJ"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-xs"
+        />
+        <div role="group" aria-label="Filtrar por status" className="flex gap-1">
+          {(
+            [
+              ["all", "Todas"],
+              ["active", "Ativas"],
+              ["inactive", "Inativas"],
+            ] as const
+          ).map(([v, l]) => (
+            <Button
+              key={v}
+              size="sm"
+              variant={statusFilter === v ? "secondary" : "ghost"}
+              aria-pressed={statusFilter === v}
+              onClick={() => setStatusFilter(v)}
+            >
+              {l}
+            </Button>
+          ))}
+        </div>
+      </div>
+
       <div className="rounded-lg border bg-card">
         <table className="w-full text-sm">
           <thead className="bg-muted/40 text-muted-foreground">
@@ -203,10 +296,20 @@ export function LegalEntitiesPage() {
                 </td>
               </tr>
             )}
-            {!isLoading && rows.length === 0 && (
+            {isError && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-destructive">
+                  Não foi possível carregar as empresas.{" "}
+                  <Button size="sm" variant="link" onClick={() => void refetch()}>
+                    Tentar novamente
+                  </Button>
+                </td>
+              </tr>
+            )}
+            {!isLoading && !isError && rows.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
-                  Nenhuma empresa cadastrada.
+                  {allRows.length === 0 ? "Nenhuma empresa cadastrada." : "Nenhuma empresa encontrada com esses filtros."}
                 </td>
               </tr>
             )}
@@ -239,7 +342,7 @@ export function LegalEntitiesPage() {
                 </td>
                 <td className="px-4 py-2 text-right">
                   <div className="flex justify-end gap-1">
-                    {!r.is_default && (
+                    {!r.is_default && r.active && (
                       <Button
                         size="sm"
                         variant="ghost"
@@ -263,8 +366,20 @@ export function LegalEntitiesPage() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      disabled={!recordAccess.for(r.id).can_delete}
-                      onClick={() => remove(r)}
+                      disabled={!recordAccess.for(r.id).can_update || (r.active && r.is_default)}
+                      onClick={() => void toggleActive(r)}
+                      aria-label={r.active ? `Desativar ${r.name}` : `Reativar ${r.name}`}
+                      title={r.active ? "Desativar" : "Reativar"}
+                    >
+                      {r.active ? <PowerOff className="h-4 w-4" /> : <Power className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={!recordAccess.for(r.id).can_delete || r.is_default}
+                      onClick={() => void remove(r)}
+                      aria-label={`Excluir ${r.name}`}
+                      title="Excluir"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
