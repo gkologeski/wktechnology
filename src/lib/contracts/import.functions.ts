@@ -402,12 +402,10 @@ export const createContractFromImport = createServerFn({ method: "POST" })
 // ============= VIEW ORIGINAL FILE =============
 // Gera URL assinada temporária do arquivo original importado (bucket `contract-imports`).
 export const getContractSourceFileUrl = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "view")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
-    const { assertHrRecordAccess } = await import("@/lib/access-control/hr-records.server");
-    await assertHrRecordAccess(supabase, "techcontracts.contracts", data.id, "view");
     const { data: row, error } = await supabase
       .from("contracts")
       .select("id, source_file_path, imported_from")

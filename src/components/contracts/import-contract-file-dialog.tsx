@@ -28,6 +28,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   parseContractPdf,
   parseContractText,
@@ -87,6 +88,7 @@ async function docxToText(file: File): Promise<string> {
 }
 
 export function ImportContractFileDialog({ open, onOpenChange }: Props) {
+  const permissions = usePermissions();
   const parsePdf = useServerFn(parseContractPdf);
   const parseText = useServerFn(parseContractText);
   const createFromImport = useServerFn(createContractFromImport);

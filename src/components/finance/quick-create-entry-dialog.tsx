@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { createFinancialEntry, createInstallments } from "@/lib/finance.functions";
 import { useLegalEntities } from "@/components/finance/legal-entity-select";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { legalEntityAssignmentOptions } from "@/lib/legal-entity-options";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
@@ -61,6 +62,7 @@ export function QuickCreateEntryDialog({
   defaultDirection?: Direction;
   onCreated?: () => void;
 }) {
+  const permissions = usePermissions();
   const create = useServerFn(createFinancialEntry);
   const createParcels = useServerFn(createInstallments);
   const listCats = useServerFn(listCategories);
