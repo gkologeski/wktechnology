@@ -223,6 +223,8 @@ type Props = {
   onChange: (html: string) => void;
   placeholder?: string;
   minHeight?: number;
+  /** Altura máxima da caixa; quando informada, o conteúdo rola internamente. */
+  maxHeight?: number | string;
   editable?: boolean;
 };
 
@@ -239,7 +241,7 @@ const FONT_FAMILIES = [
 const FONT_SIZES = ["10px", "12px", "14px", "16px", "18px", "20px", "24px", "32px", "48px"];
 
 export const WordEditor = forwardRef<WordEditorHandle, Props>(function WordEditor(
-  { value, onChange, placeholder, minHeight = 360, editable = true },
+  { value, onChange, placeholder, minHeight = 360, maxHeight, editable = true },
   ref,
 ) {
   const [mounted, setMounted] = useState(false);
@@ -322,9 +324,21 @@ export const WordEditor = forwardRef<WordEditorHandle, Props>(function WordEdito
   }
 
   return (
-    <div className="rounded-md border bg-background">
-      <Toolbar editor={editor} />
-      <EditorContent editor={editor} />
+    <div
+      className={
+        maxHeight != null
+          ? "flex flex-col rounded-md border bg-background"
+          : "rounded-md border bg-background"
+      }
+      style={maxHeight != null ? { maxHeight } : undefined}
+    >
+      <div className={maxHeight != null ? "shrink-0" : undefined}>
+        <Toolbar editor={editor} />
+      </div>
+      <EditorContent
+        editor={editor}
+        className={maxHeight != null ? "min-h-0 flex-1 overflow-y-auto" : undefined}
+      />
     </div>
   );
 });
