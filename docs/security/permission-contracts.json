@@ -9873,6 +9873,10 @@
         {
           "file": "src/lib/finance.functions.ts",
           "symbol": "createFinancialEntry"
+        },
+        {
+          "file": "@tanstack/react-start",
+          "symbol": "useServerFn"
         }
       ],
       "database": [
@@ -9916,13 +9920,13 @@
         }
       },
       "files": {
-        "src/components/finance/legal-entities-page.tsx": "aac4580de7c2dc67bbc700b7ee11c7eb4cf4e59c1b70d05a59cc3680827b1411",
-        "src/lib/legal-entities.functions.ts": "65c9f9963869c61e88eca6db3d9a43763df1509f2bdb13abfb65cf43f036d161",
-        "src/routes/_authenticated/finance.legal-entities.tsx": "feeb75d44dce4137f5c190f2737d716fb535069f42d070410ed1c5767a413e23",
-        "src/routes/_authenticated/settings.legal-entities.tsx": "8e51b31b022034fbc91d04cbf6d1d470e611ae211c3904269ac57925607a948a",
-        "src/routes/_authenticated/finance.bank-accounts.tsx": "d1a427a2e7cb2ca5b83da0b6cbb1ca73d98c1c6c302c51b0338a3d528c2ba5aa",
-        "src/routes/_authenticated/finance.categories.tsx": "92b7470291e7ec4ef61af15da571aac42b17098ec83c41c3bcb2a2d24c06c463",
-        "src/components/finance/quick-create-entry-dialog.tsx": "93c0bc0eefc6bb12afc43d73e7405acaf727d582cee1fb32c1433c455380e06b",
+        "src/components/finance/legal-entities-page.tsx": "aee0f89b818db062abde25e420ec517349b9a6fbf9598f13bda7cec60ab57a35",
+        "src/lib/legal-entities.functions.ts": "4ae1688e21ab98419a58ecb6bd14c82869d8d142d03d88a6aaaf784f7f7045d0",
+        "src/routes/_authenticated/finance.legal-entities.tsx": "c6db2c99bb89c7fc5261c1bcddce9dd2eb9c68b86a9180c479c477a0d99479fa",
+        "src/routes/_authenticated/settings.legal-entities.tsx": "1d148643b1e5845f2ed552ac156f3aeb9773902ab8079a1cdc0f539e7e32d8d6",
+        "src/routes/_authenticated/finance.bank-accounts.tsx": "7a5cc9a70366f0ff55126f8b199408dffd680a1b5555edd9536546ad2dd6a27e",
+        "src/routes/_authenticated/finance.categories.tsx": "d4d194671c4135213fd5a3e55cebfe276785351deb56298fcaec271f790f0a3e",
+        "src/components/finance/quick-create-entry-dialog.tsx": "3f638d48f9fbcab69435d279222ad6fb60a7020507e21460a244ac178d602359",
         "drizzle/migrations/0314_legal_entity_safe_lifecycle.sql": "5624b4a265dad5519d86675fada734cafc878beaf6a6f228035ea5a7b879212a",
         "drizzle/migrations/0315_legal_entity_guard_workspace_cascade.sql": "350b426fc8a8a038d3eb2cb3d0f4590dd3a378b0e5d74c557eba69fff60155d5",
         "drizzle/migrations/0316_cnpj_operational_linkage_and_summary.sql": "e7f7e9845ed6834581f5fbca725a969a92ef561e5fef026e9759ec83ae7f5e75"
@@ -9933,7 +9937,7 @@
       "kind": "presentation",
       "rationale": "Pure static value definitions and filtering only; no route, query, credentials or business action.",
       "files": {
-        "src/lib/legal-entity-options.ts": "1d1ed7229b13008b445530799bceaf618397281c491a9846793ad1f9e93d0751"
+        "src/lib/legal-entity-options.ts": "a448b9df60aa22196b765c1d0418e276aa92d13610de44a18b48d973f81c7b68"
       }
     },
     {
@@ -10003,6 +10007,14 @@
         {
           "file": "src/components/hr-access.tsx",
           "symbol": "HrScreenAccess"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "@tanstack/react-start",
+          "symbol": "useServerFn"
         }
       ],
       "database": [
@@ -10036,7 +10048,7 @@
       "files": {
         "src/components/contracts/contract-form/contract-field-input.tsx": "5dfdf300f65db113dbae568d5e052d571495c348a48c9d7711960056f94d8aa4",
         "src/components/contracts/import-contract-file-dialog.tsx": "50759ab7c420364e5c0b3377a91554df7452b4db1808aa2430911422d2f5dfcb",
-        "src/lib/contracts/import.functions.ts": "c92db2addc8f652477778fe817467c0bf2db522013c6ef2026be5947a82090dc",
+        "src/lib/contracts/import.functions.ts": "bc8e821c76be782d517a708aa8bf16d433973eb6875e2c46a764eb1441019228",
         "src/lib/contracts/template-import.server.ts": "3ea192580eac934f5f4a3fec8ba0215c89be2b2f5931daa2d9de414d086c3e0b",
         "src/routes/_authenticated/contracts.templates.$id.tsx": "2cc457ee21c13d72e3596de8d6c6ca0042a5b279e0acf21b1ded5e41c686db52"
       }
