@@ -10172,6 +10172,10 @@
         {
           "file": "drizzle/migrations/0320_proposal_contract_terms.sql",
           "symbol": "proposals"
+        },
+        {
+          "file": "drizzle/migrations/0321_proposal_versions_cascade.sql",
+          "symbol": "proposal_document_versions_proposal_id_fkey"
         }
       ],
       "tests": {
