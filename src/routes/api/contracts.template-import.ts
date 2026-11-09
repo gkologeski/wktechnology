@@ -8,7 +8,7 @@ import type { Database } from "@/integrations/supabase/types";
 
 const BodySchema = z.object({
   filename: z.string().min(1).max(255),
-  kind: z.enum(["pdf", "html"]),
+  kind: z.enum(["pdf", "html", "docx_formatted"]),
   base64: z.string().min(20).max(30_000_000).optional(),
   html: z.string().min(40).max(400_000).optional(),
 });
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/api/contracts/template-import")({
         const data = parsed.data;
         if (data.kind === "pdf" && !data.base64)
           return new Response("Arquivo ausente", { status: 400 });
-        if (data.kind === "html" && !data.html)
+        if (data.kind !== "pdf" && !data.html)
           return new Response("Conteúdo ausente", { status: 400 });
 
         const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
@@ -67,7 +67,14 @@ export const Route = createFileRoute("/api/contracts/template-import")({
                   },
                 },
               ]
-            : [
+            : data.kind === "docx_formatted"
+              ? [
+                  {
+                    type: "text",
+                    text: `Indique as variáveis do contrato "${data.filename}". Documento:\n\n${data.html}`,
+                  },
+                ]
+              : [
                 {
                   type: "text",
                   text: `Converta o contrato "${data.filename}" em um modelo reutilizável conforme as regras. Conteúdo em HTML:\n\n${data.html}`,
@@ -81,7 +88,11 @@ export const Route = createFileRoute("/api/contracts/template-import")({
             const ping = setInterval(() => send({ type: "ping" }), 8000);
             try {
               send({ type: "ping" });
-              const result = await convertTemplateWithAi(content, { userId, workspaceId });
+              const result = await convertTemplateWithAi(
+                content,
+                { userId, workspaceId },
+                data.kind === "docx_formatted" ? { preserveHtml: data.html } : {},
+              );
               send({ type: "result", result });
             } catch (e) {
               send({ type: "error", message: (e as Error).message || "Falha na conversão" });

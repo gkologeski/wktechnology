@@ -105,6 +105,7 @@ export function extractJsonObject(text: string): string {
 export async function convertTemplateWithAi(
   userContent: Array<Record<string, unknown>>,
   ctx: { userId: string; workspaceId: string },
+  opts: { preserveHtml?: string } = {},
 ): Promise<ImportedTemplate> {
   const key = process.env["LOVABLE_API_KEY"];
   if (!key) throw new Error("Configuração de IA ausente no servidor.");
@@ -117,7 +118,7 @@ export async function convertTemplateWithAi(
         model: "google/gemini-2.5-flash",
         stream: true,
         messages: [
-          { role: "system", content: SYSTEM_PROMPT },
+          { role: "system", content: opts.preserveHtml ? TOKENIZE_PROMPT : SYSTEM_PROMPT },
           { role: "user", content: userContent },
         ],
         response_format: { type: "json_object" },
@@ -156,8 +157,19 @@ export async function convertTemplateWithAi(
   }
   const result = ImportedTemplateSchema.safeParse(parsed);
   if (!result.success) throw new Error("A IA retornou um formato inesperado. Tente novamente.");
+  const { sanitizeTemplateHtml, applyTokenSuggestions } = await import("./template-html-format");
+  if (opts.preserveHtml) {
+    const applied = applyTokenSuggestions(
+      sanitizeTemplateHtml(opts.preserveHtml),
+      result.data.suggestions ?? [],
+    );
+    const warnings = [...(result.data.warnings ?? [])];
+    if (applied.unmatched.length)
+      warnings.push(`Trechos não localizados para variável: ${applied.unmatched.slice(0, 5).join("; ")}`);
+    return { ...result.data, body_html: applied.html, warnings };
+  }
   if (!result.data.body_html || result.data.body_html.trim().length < 40) {
     throw new Error("Não foi possível extrair o corpo do documento.");
   }
-  return result.data;
+  return { ...result.data, body_html: sanitizeTemplateHtml(result.data.body_html) };
 }
