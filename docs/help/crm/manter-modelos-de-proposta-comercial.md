@@ -48,7 +48,6 @@ Modelos de proposta são próprios e podem se vincular ao catálogo de serviços
 
 Além das variáveis da lista, os modelos aceitam: `{{company_legal_name}}` (razão social), `{{company_cnpj}}`, `{{payment_method}}`, `{{installments_count}}`, `{{installments_due_day}}`, `{{installment_value}}`, `{{validity_days}}`, `{{counterparty.name}}` (empresa cliente), `{{signer.full_name}}`, `{{signer.cpf}}`, `{{signer.email}}` (signatário legal único da empresa ou, na falta, o contato da proposta) e `{{{terms_block}}}` (seção "Condições comerciais" completa, atualizada automaticamente no assistente). Os modelos oficiais já trazem `{{{terms_block}}}` antes da validade.
 
-
 ## Tabela de itens no final
 
 A tabela de itens (Item | Cobrança) e o Total aparecem sempre no final do documento da proposta, na seção "Investimento", na tela, no link público e no PDF. Não é preciso colocar `{{{items_table}}}` no modelo; se o texto já trouxer a tabela, ela não é repetida no final.
