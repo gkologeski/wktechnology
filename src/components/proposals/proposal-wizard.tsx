@@ -382,7 +382,13 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => (saving ? undefined : onOpenChange(v))}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="max-w-3xl max-h-[90vh] overflow-y-auto"
+        // A confirmação "Trocar o conteúdo?" abre por cima; clicar nela não fecha o assistente.
+        onInteractOutside={(e) => {
+          if ((e.target as Element | null)?.closest?.('[role="alertdialog"]')) e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
             {editId ? "Editar proposta" : "Nova proposta"}
