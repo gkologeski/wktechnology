@@ -2,11 +2,14 @@
 export type ProposalPaymentTerms = {
   installments: number | null | undefined;
   dueDay: number | null | undefined;
+  /** Condições de pagamento estruturadas válidas: o cronograma substitui parcelas/dia. */
+  structured?: boolean;
 };
 
 /** Lista, em português, as condições que faltam para o contrato. */
 export function missingPaymentTerms(t: ProposalPaymentTerms): string[] {
   const out: string[] = [];
+  if (t.structured) return out;
   if (!t.installments || t.installments < 1 || t.installments > 120) out.push("Parcelas");
   if (!t.dueDay || t.dueDay < 1 || t.dueDay > 31) out.push("Dia de vencimento");
   return out;

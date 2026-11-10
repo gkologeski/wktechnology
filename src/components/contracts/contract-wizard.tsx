@@ -2,6 +2,7 @@
 // Origem -> Tipo -> Dados -> Serviços -> Revisão. Nada é gravado antes de
 // "Criar contrato".
 import { missingPaymentTermsMessage } from "@/lib/proposals/proposal-terms-check";
+import { parsePaymentTerms, validatePaymentTerms } from "@/lib/sales/payment-terms";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   Select,
@@ -261,7 +262,7 @@ export function ContractWizard({
     queryFn: async () => {
       const { data } = await supabase
         .from("proposals")
-        .select("installments_count, installments_due_day, validity_days")
+        .select("installments_count, installments_due_day, validity_days, payment_terms, total_amount")
         .eq("id", termsProposalId!)
         .maybeSingle();
       return data;
@@ -273,6 +274,12 @@ export function ContractWizard({
     setInstallmentsDueDay(d?.installments_due_day ? String(d.installments_due_day) : "");
   }, [proposalTermsQ.data, termsProposalId]);
 
+  // CONDICOES-PAGAMENTO: com cronograma válido na proposta, parcelas/dia são opcionais.
+  const hasStructuredTerms = (() => {
+    const d = proposalTermsQ.data;
+    const t = d ? parsePaymentTerms(d.payment_terms) : null;
+    return !!t && validatePaymentTerms(t, Number(d?.total_amount ?? 0)).length === 0;
+  })();
   const lineItems = form.prefill.data?.lineItems ?? [];
   const servicesDisabled = form.kind !== "provider";
   const blankTitle = String(form.values["title"] ?? "").trim();
@@ -289,6 +296,7 @@ export function ContractWizard({
       return missingPaymentTermsMessage({
         installments: terms.installmentsCount,
         dueDay: terms.installmentsDueDay,
+        structured: hasStructuredTerms,
       });
     return null;
   }
