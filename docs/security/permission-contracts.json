@@ -9744,7 +9744,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic.",
       "files": {
-        "src/integrations/supabase/types.ts": "534fd02d7b8cc6d8fd3afe6748a005697786bb27d129d4b5b1655ac4c933c1df",
+        "src/integrations/supabase/types.ts": "7b455120b323a2388a91cb7d55936f48322c84bc63fc73be98f6da8e1817483c",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
