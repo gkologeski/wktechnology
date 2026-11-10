@@ -75,25 +75,7 @@ export function PaymentTermsPrototype() {
         <PageHeader
           eyebrow="Protótipo · dados de exemplo"
           title="Condições de pagamento da cotação"
-          description="Nada aqui é lido ou gravado. Escolha um cenário e mude as condições para ver as parcelas."
-          secondaryActions={
-            <ToggleGroup
-              type="single"
-              value={scenario}
-              aria-label="Cenário de exemplo"
-              onValueChange={(v) => {
-                if (!v) return;
-                setScenario(v as ScenarioKey);
-                setTerms(initial(v as ScenarioKey));
-              }}
-            >
-              {(Object.keys(SCENARIOS) as ScenarioKey[]).map((k) => (
-                <ToggleGroupItem key={k} value={k}>
-                  {SCENARIOS[k].label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          }
+          description="Nada aqui é lido ou gravado. Mude as condições para ver as parcelas previstas."
         />
 
         <section className="rounded-lg border border-border bg-card p-5">
