@@ -27,6 +27,7 @@ import {
   Activity,
   Shield,
   LayoutDashboard,
+  Download,
 } from "lucide-react";
 
 import type { SidebarGroup } from "@/lib/menu-config";
@@ -78,6 +79,7 @@ export const ATS_SIDEBAR_GROUPS: SidebarGroup[] = [
       { title: "Capturados", url: "/hunting/captures", icon: Inbox },
       { title: "Templates", url: "/hunting/templates", icon: Mail },
       { title: "Observabilidade", url: "/hunting/observability", icon: Activity },
+      { title: "Instalar extensão", url: "/hunting/install", icon: Download },
     ],
   },
   {

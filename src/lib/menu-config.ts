@@ -51,6 +51,14 @@ import {
   RefreshCw,
   Linkedin,
   Phone,
+  Smartphone,
+  Printer,
+  GraduationCap,
+  Megaphone as AdsIcon,
+  Fingerprint,
+  Columns3,
+  FolderTree,
+  Upload,
 } from "lucide-react";
 
 export type Need = "admin" | "manager" | "platform" | undefined;
@@ -449,6 +457,15 @@ export const SIDEBAR_PLATFORM_ITEMS: SidebarItem[] = [
   { title: "Sandbox", url: "/settings/platform/sandbox", icon: FlaskConical, need: "platform" },
 ];
 
+/** Itens gerais do rodapé, visíveis em todos os módulos. */
+export const SIDEBAR_GENERAL_ITEMS: SidebarItem[] = [
+  { title: "Trilhas de treinamento", url: "/ajuda/trilhas", icon: GraduationCap },
+  { title: "Meus chamados", url: "/my-bug-reports", icon: Bug },
+  { title: "Integrações", url: "/integrations", icon: Plug, need: "admin" },
+  { title: "Marketplace", url: "/marketplace", icon: ShoppingBag, need: "admin" },
+  { title: "Imprimir início", url: "/home/print", icon: Printer },
+];
+
 // --- SETTINGS ----------------------------------------------------------------
 
 export const SETTINGS_GROUPS: SettingsGroup[] = [
@@ -460,6 +477,8 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
       { to: "/settings/security", label: "Segurança (2FA)", icon: ShieldCheck },
       { to: "/settings/privacy", label: "Privacidade & Meus Dados", icon: Lock },
       { to: "/settings/my-tickets", label: "Meus chamados", icon: Bug },
+      { to: "/settings/my-permissions", label: "Minhas permissões", icon: KeyRound },
+      { to: "/settings/mobile", label: "Celular e notificações", icon: Smartphone },
     ],
   },
   {
@@ -540,6 +559,27 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         need: "admin",
         permissionAny: adminAny("system.custom_objects"),
       },
+      {
+        to: "/settings/property-groups",
+        label: "Grupos de campos",
+        icon: FolderTree,
+        need: "admin",
+        permissionAny: adminAny("system.properties"),
+      },
+      {
+        to: "/settings/record-layouts",
+        label: "Layout das fichas",
+        icon: Columns3,
+        need: "admin",
+        permissionAny: adminAny("system.properties"),
+      },
+      {
+        to: "/settings/clauses",
+        label: "Cláusulas",
+        icon: FileText,
+        need: "admin",
+        permissionAny: adminAny("system.contracts"),
+      },
     ],
   },
   {
@@ -572,6 +612,20 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         icon: Shield,
         need: "admin",
         permissionAny: adminAny("system.rbac_diagnostics"),
+      },
+      {
+        to: "/settings/sso",
+        label: "Login único (SSO)",
+        icon: Fingerprint,
+        need: "admin",
+        permissionAny: adminAny("system.security"),
+      },
+      {
+        to: "/settings/scim",
+        label: "SCIM",
+        icon: UsersRound,
+        need: "admin",
+        permissionAny: adminAny("system.security"),
       },
     ],
   },
@@ -681,6 +735,41 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         icon: Download,
         need: "admin",
         permissionAny: adminAny("system.import"),
+      },
+      {
+        to: "/settings/import-csv",
+        label: "Importar planilha",
+        icon: Upload,
+        need: "admin",
+        permissionAny: adminAny("system.import"),
+      },
+      {
+        to: "/settings/integrations/contaazul",
+        label: "Conta Azul",
+        icon: Plug,
+        need: "admin",
+        permissionAny: adminAny("system.integrations"),
+      },
+      {
+        to: "/settings/hubspot-users",
+        label: "Usuários do HubSpot",
+        icon: Users,
+        need: "admin",
+        permissionAny: adminAny("system.hubspot_sync"),
+      },
+      {
+        to: "/settings/ads-sync",
+        label: "Anúncios",
+        icon: AdsIcon,
+        need: "admin",
+        permissionAny: adminAny("system.integrations"),
+      },
+      {
+        to: "/settings/video",
+        label: "Vídeo",
+        icon: Video,
+        need: "admin",
+        permissionAny: adminAny("system.integrations"),
       },
     ],
   },

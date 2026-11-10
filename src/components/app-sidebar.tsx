@@ -22,7 +22,7 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { ModuleSwitcher } from "@/components/module-switcher";
-import { SIDEBAR_GROUPS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms } from "@/lib/menu-config";
+import { SIDEBAR_GROUPS, SIDEBAR_GENERAL_ITEMS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms } from "@/lib/menu-config";
 import { ATS_SIDEBAR_GROUPS } from "@/lib/menu-config-ats";
 import { ERP_SIDEBAR_GROUPS, isWorkspacePathname } from "@/lib/menu-config-erp";
 import { CONTRACTS_SIDEBAR_GROUPS } from "@/lib/menu-config-contracts";
@@ -132,6 +132,7 @@ export function AppSidebar() {
   }, [query, isAdmin, isManager, isPlatformAdmin, grantedPermissions, groupsSource, hrMenuReady]);
 
   const platformItems = SIDEBAR_PLATFORM_ITEMS.filter((i) => canSee(i.need, perms));
+  const generalItems = SIDEBAR_GENERAL_ITEMS.filter((i) => canSee(i.need, perms, i.permissionAny));
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
@@ -317,6 +318,13 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+        <PlatformSection
+          items={generalItems}
+          isActive={isActive}
+          collapsed={collapsed}
+          label="Geral"
+          storageKey="sidebar:general-open"
+        />
         <PlatformSection items={platformItems} isActive={isActive} collapsed={collapsed} />
       </SidebarFooter>
     </Sidebar>
@@ -327,15 +335,19 @@ function PlatformSection({
   items,
   isActive,
   collapsed,
+  label = "Plataforma",
+  storageKey = "sidebar:platform-open",
 }: {
   items: typeof SIDEBAR_PLATFORM_ITEMS;
+  label?: string;
+  storageKey?: string;
   isActive: (url: string) => boolean;
   collapsed: boolean;
 }) {
   const hasActive = items.some((i) => isActive(i.url));
   const [open, setOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    const saved = window.localStorage.getItem("sidebar:platform-open");
+    const saved = window.localStorage.getItem(storageKey);
     if (saved !== null) return saved === "1";
     return false;
   });
@@ -346,9 +358,9 @@ function PlatformSection({
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      window.localStorage.setItem("sidebar:platform-open", open ? "1" : "0");
+      window.localStorage.setItem(storageKey, open ? "1" : "0");
     }
-  }, [open]);
+  }, [open, storageKey]);
 
   if (items.length === 0) return null;
 
@@ -391,7 +403,7 @@ function PlatformSection({
         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
           <Shield className="h-3 w-3" />
         </span>
-        <span className="flex-1 text-left">Plataforma</span>
+        <span className="flex-1 text-left">{label}</span>
         <ChevronDown
           className={cn("h-3.5 w-3.5 transition-transform", open ? "rotate-0" : "-rotate-90")}
         />

@@ -45,7 +45,6 @@ const routes: Record<string, readonly string[]> = {
   "/campaigns/email": ["techsales.marketing.campaigns"],
   "/campaigns/whatsapp": ["techsales.marketing.campaigns"],
   "/agents/sdr": ["techsales.marketing.sdr_agent"],
-  "/agents/prototype": ["techsales.marketing.sdr_agent"],
   "/prospecting/sequences": ["system.automation.sequences"],
   "/prospecting/campaigns": ["techsales.marketing.campaigns"],
   "/prospecting": [

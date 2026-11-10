@@ -323,7 +323,7 @@
         "review_by": "2027-01-25"
       },
       "files": {
-        "src/lib/access-control/sales-route-map.ts": "3251202b005a6ca122893b220b9aed1a6c3772aad40d9651fb2219ce64ce4dc6",
+        "src/lib/access-control/sales-route-map.ts": "fc61ef3ef6d292e60f56b1bc0859ce3953129c595c107ffe058359947efa4117",
         "src/routes/_authenticated/settings.tsx": "d887a815faf57f0d91dc5ff31cc9f0529ba0ff0a29e289875900e7cff326350a",
         "src/routes/_authenticated.tsx": "7a8c57f0ef160cc66068271b9fec9cd8129b36b2895978317c59885dad3fa296",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
@@ -2890,7 +2890,7 @@
       "kind": "presentation",
       "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately.",
       "files": {
-        "src/lib/menu-config.ts": "3670cfdaa470fe8bc1bd43d83db68a07fe02de22827314e6735f6f60c5e6a23d",
+        "src/lib/menu-config.ts": "25c806c0b344e831d082f494dc4f78d545fc9cf4f516e21c1c23fbb292374153",
         "src/lib/menu-resources.ts": "d44488e6d5be0fc4c4029fed522b367d6f598d65b70a01875f49efea1135aff1"
       }
     },
@@ -4313,7 +4313,7 @@
       "files": {
         "src/lib/integrations/clickup/clickup-plan.ts": "533a97467cf1f2c7b5da96d712d85d596da4bef664ea769de1e35051dc68918e",
         "src/components/projects/clockify-import/projects-imports-hub.tsx": "d27a05dc685ec8bcebe499543b467862fac4f823bef8e610fb88ca07351d558d",
-        "src/lib/menu-config-projects.ts": "1a9c9d12b840c50bcfb1911f9acc95372aece7baf8c3fc4b260007c66c62fc79",
+        "src/lib/menu-config-projects.ts": "e5cf5532d181ad39b3007f631dbbab7ec3533c8ed7f2d942b923b938c70bf9e1",
         "src/lib/access-control/hr-menu-access.ts": "e2627ae5b065c4a4c74d10a6f83387f8196f5e290631d661518e2a06174007a9"
       }
     },
@@ -8778,7 +8778,7 @@
       "files": {
         "drizzle/migrations/0306_help_center.sql": "cca26ff8086c7ed3a1cc551edc2d837565381dd318a2a07c534e2ad6da8034dd",
         "drizzle/migrations/0307_help_seed_crm.sql": "04af96f7572e80fef5c5776afab4c0b0407c0ceb6841f9aefce9f31d04b4f9df",
-        "src/components/app-sidebar.tsx": "6de836dcf48268152c689187ee93a8004767d447ad1f72729df3232e32630ce5",
+        "src/components/app-sidebar.tsx": "e4184644fc12facd97069757d9ca59727491640cdfe688f37b551500674dba7e",
         "src/components/help/help-button.tsx": "2b268ebe99b3235468f0049cb9e1d33fe2339b72557ba964e10a4c524318462e",
         "src/lib/help/help-access.server.ts": "79d713e8056a7cb37e13076ff21c637ae056da1f913cdc7e7cee063ae24bd88e",
         "src/lib/help/help-access.ts": "1ae9593cb60c3aac19b401fdf0a5b0f7334c27e1f63ab7dfceb21ee272bfe5dd",
@@ -10811,7 +10811,136 @@
           "name": "service activation terms refuses an inactive member"
         }
       }
+    },
+    {
+      "id": "menu-orphan-screens-navigation",
+      "kind": "presentation",
+      "rationale": "MENU-TELAS: adds menu links to existing screens (hunting extension install). Links only; the target screens keep their own route and server authorization.",
+      "files": {
+        "src/lib/menu-config-ats.ts": "59fed0d9a469017f2818d7ac0841dc6c0c48f63399f21acd4415d64fffd68a75"
+      }
     }
   ],
-  "retired": {}
+  "retired": {
+    "src/components/agents/agents-prototype.tsx": {
+      "sha256": "bd5463b8bc932708fd1e1829c7d2f4abe8999ddc2b2d0b42f23307e4bec47a1f",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/agent-configuration.tsx": {
+      "sha256": "72815b78002fc3382b273b2eb18e8679299af33a2784fb0cb054aa257afdcc43",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/agent-library.tsx": {
+      "sha256": "5c5b079aa280193267eb4fe055d256f8b5f06bec8d377cd92f6235c1347d4bbd",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/assistant-model.tsx": {
+      "sha256": "97a8bcab57bbc6e1e7911538e660bdee66d644528f8533c6cf4446b162a8e4bb",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/comparison.tsx": {
+      "sha256": "7be084ae8cc5013231532ec2779fc153e4cd458f78b18184d64910458b8bb222",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/customer-record.tsx": {
+      "sha256": "785522230d006d6976fd217647f0cdb78b256496a9267de6640f66d84e95ab0d",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/flow-edges.tsx": {
+      "sha256": "bb9bbada36843b15e226c1ffac366215ac811752d0f5a3352f6418672cc7b364",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/flow-nodes.tsx": {
+      "sha256": "7ab6a00a3baa95664aefeb2d26adc1989fdfc9ab97dd3f77aff6808195d37316",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/flow.tsx": {
+      "sha256": "0193a67b239065915a8022c1aff2e52274adf33f21514892968018d95346dd8b",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/frame.tsx": {
+      "sha256": "9d03c004356511e171eaf2d56d5fcb499bf27339907b86d3e19aa01ea5833cef",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/metrics.tsx": {
+      "sha256": "bc7445e0777958a2b13df3cbfd62388c4ae9966e5563cfeec7eb7266b88acfdf",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/model.ts": {
+      "sha256": "b7033a63b09af737669f89c4abf3725a67000029ab6eeb261dff0053476fb47f",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/operation-model.tsx": {
+      "sha256": "9bd9e5126e9d5c40455f29bd5ef7bb7aefffd4570922cce1b5e294dadf12a46e",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/shared.tsx": {
+      "sha256": "10d3674f0951d84fcd2ebcaf6e407e15a2e95a2e1c23b3cfea603e863e779ee1",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/state.tsx": {
+      "sha256": "13330285db6ccc3352507184a02ec46dca985ce549e8fb36885b459115b7b54b",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/studio-area.tsx": {
+      "sha256": "79683f4cd623778829e15ca4abcbb7412efbea8568a20681221535e986d4ee4e",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/studio-model.tsx": {
+      "sha256": "22a8b203510c0fbe091ca17fdb01e67fc73ded13e08c2b37cee2f932404fcd70",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/test-and-launch.tsx": {
+      "sha256": "477f8a91f29a18e9d9e10469911c6445b800752b999756ae5c9097ff62a33dd7",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/wizard-content.tsx": {
+      "sha256": "21df00477d5404dd7e67bc043d2d2d073bf50e35b02c1dba1c1ab9b0bd35b99d",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/agents/prototypes/wizard-navigation.tsx": {
+      "sha256": "adc3baccda4c2eb4cd0aecc286aa382326a59e8059251b492b571edd77aa27df",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/prospecting/prototype/areas.tsx": {
+      "sha256": "e16c5df44dee781b6a0a27af6c5f674265060bb1d336b84ef527bfe488f720f8",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/prospecting/prototype/data.ts": {
+      "sha256": "66aca56c8ba33bd3d96119243e18bf255db2acbeb01fbcae578b2969d513fa1b",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/prospecting/prototype/prospecting-prototype.tsx": {
+      "sha256": "ccd86b0d3e312a08f63fc3168c969f202d19075690874441a1d9efde322e8f29",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/components/prospecting/prototype/shared.tsx": {
+      "sha256": "bbb50bf750629752207da4cd7bac6fa2b9e0eb40a1d3bcfbbbfec5c0e6397f9e",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/routes/_authenticated/agents.prototype.1.tsx": {
+      "sha256": "b98ec72291d6288f0323f587a39f3b11479bd167dff84cdcba39702e00d1f7d4",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/routes/_authenticated/agents.prototype.2.tsx": {
+      "sha256": "a06ed226b2af526fa9d8a606702112a5546aacc64124199fce07862b907d4496",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/routes/_authenticated/agents.prototype.3.tsx": {
+      "sha256": "f227406906b115f3930d83ac63ed572c98521245ed253ea85e4151c72a264a97",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/routes/_authenticated/agents.prototype.index.tsx": {
+      "sha256": "4dc1b1539518e7f13be227eb24f5f8af8f4bc3e7c02c18be5cc6267538237b01",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/routes/_authenticated/agents.prototype.tsx": {
+      "sha256": "f6eb7591cd090e29593a8eedd6363fb40fd9c40840c67d12b6c630399e536c4b",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/routes/_authenticated/prospecting.prototype.tsx": {
+      "sha256": "1d3828219b2cb5253aaa4085f82158b4f094b44f378da8d3afd9b5892f97959c",
+      "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    }
+  }
 }
