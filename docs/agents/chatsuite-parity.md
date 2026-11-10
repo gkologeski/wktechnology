@@ -10,7 +10,7 @@ Legenda de status: **ausente** · **interface** (tela/editor) · **persistido** 
 Contrato comum: `src/lib/agents/flow/catalog.ts` (tipos, campos, defaults, validação, saídas, resumo),
 `src/lib/agents/flow/runtime.ts` (validação de grafo + executor + trace), `src/lib/agents/flow/sandbox-tools.ts`
 (ferramentas simuladas, zero efeitos), `src/components/agents/flow/node-config-form.tsx` (editor contextual).
-Testes: `src/lib/agents/flow/runtime.test.ts`, `src/components/agents/prototypes/model.test.ts`.
+Testes: `src/lib/agents/flow/runtime.test.ts`.
 
 **Situação geral: não é 100%.** O fluxo, os editores por tipo e o executor existem e são testados no sandbox.
 Persistência multiagente, runtime de produção ligado ao grafo e integrações externas seguem pendentes (ver final).
