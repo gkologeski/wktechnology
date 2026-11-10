@@ -220,6 +220,26 @@ function ContractDetail() {
     }
   }
 
+  const nextStep = contractNextStep({
+    status,
+    startsAt: startsAt || null,
+    endsAt: endsAt || null,
+    totalValue,
+    hasBody: bodyHtml.trim().length > 0,
+    canUpdate: canUpdateContract,
+    canTransition,
+    canActivate: can("techcontracts.contract_activation.manage.workspace"),
+    today: new Date(),
+  });
+
+  const runNextStep = (action: NextStepAction) => {
+    if (action.target.kind === "measurements") {
+      void navigate({ to: "/contracts/$id/medicoes", params: { id } });
+      return;
+    }
+    setTab(action.target.tab);
+  };
+
   if (isLoading) {
     return <p className="p-6 text-sm text-muted-foreground">Carregando…</p>;
   }
