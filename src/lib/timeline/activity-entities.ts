@@ -1,4 +1,4 @@
-import { requestStorageUploadPath } from "@/lib/storage-upload-path";
+import { uploadNoteAttachment } from "./note-attachments.functions";
 // Consultas auxiliares da linha do tempo: contato-alvo das ações, associações
 // automáticas ao criar atividade, membros do workspace e upload de anexos.
 // Extraído de `src/components/activity-timeline.tsx` sem mudança de comportamento.
@@ -197,26 +197,33 @@ export async function fetchTimelineTeam(user: { id: string; email?: string | nul
 }
 
 /** Envia anexos para o bucket de notas e devolve os metadados gravados. */
+const MAX_NOTE_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+
+async function fileToBase64(file: File): Promise<string> {
+  const buf = new Uint8Array(await file.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < buf.length; i += 0x8000) {
+    bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+  }
+  return btoa(bin);
+}
+
+/** Envia os anexos pelo servidor; qualquer falha interrompe o salvamento (rascunho preservado). */
 export async function uploadTimelineFiles(userId: string, files: File[]): Promise<Attachment[]> {
   const out: Attachment[] = [];
   for (const file of files) {
     if (!userId) throw new Error("Não autenticado.");
     if (file.size > MAX_NOTE_ATTACHMENT_BYTES) {
-      toast.error(`O anexo ${file.name} passa de 20 MB.`);
-      continue;
+      throw new Error(`O anexo ${file.name} passa de 20 MB.`);
     }
     try {
-      const { uploadNoteAttachment } = await import("./note-attachments.functions");
       const { path } = await uploadNoteAttachment({
         data: { name: file.name, type: file.type, base64: await fileToBase64(file) },
       });
       out.push({ path, name: file.name, size: file.size, type: file.type });
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : `Não foi possível enviar o anexo ${file.name}. Tente novamente.`,
-      );
+      console.error("note attachment upload failed", error);
+      throw new Error(`Não foi possível enviar o anexo ${file.name}. Tente novamente.`);
     }
   }
   return out;
