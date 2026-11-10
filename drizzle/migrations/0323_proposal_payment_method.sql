@@ -1,0 +1,3 @@
+ALTER TABLE public.proposals ADD COLUMN IF NOT EXISTS payment_method text NULL, ADD COLUMN IF NOT EXISTS payment_notes text NULL;
+ALTER TABLE public.proposals ADD CONSTRAINT proposals_payment_method_check CHECK (payment_method IS NULL OR payment_method IN ('pix','ted','boleto','transferencia','outros'));
+ALTER TABLE public.proposals ADD CONSTRAINT proposals_payment_notes_len CHECK (payment_notes IS NULL OR length(payment_notes) <= 500);
