@@ -436,7 +436,7 @@ export async function contractFromSales(
       title: `Contrato — ${baseTitle}`,
       starts_at: startsAt,
       ends_at: endsAt,
-      ...(contractTerms ? { payment_terms: contractTerms } : {}),
+      ...(contractTerms ? { payment_terms: contractTerms as never } : {}),
     },
     dealId,
     items: loaded ? loaded.items : null,
