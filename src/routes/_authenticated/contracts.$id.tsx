@@ -7,7 +7,35 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Eye, FileText, Trash2, Save, GitBranch } from "lucide-react";
+import {
+  AlertCircle,
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Circle,
+  Eye,
+  FileText,
+  Trash2,
+  Save,
+  GitBranch,
+  MoreHorizontal,
+} from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  CONTRACT_STAGES,
+  contractNextStep,
+  type ContractDetailTab,
+  type NextStep,
+  type NextStepAction,
+} from "@/lib/contracts/contract-next-step";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -76,6 +104,104 @@ const STATUS_TONE: Record<string, string> = {
 
 type Status = keyof typeof STATUS_LABEL;
 
+function ContractStageStepper({ current }: { current: number }) {
+  return (
+    <ol className="flex flex-wrap items-center gap-2" aria-label="Etapas do contrato">
+      {CONTRACT_STAGES.map((label, i) => {
+        const done = i < current;
+        const now = i === current;
+        return (
+          <li key={label} className="flex items-center gap-2">
+            <span
+              aria-current={now ? "step" : undefined}
+              className={cn(
+                "flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium",
+                now && "border-primary bg-primary/10 text-primary",
+                done && "border-border bg-muted text-foreground",
+                !now && !done && "border-border text-muted-foreground",
+              )}
+            >
+              {done ? (
+                <Check className="h-3.5 w-3.5" aria-hidden />
+              ) : (
+                <Circle className="h-3 w-3" aria-hidden />
+              )}
+              {label}
+              {done && <span className="sr-only"> — concluída</span>}
+            </span>
+            {i < CONTRACT_STAGES.length - 1 && (
+              <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function ContractNextStepCard({
+  step,
+  onAction,
+}: {
+  step: NextStep;
+  onAction: (a: NextStepAction) => void;
+}) {
+  const btn = (a: NextStepAction, primary: boolean) => (
+    <Button
+      key={a.label}
+      size="sm"
+      variant={primary ? "default" : "outline"}
+      disabled={!!a.disabledReason}
+      title={a.disabledReason}
+      onClick={() => onAction(a)}
+    >
+      {a.label}
+    </Button>
+  );
+  return (
+    <section
+      aria-labelledby="contract-next-step"
+      className="rounded-xl border border-primary/30 bg-primary/5 p-5 space-y-4"
+    >
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-xs font-medium uppercase tracking-wider text-primary">Próximo passo</p>
+          <h2 id="contract-next-step" className="text-lg font-semibold text-foreground mt-1">
+            {step.headline}
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">{step.explanation}</p>
+          {step.primary?.disabledReason && (
+            <p className="text-xs text-muted-foreground mt-1" role="note">
+              {step.primary.disabledReason}
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap gap-2 shrink-0">
+          {step.secondary.map((a) => btn(a, false))}
+          {step.primary && btn(step.primary, true)}
+        </div>
+      </div>
+      {step.checklist.length > 0 && (
+        <ul className="grid gap-1.5 sm:grid-cols-3 text-sm">
+          {step.checklist.map((c) => (
+            <li key={c.label} className="flex items-center gap-2">
+              {c.done ? (
+                <Check className="h-4 w-4 text-primary" aria-hidden />
+              ) : (
+                <AlertCircle className="h-4 w-4 text-destructive" aria-hidden />
+              )}
+              <span className={c.done ? "text-foreground" : "text-destructive"}>
+                {c.label}
+                <span className="sr-only">{c.done ? " — concluído" : " — pendente"}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function ContractDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
@@ -108,6 +234,7 @@ function ContractDetail() {
   const [bodyHtml, setBodyHtml] = useState("");
   const [saving, setSaving] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [tab, setTab] = useState<ContractDetailTab>("overview");
 
   useEffect(() => {
     if (!contract) return;
@@ -202,6 +329,26 @@ function ContractDetail() {
     }
   }
 
+  const nextStep = contractNextStep({
+    status,
+    startsAt: startsAt || null,
+    endsAt: endsAt || null,
+    totalValue,
+    hasBody: bodyHtml.trim().length > 0,
+    canUpdate: canUpdateContract,
+    canTransition,
+    canActivate: can("techcontracts.contract_activation.manage.workspace"),
+    today: new Date(),
+  });
+
+  const runNextStep = (action: NextStepAction) => {
+    if (action.target.kind === "measurements") {
+      void navigate({ to: "/contracts/$id/medicoes", params: { id } });
+      return;
+    }
+    setTab(action.target.tab);
+  };
+
   if (isLoading) {
     return <p className="p-6 text-sm text-muted-foreground">Carregando…</p>;
   }
@@ -248,21 +395,39 @@ function ContractDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" asChild>
-              <Link to="/contracts/$id/flow" params={{ id: contract.id }}>
-                <GitBranch className="h-4 w-4 mr-1" aria-hidden="true" /> Fluxo do contrato
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/contracts/$id/medicoes" params={{ id: contract.id }}>
-                Medições
-              </Link>
-            </Button>
-            {contract.source_file_path ? (
-              <Button variant="outline" onClick={() => setViewerOpen(true)}>
-                <Eye className="h-4 w-4 mr-1" /> Visualizar
-              </Button>
-            ) : null}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <MoreHorizontal className="h-4 w-4 mr-1" aria-hidden="true" /> Mais ações
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/contracts/$id/flow" params={{ id: contract.id }}>
+                    <GitBranch className="h-4 w-4 mr-2" aria-hidden="true" /> Fluxo do contrato
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/contracts/$id/medicoes" params={{ id: contract.id }}>
+                    Medições
+                  </Link>
+                </DropdownMenuItem>
+                {contract.source_file_path ? (
+                  <DropdownMenuItem onSelect={() => setViewerOpen(true)}>
+                    <Eye className="h-4 w-4 mr-2" aria-hidden="true" /> Visualizar arquivo original
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={!canDelete}
+                  title={canDelete ? undefined : DELETE_NOT_ALLOWED_TITLE}
+                  onSelect={() => void remove()}
+                  className="text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" aria-hidden="true" /> Excluir contrato…
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               onClick={save}
               disabled={!canUpdateContract || saving || amendmentMissingParent}
@@ -274,297 +439,307 @@ function ContractDetail() {
             >
               <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando…" : "Salvar"}
             </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={remove}
-              disabled={!canDelete}
-              aria-disabled={!canDelete}
-              title={canDelete ? "Excluir contrato" : DELETE_NOT_ALLOWED_TITLE}
-              aria-label="Excluir"
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
           </div>
         </div>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Dados principais</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Título</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <Select value={role} onValueChange={(v) => setRole(v as "provider" | "client")}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="provider">Prestação</SelectItem>
-                    <SelectItem value="client">Compra</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select
-                  disabled={!canUpdateContract || !canTransition}
-                  value={status}
-                  onValueChange={(v) => setStatus(v as Status)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                      <SelectItem
-                        key={k}
-                        value={k}
-                        disabled={
-                          k === "in_review" ||
-                          k === "awaiting_signature" ||
-                          (k === "active" &&
-                            !can("techcontracts.contract_activation.manage.workspace"))
-                        }
-                      >
-                        {v}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="document-kind">Tipo de documento</Label>
-              <Select
-                value={documentKind}
-                onValueChange={(v) => void changeDocumentKind(v as "main" | "amendment")}
-              >
-                <SelectTrigger id="document-kind">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="main">Principal</SelectItem>
-                  <SelectItem value="amendment">Aditivo</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Aditivos aparecem aninhados sob o contrato principal na listagem.
-              </p>
-            </div>
-            {documentKind === "amendment" && (
-              <div className="space-y-2">
-                <Label>
-                  Contrato principal <span className="text-destructive">*</span>
-                </Label>
-                <MainContractPicker
-                  value={mainContract}
-                  onChange={setMainContract}
-                  excludeId={id}
-                  triggerClassName="w-full"
-                />
-                {amendmentMissingParent && (
-                  <p className="text-xs text-destructive" role="alert">
-                    Obrigatório: um aditivo precisa estar vinculado a um contrato principal.
+      <ContractStageStepper current={nextStep.stageIndex} />
+      <ContractNextStepCard step={nextStep} onAction={runNextStep} />
+
+      <Tabs value={tab} onValueChange={(v) => setTab(v as ContractDetailTab)}>
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="overview">Visão geral</TabsTrigger>
+          <TabsTrigger value="document">Documento</TabsTrigger>
+          <TabsTrigger value="approvals">Aprovações e assinatura</TabsTrigger>
+          <TabsTrigger value="amendments">Aditivos e vínculos</TabsTrigger>
+          <TabsTrigger value="history">Histórico</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview" className="space-y-5 pt-3">
+          <div className="grid gap-5 md:grid-cols-2">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Dados principais</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Título</Label>
+                  <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Tipo</Label>
+                    <Select value={role} onValueChange={(v) => setRole(v as "provider" | "client")}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="provider">Prestação</SelectItem>
+                        <SelectItem value="client">Compra</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select
+                      disabled={!canUpdateContract || !canTransition}
+                      value={status}
+                      onValueChange={(v) => setStatus(v as Status)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                          <SelectItem
+                            key={k}
+                            value={k}
+                            disabled={
+                              k === "in_review" ||
+                              k === "awaiting_signature" ||
+                              (k === "active" &&
+                                !can("techcontracts.contract_activation.manage.workspace"))
+                            }
+                          >
+                            {v}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="document-kind">Tipo de documento</Label>
+                  <Select
+                    value={documentKind}
+                    onValueChange={(v) => void changeDocumentKind(v as "main" | "amendment")}
+                  >
+                    <SelectTrigger id="document-kind">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="main">Principal</SelectItem>
+                      <SelectItem value="amendment">Aditivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Aditivos aparecem aninhados sob o contrato principal na listagem.
                   </p>
+                </div>
+                {documentKind === "amendment" && (
+                  <div className="space-y-2">
+                    <Label>
+                      Contrato principal <span className="text-destructive">*</span>
+                    </Label>
+                    <MainContractPicker
+                      value={mainContract}
+                      onChange={setMainContract}
+                      excludeId={id}
+                      triggerClassName="w-full"
+                    />
+                    {amendmentMissingParent && (
+                      <p className="text-xs text-destructive" role="alert">
+                        Obrigatório: um aditivo precisa estar vinculado a um contrato principal.
+                      </p>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label>Valor total</Label>
-              <CurrencyCommitInput
-                value={totalValue}
-                onCommit={(v) => setTotalValue(typeof v === "number" ? v : 0)}
-                currency={contract.currency ?? "BRL"}
-              />
-            </div>
-          </CardContent>
-        </Card>
+                <div className="space-y-2">
+                  <Label>Valor total</Label>
+                  <CurrencyCommitInput
+                    value={totalValue}
+                    onCommit={(v) => setTotalValue(typeof v === "number" ? v : 0)}
+                    currency={contract.currency ?? "BRL"}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Vigência</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Início</Label>
-                <IsoDatePicker
-                  ariaLabel="Início"
-                  value={startsAt}
-                  onChange={(v) => setStartsAt(v ?? "")}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Fim</Label>
-                <IsoDatePicker
-                  ariaLabel="Fim"
-                  value={endsAt}
-                  onChange={(v) => setEndsAt(v ?? "")}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Renovação automática</Label>
-                <Select
-                  value={autoRenew ? "yes" : "no"}
-                  onValueChange={(v) => setAutoRenew(v === "yes")}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="no">Não</SelectItem>
-                    <SelectItem value="yes">Sim</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Aviso prévio (dias)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={noticeDays}
-                  onChange={(e) => setNoticeDays(Number(e.target.value) || 0)}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Vigência</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Início</Label>
+                    <IsoDatePicker
+                      ariaLabel="Início"
+                      value={startsAt}
+                      onChange={(v) => setStartsAt(v ?? "")}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Fim</Label>
+                    <IsoDatePicker
+                      ariaLabel="Fim"
+                      value={endsAt}
+                      onChange={(v) => setEndsAt(v ?? "")}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Renovação automática</Label>
+                    <Select
+                      value={autoRenew ? "yes" : "no"}
+                      onValueChange={(v) => setAutoRenew(v === "yes")}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="no">Não</SelectItem>
+                        <SelectItem value="yes">Sim</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Aviso prévio (dias)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={noticeDays}
+                      onChange={(e) => setNoticeDays(Number(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Serviços</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ContractServices
-            contractId={contract.id}
-            currency={contract.currency ?? "BRL"}
-            canLink={role === "provider"}
-            parentContract={
-              (contract as { parent?: { id: string; title: string } | null }).parent ?? null
-            }
-          />
-        </CardContent>
-      </Card>
-
-      <ContractParentLink
-        contractId={contract.id}
-        role={role}
-        currency={contract.currency ?? "BRL"}
-        totalValue={Number(contract.total_value ?? 0)}
-        parent={
-          (contract as { parent?: Parameters<typeof ContractParentLink>[0]["parent"] }).parent ??
-          null
-        }
-        canEdit={canUpdateContract}
-        children={
-          (contract as { children?: Parameters<typeof ContractParentLink>[0]["children"] })
-            .children ?? []
-        }
-      />
-
-      <ContractAmendmentsPanel
-        contractId={contract.id}
-        documentKind={(contract as { document_kind?: string }).document_kind ?? "main"}
-        contractRole={role}
-        amendmentOf={(contract as { amendmentOf?: AmendmentRow | null }).amendmentOf ?? null}
-        amendments={(contract as { amendments?: AmendmentRow[] }).amendments ?? []}
-        amendmentNumber={
-          (contract as { amendment_number?: string | null }).amendment_number ?? null
-        }
-        amendmentEffectiveAt={
-          (contract as { amendment_effective_at?: string | null }).amendment_effective_at ?? null
-        }
-        canEdit={canUpdateContract}
-      />
-
-      <LinkedProjectsCard contractId={contract.id} />
-
-      {(() => {
-        const source = (
-          contract.metadata as {
-            accepted_proposal?: {
-              proposal?: { id?: string; title?: string; version?: number };
-              decided_at?: string;
-            };
-          } | null
-        )?.accepted_proposal;
-        return source?.proposal ? (
           <Card>
-            <CardHeader>
-              <CardTitle>Proposta Comercial vinculada</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Serviços</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>
-                {source.proposal.title} — versão {source.proposal.version}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Aceita em {formatDateTime(source.decided_at ?? null)}. Versão preservada no
-                contrato.
-              </p>
-              <Link
-                to="/proposals/$id"
-                params={{ id: source.proposal.id ?? "" }}
-                className="text-sm text-primary underline"
-              >
-                Abrir Proposta Comercial
-              </Link>
+              <ContractServices
+                contractId={contract.id}
+                currency={contract.currency ?? "BRL"}
+                canLink={role === "provider"}
+                parentContract={
+                  (contract as { parent?: { id: string; title: string } | null }).parent ?? null
+                }
+              />
             </CardContent>
           </Card>
-        ) : null;
-      })()}
-      <ContractLinksHistoryCard contractId={contract.id} />
 
-      <AiLinkSuggestionsHistoryCard contractId={contract.id} />
+          {(() => {
+            const source = (
+              contract.metadata as {
+                accepted_proposal?: {
+                  proposal?: { id?: string; title?: string; version?: number };
+                  decided_at?: string;
+                };
+              } | null
+            )?.accepted_proposal;
+            return source?.proposal ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Proposta Comercial vinculada</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>
+                    {source.proposal.title} — versão {source.proposal.version}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Aceita em {formatDateTime(source.decided_at ?? null)}. Versão preservada no
+                    contrato.
+                  </p>
+                  <Link
+                    to="/proposals/$id"
+                    params={{ id: source.proposal.id ?? "" }}
+                    className="text-sm text-primary underline"
+                  >
+                    Abrir Proposta Comercial
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : null;
+          })()}
+          {contract.deal_id && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Origem</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Link
+                  to="/deals/$id"
+                  params={{ id: contract.deal_id }}
+                  className="text-primary hover:underline text-sm"
+                >
+                  Ver negócio de origem →
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+        <TabsContent value="document" className="space-y-5 pt-3">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Cláusulas / corpo do contrato</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={bodyHtml}
+                onChange={(e) => setBodyHtml(e.target.value)}
+                placeholder="Cole aqui o texto do contrato ou HTML. Um editor rico será adicionado numa próxima sprint."
+                rows={10}
+              />
+            </CardContent>
+          </Card>
 
-      <ContractApprovalsPanel contractId={contract.id} />
-      {can("techcontracts.signature_evidence.view.workspace") && (
-        <ContractSignatureCard contractId={contract.id} revisionKey={contract.updated_at ?? ""} />
-      )}
-
-      <ImportedFieldsCard contract={contract} />
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Cláusulas / corpo do contrato</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            value={bodyHtml}
-            onChange={(e) => setBodyHtml(e.target.value)}
-            placeholder="Cole aqui o texto do contrato ou HTML. Um editor rico será adicionado numa próxima sprint."
-            rows={10}
+          <ImportedFieldsCard contract={contract} />
+        </TabsContent>
+        <TabsContent value="approvals" className="space-y-5 pt-3">
+          <ContractApprovalsPanel contractId={contract.id} />
+          {can("techcontracts.signature_evidence.view.workspace") && (
+            <ContractSignatureCard
+              contractId={contract.id}
+              revisionKey={contract.updated_at ?? ""}
+            />
+          )}
+        </TabsContent>
+        <TabsContent value="amendments" className="space-y-5 pt-3">
+          <ContractParentLink
+            contractId={contract.id}
+            role={role}
+            currency={contract.currency ?? "BRL"}
+            totalValue={Number(contract.total_value ?? 0)}
+            parent={
+              (contract as { parent?: Parameters<typeof ContractParentLink>[0]["parent"] })
+                .parent ?? null
+            }
+            canEdit={canUpdateContract}
+            children={
+              (contract as { children?: Parameters<typeof ContractParentLink>[0]["children"] })
+                .children ?? []
+            }
           />
-        </CardContent>
-      </Card>
 
-      {contract.deal_id && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Origem</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Link
-              to="/deals/$id"
-              params={{ id: contract.deal_id }}
-              className="text-primary hover:underline text-sm"
-            >
-              Ver negócio de origem →
-            </Link>
-          </CardContent>
-        </Card>
-      )}
+          <ContractAmendmentsPanel
+            contractId={contract.id}
+            documentKind={(contract as { document_kind?: string }).document_kind ?? "main"}
+            contractRole={role}
+            amendmentOf={(contract as { amendmentOf?: AmendmentRow | null }).amendmentOf ?? null}
+            amendments={(contract as { amendments?: AmendmentRow[] }).amendments ?? []}
+            amendmentNumber={
+              (contract as { amendment_number?: string | null }).amendment_number ?? null
+            }
+            amendmentEffectiveAt={
+              (contract as { amendment_effective_at?: string | null }).amendment_effective_at ??
+              null
+            }
+            canEdit={canUpdateContract}
+          />
+
+          <LinkedProjectsCard contractId={contract.id} />
+        </TabsContent>
+        <TabsContent value="history" className="space-y-5 pt-3">
+          <ContractLinksHistoryCard contractId={contract.id} />
+
+          <AiLinkSuggestionsHistoryCard contractId={contract.id} />
+        </TabsContent>
+      </Tabs>
 
       <ContractFileViewerDialog
         open={viewerOpen}
