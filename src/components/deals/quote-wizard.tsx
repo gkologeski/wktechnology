@@ -401,6 +401,8 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
       } else if (step === 1) {
         await resyncMut.mutateAsync();
       } else if (step === 2) {
+        await saveTermsMut.mutateAsync();
+      } else if (step === 3) {
         await saveNotesMut.mutateAsync();
       }
       setStep((s) => Math.min(STEPS.length - 1, s + 1));
@@ -417,7 +419,8 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
     // Persist whatever step we're on
     try {
       if (step === 0) await saveBasicsMut.mutateAsync();
-      else if (step === 2) await saveNotesMut.mutateAsync();
+      else if (step === 2) await saveTermsMut.mutateAsync();
+      else if (step === 3) await saveNotesMut.mutateAsync();
       toast.success("Rascunho salvo.");
       onOpenChange(false);
     } catch {
@@ -490,6 +493,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
   const isBusy =
     saveBasicsMut.isPending ||
     resyncMut.isPending ||
+    saveTermsMut.isPending ||
     saveNotesMut.isPending ||
     publishMut.isPending;
 
@@ -601,6 +605,15 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
           )}
 
           {step === 2 && (
+            <PaymentTermsEditor
+              terms={terms}
+              onChange={(t) => setStoredTerms(t)}
+              total={Number(totals?.total ?? 0)}
+              currency={currency}
+            />
+          )}
+
+          {step === 3 && (
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label>Observações</Label>
@@ -623,7 +636,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
             </div>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <div className="space-y-4">
               <div className="rounded-md border p-3 text-sm space-y-1.5">
                 <div className="flex justify-between">
