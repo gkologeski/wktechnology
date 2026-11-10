@@ -10899,6 +10899,14 @@
           "name": "sales area refuses an inactive execution actor"
         }
       }
+    },
+    {
+      "id": "settings-legal-entities-shortcut",
+      "kind": "presentation",
+      "rationale": "Presentation only: shortcuts to existing Empresas (CNPJs)/Grupos empresariais screens in /settings, gated by existing view permissions; no new action or data.",
+      "files": {
+        "src/routes/_authenticated/settings.tsx": "89b93cbb5d5612b607b4b3b5489a3eca747b3e0beb639f021a52a198545ec321"
+      }
     }
   ],
   "retired": {
