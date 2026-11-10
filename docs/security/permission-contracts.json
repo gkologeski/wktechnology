@@ -10397,13 +10397,12 @@
     {
       "id": "dados-contrato-pure",
       "kind": "presentation",
-      "rationale": "DADOS-CONTRATO/ROLAGEM-CONTRATO pure helpers: contract term defaults and clamps, proposal draft type fields, and the lazy editor wrapper forwarding maxHeight. No I/O, routes, actions or data access; writes stay under contract-accepted-proposal-mapping. TEXTO-PROPOSTA: pure proposal terms block helper and the proposal-template variable hint list (static text only; template CRUD unchanged).",
+      "rationale": "DADOS-CONTRATO/ROLAGEM-CONTRATO pure helpers: contract term defaults and clamps, proposal draft type fields, and the lazy editor wrapper forwarding maxHeight. No I/O, routes, actions or data access; writes stay under contract-accepted-proposal-mapping. TEXTO-PROPOSTA: pure proposal terms block helper.",
       "files": {
         "src/lib/proposals/proposal-draft-types.ts": "eb46aded7fffc8b943f7b6de47776093a18237b6f53d0338e37e60ed4df4dcba",
         "src/lib/contracts/contract-terms-defaults.ts": "7196abd6a9be2f603966ed949608197d33e409352b7302093e79c3fe8a0cf4d8",
         "src/components/word-editor-lazy.tsx": "4f6e7ef7880aa6b35c94c9bb6b2caacba43d380473fd193ab6adc1a0ed428e8d",
-        "src/lib/proposals/proposal-terms-block.ts": "d110afff94214df25de49cf203854d89b2293f757830433f949c49e6be65a03d",
-        "src/routes/_authenticated/settings.proposal-templates.tsx": "489e58f207fa1eca4853ded62bf4231f170275526729df8bb7eb8df34673a2dd"
+        "src/lib/proposals/proposal-terms-block.ts": "d110afff94214df25de49cf203854d89b2293f757830433f949c49e6be65a03d"
       }
     }
   ],
