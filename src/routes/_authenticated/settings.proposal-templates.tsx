@@ -51,6 +51,14 @@ const VARIABLES = [
   "{{total}}",
   "{{valid_until}}",
   "{{{items_table}}}",
+  "{{company_legal_name}}",
+  "{{company_cnpj}}",
+  "{{payment_method}}",
+  "{{installments_count}}",
+  "{{installments_due_day}}",
+  "{{installment_value}}",
+  "{{validity_days}}",
+  "{{{terms_block}}}",
 ];
 
 function ProposalTemplatesPage() {
