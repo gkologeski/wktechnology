@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { renderPdfViaBrowserless, wrapForPrint } from "@/lib/pdf/print-html.server";
+import { bodyHasItemsTable } from "@/lib/proposals/proposal-items-placement";
 
 // PDF da proposta. Autorização: `public_token` no caminho (mesmo segredo do
 // link público). Rascunhos internos não são exportados por este link.
