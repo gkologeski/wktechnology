@@ -1,6 +1,7 @@
 // Rascunho da proposta para o assistente: dados de identificação, itens de
 // linha (da cotação ou do negócio) e serviços do catálogo usados para sugerir
 // o modelo de proposta. Usa o cliente do usuário (RLS aplicada). Não grava.
+import { chooseProposalSigner, type SignerCandidate } from "./proposal-signer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describeBilling } from "@/lib/catalog/billing-model";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
