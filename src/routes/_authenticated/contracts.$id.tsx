@@ -7,7 +7,24 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Eye, FileText, Trash2, Save, GitBranch } from "lucide-react";
+import { ArrowLeft, Eye, FileText, Trash2, Save, GitBranch, MoreHorizontal } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  contractNextStep,
+  type ContractDetailTab,
+  type NextStepAction,
+} from "@/lib/contracts/contract-next-step";
+import {
+  ContractNextStepCard,
+  ContractStageStepper,
+} from "@/components/contracts/detail/contract-next-step-card";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -108,6 +125,7 @@ function ContractDetail() {
   const [bodyHtml, setBodyHtml] = useState("");
   const [saving, setSaving] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
+  const [tab, setTab] = useState<ContractDetailTab>("overview");
 
   useEffect(() => {
     if (!contract) return;
@@ -248,21 +266,39 @@ function ContractDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" asChild>
-              <Link to="/contracts/$id/flow" params={{ id: contract.id }}>
-                <GitBranch className="h-4 w-4 mr-1" aria-hidden="true" /> Fluxo do contrato
-              </Link>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link to="/contracts/$id/medicoes" params={{ id: contract.id }}>
-                Medições
-              </Link>
-            </Button>
-            {contract.source_file_path ? (
-              <Button variant="outline" onClick={() => setViewerOpen(true)}>
-                <Eye className="h-4 w-4 mr-1" /> Visualizar
-              </Button>
-            ) : null}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <MoreHorizontal className="h-4 w-4 mr-1" aria-hidden="true" /> Mais ações
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild>
+                  <Link to="/contracts/$id/flow" params={{ id: contract.id }}>
+                    <GitBranch className="h-4 w-4 mr-2" aria-hidden="true" /> Fluxo do contrato
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/contracts/$id/medicoes" params={{ id: contract.id }}>
+                    Medições
+                  </Link>
+                </DropdownMenuItem>
+                {contract.source_file_path ? (
+                  <DropdownMenuItem onSelect={() => setViewerOpen(true)}>
+                    <Eye className="h-4 w-4 mr-2" aria-hidden="true" /> Visualizar arquivo original
+                  </DropdownMenuItem>
+                ) : null}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  disabled={!canDelete}
+                  title={canDelete ? undefined : DELETE_NOT_ALLOWED_TITLE}
+                  onSelect={() => void remove()}
+                  className="text-destructive"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" aria-hidden="true" /> Excluir contrato…
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               onClick={save}
               disabled={!canUpdateContract || saving || amendmentMissingParent}
@@ -275,21 +311,22 @@ function ContractDetail() {
               <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando…" : "Salvar"}
             </Button>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={remove}
-              disabled={!canDelete}
-              aria-disabled={!canDelete}
-              title={canDelete ? "Excluir contrato" : DELETE_NOT_ALLOWED_TITLE}
-              aria-label="Excluir"
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
           </div>
         </div>
       </div>
 
+      <ContractStageStepper current={nextStep.stageIndex} />
+      <ContractNextStepCard step={nextStep} onAction={runNextStep} />
+
+      <Tabs value={tab} onValueChange={(v) => setTab(v as ContractDetailTab)}>
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="overview">Visão geral</TabsTrigger>
+          <TabsTrigger value="document">Documento</TabsTrigger>
+          <TabsTrigger value="approvals">Aprovações e assinatura</TabsTrigger>
+          <TabsTrigger value="amendments">Aditivos e vínculos</TabsTrigger>
+          <TabsTrigger value="history">Histórico</TabsTrigger>
+        </TabsList>
+        <TabsContent value="overview" className="space-y-5 pt-3">
       <div className="grid gap-5 md:grid-cols-2">
         <Card>
           <CardHeader className="pb-3">
@@ -458,39 +495,6 @@ function ContractDetail() {
         </CardContent>
       </Card>
 
-      <ContractParentLink
-        contractId={contract.id}
-        role={role}
-        currency={contract.currency ?? "BRL"}
-        totalValue={Number(contract.total_value ?? 0)}
-        parent={
-          (contract as { parent?: Parameters<typeof ContractParentLink>[0]["parent"] }).parent ??
-          null
-        }
-        canEdit={canUpdateContract}
-        children={
-          (contract as { children?: Parameters<typeof ContractParentLink>[0]["children"] })
-            .children ?? []
-        }
-      />
-
-      <ContractAmendmentsPanel
-        contractId={contract.id}
-        documentKind={(contract as { document_kind?: string }).document_kind ?? "main"}
-        contractRole={role}
-        amendmentOf={(contract as { amendmentOf?: AmendmentRow | null }).amendmentOf ?? null}
-        amendments={(contract as { amendments?: AmendmentRow[] }).amendments ?? []}
-        amendmentNumber={
-          (contract as { amendment_number?: string | null }).amendment_number ?? null
-        }
-        amendmentEffectiveAt={
-          (contract as { amendment_effective_at?: string | null }).amendment_effective_at ?? null
-        }
-        canEdit={canUpdateContract}
-      />
-
-      <LinkedProjectsCard contractId={contract.id} />
-
       {(() => {
         const source = (
           contract.metadata as {
@@ -524,31 +528,6 @@ function ContractDetail() {
           </Card>
         ) : null;
       })()}
-      <ContractLinksHistoryCard contractId={contract.id} />
-
-      <AiLinkSuggestionsHistoryCard contractId={contract.id} />
-
-      <ContractApprovalsPanel contractId={contract.id} />
-      {can("techcontracts.signature_evidence.view.workspace") && (
-        <ContractSignatureCard contractId={contract.id} revisionKey={contract.updated_at ?? ""} />
-      )}
-
-      <ImportedFieldsCard contract={contract} />
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Cláusulas / corpo do contrato</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            value={bodyHtml}
-            onChange={(e) => setBodyHtml(e.target.value)}
-            placeholder="Cole aqui o texto do contrato ou HTML. Um editor rico será adicionado numa próxima sprint."
-            rows={10}
-          />
-        </CardContent>
-      </Card>
-
       {contract.deal_id && (
         <Card>
           <CardHeader className="pb-3">
@@ -565,6 +544,75 @@ function ContractDetail() {
           </CardContent>
         </Card>
       )}
+
+        </TabsContent>
+        <TabsContent value="document" className="space-y-5 pt-3">
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Cláusulas / corpo do contrato</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Textarea
+            value={bodyHtml}
+            onChange={(e) => setBodyHtml(e.target.value)}
+            placeholder="Cole aqui o texto do contrato ou HTML. Um editor rico será adicionado numa próxima sprint."
+            rows={10}
+          />
+        </CardContent>
+      </Card>
+
+      <ImportedFieldsCard contract={contract} />
+
+        </TabsContent>
+        <TabsContent value="approvals" className="space-y-5 pt-3">
+      <ContractApprovalsPanel contractId={contract.id} />
+      {can("techcontracts.signature_evidence.view.workspace") && (
+        <ContractSignatureCard contractId={contract.id} revisionKey={contract.updated_at ?? ""} />
+      )}
+
+        </TabsContent>
+        <TabsContent value="amendments" className="space-y-5 pt-3">
+      <ContractParentLink
+        contractId={contract.id}
+        role={role}
+        currency={contract.currency ?? "BRL"}
+        totalValue={Number(contract.total_value ?? 0)}
+        parent={
+          (contract as { parent?: Parameters<typeof ContractParentLink>[0]["parent"] }).parent ??
+          null
+        }
+        canEdit={canUpdateContract}
+        children={
+          (contract as { children?: Parameters<typeof ContractParentLink>[0]["children"] })
+            .children ?? []
+        }
+      />
+
+      <ContractAmendmentsPanel
+        contractId={contract.id}
+        documentKind={(contract as { document_kind?: string }).document_kind ?? "main"}
+        contractRole={role}
+        amendmentOf={(contract as { amendmentOf?: AmendmentRow | null }).amendmentOf ?? null}
+        amendments={(contract as { amendments?: AmendmentRow[] }).amendments ?? []}
+        amendmentNumber={
+          (contract as { amendment_number?: string | null }).amendment_number ?? null
+        }
+        amendmentEffectiveAt={
+          (contract as { amendment_effective_at?: string | null }).amendment_effective_at ?? null
+        }
+        canEdit={canUpdateContract}
+      />
+
+      <LinkedProjectsCard contractId={contract.id} />
+
+        </TabsContent>
+        <TabsContent value="history" className="space-y-5 pt-3">
+      <ContractLinksHistoryCard contractId={contract.id} />
+
+      <AiLinkSuggestionsHistoryCard contractId={contract.id} />
+
+        </TabsContent>
+      </Tabs>
 
       <ContractFileViewerDialog
         open={viewerOpen}
