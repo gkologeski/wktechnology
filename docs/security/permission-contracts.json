@@ -10404,9 +10404,9 @@
         "src/components/word-editor-lazy.tsx": "4f6e7ef7880aa6b35c94c9bb6b2caacba43d380473fd193ab6adc1a0ed428e8d",
         "src/lib/proposals/proposal-terms-block.ts": "d110afff94214df25de49cf203854d89b2293f757830433f949c49e6be65a03d",
         "src/lib/proposals/proposal-signer.ts": "2310c24c8b7a1b9e652a1530974c697671fb89c77c8f75793d2eb577c1a56e0d",
-        "src/lib/proposals/proposal-items-placement.ts": "4f3ebd800bbf59656b59096840d7626b0e3587f22406caaa36bb57f2202a5285",
-        "src/components/proposals/proposal-document.tsx": "e166c944301518b9595e0c8de3c69cd8cf7bcbbc652e2e59d22e7855cdae0199",
-        "src/lib/proposals/proposal-pdf-rules.ts": "41e5dc7ed189850e31abf42f455a6e0221dd6142c40633a8b9216ca0561cda99"
+        "src/lib/proposals/proposal-items-placement.ts": "1a5de997747831baffb6a877b730bb5ab162bca1885f655701cfcf25bfce3442",
+        "src/components/proposals/proposal-document.tsx": "d3d2a6f4094bb3965e85cbbf66216279a29ef61efb592dea4521443f581b8826",
+        "src/lib/proposals/proposal-pdf-rules.ts": "8bdfc0a514dcc11b1798d5bab756ddf63569fad299f46f8ac0af12d2dc1c9f15"
       }
     },
     {
@@ -10460,7 +10460,7 @@
         }
       },
       "files": {
-        "src/routes/api/public/proposals/$token.pdf.ts": "f8ea9e8428cf584f3c8c3d511fc177556a6e2b154e8e04e6cfd8c4fac9c37eac"
+        "src/routes/api/public/proposals/$token.pdf.ts": "3606ebbd444a3896d44e5c2455b93a5733d483ccb7855aa448e9bcfc29182409"
       },
       "exception": {
         "mechanism": "Random public_token issued when the proposal is sent; server loads only the proposal matching the token.",
