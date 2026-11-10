@@ -2269,6 +2269,13 @@
       "when": 1794269778684,
       "tag": "0323_proposal_payment_method",
       "breakpoints": true
+    },
+    {
+      "idx": 324,
+      "version": "7",
+      "when": 1794319005084,
+      "tag": "0324_tempo_itens_single_deal_recalc",
+      "breakpoints": true
     }
   ]
 }

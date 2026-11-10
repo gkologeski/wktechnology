@@ -9448,6 +9448,66 @@
         "src/lib/timeline/note-attachments.functions.ts": "cfa8ff5ab95dca39d0c8fe77bc86d6e7920b8cda3c505a0edb3e5df3fc0516c3",
         "src/lib/timeline/note-attachment-upload.ts": "af75444ca23c6bf90bc8288a46000e8e07b9604a904fed2e11781c4a1a4c3b83"
       }
+    },
+    {
+      "id": "tempo-itens-deal-recalc",
+      "kind": "business",
+      "resources": ["techsales.deals"],
+      "actions": ["update"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techsales.deals.update.own",
+        "techsales.deals.update.team",
+        "techsales.deals.update.workspace"
+      ],
+      "rationale": "TEMPO-ITENS: removes two redundant AFTER triggers that rewrote deals.value with incomplete formulas (keeps recompute_deal_value, unchanged). Line-item update keeps the user client and RLS/sales_row_guard; it only retries transient errors and treats zero returned rows as denied. No new action, key, grant or policy.",
+      "controls": [
+        {
+          "file": "src/lib/deals/line-item-write.ts",
+          "symbol": "updateLineItemGuarded"
+        },
+        {
+          "file": "src/lib/db/transient-retry.ts",
+          "symbol": "withTransientRetry"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0324_tempo_itens_single_deal_recalc.sql",
+          "symbol": "recompute_deal_amount"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/deals/line-item-write.test.ts",
+          "name": "line item update permits an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/deals/line-item-write.test.ts",
+          "name": "line item update refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/deals/line-item-write.test.ts",
+          "name": "line item update refuses an explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/deals/line-item-write.test.ts",
+          "name": "line item update refuses a foreign workspace item"
+        },
+        "inactive_member": {
+          "file": "src/lib/deals/line-item-write.test.ts",
+          "name": "line item update refuses an inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0324_tempo_itens_single_deal_recalc.sql": "0f1f674b5790a54330040db4bc3c495f1a8e1446aae2b55a711bf1c6ade25d2a",
+        "src/components/deals/use-line-items.ts": "431e8ba644b154cb368bf352c5c803b892597fd3555c0379006cd562092b05c4",
+        "src/lib/deals/line-item-write.ts": "5528e0ebd8d08c45f7b7b01cce08238765d856119475c7c4b425219b17ad2fa6"
+      }
     }
   ],
   "retired": {}
