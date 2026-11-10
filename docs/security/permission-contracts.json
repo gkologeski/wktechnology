@@ -10407,6 +10407,67 @@
         "src/lib/proposals/proposal-items-placement.ts": "4f3ebd800bbf59656b59096840d7626b0e3587f22406caaa36bb57f2202a5285",
         "src/components/proposals/proposal-document.tsx": "e166c944301518b9595e0c8de3c69cd8cf7bcbbc652e2e59d22e7855cdae0199"
       }
+    },
+    {
+      "id": "proposal-public-pdf",
+      "kind": "public",
+      "resources": [
+        "techsales.proposals"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.proposals.view.workspace"
+      ],
+      "rationale": "TABELA-FINAL: public PDF of a sent proposal through its capability link. The random public_token (column revoked from authenticated) scopes the read to one proposal via loadProposalDocument; no listing, no internal ids; drafts are not exported.",
+      "controls": [
+        {
+          "file": "src/lib/proposals/proposal-pdf-rules.ts",
+          "symbol": "isValidProposalToken"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "sales_view"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/proposals/proposal-pdf-rules.test.ts",
+          "name": "proposal pdf accepts a well-formed token"
+        },
+        "missing_permission": {
+          "file": "src/lib/proposals/proposal-pdf-rules.test.ts",
+          "name": "proposal pdf rejects a missing token"
+        },
+        "explicit_deny": {
+          "file": "src/lib/proposals/proposal-pdf-rules.test.ts",
+          "name": "proposal pdf rejects a short token"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/proposals/proposal-pdf-rules.test.ts",
+          "name": "proposal pdf rejects an oversized token"
+        },
+        "inactive_member": {
+          "file": "src/lib/proposals/proposal-pdf-rules.test.ts",
+          "name": "proposal pdf rejects a non-string token"
+        }
+      },
+      "files": {
+        "src/routes/api/public/proposals/$token.pdf.ts": "f8ea9e8428cf584f3c8c3d511fc177556a6e2b154e8e04e6cfd8c4fac9c37eac",
+        "src/lib/proposals/proposal-pdf-rules.ts": "41e5dc7ed189850e31abf42f455a6e0221dd6142c40633a8b9216ca0561cda99"
+      },
+      "exception": {
+        "mechanism": "Random public_token issued when the proposal is sent; server loads only the proposal matching the token.",
+        "boundary": "Token scopes access to a single proposal document; no session, no listing.",
+        "revocation": "Regenerate or clear the proposal public_token to invalidate the link.",
+        "review_by": "2027-05-10"
+      }
     }
   ],
   "retired": {}
