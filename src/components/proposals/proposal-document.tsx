@@ -4,13 +4,13 @@ import { forwardRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { sanitizeHtml } from "@/components/rich-html-editor";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
-import { bodyHasItemsTable } from "@/lib/proposals/proposal-items-placement";
+import { stripLegacyInvestment } from "@/lib/proposals/proposal-items-placement";
 import type { ProposalDocumentData } from "@/lib/proposals/proposal-document-types";
 
 export const ProposalDocument = forwardRef<HTMLDivElement, { doc: ProposalDocumentData }>(
   function ProposalDocument({ doc }, ref) {
     const { proposal: p, items } = doc;
-    const inlineTable = bodyHasItemsTable(p.body);
+    const body = stripLegacyInvestment(p.body);
     const expired = !!p.expires_at && new Date(p.expires_at) < new Date();
     return (
       <Card ref={ref} className="print:shadow-none print:border-0">
@@ -43,18 +43,18 @@ export const ProposalDocument = forwardRef<HTMLDivElement, { doc: ProposalDocume
             </div>
           </div>
 
-          {p.body && (
+          {body && (
             <div
               className="prose prose-sm max-w-none dark:prose-invert"
-              dangerouslySetInnerHTML={{ __html: sanitizeHtml(p.body) }}
+              dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }}
             />
           )}
 
-          {!inlineTable && (items.length > 0 || p.total_amount != null) && (
+          {(items.length > 0 || p.total_amount != null) && (
             <h2 className="text-lg font-semibold">Investimento</h2>
           )}
 
-          {!inlineTable && items.length > 0 && (
+          {items.length > 0 && (
             <div className="overflow-hidden rounded-md border">
               <table className="w-full text-sm">
                 <thead className="bg-muted/50">
@@ -75,7 +75,7 @@ export const ProposalDocument = forwardRef<HTMLDivElement, { doc: ProposalDocume
             </div>
           )}
 
-          {!inlineTable && p.total_amount != null && (
+          {p.total_amount != null && (
             <div className="flex justify-end">
               <div className="flex w-64 justify-between border-t pt-1 text-base font-semibold">
                 <span>Total</span>

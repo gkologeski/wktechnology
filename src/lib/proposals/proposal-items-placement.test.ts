@@ -1,16 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { bodyHasItemsTable } from "./proposal-items-placement";
+import { stripLegacyInvestment } from "./proposal-items-placement";
 import { missingFieldsMessage } from "@/lib/contracts/template-tokens";
 
-describe("bodyHasItemsTable", () => {
-  it("detecta a tabela de itens já presente no texto", () => {
-    expect(
-      bodyHasItemsTable("<table><thead><tr><th>Item</th><th>Cobrança</th></tr></thead></table>"),
-    ).toBe(true);
+describe("stripLegacyInvestment", () => {
+  it("retira a seção Investimento antiga com tabela e total", () => {
+    const body =
+      "<p>A</p><h2>Investimento</h2><p></p><table><tbody><tr><th><p>Item</p></th><th><p>Cobrança</p></th></tr></tbody></table><p><strong>Total:</strong> R$ 45.000,00</p><h3>Condições comerciais</h3>";
+    expect(stripLegacyInvestment(body)).toBe("<p>A</p><h3>Condições comerciais</h3>");
   });
-  it("texto sem tabela mostra a tabela final", () => {
-    expect(bodyHasItemsTable("<h2>Diagnóstico inicial</h2>")).toBe(false);
-    expect(bodyHasItemsTable(null)).toBe(false);
+  it("mantém o texto sem a seção antiga", () => {
+    expect(stripLegacyInvestment("<h2>Diagnóstico inicial</h2>")).toBe(
+      "<h2>Diagnóstico inicial</h2>",
+    );
+    expect(stripLegacyInvestment(null)).toBe("");
   });
 });
 

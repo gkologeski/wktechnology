@@ -19,11 +19,11 @@ describe("PDF público da proposta", () => {
     expect(isValidProposalToken(123)).toBe(false);
   });
   it("puts the items table after the body", () => {
-    const html = proposalPdfSections("<p>Texto</p>", "<table>T</table>", "<p>Total</p>", false);
+    const html = proposalPdfSections("<p>Texto</p>", "<table>T</table>", "<p>Total</p>");
     expect(html.indexOf("Texto")).toBeLessThan(html.indexOf("<table>"));
     expect(html).toContain("<h2>Investimento</h2>");
   });
-  it("does not duplicate a table already in the body", () => {
-    expect(proposalPdfSections("<p>x</p>", "<table>T</table>", "", true)).not.toContain("<table>");
+  it("omits the section when there are no items nor total", () => {
+    expect(proposalPdfSections("<p>x</p>", "", "")).not.toContain("Investimento");
   });
 });

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { renderPdfViaBrowserless, wrapForPrint } from "@/lib/pdf/print-html.server";
-import { bodyHasItemsTable } from "@/lib/proposals/proposal-items-placement";
+import { stripLegacyInvestment } from "@/lib/proposals/proposal-items-placement";
 import { isValidProposalToken, proposalPdfSections } from "@/lib/proposals/proposal-pdf-rules";
 
 // PDF da proposta. Autorização: `public_token` no caminho (mesmo segredo do
@@ -52,10 +52,9 @@ th{background:#f9fafb}.total{text-align:right;font-weight:600;font-size:15px}
 <div class="grid"><div><div class="label">Para</div>${esc(doc.company ?? "")}<br/>${esc(doc.contact ?? "")}</div>
 <div><div class="label">Detalhes</div>Emitida em ${date(p.created_at)}${p.expires_at ? `<br/>Válida até ${date(p.expires_at)}` : ""}</div></div>
 ${proposalPdfSections(
-  p.body.replace(/<script[\s\S]*?<\/script>/gi, ""),
+  stripLegacyInvestment(p.body).replace(/<script[\s\S]*?<\/script>/gi, ""),
   rows ? `<table><thead><tr><th>Item</th><th>Cobrança</th></tr></thead><tbody>${rows}</tbody></table>` : "",
   p.total_amount != null ? `<p class="total">Total: ${fmt(p.total_amount)}</p>` : "",
-  bodyHasItemsTable(p.body),
 )}</div>`;
         let pdf: ArrayBuffer;
         try {
