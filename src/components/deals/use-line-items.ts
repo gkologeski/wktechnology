@@ -353,7 +353,7 @@ export function useLineItemsEditor(dealId: string) {
       if (error) {
         qc.setQueryData(lineItemsQueryKey(dealId), previous);
         refreshItems();
-        toast.error(errorMessage(error.message));
+        toast.error(errorMessage(error.message ?? ""));
         return false;
       }
       // Quando a regra de acesso nega, o banco não devolve erro: só 0 linhas.
