@@ -8,7 +8,7 @@ route_pattern:
 min_permission: 
 audience: internal
 sort_order: 122
-version: 1
+version: 2
 is_published: true
 ---
 # Visão geral de Core ERP e Configurações
@@ -23,7 +23,6 @@ A Ajuda interna usa `/ajuda`; `/kb` é outra base pública. Conteúdo com `audie
 - `/catalog/services`: Manter o catálogo de serviços
 - `/files`: Consultar e organizar arquivos
 - `/home`: Consultar o dashboard do ERP
-- `/home/print`: Preparar a impressão do dashboard
 - `/modules`: Explorar os módulos do workspace
 - `/onboarding/$entity`: Usar o onboarding guiado de uma entidade
 - `/settings`: Atualizar o perfil da conta

@@ -131,7 +131,6 @@ import { Route as AuthenticatedFinanceRecurrencesRouteImport } from './routes/_a
 import { Route as AuthenticatedFinanceSalesRouteImport } from './routes/_authenticated/finance.sales'
 import { Route as AuthenticatedHomeIndexRouteImport } from './routes/_authenticated/home.index'
 import { Route as AuthenticatedHomeAccessRouteImport } from './routes/_authenticated/home.access'
-import { Route as AuthenticatedHomePrintRouteImport } from './routes/_authenticated/home.print'
 import { Route as AuthenticatedInboxIndexRouteImport } from './routes/_authenticated/inbox.index'
 import { Route as AuthenticatedInboxChatRouteImport } from './routes/_authenticated/inbox.chat'
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
@@ -1096,11 +1095,6 @@ const AuthenticatedHomeIndexRoute = AuthenticatedHomeIndexRouteImport.update({
 const AuthenticatedHomeAccessRoute = AuthenticatedHomeAccessRouteImport.update({
   id: '/home/access',
   path: '/home/access',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedHomePrintRoute = AuthenticatedHomePrintRouteImport.update({
-  id: '/home/print',
-  path: '/home/print',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedInboxIndexRoute = AuthenticatedInboxIndexRouteImport.update({
@@ -2998,7 +2992,6 @@ export interface FileRoutesByFullPath {
   '/finance/recurrences': typeof AuthenticatedFinanceRecurrencesRoute
   '/finance/sales': typeof AuthenticatedFinanceSalesRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
-  '/home/print': typeof AuthenticatedHomePrintRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -3421,7 +3414,6 @@ export interface FileRoutesByTo {
   '/finance/recurrences': typeof AuthenticatedFinanceRecurrencesRoute
   '/finance/sales': typeof AuthenticatedFinanceSalesRoute
   '/home/access': typeof AuthenticatedHomeAccessRoute
-  '/home/print': typeof AuthenticatedHomePrintRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -3850,7 +3842,6 @@ export interface FileRoutesById {
   '/_authenticated/finance/recurrences': typeof AuthenticatedFinanceRecurrencesRoute
   '/_authenticated/finance/sales': typeof AuthenticatedFinanceSalesRoute
   '/_authenticated/home/access': typeof AuthenticatedHomeAccessRoute
-  '/_authenticated/home/print': typeof AuthenticatedHomePrintRoute
   '/_authenticated/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
   '/_authenticated/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
@@ -4280,7 +4271,6 @@ export interface FileRouteTypes {
     | '/finance/recurrences'
     | '/finance/sales'
     | '/home/access'
-    | '/home/print'
     | '/inbox/chat'
     | '/inbox/email'
     | '/inbox/whatsapp'
@@ -4703,7 +4693,6 @@ export interface FileRouteTypes {
     | '/finance/recurrences'
     | '/finance/sales'
     | '/home/access'
-    | '/home/print'
     | '/inbox/chat'
     | '/inbox/email'
     | '/inbox/whatsapp'
@@ -5131,7 +5120,6 @@ export interface FileRouteTypes {
     | '/_authenticated/finance/recurrences'
     | '/_authenticated/finance/sales'
     | '/_authenticated/home/access'
-    | '/_authenticated/home/print'
     | '/_authenticated/inbox/chat'
     | '/_authenticated/inbox/email'
     | '/_authenticated/inbox/whatsapp'
@@ -6438,13 +6426,6 @@ declare module '@tanstack/react-router' {
       path: '/home/access'
       fullPath: '/home/access'
       preLoaderRoute: typeof AuthenticatedHomeAccessRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/home/print': {
-      id: '/_authenticated/home/print'
-      path: '/home/print'
-      fullPath: '/home/print'
-      preLoaderRoute: typeof AuthenticatedHomePrintRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/inbox/': {
@@ -9132,7 +9113,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedFinanceRecurrencesRoute: typeof AuthenticatedFinanceRecurrencesRoute
   AuthenticatedFinanceSalesRoute: typeof AuthenticatedFinanceSalesRoute
   AuthenticatedHomeAccessRoute: typeof AuthenticatedHomeAccessRoute
-  AuthenticatedHomePrintRoute: typeof AuthenticatedHomePrintRoute
   AuthenticatedInboxChatRoute: typeof AuthenticatedInboxChatRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
@@ -9298,7 +9278,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedFinanceRecurrencesRoute: AuthenticatedFinanceRecurrencesRoute,
   AuthenticatedFinanceSalesRoute: AuthenticatedFinanceSalesRoute,
   AuthenticatedHomeAccessRoute: AuthenticatedHomeAccessRoute,
-  AuthenticatedHomePrintRoute: AuthenticatedHomePrintRoute,
   AuthenticatedInboxChatRoute: AuthenticatedInboxChatRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,

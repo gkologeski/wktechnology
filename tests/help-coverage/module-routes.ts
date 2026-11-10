@@ -188,7 +188,6 @@ export const MODULE_ROUTES: Record<string, string[]> = {
     "/dpa",
     "/files",
     "/home",
-    "/home/print",
     "/kb",
     "/kb/$slug",
     "/login",

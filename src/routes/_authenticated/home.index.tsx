@@ -6,7 +6,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Boxes, ArrowRight, Download, FileText, FileSpreadsheet } from "lucide-react";
+import { Boxes, ArrowRight, Download, FileSpreadsheet } from "lucide-react";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { usePersistedDateRange } from "@/hooks/use-persisted-date-range";
 import {
@@ -202,11 +202,6 @@ function ErpHomeDashboard() {
         error instanceof Error ? error.message : "Não foi possível exportar o dashboard.",
       ),
   });
-  const handlePdf = () => {
-    if (!canExport) return;
-    const url = `/home/print?from=${encodeURIComponent(fromISO)}&to=${encodeURIComponent(toISO)}&autoprint=1`;
-    window.open(url, "_blank", "noopener");
-  };
 
   return (
     <div className="container max-w-6xl mx-auto p-6 space-y-8">
@@ -238,10 +233,6 @@ function ErpHomeDashboard() {
                 <DropdownMenuItem onClick={() => csvExport.mutate()}>
                   <FileSpreadsheet className="mr-2 h-4 w-4" />
                   CSV
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handlePdf}>
-                  <FileText className="mr-2 h-4 w-4" />
-                  PDF
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
