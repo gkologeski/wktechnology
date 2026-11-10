@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 25
-version: 4
+version: 5
 is_published: true
 ---
 # Gerar contrato pelo diálogo de modelo publicado
@@ -59,4 +59,4 @@ Ao gerar um contrato a partir de uma proposta aceita, o sistema preenche: parcel
 
 ## Parcelas, vencimento e lei aplicável
 
-No passo **Dados** do Novo contrato, os campos **Parcelas** e **Dia de vencimento** permitem completar ou trocar esses dados quando a proposta não os trouxer. A **Lei aplicável** tem padrão "Legislação da República Federativa do Brasil", salvo se o modelo definir outra. Se faltar algum dado obrigatório, a mensagem mostra o nome do campo em português.
+No passo **Dados** do Novo contrato, os campos **Parcelas** e **Dia de vencimento** já vêm preenchidos com os da proposta e são obrigatórios quando há proposta; ajuste-os se este contrato tiver condições diferentes. A **Lei aplicável** tem padrão "Legislação da República Federativa do Brasil", salvo se o modelo definir outra. Se faltar algum dado obrigatório, a mensagem mostra o nome do campo em português.
