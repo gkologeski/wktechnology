@@ -394,7 +394,11 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 
 ## CONDICOES-PAGAMENTO (plano aprovado 10/11/2026)
 - Decisões: contas a receber na ativação do serviço; antigas migram das parcelas atuais.
-- [x] Fase 1a: regra pura do cronograma (`src/lib/sales/payment-terms.ts`, 7 testes)
-- [ ] Fase 1b: colunas no banco + preenchimento das antigas (após aprovação do mockup)
-- [ ] Fase 2: mockup da seção "Condições de pagamento" na cotação (aguarda aprovação)
-- [ ] Fase 3: proposta + PDF · Fase 4: contrato + modelos · Fase 5: contas a receber via workflow · Fase 6: Ajuda + permissões
+- [x] Fase 1a: regra pura do cronograma (`src/lib/sales/payment-terms.ts`)
+- [x] Fase 1b: colunas (0325) + grants por coluna (0326) + preenchimento das antigas
+- [x] Fase 2: etapa na cotação + vencimento da entrada (assinatura ou data)
+- [x] Fase 3: proposta (editor, bloco Condições comerciais, PDF pelo texto)
+- [x] Fase 4: contrato recebe as condições + cartão na ficha
+- [x] Fase 5: contas a receber na ativação do serviço (0327 `service_activate_with_terms`)
+- [x] Fase 6: Ajuda `definir-condicoes-de-pagamento` + permissões
+- [ ] Validar na tela: proposta → contrato → ativação com dados reais; publicar
