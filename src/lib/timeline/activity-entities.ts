@@ -201,15 +201,23 @@ export async function uploadTimelineFiles(userId: string, files: File[]): Promis
   const out: Attachment[] = [];
   for (const file of files) {
     if (!userId) throw new Error("Não autenticado.");
-    const path = await requestStorageUploadPath("notes-attachments", file.name);
-    const { error } = await supabase.storage
-      .from("notes-attachments")
-      .upload(path, file, { contentType: file.type });
-    if (error) {
-      toast.error(`Falha em ${file.name}: ${error.message}`);
+    if (file.size > MAX_NOTE_ATTACHMENT_BYTES) {
+      toast.error(`O anexo ${file.name} passa de 20 MB.`);
       continue;
     }
-    out.push({ path, name: file.name, size: file.size, type: file.type });
+    try {
+      const { uploadNoteAttachment } = await import("./note-attachments.functions");
+      const { path } = await uploadNoteAttachment({
+        data: { name: file.name, type: file.type, base64: await fileToBase64(file) },
+      });
+      out.push({ path, name: file.name, size: file.size, type: file.type });
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : `Não foi possível enviar o anexo ${file.name}. Tente novamente.`,
+      );
+    }
   }
   return out;
 }
