@@ -22,7 +22,7 @@ describe("cronograma de pagamento", () => {
       start,
     );
     expect(s.map((p) => p.amount)).toEqual([13500, 15750, 15750]);
-    expect(s.map((p) => p.dueDate)).toEqual(["2026-11-10", "2026-12-15", "2027-03-15"]);
+    expect(s.map((p) => p.dueDate)).toEqual([null, "2026-12-15", "2027-03-15"]);
   });
 
   it("entrada em R$ + marcos sem data", () => {
