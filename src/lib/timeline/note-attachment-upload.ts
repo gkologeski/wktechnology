@@ -25,21 +25,30 @@ export function decodeBase64(b64: string): Uint8Array {
   return bytes;
 }
 
+/** Autorização no banco, como o usuário; só aceita caminho do próprio usuário. */
+export async function requestNoteUploadPath(
+  rpc: UploadPathRpc,
+  userId: string,
+  fileName: string,
+): Promise<string> {
+  const { data: path, error } = await rpc("shared_storage_upload_path", {
+    b: "notes-attachments",
+    file_name: fileName,
+  });
+  if (error) throw new Error(error.message);
+  if (typeof path !== "string" || !path.startsWith(`${userId}/`)) {
+    throw new Error("Caminho de upload inválido.");
+  }
+  return path;
+}
+
 export async function uploadAuthorizedNoteAttachment(
   rpc: UploadPathRpc,
   storage: AttachmentStorage,
   userId: string,
   input: NoteAttachmentInput,
 ): Promise<{ path: string; size: number }> {
-  const { data: path, error } = await rpc("shared_storage_upload_path", {
-    b: "notes-attachments",
-    file_name: input.name,
-  });
-  if (error) throw new Error(error.message);
-  // O caminho precisa ser do próprio usuário; qualquer outro é recusado.
-  if (typeof path !== "string" || !path.startsWith(`${userId}/`)) {
-    throw new Error("Caminho de upload inválido.");
-  }
+  const path = await requestNoteUploadPath(rpc, userId, input.name);
   const bytes = decodeBase64(input.base64);
   const { error: upErr } = await storage.upload(path, bytes, {
     contentType: input.type || "application/octet-stream",

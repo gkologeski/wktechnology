@@ -10514,6 +10514,10 @@
         {
           "file": "src/lib/timeline/note-attachments.functions.ts",
           "symbol": "uploadNoteAttachment"
+        },
+        {
+          "file": "src/lib/timeline/note-attachment-upload.ts",
+          "symbol": "requestNoteUploadPath"
         }
       ],
       "database": [
@@ -10547,7 +10551,7 @@
       "files": {
         "src/lib/timeline/activity-entities.ts": "11b77a686dbf5ef9c0fbd37e30a1ec64d188da00e2907ad68e7ee72e2128f85b",
         "src/lib/timeline/note-attachments.functions.ts": "cfa8ff5ab95dca39d0c8fe77bc86d6e7920b8cda3c505a0edb3e5df3fc0516c3",
-        "src/lib/timeline/note-attachment-upload.ts": "a77b77d82bb8e8850d036c1cf193804c11e8c7921f8e5c841f8c2e7743d0bbd0"
+        "src/lib/timeline/note-attachment-upload.ts": "af75444ca23c6bf90bc8288a46000e8e07b9604a904fed2e11781c4a1a4c3b83"
       }
     }
   ],
