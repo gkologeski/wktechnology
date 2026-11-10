@@ -2,6 +2,7 @@
 // Sempre com o cliente autenticado do usuário (RLS aplicada).
 import { loadAcceptedProposalSource } from "@/lib/contracts/accepted-proposal.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { legacyInstallments, parsePaymentTerms } from "@/lib/sales/payment-terms";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 import type { DealLineItemRow } from "@/lib/contracts/contract-create.server";
@@ -170,12 +171,21 @@ export async function proposalFromQuote(
       quote_id: quote.id,
       proposal_template_id: overrides.proposal_template_id ?? null,
       payment_terms: quote.payment_terms ?? {},
+      ...legacyFromTerms(quote.payment_terms, quote.total),
       variables: {},
     } as never)
     .select("id")
     .single();
   if (error) throw new Error(error.message);
   return { id: (prop as { id: string }).id, reused: false };
+}
+
+/** Parcelas/dia equivalentes às condições, para modelos que ainda usam esses campos. */
+function legacyFromTerms(raw: unknown, total: unknown) {
+  const t = parsePaymentTerms(raw);
+  if (!t) return {};
+  const l = legacyInstallments(t, Number(total ?? 0));
+  return { installments_count: l.installments, installments_due_day: l.dueDay };
 }
 
 type ProposalOrigin = {
