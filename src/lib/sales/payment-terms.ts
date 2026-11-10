@@ -215,6 +215,24 @@ export function parsePaymentTerms(raw: unknown): PaymentTerms | null {
   return parsed.success ? (parsed.data as PaymentTerms) : null;
 }
 
+/** Parcelas e dia de vencimento equivalentes, para modelos que ainda usam esses campos. */
+export function legacyInstallments(t: PaymentTerms, total: number): {
+  installments: number;
+  dueDay: number | null;
+} {
+  const entry = downPaymentAmount(t.downPayment, total) > 0 ? 1 : 0;
+  const p = t.plan;
+  const rest =
+    total - downPaymentAmount(t.downPayment, total) <= 0
+      ? 0
+      : p.kind === "monthly"
+        ? p.months
+        : p.kind === "periodic"
+          ? p.count
+          : p.milestones.length;
+  return { installments: Math.max(1, entry + rest), dueDay: "dueDay" in p ? p.dueDay : null };
+}
+
 /** Resumo em uma linha, em português, para telas de revisão. */
 export function describePaymentTerms(t: PaymentTerms): string {
   const dp = t.downPayment;

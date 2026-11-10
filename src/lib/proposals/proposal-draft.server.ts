@@ -126,7 +126,7 @@ export async function buildProposalDraft(
     const { data: q, error } = await supabase
       .from("quotes")
       .select(
-        "id, number, title, deal_id, contact_id, company_id, currency, total, valid_until, assigned_to",
+        "id, number, title, deal_id, contact_id, company_id, currency, total, valid_until, assigned_to, payment_terms",
       )
       .eq("id", src.quoteId)
       .maybeSingle();
@@ -149,6 +149,7 @@ export async function buildProposalDraft(
         quote_id: q.id,
         quote_number: q.number,
         proposal_template_id: null,
+        payment_terms: q.payment_terms,
         items,
         items_origin: origin,
         ...(await names(supabase, {
@@ -166,7 +167,7 @@ export async function buildProposalDraft(
     const { data: p, error } = await supabase
       .from("proposals")
       .select(
-        "id, title, body, total_amount, currency, expires_at, assigned_to, locked, company_id, contact_id, deal_id, quote_id, proposal_template_id, installments_count, installments_due_day, validity_days, payment_method, payment_notes",
+        "id, title, body, total_amount, currency, expires_at, assigned_to, locked, company_id, contact_id, deal_id, quote_id, proposal_template_id, installments_count, installments_due_day, validity_days, payment_method, payment_notes, payment_terms",
       )
       .eq("id", src.proposalId)
       .maybeSingle();
@@ -195,6 +196,7 @@ export async function buildProposalDraft(
         validity_days: p.validity_days,
         payment_method: p.payment_method,
         payment_notes: p.payment_notes,
+        payment_terms: p.payment_terms,
         items,
         items_origin: origin,
         ...(await names(supabase, {
