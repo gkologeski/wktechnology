@@ -10469,6 +10469,16 @@
         "revocation": "Regenerate or clear the proposal public_token to invalidate the link.",
         "review_by": "2027-05-10"
       }
+    },
+    {
+      "id": "contracts-detail-prototype",
+      "kind": "presentation",
+      "rationale": "PROXIMO-PASSO-CONTRATO mockup: static demo data and local UI state only, rendered inside the authenticated layout. No server functions, queries, mutations, grants or real contract data; buttons are inert.",
+      "files": {
+        "src/components/contracts/prototype/data.ts": "dfdfe4205259f09e86a3f2cd5ac1428d4cb231948c28e5e0a2e2ac8f458feff6",
+        "src/components/contracts/prototype/contract-detail-prototype.tsx": "499464b67d837b083d6fd6c062ca57ea55bc1db7bfeaa06c4d901af9fb1c1257",
+        "src/routes/_authenticated/contracts.prototype.tsx": "e2990f79f37971340113f24b213e92bcbba092864534ae0aeb8b44e15f7ebe1a"
+      }
     }
   ],
   "retired": {}
