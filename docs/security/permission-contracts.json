@@ -10684,14 +10684,6 @@
         {
           "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
           "symbol": "sales_context_access"
-        },
-        {
-          "file": "drizzle/migrations/0326_grant_payment_terms_columns.sql",
-          "symbol": "quotes"
-        },
-        {
-          "file": "drizzle/migrations/0326_grant_payment_terms_columns.sql",
-          "symbol": "proposals"
         }
       ],
       "tests": {
