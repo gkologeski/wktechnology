@@ -24,7 +24,7 @@
         "system.home.view.workspace",
         "system.home.export.workspace"
       ],
-      "rationale": "Home view/export use the authenticated shared boundary. Each finite aggregate independently rechecks its own current module and record permissions; field rules are resolved by the protected database views.",
+      "rationale": "Home view/export use the authenticated shared boundary. Each finite aggregate independently rechecks its own current module and record permissions; field rules are resolved by the protected database views. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants.",
       "controls": [
         {
           "file": "src/lib/access-control/shared-permission.middleware.ts",
@@ -69,7 +69,7 @@
       },
       "files": {
         "src/lib/home/dashboard.functions.ts": "d61bb8a39343d4e34844e827e7d3f05f83b582112e00897c2c27e331b8e00a67",
-        "src/routes/_authenticated/home.index.tsx": "85ec3f13f03e4ecf11f2e1c7881e472ec6fc36d9a1b8337ded2f4b010a5bf4da"
+        "src/routes/_authenticated/home.index.tsx": "00de36b699f6d929692a53aca9f5c2aba7f1e40b2a10d5c15c22704a0fba5bde"
       }
     },
     {
@@ -2887,9 +2887,9 @@
     {
       "id": "service-channel-navigation-labels",
       "kind": "presentation",
-      "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately.",
+      "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants.",
       "files": {
-        "src/lib/menu-config.ts": "25c806c0b344e831d082f494dc4f78d545fc9cf4f516e21c1c23fbb292374153",
+        "src/lib/menu-config.ts": "763b3c3dbb3db20f7b4e6924917c8e489e551154f51c6b7afedeb86b556b1536",
         "src/lib/menu-resources.ts": "d44488e6d5be0fc4c4029fed522b367d6f598d65b70a01875f49efea1135aff1"
       }
     },
@@ -10940,6 +10940,10 @@
     "src/routes/_authenticated/prospecting.prototype.tsx": {
       "sha256": "1d3828219b2cb5253aaa4085f82158b4f094b44f378da8d3afd9b5892f97959c",
       "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
+    },
+    "src/routes/_authenticated/home.print.tsx": {
+      "sha256": "b864596de3b93a06a8faaa339ea15116d6851ff24327bdfb389fb0c32149c185",
+      "rationale": "Dashboard print screen removed at the user's request (REMOVE-IMPRIMIR); it only re-read the existing system.home export server function, which stays protected and still serves CSV export. No permission retired."
     }
   }
 }
