@@ -436,12 +436,18 @@ export async function contractFromSales(
       title: `Contrato — ${baseTitle}`,
       starts_at: startsAt,
       ends_at: endsAt,
-      ...(contractTerms ? { payment_terms: contractTerms as never } : {}),
     },
     dealId,
     items: loaded ? loaded.items : null,
     bodyHtml,
   });
+  if (contractTerms) {
+    const { error: ptErr } = await supabase
+      .from("contracts")
+      .update({ payment_terms: contractTerms as never })
+      .eq("id", (result.contract as { id: string }).id);
+    if (ptErr) throw new Error(`Contrato criado, mas as condições de pagamento não foram gravadas: ${ptErr.message}`);
+  }
   return {
     contract: result.contract,
     reused: false,
