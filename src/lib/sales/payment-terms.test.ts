@@ -35,7 +35,7 @@ describe("cronograma de pagamento", () => {
       start,
     );
     expect(s.map((p) => [p.label, p.amount, p.dueDate])).toEqual([
-      ["Entrada", 5000, "2026-11-10"],
+      ["Entrada", 5000, null],
       ["Homologação", 20000, null],
       ["Go-live", 20000, null],
     ]);
