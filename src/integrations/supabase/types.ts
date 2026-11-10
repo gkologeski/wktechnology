@@ -36038,6 +36038,10 @@ export type Database = {
         Args: { _owner: string; _workspace: string }
         Returns: undefined
       }
+      service_activate_with_terms: {
+        Args: { p_schedule: Json; p_service: string; p_starts: string }
+        Returns: Json
+      }
       service_agent_begin_send: {
         Args: { p_job: string }
         Returns: {
