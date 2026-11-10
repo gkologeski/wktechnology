@@ -8,7 +8,7 @@ route_pattern: /settings/quotes
 min_permission:
 audience: internal
 sort_order: 204
-version: 2
+version: 3
 is_published: true
 ---
 # Gerenciar cotações e gerar propostas
@@ -21,7 +21,7 @@ is_published: true
 1. Consulte "Total emitidas", "Aceitas" e "Valor aceito".
 2. Localize a cotação pelo título ou número e confira status, valor e visualizações.
 3. Clique em "Gerar proposta" para abrir o assistente de proposta.
-4. Revise "Título *", "Responsável" e "Validade".
+4. Revise "Título *", "Responsável", "Validade" e as "Condições de pagamento" que vieram da cotação.
 5. Confira os itens e ajuste "Valor total da proposta", se necessário.
 6. Revise o modelo e o conteúdo nas etapas seguintes. Clique em "Criar proposta".
 7. Abra a proposta criada para revisar, solicitar aprovação, compartilhar ou enviar.
@@ -53,3 +53,4 @@ A proposta reaproveita os vínculos e dados comerciais da cotação. O contrato 
 ## Relacionados
 - [Atualizar um negócio](/ajuda/crm/atualizar-negocio)
 - [Editar e enviar uma proposta](/ajuda/crm/editar-enviar-proposta)
+- [Definir as condições de pagamento da cotação](/ajuda/crm/definir-condicoes-de-pagamento)
