@@ -49,9 +49,14 @@ th{background:#f9fafb}.total{text-align:right;font-weight:600;font-size:15px}
 <h1>${esc(p.title)}</h1><div class="muted">Versão ${p.version}${doc.agent ? ` · ${esc(doc.agent)}` : ""}</div>
 <div class="grid"><div><div class="label">Para</div>${esc(doc.company ?? "")}<br/>${esc(doc.contact ?? "")}</div>
 <div><div class="label">Detalhes</div>Emitida em ${date(p.created_at)}${p.expires_at ? `<br/>Válida até ${date(p.expires_at)}` : ""}</div></div>
+<div>${p.body.replace(/<script[\s\S]*?<\/script>/gi, "")}</div>
+${
+  bodyHasItemsTable(p.body)
+    ? ""
+    : `${rows || p.total_amount != null ? "<h2>Investimento</h2>" : ""}
 ${rows ? `<table><thead><tr><th>Item</th><th>Cobrança</th></tr></thead><tbody>${rows}</tbody></table>` : ""}
-${p.total_amount != null ? `<p class="total">Total: ${fmt(p.total_amount)}</p>` : ""}
-<div>${p.body.replace(/<script[\s\S]*?<\/script>/gi, "")}</div></div>`;
+${p.total_amount != null ? `<p class="total">Total: ${fmt(p.total_amount)}</p>` : ""}`
+}</div>`;
         let pdf: ArrayBuffer;
         try {
           pdf = await renderPdfViaBrowserless(wrapForPrint(inner), browserlessToken);
