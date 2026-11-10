@@ -120,6 +120,12 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Configurações",
     items: [
       {
+        title: "Visão geral",
+        url: "/projects/settings",
+        need: "admin",
+        icon: LayoutDashboard,
+      },
+      {
         title: "Importar do Clockify",
         url: "/projects/settings/imports/clockify",
         need: "admin",
