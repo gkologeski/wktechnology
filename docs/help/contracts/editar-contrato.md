@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 30
-version: 3
+version: 4
 is_published: true
 ---
 # Editar a ficha de um contrato
@@ -29,7 +29,7 @@ Botões desabilitados mostram o motivo (ex.: "Sem permissão"). Fluxo do contrat
 1. Abra o contrato pela lista. O conteúdo fica nas abas Visão geral, Documento, Aprovações e assinatura, Aditivos e vínculos e Histórico.
 2. Edite "Título", "Tipo", "Tipo de documento", "Contrato principal" quando for aditivo, e "Valor total".
 3. Revise "Início", "Fim", "Renovação automática" e "Aviso prévio (dias)".
-4. Na aba "Documento", em "Cláusulas / corpo do contrato", edite o texto quando necessário.
+4. Na aba "Documento", em "Cláusulas / corpo do contrato", edite o texto no editor formatado (negrito, alinhamento, listas e tabelas), com rolagem própria; clique em Salvar para gravar.
 5. Clique em "Salvar" e aguarde "Contrato atualizado.".
 6. Use "Mais ações" › "Visualizar arquivo original" para abrir o arquivo original quando essa ação estiver disponível.
 ![Tela: Editar a ficha de um contrato, sem dados pessoais reais](/help-media/contracts/editar-contrato.webp)
