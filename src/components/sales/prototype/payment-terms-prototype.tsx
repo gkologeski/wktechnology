@@ -147,6 +147,7 @@ export function PaymentTermsPrototype() {
               <ToggleGroup
                 type="single"
                 variant="outline"
+                className="justify-start flex-wrap"
                 value={dp.kind}
                 aria-label="Tipo de entrada"
                 onValueChange={(k) =>
@@ -188,6 +189,7 @@ export function PaymentTermsPrototype() {
               <ToggleGroup
                 type="single"
                 variant="outline"
+                className="justify-start flex-wrap"
                 value={plan.kind}
                 aria-label="Forma do saldo"
                 onValueChange={setPlanKind}
@@ -252,6 +254,7 @@ export function PaymentTermsPrototype() {
                   ))}
                   <Button
                     variant="outline"
+                className="justify-start flex-wrap"
                     size="sm"
                     className="self-start"
                     onClick={() =>
