@@ -135,6 +135,11 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
     templateId: existingQuote?.template_id ?? "",
   });
 
+  // Condições de pagamento: o que está gravado vence; sem isso, a sugestão vem dos itens.
+  const [storedTerms, setStoredTerms] = useState<PaymentTerms | null>(() =>
+    parsePaymentTerms(existingQuote?.payment_terms),
+  );
+
   // Reset when dialog opens/closes or existingQuote changes
   useEffect(() => {
     if (!open) return;
@@ -149,6 +154,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
       terms: existingQuote?.terms ?? "",
       templateId: existingQuote?.template_id ?? "",
     });
+    setStoredTerms(parsePaymentTerms(existingQuote?.payment_terms));
     setTotals(
       existingQuote
         ? {
@@ -214,6 +220,40 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
     enabled: open,
   });
   const hasLineItems = lineItemsCount.length > 0;
+
+  // Nomes dos itens da cotação: servem só para sugerir as condições de pagamento.
+  type ItemKindRow = {
+    name: string | null;
+    service: { name: string | null } | null;
+    preset: { name: string | null } | null;
+  };
+  const { data: quoteItemRows = [] } = useQuery({
+    queryKey: ["quote-line-item-kinds", quoteId],
+    queryFn: async () => {
+      if (!quoteId) return [] as ItemKindRow[];
+      const { data, error } = await supabase
+        .from("quote_line_items")
+        .select("name, service:service_catalog(name), preset:contracting_presets(name)")
+        .eq("quote_id", quoteId)
+        .order("position");
+      if (error) throw error;
+      return (data ?? []) as unknown as ItemKindRow[];
+    },
+    enabled: open && Boolean(quoteId),
+  });
+  const itemKinds = useMemo(() => {
+    const out: string[] = [];
+    if (existingQuote?.service_line) out.push(existingQuote.service_line);
+    for (const it of quoteItemRows) {
+      if (it.name) out.push(it.name);
+      if (it.service?.name) out.push(it.service.name);
+      if (it.preset?.name) out.push(it.preset.name);
+    }
+    return out;
+  }, [quoteItemRows, existingQuote?.service_line]);
+
+  const suggestedTerms = useMemo(() => suggestPaymentTerms(itemKinds), [itemKinds]);
+  const terms = storedTerms ?? suggestedTerms;
 
   const currency = deal?.currency ?? "BRL";
 
@@ -297,6 +337,16 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
           },
         },
       });
+    },
+    onSuccess: () => invalidate(),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const saveTermsMut = useMutation({
+    mutationFn: async () => {
+      if (!quoteId) return;
+      await saveTermsFn({ data: { id: quoteId, terms } });
+      setStoredTerms(terms);
     },
     onSuccess: () => invalidate(),
     onError: (e: Error) => toast.error(e.message),
