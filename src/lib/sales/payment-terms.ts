@@ -137,3 +137,48 @@ export function suggestPaymentTerms(
     plan: { kind: "milestones", milestones: [{ label: "Entrega final", percent: 100 }] },
   };
 }
+
+// ============= Validação nas bordas (servidor e telas) =============
+
+/**
+ * Aceita rótulos de marco vazios: quem reclama é `validatePaymentTerms`, com a
+ * mensagem em português. O schema só barra o que não é condição de pagamento.
+ */
+export const downPaymentSchema = z.union([
+  z.object({ kind: z.literal("none") }),
+  z.object({ kind: z.literal("amount"), value: z.number().min(0) }),
+  z.object({ kind: z.literal("percent"), value: z.number().min(0).max(100) }),
+]);
+
+export const installmentPlanSchema = z.union([
+  z.object({
+    kind: z.literal("monthly"),
+    months: z.number().int().min(1).max(120),
+    dueDay: z.number().int().min(1).max(31),
+  }),
+  z.object({
+    kind: z.literal("periodic"),
+    count: z.number().int().min(1).max(120),
+    intervalMonths: z.number().int().min(1).max(12),
+    dueDay: z.number().int().min(1).max(31),
+  }),
+  z.object({
+    kind: z.literal("milestones"),
+    milestones: z
+      .array(z.object({ label: z.string().max(120), percent: z.number().min(0).max(100) }))
+      .min(1)
+      .max(120),
+  }),
+]);
+
+export const paymentTermsSchema = z.object({
+  downPayment: downPaymentSchema,
+  plan: installmentPlanSchema,
+});
+
+/** null quando o valor guardado não é uma condição de pagamento válida. */
+export function parsePaymentTerms(raw: unknown): PaymentTerms | null {
+  const parsed = paymentTermsSchema.safeParse(raw);
+  return parsed.success ? (parsed.data as PaymentTerms) : null;
+}
+
