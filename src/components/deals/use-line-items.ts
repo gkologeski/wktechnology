@@ -1,4 +1,5 @@
-import { isTransientDatabaseError, withTransientRetry } from "@/lib/db/transient-retry";
+import { isTransientDatabaseError } from "@/lib/db/transient-retry";
+import { updateLineItemGuarded, type LineItemUpdateClient } from "@/lib/deals/line-item-write";
 // Estado e persistência dos itens de linha do negócio: autosave por campo,
 // pilha de desfazer, indicador de "salvando/salvo/não salvo" e criação de itens
 // a partir do catálogo (com preset e modelo de cobrança).
@@ -345,22 +346,15 @@ export function useLineItemsEditor(dealId: string) {
     if (Object.keys(values).length === 0) return true;
     begin();
     try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await withTransientRetry<{ id: string }[]>(() =>
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (supabase as any).from("deal_line_items").update(values).eq("id", id).select("id"),
+      const result = await updateLineItemGuarded(
+        supabase as unknown as LineItemUpdateClient,
+        id,
+        values,
       );
-      if (error) {
+      if (!result.ok) {
         qc.setQueryData(lineItemsQueryKey(dealId), previous);
         refreshItems();
-        toast.error(errorMessage(error.message ?? ""));
-        return false;
-      }
-      // Quando a regra de acesso nega, o banco não devolve erro: só 0 linhas.
-      if (!Array.isArray(data) || data.length === 0) {
-        qc.setQueryData(lineItemsQueryKey(dealId), previous);
-        refreshItems();
-        toast.error("Você não tem permissão para alterar este item.");
+        toast.error(result.message);
         return false;
       }
       notifyDealsChanged();
