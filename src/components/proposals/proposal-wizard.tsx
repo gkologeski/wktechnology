@@ -218,6 +218,12 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
       items_table: itemsTableHtml(draft.items),
       company: { name: draft.company_name ?? "" },
       contact: { name: draft.contact_name ?? "" },
+      counterparty: { name: draft.company_name ?? "" },
+      signer: draft.signer ?? {
+        full_name: draft.contact_name ?? "",
+        cpf: "",
+        email: "",
+      },
       deal: { name: draft.deal_name ?? "" },
       company_legal_name: draft.company_legal_name ?? draft.company_name ?? "",
       company_cnpj: draft.company_cnpj ?? "",
