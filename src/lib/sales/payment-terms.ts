@@ -40,7 +40,7 @@ function dateFor(start: Date, monthsAhead: number, dueDay: number): string {
 /** Divide um valor em n partes; centavos de sobra vão para a última. */
 function split(total: number, n: number): number[] {
   const base = Math.floor((total / n) * 100) / 100;
-  const parts = Array.from({ length: n }, () => base);
+  const parts = new Array<number>(n).fill(base);
   parts[n - 1] = round2(total - base * (n - 1));
   return parts;
 }

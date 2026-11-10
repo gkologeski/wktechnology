@@ -10487,7 +10487,7 @@
       "kind": "presentation",
       "rationale": "CONDICOES-PAGAMENTO: pure payment schedule rule. No I/O, no actions; persistence will be gated by quote/proposal/contract contracts.",
       "files": {
-        "src/lib/sales/payment-terms.ts": "73c957f191f97f098b55e64c794a012f810706dde770d5ff0611792ea15494af"
+        "src/lib/sales/payment-terms.ts": "338f987e260dc729d2c654a673cd7da7a74efd9ba17f76699e7dd4ff2d80596f"
       }
     },
     {
