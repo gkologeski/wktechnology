@@ -10811,6 +10811,14 @@
           "name": "service activation terms refuses an inactive member"
         }
       }
+    },
+    {
+      "id": "menu-orphan-screens-navigation",
+      "kind": "presentation",
+      "rationale": "MENU-TELAS: adds menu links to existing screens (hunting extension install). Links only; the target screens keep their own route and server authorization.",
+      "files": {
+        "src/lib/menu-config-ats.ts": "59fed0d9a469017f2818d7ac0841dc6c0c48f63399f21acd4415d64fffd68a75"
+      }
     }
   ],
   "retired": {
