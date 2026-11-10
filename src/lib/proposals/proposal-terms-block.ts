@@ -3,7 +3,13 @@
 // remove atributos desconhecidos), regenerado sempre que as
 // condições mudam no assistente sem tocar no restante do texto.
 
-export const PROPOSAL_PAYMENT_METHODS = ["pix", "ted", "boleto", "transferencia", "outros"] as const;
+export const PROPOSAL_PAYMENT_METHODS = [
+  "pix",
+  "ted",
+  "boleto",
+  "transferencia",
+  "outros",
+] as const;
 export type ProposalPaymentMethod = (typeof PROPOSAL_PAYMENT_METHODS)[number];
 
 export const PAYMENT_METHOD_LABELS: Record<ProposalPaymentMethod, string> = {
@@ -36,7 +42,10 @@ export type ProposalTerms = {
 const MARKER_RE = /<h3[^>]*>\s*Condições comerciais\s*<\/h3>\s*<ul[^>]*>[\s\S]*?<\/ul>/i;
 
 function esc(s: string): string {
-  return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
+  return s.replace(
+    /[&<>"]/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!,
+  );
 }
 
 function money(v: number, currency: string): string {
@@ -49,7 +58,9 @@ export function installmentValue(total: number | null, installments: number | nu
   return Math.round((total / installments) * 100) / 100;
 }
 
-export function paymentMethodLabel(t: Pick<ProposalTerms, "paymentMethod" | "paymentNotes">): string {
+export function paymentMethodLabel(
+  t: Pick<ProposalTerms, "paymentMethod" | "paymentNotes">,
+): string {
   if (!t.paymentMethod) return "";
   const base = PAYMENT_METHOD_LABELS[t.paymentMethod];
   return t.paymentNotes?.trim() ? `${base} (${t.paymentNotes.trim()})` : base;

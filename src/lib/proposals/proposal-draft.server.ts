@@ -76,7 +76,11 @@ async function names(
 ) {
   const [c, p, d, s] = await Promise.all([
     ids.company
-      ? supabase.from("companies").select("name, cnpj, custom_fields").eq("id", ids.company).maybeSingle()
+      ? supabase
+          .from("companies")
+          .select("name, cnpj, custom_fields")
+          .eq("id", ids.company)
+          .maybeSingle()
       : null,
     ids.contact
       ? supabase

@@ -104,8 +104,7 @@ export function buildPaymentSchedule(
   if (errors.length) throw new Error(errors.join(" "));
   const out: ScheduledPayment[] = [];
   const entry = downPaymentAmount(t.downPayment, total);
-  if (entry > 0)
-  {
+  if (entry > 0) {
     const due = downPaymentDueOf(t);
     out.push(
       due.kind === "date"
@@ -140,7 +139,13 @@ export function buildPaymentSchedule(
       const last = i === p.milestones.length - 1;
       const amount = last ? round2(balance - acc) : round2((balance * m.percent) / 100);
       acc = round2(acc + amount);
-      out.push({ sequence: out.length + 1, label: m.label, amount, dueDate: null, dueEvent: "milestone" });
+      out.push({
+        sequence: out.length + 1,
+        label: m.label,
+        amount,
+        dueDate: null,
+        dueEvent: "milestone",
+      });
     });
   }
   return out;
@@ -154,7 +159,12 @@ export function suggestPaymentTerms(
   if (legacy?.installmentsCount) {
     return {
       downPayment: { kind: "none" },
-      plan: { kind: "periodic", count: legacy.installmentsCount, intervalMonths: 1, dueDay: legacy.dueDay ?? 10 },
+      plan: {
+        kind: "periodic",
+        count: legacy.installmentsCount,
+        intervalMonths: 1,
+        dueDay: legacy.dueDay ?? 10,
+      },
     };
   }
   const k = itemKinds.map((s) => s.toLowerCase());
@@ -216,7 +226,10 @@ export function parsePaymentTerms(raw: unknown): PaymentTerms | null {
 }
 
 /** Parcelas e dia de vencimento equivalentes, para modelos que ainda usam esses campos. */
-export function legacyInstallments(t: PaymentTerms, total: number): {
+export function legacyInstallments(
+  t: PaymentTerms,
+  total: number,
+): {
   installments: number;
   dueDay: number | null;
 } {
@@ -258,4 +271,3 @@ export function describePaymentTerms(t: PaymentTerms): string {
         : `${p.milestones.length} ${p.milestones.length === 1 ? "marco" : "marcos"} de entrega`;
   return `${entry}${entryDue} · ${balance}`;
 }
-

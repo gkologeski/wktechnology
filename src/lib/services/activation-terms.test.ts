@@ -4,13 +4,21 @@ import { buildPaymentSchedule, describePaymentTerms } from "@/lib/sales/payment-
 
 const consult = {
   downPayment: { kind: "amount", value: 5000 },
-  plan: { kind: "milestones", milestones: [{ label: "Ao final do consumo de horas", percent: 100 }] },
+  plan: {
+    kind: "milestones",
+    milestones: [{ label: "Ao final do consumo de horas", percent: 100 }],
+  },
 };
 
 describe("vencimento da entrada", () => {
   it("padrão é a assinatura do contrato, sem data antes de assinar", () => {
     const s = buildPaymentSchedule(consult as never, 18870, new Date("2026-11-10T12:00:00Z"));
-    expect(s[0]).toMatchObject({ label: "Entrada", amount: 5000, dueDate: null, dueEvent: "signature" });
+    expect(s[0]).toMatchObject({
+      label: "Entrada",
+      amount: 5000,
+      dueDate: null,
+      dueEvent: "signature",
+    });
   });
   it("usa a data da assinatura quando o contrato já foi assinado", () => {
     const s = buildPaymentSchedule(consult as never, 18870, new Date("2026-11-10T12:00:00Z"), {
@@ -25,7 +33,9 @@ describe("vencimento da entrada", () => {
   });
   it("exige a data quando escolhido vencer em uma data", () => {
     const t = { ...consult, downPaymentDue: { kind: "date", date: "" } };
-    expect(() => buildPaymentSchedule(t as never, 18870, new Date())).toThrow(/data de vencimento da entrada/);
+    expect(() => buildPaymentSchedule(t as never, 18870, new Date())).toThrow(
+      /data de vencimento da entrada/,
+    );
   });
 });
 

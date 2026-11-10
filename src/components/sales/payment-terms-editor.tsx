@@ -202,9 +202,7 @@ export function PaymentTermsEditor({
               <Field
                 label="A cada (meses)"
                 value={plan.intervalMonths}
-                onChange={(v) =>
-                  onChange({ ...terms, plan: { ...plan, intervalMonths: num(v) } })
-                }
+                onChange={(v) => onChange({ ...terms, plan: { ...plan, intervalMonths: num(v) } })}
               />
               <Field
                 label="Dia de vencimento"
@@ -306,7 +304,9 @@ export function PaymentTermsEditor({
                 <TableRow key={s.sequence}>
                   <TableCell>{s.sequence}</TableCell>
                   <TableCell>{s.label}</TableCell>
-                  <TableCell className="text-muted-foreground">{fmtDate(s.dueDate, s.dueEvent)}</TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {fmtDate(s.dueDate, s.dueEvent)}
+                  </TableCell>
                   <TableCell className="text-right">{formatCurrency(s.amount, currency)}</TableCell>
                 </TableRow>
               ))}

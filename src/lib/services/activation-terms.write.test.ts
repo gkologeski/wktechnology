@@ -9,7 +9,11 @@ const TERMS = {
 type Calls = { terms: unknown[] | null; legacy: boolean };
 
 function store(opts: {
-  contract?: { payment_terms: unknown; total_value: number | null; signed_at: string | null } | null;
+  contract?: {
+    payment_terms: unknown;
+    total_value: number | null;
+    signed_at: string | null;
+  } | null;
   denyWith?: string;
 }): ServiceActivationStore<string> & { calls: Calls } {
   const calls: Calls = { terms: null, legacy: false };
@@ -45,13 +49,17 @@ describe("ativação do serviço com condições de pagamento", () => {
 
   it("service activation terms refuses missing permission", async () => {
     const s = store({ denyWith: "Sem permissão para gerar lançamentos financeiros." });
-    await expect(activateServiceCore(s, "s-1", null, "2026-11-10")).rejects.toThrow("Sem permissão");
+    await expect(activateServiceCore(s, "s-1", null, "2026-11-10")).rejects.toThrow(
+      "Sem permissão",
+    );
     expect(s.calls.legacy).toBe(false);
   });
 
   it("service activation terms refuses an explicit deny", async () => {
     const s = store({ denyWith: "Acesso negado." });
-    await expect(activateServiceCore(s, "s-1", null, "2026-11-10")).rejects.toThrow("Acesso negado");
+    await expect(activateServiceCore(s, "s-1", null, "2026-11-10")).rejects.toThrow(
+      "Acesso negado",
+    );
     expect(s.calls.legacy).toBe(false);
   });
 

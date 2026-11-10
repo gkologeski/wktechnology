@@ -446,7 +446,10 @@ export async function contractFromSales(
       .from("contracts")
       .update({ payment_terms: contractTerms as never })
       .eq("id", (result.contract as { id: string }).id);
-    if (ptErr) throw new Error(`Contrato criado, mas as condições de pagamento não foram gravadas: ${ptErr.message}`);
+    if (ptErr)
+      throw new Error(
+        `Contrato criado, mas as condições de pagamento não foram gravadas: ${ptErr.message}`,
+      );
   }
   return {
     contract: result.contract,
