@@ -31,6 +31,8 @@ export const PERSONAL_URLS: readonly string[] = [
   "/settings/privacy",
   "/my-bug-reports",
   "/settings/my-tickets",
+  "/settings/my-permissions",
+  "/settings/mobile",
 ];
 
 export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
@@ -146,6 +148,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/hunting/search": ["techhire.hunting.search"],
   "/hunting/captures": ["techhire.hunting.captures"],
   "/hunting/templates": ["techhire.hunting.templates"],
+  "/hunting/install": ["techhire.hunting"],
   "/hunting/observability": ["techhire.hunting.observability"],
   "/offers": ["techhire.offers"],
   "/stage-emails": ["techhire.stage_emails"],
@@ -184,6 +187,8 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/projects/settings/imports/clickup": ["techprojects.clickup_import"],
   "/projects/settings/imports/reconciliation": ["techprojects.reconciliation"],
   "/projects/settings/delivery": ["techprojects.delivery"],
+  // Hub de configurações: só links para as telas abaixo, cada uma com seu recurso.
+  "/projects/settings": ["techprojects.rates"],
   // Leitura de agendamentos/filas; a tela e a função exigem administrador ativo do workspace.
   "/projects/settings/operations": ["techprojects.operations"],
   "/projects/settings/time": ["techprojects.time_policy", "techprojects.delivery_templates"],
