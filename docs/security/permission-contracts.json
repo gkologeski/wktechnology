@@ -10510,6 +10510,10 @@
         {
           "file": "src/lib/timeline/note-attachments.server.ts",
           "symbol": "uploadAuthorizedNoteAttachment"
+        },
+        {
+          "file": "src/lib/timeline/note-attachments.functions.ts",
+          "symbol": "uploadNoteAttachment"
         }
       ],
       "database": [
