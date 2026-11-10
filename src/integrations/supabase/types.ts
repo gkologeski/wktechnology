@@ -21799,6 +21799,8 @@ export type Database = {
           legal_entity_id: string | null
           locked: boolean
           owner_id: string
+          payment_method: string | null
+          payment_notes: string | null
           proposal_template_id: string | null
           public_token: string | null
           quote_id: string | null
@@ -21829,6 +21831,8 @@ export type Database = {
           legal_entity_id?: string | null
           locked?: boolean
           owner_id: string
+          payment_method?: string | null
+          payment_notes?: string | null
           proposal_template_id?: string | null
           public_token?: string | null
           quote_id?: string | null
@@ -21859,6 +21863,8 @@ export type Database = {
           legal_entity_id?: string | null
           locked?: boolean
           owner_id?: string
+          payment_method?: string | null
+          payment_notes?: string | null
           proposal_template_id?: string | null
           public_token?: string | null
           quote_id?: string | null

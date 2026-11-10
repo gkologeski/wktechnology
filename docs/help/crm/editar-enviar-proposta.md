@@ -8,7 +8,7 @@ route_pattern: /proposals/$id
 min_permission:
 audience: internal
 sort_order: 203
-version: 3
+version: 4
 is_published: true
 ---
 # Editar e enviar uma proposta
@@ -55,3 +55,7 @@ A edição atualiza a proposta. A solicitação de revisão mostra "Aprovação 
 ## Condições para o contrato
 
 No passo **Dados** informe **Parcelas**, **Dia de vencimento** e **Vigência do contrato (dias)** — a vigência vem com 90 dias por padrão. Esses campos só ficam editáveis para quem pode alterar propostas. Ao gerar o contrato a partir da proposta aceita, eles são copiados automaticamente.
+
+## Forma de pagamento e Condições comerciais
+
+Além de parcelas, vencimento e vigência, informe **Forma de pagamento** (PIX, TED, Boleto bancário, Transferência bancária ou Outro) e, se quiser, **Observação do pagamento**. O texto da proposta ganha a seção **Condições comerciais**, atualizada sozinha sempre que você muda esses campos, com o valor de cada parcela. Na **Revisão**, um aviso mostra condições vazias e trechos "[Escreva aqui ...]" ainda não preenchidos (o aviso não impede salvar). A forma de pagamento também é copiada para o contrato.

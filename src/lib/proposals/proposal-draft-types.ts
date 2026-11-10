@@ -22,6 +22,8 @@ export type ProposalDraft = {
   quote_number: string | null;
   proposal_template_id: string | null;
   company_name: string | null;
+  company_legal_name?: string | null;
+  company_cnpj?: string | null;
   contact_name: string | null;
   deal_name: string | null;
   items: ProposalDraftItem[];
@@ -30,6 +32,8 @@ export type ProposalDraft = {
   installments_count?: number | null;
   installments_due_day?: number | null;
   validity_days?: number | null;
+  payment_method?: string | null;
+  payment_notes?: string | null;
 };
 
 export type ProposalDraftResult =

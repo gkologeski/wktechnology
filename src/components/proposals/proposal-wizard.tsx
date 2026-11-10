@@ -45,6 +45,17 @@ import {
 import { createProposal, updateProposal } from "@/lib/proposals.functions";
 import { createProposalFromQuote, getProposalDraft } from "@/lib/sales-flow.functions";
 import type { ProposalDraft, ProposalDraftResult } from "@/lib/proposals/proposal-draft-types";
+import {
+  PAYMENT_METHOD_LABELS,
+  PROPOSAL_PAYMENT_METHODS,
+  type ProposalPaymentMethod,
+  countPlaceholders,
+  installmentValue,
+  missingTerms,
+  paymentMethodLabel,
+  renderTermsBlock,
+  upsertTermsBlock,
+} from "@/lib/proposals/proposal-terms-block";
 
 const STEPS = [
   { key: "basics", label: "Identificação" },
@@ -130,6 +141,8 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const [installments, setInstallments] = useState<number | null>(null);
   const [dueDay, setDueDay] = useState<number | null>(null);
   const [validityDays, setValidityDays] = useState<number>(DEFAULT_VALIDITY_DAYS);
+  const [paymentMethod, setPaymentMethod] = useState<ProposalPaymentMethod | null>(null);
+  const [paymentNotes, setPaymentNotes] = useState<string>("");
   const { can } = usePermissions();
   const canEditTerms = ["own", "team", "workspace"].some((s) =>
     can(`techsales.proposals.update.${s}`),
@@ -166,18 +179,57 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
     setInstallments(draft.installments_count ?? null);
     setDueDay(draft.installments_due_day ?? null);
     setValidityDays(draft.validity_days ?? DEFAULT_VALIDITY_DAYS);
+    setPaymentMethod(
+      (PROPOSAL_PAYMENT_METHODS as readonly string[]).includes(draft.payment_method ?? "")
+        ? (draft.payment_method as ProposalPaymentMethod)
+        : null,
+    );
+    setPaymentNotes(draft.payment_notes ?? "");
   }, [draft]);
 
   const currency = draft?.currency ?? "BRL";
   const titleOk = title.trim().length > 0;
+  const terms = useMemo(
+    () => ({
+      total: amount,
+      currency,
+      installments,
+      dueDay,
+      validityDays,
+      paymentMethod,
+      paymentNotes: paymentNotes || null,
+    }),
+    [amount, currency, installments, dueDay, validityDays, paymentMethod, paymentNotes],
+  );
+  // Mantém o bloco "Condições comerciais" do texto em sincronia com os campos.
+  useEffect(() => {
+    setBody((b) => (b ? upsertTermsBlock(b, terms) : b));
+  }, [terms]);
+  const pendingTerms = missingTerms(terms);
+  const placeholders = countPlaceholders(body);
 
   function renderTemplate(t: Template): string {
     if (!draft) return normalizeProposalTemplateHtml(t.html);
-    return renderQuoteTemplate(normalizeProposalTemplateHtml(t.html), {
+    const html = normalizeProposalTemplateHtml(t.html).replace(
+      /<p>\s*\{\{\{terms_block\}\}\}\s*<\/p>/g,
+      "{{{terms_block}}}",
+    );
+    return renderQuoteTemplate(html, {
       items_table: itemsTableHtml(draft.items),
       company: { name: draft.company_name ?? "" },
       contact: { name: draft.contact_name ?? "" },
       deal: { name: draft.deal_name ?? "" },
+      company_legal_name: draft.company_legal_name ?? draft.company_name ?? "",
+      company_cnpj: draft.company_cnpj ?? "",
+      payment_method: paymentMethodLabel(terms),
+      installments_count: installments ?? "",
+      installments_due_day: dueDay ?? "",
+      installment_value: (() => {
+        const v = installmentValue(amount, installments);
+        return v != null ? formatCurrency(v, currency) : "";
+      })(),
+      validity_days: validityDays ?? "",
+      terms_block: renderTermsBlock(terms),
       items: draft.items,
       total: amount != null ? formatCurrency(amount, currency) : "",
       valid_until: expires ? format(parseISO(expires), "dd/MM/yyyy") : "",
@@ -222,6 +274,8 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
               installments_count: installments,
               installments_due_day: dueDay,
               validity_days: validityDays,
+              payment_method: paymentMethod,
+              payment_notes: paymentNotes.trim() || null,
             }
           : {}),
       })
@@ -433,6 +487,41 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                     />
                   </div>
                 </div>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="pw-payment-method">Forma de pagamento</Label>
+                    <Select
+                      value={paymentMethod ?? NONE}
+                      onValueChange={(v) =>
+                        setPaymentMethod(v === NONE ? null : (v as ProposalPaymentMethod))
+                      }
+                      disabled={!canEditTerms}
+                    >
+                      <SelectTrigger id="pw-payment-method">
+                        <SelectValue placeholder="Selecione" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NONE}>Não informada</SelectItem>
+                        {PROPOSAL_PAYMENT_METHODS.map((m) => (
+                          <SelectItem key={m} value={m}>
+                            {PAYMENT_METHOD_LABELS[m]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="pw-payment-notes">Observação do pagamento</Label>
+                    <Input
+                      id="pw-payment-notes"
+                      disabled={!canEditTerms}
+                      maxLength={500}
+                      placeholder="Ex.: chave PIX no CNPJ"
+                      value={paymentNotes}
+                      onChange={(e) => setPaymentNotes(e.target.value)}
+                    />
+                  </div>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   {[draft.company_name, draft.contact_name, draft.deal_name]
                     .filter(Boolean)
@@ -571,6 +660,10 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                     </dd>
                   </div>
                   <div>
+                    <dt className="text-xs text-muted-foreground">Forma de pagamento</dt>
+                    <dd>{paymentMethodLabel(terms) || "Não informada"}</dd>
+                  </div>
+                  <div>
                     <dt className="text-xs text-muted-foreground">Vigência</dt>
                     <dd>{validityDays} dias</dd>
                   </div>
@@ -583,6 +676,22 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                     <dd>{draft.items.length}</dd>
                   </div>
                 </dl>
+                {(pendingTerms.length > 0 || placeholders > 0) && (
+                  <div
+                    role="status"
+                    className="rounded-md border border-warning/40 bg-warning/10 p-3 text-xs text-foreground"
+                  >
+                    {pendingTerms.length > 0 && (
+                      <p>Condições para o contrato ainda vazias: {pendingTerms.join(", ")}.</p>
+                    )}
+                    {placeholders > 0 && (
+                      <p>
+                        O texto ainda tem {placeholders} trecho(s) "[Escreva aqui ...]" para
+                        completar.
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div
                   className="prose prose-sm max-h-64 max-w-none overflow-y-auto rounded-md border bg-muted/30 p-3 dark:prose-invert"
                   dangerouslySetInnerHTML={{ __html: sanitizeHtml(body) }}

@@ -2262,6 +2262,13 @@
       "when": 1794266368569,
       "tag": "0322_contract_templates_allow_archived",
       "breakpoints": true
+    },
+    {
+      "idx": 323,
+      "version": "7",
+      "when": 1794269778684,
+      "tag": "0323_proposal_payment_method",
+      "breakpoints": true
     }
   ]
 }
