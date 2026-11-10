@@ -10584,6 +10584,10 @@
         {
           "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
           "symbol": "sales_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0324_tempo_itens_single_deal_recalc.sql",
+          "symbol": "recompute_deal_amount"
         }
       ],
       "tests": {
