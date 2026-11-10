@@ -2297,6 +2297,13 @@
       "when": 1794333444997,
       "tag": "0327_service_activate_payment_terms",
       "breakpoints": true
+    },
+    {
+      "idx": 328,
+      "version": "7",
+      "when": 1794341620852,
+      "tag": "0328_sales_capabilities_single_context",
+      "breakpoints": true
     }
   ]
 }
