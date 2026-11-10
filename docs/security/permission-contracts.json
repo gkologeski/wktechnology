@@ -10684,6 +10684,14 @@
         {
           "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
           "symbol": "sales_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0326_grant_payment_terms_columns.sql",
+          "symbol": "quotes"
+        },
+        {
+          "file": "drizzle/migrations/0326_grant_payment_terms_columns.sql",
+          "symbol": "proposals"
         }
       ],
       "tests": {
@@ -10717,7 +10725,7 @@
         "src/components/deals/quote-wizard.tsx": "8ae23a5d321b35b2ae33898a7c813ba256bbaa9af8de01771aeedad2d29664ae",
         "src/components/sales/prototype/payment-terms-prototype.tsx": "33bac916b114e1aecb94ef10c63bc655e8b9b274d227b4295dacaadf934fcdfd",
         "src/routes/_authenticated/sales.prototype.tsx": "65dd5daf19997f9df2aa71b55a35a0d766b6225e16811cded2a6d0c425253a9d",
-        "drizzle/migrations/0326_grant_payment_terms_columns.sql": "964eb19e416515e210a0a13fb44bbc5fc41854fd92e87867b78e1cd720050378"
+        "drizzle/migrations/0326_grant_payment_terms_columns.sql": "fcc41e114bbb3c0bd713ff8a256e30913f4cf72904a756800aea7e499b1701ec"
       }
     }
   ],
