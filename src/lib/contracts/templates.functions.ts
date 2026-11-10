@@ -224,6 +224,8 @@ const applyInput = z.object({
   title: z.string().max(200).optional(),
   proposalId: z.string().uuid().optional(),
   contractingLegalEntityId: z.string().uuid().optional(),
+  installmentsCount: z.number().int().min(1).max(120).optional(),
+  installmentsDueDay: z.number().int().min(1).max(31).optional(),
 });
 
 /** Pré-visualização: devolve o corpo já mesclado sem criar contrato. */

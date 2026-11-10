@@ -87,7 +87,7 @@ export function mergeTemplateBody(
       return !TEMPLATE_TOKEN_KEYS.includes(key) || value == null || String(value).trim() === "";
     });
     if (missing.length)
-      throw new Error(`Preencha os dados obrigatórios do modelo: ${missing.join(", ")}.`);
+      throw new Error(missingFieldsMessage(missing));
   }
   return renderTokensWith(html, (key) => {
     const value = getPath(ctx, key);

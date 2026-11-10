@@ -228,6 +228,9 @@ type ContractFromSalesInput = {
   quoteId?: string;
   /** Quando informado, gera um termo aditivo deste contrato principal. */
   mainContractId?: string | null;
+  /** Preenchidos no assistente quando a proposta não traz parcelas/vencimento. */
+  installmentsCount?: number;
+  installmentsDueDay?: number;
 };
 
 export async function contractFromSales(
@@ -378,6 +381,8 @@ export async function contractFromSales(
         dealId: dealId ?? undefined,
         companyId: companyId ?? undefined,
         serviceCatalogId: loaded?.serviceIds[0],
+        installmentsCount: input.installmentsCount,
+        installmentsDueDay: input.installmentsDueDay,
       },
       template,
     );
