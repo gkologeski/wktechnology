@@ -110,6 +110,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const qc = useQueryClient();
   const getDraft = useServerFn(getProposalDraft);
   const createFromQuote = useServerFn(createProposalFromQuote);
+  const confirmingRef = useRef(false);
   const createBlank = useServerFn(createProposal);
   const update = useServerFn(updateProposal);
   const members = useWorkspaceMembers();
@@ -272,11 +273,14 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   async function applyTemplate(t: Template) {
     if (body.trim() && templateId !== t.id) {
       const { confirmDialog } = await import("@/components/ui/confirm-dialog");
+      confirmingRef.current = true;
       const ok = await confirmDialog({
         title: "Trocar o conteúdo?",
         description: "O texto atual será substituído pelo do modelo escolhido.",
         confirmLabel: "Usar modelo",
       });
+      // Mantém a trava até o foco voltar ao assistente.
+      window.setTimeout(() => (confirmingRef.current = false), 300);
       if (!ok) return;
     }
     setTemplateId(t.id);
@@ -386,7 +390,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
         className="max-w-3xl max-h-[90vh] overflow-y-auto"
         // A confirmação "Trocar o conteúdo?" abre por cima; clicar nela não fecha o assistente.
         onInteractOutside={(e) => {
-          if ((e.target as Element | null)?.closest?.('[role="alertdialog"]')) e.preventDefault();
+          if (confirmingRef.current) e.preventDefault();
         }}
       >
         <DialogHeader>
