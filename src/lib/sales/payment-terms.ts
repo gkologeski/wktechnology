@@ -139,7 +139,6 @@ export function suggestPaymentTerms(
 }
 
 // ============= Validação nas bordas (servidor e telas) =============
-
 /**
  * Aceita rótulos de marco vazios: quem reclama é `validatePaymentTerms`, com a
  * mensagem em português. O schema só barra o que não é condição de pagamento.
@@ -180,5 +179,24 @@ export const paymentTermsSchema = z.object({
 export function parsePaymentTerms(raw: unknown): PaymentTerms | null {
   const parsed = paymentTermsSchema.safeParse(raw);
   return parsed.success ? (parsed.data as PaymentTerms) : null;
+}
+
+/** Resumo em uma linha, em português, para telas de revisão. */
+export function describePaymentTerms(t: PaymentTerms): string {
+  const dp = t.downPayment;
+  const entry =
+    dp.kind === "none"
+      ? "sem entrada"
+      : dp.kind === "percent"
+        ? `entrada de ${dp.value}% do total`
+        : `entrada de R$ ${dp.value.toFixed(2)}`;
+  const p = t.plan;
+  const balance =
+    p.kind === "monthly"
+      ? `${p.months} mensalidades no dia ${p.dueDay}`
+      : p.kind === "periodic"
+        ? `${p.count} parcelas a cada ${p.intervalMonths} ${p.intervalMonths === 1 ? "mês" : "meses"}, dia ${p.dueDay}`
+        : `${p.milestones.length} ${p.milestones.length === 1 ? "marco" : "marcos"} de entrega`;
+  return `${entry} · ${balance}`;
 }
 

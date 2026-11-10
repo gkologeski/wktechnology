@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { createQuoteFromDeal, updateQuote, resyncQuoteLineItems } from "@/lib/quotes.functions";
 import { saveQuotePaymentTerms } from "@/lib/sales/quote-payment-terms.functions";
 import {
+  describePaymentTerms,
   parsePaymentTerms,
   suggestPaymentTerms,
   type PaymentTerms,
@@ -654,6 +655,10 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Itens</span>
                   <span>{lineItemsCount.length}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground shrink-0">Condições</span>
+                  <span className="text-right">{describePaymentTerms(terms)}</span>
                 </div>
                 {totals && (
                   <>
