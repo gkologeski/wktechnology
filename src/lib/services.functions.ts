@@ -311,8 +311,41 @@ export const activateService = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { workRpc } = await import("@/lib/access-control/work-core.server");
+    type ServiceRow =
+      import("@/integrations/supabase/types").Database["public"]["Tables"]["services"]["Row"];
+    // CONDICOES-PAGAMENTO: contrato com condições gera o cronograma de contas a receber.
+    const { data: svc } = await context.supabase
+      .from("services")
+      .select("contract_id, starts_at")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (svc?.contract_id) {
+      const { data: ct } = await context.supabase
+        .from("contracts")
+        .select("payment_terms, total_value, signed_at")
+        .eq("id", svc.contract_id)
+        .maybeSingle();
+      const { activationSchedule } = await import("@/lib/services/activation-terms");
+      const start = data.startsAt ?? svc.starts_at ?? new Date().toISOString().slice(0, 10);
+      const schedule = ct
+        ? activationSchedule(
+            ct.payment_terms,
+            ct.total_value != null ? Number(ct.total_value) : null,
+            start,
+            ct.signed_at,
+          )
+        : null;
+      if (schedule) {
+        const r = await workRpc<{ service: ServiceRow }>(
+          context.supabase,
+          "service_activate_with_terms",
+          { p_service: data.id, p_starts: start, p_schedule: schedule },
+        );
+        return r.service;
+      }
+    }
     const result = await workRpc<{
-      service: import("@/integrations/supabase/types").Database["public"]["Tables"]["services"]["Row"];
+      service: ServiceRow;
     }>(context.supabase, "service_bill_checked", {
       p_service: data.id,
       p_mode: "activate",
