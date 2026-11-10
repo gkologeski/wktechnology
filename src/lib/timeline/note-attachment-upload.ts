@@ -45,7 +45,6 @@ export async function uploadAuthorizedNoteAttachment(
     contentType: input.type || "application/octet-stream",
   });
   if (upErr) {
-    console.error("note attachment upload failed", upErr.message);
     throw new Error(`Não foi possível enviar o anexo ${input.name}. Tente novamente.`);
   }
   return { path, size: bytes.length };

@@ -220,8 +220,7 @@ export async function uploadTimelineFiles(userId: string, files: File[]): Promis
         data: { name: file.name, type: file.type, base64: await fileToBase64(file) },
       });
       out.push({ path, name: file.name, size: file.size, type: file.type });
-    } catch (error) {
-      console.error("note attachment upload failed", error);
+    } catch {
       throw new Error(`Não foi possível enviar o anexo ${file.name}. Tente novamente.`);
     }
   }

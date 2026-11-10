@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { uploadAuthorizedNoteAttachment } from "./note-attachments.server";
+import { uploadAuthorizedNoteAttachment } from "./note-attachment-upload";
 
 const USER = "11111111-1111-1111-1111-111111111111";
 const input = { name: "Especificação.docx", type: "application/msword", base64: btoa("abc") };

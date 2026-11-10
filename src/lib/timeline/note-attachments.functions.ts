@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { uploadAuthorizedNoteAttachment } from "./note-attachment-upload";
 
 /** Envia um anexo de nota/atividade pelo servidor, autorizado pelo banco como o usuário. */
 export const uploadNoteAttachment = createServerFn({ method: "POST" })
@@ -15,7 +16,6 @@ export const uploadNoteAttachment = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data, context }) => {
-    const { uploadAuthorizedNoteAttachment } = await import("./note-attachments.server");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const rpc = (name: string, args: Record<string, unknown>) =>
       (
