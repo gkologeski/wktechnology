@@ -16,8 +16,7 @@ function store(opts: {
   readError?: string;
   writeError?: string;
 }): QuotePaymentStore & { written: PaymentTerms | null } {
-  const state = { written: null as PaymentTerms | null };
-  return {
+  const s: QuotePaymentStore & { written: PaymentTerms | null } = {
     written: null,
     async readTotal() {
       if (opts.readError) throw new Error(opts.readError);
@@ -25,9 +24,10 @@ function store(opts: {
     },
     async writeTerms(_id, terms) {
       if (opts.writeError) throw new Error(opts.writeError);
-      state.written = terms;
+      s.written = terms;
     },
   };
+  return s;
 }
 
 describe("condições de pagamento da cotação", () => {
