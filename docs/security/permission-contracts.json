@@ -69,8 +69,7 @@
       },
       "files": {
         "src/lib/home/dashboard.functions.ts": "d61bb8a39343d4e34844e827e7d3f05f83b582112e00897c2c27e331b8e00a67",
-        "src/routes/_authenticated/home.index.tsx": "85ec3f13f03e4ecf11f2e1c7881e472ec6fc36d9a1b8337ded2f4b010a5bf4da",
-        "src/routes/_authenticated/home.print.tsx": "b864596de3b93a06a8faaa339ea15116d6851ff24327bdfb389fb0c32149c185"
+        "src/routes/_authenticated/home.index.tsx": "85ec3f13f03e4ecf11f2e1c7881e472ec6fc36d9a1b8337ded2f4b010a5bf4da"
       }
     },
     {

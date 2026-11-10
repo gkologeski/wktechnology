@@ -175,7 +175,6 @@
 /fraud-flags;Tela autenticada;src/routes/_authenticated/fraud-flags.tsx;12;ats;TechHire;techhire.fraud_flags;;;inventario_estatico_a_validar
 /home;Tela autenticada;src/routes/_authenticated/home.index.tsx;29;não exclusivo/compartilhado;Sistema;system.home;;;inventario_estatico_a_validar
 /home/access;Tela autenticada;src/routes/_authenticated/home.access.tsx;4;não exclusivo/compartilhado;Sistema;system.home;;;inventario_estatico_a_validar
-/home/print;Tela autenticada;src/routes/_authenticated/home.print.tsx;19;não exclusivo/compartilhado;Sistema;system.home;;;inventario_estatico_a_validar
 /hunting;Tela autenticada;src/routes/_authenticated/(ats)/hunting/index.tsx;10;ats;TechHire;techhire.hunting;;;inventario_estatico_a_validar
 /hunting/captures;Tela autenticada;src/routes/_authenticated/(ats)/hunting/captures.tsx;37;ats;TechHire;techhire.hunting.captures;;;inventario_estatico_a_validar
 /hunting/install;Tela autenticada;src/routes/_authenticated/(ats)/hunting/install.tsx;10;ats;TechHire;techhire.hunting;;;inventario_estatico_a_validar

@@ -24,7 +24,6 @@ is_published: true
 - `/catalog/services`: Manter o catálogo de serviços
 - `/files`: Consultar e organizar arquivos
 - `/home`: Consultar o dashboard do ERP
-- `/home/print`: Preparar a impressão do dashboard
 - `/modules`: Explorar os módulos do workspace
 - `/onboarding/$entity`: Usar o onboarding guiado de uma entidade
 - `/settings`: Atualizar o perfil da conta

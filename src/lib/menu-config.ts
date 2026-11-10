@@ -52,7 +52,6 @@ import {
   Linkedin,
   Phone,
   Smartphone,
-  Printer,
   GraduationCap,
   Megaphone as AdsIcon,
   Fingerprint,
@@ -463,7 +462,6 @@ export const SIDEBAR_GENERAL_ITEMS: SidebarItem[] = [
   { title: "Meus chamados", url: "/my-bug-reports", icon: Bug },
   { title: "Integrações", url: "/integrations", icon: Plug, need: "admin" },
   { title: "Marketplace", url: "/marketplace", icon: ShoppingBag, need: "admin" },
-  { title: "Imprimir início", url: "/home/print", icon: Printer },
 ];
 
 // --- SETTINGS ----------------------------------------------------------------

@@ -468,7 +468,6 @@ Legenda das colunas: **Menu** = ✔ item próprio, ↳ subtela de um item, — s
 | `/catalog/services` | [CONFIRMAR] Catálogo de Serviços | ServiceCatalogPage · `ui/button` | ✔ | todo membro ativo com o módulo licenciado | criar, editar, excluir/arquivar | `techsales.catalog.services.update.workspace` |
 | `/files` | Arquivos · TechERP | FilesPage · `ui/button` | ✔ | todo membro ativo com o módulo licenciado | criar, editar, excluir/arquivar | — |
 | `/home` | Dashboard / TechERP | ErpHomeDashboard · `date-range-picker` | ✔ | todo membro ativo com o módulo licenciado | importar, exportar, ações em massa | — |
-| `/home/print` | [CONFIRMAR] Dashboard | HomePrintPage | ↳ Dashboard | todo membro ativo com o módulo licenciado | [CONFIRMAR] somente leitura? | — |
 | `/modules` | Membros | ErpHome · `techhire/ui` | ✔ | todo membro ativo com o módulo licenciado | [CONFIRMAR] somente leitura? | — |
 | `/onboarding/$entity` | Onboarding guiado · ${params.entity} | OnboardingEntityPage · `page-header` | — | [CONFIRMAR] sem item de menu | criar, ações em massa, automação/workflow | — |
 | `/settings` | [CONFIRMAR] Perfil | SettingsIndex · `ui/card` | ✔ | todo membro ativo com o módulo licenciado | editar | — |
