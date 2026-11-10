@@ -1,6 +1,7 @@
 // Assistente da proposta (mesmo padrão do assistente de cotação):
 // Identificação -> Itens e valores -> Conteúdo (modelo de proposta) -> Revisão.
 // Nada é gravado até "Criar proposta"; ao concluir, abre o documento.
+import { missingPaymentTermsMessage } from "@/lib/proposals/proposal-terms-check";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -296,6 +297,10 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
 
   async function submit() {
     if (!source || !draft) return;
+    if (canEditTerms) {
+      const termsErr = missingPaymentTermsMessage({ installments, dueDay });
+      if (termsErr) return void toast.error(termsErr);
+    }
     setSaving(true);
     try {
       if (editId) {

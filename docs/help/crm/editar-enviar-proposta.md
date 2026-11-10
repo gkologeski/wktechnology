@@ -8,7 +8,7 @@ route_pattern: /proposals/$id
 min_permission:
 audience: internal
 sort_order: 203
-version: 4
+version: 5
 is_published: true
 ---
 # Editar e enviar uma proposta
@@ -54,7 +54,7 @@ A edição atualiza a proposta. A solicitação de revisão mostra "Aprovação 
 
 ## Condições para o contrato
 
-No passo **Dados** informe **Parcelas**, **Dia de vencimento** e **Vigência do contrato (dias)** — a vigência vem com 90 dias por padrão. Esses campos só ficam editáveis para quem pode alterar propostas. Ao gerar o contrato a partir da proposta aceita, eles são copiados automaticamente.
+No passo **Dados** informe **Parcelas** e **Dia de vencimento** (obrigatórios para salvar a proposta, pois são usados no contrato) e **Vigência do contrato (dias)** — a vigência vem com 90 dias por padrão. Esses campos só ficam editáveis para quem pode alterar propostas. Ao gerar o contrato a partir da proposta aceita, eles são copiados automaticamente.
 
 ## Forma de pagamento e Condições comerciais
 
