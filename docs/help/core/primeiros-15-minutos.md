@@ -8,7 +8,7 @@ route_pattern:
 min_permission: 
 audience: internal
 sort_order: 123
-version: 1
+version: 2
 is_published: true
 ---
 # Primeiros 15 minutos em Core ERP e Configurações

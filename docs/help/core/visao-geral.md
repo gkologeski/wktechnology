@@ -8,7 +8,7 @@ route_pattern:
 min_permission: 
 audience: internal
 sort_order: 122
-version: 1
+version: 2
 is_published: true
 ---
 # Visão geral de Core ERP e Configurações
