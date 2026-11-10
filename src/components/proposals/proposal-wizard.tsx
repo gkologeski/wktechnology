@@ -1,7 +1,7 @@
 // Assistente da proposta (mesmo padrão do assistente de cotação):
 // Identificação -> Itens e valores -> Conteúdo (modelo de proposta) -> Revisão.
 // Nada é gravado até "Criar proposta"; ao concluir, abre o documento.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -110,6 +110,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const qc = useQueryClient();
   const getDraft = useServerFn(getProposalDraft);
   const createFromQuote = useServerFn(createProposalFromQuote);
+  const confirmingRef = useRef(false);
   const createBlank = useServerFn(createProposal);
   const update = useServerFn(updateProposal);
   const members = useWorkspaceMembers();
@@ -272,11 +273,14 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   async function applyTemplate(t: Template) {
     if (body.trim() && templateId !== t.id) {
       const { confirmDialog } = await import("@/components/ui/confirm-dialog");
+      confirmingRef.current = true;
       const ok = await confirmDialog({
         title: "Trocar o conteúdo?",
         description: "O texto atual será substituído pelo do modelo escolhido.",
         confirmLabel: "Usar modelo",
       });
+      // Mantém a trava até o foco voltar ao assistente.
+      window.setTimeout(() => (confirmingRef.current = false), 300);
       if (!ok) return;
     }
     setTemplateId(t.id);
@@ -381,8 +385,17 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const chosen = templates.find((t) => t.id === templateId) ?? null;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => (saving ? undefined : onOpenChange(v))}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+    <Dialog
+      open={open}
+      onOpenChange={(v) => (saving || (!v && confirmingRef.current) ? undefined : onOpenChange(v))}
+    >
+      <DialogContent
+        className="max-w-3xl max-h-[90vh] overflow-y-auto"
+        // A confirmação "Trocar o conteúdo?" abre por cima; clicar nela não fecha o assistente.
+        onInteractOutside={(e) => {
+          if (confirmingRef.current) e.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
             {editId ? "Editar proposta" : "Nova proposta"}

@@ -2,6 +2,7 @@
 // Sempre com o cliente autenticado do usuário (RLS aplicada).
 import { loadAcceptedProposalSource } from "@/lib/contracts/accepted-proposal.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { legacyInstallments, parsePaymentTerms } from "@/lib/sales/payment-terms";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 import type { DealLineItemRow } from "@/lib/contracts/contract-create.server";
@@ -170,12 +171,21 @@ export async function proposalFromQuote(
       quote_id: quote.id,
       proposal_template_id: overrides.proposal_template_id ?? null,
       payment_terms: quote.payment_terms ?? {},
+      ...legacyFromTerms(quote.payment_terms, quote.total),
       variables: {},
     } as never)
     .select("id")
     .single();
   if (error) throw new Error(error.message);
   return { id: (prop as { id: string }).id, reused: false };
+}
+
+/** Parcelas/dia equivalentes às condições, para modelos que ainda usam esses campos. */
+function legacyFromTerms(raw: unknown, total: unknown) {
+  const t = parsePaymentTerms(raw);
+  if (!t) return {};
+  const l = legacyInstallments(t, Number(total ?? 0));
+  return { installments_count: l.installments, installments_due_day: l.dueDay };
 }
 
 type ProposalOrigin = {
@@ -399,12 +409,14 @@ export async function contractFromSales(
 
   // CONDICOES-PAGAMENTO: condições da proposta (ou da cotação) seguem para o contrato.
   let paymentTerms: unknown = quote?.payment_terms ?? null;
+  let paymentMethod: string | null = null;
   if (proposal) {
     const { data: pt } = await supabase
       .from("proposals")
-      .select("payment_terms")
+      .select("payment_terms, payment_method")
       .eq("id", proposal.id)
       .maybeSingle();
+    paymentMethod = (pt as { payment_method: string | null } | null)?.payment_method ?? null;
     const raw = (pt as { payment_terms: unknown } | null)?.payment_terms;
     if (raw && typeof raw === "object" && "plan" in raw) paymentTerms = raw;
   }
@@ -441,10 +453,16 @@ export async function contractFromSales(
     items: loaded ? loaded.items : null,
     bodyHtml,
   });
-  if (contractTerms) {
+  if (contractTerms || paymentMethod) {
     const { error: ptErr } = await supabase
       .from("contracts")
-      .update({ payment_terms: contractTerms as never })
+      .update({
+        ...(contractTerms ? { payment_terms: contractTerms as never } : {}),
+        // Forma de pagamento da proposta, quando o contrato ainda não tem uma.
+        ...(paymentMethod && !(result.contract as { payment_method?: string | null }).payment_method
+          ? { payment_method: paymentMethod }
+          : {}),
+      })
       .eq("id", (result.contract as { id: string }).id);
     if (ptErr)
       throw new Error(
