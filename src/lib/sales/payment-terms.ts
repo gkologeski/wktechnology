@@ -4,6 +4,8 @@
  * Usada por cotação, proposta, contrato e (na ativação do serviço) contas a receber.
  */
 
+import { z } from "zod";
+
 export type DownPayment =
   | { kind: "none" }
   | { kind: "amount"; value: number }
@@ -135,3 +137,66 @@ export function suggestPaymentTerms(
     plan: { kind: "milestones", milestones: [{ label: "Entrega final", percent: 100 }] },
   };
 }
+
+// ============= Validação nas bordas (servidor e telas) =============
+/**
+ * Aceita rótulos de marco vazios: quem reclama é `validatePaymentTerms`, com a
+ * mensagem em português. O schema só barra o que não é condição de pagamento.
+ */
+export const downPaymentSchema = z.union([
+  z.object({ kind: z.literal("none") }),
+  z.object({ kind: z.literal("amount"), value: z.number().min(0) }),
+  z.object({ kind: z.literal("percent"), value: z.number().min(0).max(100) }),
+]);
+
+export const installmentPlanSchema = z.union([
+  z.object({
+    kind: z.literal("monthly"),
+    months: z.number().int().min(1).max(120),
+    dueDay: z.number().int().min(1).max(31),
+  }),
+  z.object({
+    kind: z.literal("periodic"),
+    count: z.number().int().min(1).max(120),
+    intervalMonths: z.number().int().min(1).max(12),
+    dueDay: z.number().int().min(1).max(31),
+  }),
+  z.object({
+    kind: z.literal("milestones"),
+    milestones: z
+      .array(z.object({ label: z.string().max(120), percent: z.number().min(0).max(100) }))
+      .min(1)
+      .max(120),
+  }),
+]);
+
+export const paymentTermsSchema = z.object({
+  downPayment: downPaymentSchema,
+  plan: installmentPlanSchema,
+});
+
+/** null quando o valor guardado não é uma condição de pagamento válida. */
+export function parsePaymentTerms(raw: unknown): PaymentTerms | null {
+  const parsed = paymentTermsSchema.safeParse(raw);
+  return parsed.success ? (parsed.data as PaymentTerms) : null;
+}
+
+/** Resumo em uma linha, em português, para telas de revisão. */
+export function describePaymentTerms(t: PaymentTerms): string {
+  const dp = t.downPayment;
+  const entry =
+    dp.kind === "none"
+      ? "sem entrada"
+      : dp.kind === "percent"
+        ? `entrada de ${dp.value}% do total`
+        : `entrada de R$ ${dp.value.toFixed(2)}`;
+  const p = t.plan;
+  const balance =
+    p.kind === "monthly"
+      ? `${p.months} mensalidades no dia ${p.dueDay}`
+      : p.kind === "periodic"
+        ? `${p.count} parcelas a cada ${p.intervalMonths} ${p.intervalMonths === 1 ? "mês" : "meses"}, dia ${p.dueDay}`
+        : `${p.milestones.length} ${p.milestones.length === 1 ? "marco" : "marcos"} de entrega`;
+  return `${entry} · ${balance}`;
+}
+

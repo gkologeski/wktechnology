@@ -7,6 +7,14 @@ import { useServerFn } from "@tanstack/react-start";
 import { Check, ChevronLeft, ChevronRight, ExternalLink, Loader2, Slash } from "lucide-react";
 import { toast } from "sonner";
 import { createQuoteFromDeal, updateQuote, resyncQuoteLineItems } from "@/lib/quotes.functions";
+import { saveQuotePaymentTerms } from "@/lib/sales/quote-payment-terms.functions";
+import {
+  describePaymentTerms,
+  parsePaymentTerms,
+  suggestPaymentTerms,
+  type PaymentTerms,
+} from "@/lib/sales/payment-terms";
+import { PaymentTermsEditor } from "@/components/sales/payment-terms-editor";
 import { listQuoteTemplates } from "@/lib/quote-templates.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +68,8 @@ type QuoteRow = {
   discount_total: number | string | null;
   tax_total: number | string | null;
   total: number | string | null;
+  payment_terms?: unknown;
+  service_line?: string | null;
 };
 
 type Props = {
@@ -72,6 +82,7 @@ type Props = {
 const STEPS = [
   { key: "basics", label: "Modelo & Identificação" },
   { key: "items", label: "Itens de linha" },
+  { key: "terms", label: "Condições de pagamento" },
   { key: "notes", label: "Observações & Termos" },
   { key: "review", label: "Revisão & Publicação" },
 ] as const;
@@ -92,6 +103,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
   const createFn = useServerFn(createQuoteFromDeal);
   const updateFn = useServerFn(updateQuote);
   const resyncFn = useServerFn(resyncQuoteLineItems);
+  const saveTermsFn = useServerFn(saveQuotePaymentTerms);
   const listTemplatesFn = useServerFn(listQuoteTemplates);
 
   const [step, setStep] = useState(0);
@@ -124,6 +136,11 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
     templateId: existingQuote?.template_id ?? "",
   });
 
+  // Condições de pagamento: o que está gravado vence; sem isso, a sugestão vem dos itens.
+  const [storedTerms, setStoredTerms] = useState<PaymentTerms | null>(() =>
+    parsePaymentTerms(existingQuote?.payment_terms),
+  );
+
   // Reset when dialog opens/closes or existingQuote changes
   useEffect(() => {
     if (!open) return;
@@ -138,6 +155,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
       terms: existingQuote?.terms ?? "",
       templateId: existingQuote?.template_id ?? "",
     });
+    setStoredTerms(parsePaymentTerms(existingQuote?.payment_terms));
     setTotals(
       existingQuote
         ? {
@@ -203,6 +221,40 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
     enabled: open,
   });
   const hasLineItems = lineItemsCount.length > 0;
+
+  // Nomes dos itens da cotação: servem só para sugerir as condições de pagamento.
+  type ItemKindRow = {
+    name: string | null;
+    service: { name: string | null } | null;
+    preset: { name: string | null } | null;
+  };
+  const { data: quoteItemRows = [] } = useQuery({
+    queryKey: ["quote-line-item-kinds", quoteId],
+    queryFn: async () => {
+      if (!quoteId) return [] as ItemKindRow[];
+      const { data, error } = await supabase
+        .from("quote_line_items")
+        .select("name, service:service_catalog(name), preset:contracting_presets(name)")
+        .eq("quote_id", quoteId)
+        .order("position");
+      if (error) throw error;
+      return (data ?? []) as unknown as ItemKindRow[];
+    },
+    enabled: open && Boolean(quoteId),
+  });
+  const itemKinds = useMemo(() => {
+    const out: string[] = [];
+    if (existingQuote?.service_line) out.push(existingQuote.service_line);
+    for (const it of quoteItemRows) {
+      if (it.name) out.push(it.name);
+      if (it.service?.name) out.push(it.service.name);
+      if (it.preset?.name) out.push(it.preset.name);
+    }
+    return out;
+  }, [quoteItemRows, existingQuote?.service_line]);
+
+  const suggestedTerms = useMemo(() => suggestPaymentTerms(itemKinds), [itemKinds]);
+  const terms = storedTerms ?? suggestedTerms;
 
   const currency = deal?.currency ?? "BRL";
 
@@ -291,6 +343,16 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const saveTermsMut = useMutation({
+    mutationFn: async () => {
+      if (!quoteId) return;
+      await saveTermsFn({ data: { id: quoteId, terms } });
+      setStoredTerms(terms);
+    },
+    onSuccess: () => invalidate(),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
   const publishMut = useMutation({
     mutationFn: async () => {
       if (!quoteId) return;
@@ -340,6 +402,8 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
       } else if (step === 1) {
         await resyncMut.mutateAsync();
       } else if (step === 2) {
+        await saveTermsMut.mutateAsync();
+      } else if (step === 3) {
         await saveNotesMut.mutateAsync();
       }
       setStep((s) => Math.min(STEPS.length - 1, s + 1));
@@ -356,7 +420,8 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
     // Persist whatever step we're on
     try {
       if (step === 0) await saveBasicsMut.mutateAsync();
-      else if (step === 2) await saveNotesMut.mutateAsync();
+      else if (step === 2) await saveTermsMut.mutateAsync();
+      else if (step === 3) await saveNotesMut.mutateAsync();
       toast.success("Rascunho salvo.");
       onOpenChange(false);
     } catch {
@@ -429,6 +494,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
   const isBusy =
     saveBasicsMut.isPending ||
     resyncMut.isPending ||
+    saveTermsMut.isPending ||
     saveNotesMut.isPending ||
     publishMut.isPending;
 
@@ -540,6 +606,15 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
           )}
 
           {step === 2 && (
+            <PaymentTermsEditor
+              terms={terms}
+              onChange={(t) => setStoredTerms(t)}
+              total={Number(totals?.total ?? 0)}
+              currency={currency}
+            />
+          )}
+
+          {step === 3 && (
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <Label>Observações</Label>
@@ -562,7 +637,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
             </div>
           )}
 
-          {step === 3 && (
+          {step === 4 && (
             <div className="space-y-4">
               <div className="rounded-md border p-3 text-sm space-y-1.5">
                 <div className="flex justify-between">
@@ -580,6 +655,10 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Itens</span>
                   <span>{lineItemsCount.length}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground shrink-0">Condições</span>
+                  <span className="text-right">{describePaymentTerms(terms)}</span>
                 </div>
                 {totals && (
                   <>

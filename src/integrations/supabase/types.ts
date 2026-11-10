@@ -21801,6 +21801,7 @@ export type Database = {
           owner_id: string
           payment_method: string | null
           payment_notes: string | null
+          payment_terms: Json
           proposal_template_id: string | null
           public_token: string | null
           quote_id: string | null
@@ -21833,6 +21834,7 @@ export type Database = {
           owner_id: string
           payment_method?: string | null
           payment_notes?: string | null
+          payment_terms?: Json
           proposal_template_id?: string | null
           public_token?: string | null
           quote_id?: string | null
@@ -21865,6 +21867,7 @@ export type Database = {
           owner_id?: string
           payment_method?: string | null
           payment_notes?: string | null
+          payment_terms?: Json
           proposal_template_id?: string | null
           public_token?: string | null
           quote_id?: string | null
@@ -23872,6 +23875,7 @@ export type Database = {
           paid_at: string | null
           payment_link_url: string | null
           payment_session_id: string | null
+          payment_terms: Json
           public_token: string
           sent_at: string | null
           service_line: string | null
@@ -23906,6 +23910,7 @@ export type Database = {
           paid_at?: string | null
           payment_link_url?: string | null
           payment_session_id?: string | null
+          payment_terms?: Json
           public_token?: string
           sent_at?: string | null
           service_line?: string | null
@@ -23940,6 +23945,7 @@ export type Database = {
           paid_at?: string | null
           payment_link_url?: string | null
           payment_session_id?: string | null
+          payment_terms?: Json
           public_token?: string
           sent_at?: string | null
           service_line?: string | null

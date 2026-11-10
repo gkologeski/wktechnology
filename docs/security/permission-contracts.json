@@ -8062,11 +8062,7 @@
         "src/components/hiring/recruitment-authorization-panel.tsx": "63999fab8527aaba7d5bce74450e4c9730b86a54a45104f9952d28de00ad4f8d",
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
-        "src/lib/hiring/signature.functions.ts": "fbd40253714587c00093d0dc56a57075f1d627cb29c41dadc428f8821efbcbcb",
-        "src/components/sales/prototype/payment-terms-prototype.tsx": "fda5d076218282fda0fa99e4cf9866baa86af6cd66707b4856520b87f2a82e70",
-        "src/routes/_authenticated/sales.prototype.tsx": "65dd5daf19997f9df2aa71b55a35a0d766b6225e16811cded2a6d0c425253a9d",
-        "src/components/sales/prototype/payment-terms-prototype.tsx": "fda5d076218282fda0fa99e4cf9866baa86af6cd66707b4856520b87f2a82e70",
-        "src/routes/_authenticated/sales.prototype.tsx": "65dd5daf19997f9df2aa71b55a35a0d766b6225e16811cded2a6d0c425253a9d"
+        "src/lib/hiring/signature.functions.ts": "fbd40253714587c00093d0dc56a57075f1d627cb29c41dadc428f8821efbcbcb"
       }
     },
     {
@@ -9748,7 +9744,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic.",
       "files": {
-        "src/integrations/supabase/types.ts": "534fd02d7b8cc6d8fd3afe6748a005697786bb27d129d4b5b1655ac4c933c1df",
+        "src/integrations/supabase/types.ts": "7b455120b323a2388a91cb7d55936f48322c84bc63fc73be98f6da8e1817483c",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -10483,14 +10479,6 @@
       }
     },
     {
-      "id": "sales-payment-terms-rule",
-      "kind": "presentation",
-      "rationale": "CONDICOES-PAGAMENTO: pure payment schedule rule. No I/O, no actions; persistence will be gated by quote/proposal/contract contracts.",
-      "files": {
-        "src/lib/sales/payment-terms.ts": "338f987e260dc729d2c654a673cd7da7a74efd9ba17f76699e7dd4ff2d80596f"
-      }
-    },
-    {
       "id": "note-attachment-server-upload",
       "kind": "business",
       "resources": [
@@ -10632,6 +10620,103 @@
         "drizzle/migrations/0324_tempo_itens_single_deal_recalc.sql": "0f1f674b5790a54330040db4bc3c495f1a8e1446aae2b55a711bf1c6ade25d2a",
         "src/components/deals/use-line-items.ts": "431e8ba644b154cb368bf352c5c803b892597fd3555c0379006cd562092b05c4",
         "src/lib/deals/line-item-write.ts": "5528e0ebd8d08c45f7b7b01cce08238765d856119475c7c4b425219b17ad2fa6"
+      }
+    },
+    {
+      "id": "sales-quote-payment-terms",
+      "kind": "business",
+      "resources": [
+        "techsales.quotes"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.quotes.update.own",
+        "techsales.quotes.update.team",
+        "techsales.quotes.update.workspace"
+      ],
+      "rationale": "CONDICOES-PAGAMENTO: a cotação passa a guardar entrada e saldo (mensal, parcelas ou marcos). A gravação é uma server function autenticada que exige techsales.quotes update, confere a linha com assertSalesRecord e só escreve na própria cotação; o total lido é o da própria linha (RLS), e números que não fecham são recusados antes de gravar. Coluna nova com padrão {} e preenchimento das propostas antigas a partir das parcelas existentes: nenhuma coluna, política ou grant existente foi alterado.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/sales/quote-payment-terms.write.ts",
+          "symbol": "saveQuotePaymentTermsCore"
+        },
+        {
+          "file": "src/lib/sales/payment-terms.ts",
+          "symbol": "validatePaymentTerms"
+        },
+        {
+          "file": "src/lib/sales/payment-terms.ts",
+          "symbol": "buildPaymentSchedule"
+        },
+        {
+          "file": "src/components/sales/payment-terms-editor.tsx",
+          "symbol": "PaymentTermsEditor"
+        },
+        {
+          "file": "src/components/sales/prototype/payment-terms-prototype.tsx",
+          "symbol": "PaymentTermsPrototype"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0325_quote_payment_terms.sql",
+          "symbol": "quotes"
+        },
+        {
+          "file": "drizzle/migrations/0325_quote_payment_terms.sql",
+          "symbol": "proposals"
+        },
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_context_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/sales/quote-payment-terms.test.ts",
+          "name": "quote payment terms allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/sales/quote-payment-terms.test.ts",
+          "name": "quote payment terms refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/sales/quote-payment-terms.test.ts",
+          "name": "quote payment terms refuses an explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/sales/quote-payment-terms.test.ts",
+          "name": "quote payment terms refuses a foreign workspace quote"
+        },
+        "inactive_member": {
+          "file": "src/lib/sales/quote-payment-terms.test.ts",
+          "name": "quote payment terms refuses an inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0325_quote_payment_terms.sql": "cb6ba51e5baa85548e547d5c7d01dd89a6f96a1217a3ec524ff05d056f21e861",
+        "src/lib/sales/payment-terms.ts": "4ec66158f4106a535e26d3df8d9ce305bf84c736a51739739cd4faa0c03f487c",
+        "src/lib/sales/quote-payment-terms.write.ts": "53bd243aa624ab155416251f9977ef77dcdc801851d2be2443034f4924cfe836",
+        "src/lib/sales/quote-payment-terms.functions.ts": "5d76c67e6afe9903722e51c0948844e8db097c5b5ef3cf5be8bbf2eeddade7b3",
+        "src/components/sales/payment-terms-editor.tsx": "dfdc5add573924ccf80b0c7c5d04a47a81f8c391fdfe64afaf57c28945569d1a",
+        "src/components/deals/quote-wizard.tsx": "8ae23a5d321b35b2ae33898a7c813ba256bbaa9af8de01771aeedad2d29664ae",
+        "src/components/sales/prototype/payment-terms-prototype.tsx": "33bac916b114e1aecb94ef10c63bc655e8b9b274d227b4295dacaadf934fcdfd",
+        "src/routes/_authenticated/sales.prototype.tsx": "65dd5daf19997f9df2aa71b55a35a0d766b6225e16811cded2a6d0c425253a9d"
       }
     }
   ],
