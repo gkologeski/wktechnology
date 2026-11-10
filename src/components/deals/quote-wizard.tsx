@@ -7,6 +7,13 @@ import { useServerFn } from "@tanstack/react-start";
 import { Check, ChevronLeft, ChevronRight, ExternalLink, Loader2, Slash } from "lucide-react";
 import { toast } from "sonner";
 import { createQuoteFromDeal, updateQuote, resyncQuoteLineItems } from "@/lib/quotes.functions";
+import { saveQuotePaymentTerms } from "@/lib/sales/quote-payment-terms.functions";
+import {
+  parsePaymentTerms,
+  suggestPaymentTerms,
+  type PaymentTerms,
+} from "@/lib/sales/payment-terms";
+import { PaymentTermsEditor } from "@/components/sales/payment-terms-editor";
 import { listQuoteTemplates } from "@/lib/quote-templates.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +67,8 @@ type QuoteRow = {
   discount_total: number | string | null;
   tax_total: number | string | null;
   total: number | string | null;
+  payment_terms?: unknown;
+  service_line?: string | null;
 };
 
 type Props = {
@@ -72,6 +81,7 @@ type Props = {
 const STEPS = [
   { key: "basics", label: "Modelo & Identificação" },
   { key: "items", label: "Itens de linha" },
+  { key: "terms", label: "Condições de pagamento" },
   { key: "notes", label: "Observações & Termos" },
   { key: "review", label: "Revisão & Publicação" },
 ] as const;
@@ -92,6 +102,7 @@ export function QuoteWizard({ dealId, open, onOpenChange, existingQuote }: Props
   const createFn = useServerFn(createQuoteFromDeal);
   const updateFn = useServerFn(updateQuote);
   const resyncFn = useServerFn(resyncQuoteLineItems);
+  const saveTermsFn = useServerFn(saveQuotePaymentTerms);
   const listTemplatesFn = useServerFn(listQuoteTemplates);
 
   const [step, setStep] = useState(0);
