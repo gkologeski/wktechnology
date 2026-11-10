@@ -8054,7 +8054,7 @@
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
         "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
-        "src/routes/_authenticated/contracts.$id.tsx": "fd50aac1de76fed8580d44e4350019ec67231e1e794a567ec9b5fbf3b2ca1244",
+        "src/routes/_authenticated/contracts.$id.tsx": "2f83878ad639bffafe2136c0ed5f451d507aecd0f347c9d0e827d163ac05ff31",
         "src/routes/_authenticated/settings.esign.tsx": "3f34242a562fb3977f527789872cac53341b84205a943bf2c3fbcb884ce67e48",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
@@ -9744,7 +9744,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic.",
       "files": {
-        "src/integrations/supabase/types.ts": "7b455120b323a2388a91cb7d55936f48322c84bc63fc73be98f6da8e1817483c",
+        "src/integrations/supabase/types.ts": "397e1162a870b4b3fc25b13311f555d1c9301657cf792f3b464b505a891b36b1",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -10215,13 +10215,13 @@
         "src/lib/contracts/template-merge.server.ts": "7d34397cf7f273533cd923410da205589ab61b88c438e673cc597faba7374644",
         "src/lib/contracts/templates.functions.ts": "0cc3731ac8ed3660b059eae7f37581ce72ccb8bebbe74834a4f7c437791f7d27",
         "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
-        "src/lib/sales-flow.server.ts": "69cba0abb73f7b843e9ccbb6cef7192fbb11fc3e73d69ba2e87260de76124dce",
+        "src/lib/sales-flow.server.ts": "493ea18318e669725aeef5620486de034db9bb7ca905f73fa3fe93eda0404f9f",
         "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "88cfa5c7cd0299074465dc501366ce8245c576c0ce355d73f83bcd5012d2f2cf",
         "src/lib/sales-flow.functions.ts": "143d9934d1af165fdd16768c1abebf7b7cc59bcc7df47f945783dd92e19ab222",
-        "src/components/proposals/proposal-wizard.tsx": "20ce56aa632d8cdc92d31964210cbb019cd0988b7b142d886527e104383d5d13",
-        "src/lib/proposals/proposal-draft.server.ts": "fee16e6e60f05d647d0f46f2280144d91ee81de59f67b41868204486a42f664e",
+        "src/components/proposals/proposal-wizard.tsx": "5496f0f754b83425e79fe8d23fc3a08fe26340af8346afeff68b637e0b38c0cd",
+        "src/lib/proposals/proposal-draft.server.ts": "0a0c62f26c7ec07fe1aa620552cef9f1c41144acacf99ef18bdb93df7f9c1558",
         "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
         "drizzle/migrations/0321_proposal_versions_cascade.sql": "d74b28603f0279e6cb749f1af8ae34658c561ed0f659964fea8d6f4a2b257bcf",
         "drizzle/migrations/0323_proposal_payment_method.sql": "cf944cd4385707aeb616275a4e4a84839911ae49e6f3a50c3446c3f216bf9a99"
@@ -10399,10 +10399,10 @@
       "kind": "presentation",
       "rationale": "DADOS-CONTRATO/ROLAGEM-CONTRATO pure helpers: contract term defaults and clamps, proposal draft type fields, and the lazy editor wrapper forwarding maxHeight. No I/O, routes, actions or data access; writes stay under contract-accepted-proposal-mapping. TEXTO-PROPOSTA: pure proposal terms block helper. TEXTO-CONSULTORIA: pure signer choice helper. TABELA-FINAL: pure items-table placement helper and proposal document/PDF ordering (presentation only; same data, same token gate). PROPOSTA-COMPLETA: pure payment-terms completeness check; wizards require installments/due day (UI validation only, writes unchanged).",
       "files": {
-        "src/lib/proposals/proposal-draft-types.ts": "5ce2f60af71d1aad44718e7f37ead519c751e325b8fb94358e47fe939ab82554",
+        "src/lib/proposals/proposal-draft-types.ts": "0fe9a03564c66c6aded91ad253ea049e289a9d7d3d5733df297f5191bc99bb64",
         "src/lib/contracts/contract-terms-defaults.ts": "4243429565dc9b855faf2b73986e8044ef2ad746a9582ee841e0f85b42583463",
         "src/components/word-editor-lazy.tsx": "4f6e7ef7880aa6b35c94c9bb6b2caacba43d380473fd193ab6adc1a0ed428e8d",
-        "src/lib/proposals/proposal-terms-block.ts": "d110afff94214df25de49cf203854d89b2293f757830433f949c49e6be65a03d",
+        "src/lib/proposals/proposal-terms-block.ts": "5089272e832f6ea0613d71a5d2be1c9831407008243be97a6ac27c58fde72303",
         "src/lib/proposals/proposal-signer.ts": "2310c24c8b7a1b9e652a1530974c697671fb89c77c8f75793d2eb577c1a56e0d",
         "src/lib/proposals/proposal-items-placement.ts": "1a5de997747831baffb6a877b730bb5ab162bca1885f655701cfcf25bfce3442",
         "src/components/proposals/proposal-document.tsx": "d3d2a6f4094bb3965e85cbbf66216279a29ef61efb592dea4521443f581b8826",
@@ -10718,14 +10718,95 @@
       },
       "files": {
         "drizzle/migrations/0325_quote_payment_terms.sql": "cb6ba51e5baa85548e547d5c7d01dd89a6f96a1217a3ec524ff05d056f21e861",
-        "src/lib/sales/payment-terms.ts": "4ec66158f4106a535e26d3df8d9ce305bf84c736a51739739cd4faa0c03f487c",
+        "src/lib/sales/payment-terms.ts": "f41fe1b0048d5ac26cb50cbd89f593e91d7e78f5f2e2b1eb1a9e7fa535d192a5",
         "src/lib/sales/quote-payment-terms.write.ts": "53bd243aa624ab155416251f9977ef77dcdc801851d2be2443034f4924cfe836",
         "src/lib/sales/quote-payment-terms.functions.ts": "5d76c67e6afe9903722e51c0948844e8db097c5b5ef3cf5be8bbf2eeddade7b3",
-        "src/components/sales/payment-terms-editor.tsx": "dfdc5add573924ccf80b0c7c5d04a47a81f8c391fdfe64afaf57c28945569d1a",
+        "src/components/sales/payment-terms-editor.tsx": "e669f7c5268699e63d1b1d87a8aed7ff3aa0d7d0ef073f75e5cca07ebeb0fd1d",
         "src/components/deals/quote-wizard.tsx": "8ae23a5d321b35b2ae33898a7c813ba256bbaa9af8de01771aeedad2d29664ae",
         "src/components/sales/prototype/payment-terms-prototype.tsx": "33bac916b114e1aecb94ef10c63bc655e8b9b274d227b4295dacaadf934fcdfd",
         "src/routes/_authenticated/sales.prototype.tsx": "65dd5daf19997f9df2aa71b55a35a0d766b6225e16811cded2a6d0c425253a9d",
         "drizzle/migrations/0326_grant_payment_terms_columns.sql": "fcc41e114bbb3c0bd713ff8a256e30913f4cf72904a756800aea7e499b1701ec"
+      }
+    },
+    {
+      "id": "service-activation-payment-terms",
+      "kind": "business",
+      "resources": [
+        "techservice.services",
+        "techservice.billing",
+        "techfinance.entries"
+      ],
+      "actions": [
+        "update",
+        "manage",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techservice.services.update.own",
+        "techservice.services.update.team",
+        "techservice.services.update.workspace",
+        "techservice.billing.manage.workspace",
+        "techfinance.entries.create.own",
+        "techfinance.entries.create.workspace"
+      ],
+      "rationale": "CONDICOES-PAGAMENTO: activateService (requireWorkPermission techservice.services update) lê serviço e contrato pelo cliente do usuário (RLS) e, quando o contrato tem condições de pagamento válidas, chama service_activate_with_terms (0327, SECURITY DEFINER) com o cronograma calculado. A função exige sessão, repete as mesmas autorizações de service_bill_checked (work_area_authorize de serviço e billing, finance_scope_access e criação de lançamentos), confere contrato do mesmo workspace e soma igual ao valor do contrato, cria as contas uma única vez por contrato (external_ref) e desliga a cobrança automática do serviço para não cobrar em dobro. Recusa de autorização não cai na cobrança antiga. EXECUTE só para authenticated. O cartão da ficha do contrato é somente leitura sobre dados já autorizados.",
+      "files": {
+        "drizzle/migrations/0327_service_activate_payment_terms.sql": "13b08044f99e75576b63e6a01fdf667bbeb694f8904d19f3ef7966f5c70a00d6",
+        "src/lib/services/activation-terms.ts": "cbcc49d31367a2a3e00306de4d1eb77b4a3f639eebb4864388c6d451490c3068",
+        "src/lib/services/activation-terms.write.ts": "9188bd5a91297a19257babf48e4e03d7a1c38d3f3e85a530864c6de872ac9a63",
+        "src/lib/services.functions.ts": "9d6a16a1b1a31b016d7de2a495c9b27eaf227a5eedebe608908b19fb239123a7",
+        "src/components/contracts/contract-payment-terms-card.tsx": "90a8279ecece45c912b0ffb6c84ff23a86088421fc40e9785bd25dc9f5037d24"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/services/activation-terms.write.ts",
+          "symbol": "activateServiceCore"
+        },
+        {
+          "file": "src/lib/services/activation-terms.ts",
+          "symbol": "activationSchedule"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0327_service_activate_payment_terms.sql",
+          "symbol": "service_activate_with_terms"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_area_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/services/activation-terms.write.test.ts",
+          "name": "service activation terms allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/services/activation-terms.write.test.ts",
+          "name": "service activation terms refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/services/activation-terms.write.test.ts",
+          "name": "service activation terms refuses an explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/services/activation-terms.write.test.ts",
+          "name": "service activation terms refuses a foreign workspace contract"
+        },
+        "inactive_member": {
+          "file": "src/lib/services/activation-terms.write.test.ts",
+          "name": "service activation terms refuses an inactive member"
+        }
       }
     }
   ],
