@@ -19,9 +19,6 @@ function store(opts: {
   const state = { written: null as PaymentTerms | null };
   return {
     written: null,
-    get writtenValue() {
-      return state.written;
-    },
     async readTotal() {
       if (opts.readError) throw new Error(opts.readError);
       return opts.total === undefined ? null : opts.total;

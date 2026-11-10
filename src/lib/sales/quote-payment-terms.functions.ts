@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
+import type { Json } from "@/integrations/supabase/types";
 import { paymentTermsSchema } from "@/lib/sales/payment-terms";
 import {
   saveQuotePaymentTermsCore,
@@ -28,7 +29,7 @@ export const saveQuotePaymentTerms = createServerFn({ method: "POST" })
       writeTerms: async (id, terms) => {
         const { error } = await context.supabase
           .from("quotes")
-          .update({ payment_terms: terms })
+          .update({ payment_terms: terms as unknown as Json })
           .eq("id", id);
         if (error) throw error;
       },
