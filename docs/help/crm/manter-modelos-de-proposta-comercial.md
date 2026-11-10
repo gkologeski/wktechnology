@@ -8,7 +8,7 @@ route_pattern: /settings/proposal-templates
 min_permission: 
 audience: internal
 sort_order: 158
-version: 2
+version: 3
 is_published: true
 ---
 # Manter modelos de proposta comercial
@@ -43,3 +43,7 @@ Modelos de proposta são próprios e podem se vincular ao catálogo de serviços
 - Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.
 
 ![Tela: capturar /settings/proposal-templates com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/manter-modelos-de-proposta-comercial.webp)
+
+## Variáveis de condições comerciais
+
+Além das variáveis da lista, os modelos aceitam: `{{company_legal_name}}` (razão social), `{{company_cnpj}}`, `{{payment_method}}`, `{{installments_count}}`, `{{installments_due_day}}`, `{{installment_value}}`, `{{validity_days}}` e `{{{terms_block}}}` (seção "Condições comerciais" completa, atualizada automaticamente no assistente). Os modelos oficiais já trazem `{{{terms_block}}}` antes da validade.
