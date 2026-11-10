@@ -10218,9 +10218,9 @@
         "src/lib/sales-flow.server.ts": "210da931998802a2bca255b4578b2f23048dd2bac248c320e6bf6ec12ee43fe1",
         "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
-        "src/components/contracts/contract-wizard.tsx": "5479de30857cd8340aed7c86fef16b5d7a8747fc5b8b4f6579fb8ff60b46ab4f",
+        "src/components/contracts/contract-wizard.tsx": "dba61bd101c8c696bc840b0819479ff5b2d79805a69da55519cf98209b37c4a5",
         "src/lib/sales-flow.functions.ts": "143d9934d1af165fdd16768c1abebf7b7cc59bcc7df47f945783dd92e19ab222",
-        "src/components/proposals/proposal-wizard.tsx": "291ff7b2562eb34a1d1491e26384f3f59925bc5253787619fcb6e7c670d06cb4",
+        "src/components/proposals/proposal-wizard.tsx": "4150c40ca49dd89acb2ca7f53274554e8368db671556e9a8bb3c43464f42f8bd",
         "src/lib/proposals/proposal-draft.server.ts": "fee16e6e60f05d647d0f46f2280144d91ee81de59f67b41868204486a42f664e",
         "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
         "drizzle/migrations/0321_proposal_versions_cascade.sql": "d74b28603f0279e6cb749f1af8ae34658c561ed0f659964fea8d6f4a2b257bcf",
@@ -10397,7 +10397,7 @@
     {
       "id": "dados-contrato-pure",
       "kind": "presentation",
-      "rationale": "DADOS-CONTRATO/ROLAGEM-CONTRATO pure helpers: contract term defaults and clamps, proposal draft type fields, and the lazy editor wrapper forwarding maxHeight. No I/O, routes, actions or data access; writes stay under contract-accepted-proposal-mapping. TEXTO-PROPOSTA: pure proposal terms block helper. TEXTO-CONSULTORIA: pure signer choice helper. TABELA-FINAL: pure items-table placement helper and proposal document/PDF ordering (presentation only; same data, same token gate).",
+      "rationale": "DADOS-CONTRATO/ROLAGEM-CONTRATO pure helpers: contract term defaults and clamps, proposal draft type fields, and the lazy editor wrapper forwarding maxHeight. No I/O, routes, actions or data access; writes stay under contract-accepted-proposal-mapping. TEXTO-PROPOSTA: pure proposal terms block helper. TEXTO-CONSULTORIA: pure signer choice helper. TABELA-FINAL: pure items-table placement helper and proposal document/PDF ordering (presentation only; same data, same token gate). PROPOSTA-COMPLETA: pure payment-terms completeness check; wizards require installments/due day (UI validation only, writes unchanged).",
       "files": {
         "src/lib/proposals/proposal-draft-types.ts": "5ce2f60af71d1aad44718e7f37ead519c751e325b8fb94358e47fe939ab82554",
         "src/lib/contracts/contract-terms-defaults.ts": "4243429565dc9b855faf2b73986e8044ef2ad746a9582ee841e0f85b42583463",
@@ -10406,7 +10406,8 @@
         "src/lib/proposals/proposal-signer.ts": "2310c24c8b7a1b9e652a1530974c697671fb89c77c8f75793d2eb577c1a56e0d",
         "src/lib/proposals/proposal-items-placement.ts": "1a5de997747831baffb6a877b730bb5ab162bca1885f655701cfcf25bfce3442",
         "src/components/proposals/proposal-document.tsx": "d3d2a6f4094bb3965e85cbbf66216279a29ef61efb592dea4521443f581b8826",
-        "src/lib/proposals/proposal-pdf-rules.ts": "8bdfc0a514dcc11b1798d5bab756ddf63569fad299f46f8ac0af12d2dc1c9f15"
+        "src/lib/proposals/proposal-pdf-rules.ts": "8bdfc0a514dcc11b1798d5bab756ddf63569fad299f46f8ac0af12d2dc1c9f15",
+        "src/lib/proposals/proposal-terms-check.ts": "f63a1caa63e25b90ea3b1e6c71d5021fd78745e0ebc2e24f4ca579d7844f870c"
       }
     },
     {
