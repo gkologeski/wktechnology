@@ -367,6 +367,8 @@ export async function contractFromSales(
   let bodyHtml: string | null = null;
   let mergedNumber: string | undefined;
   let entityId: string | null = input.contractingLegalEntityId ?? null;
+  let startsAt: string | null = null;
+  let endsAt: string | null = null;
   if (template) {
     const { buildMergeContext } = await import("@/lib/contracts/template-merge.server");
     const { mergeTemplateBody } = await import("@/lib/contracts/template-tokens");
@@ -388,7 +390,23 @@ export async function contractFromSales(
     );
     bodyHtml = mergeTemplateBody(template.body_html ?? "", ctx, { strict: !!source });
     mergedNumber = contract.number;
+    startsAt = contract.starts_at ?? null;
+    endsAt = contract.ends_at ?? null;
     entityId = entity?.id ?? null;
+  }
+
+  if (!startsAt && proposal) {
+    // Sem modelo: vigência vem da proposta (padrão 90 dias) a partir de hoje.
+    const { data: terms } = await supabase
+      .from("proposals")
+      .select("validity_days")
+      .eq("id", proposal.id)
+      .maybeSingle();
+    const days = Number((terms as { validity_days: number | null } | null)?.validity_days ?? 90);
+    const start = new Date();
+    startsAt = start.toISOString().slice(0, 10);
+    const end = new Date(start.getTime() + days * 86_400_000);
+    endsAt = end.toISOString().slice(0, 10);
   }
 
   const result = await createContractShared(supabase, {
@@ -396,7 +414,13 @@ export async function contractFromSales(
     userId,
     kind: "provider",
     number: mergedNumber,
-    fields: { ...common, contracting_legal_entity_id: entityId, title: `Contrato — ${baseTitle}` },
+    fields: {
+      ...common,
+      contracting_legal_entity_id: entityId,
+      title: `Contrato — ${baseTitle}`,
+      starts_at: startsAt,
+      ends_at: endsAt,
+    },
     dealId,
     items: loaded ? loaded.items : null,
     bodyHtml,
