@@ -1,7 +1,7 @@
 // Assistente da proposta (mesmo padrão do assistente de cotação):
 // Identificação -> Itens e valores -> Conteúdo (modelo de proposta) -> Revisão.
 // Nada é gravado até "Criar proposta"; ao concluir, abre o documento.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -385,7 +385,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const chosen = templates.find((t) => t.id === templateId) ?? null;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => (saving ? undefined : onOpenChange(v))}>
+    <Dialog open={open} onOpenChange={(v) => (saving || (!v && confirmingRef.current) ? undefined : onOpenChange(v))}>
       <DialogContent
         className="max-w-3xl max-h-[90vh] overflow-y-auto"
         // A confirmação "Trocar o conteúdo?" abre por cima; clicar nela não fecha o assistente.
