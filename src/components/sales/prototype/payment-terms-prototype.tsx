@@ -22,20 +22,10 @@ import {
 } from "@/lib/sales/payment-terms";
 
 /** Protótipo CONDICOES-PAGAMENTO: dados de exemplo, sem leitura ou gravação. */
-const SCENARIOS = {
-  outsourcing: {
-    label: "Outsourcing",
-    items: [{ name: "Alocação — Desenvolvedor Sênior", kind: "Outsourcing", total: 216000 }],
-  },
-  consultoria: {
-    label: "Consultoria + Fábrica",
-    items: [
-      { name: "Consultoria — Pacote de horas", kind: "Consultoria", total: 45000 },
-      { name: "Fábrica de Software — Portal", kind: "Fábrica de Software", total: 120000 },
-    ],
-  },
-} as const;
-type ScenarioKey = keyof typeof SCENARIOS;
+const ITEMS = [
+  { name: "Consultoria — Pacote de horas", kind: "Consultoria", total: 45000 },
+  { name: "Fábrica de Software — Portal", kind: "Fábrica de Software", total: 120000 },
+];
 
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const fmtDate = (iso: string | null) =>
