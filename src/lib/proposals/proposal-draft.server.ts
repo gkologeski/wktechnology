@@ -1,6 +1,7 @@
 // Rascunho da proposta para o assistente: dados de identificação, itens de
 // linha (da cotação ou do negócio) e serviços do catálogo usados para sugerir
 // o modelo de proposta. Usa o cliente do usuário (RLS aplicada). Não grava.
+import { chooseProposalSigner, type SignerCandidate } from "./proposal-signer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describeBilling } from "@/lib/catalog/billing-model";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
@@ -73,20 +74,29 @@ async function names(
   supabase: SupabaseClient,
   ids: { company: string | null; contact: string | null; deal: string | null },
 ) {
-  const [c, p, d] = await Promise.all([
+  const [c, p, d, s] = await Promise.all([
     ids.company
       ? supabase.from("companies").select("name, cnpj, custom_fields").eq("id", ids.company).maybeSingle()
       : null,
     ids.contact
       ? supabase
           .from("contacts")
-          .select("first_name, last_name")
+          .select("first_name, last_name, email, custom_fields")
           .eq("id", ids.contact)
           .maybeSingle()
       : null,
     ids.deal ? supabase.from("deals").select("name").eq("id", ids.deal).maybeSingle() : null,
+    ids.company
+      ? supabase
+          .from("contacts")
+          .select("first_name, last_name, email, custom_fields")
+          .eq("company_id", ids.company)
+          .eq("custom_fields->>signatario_legal", "true")
+          .limit(2)
+      : null,
   ]);
-  const contact = p?.data as { first_name: string | null; last_name: string | null } | null;
+  const contact = p?.data as SignerCandidate | null;
+  const signer = chooseProposalSigner((s?.data ?? []) as SignerCandidate[], contact);
   return {
     company_name: (c?.data as { name: string } | null)?.name ?? null,
     company_cnpj: (c?.data as { cnpj: string | null } | null)?.cnpj ?? null,
@@ -97,6 +107,7 @@ async function names(
       ? `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim() || null
       : null,
     deal_name: (d?.data as { name: string } | null)?.name ?? null,
+    signer,
   };
 }
 

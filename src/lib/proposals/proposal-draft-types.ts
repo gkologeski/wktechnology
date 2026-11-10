@@ -26,6 +26,8 @@ export type ProposalDraft = {
   company_cnpj?: string | null;
   contact_name: string | null;
   deal_name: string | null;
+  /** Signatário da contratante (TEXTO-CONSULTORIA). */
+  signer?: { full_name: string; cpf: string; email: string };
   items: ProposalDraftItem[];
   items_origin: "quote" | "deal" | null;
   /** Condições contratuais copiadas para o contrato (DADOS-CONTRATO). */

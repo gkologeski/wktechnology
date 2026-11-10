@@ -8,7 +8,7 @@ route_pattern: /settings/proposal-templates
 min_permission: 
 audience: internal
 sort_order: 158
-version: 3
+version: 4
 is_published: true
 ---
 # Manter modelos de proposta comercial
@@ -46,4 +46,4 @@ Modelos de proposta são próprios e podem se vincular ao catálogo de serviços
 
 ## Variáveis de condições comerciais
 
-Além das variáveis da lista, os modelos aceitam: `{{company_legal_name}}` (razão social), `{{company_cnpj}}`, `{{payment_method}}`, `{{installments_count}}`, `{{installments_due_day}}`, `{{installment_value}}`, `{{validity_days}}` e `{{{terms_block}}}` (seção "Condições comerciais" completa, atualizada automaticamente no assistente). Os modelos oficiais já trazem `{{{terms_block}}}` antes da validade.
+Além das variáveis da lista, os modelos aceitam: `{{company_legal_name}}` (razão social), `{{company_cnpj}}`, `{{payment_method}}`, `{{installments_count}}`, `{{installments_due_day}}`, `{{installment_value}}`, `{{validity_days}}`, `{{counterparty.name}}` (empresa cliente), `{{signer.full_name}}`, `{{signer.cpf}}`, `{{signer.email}}` (signatário legal único da empresa ou, na falta, o contato da proposta) e `{{{terms_block}}}` (seção "Condições comerciais" completa, atualizada automaticamente no assistente). Os modelos oficiais já trazem `{{{terms_block}}}` antes da validade.
