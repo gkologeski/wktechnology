@@ -391,3 +391,8 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [ ] Entrega 2: aprovadores jurídicos em Fluxos de aprovação, tela Revisar minuta, permissão nova
 - [ ] Entrega 3: envio automático pela conta do responsável, link público Aceitar/Pedir ajustes, gate do Gerar contrato
 - [ ] Decidir: workflow "Criar contrato" dispara ao entrar em Contratação (conflita com minuta)
+
+## CONDICOES-PAGAMENTO (plano aprovado 10/11/2026)
+- [ ] Fase 1: banco + regra pura do cronograma
+- [ ] Fase 2: mockup da seção "Condições de pagamento" na cotação (aguarda aprovação)
+- [ ] Fase 3: proposta + PDF · Fase 4: contrato + modelos · Fase 5: contas a receber via workflow · Fase 6: Ajuda + permissões
