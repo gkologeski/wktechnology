@@ -10641,7 +10641,7 @@
         "techsales.quotes.update.team",
         "techsales.quotes.update.workspace"
       ],
-      "rationale": "CONDICOES-PAGAMENTO: a cotação passa a guardar entrada e saldo (mensal, parcelas ou marcos). A gravação é uma server function autenticada que exige techsales.quotes update, confere a linha com assertSalesRecord e só escreve na própria cotação; o total lido é o da própria linha (RLS), e números que não fecham são recusados antes de gravar. Coluna nova com padrão {} e preenchimento das propostas antigas a partir das parcelas existentes: nenhuma coluna, política ou grant existente foi alterado.",
+      "rationale": "CONDICOES-PAGAMENTO: a cotação passa a guardar entrada e saldo (mensal, parcelas ou marcos). A gravação é uma server function autenticada que exige techsales.quotes update, confere a linha com assertSalesRecord e só escreve na própria cotação; o total lido é o da própria linha (RLS), e números que não fecham são recusados antes de gravar. Coluna nova com padrão {} e preenchimento das propostas antigas a partir das parcelas existentes: nenhuma coluna, política ou grant existente foi alterado. 0326: as colunas novas de cotações e propostas recebem GRANT por coluna a authenticated (a tabela usa grants por coluna); as políticas RLS de update continuam decidindo quem grava.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -10684,6 +10684,14 @@
         {
           "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
           "symbol": "sales_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0326_grant_payment_terms_columns.sql",
+          "symbol": "quotes"
+        },
+        {
+          "file": "drizzle/migrations/0326_grant_payment_terms_columns.sql",
+          "symbol": "proposals"
         }
       ],
       "tests": {
@@ -10716,7 +10724,8 @@
         "src/components/sales/payment-terms-editor.tsx": "dfdc5add573924ccf80b0c7c5d04a47a81f8c391fdfe64afaf57c28945569d1a",
         "src/components/deals/quote-wizard.tsx": "8ae23a5d321b35b2ae33898a7c813ba256bbaa9af8de01771aeedad2d29664ae",
         "src/components/sales/prototype/payment-terms-prototype.tsx": "33bac916b114e1aecb94ef10c63bc655e8b9b274d227b4295dacaadf934fcdfd",
-        "src/routes/_authenticated/sales.prototype.tsx": "65dd5daf19997f9df2aa71b55a35a0d766b6225e16811cded2a6d0c425253a9d"
+        "src/routes/_authenticated/sales.prototype.tsx": "65dd5daf19997f9df2aa71b55a35a0d766b6225e16811cded2a6d0c425253a9d",
+        "drizzle/migrations/0326_grant_payment_terms_columns.sql": "964eb19e416515e210a0a13fb44bbc5fc41854fd92e87867b78e1cd720050378"
       }
     }
   ],
