@@ -31,14 +31,13 @@ const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", curren
 const fmtDate = (iso: string | null) =>
   iso ? new Date(`${iso}T12:00:00Z`).toLocaleDateString("pt-BR") : "Na entrega do marco";
 
-function initial(key: ScenarioKey): PaymentTerms {
-  return suggestPaymentTerms(SCENARIOS[key].items.map((i) => i.kind));
+function initial(): PaymentTerms {
+  return suggestPaymentTerms(ITEMS.map((i) => i.kind));
 }
 
 export function PaymentTermsPrototype() {
-  const [scenario, setScenario] = useState<ScenarioKey>("consultoria");
-  const [terms, setTerms] = useState<PaymentTerms>(() => initial("consultoria"));
-  const items = SCENARIOS[scenario].items;
+  const [terms, setTerms] = useState<PaymentTerms>(() => initial());
+  const items = ITEMS;
   const total = items.reduce((s, i) => s + i.total, 0);
   const errors = validatePaymentTerms(terms, total);
   const schedule = useMemo(
