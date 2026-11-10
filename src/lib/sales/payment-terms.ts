@@ -16,17 +16,28 @@ export type InstallmentPlan =
   | { kind: "periodic"; count: number; intervalMonths: number; dueDay: number }
   | { kind: "milestones"; milestones: { label: string; percent: number }[] };
 
+/** Vencimento da entrada: data fixa ou na assinatura do contrato (padrão). */
+export type DownPaymentDue = { kind: "signature" } | { kind: "date"; date: string };
+
 export interface PaymentTerms {
   downPayment: DownPayment;
   plan: InstallmentPlan;
+  downPaymentDue?: DownPaymentDue;
 }
 
 export interface ScheduledPayment {
   sequence: number;
   label: string;
   amount: number;
-  /** ISO yyyy-mm-dd; null quando depende de marco/entrega. */
+  /** ISO yyyy-mm-dd; null quando depende de marco/entrega ou da assinatura. */
   dueDate: string | null;
+  /** Evento que define o vencimento quando não há data. */
+  dueEvent?: "signature" | "milestone";
+}
+
+/** Assinatura é o padrão quando o vencimento da entrada não foi escolhido. */
+export function downPaymentDueOf(t: PaymentTerms): DownPaymentDue {
+  return t.downPaymentDue ?? { kind: "signature" };
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -55,6 +66,9 @@ export function validatePaymentTerms(t: PaymentTerms, total: number): string[] {
     errors.push("A entrada deve estar entre R$ 0 e o total.");
   if (dp.kind === "percent" && (dp.value < 0 || dp.value > 100))
     errors.push("A entrada deve estar entre 0% e 100%.");
+  const due = t.downPaymentDue;
+  if (dp.kind !== "none" && due?.kind === "date" && !/^\d{4}-\d{2}-\d{2}$/.test(due.date))
+    errors.push("Escolha a data de vencimento da entrada.");
   const p = t.plan;
   if (p.kind === "monthly" && !(p.months >= 1 && p.months <= 120))
     errors.push("Meses devem estar entre 1 e 120.");
@@ -84,13 +98,26 @@ export function buildPaymentSchedule(
   t: PaymentTerms,
   total: number,
   start: Date,
+  opts: { signedAt?: string | null } = {},
 ): ScheduledPayment[] {
   const errors = validatePaymentTerms(t, total);
   if (errors.length) throw new Error(errors.join(" "));
   const out: ScheduledPayment[] = [];
   const entry = downPaymentAmount(t.downPayment, total);
-  if (entry > 0)
-    out.push({ sequence: 1, label: "Entrada", amount: entry, dueDate: start.toISOString().slice(0, 10) });
+  if (entry > 0) {
+    const due = downPaymentDueOf(t);
+    out.push(
+      due.kind === "date"
+        ? { sequence: 1, label: "Entrada", amount: entry, dueDate: due.date }
+        : {
+            sequence: 1,
+            label: "Entrada",
+            amount: entry,
+            dueDate: opts.signedAt ? opts.signedAt.slice(0, 10) : null,
+            dueEvent: "signature",
+          },
+    );
+  }
   const balance = round2(total - entry);
   if (balance <= 0) return out;
   const p = t.plan;
@@ -112,7 +139,13 @@ export function buildPaymentSchedule(
       const last = i === p.milestones.length - 1;
       const amount = last ? round2(balance - acc) : round2((balance * m.percent) / 100);
       acc = round2(acc + amount);
-      out.push({ sequence: out.length + 1, label: m.label, amount, dueDate: null });
+      out.push({
+        sequence: out.length + 1,
+        label: m.label,
+        amount,
+        dueDate: null,
+        dueEvent: "milestone",
+      });
     });
   }
   return out;
@@ -126,7 +159,12 @@ export function suggestPaymentTerms(
   if (legacy?.installmentsCount) {
     return {
       downPayment: { kind: "none" },
-      plan: { kind: "periodic", count: legacy.installmentsCount, intervalMonths: 1, dueDay: legacy.dueDay ?? 10 },
+      plan: {
+        kind: "periodic",
+        count: legacy.installmentsCount,
+        intervalMonths: 1,
+        dueDay: legacy.dueDay ?? 10,
+      },
     };
   }
   const k = itemKinds.map((s) => s.toLowerCase());
@@ -170,15 +208,42 @@ export const installmentPlanSchema = z.union([
   }),
 ]);
 
+export const downPaymentDueSchema = z.union([
+  z.object({ kind: z.literal("signature") }),
+  z.object({ kind: z.literal("date"), date: z.string().max(10) }),
+]);
+
 export const paymentTermsSchema = z.object({
   downPayment: downPaymentSchema,
   plan: installmentPlanSchema,
+  downPaymentDue: downPaymentDueSchema.optional(),
 });
 
 /** null quando o valor guardado não é uma condição de pagamento válida. */
 export function parsePaymentTerms(raw: unknown): PaymentTerms | null {
   const parsed = paymentTermsSchema.safeParse(raw);
   return parsed.success ? (parsed.data as PaymentTerms) : null;
+}
+
+/** Parcelas e dia de vencimento equivalentes, para modelos que ainda usam esses campos. */
+export function legacyInstallments(
+  t: PaymentTerms,
+  total: number,
+): {
+  installments: number;
+  dueDay: number | null;
+} {
+  const entry = downPaymentAmount(t.downPayment, total) > 0 ? 1 : 0;
+  const p = t.plan;
+  const rest =
+    total - downPaymentAmount(t.downPayment, total) <= 0
+      ? 0
+      : p.kind === "monthly"
+        ? p.months
+        : p.kind === "periodic"
+          ? p.count
+          : p.milestones.length;
+  return { installments: Math.max(1, entry + rest), dueDay: "dueDay" in p ? p.dueDay : null };
 }
 
 /** Resumo em uma linha, em português, para telas de revisão. */
@@ -190,6 +255,13 @@ export function describePaymentTerms(t: PaymentTerms): string {
       : dp.kind === "percent"
         ? `entrada de ${dp.value}% do total`
         : `entrada de R$ ${dp.value.toFixed(2)}`;
+  const due = downPaymentDueOf(t);
+  const entryDue =
+    dp.kind === "none"
+      ? ""
+      : due.kind === "date"
+        ? ` (vence em ${due.date.split("-").reverse().join("/")})`
+        : " (vence na assinatura do contrato)";
   const p = t.plan;
   const balance =
     p.kind === "monthly"
@@ -197,6 +269,5 @@ export function describePaymentTerms(t: PaymentTerms): string {
       : p.kind === "periodic"
         ? `${p.count} parcelas a cada ${p.intervalMonths} ${p.intervalMonths === 1 ? "mês" : "meses"}, dia ${p.dueDay}`
         : `${p.milestones.length} ${p.milestones.length === 1 ? "marco" : "marcos"} de entrega`;
-  return `${entry} · ${balance}`;
+  return `${entry}${entryDue} · ${balance}`;
 }
-

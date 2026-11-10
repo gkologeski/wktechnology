@@ -17,25 +17,34 @@ describe("cronograma de pagamento", () => {
 
   it("entrada em % + parcelas periódicas", () => {
     const s = buildPaymentSchedule(
-      { downPayment: { kind: "percent", value: 30 }, plan: { kind: "periodic", count: 2, intervalMonths: 3, dueDay: 15 } },
+      {
+        downPayment: { kind: "percent", value: 30 },
+        plan: { kind: "periodic", count: 2, intervalMonths: 3, dueDay: 15 },
+      },
       45000,
       start,
     );
     expect(s.map((p) => p.amount)).toEqual([13500, 15750, 15750]);
-    expect(s.map((p) => p.dueDate)).toEqual(["2026-11-10", "2026-12-15", "2027-03-15"]);
+    expect(s.map((p) => p.dueDate)).toEqual([null, "2026-12-15", "2027-03-15"]);
   });
 
   it("entrada em R$ + marcos sem data", () => {
     const s = buildPaymentSchedule(
       {
         downPayment: { kind: "amount", value: 5000 },
-        plan: { kind: "milestones", milestones: [{ label: "Homologação", percent: 50 }, { label: "Go-live", percent: 50 }] },
+        plan: {
+          kind: "milestones",
+          milestones: [
+            { label: "Homologação", percent: 50 },
+            { label: "Go-live", percent: 50 },
+          ],
+        },
       },
       45000,
       start,
     );
     expect(s.map((p) => [p.label, p.amount, p.dueDate])).toEqual([
-      ["Entrada", 5000, "2026-11-10"],
+      ["Entrada", 5000, null],
       ["Homologação", 20000, null],
       ["Go-live", 20000, null],
     ]);
@@ -43,7 +52,10 @@ describe("cronograma de pagamento", () => {
 
   it("centavos de sobra vão para a última parcela", () => {
     const s = buildPaymentSchedule(
-      { downPayment: { kind: "none" }, plan: { kind: "periodic", count: 3, intervalMonths: 1, dueDay: 31 } },
+      {
+        downPayment: { kind: "none" },
+        plan: { kind: "periodic", count: 3, intervalMonths: 1, dueDay: 31 },
+      },
       100,
       start,
     );
@@ -54,7 +66,10 @@ describe("cronograma de pagamento", () => {
   it("marcos precisam somar 100%", () => {
     expect(
       validatePaymentTerms(
-        { downPayment: { kind: "none" }, plan: { kind: "milestones", milestones: [{ label: "A", percent: 60 }] } },
+        {
+          downPayment: { kind: "none" },
+          plan: { kind: "milestones", milestones: [{ label: "A", percent: 60 }] },
+        },
         1000,
       ),
     ).toContain("Os marcos devem somar 100% do saldo.");
@@ -69,6 +84,9 @@ describe("cronograma de pagamento", () => {
 
   it("sugestão por tipo de item", () => {
     expect(suggestPaymentTerms(["Outsourcing"]).plan.kind).toBe("monthly");
-    expect(suggestPaymentTerms(["Consultoria"]).downPayment).toEqual({ kind: "percent", value: 30 });
+    expect(suggestPaymentTerms(["Consultoria"]).downPayment).toEqual({
+      kind: "percent",
+      value: 30,
+    });
   });
 });

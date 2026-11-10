@@ -311,14 +311,54 @@ export const activateService = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { workRpc } = await import("@/lib/access-control/work-core.server");
-    const result = await workRpc<{
-      service: import("@/integrations/supabase/types").Database["public"]["Tables"]["services"]["Row"];
-    }>(context.supabase, "service_bill_checked", {
-      p_service: data.id,
-      p_mode: "activate",
-      p_starts: data.startsAt ?? null,
-    });
-    return result.service;
+    type ServiceRow =
+      import("@/integrations/supabase/types").Database["public"]["Tables"]["services"]["Row"];
+    // CONDICOES-PAGAMENTO: contrato com condições gera o cronograma de contas a receber.
+    const { activateServiceCore } = await import("@/lib/services/activation-terms.write");
+    const sb = context.supabase;
+    return activateServiceCore<ServiceRow>(
+      {
+        readService: async (sid) => {
+          const { data: row, error } = await sb
+            .from("services")
+            .select("contract_id, starts_at")
+            .eq("id", sid)
+            .maybeSingle();
+          if (error) throw error;
+          return row;
+        },
+        readContract: async (cid) => {
+          const { data: row, error } = await sb
+            .from("contracts")
+            .select("payment_terms, total_value, signed_at")
+            .eq("id", cid)
+            .maybeSingle();
+          if (error) throw error;
+          return row
+            ? { ...row, total_value: row.total_value != null ? Number(row.total_value) : null }
+            : null;
+        },
+        activateWithTerms: async (sid, start, schedule) =>
+          (
+            await workRpc<{ service: ServiceRow }>(sb, "service_activate_with_terms", {
+              p_service: sid,
+              p_starts: start,
+              p_schedule: schedule,
+            })
+          ).service,
+        activateLegacy: async (sid, st) =>
+          (
+            await workRpc<{ service: ServiceRow }>(sb, "service_bill_checked", {
+              p_service: sid,
+              p_mode: "activate",
+              p_starts: st,
+            })
+          ).service,
+      },
+      data.id,
+      data.startsAt ?? null,
+      new Date().toISOString().slice(0, 10),
+    );
   });
 
 // ============= BILLING TICK (manual) =============

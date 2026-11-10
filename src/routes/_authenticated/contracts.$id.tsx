@@ -21,6 +21,7 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ContractPaymentTermsCard } from "@/components/contracts/contract-payment-terms-card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -606,6 +607,12 @@ function ContractDetail() {
               </CardContent>
             </Card>
           </div>
+
+          <ContractPaymentTermsCard
+            raw={(contract as { payment_terms?: unknown }).payment_terms}
+            total={Number(contract.total_value ?? 0)}
+            currency={contract.currency ?? "BRL"}
+          />
 
           <Card>
             <CardHeader className="pb-3">

@@ -2290,6 +2290,13 @@
       "when": 1794332738497,
       "tag": "0326_grant_payment_terms_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 327,
+      "version": "7",
+      "when": 1794333444997,
+      "tag": "0327_service_activate_payment_terms",
+      "breakpoints": true
     }
   ]
 }

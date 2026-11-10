@@ -36,6 +36,8 @@ export type ProposalDraft = {
   validity_days?: number | null;
   payment_method?: string | null;
   payment_notes?: string | null;
+  /** Condições de pagamento (entrada + saldo) — CONDICOES-PAGAMENTO. */
+  payment_terms?: import("@/integrations/supabase/types").Json;
 };
 
 export type ProposalDraftResult =
