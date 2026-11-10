@@ -6,6 +6,7 @@ import { loadAcceptedProposalSource, legalEntityAddress } from "./accepted-propo
 import { usedTokens } from "./template-tokens";
 import {
   DEFAULT_JURISDICTION,
+  DEFAULT_GOVERNING_LAW,
   DEFAULT_PENALTY_PERCENT,
   DEFAULT_VALIDITY_DAYS,
   endFromValidity,
