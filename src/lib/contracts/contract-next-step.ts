@@ -3,9 +3,7 @@
 
 export type ContractDetailTab = "overview" | "document" | "approvals" | "amendments" | "history";
 
-export type NextStepTarget =
-  | { kind: "tab"; tab: ContractDetailTab }
-  | { kind: "measurements" };
+export type NextStepTarget = { kind: "tab"; tab: ContractDetailTab } | { kind: "measurements" };
 
 export type NextStepAction = {
   label: string;
@@ -88,7 +86,11 @@ export function contractNextStep(input: NextStepInput): NextStep {
         missing > 0
           ? `Falta${missing > 1 ? "m" : ""} ${missing} item${missing > 1 ? "s" : ""} antes de enviar. Depois da aprovação, o contrato segue para assinatura.`
           : "Tudo pronto. Depois da aprovação, o contrato segue para assinatura.",
-      primary: { label: "Enviar para aprovação", target: tab("approvals"), disabledReason: blocked },
+      primary: {
+        label: "Enviar para aprovação",
+        target: tab("approvals"),
+        disabledReason: blocked,
+      },
       secondary: [{ label: "Revisar documento", target: tab("document") }],
       checklist,
     };
@@ -98,7 +100,8 @@ export function contractNextStep(input: NextStepInput): NextStep {
     return {
       stageIndex: 1,
       headline: "Aguardando aprovações",
-      explanation: "Acompanhe quem já aprovou. Com todas as aprovações, o contrato segue para assinatura.",
+      explanation:
+        "Acompanhe quem já aprovou. Com todas as aprovações, o contrato segue para assinatura.",
       primary: { label: "Ver aprovações pendentes", target: tab("approvals") },
       secondary: [],
       checklist: [],

@@ -35,7 +35,8 @@ export const PROTO_SCENARIOS: Record<ProtoStage, ProtoScenario> = {
     stage: "draft",
     statusLabel: "Rascunho",
     headline: "Revise os dados e envie para aprovação",
-    explanation: "Falta 1 item antes de enviar. Depois da aprovação, o contrato segue para assinatura.",
+    explanation:
+      "Falta 1 item antes de enviar. Depois da aprovação, o contrato segue para assinatura.",
     primary: "Enviar para aprovação",
     secondary: ["Pular aprovação e preparar assinatura"],
     checklist: [
@@ -49,7 +50,8 @@ export const PROTO_SCENARIOS: Record<ProtoStage, ProtoScenario> = {
     stage: "in_review",
     statusLabel: "Em revisão",
     headline: "Aguardando 1 de 2 aprovações",
-    explanation: "Você será avisado quando todos aprovarem. Ninguém precisa fazer nada nesta ficha agora.",
+    explanation:
+      "Você será avisado quando todos aprovarem. Ninguém precisa fazer nada nesta ficha agora.",
     primary: "Ver aprovações pendentes",
     secondary: ["Cobrar aprovador"],
     people: [

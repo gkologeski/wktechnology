@@ -13,12 +13,7 @@ import {
 import { PageHeader, SectionHeader } from "@/components/techhire/ui";
 import { cn } from "@/lib/utils";
 import { WorkScreenAccess } from "@/components/work-access";
-import {
-  PROTO_CONTRACT,
-  PROTO_SCENARIOS,
-  PROTO_STAGES,
-  type ProtoStage,
-} from "./data";
+import { PROTO_CONTRACT, PROTO_SCENARIOS, PROTO_STAGES, type ProtoStage } from "./data";
 
 const ORDER: ProtoStage[] = ["draft", "in_review", "awaiting_signature", "active"];
 
@@ -40,7 +35,11 @@ function StageStepper({ current }: { current: ProtoStage }) {
                 !now && !done && "border-border text-muted-foreground",
               )}
             >
-              {done ? <Check className="h-3.5 w-3.5" aria-hidden /> : <Circle className="h-3 w-3" aria-hidden />}
+              {done ? (
+                <Check className="h-3.5 w-3.5" aria-hidden />
+              ) : (
+                <Circle className="h-3 w-3" aria-hidden />
+              )}
               {s.label}
             </span>
             {i < PROTO_STAGES.length - 1 && (
@@ -75,7 +74,11 @@ function NextStepCard({ stage }: { stage: ProtoStage }) {
               {a}
             </Button>
           ))}
-          <Button size="sm" disabled={blocked} title={blocked ? "Conclua os itens pendentes" : undefined}>
+          <Button
+            size="sm"
+            disabled={blocked}
+            title={blocked ? "Conclua os itens pendentes" : undefined}
+          >
             {s.primary}
           </Button>
         </div>
@@ -180,7 +183,11 @@ function PrototypeBody() {
             </DropdownMenuContent>
           </DropdownMenu>
         }
-        primaryAction={<Button size="sm" variant="outline">Salvar alterações</Button>}
+        primaryAction={
+          <Button size="sm" variant="outline">
+            Salvar alterações
+          </Button>
+        }
       />
 
       <StageStepper current={stage} />

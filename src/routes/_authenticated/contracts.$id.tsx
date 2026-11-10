@@ -330,7 +330,6 @@ function ContractDetail() {
             >
               <Save className="h-4 w-4 mr-1" /> {saving ? "Salvando…" : "Salvar"}
             </Button>
-
           </div>
         </div>
       </div>
@@ -347,290 +346,289 @@ function ContractDetail() {
           <TabsTrigger value="history">Histórico</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-5 pt-3">
-      <div className="grid gap-5 md:grid-cols-2">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Dados principais</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Título</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Tipo</Label>
-                <Select value={role} onValueChange={(v) => setRole(v as "provider" | "client")}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="provider">Prestação</SelectItem>
-                    <SelectItem value="client">Compra</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select
-                  disabled={!canUpdateContract || !canTransition}
-                  value={status}
-                  onValueChange={(v) => setStatus(v as Status)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                      <SelectItem
-                        key={k}
-                        value={k}
-                        disabled={
-                          k === "in_review" ||
-                          k === "awaiting_signature" ||
-                          (k === "active" &&
-                            !can("techcontracts.contract_activation.manage.workspace"))
-                        }
-                      >
-                        {v}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="document-kind">Tipo de documento</Label>
-              <Select
-                value={documentKind}
-                onValueChange={(v) => void changeDocumentKind(v as "main" | "amendment")}
-              >
-                <SelectTrigger id="document-kind">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="main">Principal</SelectItem>
-                  <SelectItem value="amendment">Aditivo</SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Aditivos aparecem aninhados sob o contrato principal na listagem.
-              </p>
-            </div>
-            {documentKind === "amendment" && (
-              <div className="space-y-2">
-                <Label>
-                  Contrato principal <span className="text-destructive">*</span>
-                </Label>
-                <MainContractPicker
-                  value={mainContract}
-                  onChange={setMainContract}
-                  excludeId={id}
-                  triggerClassName="w-full"
-                />
-                {amendmentMissingParent && (
-                  <p className="text-xs text-destructive" role="alert">
-                    Obrigatório: um aditivo precisa estar vinculado a um contrato principal.
+          <div className="grid gap-5 md:grid-cols-2">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Dados principais</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Título</Label>
+                  <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Tipo</Label>
+                    <Select value={role} onValueChange={(v) => setRole(v as "provider" | "client")}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="provider">Prestação</SelectItem>
+                        <SelectItem value="client">Compra</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select
+                      disabled={!canUpdateContract || !canTransition}
+                      value={status}
+                      onValueChange={(v) => setStatus(v as Status)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                          <SelectItem
+                            key={k}
+                            value={k}
+                            disabled={
+                              k === "in_review" ||
+                              k === "awaiting_signature" ||
+                              (k === "active" &&
+                                !can("techcontracts.contract_activation.manage.workspace"))
+                            }
+                          >
+                            {v}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="document-kind">Tipo de documento</Label>
+                  <Select
+                    value={documentKind}
+                    onValueChange={(v) => void changeDocumentKind(v as "main" | "amendment")}
+                  >
+                    <SelectTrigger id="document-kind">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="main">Principal</SelectItem>
+                      <SelectItem value="amendment">Aditivo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Aditivos aparecem aninhados sob o contrato principal na listagem.
                   </p>
+                </div>
+                {documentKind === "amendment" && (
+                  <div className="space-y-2">
+                    <Label>
+                      Contrato principal <span className="text-destructive">*</span>
+                    </Label>
+                    <MainContractPicker
+                      value={mainContract}
+                      onChange={setMainContract}
+                      excludeId={id}
+                      triggerClassName="w-full"
+                    />
+                    {amendmentMissingParent && (
+                      <p className="text-xs text-destructive" role="alert">
+                        Obrigatório: um aditivo precisa estar vinculado a um contrato principal.
+                      </p>
+                    )}
+                  </div>
                 )}
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label>Valor total</Label>
-              <CurrencyCommitInput
-                value={totalValue}
-                onCommit={(v) => setTotalValue(typeof v === "number" ? v : 0)}
-                currency={contract.currency ?? "BRL"}
-              />
-            </div>
-          </CardContent>
-        </Card>
+                <div className="space-y-2">
+                  <Label>Valor total</Label>
+                  <CurrencyCommitInput
+                    value={totalValue}
+                    onCommit={(v) => setTotalValue(typeof v === "number" ? v : 0)}
+                    currency={contract.currency ?? "BRL"}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Vigência</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Início</Label>
-                <IsoDatePicker
-                  ariaLabel="Início"
-                  value={startsAt}
-                  onChange={(v) => setStartsAt(v ?? "")}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Fim</Label>
-                <IsoDatePicker
-                  ariaLabel="Fim"
-                  value={endsAt}
-                  onChange={(v) => setEndsAt(v ?? "")}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label>Renovação automática</Label>
-                <Select
-                  value={autoRenew ? "yes" : "no"}
-                  onValueChange={(v) => setAutoRenew(v === "yes")}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="no">Não</SelectItem>
-                    <SelectItem value="yes">Sim</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>Aviso prévio (dias)</Label>
-                <Input
-                  type="number"
-                  min={0}
-                  value={noticeDays}
-                  onChange={(e) => setNoticeDays(Number(e.target.value) || 0)}
-                />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Vigência</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Início</Label>
+                    <IsoDatePicker
+                      ariaLabel="Início"
+                      value={startsAt}
+                      onChange={(v) => setStartsAt(v ?? "")}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Fim</Label>
+                    <IsoDatePicker
+                      ariaLabel="Fim"
+                      value={endsAt}
+                      onChange={(v) => setEndsAt(v ?? "")}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>Renovação automática</Label>
+                    <Select
+                      value={autoRenew ? "yes" : "no"}
+                      onValueChange={(v) => setAutoRenew(v === "yes")}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="no">Não</SelectItem>
+                        <SelectItem value="yes">Sim</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Aviso prévio (dias)</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={noticeDays}
+                      onChange={(e) => setNoticeDays(Number(e.target.value) || 0)}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Serviços</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ContractServices
-            contractId={contract.id}
-            currency={contract.currency ?? "BRL"}
-            canLink={role === "provider"}
-            parentContract={
-              (contract as { parent?: { id: string; title: string } | null }).parent ?? null
-            }
-          />
-        </CardContent>
-      </Card>
-
-      {(() => {
-        const source = (
-          contract.metadata as {
-            accepted_proposal?: {
-              proposal?: { id?: string; title?: string; version?: number };
-              decided_at?: string;
-            };
-          } | null
-        )?.accepted_proposal;
-        return source?.proposal ? (
           <Card>
-            <CardHeader>
-              <CardTitle>Proposta Comercial vinculada</CardTitle>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Serviços</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>
-                {source.proposal.title} — versão {source.proposal.version}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Aceita em {formatDateTime(source.decided_at ?? null)}. Versão preservada no
-                contrato.
-              </p>
-              <Link
-                to="/proposals/$id"
-                params={{ id: source.proposal.id ?? "" }}
-                className="text-sm text-primary underline"
-              >
-                Abrir Proposta Comercial
-              </Link>
+              <ContractServices
+                contractId={contract.id}
+                currency={contract.currency ?? "BRL"}
+                canLink={role === "provider"}
+                parentContract={
+                  (contract as { parent?: { id: string; title: string } | null }).parent ?? null
+                }
+              />
             </CardContent>
           </Card>
-        ) : null;
-      })()}
-      {contract.deal_id && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Origem</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Link
-              to="/deals/$id"
-              params={{ id: contract.deal_id }}
-              className="text-primary hover:underline text-sm"
-            >
-              Ver negócio de origem →
-            </Link>
-          </CardContent>
-        </Card>
-      )}
 
+          {(() => {
+            const source = (
+              contract.metadata as {
+                accepted_proposal?: {
+                  proposal?: { id?: string; title?: string; version?: number };
+                  decided_at?: string;
+                };
+              } | null
+            )?.accepted_proposal;
+            return source?.proposal ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Proposta Comercial vinculada</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p>
+                    {source.proposal.title} — versão {source.proposal.version}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Aceita em {formatDateTime(source.decided_at ?? null)}. Versão preservada no
+                    contrato.
+                  </p>
+                  <Link
+                    to="/proposals/$id"
+                    params={{ id: source.proposal.id ?? "" }}
+                    className="text-sm text-primary underline"
+                  >
+                    Abrir Proposta Comercial
+                  </Link>
+                </CardContent>
+              </Card>
+            ) : null;
+          })()}
+          {contract.deal_id && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Origem</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Link
+                  to="/deals/$id"
+                  params={{ id: contract.deal_id }}
+                  className="text-primary hover:underline text-sm"
+                >
+                  Ver negócio de origem →
+                </Link>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
         <TabsContent value="document" className="space-y-5 pt-3">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Cláusulas / corpo do contrato</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Textarea
-            value={bodyHtml}
-            onChange={(e) => setBodyHtml(e.target.value)}
-            placeholder="Cole aqui o texto do contrato ou HTML. Um editor rico será adicionado numa próxima sprint."
-            rows={10}
-          />
-        </CardContent>
-      </Card>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Cláusulas / corpo do contrato</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Textarea
+                value={bodyHtml}
+                onChange={(e) => setBodyHtml(e.target.value)}
+                placeholder="Cole aqui o texto do contrato ou HTML. Um editor rico será adicionado numa próxima sprint."
+                rows={10}
+              />
+            </CardContent>
+          </Card>
 
-      <ImportedFieldsCard contract={contract} />
-
+          <ImportedFieldsCard contract={contract} />
         </TabsContent>
         <TabsContent value="approvals" className="space-y-5 pt-3">
-      <ContractApprovalsPanel contractId={contract.id} />
-      {can("techcontracts.signature_evidence.view.workspace") && (
-        <ContractSignatureCard contractId={contract.id} revisionKey={contract.updated_at ?? ""} />
-      )}
-
+          <ContractApprovalsPanel contractId={contract.id} />
+          {can("techcontracts.signature_evidence.view.workspace") && (
+            <ContractSignatureCard
+              contractId={contract.id}
+              revisionKey={contract.updated_at ?? ""}
+            />
+          )}
         </TabsContent>
         <TabsContent value="amendments" className="space-y-5 pt-3">
-      <ContractParentLink
-        contractId={contract.id}
-        role={role}
-        currency={contract.currency ?? "BRL"}
-        totalValue={Number(contract.total_value ?? 0)}
-        parent={
-          (contract as { parent?: Parameters<typeof ContractParentLink>[0]["parent"] }).parent ??
-          null
-        }
-        canEdit={canUpdateContract}
-        children={
-          (contract as { children?: Parameters<typeof ContractParentLink>[0]["children"] })
-            .children ?? []
-        }
-      />
+          <ContractParentLink
+            contractId={contract.id}
+            role={role}
+            currency={contract.currency ?? "BRL"}
+            totalValue={Number(contract.total_value ?? 0)}
+            parent={
+              (contract as { parent?: Parameters<typeof ContractParentLink>[0]["parent"] })
+                .parent ?? null
+            }
+            canEdit={canUpdateContract}
+            children={
+              (contract as { children?: Parameters<typeof ContractParentLink>[0]["children"] })
+                .children ?? []
+            }
+          />
 
-      <ContractAmendmentsPanel
-        contractId={contract.id}
-        documentKind={(contract as { document_kind?: string }).document_kind ?? "main"}
-        contractRole={role}
-        amendmentOf={(contract as { amendmentOf?: AmendmentRow | null }).amendmentOf ?? null}
-        amendments={(contract as { amendments?: AmendmentRow[] }).amendments ?? []}
-        amendmentNumber={
-          (contract as { amendment_number?: string | null }).amendment_number ?? null
-        }
-        amendmentEffectiveAt={
-          (contract as { amendment_effective_at?: string | null }).amendment_effective_at ?? null
-        }
-        canEdit={canUpdateContract}
-      />
+          <ContractAmendmentsPanel
+            contractId={contract.id}
+            documentKind={(contract as { document_kind?: string }).document_kind ?? "main"}
+            contractRole={role}
+            amendmentOf={(contract as { amendmentOf?: AmendmentRow | null }).amendmentOf ?? null}
+            amendments={(contract as { amendments?: AmendmentRow[] }).amendments ?? []}
+            amendmentNumber={
+              (contract as { amendment_number?: string | null }).amendment_number ?? null
+            }
+            amendmentEffectiveAt={
+              (contract as { amendment_effective_at?: string | null }).amendment_effective_at ??
+              null
+            }
+            canEdit={canUpdateContract}
+          />
 
-      <LinkedProjectsCard contractId={contract.id} />
-
+          <LinkedProjectsCard contractId={contract.id} />
         </TabsContent>
         <TabsContent value="history" className="space-y-5 pt-3">
-      <ContractLinksHistoryCard contractId={contract.id} />
+          <ContractLinksHistoryCard contractId={contract.id} />
 
-      <AiLinkSuggestionsHistoryCard contractId={contract.id} />
-
+          <AiLinkSuggestionsHistoryCard contractId={contract.id} />
         </TabsContent>
       </Tabs>
 
