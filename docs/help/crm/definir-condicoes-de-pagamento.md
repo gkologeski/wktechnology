@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 205
-version: 1
+version: 2
 is_published: true
 ---
 # Definir as condições de pagamento da cotação
@@ -49,3 +49,7 @@ A cotação, a proposta e o contrato mostram as mesmas condições, e as contas 
 ## Relacionados
 - [Gerenciar cotações e gerar propostas](/ajuda/crm/gerenciar-cotacoes)
 - [Editar e enviar uma proposta](/ajuda/crm/editar-enviar-proposta)
+
+## Na proposta e no contrato
+
+Na proposta, as condições aparecem no quadro **Condições comerciais** (tela, link do cliente e PDF). Ao trocar o modelo de proposta, confirme em **Usar modelo**; o assistente continua aberto. No contrato gerado da proposta aceita, as condições aparecem na ficha e no texto do modelo pela variável **Condições de pagamento**.
