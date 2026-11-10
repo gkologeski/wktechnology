@@ -1,5 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ContractDetailPrototype } from "@/components/contracts/prototype/contract-detail-prototype";
+import { WorkScreenAccess } from "@/components/work-access";
+
+function PrototypeAccess() {
+  return (
+    <WorkScreenAccess resources={["techcontracts.contracts"]}>
+      <ContractDetailPrototype />
+    </WorkScreenAccess>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/contracts/prototype")({
   head: () => ({
@@ -18,5 +27,5 @@ export const Route = createFileRoute("/_authenticated/contracts/prototype")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: ContractDetailPrototype,
+  component: PrototypeAccess,
 });
