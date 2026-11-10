@@ -8064,6 +8064,8 @@
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
         "src/lib/hiring/signature.functions.ts": "fbd40253714587c00093d0dc56a57075f1d627cb29c41dadc428f8821efbcbcb",
         "src/components/sales/prototype/payment-terms-prototype.tsx": "5b4e81b221543e95912a42a7d898457788da75797869558df0e9baee4c052faf",
+        "src/routes/_authenticated/sales.payment-terms-prototype.tsx": "087e5678360f1d17cb3461cf4e5ede54eb547f1d2b767e101a8944cadb3ab639",
+        "src/components/sales/prototype/payment-terms-prototype.tsx": "5b4e81b221543e95912a42a7d898457788da75797869558df0e9baee4c052faf",
         "src/routes/_authenticated/sales.payment-terms-prototype.tsx": "087e5678360f1d17cb3461cf4e5ede54eb547f1d2b767e101a8944cadb3ab639"
       }
     },
