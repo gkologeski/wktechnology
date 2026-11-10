@@ -178,6 +178,7 @@ import { Route as AuthenticatedProspectingIndexRouteImport } from './routes/_aut
 import { Route as AuthenticatedProspectingPrototypeRouteImport } from './routes/_authenticated/prospecting.prototype'
 import { Route as AuthenticatedProspectingSequencesRouteImport } from './routes/_authenticated/prospecting.sequences'
 import { Route as AuthenticatedQaTestCasesRouteImport } from './routes/_authenticated/qa.test-cases'
+import { Route as AuthenticatedSalesPrototypeRouteImport } from './routes/_authenticated/sales.prototype'
 import { Route as AuthenticatedServicesIndexRouteImport } from './routes/_authenticated/services.index'
 import { Route as AuthenticatedServicesIdRouteImport } from './routes/_authenticated/services.$id'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
@@ -1377,6 +1378,12 @@ const AuthenticatedQaTestCasesRoute =
   AuthenticatedQaTestCasesRouteImport.update({
     id: '/qa/test-cases',
     path: '/qa/test-cases',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSalesPrototypeRoute =
+  AuthenticatedSalesPrototypeRouteImport.update({
+    id: '/sales/prototype',
+    path: '/sales/prototype',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedServicesIndexRoute =
@@ -3078,6 +3085,7 @@ export interface FileRoutesByFullPath {
   '/prospecting/prototype': typeof AuthenticatedProspectingPrototypeRoute
   '/prospecting/sequences': typeof AuthenticatedProspectingSequencesRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
+  '/sales/prototype': typeof AuthenticatedSalesPrototypeRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
@@ -3506,6 +3514,7 @@ export interface FileRoutesByTo {
   '/prospecting/prototype': typeof AuthenticatedProspectingPrototypeRoute
   '/prospecting/sequences': typeof AuthenticatedProspectingSequencesRoute
   '/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
+  '/sales/prototype': typeof AuthenticatedSalesPrototypeRoute
   '/services/$id': typeof AuthenticatedServicesIdRoute
   '/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
@@ -3941,6 +3950,7 @@ export interface FileRoutesById {
   '/_authenticated/prospecting/prototype': typeof AuthenticatedProspectingPrototypeRoute
   '/_authenticated/prospecting/sequences': typeof AuthenticatedProspectingSequencesRoute
   '/_authenticated/qa/test-cases': typeof AuthenticatedQaTestCasesRoute
+  '/_authenticated/sales/prototype': typeof AuthenticatedSalesPrototypeRoute
   '/_authenticated/services/$id': typeof AuthenticatedServicesIdRoute
   '/_authenticated/settings/access-policy': typeof AuthenticatedSettingsAccessPolicyRoute
   '/_authenticated/settings/ads-sync': typeof AuthenticatedSettingsAdsSyncRoute
@@ -4377,6 +4387,7 @@ export interface FileRouteTypes {
     | '/prospecting/prototype'
     | '/prospecting/sequences'
     | '/qa/test-cases'
+    | '/sales/prototype'
     | '/services/$id'
     | '/settings/access-policy'
     | '/settings/ads-sync'
@@ -4805,6 +4816,7 @@ export interface FileRouteTypes {
     | '/prospecting/prototype'
     | '/prospecting/sequences'
     | '/qa/test-cases'
+    | '/sales/prototype'
     | '/services/$id'
     | '/settings/access-policy'
     | '/settings/ads-sync'
@@ -5239,6 +5251,7 @@ export interface FileRouteTypes {
     | '/_authenticated/prospecting/prototype'
     | '/_authenticated/prospecting/sequences'
     | '/_authenticated/qa/test-cases'
+    | '/_authenticated/sales/prototype'
     | '/_authenticated/services/$id'
     | '/_authenticated/settings/access-policy'
     | '/_authenticated/settings/ads-sync'
@@ -6843,6 +6856,13 @@ declare module '@tanstack/react-router' {
       path: '/qa/test-cases'
       fullPath: '/qa/test-cases'
       preLoaderRoute: typeof AuthenticatedQaTestCasesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/sales/prototype': {
+      id: '/_authenticated/sales/prototype'
+      path: '/sales/prototype'
+      fullPath: '/sales/prototype'
+      preLoaderRoute: typeof AuthenticatedSalesPrototypeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/services/': {
@@ -9304,6 +9324,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProjectsTasksRoute: typeof AuthenticatedProjectsTasksRoute
   AuthenticatedProjectsTimesheetRoute: typeof AuthenticatedProjectsTimesheetRoute
   AuthenticatedQaTestCasesRoute: typeof AuthenticatedQaTestCasesRoute
+  AuthenticatedSalesPrototypeRoute: typeof AuthenticatedSalesPrototypeRoute
   AuthenticatedServicesIdRoute: typeof AuthenticatedServicesIdRoute
   AuthenticatedSurveyBuilderIdRoute: typeof AuthenticatedSurveyBuilderIdRoute
   AuthenticatedWorkspaceModulesRoute: typeof AuthenticatedWorkspaceModulesRoute
@@ -9474,6 +9495,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProjectsTasksRoute: AuthenticatedProjectsTasksRoute,
   AuthenticatedProjectsTimesheetRoute: AuthenticatedProjectsTimesheetRoute,
   AuthenticatedQaTestCasesRoute: AuthenticatedQaTestCasesRoute,
+  AuthenticatedSalesPrototypeRoute: AuthenticatedSalesPrototypeRoute,
   AuthenticatedServicesIdRoute: AuthenticatedServicesIdRoute,
   AuthenticatedSurveyBuilderIdRoute: AuthenticatedSurveyBuilderIdRoute,
   AuthenticatedWorkspaceModulesRoute: AuthenticatedWorkspaceModulesRoute,
