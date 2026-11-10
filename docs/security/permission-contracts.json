@@ -10774,6 +10774,14 @@
         {
           "file": "src/lib/services/activation-terms.ts",
           "symbol": "activationSchedule"
+        },
+        {
+          "file": "src/lib/sales/payment-terms.ts",
+          "symbol": "buildPaymentSchedule"
+        },
+        {
+          "file": "src/lib/sales/payment-terms.ts",
+          "symbol": "validatePaymentTerms"
         }
       ],
       "database": [
