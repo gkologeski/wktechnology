@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { clampInt } from "@/lib/contracts/contract-terms-defaults";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -114,6 +115,12 @@ export function ContractWizard({
   const [templateTitle, setTemplateTitle] = useState("");
   const [copyServices, setCopyServices] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [installmentsCount, setInstallmentsCount] = useState("");
+  const [installmentsDueDay, setInstallmentsDueDay] = useState("");
+  const terms = {
+    installmentsCount: clampInt(installmentsCount, 1, 120) ?? undefined,
+    installmentsDueDay: clampInt(installmentsDueDay, 1, 31) ?? undefined,
+  };
 
   const originsQ = useQuery({
     queryKey: ["contract-wizard-origins", dealId, source?.quoteId, source?.proposalId],
@@ -285,6 +292,7 @@ export function ContractWizard({
             dealId: dealId ?? undefined,
             companyId: source?.companyId ?? undefined,
             title: templateTitle.trim(),
+            ...terms,
           },
         });
         id = row.id;
@@ -294,6 +302,7 @@ export function ContractWizard({
             ...salesSource!,
             contractingLegalEntityId: entityId === "none" ? undefined : entityId,
             mainContractId: choice === "new" ? null : choice,
+            ...terms,
           },
         });
         if (r.reused) toast.info("Este documento já gerou um contrato — abrindo o existente.");
@@ -520,6 +529,31 @@ export function ContractWizard({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="cw-installments">Parcelas</Label>
+                  <Input
+                    id="cw-installments"
+                    inputMode="numeric"
+                    placeholder="Usar o da proposta"
+                    value={installmentsCount}
+                    onChange={(e) => setInstallmentsCount(e.target.value.replace(/\D/g, ""))}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="cw-due-day">Dia de vencimento</Label>
+                  <Input
+                    id="cw-due-day"
+                    inputMode="numeric"
+                    placeholder="Usar o da proposta"
+                    value={installmentsDueDay}
+                    onChange={(e) => setInstallmentsDueDay(e.target.value.replace(/\D/g, ""))}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground sm:col-span-2">
+                  Preencha só se a proposta não tiver parcelas e vencimento ou para trocá-los neste contrato.
+                </p>
               </div>
             </div>
           )}
