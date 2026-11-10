@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 30
-version: 2
+version: 3
 is_published: true
 ---
 # Editar a ficha de um contrato
@@ -17,13 +17,21 @@ is_published: true
 **Onde fica:** TechContracts > Contratos (/contracts/$id).
 **Antes de começar:** Abrir o contrato correto e conferir a versão salva.
 
+## Etapas e próximo passo
+No topo da ficha aparecem as etapas (Rascunho → Revisão e aprovação → Assinatura → Ativo → Renovação ou encerramento) e o quadro "Próximo passo", com a ação principal da situação atual:
+- Rascunho: "Enviar para aprovação" — liberado quando vigência, valor total e corpo estão preenchidos; abre a aba "Aprovações e assinatura".
+- Em revisão: "Ver aprovações pendentes".
+- Aguardando assinatura: "Acompanhar assinatura"; "Ativar contrato" exige a permissão de ativação.
+- Ativo: "Registrar medição" ou "Adicionar aditivo"; a 30 dias do término, "Renovar".
+Botões desabilitados mostram o motivo (ex.: "Sem permissão"). Fluxo do contrato, Medições, Visualizar arquivo original e Excluir ficam em "Mais ações".
+
 ## Passo a passo
-1. Abra o contrato pela lista.
+1. Abra o contrato pela lista. O conteúdo fica nas abas Visão geral, Documento, Aprovações e assinatura, Aditivos e vínculos e Histórico.
 2. Edite "Título", "Tipo", "Tipo de documento", "Contrato principal" quando for aditivo, e "Valor total".
 3. Revise "Início", "Fim", "Renovação automática" e "Aviso prévio (dias)".
-4. Em "Cláusulas / corpo do contrato", edite o texto quando necessário.
+4. Na aba "Documento", em "Cláusulas / corpo do contrato", edite o texto quando necessário.
 5. Clique em "Salvar" e aguarde "Contrato atualizado.".
-6. Use "Visualizar" para abrir o arquivo original quando essa ação estiver disponível.
+6. Use "Mais ações" › "Visualizar arquivo original" para abrir o arquivo original quando essa ação estiver disponível.
 ![Tela: Editar a ficha de um contrato, sem dados pessoais reais](/help-media/contracts/editar-contrato.webp)
 
 ## Resultado esperado

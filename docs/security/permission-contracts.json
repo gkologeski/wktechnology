@@ -8054,7 +8054,7 @@
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
         "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
-        "src/routes/_authenticated/contracts.$id.tsx": "f4dd8961a0c0a7faff760d09d55cb191b8d9da10158790ff43c0771e8d607c73",
+        "src/routes/_authenticated/contracts.$id.tsx": "84514c1919eccb48f88c81396a851a53ca64f7b05217305239ea4fe94ad7cee1",
         "src/routes/_authenticated/settings.esign.tsx": "3f34242a562fb3977f527789872cac53341b84205a943bf2c3fbcb884ce67e48",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
@@ -8063,7 +8063,7 @@
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
         "src/lib/hiring/signature.functions.ts": "fbd40253714587c00093d0dc56a57075f1d627cb29c41dadc428f8821efbcbcb",
-        "src/components/contracts/prototype/contract-detail-prototype.tsx": "05499437e1276cd68bda94c2847d61215141ccd83ac61ed50e115c20be5211f5",
+        "src/components/contracts/prototype/contract-detail-prototype.tsx": "514c6bad5d98b1f58ed4e6b149c3801071d0317baa287b014c396d99abceb266",
         "src/routes/_authenticated/contracts.prototype.tsx": "086d9fe6cb910061149dfed9ea32b4e6acc92924a6eea08952e7fc5c6a5bbd89"
       }
     },
@@ -10473,11 +10473,13 @@
       }
     },
     {
-      "id": "contracts-detail-prototype",
+      "id": "contracts-detail-next-step",
       "kind": "presentation",
-      "rationale": "PROXIMO-PASSO-CONTRATO mockup: static demo data and local UI state only, rendered inside the authenticated layout. No server functions, queries, mutations, grants or real contract data; buttons are inert.",
+      "rationale": "PROXIMO-PASSO-CONTRATO: pure next-step rule and presentational stepper/card. No I/O; actions only switch tabs or navigate to existing gated screens whose permissions stay in their own contracts.",
       "files": {
-        "src/components/contracts/prototype/data.ts": "dfdfe4205259f09e86a3f2cd5ac1428d4cb231948c28e5e0a2e2ac8f458feff6"
+        "src/lib/contracts/contract-next-step.ts": "c90ae55d6e3946529e4a3faea0c8b9d57a4de64ee26166234bcdb1a9f444292f",
+        "src/components/contracts/detail/contract-next-step-card.tsx": "36132b4af714224917c1e6761aaa4724e55bd3ff5f678c78b5eb5e3e30e30c27",
+        "src/components/contracts/prototype/data.ts": "4a77b89a6a8c3cfdf422d6469a1ca13fcbb1b7a940cbcdd564c4c28b6b1f8587"
       }
     }
   ],
