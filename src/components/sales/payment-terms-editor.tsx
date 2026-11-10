@@ -16,13 +16,19 @@ import {
 import {
   buildPaymentSchedule,
   downPaymentAmount,
+  downPaymentDueOf,
   validatePaymentTerms,
   type PaymentTerms,
 } from "@/lib/sales/payment-terms";
 import { formatCurrency } from "@/lib/crm";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 
-const fmtDate = (iso: string | null) =>
-  iso ? new Date(`${iso}T12:00:00Z`).toLocaleDateString("pt-BR") : "Na entrega do marco";
+const fmtDate = (iso: string | null, event?: "signature" | "milestone") =>
+  iso
+    ? new Date(`${iso}T12:00:00Z`).toLocaleDateString("pt-BR")
+    : event === "signature"
+      ? "Na assinatura do contrato"
+      : "Na entrega do marco";
 
 const num = (v: string) => (v === "" ? 0 : Number(v));
 
@@ -120,6 +126,39 @@ export function PaymentTermsEditor({
                   ? `% = ${formatCurrency(downPaymentAmount(dp, total), currency)}`
                   : "R$"}
               </span>
+            </div>
+          )}
+          {dp.kind !== "none" && (
+            <div className="flex flex-col gap-2">
+              <Label>Vencimento da entrada</Label>
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                className="justify-start flex-wrap"
+                value={downPaymentDueOf(terms).kind}
+                aria-label="Vencimento da entrada"
+                onValueChange={(k) =>
+                  k &&
+                  onChange({
+                    ...terms,
+                    downPaymentDue:
+                      k === "date" ? { kind: "date", date: "" } : { kind: "signature" },
+                  })
+                }
+              >
+                <ToggleGroupItem value="signature">Na assinatura do contrato</ToggleGroupItem>
+                <ToggleGroupItem value="date">Em uma data</ToggleGroupItem>
+              </ToggleGroup>
+              {terms.downPaymentDue?.kind === "date" && (
+                <IsoDatePicker
+                  ariaLabel="Data de vencimento da entrada"
+                  className="w-48"
+                  value={terms.downPaymentDue.date || null}
+                  onChange={(v) =>
+                    onChange({ ...terms, downPaymentDue: { kind: "date", date: v ?? "" } })
+                  }
+                />
+              )}
             </div>
           )}
         </div>
@@ -267,7 +306,7 @@ export function PaymentTermsEditor({
                 <TableRow key={s.sequence}>
                   <TableCell>{s.sequence}</TableCell>
                   <TableCell>{s.label}</TableCell>
-                  <TableCell className="text-muted-foreground">{fmtDate(s.dueDate)}</TableCell>
+                  <TableCell className="text-muted-foreground">{fmtDate(s.dueDate, s.dueEvent)}</TableCell>
                   <TableCell className="text-right">{formatCurrency(s.amount, currency)}</TableCell>
                 </TableRow>
               ))}
