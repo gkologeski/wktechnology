@@ -385,7 +385,10 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const chosen = templates.find((t) => t.id === templateId) ?? null;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => (saving || (!v && confirmingRef.current) ? undefined : onOpenChange(v))}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => (saving || (!v && confirmingRef.current) ? undefined : onOpenChange(v))}
+    >
       <DialogContent
         className="max-w-3xl max-h-[90vh] overflow-y-auto"
         // A confirmação "Trocar o conteúdo?" abre por cima; clicar nela não fecha o assistente.

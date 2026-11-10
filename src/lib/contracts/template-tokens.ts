@@ -16,7 +16,11 @@ export const CONTRACT_TEMPLATE_TOKENS: MessageToken[] = [
   { token: "{{contract.payment_day}}", label: "Dia de pagamento", group: "Contrato" },
   { token: "{{contract.validity_days}}", label: "Vigência (dias)", group: "Contrato" },
   { token: "{{contract.installments_count}}", label: "Quantidade de parcelas", group: "Contrato" },
-  { token: "{{contract.installments_due_day}}", label: "Dia de vencimento das parcelas", group: "Contrato" },
+  {
+    token: "{{contract.installments_due_day}}",
+    label: "Dia de vencimento das parcelas",
+    group: "Contrato",
+  },
   { token: "{{contract.payment_method}}", label: "Forma de pagamento", group: "Contrato" },
   { token: "{{contract.payment_schedule}}", label: "Condições de pagamento", group: "Contrato" },
   { token: "{{contract.readjustment_index}}", label: "Índice de reajuste", group: "Contrato" },
@@ -98,8 +102,7 @@ export function mergeTemplateBody(
       const value = getPath(ctx, key);
       return !TEMPLATE_TOKEN_KEYS.includes(key) || value == null || String(value).trim() === "";
     });
-    if (missing.length)
-      throw new Error(missingFieldsMessage(missing));
+    if (missing.length) throw new Error(missingFieldsMessage(missing));
   }
   return renderTokensWith(html, (key) => {
     const value = getPath(ctx, key);

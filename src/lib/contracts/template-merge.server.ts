@@ -277,8 +277,7 @@ export async function buildMergeContext(
       input.installmentsDueDay ??
       proposalTerms?.installments_due_day ??
       null,
-    payment_method:
-      (defaults.payment_method as string) ?? proposalTerms?.payment_method ?? null,
+    payment_method: (defaults.payment_method as string) ?? proposalTerms?.payment_method ?? null,
     readjustment_index: (defaults.readjustment_index as string) ?? null,
     penalty_percent: pickTerm<number>(
       null,
@@ -325,9 +324,7 @@ export async function buildMergeContext(
       address: legalEntityAddress(entity?.address_json),
     },
     signer: {
-      full_name: signer
-        ? [signer.first_name, signer.last_name].filter(Boolean).join(" ")
-        : null,
+      full_name: signer ? [signer.first_name, signer.last_name].filter(Boolean).join(" ") : null,
       cpf: (signer?.custom_fields?.cpf as string) ?? null,
       email: signer?.email ?? null,
     },

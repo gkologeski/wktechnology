@@ -262,7 +262,9 @@ export function ContractWizard({
     queryFn: async () => {
       const { data } = await supabase
         .from("proposals")
-        .select("installments_count, installments_due_day, validity_days, payment_terms, total_amount")
+        .select(
+          "installments_count, installments_due_day, validity_days, payment_terms, total_amount",
+        )
         .eq("id", termsProposalId!)
         .maybeSingle();
       return data;
@@ -592,8 +594,8 @@ export function ContractWizard({
                 </div>
                 {termsProposalId && (
                   <p className="text-sm sm:col-span-2" aria-live="polite">
-                    Vigência: começa hoje e vale{" "}
-                    {proposalTermsQ.data?.validity_days ?? 90} dias (término em{" "}
+                    Vigência: começa hoje e vale {proposalTermsQ.data?.validity_days ?? 90} dias
+                    (término em{" "}
                     {new Date(
                       Date.now() + (proposalTermsQ.data?.validity_days ?? 90) * 86_400_000,
                     ).toLocaleDateString("pt-BR")}
@@ -601,7 +603,8 @@ export function ContractWizard({
                   </p>
                 )}
                 <p className="text-xs text-muted-foreground sm:col-span-2">
-                  Preencha só se a proposta não tiver parcelas e vencimento ou para trocá-los neste contrato.
+                  Preencha só se a proposta não tiver parcelas e vencimento ou para trocá-los neste
+                  contrato.
                 </p>
               </div>
             </div>
