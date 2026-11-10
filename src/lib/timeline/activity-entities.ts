@@ -3,7 +3,6 @@ import { uploadNoteAttachment } from "./note-attachments.functions";
 // automáticas ao criar atividade, membros do workspace e upload de anexos.
 // Extraído de `src/components/activity-timeline.tsx` sem mudança de comportamento.
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import type { Attachment, RelatedKey, TeamMember } from "@/components/activity/timeline-shared";
 import type { WhatsAppIdentity } from "@/lib/whatsapp-paste";
 
