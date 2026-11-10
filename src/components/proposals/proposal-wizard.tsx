@@ -210,7 +210,11 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
 
   function renderTemplate(t: Template): string {
     if (!draft) return normalizeProposalTemplateHtml(t.html);
-    return renderQuoteTemplate(normalizeProposalTemplateHtml(t.html), {
+    const html = normalizeProposalTemplateHtml(t.html).replace(
+      /<p>\s*\{\{\{terms_block\}\}\}\s*<\/p>/g,
+      "{{{terms_block}}}",
+    );
+    return renderQuoteTemplate(html, {
       items_table: itemsTableHtml(draft.items),
       company: { name: draft.company_name ?? "" },
       contact: { name: draft.contact_name ?? "" },
