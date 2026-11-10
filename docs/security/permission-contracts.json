@@ -10212,14 +10212,14 @@
       "files": {
         "src/components/contracts/apply-contract-template-dialog.tsx": "f1b8f344a6a5bbc22cc7d8aa43c04bdd0b680fbf579de229b7da056b3025ef3c",
         "src/lib/contracts/contract-create.server.ts": "83d6a2580954f05b3340a2404a75ab876669bf256965de4e203b8bfb5bf3d66b",
-        "src/lib/contracts/template-merge.server.ts": "b1c8152ee2c365a291bfca0241c2042eba623beff9fce98ccb524cd3db989f25",
-        "src/lib/contracts/templates.functions.ts": "c237fa723b38ad1107fb831ea2fd8639ae3608237b047a59ab3fb315728d5b99",
+        "src/lib/contracts/template-merge.server.ts": "7d34397cf7f273533cd923410da205589ab61b88c438e673cc597faba7374644",
+        "src/lib/contracts/templates.functions.ts": "0cc3731ac8ed3660b059eae7f37581ce72ccb8bebbe74834a4f7c437791f7d27",
         "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
-        "src/lib/sales-flow.server.ts": "921ea47d0dc77de74958a21e27d57a62277650d59646e42005880d01e9f9aae0",
+        "src/lib/sales-flow.server.ts": "210da931998802a2bca255b4578b2f23048dd2bac248c320e6bf6ec12ee43fe1",
         "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
-        "src/components/contracts/contract-wizard.tsx": "fca40ccfa8137fb3f857f7412f7bef9bf132395a49f35c7a6ff692a978f2041b",
-        "src/lib/sales-flow.functions.ts": "ba9d014b9aff1352c7205b7f44b19d8b59874707f6ec48baee4e29222c6eb56f",
+        "src/components/contracts/contract-wizard.tsx": "5479de30857cd8340aed7c86fef16b5d7a8747fc5b8b4f6579fb8ff60b46ab4f",
+        "src/lib/sales-flow.functions.ts": "143d9934d1af165fdd16768c1abebf7b7cc59bcc7df47f945783dd92e19ab222",
         "src/components/proposals/proposal-wizard.tsx": "291ff7b2562eb34a1d1491e26384f3f59925bc5253787619fcb6e7c670d06cb4",
         "src/lib/proposals/proposal-draft.server.ts": "fee16e6e60f05d647d0f46f2280144d91ee81de59f67b41868204486a42f664e",
         "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
@@ -10296,7 +10296,7 @@
         "review_by": "2027-03-01"
       },
       "files": {
-        "src/lib/contracts/template-tokens.ts": "0bee5f88a9f792f92a71368f43ec4ec32bcbcb0eead33061e457c1fb8be55bbb"
+        "src/lib/contracts/template-tokens.ts": "1306a34713faabbc067e8ce57a6426d90e998d121594cf0c92b6c968cec5d305"
       }
     },
     {
@@ -10397,13 +10397,76 @@
     {
       "id": "dados-contrato-pure",
       "kind": "presentation",
-      "rationale": "DADOS-CONTRATO/ROLAGEM-CONTRATO pure helpers: contract term defaults and clamps, proposal draft type fields, and the lazy editor wrapper forwarding maxHeight. No I/O, routes, actions or data access; writes stay under contract-accepted-proposal-mapping. TEXTO-PROPOSTA: pure proposal terms block helper. TEXTO-CONSULTORIA: pure signer choice helper.",
+      "rationale": "DADOS-CONTRATO/ROLAGEM-CONTRATO pure helpers: contract term defaults and clamps, proposal draft type fields, and the lazy editor wrapper forwarding maxHeight. No I/O, routes, actions or data access; writes stay under contract-accepted-proposal-mapping. TEXTO-PROPOSTA: pure proposal terms block helper. TEXTO-CONSULTORIA: pure signer choice helper. TABELA-FINAL: pure items-table placement helper and proposal document/PDF ordering (presentation only; same data, same token gate).",
       "files": {
         "src/lib/proposals/proposal-draft-types.ts": "5ce2f60af71d1aad44718e7f37ead519c751e325b8fb94358e47fe939ab82554",
-        "src/lib/contracts/contract-terms-defaults.ts": "7196abd6a9be2f603966ed949608197d33e409352b7302093e79c3fe8a0cf4d8",
+        "src/lib/contracts/contract-terms-defaults.ts": "4243429565dc9b855faf2b73986e8044ef2ad746a9582ee841e0f85b42583463",
         "src/components/word-editor-lazy.tsx": "4f6e7ef7880aa6b35c94c9bb6b2caacba43d380473fd193ab6adc1a0ed428e8d",
         "src/lib/proposals/proposal-terms-block.ts": "d110afff94214df25de49cf203854d89b2293f757830433f949c49e6be65a03d",
-        "src/lib/proposals/proposal-signer.ts": "2310c24c8b7a1b9e652a1530974c697671fb89c77c8f75793d2eb577c1a56e0d"
+        "src/lib/proposals/proposal-signer.ts": "2310c24c8b7a1b9e652a1530974c697671fb89c77c8f75793d2eb577c1a56e0d",
+        "src/lib/proposals/proposal-items-placement.ts": "1a5de997747831baffb6a877b730bb5ab162bca1885f655701cfcf25bfce3442",
+        "src/components/proposals/proposal-document.tsx": "d3d2a6f4094bb3965e85cbbf66216279a29ef61efb592dea4521443f581b8826",
+        "src/lib/proposals/proposal-pdf-rules.ts": "8bdfc0a514dcc11b1798d5bab756ddf63569fad299f46f8ac0af12d2dc1c9f15"
+      }
+    },
+    {
+      "id": "proposal-public-pdf",
+      "kind": "public",
+      "resources": [
+        "techsales.proposals"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.proposals.view.workspace"
+      ],
+      "rationale": "TABELA-FINAL: public PDF of a sent proposal through its capability link. The random public_token (column revoked from authenticated) scopes the read to one proposal via loadProposalDocument; no listing, no internal ids; drafts are not exported.",
+      "controls": [
+        {
+          "file": "src/lib/proposals/proposal-pdf-rules.ts",
+          "symbol": "isValidProposalToken"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "sales_view"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/proposals/proposal-pdf-rules.test.ts",
+          "name": "proposal pdf accepts a well-formed token"
+        },
+        "missing_permission": {
+          "file": "src/lib/proposals/proposal-pdf-rules.test.ts",
+          "name": "proposal pdf rejects a missing token"
+        },
+        "explicit_deny": {
+          "file": "src/lib/proposals/proposal-pdf-rules.test.ts",
+          "name": "proposal pdf rejects a short token"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/proposals/proposal-pdf-rules.test.ts",
+          "name": "proposal pdf rejects an oversized token"
+        },
+        "inactive_member": {
+          "file": "src/lib/proposals/proposal-pdf-rules.test.ts",
+          "name": "proposal pdf rejects a non-string token"
+        }
+      },
+      "files": {
+        "src/routes/api/public/proposals/$token.pdf.ts": "3606ebbd444a3896d44e5c2455b93a5733d483ccb7855aa448e9bcfc29182409"
+      },
+      "exception": {
+        "mechanism": "Random public_token issued when the proposal is sent; server loads only the proposal matching the token.",
+        "boundary": "Token scopes access to a single proposal document; no session, no listing.",
+        "revocation": "Regenerate or clear the proposal public_token to invalidate the link.",
+        "review_by": "2027-05-10"
       }
     }
   ],

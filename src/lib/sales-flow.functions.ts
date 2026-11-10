@@ -60,6 +60,8 @@ export const createContractFromSales = createServerFn({ method: "POST" })
         quoteId: z.string().uuid().optional(),
         mainContractId: z.string().uuid().nullable().optional(),
         contractingLegalEntityId: z.string().uuid().optional(),
+        installmentsCount: z.number().int().min(1).max(120).optional(),
+        installmentsDueDay: z.number().int().min(1).max(31).optional(),
       })
       .refine((v) => v.proposalId || v.quoteId, "Informe a proposta ou a cotação")
       .parse(d),

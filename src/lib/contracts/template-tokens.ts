@@ -76,6 +76,17 @@ export const TEMPLATE_TOKEN_KEYS = CONTRACT_TEMPLATE_TOKENS.map((t) =>
 );
 
 /** Substitui os tokens do modelo pelos valores do contexto. Tokens sem valor viram `[[label]]`. */
+/** Mensagem em PT-BR com os rótulos das variáveis obrigatórias vazias. */
+export function missingFieldsMessage(keys: string[]): string {
+  const labels = keys.map(
+    (k) => CONTRACT_TEMPLATE_TOKENS.find((t) => t.token === `{{${k}}}`)?.label ?? k,
+  );
+  const hint = keys.some((k) => k.startsWith("contract.installments_"))
+    ? " Informe parcelas e vencimento na proposta ou no passo Dados do Novo contrato."
+    : "";
+  return `Preencha os dados obrigatórios do modelo: ${labels.join(", ")}.${hint}`;
+}
+
 export function mergeTemplateBody(
   html: string,
   ctx: Record<string, unknown>,
@@ -87,7 +98,7 @@ export function mergeTemplateBody(
       return !TEMPLATE_TOKEN_KEYS.includes(key) || value == null || String(value).trim() === "";
     });
     if (missing.length)
-      throw new Error(`Preencha os dados obrigatórios do modelo: ${missing.join(", ")}.`);
+      throw new Error(missingFieldsMessage(missing));
   }
   return renderTokensWith(html, (key) => {
     const value = getPath(ctx, key);

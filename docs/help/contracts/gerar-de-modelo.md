@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 25
-version: 3
+version: 4
 is_published: true
 ---
 # Gerar contrato pelo diálogo de modelo publicado
@@ -56,3 +56,7 @@ No assistente **Novo contrato**, a etapa **Dados** também permite escolher a Pr
 ## Preenchimento automático
 
 Ao gerar um contrato a partir de uma proposta aceita, o sistema preenche: parcelas, dia de vencimento e vigência (padrão 90 dias, com fim calculado a partir do início); multa (padrão 2%) e foro (padrão Florianópolis-SC), salvo se o modelo definir outro valor; e o signatário da contratante (contato marcado como signatário legal, com CPF). Se houver mais de um signatário, nenhum é escolhido automaticamente. Endereço vazio da pessoa jurídica prestadora é completado pelos dados oficiais do CNPJ, sem sobrescrever endereço já cadastrado. Novas variáveis: `{{contract.validity_days}}`, `{{contract.installments_count}}`, `{{contract.installments_due_day}}`, `{{signer.full_name}}`, `{{signer.cpf}}`, `{{signer.email}}`.
+
+## Parcelas, vencimento e lei aplicável
+
+No passo **Dados** do Novo contrato, os campos **Parcelas** e **Dia de vencimento** permitem completar ou trocar esses dados quando a proposta não os trouxer. A **Lei aplicável** tem padrão "Legislação da República Federativa do Brasil", salvo se o modelo definir outra. Se faltar algum dado obrigatório, a mensagem mostra o nome do campo em português.

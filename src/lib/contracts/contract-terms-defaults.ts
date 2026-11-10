@@ -4,6 +4,7 @@
 export const DEFAULT_VALIDITY_DAYS = 90;
 export const DEFAULT_PENALTY_PERCENT = 2;
 export const DEFAULT_JURISDICTION = "Florianópolis-SC";
+export const DEFAULT_GOVERNING_LAW = "Legislação da República Federativa do Brasil";
 
 /** Converte texto em inteiro dentro do intervalo; vazio/ inválido vira null. */
 export function clampInt(raw: string, min: number, max: number): number | null {

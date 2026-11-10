@@ -6,6 +6,7 @@ import { loadAcceptedProposalSource, legalEntityAddress } from "./accepted-propo
 import { usedTokens } from "./template-tokens";
 import {
   DEFAULT_JURISDICTION,
+  DEFAULT_GOVERNING_LAW,
   DEFAULT_PENALTY_PERCENT,
   DEFAULT_VALIDITY_DAYS,
   endFromValidity,
@@ -71,6 +72,8 @@ export type MergeInput = {
   title?: string;
   proposalId?: string;
   contractingLegalEntityId?: string;
+  installmentsCount?: number;
+  installmentsDueDay?: number;
 };
 
 export async function buildMergeContext(
@@ -247,8 +250,8 @@ export async function buildMergeContext(
       (defaults.ends_at as string) ??
       (startsAt && validityDays ? endFromValidity(startsAt, validityDays) : null),
     validity_days: validityDays,
-    installments_count: proposalTerms?.installments_count ?? null,
-    installments_due_day: proposalTerms?.installments_due_day ?? null,
+    installments_count: input.installmentsCount ?? proposalTerms?.installments_count ?? null,
+    installments_due_day: input.installmentsDueDay ?? proposalTerms?.installments_due_day ?? null,
     notice_days: (defaults.notice_days as number) ?? 30,
     total_value: source
       ? (source.proposal.total_amount ?? 0)
@@ -258,7 +261,10 @@ export async function buildMergeContext(
       ? (source.proposal.currency ?? "BRL")
       : ((defaults.currency as string) ?? deal?.currency ?? service?.currency ?? "BRL"),
     payment_day:
-      (defaults.payment_day as number) ?? proposalTerms?.installments_due_day ?? null,
+      (defaults.payment_day as number) ??
+      input.installmentsDueDay ??
+      proposalTerms?.installments_due_day ??
+      null,
     payment_method:
       (defaults.payment_method as string) ?? proposalTerms?.payment_method ?? null,
     readjustment_index: (defaults.readjustment_index as string) ?? null,
@@ -275,7 +281,11 @@ export async function buildMergeContext(
       defaults.jurisdiction as string | null,
       DEFAULT_JURISDICTION,
     ),
-    governing_law: (defaults.governing_law as string) ?? null,
+    governing_law: pickTerm<string>(
+      null,
+      defaults.governing_law as string | null,
+      DEFAULT_GOVERNING_LAW,
+    ),
   };
 
   const ctx = {

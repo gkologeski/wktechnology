@@ -49,7 +49,7 @@ it("blocks missing and unknown variables instead of issuing an incomplete contra
       { proposal: { version: 3 } },
       { strict: true },
     ),
-  ).toThrow("contracting.address");
+  ).toThrow("Endereço");
   expect(() => mergeTemplateBody("{{proposal.latest}}", {}, { strict: true })).toThrow(
     "proposal.latest",
   );
