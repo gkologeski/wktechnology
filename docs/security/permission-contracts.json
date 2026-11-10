@@ -323,7 +323,7 @@
       },
       "files": {
         "src/lib/access-control/sales-route-map.ts": "fc61ef3ef6d292e60f56b1bc0859ce3953129c595c107ffe058359947efa4117",
-        "src/routes/_authenticated/settings.tsx": "d887a815faf57f0d91dc5ff31cc9f0529ba0ff0a29e289875900e7cff326350a",
+        "src/routes/_authenticated/settings.tsx": "89b93cbb5d5612b607b4b3b5489a3eca747b3e0beb639f021a52a198545ec321",
         "src/routes/_authenticated.tsx": "7a8c57f0ef160cc66068271b9fec9cd8129b36b2895978317c59885dad3fa296",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
       }
@@ -10898,14 +10898,6 @@
           "file": "src/lib/access-control/sales-area-ci.test.ts",
           "name": "sales area refuses an inactive execution actor"
         }
-      }
-    },
-    {
-      "id": "settings-legal-entities-shortcut",
-      "kind": "presentation",
-      "rationale": "Presentation only: shortcuts to existing Empresas (CNPJs)/Grupos empresariais screens in /settings, gated by existing view permissions; no new action or data.",
-      "files": {
-        "src/routes/_authenticated/settings.tsx": "89b93cbb5d5612b607b4b3b5489a3eca747b3e0beb639f021a52a198545ec321"
       }
     }
   ],
