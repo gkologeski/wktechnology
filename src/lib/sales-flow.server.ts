@@ -31,6 +31,7 @@ type QuoteRow = {
   valid_until: string | null;
   service_line: string | null;
   assigned_to: string | null;
+  payment_terms?: unknown;
 };
 
 function esc(s: string): string {
@@ -49,7 +50,7 @@ async function loadQuote(supabase: SupabaseClient, quoteId: string) {
   const { data: quote, error } = await supabase
     .from("quotes")
     .select(
-      "id, number, title, deal_id, contact_id, company_id, currency, total, terms, notes, valid_until, service_line, assigned_to",
+      "id, number, title, deal_id, contact_id, company_id, currency, total, terms, notes, valid_until, service_line, assigned_to, payment_terms",
     )
     .eq("id", quoteId)
     .maybeSingle();
@@ -168,6 +169,7 @@ export async function proposalFromQuote(
       assigned_to: overrides.assigned_to !== undefined ? overrides.assigned_to : quote.assigned_to,
       quote_id: quote.id,
       proposal_template_id: overrides.proposal_template_id ?? null,
+      payment_terms: quote.payment_terms ?? {},
       variables: {},
     } as never)
     .select("id")
@@ -395,6 +397,20 @@ export async function contractFromSales(
     entityId = entity?.id ?? null;
   }
 
+  // CONDICOES-PAGAMENTO: condições da proposta (ou da cotação) seguem para o contrato.
+  let paymentTerms: unknown = quote?.payment_terms ?? null;
+  if (proposal) {
+    const { data: pt } = await supabase
+      .from("proposals")
+      .select("payment_terms")
+      .eq("id", proposal.id)
+      .maybeSingle();
+    const raw = (pt as { payment_terms: unknown } | null)?.payment_terms;
+    if (raw && typeof raw === "object" && "plan" in raw) paymentTerms = raw;
+  }
+  const { parsePaymentTerms } = await import("@/lib/sales/payment-terms");
+  const contractTerms = parsePaymentTerms(paymentTerms);
+
   if (!startsAt && proposal) {
     // Sem modelo: vigência vem da proposta (padrão 90 dias) a partir de hoje.
     const { data: terms } = await supabase
@@ -420,6 +436,7 @@ export async function contractFromSales(
       title: `Contrato — ${baseTitle}`,
       starts_at: startsAt,
       ends_at: endsAt,
+      ...(contractTerms ? { payment_terms: contractTerms } : {}),
     },
     dealId,
     items: loaded ? loaded.items : null,
