@@ -28,7 +28,10 @@ is_published: true
 8. Ao gerar o contrato da proposta, a ficha mostra o cartão "Condições de pagamento" com o cronograma previsto.
 9. Ao ativar o serviço do contrato, o sistema cria as contas a receber do cronograma uma única vez para o contrato.
 
-## Regras importantes
+## Resultado esperado
+A cotação, a proposta e o contrato mostram as mesmas condições, e as contas a receber aparecem no TechFinance logo após ativar o serviço.
+
+## Regras e limites
 - Entrada na assinatura: antes de assinar, a conta nasce com a data de ativação e a observação "Vence na assinatura do contrato"; se o contrato já estiver assinado, usa a data da assinatura.
 - Marcos não têm data: a conta nasce com a data de ativação e a observação "Vence na entrega do marco"; ajuste a data no TechFinance quando o marco for entregue.
 - Mensalidades e parcelas começam no mês seguinte quando há entrada.
