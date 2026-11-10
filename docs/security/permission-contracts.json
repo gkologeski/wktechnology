@@ -10942,7 +10942,7 @@
       "rationale": "Prototype screen removed at the user's request (REMOVE-PROTOTIPOS); demo-only local state, no data access or permissions to retire."
     },
     "src/routes/_authenticated/home.print.tsx": {
-      "sha256": "b864596de3b93a06a8faaa339ea15116d6851ff24327bdfb389fb0c32149c185",
+      "sha256": "2fe285389f94ad9fc336cae5b6a27072ce76872b994f17ed882c1264a4d11443",
       "rationale": "Dashboard print screen removed at the user's request (REMOVE-IMPRIMIR); it only re-read the existing system.home export server function, which stays protected and still serves CSV export. No permission retired."
     }
   }
