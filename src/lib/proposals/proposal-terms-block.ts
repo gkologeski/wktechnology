@@ -73,16 +73,12 @@ function scheduleLines(t: ProposalTerms, s: PaymentTerms): string[] {
   const total = t.total ?? 0;
   const rows = buildPaymentSchedule(s, total, new Date());
   const when = (r: (typeof rows)[number]) =>
-    r.dueDate && !(r.label === "Entrada" && s.downPaymentDue?.kind !== "date")
-      ? r.dueEvent === "milestone"
-        ? "na entrega do marco"
-        : r.label === "Entrada"
-          ? `em ${r.dueDate.split("-").reverse().join("/")}`
-          : ""
+    r.dueEvent === "milestone"
+      ? "na entrega do marco"
       : r.dueEvent === "signature"
         ? "na assinatura do contrato"
-        : r.dueEvent === "milestone"
-          ? "na entrega do marco"
+        : r.dueDate
+          ? `em ${r.dueDate.split("-").reverse().join("/")}`
           : "";
   const plan = s.plan;
   const items = rows
