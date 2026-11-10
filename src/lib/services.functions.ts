@@ -314,44 +314,51 @@ export const activateService = createServerFn({ method: "POST" })
     type ServiceRow =
       import("@/integrations/supabase/types").Database["public"]["Tables"]["services"]["Row"];
     // CONDICOES-PAGAMENTO: contrato com condições gera o cronograma de contas a receber.
-    const { data: svc } = await context.supabase
-      .from("services")
-      .select("contract_id, starts_at")
-      .eq("id", data.id)
-      .maybeSingle();
-    if (svc?.contract_id) {
-      const { data: ct } = await context.supabase
-        .from("contracts")
-        .select("payment_terms, total_value, signed_at")
-        .eq("id", svc.contract_id)
-        .maybeSingle();
-      const { activationSchedule } = await import("@/lib/services/activation-terms");
-      const start = data.startsAt ?? svc.starts_at ?? new Date().toISOString().slice(0, 10);
-      const schedule = ct
-        ? activationSchedule(
-            ct.payment_terms,
-            ct.total_value != null ? Number(ct.total_value) : null,
-            start,
-            ct.signed_at,
-          )
-        : null;
-      if (schedule) {
-        const r = await workRpc<{ service: ServiceRow }>(
-          context.supabase,
-          "service_activate_with_terms",
-          { p_service: data.id, p_starts: start, p_schedule: schedule },
-        );
-        return r.service;
-      }
-    }
-    const result = await workRpc<{
-      service: ServiceRow;
-    }>(context.supabase, "service_bill_checked", {
-      p_service: data.id,
-      p_mode: "activate",
-      p_starts: data.startsAt ?? null,
-    });
-    return result.service;
+    const { activateServiceCore } = await import("@/lib/services/activation-terms.write");
+    const sb = context.supabase;
+    return activateServiceCore<ServiceRow>(
+      {
+        readService: async (sid) => {
+          const { data: row, error } = await sb
+            .from("services")
+            .select("contract_id, starts_at")
+            .eq("id", sid)
+            .maybeSingle();
+          if (error) throw error;
+          return row;
+        },
+        readContract: async (cid) => {
+          const { data: row, error } = await sb
+            .from("contracts")
+            .select("payment_terms, total_value, signed_at")
+            .eq("id", cid)
+            .maybeSingle();
+          if (error) throw error;
+          return row
+            ? { ...row, total_value: row.total_value != null ? Number(row.total_value) : null }
+            : null;
+        },
+        activateWithTerms: async (sid, start, schedule) =>
+          (
+            await workRpc<{ service: ServiceRow }>(sb, "service_activate_with_terms", {
+              p_service: sid,
+              p_starts: start,
+              p_schedule: schedule,
+            })
+          ).service,
+        activateLegacy: async (sid, st) =>
+          (
+            await workRpc<{ service: ServiceRow }>(sb, "service_bill_checked", {
+              p_service: sid,
+              p_mode: "activate",
+              p_starts: st,
+            })
+          ).service,
+      },
+      data.id,
+      data.startsAt ?? null,
+      new Date().toISOString().slice(0, 10),
+    );
   });
 
 // ============= BILLING TICK (manual) =============
