@@ -10477,6 +10477,74 @@
       "files": {
         "src/lib/contracts/contract-next-step.ts": "c90ae55d6e3946529e4a3faea0c8b9d57a4de64ee26166234bcdb1a9f444292f"
       }
+    },
+    {
+      "id": "note-attachment-server-upload",
+      "kind": "business",
+      "resources": [
+        "techsales.notes",
+        "techsales.tasks",
+        "techsales.activities"
+      ],
+      "actions": [
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.notes.create.own",
+        "techsales.notes.create.team",
+        "techsales.notes.create.workspace",
+        "techsales.tasks.create.own",
+        "techsales.tasks.create.team",
+        "techsales.tasks.create.workspace",
+        "techsales.activities.create.own",
+        "techsales.activities.create.team",
+        "techsales.activities.create.workspace"
+      ],
+      "rationale": "ANEXO-NOTA: browser direct storage upload timed out; attachments now go through an authenticated server function. Authorization is unchanged: shared_storage_upload_path runs as the user (active membership, active workspace, view+create on notes/tasks/activities, deny wins) and returns the only allowed path; the handler rejects any path outside the caller and writes only there. No RLS, grant or role change.",
+      "controls": [
+        {
+          "file": "src/lib/timeline/note-attachments.server.ts",
+          "symbol": "uploadAuthorizedNoteAttachment"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0234_order5_legacy_storage_prepare.sql",
+          "symbol": "shared_storage_upload_path"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/timeline/note-attachments.test.ts",
+          "name": "note attachment allows authorized active workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/timeline/note-attachments.test.ts",
+          "name": "note attachment denies missing permission before upload"
+        },
+        "explicit_deny": {
+          "file": "src/lib/timeline/note-attachments.test.ts",
+          "name": "note attachment respects explicit deny before upload"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/timeline/note-attachments.test.ts",
+          "name": "note attachment rejects path of another user or workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/timeline/note-attachments.test.ts",
+          "name": "note attachment rejects inactive membership before upload"
+        }
+      },
+      "files": {
+        "src/lib/timeline/activity-entities.ts": "553f9834434a3f0573ff39376b223e6c5649119924b3202dc7f0bc2a1e7eb8c2",
+        "src/lib/timeline/note-attachments.functions.ts": "b3721f24cbc88e4f372f819bfa77204c83e6a432a5bab39853d7f91030d6717e",
+        "src/lib/timeline/note-attachments.server.ts": "619bff1da433f7459d36ee885343fc28569d6cd5caffc8ea8bebbf5dddce6cd2"
+      }
     }
   ],
   "retired": {}
