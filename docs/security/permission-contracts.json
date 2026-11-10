@@ -10405,8 +10405,7 @@
         "src/lib/proposals/proposal-terms-block.ts": "d110afff94214df25de49cf203854d89b2293f757830433f949c49e6be65a03d",
         "src/lib/proposals/proposal-signer.ts": "2310c24c8b7a1b9e652a1530974c697671fb89c77c8f75793d2eb577c1a56e0d",
         "src/lib/proposals/proposal-items-placement.ts": "4f3ebd800bbf59656b59096840d7626b0e3587f22406caaa36bb57f2202a5285",
-        "src/components/proposals/proposal-document.tsx": "e166c944301518b9595e0c8de3c69cd8cf7bcbbc652e2e59d22e7855cdae0199",
-        "src/routes/api/public/proposals/$token.pdf.ts": "3ff729dbbeb627196e6539726811dda61062527a5b8dbf63c9cdd0906ee8daf5"
+        "src/components/proposals/proposal-document.tsx": "e166c944301518b9595e0c8de3c69cd8cf7bcbbc652e2e59d22e7855cdae0199"
       }
     }
   ],
