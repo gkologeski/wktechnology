@@ -1,9 +1,8 @@
-import { requestStorageUploadPath } from "@/lib/storage-upload-path";
+import { uploadNoteAttachment } from "./note-attachments.functions";
 // Consultas auxiliares da linha do tempo: contato-alvo das ações, associações
 // automáticas ao criar atividade, membros do workspace e upload de anexos.
 // Extraído de `src/components/activity-timeline.tsx` sem mudança de comportamento.
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import type { Attachment, RelatedKey, TeamMember } from "@/components/activity/timeline-shared";
 import type { WhatsAppIdentity } from "@/lib/whatsapp-paste";
 
@@ -197,19 +196,33 @@ export async function fetchTimelineTeam(user: { id: string; email?: string | nul
 }
 
 /** Envia anexos para o bucket de notas e devolve os metadados gravados. */
+const MAX_NOTE_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+
+async function fileToBase64(file: File): Promise<string> {
+  const buf = new Uint8Array(await file.arrayBuffer());
+  let bin = "";
+  for (let i = 0; i < buf.length; i += 0x8000) {
+    bin += String.fromCharCode(...buf.subarray(i, i + 0x8000));
+  }
+  return btoa(bin);
+}
+
+/** Envia os anexos pelo servidor; qualquer falha interrompe o salvamento (rascunho preservado). */
 export async function uploadTimelineFiles(userId: string, files: File[]): Promise<Attachment[]> {
   const out: Attachment[] = [];
   for (const file of files) {
     if (!userId) throw new Error("Não autenticado.");
-    const path = await requestStorageUploadPath("notes-attachments", file.name);
-    const { error } = await supabase.storage
-      .from("notes-attachments")
-      .upload(path, file, { contentType: file.type });
-    if (error) {
-      toast.error(`Falha em ${file.name}: ${error.message}`);
-      continue;
+    if (file.size > MAX_NOTE_ATTACHMENT_BYTES) {
+      throw new Error(`O anexo ${file.name} passa de 20 MB.`);
     }
-    out.push({ path, name: file.name, size: file.size, type: file.type });
+    try {
+      const { path } = await uploadNoteAttachment({
+        data: { name: file.name, type: file.type, base64: await fileToBase64(file) },
+      });
+      out.push({ path, name: file.name, size: file.size, type: file.type });
+    } catch {
+      throw new Error(`Não foi possível enviar o anexo ${file.name}. Tente novamente.`);
+    }
   }
   return out;
 }
