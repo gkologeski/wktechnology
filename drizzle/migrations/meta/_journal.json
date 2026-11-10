@@ -2283,6 +2283,13 @@
       "when": 1794323933808,
       "tag": "0325_quote_payment_terms",
       "breakpoints": true
+    },
+    {
+      "idx": 326,
+      "version": "7",
+      "when": 1794332738497,
+      "tag": "0326_grant_payment_terms_columns",
+      "breakpoints": true
     }
   ]
 }
