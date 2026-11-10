@@ -8063,8 +8063,7 @@
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
         "src/lib/hiring/signature.functions.ts": "fbd40253714587c00093d0dc56a57075f1d627cb29c41dadc428f8821efbcbcb",
-        "src/routes/_authenticated/contracts.prototype.tsx": "e2990f79f37971340113f24b213e92bcbba092864534ae0aeb8b44e15f7ebe1a",
-        "src/components/contracts/prototype/contract-detail-prototype.tsx": "499464b67d837b083d6fd6c062ca57ea55bc1db7bfeaa06c4d901af9fb1c1257"
+        "src/components/contracts/prototype/contract-detail-prototype.tsx": "05499437e1276cd68bda94c2847d61215141ccd83ac61ed50e115c20be5211f5"
       }
     },
     {
@@ -10477,7 +10476,8 @@
       "kind": "presentation",
       "rationale": "PROXIMO-PASSO-CONTRATO mockup: static demo data and local UI state only, rendered inside the authenticated layout. No server functions, queries, mutations, grants or real contract data; buttons are inert.",
       "files": {
-        "src/components/contracts/prototype/data.ts": "dfdfe4205259f09e86a3f2cd5ac1428d4cb231948c28e5e0a2e2ac8f458feff6"
+        "src/components/contracts/prototype/data.ts": "dfdfe4205259f09e86a3f2cd5ac1428d4cb231948c28e5e0a2e2ac8f458feff6",
+        "src/routes/_authenticated/contracts.prototype.tsx": "e2990f79f37971340113f24b213e92bcbba092864534ae0aeb8b44e15f7ebe1a"
       }
     }
   ],

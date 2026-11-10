@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { PageHeader, SectionHeader } from "@/components/techhire/ui";
 import { cn } from "@/lib/utils";
+import { WorkScreenAccess } from "@/components/work-access";
 import {
   PROTO_CONTRACT,
   PROTO_SCENARIOS,
@@ -123,6 +124,14 @@ function Field({ label, value }: { label: string; value: string }) {
 }
 
 export function ContractDetailPrototype() {
+  return (
+    <WorkScreenAccess resources={["techcontracts.contracts"]}>
+      <PrototypeBody />
+    </WorkScreenAccess>
+  );
+}
+
+function PrototypeBody() {
   const [stage, setStage] = useState<ProtoStage>("draft");
   const s = PROTO_SCENARIOS[stage];
   const c = PROTO_CONTRACT;
