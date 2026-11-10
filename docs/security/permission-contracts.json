@@ -10818,6 +10818,87 @@
       "files": {
         "src/lib/menu-config-ats.ts": "59fed0d9a469017f2818d7ac0841dc6c0c48f63399f21acd4415d64fffd68a75"
       }
+    },
+    {
+      "id": "sales-capabilities-set-based",
+      "kind": "business",
+      "resources": [
+        "techsales.quotes",
+        "techsales.deals",
+        "techsales.proposals",
+        "techsales.leads",
+        "techsales.contacts",
+        "techsales.companies"
+      ],
+      "actions": [
+        "view",
+        "update",
+        "delete",
+        "assign",
+        "approve",
+        "export",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.quotes.view.workspace",
+        "techsales.deals.view.workspace",
+        "techsales.proposals.view.workspace",
+        "techsales.leads.view.workspace",
+        "techsales.contacts.view.workspace",
+        "techsales.companies.view.workspace"
+      ],
+      "rationale": "TEMPO-COTACAO: só desempenho. sales_capabilities (SECURITY INVOKER, RLS do usuário) calcula sales_access_context() uma vez e, nas seis tabelas principais, avalia em uma única consulta o mesmo sales_context_access(c, workspace_id, recurso, ação, ARRAY[coalesce(assigned_to, owner_id)]) que sales_record_access usava por registro; linhas invisíveis pela RLS continuam fora. Demais tabelas seguem o laço por registro via sales_private.record_access_ctx (cópia literal de sales_record_access com contexto por parâmetro, em schema não exposto pela API). Nenhuma chave nova, nenhuma permissão concedida; resultado conferido idêntico ao anterior por registro.",
+      "files": {
+        "drizzle/migrations/0328_sales_capabilities_single_context.sql": "65cad7e920f084cb76f99d59ec7eabdfbbdc082c392e1d9847a69bd5902fdd3e",
+        "drizzle/migrations/0329_sales_capabilities_set_based.sql": "bd296364c0ab807591c25715fa47cd4012473b75c301f9907a761a03e8519224"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-capabilities.functions.ts",
+          "symbol": "getSalesCapabilities"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0329_sales_capabilities_set_based.sql",
+          "symbol": "sales_capabilities"
+        },
+        {
+          "file": "drizzle/migrations/0328_sales_capabilities_single_context.sql",
+          "symbol": "sales_capabilities"
+        },
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_context_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      }
     }
   ],
   "retired": {
