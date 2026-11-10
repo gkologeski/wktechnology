@@ -43,7 +43,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { CurrencyCommitInput } from "@/components/ui/currency-commit-input";
-import { Textarea } from "@/components/ui/textarea";
+import { WordEditor } from "@/components/word-editor-lazy";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
@@ -679,11 +679,13 @@ function ContractDetail() {
               <CardTitle className="text-base">Cláusulas / corpo do contrato</CardTitle>
             </CardHeader>
             <CardContent>
-              <Textarea
+              <WordEditor
                 value={bodyHtml}
-                onChange={(e) => setBodyHtml(e.target.value)}
-                placeholder="Cole aqui o texto do contrato ou HTML. Um editor rico será adicionado numa próxima sprint."
-                rows={10}
+                onChange={setBodyHtml}
+                placeholder="Escreva ou cole aqui o texto do contrato."
+                minHeight={420}
+                maxHeight="70vh"
+                editable={canUpdateContract}
               />
             </CardContent>
           </Card>
