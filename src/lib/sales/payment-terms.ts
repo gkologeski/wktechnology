@@ -4,6 +4,8 @@
  * Usada por cotação, proposta, contrato e (na ativação do serviço) contas a receber.
  */
 
+import { z } from "zod";
+
 export type DownPayment =
   | { kind: "none" }
   | { kind: "amount"; value: number }
