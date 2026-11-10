@@ -1,3 +1,4 @@
+import { isTransientDatabaseError, withTransientRetry } from "@/lib/db/transient-retry";
 // Estado e persistência dos itens de linha do negócio: autosave por campo,
 // pilha de desfazer, indicador de "salvando/salvo/não salvo" e criação de itens
 // a partir do catálogo (com preset e modelo de cobrança).
@@ -209,6 +210,9 @@ export function useLineItemsEditor(dealId: string) {
     if (/row-level security/i.test(message)) {
       return "Você não tem permissão para alterar os itens deste negócio.";
     }
+    if (isTransientDatabaseError({ message })) {
+      return "Não foi possível salvar o item agora (banco ocupado). Tente novamente em instantes.";
+    }
     return message;
   }
 
@@ -342,11 +346,10 @@ export function useLineItemsEditor(dealId: string) {
     begin();
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from("deal_line_items")
-        .update(values)
-        .eq("id", id)
-        .select("id");
+      const { data, error } = await withTransientRetry<{ id: string }[]>(() =>
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (supabase as any).from("deal_line_items").update(values).eq("id", id).select("id"),
+      );
       if (error) {
         qc.setQueryData(lineItemsQueryKey(dealId), previous);
         refreshItems();
