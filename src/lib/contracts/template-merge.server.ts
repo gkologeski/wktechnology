@@ -4,6 +4,7 @@
 
 import { loadAcceptedProposalSource, legalEntityAddress } from "./accepted-proposal.server";
 import { usedTokens } from "./template-tokens";
+import { paymentScheduleText } from "./payment-schedule-text";
 import {
   DEFAULT_JURISDICTION,
   DEFAULT_GOVERNING_LAW,
@@ -186,11 +187,15 @@ export async function buildMergeContext(
     installments_due_day: number | null;
     validity_days: number | null;
     payment_method: string | null;
+    payment_terms?: unknown;
+    total_amount?: number | null;
   } | null = null;
   if (source) {
     const { data } = await supabase
       .from("proposals")
-      .select("installments_count, installments_due_day, validity_days, payment_method")
+      .select(
+        "installments_count, installments_due_day, validity_days, payment_method, payment_terms, total_amount",
+      )
       .eq("workspace_id", workspaceId)
       .eq("id", source.proposal.id)
       .maybeSingle();
@@ -252,6 +257,13 @@ export async function buildMergeContext(
     validity_days: validityDays,
     installments_count: input.installmentsCount ?? proposalTerms?.installments_count ?? null,
     installments_due_day: input.installmentsDueDay ?? proposalTerms?.installments_due_day ?? null,
+    // CONDICOES-PAGAMENTO: resumo do cronograma (entrada + saldo) ou parcelas/dia antigos.
+    payment_schedule: paymentScheduleText(
+      proposalTerms?.payment_terms,
+      Number(proposalTerms?.total_amount ?? source?.proposal.total_amount ?? 0),
+      input.installmentsCount ?? proposalTerms?.installments_count ?? null,
+      input.installmentsDueDay ?? proposalTerms?.installments_due_day ?? null,
+    ),
     notice_days: (defaults.notice_days as number) ?? 30,
     total_value: source
       ? (source.proposal.total_amount ?? 0)

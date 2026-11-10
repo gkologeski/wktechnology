@@ -18,6 +18,7 @@ export const CONTRACT_TEMPLATE_TOKENS: MessageToken[] = [
   { token: "{{contract.installments_count}}", label: "Quantidade de parcelas", group: "Contrato" },
   { token: "{{contract.installments_due_day}}", label: "Dia de vencimento das parcelas", group: "Contrato" },
   { token: "{{contract.payment_method}}", label: "Forma de pagamento", group: "Contrato" },
+  { token: "{{contract.payment_schedule}}", label: "Condições de pagamento", group: "Contrato" },
   { token: "{{contract.readjustment_index}}", label: "Índice de reajuste", group: "Contrato" },
   { token: "{{contract.penalty_percent}}", label: "Multa (%)", group: "Contrato" },
   { token: "{{contract.service_type}}", label: "Tipo de serviço", group: "Contrato" },
