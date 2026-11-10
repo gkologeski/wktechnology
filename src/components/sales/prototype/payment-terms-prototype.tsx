@@ -254,7 +254,6 @@ export function PaymentTermsPrototype() {
                   ))}
                   <Button
                     variant="outline"
-                className="justify-start flex-wrap"
                     size="sm"
                     className="self-start"
                     onClick={() =>

@@ -8063,9 +8063,9 @@
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
         "src/lib/hiring/signature.functions.ts": "fbd40253714587c00093d0dc56a57075f1d627cb29c41dadc428f8821efbcbcb",
-        "src/components/sales/prototype/payment-terms-prototype.tsx": "5b4e81b221543e95912a42a7d898457788da75797869558df0e9baee4c052faf",
+        "src/components/sales/prototype/payment-terms-prototype.tsx": "fda5d076218282fda0fa99e4cf9866baa86af6cd66707b4856520b87f2a82e70",
         "src/routes/_authenticated/sales.prototype.tsx": "65dd5daf19997f9df2aa71b55a35a0d766b6225e16811cded2a6d0c425253a9d",
-        "src/components/sales/prototype/payment-terms-prototype.tsx": "5b4e81b221543e95912a42a7d898457788da75797869558df0e9baee4c052faf",
+        "src/components/sales/prototype/payment-terms-prototype.tsx": "fda5d076218282fda0fa99e4cf9866baa86af6cd66707b4856520b87f2a82e70",
         "src/routes/_authenticated/sales.prototype.tsx": "65dd5daf19997f9df2aa71b55a35a0d766b6225e16811cded2a6d0c425253a9d"
       }
     },
