@@ -1,6 +1,7 @@
 // Assistente de criação de contrato (mesmo padrão do assistente de cotação):
 // Origem -> Tipo -> Dados -> Serviços -> Revisão. Nada é gravado antes de
 // "Criar contrato".
+import { missingPaymentTermsMessage } from "@/lib/proposals/proposal-terms-check";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   Select,
