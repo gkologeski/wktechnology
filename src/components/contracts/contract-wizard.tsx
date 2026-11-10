@@ -247,6 +247,31 @@ export function ContractWizard({
     },
   });
 
+  // PROPOSTA-COMPLETA: pré-preenche parcelas/vencimento com os da proposta.
+  const termsProposalId =
+    origin.type === "proposal"
+      ? origin.id
+      : origin.type === "template" && templateProposalId !== "none"
+        ? templateProposalId
+        : null;
+  const proposalTermsQ = useQuery({
+    queryKey: ["contract-wizard-proposal-terms", termsProposalId],
+    enabled: open && !!termsProposalId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("proposals")
+        .select("installments_count, installments_due_day")
+        .eq("id", termsProposalId!)
+        .maybeSingle();
+      return data;
+    },
+  });
+  useEffect(() => {
+    const d = proposalTermsQ.data;
+    setInstallmentsCount(d?.installments_count ? String(d.installments_count) : "");
+    setInstallmentsDueDay(d?.installments_due_day ? String(d.installments_due_day) : "");
+  }, [proposalTermsQ.data, termsProposalId]);
+
   const lineItems = form.prefill.data?.lineItems ?? [];
   const servicesDisabled = form.kind !== "provider";
   const blankTitle = String(form.values["title"] ?? "").trim();
@@ -259,6 +284,11 @@ export function ContractWizard({
     }
     if (step === 2 && origin.type === "template" && !templateTitle.trim())
       return "Informe um título.";
+    if (step === 2 && termsProposalId)
+      return missingPaymentTermsMessage({
+        installments: terms.installmentsCount,
+        dueDay: terms.installmentsDueDay,
+      });
     return null;
   }
 
