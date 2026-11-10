@@ -393,6 +393,8 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [ ] Decidir: workflow "Criar contrato" dispara ao entrar em Contratação (conflita com minuta)
 
 ## CONDICOES-PAGAMENTO (plano aprovado 10/11/2026)
-- [ ] Fase 1: banco + regra pura do cronograma
+- Decisões: contas a receber na ativação do serviço; antigas migram das parcelas atuais.
+- [x] Fase 1a: regra pura do cronograma (`src/lib/sales/payment-terms.ts`, 7 testes)
+- [ ] Fase 1b: colunas no banco + preenchimento das antigas (após aprovação do mockup)
 - [ ] Fase 2: mockup da seção "Condições de pagamento" na cotação (aguarda aprovação)
 - [ ] Fase 3: proposta + PDF · Fase 4: contrato + modelos · Fase 5: contas a receber via workflow · Fase 6: Ajuda + permissões
