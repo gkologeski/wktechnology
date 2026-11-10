@@ -75,7 +75,7 @@ async function names(
 ) {
   const [c, p, d] = await Promise.all([
     ids.company
-      ? supabase.from("companies").select("name").eq("id", ids.company).maybeSingle()
+      ? supabase.from("companies").select("name, cnpj, custom_fields").eq("id", ids.company).maybeSingle()
       : null,
     ids.contact
       ? supabase
@@ -89,6 +89,10 @@ async function names(
   const contact = p?.data as { first_name: string | null; last_name: string | null } | null;
   return {
     company_name: (c?.data as { name: string } | null)?.name ?? null,
+    company_cnpj: (c?.data as { cnpj: string | null } | null)?.cnpj ?? null,
+    company_legal_name:
+      ((c?.data as { custom_fields: Record<string, unknown> | null } | null)?.custom_fields
+        ?.razao_social as string | undefined) ?? null,
     contact_name: contact
       ? `${contact.first_name ?? ""} ${contact.last_name ?? ""}`.trim() || null
       : null,
@@ -151,7 +155,7 @@ export async function buildProposalDraft(
     const { data: p, error } = await supabase
       .from("proposals")
       .select(
-        "id, title, body, total_amount, currency, expires_at, assigned_to, locked, company_id, contact_id, deal_id, quote_id, proposal_template_id, installments_count, installments_due_day, validity_days",
+        "id, title, body, total_amount, currency, expires_at, assigned_to, locked, company_id, contact_id, deal_id, quote_id, proposal_template_id, installments_count, installments_due_day, validity_days, payment_method, payment_notes",
       )
       .eq("id", src.proposalId)
       .maybeSingle();
@@ -178,6 +182,8 @@ export async function buildProposalDraft(
         installments_count: p.installments_count,
         installments_due_day: p.installments_due_day,
         validity_days: p.validity_days,
+        payment_method: p.payment_method,
+        payment_notes: p.payment_notes,
         items,
         items_origin: origin,
         ...(await names(supabase, {

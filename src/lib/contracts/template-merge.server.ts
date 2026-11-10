@@ -182,11 +182,12 @@ export async function buildMergeContext(
     installments_count: number | null;
     installments_due_day: number | null;
     validity_days: number | null;
+    payment_method: string | null;
   } | null = null;
   if (source) {
     const { data } = await supabase
       .from("proposals")
-      .select("installments_count, installments_due_day, validity_days")
+      .select("installments_count, installments_due_day, validity_days, payment_method")
       .eq("workspace_id", workspaceId)
       .eq("id", source.proposal.id)
       .maybeSingle();
@@ -258,7 +259,8 @@ export async function buildMergeContext(
       : ((defaults.currency as string) ?? deal?.currency ?? service?.currency ?? "BRL"),
     payment_day:
       (defaults.payment_day as number) ?? proposalTerms?.installments_due_day ?? null,
-    payment_method: (defaults.payment_method as string) ?? null,
+    payment_method:
+      (defaults.payment_method as string) ?? proposalTerms?.payment_method ?? null,
     readjustment_index: (defaults.readjustment_index as string) ?? null,
     penalty_percent: pickTerm<number>(
       null,
