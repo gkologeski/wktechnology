@@ -1,5 +1,6 @@
 // Bloco "Condições comerciais" da proposta (TEXTO-PROPOSTA).
-// Delimitado por <section data-proposal-terms>, regenerado sempre que as
+// Delimitado pelo título "Condições comerciais" + lista seguinte (o editor
+// remove atributos desconhecidos), regenerado sempre que as
 // condições mudam no assistente sem tocar no restante do texto.
 
 export const PROPOSAL_PAYMENT_METHODS = ["pix", "ted", "boleto", "transferencia", "outros"] as const;
@@ -23,7 +24,7 @@ export type ProposalTerms = {
   paymentNotes: string | null;
 };
 
-const MARKER_RE = /<section[^>]*data-proposal-terms[^>]*>[\s\S]*?<\/section>/i;
+const MARKER_RE = /<h3[^>]*>\s*Condições comerciais\s*<\/h3>\s*<ul[^>]*>[\s\S]*?<\/ul>/i;
 
 function esc(s: string): string {
   return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]!);
@@ -63,7 +64,6 @@ export function renderTermsBlock(t: ProposalTerms): string {
     : pending;
   const method = paymentMethodLabel(t);
   return [
-    '<section data-proposal-terms="1">',
     "<h3>Condições comerciais</h3>",
     "<ul>",
     `<li><strong>Forma de pagamento:</strong> ${method ? esc(method) : pending}</li>`,
@@ -71,7 +71,6 @@ export function renderTermsBlock(t: ProposalTerms): string {
     `<li><strong>Vencimento:</strong> ${t.dueDay ? `todo dia ${t.dueDay}` : pending}</li>`,
     `<li><strong>Vigência do contrato:</strong> ${t.validityDays ? `${t.validityDays} dias` : pending}</li>`,
     "</ul>",
-    "</section>",
   ].join("");
 }
 
