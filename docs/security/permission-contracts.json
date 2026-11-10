@@ -10212,15 +10212,15 @@
       "files": {
         "src/components/contracts/apply-contract-template-dialog.tsx": "f1b8f344a6a5bbc22cc7d8aa43c04bdd0b680fbf579de229b7da056b3025ef3c",
         "src/lib/contracts/contract-create.server.ts": "83d6a2580954f05b3340a2404a75ab876669bf256965de4e203b8bfb5bf3d66b",
-        "src/lib/contracts/template-merge.server.ts": "7d34397cf7f273533cd923410da205589ab61b88c438e673cc597faba7374644",
+        "src/lib/contracts/template-merge.server.ts": "b990b9245874872a9bb06da7f62e5188f091d6d8fe29d69ff1c1a2eac007fed2",
         "src/lib/contracts/templates.functions.ts": "0cc3731ac8ed3660b059eae7f37581ce72ccb8bebbe74834a4f7c437791f7d27",
         "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
-        "src/lib/sales-flow.server.ts": "00181d1baa0b31d436d3fa9583f3191ba9e3501fb4fb5bc3f62b685e77aae421",
+        "src/lib/sales-flow.server.ts": "60fe9376cc6beecf3f32aed6a1bdf6ade080972b39f43c17c52b6278233633c5",
         "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
-        "src/components/contracts/contract-wizard.tsx": "88cfa5c7cd0299074465dc501366ce8245c576c0ce355d73f83bcd5012d2f2cf",
+        "src/components/contracts/contract-wizard.tsx": "96f1c391feb67de5ec0628570adfc0fc240d9427e4c2a8dd93e97ebd9b183987",
         "src/lib/sales-flow.functions.ts": "143d9934d1af165fdd16768c1abebf7b7cc59bcc7df47f945783dd92e19ab222",
-        "src/components/proposals/proposal-wizard.tsx": "5496f0f754b83425e79fe8d23fc3a08fe26340af8346afeff68b637e0b38c0cd",
+        "src/components/proposals/proposal-wizard.tsx": "6c529ffa94e28cd3dc63692eaa8ed8b39f88c2df54c834d8685135a839950f0f",
         "src/lib/proposals/proposal-draft.server.ts": "6be33928434f3c33a3ca88c7f5c8ef4390d961cb73420a3fd0ff23544ef12208",
         "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
         "drizzle/migrations/0321_proposal_versions_cascade.sql": "d74b28603f0279e6cb749f1af8ae34658c561ed0f659964fea8d6f4a2b257bcf",
@@ -10296,7 +10296,7 @@
         "review_by": "2027-03-01"
       },
       "files": {
-        "src/lib/contracts/template-tokens.ts": "1306a34713faabbc067e8ce57a6426d90e998d121594cf0c92b6c968cec5d305"
+        "src/lib/contracts/template-tokens.ts": "3d902ae543fd7baab2340f4319b29f0dc71370802a7554a37d33f889b6c36f82"
       }
     },
     {
@@ -10407,7 +10407,8 @@
         "src/lib/proposals/proposal-items-placement.ts": "1a5de997747831baffb6a877b730bb5ab162bca1885f655701cfcf25bfce3442",
         "src/components/proposals/proposal-document.tsx": "d3d2a6f4094bb3965e85cbbf66216279a29ef61efb592dea4521443f581b8826",
         "src/lib/proposals/proposal-pdf-rules.ts": "8bdfc0a514dcc11b1798d5bab756ddf63569fad299f46f8ac0af12d2dc1c9f15",
-        "src/lib/proposals/proposal-terms-check.ts": "f63a1caa63e25b90ea3b1e6c71d5021fd78745e0ebc2e24f4ca579d7844f870c"
+        "src/lib/proposals/proposal-terms-check.ts": "0d102ff46a544c4c0082238a7c1812340e56b161b72baadf206f5a18432b86a7",
+        "src/lib/contracts/payment-schedule-text.ts": "c5c25669c1678812bee6b8a4194cac1962265f97659eb784f9fa0195795ada59"
       }
     },
     {
