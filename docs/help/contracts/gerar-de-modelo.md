@@ -60,3 +60,7 @@ Ao gerar um contrato a partir de uma proposta aceita, o sistema preenche: parcel
 ## Parcelas, vencimento e lei aplicável
 
 No passo **Dados** do Novo contrato, os campos **Parcelas** e **Dia de vencimento** já vêm preenchidos com os da proposta e são obrigatórios quando há proposta; ajuste-os se este contrato tiver condições diferentes. A **Lei aplicável** tem padrão "Legislação da República Federativa do Brasil", salvo se o modelo definir outra. Se faltar algum dado obrigatório, a mensagem mostra o nome do campo em português.
+
+## Vigência a partir da proposta
+
+Ao gerar o contrato de uma proposta aceita, o início é a data de hoje e o término soma os dias de vigência da proposta (padrão 90 dias). O passo **Dados** mostra essas datas para conferência.
