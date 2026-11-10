@@ -296,6 +296,10 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
 
   async function submit() {
     if (!source || !draft) return;
+    if (canEditTerms) {
+      const termsErr = missingPaymentTermsMessage({ installments, dueDay });
+      if (termsErr) return void toast.error(termsErr);
+    }
     setSaving(true);
     try {
       if (editId) {
