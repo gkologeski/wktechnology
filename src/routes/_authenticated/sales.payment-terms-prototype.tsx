@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { WorkScreenAccess } from "@/components/work-access";
 import { PaymentTermsPrototype } from "@/components/sales/prototype/payment-terms-prototype";
 
 export const Route = createFileRoute("/_authenticated/sales/payment-terms-prototype")({
@@ -12,5 +13,13 @@ export const Route = createFileRoute("/_authenticated/sales/payment-terms-protot
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: PaymentTermsPrototype,
+  component: PaymentTermsPrototypePage,
 });
+
+function PaymentTermsPrototypePage() {
+  return (
+    <WorkScreenAccess resources={["techcontracts.contracts"]}>
+      <PaymentTermsPrototype />
+    </WorkScreenAccess>
+  );
+}

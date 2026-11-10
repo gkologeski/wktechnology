@@ -8064,9 +8064,9 @@
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
         "src/lib/hiring/signature.functions.ts": "fbd40253714587c00093d0dc56a57075f1d627cb29c41dadc428f8821efbcbcb",
         "src/components/sales/prototype/payment-terms-prototype.tsx": "5b4e81b221543e95912a42a7d898457788da75797869558df0e9baee4c052faf",
-        "src/routes/_authenticated/sales.payment-terms-prototype.tsx": "087e5678360f1d17cb3461cf4e5ede54eb547f1d2b767e101a8944cadb3ab639",
+        "src/routes/_authenticated/sales.payment-terms-prototype.tsx": "b7aad355dd601112c81d5f07ef9b8212cb5392340ec607bba910c37b6ddb356d",
         "src/components/sales/prototype/payment-terms-prototype.tsx": "5b4e81b221543e95912a42a7d898457788da75797869558df0e9baee4c052faf",
-        "src/routes/_authenticated/sales.payment-terms-prototype.tsx": "087e5678360f1d17cb3461cf4e5ede54eb547f1d2b767e101a8944cadb3ab639"
+        "src/routes/_authenticated/sales.payment-terms-prototype.tsx": "b7aad355dd601112c81d5f07ef9b8212cb5392340ec607bba910c37b6ddb356d"
       }
     },
     {
@@ -10480,6 +10480,14 @@
       "rationale": "PROXIMO-PASSO-CONTRATO: pure next-step rule and presentational stepper/card. No I/O; actions only switch tabs or navigate to existing gated screens whose permissions stay in their own contracts.",
       "files": {
         "src/lib/contracts/contract-next-step.ts": "c90ae55d6e3946529e4a3faea0c8b9d57a4de64ee26166234bcdb1a9f444292f"
+      }
+    },
+    {
+      "id": "sales-payment-terms-rule",
+      "kind": "presentation",
+      "rationale": "CONDICOES-PAGAMENTO: pure payment schedule rule. No I/O, no actions; persistence will be gated by quote/proposal/contract contracts.",
+      "files": {
+        "src/lib/sales/payment-terms.ts": "73c957f191f97f098b55e64c794a012f810706dde770d5ff0611792ea15494af"
       }
     },
     {
