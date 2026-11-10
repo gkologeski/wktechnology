@@ -2890,7 +2890,7 @@
       "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants.",
       "files": {
         "src/lib/menu-config.ts": "763b3c3dbb3db20f7b4e6924917c8e489e551154f51c6b7afedeb86b556b1536",
-        "src/lib/menu-resources.ts": "d44488e6d5be0fc4c4029fed522b367d6f598d65b70a01875f49efea1135aff1"
+        "src/lib/menu-resources.ts": "437e81c840128700b7c68277e43fed796c0e563503727c0db479b2ad97f0ca79"
       }
     },
     {
