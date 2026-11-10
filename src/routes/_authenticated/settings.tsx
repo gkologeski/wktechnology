@@ -74,6 +74,7 @@ import {
   Gauge,
   FlaskConical,
   Phone,
+  Building2,
 } from "lucide-react";
 import { useMyRole } from "@/lib/use-my-role";
 import { useIsPlatformAdmin } from "@/lib/use-platform-admin";
@@ -115,6 +116,18 @@ const sections: Section[] = [
     label: "Workspace",
     tabs: [
       { to: "/settings/branding", label: "White-label", icon: Sparkles, need: "admin" },
+      {
+        to: "/settings/legal-entities",
+        label: "Empresas (CNPJs)",
+        icon: Building2,
+        permission: "system.legal_entities.view.workspace",
+      },
+      {
+        to: "/settings/legal-entity-groups",
+        label: "Grupos empresariais",
+        icon: Building2,
+        permission: "system.legal_entity_groups.view.workspace",
+      },
       { to: "/settings/language", label: "Idioma", icon: Languages },
       { to: "/settings/phones", label: "Telefones", icon: Phone, need: "admin" },
       { to: "/settings/mobile", label: "Mobile / PWA", icon: Smartphone },
