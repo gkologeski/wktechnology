@@ -9744,7 +9744,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic.",
       "files": {
-        "src/integrations/supabase/types.ts": "ef6679f31b35dcd428d6ab08d85591f8dfb33ddf8cf161538ed46eb6d8c9175f",
+        "src/integrations/supabase/types.ts": "534fd02d7b8cc6d8fd3afe6748a005697786bb27d129d4b5b1655ac4c933c1df",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -10114,7 +10114,7 @@
         "techcontracts.contract_templates.view.workspace",
         "techsales.proposals.view.workspace"
       ],
-      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change.",
+      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -10181,6 +10181,10 @@
         {
           "file": "drizzle/migrations/0321_proposal_versions_cascade.sql",
           "symbol": "proposal_document_versions"
+        },
+        {
+          "file": "drizzle/migrations/0323_proposal_payment_method.sql",
+          "symbol": "proposals"
         }
       ],
       "tests": {
@@ -10208,7 +10212,7 @@
       "files": {
         "src/components/contracts/apply-contract-template-dialog.tsx": "f1b8f344a6a5bbc22cc7d8aa43c04bdd0b680fbf579de229b7da056b3025ef3c",
         "src/lib/contracts/contract-create.server.ts": "83d6a2580954f05b3340a2404a75ab876669bf256965de4e203b8bfb5bf3d66b",
-        "src/lib/contracts/template-merge.server.ts": "357eba5a45f6889e5898fb728b270421ea87be79dd8becaa9df8ba28433a7f2f",
+        "src/lib/contracts/template-merge.server.ts": "b1c8152ee2c365a291bfca0241c2042eba623beff9fce98ccb524cd3db989f25",
         "src/lib/contracts/templates.functions.ts": "c237fa723b38ad1107fb831ea2fd8639ae3608237b047a59ab3fb315728d5b99",
         "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
         "src/lib/sales-flow.server.ts": "921ea47d0dc77de74958a21e27d57a62277650d59646e42005880d01e9f9aae0",
@@ -10216,10 +10220,13 @@
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "fca40ccfa8137fb3f857f7412f7bef9bf132395a49f35c7a6ff692a978f2041b",
         "src/lib/sales-flow.functions.ts": "ba9d014b9aff1352c7205b7f44b19d8b59874707f6ec48baee4e29222c6eb56f",
-        "src/components/proposals/proposal-wizard.tsx": "c7958d093a50b4f1e5c36baf397772f48156c9a26e111c5a85fae2620969196f",
-        "src/lib/proposals/proposal-draft.server.ts": "e11feeafb1f2b43928b2623315753716b8862647d8e3475873d13b8197f59f49",
+        "src/components/proposals/proposal-wizard.tsx": "a91b7de1a5f6ef56e073e86f65be274d2562f12f94888ec1ed186e6106d8f436",
+        "src/lib/proposals/proposal-draft.server.ts": "bf2e38b6a82c942febc4f7cfa27fb07cd2146cc0e37ecedc1943efe4dbd62440",
         "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
-        "drizzle/migrations/0321_proposal_versions_cascade.sql": "d74b28603f0279e6cb749f1af8ae34658c561ed0f659964fea8d6f4a2b257bcf"
+        "drizzle/migrations/0321_proposal_versions_cascade.sql": "d74b28603f0279e6cb749f1af8ae34658c561ed0f659964fea8d6f4a2b257bcf",
+        "drizzle/migrations/0323_proposal_payment_method.sql": "cf944cd4385707aeb616275a4e4a84839911ae49e6f3a50c3446c3f216bf9a99",
+        "src/lib/proposals/proposal-terms-block.ts": "d110afff94214df25de49cf203854d89b2293f757830433f949c49e6be65a03d",
+        "src/routes/_authenticated/settings.proposal-templates.tsx": "489e58f207fa1eca4853ded62bf4231f170275526729df8bb7eb8df34673a2dd"
       }
     },
     {
@@ -10394,7 +10401,7 @@
       "kind": "presentation",
       "rationale": "DADOS-CONTRATO/ROLAGEM-CONTRATO pure helpers: contract term defaults and clamps, proposal draft type fields, and the lazy editor wrapper forwarding maxHeight. No I/O, routes, actions or data access; writes stay under contract-accepted-proposal-mapping.",
       "files": {
-        "src/lib/proposals/proposal-draft-types.ts": "f923944f29a95e6de8c58486d90c3262d6bd14d6e563e5a46ea6f89fe89cf302",
+        "src/lib/proposals/proposal-draft-types.ts": "eb46aded7fffc8b943f7b6de47776093a18237b6f53d0338e37e60ed4df4dcba",
         "src/lib/contracts/contract-terms-defaults.ts": "7196abd6a9be2f603966ed949608197d33e409352b7302093e79c3fe8a0cf4d8",
         "src/components/word-editor-lazy.tsx": "4f6e7ef7880aa6b35c94c9bb6b2caacba43d380473fd193ab6adc1a0ed428e8d"
       }
