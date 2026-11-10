@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { WorkScreenAccess } from "@/components/work-access";
 import { PaymentTermsPrototype } from "@/components/sales/prototype/payment-terms-prototype";
 
-export const Route = createFileRoute("/_authenticated/sales/payment-terms-prototype")({
+export const Route = createFileRoute("/_authenticated/sales/prototype")({
   head: () => ({
     meta: [
       { title: "Protótipo — Condições de pagamento" },
