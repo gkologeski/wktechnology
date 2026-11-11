@@ -1,0 +1,2 @@
+{"service_channel_accounts":{"id":"92c37951-a88d-4d13-80f9-e2d61a895d8a","workspace_id":"184b9435-0a9b-4334-9e89-8854dc883f5d","channel":"whatsapp","display_name":"Bruna","label":"+55 48 6136-5335","source_key":"1311815615348040","enabled":true,"routing_configured":true,"created_at":"2026-10-27 14:54:22.333543+00"},
+"service_channel_bindings":{"account_id":"92c37951-a88d-4d13-80f9-e2d61a895d8a","agent_id":"1f53291d-9952-41bd-a94e-3c2cfe95ed67","workspace_id":"184b9435-0a9b-4334-9e89-8854dc883f5d","display_name":"Bruna","campaigns":true,"inbound":true,"enabled":true}}
