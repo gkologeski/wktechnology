@@ -70,7 +70,9 @@ export function PaymentTermsEditor({
           ? { kind: "monthly", months: 12, dueDay }
           : k === "periodic"
             ? { kind: "periodic", count: 3, intervalMonths: 1, dueDay }
-            : {
+            : k === "fixed_date"
+              ? { kind: "fixed_date", date: "" }
+              : {
                 kind: "milestones",
                 milestones: [
                   { label: "Aprovação do escopo", percent: 30 },
@@ -176,7 +178,18 @@ export function PaymentTermsEditor({
             <ToggleGroupItem value="monthly">Mensal</ToggleGroupItem>
             <ToggleGroupItem value="periodic">Parcelas periódicas</ToggleGroupItem>
             <ToggleGroupItem value="milestones">Por entregas/marcos</ToggleGroupItem>
+            <ToggleGroupItem value="fixed_date">Em uma data</ToggleGroupItem>
           </ToggleGroup>
+          {plan.kind === "fixed_date" && (
+            <IsoDatePicker
+              ariaLabel="Data de vencimento do saldo"
+              className="w-48"
+              value={plan.date || null}
+              onChange={(v) =>
+                onChange({ ...terms, plan: { kind: "fixed_date", date: v ?? "" } })
+              }
+            />
+          )}
 
           {plan.kind === "monthly" && (
             <div className="grid grid-cols-2 gap-3">

@@ -10406,7 +10406,7 @@
         "src/lib/proposals/proposal-draft-types.ts": "0fe9a03564c66c6aded91ad253ea049e289a9d7d3d5733df297f5191bc99bb64",
         "src/lib/contracts/contract-terms-defaults.ts": "4243429565dc9b855faf2b73986e8044ef2ad746a9582ee841e0f85b42583463",
         "src/components/word-editor-lazy.tsx": "4f6e7ef7880aa6b35c94c9bb6b2caacba43d380473fd193ab6adc1a0ed428e8d",
-        "src/lib/proposals/proposal-terms-block.ts": "7d54b92f967547d359eda04fb5338792e94e4ddd9fec7b9e1407ae99e4a7dd94",
+        "src/lib/proposals/proposal-terms-block.ts": "34e2edb854dfd85108d6671975ca99b96ca71a30ab755ac7f4c9865826014214",
         "src/lib/proposals/proposal-signer.ts": "2310c24c8b7a1b9e652a1530974c697671fb89c77c8f75793d2eb577c1a56e0d",
         "src/lib/proposals/proposal-items-placement.ts": "1a5de997747831baffb6a877b730bb5ab162bca1885f655701cfcf25bfce3442",
         "src/components/proposals/proposal-document.tsx": "d3d2a6f4094bb3965e85cbbf66216279a29ef61efb592dea4521443f581b8826",
@@ -10719,10 +10719,10 @@
       },
       "files": {
         "drizzle/migrations/0325_quote_payment_terms.sql": "cb6ba51e5baa85548e547d5c7d01dd89a6f96a1217a3ec524ff05d056f21e861",
-        "src/lib/sales/payment-terms.ts": "c6f7f7263a4f670c50791782acc0cfe944ea7d3507e1ea4da51ec0be70c3cdf9",
+        "src/lib/sales/payment-terms.ts": "ddb6c22486040aa7cb5e5f8f50d5fa08f1ff50b800ad473b253f3349a29ca00e",
         "src/lib/sales/quote-payment-terms.write.ts": "53bd243aa624ab155416251f9977ef77dcdc801851d2be2443034f4924cfe836",
         "src/lib/sales/quote-payment-terms.functions.ts": "5d76c67e6afe9903722e51c0948844e8db097c5b5ef3cf5be8bbf2eeddade7b3",
-        "src/components/sales/payment-terms-editor.tsx": "cc1cfc656a4c93dc2da12f5f5d6220d5f753702a3f44130ffb0426bb1169b12f",
+        "src/components/sales/payment-terms-editor.tsx": "909da1008558710d9c5d83e8974f83058de2b9d1b4ba5c1d13149a50821af043",
         "src/components/deals/quote-wizard.tsx": "8ae23a5d321b35b2ae33898a7c813ba256bbaa9af8de01771aeedad2d29664ae",
         "drizzle/migrations/0326_grant_payment_terms_columns.sql": "fcc41e114bbb3c0bd713ff8a256e30913f4cf72904a756800aea7e499b1701ec"
       }

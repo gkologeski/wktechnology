@@ -93,12 +93,12 @@ function scheduleLines(t: ProposalTerms, s: PaymentTerms): string[] {
           : "";
   const plan = s.plan;
   const items = rows
-    .filter((r) => r.label === "Entrada" || plan.kind === "milestones")
+    .filter((r) => r.label === "Entrada" || plan.kind === "milestones" || plan.kind === "fixed_date")
     .map((r) => {
       const w = when(r);
       return `<li>${esc(r.label)}: ${esc(money(r.amount, t.currency))}${w ? ` — ${esc(w)}` : ""}</li>`;
     });
-  if (plan.kind !== "milestones") {
+  if (plan.kind === "monthly" || plan.kind === "periodic") {
     const parts = rows.filter((r) => r.label !== "Entrada");
     if (parts.length) {
       const each = parts[0]!.amount;

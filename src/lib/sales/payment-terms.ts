@@ -14,7 +14,9 @@ export type DownPayment =
 export type InstallmentPlan =
   | { kind: "monthly"; months: number; dueDay: number }
   | { kind: "periodic"; count: number; intervalMonths: number; dueDay: number }
-  | { kind: "milestones"; milestones: { label: string; percent: number }[] };
+  | { kind: "milestones"; milestones: { label: string; percent: number }[] }
+  /** SALDO-DATA-FIXA: saldo inteiro em uma única parcela, numa data escolhida. */
+  | { kind: "fixed_date"; date: string };
 
 /** Vencimento da entrada: data fixa ou na assinatura do contrato (padrão). */
 export type DownPaymentDue = { kind: "signature" } | { kind: "date"; date: string };
@@ -79,6 +81,16 @@ export function validatePaymentTerms(t: PaymentTerms, total: number): string[] {
   }
   if ((p.kind === "monthly" || p.kind === "periodic") && !(p.dueDay >= 1 && p.dueDay <= 31))
     errors.push("Dia de vencimento deve estar entre 1 e 31.");
+  if (p.kind === "fixed_date") {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(p.date)) errors.push("Escolha a data de vencimento do saldo.");
+    else if (
+      dp.kind !== "none" &&
+      due?.kind === "date" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(due.date) &&
+      p.date < due.date
+    )
+      errors.push("O saldo não pode vencer antes da entrada.");
+  }
   if (p.kind === "milestones") {
     if (p.milestones.length === 0) errors.push("Informe ao menos um marco.");
     const sum = round2(p.milestones.reduce((s, m) => s + m.percent, 0));
@@ -133,6 +145,8 @@ export function buildPaymentSchedule(
         dueDate: dateFor(start, offset + i * step, p.dueDay),
       }),
     );
+  } else if (p.kind === "fixed_date") {
+    out.push({ sequence: out.length + 1, label: "Saldo", amount: balance, dueDate: p.date });
   } else {
     let acc = 0;
     p.milestones.forEach((m, i) => {
@@ -199,6 +213,7 @@ export const installmentPlanSchema = z.union([
     intervalMonths: z.number().int().min(1).max(12),
     dueDay: z.number().int().min(1).max(31),
   }),
+  z.object({ kind: z.literal("fixed_date"), date: z.string().max(10) }),
   z.object({
     kind: z.literal("milestones"),
     milestones: z
@@ -242,7 +257,9 @@ export function legacyInstallments(
         ? p.months
         : p.kind === "periodic"
           ? p.count
-          : p.milestones.length;
+          : p.kind === "fixed_date"
+            ? 1
+            : p.milestones.length;
   return { installments: Math.max(1, entry + rest), dueDay: "dueDay" in p ? p.dueDay : null };
 }
 
@@ -268,6 +285,8 @@ export function describePaymentTerms(t: PaymentTerms): string {
       ? `${p.months} mensalidades no dia ${p.dueDay}`
       : p.kind === "periodic"
         ? `${p.count} parcelas a cada ${p.intervalMonths} ${p.intervalMonths === 1 ? "mês" : "meses"}, dia ${p.dueDay}`
-        : `${p.milestones.length} ${p.milestones.length === 1 ? "marco" : "marcos"} de entrega`;
+        : p.kind === "fixed_date"
+          ? `saldo em parcela única em ${p.date.split("-").reverse().join("/")}`
+          : `${p.milestones.length} ${p.milestones.length === 1 ? "marco" : "marcos"} de entrega`;
   return `${entry}${entryDue} · ${balance}`;
 }
