@@ -9907,7 +9907,7 @@
         "techprojects.jibble_import.manage.workspace",
         "techprojects.clickup_import.manage.workspace"
       ],
-      "rationale": "CONECTOR-IMPORTA: periodic import schedule reuses each importer's existing view/manage keys (requireClockifyAdmin/requireJibbleAdmin/assertClickUpImport). Table import_connector_schedules: GRANT select/insert/update to authenticated, RLS only for active workspace admins, owner must be caller. Cron (CRON_SECRET, existing clockify-import-tick) re-checks work_import_delegate_allowed for the schedule owner before starting any run and disables the schedule when revoked. ClickUp scheduling stays off (RPCs need a user session). Catalog adds links only. ClickUp automation runs each official step through clickup_import_delegate (service_role only, fixed allow-list) as the schedule owner, so clickup_import_require re-checks the owner's key; the scheduler also re-checks active admin + manage key each tick, and lists never imported before are held as skip for human review. Run-now requires manage via authorizeImportSchedule.",
+      "rationale": "CONECTOR-IMPORTA: periodic import schedule reuses each importer's existing view/manage keys (requireClockifyAdmin/requireJibbleAdmin/assertClickUpImport). Table import_connector_schedules: GRANT select/insert/update to authenticated, RLS only for active workspace admins, owner must be caller. Cron (CRON_SECRET, existing clockify-import-tick) re-checks work_import_delegate_allowed for the schedule owner before starting any run and disables the schedule when revoked. ClickUp scheduling stays off (RPCs need a user session). Catalog adds links only. ClickUp automation runs each official step through clickup_import_delegate (service_role only, fixed allow-list) as the schedule owner, so clickup_import_require re-checks the owner's key; the scheduler also re-checks active admin + manage key each tick, and lists never imported before are held as skip for human review. Run-now requires manage via authorizeImportSchedule. PESSOAS-JIBBLE: Jibble person target options (jibbleTargetOptions, reached only after requireJibbleAdmin in jibble.functions.ts; view-as writes blocked by assertNotReadOnlyView) list every workspace member alphabetically instead of an arbitrary first 50; no new data, key or action.",
       "controls": [
         {
           "file": "src/lib/integrations/import-schedule/schedule.server.ts",
@@ -9948,6 +9948,14 @@
         {
           "file": "src/lib/integrations/clickup/clickup-import.server.ts",
           "symbol": "assertClickUpImport"
+        },
+        {
+          "file": "src/lib/integrations/jibble/jibble-service.server.ts",
+          "symbol": "requireJibbleAdmin"
+        },
+        {
+          "file": "src/lib/view-as-guard.server.ts",
+          "symbol": "assertNotReadOnlyView"
         }
       ],
       "database": [
@@ -9997,7 +10005,8 @@
         "src/routes/_authenticated/projects.settings.imports.jibble.tsx": "59ea4f7c5d8eb4749e079f7ce6b2191e2be88949b514050e74c6a99966bd9c5c",
         "src/components/integrations/pages/integrations-catalog-page.tsx": "a4a157726cbe79f94fb3939a5ee3ed046fd51d4dd66f2408a6ddab66cd74b8e0",
         "src/lib/integrations/import-schedule/clickup-schedule.server.ts": "09ef0f198ab36b2a7b8d1601b8255e48db7a8ac9de08eb8d3fdb6029c4c06861",
-        "drizzle/migrations/0334_clickup_import_delegate.sql": "1b9273affc14406399f424089b109d95b446fb505a5c5753b804c6692c0e0c47"
+        "drizzle/migrations/0334_clickup_import_delegate.sql": "1b9273affc14406399f424089b109d95b446fb505a5c5753b804c6692c0e0c47",
+        "src/lib/integrations/jibble/jibble-service.server.ts": "9726817db6423b1f56f07a6f37469605f923be905265aceb11ec34a55f34b29e"
       }
     },
     {

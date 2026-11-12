@@ -544,7 +544,44 @@ export async function jibbleTargetOptions(
   entity: "person" | "client" | "project",
   q: string,
 ) {
-  return clockifyTargetOptions(ctx, entity === "person" ? "user" : entity, q);
+  if (entity !== "person") return clockifyTargetOptions(ctx, entity, q);
+  return jibblePersonOptions(ctx, q);
+}
+
+/**
+ * Todas as pessoas do workspace (inclusive cadastros sem acesso, marcados
+ * "inativo"), em ordem alfabética. Antes vinham só as 50 primeiras em ordem
+ * arbitrária e parte das pessoas nunca aparecia em "Escolher destino".
+ */
+async function jibblePersonOptions(ctx: Ctx, q: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const db = supabaseAdmin as unknown as SupabaseClient;
+  const term = q.replace(/[%_\\,()]/g, "").trim().toLocaleLowerCase("pt-BR");
+  const { data: members, error } = await db
+    .from("workspace_members")
+    .select("user_id, status")
+    .eq("workspace_id", ctx.workspaceId)
+    .limit(5000);
+  if (error) throw new Error(error.message);
+  const ids = (members ?? []).map((m) => m.user_id as string);
+  const names = new Map<string, string | null>();
+  // Em lotes: centenas de ids numa única URL estouram o limite da consulta.
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data: profiles, error: pErr } = await db
+      .from("profiles")
+      .select("id, full_name")
+      .in("id", ids.slice(i, i + 200));
+    if (pErr) throw new Error(pErr.message);
+    for (const p of profiles ?? []) names.set(p.id as string, (p.full_name as string | null) ?? null);
+  }
+  return (members ?? [])
+    .map((m) => ({
+      id: m.user_id as string,
+      label: names.get(m.user_id as string) ?? "Sem nome",
+      status: m.status as string,
+    }))
+    .filter((o) => !term || o.label.toLocaleLowerCase("pt-BR").includes(term))
+    .sort((a, b) => a.label.localeCompare(b.label, "pt-BR"));
 }
 
 export async function listJibbleStaging(
