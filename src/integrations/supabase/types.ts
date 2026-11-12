@@ -13519,6 +13519,7 @@ export type Database = {
           enabled: boolean
           frequency: string
           id: string
+          job_state: Json | null
           last_error: string | null
           last_run_at: string | null
           last_run_id: string | null
@@ -13538,6 +13539,7 @@ export type Database = {
           enabled?: boolean
           frequency?: string
           id?: string
+          job_state?: Json | null
           last_error?: string | null
           last_run_at?: string | null
           last_run_id?: string | null
@@ -13557,6 +13559,7 @@ export type Database = {
           enabled?: boolean
           frequency?: string
           id?: string
+          job_state?: Json | null
           last_error?: string | null
           last_run_at?: string | null
           last_run_id?: string | null
@@ -32523,6 +32526,10 @@ export type Database = {
       clickup_import_assignees: {
         Args: { p_payload: Json; p_ws: string }
         Returns: string[]
+      }
+      clickup_import_delegate: {
+        Args: { p_actor: string; p_args: Json; p_fn: string }
+        Returns: Json
       }
       clickup_import_finish_collect: {
         Args: { p_counts: Json; p_run: string }

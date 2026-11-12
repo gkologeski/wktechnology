@@ -25,7 +25,7 @@ export const WEEKDAY_LABELS = [
   "Sábado",
 ];
 /** Provedores cuja execução automática já existe no servidor. */
-export const AUTO_PROVIDERS: ImportProvider[] = ["clockify", "jibble"];
+export const AUTO_PROVIDERS: ImportProvider[] = ["clockify", "jibble", "clickup"];
 
 function offsetMinutes(at: Date, timeZone: string): number {
   const parts = new Intl.DateTimeFormat("en-US", {

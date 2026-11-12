@@ -8,7 +8,7 @@ route_pattern: /projects/settings/imports/jibble
 min_permission: 
 audience: internal
 sort_order: 110
-version: 3
+version: 4
 is_published: true
 ---
 # Importar do Jibble
@@ -49,7 +49,7 @@ No fim da tela, a seção **Importação contínua** busca dados novos do Jibble
 3. Escolha o que fazer a cada execução:
    - **Só gerar a prévia**: o sistema prepara a prévia e um administrador confere e confirma, como na importação manual.
    - **Importar automaticamente**: a prévia é confirmada em nome de quem ligou a agenda. Itens com conflito continuam esperando revisão.
-4. Clique em **Salvar agenda**. A tela mostra a próxima execução, a última e o resultado.
+4. Clique em **Salvar agenda**. A tela mostra a próxima execução, a última e o resultado. Para rodar na hora, clique em **Executar agora**.
 
 Cuidados: nada editado no sistema é sobrescrito e nada é duplicado. Se quem ligou a agenda perder a permissão ou deixar de ser administrador ativo, a agenda é desligada. Só administradores com acesso ao importador veem e alteram a agenda.
 

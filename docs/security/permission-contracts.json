@@ -8713,7 +8713,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic.",
       "files": {
-        "src/integrations/supabase/types.ts": "108c22ce9af3c68a2465d97b4acf4029fa6c00492e4742ce3ce545a5ab1fd920",
+        "src/integrations/supabase/types.ts": "bfc6e6ef9ae71c3549dcab0e39a8139c3e31d1d7322f2dc701fc9eda8bda95aa",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -9907,7 +9907,7 @@
         "techprojects.jibble_import.manage.workspace",
         "techprojects.clickup_import.manage.workspace"
       ],
-      "rationale": "CONECTOR-IMPORTA: periodic import schedule reuses each importer's existing view/manage keys (requireClockifyAdmin/requireJibbleAdmin/assertClickUpImport). Table import_connector_schedules: GRANT select/insert/update to authenticated, RLS only for active workspace admins, owner must be caller. Cron (CRON_SECRET, existing clockify-import-tick) re-checks work_import_delegate_allowed for the schedule owner before starting any run and disables the schedule when revoked. ClickUp scheduling stays off (RPCs need a user session). Catalog adds links only.",
+      "rationale": "CONECTOR-IMPORTA: periodic import schedule reuses each importer's existing view/manage keys (requireClockifyAdmin/requireJibbleAdmin/assertClickUpImport). Table import_connector_schedules: GRANT select/insert/update to authenticated, RLS only for active workspace admins, owner must be caller. Cron (CRON_SECRET, existing clockify-import-tick) re-checks work_import_delegate_allowed for the schedule owner before starting any run and disables the schedule when revoked. ClickUp scheduling stays off (RPCs need a user session). Catalog adds links only. ClickUp automation runs each official step through clickup_import_delegate (service_role only, fixed allow-list) as the schedule owner, so clickup_import_require re-checks the owner's key; the scheduler also re-checks active admin + manage key each tick, and lists never imported before are held as skip for human review. Run-now requires manage via authorizeImportSchedule.",
       "controls": [
         {
           "file": "src/lib/integrations/import-schedule/schedule.server.ts",
@@ -9944,6 +9944,10 @@
         {
           "file": "src/integrations/supabase/cron-auth.ts",
           "symbol": "authenticateCronRequest"
+        },
+        {
+          "file": "src/lib/integrations/clickup/clickup-import.server.ts",
+          "symbol": "assertClickUpImport"
         }
       ],
       "database": [
@@ -9954,6 +9958,10 @@
         {
           "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
           "symbol": "work_import_delegate_allowed"
+        },
+        {
+          "file": "drizzle/migrations/0334_clickup_import_delegate.sql",
+          "symbol": "clickup_import_delegate"
         }
       ],
       "tests": {
@@ -9980,14 +9988,16 @@
       },
       "files": {
         "drizzle/migrations/0333_import_connector_schedules.sql": "47fea8b96602b2e3a7352cd2d536960a87a924aaa7775253d8923ae2fe0b4eee",
-        "src/components/integrations/import-schedule/import-schedule-card.tsx": "348fbd46e7f80ddd368726492b6c393f2ad554ebf3ff131ba3f37b6d24f0964a",
-        "src/lib/integrations/import-schedule/schedule.functions.ts": "68487d4048d2bcf058b36a9877efa420a0a915c84d3536392f1e08575a652b3d",
-        "src/lib/integrations/import-schedule/schedule.server.ts": "b7ac964ec8ee61f0dfbdf674e9b7e0c66bf29f8bac0e156905adcd29884445f3",
+        "src/components/integrations/import-schedule/import-schedule-card.tsx": "e0c31f61cbcb1fe80e6202f0a32bd485897b70837fc6fdd80de96763988de049",
+        "src/lib/integrations/import-schedule/schedule.functions.ts": "654dd73878e2b6395c7300f734b09ef71cb65a4a5f2fca76f5b47fe4d331b0f3",
+        "src/lib/integrations/import-schedule/schedule.server.ts": "066415a4b950b415278b1c6f01f2b456a1da2d86f3edb57972302ae03dc8c06f",
         "src/routes/api/public/hooks/clockify-import-tick.ts": "f981ba5cf0c85bac595ddfbd1807cffae6e33e4b46e5da5c88f48479cf79dfd6",
         "src/routes/_authenticated/projects.settings.imports.clickup.tsx": "b2af86edf4ac233fb016f5c6e28ff9453c23c3fe080390201741ccf3e0b83ba8",
         "src/routes/_authenticated/projects.settings.imports.clockify.tsx": "031d8e89759c2f6a072dd84105f5206bc363ff3180ef45835e23b32407f8b80c",
         "src/routes/_authenticated/projects.settings.imports.jibble.tsx": "59ea4f7c5d8eb4749e079f7ce6b2191e2be88949b514050e74c6a99966bd9c5c",
-        "src/components/integrations/pages/integrations-catalog-page.tsx": "a4a157726cbe79f94fb3939a5ee3ed046fd51d4dd66f2408a6ddab66cd74b8e0"
+        "src/components/integrations/pages/integrations-catalog-page.tsx": "a4a157726cbe79f94fb3939a5ee3ed046fd51d4dd66f2408a6ddab66cd74b8e0",
+        "src/lib/integrations/import-schedule/clickup-schedule.server.ts": "09ef0f198ab36b2a7b8d1601b8255e48db7a8ac9de08eb8d3fdb6029c4c06861",
+        "drizzle/migrations/0334_clickup_import_delegate.sql": "1b9273affc14406399f424089b109d95b446fb505a5c5753b804c6692c0e0c47"
       }
     },
     {
@@ -9995,7 +10005,7 @@
       "kind": "presentation",
       "rationale": "CONECTOR-IMPORTA: pure next-run calculation and the generated managed-scheduler secret check (no data access or action).",
       "files": {
-        "src/lib/integrations/import-schedule/schedule.ts": "22efd782fe3fed325f524426c535fc02b8be33f714b7e212943a825a632bc8bf",
+        "src/lib/integrations/import-schedule/schedule.ts": "61486a8fc0b5420df439475f4eab2e00e208833f481683a56555917cc203ffd3",
         "src/integrations/supabase/cron-auth.ts": "18430aa4c7faff5b44c572a8a4dfa6482daa52acbea09f384b872f087e58e738"
       }
     }

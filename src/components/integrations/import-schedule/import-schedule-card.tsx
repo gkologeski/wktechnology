@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import {
   getImportSchedule,
+  runImportScheduleNow,
   saveImportSchedule,
 } from "@/lib/integrations/import-schedule/schedule.functions";
 import {
@@ -34,6 +35,9 @@ const STATUS: Record<string, string> = {
   preview_started: "Prévia iniciada",
   import_started: "Importação iniciada",
   failed: "Falhou",
+  running: "Em andamento",
+  preview_ready: "Prévia pronta para revisão",
+  import_done: "Importação concluída",
 };
 const fmt = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" }) : "—";
@@ -50,6 +54,7 @@ function ScheduleSection({ provider, name }: { provider: ImportProvider; name: s
   const qc = useQueryClient();
   const get = useServerFn(getImportSchedule);
   const save = useServerFn(saveImportSchedule);
+  const runNow = useServerFn(runImportScheduleNow);
   const q = useQuery({
     queryKey: ["import-schedule", provider],
     queryFn: () => get({ data: { provider } }),
@@ -81,6 +86,15 @@ function ScheduleSection({ provider, name }: { provider: ImportProvider; name: s
     onError: (e: Error) => toast.error(e.message),
   });
 
+  const now = useMutation({
+    mutationFn: () => runNow({ data: { provider } }),
+    onSuccess: () => {
+      toast.success("Execução iniciada. Acompanhe o resultado nesta seção.");
+      void qc.invalidateQueries({ queryKey: ["import-schedule", provider] });
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const held = Number((s?.job_state as { heldLists?: number } | null)?.heldLists ?? 0);
   const daily = frequency === "daily" || frequency === "weekly";
   return (
     <section
@@ -205,6 +219,8 @@ function ScheduleSection({ provider, name }: { provider: ImportProvider; name: s
                 <Label htmlFor={`ma-${provider}`} className="font-normal">
                   Importar automaticamente — a prévia é confirmada em seu nome. Itens com conflito
                   continuam esperando revisão.
+                  {provider === "clickup" &&
+                    " Listas que nunca foram importadas ficam de fora até alguém revisar."}
                 </Label>
               </div>
             </RadioGroup>
@@ -229,9 +245,27 @@ function ScheduleSection({ provider, name }: { provider: ImportProvider; name: s
               <AlertDescription>{s.last_error}</AlertDescription>
             </Alert>
           )}
-          <Button onClick={() => m.mutate()} disabled={m.isPending}>
-            {m.isPending ? "Salvando…" : "Salvar agenda"}
-          </Button>
+          {provider === "clickup" && held > 0 && (
+            <Alert aria-live="polite">
+              <AlertTitle>Listas novas aguardando revisão</AlertTitle>
+              <AlertDescription>
+                {held} lista(s) do ClickUp nunca importada(s) ficaram de fora. Revise a organização
+                acima para incluí-las.
+              </AlertDescription>
+            </Alert>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={() => m.mutate()} disabled={m.isPending}>
+              {m.isPending ? "Salvando…" : "Salvar agenda"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => now.mutate()}
+              disabled={now.isPending || !s?.enabled || s?.last_status === "running"}
+            >
+              {now.isPending ? "Iniciando…" : "Executar agora"}
+            </Button>
+          </div>
         </div>
       )}
     </section>

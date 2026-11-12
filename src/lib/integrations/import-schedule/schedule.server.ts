@@ -2,6 +2,7 @@
 // da agenda com o cliente do usuário (RLS: admin ativo) e execução automática pelo agendador.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { workRpc } from "@/lib/access-control/work-core.server";
+import { advanceClickUpSchedule, type ClickUpJobState } from "./clickup-schedule.server";
 import { AUTO_PROVIDERS, nextRunAt, type ImportFrequency, type ImportProvider } from "./schedule";
 
 export type ScheduleCtx = { workspaceId: string; userId: string };
@@ -34,7 +35,7 @@ export async function authorizeImportSchedule(
 }
 
 const COLS =
-  "provider, enabled, frequency, run_hour, run_weekday, time_zone, mode, next_run_at, last_run_at, last_status, last_error";
+  "provider, enabled, frequency, run_hour, run_weekday, time_zone, mode, next_run_at, last_run_at, last_status, last_error, job_state";
 
 export async function getSchedule(
   supabase: SupabaseClient,
@@ -63,8 +64,6 @@ export async function saveSchedule(
     mode: "preview" | "auto_import";
   },
 ) {
-  if (input.enabled && !AUTO_PROVIDERS.includes(input.provider))
-    throw new Error("A importação contínua do ClickUp ainda não está disponível.");
   const timeZone = "America/Sao_Paulo";
   const next = input.enabled
     ? nextRunAt(
@@ -108,7 +107,154 @@ type Row = {
   mode: "preview" | "auto_import";
   owner_user_id: string;
   last_run_id: string | null;
+  job_state?: ClickUpJobState | null;
 };
+
+async function ownerAllowed(db: SupabaseClient, r: Row): Promise<boolean> {
+  if (r.provider !== "clickup")
+    return workRpc<boolean>(db, "work_import_delegate_allowed", {
+      p_ws: r.workspace_id,
+      p_actor: r.owner_user_id,
+      p_provider: r.provider,
+    });
+  const [adm, acc] = await Promise.all([
+    db.rpc("is_active_workspace_admin", { _workspace: r.workspace_id, _user: r.owner_user_id }),
+    db.rpc(
+      "clickup_import_access" as never,
+      {
+        p_ws: r.workspace_id,
+        p_user: r.owner_user_id,
+        p_action: "manage",
+      } as never,
+    ),
+  ]);
+  return adm.data === true && acc.data === true;
+}
+
+/** Inicia uma execução (agenda vencida ou "Executar agora") em nome do dono da agenda. */
+async function startScheduledRun(db: SupabaseClient, r: Row) {
+  if (!(await ownerAllowed(db, r)))
+    throw new Error("Quem ativou a agenda perdeu a permissão. A agenda foi pausada.");
+  if (r.provider === "clickup") {
+    if (r.job_state?.runId) return; // ainda processando a execução anterior
+    await stepClickUp(db, r, null);
+    return;
+  }
+  const ctx = { workspaceId: r.workspace_id, userId: r.owner_user_id };
+  const runId =
+    r.provider === "clockify"
+      ? (
+          await (
+            await import("@/lib/integrations/clockify/clockify-service.server")
+          ).startClockifyRun(ctx, { kind: "dry_run" })
+        ).runId
+      : (
+          await (
+            await import("@/lib/integrations/jibble/jibble-service.server")
+          ).startJibbleRun(ctx, { kind: "dry_run" })
+        ).runId;
+  await db
+    .from("import_connector_schedules")
+    .update({ last_status: "preview_started", last_error: null, last_run_id: runId })
+    .eq("id", r.id);
+}
+
+async function stepClickUp(db: SupabaseClient, r: Row, state: ClickUpJobState | null) {
+  const res = await advanceClickUpSchedule(
+    { admin: db, workspaceId: r.workspace_id, actor: r.owner_user_id, mode: r.mode },
+    state,
+  );
+  if (res.status === "running")
+    await db
+      .from("import_connector_schedules")
+      .update({
+        last_status: "running",
+        last_error: null,
+        last_run_id: res.state.runId,
+        job_state: res.state as never,
+      })
+      .eq("id", r.id);
+  else
+    await db
+      .from("import_connector_schedules")
+      .update({
+        last_status: res.status,
+        last_error: null,
+        job_state: { heldLists: res.heldLists } as never,
+      })
+      .eq("id", r.id);
+}
+
+/** Continua as execuções do ClickUp em andamento (uma etapa curta por chamada). */
+async function continueClickUpJobs(db: SupabaseClient) {
+  const { data } = await db
+    .from("import_connector_schedules")
+    .select(
+      "id, workspace_id, provider, mode, owner_user_id, job_state, frequency, run_hour, run_weekday, time_zone, last_run_id",
+    )
+    .eq("enabled", true)
+    .eq("provider", "clickup")
+    .eq("last_status", "running")
+    .limit(2);
+  let n = 0;
+  for (const r of (data ?? []) as Row[]) {
+    try {
+      if (!(await ownerAllowed(db, r)))
+        throw new Error("Quem ativou a agenda perdeu a permissão. A agenda foi pausada.");
+      await stepClickUp(db, r, r.job_state ?? null);
+      n++;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await db
+        .from("import_connector_schedules")
+        .update({
+          last_status: "failed",
+          last_error: msg.slice(0, 500),
+          job_state: null,
+          ...(/permissão/i.test(msg) ? { enabled: false } : {}),
+        })
+        .eq("id", r.id);
+    }
+  }
+  return n;
+}
+
+/** "Executar agora": quem tem acesso de gestão dispara a execução da agenda ligada. */
+export async function runScheduleNow(ctx: ScheduleCtx, provider: ImportProvider) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const db = supabaseAdmin as unknown as SupabaseClient;
+  const { data } = await db
+    .from("import_connector_schedules")
+    .select(
+      "id, workspace_id, provider, mode, owner_user_id, job_state, frequency, run_hour, run_weekday, time_zone, last_run_id, last_status",
+    )
+    .eq("workspace_id", ctx.workspaceId)
+    .eq("provider", provider)
+    .maybeSingle();
+  const r = data as (Row & { last_status: string | null; enabled?: boolean }) | null;
+  if (!r) throw new Error("Salve a agenda antes de executar.");
+  if (r.last_status === "running" || r.job_state?.runId)
+    throw new Error("Já existe uma execução em andamento.");
+  try {
+    await startScheduledRun(db, { ...r, job_state: null });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    await db
+      .from("import_connector_schedules")
+      .update({
+        last_status: "failed",
+        last_error: msg.slice(0, 500),
+        last_run_at: new Date().toISOString(),
+      })
+      .eq("id", r.id);
+    throw e;
+  }
+  await db
+    .from("import_connector_schedules")
+    .update({ last_run_at: new Date().toISOString() })
+    .eq("id", r.id);
+  return { ok: true };
+}
 
 /** Chamado pelo agendador (CRON_SECRET). Nunca inicia nada para dono inativo ou sem permissão. */
 export async function processDueSchedules(limit = 5) {
@@ -117,7 +263,7 @@ export async function processDueSchedules(limit = 5) {
   const { data } = await db
     .from("import_connector_schedules")
     .select(
-      "id, workspace_id, provider, frequency, run_hour, run_weekday, time_zone, mode, owner_user_id, last_run_id",
+      "id, workspace_id, provider, frequency, run_hour, run_weekday, time_zone, mode, owner_user_id, last_run_id, job_state",
     )
     .eq("enabled", true)
     .lte("next_run_at", now.toISOString())
@@ -143,30 +289,7 @@ export async function processDueSchedules(limit = 5) {
       .maybeSingle();
     if (!claimed) continue;
     try {
-      const allowed = await workRpc<boolean>(db as never, "work_import_delegate_allowed", {
-        p_ws: r.workspace_id,
-        p_actor: r.owner_user_id,
-        p_provider: r.provider,
-      });
-      if (!allowed)
-        throw new Error("Quem ativou a agenda perdeu a permissão. A agenda foi pausada.");
-      const ctx = { workspaceId: r.workspace_id, userId: r.owner_user_id };
-      const runId =
-        r.provider === "clockify"
-          ? (
-              await (
-                await import("@/lib/integrations/clockify/clockify-service.server")
-              ).startClockifyRun(ctx, { kind: "dry_run" })
-            ).runId
-          : (
-              await (
-                await import("@/lib/integrations/jibble/jibble-service.server")
-              ).startJibbleRun(ctx, { kind: "dry_run" })
-            ).runId;
-      await db
-        .from("import_connector_schedules")
-        .update({ last_status: "preview_started", last_error: null, last_run_id: runId })
-        .eq("id", r.id);
+      await startScheduledRun(db as unknown as SupabaseClient, r);
       started++;
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
@@ -181,6 +304,7 @@ export async function processDueSchedules(limit = 5) {
     }
   }
   started += await promoteCompletedPreviews();
+  started += await continueClickUpJobs(db as unknown as SupabaseClient);
   return { due: data?.length ?? 0, started };
 }
 

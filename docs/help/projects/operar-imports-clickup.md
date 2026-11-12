@@ -8,7 +8,7 @@ route_pattern: /projects/settings/imports/clickup
 min_permission: 
 audience: internal
 sort_order: 80
-version: 3
+version: 4
 is_published: true
 ---
 # Importar organização e tarefas do ClickUp
@@ -41,7 +41,20 @@ Leitura e importação são etapas separadas. Identidade inativa preserva atribu
 ## Relacionados
 ## Importação contínua
 
-A importação contínua ainda não está disponível para o ClickUp, porque cada etapa exige revisão. Continue usando a importação manual.
+No fim da tela, a seção **Importação contínua** lê o ClickUp sozinha.
+
+1. Ligue **Ligar importação contínua**.
+2. Escolha a **Frequência**: a cada 1 hora, 6 horas, 12 horas, diariamente ou semanalmente. Nas duas últimas, escolha também o horário (Brasília) e, na semanal, o dia.
+3. Escolha o que fazer a cada execução:
+   - **Só gerar a prévia**: o sistema lê o ClickUp e deixa a organização pronta para revisão nesta tela.
+   - **Importar automaticamente**: grava as tarefas em nome de quem ligou a agenda e completa os responsáveis já confirmados.
+4. Clique em **Salvar agenda**. Para rodar na hora, clique em **Executar agora**.
+
+Cuidados:
+- Listas do ClickUp que **nunca foram importadas** ficam de fora da importação automática. A seção avisa quantas ficaram aguardando revisão.
+- Nenhuma tarefa editada no sistema é sobrescrita e nada é duplicado. Horas nunca vêm do ClickUp.
+- A leitura é feita aos poucos para respeitar o limite do ClickUp; uma execução grande pode levar vários minutos.
+- Se quem ligou a agenda perder a permissão ou deixar de ser administrador ativo, a agenda é desligada.
 
 - [Campos e status](/ajuda/projects/campos-e-status)
 - [Permissões](/ajuda/projects/permissoes)

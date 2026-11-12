@@ -44,3 +44,17 @@ export const saveImportSchedule = createServerFn({ method: "POST" })
     );
     return s.saveSchedule(context.supabase, ctx, data);
   });
+
+export const runImportScheduleNow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ provider }).parse(d))
+  .handler(async ({ data, context }) => {
+    const ctx = await authorizeImportSchedule(
+      context.supabase,
+      context.userId,
+      data.provider,
+      true,
+    );
+    const s = await import("@/lib/integrations/import-schedule/schedule.server");
+    return s.runScheduleNow(ctx, data.provider);
+  });
