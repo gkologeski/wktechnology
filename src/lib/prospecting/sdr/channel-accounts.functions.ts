@@ -118,16 +118,7 @@ export const discoverServiceChannels = createServerFn({ method: "POST" })
           source_key: row.phone_number_id,
           label: row.display_phone_number,
         });
-      // Legacy gateway accounts are discovered only from rows already authorized in this workspace,
-      // and only for the number connected today; deleted connections must not come back.
-      let currentLegacyId: string | null = null;
-      try {
-        const { gatewayConfigured, getConnectedPhone } =
-          await import("@/lib/whatsapp/gateway-channel.server");
-        if (gatewayConfigured()) currentLegacyId = (await getConnectedPhone()).id ?? null;
-      } catch {
-        currentLegacyId = null;
-      }
+      // Legacy gateway accounts are discovered only from rows already authorized in this workspace.
       const legacy = await db
         .from("whatsapp_conversations")
         .select("wa_phone_number_id,twilio_number")
@@ -138,7 +129,6 @@ export const discoverServiceChannels = createServerFn({ method: "POST" })
       for (const row of legacy.data ?? []) {
         if (
           row.wa_phone_number_id &&
-          row.wa_phone_number_id === currentLegacyId &&
           !rows.some((r) => r.channel === "whatsapp" && r.source_key === row.wa_phone_number_id)
         )
           rows.push({
