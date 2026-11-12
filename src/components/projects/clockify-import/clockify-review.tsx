@@ -18,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { CompanyPicker } from "@/components/ui/company-picker";
 import { EmptyState, StatusBadge } from "@/components/techhire/ui";
 import {
   DECISION_LABEL,
@@ -73,6 +74,7 @@ export function MappingsTable({
 }) {
   const [filter, setFilter] = useState<"all" | "pending">("pending");
   const [picked, setPicked] = useState<Record<string, string>>({});
+  const [companyText, setCompanyText] = useState<Record<string, string>>({});
   const visible = useMemo(
     () => (filter === "pending" ? rows.filter((r) => r.decision === "pending") : rows),
     [rows, filter],
@@ -160,36 +162,56 @@ export function MappingsTable({
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap items-center gap-2">
-                        <Select
-                          value={sel}
-                          onValueChange={(v) => setPicked((p) => ({ ...p, [r.external_id]: v }))}
-                        >
-                          <SelectTrigger
-                            className="w-52"
-                            aria-label={`Destino de ${r.label ?? r.external_id}`}
+                        {entity === "client" ? (
+                          <div className="w-64">
+                            <CompanyPicker
+                              mode="pick"
+                              placeholder="Buscar empresa"
+                              value={{
+                                id: sel || null,
+                                name:
+                                  companyText[r.external_id] ??
+                                  (sel ? (optionLabel.get(sel) ?? "") : ""),
+                              }}
+                              onChange={(v) => {
+                                setCompanyText((t) => ({ ...t, [r.external_id]: v.name }));
+                                setPicked((p) => ({ ...p, [r.external_id]: v.id ?? "" }));
+                              }}
+                              id={`company-${r.external_id}`}
+                            />
+                          </div>
+                        ) : (
+                          <Select
+                            value={sel}
+                            onValueChange={(v) => setPicked((p) => ({ ...p, [r.external_id]: v }))}
                           >
-                            <SelectValue placeholder="Escolher destino" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {[
-                              ...r.candidates.map((c) => ({
-                                id: (c.user_id ?? c.id) as string,
-                                label: c.name ?? "Sem nome",
-                                status: c.status ?? null,
-                              })),
-                              ...options,
-                            ]
-                              .filter(
-                                (o, i, arr) => o.id && arr.findIndex((x) => x.id === o.id) === i,
-                              )
-                              .map((o) => (
-                                <SelectItem key={o.id} value={o.id}>
-                                  {o.label}
-                                  {o.status === "inactive" ? " (inativo)" : ""}
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                        </Select>
+                            <SelectTrigger
+                              className="w-52"
+                              aria-label={`Destino de ${r.label ?? r.external_id}`}
+                            >
+                              <SelectValue placeholder="Escolher destino" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[
+                                ...r.candidates.map((c) => ({
+                                  id: (c.user_id ?? c.id) as string,
+                                  label: c.name ?? "Sem nome",
+                                  status: c.status ?? null,
+                                })),
+                                ...options,
+                              ]
+                                .filter(
+                                  (o, i, arr) => o.id && arr.findIndex((x) => x.id === o.id) === i,
+                                )
+                                .map((o) => (
+                                  <SelectItem key={o.id} value={o.id}>
+                                    {o.label}
+                                    {o.status === "inactive" ? " (inativo)" : ""}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        )}
                         <Button
                           size="sm"
                           disabled={busy || !sel}

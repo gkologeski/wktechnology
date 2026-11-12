@@ -8,7 +8,7 @@ route_pattern: /projects/settings/imports/clockify
 min_permission: 
 audience: internal
 sort_order: 90
-version: 4
+version: 5
 is_published: true
 ---
 # Importar do Clockify
@@ -25,6 +25,7 @@ is_published: true
 1. Abra Configurações > Importar do Clockify. Salve a conexão e teste a chave no controle próprio, sem compartilhá-la.
 2. Selecione o workspace de origem. Inicie a prévia e configure o tratamento de apontamentos sem projeto e a situação das horas no ERP.
 3. Após a simulação, confira Resumo, Pessoas, Clientes, Projetos e Staging. Revise os mapeamentos e os vínculos antes de continuar.
+   Em **Clientes**, a Decisão usa a busca de empresas: digite parte do nome e escolha a empresa na lista que aparece. Só empresas já cadastradas podem ser escolhidas.
 4. Marque a confirmação da prévia e confirme Importar agora somente após revisar os totais.
 5. Acompanhe a execução e o resultado. Use controles de estado e revisão apenas para a execução indicada.
 

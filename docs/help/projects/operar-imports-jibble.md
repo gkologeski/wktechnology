@@ -8,7 +8,7 @@ route_pattern: /projects/settings/imports/jibble
 min_permission: 
 audience: internal
 sort_order: 110
-version: 4
+version: 5
 is_published: true
 ---
 # Importar do Jibble
@@ -25,6 +25,7 @@ is_published: true
 1. Abra Configurações > Importar do Jibble. Salve as credenciais e teste a conexão.
 2. Confirme a organização de origem e inicie a prévia.
 3. Confira Resumo, Mapeamentos, Duplicidades e Staging. Resolva as decisões de duplicidade antes de confirmar o que deve entrar.
+   Em **Clientes**, a Decisão usa a busca de empresas: digite parte do nome e escolha a empresa na lista que aparece. Só empresas já cadastradas podem ser escolhidas.
 4. Confirme a importação da prévia revisada e acompanhe o histórico da execução.
 5. Se precisar desfazer, confira a execução escolhida e a confirmação Desfazer; depois revise o resultado.
 
