@@ -8,7 +8,7 @@ route_pattern: /projects/settings/imports/clickup
 min_permission: 
 audience: internal
 sort_order: 80
-version: 2
+version: 3
 is_published: true
 ---
 # Importar organização e tarefas do ClickUp
@@ -39,6 +39,10 @@ Leitura e importação são etapas separadas. Identidade inativa preserva atribu
 - Falha ao salvar: leia a mensagem retornada, corrija os campos ou bloqueios indicados e confirme o estado antes de repetir.
 
 ## Relacionados
+## Importação contínua
+
+A importação contínua ainda não está disponível para o ClickUp, porque cada etapa exige revisão. Continue usando a importação manual.
+
 - [Campos e status](/ajuda/projects/campos-e-status)
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)

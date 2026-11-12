@@ -1,5 +1,6 @@
 import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
+import { ImportScheduleCard } from "@/components/integrations/import-schedule/import-schedule-card";
 import { ClockifyImportPage } from "@/components/projects/clockify-import/clockify-import-page";
 
 export const Route = createFileRoute("/_authenticated/projects/settings/imports/clockify")({
@@ -29,6 +30,9 @@ function Order3RouteAccess() {
   return (
     <Order3ScreenAccess resources={["techprojects.clockify_import"]}>
       <Order3Page />
+      <div className="px-4 pb-8 md:px-6">
+        <ImportScheduleCard provider="clockify" name="Clockify" />
+      </div>
     </Order3ScreenAccess>
   );
 }

@@ -1,17 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { requireCronAuth } from "@/lib/cron-auth.server";
+import { authenticateCronRequest } from "@/integrations/supabase/cron-auth";
 import { runCronWithLogging } from "@/lib/cron-observability.server";
 
 // Avança em segundo plano execuções de importação de horas (Clockify e Jibble) já iniciadas
 // por um admin.
-// Nunca inicia importação sozinho. Exige Bearer CRON_SECRET.
+// Também inicia as importações contínuas agendadas por um admin (agenda própria). Exige Bearer CRON_SECRET.
 export const Route = createFileRoute("/api/public/hooks/clockify-import-tick")({
   server: {
     handlers: {
-      GET: async () => Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
+      GET: async ({ request }) =>
+        requireCronAuth(request) ??
+        Response.json({ ok: true, info: "POST with Bearer CRON_SECRET" }),
       POST: async ({ request }) => {
-        const unauth = requireCronAuth(request);
-        if (unauth) return unauth;
+        // Aceita o CRON_SECRET antigo ou o segredo do agendador gerenciado.
+        if (requireCronAuth(request)) {
+          const unauth = await authenticateCronRequest(request);
+          if (unauth) return unauth;
+        }
         const run = await runCronWithLogging("clockify-import-tick", async () => {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const { advanceClockifyRun } =
@@ -43,7 +49,13 @@ export const Route = createFileRoute("/api/public/hooks/clockify-import-tick")({
             }));
             if (res.advanced) advanced++;
           }
+          // Importação contínua: agendas vencidas iniciam prévia (e, se escolhido, importação).
+          const { processDueSchedules } =
+            await import("@/lib/integrations/import-schedule/schedule.server");
+          const sched = await processDueSchedules().catch(() => ({ due: 0, started: 0 }));
           return {
+            schedules_due: sched.due,
+            schedules_started: sched.started,
             runs: (runs?.length ?? 0) + (jbRuns?.length ?? 0),
             advanced,
           } as Record<string, unknown>;

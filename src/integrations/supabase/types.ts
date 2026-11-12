@@ -13513,6 +13513,74 @@ export type Database = {
         }
         Relationships: []
       }
+      import_connector_schedules: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          frequency: string
+          id: string
+          last_error: string | null
+          last_run_at: string | null
+          last_run_id: string | null
+          last_status: string | null
+          mode: string
+          next_run_at: string | null
+          owner_user_id: string
+          provider: string
+          run_hour: number
+          run_weekday: number
+          time_zone: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          frequency?: string
+          id?: string
+          last_error?: string | null
+          last_run_at?: string | null
+          last_run_id?: string | null
+          last_status?: string | null
+          mode?: string
+          next_run_at?: string | null
+          owner_user_id: string
+          provider: string
+          run_hour?: number
+          run_weekday?: number
+          time_zone?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          frequency?: string
+          id?: string
+          last_error?: string | null
+          last_run_at?: string | null
+          last_run_id?: string | null
+          last_status?: string | null
+          mode?: string
+          next_run_at?: string | null
+          owner_user_id?: string
+          provider?: string
+          run_hour?: number
+          run_weekday?: number
+          time_zone?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_connector_schedules_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inbox_ai_suggestions: {
         Row: {
           applied_company_id: string | null

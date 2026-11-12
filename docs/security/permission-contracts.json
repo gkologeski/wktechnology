@@ -3750,7 +3750,6 @@
         "src/lib/integrations/clickup/clickup-import.functions.ts": "e62e710dd0814003392018fa80d80fe21e1a8277b67afc39f5642b0b3fb107b9",
         "src/lib/integrations/clickup/clickup-import.middleware.ts": "7d32c2b75e626e5dd9a80a9b8b43038efeece0923af9835a5a965bf803ad65b4",
         "src/components/projects/clickup-import/clickup-import-page.tsx": "619d3d88c013fc0e8be7ee3378d32ce725a5169d245305619a027e73e38c1091",
-        "src/routes/_authenticated/projects.settings.imports.clickup.tsx": "0c780f5362f1f7f091668dca2d1480163b4255d12e9fd23b3c8dec8d24d84629",
         "src/routes/_authenticated/projects.settings.imports.index.tsx": "1b467a4bdabfc704d37c532aee03bbe9894423de41e1fca5d7ed1657e56d0c0b",
         "drizzle/migrations/0268_project_tasks_comment.sql": "f6ddbc10f820db9e8add066f99a665d477b4bc02e22b57b7fcb856b2d4d75e41",
         "drizzle/migrations/0269_clickup_apply_step_fix.sql": "3cec267765eec356abbbcd175ce6900e26735aab20ec9dc2438f4496064309cd"
@@ -8714,7 +8713,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic.",
       "files": {
-        "src/integrations/supabase/types.ts": "549c9d31cf722734ac19cbe169ae3cc8c62857dbc438d60615dc5e10f603d2df",
+        "src/integrations/supabase/types.ts": "108c22ce9af3c68a2465d97b4acf4029fa6c00492e4742ce3ce545a5ab1fd920",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -9891,6 +9890,113 @@
         "src/lib/proposals/proposal-entity.functions.ts": "3dd63515ee6e3a2888c1a7947f21275e7592341c0b2285e81fc698df1458973c",
         "drizzle/migrations/0331_proposal_legal_entity_choice.sql": "0d93fa11f76988c8e6f30fc55fce7430c482560499d365acdc29e4d2c206acbb",
         "drizzle/migrations/0332_deal_legal_entity_for_proposal.sql": "222dbe3d4cf5959a615edaf8df9f3f0e90079645aefce6307e18bbc222680075"
+      }
+    },
+    {
+      "id": "import-connector-schedule",
+      "kind": "business",
+      "resources": [
+        "techprojects.clockify_import",
+        "techprojects.jibble_import",
+        "techprojects.clickup_import"
+      ],
+      "actions": ["view", "manage"],
+      "scopes": ["workspace"],
+      "permission_keys": [
+        "techprojects.clockify_import.manage.workspace",
+        "techprojects.jibble_import.manage.workspace",
+        "techprojects.clickup_import.manage.workspace"
+      ],
+      "rationale": "CONECTOR-IMPORTA: periodic import schedule reuses each importer's existing view/manage keys (requireClockifyAdmin/requireJibbleAdmin/assertClickUpImport). Table import_connector_schedules: GRANT select/insert/update to authenticated, RLS only for active workspace admins, owner must be caller. Cron (CRON_SECRET, existing clockify-import-tick) re-checks work_import_delegate_allowed for the schedule owner before starting any run and disables the schedule when revoked. ClickUp scheduling stays off (RPCs need a user session). Catalog adds links only.",
+      "controls": [
+        {
+          "file": "src/lib/integrations/import-schedule/schedule.server.ts",
+          "symbol": "authorizeImportSchedule"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/components/hr-access.tsx",
+          "symbol": "HrScreenAccess"
+        },
+        {
+          "file": "src/lib/cron-auth.server.ts",
+          "symbol": "requireCronAuth"
+        },
+        {
+          "file": "src/lib/integrations/import-schedule/schedule.functions.ts",
+          "symbol": "getImportSchedule"
+        },
+        {
+          "file": "src/lib/integrations/clockify/clockify-service.server.ts",
+          "symbol": "requireClockifyAdmin"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/integrations/supabase/cron-auth.ts",
+          "symbol": "authenticateCronRequest"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0333_import_connector_schedules.sql",
+          "symbol": "ics_update"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_import_delegate_allowed"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/integrations/import-schedule/schedule-access.test.ts",
+          "name": "import schedule permits an authorized active admin"
+        },
+        "missing_permission": {
+          "file": "src/lib/integrations/import-schedule/schedule-access.test.ts",
+          "name": "import schedule rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/integrations/import-schedule/schedule-access.test.ts",
+          "name": "import schedule rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/integrations/import-schedule/schedule-access.test.ts",
+          "name": "import schedule rejects a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/integrations/import-schedule/schedule-access.test.ts",
+          "name": "import schedule rejects inactive membership"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0333_import_connector_schedules.sql": "47fea8b96602b2e3a7352cd2d536960a87a924aaa7775253d8923ae2fe0b4eee",
+        "src/components/integrations/import-schedule/import-schedule-card.tsx": "348fbd46e7f80ddd368726492b6c393f2ad554ebf3ff131ba3f37b6d24f0964a",
+        "src/lib/integrations/import-schedule/schedule.functions.ts": "68487d4048d2bcf058b36a9877efa420a0a915c84d3536392f1e08575a652b3d",
+        "src/lib/integrations/import-schedule/schedule.server.ts": "b7ac964ec8ee61f0dfbdf674e9b7e0c66bf29f8bac0e156905adcd29884445f3",
+        "src/routes/api/public/hooks/clockify-import-tick.ts": "f981ba5cf0c85bac595ddfbd1807cffae6e33e4b46e5da5c88f48479cf79dfd6",
+        "src/routes/_authenticated/projects.settings.imports.clickup.tsx": "b2af86edf4ac233fb016f5c6e28ff9453c23c3fe080390201741ccf3e0b83ba8",
+        "src/routes/_authenticated/projects.settings.imports.clockify.tsx": "031d8e89759c2f6a072dd84105f5206bc363ff3180ef45835e23b32407f8b80c",
+        "src/routes/_authenticated/projects.settings.imports.jibble.tsx": "59ea4f7c5d8eb4749e079f7ce6b2191e2be88949b514050e74c6a99966bd9c5c",
+        "src/components/integrations/pages/integrations-catalog-page.tsx": "a4a157726cbe79f94fb3939a5ee3ed046fd51d4dd66f2408a6ddab66cd74b8e0"
+      }
+    },
+    {
+      "id": "import-connector-schedule-presentation",
+      "kind": "presentation",
+      "rationale": "CONECTOR-IMPORTA: pure next-run calculation and the generated managed-scheduler secret check (no data access or action).",
+      "files": {
+        "src/lib/integrations/import-schedule/schedule.ts": "22efd782fe3fed325f524426c535fc02b8be33f714b7e212943a825a632bc8bf",
+        "src/integrations/supabase/cron-auth.ts": "18430aa4c7faff5b44c572a8a4dfa6482daa52acbea09f384b872f087e58e738"
       }
     }
   ],

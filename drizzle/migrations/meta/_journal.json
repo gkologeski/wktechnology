@@ -2332,6 +2332,13 @@
       "when": 1794496389753,
       "tag": "0332_deal_legal_entity_for_proposal",
       "breakpoints": true
+    },
+    {
+      "idx": 333,
+      "version": "7",
+      "when": 1794505663603,
+      "tag": "0333_import_connector_schedules",
+      "breakpoints": true
     }
   ]
 }

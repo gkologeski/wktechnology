@@ -9,6 +9,28 @@ import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { PROVIDERS, CATEGORY_LABELS } from "@/lib/integrations/registry";
 import { listIntegrations } from "@/lib/integrations/core.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+
+const TIME_CONNECTORS = [
+  {
+    name: "Clockify",
+    resource: "techprojects.clockify_import",
+    to: "/projects/settings/imports/clockify",
+    description: "Importa horas, projetos e pessoas. Permite importação contínua periódica.",
+  },
+  {
+    name: "Jibble",
+    resource: "techprojects.jibble_import",
+    to: "/projects/settings/imports/jibble",
+    description: "Importa ponto e jornadas. Permite importação contínua periódica.",
+  },
+  {
+    name: "ClickUp",
+    resource: "techprojects.clickup_import",
+    to: "/projects/settings/imports/clickup",
+    description: "Importa listas e tarefas com revisão manual de cada etapa.",
+  },
+] as const;
 
 export function IntegrationsCatalog() {
   const list = useServerFn(listIntegrations);
@@ -16,6 +38,11 @@ export function IntegrationsCatalog() {
     queryKey: ["integrations", "list"],
     queryFn: () => list({}),
   });
+  const perms = usePermissions();
+  // Só mostra o conector de quem pode consultar o importador (a tela também confere).
+  const timeConnectors = TIME_CONNECTORS.filter((c) =>
+    perms.canAny(["workspace", "team", "own"].map((sc) => `${c.resource}.view.${sc}`)),
+  );
   const connected = new Map((data?.items ?? []).map((i) => [i.provider, i.status]));
 
   const [search, setSearch] = useState("");
@@ -77,6 +104,29 @@ export function IntegrationsCatalog() {
           ))}
         </div>
       </div>
+
+      {timeConnectors.length > 0 && (
+        <section aria-labelledby="time-connectors" className="mb-8">
+          <h2
+            id="time-connectors"
+            className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3"
+          >
+            Horas e tarefas (TechProjects)
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {timeConnectors.map((c) => (
+              <Link
+                key={c.to}
+                to={c.to}
+                className="rounded-lg border border-border bg-card p-4 hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <h3 className="font-semibold">{c.name}</h3>
+                <p className="text-sm text-muted-foreground mt-1">{c.description}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="space-y-8">
         {Object.entries(groups).length === 0 && (

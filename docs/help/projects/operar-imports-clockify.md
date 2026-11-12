@@ -8,7 +8,7 @@ route_pattern: /projects/settings/imports/clockify
 min_permission: 
 audience: internal
 sort_order: 90
-version: 2
+version: 3
 is_published: true
 ---
 # Importar do Clockify
@@ -40,6 +40,19 @@ Prévia não equivale a importação. Identidades criadas sem acesso não recebe
 - Falha ao salvar: leia a mensagem retornada, corrija os campos ou bloqueios indicados e confirme o estado antes de repetir.
 
 ## Relacionados
+## Importação contínua
+
+No fim da tela, a seção **Importação contínua** busca dados novos do Clockify sozinha.
+
+1. Ligue **Ligar importação contínua**.
+2. Escolha a **Frequência**: a cada 1 hora, 6 horas, 12 horas, diariamente ou semanalmente. Nas duas últimas, escolha também o horário (Brasília) e, na semanal, o dia.
+3. Escolha o que fazer a cada execução:
+   - **Só gerar a prévia**: o sistema prepara a prévia e um administrador confere e confirma, como na importação manual.
+   - **Importar automaticamente**: a prévia é confirmada em nome de quem ligou a agenda. Itens com conflito continuam esperando revisão.
+4. Clique em **Salvar agenda**. A tela mostra a próxima execução, a última e o resultado.
+
+Cuidados: nada editado no sistema é sobrescrito e nada é duplicado. Se quem ligou a agenda perder a permissão ou deixar de ser administrador ativo, a agenda é desligada. Só administradores com acesso ao importador veem e alteram a agenda.
+
 - [Campos e status](/ajuda/projects/campos-e-status)
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)

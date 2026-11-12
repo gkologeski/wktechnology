@@ -1,5 +1,6 @@
 import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 import { createFileRoute } from "@tanstack/react-router";
+import { ImportScheduleCard } from "@/components/integrations/import-schedule/import-schedule-card";
 import { ClickUpImportPage } from "@/components/projects/clickup-import/clickup-import-page";
 
 export const Route = createFileRoute("/_authenticated/projects/settings/imports/clickup")({
@@ -28,6 +29,9 @@ function Order3RouteAccess() {
   return (
     <Order3ScreenAccess resources={["techprojects.clickup_import"]}>
       <Order3Page />
+      <div className="px-4 pb-8 md:px-6">
+        <ImportScheduleCard provider="clickup" name="ClickUp" />
+      </div>
     </Order3ScreenAccess>
   );
 }
