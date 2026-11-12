@@ -2815,7 +2815,7 @@
         }
       },
       "files": {
-        "src/lib/prospecting/sdr/channel-accounts.functions.ts": "5a32fe89cc59d1378a4b5c1579970d2afabe707f29173a8e8f062019519e8dc6",
+        "src/lib/prospecting/sdr/channel-accounts.functions.ts": "ccd254cd31c9cdd77ff15cab43bf5efbe1258ef8d8209adf6d7479a0bd746ff5",
         "src/lib/prospecting/sdr/channel-access.server.ts": "a23a8c47439c6f10cf0a30dae2253b53af3a894e3238c7099381a0465594a95a",
         "src/routes/_authenticated/settings.channels.tsx": "d04c6a22f9bb7c6e22591c213c35bdf14e3c2cb2985fb63cbb41332fb9a0c6c5",
         "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c",
