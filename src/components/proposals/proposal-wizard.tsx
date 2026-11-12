@@ -42,7 +42,17 @@ import {
   itemsTableHtml,
   normalizeProposalTemplateHtml,
 } from "@/lib/proposals/proposal-template-html";
-import { createProposal, updateProposal } from "@/lib/proposals.functions";
+import { updateProposal } from "@/lib/proposals.functions";
+import {
+  createProposalWithEntity,
+  setProposalLegalEntity,
+} from "@/lib/proposals/proposal-entity.functions";
+import {
+  friendlyLegalEntityError,
+  LEGAL_ENTITY_INACTIVE_HINT,
+  LEGAL_ENTITY_REQUIRED_MESSAGE,
+  pickInitialLegalEntity,
+} from "@/lib/proposals/proposal-legal-entity";
 import { createProposalFromQuote, getProposalDraft } from "@/lib/sales-flow.functions";
 import type { ProposalDraft, ProposalDraftResult } from "@/lib/proposals/proposal-draft-types";
 import {
@@ -111,7 +121,8 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const getDraft = useServerFn(getProposalDraft);
   const createFromQuote = useServerFn(createProposalFromQuote);
   const confirmingRef = useRef(false);
-  const createBlank = useServerFn(createProposal);
+  const createBlank = useServerFn(createProposalWithEntity);
+  const setEntity = useServerFn(setProposalLegalEntity);
   const update = useServerFn(updateProposal);
   const members = useWorkspaceMembers();
 
@@ -154,6 +165,8 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
   const [paymentMethod, setPaymentMethod] = useState<ProposalPaymentMethod | null>(null);
   const [paymentNotes, setPaymentNotes] = useState<string>("");
   const [payTerms, setPayTerms] = useState<PaymentTerms | null>(null);
+  const [entityId, setEntityId] = useState<string | null>(null);
+  const [originInactive, setOriginInactive] = useState(false);
   const { can } = usePermissions();
   const canEditTerms = ["own", "team", "workspace"].some((s) =>
     can(`techsales.proposals.update.${s}`),
@@ -196,6 +209,9 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
         : null,
     );
     setPaymentNotes(draft.payment_notes ?? "");
+    const pick = pickInitialLegalEntity(draft.legal_entity_id, draft.legal_entity_options ?? []);
+    setEntityId(pick.id);
+    setOriginInactive(pick.originInactive);
     // Condições: as gravadas (da proposta ou da cotação) vencem; sem elas, parcelas antigas ou sugestão.
     setPayTerms(
       parsePaymentTerms(draft.payment_terms) ??
@@ -216,6 +232,9 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
 
   const currency = draft?.currency ?? "BRL";
   const titleOk = title.trim().length > 0;
+  const entityOptions = draft?.legal_entity_options ?? [];
+  const entityOk = !!entityId;
+  const step0Ok = titleOk && entityOk;
   const terms = useMemo(
     () => ({
       total: amount,
@@ -334,15 +353,23 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
       const termsErr = validatePaymentTerms(payTerms, amount ?? 0);
       if (termsErr.length) return void toast.error(termsErr.join(" "));
     }
+    if (!entityId) return void toast.error(LEGAL_ENTITY_REQUIRED_MESSAGE);
     setSaving(true);
     try {
       if (editId) {
         await update({
           data: {
             id: editId,
-            patch: { title: title.trim(), body, total_amount: amount, expires_at: expires },
+            patch: {
+              title: title.trim(),
+              body,
+              total_amount: amount,
+              expires_at: expires,
+            },
           },
         });
+        if (entityId !== draft.legal_entity_id)
+          await setEntity({ data: { id: editId, legalEntityId: entityId } });
         toast.success(asDraft ? "Rascunho salvo." : "Proposta atualizada.");
         await afterSave(editId);
       } else if ("quoteId" in source) {
@@ -355,6 +382,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
             expires_at: expires,
             assigned_to: assignee,
             proposal_template_id: templateId,
+            legal_entity_id: entityId,
           },
         });
         toast.success(
@@ -376,13 +404,14 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
             totalAmount: amount,
             currency,
             expiresAt: expires,
+            legalEntityId: entityId,
           },
         });
         toast.success(asDraft ? "Rascunho salvo." : "Proposta criada.");
         await afterSave(row.id);
       }
     } catch (e) {
-      toast.error((e as Error).message);
+      toast.error(friendlyLegalEntityError((e as Error).message));
     } finally {
       setSaving(false);
     }
@@ -471,6 +500,39 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                   <Label htmlFor="pw-title">Título *</Label>
                   <Input id="pw-title" value={title} onChange={(e) => setTitle(e.target.value)} />
                   {!titleOk && <p className="text-xs text-destructive">Informe o título.</p>}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="pw-entity">Empresa emissora (CNPJ) *</Label>
+                  <Select
+                    value={entityId ?? undefined}
+                    onValueChange={(v) => setEntityId(v)}
+                    disabled={entityOptions.length === 0}
+                  >
+                    <SelectTrigger id="pw-entity" aria-invalid={!entityOk}>
+                      <SelectValue
+                        placeholder={
+                          entityOptions.length ? "Selecione a empresa" : "Nenhuma empresa ativa"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {entityOptions.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          {o.name}
+                          {o.cnpj ? ` — ${o.cnpj}` : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!entityOk && (
+                    <p className="text-xs text-destructive" role="alert">
+                      {entityOptions.length === 0
+                        ? "Não há empresa (CNPJ) ativa no workspace. Cadastre uma em Configurações › Empresas (CNPJs)."
+                        : originInactive
+                          ? LEGAL_ENTITY_INACTIVE_HINT
+                          : LEGAL_ENTITY_REQUIRED_MESSAGE}
+                    </p>
+                  )}
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="flex flex-col gap-1.5">
@@ -764,18 +826,18 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
               <Button
                 variant="outline"
                 onClick={() => void submit(true)}
-                disabled={saving || !draft || !titleOk}
+                disabled={saving || !draft || !step0Ok}
               >
                 {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
                 Salvar rascunho
               </Button>
             )}
             {step < STEPS.length - 1 ? (
-              <Button onClick={goNext} disabled={!draft || !titleOk}>
+              <Button onClick={goNext} disabled={!draft || !step0Ok}>
                 Avançar <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             ) : (
-              <Button onClick={() => void submit()} disabled={saving || !titleOk}>
+              <Button onClick={() => void submit()} disabled={saving || !step0Ok}>
                 {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
                 {editId ? "Salvar proposta" : "Criar proposta"}
               </Button>

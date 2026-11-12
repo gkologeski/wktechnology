@@ -20,6 +20,7 @@ export const createProposalFromQuote = createServerFn({ method: "POST" })
         expires_at: z.string().nullable().optional(),
         assigned_to: z.string().uuid().nullable().optional(),
         proposal_template_id: z.string().uuid().nullable().optional(),
+        legal_entity_id: z.string().uuid().optional(),
       })
       .parse(d),
   )
@@ -48,7 +49,37 @@ export const getProposalDraft = createServerFn({ method: "POST" })
       proposals: data.proposalId,
     });
     const { buildProposalDraft } = await import("./proposals/proposal-draft.server");
-    return buildProposalDraft(context.supabase, data);
+    const result = await buildProposalDraft(context.supabase, data);
+    if (result.reused) return result;
+    // Empresas emissoras ativas do workspace (só id/nome/CNPJ), lidas após a checagem de permissão acima.
+    const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: entities, error } = await supabaseAdmin
+      .from("legal_entities")
+      .select("id, name, cnpj")
+      .eq("workspace_id", workspaceId)
+      .eq("active", true)
+      .order("name");
+    if (error) throw new Error(error.message);
+    // Negócios são lidos por uma visão protegida sem a coluna: a empresa vem de uma RPC que confere o acesso.
+    let originEntity = result.draft.legal_entity_id ?? null;
+    if (result.draft.legal_entity_id === undefined && data.dealId) {
+      const { data: e, error: eErr } = await context.supabase.rpc(
+        "deal_legal_entity_for_proposal",
+        { _deal_id: data.dealId },
+      );
+      if (eErr) throw new Error(eErr.message);
+      originEntity = (e as string | null) ?? null;
+    }
+    return {
+      ...result,
+      draft: {
+        ...result.draft,
+        legal_entity_id: originEntity,
+        legal_entity_options: entities ?? [],
+      },
+    };
   });
 
 export const createContractFromSales = createServerFn({ method: "POST" })

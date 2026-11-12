@@ -2318,6 +2318,20 @@
       "when": 1794445018486,
       "tag": "0330_service_channel_accounts_archived",
       "breakpoints": true
+    },
+    {
+      "idx": 331,
+      "version": "7",
+      "when": 1794495422846,
+      "tag": "0331_proposal_legal_entity_choice",
+      "breakpoints": true
+    },
+    {
+      "idx": 332,
+      "version": "7",
+      "when": 1794496389753,
+      "tag": "0332_deal_legal_entity_for_proposal",
+      "breakpoints": true
     }
   ]
 }

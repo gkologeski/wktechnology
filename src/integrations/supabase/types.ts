@@ -32821,6 +32821,10 @@ export type Database = {
         Returns: string
       }
       deal_delivery_ws_of_deal: { Args: { p_deal: string }; Returns: string }
+      deal_legal_entity_for_proposal: {
+        Args: { _deal_id: string }
+        Returns: string
+      }
       deal_stage_type: {
         Args: { p_pipeline: string; p_stage: string; p_stage_id: string }
         Returns: string

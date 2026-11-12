@@ -126,6 +126,7 @@ export type ProposalOverrides = {
   expires_at?: string | null;
   assigned_to?: string | null;
   proposal_template_id?: string | null;
+  legal_entity_id?: string;
 };
 
 async function existingProposalId(supabase: SupabaseClient, quoteId: string) {
@@ -170,6 +171,7 @@ export async function proposalFromQuote(
       assigned_to: overrides.assigned_to !== undefined ? overrides.assigned_to : quote.assigned_to,
       quote_id: quote.id,
       proposal_template_id: overrides.proposal_template_id ?? null,
+      ...(overrides.legal_entity_id ? { legal_entity_id: overrides.legal_entity_id } : {}),
       payment_terms: quote.payment_terms ?? {},
       ...legacyFromTerms(quote.payment_terms, quote.total),
       variables: {},

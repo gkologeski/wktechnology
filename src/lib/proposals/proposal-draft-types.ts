@@ -38,6 +38,9 @@ export type ProposalDraft = {
   payment_notes?: string | null;
   /** Condições de pagamento (entrada + saldo) — CONDICOES-PAGAMENTO. */
   payment_terms?: import("@/integrations/supabase/types").Json;
+  /** Empresa emissora (CNPJ) herdada da origem e empresas ativas do workspace — EMPRESA-PROPOSTA. */
+  legal_entity_id?: string | null;
+  legal_entity_options?: import("./proposal-legal-entity").LegalEntityOption[];
 };
 
 export type ProposalDraftResult =

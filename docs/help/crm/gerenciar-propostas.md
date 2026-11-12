@@ -8,7 +8,7 @@ route_pattern: /proposals
 min_permission:
 audience: internal
 sort_order: 202
-version: 5
+version: 6
 is_published: true
 ---
 # Gerenciar propostas
@@ -50,3 +50,9 @@ A mensagem "Proposta criada" confirma o cadastro. A proposta fica disponível na
 ## Salvar como rascunho
 
 Em qualquer etapa do assistente, antes da última, clique em **Salvar rascunho** para gravar o que já foi preenchido (basta ter o título). As condições de pagamento podem ficar incompletas no rascunho; o botão final **Criar proposta**/**Salvar proposta** continua exigindo condições válidas. A proposta fica com a situação **Rascunho** e pode ser reaberta para edição.
+
+## Empresa emissora (CNPJ)
+Na primeira etapa do assistente, escolha em **Empresa emissora (CNPJ)** qual empresa do grupo emite a proposta. A lista mostra só as empresas ativas.
+- Se o negócio ou a cotação já tiver uma empresa ativa, ela vem preenchida.
+- Se a empresa de origem estiver inativa, o campo vem vazio com o aviso "A empresa do negócio está inativa. Escolha a empresa emissora." Não dá para avançar nem salvar rascunho sem escolher.
+- A escolha vale só para a proposta. O negócio e a cotação mantêm a empresa original. O contrato gerado a partir da proposta usa a empresa escolhida.
