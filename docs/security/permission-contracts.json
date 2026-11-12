@@ -222,7 +222,7 @@
         "system.communication.subscription_types.update.workspace",
         "system.communication.subscription_types.view.workspace"
       ],
-      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 05/11/2026: header gains the Help '?' button (HelpButton), which only reads help articles through help.functions (help-center contract); no access change to existing routes.",
+      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 05/11/2026: header gains the Help '?' button (HelpButton), which only reads help articles through help.functions (help-center contract); no access change to existing routes. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect.",
       "database": [
         {
           "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
@@ -270,7 +270,7 @@
         "review_by": "2027-01-25"
       },
       "files": {
-        "src/lib/access-control/sales-route-map.ts": "fc61ef3ef6d292e60f56b1bc0859ce3953129c595c107ffe058359947efa4117",
+        "src/lib/access-control/sales-route-map.ts": "3c8ba90aa7cdc4dad683325a06f85c55398a1ae2e4400ecd41865575ba583fac",
         "src/routes/_authenticated/settings.tsx": "89b93cbb5d5612b607b4b3b5489a3eca747b3e0beb639f021a52a198545ec321",
         "src/routes/_authenticated.tsx": "7a8c57f0ef160cc66068271b9fec9cd8129b36b2895978317c59885dad3fa296",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
@@ -2510,9 +2510,9 @@
     {
       "id": "service-channel-navigation-labels",
       "kind": "presentation",
-      "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants.",
+      "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect.",
       "files": {
-        "src/lib/menu-config.ts": "763b3c3dbb3db20f7b4e6924917c8e489e551154f51c6b7afedeb86b556b1536",
+        "src/lib/menu-config.ts": "d33bc02ded17a8e96e82b67b394f69865cd7be4af951dbba1cc14dd56ed1a20d",
         "src/lib/menu-resources.ts": "437e81c840128700b7c68277e43fed796c0e563503727c0db479b2ad97f0ca79"
       }
     },
@@ -3662,11 +3662,11 @@
     {
       "id": "finance-sales-labels",
       "kind": "presentation",
-      "rationale": "PT-BR labels for the new techfinance.sales and contaazul_people resources and a sidebar entry for /finance/sales gated by techfinance.sales.view.workspace; menu visibility is cosmetic, the page and server function enforce the permission (contract finance-sales).",
+      "rationale": "PT-BR labels for the new techfinance.sales and contaazul_people resources and a sidebar entry for /finance/sales gated by techfinance.sales.view.workspace; menu visibility is cosmetic, the page and server function enforce the permission (contract finance-sales). | CAMPANHA-LIGACOES 12/11/2026: static PT-BR breadcrumb labels for /campaigns/calls; no access change.",
       "files": {
         "src/lib/access-control/resource-labels.ts": "b9486bd90fbd4e5aa1cf7af67fbb77163e7c88ac9d2a95dffcd041df79abfcef",
         "src/lib/menu-config-finance.ts": "634465260359b9d97cfd6a635ae5bd7ade12cb9ab9a83ec9e96e507d83194e1d",
-        "src/lib/breadcrumb-labels.ts": "42372092ce4d5124facf0fceaac05630ea9d5efff980ff7794ed57c96863821f"
+        "src/lib/breadcrumb-labels.ts": "44c31c465cce8d212398e5b4fe28cf90c2f1d7c49f0871ee5e788b73151d4808"
       }
     },
     {
@@ -4626,7 +4626,7 @@
         "techsales.prospecting_voice.create.team",
         "techsales.prospecting_voice.create.workspace"
       ],
-      "rationale": "Review 01/11/2026: startVapiCall moved unchanged from prospecting-campaigns.functions.ts to server-only prospecting-vapi-call.server.ts so the client bundle no longer pulls server permission checks; no behavior or access change. Campaign server functions keep requireSalesPermission per action plus assertSalesRecord; manual dial requires techsales.prospecting_voice.create and assertSalesArea/assertSalesRecord as the caller; the dial cron requires CRON_SECRET (requireCronAuth) and every worker call passes assertSalesWorker against the running campaign before and right before dialing. The informational GET of the dial cron now also requires requireCronAuth. Review 01/11/2026 (2): WhatsApp after voice call. saveCampaignCallFollowup requires techsales.marketing.campaigns.update + assertSalesRecord(update) and, when enabling, assertSalesArea(techsales.marketing.campaigns, create) like WhatsApp campaigns; listCallFollowupSenders requires campaigns.view and reads only the active workspace; dialLeadNow accepts followup_campaign_id only after assertSalesRecord(view) on that campaign. The follow-up sender runs only from the Vapi webhook (VAPI_WEBHOOK_SECRET), reads campaign/lead scoped to the attempt workspace, claims once per attempt, respects opt-out and the 24h window (template outside it); the follow-up also passes assertSalesWorker (campaign actor must still view the lead and hold techsales.marketing.campaigns.create) and sends through resolveWaNumber (connection/number checks). The UI disables save/test buttons via usePermissions; servers enforce. Review 01/11/2026 (3): Vapi assistant gains endCall function/phrases and 20 s silence timeout; script save validator tolerates legacy empty-array variables. No access change. Review 02/11/2026: call scripts can be archived (archived_at) via setScriptArchived requiring techsales.prospecting_scripts update + assertSalesRecord; deleteScript refuses scripts already used by campaign variants (FK restrict preserved); listScripts hides archived unless includeArchived; listScriptUsage requires prospecting_scripts view and reads variants through RLS. Settings shortcut removed; old URL only redirects. No RLS/policy change.",
+      "rationale": "Review 01/11/2026: startVapiCall moved unchanged from prospecting-campaigns.functions.ts to server-only prospecting-vapi-call.server.ts so the client bundle no longer pulls server permission checks; no behavior or access change. Campaign server functions keep requireSalesPermission per action plus assertSalesRecord; manual dial requires techsales.prospecting_voice.create and assertSalesArea/assertSalesRecord as the caller; the dial cron requires CRON_SECRET (requireCronAuth) and every worker call passes assertSalesWorker against the running campaign before and right before dialing. The informational GET of the dial cron now also requires requireCronAuth. Review 01/11/2026 (2): WhatsApp after voice call. saveCampaignCallFollowup requires techsales.marketing.campaigns.update + assertSalesRecord(update) and, when enabling, assertSalesArea(techsales.marketing.campaigns, create) like WhatsApp campaigns; listCallFollowupSenders requires campaigns.view and reads only the active workspace; dialLeadNow accepts followup_campaign_id only after assertSalesRecord(view) on that campaign. The follow-up sender runs only from the Vapi webhook (VAPI_WEBHOOK_SECRET), reads campaign/lead scoped to the attempt workspace, claims once per attempt, respects opt-out and the 24h window (template outside it); the follow-up also passes assertSalesWorker (campaign actor must still view the lead and hold techsales.marketing.campaigns.create) and sends through resolveWaNumber (connection/number checks). The UI disables save/test buttons via usePermissions; servers enforce. Review 01/11/2026 (3): Vapi assistant gains endCall function/phrases and 20 s silence timeout; script save validator tolerates legacy empty-array variables. No access change. Review 02/11/2026: call scripts can be archived (archived_at) via setScriptArchived requiring techsales.prospecting_scripts update + assertSalesRecord; deleteScript refuses scripts already used by campaign variants (FK restrict preserved); listScripts hides archived unless includeArchived; listScriptUsage requires prospecting_scripts view and reads variants through RLS. Settings shortcut removed; old URL only redirects. No RLS/policy change. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -4704,13 +4704,18 @@
         "drizzle/migrations/0290_prospecting_call_whatsapp_followup.sql": "df467dc2e493da88db8bfcd28c8007c8659f1fab510b1ba1aea9bd45b061a87d",
         "src/components/prospecting/campaign-call-followup.tsx": "21e78f2aca523e51c931f9ed68ffcc9f952d90403dc99c18ea19aac77dce7ae5",
         "src/lib/prospecting-call-followup.server.ts": "71d019f722ae4a114e32bbeea36d4339a5d1add54dd4d21133399cec3c762cea",
-        "src/routes/_authenticated/prospecting.campaigns.$id.tsx": "5bff465ce7c05015aa9d932de5db107c5786698c8618dfd2de78087bb8a3bff4",
         "src/lib/prospecting-scripts.functions.ts": "f902e7be21d529cf9321d31a2bed54429a189e8da6a559a52669cdbe62dcede9",
         "src/components/prospecting/pages/voice-agent-page.tsx": "e10c687abb1b144a47e5e7acbb077ad9630a86713dbbd70871e8a70fc2d4a882",
         "src/lib/voice-agent.functions.ts": "932a46a77422c54536399f8e2d709a423e51b7b5315c87b58fe654bad81aae0a",
         "drizzle/migrations/0293_prospecting_scripts_archived_at.sql": "a6e8cce47013518da00c651e96d47f4b4cfbb1b847aed5cf720cd405d6d6fd91",
         "src/components/prospecting/pages/scripts-page.tsx": "7ee17213929ea516345b3f4faeb6ccf845dcb21c072900bb68b7b828f7619c2d",
-        "src/routes/_authenticated/settings.prospecting-scripts.tsx": "1ef5834887cf147656167ce35259a9e502765aefadfde9542cef78030f56535e"
+        "src/routes/_authenticated/settings.prospecting-scripts.tsx": "fc214bca25673208de5b62482ad0e0b55e4a7c4f491f6a25ceecdd2113582f58",
+        "src/routes/_authenticated/campaigns.calls.$id.tsx": "23fdbc6e9784ccd82e38dca26c8558d12e9c0b4287600c64e212ca70eb9091e7",
+        "src/routes/_authenticated/campaigns.calls.index.tsx": "1da19f26fc19fd0b8935e611f6b2648060c5457cf6493918101b10cd949387a6",
+        "src/routes/_authenticated/campaigns.calls.scripts.tsx": "e10a8fabc26c1fa80f67e84252f1543ec5e027c3548482855a70640ab3d91c52",
+        "src/routes/_authenticated/prospecting.index.tsx": "acdb05cf4eb061d89e8a7826b78d01600d860d1025e9a643051bf06b5832a7be",
+        "src/routes/_authenticated/prospecting.campaigns.$id.tsx": "2db1c782822c71b6b4208a5b8f8b894e4506aa3629a64cbd127b858231c11e74",
+        "src/routes/_authenticated/prospecting.campaigns.index.tsx": "df9e74b8bd450c6f98ca526f244b6fad2aab8706e62d830e531ea9ee97095f4f"
       }
     },
     {
@@ -10021,6 +10026,15 @@
       "files": {
         "src/lib/integrations/import-schedule/schedule.ts": "61486a8fc0b5420df439475f4eab2e00e208833f481683a56555917cc203ffd3",
         "src/integrations/supabase/cron-auth.ts": "18430aa4c7faff5b44c572a8a4dfa6482daa52acbea09f384b872f087e58e738"
+      }
+    },
+    {
+      "id": "voice-campaigns-navigation",
+      "kind": "presentation",
+      "rationale": "CAMPANHA-LIGACOES 12/11/2026: static links only. Prospecting hub card and area/legacy-tab map now point to /campaigns/calls; no data queries, writes, keys or grants. Destination routes enforce techsales.marketing.campaigns / techsales.prospecting_scripts.",
+      "files": {
+        "src/components/prospecting/areas/campaigns-hub.tsx": "886caf939ddc55123e28a051817371c7e555b9a84c1acfbd397f29fd6fe45024",
+        "src/lib/prospecting/areas.ts": "dff0118b6259b5d0189e30c48e4166f4e8389dea9b855e687decdb47fb6db569"
       }
     },
     {

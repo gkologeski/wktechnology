@@ -36,7 +36,7 @@ export type LegacyTab = (typeof LEGACY_TAB_VALUES)[number];
 
 export type LegacyTarget =
   | { kind: "area"; area: Area; section?: Section }
-  | { kind: "route"; to: "/settings/voice-agent" | "/agents/sdr" };
+  | { kind: "route"; to: "/settings/voice-agent" | "/agents/sdr" | "/campaigns/calls/scripts" };
 
 /** Destino novo de cada aba antiga; nenhum link salvo deixa de abrir. */
 export const LEGACY_TAB_MAP: Record<LegacyTab, LegacyTarget> = {
@@ -44,7 +44,7 @@ export const LEGACY_TAB_MAP: Record<LegacyTab, LegacyTarget> = {
   nutricao: { kind: "area", area: "trabalho", section: "nutricao" },
   scoring: { kind: "area", area: "trabalho", section: "qualificacao" },
   cadencias: { kind: "area", area: "campanhas", section: "cadencias" },
-  scripts: { kind: "area", area: "campanhas", section: "roteiros" },
+  scripts: { kind: "route", to: "/campaigns/calls/scripts" },
   questionarios: { kind: "area", area: "campanhas", section: "questionarios" },
   playbooks: { kind: "area", area: "campanhas", section: "playbooks" },
   base: { kind: "area", area: "publicos", section: "base" },
@@ -57,7 +57,7 @@ export const LEGACY_TAB_MAP: Record<LegacyTab, LegacyTarget> = {
 export const AREA_SECTIONS: Record<Area, readonly Section[]> = {
   visao: [],
   trabalho: ["fila", "nutricao", "qualificacao"],
-  campanhas: ["cadencias", "roteiros", "questionarios", "playbooks"],
+  campanhas: ["cadencias", "questionarios", "playbooks"],
   publicos: ["base", "apollo", "enriquecimento"],
   resultados: [],
 };

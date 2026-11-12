@@ -155,11 +155,16 @@ function ProspectingSuite() {
 
   // Compatibilidade com links antigos ?tab=
   useEffect(() => {
+    // Roteiros de ligação mudaram para Campanhas de Ligação.
+    if (search.section === "roteiros") {
+      navigate({ to: "/campaigns/calls/scripts", replace: true });
+      return;
+    }
     if (!search.tab) return;
     const t = LEGACY_TAB_MAP[search.tab];
     if (t.kind === "route") navigate({ to: t.to, replace: true });
     else navigate({ search: { area: t.area, section: t.section }, replace: true });
-  }, [search.tab, navigate]);
+  }, [search.tab, search.section, navigate]);
 
   const allowedSection = (s: Section) => !isLoading && can(SECTIONS[s].permission);
   const areaVisible = (a: Area) =>
