@@ -2755,7 +2755,7 @@
         "system.channels.view.workspace",
         "system.channels.manage.workspace"
       ],
-      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back. The agent config panel may now receive the agent chosen in the Estúdio bar instead of its own selector; channel controls and server checks are unchanged. Email accounts now expose the existing campaigns flag (same RPC, same checks) and the editor pre-validates the agent activation rule mirrored from service_channel_save; the server check is unchanged.",
+      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back. The agent config panel may now receive the agent chosen in the Estúdio bar instead of its own selector; channel controls and server checks are unchanged. Email accounts now expose the existing campaigns flag (same RPC, same checks) and the editor pre-validates the agent activation rule mirrored from service_channel_save; the server check is unchanged. Disconnected WhatsApp numbers are archived (archived_at) during the same manage-gated discovery; archived accounts are listed read-only and blocked in the channel runtime and sequence releases. No new keys or grants.",
       "controls": [
         {
           "file": "src/lib/prospecting/sdr/channel-access.server.ts",
@@ -2790,6 +2790,10 @@
         {
           "file": "drizzle/migrations/0256_service_channel_registry.sql",
           "symbol": "service_channels_read"
+        },
+        {
+          "file": "drizzle/migrations/0330_service_channel_accounts_archived.sql",
+          "symbol": "service_channel_accounts"
         }
       ],
       "tests": {
@@ -2815,13 +2819,14 @@
         }
       },
       "files": {
-        "src/lib/prospecting/sdr/channel-accounts.functions.ts": "5a32fe89cc59d1378a4b5c1579970d2afabe707f29173a8e8f062019519e8dc6",
+        "src/lib/prospecting/sdr/channel-accounts.functions.ts": "d1d297004e828e1f93af5b53a348265e26717bc0ca79b9ad937b87033f6fc078",
         "src/lib/prospecting/sdr/channel-access.server.ts": "a23a8c47439c6f10cf0a30dae2253b53af3a894e3238c7099381a0465594a95a",
-        "src/routes/_authenticated/settings.channels.tsx": "d04c6a22f9bb7c6e22591c213c35bdf14e3c2cb2985fb63cbb41332fb9a0c6c5",
+        "src/routes/_authenticated/settings.channels.tsx": "e812e80589e504b7d6c6fb7b50074fb9fa7549f55559c88540589f5da058dece",
         "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c",
         "src/components/service-channels/account-editor.tsx": "a4bf631320faddfeac35c5805701d81d0a029b0b31c2a9e0d34092bdd90d7933",
         "src/components/service-channels/agent-channels.tsx": "97abf189efffa02a15a536b7e9aef0a8cf3bc97d85f88c95915d7e916cdb8a41",
-        "src/components/prospecting/sdr-agent-config.tsx": "e71914364a83849fcd0d874b9f0c8b052edf070beb4bcb2c7ebc138a6a8378fb"
+        "src/components/prospecting/sdr-agent-config.tsx": "e71914364a83849fcd0d874b9f0c8b052edf070beb4bcb2c7ebc138a6a8378fb",
+        "drizzle/migrations/0330_service_channel_accounts_archived.sql": "be2054401430cc9808dc43d50eca171f31f0a22c063ddf495a73747b2606f3e7"
       }
     },
     {
@@ -2972,7 +2977,7 @@
         "review_by": "2027-01-27"
       },
       "files": {
-        "src/lib/prospecting/sdr/channel-runtime.server.ts": "a1528c862f67ac28a1b664d975c6aaf7b534d280bc8345a66e861142a5fe12cf",
+        "src/lib/prospecting/sdr/channel-runtime.server.ts": "75026e5dc363d149c439c68b02694193e36dd600fb458fc8c374def54f74f137",
         "src/lib/prospecting/sdr/worker.server.ts": "ad6e2610dc288e3e6e6b089bfda9bcd3d4bccdeb546ae41620b13ccc74ed6d11",
         "src/lib/prospecting/sdr/ingest.server.ts": "24e1313dca8653d5ec0ef15ebb200040ef92ac3189c90fbeee22bed508a93777",
         "src/lib/prospecting/sdr/tools/runtime.ts": "dcb7dd1240f535cf9ff084ad43989bafcd4db6d56f02ebb2c8efbc18965d4918",
@@ -5616,7 +5621,7 @@
       "files": {
         "src/lib/prospecting/sequences/drafts.functions.ts": "f79fda353859c5b593dc270efd26090fed418f8a81e16f3a9c7227b9fa1fbe8a",
         "src/lib/prospecting/sequences/preflight.ts": "e68086bb637babf6da2e5d3d00b553baf9875c13938842e47a526e1ba0530a2a",
-        "src/lib/prospecting/sequences/releases.server.ts": "26f3fae6efd71173aeb33063e2f047c8707c2822c709661e8682aa12db4e5062",
+        "src/lib/prospecting/sequences/releases.server.ts": "49c7854ddfce663d839fafdb71bb7c14002dda37f69b1f4ccf0c00a68403eefc",
         "src/components/prospecting/sequences/sequence-readiness.tsx": "e2ad721054d3d82d7e2aaba7cefaa4459b8496d85f7418da09e13c9fcb25e3ff",
         "src/components/prospecting/sequences/sequence-template-picker.tsx": "22cc4ea6715b1601c84373d158dc8844095012ba7ee69461ace4f127532ee88c",
         "drizzle/migrations/0293_prospecting_sequence_versions.sql": "38d37b1faf6153875d32a8cd3f4c9036689aec2fbd2dae056ed6df4bb15438a5",
@@ -9744,7 +9749,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic.",
       "files": {
-        "src/integrations/supabase/types.ts": "397e1162a870b4b3fc25b13311f555d1c9301657cf792f3b464b505a891b36b1",
+        "src/integrations/supabase/types.ts": "72e6737eccb9c4c1a83467f59476c6641614ba3fefe37ada3cff68b976c24b7e",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -10899,6 +10904,15 @@
           "file": "src/lib/access-control/sales-area-ci.test.ts",
           "name": "sales area refuses an inactive execution actor"
         }
+      }
+    },
+    {
+      "id": "service-channel-archive-presentation",
+      "kind": "presentation",
+      "rationale": "CANAIS-ARQUIVADOS: read-only list of archived numbers and a pure archive decision rule. No data access or actions; data comes from listServiceChannels and writes from discoverServiceChannels, both gated by requireChannelAccess.",
+      "files": {
+        "src/components/service-channels/archived-accounts.tsx": "fffafffb9d2d8455a9f20e192fdd6af9d3ea2afa7d916759ec4464071aff8701",
+        "src/lib/prospecting/sdr/channel-archive.ts": "b5d299cae89314313c28021a2cd50150d1ab8048d4b1857c59fc6ef246e6e0ba"
       }
     }
   ],

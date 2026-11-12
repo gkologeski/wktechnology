@@ -26637,6 +26637,7 @@ export type Database = {
       }
       service_channel_accounts: {
         Row: {
+          archived_at: string | null
           channel: string
           created_at: string
           display_name: string
@@ -26648,6 +26649,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          archived_at?: string | null
           channel: string
           created_at?: string
           display_name?: string
@@ -26659,6 +26661,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          archived_at?: string | null
           channel?: string
           created_at?: string
           display_name?: string

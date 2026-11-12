@@ -2311,6 +2311,13 @@
       "when": 1794341686774,
       "tag": "0329_sales_capabilities_set_based",
       "breakpoints": true
+    },
+    {
+      "idx": 330,
+      "version": "7",
+      "when": 1794445018486,
+      "tag": "0330_service_channel_accounts_archived",
+      "breakpoints": true
     }
   ]
 }
