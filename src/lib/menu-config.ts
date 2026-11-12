@@ -58,6 +58,7 @@ import {
   Columns3,
   FolderTree,
   Upload,
+  PhoneCall,
 } from "lucide-react";
 
 export type Need = "admin" | "manager" | "platform" | undefined;
@@ -291,6 +292,13 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
         title: "Campanhas WhatsApp",
         url: "/campaigns/whatsapp",
         icon: Megaphone,
+        need: "manager",
+        permissionAny: MENU_PERMISSIONS.campaigns,
+      },
+      {
+        title: "Campanhas de Ligação",
+        url: "/campaigns/calls",
+        icon: PhoneCall,
         need: "manager",
         permissionAny: MENU_PERMISSIONS.campaigns,
       },

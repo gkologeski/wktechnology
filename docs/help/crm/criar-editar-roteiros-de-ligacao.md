@@ -4,17 +4,17 @@ slug: criar-editar-roteiros-de-ligacao
 title: Criar e editar roteiros de ligação
 summary: Configure scripts de voz, teste a abertura e arquive roteiros já usados.
 article_type: howto
-route_pattern: /prospecting
-min_permission: techsales.prospecting_search.view.workspace
+route_pattern: /campaigns/calls/scripts
+min_permission: techsales.prospecting_scripts.view.workspace
 audience: internal
 sort_order: 409
-version: 2
+version: 3
 is_published: true
 ---
 # Criar e editar roteiros de ligação
 **Para que serve:** Criar roteiros para ligações e preservar o histórico dos usados.
 **Quem pode fazer:** Abrir exige `techsales.prospecting_scripts.view.workspace`; criar, editar e excluir exigem create, update e delete de `techsales.prospecting_scripts`. Arquivar e restaurar exigem update.
-**Onde fica:** Menu > TechSales > Prospecção > Campanhas > Roteiros de ligação (`/prospecting`).
+**Onde fica:** Menu > TechSales > Captar > Campanhas de Ligação > botão "Roteiros de ligação" (`/campaigns/calls/scripts`). Links antigos da Prospecção abrem esta mesma tela.
 **Antes de começar:** Prepare objetivo, mensagem inicial e orientações do agente.
 
 ## Passo a passo

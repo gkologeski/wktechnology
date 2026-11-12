@@ -47,6 +47,8 @@ const routes: Record<string, readonly string[]> = {
   "/agents/sdr": ["techsales.marketing.sdr_agent"],
   "/prospecting/sequences": ["system.automation.sequences"],
   "/prospecting/campaigns": ["techsales.marketing.campaigns"],
+  "/campaigns/calls/scripts": ["techsales.prospecting_scripts"],
+  "/campaigns/calls": ["techsales.marketing.campaigns"],
   "/prospecting": [
     "techsales.prospecting_queue",
     "techsales.prospecting_cadences",

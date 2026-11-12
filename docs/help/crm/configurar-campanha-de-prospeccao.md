@@ -4,17 +4,17 @@ slug: configurar-campanha-de-prospeccao
 title: Configurar público e roteiros de uma campanha
 summary: Ajuste a janela de discagem, o público e as variantes de roteiro da campanha.
 article_type: howto
-route_pattern: /prospecting/campaigns/$id
-min_permission: techsales.prospecting_search.view.workspace
+route_pattern: /campaigns/calls/$id
+min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 402
-version: 2
+version: 3
 is_published: true
 ---
 # Configurar público e roteiros de uma campanha
 **Para que serve:** Definir quem recebe ligações e como os roteiros são escolhidos.
 **Quem pode fazer:** Usuários com acesso às campanhas de voz. Alterar exige `techsales.prospecting_voice.update.workspace`.
-**Onde fica:** Menu > TechSales > Prospecção > Campanhas > Campanha (`/prospecting/campaigns/$id`).
+**Onde fica:** Menu > TechSales > Captar > Campanhas de Ligação > Campanha (`/campaigns/calls/$id`). Links antigos de `/prospecting/campaigns/$id` abrem esta mesma tela.
 **Antes de começar:** Crie a campanha e os roteiros de ligação.
 
 ## Passo a passo

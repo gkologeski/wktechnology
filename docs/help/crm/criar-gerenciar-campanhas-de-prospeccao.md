@@ -1,20 +1,20 @@
 ---
 module_key: crm
 slug: criar-gerenciar-campanhas-de-prospeccao
-title: Criar e gerenciar campanhas de prospecção
+title: Criar e gerenciar campanhas de ligação
 summary: Crie uma campanha de ligação e controle sua execução pela lista.
 article_type: howto
-route_pattern: /prospecting/campaigns
-min_permission: techsales.prospecting_search.view.workspace
+route_pattern: /campaigns/calls
+min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 401
-version: 2
+version: 3
 is_published: true
 ---
-# Criar e gerenciar campanhas de prospecção
+# Criar e gerenciar campanhas de ligação
 **Para que serve:** Criar campanhas de discagem automática e acessar sua configuração.
-**Quem pode fazer:** Usuários liberados pelo menu Prospecção, com as permissões de voz `techsales.prospecting_voice.view/create/update/delete.workspace`, conforme a ação.
-**Onde fica:** Menu > TechSales > Prospecção > Campanhas (`/prospecting/campaigns`).
+**Quem pode fazer:** Ver exige `techsales.marketing.campaigns.view`; o botão "Nova campanha" só fica ativo com `techsales.marketing.campaigns.create`; iniciar, pausar e remover seguem update e delete da mesma permissão.
+**Onde fica:** Menu > TechSales > Captar > Campanhas de Ligação (`/campaigns/calls`). O endereço antigo `/prospecting/campaigns` abre esta mesma tela. O botão "Roteiros de ligação", no topo, abre os roteiros.
 **Antes de começar:** Defina o nome. Configure público e roteiros antes de iniciar.
 
 ## Passo a passo

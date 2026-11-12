@@ -66,3 +66,12 @@ describe("indicadores com cobertura explícita", () => {
     expect(g.size).toBe(1);
   });
 });
+
+describe("Campanhas de Ligação fora da Prospecção", () => {
+  it("link antigo ?tab=scripts abre os roteiros em Campanhas de Ligação", () => {
+    expect(LEGACY_TAB_MAP.scripts).toEqual({ kind: "route", to: "/campaigns/calls/scripts" });
+  });
+  it("a área Campanhas da Prospecção não lista mais os roteiros", () => {
+    expect(AREA_SECTIONS.campanhas).not.toContain("roteiros");
+  });
+});

@@ -18,6 +18,8 @@ export const SEGMENT_LABELS: Record<string, string> = {
   whatsapp: "WhatsApp",
   communications: "Comunicações",
   campaigns: "Campanhas",
+  calls: "Ligação",
+  scripts: "Roteiros",
   prospecting: "Prospecção",
   analytics: "Analytics",
   reports: "Relatórios",
