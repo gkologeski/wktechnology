@@ -8,7 +8,7 @@ route_pattern: /agents/sdr
 min_permission: techsales.marketing.sdr_agent.view.workspace
 audience: internal
 sort_order: 410
-version: 2
+version: 3
 is_published: true
 ---
 # Configurar, duplicar e auditar o agente SDR
@@ -24,7 +24,10 @@ is_published: true
 4. Em "Persona e teste", revise "Nome do assistente", "Descrição", "Intenção do agente" e "Tom principal".
 5. Revise "Exemplos do jeito certo" e "Expressões a evitar" e teste a conversa.
 6. Salve o rascunho. Publique só quando estiver pronto.
-7. Em "Configuração do agente", revise situação, roteiro, qualificação, agenda, WhatsApp e passagem para humano.
+7. Em "Configuração do agente", revise situação, roteiro, qualificação, WhatsApp e passagem para humano.
+8. Em "Quem participa do atendimento", defina duas pessoas, uma abaixo da outra:
+   - **Responsável pelo atendimento humano:** recebe a conversa quando a Lia passa para uma pessoa e as tarefas de acompanhamento.
+   - **Proprietário da agenda de vendas:** a Lia consulta a agenda dessa pessoa e marca as reuniões nela, com link do Meet. Só pode ser escolhido quem conectou a agenda do Google; os demais aparecem desativados como "Sem agenda conectada". A troca vai para o rascunho e vale depois de publicar.
 8. Consulte "Habilidades e ferramentas", "Portfólio e materiais" e "Regras gerais".
 9. Para copiar, clique em "Duplicar" e confirme.
 10. Em "Resultados", veja conversas, qualificações e reuniões dos últimos 30 dias.

@@ -2821,7 +2821,7 @@
         "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c",
         "src/components/service-channels/account-editor.tsx": "a4bf631320faddfeac35c5805701d81d0a029b0b31c2a9e0d34092bdd90d7933",
         "src/components/service-channels/agent-channels.tsx": "97abf189efffa02a15a536b7e9aef0a8cf3bc97d85f88c95915d7e916cdb8a41",
-        "src/components/prospecting/sdr-agent-config.tsx": "e16579d05744c8f06021ec4b3fa45aaa7b1755b99bd003c57fded76f42f8eaa1"
+        "src/components/prospecting/sdr-agent-config.tsx": "e71914364a83849fcd0d874b9f0c8b052edf070beb4bcb2c7ebc138a6a8378fb"
       }
     },
     {
@@ -3145,7 +3145,8 @@
         "src/routes/_authenticated/agents.sdr.tsx": "e8467d55e712ff1e3f483acc873da0fe07e2a4a728707c82022bd8142e2aae4b",
         "src/components/prospecting/sdr-agent-actions.tsx": "f17d0e8a62209bfd8034262548b4e5b164cd9f9ea8abb877fd12b953fb658cde",
         "src/components/prospecting/sdr-agent-picker.tsx": "4277cd1e6a1066b07845b803e9d401e8fc6eff796e1acf57e0581a75f41d0039",
-        "src/components/prospecting/sdr-skills-panel.tsx": "0f7fd7bbb94c748cac9a04a25406584fd6a73c8466da48223882698115727572",
+        "src/components/prospecting/sdr-skills-panel.tsx": "8af28b6552abd23685fb7307f2ab0a3b009f8a83f717c174a27d195ec35b580a",
+        "src/components/prospecting/sdr-sales-calendar-owner.tsx": "9db9d89d6da537ac9a21f410375fb7b54fb587f4412311d04bee8b3401ef456c",
         "src/components/prospecting/sdr-console.tsx": "ca410d4ec19673835d97e8adcffcc5023b8f62970e04e11f2af08cd4b16546cb",
         "src/components/prospecting/sdr-studio-agent-bar.tsx": "84cc91802054f71827201ba06b93eecbc530eaa2605a564f4c30441b476bd1df",
         "src/lib/sdr-agent.functions.ts": "5b72111380ad8cf6e83b58d9d8a70cf0950ffca91e80fb60fbe70e3645f468ee",

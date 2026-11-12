@@ -288,26 +288,16 @@ function SkillsForm({ playbookId }: { playbookId: string }) {
         ) : (
           <div className="grid min-w-0 grid-cols-1 gap-4 md:grid-cols-2">
             <div className="min-w-0 space-y-1.5 md:col-span-2">
-              <Label htmlFor="sk-host">Anfitrião e agenda</Label>
-              <Select
-                value={s.calendar_account_id}
-                onValueChange={(v) => {
-                  const a = c.calendars.find((x) => x.id === v);
-                  if (a) setS({ calendar_account_id: a.id, host_user_id: a.owner_id });
-                }}
-              >
-                <SelectTrigger id="sk-host" className="min-w-0 [&>span]:truncate">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {c.calendars.map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.owner_name} · {a.email} ({a.provider === "google" ? "Google" : a.provider}
-                      {a.status === "error" ? ", com erro" : ""})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Label>Proprietário da agenda de vendas</Label>
+              <p className="text-sm">
+                {(() => {
+                  const a = c.calendars.find((x) => x.id === s.calendar_account_id);
+                  return a ? `${a.owner_name} · ${a.email}` : "Agenda não encontrada";
+                })()}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Para trocar, use Configuração do agente › Quem participa do atendimento.
+              </p>
               <p
                 className={`text-xs ${c.calendarReadiness.ok ? "text-muted-foreground" : "text-destructive"}`}
                 role="status"

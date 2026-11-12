@@ -36,6 +36,7 @@ import {
 import { SDR_TOOLS, type AgentConfig, type SdrTool } from "@/lib/prospecting/sdr/agent-config";
 import { parseOptOutPhrases } from "./sdr-opt-out-text";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
+import { SdrSalesCalendarOwner } from "./sdr-sales-calendar-owner";
 
 const TOOL_LABEL: Record<SdrTool, string> = {
   qualify: "Qualificar e gravar no CRM",
@@ -371,12 +372,15 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
       </FormSection>
 
       <FormSection
-        title="Responsável e agenda"
-        description="Quem recebe a conversa e qual página de agendamento o agente pode oferecer."
+        title="Quem participa do atendimento"
+        description="Duas pessoas com papéis diferentes: quem assume a conversa e em qual agenda a Lia marca as reuniões."
       >
-        <div className="grid gap-3 md:grid-cols-2">
+        <div className="grid gap-5">
           <div className="space-y-1.5">
-            <Label htmlFor="cfg-owner">Responsável</Label>
+            <Label htmlFor="cfg-owner">1. Responsável pelo atendimento humano</Label>
+            <p className="text-xs text-muted-foreground">
+              Recebe a conversa quando a Lia passa para uma pessoa e as tarefas de acompanhamento.
+            </p>
             <Select
               value={cfg.assigned_to ?? NONE}
               onValueChange={(v) => set("assigned_to", v === NONE ? null : v)}
@@ -394,25 +398,10 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="cfg-booking">Página de agendamento</Label>
-            <Select
-              value={cfg.booking_page_id ?? NONE}
-              onValueChange={(v) => set("booking_page_id", v === NONE ? null : v)}
-            >
-              <SelectTrigger id="cfg-booking" disabled={!cfg.allowed_tools.includes("schedule")}>
-                <SelectValue placeholder="Sem agenda" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={NONE}>Sem agenda</SelectItem>
-                {opts.bookingPages.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <SdrSalesCalendarOwner
+            playbookId={playbookId}
+            members={members.data ?? []}
+          />
         </div>
       </FormSection>
 
