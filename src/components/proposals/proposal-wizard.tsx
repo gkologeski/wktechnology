@@ -326,9 +326,10 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
     void navigate({ to: "/proposals/$id", params: { id } });
   }
 
-  async function submit() {
+  async function submit(asDraft = false) {
     if (!source || !draft) return;
-    if (canEditTerms) {
+    // Rascunho: grava o que já foi preenchido, sem exigir condições completas.
+    if (canEditTerms && !asDraft) {
       if (!payTerms) return void toast.error("Defina as condições de pagamento.");
       const termsErr = validatePaymentTerms(payTerms, amount ?? 0);
       if (termsErr.length) return void toast.error(termsErr.join(" "));
@@ -342,7 +343,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
             patch: { title: title.trim(), body, total_amount: amount, expires_at: expires },
           },
         });
-        toast.success("Proposta atualizada.");
+        toast.success(asDraft ? "Rascunho salvo." : "Proposta atualizada.");
         await afterSave(editId);
       } else if ("quoteId" in source) {
         const r = await createFromQuote({
@@ -356,7 +357,13 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
             proposal_template_id: templateId,
           },
         });
-        toast.success(r.reused ? "Esta cotação já tem proposta." : "Proposta criada.");
+        toast.success(
+          r.reused
+            ? "Esta cotação já tem proposta."
+            : asDraft
+              ? "Rascunho salvo."
+              : "Proposta criada.",
+        );
         await afterSave(r.id);
       } else {
         const row = await createBlank({
@@ -371,7 +378,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
             expiresAt: expires,
           },
         });
-        toast.success("Proposta criada.");
+        toast.success(asDraft ? "Rascunho salvo." : "Proposta criada.");
         await afterSave(row.id);
       }
     } catch (e) {
@@ -752,16 +759,28 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
               Cancelar
             </Button>
           </div>
-          {step < STEPS.length - 1 ? (
-            <Button onClick={goNext} disabled={!draft || !titleOk}>
-              Avançar <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          ) : (
-            <Button onClick={() => void submit()} disabled={saving || !titleOk}>
-              {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-              {editId ? "Salvar proposta" : "Criar proposta"}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {step < STEPS.length - 1 && (
+              <Button
+                variant="outline"
+                onClick={() => void submit(true)}
+                disabled={saving || !draft || !titleOk}
+              >
+                {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                Salvar rascunho
+              </Button>
+            )}
+            {step < STEPS.length - 1 ? (
+              <Button onClick={goNext} disabled={!draft || !titleOk}>
+                Avançar <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button onClick={() => void submit()} disabled={saving || !titleOk}>
+                {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
+                {editId ? "Salvar proposta" : "Criar proposta"}
+              </Button>
+            )}
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

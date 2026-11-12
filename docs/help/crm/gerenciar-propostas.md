@@ -8,7 +8,7 @@ route_pattern: /proposals
 min_permission:
 audience: internal
 sort_order: 202
-version: 4
+version: 5
 is_published: true
 ---
 # Gerenciar propostas
@@ -46,3 +46,7 @@ A mensagem "Proposta criada" confirma o cadastro. A proposta fica disponível na
 ## Relacionados
 - [Editar e enviar uma proposta](/ajuda/crm/editar-enviar-proposta)
 - [Gerenciar cotações e gerar propostas](/ajuda/crm/gerenciar-cotacoes)
+
+## Salvar como rascunho
+
+Em qualquer etapa do assistente, antes da última, clique em **Salvar rascunho** para gravar o que já foi preenchido (basta ter o título). As condições de pagamento podem ficar incompletas no rascunho; o botão final **Criar proposta**/**Salvar proposta** continua exigindo condições válidas. A proposta fica com a situação **Rascunho** e pode ser reaberta para edição.

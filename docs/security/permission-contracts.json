@@ -10224,7 +10224,7 @@
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "96f1c391feb67de5ec0628570adfc0fc240d9427e4c2a8dd93e97ebd9b183987",
         "src/lib/sales-flow.functions.ts": "143d9934d1af165fdd16768c1abebf7b7cc59bcc7df47f945783dd92e19ab222",
-        "src/components/proposals/proposal-wizard.tsx": "6c529ffa94e28cd3dc63692eaa8ed8b39f88c2df54c834d8685135a839950f0f",
+        "src/components/proposals/proposal-wizard.tsx": "07f98ee0d7d19d312a36c00811b0107f5e826673defae8939bb24001d9380d96",
         "src/lib/proposals/proposal-draft.server.ts": "6be33928434f3c33a3ca88c7f5c8ef4390d961cb73420a3fd0ff23544ef12208",
         "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
         "drizzle/migrations/0321_proposal_versions_cascade.sql": "d74b28603f0279e6cb749f1af8ae34658c561ed0f659964fea8d6f4a2b257bcf",
