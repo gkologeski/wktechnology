@@ -10,6 +10,7 @@ import { PageHeader } from "@/components/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AccountEditor } from "@/components/service-channels/account-editor";
+import { ArchivedAccounts } from "@/components/service-channels/archived-accounts";
 import {
   listServiceChannels,
   discoverServiceChannels,
@@ -68,7 +69,9 @@ function ServiceChannelsPage() {
             <item.icon className="mb-3 h-5 w-5 text-primary" />
             <span className="font-semibold">{item.label}</span>
             <p className="mt-1 text-sm text-muted-foreground">
-              {accounts.data?.accounts.filter((a) => a.channel === key).length ?? "—"} contas
+              {accounts.data?.accounts.filter((a) => a.channel === key && !a.archived_at).length ??
+                "—"}{" "}
+              conectadas
             </p>
           </button>
         ))}
@@ -109,15 +112,15 @@ function ServiceChannelsPage() {
           </Button>
         </div>
       )}
-      {accounts.data && !accounts.data.accounts.some((a) => a.channel === channel) && (
+      {accounts.data && !accounts.data.accounts.some((a) => a.channel === channel && !a.archived_at) && (
         <Card>
           <CardContent className="py-8 text-center text-muted-foreground">
-            Nenhuma conta registrada. Configure uma conexão e atualize as contas.
+            Nenhuma conta conectada. Configure uma conexão e atualize as contas.
           </CardContent>
         </Card>
       )}
       {accounts.data?.accounts
-        .filter((a) => a.channel === channel)
+        .filter((a) => a.channel === channel && !a.archived_at)
         .map((account) => (
           <AccountEditor
             key={account.id}
@@ -127,6 +130,12 @@ function ServiceChannelsPage() {
             canManage={canManage}
           />
         ))}
+      {accounts.data && (
+        <ArchivedAccounts
+          accounts={accounts.data.accounts.filter((a) => a.channel === channel && a.archived_at)}
+          conversationCounts={accounts.data.conversationCounts}
+        />
+      )}
     </div>
   );
 }

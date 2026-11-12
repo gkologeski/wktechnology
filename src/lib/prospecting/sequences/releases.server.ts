@@ -67,12 +67,12 @@ async function channel(
   if (access.workspace !== workspace) throw new Error("Conta indisponível.");
   const { data, error } = await client
     .from("service_channel_accounts" as never)
-    .select("id,workspace_id,channel,source_key,enabled")
+    .select("id,workspace_id,channel,source_key,enabled,archived_at")
     .eq("id", accountId)
     .eq("workspace_id", workspace)
     .eq("channel", kind)
     .maybeSingle();
-  if (error || !data || !(data as Account).enabled)
+  if (error || !data || !(data as Account).enabled || (data as { archived_at?: string | null }).archived_at)
     throw new Error("Conta indisponível ou desativada.");
   return data as Account;
 }

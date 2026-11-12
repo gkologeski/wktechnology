@@ -1,0 +1,3 @@
+ALTER TABLE public.service_channel_accounts ADD COLUMN IF NOT EXISTS archived_at timestamptz NULL;
+COMMENT ON COLUMN public.service_channel_accounts.archived_at IS 'Quando preenchido, o número/conta está desconectado e fica apenas como histórico (não envia nem recebe pelos agentes).';
+CREATE INDEX IF NOT EXISTS service_channel_accounts_active_idx ON public.service_channel_accounts (workspace_id, channel) WHERE archived_at IS NULL;

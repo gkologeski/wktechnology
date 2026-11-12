@@ -8,7 +8,7 @@ route_pattern: /settings/channels
 min_permission: system.channels.view.workspace
 audience: internal
 sort_order: 117
-version: 2
+version: 3
 is_published: true
 ---
 # Administrar canais de atendimento
@@ -42,3 +42,11 @@ A consulta exige system.channels.view.workspace; gerenciamento usa system.channe
 - [Permissões do Core](/ajuda/core/permissoes)
 
 ![Tela: capturar /settings/channels com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/administrar-canais-de-atendimento.webp)
+
+## Números conectados e arquivados
+
+- A lista principal mostra só os números **conectados**. O contador do cartão de cada canal também conta só os conectados.
+- Ao clicar em **Atualizar contas**, um número que foi desconectado (ou que só aparece em conversas antigas) vai para **Arquivados**, no fim da lista.
+- Abra **Arquivados** para consultar o histórico: nome, número, data do arquivamento e quantas conversas foram preservadas. Não é possível editar nem ligar um agente a um número arquivado, e ele não envia nem recebe mensagens.
+- Se o número voltar a ser conectado, ele sai de Arquivados sozinho na próxima atualização.
+- Nada é apagado: conversas e mensagens continuam guardadas.

@@ -28,7 +28,7 @@ export async function loadChannelRuntime(
       : { status: "legacy" };
   const account = await admin
     .from("service_channel_accounts")
-    .select("id,workspace_id,channel,label,display_name,enabled,routing_configured")
+    .select("id,workspace_id,channel,label,display_name,enabled,routing_configured,archived_at")
     .eq("workspace_id", input.workspaceId)
     .eq("channel", input.channel)
     .eq("source_key", input.sourceKey)
@@ -38,7 +38,8 @@ export async function loadChannelRuntime(
     return input.snapshot != null
       ? { status: "blocked", reason: "channel_account_unavailable" }
       : { status: "legacy" };
-  if (!account.data.enabled) return { status: "blocked", reason: "channel_disabled" };
+  if (!account.data.enabled || account.data.archived_at)
+    return { status: "blocked", reason: "channel_disabled" };
   const binding = await admin
     .from("service_channel_bindings")
     .select("agent_id,display_name,enabled,inbound,campaigns")
