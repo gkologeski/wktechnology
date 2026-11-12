@@ -58,7 +58,7 @@ Fontes consultadas em 12/11/2026:
 - Testes direcionados: 17/17; tipos sem erros; lint dos arquivos alterados sem erros (avisos legados permanecem).
 - SQL: 5/5 cenários na migração real em PostgreSQL 17 descartável, com contexto de identidade sintético; não é autenticação real GoTrue. Script reproduzível: `python3 tests/unipile/personal-account-rls.py`.
 - Ajuda: 247/247 telas cobertas, 427 artigos; artigo LinkedIn atualizado para versão 3. Aplicação editorial ao banco ainda pendente.
-- Build completo aprovado. Gate de performance não aprovado porque exige verificação global completa; não há liberação de deploy.
+- Build completo aprovado. Gate de performance não aprovado por tempo de build e por exigir verificação global completa; não há liberação de deploy.
 - Gate global: 53 erros de formatação em 15 arquivos não alterados; nenhum erro de lint nos arquivos deste pacote. A execução inicial de testes teve falhas por Docker bloqueado e Node 20/ESM. Nova execução com Node 22/Docker aprovada: 3.031/3.031 testes. Não há aceite global nem liberação de publicação.
 - Usuário confirmou ambiente Unipile e conta de teste existentes; nenhuma senha/chave solicitada.
 - Próxima fronteira segura: Scope Unipile por workspace/usuário, sem migrar automaticamente contas existentes (a atribuição é permanente); Hosted Auth deve usar o Scope e validar `account_id` exato, estado, expiração e vínculo antes da confirmação. Documentação: https://developer.unipile.com/v2.0/docs/scopes.
