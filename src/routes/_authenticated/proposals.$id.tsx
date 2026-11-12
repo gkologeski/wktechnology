@@ -16,7 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getSalesPublicToken } from "@/lib/access-control/sales-sharing.functions";
-import { ArrowLeft, Copy, Download, Lock, Pencil, Send, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Ban, Copy, Download, Lock, Pencil, Send, ShieldCheck } from "lucide-react";
+import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,7 @@ import {
   requestProposalApproval,
   decideProposalApproval,
 } from "@/lib/proposals.functions";
+import { cancelProposal } from "@/lib/proposals/proposal-cancel.functions";
 import { getProposalDocument } from "@/lib/proposals/proposal-document.functions";
 import { PROPOSAL_STATUS_LABEL } from "@/lib/proposals/proposal-document-types";
 import { getPublicAppUrl } from "@/lib/app-url";
@@ -79,6 +81,7 @@ function ProposalContent({ id }: { id: string }) {
   const send = useServerFn(sendProposal);
   const req = useServerFn(requestProposalApproval);
   const decide = useServerFn(decideProposalApproval);
+  const cancel = useServerFn(cancelProposal);
   const [comment, setComment] = useState("");
   const [wizard, setWizard] = useState<ProposalSource | null>(null);
   const [emailOpen, setEmailOpen] = useState(false);
@@ -123,6 +126,14 @@ function ProposalContent({ id }: { id: string }) {
     onSuccess: () => {
       toast.success("Aprovação solicitada.");
       setComment("");
+      refresh();
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+  const cancelM = useMutation({
+    mutationFn: () => cancel({ data: { id } }),
+    onSuccess: () => {
+      toast.success("Proposta cancelada.");
       refresh();
     },
     onError: (e: Error) => toast.error(e.message),
@@ -298,7 +309,30 @@ function ProposalContent({ id }: { id: string }) {
               />
             </SalesAction>
           )}
-          <GenerateContractButton source={{ proposalId: id }} size="default" />
+          {["draft", "in_review", "approved", "sent"].includes(p.status) && (
+            <SalesAction table="proposals" id={id} action="update">
+              <Button
+                variant="outline"
+                className="text-destructive"
+                disabled={cancelM.isPending}
+                onClick={async () => {
+                  const ok = await confirmDialog({
+                    title: "Cancelar proposta?",
+                    description:
+                      "A proposta fica registrada como Cancelada e o cliente não poderá mais aceitá-la pelo link. Esta ação não pode ser desfeita.",
+                    confirmLabel: "Cancelar proposta",
+                    variant: "destructive",
+                  });
+                  if (ok) cancelM.mutate();
+                }}
+              >
+                <Ban className="mr-2 h-4 w-4" /> Cancelar proposta
+              </Button>
+            </SalesAction>
+          )}
+          {p.status !== "canceled" && (
+            <GenerateContractButton source={{ proposalId: id }} size="default" />
+          )}
         </div>
       </div>
 

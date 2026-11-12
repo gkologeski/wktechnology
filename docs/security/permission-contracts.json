@@ -9591,7 +9591,6 @@
       },
       "files": {
         "src/components/proposals/send-proposal-email-dialog.tsx": "daa13b46de45f713cc6d9ac211a74cbef063f2b1340c90074aa7492ad75659d6",
-        "src/routes/_authenticated/proposals.$id.tsx": "450853b0ef108d8a9e475b4cc09df0b46d979d6395a4ff6ec547d1025a8056a4",
         "src/lib/email-accounts.functions.ts": "5c6cb52bb68477a550dda2fe2242883e8b3805c6bab06cd91b107b27e148c877"
       }
     },
@@ -10913,6 +10912,72 @@
       "files": {
         "src/components/service-channels/archived-accounts.tsx": "fffafffb9d2d8455a9f20e192fdd6af9d3ea2afa7d916759ec4464071aff8701",
         "src/lib/prospecting/sdr/channel-archive.ts": "b5d299cae89314313c28021a2cd50150d1ab8048d4b1857c59fc6ef246e6e0ba"
+      }
+    },
+    {
+      "id": "proposal-cancel",
+      "kind": "business",
+      "resources": [
+        "techsales.proposals"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.proposals.update.workspace"
+      ],
+      "rationale": "CANCELA-PROPOSTA: cancelProposal reuses techsales.proposals update (requireSalesPermission + assertSalesRecord per record, RLS client, compare-and-set on status). UI buttons gated by SalesAction update. Public token read already only exposes sent/accepted/rejected, so canceled proposals cannot be accepted. No schema, grant or policy change. Ficha also hosts the existing proposal email/send actions (same gates as before).",
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/components/sales-access.tsx",
+          "symbol": "SalesAction"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_context_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/proposals/proposal-cancel.test.ts",
+          "name": "proposal cancel permits an authorized active actor"
+        },
+        "missing_permission": {
+          "file": "src/lib/proposals/proposal-cancel.test.ts",
+          "name": "proposal cancel rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/proposals/proposal-cancel.test.ts",
+          "name": "proposal cancel rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/proposals/proposal-cancel.test.ts",
+          "name": "proposal cancel rejects a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/proposals/proposal-cancel.test.ts",
+          "name": "proposal cancel rejects inactive membership"
+        }
+      },
+      "files": {
+        "src/lib/proposals/proposal-cancel.functions.ts": "8b7be7c6b8b0019e7456741d86ea55ee9ccc3f633e5e8f3d6c5f3fe4fa4602d2",
+        "src/routes/_authenticated/proposals.$id.tsx": "3411b971106cb95f1f8c11810863a9f1d4e90f2af7a4f5980f6df44503cf6497",
+        "src/components/deals/deal-proposals.tsx": "ca731b749a8eb0346d0da39d0ffae68f387c931e8287ddfd50bc6f5738d92d2c"
       }
     }
   ],

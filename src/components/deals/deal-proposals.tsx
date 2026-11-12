@@ -14,6 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency } from "@/lib/crm";
 import { deleteRowGuarded } from "@/lib/delete-guard";
 import { sendProposal } from "@/lib/proposals.functions";
+import { cancelProposal } from "@/lib/proposals/proposal-cancel.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { ProposalWizard, type ProposalSource } from "@/components/proposals/proposal-wizard";
 import { ContractWizard, type ContractWizardSource } from "@/components/contracts/contract-wizard";
@@ -40,6 +41,7 @@ export function DealProposals({
   const qc = useQueryClient();
   const navigate = useNavigate();
   const send = useServerFn(sendProposal);
+  const cancel = useServerFn(cancelProposal);
   const [wizard, setWizard] = useState<ProposalSource | null>(null);
   const [contractWizard, setContractWizard] = useState<ContractWizardSource | null>(null);
 
@@ -126,7 +128,23 @@ export function DealProposals({
       a.push({ kind: "item", label: "Copiar link", onSelect: () => void sharing.copy(p.id) });
       a.push({ kind: "item", label: "Baixar PDF", onSelect: () => void sharing.open(p.id, true) });
     }
-    if (canCreateContract)
+    if (cap.can_update && ["draft", "in_review", "approved", "sent"].includes(p.status))
+      a.push({
+        kind: "item",
+        label: "Cancelar proposta",
+        destructive: true,
+        onSelect: async () => {
+          const yes = await confirmDialog({
+            title: "Cancelar proposta?",
+            description:
+              "A proposta fica registrada como Cancelada e o cliente não poderá mais aceitá-la pelo link.",
+            confirmLabel: "Cancelar proposta",
+            variant: "destructive",
+          });
+          if (yes) void run(() => cancel({ data: { id: p.id } }), "Proposta cancelada.");
+        },
+      });
+    if (canCreateContract && p.status !== "canceled")
       a.push({
         kind: "item",
         label: "Gerar contrato",
