@@ -5272,7 +5272,7 @@
         "techsales.prospecting_voice.create.team",
         "techsales.prospecting_voice.create.workspace"
       ],
-      "rationale": "Review 01/11/2026: startVapiCall moved unchanged from prospecting-campaigns.functions.ts to server-only prospecting-vapi-call.server.ts so the client bundle no longer pulls server permission checks; no behavior or access change. Campaign server functions keep requireSalesPermission per action plus assertSalesRecord; manual dial requires techsales.prospecting_voice.create and assertSalesArea/assertSalesRecord as the caller; the dial cron requires CRON_SECRET (requireCronAuth) and every worker call passes assertSalesWorker against the running campaign before and right before dialing. The informational GET of the dial cron now also requires requireCronAuth. Review 01/11/2026 (2): WhatsApp after voice call. saveCampaignCallFollowup requires techsales.marketing.campaigns.update + assertSalesRecord(update) and, when enabling, assertSalesArea(techsales.marketing.campaigns, create) like WhatsApp campaigns; listCallFollowupSenders requires campaigns.view and reads only the active workspace; dialLeadNow accepts followup_campaign_id only after assertSalesRecord(view) on that campaign. The follow-up sender runs only from the Vapi webhook (VAPI_WEBHOOK_SECRET), reads campaign/lead scoped to the attempt workspace, claims once per attempt, respects opt-out and the 24h window (template outside it); the follow-up also passes assertSalesWorker (campaign actor must still view the lead and hold techsales.marketing.campaigns.create) and sends through resolveWaNumber (connection/number checks). The UI disables save/test buttons via usePermissions; servers enforce. Review 01/11/2026 (3): Vapi assistant gains endCall function/phrases and 20 s silence timeout; script save validator tolerates legacy empty-array variables. No access change. Review 02/11/2026: call scripts can be archived (archived_at) via setScriptArchived requiring techsales.prospecting_scripts update + assertSalesRecord; deleteScript refuses scripts already used by campaign variants (FK restrict preserved); listScripts hides archived unless includeArchived; listScriptUsage requires prospecting_scripts view and reads variants through RLS. Settings shortcut removed; old URL only redirects. No RLS/policy change. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect.",
+      "rationale": "Review 01/11/2026: startVapiCall moved unchanged from prospecting-campaigns.functions.ts to server-only prospecting-vapi-call.server.ts so the client bundle no longer pulls server permission checks; no behavior or access change. Campaign server functions keep requireSalesPermission per action plus assertSalesRecord; manual dial requires techsales.prospecting_voice.create and assertSalesArea/assertSalesRecord as the caller; the dial cron requires CRON_SECRET (requireCronAuth) and every worker call passes assertSalesWorker against the running campaign before and right before dialing. The informational GET of the dial cron now also requires requireCronAuth. Review 01/11/2026 (2): WhatsApp after voice call. saveCampaignCallFollowup requires techsales.marketing.campaigns.update + assertSalesRecord(update) and, when enabling, assertSalesArea(techsales.marketing.campaigns, create) like WhatsApp campaigns; listCallFollowupSenders requires campaigns.view and reads only the active workspace; dialLeadNow accepts followup_campaign_id only after assertSalesRecord(view) on that campaign. The follow-up sender runs only from the Vapi webhook (VAPI_WEBHOOK_SECRET), reads campaign/lead scoped to the attempt workspace, claims once per attempt, respects opt-out and the 24h window (template outside it); the follow-up also passes assertSalesWorker (campaign actor must still view the lead and hold techsales.marketing.campaigns.create) and sends through resolveWaNumber (connection/number checks). The UI disables save/test buttons via usePermissions; servers enforce. Review 01/11/2026 (3): Vapi assistant gains endCall function/phrases and 20 s silence timeout; script save validator tolerates legacy empty-array variables. No access change. Review 02/11/2026: call scripts can be archived (archived_at) via setScriptArchived requiring techsales.prospecting_scripts update + assertSalesRecord; deleteScript refuses scripts already used by campaign variants (FK restrict preserved); listScripts hides archived unless includeArchived; listScriptUsage requires prospecting_scripts view and reads variants through RLS. Settings shortcut removed; old URL only redirects. No RLS/policy change. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. Review 12/11/2026 (CAMPANHA-LIGACOES fase 2): ficha em 5 passos e situação em PT-BR, sem ação nova; regra de exclusão por contato recente (recent_contact_days/scope) salva por upsertCampaign (create/update + assertSalesRecord) e aplicada em setCampaignStatus/auditCampaignQueueability com o cliente do usuário (RLS), só no workspace ativo; colunas novas herdam as políticas existentes de prospecting_campaigns.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -5319,6 +5319,10 @@
         {
           "file": "drizzle/migrations/0293_prospecting_scripts_archived_at.sql",
           "symbol": "prospecting_scripts"
+        },
+        {
+          "file": "drizzle/migrations/0335_call_campaign_recent_contact.sql",
+          "symbol": "prospecting_campaigns"
         }
       ],
       "tests": {
@@ -5344,7 +5348,7 @@
         }
       },
       "files": {
-        "src/lib/prospecting-campaigns.functions.ts": "4dd55cc35bc73330be377aedcf54fdbeac43944e8956fff292aa408fc9f0dd58",
+        "src/lib/prospecting-campaigns.functions.ts": "c678fc414a1cfdc70c685f6215293f48b1dc0033273899c4ab1ae31d54135814",
         "src/lib/prospecting-vapi-call.server.ts": "137d4d491bf882dcfd52016a588d06f9411fe0323316c0400e14472144ac2e9f",
         "src/routes/api/public/hooks/prospecting-dial-tick.ts": "c83b39d0528a00d84dbc76d6bea13c3759b15a4b39f4155bd82b8d5160b3d5a1",
         "drizzle/migrations/0290_prospecting_call_whatsapp_followup.sql": "df467dc2e493da88db8bfcd28c8007c8659f1fab510b1ba1aea9bd45b061a87d",
@@ -5356,12 +5360,14 @@
         "drizzle/migrations/0293_prospecting_scripts_archived_at.sql": "a6e8cce47013518da00c651e96d47f4b4cfbb1b847aed5cf720cd405d6d6fd91",
         "src/components/prospecting/pages/scripts-page.tsx": "7ee17213929ea516345b3f4faeb6ccf845dcb21c072900bb68b7b828f7619c2d",
         "src/routes/_authenticated/settings.prospecting-scripts.tsx": "fc214bca25673208de5b62482ad0e0b55e4a7c4f491f6a25ceecdd2113582f58",
-        "src/routes/_authenticated/campaigns.calls.$id.tsx": "23fdbc6e9784ccd82e38dca26c8558d12e9c0b4287600c64e212ca70eb9091e7",
-        "src/routes/_authenticated/campaigns.calls.index.tsx": "1da19f26fc19fd0b8935e611f6b2648060c5457cf6493918101b10cd949387a6",
+        "src/routes/_authenticated/campaigns.calls.$id.tsx": "bcef4280d41aa031585fc39817a550159a8474360beabbb0eafd31da51108c14",
+        "src/routes/_authenticated/campaigns.calls.index.tsx": "2d68a048705bdd9f33aabc8e1b484628c2a68ca947058d6bf662d6ca94b23072",
         "src/routes/_authenticated/campaigns.calls.scripts.tsx": "e10a8fabc26c1fa80f67e84252f1543ec5e027c3548482855a70640ab3d91c52",
         "src/routes/_authenticated/prospecting.index.tsx": "acdb05cf4eb061d89e8a7826b78d01600d860d1025e9a643051bf06b5832a7be",
         "src/routes/_authenticated/prospecting.campaigns.$id.tsx": "2db1c782822c71b6b4208a5b8f8b894e4506aa3629a64cbd127b858231c11e74",
-        "src/routes/_authenticated/prospecting.campaigns.index.tsx": "df9e74b8bd450c6f98ca526f244b6fad2aab8706e62d830e531ea9ee97095f4f"
+        "src/routes/_authenticated/prospecting.campaigns.index.tsx": "df9e74b8bd450c6f98ca526f244b6fad2aab8706e62d830e531ea9ee97095f4f",
+        "drizzle/migrations/0335_call_campaign_recent_contact.sql": "8e9640ec3cb63a4a0aeb418ef74360fb28bb7d664ff99cbec77e756ce6dd053e",
+        "src/lib/prospecting/calls/recent-contact.server.ts": "b3e2bda54d5a71db81f429dcbbd8efcf9be26464d559adf76f7b25e0ea99d5f1"
       }
     },
     {
@@ -9752,7 +9758,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic.",
       "files": {
-        "src/integrations/supabase/types.ts": "bfc6e6ef9ae71c3549dcab0e39a8139c3e31d1d7322f2dc701fc9eda8bda95aa",
+        "src/integrations/supabase/types.ts": "c1fbe8d7f97e69ca77238214e5ad414d0bc94663cd20ae3e70ad5c0a6590cd16",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -11204,6 +11210,15 @@
       "files": {
         "src/components/prospecting/areas/campaigns-hub.tsx": "886caf939ddc55123e28a051817371c7e555b9a84c1acfbd397f29fd6fe45024",
         "src/lib/prospecting/areas.ts": "dff0118b6259b5d0189e30c48e4166f4e8389dea9b855e687decdb47fb6db569"
+      }
+    },
+    {
+      "id": "call-campaign-pure-rules",
+      "kind": "presentation",
+      "rationale": "Pure helpers for call campaigns: PT-BR status labels, start checklist and recent-contact window math. No I/O, routes, actions, grants or data access; enforcement stays in prospecting-voice-campaigns server functions.",
+      "files": {
+        "src/lib/prospecting/calls/recent-contact.ts": "315ab9adb2de70bf31c0514a79c27e779a54c27fcc7723eae4815a1b8ce3b8aa",
+        "src/lib/prospecting/calls/status-label.ts": "62f7f187b9ee81fea37e7850e45d97b56edeeef04c2084fdc04d6c6e8713354f"
       }
     }
   ],

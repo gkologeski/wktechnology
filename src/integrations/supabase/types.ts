@@ -22385,6 +22385,8 @@ export type Database = {
           max_attempts: number
           name: string
           owner_id: string
+          recent_contact_days: number
+          recent_contact_scope: string
           retry_interval_minutes: number
           source_ref: string | null
           source_type: Database["public"]["Enums"]["prospecting_source_type"]
@@ -22410,6 +22412,8 @@ export type Database = {
           max_attempts?: number
           name: string
           owner_id: string
+          recent_contact_days?: number
+          recent_contact_scope?: string
           retry_interval_minutes?: number
           source_ref?: string | null
           source_type?: Database["public"]["Enums"]["prospecting_source_type"]
@@ -22435,6 +22439,8 @@ export type Database = {
           max_attempts?: number
           name?: string
           owner_id?: string
+          recent_contact_days?: number
+          recent_contact_scope?: string
           retry_interval_minutes?: number
           source_ref?: string | null
           source_type?: Database["public"]["Enums"]["prospecting_source_type"]

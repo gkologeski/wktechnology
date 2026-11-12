@@ -11,6 +11,7 @@ import {
   type AudienceRule,
 } from "@/lib/prospecting-audience.functions";
 import { isRetriableEndedReason } from "@/lib/prospecting-ended-reason";
+import { normalizeRecentContact } from "@/lib/prospecting/calls/recent-contact";
 
 // Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -40,6 +41,8 @@ export type Campaign = {
   followup_template_name?: string | null;
   followup_template_language?: string;
   followup_answered_text?: string | null;
+  recent_contact_days?: number;
+  recent_contact_scope?: "calls" | "calls_whatsapp";
 };
 
 export type Variant = {
@@ -109,6 +112,8 @@ const CampaignInput = z.object({
     .default([]),
   audience_mode: z.enum(["static", "dynamic"]).default("static"),
   audience_rules: AudienceRulesSchema.default([]),
+  recent_contact_days: z.number().int().min(0).max(365).default(7),
+  recent_contact_scope: z.enum(["calls", "calls_whatsapp"]).default("calls"),
 });
 
 export const listCampaigns = createServerFn({ method: "POST" })
@@ -184,6 +189,8 @@ export const upsertCampaign = createServerFn({ method: "POST" })
       dialing_window: data.dialing_window,
       audience_mode: data.audience_mode,
       audience_rules: data.audience_rules,
+      recent_contact_days: data.recent_contact_days,
+      recent_contact_scope: data.recent_contact_scope,
     };
 
     let id: string;
@@ -272,7 +279,7 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
 
       const { data: c } = await sb
         .from("prospecting_campaigns")
-        .select("lead_ids, max_attempts, audience_mode, audience_rules")
+        .select("lead_ids, max_attempts, audience_mode, audience_rules, recent_contact_days, recent_contact_scope")
         .eq("id", data.id)
         .eq("workspace_id", ws)
         .single();
@@ -287,7 +294,7 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
       if (leadIds.length) {
         const { data: visibleLeads, error: leadError } = await sb
           .from("leads")
-          .select("id")
+          .select("id, phone")
           .in("id", leadIds)
           .eq("workspace_id", ws);
         if (leadError) throw new Error(leadError.message);
@@ -315,8 +322,19 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
             lastAttempt: Math.max(prev.lastAttempt, x.attempt_number ?? 0),
           });
         }
+        const { findRecentlyContacted } = await import(
+          "@/lib/prospecting/calls/recent-contact.server"
+        );
+        const recent = await findRecentlyContacted(
+          sb,
+          ws,
+          data.id,
+          (visibleLeads ?? []) as Array<{ id: string; phone: string | null }>,
+          normalizeRecentContact(c ?? {}),
+        );
         const rows = leadIds
           .filter((lid) => {
+            if (recent.has(lid)) return false;
             const prev = byLead.get(lid);
             return !prev || (!prev.blocking && prev.lastAttempt < maxAttempts);
           })
@@ -386,7 +404,7 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: c } = await sb
       .from("prospecting_campaigns")
-      .select("lead_ids, max_attempts, audience_mode, audience_rules")
+      .select("lead_ids, max_attempts, audience_mode, audience_rules, recent_contact_days, recent_contact_scope")
       .eq("id", data.campaign_id)
       .eq("workspace_id", ws)
       .single();
@@ -459,11 +477,22 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
       agg.set(x.lead_id, a);
     }
 
+    const { findRecentlyContacted } = await import("@/lib/prospecting/calls/recent-contact.server");
+    const recent = await findRecentlyContacted(
+      sb,
+      ws,
+      data.campaign_id,
+      [...leadMap.entries()].map(([id, v]) => ({ id, phone: v.phone })),
+      normalizeRecentContact(c),
+    );
+
     return leadIds.map<LeadAudit>((lid) => {
       const a = agg.get(lid);
       const info = leadMap.get(lid);
       const reasons: string[] = [];
       if (!info) reasons.push("Lead não encontrado no workspace");
+      const recentWhy = recent.get(lid);
+      if (recentWhy) reasons.push(recentWhy);
       if (info && !info.phone) reasons.push("Lead sem telefone");
       if (a?.hasBlocking) {
         reasons.push(

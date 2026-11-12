@@ -1,3 +1,4 @@
+import { callCampaignStatusLabel } from "@/lib/prospecting/calls/status-label";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -107,11 +108,7 @@ function CampaignsListPage() {
           <div className="divide-y">
             {rows.map((c) => (
               <div key={c.id} className="py-2 flex items-center justify-between gap-3">
-                <Link
-                  to="/campaigns/calls/$id"
-                  params={{ id: c.id }}
-                  className="flex-1 min-w-0"
-                >
+                <Link to="/campaigns/calls/$id" params={{ id: c.id }} className="flex-1 min-w-0">
                   <div className="font-medium truncate">{c.name}</div>
                   <div className="text-xs text-muted-foreground">
                     {c.lead_ids?.length ?? 0} leads ·{" "}
@@ -127,7 +124,7 @@ function CampaignsListPage() {
                         : "outline"
                   }
                 >
-                  {c.status}
+                  {callCampaignStatusLabel(c.status)}
                 </Badge>
                 {c.status !== "running" ? (
                   <Button
