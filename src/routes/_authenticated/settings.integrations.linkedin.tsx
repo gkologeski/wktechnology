@@ -18,6 +18,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { readViewAs } from "@/lib/view-as-client";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   getLinkedinAccount,
@@ -76,6 +78,16 @@ const STATUS_VARIANT: Record<
 
 function LinkedinIntegrationPage() {
   const search = useSearch({ from: Route.id });
+  const permissions = usePermissions();
+  const canManage =
+    !permissions.isLoading &&
+    !permissions.isError &&
+    !!permissions.workspaceId &&
+    !readViewAs()?.readOnly &&
+    (permissions.can("system.linkedin.view.own") ||
+      permissions.can("system.linkedin.view.workspace")) &&
+    (permissions.can("system.linkedin.manage.own") ||
+      permissions.can("system.linkedin.manage.workspace"));
   const loadAccount = useServerFn(getLinkedinAccount);
   const loadUsage = useServerFn(getRateUsage);
   const startConnect = useServerFn(startLinkedinConnect);
@@ -121,12 +133,14 @@ function LinkedinIntegrationPage() {
 
   useEffect(() => {
     if (search.connected === "1") {
-      toast.success("Conta LinkedIn conectada via Unipile.");
+      // The provider redirect is not a success receipt; reconcile first.
       // Fallback caso o webhook ainda não tenha chegado: reconcilia via API.
       // Na v2 o `state` é a correlação com o connect_token emitido no início.
       (async () => {
         try {
-          await reconcile({ data: search.state ? { state: search.state } : {} });
+          const result = await reconcile({ data: search.state ? { state: search.state } : {} });
+          if (result.ok) toast.success("Conta LinkedIn confirmada via Unipile.");
+          else toast.info("Aguardando confirmação segura da conta pela Unipile.");
         } catch {
           /* ignora */
         }
@@ -202,7 +216,7 @@ function LinkedinIntegrationPage() {
           </h1>
           <p className="text-sm text-muted-foreground">
             Conecte sua conta LinkedIn para buscar perfis, capturar candidatos e enviar mensagens
-            respeitando limites human-like.
+            com controles operacionais por conta.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
@@ -221,14 +235,14 @@ function LinkedinIntegrationPage() {
           </CardTitle>
           <CardDescription>
             A conexão é feita via Unipile Hosted Auth — suas credenciais LinkedIn nunca passam pelo
-            TechHire.
+            TechERP.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {loading ? (
             <p className="text-sm text-muted-foreground">Carregando…</p>
           ) : !account || account.status === "disconnected" ? (
-            <Button onClick={onConnect} disabled={connecting}>
+            <Button onClick={onConnect} disabled={connecting || !canManage}>
               <Link2 className="h-4 w-4 mr-2" />
               {connecting ? "Abrindo Unipile…" : "Conectar LinkedIn"}
             </Button>
@@ -237,7 +251,7 @@ function LinkedinIntegrationPage() {
               <p className="text-sm text-muted-foreground">
                 Conexão pendente. Se já fechou a janela, tente novamente.
               </p>
-              <Button onClick={onConnect} disabled={connecting}>
+              <Button onClick={onConnect} disabled={connecting || !canManage}>
                 <Link2 className="h-4 w-4 mr-2" />
                 Tentar novamente
               </Button>
@@ -247,7 +261,7 @@ function LinkedinIntegrationPage() {
               <p className="text-sm text-destructive">
                 {account.last_error ?? "Erro ao conectar."}
               </p>
-              <Button onClick={onConnect} disabled={connecting}>
+              <Button onClick={onConnect} disabled={connecting || !canManage}>
                 <Link2 className="h-4 w-4 mr-2" />
                 Reconectar
               </Button>
@@ -262,7 +276,7 @@ function LinkedinIntegrationPage() {
                 <span className="text-muted-foreground">Último uso:</span>{" "}
                 {account.last_seen_at ? new Date(account.last_seen_at).toLocaleString() : "—"}
               </div>
-              <Button variant="outline" onClick={onDisconnect}>
+              <Button variant="outline" onClick={onDisconnect} disabled={!canManage}>
                 <Power className="h-4 w-4 mr-2" />
                 Desconectar
               </Button>
@@ -281,7 +295,7 @@ function LinkedinIntegrationPage() {
                 variant="outline"
                 size="sm"
                 onClick={onCheckCredentials}
-                disabled={checking}
+                disabled={checking || !canManage}
                 aria-label="Testar credenciais da API Unipile"
               >
                 <KeyRound className={`h-4 w-4 mr-2 ${checking ? "animate-pulse" : ""}`} />
@@ -357,7 +371,10 @@ function LinkedinIntegrationPage() {
               />
             </div>
           </div>
-          <Button onClick={onSaveWindow} disabled={!account || account.status === "disconnected"}>
+          <Button
+            onClick={onSaveWindow}
+            disabled={!canManage || !account || account.status === "disconnected"}
+          >
             Salvar janela
           </Button>
         </CardContent>

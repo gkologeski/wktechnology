@@ -10022,6 +10022,135 @@
         "src/lib/integrations/import-schedule/schedule.ts": "61486a8fc0b5420df439475f4eab2e00e208833f481683a56555917cc203ffd3",
         "src/integrations/supabase/cron-auth.ts": "18430aa4c7faff5b44c572a8a4dfa6482daa52acbea09f384b872f087e58e738"
       }
+    },
+    {
+      "id": "unipile-personal-account-foundation",
+      "kind": "business",
+      "resources": ["system.linkedin"],
+      "actions": ["view", "manage"],
+      "scopes": ["own", "workspace"],
+      "permission_keys": [
+        "system.linkedin.view.own",
+        "system.linkedin.view.workspace",
+        "system.linkedin.manage.own",
+        "system.linkedin.manage.workspace"
+      ],
+      "rationale": "Account lifecycle and observability require effective LinkedIn keys plus active context, authenticated owner and workspace. Restrictive RLS intersects legacy owner policies. Redirects never select the latest provider account. No broad grants or automatic sharing. Provider confirmation flow remains pending until secure correlation is implemented.",
+      "controls": [
+        {
+          "file": "src/lib/unipile/account-access.middleware.ts",
+          "symbol": "requireLinkedinPermission"
+        },
+        {
+          "file": "src/lib/unipile/account-access.ts",
+          "symbol": "linkedinAccountAccess"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/unipile/account-access.ts",
+          "symbol": "hasLinkedinPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0336_unipile_personal_account_access.sql",
+          "symbol": "unipile_personal_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/unipile/account-access.test.ts",
+          "name": "allows an authorized active owner"
+        },
+        "missing_permission": {
+          "file": "src/lib/unipile/account-access.test.ts",
+          "name": "rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/unipile/account-access.test.ts",
+          "name": "rejects effective explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/unipile/account-access.test.ts",
+          "name": "rejects a foreign actor"
+        },
+        "inactive_member": {
+          "file": "src/lib/unipile/account-access.test.ts",
+          "name": "rejects inactive membership without active context"
+        }
+      },
+      "files": {
+        "src/lib/unipile/account-access.ts": "c24d6357961ace7b03581f8b3540063af51628dfadef7c5e0afefa0e6f72bb3b",
+        "src/lib/unipile/account-access.middleware.ts": "f65f23e465e067d362b9fe3dbb0f93ea71373e2e98363cc5da974b7b6cf95435",
+        "src/lib/unipile/accounts.functions.ts": "3966c168f85460c49a3e84cb0f4ac1270d33c56629adc40b9ea81ceee593490f",
+        "src/lib/unipile/observability.functions.ts": "f25729ed291091deda701dff1c63c72375287a969d05d9c349c77150fc43e734",
+        "src/routes/_authenticated/settings.integrations.linkedin.tsx": "addd8acaaff5306bff79c977073fb92896c8ecb8063ba6374c4ab58edaa73e14",
+        "drizzle/migrations/0336_unipile_personal_account_access.sql": "913c4152f56b75f19a547e0fde7b1342443fff24fd5dee2ff46aecf67489f5bf"
+      }
+    },
+    {
+      "id": "unipile-v2-signed-webhook",
+      "kind": "public",
+      "resources": ["system.linkedin"],
+      "actions": ["manage"],
+      "scopes": ["own"],
+      "permission_keys": [],
+      "rationale": "V2 callback verifies timestamp.rawBody with endpoint secret before parsing. Five-minute age tolerance; invalid V2 cannot downgrade. Legacy HMAC remains for existing endpoint compatibility. Callback never grants user access. Event deduplication is tracked in the next package.",
+      "controls": [
+        {
+          "file": "src/lib/unipile/webhook-signature.server.ts",
+          "symbol": "verifyUnipileSignature"
+        },
+        {
+          "file": "src/lib/unipile/webhook-signature.server.ts",
+          "symbol": "unipileSignatureDigest"
+        },
+        {
+          "file": "src/routes/api/public/unipile/webhook.ts",
+          "symbol": "verifySignature"
+        }
+      ],
+      "database": [
+        {
+          "file": "supabase/migrations/20260630192157_9935be66-baf6-4852-b07c-529567712eb8.sql",
+          "symbol": "unipile_accounts"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/unipile/webhook-signature.test.ts",
+          "name": "accepts a valid timestamped provider signature"
+        },
+        "missing_permission": {
+          "file": "src/lib/unipile/webhook-signature.test.ts",
+          "name": "rejects a missing provider signature"
+        },
+        "explicit_deny": {
+          "file": "src/lib/unipile/webhook-signature.test.ts",
+          "name": "rejects a modified raw body"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/unipile/webhook-signature.test.ts",
+          "name": "rejects another endpoint secret"
+        },
+        "inactive_member": {
+          "file": "src/lib/unipile/webhook-signature.test.ts",
+          "name": "rejects expired and future signatures"
+        }
+      },
+      "exception": {
+        "mechanism": "Endpoint-specific HMAC-SHA256 over timestamp and exact raw body; no anonymous credential or user session.",
+        "boundary": "Unipile callback only; local account mapping is provider-specific and cannot expand membership.",
+        "revocation": "Rotate or remove UNIPILE_WEBHOOK_SECRET and disable webhook at provider.",
+        "review_by": "2027-02-12"
+      },
+      "files": {
+        "src/lib/unipile/webhook-signature.server.ts": "00179df612bd1e48a0969bb7f656732412b0df7cbc01002ee007c504816d607c",
+        "src/routes/api/public/unipile/webhook.ts": "fa8155f120ac1507a58ff8c60bbb2fea03bb88c8d0c42cbc535fb189b4bbb00e"
+      }
     }
   ],
   "retired": {

@@ -8,9 +8,10 @@ import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getAppUrl } from "@/lib/app-url";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { requireLinkedinPermission } from "./account-access.middleware";
 
 export const getLinkedinAccount = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, requireLinkedinPermission("view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -20,6 +21,7 @@ export const getLinkedinAccount = createServerFn({ method: "GET" })
         "id, status, unipile_account_id, display_name, connected_at, last_seen_at, daily_window, last_error",
       )
       .eq("workspace_id", workspaceId)
+      .eq("owner_id", userId)
       .eq("provider", "linkedin")
       .order("created_at", { ascending: false })
       .limit(1)
@@ -28,7 +30,7 @@ export const getLinkedinAccount = createServerFn({ method: "GET" })
   });
 
 export const getRateUsage = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, requireLinkedinPermission("view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -36,6 +38,7 @@ export const getRateUsage = createServerFn({ method: "GET" })
       .from("unipile_accounts")
       .select("id")
       .eq("workspace_id", workspaceId)
+      .eq("owner_id", userId)
       .eq("provider", "linkedin")
       .order("created_at", { ascending: false })
       .limit(1)
@@ -66,7 +69,7 @@ const CREDENTIAL_MESSAGE: Record<string, string> = {
  * Testa as credenciais da API v2 sem expor a chave.
  */
 export const checkUnipileCredentials = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, requireLinkedinPermission("manage")])
   .handler(async () => {
     const { verifyApiKey } = await import("@/lib/unipile/client.server");
     const result = await verifyApiKey();
@@ -84,7 +87,7 @@ export const checkUnipileCredentials = createServerFn({ method: "POST" })
  * Inicia o fluxo Hosted Auth: cria registro pending + retorna URL para o usuário.
  */
 export const startLinkedinConnect = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, requireLinkedinPermission("manage")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -100,6 +103,7 @@ export const startLinkedinConnect = createServerFn({ method: "POST" })
       .from("unipile_accounts")
       .select("id")
       .eq("workspace_id", workspaceId)
+      .eq("owner_id", userId)
       .eq("provider", "linkedin")
       .order("created_at", { ascending: false })
       .limit(1)
@@ -141,7 +145,7 @@ export const startLinkedinConnect = createServerFn({ method: "POST" })
   });
 
 export const disconnectLinkedinAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, requireLinkedinPermission("manage")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -149,6 +153,7 @@ export const disconnectLinkedinAccount = createServerFn({ method: "POST" })
       .from("unipile_accounts")
       .update({ status: "disconnected", unipile_account_id: null })
       .eq("workspace_id", workspaceId)
+      .eq("owner_id", userId)
       .eq("provider", "linkedin");
     return { ok: true };
   });
@@ -158,13 +163,12 @@ export const disconnectLinkedinAccount = createServerFn({ method: "POST" })
  *
  * v1: o webhook pode não ter chegado ainda; procuramos na API Unipile uma conta
  * cujo `name` bate com o `connect_token` salvo.
- * v2: o hosted auth não aceita mais `name` nem `notify_url`, então o
- * `connect_token` volta como `state` na URL de retorno. Validamos esse `state`
- * contra o token salvo e adotamos a conta LinkedIn mais recente de
- * `GET /v2/accounts`.
+ * A URL de retorno não comprova o account_id. A confirmação deve chegar
+ * pelo callback autenticado do provedor, correlacionado ao token da conexão.
+ * Nunca adota uma conta da listagem global da integradora.
  */
 export const reconcileLinkedinAccount = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, requireLinkedinPermission("manage")])
   .inputValidator((i: unknown) =>
     z
       .object({ state: z.string().trim().min(1).max(128).optional() })
@@ -178,52 +182,30 @@ export const reconcileLinkedinAccount = createServerFn({ method: "POST" })
       .from("unipile_accounts")
       .select("id, status, connect_token, unipile_account_id")
       .eq("workspace_id", workspaceId)
+      .eq("owner_id", userId)
       .eq("provider", "linkedin")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (!row) return { ok: false, reason: "no_account" };
+    if (data.state && data.state !== row.connect_token) {
+      return { ok: false, reason: "state_mismatch" };
+    }
     if (row.status === "connected" && row.unipile_account_id) {
       return { ok: true, already: true };
     }
 
-    const { listUnipileAccounts } = await import("@/lib/unipile/client.server");
-
-    // Na v2 o `state` é a única correlação disponível: se veio e não bate com o
-    // token emitido por nós, não adotamos nenhuma conta.
-    if (data.state && data.state !== row.connect_token) {
+    // A redirect state is not proof of which provider account was authenticated.
+    // Only the authenticated provider callback may bind the exact account id.
+    // Never adopt the latest account from the integrator's shared tenant.
+    if (!data.state || data.state !== row.connect_token) {
       return { ok: false, reason: "state_mismatch" };
     }
-
-    const listed = await listUnipileAccounts(50);
-    if (!listed.ok) return { ok: false, reason: listed.reason };
-
-    let match: (typeof listed.items)[number] | undefined;
-    {
-      match = listed.items
-        .filter((a) => a.provider.includes("LINKEDIN"))
-        .sort((a, b) => String(b.created_at ?? "").localeCompare(String(a.created_at ?? "")))[0];
-    }
-    if (!match?.id) return { ok: false, reason: "no_match" };
-
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const nowIso = new Date().toISOString();
-    await supabaseAdmin
-      .from("unipile_accounts")
-      .update({
-        status: "connected",
-        unipile_account_id: match.id,
-        connected_at: nowIso,
-        last_seen_at: nowIso,
-        last_error: null,
-        display_name: match.name,
-      })
-      .eq("id", row.id);
-    return { ok: true, account_id: match.id };
+    return { ok: false, reason: "provider_confirmation_pending" };
   });
 
 export const updateDailyWindow = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, requireLinkedinPermission("manage")])
   .inputValidator((d: { tz?: string; start_hour: number; end_hour: number }) =>
     z
       .object({
@@ -243,6 +225,7 @@ export const updateDailyWindow = createServerFn({ method: "POST" })
       .from("unipile_accounts")
       .update({ daily_window: data })
       .eq("workspace_id", workspaceId)
+      .eq("owner_id", userId)
       .eq("provider", "linkedin");
     return { ok: true };
   });

@@ -11,6 +11,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { createHmac, timingSafeEqual } from "crypto";
+import { verifyUnipileSignature } from "@/lib/unipile/webhook-signature.server";
 
 const SIGNATURE_HEADERS = ["x-unipile-signature", "x-webhook-signature", "x-signature"];
 
@@ -49,7 +50,13 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
         const signature =
           SIGNATURE_HEADERS.map((h) => request.headers.get(h)).find((v) => !!v) ?? null;
 
-        if (!verifySignature(body, signature, secret)) {
+        const v2Signature = request.headers.get("unipile-signature");
+        // An invalid V2 header must never downgrade to the legacy verifier.
+        const verified =
+          v2Signature !== null
+            ? verifyUnipileSignature(body, v2Signature, secret)
+            : verifySignature(body, signature, secret);
+        if (!verified) {
           return new Response("Invalid signature", { status: 401 });
         }
 

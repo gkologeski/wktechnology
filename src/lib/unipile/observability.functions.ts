@@ -3,6 +3,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { requireLinkedinPermission } from "./account-access.middleware";
 
 export type UnipileEndpointKey =
   | "profile.fetch"
@@ -63,7 +64,7 @@ export interface ObservabilityAggregate {
 }
 
 export const getObservability = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, requireLinkedinPermission("view")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
@@ -74,6 +75,7 @@ export const getObservability = createServerFn({ method: "GET" })
         "id, status, display_name, unipile_account_id, daily_window, last_seen_at, last_error",
       )
       .eq("workspace_id", workspaceId)
+      .eq("owner_id", userId)
       .eq("provider", "linkedin")
       .order("created_at", { ascending: false })
       .limit(1)

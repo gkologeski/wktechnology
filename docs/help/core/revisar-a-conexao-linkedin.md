@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/linkedin
 min_permission: system.linkedin.view.workspace
 audience: internal
 sort_order: 135
-version: 2
+version: 3
 is_published: true
 ---
 # Revisar a conexão LinkedIn
@@ -23,13 +23,15 @@ is_published: true
 
 ## Passo a passo
 1. Abra Configurações > LinkedIn (Unipile).
-2. Confira as contas conectadas.
+2. Confira sua própria conta no workspace ativo; contas de outros usuários não são selecionadas automaticamente.
 3. Revise Fuso horário, Início, Fim e Uso de hoje.
 
 ## Resultado esperado
 A tela apresenta o resultado da consulta ou da ação descrita. Confira a confirmação e o estado exibidos; uma configuração gravada não prova execução no provedor externo.
 
 ## Regras e limites
+Conectar, desconectar e alterar a janela exigem leitura e gerenciamento de LinkedIn. O retorno da autenticação não comprova sucesso: a conta só é confirmada após validação segura. Nunca selecione uma conta da listagem global por ser a mais recente.
+
 Os limites exibidos dependem da conta e do provedor; conexão não autoriza envio irrestrito nem substitui consentimento.
 
 ## Erros comuns
