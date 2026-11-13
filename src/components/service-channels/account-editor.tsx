@@ -161,7 +161,9 @@ export function AccountEditor({
               <Switch checked={inbound} onCheckedChange={setInbound} />
               Receptivo
             </Label>
-            {(account.channel === "whatsapp" || account.channel === "email") && (
+            {(account.channel === "whatsapp" ||
+              account.channel === "email" ||
+              account.channel === "linkedin") && (
               <Label className="flex items-center gap-2">
                 <Switch checked={campaigns} onCheckedChange={setCampaigns} />
                 {campaignsLabel(account.channel)}

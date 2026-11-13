@@ -2826,8 +2826,8 @@
         "src/lib/prospecting/sdr/channel-access.server.ts": "a23a8c47439c6f10cf0a30dae2253b53af3a894e3238c7099381a0465594a95a",
         "src/routes/_authenticated/settings.channels.tsx": "8d3488a913ba928ebc9d4566bdda496eca06466b4ae6f719b89894450eed47ad",
         "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c",
-        "src/components/service-channels/account-editor.tsx": "a4bf631320faddfeac35c5805701d81d0a029b0b31c2a9e0d34092bdd90d7933",
-        "src/components/service-channels/agent-channels.tsx": "97abf189efffa02a15a536b7e9aef0a8cf3bc97d85f88c95915d7e916cdb8a41",
+        "src/components/service-channels/account-editor.tsx": "764f57a1a88016fea296bfea6f06e41daef53a7a319b0e8ad45bd3024721e97d",
+        "src/components/service-channels/agent-channels.tsx": "8d215220c3106b917eece339c7f5f7c249be7a48cb97405eef8b8c9a99262c23",
         "src/components/prospecting/sdr-agent-config.tsx": "64f19b23f0ca7a055a122dbf148e1fe872458b8e718345a819f28714f8350846",
         "drizzle/migrations/0330_service_channel_accounts_archived.sql": "be2054401430cc9808dc43d50eca171f31f0a22c063ddf495a73747b2606f3e7"
       }

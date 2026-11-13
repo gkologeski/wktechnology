@@ -36,8 +36,8 @@ export function AgentChannels({ agentId }: { agentId: string }) {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Escolha uma ou mais contas de WhatsApp, e-mail ou chat. Cada conta tem sua identidade e seus
-        modos de atendimento.
+        Escolha uma ou mais contas de WhatsApp, e-mail, chat ou sua conta pessoal do LinkedIn. Cada
+        conta tem sua identidade e seus modos de atendimento.
       </p>
       {data.accounts.map((account) => {
         const binding = data.bindings.find((b) => b.account_id === account.id);
