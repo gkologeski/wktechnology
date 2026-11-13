@@ -1,5 +1,5 @@
 // Quadro "Público" + mapeamento de variáveis da nova campanha de WhatsApp.
-import { useMemo } from "react";
+import { useMemo, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -209,7 +209,16 @@ export function CampaignAudiencePanel({
   manualCount,
   readOnly = false,
   variableGroups,
+  channel = "whatsapp",
+  recentSlot,
+  previewOverride,
 }: {
+  /** "calls": Campanha de Ligação — só Leads, sem regras exclusivas do WhatsApp. */
+  channel?: "whatsapp" | "calls";
+  /** Substitui a regra de envio recente do WhatsApp (ex.: regra das ligações). */
+  recentSlot?: ReactNode;
+  /** Prévia própria do canal; `key` muda quando o público ou as regras mudam. */
+  previewOverride?: { key: string; enabled: boolean; fn: () => Promise<unknown> };
   readOnly?: boolean;
   /** Um quadro por modelo do rodízio; cada um com as próprias chaves de variável. */
   variableGroups?: VariableGroup[];
@@ -228,7 +237,10 @@ export function CampaignAudiencePanel({
   const filterFields = useAudienceFilterFields();
   const queuesQ = useQuery({ queryKey: ["wa-camp-queues"], queryFn: () => queuesFn() });
   const segmentsQ = useQuery({ queryKey: ["wa-camp-segments"], queryFn: () => segmentsFn() });
-  const queues = (queuesQ.data ?? []) as QueueRow[];
+  const isCalls = channel === "calls";
+  const queues = ((queuesQ.data ?? []) as QueueRow[]).filter(
+    (q) => !isCalls || q.entity === "lead",
+  );
   const segments = ((segmentsQ.data?.segments ?? []) as SegmentRow[]).filter(
     (s) => s.entity === value.base,
   );
@@ -253,11 +265,20 @@ export function CampaignAudiencePanel({
     }),
     500,
   );
-  const previewQ = useQuery({
+  const overrideKey = useDebouncedValue(previewOverride?.key ?? "", 500);
+  const waPreviewQ = useQuery({
     queryKey: ["wa-camp-preview", debounced],
-    enabled: !!payload && !!(JSON.parse(debounced) as { audience?: unknown }).audience,
+    enabled:
+      !previewOverride && !!payload && !!(JSON.parse(debounced) as { audience?: unknown }).audience,
     queryFn: () => previewFn({ data: JSON.parse(debounced) }),
   });
+  const callPreviewQ = useQuery({
+    queryKey: ["call-camp-preview", overrideKey],
+    enabled: !!previewOverride?.enabled && overrideKey === previewOverride.key,
+    queryFn: () => previewOverride!.fn(),
+  });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const previewQ = (previewOverride ? callPreviewQ : waPreviewQ) as typeof waPreviewQ;
 
   const set = (patch: Partial<AudienceState>) => onChange({ ...value, ...patch });
   const setVar = (k: string, patch: Partial<{ field: string; fallback: string }>) =>
@@ -283,6 +304,8 @@ export function CampaignAudiencePanel({
           },
         ];
   const p = previewQ.data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cp: any = previewQ.data;
 
   return (
     <div className="min-w-0 space-y-4">
@@ -362,11 +385,13 @@ export function CampaignAudiencePanel({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {(Object.keys(BASE_LABEL) as AudienceBase[]).map((b) => (
-                        <SelectItem key={b} value={b}>
-                          {BASE_LABEL[b]}
-                        </SelectItem>
-                      ))}
+                      {(Object.keys(BASE_LABEL) as AudienceBase[])
+                        .filter((b) => !isCalls || b === "leads")
+                        .map((b) => (
+                          <SelectItem key={b} value={b}>
+                            {BASE_LABEL[b]}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -442,36 +467,46 @@ export function CampaignAudiencePanel({
 
             <TabsContent value="manual" className="space-y-1">
               <label htmlFor="aud-manual" className="text-xs text-muted-foreground">
-                Destinatários (um por linha: telefone,var1,var2,...)
+                {isCalls
+                  ? "Telefones de Leads já cadastrados (um por linha)"
+                  : "Destinatários (um por linha: telefone,var1,var2,...)"}
               </label>
               <Textarea
                 id="aud-manual"
                 rows={5}
                 value={manualRaw}
                 onChange={(e) => onManualRaw(e.target.value)}
-                placeholder={"+5511999999999,João,14h\n+5511888888888,Maria,16h"}
+                placeholder={
+                  isCalls
+                    ? "+5511999999999\n+5511888888888"
+                    : "+5511999999999,João,14h\n+5511888888888,Maria,16h"
+                }
               />
-              <p className="text-xs text-muted-foreground">{manualCount} destinatário(s)</p>
+              <p className="text-xs text-muted-foreground">
+                {manualCount} {isCalls ? "telefone(s)" : "destinatário(s)"}
+              </p>
             </TabsContent>
           </Tabs>
 
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            <label htmlFor="aud-recent-days" className="text-muted-foreground">
-              Não enviar para quem recebeu WhatsApp de outra campanha nos últimos
-            </label>
-            <Input
-              id="aud-recent-days"
-              type="number"
-              min={0}
-              max={365}
-              className="h-8 w-20"
-              value={value.recentDays}
-              onChange={(e) =>
-                set({ recentDays: Math.max(0, Math.min(365, Number(e.target.value) || 0)) })
-              }
-            />
-            <span className="text-muted-foreground">dias (0 desliga)</span>
-          </div>
+          {recentSlot ?? (
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <label htmlFor="aud-recent-days" className="text-muted-foreground">
+                Não enviar para quem recebeu WhatsApp de outra campanha nos últimos
+              </label>
+              <Input
+                id="aud-recent-days"
+                type="number"
+                min={0}
+                max={365}
+                className="h-8 w-20"
+                value={value.recentDays}
+                onChange={(e) =>
+                  set({ recentDays: Math.max(0, Math.min(365, Number(e.target.value) || 0)) })
+                }
+              />
+              <span className="text-muted-foreground">dias (0 desliga)</span>
+            </div>
+          )}
 
           <div className="flex flex-wrap items-center gap-4 text-xs">
             <label htmlFor="aud-excl-customers" className="flex items-center gap-2">
@@ -482,7 +517,8 @@ export function CampaignAudiencePanel({
                 checked={value.excludeCustomers}
                 onChange={(e) => set({ excludeCustomers: e.target.checked })}
               />
-              Não enviar a quem já é cliente (negócio ganho ou contrato ativo)
+              {isCalls ? "Não ligar para" : "Não enviar a"} quem já é cliente (negócio ganho ou
+              contrato ativo)
             </label>
             <label htmlFor="aud-excl-open" className="flex items-center gap-2">
               <input
@@ -492,11 +528,11 @@ export function CampaignAudiencePanel({
                 checked={value.excludeOpenDeals}
                 onChange={(e) => set({ excludeOpenDeals: e.target.checked })}
               />
-              Não enviar a quem está em negociação aberta
+              {isCalls ? "Não ligar para" : "Não enviar a"} quem está em negociação aberta
             </label>
           </div>
 
-          {payload && (
+          {(previewOverride ? previewOverride.enabled : !!payload) && (
             <div className="rounded-md bg-muted/50 p-2 text-xs" aria-live="polite">
               {previewQ.isLoading || previewQ.isFetching ? (
                 <span className="text-muted-foreground">Calculando público…</span>
@@ -504,6 +540,77 @@ export function CampaignAudiencePanel({
                 <span className="text-destructive">
                   {(previewQ.error as Error).message || "Não foi possível calcular o público."}
                 </span>
+              ) : cp && isCalls ? (
+                <div className="space-y-1">
+                  <div>
+                    <strong>{cp.included}</strong> lead(s) incluídos de {cp.found} registro(s)
+                    {cp.truncated ? " (acima do limite de 5.000)" : ""}.
+                  </div>
+                  <div className="text-muted-foreground">
+                    Fora: {cp.excluded.no_phone} sem telefone
+                    {cp.notFound ? ` · ${cp.notFound} telefone(s) sem Lead cadastrado` : ""} ·{" "}
+                    {cp.recentRemovedCount} por contato recente
+                    {cp.recentOverriddenCount > 0
+                      ? ` (${cp.recentOverriddenCount} liberado(s))`
+                      : ""}{" "}
+                    · {cp.commercialRemovedCount} cliente ou em negociação
+                    {cp.commercialOverriddenCount > 0
+                      ? ` (${cp.commercialOverriddenCount} liberado(s))`
+                      : ""}
+                  </div>
+                  {(
+                    [
+                      ["recent", cp.recentRemoved, "recentOverrides", "por contato recente"],
+                      [
+                        "commercial",
+                        cp.commercialRemoved,
+                        "commercialOverrides",
+                        "por ser cliente ou estar em negociação",
+                      ],
+                    ] as const
+                  ).map(([k, list, field, why]) =>
+                    list.length > 0 || value[field].length > 0 ? (
+                      <details key={k} className="pt-1">
+                        <summary className="cursor-pointer font-medium">
+                          {list.length} lead(s) retirado(s) {why}
+                        </summary>
+                        <ul className="mt-1 max-h-48 space-y-1 overflow-auto">
+                          {value[field].map((ph: string) => (
+                            <li key={`${k}-ov-${ph}`} className="flex items-center gap-2">
+                              <input
+                                id={`${k}-ov-${ph}`}
+                                type="checkbox"
+                                checked
+                                disabled={readOnly}
+                                onChange={() =>
+                                  set({ [field]: value[field].filter((x: string) => x !== ph) })
+                                }
+                              />
+                              <label htmlFor={`${k}-ov-${ph}`}>{ph} — liberado manualmente</label>
+                            </li>
+                          ))}
+                          {list.map((r: { label: string; phone: string; reason: string }) => (
+                            <li key={`${k}-${r.phone}`} className="flex items-center gap-2">
+                              <input
+                                id={`${k}-${r.phone}`}
+                                type="checkbox"
+                                checked={false}
+                                disabled={readOnly}
+                                onChange={() => set({ [field]: [...value[field], r.phone] })}
+                              />
+                              <label htmlFor={`${k}-${r.phone}`}>
+                                {r.label || r.phone} · {r.phone} — {r.reason}
+                              </label>
+                            </li>
+                          ))}
+                        </ul>
+                        <p className="mt-1 text-muted-foreground">
+                          Marque para incluir mesmo assim.
+                        </p>
+                      </details>
+                    ) : null,
+                  )}
+                </div>
               ) : p ? (
                 <div className="space-y-1">
                   <div>

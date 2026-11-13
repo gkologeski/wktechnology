@@ -26,6 +26,7 @@ import {
   listCampaignAttempts,
   setCampaignStatus,
   auditCampaignQueueability,
+  previewCallAudience,
   type Campaign,
   type Variant,
   type Attempt,
@@ -33,6 +34,13 @@ import {
 } from "@/lib/prospecting-campaigns.functions";
 import type { AudienceRule } from "@/lib/prospecting-audience.functions";
 import { HubspotListBuilder } from "@/components/prospecting/list-builder";
+import {
+  CampaignAudiencePanel,
+  EMPTY_AUDIENCE,
+  hydrateAudienceConfig,
+  type AudienceState,
+} from "@/components/whatsapp/campaign-audience-panel";
+import { hasCallAudience, parseManualPhones } from "@/lib/prospecting/calls/call-audience";
 import { CampaignCallFollowup } from "@/components/prospecting/campaign-call-followup";
 import { listScripts, type ProspectingScript } from "@/lib/prospecting-scripts.functions";
 
@@ -52,6 +60,7 @@ function CampaignDetailPage() {
   const statusFn = useServerFn(setCampaignStatus);
   const scriptsFn = useServerFn(listScripts);
   const auditFn = useServerFn(auditCampaignQueueability);
+  const previewFn = useServerFn(previewCallAudience);
 
   const [campaign, setCampaign] = useState<Campaign | null>(null);
   const [variants, setVariants] = useState<VariantForm[]>([]);
@@ -61,6 +70,12 @@ function CampaignDetailPage() {
   const [audienceRules, setAudienceRules] = useState<AudienceRule[]>([]);
   const [audit, setAudit] = useState<LeadAudit[]>([]);
   const [step, setStep] = useState(0);
+  const [callAudience, setCallAudience] = useState<AudienceState>({
+    ...EMPTY_AUDIENCE,
+    base: "leads",
+  });
+  const [manualRaw, setManualRaw] = useState("");
+  const [useNewAudience, setUseNewAudience] = useState(true);
   const [busy, setBusy] = useState(false);
 
   const refresh = async () => {
@@ -74,6 +89,14 @@ function CampaignDetailPage() {
       })),
     );
     const rawRules = (out.campaign.audience_rules ?? []) as AudienceRule[];
+    const stored = hydrateAudienceConfig(out.campaign.audience_config);
+    if (stored) {
+      setCallAudience({ ...stored.state, base: "leads" });
+      setManualRaw(stored.manualRaw);
+    }
+    setUseNewAudience(
+      !!stored || (rawRules.length === 0 && (out.campaign.lead_ids?.length ?? 0) === 0),
+    );
     setAudienceMode(out.campaign.audience_mode ?? "static");
     // Compat: se não há regras mas existem lead_ids legados, mostra como bloco manual.
     if (rawRules.length === 0 && (out.campaign.lead_ids?.length ?? 0) > 0) {
@@ -114,8 +137,24 @@ function CampaignDetailPage() {
 
   if (!campaign) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
 
+  const callAudienceConfig = {
+    state: {
+      mode: callAudience.mode,
+      queueId: callAudience.queueId,
+      base: "leads" as const,
+      groups: callAudience.groups as unknown[],
+      groupsLogic: callAudience.groupsLogic,
+      recentOverrides: callAudience.recentOverrides,
+      excludeCustomers: callAudience.excludeCustomers,
+      excludeOpenDeals: callAudience.excludeOpenDeals,
+      commercialOverrides: callAudience.commercialOverrides,
+    },
+    manualRaw: callAudience.mode === "manual" ? manualRaw : "",
+  };
   const checklist = callCampaignChecklist({
-    hasAudience: audit.length > 0 || audienceRules.length > 0,
+    hasAudience: useNewAudience
+      ? hasCallAudience(callAudienceConfig)
+      : audit.length > 0 || audienceRules.length > 0,
     variants,
     weighted: campaign.assignment_mode === "weighted",
     days: campaign.dialing_window.days,
@@ -154,6 +193,7 @@ function CampaignDetailPage() {
           audience_rules: audienceRules,
           recent_contact_days: campaign.recent_contact_days ?? 7,
           recent_contact_scope: campaign.recent_contact_scope ?? "calls",
+          audience_config: useNewAudience ? callAudienceConfig : null,
         },
       });
       toast.success("Salvo");
@@ -214,68 +254,166 @@ function CampaignDetailPage() {
                 onChange={(e) => setCampaign({ ...campaign, name: e.target.value })}
               />
             </div>
-            <div>
-              <Label>Público da campanha</Label>
-              <p className="text-xs text-muted-foreground mt-1 mb-2">
-                Combine filtros em diferentes entidades para gerar a lista de leads. Em modo
-                dinâmico, a lista é recalculada toda vez que a campanha é iniciada.
-              </p>
-              <HubspotListBuilder
-                mode={audienceMode}
-                rules={audienceRules}
-                onChange={setAudienceRules}
-                onModeChange={setAudienceMode}
+            {useNewAudience ? (
+              <CampaignAudiencePanel
+                channel="calls"
+                value={callAudience}
+                onChange={setCallAudience}
+                variableCount={0}
+                manualRaw={manualRaw}
+                onManualRaw={setManualRaw}
+                manualCount={parseManualPhones(manualRaw).length}
+                recentSlot={
+                  <div className="space-y-1 text-xs">
+                    <div className="flex flex-wrap items-center gap-2 text-sm">
+                      <Label htmlFor="recent-scope" className="text-muted-foreground">
+                        Desconsiderar
+                      </Label>
+                      <Select
+                        value={campaign.recent_contact_scope ?? "calls"}
+                        onValueChange={(v) =>
+                          setCampaign({
+                            ...campaign,
+                            recent_contact_scope: v as "calls" | "calls_whatsapp",
+                          })
+                        }
+                      >
+                        <SelectTrigger id="recent-scope" className="w-auto min-w-64">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="calls">
+                            ligações realizadas de outra campanha
+                          </SelectItem>
+                          <SelectItem value="calls_whatsapp">
+                            ligações e mensagens de WhatsApp realizadas de outra campanha
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Label htmlFor="recent-days" className="text-muted-foreground">
+                        em até
+                      </Label>
+                      <Input
+                        id="recent-days"
+                        type="number"
+                        min={0}
+                        max={365}
+                        className="w-20"
+                        value={campaign.recent_contact_days ?? 7}
+                        onChange={(e) =>
+                          setCampaign({
+                            ...campaign,
+                            recent_contact_days: Math.max(
+                              0,
+                              Math.min(365, Number(e.target.value) || 0),
+                            ),
+                          })
+                        }
+                      />
+                      <span className="text-muted-foreground">dias</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Use 0 para desligar. Quem se encaixa fica fora da fila ao iniciar e aparece
+                      com o motivo na revisão.
+                    </p>
+                  </div>
+                }
+                previewOverride={{
+                  key: JSON.stringify([
+                    callAudienceConfig,
+                    campaign.recent_contact_days ?? 7,
+                    campaign.recent_contact_scope ?? "calls",
+                  ]),
+                  enabled: hasCallAudience(callAudienceConfig),
+                  fn: () =>
+                    previewFn({
+                      data: {
+                        campaign_id: campaign.id,
+                        audience_config: callAudienceConfig,
+                        recent_contact_days: campaign.recent_contact_days ?? 7,
+                        recent_contact_scope: campaign.recent_contact_scope ?? "calls",
+                      },
+                    }),
+                }}
               />
-            </div>
-            <div className="rounded-md border p-3 space-y-2">
-              <div className="text-sm font-medium">Regras de exclusão</div>
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <Label htmlFor="recent-scope" className="text-muted-foreground">
-                  Desconsiderar
-                </Label>
-                <Select
-                  value={campaign.recent_contact_scope ?? "calls"}
-                  onValueChange={(v) =>
-                    setCampaign({
-                      ...campaign,
-                      recent_contact_scope: v as "calls" | "calls_whatsapp",
-                    })
-                  }
-                >
-                  <SelectTrigger id="recent-scope" className="w-auto min-w-64">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="calls">ligações realizadas de outra campanha</SelectItem>
-                    <SelectItem value="calls_whatsapp">
-                      ligações e mensagens de WhatsApp realizadas de outra campanha
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <Label htmlFor="recent-days" className="text-muted-foreground">
-                  em até
-                </Label>
-                <Input
-                  id="recent-days"
-                  type="number"
-                  min={0}
-                  max={365}
-                  className="w-20"
-                  value={campaign.recent_contact_days ?? 7}
-                  onChange={(e) =>
-                    setCampaign({
-                      ...campaign,
-                      recent_contact_days: Math.max(0, Math.min(365, Number(e.target.value) || 0)),
-                    })
-                  }
-                />
-                <span className="text-muted-foreground">dias</span>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-xs">
+                  <span className="flex-1">
+                    Esta campanha usa o montador de público anterior. Troque para o mesmo quadro das
+                    campanhas de WhatsApp; o público antigo deixa de valer ao salvar.
+                  </span>
+                  <Button size="sm" variant="outline" onClick={() => setUseNewAudience(true)}>
+                    Usar o novo quadro
+                  </Button>
+                </div>
+                <div>
+                  <Label>Público da campanha</Label>
+                  <p className="text-xs text-muted-foreground mt-1 mb-2">
+                    Combine filtros em diferentes entidades para gerar a lista de leads. Em modo
+                    dinâmico, a lista é recalculada toda vez que a campanha é iniciada.
+                  </p>
+                  <HubspotListBuilder
+                    mode={audienceMode}
+                    rules={audienceRules}
+                    onChange={setAudienceRules}
+                    onModeChange={setAudienceMode}
+                  />
+                </div>
+                <div className="rounded-md border p-3 space-y-2">
+                  <div className="text-sm font-medium">Regras de exclusão</div>
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
+                    <Label htmlFor="recent-scope" className="text-muted-foreground">
+                      Desconsiderar
+                    </Label>
+                    <Select
+                      value={campaign.recent_contact_scope ?? "calls"}
+                      onValueChange={(v) =>
+                        setCampaign({
+                          ...campaign,
+                          recent_contact_scope: v as "calls" | "calls_whatsapp",
+                        })
+                      }
+                    >
+                      <SelectTrigger id="recent-scope" className="w-auto min-w-64">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="calls">ligações realizadas de outra campanha</SelectItem>
+                        <SelectItem value="calls_whatsapp">
+                          ligações e mensagens de WhatsApp realizadas de outra campanha
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Label htmlFor="recent-days" className="text-muted-foreground">
+                      em até
+                    </Label>
+                    <Input
+                      id="recent-days"
+                      type="number"
+                      min={0}
+                      max={365}
+                      className="w-20"
+                      value={campaign.recent_contact_days ?? 7}
+                      onChange={(e) =>
+                        setCampaign({
+                          ...campaign,
+                          recent_contact_days: Math.max(
+                            0,
+                            Math.min(365, Number(e.target.value) || 0),
+                          ),
+                        })
+                      }
+                    />
+                    <span className="text-muted-foreground">dias</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Use 0 para desligar. Quem se encaixa fica fora da fila ao iniciar e aparece com
+                    o motivo na revisão.
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Use 0 para desligar. Quem se encaixa fica fora da fila ao iniciar e aparece com o
-                motivo na revisão.
-              </p>
-            </div>
+            )}
           </CardContent>
         </Card>
       )}

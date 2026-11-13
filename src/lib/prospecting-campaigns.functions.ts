@@ -12,6 +12,7 @@ import {
 } from "@/lib/prospecting-audience.functions";
 import { isRetriableEndedReason } from "@/lib/prospecting-ended-reason";
 import { normalizeRecentContact } from "@/lib/prospecting/calls/recent-contact";
+import type { CallAudienceConfig } from "@/lib/prospecting/calls/call-audience";
 
 // Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,6 +44,7 @@ export type Campaign = {
   followup_answered_text?: string | null;
   recent_contact_days?: number;
   recent_contact_scope?: "calls" | "calls_whatsapp";
+  audience_config?: JsonValue | null;
 };
 
 export type Variant = {
@@ -77,6 +79,21 @@ export type Attempt = {
 type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } | JsonValue[];
 
 const ACTIVE_ATTEMPT_STATUSES = ["queued", "ringing", "in_progress"];
+
+const CallAudienceConfigSchema = z.object({
+  state: z.object({
+    mode: z.enum(["queue", "filter", "manual"]),
+    queueId: z.string().max(64).default(""),
+    base: z.enum(["leads", "contacts"]).default("leads"),
+    groups: z.array(z.unknown()).max(10).default([]),
+    groupsLogic: z.enum(["and", "or"]).default("or"),
+    recentOverrides: z.array(z.string().max(32)).max(5000).default([]),
+    excludeCustomers: z.boolean().default(true),
+    excludeOpenDeals: z.boolean().default(true),
+    commercialOverrides: z.array(z.string().max(32)).max(5000).default([]),
+  }),
+  manualRaw: z.string().max(200_000).default(""),
+});
 
 const CampaignInput = z.object({
   id: z.string().uuid().nullable().optional(),
@@ -114,6 +131,7 @@ const CampaignInput = z.object({
   audience_rules: AudienceRulesSchema.default([]),
   recent_contact_days: z.number().int().min(0).max(365).default(7),
   recent_contact_scope: z.enum(["calls", "calls_whatsapp"]).default("calls"),
+  audience_config: CallAudienceConfigSchema.nullable().optional(),
 });
 
 export const listCampaigns = createServerFn({ method: "POST" })
@@ -175,6 +193,18 @@ export const upsertCampaign = createServerFn({ method: "POST" })
     } else if (data.audience_mode === "dynamic") {
       resolvedLeadIds = [];
     }
+    if (data.audience_config) {
+      const { resolveCallAudience } = await import("@/lib/prospecting/calls/call-audience.server");
+      const r = await resolveCallAudience(
+        sb,
+        ws,
+        context.userId,
+        data.id ?? null,
+        data.audience_config,
+        normalizeRecentContact(data),
+      );
+      resolvedLeadIds = r.leadIds;
+    }
 
     const payload = {
       workspace_id: ws,
@@ -191,6 +221,13 @@ export const upsertCampaign = createServerFn({ method: "POST" })
       audience_rules: data.audience_rules,
       recent_contact_days: data.recent_contact_days,
       recent_contact_scope: data.recent_contact_scope,
+      ...(data.audience_config
+        ? {
+            audience_config: data.audience_config as never,
+            audience_mode: "static",
+            audience_rules: [],
+          }
+        : {}),
     };
 
     let id: string;
@@ -279,7 +316,9 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
 
       const { data: c } = await sb
         .from("prospecting_campaigns")
-        .select("lead_ids, max_attempts, audience_mode, audience_rules, recent_contact_days, recent_contact_scope")
+        .select(
+          "lead_ids, max_attempts, audience_mode, audience_rules, recent_contact_days, recent_contact_scope, audience_config",
+        )
         .eq("id", data.id)
         .eq("workspace_id", ws)
         .single();
@@ -290,6 +329,24 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
         const rules = (c?.audience_rules ?? []) as AudienceRule[];
         const resolved = await resolveAudienceServer(ws, rules, context.supabase);
         leadIds = resolved.lead_ids;
+      }
+      const callCfg = (c as { audience_config?: unknown } | null)?.audience_config as
+        | CallAudienceConfig
+        | null
+        | undefined;
+      if (callCfg) {
+        const { resolveCallAudience } =
+          await import("@/lib/prospecting/calls/call-audience.server");
+        leadIds = (
+          await resolveCallAudience(
+            sb,
+            ws,
+            context.userId,
+            data.id,
+            callCfg,
+            normalizeRecentContact(c ?? {}),
+          )
+        ).leadIds;
       }
       if (leadIds.length) {
         const { data: visibleLeads, error: leadError } = await sb
@@ -322,15 +379,14 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
             lastAttempt: Math.max(prev.lastAttempt, x.attempt_number ?? 0),
           });
         }
-        const { findRecentlyContacted } = await import(
-          "@/lib/prospecting/calls/recent-contact.server"
-        );
+        const { findRecentlyContacted } =
+          await import("@/lib/prospecting/calls/recent-contact.server");
         const recent = await findRecentlyContacted(
           sb,
           ws,
           data.id,
           (visibleLeads ?? []) as Array<{ id: string; phone: string | null }>,
-          normalizeRecentContact(c ?? {}),
+          callCfg ? { days: 0, scope: "calls" } : normalizeRecentContact(c ?? {}),
         );
         const rows = leadIds
           .filter((lid) => {
@@ -369,6 +425,32 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const previewCallAudience = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
+  .inputValidator((i) =>
+    z
+      .object({
+        campaign_id: z.string().uuid().nullable(),
+        audience_config: CallAudienceConfigSchema,
+        recent_contact_days: z.number().int().min(0).max(365).default(7),
+        recent_contact_scope: z.enum(["calls", "calls_whatsapp"]).default("calls"),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { resolveCallAudience } = await import("@/lib/prospecting/calls/call-audience.server");
+    const r = await resolveCallAudience(
+      context.supabase,
+      ws,
+      context.userId,
+      data.campaign_id,
+      data.audience_config,
+      normalizeRecentContact(data),
+    );
+    return r.preview;
+  });
+
 export const listCampaignAttempts = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
   .inputValidator((i) => z.object({ campaign_id: z.string().uuid() }).parse(i))
@@ -404,7 +486,9 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: c } = await sb
       .from("prospecting_campaigns")
-      .select("lead_ids, max_attempts, audience_mode, audience_rules, recent_contact_days, recent_contact_scope")
+      .select(
+        "lead_ids, max_attempts, audience_mode, audience_rules, recent_contact_days, recent_contact_scope, audience_config",
+      )
       .eq("id", data.campaign_id)
       .eq("workspace_id", ws)
       .single();
@@ -416,6 +500,23 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
       const rules = (c.audience_rules ?? []) as AudienceRule[];
       const resolved = await resolveAudienceServer(ws, rules, context.supabase);
       leadIds = resolved.lead_ids;
+    }
+    const callCfg = (c as { audience_config?: unknown }).audience_config as
+      | CallAudienceConfig
+      | null
+      | undefined;
+    if (callCfg) {
+      const { resolveCallAudience } = await import("@/lib/prospecting/calls/call-audience.server");
+      leadIds = (
+        await resolveCallAudience(
+          sb,
+          ws,
+          context.userId,
+          data.campaign_id,
+          callCfg,
+          normalizeRecentContact(c),
+        )
+      ).leadIds;
     }
     if (!leadIds.length) return [];
 
@@ -483,7 +584,7 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
       ws,
       data.campaign_id,
       [...leadMap.entries()].map(([id, v]) => ({ id, phone: v.phone })),
-      normalizeRecentContact(c),
+      callCfg ? { days: 0, scope: "calls" } : normalizeRecentContact(c),
     );
 
     return leadIds.map<LeadAudit>((lid) => {

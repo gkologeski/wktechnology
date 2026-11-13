@@ -19,17 +19,22 @@ export async function findRecentlyContacted(
   // Defesa em profundidade: quem consulta precisa ver campanhas.
   await assertSalesArea(sb, "techsales.marketing.campaigns", "view");
   const ids = leads.map((l) => l.id);
-  for (let i = 0; i < ids.length; i += 500) {
+  // Uma consulta pela janela inteira (ligações de outras campanhas são poucas),
+  // em vez de centenas de ids por lote.
+  const want = new Set(ids);
+  for (let from = 0; ; from += 1000) {
     const { data, error } = await sb
       .from("prospecting_call_attempts")
       .select("lead_id")
       .eq("workspace_id", ws)
       .neq("campaign_id", campaignId)
       .gte("created_at", since)
-      .in("lead_id", ids.slice(i, i + 500));
+      .not("lead_id", "is", null)
+      .range(from, from + 999);
     if (error) throw new Error(error.message);
     for (const r of (data ?? []) as Array<{ lead_id: string | null }>)
-      if (r.lead_id) out.set(r.lead_id, recentReason("call", cfg.days));
+      if (r.lead_id && want.has(r.lead_id)) out.set(r.lead_id, recentReason("call", cfg.days));
+    if ((data ?? []).length < 1000) break;
   }
   if (cfg.scope !== "calls_whatsapp") return out;
   const phoneToLead = new Map<string, string>();
@@ -38,19 +43,20 @@ export async function findRecentlyContacted(
     for (const v of brPhoneVariants(l.phone)) phoneToLead.set(v, l.id);
   }
   const phones = [...phoneToLead.keys()];
-  for (let i = 0; i < phones.length; i += 500) {
+  for (let from = 0; phones.length > 0; from += 1000) {
     const { data, error } = await sb
       .from("whatsapp_campaign_recipients")
       .select("phone")
       .eq("workspace_id", ws)
       .eq("status", "sent")
       .gte("sent_at", since)
-      .in("phone", phones.slice(i, i + 500));
+      .range(from, from + 999);
     if (error) throw new Error(error.message);
     for (const r of (data ?? []) as Array<{ phone: string }>) {
       const lid = phoneToLead.get(r.phone);
       if (lid && !out.has(lid)) out.set(lid, recentReason("whatsapp", cfg.days));
     }
+    if ((data ?? []).length < 1000) break;
   }
   return out;
 }

@@ -22370,6 +22370,7 @@ export type Database = {
         Row: {
           assigned_to: string | null
           assignment_mode: Database["public"]["Enums"]["prospecting_assignment_mode"]
+          audience_config: Json | null
           audience_mode: string
           audience_rules: Json
           created_at: string
@@ -22397,6 +22398,7 @@ export type Database = {
         Insert: {
           assigned_to?: string | null
           assignment_mode?: Database["public"]["Enums"]["prospecting_assignment_mode"]
+          audience_config?: Json | null
           audience_mode?: string
           audience_rules?: Json
           created_at?: string
@@ -22424,6 +22426,7 @@ export type Database = {
         Update: {
           assigned_to?: string | null
           assignment_mode?: Database["public"]["Enums"]["prospecting_assignment_mode"]
+          audience_config?: Json | null
           audience_mode?: string
           audience_rules?: Json
           created_at?: string

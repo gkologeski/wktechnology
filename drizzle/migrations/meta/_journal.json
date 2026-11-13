@@ -2353,6 +2353,13 @@
       "when": 1794527309648,
       "tag": "0335_call_campaign_recent_contact",
       "breakpoints": true
+    },
+    {
+      "idx": 336,
+      "version": "7",
+      "when": 1794528319042,
+      "tag": "0336_call_campaign_audience_config",
+      "breakpoints": true
     }
   ]
 }
