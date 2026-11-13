@@ -201,7 +201,11 @@
       }
     },
     {
-      "resources": ["system.automation.macros", "system.communication.subscription_types"],
+      "resources": [
+        "system.automation.macros",
+        "system.communication.subscription_types",
+        "system.linkedin"
+      ],
       "actions": ["view", "create", "update", "delete", "manage", "export"],
       "scopes": ["own", "team", "workspace"],
       "permission_keys": [
@@ -220,9 +224,11 @@
         "system.communication.subscription_types.create.workspace",
         "system.communication.subscription_types.delete.workspace",
         "system.communication.subscription_types.update.workspace",
-        "system.communication.subscription_types.view.workspace"
+        "system.communication.subscription_types.view.workspace",
+        "system.linkedin.view.own",
+        "system.linkedin.view.workspace"
       ],
-      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 05/11/2026: header gains the Help '?' button (HelpButton), which only reads help articles through help.functions (help-center contract); no access change to existing routes. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect.",
+      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 05/11/2026: header gains the Help '?' button (HelpButton), which only reads help articles through help.functions (help-center contract); no access change to existing routes. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. Personal LinkedIn has a specific route mapping; integration-administrator grants cannot replace its own view permission.",
       "database": [
         {
           "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
@@ -270,7 +276,7 @@
         "review_by": "2027-01-25"
       },
       "files": {
-        "src/lib/access-control/sales-route-map.ts": "3c8ba90aa7cdc4dad683325a06f85c55398a1ae2e4400ecd41865575ba583fac",
+        "src/lib/access-control/sales-route-map.ts": "2c186ca11fcde96a9d6f0b41a6175a6d1f1ef8038d298b180cc63ea07dbdeb98",
         "src/routes/_authenticated/settings.tsx": "89b93cbb5d5612b607b4b3b5489a3eca747b3e0beb639f021a52a198545ec321",
         "src/routes/_authenticated.tsx": "7a8c57f0ef160cc66068271b9fec9cd8129b36b2895978317c59885dad3fa296",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
@@ -2510,9 +2516,9 @@
     {
       "id": "service-channel-navigation-labels",
       "kind": "presentation",
-      "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect.",
+      "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. LinkedIn navigation accepts personal view as well as workspace view; server and RLS remain independently enforced.",
       "files": {
-        "src/lib/menu-config.ts": "d33bc02ded17a8e96e82b67b394f69865cd7be4af951dbba1cc14dd56ed1a20d",
+        "src/lib/menu-config.ts": "e4d2038f12963812650ade92d6a7081756a552c7c662b7c5f31c3ec81c995171",
         "src/lib/menu-resources.ts": "437e81c840128700b7c68277e43fed796c0e563503727c0db479b2ad97f0ca79"
       }
     },
@@ -10040,14 +10046,17 @@
     {
       "id": "unipile-personal-account-foundation",
       "kind": "business",
-      "resources": ["system.linkedin"],
+      "resources": ["system.linkedin", "techhire.candidates"],
       "actions": ["view", "manage"],
-      "scopes": ["own", "workspace"],
+      "scopes": ["own", "workspace", "team"],
       "permission_keys": [
         "system.linkedin.view.own",
         "system.linkedin.view.workspace",
         "system.linkedin.manage.own",
-        "system.linkedin.manage.workspace"
+        "system.linkedin.manage.workspace",
+        "techhire.candidates.view.own",
+        "techhire.candidates.view.team",
+        "techhire.candidates.view.workspace"
       ],
       "rationale": "Personal LinkedIn lifecycle requires effective keys, active actor and workspace. Hosted Auth uses an exact scope and one-use expiring state; service-only SQL finalizes after rechecking membership. Atomic attempt reservation applies across operations and counts failures. No automatic account sharing or grants.",
       "controls": [
@@ -10102,6 +10111,10 @@
         {
           "file": "src/lib/unipile/retry-policy.ts",
           "symbol": "isDeferredReason"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
         }
       ],
       "database": [
@@ -10140,6 +10153,10 @@
         {
           "file": "drizzle/migrations/0341_unipile_log_access.sql",
           "symbol": "unipile_message_log_personal_read"
+        },
+        {
+          "file": "drizzle/migrations/0193_hr_action_scope_alignment.sql",
+          "symbol": "hr_record_access"
         }
       ],
       "tests": {
@@ -10183,7 +10200,9 @@
         "drizzle/migrations/0340_unipile_delivery_receipts.sql": "780b1ae0a70e05f35ba5e94f4621afe573725283ac55dfe8ea62fc5d663e827e",
         "src/lib/ats/sourcing-sequences-worker.server.ts": "df5bd21875be131e95efff3b663c4d6b5800556eb0ba3d0ab2d6e169e844e8c0",
         "drizzle/migrations/0341_unipile_log_access.sql": "546f3633ee6d629b61cee60cf19f6db7aec2518f787824c4346c58974b032b14",
-        "src/lib/unipile/retry-policy.ts": "d2152e77ba691dbed093f15f06bfa1e28c57721b1f40adb189a9600cd8f461e7"
+        "src/lib/unipile/retry-policy.ts": "d2152e77ba691dbed093f15f06bfa1e28c57721b1f40adb189a9600cd8f461e7",
+        "src/lib/unipile/candidate-outreach.server.ts": "d57fa4d0f484d2055749be63c6d1607154c81914303b26b40734767e605aa359",
+        "src/lib/unipile/messaging.functions.ts": "ec00535223d229749b29af190def1d656a831bed05de05ce48d2635a21c1f66c"
       }
     },
     {

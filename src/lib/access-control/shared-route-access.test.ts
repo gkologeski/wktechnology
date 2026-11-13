@@ -24,3 +24,35 @@ describe("shared areas follow the permission matrix", () => {
     ]);
   });
 });
+
+it("personal LinkedIn URL uses its own resource rather than integration administration", () => {
+  expect(salesRouteResources("/settings/integrations/linkedin")).toEqual(["system.linkedin"]);
+  expect(
+    canViewSalesRoute(
+      "/settings/integrations/linkedin",
+      new Set(["system.linkedin.view.own"]),
+      true,
+    ),
+  ).toBe(true);
+  expect(
+    canViewSalesRoute(
+      "/settings/integrations/linkedin",
+      new Set(["system.integrations.view.workspace"]),
+      true,
+    ),
+  ).toBe(false);
+  expect(
+    canViewSalesRoute(
+      "/settings/integrations/linkedin",
+      new Set(["system.linkedin.manage.own"]),
+      true,
+    ),
+  ).toBe(false);
+  expect(
+    canViewSalesRoute(
+      "/settings/integrations/linkedin",
+      new Set(["system.linkedin.view.own"]),
+      false,
+    ),
+  ).toBe(false);
+});

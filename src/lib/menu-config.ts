@@ -719,7 +719,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         label: "LinkedIn (Unipile)",
         icon: Linkedin,
         need: "admin",
-        permissionAny: adminAny("system.linkedin"),
+        permissionAny: ["system.linkedin.view.own", "system.linkedin.view.workspace"],
       },
       {
         to: "/settings/integrations/hubspot",

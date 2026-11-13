@@ -22,6 +22,7 @@ const routes: Record<string, readonly string[]> = {
   "/settings/custom-properties": ["system.custom_properties"],
   "/settings/access-policy": ["system.settings"],
   "/settings/data-residency": ["system.settings"],
+  "/settings/integrations/linkedin": ["system.linkedin"],
   "/settings/integrations/ai": ["system.ai_settings"],
   "/settings/ai-panel": ["system.ai_settings"],
   "/dashboard": ["techsales.dashboard"],
