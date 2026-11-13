@@ -28659,6 +28659,7 @@ export type Database = {
       }
       unipile_accounts: {
         Row: {
+          account_scope_id: string | null
           connect_token: string | null
           connected_at: string | null
           created_at: string
@@ -28667,7 +28668,10 @@ export type Database = {
           id: string
           last_error: string | null
           last_seen_at: string | null
+          next_outbound_at: string | null
+          operation_policy: Json
           owner_id: string
+          paused_until: string | null
           provider: string
           status: string
           unipile_account_id: string | null
@@ -28675,6 +28679,7 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          account_scope_id?: string | null
           connect_token?: string | null
           connected_at?: string | null
           created_at?: string
@@ -28683,7 +28688,10 @@ export type Database = {
           id?: string
           last_error?: string | null
           last_seen_at?: string | null
+          next_outbound_at?: string | null
+          operation_policy?: Json
           owner_id: string
+          paused_until?: string | null
           provider?: string
           status?: string
           unipile_account_id?: string | null
@@ -28691,6 +28699,7 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          account_scope_id?: string | null
           connect_token?: string | null
           connected_at?: string | null
           created_at?: string
@@ -28699,7 +28708,10 @@ export type Database = {
           id?: string
           last_error?: string | null
           last_seen_at?: string | null
+          next_outbound_at?: string | null
+          operation_policy?: Json
           owner_id?: string
+          paused_until?: string | null
           provider?: string
           status?: string
           unipile_account_id?: string | null
@@ -28707,6 +28719,161 @@ export type Database = {
           workspace_id?: string | null
         }
         Relationships: []
+      }
+      unipile_attempts: {
+        Row: {
+          account_id: string
+          created_at: string
+          endpoint: string
+          id: string
+          noted: boolean
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          noted?: boolean
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          noted?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unipile_attempts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "unipile_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unipile_auth_flows: {
+        Row: {
+          consumed_at: string | null
+          created_at: string
+          expected_account_id: string | null
+          expires_at: string
+          id: string
+          owner_id: string
+          scope_id: string | null
+          state_hash: string
+          workspace_id: string
+        }
+        Insert: {
+          consumed_at?: string | null
+          created_at?: string
+          expected_account_id?: string | null
+          expires_at: string
+          id?: string
+          owner_id: string
+          scope_id?: string | null
+          state_hash: string
+          workspace_id: string
+        }
+        Update: {
+          consumed_at?: string | null
+          created_at?: string
+          expected_account_id?: string | null
+          expires_at?: string
+          id?: string
+          owner_id?: string
+          scope_id?: string | null
+          state_hash?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unipile_auth_flows_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unipile_delivery_receipts: {
+        Row: {
+          account_id: string
+          created_at: string
+          id: string
+          lease_token: string
+          request_key: string
+          response: Json | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          id?: string
+          lease_token?: string
+          request_key: string
+          response?: Json | null
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          id?: string
+          lease_token?: string
+          request_key?: string
+          response?: Json | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unipile_delivery_receipts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "unipile_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unipile_inbound_messages: {
+        Row: {
+          account_id: string
+          body: string | null
+          chat_id: string
+          created_at: string
+          id: string
+          provider_message_id: string
+          sender_id: string
+        }
+        Insert: {
+          account_id: string
+          body?: string | null
+          chat_id: string
+          created_at?: string
+          id?: string
+          provider_message_id: string
+          sender_id: string
+        }
+        Update: {
+          account_id?: string
+          body?: string | null
+          chat_id?: string
+          created_at?: string
+          id?: string
+          provider_message_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "unipile_inbound_messages_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "unipile_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       unipile_message_log: {
         Row: {
@@ -36551,10 +36718,71 @@ export type Database = {
         Returns: Json
       }
       try_iso_date: { Args: { p: string }; Returns: string }
+      unipile_connect_complete: {
+        Args: {
+          p_account_id: string
+          p_flow: string
+          p_name: string
+          p_scope_id: string
+          p_state_hash: string
+        }
+        Returns: string
+      }
+      unipile_connect_start: {
+        Args: {
+          p_expected_account: string
+          p_owner: string
+          p_scope: string
+          p_state_hash: string
+          p_workspace: string
+        }
+        Returns: string
+      }
+      unipile_delivery_begin: {
+        Args: {
+          p_account: string
+          p_daily: number
+          p_endpoint: string
+          p_interval: number
+          p_key: string
+          p_noted?: boolean
+        }
+        Returns: Json
+      }
+      unipile_delivery_finish: {
+        Args: {
+          p_id: string
+          p_response?: Json
+          p_status: string
+          p_token: string
+        }
+        Returns: undefined
+      }
       unipile_personal_access: {
         Args: { a: string; c: Json; o: string; w: string }
         Returns: boolean
       }
+      unipile_receive_message: {
+        Args: {
+          p_account: string
+          p_body: string
+          p_chat: string
+          p_message: string
+          p_sender: string
+        }
+        Returns: Json
+      }
+      unipile_request_reserve: {
+        Args: {
+          p_account: string
+          p_daily: number
+          p_endpoint: string
+          p_interval: number
+          p_noted?: boolean
+        }
+        Returns: Json
+      }
+      unipile_usage_snapshot: { Args: { p_account: string }; Returns: Json }
       user_can_act: {
         Args: {
           _action: string
