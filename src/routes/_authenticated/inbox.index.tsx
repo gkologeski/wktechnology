@@ -17,7 +17,10 @@ import {
   ExternalLink,
   Sparkles,
   MessagesSquare,
+  Phone,
 } from "lucide-react";
+import { CallInboxCard } from "@/components/inbox/call-inbox-card";
+import { useCallAttemptCard } from "@/hooks/use-call-attempt-card";
 import { sendGmailEmail } from "@/lib/email-send.functions";
 import { sendWhatsAppMessage } from "@/lib/whatsapp.functions";
 import { SendWhatsAppDialog } from "@/components/whatsapp/send-whatsapp-dialog";
@@ -63,7 +66,7 @@ export const Route = createFileRoute("/_authenticated/inbox/")({
 
 type Item = {
   id: string;
-  channel: "email" | "whatsapp" | "chat";
+  channel: "email" | "whatsapp" | "chat" | "call";
   conversationId: string;
   title: string;
   snippet: string;
@@ -78,7 +81,7 @@ type Item = {
 
 function UnifiedInboxPage() {
   const permissions = usePermissions();
-  const [channel, setChannel] = useState<"all" | "email" | "whatsapp" | "chat">("all");
+  const [channel, setChannel] = useState<"all" | "email" | "whatsapp" | "chat" | "call">("all");
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -124,6 +127,21 @@ function UnifiedInboxPage() {
             contactId: r.contact_id,
             leadId: r.lead_id,
             subject: "",
+          };
+        if (r.channel === "call")
+          return {
+            id: `call:${r.id}`,
+            conversationId: r.id,
+            channel: "call" as const,
+            title: person ?? r.phone ?? "Ligação",
+            snippet: r.snippet ?? "",
+            contactLabel: person ?? r.phone ?? "Ligação",
+            lastAt: r.last_message_at,
+            href: r.contact_id ? `/contacts/${r.contact_id}` : `/leads/${r.lead_id}`,
+            replyTo: r.phone,
+            contactId: r.contact_id,
+            leadId: r.lead_id,
+            subject: "Ligação",
           };
         return {
           id: `chat:${r.id}`,
@@ -184,7 +202,7 @@ function UnifiedInboxPage() {
               contactId: current?.contactId ?? null,
               to: current?.replyTo ?? null,
             },
-    enabled: !!current,
+    enabled: !!current && current.channel !== "call",
     value: { body_text: draft, subject: current?.subject ?? "" },
     onRestore: (d) => setDraft(d.body_text),
   });
@@ -200,6 +218,7 @@ function UnifiedInboxPage() {
   const reply = useMutation({
     mutationFn: async () => {
       if (!current) throw new Error("Selecione um item.");
+      if (current.channel === "call") throw new Error("Ligações não aceitam resposta por aqui.");
       if (current.channel === "email") {
         if (!current.replyTo)
           throw new Error("Não foi possível identificar o destinatário do e-mail.");
@@ -291,7 +310,8 @@ function UnifiedInboxPage() {
                 variant={channel === "all" ? "default" : "outline"}
                 onClick={() => setChannel("all")}
               >
-                Todos{counts ? ` (${counts.email + counts.whatsapp + counts.chat})` : ""}
+                Todos
+                {counts ? ` (${counts.email + counts.whatsapp + counts.chat + counts.call})` : ""}
               </Button>
               <Button
                 size="sm"
@@ -314,6 +334,13 @@ function UnifiedInboxPage() {
                 onClick={() => setChannel("chat")}
               >
                 <MessagesSquare className="mr-1 h-4 w-4" /> Chat{counts ? ` (${counts.chat})` : ""}
+              </Button>
+              <Button
+                size="sm"
+                variant={channel === "call" ? "default" : "outline"}
+                onClick={() => setChannel("call")}
+              >
+                <Phone className="mr-1 h-4 w-4" /> Ligações{counts ? ` (${counts.call})` : ""}
               </Button>
             </div>
           </InboxListHeader>
@@ -344,6 +371,8 @@ function UnifiedInboxPage() {
                       channelIcon={
                         it.channel === "email" ? (
                           <Mail className="h-3 w-3 text-primary" />
+                        ) : it.channel === "call" ? (
+                          <Phone className="h-3 w-3 text-primary" />
                         ) : it.channel === "chat" ? (
                           <MessagesSquare className="h-3 w-3 text-primary" />
                         ) : (
@@ -393,24 +422,32 @@ function UnifiedInboxPage() {
               <InboxConversationHeader
                 photoUrl={photoOf({ contact_id: current.contactId, lead_id: current.leadId })}
                 label={current.contactLabel}
-                subtitle={`${current.channel === "email" ? "Email" : current.channel === "whatsapp" ? "WhatsApp" : "Chat ao vivo"}${current.replyTo ? ` · ${current.replyTo}` : ""}`}
+                subtitle={`${current.channel === "email" ? "Email" : current.channel === "whatsapp" ? "WhatsApp" : current.channel === "call" ? "Ligação" : "Chat ao vivo"}${current.replyTo ? ` · ${current.replyTo}` : ""}`}
                 actions={
                   <Button asChild size="sm" variant="outline">
                     <Link to={current.href}>
-                      Abrir no canal <ExternalLink className="ml-1 h-3.5 w-3.5" />
+                      {current.channel === "call" ? "Abrir ficha" : "Abrir no canal"}{" "}
+                      <ExternalLink className="ml-1 h-3.5 w-3.5" />
                     </Link>
                   </Button>
                 }
               />
               <div className="min-h-0 flex-1 overflow-y-auto bg-product-panel-muted px-6 py-8">
-                <InboxMessageBubble outbound={false} when={current.lastAt}>
-                  <p className="text-sm font-medium text-foreground">{current.title}</p>
-                  {current.snippet && current.snippet !== current.title ? (
-                    <p className="mt-1 text-sm text-text-secondary">{current.snippet}</p>
-                  ) : null}
-                </InboxMessageBubble>
+                {current.channel === "call" ? (
+                  <CallAttemptPanel attemptId={current.conversationId} when={current.lastAt} />
+                ) : (
+                  <InboxMessageBubble outbound={false} when={current.lastAt}>
+                    <p className="text-sm font-medium text-foreground">{current.title}</p>
+                    {current.snippet && current.snippet !== current.title ? (
+                      <p className="mt-1 text-sm text-text-secondary">{current.snippet}</p>
+                    ) : null}
+                  </InboxMessageBubble>
+                )}
               </div>
-              <div className="m-4 space-y-2 rounded-[calc(var(--radius)+1rem)] bg-product-panel-muted p-2 ring-1 ring-border-subtle focus-within:ring-2 focus-within:ring-ring">
+              <div
+                hidden={current.channel === "call"}
+                className="m-4 space-y-2 rounded-[calc(var(--radius)+1rem)] bg-product-panel-muted p-2 ring-1 ring-border-subtle focus-within:ring-2 focus-within:ring-ring"
+              >
                 {current.channel === "whatsapp" && (
                   <SendWhatsAppDialog
                     conversationId={current.id}
@@ -542,11 +579,21 @@ function UnifiedInboxPage() {
             <div className="space-y-3 border-t border-border pt-4 text-sm">
               <div>
                 <p className="text-xs text-muted-foreground">Canal</p>
-                <p className="mt-1 font-medium capitalize">{current.channel}</p>
+                <p className="mt-1 font-medium">
+                  {
+                    {
+                      email: "E-mail",
+                      whatsapp: "WhatsApp",
+                      chat: "Chat ao vivo",
+                      call: "Ligação",
+                    }[current.channel]
+                  }
+                </p>
               </div>
               <Button asChild className="w-full" variant="outline">
                 <Link to={current.href}>
-                  Abrir conversa <ExternalLink className="ml-2 h-3.5 w-3.5" />
+                  {current.channel === "call" ? "Abrir ficha" : "Abrir conversa"}{" "}
+                  <ExternalLink className="ml-2 h-3.5 w-3.5" />
                 </Link>
               </Button>
             </div>
@@ -564,4 +611,15 @@ function useDebounced<T>(value: T, ms: number): T {
     return () => clearTimeout(t);
   }, [value, ms]);
   return v;
+}
+
+function CallAttemptPanel({ attemptId, when }: { attemptId: string; when: string | null }) {
+  const q = useCallAttemptCard(attemptId);
+  if (q.isPending) return <InboxLoading />;
+  if (q.isError || !q.data) return <InboxError onRetry={() => void q.refetch()} />;
+  return (
+    <InboxMessageBubble outbound when={when}>
+      <CallInboxCard body={q.data.body} recordingUrl={q.data.recordingUrl} />
+    </InboxMessageBubble>
+  );
 }

@@ -1,6 +1,6 @@
 // Contrato da RPC `get_inbox_unified_page` (migrações 0095/0096): paginação global
 // por (sort_at, origem, id), busca/filtros e contagens exatas no servidor, sob RLS.
-export type InboxChannel = "email" | "whatsapp" | "chat";
+export type InboxChannel = "email" | "whatsapp" | "chat" | "call";
 export type InboxChannelFilter = "all" | InboxChannel;
 
 export type InboxCursor = { at: string; src: number; id: string };
@@ -30,7 +30,7 @@ export type InboxPage = {
   nextCursor: InboxCursor | null;
 };
 
-const CHANNELS: InboxChannel[] = ["email", "whatsapp", "chat"];
+const CHANNELS: InboxChannel[] = ["email", "whatsapp", "chat", "call"];
 
 function str(v: unknown): string | null {
   return typeof v === "string" ? v : null;
@@ -67,6 +67,7 @@ export function parseInboxPage(raw: unknown): InboxPage {
     email: Number(c.email) || 0,
     whatsapp: Number(c.whatsapp) || 0,
     chat: Number(c.chat) || 0,
+    call: Number(c.call) || 0,
   };
   const nc = r.next_cursor as Record<string, unknown> | null | undefined;
   const nextCursor =

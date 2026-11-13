@@ -2273,7 +2273,7 @@
       "files": {
         "src/lib/whatsapp.functions.ts": "1134b8ac720de7dcd2dfb45acfbbcc23d3c55351755afad874ec9fb80ce87aac",
         "src/lib/whatsapp-campaigns.functions.ts": "4c0c8ef6eeb82931166481bb7a8d53e48238f941c9e762171a65e81aad06eed8",
-        "src/routes/_authenticated/inbox.index.tsx": "6871432118a6bd8ef6477bf0ca6ef3bd14a00e7fbec3beef7bb955f610daee80",
+        "src/routes/_authenticated/inbox.index.tsx": "5544e6ee7a6602cd80bc4869ba0e5743b7203fcdc256b710d5d181dd85e7b7b6",
         "src/routes/_authenticated/inbox.whatsapp.tsx": "0dcbc7da3afdb6c7bce32228335bc62fa611f966c458e0ff642dd6cebecf95f1",
         "src/routes/_authenticated/campaigns.whatsapp.tsx": "c6eae748917f5de80b79433c10fa21aaacc17fa7f172e8a46589aa907dd148be",
         "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9",
@@ -11699,6 +11699,92 @@
       "rationale": "Pure parsing of a caller-provided personal LinkedIn URL into a bounded identifier. No fetch, state, credential access or permission creation. Actual lookups remain protected by own account and sequence boundaries.",
       "files": {
         "src/lib/unipile/profile-address.ts": "d4d977b6ef2491a626c0d47fc3f0908f1d2997e8c761dfbf6fa44091c485818e"
+      }
+    },
+    {
+      "id": "inbox-unified-calls",
+      "kind": "business",
+      "resources": [
+        "techsales.inbox.email",
+        "techsales.inbox.whatsapp",
+        "techsales.inbox.chat",
+        "techsales.contacts",
+        "techsales.leads",
+        "techsales.marketing.campaigns",
+        "techsales.prospecting_voice"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.inbox.email.view.own",
+        "techsales.inbox.email.view.team",
+        "techsales.inbox.email.view.workspace",
+        "techsales.inbox.whatsapp.view.own",
+        "techsales.inbox.whatsapp.view.team",
+        "techsales.inbox.whatsapp.view.workspace",
+        "techsales.inbox.chat.view.own",
+        "techsales.inbox.chat.view.team",
+        "techsales.inbox.chat.view.workspace",
+        "techsales.marketing.campaigns.view.own",
+        "techsales.marketing.campaigns.view.team",
+        "techsales.marketing.campaigns.view.workspace",
+        "techsales.prospecting_voice.view.own",
+        "techsales.prospecting_voice.view.team",
+        "techsales.prospecting_voice.view.workspace"
+      ],
+      "rationale": "LIGACOES-INBOX-UNIFICADA: invoker RPC adds voice call attempts as a read-only channel under existing prospecting_call_attempts RLS (sales_view / sales_standalone_call_view); the call card reads the attempt with the user client (RLS). No new grants, roles, keys or bypass; no reply action for calls.",
+      "controls": [
+        {
+          "file": "drizzle/migrations/0352_inbox_unified_calls.sql",
+          "symbol": "get_inbox_unified_page"
+        },
+        {
+          "file": "src/lib/inbox/unified-page.ts",
+          "symbol": "str"
+        },
+        {
+          "file": "src/lib/prospecting/calls/call-inbox.ts",
+          "symbol": "buildCallInboxBody"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0352_inbox_unified_calls.sql",
+          "symbol": "get_inbox_unified_page"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "inbox SQL permits authorized member with protected identity grants"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "inbox SQL denies missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "inbox SQL respects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "inbox SQL isolates foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "inbox SQL rejects inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0352_inbox_unified_calls.sql": "046f0007784116da64a89f621811c55dcbaa1cbd2759682373fdfe287410e3e9",
+        "src/hooks/use-call-attempt-card.ts": "dc6a0f45b0b8d6acb114f4384d3a32cd9ceae5f8b49b408c1e748f2af87dd8dd",
+        "src/lib/inbox/unified-page.ts": "d39c8a5645a5349d660c74ceb695b293c421ee091998d3a80b61cb5d5087c118"
       }
     }
   ],

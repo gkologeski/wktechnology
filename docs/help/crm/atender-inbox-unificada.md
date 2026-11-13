@@ -2,13 +2,13 @@
 module_key: crm
 slug: atender-inbox-unificada
 title: Atender pela Inbox unificada
-summary: Localizar conversas de e-mail, WhatsApp e chat e responder pela Inbox.
+summary: Localizar conversas de e-mail, WhatsApp, chat e ligações e responder pela Inbox.
 article_type: howto
 route_pattern: /inbox
 min_permission:
 audience: internal
 sort_order: 300
-version: 2
+version: 3
 is_published: true
 ---
 # Atender pela Inbox unificada
@@ -27,6 +27,12 @@ is_published: true
 
 ## Resultado esperado
 A resposta sai pelo canal da conversa.
+
+## Ligações
+1. Clique em "Ligações" para ver as ligações do agente de voz.
+2. Selecione uma ligação para ver situação, duração, roteiro, reunião marcada, resumo, áudio e "Ver transcrição completa".
+3. Ligação não tem resposta por aqui; clique em "Abrir ficha" para seguir pelo Lead ou Contato.
+- Só aparecem ligações que você já pode ver nas Campanhas de Ligação.
 
 ## Regras e limites
 - A lista mostra um resumo; o histórico completo fica no canal.
