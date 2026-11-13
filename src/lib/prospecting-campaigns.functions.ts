@@ -428,7 +428,10 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.marketing.campaigns", "manage")])
   .inputValidator((i) =>
     z
-      .object({ id: z.string().uuid(), status: z.enum(["draft", "running", "paused", "done", "canceled"]) })
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["draft", "running", "paused", "done", "canceled"]),
+      })
       .parse(i),
   )
   .handler(async ({ data, context }) => {

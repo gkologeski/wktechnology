@@ -461,7 +461,11 @@ export async function checkHostCalendar(
   return { ok: true, provider: acc.provider };
 }
 
-export async function googleToken(admin: Admin, accountId: string, workspaceId: string): Promise<string> {
+export async function googleToken(
+  admin: Admin,
+  accountId: string,
+  workspaceId: string,
+): Promise<string> {
   const { data: acc, error } = await admin
     .from("calendar_accounts")
     .select("id, access_token, refresh_token, expires_at, workspace_id")

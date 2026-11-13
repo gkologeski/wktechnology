@@ -3276,7 +3276,7 @@
       "files": {
         "src/lib/prospecting/sdr/service-worker.server.ts": "fc896342af96bb4ec6e8b47d9cb56982da686f5ee1da6b491e92d4dccb81e75d",
         "src/lib/prospecting/sdr/service-transports.server.ts": "a2f25e8155f2d2829ffcd1fd883ba813e071ba13c79cb617a1991c700a18b2f3",
-        "src/lib/prospecting/sdr/tools/store.server.ts": "7c1a98053ee9fdf0d7e4ee042e609ed69ed1da3d42ff2956666c4b01648ec502",
+        "src/lib/prospecting/sdr/tools/store.server.ts": "8f82fe6c4ad9bce7537eb64321abb3408b369359250b5a33bee03f28b20c3028",
         "drizzle/migrations/0258_service_agent_queue.sql": "1df35e4858d14e524b4056925ef5ce73e3567d8fe3caf0a5076bd79b36b61810",
         "drizzle/migrations/0259_service_agent_commit.sql": "8552e42c40381f6e21d580455071bf87b071d56f23d006c62c37bb801cd095cd",
         "drizzle/migrations/0260_service_agent_delivery.sql": "5086f1318c0c5d9de08f822d567138475fac28b821a6469991944db5a462e6b4",
@@ -5384,7 +5384,7 @@
         }
       },
       "files": {
-        "src/lib/prospecting-campaigns.functions.ts": "9b298c5064bd808aa0f38c8c6d6fb215f8e598a73a750baa9e813456da8cfaa9",
+        "src/lib/prospecting-campaigns.functions.ts": "2b8cc86d312c3937c9b701f49a431023093ade1db2dfe0967732c9bf43bf17c4",
         "src/lib/prospecting-vapi-call.server.ts": "7451493d7eb9d31db63a7609d233aa6c38c11477f20345a17a1063c3e63945ae",
         "src/routes/api/public/hooks/prospecting-dial-tick.ts": "cd24b1480e6d24b556bc2ba777941fad47e50959c0af62f611512daa403919e3",
         "drizzle/migrations/0290_prospecting_call_whatsapp_followup.sql": "df467dc2e493da88db8bfcd28c8007c8659f1fab510b1ba1aea9bd45b061a87d",
@@ -5397,7 +5397,7 @@
         "src/components/prospecting/pages/scripts-page.tsx": "f8045dec522334f4c908119196d94e39b84838029aea352d250e215f7cfd4b7e",
         "src/routes/_authenticated/settings.prospecting-scripts.tsx": "fc214bca25673208de5b62482ad0e0b55e4a7c4f491f6a25ceecdd2113582f58",
         "src/routes/_authenticated/campaigns.calls.$id.tsx": "93acb1d80198bc61a6913b720e5050935550abdf87eaa3d9990fd26dd20b2c13",
-        "src/routes/_authenticated/campaigns.calls.index.tsx": "19ed930a2feff47788e81caa3e4aba46666c5d6930a126c27bc863e57195b119",
+        "src/routes/_authenticated/campaigns.calls.index.tsx": "ea9b2540da5e50f7e7d6d93d7042da67f38240f9d73e571b90f33a52a4779c83",
         "src/routes/_authenticated/campaigns.calls.scripts.tsx": "e10a8fabc26c1fa80f67e84252f1543ec5e027c3548482855a70640ab3d91c52",
         "src/routes/_authenticated/prospecting.index.tsx": "acdb05cf4eb061d89e8a7826b78d01600d860d1025e9a643051bf06b5832a7be",
         "src/routes/_authenticated/prospecting.campaigns.$id.tsx": "2db1c782822c71b6b4208a5b8f8b894e4506aa3629a64cbd127b858231c11e74",
@@ -5408,7 +5408,7 @@
         "drizzle/migrations/0336_call_campaign_audience_config.sql": "d32ff0b6151f1da909d816339dddbdb25f987272e880b1b5c95d8a7598e87fb4",
         "drizzle/migrations/0337_call_attempts_contact_target.sql": "4311e8024a896c67d1b111b1ea6279d2505acd6340acf00c157d99caee115cc9",
         "drizzle/migrations/0338_prospecting_campaign_status_canceled.sql": "e95de05bda8593271ab97c7c97a315765f19b68b307b0d3125f5ab9a91be81b5",
-        "src/components/prospecting/campaign-call-meetings.tsx": "21e526e68ef24e9c657db3071e48cc48afbb8b67715bf41f2cba79c6bccc5000",
+        "src/components/prospecting/campaign-call-meetings.tsx": "1c67f05de79118486c41dc5b1b1becf1c94b165791ee0ab5c5656ea6251902d3",
         "drizzle/migrations/0339_call_campaign_meeting_assignment.sql": "a6b1a97074c3a86f612241a2dfa3f3636202a98b1c3b6e3dd2d29774e4458e02",
         "drizzle/migrations/0340_call_meeting_hosts_with_calendar.sql": "233c9f7b0d27430ea1c323f509fffb2d87b449fe164d2224ff9dd7219dcb58b2",
         "src/lib/prospecting/calls/voice-booking.server.ts": "e5ffe50c3db2f720e381f8bbc5e9de6a3f9d43e26e8d5cb30d50c4d65a5f6925",
@@ -11265,7 +11265,7 @@
       "rationale": "Pure helpers for call campaigns: PT-BR status labels, start checklist and recent-contact window math. No I/O, routes, actions, grants or data access; enforcement stays in prospecting-voice-campaigns server functions. Adds pure edit/delete/cancel predicates and attempt summarization (no I/O). Adds canceled label and pure pace estimate (no I/O). Adds pure meeting-distribution normalization and checklist item (no I/O). Adds pure voice-booking helpers (host choice, tool-call parsing, offer matching, template variables; no I/O). Adds pure call card text builder/splitter for the Inbox (no I/O). Adds presentational call card (props only, no data access).",
       "files": {
         "src/lib/prospecting/calls/recent-contact.ts": "315ab9adb2de70bf31c0514a79c27e779a54c27fcc7723eae4815a1b8ce3b8aa",
-        "src/lib/prospecting/calls/status-label.ts": "f0aab55a1453aa23b00daa026507395a5689d24ef95d1f7ffd278d574bd0868f",
+        "src/lib/prospecting/calls/status-label.ts": "92a5ec4f16741e4104011c8d59b579558dbbbc44c7fdfdb6d4932d61cc551505",
         "src/lib/prospecting/calls/call-audience.ts": "a840dddaa6ef430a3724d758826e2c56f6fe6ebd27eca37fe3bfcc16e4108304",
         "src/lib/prospecting/calls/meeting-assignment.ts": "62cdf65bc1c368ba468022f96c93a7679a09f0e9906309769fed1d5118975ed5",
         "src/lib/prospecting/calls/voice-booking.ts": "9258746876bfd0710e69b47d5cfd20368830fc352fd570434192ce77808f7810",

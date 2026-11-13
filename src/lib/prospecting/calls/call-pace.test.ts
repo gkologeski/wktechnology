@@ -20,13 +20,27 @@ describe("situação Cancelada", () => {
 
 describe("ritmo", () => {
   it("pausada não tem previsão", () => {
-    expect(estimateCallPace({ status: "paused", pending: 5, nextAt: null, window: win, now: new Date() })).toEqual({
+    expect(
+      estimateCallPace({
+        status: "paused",
+        pending: 5,
+        nextAt: null,
+        window: win,
+        now: new Date(),
+      }),
+    ).toEqual({
       kind: "none",
       label: "Pausada — sem previsão",
     });
   });
   it("sem fila", () => {
-    const p = estimateCallPace({ status: "running", pending: 0, nextAt: null, window: win, now: new Date() });
+    const p = estimateCallPace({
+      status: "running",
+      pending: 0,
+      nextAt: null,
+      window: win,
+      now: new Date(),
+    });
     expect(p).toEqual({ kind: "none", label: "Sem ligações na fila" });
   });
   it("fora da janela começa no próximo dia útil 09:00 (sábado 10:00 BRT → segunda)", () => {
