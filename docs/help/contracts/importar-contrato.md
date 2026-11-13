@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 23
-version: 3
+version: 4
 is_published: true
 ---
 # Importar e revisar um contrato PDF ou DOCX
@@ -45,3 +45,5 @@ Rascunho criado na extração e atualizado após a finalização.
 - [Importar em lote](/ajuda/contracts/importar-em-lote)
 - [Consultar contratos](/ajuda/contracts/consultar-contratos)
 - [Permissões](/ajuda/contracts/permissoes)
+
+> Dados de assinatura eletrônica (provedor e identificadores) lidos do arquivo não são gravados na importação: eles só são preenchidos pelo próprio fluxo de assinatura do sistema.

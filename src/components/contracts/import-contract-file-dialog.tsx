@@ -43,6 +43,7 @@ import {
   type ExtractionProgress,
 } from "@/components/contracts/import-progress";
 import type { ExtractedContract } from "@/lib/contracts/import-schemas";
+import { buildImportPatch } from "@/lib/contracts/import-patch";
 import {
   PAYMENT_METHODS,
   SERVICE_LOCATIONS,
@@ -226,42 +227,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
     }
   }, [canImport, file, kind, parsePdf, parseText, uploadOriginal, createFromImport]);
 
-  const buildPatch = useCallback((f: ExtractedContract) => {
-    const num = (v: unknown) =>
-      typeof v === "number" && Number.isFinite(v) ? v : v == null || v === "" ? null : Number(v);
-    return {
-      title: f.title?.trim() || "Contrato importado",
-      role: f.role ?? undefined,
-      total_value: (f.total_value ?? f.monthly_value ?? 0) as number,
-      currency: f.currency ?? "BRL",
-      starts_at: f.starts_at ?? null,
-      ends_at: f.ends_at ?? null,
-      auto_renew: f.auto_renew ?? false,
-      notice_days: (num(f.notice_days) ?? 30) as number,
-      monthly_value: num(f.monthly_value),
-      hours_per_month: num(f.hours_per_month),
-      payment_day: num(f.payment_day),
-      payment_method: f.payment_method ?? null,
-      late_fee_percent: num(f.late_fee_percent),
-      late_interest_monthly_percent: num(f.late_interest_monthly_percent),
-      expense_reimbursement_days: num(f.expense_reimbursement_days),
-      readjustment_index: f.readjustment_index ?? null,
-      readjustment_period: f.readjustment_period ?? null,
-      penalty_percent: num(f.penalty_percent),
-      cure_period_days: num(f.cure_period_days),
-      trial_period_days: num(f.trial_period_days),
-      unilateral_termination_notice_days: num(f.unilateral_termination_notice_days),
-      service_type: f.service_type ?? null,
-      service_scope: f.service_scope ?? null,
-      service_location: f.service_location ?? null,
-      governing_law: f.governing_law ?? null,
-      jurisdiction: f.jurisdiction ?? null,
-      confidentiality_term_months: num(f.confidentiality_term_months),
-      signature_provider: f.signature_provider ?? null,
-      signature_document_id: f.signature_document_id ?? null,
-      signature_operation_id: f.signature_operation_id ?? null,
-    };
-  }, []);
+  const buildPatch = useCallback((f: ExtractedContract) => buildImportPatch(f), []);
 
   const submit = useCallback(async () => {
     if (!fields || !contractId) return;
