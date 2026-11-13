@@ -46,3 +46,48 @@ export function callCampaignChecklist(i: {
     },
   ];
 }
+
+/** Edição só em rascunho ou pausada. */
+export function canEditCallCampaign(status: string): boolean {
+  return status === "draft" || status === "paused";
+}
+/** Exclusão bloqueada enquanto em andamento. */
+export function canDeleteCallCampaign(status: string): boolean {
+  return status !== "running";
+}
+/** Encerrar (cancelar) vale para rascunho, em andamento ou pausada. */
+export function canCancelCallCampaign(status: string): boolean {
+  return status === "draft" || status === "running" || status === "paused";
+}
+
+export type CallCampaignStats = {
+  done: number;
+  failed: number;
+  pending: number;
+  total: number;
+  startedAt: string | null;
+};
+const FAILED = new Set(["failed", "no_answer", "busy"]);
+const PENDING = new Set(["queued", "ringing", "in_progress"]);
+
+export function summarizeCallAttempts(
+  rows: { campaign_id: string; status: string; created_at: string }[],
+): Map<string, CallCampaignStats> {
+  const out = new Map<string, CallCampaignStats>();
+  for (const r of rows) {
+    const s = out.get(r.campaign_id) ?? {
+      done: 0,
+      failed: 0,
+      pending: 0,
+      total: 0,
+      startedAt: null,
+    };
+    s.total++;
+    if (r.status === "completed") s.done++;
+    else if (FAILED.has(r.status)) s.failed++;
+    else if (PENDING.has(r.status)) s.pending++;
+    if (!s.startedAt || r.created_at < s.startedAt) s.startedAt = r.created_at;
+    out.set(r.campaign_id, s);
+  }
+  return out;
+}

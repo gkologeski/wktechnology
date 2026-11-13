@@ -12,6 +12,7 @@ import {
 } from "@/lib/prospecting-audience.functions";
 import { isRetriableEndedReason } from "@/lib/prospecting-ended-reason";
 import { normalizeRecentContact } from "@/lib/prospecting/calls/recent-contact";
+import type { CallCampaignStats } from "@/lib/prospecting/calls/status-label";
 import type { CallAudienceConfig } from "@/lib/prospecting/calls/call-audience";
 
 // Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
@@ -28,6 +29,7 @@ export type Campaign = {
   assignment_mode: "weighted" | "segment";
   max_attempts: number;
   retry_interval_minutes: number;
+  stats?: CallCampaignStats | null;
   source_type: "segment" | "saved_view" | "manual";
   source_ref: string | null;
   lead_ids: string[];
@@ -145,7 +147,90 @@ export const listCampaigns = createServerFn({ method: "POST" })
       .eq("workspace_id", ws)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as Campaign[];
+    const list = (data ?? []) as unknown as Campaign[];
+    if (!list.length) return list;
+    // Contagens por campanha (cliente do usuário, RLS).
+    const { data: att, error: attErr } = await sb
+      .from("prospecting_call_attempts")
+      .select("campaign_id, status, created_at")
+      .eq("workspace_id", ws)
+      .in(
+        "campaign_id",
+        list.map((c) => c.id),
+      )
+      .limit(50000);
+    if (attErr) throw new Error(attErr.message);
+    const { summarizeCallAttempts } = await import("@/lib/prospecting/calls/status-label");
+    const stats = summarizeCallAttempts(
+      (att ?? []) as Array<{ campaign_id: string; status: string; created_at: string }>,
+    );
+    return list.map((c) => ({ ...c, stats: stats.get(c.id) ?? null }));
+  });
+
+export const duplicateCampaign = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "create")])
+  .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase;
+    const ws = await resolveActiveWorkspace(context.userId);
+    await assertSalesRecord(sb, "prospecting_campaigns", data.id, "view");
+    const { data: c, error } = await sb
+      .from("prospecting_campaigns")
+      .select("*")
+      .eq("id", data.id)
+      .eq("workspace_id", ws)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!c) throw new Error("Campanha não encontrada");
+    const src = c as Record<string, unknown>;
+    const copy: Record<string, unknown> = {};
+    for (const k of [
+      "name",
+      "assignment_mode",
+      "max_attempts",
+      "retry_interval_minutes",
+      "source_type",
+      "source_ref",
+      "lead_ids",
+      "dialing_window",
+      "audience_mode",
+      "audience_rules",
+      "recent_contact_days",
+      "recent_contact_scope",
+      "audience_config",
+      "followup_enabled",
+      "followup_sender_phone_number_id",
+      "followup_template_name",
+      "followup_template_language",
+      "followup_answered_text",
+    ])
+      if (k in src) copy[k] = src[k];
+    copy.name = `${String(src.name ?? "Campanha")} (cópia)`;
+    const { data: row, error: insErr } = await sb
+      .from("prospecting_campaigns")
+      .insert({ ...copy, workspace_id: ws, owner_id: context.userId, status: "draft" } as never)
+      .select("id")
+      .single();
+    if (insErr) throw new Error(insErr.message);
+    const id = (row as { id: string }).id;
+    const { data: variants } = await sb
+      .from("prospecting_campaign_variants")
+      .select("script_id, weight, segment_id, position")
+      .eq("campaign_id", data.id);
+    if (variants?.length) {
+      const { error: vErr } = await sb
+        .from("prospecting_campaign_variants")
+        .insert(
+          variants.map((v) => ({
+            ...v,
+            workspace_id: ws,
+            owner_id: context.userId,
+            campaign_id: id,
+          })),
+        );
+      if (vErr) throw new Error(vErr.message);
+    }
+    return { id };
   });
 
 export const getCampaign = createServerFn({ method: "POST" })
@@ -277,6 +362,15 @@ export const deleteCampaign = createServerFn({ method: "POST" })
 
     const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
+    const { data: cur } = await sb
+      .from("prospecting_campaigns")
+      .select("status")
+      .eq("id", data.id)
+      .eq("workspace_id", ws)
+      .maybeSingle();
+    const { canDeleteCallCampaign } = await import("@/lib/prospecting/calls/status-label");
+    if (cur && !canDeleteCallCampaign(String(cur.status)))
+      throw new Error("Pause a campanha antes de excluir.");
     const { error } = await sb
       .from("prospecting_campaigns")
       .delete()
@@ -427,6 +521,20 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .eq("workspace_id", ws);
     if (error) throw new Error(error.message);
+    if (data.status === "done") {
+      // Encerrar: tentativas ainda na fila deixam de ser discadas.
+      const { error: cErr } = await callQueue
+        .from("prospecting_call_attempts")
+        .update({
+          status: "canceled",
+          ended_at: new Date().toISOString(),
+          ended_reason: "campaign canceled",
+        })
+        .eq("campaign_id", data.id)
+        .eq("workspace_id", ws)
+        .eq("status", "queued");
+      if (cErr) throw new Error(cErr.message);
+    }
     return { ok: true };
   });
 

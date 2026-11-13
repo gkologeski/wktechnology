@@ -8,7 +8,7 @@ route_pattern: /campaigns/calls/$id
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 402
-version: 6
+version: 7
 is_published: true
 ---
 # Configurar uma campanha de ligação em 5 passos
@@ -39,3 +39,13 @@ A regra de contato recente só olha outras campanhas e apenas o que você pode v
 ## Relacionados
 - [Criar e gerenciar campanhas de prospecção](/ajuda/crm/criar-gerenciar-campanhas-de-prospeccao)
 - [Criar e editar roteiros de ligação](/ajuda/crm/criar-editar-roteiros-de-ligacao)
+
+## Controles na lista de campanhas
+
+Em **Campanhas de Ligação**, cada campanha mostra quantas ligações foram realizadas, quantas ficaram sem sucesso, quantas estão pendentes e quando a campanha começou. Os botões são:
+
+- **Editar**: abre os 5 passos. Só funciona em campanhas em rascunho ou pausadas.
+- **Duplicar**: cria uma cópia em rascunho com público, roteiros, agenda e pós-ligação, sem as ligações já feitas.
+- **Iniciar / Retomar / Pausar**: controla a discagem.
+- **Encerrar** (X): finaliza a campanha como Concluída; as ligações que ainda estavam na fila não são feitas.
+- **Excluir**: só fora de "Em andamento". As ligações já feitas continuam registradas nas fichas.
