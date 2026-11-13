@@ -10,6 +10,7 @@ import {
   Linkedin,
   Mail,
   MessageCircle,
+  Phone,
   RefreshCw,
   PanelRightClose,
   PanelRightOpen,
@@ -27,6 +28,7 @@ const CHANNELS = [
   { to: "/inbox/whatsapp" as const, label: "WhatsApp", icon: WhatsAppIcon },
   { to: "/inbox/linkedin" as const, label: "LinkedIn", icon: Linkedin },
   { to: "/inbox/chat" as const, label: "Chat ao vivo", icon: MessageCircle },
+  { to: "/inbox/ligacoes" as const, label: "Ligações", icon: Phone },
 ];
 
 /**

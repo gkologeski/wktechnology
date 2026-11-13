@@ -1,7 +1,17 @@
 // Catálogo de variáveis (tokens) disponíveis em modelos de contrato do TechContracts
 // e o merge puro do corpo do modelo. Client-safe (sem I/O) para uso no editor e no preview.
 import type { MessageToken } from "@/lib/message-tokens-catalog";
-import { renderTokensWith, getPath } from "@/lib/message-tokens";
+import { renderTokensWith, getPath as basePath } from "@/lib/message-tokens";
+import { currencyToWordsPtBr } from "@/lib/format/currency-words-ptbr";
+
+/** Lê o valor do token; `<campo>_extenso` é derivado do valor monetário do próprio campo. */
+function getPath(ctx: Record<string, unknown>, key: string): unknown {
+  if (key.endsWith("_extenso")) {
+    const words = currencyToWordsPtBr(basePath(ctx, key.slice(0, -"_extenso".length)));
+    return words || null;
+  }
+  return basePath(ctx, key);
+}
 
 export const CONTRACT_TEMPLATE_TOKENS: MessageToken[] = [
   // Contrato
@@ -11,7 +21,17 @@ export const CONTRACT_TEMPLATE_TOKENS: MessageToken[] = [
   { token: "{{contract.ends_at}}", label: "Fim da vigência", group: "Contrato" },
   { token: "{{contract.notice_days}}", label: "Aviso prévio (dias)", group: "Contrato" },
   { token: "{{contract.total_value}}", label: "Valor total", group: "Contrato" },
+  {
+    token: "{{contract.total_value_extenso}}",
+    label: "Valor total por extenso",
+    group: "Contrato",
+  },
   { token: "{{contract.monthly_value}}", label: "Valor mensal", group: "Contrato" },
+  {
+    token: "{{contract.monthly_value_extenso}}",
+    label: "Valor mensal por extenso",
+    group: "Contrato",
+  },
   { token: "{{contract.currency}}", label: "Moeda", group: "Contrato" },
   { token: "{{contract.payment_day}}", label: "Dia de pagamento", group: "Contrato" },
   { token: "{{contract.validity_days}}", label: "Vigência (dias)", group: "Contrato" },
