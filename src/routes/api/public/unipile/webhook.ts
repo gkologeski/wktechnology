@@ -46,7 +46,11 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
         const secret = process.env.UNIPILE_WEBHOOK_SECRET;
         if (!secret) return new Response("Webhook secret not configured", { status: 500 });
 
+        if (Number(request.headers.get("content-length")) > 1048576)
+          return new Response("Payload too large", { status: 413 });
         const body = await request.text();
+        if (new TextEncoder().encode(body).length > 1048576)
+          return new Response("Payload too large", { status: 413 });
         const signature =
           SIGNATURE_HEADERS.map((h) => request.headers.get(h)).find((v) => !!v) ?? null;
 
@@ -75,84 +79,43 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
         const unipileAccountId = event.unipileAccountId;
         const connectToken = event.connectToken;
 
-        // --- Opt-out on reply: mensagem recebida no LinkedIn ---
+        // Replies pause cadence; they are not automatically classified as opt-out.
         if (event.kind === "message_received" && unipileAccountId) {
+          const known = await supabaseAdmin
+            .from("unipile_accounts")
+            .select("id,status")
+            .eq("unipile_account_id", unipileAccountId)
+            .maybeSingle();
+          if (known.error) return json({ error: "Account lookup failed" }, 503);
+          if (!known.data || known.data.status !== "connected")
+            return json({ ok: true, event: "unmapped_or_inactive" });
           let msg = event.message!;
-
-          // v2 reduzido: busca os dados completos da mensagem.
           if (msg.needsHydration && msg.messageId) {
             const full = await hydrateV2Message(unipileAccountId, msg.messageId);
-            if (full) {
-              msg = {
-                ...msg,
-                senderProviderId: msg.senderProviderId ?? full.senderProviderId,
-                text: msg.text ?? full.text,
-                chatId: msg.chatId ?? full.chatId,
-                isSelfSent: msg.isSelfSent || full.isSelfSent,
-              };
-            }
+            if (!full) return json({ error: "Message hydration unavailable" }, 503);
+            msg = {
+              ...msg,
+              senderProviderId: msg.senderProviderId ?? full.senderProviderId,
+              text: msg.text ?? full.text,
+              chatId: msg.chatId ?? full.chatId,
+              isSelfSent: msg.isSelfSent || full.isSelfSent,
+            };
           }
-
-          // Guard: ignora echo do próprio outbound (nossos envios de sourcing).
-          if (msg.isSelfSent) {
-            return json({ ok: true, event: "self_echo_ignored" });
-          }
-
-          const senderId = msg.senderProviderId;
-          if (senderId) {
-            const { data: acc } = await supabaseAdmin
-              .from("unipile_accounts")
-              .select("id, owner_id")
-              .eq("unipile_account_id", unipileAccountId)
-              .maybeSingle();
-            if (acc) {
-              // localiza candidato pelo último log de mensagem/convite enviado
-              // a esse provider_id
-              const { data: log } = await supabaseAdmin
-                .from("unipile_message_log")
-                .select("candidate_id")
-                .eq("account_id", acc.id)
-                .eq("target_identifier", String(senderId))
-                .not("candidate_id", "is", null)
-                .order("created_at", { ascending: false })
-                .limit(1)
-                .maybeSingle();
-              if (log?.candidate_id) {
-                // Pausa qualquer enrollment ativo desse candidato para esse owner.
-                const { data: updated } = await supabaseAdmin
-                  .from("ats_sourcing_enrollments")
-                  .update({
-                    status: "replied",
-                    finished_at: new Date().toISOString(),
-                    next_run_at: null,
-                    last_error: "Opt-out automático: candidato respondeu no LinkedIn",
-                  } as never)
-                  .eq("owner_id", acc.owner_id)
-                  .eq("candidate_id", log.candidate_id)
-                  .eq("status", "active")
-                  .select("id");
-
-                // Registra a resposta para auditoria/timeline
-                await supabaseAdmin.from("unipile_message_log").insert({
-                  account_id: acc.id,
-                  owner_id: acc.owner_id,
-                  kind: "reply",
-                  target_identifier: String(senderId),
-                  candidate_id: log.candidate_id,
-                  body: (msg.text ?? "").slice(0, 4000) || null,
-                  status: "received",
-                  sent_at: new Date().toISOString(),
-                } as never);
-
-                return json({
-                  ok: true,
-                  event: "reply_processed",
-                  paused_enrollments: updated?.length ?? 0,
-                });
-              }
-            }
-          }
-          return json({ ok: true, event: "reply_no_match" });
+          if (msg.isSelfSent) return json({ ok: true, event: "self_echo_ignored" });
+          if (!msg.messageId || !msg.chatId || !msg.senderProviderId)
+            return json({ error: "Incomplete message identifiers" }, 422);
+          const received = await supabaseAdmin.rpc(
+            "unipile_receive_message" as never,
+            {
+              p_account: known.data.id,
+              p_message: msg.messageId,
+              p_chat: msg.chatId,
+              p_sender: msg.senderProviderId,
+              p_body: msg.text,
+            } as never,
+          );
+          if (received.error) return json({ error: "Message persistence unavailable" }, 503);
+          return json({ ok: true, event: "reply_processed", result: received.data });
         }
 
         // Eventos de mensageria irrelevantes (message.sent, message.read, ...)
@@ -164,20 +127,20 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
           return new Response("Missing identifiers", { status: 200 });
         }
 
-        // Busca o registro pelo connect_token/state (preferência) ou unipile_account_id
-        let query = supabaseAdmin.from("unipile_accounts").select("id, owner_id").limit(1);
-        if (connectToken) {
-          query = query.eq("connect_token", connectToken);
-        } else if (unipileAccountId) {
-          query = query.eq("unipile_account_id", unipileAccountId);
-        }
-        const { data: row } = await query.maybeSingle();
+        // Only the authenticated Hosted Auth finalizer may connect or re-connect an account.
+        // Lifecycle notifications may update an already mapped exact provider ID, never adopt one.
+        if (!unipileAccountId) return json({ ok: true, event: "unmapped" });
+        const { data: row, error: lookupError } = await supabaseAdmin
+          .from("unipile_accounts")
+          .select("id,owner_id")
+          .eq("unipile_account_id", unipileAccountId)
+          .maybeSingle();
+        if (lookupError) return json({ error: "Account lookup failed" }, 503);
 
         if (row) {
           const nowIso = new Date().toISOString();
           let status: "connected" | "disconnected" | "error" | null = null;
-          if (event.kind === "account_connected" && unipileAccountId) status = "connected";
-          else if (event.kind === "account_disconnected") status = "disconnected";
+          if (event.kind === "account_disconnected") status = "disconnected";
           else if (event.kind === "account_failed") status = "error";
 
           await supabaseAdmin
@@ -185,13 +148,6 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
             .update({
               last_seen_at: nowIso,
               ...(status ? { status } : {}),
-              ...(status === "connected"
-                ? {
-                    unipile_account_id: unipileAccountId,
-                    connected_at: nowIso,
-                    last_error: null,
-                  }
-                : {}),
               ...(status === "error" || status === "disconnected"
                 ? {
                     last_error: event.error ?? (status === "error" ? "Falha na conexão" : null),

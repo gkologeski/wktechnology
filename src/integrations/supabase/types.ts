@@ -28582,6 +28582,10 @@ export type Database = {
       }
       unipile_accounts: {
         Row: {
+          account_scope_id: string | null
+          operation_policy: Json
+          paused_until: string | null
+          next_outbound_at: string | null
           connect_token: string | null
           connected_at: string | null
           created_at: string
@@ -28598,6 +28602,10 @@ export type Database = {
           workspace_id: string | null
         }
         Insert: {
+          account_scope_id?: string | null
+          operation_policy?: Json
+          paused_until?: string | null
+          next_outbound_at?: string | null
           connect_token?: string | null
           connected_at?: string | null
           created_at?: string
@@ -28614,6 +28622,10 @@ export type Database = {
           workspace_id?: string | null
         }
         Update: {
+          account_scope_id?: string | null
+          operation_policy?: Json
+          paused_until?: string | null
+          next_outbound_at?: string | null
           connect_token?: string | null
           connected_at?: string | null
           created_at?: string

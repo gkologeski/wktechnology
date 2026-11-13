@@ -72,7 +72,9 @@ export function SdrSalesCalendarOwner({
         A Lia consulta a agenda dessa pessoa e marca as reuniões nela, com link do Meet.
       </p>
       {q.isLoading ? (
-        <p role="status" className="text-sm text-muted-foreground">Carregando agendas…</p>
+        <p role="status" className="text-sm text-muted-foreground">
+          Carregando agendas…
+        </p>
       ) : q.error ? (
         <p role="alert" className="text-sm text-destructive">
           Não foi possível carregar as agendas.

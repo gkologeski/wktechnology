@@ -195,7 +195,11 @@ export async function hydrateV2Message(
   try {
     const res = await fetch(
       `${base}/${encodeURIComponent(unipileAccountId)}/messages/${encodeURIComponent(messageId)}`,
-      { headers: { "X-API-KEY": key, Accept: "application/json" } },
+      {
+        redirect: "manual",
+        signal: AbortSignal.timeout(15000),
+        headers: { "X-API-KEY": key, Accept: "application/json" },
+      },
     );
     if (!res.ok) return null;
     const data: any = await res.json().catch(() => null);

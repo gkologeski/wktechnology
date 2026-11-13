@@ -72,7 +72,12 @@ async function channel(
     .eq("workspace_id", workspace)
     .eq("channel", kind)
     .maybeSingle();
-  if (error || !data || !(data as Account).enabled || (data as { archived_at?: string | null }).archived_at)
+  if (
+    error ||
+    !data ||
+    !(data as Account).enabled ||
+    (data as { archived_at?: string | null }).archived_at
+  )
     throw new Error("Conta indisponível ou desativada.");
   return data as Account;
 }

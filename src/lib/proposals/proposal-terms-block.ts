@@ -93,7 +93,9 @@ function scheduleLines(t: ProposalTerms, s: PaymentTerms): string[] {
           : "";
   const plan = s.plan;
   const items = rows
-    .filter((r) => r.label === "Entrada" || plan.kind === "milestones" || plan.kind === "fixed_date")
+    .filter(
+      (r) => r.label === "Entrada" || plan.kind === "milestones" || plan.kind === "fixed_date",
+    )
     .map((r) => {
       const w = when(r);
       return `<li>${esc(r.label)}: ${esc(money(r.amount, t.currency))}${w ? ` — ${esc(w)}` : ""}</li>`;

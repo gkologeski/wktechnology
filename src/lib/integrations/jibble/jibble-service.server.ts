@@ -556,7 +556,10 @@ export async function jibbleTargetOptions(
 async function jibblePersonOptions(ctx: Ctx, q: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const db = supabaseAdmin as unknown as SupabaseClient;
-  const term = q.replace(/[%_\\,()]/g, "").trim().toLocaleLowerCase("pt-BR");
+  const term = q
+    .replace(/[%_\\,()]/g, "")
+    .trim()
+    .toLocaleLowerCase("pt-BR");
   const { data: members, error } = await db
     .from("workspace_members")
     .select("user_id, status")
@@ -572,7 +575,8 @@ async function jibblePersonOptions(ctx: Ctx, q: string) {
       .select("id, full_name")
       .in("id", ids.slice(i, i + 200));
     if (pErr) throw new Error(pErr.message);
-    for (const p of profiles ?? []) names.set(p.id as string, (p.full_name as string | null) ?? null);
+    for (const p of profiles ?? [])
+      names.set(p.id as string, (p.full_name as string | null) ?? null);
   }
   return (members ?? [])
     .map((m) => ({

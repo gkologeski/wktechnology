@@ -1,7 +1,6 @@
 // Cliente server-only para a API Unipile (LinkedIn).
-// Implementa throttling human-like: cap mínimo, jitter, budget diário,
-// pausa de café e janela horária por conta. Persiste rate buckets e
-// log de requisições para observabilidade.
+// Reserva tentativas atomicamente, respeita janela/cotas e pausa do provedor.
+// Recibos persistentes impedem repetir envios com resultado incerto.
 //
 // IMPORTANTE: este módulo é server-only. Nunca importar no topo de
 // arquivos *.functions.ts que rotas/componentes importam — fazer
@@ -47,7 +46,7 @@ const BUDGETS: Record<UnipileEndpoint, ThrottleBudget> = {
   "message.send": {
     minIntervalMs: 8_000,
     jitterMs: [2_000, 6_000],
-    dailyLimit: 40,
+    dailyLimit: 50,
     coffeeBreakEvery: [6, 10],
     coffeeBreakMs: [30_000, 90_000],
   },
@@ -93,7 +92,8 @@ export type UnipileErrorReason =
   | "out_of_window"
   | "account_disconnected"
   | "provider_error"
-  | "network_error";
+  | "network_error"
+  | "delivery_uncertain";
 
 export class UnipileError extends Error {
   constructor(
@@ -109,37 +109,6 @@ export class UnipileError extends Error {
 }
 
 // --------- Helpers ---------
-
-function randBetween(min: number, max: number) {
-  if (max <= min) return min;
-  return Math.floor(min + Math.random() * (max - min));
-}
-
-function sleep(ms: number) {
-  return new Promise<void>((r) => setTimeout(r, ms));
-}
-
-function todayUtc() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function isInsideWindow(window: { tz?: string; start_hour?: number; end_hour?: number } | null) {
-  if (!window) return true;
-  const tz = window.tz ?? "America/Sao_Paulo";
-  const start = window.start_hour ?? 8;
-  const end = window.end_hour ?? 20;
-  try {
-    const fmt = new Intl.DateTimeFormat("en-US", {
-      timeZone: tz,
-      hour: "numeric",
-      hour12: false,
-    });
-    const hour = parseInt(fmt.format(new Date()), 10);
-    return hour >= start && hour < end;
-  } catch {
-    return true;
-  }
-}
 
 /**
  * Base URL da API Unipile v2. Na v2 a base é fixa; o único override suportado é
@@ -165,8 +134,7 @@ function getEnv() {
 function hashPayload(input: unknown): string {
   return createHash("sha256")
     .update(typeof input === "string" ? input : JSON.stringify(input ?? null))
-    .digest("hex")
-    .slice(0, 32);
+    .digest("hex");
 }
 
 // --------- Throttle / budget ---------
@@ -178,73 +146,32 @@ interface ThrottleCtx {
   window?: { tz?: string; start_hour?: number; end_hour?: number } | null;
 }
 
-async function enforceBudget(ctx: ThrottleCtx, endpoint: UnipileEndpoint, budget: ThrottleBudget) {
-  // 1) Janela humana
-  if (!isInsideWindow(ctx.window ?? null)) {
-    throw new UnipileError("Fora da janela horária permitida para esta conta.", "out_of_window");
-  }
-
-  // 2) Bucket diário
-  const day = todayUtc();
-  const { data: existing } = await supabaseAdmin
-    .from("unipile_rate_buckets")
-    .select("id, count, last_request_at")
-    .eq("account_id", ctx.accountId)
-    .eq("endpoint", endpoint)
-    .eq("day_utc", day)
-    .maybeSingle();
-
-  if (existing && existing.count >= budget.dailyLimit) {
+async function enforceBudget(
+  ctx: ThrottleCtx,
+  endpoint: UnipileEndpoint,
+  budget: ThrottleBudget,
+  noted = false,
+) {
+  const result = await supabaseAdmin.rpc(
+    "unipile_request_reserve" as never,
+    {
+      p_account: ctx.accountId,
+      p_endpoint: endpoint,
+      p_daily: budget.dailyLimit,
+      p_interval: Math.ceil(budget.minIntervalMs / 1000),
+      p_noted: noted,
+    } as never,
+  );
+  if (result.error)
+    throw new UnipileError("Conta sem autorização ou indisponível.", "account_disconnected");
+  const reservation = result.data as { ok: boolean; reason?: string; retryAt?: string } | null;
+  if (!reservation?.ok)
     throw new UnipileError(
-      `Budget diário atingido para ${endpoint} (${budget.dailyLimit}).`,
-      "daily_budget_reached",
+      reservation?.reason || "Reserva indisponível.",
+      "rate_limited",
+      undefined,
+      reservation?.retryAt ? Math.max(1000, Date.parse(reservation.retryAt) - Date.now()) : 3600000,
     );
-  }
-
-  // 3) Intervalo mínimo + jitter
-  if (existing?.last_request_at && budget.minIntervalMs > 0) {
-    const last = new Date(existing.last_request_at).getTime();
-    const elapsed = Date.now() - last;
-    const wait = budget.minIntervalMs - elapsed;
-    if (wait > 0) {
-      await sleep(wait + randBetween(budget.jitterMs[0], budget.jitterMs[1]));
-    } else {
-      await sleep(randBetween(budget.jitterMs[0], budget.jitterMs[1]));
-    }
-  }
-
-  // 4) Pausa de café
-  if (existing && budget.coffeeBreakMs[1] > 0) {
-    const every = randBetween(budget.coffeeBreakEvery[0], budget.coffeeBreakEvery[1] + 1);
-    if (existing.count > 0 && existing.count % every === 0) {
-      await sleep(randBetween(budget.coffeeBreakMs[0], budget.coffeeBreakMs[1]));
-    }
-  }
-}
-
-async function incrementBucket(accountId: string, endpoint: UnipileEndpoint) {
-  const day = todayUtc();
-  const { data: existing } = await supabaseAdmin
-    .from("unipile_rate_buckets")
-    .select("id, count")
-    .eq("account_id", accountId)
-    .eq("endpoint", endpoint)
-    .eq("day_utc", day)
-    .maybeSingle();
-  if (existing) {
-    await supabaseAdmin
-      .from("unipile_rate_buckets")
-      .update({ count: existing.count + 1, last_request_at: new Date().toISOString() })
-      .eq("id", existing.id);
-  } else {
-    await supabaseAdmin.from("unipile_rate_buckets").insert({
-      account_id: accountId,
-      endpoint,
-      day_utc: day,
-      count: 1,
-      last_request_at: new Date().toISOString(),
-    });
-  }
 }
 
 async function logRequest(
@@ -277,6 +204,7 @@ interface CallOptions {
   path: string;
   query?: Record<string, string | number | undefined>;
   body?: unknown;
+  requestKey?: string;
 }
 
 function buildQuery(query?: Record<string, string | number | undefined>) {
@@ -288,10 +216,48 @@ function buildQuery(query?: Record<string, string | number | undefined>) {
 }
 
 async function call(ctx: ThrottleCtx, opts: CallOptions) {
-  const budget = BUDGETS[opts.endpoint];
-  await enforceBudget(ctx, opts.endpoint, budget);
-
   const { baseUrl, key } = getEnv();
+  const budget = BUDGETS[opts.endpoint];
+  const outbound = opts.endpoint === "message.send" || opts.endpoint === "invite.send";
+  let receipt: { id: string; token: string } | null = null;
+  if (outbound) {
+    const key = hashPayload({
+      path: opts.path,
+      body: opts.body,
+      requestKey: opts.requestKey ?? null,
+    });
+    const begin = await supabaseAdmin.rpc(
+      "unipile_delivery_begin" as never,
+      {
+        p_account: ctx.accountId,
+        p_key: key,
+        p_endpoint: opts.endpoint,
+        p_daily: budget.dailyLimit,
+        p_interval: Math.ceil(budget.minIntervalMs / 1000),
+        p_noted: opts.endpoint === "invite.send" && !!(opts.body as { message?: string })?.message,
+      } as never,
+    );
+    if (begin.error)
+      throw new UnipileError("Conta sem autorização ou indisponível.", "account_disconnected");
+    const r = begin.data as {
+      ok: boolean;
+      cached?: boolean;
+      response?: unknown;
+      id: string;
+      token: string;
+      reason?: string;
+      retryAt?: string;
+    };
+    if (!r?.ok)
+      throw new UnipileError(
+        r?.reason ?? "Reserva indisponível",
+        r?.reason === "delivery_uncertain" ? "delivery_uncertain" : "rate_limited",
+        undefined,
+        r?.retryAt ? Math.max(1000, Date.parse(r.retryAt) - Date.now()) : 3600000,
+      );
+    if (r.cached) return r.response;
+    receipt = { id: r.id, token: r.token };
+  } else await enforceBudget(ctx, opts.endpoint, budget);
 
   const method = opts.method;
   const url = `${baseUrl}${opts.path}${buildQuery(opts.query)}`;
@@ -303,6 +269,8 @@ async function call(ctx: ThrottleCtx, opts: CallOptions) {
   try {
     const res = await fetch(url, {
       method,
+      redirect: "manual",
+      signal: AbortSignal.timeout(15000),
       headers: {
         "X-API-KEY": key,
         Accept: "application/json",
@@ -315,6 +283,17 @@ async function call(ctx: ThrottleCtx, opts: CallOptions) {
     const data = text ? safeJson(text) : null;
 
     if (!res.ok) {
+      const { unipileProtection } = await import("./protection");
+      const pause = unipileProtection(res.status, res.headers.get("retry-after"));
+      if (pause)
+        await supabaseAdmin
+          .from("unipile_accounts")
+          .update({
+            paused_until: pause.until,
+            last_error: pause.reason,
+            ...(pause.disconnected ? { status: "disconnected" } : {}),
+          })
+          .eq("id", ctx.accountId);
       errorMsg = (data && (data.message || data.error)) || text.slice(0, 500);
       if (res.status === 429) {
         throw new UnipileError(`Rate limited (${res.status}).`, "rate_limited", res.status);
@@ -333,9 +312,31 @@ async function call(ctx: ThrottleCtx, opts: CallOptions) {
       );
     }
 
-    await incrementBucket(ctx.accountId, opts.endpoint);
+    if (receipt) {
+      const saved = await supabaseAdmin.rpc(
+        "unipile_delivery_finish" as never,
+        { p_id: receipt.id, p_token: receipt.token, p_status: "sent", p_response: data } as never,
+      );
+      if (saved.error)
+        throw new UnipileError(
+          "Envio realizado, mas recibo pendente de reconciliação.",
+          "delivery_uncertain",
+        );
+      receipt = null;
+    }
     return data;
   } catch (err) {
+    if (receipt) {
+      // Only explicit 4xx rejection is safely retryable. Timeouts/5xx remain uncertain.
+      const outcome =
+        status !== null && status >= 400 && status < 500 && status !== 408
+          ? "not_started"
+          : "uncertain";
+      await supabaseAdmin.rpc(
+        "unipile_delivery_finish" as never,
+        { p_id: receipt.id, p_token: receipt.token, p_status: outcome } as never,
+      );
+    }
     if (!errorMsg) errorMsg = (err as Error).message;
     if (err instanceof UnipileError) throw err;
     throw new UnipileError((err as Error).message, "network_error");
@@ -366,11 +367,15 @@ function safeJson(text: string): any {
  * Carrega o registro `unipile_accounts` e monta o contexto de throttling.
  * Lança UnipileError se a conta não estiver conectada.
  */
-export async function loadAccountCtx(ownerId: string): Promise<ThrottleCtx> {
+export async function loadAccountCtx(ownerId: string, workspaceId?: string): Promise<ThrottleCtx> {
+  const workspace =
+    workspaceId ??
+    (await (await import("@/lib/active-workspace.server")).resolveActiveWorkspace(ownerId));
   const { data, error } = await supabaseAdmin
     .from("unipile_accounts")
     .select("id, owner_id, unipile_account_id, status, daily_window")
     .eq("owner_id", ownerId)
+    .eq("workspace_id", workspace)
     .eq("provider", "linkedin")
     .order("created_at", { ascending: false })
     .limit(1)
@@ -385,118 +390,6 @@ export async function loadAccountCtx(ownerId: string): Promise<ThrottleCtx> {
     unipileAccountId: data.unipile_account_id,
     window: (data.daily_window as ThrottleCtx["window"]) ?? null,
   };
-}
-
-/**
- * Gera URL Hosted Auth para conectar uma conta LinkedIn.
- *
- * POST /v2/auth/link — não existem `api_url`, `notify_url`, `name` nem redirects
- * separados de sucesso/erro. O `connectToken` viaja como `state` no
- * `redirect_uri`, e a tela de sucesso é responsabilidade da nossa aplicação.
- */
-export async function createHostedAuthLink(params: {
-  ownerId: string;
-  notifyUrl: string;
-  successRedirect: string;
-  failureRedirect: string;
-  connectToken: string;
-}) {
-  const { baseUrl, key } = getEnv();
-  const expiresOn = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-
-  const url = `${baseUrl}/auth/link`;
-
-  const body = {
-    type: "create",
-    providers: [HOSTED_AUTH_PROVIDER],
-    expires_on: expiresOn,
-    redirect_uri: appendQueryParam(params.successRedirect, "state", params.connectToken),
-  };
-
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      "X-API-KEY": key,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  const text = await res.text();
-  const data = safeJson(text);
-  if (!res.ok) {
-    const type = typeof data?.type === "string" ? data.type : "";
-    const reason: UnipileErrorReason =
-      res.status === 401 || type === "api/invalid_credentials"
-        ? "invalid_credentials"
-        : res.status === 400 || type === "api/invalid_parameters"
-          ? "invalid_parameters"
-          : "provider_error";
-    throw new UnipileError(
-      `Falha ao criar hosted auth (${res.status}): ${data?.detail ?? data?.title ?? data?.message ?? text.slice(0, 300)}`,
-      reason,
-      res.status,
-    );
-  }
-  // resposta v2: { object: "HostedAuthLink", link: "https://auth.unipile.com/?token=..." }
-  const link = (data?.link ?? data?.url) as string | undefined;
-  if (!link) {
-    throw new UnipileError(
-      "A Unipile não retornou a URL de autenticação.",
-      "provider_error",
-      res.status,
-    );
-  }
-  return { url: link, raw: data };
-}
-
-function appendQueryParam(url: string, key: string, value: string) {
-  const sep = url.includes("?") ? "&" : "?";
-  return `${url}${sep}${encodeURIComponent(key)}=${encodeURIComponent(value)}`;
-}
-
-export type UnipileAccountSummary = {
-  id: string;
-  name: string | null;
-  provider: string;
-  created_at: string | null;
-  raw: Record<string, unknown>;
-};
-
-/**
- * Lista as contas do tenant Unipile.
- *
- * GET /v2/accounts (item traz `provider`; `name` não é mais definível por nós
- * no hosted auth, então a correlação passa a ser via `state`).
- *
- * Não usa `call()` porque não é uma chamada por conta (sem throttle bucket).
- */
-export async function listUnipileAccounts(
-  limit = 50,
-): Promise<{ ok: true; items: UnipileAccountSummary[] } | { ok: false; reason: string }> {
-  let env: ReturnType<typeof getEnv>;
-  try {
-    env = getEnv();
-  } catch {
-    return { ok: false, reason: "missing_credentials" };
-  }
-  const { baseUrl, key } = env;
-  const res = await fetch(`${baseUrl}/accounts?limit=${limit}`, {
-    headers: { "X-API-KEY": key, Accept: "application/json" },
-  });
-  if (!res.ok) return { ok: false, reason: `unipile_${res.status}` };
-  const json: any = await res.json().catch(() => ({}));
-  const raw: any[] = json?.items ?? json?.data ?? json?.accounts ?? [];
-  const items = raw
-    .filter((a) => a && a.id)
-    .map((a) => ({
-      id: String(a.id),
-      name: (a.name ?? a.display_name ?? null) as string | null,
-      provider: String(a.provider ?? "").toUpperCase(),
-      created_at: (a.created_at ?? a.createdAt ?? null) as string | null,
-      raw: a as Record<string, unknown>,
-    }));
-  return { ok: true, items };
 }
 
 /** Valor de filtro estruturado: texto livre (string) ou ID já resolvido. */
@@ -815,7 +708,7 @@ export function normalizeInviteResult(res: any): { invitationId: string | null }
  */
 export async function sendLinkedinMessage(
   ctx: ThrottleCtx,
-  params: { attendeeProviderId: string; text: string },
+  params: { attendeeProviderId: string; text: string; requestKey?: string },
 ) {
   // v2: POST /:account_id/chats/send — os destinatários vão em `users_ids`.
   return call(ctx, {
@@ -823,6 +716,7 @@ export async function sendLinkedinMessage(
     method: "POST",
     path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats/send`,
     body: { users_ids: [params.attendeeProviderId], text: params.text },
+    requestKey: params.requestKey,
   });
 }
 
@@ -832,7 +726,7 @@ export async function sendLinkedinMessage(
  */
 export async function sendLinkedinInvite(
   ctx: ThrottleCtx,
-  params: { providerId: string; message?: string },
+  params: { providerId: string; message?: string; requestKey?: string },
 ) {
   // v2: relation requests — o destinatário vai em `user_id`.
   const body: Record<string, unknown> = { user_id: params.providerId };
@@ -843,6 +737,7 @@ export async function sendLinkedinInvite(
     method: "POST",
     path: `/${encodeURIComponent(ctx.unipileAccountId)}/users/me/relation-requests`,
     body,
+    requestKey: params.requestKey,
   });
 }
 
@@ -1124,6 +1019,8 @@ export async function verifyApiKey(): Promise<UnipileCredentialCheck> {
   const { baseUrl, key } = env;
   try {
     const res = await fetch(`${baseUrl}/accounts?limit=1`, {
+      redirect: "manual",
+      signal: AbortSignal.timeout(15000),
       headers: { "X-API-KEY": key, Accept: "application/json" },
     });
     const text = await res.text();

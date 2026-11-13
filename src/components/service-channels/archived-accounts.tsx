@@ -20,18 +20,25 @@ export function ArchivedAccounts({
             <Archive className="h-4 w-4 text-muted-foreground" aria-hidden />
             Arquivados ({accounts.length})
           </span>
-          <ChevronDown className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180" aria-hidden />
+          <ChevronDown
+            className="h-4 w-4 transition-transform group-data-[state=open]:rotate-180"
+            aria-hidden
+          />
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent>
         <p className="px-4 pb-2 text-sm text-muted-foreground">
-          Números desconectados. Ficam só para consulta do histórico: não enviam nem recebem mensagens.
+          Números desconectados. Ficam só para consulta do histórico: não enviam nem recebem
+          mensagens.
         </p>
         <ul className="divide-y border-t">
           {accounts.map((a) => {
             const count = conversationCounts[a.id];
             return (
-              <li key={a.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm">
+              <li
+                key={a.id}
+                className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm"
+              >
                 <div>
                   <p className="font-medium">{a.display_name || a.label}</p>
                   {a.display_name && a.display_name !== a.label && (

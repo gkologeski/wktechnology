@@ -1,5 +1,6 @@
+import { LinkedinProtection } from "@/components/service-channels/linkedin-protection";
 import { createFileRoute, useSearch } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -39,6 +40,7 @@ const searchSchema = z
       .optional(),
     // `state` = connect_token devolvido pelo hosted auth (API v2).
     state: z.string().trim().max(128).optional(),
+    account_id: z.string().max(200).optional(),
   })
   .passthrough();
 
@@ -58,7 +60,13 @@ type AccountRow = {
   last_error: string | null;
 };
 
-type Bucket = { endpoint: string; count: number; day_utc: string; last_request_at?: string };
+type Bucket = {
+  endpoint: string;
+  count: number;
+  day_utc: string;
+  limit?: number;
+  last_request_at?: string;
+};
 
 const STATUS_LABEL: Record<AccountRow["status"], string> = {
   connected: "Conectado",
@@ -78,6 +86,8 @@ const STATUS_VARIANT: Record<
 
 function LinkedinIntegrationPage() {
   const search = useSearch({ from: Route.id });
+  const navigate = Route.useNavigate();
+  const handledCallback = useRef<string | null>(null);
   const permissions = usePermissions();
   const canManage =
     !permissions.isLoading &&
@@ -122,6 +132,10 @@ function LinkedinIntegrationPage() {
         setStartHour(w?.start_hour ?? 8);
         setEndHour(w?.end_hour ?? 20);
       }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Falha ao carregar a integração LinkedIn.",
+      );
     } finally {
       setLoading(false);
     }
@@ -133,22 +147,27 @@ function LinkedinIntegrationPage() {
 
   useEffect(() => {
     if (search.connected === "1") {
-      // The provider redirect is not a success receipt; reconcile first.
-      // Fallback caso o webhook ainda não tenha chegado: reconcilia via API.
-      // Na v2 o `state` é a correlação com o connect_token emitido no início.
+      if (handledCallback.current === search.state) return;
+      handledCallback.current = search.state ?? "missing";
+      // Redirect pointers are verified against the provider and a one-use server state.
       (async () => {
         try {
-          const result = await reconcile({ data: search.state ? { state: search.state } : {} });
+          if (!search.state || !search.account_id)
+            throw new Error("Retorno de autenticação incompleto.");
+          const result = await reconcile({
+            data: { state: search.state, accountId: search.account_id },
+          });
           if (result.ok) toast.success("Conta LinkedIn confirmada via Unipile.");
           else toast.info("Aguardando confirmação segura da conta pela Unipile.");
-        } catch {
-          /* ignora */
+        } catch (e) {
+          toast.error((e as Error).message);
         }
         await refresh();
+        void navigate({ search: {}, replace: true });
       })();
     }
     if (search.connected === "0") toast.error("Falha ao conectar conta LinkedIn.");
-  }, [search.connected, search.state]);
+  }, [search.connected, search.state, search.account_id]);
 
   const onCheckCredentials = async () => {
     setChecking(true);
@@ -196,14 +215,6 @@ function LinkedinIntegrationPage() {
     } catch (e) {
       toast.error((e as Error).message);
     }
-  };
-
-  const dailyLimits: Record<string, number> = {
-    "profile.fetch": 80,
-    "profile.search": 20,
-    "message.send": 40,
-    "invite.send": 15,
-    "chat.list": 200,
   };
 
   return (
@@ -380,17 +391,18 @@ function LinkedinIntegrationPage() {
         </CardContent>
       </Card>
 
+      <LinkedinProtection />
       <Card>
         <CardHeader>
           <CardTitle>Uso de hoje</CardTitle>
           <CardDescription>
-            Cada operação respeita um budget diário separado para proteger sua conta LinkedIn.
+            Tentativas do TechERP no dia civil do fuso configurado, incluindo falhas. Cotas semanais
+            e pausas também se aplicam.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          {Object.entries(dailyLimits).map(([endpoint, limit]) => {
-            const used = buckets.find((b) => b.endpoint === endpoint)?.count ?? 0;
-            const pct = Math.min(100, Math.round((used / limit) * 100));
+          {buckets.map(({ endpoint, count: used, limit = 0 }) => {
+            const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 100;
             return (
               <div key={endpoint} className="space-y-1">
                 <div className="flex items-center justify-between">

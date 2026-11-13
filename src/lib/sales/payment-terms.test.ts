@@ -92,15 +92,29 @@ describe("cronograma de pagamento", () => {
 });
 
 describe("SALDO-DATA-FIXA", () => {
-  const base = { downPayment: { kind: "percent", value: 50 }, downPaymentDue: { kind: "date", date: "2026-12-07" } } as const;
+  const base = {
+    downPayment: { kind: "percent", value: 50 },
+    downPaymentDue: { kind: "date", date: "2026-12-07" },
+  } as const;
   it("saldo vira parcela única na data escolhida", () => {
-    const r = buildPaymentSchedule({ ...base, plan: { kind: "fixed_date", date: "2027-01-15" } }, 18870, new Date());
-    expect(r.map((x) => [x.label, x.amount, x.dueDate])).toEqual([["Entrada", 9435, "2026-12-07"], ["Saldo", 9435, "2027-01-15"]]);
+    const r = buildPaymentSchedule(
+      { ...base, plan: { kind: "fixed_date", date: "2027-01-15" } },
+      18870,
+      new Date(),
+    );
+    expect(r.map((x) => [x.label, x.amount, x.dueDate])).toEqual([
+      ["Entrada", 9435, "2026-12-07"],
+      ["Saldo", 9435, "2027-01-15"],
+    ]);
   });
   it("exige a data do saldo", () => {
-    expect(validatePaymentTerms({ ...base, plan: { kind: "fixed_date", date: "" } }, 100)).toContain("Escolha a data de vencimento do saldo.");
+    expect(
+      validatePaymentTerms({ ...base, plan: { kind: "fixed_date", date: "" } }, 100),
+    ).toContain("Escolha a data de vencimento do saldo.");
   });
   it("saldo não vence antes da entrada", () => {
-    expect(validatePaymentTerms({ ...base, plan: { kind: "fixed_date", date: "2026-12-01" } }, 100)).toContain("O saldo não pode vencer antes da entrada.");
+    expect(
+      validatePaymentTerms({ ...base, plan: { kind: "fixed_date", date: "2026-12-01" } }, 100),
+    ).toContain("O saldo não pode vencer antes da entrada.");
   });
 });

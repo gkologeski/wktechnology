@@ -25,6 +25,7 @@ export const cancelProposal = createServerFn({ method: "POST" })
       .eq("status", cur.status)
       .select("id");
     if (error) throw new Error(error.message);
-    if (!upd?.length) throw new Error("Não foi possível cancelar: a proposta mudou ou você não tem acesso.");
+    if (!upd?.length)
+      throw new Error("Não foi possível cancelar: a proposta mudou ou você não tem acesso.");
     return { ok: true };
   });

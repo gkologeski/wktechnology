@@ -4,9 +4,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { getAppUrl } from "@/lib/app-url";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { requireLinkedinPermission } from "./account-access.middleware";
 
@@ -15,10 +13,10 @@ export const getLinkedinAccount = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("unipile_accounts")
       .select(
-        "id, status, unipile_account_id, display_name, connected_at, last_seen_at, daily_window, last_error",
+        "id, status, unipile_account_id, display_name, connected_at, last_seen_at, daily_window, last_error, operation_policy, paused_until",
       )
       .eq("workspace_id", workspaceId)
       .eq("owner_id", userId)
@@ -26,6 +24,7 @@ export const getLinkedinAccount = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (error) throw new Error("Não foi possível carregar a conta LinkedIn.");
     return { account: data ?? null };
   });
 
@@ -34,7 +33,7 @@ export const getRateUsage = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { data: acc } = await supabase
+    const { data: acc, error: accountError } = await supabase
       .from("unipile_accounts")
       .select("id")
       .eq("workspace_id", workspaceId)
@@ -43,14 +42,18 @@ export const getRateUsage = createServerFn({ method: "GET" })
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (accountError) throw new Error("Não foi possível consultar a conta LinkedIn.");
     if (!acc) return { buckets: [] as Array<{ endpoint: string; count: number; day_utc: string }> };
-    const day = new Date().toISOString().slice(0, 10);
-    const { data: buckets } = await supabase
-      .from("unipile_rate_buckets")
-      .select("endpoint, count, day_utc, last_request_at")
-      .eq("account_id", acc.id)
-      .eq("day_utc", day);
-    return { buckets: buckets ?? [] };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const result = await supabaseAdmin.rpc(
+      "unipile_usage_snapshot" as never,
+      { p_account: acc.id } as never,
+    );
+    if (result.error) throw new Error("Não foi possível carregar o uso da conta.");
+    return result.data as {
+      buckets: Array<{ endpoint: string; count: number; day_utc: string; limit: number }>;
+      timezone: string;
+    };
   });
 
 /** Mensagens pt-BR para falhas de credencial/requisição da Unipile. */
@@ -84,64 +87,16 @@ export const checkUnipileCredentials = createServerFn({ method: "POST" })
   });
 
 /**
- * Inicia o fluxo Hosted Auth: cria registro pending + retorna URL para o usuário.
+ * Inicia Hosted Auth com estado privado e limitado; preserva a conta atual até confirmação.
  */
 export const startLinkedinConnect = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, requireLinkedinPermission("manage")])
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    const { verifyApiKey } = await import("@/lib/unipile/client.server");
-    const check = await verifyApiKey();
-    if (!check.ok) {
-      throw new Error(CREDENTIAL_MESSAGE[check.reason] ?? CREDENTIAL_MESSAGE.provider_error);
-    }
-    const connectToken = `lvb_${randomBytes(16).toString("hex")}`;
-
-    // Upsert pending account (mantém uma única linha por usuário)
-    const { data: existing } = await supabase
-      .from("unipile_accounts")
-      .select("id")
-      .eq("workspace_id", workspaceId)
-      .eq("owner_id", userId)
-      .eq("provider", "linkedin")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    if (existing) {
-      await supabase
-        .from("unipile_accounts")
-        .update({ status: "pending", connect_token: connectToken, last_error: null })
-        .eq("id", existing.id);
-    } else {
-      await supabase.from("unipile_accounts").insert({
-        owner_id: userId,
-        workspace_id: workspaceId,
-        provider: "linkedin",
-        status: "pending",
-        connect_token: connectToken,
-      });
-    }
-
-    const baseUrl = getAppUrl();
-    const { createHostedAuthLink, UnipileError } = await import("@/lib/unipile/client.server");
-    try {
-      const link = await createHostedAuthLink({
-        ownerId: userId,
-        notifyUrl: `${baseUrl}/api/public/unipile/webhook`,
-        successRedirect: `${baseUrl}/unipile-connected?connected=1`,
-        failureRedirect: `${baseUrl}/unipile-connected?connected=0`,
-        connectToken,
-      });
-      return { url: link.url };
-    } catch (e) {
-      if (e instanceof UnipileError) {
-        const friendly = CREDENTIAL_MESSAGE[e.code] ?? CREDENTIAL_MESSAGE.provider_error;
-        throw new Error(`${friendly} (detalhe: ${e.message})`);
-      }
-      throw e;
-    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { beginPersonalLinkedin } = await import("./auth-flow.server");
+    return beginPersonalLinkedin(supabaseAdmin, userId, workspaceId);
   });
 
 export const disconnectLinkedinAccount = createServerFn({ method: "POST" })
@@ -149,59 +104,36 @@ export const disconnectLinkedinAccount = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const result = await supabaseAdmin
       .from("unipile_accounts")
-      .update({ status: "disconnected", unipile_account_id: null })
+      .update({ status: "disconnected", last_error: "Disconnected by owner" })
       .eq("workspace_id", workspaceId)
       .eq("owner_id", userId)
       .eq("provider", "linkedin");
+    if (result.error) throw new Error(result.error.message);
     return { ok: true };
   });
 
-/**
- * Fallback de reconciliação após o retorno do Hosted Auth.
- *
- * v1: o webhook pode não ter chegado ainda; procuramos na API Unipile uma conta
- * cujo `name` bate com o `connect_token` salvo.
- * A URL de retorno não comprova o account_id. A confirmação deve chegar
- * pelo callback autenticado do provedor, correlacionado ao token da conexão.
- * Nunca adota uma conta da listagem global da integradora.
- */
+/** Confirma somente a conta exata no escopo pessoal e no fluxo de uso único. */
 export const reconcileLinkedinAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth, requireLinkedinPermission("manage")])
-  .inputValidator((i: unknown) =>
+  .inputValidator((input: unknown) =>
     z
-      .object({ state: z.string().trim().min(1).max(128).optional() })
-      .partial()
-      .parse(i ?? {}),
+      .object({ state: z.string().min(32).max(128), accountId: z.string().min(1).max(200) })
+      .parse(input),
   )
   .handler(async ({ context, data }) => {
-    const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(userId);
-    const { data: row } = await supabase
-      .from("unipile_accounts")
-      .select("id, status, connect_token, unipile_account_id")
-      .eq("workspace_id", workspaceId)
-      .eq("owner_id", userId)
-      .eq("provider", "linkedin")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (!row) return { ok: false, reason: "no_account" };
-    if (data.state && data.state !== row.connect_token) {
-      return { ok: false, reason: "state_mismatch" };
-    }
-    if (row.status === "connected" && row.unipile_account_id) {
-      return { ok: true, already: true };
-    }
-
-    // A redirect state is not proof of which provider account was authenticated.
-    // Only the authenticated provider callback may bind the exact account id.
-    // Never adopt the latest account from the integrator's shared tenant.
-    if (!data.state || data.state !== row.connect_token) {
-      return { ok: false, reason: "state_mismatch" };
-    }
-    return { ok: false, reason: "provider_confirmation_pending" };
+    const workspaceId = await resolveActiveWorkspace(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { finishPersonalLinkedin } = await import("./auth-flow.server");
+    return finishPersonalLinkedin(
+      supabaseAdmin,
+      context.userId,
+      workspaceId,
+      data.state,
+      data.accountId,
+    );
   });
 
 export const updateDailyWindow = createServerFn({ method: "POST" })
@@ -209,7 +141,19 @@ export const updateDailyWindow = createServerFn({ method: "POST" })
   .inputValidator((d: { tz?: string; start_hour: number; end_hour: number }) =>
     z
       .object({
-        tz: z.string().min(1).max(64).default("America/Sao_Paulo"),
+        tz: z
+          .string()
+          .min(1)
+          .max(64)
+          .default("America/Sao_Paulo")
+          .refine((value) => {
+            try {
+              new Intl.DateTimeFormat("pt-BR", { timeZone: value });
+              return true;
+            } catch {
+              return false;
+            }
+          }, "Fuso horário inválido."),
         start_hour: z.number().int().min(0).max(23),
         end_hour: z.number().int().min(1).max(24),
       })
@@ -221,11 +165,33 @@ export const updateDailyWindow = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const workspaceId = await resolveActiveWorkspace(userId);
-    await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const result = await supabaseAdmin
       .from("unipile_accounts")
       .update({ daily_window: data })
       .eq("workspace_id", workspaceId)
       .eq("owner_id", userId)
       .eq("provider", "linkedin");
+    if (result.error) throw new Error(result.error.message);
+    return { ok: true };
+  });
+
+export const saveLinkedinOperationPolicy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth, requireLinkedinPermission("manage")])
+  .inputValidator(async (input: unknown) =>
+    (await import("./operation-policy")).linkedinPolicySchema.parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    const workspace = await resolveActiveWorkspace(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const result = await supabaseAdmin
+      .from("unipile_accounts")
+      .update({ operation_policy: data } as never)
+      .eq("owner_id", context.userId)
+      .eq("workspace_id", workspace)
+      .eq("provider", "linkedin")
+      .select("id");
+    if (result.error || !result.data?.length)
+      throw new Error("Conta indisponível para configurar limites.");
     return { ok: true };
   });

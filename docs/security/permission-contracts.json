@@ -2445,13 +2445,13 @@
         }
       },
       "files": {
-        "src/lib/prospecting/sdr/channel-accounts.functions.ts": "d1d297004e828e1f93af5b53a348265e26717bc0ca79b9ad937b87033f6fc078",
+        "src/lib/prospecting/sdr/channel-accounts.functions.ts": "d9fb7b92eba1f8d6b1638d57439eb9dd9839af3c3b6a164795b93e556d8218e5",
         "src/lib/prospecting/sdr/channel-access.server.ts": "a23a8c47439c6f10cf0a30dae2253b53af3a894e3238c7099381a0465594a95a",
-        "src/routes/_authenticated/settings.channels.tsx": "e812e80589e504b7d6c6fb7b50074fb9fa7549f55559c88540589f5da058dece",
+        "src/routes/_authenticated/settings.channels.tsx": "3ff7ce8b3a0390d8b4be6885b8fb707bb9b35d8acf8798d1d29e1d0c08066f93",
         "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c",
         "src/components/service-channels/account-editor.tsx": "a4bf631320faddfeac35c5805701d81d0a029b0b31c2a9e0d34092bdd90d7933",
         "src/components/service-channels/agent-channels.tsx": "97abf189efffa02a15a536b7e9aef0a8cf3bc97d85f88c95915d7e916cdb8a41",
-        "src/components/prospecting/sdr-agent-config.tsx": "e71914364a83849fcd0d874b9f0c8b052edf070beb4bcb2c7ebc138a6a8378fb",
+        "src/components/prospecting/sdr-agent-config.tsx": "64f19b23f0ca7a055a122dbf148e1fe872458b8e718345a819f28714f8350846",
         "drizzle/migrations/0330_service_channel_accounts_archived.sql": "be2054401430cc9808dc43d50eca171f31f0a22c063ddf495a73747b2606f3e7"
       }
     },
@@ -2732,7 +2732,7 @@
         "src/components/prospecting/sdr-agent-actions.tsx": "f17d0e8a62209bfd8034262548b4e5b164cd9f9ea8abb877fd12b953fb658cde",
         "src/components/prospecting/sdr-agent-picker.tsx": "4277cd1e6a1066b07845b803e9d401e8fc6eff796e1acf57e0581a75f41d0039",
         "src/components/prospecting/sdr-skills-panel.tsx": "8af28b6552abd23685fb7307f2ab0a3b009f8a83f717c174a27d195ec35b580a",
-        "src/components/prospecting/sdr-sales-calendar-owner.tsx": "9db9d89d6da537ac9a21f410375fb7b54fb587f4412311d04bee8b3401ef456c",
+        "src/components/prospecting/sdr-sales-calendar-owner.tsx": "1da3a843fd8cf478414c8016fb55062e8007b2c5b62de1c82da821220bf872bb",
         "src/components/prospecting/sdr-console.tsx": "ca410d4ec19673835d97e8adcffcc5023b8f62970e04e11f2af08cd4b16546cb",
         "src/components/prospecting/sdr-studio-agent-bar.tsx": "84cc91802054f71827201ba06b93eecbc530eaa2605a564f4c30441b476bd1df",
         "src/lib/sdr-agent.functions.ts": "5b72111380ad8cf6e83b58d9d8a70cf0950ffca91e80fb60fbe70e3645f468ee",
@@ -4711,7 +4711,7 @@
         "src/components/prospecting/pages/scripts-page.tsx": "7ee17213929ea516345b3f4faeb6ccf845dcb21c072900bb68b7b828f7619c2d",
         "src/routes/_authenticated/settings.prospecting-scripts.tsx": "fc214bca25673208de5b62482ad0e0b55e4a7c4f491f6a25ceecdd2113582f58",
         "src/routes/_authenticated/campaigns.calls.$id.tsx": "23fdbc6e9784ccd82e38dca26c8558d12e9c0b4287600c64e212ca70eb9091e7",
-        "src/routes/_authenticated/campaigns.calls.index.tsx": "1da19f26fc19fd0b8935e611f6b2648060c5457cf6493918101b10cd949387a6",
+        "src/routes/_authenticated/campaigns.calls.index.tsx": "e4d1ec288eb96c86b3e2808aa0a03fb76e414bc3780629e7038e10c803a7509e",
         "src/routes/_authenticated/campaigns.calls.scripts.tsx": "e10a8fabc26c1fa80f67e84252f1543ec5e027c3548482855a70640ab3d91c52",
         "src/routes/_authenticated/prospecting.index.tsx": "acdb05cf4eb061d89e8a7826b78d01600d860d1025e9a643051bf06b5832a7be",
         "src/routes/_authenticated/prospecting.campaigns.$id.tsx": "2db1c782822c71b6b4208a5b8f8b894e4506aa3629a64cbd127b858231c11e74",
@@ -4953,7 +4953,7 @@
       "files": {
         "src/lib/prospecting/sequences/drafts.functions.ts": "f79fda353859c5b593dc270efd26090fed418f8a81e16f3a9c7227b9fa1fbe8a",
         "src/lib/prospecting/sequences/preflight.ts": "e68086bb637babf6da2e5d3d00b553baf9875c13938842e47a526e1ba0530a2a",
-        "src/lib/prospecting/sequences/releases.server.ts": "49c7854ddfce663d839fafdb71bb7c14002dda37f69b1f4ccf0c00a68403eefc",
+        "src/lib/prospecting/sequences/releases.server.ts": "61fdccc1a2d5569cd964a7049571e1cc0b070e57035ef9c259beb1d29b6cd8f4",
         "src/components/prospecting/sequences/sequence-readiness.tsx": "e2ad721054d3d82d7e2aaba7cefaa4459b8496d85f7418da09e13c9fcb25e3ff",
         "src/components/prospecting/sequences/sequence-template-picker.tsx": "22cc4ea6715b1601c84373d158dc8844095012ba7ee69461ace4f127532ee88c",
         "drizzle/migrations/0293_prospecting_sequence_versions.sql": "38d37b1faf6153875d32a8cd3f4c9036689aec2fbd2dae056ed6df4bb15438a5",
@@ -7856,7 +7856,7 @@
       "files": {
         "drizzle/migrations/0306_help_center.sql": "cca26ff8086c7ed3a1cc551edc2d837565381dd318a2a07c534e2ad6da8034dd",
         "drizzle/migrations/0307_help_seed_crm.sql": "04af96f7572e80fef5c5776afab4c0b0407c0ceb6841f9aefce9f31d04b4f9df",
-        "src/components/app-sidebar.tsx": "e4184644fc12facd97069757d9ca59727491640cdfe688f37b551500674dba7e",
+        "src/components/app-sidebar.tsx": "f96c98a0f167785dba906197d9d3f52bac4f9563b7243880c375b895745f8967",
         "src/components/help/help-button.tsx": "2b268ebe99b3235468f0049cb9e1d33fe2339b72557ba964e10a4c524318462e",
         "src/lib/help/help-access.server.ts": "79d713e8056a7cb37e13076ff21c637ae056da1f913cdc7e7cee063ae24bd88e",
         "src/lib/help/help-access.ts": "1ae9593cb60c3aac19b401fdf0a5b0f7334c27e1f63ab7dfceb21ee272bfe5dd",
@@ -8718,7 +8718,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic.",
       "files": {
-        "src/integrations/supabase/types.ts": "bfc6e6ef9ae71c3549dcab0e39a8139c3e31d1d7322f2dc701fc9eda8bda95aa",
+        "src/integrations/supabase/types.ts": "3e2d22d5c6c91af74fe2b33c901eb56c54e125f07935cfe1b544e49e393045cd",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -9323,7 +9323,7 @@
         "src/lib/proposals/proposal-draft-types.ts": "29c474556e912a317efa1d6bc38537a7838268e3b85fd319d52d4ed236443124",
         "src/lib/contracts/contract-terms-defaults.ts": "4243429565dc9b855faf2b73986e8044ef2ad746a9582ee841e0f85b42583463",
         "src/components/word-editor-lazy.tsx": "4f6e7ef7880aa6b35c94c9bb6b2caacba43d380473fd193ab6adc1a0ed428e8d",
-        "src/lib/proposals/proposal-terms-block.ts": "34e2edb854dfd85108d6671975ca99b96ca71a30ab755ac7f4c9865826014214",
+        "src/lib/proposals/proposal-terms-block.ts": "5621b6a6e969fcefa16a9474adad912378338c750c3a5683f2779dcb74e5478b",
         "src/lib/proposals/proposal-signer.ts": "2310c24c8b7a1b9e652a1530974c697671fb89c77c8f75793d2eb577c1a56e0d",
         "src/lib/proposals/proposal-items-placement.ts": "1a5de997747831baffb6a877b730bb5ab162bca1885f655701cfcf25bfce3442",
         "src/components/proposals/proposal-document.tsx": "d3d2a6f4094bb3965e85cbbf66216279a29ef61efb592dea4521443f581b8826",
@@ -9376,7 +9376,7 @@
         }
       },
       "files": {
-        "src/routes/api/public/proposals/$token.pdf.ts": "3606ebbd444a3896d44e5c2455b93a5733d483ccb7855aa448e9bcfc29182409"
+        "src/routes/api/public/proposals/$token.pdf.ts": "80257dfa0aaa31ed63011a41d752864450ee70d5013aeb668d2b42a7172a4ffb"
       },
       "exception": {
         "mechanism": "Random public_token issued when the proposal is sent; server loads only the proposal matching the token.",
@@ -9606,7 +9606,7 @@
         "src/lib/sales/payment-terms.ts": "ddb6c22486040aa7cb5e5f8f50d5fa08f1ff50b800ad473b253f3349a29ca00e",
         "src/lib/sales/quote-payment-terms.write.ts": "53bd243aa624ab155416251f9977ef77dcdc801851d2be2443034f4924cfe836",
         "src/lib/sales/quote-payment-terms.functions.ts": "5d76c67e6afe9903722e51c0948844e8db097c5b5ef3cf5be8bbf2eeddade7b3",
-        "src/components/sales/payment-terms-editor.tsx": "909da1008558710d9c5d83e8974f83058de2b9d1b4ba5c1d13149a50821af043",
+        "src/components/sales/payment-terms-editor.tsx": "4e6b9601095fe73f3974ed0856eabc6dfe96b9bbb669da0cfe8918734c5b7e59",
         "src/components/deals/quote-wizard.tsx": "8ae23a5d321b35b2ae33898a7c813ba256bbaa9af8de01771aeedad2d29664ae",
         "drizzle/migrations/0326_grant_payment_terms_columns.sql": "fcc41e114bbb3c0bd713ff8a256e30913f4cf72904a756800aea7e499b1701ec"
       }
@@ -9770,7 +9770,7 @@
       "kind": "presentation",
       "rationale": "CANAIS-ARQUIVADOS: read-only list of archived numbers and a pure archive decision rule. No data access or actions; data comes from listServiceChannels and writes from discoverServiceChannels, both gated by requireChannelAccess.",
       "files": {
-        "src/components/service-channels/archived-accounts.tsx": "fffafffb9d2d8455a9f20e192fdd6af9d3ea2afa7d916759ec4464071aff8701",
+        "src/components/service-channels/archived-accounts.tsx": "72b1dbb3dfb79481295d4b501cb6c0d37182b1d3ef4986c5bfdcdaf6a8fe6c44",
         "src/lib/prospecting/sdr/channel-archive.ts": "b5d299cae89314313c28021a2cd50150d1ab8048d4b1857c59fc6ef246e6e0ba"
       }
     },
@@ -9825,7 +9825,7 @@
         }
       },
       "files": {
-        "src/lib/proposals/proposal-cancel.functions.ts": "8b7be7c6b8b0019e7456741d86ea55ee9ccc3f633e5e8f3d6c5f3fe4fa4602d2",
+        "src/lib/proposals/proposal-cancel.functions.ts": "49841b802ff018e2f78b399f17c6cb1c86cee025ec7a5aa2b9ad49b2a3d082d6",
         "src/routes/_authenticated/proposals.$id.tsx": "3411b971106cb95f1f8c11810863a9f1d4e90f2af7a4f5980f6df44503cf6497",
         "src/components/deals/deal-proposals.tsx": "ca731b749a8eb0346d0da39d0ffae68f387c931e8287ddfd50bc6f5738d92d2c"
       }
@@ -10016,7 +10016,7 @@
         "src/components/integrations/pages/integrations-catalog-page.tsx": "a4a157726cbe79f94fb3939a5ee3ed046fd51d4dd66f2408a6ddab66cd74b8e0",
         "src/lib/integrations/import-schedule/clickup-schedule.server.ts": "09ef0f198ab36b2a7b8d1601b8255e48db7a8ac9de08eb8d3fdb6029c4c06861",
         "drizzle/migrations/0334_clickup_import_delegate.sql": "1b9273affc14406399f424089b109d95b446fb505a5c5753b804c6692c0e0c47",
-        "src/lib/integrations/jibble/jibble-service.server.ts": "9726817db6423b1f56f07a6f37469605f923be905265aceb11ec34a55f34b29e"
+        "src/lib/integrations/jibble/jibble-service.server.ts": "cd655e7ab710d6fc3a83e3400b064797fc81db7def3112c24910cad72186e0dc"
       }
     },
     {
@@ -10025,7 +10025,7 @@
       "rationale": "CONECTOR-IMPORTA: pure next-run calculation and the generated managed-scheduler secret check (no data access or action).",
       "files": {
         "src/lib/integrations/import-schedule/schedule.ts": "61486a8fc0b5420df439475f4eab2e00e208833f481683a56555917cc203ffd3",
-        "src/integrations/supabase/cron-auth.ts": "18430aa4c7faff5b44c572a8a4dfa6482daa52acbea09f384b872f087e58e738"
+        "src/integrations/supabase/cron-auth.ts": "e16d7db0dfb60d40733a9fda53b2230828e5f997241d8523eaa5f597ec33d582"
       }
     },
     {
@@ -10049,7 +10049,7 @@
         "system.linkedin.manage.own",
         "system.linkedin.manage.workspace"
       ],
-      "rationale": "Account lifecycle and observability require effective LinkedIn keys plus active context, authenticated owner and workspace. Restrictive RLS intersects legacy owner policies. Redirects never select the latest provider account. No broad grants or automatic sharing. Provider confirmation flow remains pending until secure correlation is implemented.",
+      "rationale": "Personal LinkedIn lifecycle requires effective keys, active actor and workspace. Hosted Auth uses an exact scope and one-use expiring state; service-only SQL finalizes after rechecking membership. Atomic attempt reservation applies across operations and counts failures. No automatic account sharing or grants.",
       "controls": [
         {
           "file": "src/lib/unipile/account-access.middleware.ts",
@@ -10066,12 +10066,80 @@
         {
           "file": "src/lib/unipile/account-access.ts",
           "symbol": "hasLinkedinPermission"
+        },
+        {
+          "file": "src/lib/unipile/auth-flow.server.ts",
+          "symbol": "assertPersonalAccess"
+        },
+        {
+          "file": "src/lib/unipile/auth-flow.ts",
+          "symbol": "validConnectionState"
+        },
+        {
+          "file": "src/lib/unipile/auth-provider.server.ts",
+          "symbol": "requireProviderKey"
+        },
+        {
+          "file": "src/lib/unipile/auth-provider.server.ts",
+          "symbol": "unipileAuthRequest"
+        },
+        {
+          "file": "src/lib/unipile/client.server.ts",
+          "symbol": "enforceBudget"
+        },
+        {
+          "file": "src/lib/unipile/protection.ts",
+          "symbol": "protectionDelay"
+        },
+        {
+          "file": "src/lib/unipile/operation-policy.ts",
+          "symbol": "createLinkedinPolicySchema"
+        },
+        {
+          "file": "src/lib/unipile/client.server.ts",
+          "symbol": "loadAccountCtx"
+        },
+        {
+          "file": "src/lib/unipile/retry-policy.ts",
+          "symbol": "isDeferredReason"
         }
       ],
       "database": [
         {
           "file": "drizzle/migrations/0336_unipile_personal_account_access.sql",
           "symbol": "unipile_personal_access"
+        },
+        {
+          "file": "drizzle/migrations/0337_unipile_secure_auth_flow.sql",
+          "symbol": "unipile_connect_complete"
+        },
+        {
+          "file": "drizzle/migrations/0338_unipile_atomic_limits.sql",
+          "symbol": "unipile_request_reserve"
+        },
+        {
+          "file": "drizzle/migrations/0340_unipile_delivery_receipts.sql",
+          "symbol": "unipile_delivery_begin"
+        },
+        {
+          "file": "drizzle/migrations/0340_unipile_delivery_receipts.sql",
+          "symbol": "unipile_delivery_finish"
+        },
+        {
+          "file": "drizzle/migrations/0340_unipile_delivery_receipts.sql",
+          "symbol": "unipile_usage_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0337_unipile_secure_auth_flow.sql",
+          "symbol": "unipile_connect_start"
+        },
+        {
+          "file": "drizzle/migrations/0341_unipile_log_access.sql",
+          "symbol": "unipile_request_log_personal_read"
+        },
+        {
+          "file": "drizzle/migrations/0341_unipile_log_access.sql",
+          "symbol": "unipile_message_log_personal_read"
         }
       ],
       "tests": {
@@ -10099,10 +10167,23 @@
       "files": {
         "src/lib/unipile/account-access.ts": "c24d6357961ace7b03581f8b3540063af51628dfadef7c5e0afefa0e6f72bb3b",
         "src/lib/unipile/account-access.middleware.ts": "f65f23e465e067d362b9fe3dbb0f93ea71373e2e98363cc5da974b7b6cf95435",
-        "src/lib/unipile/accounts.functions.ts": "3966c168f85460c49a3e84cb0f4ac1270d33c56629adc40b9ea81ceee593490f",
-        "src/lib/unipile/observability.functions.ts": "f25729ed291091deda701dff1c63c72375287a969d05d9c349c77150fc43e734",
-        "src/routes/_authenticated/settings.integrations.linkedin.tsx": "addd8acaaff5306bff79c977073fb92896c8ecb8063ba6374c4ab58edaa73e14",
-        "drizzle/migrations/0336_unipile_personal_account_access.sql": "913c4152f56b75f19a547e0fde7b1342443fff24fd5dee2ff46aecf67489f5bf"
+        "src/lib/unipile/accounts.functions.ts": "577ba3fdffe6f5fd1fc61a84e68233cfde69679939fa573246f1d760d85db732",
+        "src/lib/unipile/observability.functions.ts": "734578b557104d026c7ab8778e38f00a324efc4acf0c8c351385f3c6cbc6b102",
+        "src/routes/_authenticated/settings.integrations.linkedin.tsx": "b14a52d8f0f268d2b7dfa999d7a77c4f0135318e9f53e5f43c417645ecf1b607",
+        "drizzle/migrations/0336_unipile_personal_account_access.sql": "913c4152f56b75f19a547e0fde7b1342443fff24fd5dee2ff46aecf67489f5bf",
+        "src/lib/unipile/auth-flow.server.ts": "23dcab1fee0dce983cbecb2bf8af1630f1c7297c738a56124f10095d009dff09",
+        "src/lib/unipile/auth-flow.ts": "d14515a4b52c720957a961f4c59fb4bef3bd0db6b9c40789afc0f901562aee15",
+        "src/lib/unipile/auth-provider.server.ts": "575ad5ecfe2d617dd498b17f3f2e511e380a3278e3a3c2af14106471458267d6",
+        "src/lib/unipile/client.server.ts": "ae3e9461cbe00f8548f3443076ff582907b7e9d330a589285b0740db3a4b837d",
+        "src/lib/unipile/protection.ts": "09e0c8391a1f7882d04463d330437db682e32e59bcf4b893013868e21a1d8b50",
+        "src/lib/unipile/operation-policy.ts": "43bb1b2d51f989825f5078a3a72558454c1c566220f1f2f8d8fb83ae078c633d",
+        "src/components/service-channels/linkedin-protection.tsx": "92c9e82eff6b0735193d8a609ed33823097cea8bc98ef3b3211b4b54103f1a0b",
+        "drizzle/migrations/0337_unipile_secure_auth_flow.sql": "aee45ea427023b8382af9ef48744bbeac3a389f6aa4683af5f28423efa562350",
+        "drizzle/migrations/0338_unipile_atomic_limits.sql": "15f8351766a6bf4309dfed995d786ef2867e738910152f6dfc89e411baa4f1c1",
+        "drizzle/migrations/0340_unipile_delivery_receipts.sql": "780b1ae0a70e05f35ba5e94f4621afe573725283ac55dfe8ea62fc5d663e827e",
+        "src/lib/ats/sourcing-sequences-worker.server.ts": "df5bd21875be131e95efff3b663c4d6b5800556eb0ba3d0ab2d6e169e844e8c0",
+        "drizzle/migrations/0341_unipile_log_access.sql": "546f3633ee6d629b61cee60cf19f6db7aec2518f787824c4346c58974b032b14",
+        "src/lib/unipile/retry-policy.ts": "d2152e77ba691dbed093f15f06bfa1e28c57721b1f40adb189a9600cd8f461e7"
       }
     },
     {
@@ -10112,7 +10193,7 @@
       "actions": ["manage"],
       "scopes": ["own"],
       "permission_keys": [],
-      "rationale": "V2 callback verifies timestamp.rawBody with endpoint secret before parsing. Five-minute age tolerance; invalid V2 cannot downgrade. Legacy HMAC remains for existing endpoint compatibility. Callback never grants user access. Event deduplication is tracked in the next package.",
+      "rationale": "Verified signed callback resolves only an exact already mapped provider account. It never activates or adopts an account. Private inbound journal and cadence pause are atomic and deduplicated by account/message ID; reply is distinct from opt-out.",
       "controls": [
         {
           "file": "src/lib/unipile/webhook-signature.server.ts",
@@ -10125,12 +10206,20 @@
         {
           "file": "src/routes/api/public/unipile/webhook.ts",
           "symbol": "verifySignature"
+        },
+        {
+          "file": "src/lib/unipile/webhook-events.server.ts",
+          "symbol": "firstString"
         }
       ],
       "database": [
         {
           "file": "supabase/migrations/20260630192157_9935be66-baf6-4852-b07c-529567712eb8.sql",
           "symbol": "unipile_accounts"
+        },
+        {
+          "file": "drizzle/migrations/0339_unipile_inbound_idempotency.sql",
+          "symbol": "unipile_receive_message"
         }
       ],
       "tests": {
@@ -10163,7 +10252,66 @@
       },
       "files": {
         "src/lib/unipile/webhook-signature.server.ts": "00179df612bd1e48a0969bb7f656732412b0df7cbc01002ee007c504816d607c",
-        "src/routes/api/public/unipile/webhook.ts": "fa8155f120ac1507a58ff8c60bbb2fea03bb88c8d0c42cbc535fb189b4bbb00e"
+        "src/routes/api/public/unipile/webhook.ts": "75878e8c59c430c062a31ffa808b5aeb4578d5f7d89931d2a0b19caa5ac9c2b7",
+        "src/lib/unipile/webhook-events.server.ts": "4255b963018ead8554bb117ae34bd70073f7f80caccd61fc77ac62445f33239a",
+        "drizzle/migrations/0339_unipile_inbound_idempotency.sql": "2013d61eb5fd683c8e626c0fec177f7e0ac24bae937bc1883870ce68b5e0e7cc"
+      }
+    },
+    {
+      "id": "unipile-auth-callback-navigation",
+      "kind": "public",
+      "resources": ["system.linkedin"],
+      "actions": ["manage"],
+      "scopes": ["own"],
+      "permission_keys": [],
+      "rationale": "Public callback displays no private data and never confirms credentials. Bounded pointers go only to a fixed local authenticated route; server flow validates exact account, scope, expiry and active membership.",
+      "controls": [
+        {
+          "file": "src/lib/unipile/callback-target.ts",
+          "symbol": "linkedinCallbackTarget"
+        },
+        {
+          "file": "src/lib/unipile/callback-target.ts",
+          "symbol": "validCallbackPointer"
+        }
+      ],
+      "database": [
+        {
+          "file": "supabase/migrations/20260630192157_9935be66-baf6-4852-b07c-529567712eb8.sql",
+          "symbol": "unipile_accounts"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/unipile/callback-target.test.ts",
+          "name": "passes a bounded callback pointer to local authenticated settings"
+        },
+        "missing_permission": {
+          "file": "src/lib/unipile/callback-target.test.ts",
+          "name": "rejects absent state"
+        },
+        "explicit_deny": {
+          "file": "src/lib/unipile/callback-target.test.ts",
+          "name": "rejects provider failure even with valid pointers"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/unipile/callback-target.test.ts",
+          "name": "cannot redirect to another site"
+        },
+        "inactive_member": {
+          "file": "src/lib/unipile/callback-target.test.ts",
+          "name": "rejects an oversized account pointer"
+        }
+      },
+      "exception": {
+        "mechanism": "Only bounded pointers and constant local navigation; no callback input authorizes reads or writes.",
+        "boundary": "Authenticated settings/server reverify provider account and single-use stored state.",
+        "revocation": "Remove callback route or disable Hosted Auth.",
+        "review_by": "2027-02-12"
+      },
+      "files": {
+        "src/lib/unipile/callback-target.ts": "df957ee0fe4982ee0b1351f7d91cc5a21f57b5e63daaa43081fe1638f81fcf25",
+        "src/routes/unipile-connected.tsx": "e696ffd97ae744920fb7e50f02cef601d1839f9d75d61bc1322bcf2eece3635a"
       }
     }
   ],

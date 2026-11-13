@@ -112,13 +112,14 @@ function ServiceChannelsPage() {
           </Button>
         </div>
       )}
-      {accounts.data && !accounts.data.accounts.some((a) => a.channel === channel && !a.archived_at) && (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            Nenhuma conta conectada. Configure uma conexão e atualize as contas.
-          </CardContent>
-        </Card>
-      )}
+      {accounts.data &&
+        !accounts.data.accounts.some((a) => a.channel === channel && !a.archived_at) && (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              Nenhuma conta conectada. Configure uma conexão e atualize as contas.
+            </CardContent>
+          </Card>
+        )}
       {accounts.data?.accounts
         .filter((a) => a.channel === channel && !a.archived_at)
         .map((account) => (

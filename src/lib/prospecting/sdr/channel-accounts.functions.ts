@@ -12,7 +12,9 @@ export const listServiceChannels = createServerFn({ method: "GET" })
     const [accounts, bindings, agents] = await Promise.all([
       db
         .from("service_channel_accounts")
-        .select("id,workspace_id,channel,source_key,label,display_name,enabled,routing_configured,archived_at")
+        .select(
+          "id,workspace_id,channel,source_key,label,display_name,enabled,routing_configured,archived_at",
+        )
         .eq("workspace_id", access.workspace)
         .order("label"),
       db
@@ -131,7 +133,8 @@ export const discoverServiceChannels = createServerFn({ method: "POST" })
         .eq("workspace_id", access.workspace);
       if (cloud.error) throw new Error("Não foi possível consultar os números WhatsApp.");
       for (const row of cloud.data ?? []) {
-        if (String(row.status ?? "").toUpperCase() === "CONNECTED") activeWa.add(row.phone_number_id);
+        if (String(row.status ?? "").toUpperCase() === "CONNECTED")
+          activeWa.add(row.phone_number_id);
         rows.push({
           workspace_id: access.workspace,
           channel: "whatsapp",

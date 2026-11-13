@@ -73,13 +73,13 @@ export function PaymentTermsEditor({
             : k === "fixed_date"
               ? { kind: "fixed_date", date: "" }
               : {
-                kind: "milestones",
-                milestones: [
-                  { label: "Aprovação do escopo", percent: 30 },
-                  { label: "Homologação", percent: 40 },
-                  { label: "Entrega final", percent: 30 },
-                ],
-              },
+                  kind: "milestones",
+                  milestones: [
+                    { label: "Aprovação do escopo", percent: 30 },
+                    { label: "Homologação", percent: 40 },
+                    { label: "Entrega final", percent: 30 },
+                  ],
+                },
     });
   };
 
@@ -185,9 +185,7 @@ export function PaymentTermsEditor({
               ariaLabel="Data de vencimento do saldo"
               className="w-48"
               value={plan.date || null}
-              onChange={(v) =>
-                onChange({ ...terms, plan: { kind: "fixed_date", date: v ?? "" } })
-              }
+              onChange={(v) => onChange({ ...terms, plan: { kind: "fixed_date", date: v ?? "" } })}
             />
           )}
 
