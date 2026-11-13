@@ -245,16 +245,14 @@ export const duplicateCampaign = createServerFn({ method: "POST" })
       .select("script_id, weight, segment_id, position")
       .eq("campaign_id", data.id);
     if (variants?.length) {
-      const { error: vErr } = await sb
-        .from("prospecting_campaign_variants")
-        .insert(
-          variants.map((v) => ({
-            ...v,
-            workspace_id: ws,
-            owner_id: context.userId,
-            campaign_id: id,
-          })),
-        );
+      const { error: vErr } = await sb.from("prospecting_campaign_variants").insert(
+        variants.map((v) => ({
+          ...v,
+          workspace_id: ws,
+          owner_id: context.userId,
+          campaign_id: id,
+        })),
+      );
       if (vErr) throw new Error(vErr.message);
     }
     return { id };
@@ -430,7 +428,10 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.marketing.campaigns", "manage")])
   .inputValidator((i) =>
     z
-      .object({ id: z.string().uuid(), status: z.enum(["draft", "running", "paused", "done", "canceled"]) })
+      .object({
+        id: z.string().uuid(),
+        status: z.enum(["draft", "running", "paused", "done", "canceled"]),
+      })
       .parse(i),
   )
   .handler(async ({ data, context }) => {

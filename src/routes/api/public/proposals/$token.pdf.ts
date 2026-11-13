@@ -19,8 +19,7 @@ export const Route = createFileRoute("/api/public/proposals/$token/pdf")({
     handlers: {
       GET: async ({ params }) => {
         const token = params.token;
-        if (!isValidProposalToken(token))
-          return new Response("Link inválido", { status: 400 });
+        if (!isValidProposalToken(token)) return new Response("Link inválido", { status: 400 });
         const browserlessToken = process.env["BROWSERLESS_TOKEN"];
         if (!browserlessToken)
           return new Response("Geração de PDF não configurada.", { status: 503 });
@@ -53,7 +52,9 @@ th{background:#f9fafb}.total{text-align:right;font-weight:600;font-size:15px}
 <div><div class="label">Detalhes</div>Emitida em ${date(p.created_at)}${p.expires_at ? `<br/>Válida até ${date(p.expires_at)}` : ""}</div></div>
 ${proposalPdfSections(
   stripLegacyInvestment(p.body).replace(/<script[\s\S]*?<\/script>/gi, ""),
-  rows ? `<table><thead><tr><th>Item</th><th>Cobrança</th></tr></thead><tbody>${rows}</tbody></table>` : "",
+  rows
+    ? `<table><thead><tr><th>Item</th><th>Cobrança</th></tr></thead><tbody>${rows}</tbody></table>`
+    : "",
   p.total_amount != null ? `<p class="total">Total: ${fmt(p.total_amount)}</p>` : "",
 )}</div>`;
         let pdf: ArrayBuffer;

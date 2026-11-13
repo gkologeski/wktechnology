@@ -10,6 +10,7 @@ import {
   fetchProfile,
   UnipileError,
 } from "@/lib/unipile/client.server";
+import { linkedinRetryPolicy } from "@/lib/unipile/retry-policy";
 import { recordAtsEvent } from "./audit.server";
 import { renderTokens } from "@/lib/message-tokens";
 import { loadAgentContext } from "@/lib/message-tokens-agent.server";
@@ -383,7 +384,7 @@ export async function processDueEnrollments(limit = 50): Promise<{
           logError = "Candidato sem linkedin_url";
         } else {
           try {
-            const ctx = await loadAccountCtx(e.owner_id);
+            const ctx = await loadAccountCtx(e.owner_id, e.workspace_id);
             const m = candidate.linkedin_url.match(/linkedin\.com\/in\/([^/?#]+)/i);
             const publicId = m ? decodeURIComponent(m[1]).replace(/\/$/, "") : null;
             if (!publicId) throw new UnipileError("linkedin_url inválido", "provider_error");
@@ -396,11 +397,13 @@ export async function processDueEnrollments(limit = 50): Promise<{
             let inviteResp: any = null;
             if (next.channel === "linkedin_invite") {
               inviteResp = await sendLinkedinInvite(ctx, {
+                requestKey: `sourcing:${e.id}:${next.step_order}`,
                 providerId: String(providerId),
                 message: body.slice(0, 300) || undefined,
               });
             } else {
               await sendLinkedinMessage(ctx, {
+                requestKey: `sourcing:${e.id}:${next.step_order}`,
                 attendeeProviderId: String(providerId),
                 text: body || `Olá ${candidate.full_name ?? ""}`.trim(),
               });
@@ -426,8 +429,26 @@ export async function processDueEnrollments(limit = 50): Promise<{
             result.sent += 1;
             meta.sentToday += 1;
           } catch (err) {
-            logStatus = "failed";
-            logError = (err instanceof Error ? err.message : String(err)).slice(0, 500);
+            const disposition = linkedinRetryPolicy(
+              err instanceof UnipileError ? err : {},
+              Date.now(),
+            );
+            const message = (err instanceof Error ? err.message : String(err)).slice(0, 500);
+            const saved = await supabaseAdmin
+              .from("ats_sourcing_enrollments")
+              .update({
+                status: disposition.status,
+                next_run_at: disposition.nextRunAt,
+                last_error: message,
+              } as never)
+              .eq("id", e.id)
+              .eq("workspace_id", e.workspace_id)
+              .eq("owner_id", e.owner_id);
+            if (saved.error) throw new Error(saved.error.message);
+            if (disposition.status === "active") result.throttled++;
+            else result.errors++;
+            // Keep current_step unchanged. Only a confirmed provider receipt advances it.
+            continue;
           }
         }
       } else {

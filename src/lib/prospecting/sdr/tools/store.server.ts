@@ -35,7 +35,10 @@ export function createDbToolStore(
     jobId: string | null;
     conversationId: string;
     enrollmentId: string | null;
-    conversationReference?: { table: "email_threads" | "live_chat_sessions"; id: string };
+    conversationReference?: {
+      table: "email_threads" | "live_chat_sessions" | "linkedin_conversations";
+      id: string;
+    };
     customerScope?: { leadId: string | null; contactId: string | null };
     restrictCustomerContext?: boolean;
   },
@@ -458,7 +461,11 @@ export async function checkHostCalendar(
   return { ok: true, provider: acc.provider };
 }
 
-export async function googleToken(admin: Admin, accountId: string, workspaceId: string): Promise<string> {
+export async function googleToken(
+  admin: Admin,
+  accountId: string,
+  workspaceId: string,
+): Promise<string> {
   const { data: acc, error } = await admin
     .from("calendar_accounts")
     .select("id, access_token, refresh_token, expires_at, workspace_id")

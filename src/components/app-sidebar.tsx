@@ -22,7 +22,13 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { ModuleSwitcher } from "@/components/module-switcher";
-import { SIDEBAR_GROUPS, SIDEBAR_GENERAL_ITEMS, SIDEBAR_PLATFORM_ITEMS, canSee, type Perms } from "@/lib/menu-config";
+import {
+  SIDEBAR_GROUPS,
+  SIDEBAR_GENERAL_ITEMS,
+  SIDEBAR_PLATFORM_ITEMS,
+  canSee,
+  type Perms,
+} from "@/lib/menu-config";
 import { ATS_SIDEBAR_GROUPS } from "@/lib/menu-config-ats";
 import { ERP_SIDEBAR_GROUPS, isWorkspacePathname } from "@/lib/menu-config-erp";
 import { CONTRACTS_SIDEBAR_GROUPS } from "@/lib/menu-config-contracts";

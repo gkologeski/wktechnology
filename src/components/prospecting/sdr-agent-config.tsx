@@ -398,10 +398,7 @@ function AgentForm({ workspaceId, playbookId }: { workspaceId: string; playbookI
               </SelectContent>
             </Select>
           </div>
-          <SdrSalesCalendarOwner
-            playbookId={playbookId}
-            members={members.data ?? []}
-          />
+          <SdrSalesCalendarOwner playbookId={playbookId} members={members.data ?? []} />
         </div>
       </FormSection>
 

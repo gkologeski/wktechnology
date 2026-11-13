@@ -1,5 +1,7 @@
 // Canonical resources shared by route, action and server gates. No role grants.
 export const SALES_TABLE_RESOURCES = {
+  linkedin_conversations: "techsales.inbox.linkedin",
+  linkedin_messages: "techsales.inbox.linkedin",
   workflow_events: "system.workflows",
   ai_summaries: "techsales.ai_summaries",
   activity_comments: "techsales.activities",

@@ -319,7 +319,11 @@ function fmtPace(d: Date, withTime: boolean): string {
   });
 }
 
-function CallPaceLine({ c }: { c: { status: string; stats?: CallCampaignStats | null; dialing_window?: unknown } }) {
+function CallPaceLine({
+  c,
+}: {
+  c: { status: string; stats?: CallCampaignStats | null; dialing_window?: unknown };
+}) {
   if (c.status !== "running" && c.status !== "paused") return null;
   const pace = estimateCallPace({
     status: c.status,

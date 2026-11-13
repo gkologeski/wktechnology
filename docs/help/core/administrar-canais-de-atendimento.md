@@ -8,7 +8,7 @@ route_pattern: /settings/channels
 min_permission: system.channels.view.workspace
 audience: internal
 sort_order: 117
-version: 3
+version: 4
 is_published: true
 ---
 # Administrar canais de atendimento
@@ -50,3 +50,7 @@ A consulta exige system.channels.view.workspace; gerenciamento usa system.channe
 - Abra **Arquivados** para consultar o histórico: nome, número, data do arquivamento e quantas conversas foram preservadas. Não é possível editar nem ligar um agente a um número arquivado, e ele não envia nem recebe mensagens.
 - Se o número voltar a ser conectado, ele sai de Arquivados sozinho na próxima atualização.
 - Nada é apagado: conversas e mensagens continuam guardadas.
+
+## LinkedIn pessoal e agentes
+
+Conecte sua conta em Meu LinkedIn e clique em Atualizar contas em Canais. A lista inclui somente sua conta no workspace ativo. Selecione o canal, informe o nome de atendimento, habilite a conta e escolha um agente publicado. Configure separadamente o atendimento receptivo e as respostas após sequências LinkedIn. Salvar um agente não inicia campanhas. O agente utiliza a persona publicada e os mesmos controles de identidade, CRM e atendimento humano dos outros canais.

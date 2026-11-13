@@ -1,4 +1,7 @@
 import { transportCapabilities } from "@/lib/prospecting/sdr/channel-permissions";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
+import { LinkedinProtection } from "./linkedin-protection";
 import { lazy, Suspense } from "react";
 import type { ServiceChannel } from "@/lib/prospecting/sdr/channel-identity";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -23,7 +26,14 @@ export function ConnectionConfiguration({ channel }: { channel: ServiceChannel }
     );
   return (
     <Suspense fallback={<p role="status">Carregando configuração da conexão…</p>}>
-      {channel === "whatsapp" ? (
+      {channel === "linkedin" ? (
+        <div className="space-y-3">
+          <Button asChild variant="outline">
+            <Link to="/settings/integrations/linkedin">Conectar ou gerenciar meu LinkedIn</Link>
+          </Button>
+          <LinkedinProtection />
+        </div>
+      ) : channel === "whatsapp" ? (
         <WhatsApp />
       ) : channel === "email" ? (
         <Email returnTo="/settings/channels" />

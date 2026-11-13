@@ -8,7 +8,7 @@ route_pattern: /prospecting/sequences
 min_permission: system.automation.sequences.view.workspace
 audience: internal
 sort_order: 405
-version: 2
+version: 3
 is_published: true
 ---
 # Configurar canais e planejamento de uma sequência
@@ -44,3 +44,7 @@ Intervalo por conta: 1 a 3.600 segundos. Limite em 24 horas: 1 a 1.000. Não sub
 ## Relacionados
 - [Criar o fluxo de uma sequência multicanal](/ajuda/crm/criar-fluxo-de-sequencia)
 - [Validar e criar uma versão imutável de sequência](/ajuda/crm/validar-versionar-sequencia)
+
+## Conta LinkedIn
+
+A etapa LinkedIn utiliza somente a conta pessoal conectada do proprietário da sequência no workspace ativo. Exige permissões de conexão, leitura e envio da Inbox LinkedIn, além das permissões da sequência e de Canais. O limite efetivo é o mais restritivo entre o planejamento, as proteções Unipile e o provedor. A janela de 24 horas e o template aprovado são regras do WhatsApp e não são aplicados ao LinkedIn.

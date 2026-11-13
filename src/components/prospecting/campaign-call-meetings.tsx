@@ -92,8 +92,8 @@ export function CampaignCallMeetings({
             {!off && missing.length > 0 && (
               <p className="text-xs text-muted-foreground">
                 Sem agenda conectada (não aparecem para escolha):{" "}
-                {missing.map((m) => m.full_name?.trim() || "Sem nome").join(", ")}. Conecte a
-                agenda em Configurações › Agendas.
+                {missing.map((m) => m.full_name?.trim() || "Sem nome").join(", ")}. Conecte a agenda
+                em Configurações › Agendas.
               </p>
             )}
           </>
@@ -121,7 +121,10 @@ export function CampaignCallMeetings({
                 onChange={(e) =>
                   onChange({
                     ...value,
-                    meeting_duration_minutes: Math.min(120, Math.max(15, Number(e.target.value) || 30)),
+                    meeting_duration_minutes: Math.min(
+                      120,
+                      Math.max(15, Number(e.target.value) || 30),
+                    ),
                   })
                 }
               />
@@ -169,7 +172,11 @@ export function CampaignCallMeetings({
                 disabled={disabled}
                 onValueChange={(v) => {
                   const [name, language] = v.split("|");
-                  onChange({ ...value, meeting_template_name: name, meeting_template_language: language });
+                  onChange({
+                    ...value,
+                    meeting_template_name: name,
+                    meeting_template_language: language,
+                  });
                 }}
               >
                 <SelectTrigger id="meet-template">

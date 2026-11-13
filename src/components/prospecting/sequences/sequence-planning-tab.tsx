@@ -139,6 +139,7 @@ export function SequencePlanningTab({ definition, disabled: locked, onChange }: 
   }, [sim.suggestedIntake, planning.intake.mode, disabled, !!definition.planning]);
 
   const counts = {
+    linkedin: definition.steps.filter((s) => s.type === "linkedin").length,
     email: definition.steps.filter((s) => s.type === "email").length,
     whatsapp: definition.steps.filter((s) => s.type === "whatsapp").length,
     call: definition.steps.filter((s) => s.type === "call").length,
@@ -385,8 +386,15 @@ export function SequencePlanningTab({ definition, disabled: locked, onChange }: 
       <Section icon={Gauge} title="4. Simulador de entrada diária">
         <p className="text-sm text-muted-foreground">
           Fluxo atual: {counts.email} e-mail(s), {counts.whatsapp} WhatsApp(s), {counts.call}{" "}
-          ligação(ões). Expediente {definition.settings.start}–{definition.settings.end}.
+          ligação(ões), {counts.linkedin} LinkedIn. Expediente {definition.settings.start}–
+          {definition.settings.end}.
         </p>
+        {counts.linkedin > 0 && (
+          <p className="text-sm text-muted-foreground">
+            O simulador abaixo estima e-mail, WhatsApp e chamadas. LinkedIn respeita a capacidade e
+            as pausas da sua conexão durante cada envio; a duração real pode ser maior.
+          </p>
+        )}
         <Radio
           name="intake-mode"
           value={planning.intake.mode}

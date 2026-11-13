@@ -4,6 +4,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { createHash } from "crypto";
+import { requireLinkedinPermission } from "./account-access.middleware";
+import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // ---------- helpers ----------
@@ -21,19 +23,18 @@ function firstNameOf(full?: string | null): string {
 
 async function renderLinkedinTokens(
   text: string,
-  opts: { candidateId?: string | null; profileRaw?: any },
+  opts: {
+    candidate?: {
+      full_name: string | null;
+      current_company: string | null;
+      headline: string | null;
+      email: string | null;
+    } | null;
+    profileRaw?: any;
+  },
 ): Promise<string> {
   if (!text || text.indexOf("{{") === -1) return text;
-  let candidate: any = null;
-  if (opts.candidateId) {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
-      .from("ats_candidates")
-      .select("full_name, current_company, headline, email")
-      .eq("id", opts.candidateId)
-      .maybeSingle();
-    candidate = data ?? null;
-  }
+  const candidate = opts.candidate;
   // Shape do perfil difere entre v1 e v2 — normalizado no client.
   const { extractProfileFields } = await import("@/lib/unipile/client.server");
   const p = extractProfileFields(opts.profileRaw ?? {});
@@ -75,7 +76,7 @@ const sendMessageInput = z.object({
 });
 
 export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, requireLinkedinPermission("manage")])
   .inputValidator((v) => sendMessageInput.parse(v))
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -83,7 +84,10 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
     const { loadAccountCtx, sendLinkedinMessage, UnipileError } =
       await import("@/lib/unipile/client.server");
 
-    const ctx = await loadAccountCtx(userId);
+    const workspace = await resolveActiveWorkspace(userId);
+    const { loadOutreachCandidate } = await import("./candidate-outreach.server");
+    const candidate = await loadOutreachCandidate(context.supabase, workspace, data.candidateId);
+    const ctx = await loadAccountCtx(userId, workspace);
 
     let providerId = data.providerId ?? null;
     let profileRaw: any = null;
@@ -111,7 +115,7 @@ export const sendLinkedinMessageFn = createServerFn({ method: "POST" })
     }
 
     const renderedText = await renderLinkedinTokens(data.text, {
-      candidateId: data.candidateId ?? null,
+      candidate,
       profileRaw,
     });
 
@@ -194,7 +198,7 @@ const sendInviteInput = z.object({
 });
 
 export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, requireLinkedinPermission("manage")])
   .inputValidator((v) => sendInviteInput.parse(v))
   .handler(async ({ data, context }) => {
     const { userId } = context;
@@ -202,7 +206,10 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
     const { loadAccountCtx, sendLinkedinInvite, UnipileError } =
       await import("@/lib/unipile/client.server");
 
-    const ctx = await loadAccountCtx(userId);
+    const workspace = await resolveActiveWorkspace(userId);
+    const { loadOutreachCandidate } = await import("./candidate-outreach.server");
+    const candidate = await loadOutreachCandidate(context.supabase, workspace, data.candidateId);
+    const ctx = await loadAccountCtx(userId, workspace);
 
     let providerId = data.providerId ?? null;
     let profileRaw: any = null;
@@ -228,7 +235,7 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
 
     const renderedMessage = data.message
       ? await renderLinkedinTokens(data.message, {
-          candidateId: data.candidateId ?? null,
+          candidate,
           profileRaw,
         })
       : undefined;
@@ -296,10 +303,16 @@ export const sendLinkedinInviteFn = createServerFn({ method: "POST" })
 // ---------- histórico ----------
 
 export const listCandidateOutreachFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, requireLinkedinPermission("view")])
   .inputValidator((v) => z.object({ candidateId: z.string().uuid() }).parse(v))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    const { loadOutreachCandidate } = await import("./candidate-outreach.server");
+    await loadOutreachCandidate(
+      supabase,
+      await resolveActiveWorkspace(context.userId),
+      data.candidateId,
+    );
     const { data: rows } = await supabase
       .from("unipile_message_log")
       .select("id, kind, status, body, target_identifier, error, sent_at, created_at")

@@ -1,3 +1,4 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import {
@@ -6,6 +7,7 @@ import {
   Check,
   CheckCheck,
   Inbox,
+  Linkedin,
   Mail,
   MessageCircle,
   RefreshCw,
@@ -23,6 +25,7 @@ const CHANNELS = [
   { to: "/inbox" as const, label: "Unificada", icon: Inbox },
   { to: "/inbox/email" as const, label: "Email", icon: Mail },
   { to: "/inbox/whatsapp" as const, label: "WhatsApp", icon: WhatsAppIcon },
+  { to: "/inbox/linkedin" as const, label: "LinkedIn", icon: Linkedin },
   { to: "/inbox/chat" as const, label: "Chat ao vivo", icon: MessageCircle },
 ];
 
@@ -141,10 +144,20 @@ export function InboxWorkspace({
 }
 
 function InboxChannelTabs() {
+  const permissions = usePermissions();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   return (
     <nav className="flex min-w-0 items-center gap-1 overflow-x-auto" aria-label="Canais da Inbox">
-      {CHANNELS.map(({ to, label, icon: Icon }) => {
+      {CHANNELS.filter(
+        (c) =>
+          c.to !== "/inbox/linkedin" ||
+          (!permissions.isLoading &&
+            !permissions.isError &&
+            !!permissions.workspaceId &&
+            permissions.can("techsales.inbox.linkedin.view.own") &&
+            (permissions.can("system.linkedin.view.own") ||
+              permissions.can("system.linkedin.view.workspace"))),
+      ).map(({ to, label, icon: Icon }) => {
         const active =
           to === "/inbox" ? pathname === "/inbox" || pathname === "/inbox/" : pathname === to;
         return (

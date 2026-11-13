@@ -20,6 +20,7 @@ export const Route = createFileRoute("/_authenticated/settings/channels")({
   component: ServiceChannelsPage,
 });
 const TYPES = {
+  linkedin: { label: "LinkedIn", icon: Globe, path: "/settings/integrations/linkedin" },
   whatsapp: { label: "WhatsApp", icon: MessageSquare, path: "/settings/whatsapp" },
   email: { label: "E-mail", icon: Mail, path: "/settings/email" },
   chat: { label: "Chat do site", icon: Globe, path: "/settings/widget" },
@@ -112,13 +113,14 @@ function ServiceChannelsPage() {
           </Button>
         </div>
       )}
-      {accounts.data && !accounts.data.accounts.some((a) => a.channel === channel && !a.archived_at) && (
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            Nenhuma conta conectada. Configure uma conexão e atualize as contas.
-          </CardContent>
-        </Card>
-      )}
+      {accounts.data &&
+        !accounts.data.accounts.some((a) => a.channel === channel && !a.archived_at) && (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              Nenhuma conta conectada. Configure uma conexão e atualize as contas.
+            </CardContent>
+          </Card>
+        )}
       {accounts.data?.accounts
         .filter((a) => a.channel === channel && !a.archived_at)
         .map((account) => (

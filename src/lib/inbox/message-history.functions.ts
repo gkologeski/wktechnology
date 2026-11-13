@@ -1,3 +1,4 @@
+import { authorizeHistoryChannel } from "./history-access.server";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
@@ -14,16 +15,11 @@ const cursorSchema = z.object({
 });
 
 export const listConversationMessages = createServerFn({ method: "POST" })
-  .middleware([
-    requireSalesPermission(
-      ["techsales.inbox.email", "techsales.inbox.whatsapp", "techsales.inbox.chat"],
-      "view",
-    ),
-  ])
+  .middleware([requireSupabaseAuth])
   .inputValidator((i) =>
     z
       .object({
-        channel: z.enum(["email", "whatsapp", "chat"]),
+        channel: z.enum(["email", "whatsapp", "chat", "linkedin"]),
         conversation_id: z.string().uuid(),
         before: cursorSchema.optional(),
         after: cursorSchema.optional(),
@@ -33,6 +29,7 @@ export const listConversationMessages = createServerFn({ method: "POST" })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
+    await authorizeHistoryChannel(context.supabase, context.userId, data.channel);
     type Res = { data: unknown[] | null; error: { message: string } | null };
     type Q = PromiseLike<Res> & {
       eq(c: string, v: string): Q;
@@ -59,6 +56,12 @@ export const listConversationMessages = createServerFn({ method: "POST" })
         table: "live_chat_messages",
         fk: "session_id",
         select: "id, session_id, direction, author_user_id, body, created_at",
+        limit: 50,
+      },
+      linkedin: {
+        table: "linkedin_messages",
+        fk: "conversation_id",
+        select: "id,conversation_id,direction,body,created_at,provider_message_id",
         limit: 50,
       },
     } as const;

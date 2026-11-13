@@ -1,3 +1,4 @@
+import { linkedinCallbackTarget } from "@/lib/unipile/callback-target";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,10 +13,7 @@ export const Route = createFileRoute("/unipile-connected")({
 
 function UnipileConnectedPage() {
   const search = Route.useSearch() as Record<string, unknown>;
-  const ok = search.connected !== "0";
-  // Na API v2 o hosted auth não aceita mais notify_url/name: o connect_token
-  // volta como `state` e precisa chegar na tela de settings para reconciliação.
-  const state = typeof search.state === "string" ? search.state : "";
+  const { ok, target } = linkedinCallbackTarget(search);
   const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
@@ -26,15 +24,13 @@ function UnipileConnectedPage() {
       if (cancelled) return;
       if (data.session) {
         setRedirecting(true);
-        const qs = new URLSearchParams({ connected: ok ? "1" : "0" });
-        if (state) qs.set("state", state);
-        window.location.replace(`/settings/integrations/linkedin?${qs.toString()}`);
+        window.location.replace(target);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [ok, state]);
+  }, [target]);
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6">
@@ -45,11 +41,11 @@ function UnipileConnectedPage() {
           <XCircle className="h-12 w-12 text-destructive mx-auto" />
         )}
         <h1 className="text-xl font-semibold">
-          {ok ? "Conta LinkedIn conectada" : "Falha ao conectar"}
+          {ok ? "Verificar conexão LinkedIn" : "Falha ao conectar"}
         </h1>
         <p className="text-sm text-muted-foreground">
           {ok
-            ? "Sua conta foi conectada via Unipile. Redirecionando para as configurações…"
+            ? "Autenticação recebida. A conta será confirmada com a Unipile nas configurações."
             : "Não foi possível concluir a conexão. Tente novamente."}
         </p>
         {!redirecting && (

@@ -3,9 +3,16 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { workRpc } from "@/lib/access-control/work-core.server";
-const Source = z.object({ channel: z.enum(["email", "chat"]), source_id: z.string().uuid() });
-const sourceTable = (channel: "email" | "chat") =>
-  channel === "email" ? "email_threads" : "live_chat_sessions";
+const Source = z.object({
+  channel: z.enum(["email", "chat", "linkedin"]),
+  source_id: z.string().uuid(),
+});
+const sourceTable = (channel: "email" | "chat" | "linkedin") =>
+  channel === "email"
+    ? "email_threads"
+    : channel === "linkedin"
+      ? "linkedin_conversations"
+      : "live_chat_sessions";
 export type ServiceInboxState = {
   active: boolean;
   agent_name?: string;

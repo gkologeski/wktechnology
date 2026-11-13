@@ -14,7 +14,7 @@ export type ServiceSession = {
   id: string;
   workspace_id: string;
   account_id: string;
-  channel: "email" | "chat";
+  channel: "email" | "chat" | "linkedin";
   source_id: string;
   enrollment_id: string;
   ai_owner: string;
@@ -59,14 +59,23 @@ export async function loadServiceHistory(
   const email = session.channel === "email";
   if (email && !emailAccountId) throw new Error("Conta de histórico indisponível.");
   let query = admin
-    .from(email ? "email_messages" : "live_chat_messages")
+    .from(
+      email
+        ? "email_messages"
+        : session.channel === "linkedin"
+          ? "linkedin_messages"
+          : "live_chat_messages",
+    )
     .select(
       email
         ? "id,direction,body_text,snippet,from_email,created_at"
         : "id,direction,body,created_at",
     )
     .eq("workspace_id", session.workspace_id)
-    .eq(email ? "thread_id" : "session_id", session.source_id)
+    .eq(
+      email ? "thread_id" : session.channel === "linkedin" ? "conversation_id" : "session_id",
+      session.source_id,
+    )
     .order("created_at", { ascending: false })
     .limit(30);
   if (email) query = query.eq("account_id", emailAccountId);
@@ -144,6 +153,69 @@ export async function deliverServiceJob(
   const materialIds = Array.isArray(job.draft_payload?.file_material_ids)
     ? (job.draft_payload.file_material_ids as string[])
     : [];
+  if (session.channel === "linkedin") {
+    const cv = must(
+      await admin
+        .from("linkedin_conversations")
+        .select("account_id,owner_id,provider_chat_id,status")
+        .eq("id", session.source_id)
+        .eq("workspace_id", session.workspace_id)
+        .single(),
+    ) as any;
+    if (cv.status !== "open")
+      throw Object.assign(new Error("Conversa encerrada."), { beforeProvider: true });
+    const { loadAccountCtx, sendLinkedinChatReply, normalizeSendMessageResult, UnipileError } =
+      await import("@/lib/unipile/client.server");
+    const ctx = await loadAccountCtx(cv.owner_id, session.workspace_id);
+    if (ctx.accountId !== cv.account_id)
+      throw Object.assign(new Error("Conta alterada."), { beforeProvider: true });
+    const files = await emailMaterialAttachments(admin, session.workspace_id, materialIds);
+    if (files.reduce((n, f) => n + f.data.length, 0) > 5 * 1024 * 1024)
+      throw Object.assign(new Error("Materiais excedem o limite do LinkedIn."), {
+        beforeProvider: true,
+      });
+    await serviceJobGuard(admin, job);
+    let response: unknown;
+    try {
+      response = await sendLinkedinChatReply(ctx, {
+        chatId: cv.provider_chat_id,
+        text: job.draft_text,
+        requestKey: `sdr:${job.id}`,
+        attachments: files.map((f) => ({
+          filename: f.filename,
+          content_type: f.contentType,
+          data: Buffer.from(f.data).toString("base64"),
+        })),
+      });
+    } catch (error) {
+      if (
+        error instanceof UnipileError &&
+        ["rate_limited", "daily_budget_reached", "out_of_window"].includes(error.code)
+      )
+        throw Object.assign(error, {
+          beforeProvider: true,
+          deferMs: error.retryAfterMs ?? 3600000,
+        });
+      throw error;
+    }
+    const receipt = normalizeSendMessageResult(response);
+    if (!receipt.messageId) throw new Error("Envio LinkedIn com retorno incerto.");
+    must(
+      await admin
+        .from("service_agent_jobs")
+        .update({ provider_message_id: receipt.messageId })
+        .eq("id", job.id)
+        .eq("send_token", job.send_token),
+    );
+    must(
+      await admin.rpc("service_agent_complete_linkedin", {
+        p_job: job.id,
+        p_send_token: job.send_token,
+        p_provider_id: receipt.messageId,
+      }),
+    );
+    return { providerId: receipt.messageId };
+  }
   if (session.channel === "chat") {
     const files = materialIds.length
       ? (must(

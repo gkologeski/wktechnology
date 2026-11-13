@@ -1,5 +1,6 @@
+import { LinkedinProtection } from "@/components/service-channels/linkedin-protection";
 import { createFileRoute, useSearch } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -18,6 +19,8 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { readViewAs } from "@/lib/view-as-client";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
   getLinkedinAccount,
@@ -37,6 +40,7 @@ const searchSchema = z
       .optional(),
     // `state` = connect_token devolvido pelo hosted auth (API v2).
     state: z.string().trim().max(128).optional(),
+    account_id: z.string().max(200).optional(),
   })
   .passthrough();
 
@@ -56,7 +60,13 @@ type AccountRow = {
   last_error: string | null;
 };
 
-type Bucket = { endpoint: string; count: number; day_utc: string; last_request_at?: string };
+type Bucket = {
+  endpoint: string;
+  count: number;
+  day_utc: string;
+  limit?: number;
+  last_request_at?: string;
+};
 
 const STATUS_LABEL: Record<AccountRow["status"], string> = {
   connected: "Conectado",
@@ -76,6 +86,18 @@ const STATUS_VARIANT: Record<
 
 function LinkedinIntegrationPage() {
   const search = useSearch({ from: Route.id });
+  const navigate = Route.useNavigate();
+  const handledCallback = useRef<string | null>(null);
+  const permissions = usePermissions();
+  const canManage =
+    !permissions.isLoading &&
+    !permissions.isError &&
+    !!permissions.workspaceId &&
+    !readViewAs()?.readOnly &&
+    (permissions.can("system.linkedin.view.own") ||
+      permissions.can("system.linkedin.view.workspace")) &&
+    (permissions.can("system.linkedin.manage.own") ||
+      permissions.can("system.linkedin.manage.workspace"));
   const loadAccount = useServerFn(getLinkedinAccount);
   const loadUsage = useServerFn(getRateUsage);
   const startConnect = useServerFn(startLinkedinConnect);
@@ -110,6 +132,10 @@ function LinkedinIntegrationPage() {
         setStartHour(w?.start_hour ?? 8);
         setEndHour(w?.end_hour ?? 20);
       }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Falha ao carregar a integração LinkedIn.",
+      );
     } finally {
       setLoading(false);
     }
@@ -121,20 +147,27 @@ function LinkedinIntegrationPage() {
 
   useEffect(() => {
     if (search.connected === "1") {
-      toast.success("Conta LinkedIn conectada via Unipile.");
-      // Fallback caso o webhook ainda não tenha chegado: reconcilia via API.
-      // Na v2 o `state` é a correlação com o connect_token emitido no início.
+      if (handledCallback.current === search.state) return;
+      handledCallback.current = search.state ?? "missing";
+      // Redirect pointers are verified against the provider and a one-use server state.
       (async () => {
         try {
-          await reconcile({ data: search.state ? { state: search.state } : {} });
-        } catch {
-          /* ignora */
+          if (!search.state || !search.account_id)
+            throw new Error("Retorno de autenticação incompleto.");
+          const result = await reconcile({
+            data: { state: search.state, accountId: search.account_id },
+          });
+          if (result.ok) toast.success("Conta LinkedIn confirmada via Unipile.");
+          else toast.info("Aguardando confirmação segura da conta pela Unipile.");
+        } catch (e) {
+          toast.error((e as Error).message);
         }
         await refresh();
+        void navigate({ search: {}, replace: true });
       })();
     }
     if (search.connected === "0") toast.error("Falha ao conectar conta LinkedIn.");
-  }, [search.connected, search.state]);
+  }, [search.connected, search.state, search.account_id]);
 
   const onCheckCredentials = async () => {
     setChecking(true);
@@ -184,14 +217,6 @@ function LinkedinIntegrationPage() {
     }
   };
 
-  const dailyLimits: Record<string, number> = {
-    "profile.fetch": 80,
-    "profile.search": 20,
-    "message.send": 40,
-    "invite.send": 15,
-    "chat.list": 200,
-  };
-
   return (
     <div className="p-6 space-y-6 max-w-4xl">
       <div className="flex items-start justify-between gap-4">
@@ -202,7 +227,7 @@ function LinkedinIntegrationPage() {
           </h1>
           <p className="text-sm text-muted-foreground">
             Conecte sua conta LinkedIn para buscar perfis, capturar candidatos e enviar mensagens
-            respeitando limites human-like.
+            com controles operacionais por conta.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={refresh} disabled={loading}>
@@ -221,14 +246,14 @@ function LinkedinIntegrationPage() {
           </CardTitle>
           <CardDescription>
             A conexão é feita via Unipile Hosted Auth — suas credenciais LinkedIn nunca passam pelo
-            TechHire.
+            TechERP.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {loading ? (
             <p className="text-sm text-muted-foreground">Carregando…</p>
           ) : !account || account.status === "disconnected" ? (
-            <Button onClick={onConnect} disabled={connecting}>
+            <Button onClick={onConnect} disabled={connecting || !canManage}>
               <Link2 className="h-4 w-4 mr-2" />
               {connecting ? "Abrindo Unipile…" : "Conectar LinkedIn"}
             </Button>
@@ -237,7 +262,7 @@ function LinkedinIntegrationPage() {
               <p className="text-sm text-muted-foreground">
                 Conexão pendente. Se já fechou a janela, tente novamente.
               </p>
-              <Button onClick={onConnect} disabled={connecting}>
+              <Button onClick={onConnect} disabled={connecting || !canManage}>
                 <Link2 className="h-4 w-4 mr-2" />
                 Tentar novamente
               </Button>
@@ -247,7 +272,7 @@ function LinkedinIntegrationPage() {
               <p className="text-sm text-destructive">
                 {account.last_error ?? "Erro ao conectar."}
               </p>
-              <Button onClick={onConnect} disabled={connecting}>
+              <Button onClick={onConnect} disabled={connecting || !canManage}>
                 <Link2 className="h-4 w-4 mr-2" />
                 Reconectar
               </Button>
@@ -262,7 +287,7 @@ function LinkedinIntegrationPage() {
                 <span className="text-muted-foreground">Último uso:</span>{" "}
                 {account.last_seen_at ? new Date(account.last_seen_at).toLocaleString() : "—"}
               </div>
-              <Button variant="outline" onClick={onDisconnect}>
+              <Button variant="outline" onClick={onDisconnect} disabled={!canManage}>
                 <Power className="h-4 w-4 mr-2" />
                 Desconectar
               </Button>
@@ -281,7 +306,7 @@ function LinkedinIntegrationPage() {
                 variant="outline"
                 size="sm"
                 onClick={onCheckCredentials}
-                disabled={checking}
+                disabled={checking || !canManage}
                 aria-label="Testar credenciais da API Unipile"
               >
                 <KeyRound className={`h-4 w-4 mr-2 ${checking ? "animate-pulse" : ""}`} />
@@ -357,23 +382,27 @@ function LinkedinIntegrationPage() {
               />
             </div>
           </div>
-          <Button onClick={onSaveWindow} disabled={!account || account.status === "disconnected"}>
+          <Button
+            onClick={onSaveWindow}
+            disabled={!canManage || !account || account.status === "disconnected"}
+          >
             Salvar janela
           </Button>
         </CardContent>
       </Card>
 
+      <LinkedinProtection />
       <Card>
         <CardHeader>
           <CardTitle>Uso de hoje</CardTitle>
           <CardDescription>
-            Cada operação respeita um budget diário separado para proteger sua conta LinkedIn.
+            Tentativas do TechERP no dia civil do fuso configurado, incluindo falhas. Cotas semanais
+            e pausas também se aplicam.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          {Object.entries(dailyLimits).map(([endpoint, limit]) => {
-            const used = buckets.find((b) => b.endpoint === endpoint)?.count ?? 0;
-            const pct = Math.min(100, Math.round((used / limit) * 100));
+          {buckets.map(({ endpoint, count: used, limit = 0 }) => {
+            const pct = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 100;
             return (
               <div key={endpoint} className="space-y-1">
                 <div className="flex items-center justify-between">

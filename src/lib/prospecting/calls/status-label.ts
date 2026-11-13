@@ -20,7 +20,11 @@ export function callCampaignChecklist(i: {
   days: number[];
   start: string;
   end: string;
-  meeting?: { meeting_assignment_mode: string; meeting_member_ids: string[]; meeting_template_name: string | null };
+  meeting?: {
+    meeting_assignment_mode: string;
+    meeting_member_ids: string[];
+    meeting_template_name: string | null;
+  };
 }): CallCampaignChecklist {
   const withScript = i.variants.filter((v) => v.script_id);
   const sum = withScript.reduce((s, v) => s + v.weight, 0);

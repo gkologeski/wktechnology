@@ -29,6 +29,13 @@ describe("controles da campanha de ligação", () => {
       { campaign_id: "a", status: "queued", created_at: "2026-11-04" },
       { campaign_id: "a", status: "canceled", created_at: "2026-11-05" },
     ]).get("a");
-    expect(s).toEqual({ done: 1, failed: 2, pending: 1, total: 5, startedAt: "2026-11-01", nextAt: "2026-11-04" });
+    expect(s).toEqual({
+      done: 1,
+      failed: 2,
+      pending: 1,
+      total: 5,
+      startedAt: "2026-11-01",
+      nextAt: "2026-11-04",
+    });
   });
 });

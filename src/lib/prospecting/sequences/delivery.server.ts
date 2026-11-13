@@ -5,7 +5,7 @@ import { renderRequiredTokens, usesEntityTokens } from "./variable-tokens";
 import { validateEmailAddress } from "@/lib/email-address";
 import { isValidE164 } from "@/lib/phone/e164";
 import { pickUnsuppressedWhatsApp } from "@/lib/whatsapp/whatsapp-suppression";
-import { SequenceNotStartedError } from "./runtime";
+import { SequenceNotStartedError, SequenceDeferredError } from "./runtime";
 import { inspectSequenceTemplate } from "./preflight";
 import type { RuntimeContext, SequencePorts } from "./worker.server";
 import type { SequenceStep } from "./draft";
@@ -42,7 +42,14 @@ function assertReservedSource(
 ) {
   if (effect.sourceKey !== sourceKey || !effect.source)
     throw new SequenceNotStartedError("sender_changed_before_send");
-  for (const key of ["email", "phones", "first_name", "last_name", "company_name"]) {
+  for (const key of [
+    "email",
+    "phones",
+    "first_name",
+    "last_name",
+    "company_name",
+    "linkedin_url",
+  ]) {
     if (
       JSON.stringify((effect.source as unknown as Record<string, unknown>)[key] ?? null) !==
       JSON.stringify((ctx.source as unknown as Record<string, unknown>)[key] ?? null)
@@ -68,9 +75,11 @@ async function tokenContext(
   const texts =
     step.type === "email"
       ? [step.subject, step.body]
-      : step.type === "whatsapp"
-        ? Object.values(step.variables)
-        : [];
+      : step.type === "linkedin"
+        ? [step.body]
+        : step.type === "whatsapp"
+          ? Object.values(step.variables)
+          : [];
   const entities = texts.some((t) => usesEntityTokens(t))
     ? await loadEntityVariables(admin, ctx.run.workspace_id, ctx.person)
     : {};
@@ -86,7 +95,7 @@ async function channelIdentity(
   admin: SupabaseClient,
   ctx: RuntimeContext,
   sourceKey: string,
-  channel: "email" | "whatsapp",
+  channel: "email" | "whatsapp" | "linkedin",
   agentId: string | null,
 ) {
   if (!agentId) return;
@@ -155,7 +164,8 @@ export function sequenceDeliveryPorts(
           });
           return { receipt: id, committed: true };
         };
-      if (step.type !== "email" && step.type !== "whatsapp") throw new Error("Etapa não enviável.");
+      if (step.type !== "email" && step.type !== "whatsapp" && step.type !== "linkedin")
+        throw new Error("Etapa não enviável.");
       const account = await workRpc<{ sourceKey: string }>(
         admin,
         "prospecting_sequence_delivery_access",
@@ -163,8 +173,72 @@ export function sequenceDeliveryPorts(
       );
       const tokens = await tokenContext(admin, ctx, step);
       const agentId =
-        (step.type === "whatsapp" ? step.agentId : null) || ctx.definition.settings.agentId;
+        (step.type === "whatsapp" || step.type === "linkedin" ? step.agentId : null) ||
+        ctx.definition.settings.agentId;
       await channelIdentity(admin, ctx, account.sourceKey, step.type, agentId);
+      if (step.type === "linkedin") {
+        const { linkedinProfileIdentifier } = await import("@/lib/unipile/profile-address");
+        const identifier = linkedinProfileIdentifier(ctx.source.linkedin_url);
+        if (!identifier) throw new Error("Perfil LinkedIn ausente ou inválido.");
+        const unipile = await import("@/lib/unipile/client.server");
+        const sender = await unipile.loadAccountCtx(ctx.run.owner_id, ctx.run.workspace_id);
+        if (sender.accountId !== account.sourceKey)
+          throw new SequenceNotStartedError("sender_changed_before_send");
+        const defer = (error: unknown): never => {
+          if (
+            error instanceof unipile.UnipileError &&
+            ["rate_limited", "daily_budget_reached", "out_of_window"].includes(error.code)
+          )
+            throw new SequenceDeferredError(
+              new Date(Date.now() + (error.retryAfterMs ?? 3600000)).toISOString(),
+            );
+          throw error;
+        };
+        let profile: unknown;
+        try {
+          profile = await unipile.fetchProfile(sender, identifier);
+        } catch (e) {
+          defer(e);
+        }
+        const target = unipile.extractProfileProviderId(profile);
+        if (!target) throw new Error("Não foi possível identificar o destinatário LinkedIn.");
+        const text = requiredTokens(step.body, tokens);
+        return async (effect) => {
+          assertReservedSource(effect, ctx, account.sourceKey);
+          await workRpc(admin, "prospecting_sequence_delivery_access", {
+            p_run: ctx.run.id,
+            p_lease: ctx.run.lease_token,
+          });
+          if (
+            !(await workRpc<boolean>(admin, "prospecting_sequence_linkedin_identity", {
+              p_run: ctx.run.id,
+              p_lease: ctx.run.lease_token,
+              p_account: sender.accountId,
+              p_target: target,
+            }))
+          )
+            throw new SequenceNotStartedError("source_changed_before_send");
+          await channelIdentity(admin, ctx, account.sourceKey, "linkedin", agentId);
+          let result: unknown;
+          try {
+            result = await unipile.sendLinkedinMessage(sender, {
+              attendeeProviderId: target,
+              text,
+              requestKey: `sequence:${effect.id}`,
+            });
+          } catch (e) {
+            defer(e);
+          }
+          const receipt = unipile.normalizeSendMessageResult(result);
+          if (!receipt.messageId) throw new Error("Recibo LinkedIn incompleto.");
+          return persistReceipt(admin, effect, {
+            messageId: receipt.messageId,
+            chatId: receipt.chatId,
+            targetId: target,
+            body: text,
+          });
+        };
+      }
       if (step.type === "email") {
         const checked = validateEmailAddress(ctx.source.email);
         if (!checked.ok) throw new Error("Destinatário inválido.");

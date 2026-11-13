@@ -1,3 +1,4 @@
+import { linkedinProfileIdentifier } from "@/lib/unipile/profile-address";
 import { z } from "zod";
 import { validateEmailAddress } from "@/lib/email-address";
 import { isValidE164 } from "@/lib/phone/e164";
@@ -40,6 +41,8 @@ export function cohortCandidates(rows: AudienceRow[], definition: SequenceDefini
     .map((row) => {
       if (row.sourceType !== "lead" && row.sourceType !== "contact")
         throw new Error("Base de destinatários inválida.");
+      const raw_linkedin_url = row.values[`${row.sourceType}.linkedin_url`] ?? "";
+      const linkedin_identifier = linkedinProfileIdentifier(raw_linkedin_url);
       const raw_email = row.values[`${row.sourceType}.email`] ?? "";
       const checked = validateEmailAddress(raw_email);
       const raw_phones = [
@@ -53,6 +56,8 @@ export function cohortCandidates(rows: AudienceRow[], definition: SequenceDefini
         entity: row.sourceType,
         id: row.sourceId,
         raw_email,
+        raw_linkedin_url,
+        linkedin_identifier,
         raw_phones,
         email: checked.ok ? checked.value : null,
         email_aliases: checked.ok
@@ -60,6 +65,7 @@ export function cohortCandidates(rows: AudienceRow[], definition: SequenceDefini
           : [],
         phones,
         channels: {
+          linkedin: needed.has("linkedin") && !!linkedin_identifier,
           email: needed.has("email") && checked.ok,
           whatsapp: needed.has("whatsapp") && whatsapp,
           call: needed.has("call") && phones.length > 0,

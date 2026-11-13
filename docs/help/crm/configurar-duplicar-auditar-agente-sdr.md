@@ -8,7 +8,7 @@ route_pattern: /agents/sdr
 min_permission: techsales.marketing.sdr_agent.view.workspace
 audience: internal
 sort_order: 410
-version: 3
+version: 4
 is_published: true
 ---
 # Configurar, duplicar e auditar o agente SDR
@@ -46,3 +46,7 @@ Não há aprovação manual: cada mensagem é auditada antes do envio e refeita 
 ## Relacionados
 - [Configurar canais e planejamento de uma sequência](/ajuda/crm/configurar-canais-planejamento-de-sequencia)
 - [Permissões](/ajuda/crm/permissoes)
+
+## Atendimento LinkedIn
+
+Vincule o agente à sua conta LinkedIn em Configurações > Canais. Habilite receptivo, respostas a sequências ou ambos. O agente usa a versão publicada da persona e das ferramentas existentes, com nome de atendimento definido no canal. Acesso ao CRM continua condicionado às permissões atuais do proprietário da conta; identidade não confirmada limita o contexto. Assumir como humano interrompe respostas automáticas.

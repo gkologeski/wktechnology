@@ -13,21 +13,36 @@ const base = {
 describe("distribuição das reuniões da ligação", () => {
   it("membro específico exige exatamente um", () => {
     expect(() =>
-      normalizeMeetingAssignment({ ...base, meeting_assignment_mode: "member", meeting_member_ids: [] }),
+      normalizeMeetingAssignment({
+        ...base,
+        meeting_assignment_mode: "member",
+        meeting_member_ids: [],
+      }),
     ).toThrow(/exatamente um/);
   });
   it("rodízio exige ao menos dois", () => {
     expect(() =>
-      normalizeMeetingAssignment({ ...base, meeting_assignment_mode: "round_robin", meeting_member_ids: [A] }),
+      normalizeMeetingAssignment({
+        ...base,
+        meeting_assignment_mode: "round_robin",
+        meeting_member_ids: [A],
+      }),
     ).toThrow(/dois/);
   });
   it("sem agendamento descarta membros", () => {
-    const r = normalizeMeetingAssignment({ ...base, meeting_assignment_mode: "unassigned", meeting_member_ids: [A] });
+    const r = normalizeMeetingAssignment({
+      ...base,
+      meeting_assignment_mode: "unassigned",
+      meeting_member_ids: [A],
+    });
     expect(r.meeting_member_ids).toEqual([]);
   });
   it("aponta quem não tem agenda conectada", () => {
     expect(
-      membersWithoutCalendar({ meeting_assignment_mode: "round_robin", meeting_member_ids: [A, B] }, new Set([A])),
+      membersWithoutCalendar(
+        { meeting_assignment_mode: "round_robin", meeting_member_ids: [A, B] },
+        new Set([A]),
+      ),
     ).toEqual([B]);
   });
 });
