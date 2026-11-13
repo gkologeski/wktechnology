@@ -15,6 +15,7 @@ async function maybeRequeueAttempt(
   row: {
     id: string;
     workspace_id: string;
+    owner_id?: string | null;
     campaign_id: string | null;
     lead_id: string | null;
     contact_id: string | null;
@@ -53,7 +54,7 @@ async function maybeRequeueAttempt(
   const scheduledAt = new Date(Date.now() + retryMin * 60_000).toISOString();
   await sb.from("prospecting_call_attempts").insert({
     workspace_id: row.workspace_id,
-    owner_id: row.workspace_id,
+    owner_id: row.owner_id ?? row.workspace_id,
     campaign_id: row.campaign_id,
     [col]: target,
     status: "queued",
@@ -171,7 +172,7 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           updates.status = "completed";
           updates.ended_at = new Date().toISOString();
           if (typeof msg.durationSeconds === "number")
-            updates.duration_seconds = msg.durationSeconds;
+            updates.duration_seconds = Math.round(msg.durationSeconds);
           if (typeof msg.cost === "number") updates.cost_usd = msg.cost;
           const artifact = msg.artifact as Record<string, unknown> | undefined;
           if (artifact) {
@@ -197,7 +198,7 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           .from("prospecting_call_attempts")
           .update(updates)
           .eq("vapi_call_id", callId)
-          .select("id, workspace_id, campaign_id, lead_id, contact_id, summary, attempt_number")
+          .select("id, workspace_id, owner_id, campaign_id, lead_id, contact_id, summary, attempt_number")
           .maybeSingle();
         if (error) {
           console.error("[vapi-hook]", error);
@@ -205,17 +206,18 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
         }
 
         if (type === "end-of-call-report" && (row?.lead_id || row?.contact_id)) {
-          await sb.from("activities").insert({
+          const { error: actErr } = await sb.from("activities").insert({
             workspace_id: row.workspace_id,
-            owner_id: row.workspace_id,
+            // Dono = quem iniciou a ligação (o workspace não é usuário: violava a FK).
+            owner_id: row.owner_id,
             type: "call",
             related_lead_id: row.lead_id ?? null,
             related_contact_id: row.contact_id ?? null,
             subject: "Ligação do agente de voz",
             body: row.summary ?? (updates.transcript as string | undefined) ?? null,
-            description: row.summary ?? (updates.transcript as string | undefined) ?? null,
             external_ids: { call_attempt_id: row.id },
           });
+          if (actErr) console.error("[vapi-hook] activity", actErr.message);
           // Cartão "Ligação" na conversa da Inbox (best-effort).
           const { recordCallInInbox } = await import("@/lib/prospecting/calls/call-inbox.server");
           await recordCallInInbox(row.id as string).catch((e) =>
