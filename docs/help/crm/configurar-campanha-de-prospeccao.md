@@ -8,7 +8,7 @@ route_pattern: /campaigns/calls/$id
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 402
-version: 7
+version: 11
 is_published: true
 ---
 # Configurar uma campanha de ligação em 5 passos
@@ -47,5 +47,33 @@ Em **Campanhas de Ligação**, cada campanha mostra quantas ligações foram rea
 - **Editar**: abre os 5 passos. Só funciona em campanhas em rascunho ou pausadas.
 - **Duplicar**: cria uma cópia em rascunho com público, roteiros, agenda e pós-ligação, sem as ligações já feitas.
 - **Iniciar / Retomar / Pausar**: controla a discagem.
-- **Encerrar** (X): finaliza a campanha como Concluída; as ligações que ainda estavam na fila não são feitas.
+- **Encerrar** (X): finaliza a campanha como **Cancelada**; as ligações que ainda estavam na fila não são feitas. Uma campanha cancelada não pode ser editada nem retomada, mas pode ser duplicada ou excluída.
 - **Excluir**: só fora de "Em andamento". As ligações já feitas continuam registradas nas fichas.
+
+### Ritmo
+
+Com a campanha em andamento, a lista e o topo da ficha mostram uma **estimativa** da próxima ligação e do término, calculada pelas ligações na fila, pela janela de horário e pelos dias de discagem (o discador faz até 10 ligações a cada 2 minutos). Pausada, a campanha mostra "Pausada — sem previsão".
+
+### Modelo aprovado no pós-ligação
+
+No passo **Pós-ligação**, ao escolher o remetente do WhatsApp, a lista **Modelo aprovado** carrega sozinha os modelos aprovados pela Meta desse remetente. Se você trocar de remetente e o modelo salvo não existir nele, escolha um modelo novo.
+
+## Distribuição das reuniões
+No passo **4. Pós-ligação**, a seção **Distribuição das reuniões** define na agenda de quem a reunião é marcada, com as mesmas opções da campanha de WhatsApp:
+- **Responsável do Lead/Contato:** usa a agenda do responsável. Se ele não tiver agenda conectada, os horários seguem pelo WhatsApp.
+- **Membro específico:** todas as reuniões vão para a pessoa escolhida.
+- **Dividir entre membros da equipe:** rodízio igual entre os membros marcados (mínimo 2).
+- **Sem agendamento na ligação:** a assistente só combina de enviar os horários pelo WhatsApp (padrão).
+
+Só aparecem para escolha membros ativos com agenda Google conectada; os demais são listados como "Sem agenda conectada". Com distribuição ligada, escolha a duração, quantos dias à frente oferecer e o modelo aprovado do WhatsApp que levará o link. O botão **Iniciar** só libera quando essa seção estiver completa.
+
+## Agendar durante a ligação
+Para a assistente marcar a reunião na própria ligação, abra **Roteiros** e ligue **Agendar durante a ligação** no roteiro usado pela campanha (vem desligado). Com isso:
+1. Quando o cliente aceita conversar, a assistente consulta a agenda real do especialista definido na distribuição e fala até 3 horários livres (segunda a sexta, 9h–12h e 13h30–18h, com pelo menos 2 horas de antecedência).
+2. O cliente escolhe; a assistente repete a data e a hora e marca só depois da confirmação. Cada ligação marca no máximo uma reunião, e a agenda é conferida de novo antes de marcar.
+3. A reunião entra na agenda Google do especialista com link de vídeo e aparece na ficha do Lead/Contato.
+4. Ao terminar a ligação, o cliente recebe o link pelo WhatsApp com o modelo aprovado escolhido ({{1}} nome, {{2}} data e hora, {{3}} link).
+Se a agenda não responder, a assistente diz que vai mandar os horários pelo WhatsApp. Em **Chamadas recentes**, a ligação mostra "Reunião dd/mm hh:mm" ou "Reunião não marcada".
+
+## Ligação na Inbox
+Ao terminar, cada ligação aparece como cartão **Ligação** na conversa do Lead/Contato na Inbox do WhatsApp (a mesma conversa quando o número é o mesmo): situação, duração, roteiro, reunião marcada (se houve), resumo, áudio da gravação e **Ver transcrição completa**. A conversa segue as regras da Inbox: só quem tem acesso à conversa vê. O resumo também passa a aparecer no evento **Ligação** da ficha.

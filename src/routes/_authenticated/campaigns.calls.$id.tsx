@@ -18,6 +18,9 @@ import { ArrowLeft, Plus, Trash2, Save, Play, Pause, Check, AlertCircle } from "
 import {
   callCampaignChecklist,
   callCampaignStatusLabel,
+  estimateCallPace,
+  summarizeCallAttempts,
+  type DialingWindow,
 } from "@/lib/prospecting/calls/status-label";
 import { toast } from "sonner";
 import {
@@ -42,6 +45,8 @@ import {
 } from "@/components/whatsapp/campaign-audience-panel";
 import { hasCallAudience, parseManualPhones } from "@/lib/prospecting/calls/call-audience";
 import { CampaignCallFollowup } from "@/components/prospecting/campaign-call-followup";
+import { CampaignCallMeetings } from "@/components/prospecting/campaign-call-meetings";
+import type { MeetingAssignment } from "@/lib/prospecting/calls/meeting-assignment";
 import { listScripts, type ProspectingScript } from "@/lib/prospecting-scripts.functions";
 
 export const Route = createFileRoute("/_authenticated/campaigns/calls/$id")({
@@ -77,10 +82,26 @@ function CampaignDetailPage() {
   const [manualRaw, setManualRaw] = useState("");
   const [useNewAudience, setUseNewAudience] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [meeting, setMeeting] = useState<MeetingAssignment>({
+    meeting_assignment_mode: "unassigned",
+    meeting_member_ids: [],
+    meeting_duration_minutes: 30,
+    meeting_horizon_days: 7,
+    meeting_template_name: null,
+    meeting_template_language: null,
+  });
 
   const refresh = async () => {
     const out = await getFn({ data: { id } });
     setCampaign(out.campaign);
+    setMeeting({
+      meeting_assignment_mode: out.campaign.meeting_assignment_mode ?? "unassigned",
+      meeting_member_ids: out.campaign.meeting_member_ids ?? [],
+      meeting_duration_minutes: out.campaign.meeting_duration_minutes ?? 30,
+      meeting_horizon_days: out.campaign.meeting_horizon_days ?? 7,
+      meeting_template_name: out.campaign.meeting_template_name ?? null,
+      meeting_template_language: out.campaign.meeting_template_language ?? null,
+    });
     setVariants(
       out.variants.map((v: Variant) => ({
         script_id: v.script_id,
@@ -163,6 +184,7 @@ function CampaignDetailPage() {
     days: campaign.dialing_window.days,
     start: campaign.dialing_window.start,
     end: campaign.dialing_window.end,
+    meeting,
   });
   const blockers = checklist.filter((c) => !c.ok);
   const canStart = blockers.length === 0;
@@ -197,6 +219,7 @@ function CampaignDetailPage() {
           recent_contact_days: campaign.recent_contact_days ?? 7,
           recent_contact_scope: campaign.recent_contact_scope ?? "calls",
           audience_config: useNewAudience ? callAudienceConfig : null,
+          meeting,
         },
       });
       toast.success("Salvo");
@@ -222,6 +245,37 @@ function CampaignDetailPage() {
           {callCampaignStatusLabel(campaign.status)}
         </Badge>
       </div>
+      {(campaign.status === "running" || campaign.status === "paused") &&
+        (() => {
+          const st = summarizeCallAttempts(
+            attempts.map((a) => ({
+              campaign_id: campaign.id,
+              status: a.status,
+              created_at: String((a as { created_at?: string }).created_at ?? ""),
+              scheduled_at: (a as { scheduled_at?: string | null }).scheduled_at ?? null,
+            })),
+          ).get(campaign.id);
+          const pace = estimateCallPace({
+            status: campaign.status,
+            pending: st?.pending ?? 0,
+            nextAt: st?.nextAt ?? null,
+            window: (campaign.dialing_window as DialingWindow | null) ?? null,
+            now: new Date(),
+          });
+          const f = (d: Date, t: boolean) =>
+            d.toLocaleString("pt-BR", {
+              day: "2-digit",
+              month: "2-digit",
+              ...(t ? { hour: "2-digit", minute: "2-digit" } : {}),
+            });
+          return (
+            <p className="text-sm text-muted-foreground" aria-live="polite">
+              {pace.kind === "estimate"
+                ? `Estimativa: próxima ligação ${f(pace.nextAt, true)} · término ${f(pace.endAt, false)}`
+                : pace.label}
+            </p>
+          );
+        })()}
 
       <nav aria-label="Passos da campanha" className="flex flex-wrap gap-2">
         {STEPS.map((label, i) => {
@@ -644,6 +698,11 @@ function CampaignDetailPage() {
             leads={audit}
             onChanged={refresh}
           />
+          <CampaignCallMeetings
+            value={meeting}
+            senderId={campaign.followup_sender_phone_number_id ?? null}
+            onChange={setMeeting}
+          />
         </div>
       )}
 
@@ -848,6 +907,20 @@ function CampaignDetailPage() {
                       <span className="text-xs text-muted-foreground truncate flex-1">
                         {a.ended_reason ?? a.summary ?? a.vapi_call_id ?? "—"}
                       </span>
+                      {a.meeting_status === "booked" && a.meeting_start_at && (
+                        <Badge variant="secondary">
+                          Reunião{" "}
+                          {new Date(a.meeting_start_at).toLocaleString("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </Badge>
+                      )}
+                      {a.meeting_status === "failed" && (
+                        <Badge variant="outline">Reunião não marcada</Badge>
+                      )}
                       <span className="text-xs text-muted-foreground">
                         {a.duration_seconds ?? 0}s
                       </span>

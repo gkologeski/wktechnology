@@ -1,0 +1,1 @@
+ALTER TYPE public.prospecting_campaign_status ADD VALUE IF NOT EXISTS 'canceled';

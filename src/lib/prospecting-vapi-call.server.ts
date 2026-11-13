@@ -180,8 +180,33 @@ export async function startVapiCall(opts: {
   const { publicAppOrigin } = await import("@/lib/runtime-config.server");
   const baseUrl = publicAppOrigin();
 
+  // Agendamento na ligação: só com roteiro que permite e campanha com distribuição.
+  let bookingEnabled = false;
+  if (script.allow_booking && opts.campaignId) {
+    const { data: mc } = await sb
+      .from("prospecting_campaigns")
+      .select("meeting_assignment_mode")
+      .eq("id", opts.campaignId)
+      .eq("workspace_id", opts.workspaceId)
+      .maybeSingle();
+    bookingEnabled = !!mc && mc.meeting_assignment_mode !== "unassigned";
+  }
+  const { VOICE_BOOKING_PROMPT, voiceBookingTools } =
+    await import("@/lib/prospecting/calls/voice-booking");
+  const withTools = (secret: string | undefined): Record<string, unknown> =>
+    bookingEnabled
+      ? {
+          ...(assistant.model as Record<string, unknown>),
+          messages: [{ role: "system", content: renderedPrompt + VOICE_BOOKING_PROMPT }],
+          tools: voiceBookingTools(`${baseUrl}/api/public/hooks/vapi`, secret),
+        }
+      : (assistant.model as Record<string, unknown>);
+
   // Body actually sent to Vapi (includes the real secret).
-  const outgoingAssistant: Record<string, unknown> = { ...assistant };
+  const outgoingAssistant: Record<string, unknown> = {
+    ...assistant,
+    model: withTools(webhookSecret),
+  };
   if (webhookSecret) {
     outgoingAssistant.server = { url: `${baseUrl}/api/public/hooks/vapi`, secret: webhookSecret };
   }
@@ -200,7 +225,10 @@ export async function startVapiCall(opts: {
   };
 
   // Persisted snapshot (redacted secret) — safe to render in the UI.
-  const redactedAssistant: Record<string, unknown> = { ...assistant };
+  const redactedAssistant: Record<string, unknown> = {
+    ...assistant,
+    model: withTools(webhookSecret ? "[REDACTED]" : undefined),
+  };
   if (webhookSecret) {
     redactedAssistant.server = { url: `${baseUrl}/api/public/hooks/vapi`, secret: "[REDACTED]" };
   }

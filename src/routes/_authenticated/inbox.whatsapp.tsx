@@ -1,3 +1,4 @@
+import { CallInboxCard } from "@/components/inbox/call-inbox-card";
 import { describeDeliveryError } from "@/lib/whatsapp/delivery-error";
 import { DeliveryFailureLabel } from "@/components/inbox/delivery-failure-label";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -674,9 +675,12 @@ function WhatsAppInbox() {
                       key={m.id}
                       outbound={m.direction === "outbound"}
                       when={m.created_at}
-                      status={m.direction === "outbound" ? m.status : null}
+                      status={m.direction === "outbound" && !m.call_attempt_id ? m.status : null}
                     >
-                      {m.media_url && (
+                      {m.call_attempt_id ? (
+                        <CallInboxCard body={m.body ?? ""} recordingUrl={m.media_url} />
+                      ) : null}
+                      {!m.call_attempt_id && m.media_url && (
                         <div className="mb-1">
                           <WhatsAppMediaBubble
                             url={m.media_url}
@@ -685,13 +689,15 @@ function WhatsAppInbox() {
                           />
                         </div>
                       )}
-                      {m.body && !(m.media_url && isLegacyPlaceholder(m.body)) && (
-                        <div className="whitespace-pre-wrap">
-                          <LinkifiedText
-                            text={sdrMaterialOf(m) ? stripMaterialLine(m.body) : m.body}
-                          />
-                        </div>
-                      )}
+                      {!m.call_attempt_id &&
+                        m.body &&
+                        !(m.media_url && isLegacyPlaceholder(m.body)) && (
+                          <div className="whitespace-pre-wrap">
+                            <LinkifiedText
+                              text={sdrMaterialOf(m) ? stripMaterialLine(m.body) : m.body}
+                            />
+                          </div>
+                        )}
                       {sdrMaterialOf(m) ? (
                         <SdrMaterialLink messageId={m.id} label={sdrMaterialOf(m)!} />
                       ) : null}
@@ -699,7 +705,8 @@ function WhatsAppInbox() {
                     <DeliveryFailureLabel
                       failure={
                         m.direction === "outbound" &&
-                        (m.status === "failed" || m.status === "undelivered")
+                        (m.status === "failed" || m.status === "undelivered") &&
+                        !m.call_attempt_id
                           ? describeDeliveryError(m.error_code, m.error_message)
                           : null
                       }
@@ -1043,6 +1050,7 @@ type WaMessageRow = {
   is_template: boolean | null;
   error_code?: string | null;
   error_message?: string | null;
+  call_attempt_id?: string | null;
 };
 const WA_PATCH_KEYS = [
   "status",

@@ -17,6 +17,7 @@ export type ProspectingScript = {
   created_at: string;
   updated_at: string;
   archived_at: string | null;
+  allow_booking?: boolean;
 };
 
 const ScriptInput = z.object({
@@ -27,6 +28,7 @@ const ScriptInput = z.object({
   objective: z.string().max(200).nullable().optional(),
   voice_id: z.string().max(64).nullable().optional(),
   voice_provider: z.enum(["elevenlabs", "vapi_default"]).default("elevenlabs"),
+  allow_booking: z.boolean().default(false),
   // Older rows may store an empty list; treat any array as "no variables".
   variables: z
     .preprocess((v) => (Array.isArray(v) ? {} : v), z.record(z.string(), z.string()))
@@ -62,6 +64,7 @@ export const upsertScript = createServerFn({ method: "POST" })
       voice_id: data.voice_id ?? null,
       voice_provider: data.voice_provider,
       variables: data.variables,
+      allow_booking: data.allow_booking,
     };
     if (data.id) {
       const { owner_id: _owner, workspace_id: _ws, ...updatable } = payload;
