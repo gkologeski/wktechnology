@@ -271,8 +271,8 @@ export function ScriptsPage() {
               <div>
                 <Label htmlFor="script-allow-booking">Agendar durante a ligação</Label>
                 <p className="text-xs text-muted-foreground mt-1">
-                  A assistente consulta a agenda do especialista definido na campanha, oferece
-                  até 3 horários e marca a reunião. O link vai pelo WhatsApp depois da ligação.
+                  A assistente consulta a agenda do especialista definido na campanha, oferece até 3
+                  horários e marca a reunião. O link vai pelo WhatsApp depois da ligação.
                 </p>
               </div>
               <Switch

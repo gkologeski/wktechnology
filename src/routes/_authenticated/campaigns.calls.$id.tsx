@@ -907,6 +907,20 @@ function CampaignDetailPage() {
                       <span className="text-xs text-muted-foreground truncate flex-1">
                         {a.ended_reason ?? a.summary ?? a.vapi_call_id ?? "—"}
                       </span>
+                      {a.meeting_status === "booked" && a.meeting_start_at && (
+                        <Badge variant="secondary">
+                          Reunião{" "}
+                          {new Date(a.meeting_start_at).toLocaleString("pt-BR", {
+                            day: "2-digit",
+                            month: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </Badge>
+                      )}
+                      {a.meeting_status === "failed" && (
+                        <Badge variant="outline">Reunião não marcada</Badge>
+                      )}
                       <span className="text-xs text-muted-foreground">
                         {a.duration_seconds ?? 0}s
                       </span>

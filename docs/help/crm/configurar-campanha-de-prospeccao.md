@@ -8,7 +8,7 @@ route_pattern: /campaigns/calls/$id
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 402
-version: 9
+version: 10
 is_published: true
 ---
 # Configurar uma campanha de ligação em 5 passos
@@ -66,3 +66,11 @@ No passo **4. Pós-ligação**, a seção **Distribuição das reuniões** defin
 - **Sem agendamento na ligação:** a assistente só combina de enviar os horários pelo WhatsApp (padrão).
 
 Só aparecem para escolha membros ativos com agenda Google conectada; os demais são listados como "Sem agenda conectada". Com distribuição ligada, escolha a duração, quantos dias à frente oferecer e o modelo aprovado do WhatsApp que levará o link. O botão **Iniciar** só libera quando essa seção estiver completa.
+
+## Agendar durante a ligação
+Para a assistente marcar a reunião na própria ligação, abra **Roteiros** e ligue **Agendar durante a ligação** no roteiro usado pela campanha (vem desligado). Com isso:
+1. Quando o cliente aceita conversar, a assistente consulta a agenda real do especialista definido na distribuição e fala até 3 horários livres (segunda a sexta, 9h–12h e 13h30–18h, com pelo menos 2 horas de antecedência).
+2. O cliente escolhe; a assistente repete a data e a hora e marca só depois da confirmação. Cada ligação marca no máximo uma reunião, e a agenda é conferida de novo antes de marcar.
+3. A reunião entra na agenda Google do especialista com link de vídeo e aparece na ficha do Lead/Contato.
+4. Ao terminar a ligação, o cliente recebe o link pelo WhatsApp com o modelo aprovado escolhido ({{1}} nome, {{2}} data e hora, {{3}} link).
+Se a agenda não responder, a assistente diz que vai mandar os horários pelo WhatsApp. Em **Chamadas recentes**, a ligação mostra "Reunião dd/mm hh:mm" ou "Reunião não marcada".

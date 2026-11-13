@@ -85,7 +85,9 @@ async function loadContext(sb: Admin, callId: string): Promise<Ctx | string> {
       .eq("status", "active");
     const active = new Set(((mems ?? []) as { user_id: string }[]).map((m) => m.user_id));
     const hosts = new Set(
-      ((accs ?? []) as { owner_id: string }[]).map((a) => a.owner_id).filter((id) => active.has(id)),
+      ((accs ?? []) as { owner_id: string }[])
+        .map((a) => a.owner_id)
+        .filter((id) => active.has(id)),
     );
     let ownerId: string | null = null;
     if (mode === "auto") {
@@ -143,7 +145,10 @@ async function loadContext(sb: Admin, callId: string): Promise<Ctx | string> {
   try {
     await assertSalesWorker(sb, "prospecting_campaigns", camp.id, [
       { member_id: hostId as string },
-      { table: att.contact_id ? "contacts" : "leads", id: (att.contact_id ?? att.lead_id) as string },
+      {
+        table: att.contact_id ? "contacts" : "leads",
+        id: (att.contact_id ?? att.lead_id) as string,
+      },
       { resource: "techsales.marketing.campaigns", action: "create" },
     ]);
   } catch {
@@ -208,7 +213,10 @@ async function availability(sb: Admin, c: Ctx): Promise<string> {
   if (!slots.length)
     return "Não há horários livres nos próximos dias. Diga que o especialista vai enviar opções pelo WhatsApp.";
   const offers: Offer[] = slots.map((x, i) => ({ option: i + 1, start: x.start, end: x.end }));
-  await sb.from("prospecting_call_attempts").update({ meeting_offers: offers }).eq("id", c.attempt.id);
+  await sb
+    .from("prospecting_call_attempts")
+    .update({ meeting_offers: offers })
+    .eq("id", c.attempt.id);
   return (
     "Horários livres: " +
     offers.map((o) => `opção ${o.option}: ${formatSlotPt(o.start, s.timezone)}`).join("; ") +
@@ -284,7 +292,9 @@ async function book(sb: Admin, c: Ctx, args: Record<string, unknown>): Promise<s
       if (g.ok) j = (await g.json()) as Record<string, unknown>;
     } else if (res.ok) j = (await res.json()) as Record<string, unknown>;
     if (!j) return fail(`Google respondeu ${res.status}`, res.status >= 500 || res.status === 429);
-    const conf = j.conferenceData as { entryPoints?: { entryPointType: string; uri: string }[] } | undefined;
+    const conf = j.conferenceData as
+      | { entryPoints?: { entryPointType: string; uri: string }[] }
+      | undefined;
     link =
       (j.hangoutLink as string | undefined) ??
       conf?.entryPoints?.find((e) => e.entryPointType === "video")?.uri ??
@@ -305,7 +315,12 @@ async function book(sb: Admin, c: Ctx, args: Record<string, unknown>): Promise<s
       due_date: new Date(offer.start).toISOString(),
       related_lead_id: c.attempt.lead_id ?? null,
       related_contact_id: c.attempt.contact_id ?? null,
-      external_ids: { provider: "google", event_id: eventId, meet_link: link, call_attempt_id: c.attempt.id },
+      external_ids: {
+        provider: "google",
+        event_id: eventId,
+        meet_link: link,
+        call_attempt_id: c.attempt.id,
+      },
     })
     .select("id")
     .maybeSingle();
@@ -351,7 +366,9 @@ export async function sendMeetingWhatsApp(attemptId: string): Promise<{ status: 
   const sb = await admin();
   const { data: att } = await sb
     .from("prospecting_call_attempts")
-    .select("id, workspace_id, campaign_id, lead_id, contact_id, meeting_status, meeting_start_at, meeting_link, meeting_whatsapp_status")
+    .select(
+      "id, workspace_id, campaign_id, lead_id, contact_id, meeting_status, meeting_start_at, meeting_link, meeting_whatsapp_status",
+    )
     .eq("id", attemptId)
     .maybeSingle();
   if (!att?.campaign_id || att.meeting_status !== "booked" || att.meeting_whatsapp_status)
@@ -386,18 +403,30 @@ export async function sendMeetingWhatsApp(attemptId: string): Promise<{ status: 
     ]);
     const { data: row } = await sb
       .from(table)
-      .select(att.contact_id ? "first_name, phone, mobile_phone, whatsapp_e164" : "first_name, phone, whatsapp_e164")
+      .select(
+        att.contact_id
+          ? "first_name, phone, mobile_phone, whatsapp_e164"
+          : "first_name, phone, whatsapp_e164",
+      )
       .eq("id", targetId)
       .eq("workspace_id", att.workspace_id)
       .maybeSingle();
     const phone = row?.whatsapp_e164 || row?.mobile_phone || row?.phone;
     if (!phone) return finish("skipped", "Sem telefone para WhatsApp");
-    const { normalizePhone, metaSend, resolveWaNumber } = await import("@/lib/whatsapp/meta-channel.server");
-    const num = await resolveWaNumber(att.workspace_id, camp.followup_sender_phone_number_id ?? null);
+    const { normalizePhone, metaSend, resolveWaNumber } =
+      await import("@/lib/whatsapp/meta-channel.server");
+    const num = await resolveWaNumber(
+      att.workspace_id,
+      camp.followup_sender_phone_number_id ?? null,
+    );
     const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");
-    const tpls = await loadApprovedTemplates(sb, att.workspace_id, { phoneNumberId: num.phoneNumberId });
+    const tpls = await loadApprovedTemplates(sb, att.workspace_id, {
+      phoneNumberId: num.phoneNumberId,
+    });
     const tpl = tpls.find(
-      (t) => t.name === camp.meeting_template_name && (!camp.meeting_template_language || t.language === camp.meeting_template_language),
+      (t) =>
+        t.name === camp.meeting_template_name &&
+        (!camp.meeting_template_language || t.language === camp.meeting_template_language),
     );
     if (!tpl) return finish("failed", "Modelo da reunião não está aprovado");
     const variables = meetingTemplateVariables(countBodyParams(tpl.components), {

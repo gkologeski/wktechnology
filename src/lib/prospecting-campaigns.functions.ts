@@ -85,6 +85,11 @@ export type Attempt = {
   vapi_response: JsonValue | null;
   followup_status?: string | null;
   followup_error?: string | null;
+  meeting_status?: string | null;
+  meeting_start_at?: string | null;
+  meeting_link?: string | null;
+  meeting_error?: string | null;
+  meeting_whatsapp_status?: string | null;
   created_at: string;
 };
 
