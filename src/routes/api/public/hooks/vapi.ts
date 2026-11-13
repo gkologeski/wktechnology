@@ -17,11 +17,14 @@ async function maybeRequeueAttempt(
     workspace_id: string;
     campaign_id: string | null;
     lead_id: string | null;
+    contact_id: string | null;
     attempt_number: number | null;
   } | null,
   endedReason: string | null,
 ): Promise<boolean> {
-  if (!row?.campaign_id || !row.lead_id) return false;
+  if (!row?.campaign_id || (!row.lead_id && !row.contact_id)) return false;
+  const col = row.contact_id ? "contact_id" : "lead_id";
+  const target = (row.contact_id ?? row.lead_id) as string;
   if (!isRetriableEndedReason(endedReason)) return false;
 
   const { data: c } = await sb
@@ -40,7 +43,7 @@ async function maybeRequeueAttempt(
     .from("prospecting_call_attempts")
     .select("status, attempt_number")
     .eq("campaign_id", row.campaign_id)
-    .eq("lead_id", row.lead_id);
+    .eq(col, target);
   const rows = (existing ?? []) as Array<{ status: string; attempt_number: number | null }>;
   const hasPending = rows.some((r) => ACTIVE_ATTEMPT_STATUSES.includes(r.status));
   if (hasPending) return false;
@@ -52,7 +55,7 @@ async function maybeRequeueAttempt(
     workspace_id: row.workspace_id,
     owner_id: row.workspace_id,
     campaign_id: row.campaign_id,
-    lead_id: row.lead_id,
+    [col]: target,
     status: "queued",
     attempt_number: highest + 1,
     scheduled_at: scheduledAt,
@@ -185,19 +188,20 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           .from("prospecting_call_attempts")
           .update(updates)
           .eq("vapi_call_id", callId)
-          .select("id, workspace_id, campaign_id, lead_id, summary, attempt_number")
+          .select("id, workspace_id, campaign_id, lead_id, contact_id, summary, attempt_number")
           .maybeSingle();
         if (error) {
           console.error("[vapi-hook]", error);
           return Response.json({ ok: false, error: error.message }, { status: 500 });
         }
 
-        if (type === "end-of-call-report" && row?.lead_id) {
+        if (type === "end-of-call-report" && (row?.lead_id || row?.contact_id)) {
           await sb.from("activities").insert({
             workspace_id: row.workspace_id,
             owner_id: row.workspace_id,
             type: "call",
-            related_lead_id: row.lead_id,
+            related_lead_id: row.lead_id ?? null,
+            related_contact_id: row.contact_id ?? null,
             subject: "Chamada do agente de voz (Vapi)",
             description: row.summary ?? (updates.transcript as string | undefined) ?? null,
           });

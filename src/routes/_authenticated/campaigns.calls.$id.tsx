@@ -91,7 +91,10 @@ function CampaignDetailPage() {
     const rawRules = (out.campaign.audience_rules ?? []) as AudienceRule[];
     const stored = hydrateAudienceConfig(out.campaign.audience_config);
     if (stored) {
-      setCallAudience({ ...stored.state, base: "leads" });
+      setCallAudience({
+        ...stored.state,
+        base: stored.state.base === "contacts" ? "contacts" : "leads",
+      });
       setManualRaw(stored.manualRaw);
     }
     setUseNewAudience(
@@ -141,7 +144,7 @@ function CampaignDetailPage() {
     state: {
       mode: callAudience.mode,
       queueId: callAudience.queueId,
-      base: "leads" as const,
+      base: (callAudience.base === "contacts" ? "contacts" : "leads") as "leads" | "contacts",
       groups: callAudience.groups as unknown[],
       groupsLogic: callAudience.groupsLogic,
       recentOverrides: callAudience.recentOverrides,
@@ -541,7 +544,7 @@ function CampaignDetailPage() {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <div>
-                <Label>Máx. tentativas por lead</Label>
+                <Label>Máx. tentativas por pessoa</Label>
                 <Input
                   type="number"
                   min={1}
@@ -688,11 +691,11 @@ function CampaignDetailPage() {
             </CardHeader>
             <CardContent>
               {audit.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Sem leads na campanha.</p>
+                <p className="text-sm text-muted-foreground">Ninguém no público da campanha.</p>
               ) : (
                 <>
                   <div className="text-xs text-muted-foreground mb-2">
-                    {audit.filter((a) => a.queueable).length} de {audit.length} leads enfileiráveis
+                    {audit.filter((a) => a.queueable).length} de {audit.length} na fila de ligação
                     ao iniciar.
                   </div>
                   <div className="divide-y text-sm">

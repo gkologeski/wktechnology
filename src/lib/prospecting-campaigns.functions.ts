@@ -323,6 +323,7 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
         .eq("workspace_id", ws)
         .single();
       let leadIds = (c?.lead_ids ?? []) as string[];
+      let entity: "lead" | "contact" = "lead";
       const maxAttempts = (c?.max_attempts as number | undefined) ?? 1;
       const audienceMode = (c?.audience_mode as string | undefined) ?? "static";
       if (audienceMode === "dynamic") {
@@ -337,57 +338,61 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
       if (callCfg) {
         const { resolveCallAudience } =
           await import("@/lib/prospecting/calls/call-audience.server");
-        leadIds = (
-          await resolveCallAudience(
-            sb,
-            ws,
-            context.userId,
-            data.id,
-            callCfg,
-            normalizeRecentContact(c ?? {}),
-          )
-        ).leadIds;
+        const r = await resolveCallAudience(
+          sb,
+          ws,
+          context.userId,
+          data.id,
+          callCfg,
+          normalizeRecentContact(c ?? {}),
+        );
+        entity = r.entity;
+        leadIds = r.ids;
       }
+      const table = entity === "contact" ? "contacts" : "leads";
+      const col = entity === "contact" ? "contact_id" : "lead_id";
+      const noun = entity === "contact" ? "contatos" : "leads";
       if (leadIds.length) {
-        const { data: visibleLeads, error: leadError } = await sb
-          .from("leads")
+        const { data: visibleRows, error: leadError } = await sb
+          .from(table)
           .select("id, phone")
           .in("id", leadIds)
           .eq("workspace_id", ws);
         if (leadError) throw new Error(leadError.message);
-        const visibleIds = new Set((visibleLeads ?? []).map((x) => x.id));
+        const visible = (visibleRows ?? []) as Array<{ id: string; phone: string | null }>;
+        const visibleIds = new Set(visible.map((x) => x.id));
         if (leadIds.some((id) => !visibleIds.has(id)))
           throw new Error(
-            "Há leads sem acesso atual no público da campanha. Revise a seleção antes de iniciar.",
+            `Há ${noun} sem acesso atual no público da campanha. Revise a seleção antes de iniciar.`,
           );
         const { data: existing } = await sb
           .from("prospecting_call_attempts")
-          .select("lead_id, status, attempt_number, ended_reason")
+          .select("lead_id, contact_id, status, attempt_number, ended_reason")
           .eq("campaign_id", data.id);
         const byLead = new Map<string, { blocking: boolean; lastAttempt: number }>();
         for (const x of (existing ?? []) as Array<{
-          lead_id: string;
+          lead_id: string | null;
+          contact_id: string | null;
           status: string;
           attempt_number: number;
           ended_reason: string | null;
         }>) {
-          const prev = byLead.get(x.lead_id) ?? { blocking: false, lastAttempt: 0 };
+          const key = x[col];
+          if (!key) continue;
+          const prev = byLead.get(key) ?? { blocking: false, lastAttempt: 0 };
           const isActive = ["queued", "ringing", "in_progress"].includes(x.status);
           const isTalked = x.status === "completed" && !isRetriableEndedReason(x.ended_reason);
-          byLead.set(x.lead_id, {
+          byLead.set(key, {
             blocking: prev.blocking || isActive || isTalked,
             lastAttempt: Math.max(prev.lastAttempt, x.attempt_number ?? 0),
           });
         }
-        const { findRecentlyContacted } =
-          await import("@/lib/prospecting/calls/recent-contact.server");
-        const recent = await findRecentlyContacted(
-          sb,
-          ws,
-          data.id,
-          (visibleLeads ?? []) as Array<{ id: string; phone: string | null }>,
-          callCfg ? { days: 0, scope: "calls" } : normalizeRecentContact(c ?? {}),
-        );
+        // Público novo já descontou contatos recentes na resolução (com liberações manuais).
+        const recent = callCfg
+          ? new Map<string, string>()
+          : await (
+              await import("@/lib/prospecting/calls/recent-contact.server")
+            ).findRecentlyContacted(sb, ws, data.id, visible, normalizeRecentContact(c ?? {}));
         const rows = leadIds
           .filter((lid) => {
             if (recent.has(lid)) return false;
@@ -398,7 +403,7 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
             workspace_id: ws,
             owner_id: context.userId,
             campaign_id: data.id,
-            lead_id: lid,
+            [col]: lid,
             status: "queued" as const,
             attempt_number: (byLead.get(lid)?.lastAttempt ?? 0) + 1,
             scheduled_at: new Date().toISOString(),
@@ -494,6 +499,7 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
       .single();
     if (!c) return [];
     let leadIds = (c.lead_ids ?? []) as string[];
+    let entity: "lead" | "contact" = "lead";
     const maxAttempts = (c.max_attempts as number | undefined) ?? 1;
     const audienceMode = (c.audience_mode as string | undefined) ?? "static";
     if (audienceMode === "dynamic") {
@@ -507,21 +513,23 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
       | undefined;
     if (callCfg) {
       const { resolveCallAudience } = await import("@/lib/prospecting/calls/call-audience.server");
-      leadIds = (
-        await resolveCallAudience(
-          sb,
-          ws,
-          context.userId,
-          data.campaign_id,
-          callCfg,
-          normalizeRecentContact(c),
-        )
-      ).leadIds;
+      const r = await resolveCallAudience(
+        sb,
+        ws,
+        context.userId,
+        data.campaign_id,
+        callCfg,
+        normalizeRecentContact(c),
+      );
+      entity = r.entity;
+      leadIds = r.ids;
     }
+    const col = entity === "contact" ? "contact_id" : "lead_id";
+    const noun = entity === "contact" ? "Contato" : "Lead";
     if (!leadIds.length) return [];
 
     const { data: leads } = await sb
-      .from("leads")
+      .from(entity === "contact" ? "contacts" : "leads")
       .select("id, first_name, last_name, company_name, phone")
       .eq("workspace_id", ws)
       .in("id", leadIds);
@@ -542,7 +550,7 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
 
     const { data: existing } = await sb
       .from("prospecting_call_attempts")
-      .select("lead_id, status, attempt_number, created_at, ended_reason")
+      .select("lead_id, contact_id, status, attempt_number, created_at, ended_reason")
       .eq("campaign_id", data.campaign_id)
       .eq("workspace_id", ws)
       .order("created_at", { ascending: false });
@@ -555,13 +563,16 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
     };
     const agg = new Map<string, Agg>();
     for (const x of (existing ?? []) as Array<{
-      lead_id: string;
+      lead_id: string | null;
+      contact_id: string | null;
       status: string;
       attempt_number: number;
       created_at: string;
       ended_reason: string | null;
     }>) {
-      const a = agg.get(x.lead_id) ?? {
+      const key = x[col];
+      if (!key) continue;
+      const a = agg.get(key) ?? {
         count: 0,
         lastStatus: null,
         hasBlocking: null,
@@ -575,7 +586,7 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
         a.hasBlocking = isTalked ? "conversed" : x.status;
       }
       a.lastAttempt = Math.max(a.lastAttempt, x.attempt_number ?? 0);
-      agg.set(x.lead_id, a);
+      agg.set(key, a);
     }
 
     const { findRecentlyContacted } = await import("@/lib/prospecting/calls/recent-contact.server");
@@ -585,16 +596,17 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
       data.campaign_id,
       [...leadMap.entries()].map(([id, v]) => ({ id, phone: v.phone })),
       callCfg ? { days: 0, scope: "calls" } : normalizeRecentContact(c),
+      entity,
     );
 
     return leadIds.map<LeadAudit>((lid) => {
       const a = agg.get(lid);
       const info = leadMap.get(lid);
       const reasons: string[] = [];
-      if (!info) reasons.push("Lead não encontrado no workspace");
+      if (!info) reasons.push(`${noun} não encontrado no workspace`);
       const recentWhy = recent.get(lid);
       if (recentWhy) reasons.push(recentWhy);
-      if (info && !info.phone) reasons.push("Lead sem telefone");
+      if (info && !info.phone) reasons.push(`${noun} sem telefone`);
       if (a?.hasBlocking) {
         reasons.push(
           a.hasBlocking === "conversed"

@@ -22176,6 +22176,7 @@ export type Database = {
         Row: {
           attempt_number: number
           campaign_id: string | null
+          contact_id: string | null
           cost_usd: number | null
           created_at: string
           duration_seconds: number | null
@@ -22206,6 +22207,7 @@ export type Database = {
         Insert: {
           attempt_number?: number
           campaign_id?: string | null
+          contact_id?: string | null
           cost_usd?: number | null
           created_at?: string
           duration_seconds?: number | null
@@ -22236,6 +22238,7 @@ export type Database = {
         Update: {
           attempt_number?: number
           campaign_id?: string | null
+          contact_id?: string | null
           cost_usd?: number | null
           created_at?: string
           duration_seconds?: number | null
@@ -22269,6 +22272,20 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "prospecting_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_call_attempts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_call_attempts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "shared_fields_contacts"
             referencedColumns: ["id"]
           },
           {

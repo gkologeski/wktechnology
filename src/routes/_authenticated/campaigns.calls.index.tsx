@@ -111,8 +111,11 @@ function CampaignsListPage() {
                 <Link to="/campaigns/calls/$id" params={{ id: c.id }} className="flex-1 min-w-0">
                   <div className="font-medium truncate">{c.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {c.lead_ids?.length ?? 0} leads ·{" "}
-                    {c.assignment_mode === "weighted" ? "A/B por peso" : "Por segmento"}
+                    {(c.audience_config as { state?: { base?: string } } | null)?.state?.base ===
+                    "contacts"
+                      ? "Contatos"
+                      : `${c.lead_ids?.length ?? 0} leads`}{" "}
+                    · {c.assignment_mode === "weighted" ? "A/B por peso" : "Por segmento"}
                   </div>
                 </Link>
                 <Badge

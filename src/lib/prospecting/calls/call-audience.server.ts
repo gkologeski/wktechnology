@@ -1,4 +1,5 @@
-// Resolve o público da Campanha de Ligação (quadro igual ao do WhatsApp) em Leads,
+// Resolve o público da Campanha de Ligação (quadro igual ao do WhatsApp) em Leads
+// ou Contatos,
 // com o cliente do usuário (RLS) e o workspace ativo.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { assertSalesArea } from "@/lib/access-control/sales-core.server";
@@ -17,6 +18,36 @@ function e164(p: string | null | undefined): string | null {
   const d = String(p ?? "").replace(/\D/g, "");
   if (d.length < 10) return null;
   return `+${d.length <= 11 ? `55${d}` : d}`;
+}
+
+export type CallTargetEntity = "lead" | "contact";
+
+async function contactsFromManual(db: Db, ws: string, raw: string) {
+  const phones = parseManualPhones(raw);
+  const variants = [...new Set(phones.flatMap(brPhoneVariants))];
+  const found = new Map<string, Lead>();
+  const matched = new Set<string>();
+  for (let i = 0; i < variants.length; i += 150) {
+    const list = variants.slice(i, i + 150).join(",");
+    const { data, error } = await db
+      .from("contacts")
+      .select("id, first_name, last_name, company_name, phone, mobile_phone, whatsapp_e164")
+      .eq("workspace_id", ws)
+      .is("deleted_at", null)
+      .or(`whatsapp_e164.in.(${list}),phone.in.(${list}),mobile_phone.in.(${list})`);
+    if (error) throw new Error(error.message);
+    for (const c of data ?? []) {
+      const ph = e164(c.mobile_phone) ?? e164(c.phone) ?? e164(c.whatsapp_e164);
+      found.set(c.id, {
+        id: c.id,
+        label: [c.first_name, c.last_name].filter(Boolean).join(" ") || c.company_name || "",
+        phone: ph,
+      });
+      for (const v of [c.whatsapp_e164, e164(c.phone), e164(c.mobile_phone)]) if (v) matched.add(v);
+    }
+  }
+  const notFound = phones.filter((p) => !brPhoneVariants(p).some((v) => matched.has(v))).length;
+  return { leads: [...found.values()], found: phones.length, notFound };
 }
 
 async function leadsFromManual(db: Db, ws: string, raw: string) {
@@ -62,8 +93,12 @@ export async function resolveCallAudience(
   let found = 0;
   let truncated = false;
   let notFound = 0;
+  let entity: CallTargetEntity = s.base === "contacts" ? "contact" : "lead";
   if (s.mode === "manual") {
-    const r = await leadsFromManual(db, ws, cfg.manualRaw);
+    const r =
+      entity === "contact"
+        ? await contactsFromManual(db, ws, cfg.manualRaw)
+        : await leadsFromManual(db, ws, cfg.manualRaw);
     leads = r.leads;
     found = r.found;
     notFound = r.notFound;
@@ -75,15 +110,16 @@ export async function resolveCallAudience(
         ? { type: "queue" as const, queue_id: s.queueId }
         : {
             type: "filter" as const,
-            base: "leads" as const,
+            base: (entity === "contact" ? "contacts" : "leads") as "leads" | "contacts",
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             groups: normalizeAudienceGroups({ groups: s.groups as any }),
             groups_logic: s.groupsLogic,
           };
     if (s.mode === "queue" && !s.queueId) throw new Error("Escolha uma fila.");
     const res = await loadAudienceRows(db, ws, audience, userId);
-    if (res.base !== "leads")
-      throw new Error("Campanhas de ligação usam Leads. Escolha uma fila de Leads.");
+    if (res.base !== "leads" && res.base !== "contacts")
+      throw new Error("Campanhas de ligação usam Leads ou Contatos.");
+    entity = res.base === "contacts" ? "contact" : "lead";
     found = res.rows.length;
     truncated = res.truncated;
     const seen = new Set<string>();
@@ -97,7 +133,14 @@ export async function resolveCallAudience(
   const noPhone = leads.filter((l) => !l.phone).length;
   const withPhone = leads.filter((l) => l.phone);
 
-  const recentMap = await findRecentlyContacted(db, ws, campaignId ?? NIL, withPhone, recent);
+  const recentMap = await findRecentlyContacted(
+    db,
+    ws,
+    campaignId ?? NIL,
+    withPhone,
+    recent,
+    entity,
+  );
   const ov = new Set(s.recentOverrides);
   const recentRemoved = withPhone.filter((l) => recentMap.has(l.id) && !ov.has(l.phone!));
   const recentOverridden = withPhone.filter((l) => recentMap.has(l.id) && ov.has(l.phone!)).length;
@@ -118,9 +161,12 @@ export async function resolveCallAudience(
     new Set(s.commercialOverrides),
   );
   return {
-    leadIds: commercial.kept.map((l) => l.id),
+    entity,
+    ids: commercial.kept.map((l) => l.id),
+    /** Só Leads (compatível com chamadas antigas); vazio quando a base é Contatos. */
+    leadIds: entity === "lead" ? commercial.kept.map((l) => l.id) : [],
     preview: {
-      base: "leads",
+      base: entity === "contact" ? "contacts" : "leads",
       found,
       truncated,
       included: commercial.kept.length,

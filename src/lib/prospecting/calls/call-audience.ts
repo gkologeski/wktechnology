@@ -1,5 +1,5 @@
 // Público das Campanhas de Ligação no mesmo formato do quadro do WhatsApp.
-// Ligações discam para Leads: base e filas ficam restritas a Leads.
+// Ligações discam para Leads ou Contatos (base escolhida no quadro).
 export type CallAudienceState = {
   mode: "queue" | "filter" | "manual";
   queueId: string;

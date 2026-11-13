@@ -25,7 +25,9 @@ export async function startVapiCall(opts: {
   workspaceId: string;
   caller?: SupabaseClient;
   actorId?: string;
-  leadId: string;
+  /** Alvo da ligação: um Lead ou um Contato (exatamente um). */
+  leadId?: string | null;
+  contactId?: string | null;
   scriptId: string;
   campaignId?: string | null;
   variantId?: string | null;
@@ -35,6 +37,10 @@ export async function startVapiCall(opts: {
   followupCampaignId?: string | null;
 }): Promise<{ ok: boolean; call_id?: string; error?: string }> {
   const sb = opts.caller ?? (await sbAdmin());
+  const targetTable = opts.contactId ? "contacts" : "leads";
+  const targetId = (opts.contactId ?? opts.leadId) as string;
+  if (!targetId || (opts.contactId && opts.leadId))
+    return { ok: false, error: "Ligação sem destino (Lead ou Contato)." };
   const diagnostics = await sbAdmin();
   const authorize = async () => {
     if (opts.campaignId) {
@@ -49,12 +55,12 @@ export async function startVapiCall(opts: {
     }
     if (opts.caller) {
       await assertSalesArea(opts.caller, "techsales.prospecting_voice", "create");
-      await assertSalesRecord(opts.caller, "leads", opts.leadId, "view");
+      await assertSalesRecord(opts.caller, targetTable, targetId, "view");
       await assertSalesRecord(opts.caller, "prospecting_scripts", opts.scriptId, "view");
     } else {
       if (!opts.campaignId) throw new Error("Chamada sem responsável de execução autorizado.");
       await assertSalesWorker(sb, "prospecting_campaigns", opts.campaignId, [
-        { table: "leads", id: opts.leadId },
+        { table: targetTable, id: targetId },
         { table: "prospecting_scripts", id: opts.scriptId },
         { resource: "techsales.prospecting_voice", action: "create" },
       ]);
@@ -76,23 +82,33 @@ export async function startVapiCall(opts: {
     return { ok: false, error: "VAPI_API_KEY ausente" };
   }
 
-  const { data: lead } = await sb
-    .from("leads")
-    .select("id, first_name, last_name, company_name, phone")
-    .eq("id", opts.leadId)
+  const noun = opts.contactId ? "Contato" : "Lead";
+  const { data: row } = await sb
+    .from(targetTable)
+    .select(
+      opts.contactId
+        ? "id, first_name, last_name, company_name, phone, mobile_phone"
+        : "id, first_name, last_name, company_name, phone",
+    )
+    .eq("id", targetId)
+    .eq("workspace_id", opts.workspaceId)
     .single();
+  // Contato: celular primeiro, depois telefone.
+  const lead = row
+    ? { ...row, phone: (row.mobile_phone as string | null) || (row.phone as string | null) }
+    : null;
   if (!lead?.phone) {
-    await persistDiag({ vapi_response: { error: "Lead sem telefone", lead_id: opts.leadId } });
-    return { ok: false, error: "Lead sem telefone" };
+    await persistDiag({ vapi_response: { error: `${noun} sem telefone`, target_id: targetId } });
+    return { ok: false, error: `${noun} sem telefone` };
   }
   // O provedor de voz exige E.164; número fora do padrão não é discado.
   if (!isValidE164(lead.phone)) {
     await persistDiag({
-      vapi_response: { error: "Telefone fora do padrão E.164", lead_id: opts.leadId },
+      vapi_response: { error: "Telefone fora do padrão E.164", target_id: targetId },
     });
     return {
       ok: false,
-      error: "Telefone do lead fora do padrão (+código do país). Corrija antes de ligar.",
+      error: `Telefone do ${noun.toLowerCase()} fora do padrão (+código do país). Corrija antes de ligar.`,
     };
   }
 
@@ -174,7 +190,8 @@ export async function startVapiCall(opts: {
     assistant: outgoingAssistant,
     customer: { number: lead.phone },
     metadata: {
-      leadId: opts.leadId,
+      leadId: opts.leadId ?? null,
+      contactId: opts.contactId ?? null,
       scriptId: opts.scriptId,
       campaignId: opts.campaignId ?? null,
       variantId: opts.variantId ?? null,
@@ -237,7 +254,8 @@ export async function startVapiCall(opts: {
       followup_campaign_id: opts.followupCampaignId ?? null,
       variant_id: opts.variantId ?? null,
       script_id: opts.scriptId,
-      lead_id: opts.leadId,
+      lead_id: opts.leadId ?? null,
+      contact_id: opts.contactId ?? null,
       vapi_call_id: json.id ?? null,
       status: "ringing",
       attempt_number: opts.attemptNumber ?? 1,

@@ -1,4 +1,4 @@
-// Quais leads da campanha tiveram contato recente vindo de OUTRA campanha.
+// Quais Leads ou Contatos da campanha tiveram contato recente vindo de OUTRA campanha.
 // Usa o cliente do usuário (RLS) — só enxerga o que ele pode ver.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { assertSalesArea } from "@/lib/access-control/sales-core.server";
@@ -12,7 +12,9 @@ export async function findRecentlyContacted(
   campaignId: string,
   leads: Array<{ id: string; phone: string | null }>,
   cfg: RecentContactConfig,
+  entity: "lead" | "contact" = "lead",
 ): Promise<Map<string, string>> {
+  const col = entity === "contact" ? "contact_id" : "lead_id";
   const out = new Map<string, string>();
   const since = recentSince(cfg);
   if (!since || leads.length === 0) return out;
@@ -25,15 +27,17 @@ export async function findRecentlyContacted(
   for (let from = 0; ; from += 1000) {
     const { data, error } = await sb
       .from("prospecting_call_attempts")
-      .select("lead_id")
+      .select(col)
       .eq("workspace_id", ws)
       .neq("campaign_id", campaignId)
       .gte("created_at", since)
-      .not("lead_id", "is", null)
+      .not(col, "is", null)
       .range(from, from + 999);
     if (error) throw new Error(error.message);
-    for (const r of (data ?? []) as Array<{ lead_id: string | null }>)
-      if (r.lead_id && want.has(r.lead_id)) out.set(r.lead_id, recentReason("call", cfg.days));
+    for (const r of (data ?? []) as Array<Record<string, string | null>>) {
+      const id = r[col];
+      if (id && want.has(id)) out.set(id, recentReason("call", cfg.days));
+    }
     if ((data ?? []).length < 1000) break;
   }
   if (cfg.scope !== "calls_whatsapp") return out;

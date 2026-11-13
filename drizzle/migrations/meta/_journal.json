@@ -2360,6 +2360,13 @@
       "when": 1794528319042,
       "tag": "0336_call_campaign_audience_config",
       "breakpoints": true
+    },
+    {
+      "idx": 337,
+      "version": "7",
+      "when": 1794531135418,
+      "tag": "0337_call_attempts_contact_target",
+      "breakpoints": true
     }
   ]
 }

@@ -82,7 +82,7 @@ export const Route = createFileRoute("/api/public/hooks/prospecting-dial-tick")(
           const now = new Date().toISOString();
           const { data: queued } = await sb
             .from("prospecting_call_attempts")
-            .select("id, workspace_id, campaign_id, lead_id, attempt_number")
+            .select("id, workspace_id, campaign_id, lead_id, contact_id, attempt_number")
             .eq("status", "queued")
             .lte("scheduled_at", now)
             .order("scheduled_at", { ascending: true })
@@ -93,13 +93,14 @@ export const Route = createFileRoute("/api/public/hooks/prospecting-dial-tick")(
             workspace_id: string;
             campaign_id: string | null;
             lead_id: string | null;
+            contact_id: string | null;
             attempt_number: number;
           }>;
           let dialed = 0;
           const skipped: string[] = [];
 
           for (const it of items) {
-            if (!it.lead_id || !it.campaign_id) {
+            if ((!it.lead_id && !it.contact_id) || !it.campaign_id) {
               await sb
                 .from("prospecting_call_attempts")
                 .update({ status: "failed", ended_reason: "missing lead or campaign" })
@@ -154,6 +155,7 @@ export const Route = createFileRoute("/api/public/hooks/prospecting-dial-tick")(
             const result = await startVapiCall({
               workspaceId: it.workspace_id,
               leadId: it.lead_id,
+              contactId: it.contact_id,
               scriptId: chosen.script_id,
               campaignId: it.campaign_id,
               variantId: chosen.id,

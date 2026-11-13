@@ -213,7 +213,7 @@ export function CampaignAudiencePanel({
   recentSlot,
   previewOverride,
 }: {
-  /** "calls": Campanha de Ligação — só Leads, sem regras exclusivas do WhatsApp. */
+  /** "calls": Campanha de Ligação — Leads ou Contatos, sem regras exclusivas do WhatsApp. */
   channel?: "whatsapp" | "calls";
   /** Substitui a regra de envio recente do WhatsApp (ex.: regra das ligações). */
   recentSlot?: ReactNode;
@@ -239,7 +239,7 @@ export function CampaignAudiencePanel({
   const segmentsQ = useQuery({ queryKey: ["wa-camp-segments"], queryFn: () => segmentsFn() });
   const isCalls = channel === "calls";
   const queues = ((queuesQ.data ?? []) as QueueRow[]).filter(
-    (q) => !isCalls || q.entity === "lead",
+    (q) => !isCalls || q.entity === "lead" || q.entity === "contact",
   );
   const segments = ((segmentsQ.data?.segments ?? []) as SegmentRow[]).filter(
     (s) => s.entity === value.base,
@@ -277,7 +277,7 @@ export function CampaignAudiencePanel({
     enabled: !!previewOverride?.enabled && overrideKey === previewOverride.key,
     queryFn: () => previewOverride!.fn(),
   });
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const previewQ = (previewOverride ? callPreviewQ : waPreviewQ) as typeof waPreviewQ;
 
   const set = (patch: Partial<AudienceState>) => onChange({ ...value, ...patch });
@@ -386,7 +386,7 @@ export function CampaignAudiencePanel({
                     </SelectTrigger>
                     <SelectContent>
                       {(Object.keys(BASE_LABEL) as AudienceBase[])
-                        .filter((b) => !isCalls || b === "leads")
+                        .filter((b) => !isCalls || b === "leads" || b === "contacts")
                         .map((b) => (
                           <SelectItem key={b} value={b}>
                             {BASE_LABEL[b]}
@@ -466,9 +466,28 @@ export function CampaignAudiencePanel({
             </TabsContent>
 
             <TabsContent value="manual" className="space-y-1">
+              {isCalls && (
+                <div className="max-w-xs pb-1">
+                  <label htmlFor="aud-manual-base" className="text-xs text-muted-foreground">
+                    Base
+                  </label>
+                  <Select
+                    value={value.base === "contacts" ? "contacts" : "leads"}
+                    onValueChange={(b) => set({ base: b as AudienceBase, variableMap: {} })}
+                  >
+                    <SelectTrigger id="aud-manual-base">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="leads">Leads</SelectItem>
+                      <SelectItem value="contacts">Contatos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <label htmlFor="aud-manual" className="text-xs text-muted-foreground">
                 {isCalls
-                  ? "Telefones de Leads já cadastrados (um por linha)"
+                  ? `Telefones de ${value.base === "contacts" ? "Contatos" : "Leads"} já cadastrados (um por linha)`
                   : "Destinatários (um por linha: telefone,var1,var2,...)"}
               </label>
               <Textarea
@@ -543,13 +562,17 @@ export function CampaignAudiencePanel({
               ) : cp && isCalls ? (
                 <div className="space-y-1">
                   <div>
-                    <strong>{cp.included}</strong> lead(s) incluídos de {cp.found} registro(s)
+                    <strong>{cp.included}</strong>{" "}
+                    {cp.base === "contacts" ? "contato(s)" : "lead(s)"} incluídos de {cp.found}{" "}
+                    registro(s)
                     {cp.truncated ? " (acima do limite de 5.000)" : ""}.
                   </div>
                   <div className="text-muted-foreground">
                     Fora: {cp.excluded.no_phone} sem telefone
-                    {cp.notFound ? ` · ${cp.notFound} telefone(s) sem Lead cadastrado` : ""} ·{" "}
-                    {cp.recentRemovedCount} por contato recente
+                    {cp.notFound
+                      ? ` · ${cp.notFound} telefone(s) sem ${cp.base === "contacts" ? "Contato" : "Lead"} cadastrado`
+                      : ""}{" "}
+                    · {cp.recentRemovedCount} por contato recente
                     {cp.recentOverriddenCount > 0
                       ? ` (${cp.recentOverriddenCount} liberado(s))`
                       : ""}{" "}
@@ -572,7 +595,8 @@ export function CampaignAudiencePanel({
                     list.length > 0 || value[field].length > 0 ? (
                       <details key={k} className="pt-1">
                         <summary className="cursor-pointer font-medium">
-                          {list.length} lead(s) retirado(s) {why}
+                          {list.length} {cp.base === "contacts" ? "contato(s)" : "lead(s)"}{" "}
+                          retirado(s) {why}
                         </summary>
                         <ul className="mt-1 max-h-48 space-y-1 overflow-auto">
                           {value[field].map((ph: string) => (
