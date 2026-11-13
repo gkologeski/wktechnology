@@ -14646,6 +14646,164 @@ export type Database = {
           },
         ]
       }
+      linkedin_conversations: {
+        Row: {
+          account_id: string
+          assigned_to: string | null
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          deal_id: string | null
+          id: string
+          identity_status: string
+          last_message_at: string
+          lead_id: string | null
+          owner_id: string
+          provider_chat_id: string
+          sender_id: string
+          snippet: string
+          status: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          account_id: string
+          assigned_to?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          identity_status?: string
+          last_message_at?: string
+          lead_id?: string | null
+          owner_id: string
+          provider_chat_id: string
+          sender_id: string
+          snippet?: string
+          status?: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string
+          assigned_to?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          deal_id?: string | null
+          id?: string
+          identity_status?: string
+          last_message_at?: string
+          lead_id?: string | null
+          owner_id?: string
+          provider_chat_id?: string
+          sender_id?: string
+          snippet?: string
+          status?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "linkedin_conversations_account_id_workspace_id_owner_id_fkey"
+            columns: ["account_id", "workspace_id", "owner_id"]
+            isOneToOne: false
+            referencedRelation: "unipile_accounts"
+            referencedColumns: ["id", "workspace_id", "owner_id"]
+          },
+          {
+            foreignKeyName: "linkedin_conversations_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "linkedin_conversations_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "linkedin_conversations_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "shared_fields_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "linkedin_conversations_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "linkedin_conversations_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "shared_fields_deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "linkedin_conversations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "linkedin_conversations_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "shared_fields_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      linkedin_messages: {
+        Row: {
+          account_id: string
+          body: string
+          conversation_id: string
+          created_at: string
+          direction: string
+          id: string
+          provider_message_id: string
+          workspace_id: string
+        }
+        Insert: {
+          account_id: string
+          body?: string
+          conversation_id: string
+          created_at?: string
+          direction: string
+          id?: string
+          provider_message_id: string
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string
+          body?: string
+          conversation_id?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          provider_message_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "linkedin_messages_conversation_id_workspace_id_account_id_fkey"
+            columns: ["conversation_id", "workspace_id", "account_id"]
+            isOneToOne: false
+            referencedRelation: "linkedin_conversations"
+            referencedColumns: ["id", "workspace_id", "account_id"]
+          },
+        ]
+      }
       live_chat_messages: {
         Row: {
           agent_attachments: Json | null
@@ -34135,6 +34293,33 @@ export type Database = {
         Args: { p_workspace: string }
         Returns: number
       }
+      linkedin_conversation_edit: {
+        Args: {
+          p_entity?: string
+          p_entity_type?: string
+          p_id: string
+          p_status?: string
+        }
+        Returns: undefined
+      }
+      linkedin_inbox_access: {
+        Args: { a: string; c: Json; o: string; w: string }
+        Returns: boolean
+      }
+      linkedin_outbound_commit: {
+        Args: {
+          p_body: string
+          p_conversation: string
+          p_message: string
+          p_owner: string
+          p_workspace: string
+        }
+        Returns: string
+      }
+      linkedin_record_access_ctx: {
+        Args: { a: string; c: Json; i: string; t: string }
+        Returns: boolean
+      }
       lookup_stage_sla: {
         Args: {
           p_entity: string
@@ -35668,6 +35853,16 @@ export type Database = {
         Args: { p_action: string; p_run: string; p_workspace: string }
         Returns: string
       }
+      prospecting_sequence_defer_delivery: {
+        Args: {
+          p_due: string
+          p_effect: string
+          p_lease: string
+          p_run: string
+          p_token: string
+        }
+        Returns: undefined
+      }
       prospecting_sequence_delivery_access: {
         Args: { p_lease: string; p_run: string }
         Returns: Json
@@ -35728,6 +35923,15 @@ export type Database = {
       prospecting_sequence_insights: {
         Args: { p_version: string; p_workspace: string }
         Returns: Json
+      }
+      prospecting_sequence_linkedin_identity: {
+        Args: {
+          p_account: string
+          p_lease: string
+          p_run: string
+          p_target: string
+        }
+        Returns: boolean
       }
       prospecting_sequence_message_commit_0302: {
         Args: { p_effect: string; p_payload: Json; p_token: string }
@@ -36457,6 +36661,10 @@ export type Database = {
           p_provider_id: string
           p_send_token: string
         }
+        Returns: string
+      }
+      service_agent_complete_linkedin: {
+        Args: { p_job: string; p_provider_id: string; p_send_token: string }
         Returns: string
       }
       service_agent_email_is_automatic: {
