@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 25
-version: 7
+version: 8
 is_published: true
 ---
 # Gerar contrato pelo diálogo de modelo publicado
@@ -76,3 +76,5 @@ Nos modelos, use `{{contract.payment_schedule}}` (Condições de pagamento) para
 No passo **Dados**, o quadro **Dados do modelo** lista cada variável que o modelo usa e mostra o valor que entrará no contrato ou **Falta**. O botão Avançar só continua quando nada falta.
 - **Escopo do serviço** e **Valor mensal (R$)** aparecem quando o modelo os usa e valem só para este contrato. O valor mensal por extenso é escrito automaticamente.
 - **Endereço** da empresa e **Nome/CPF do signatário** vêm do cadastro: preencha o endereço da empresa e marque um contato como signatário legal, com CPF. Use o link **Abrir a ficha da empresa**. Sem endereço cadastrado, o documento usa o endereço oficial do CNPJ, quando houver CNPJ.
+
+> Os dados cadastrais da empresa (CNPJ, endereço, cidade, UF e CEP) vêm da ficha atual da empresa. Valores e condições de pagamento continuam vindo da proposta aceita.

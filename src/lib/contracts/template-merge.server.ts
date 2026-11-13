@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { loadAcceptedProposalSource, legalEntityAddress } from "./accepted-proposal.server";
+import { mergeCompanyParty } from "./company-party";
 import { usedTokens } from "./template-tokens";
 import { paymentScheduleText } from "./payment-schedule-text";
 import {
@@ -122,7 +123,7 @@ export async function buildMergeContext(
   if (companyId) {
     const { data } = await supabase
       .from("companies")
-      .select("id, name, cnpj, address, city, state, phone")
+      .select("id, name, cnpj, address, city, state, cep, phone")
       .eq("workspace_id", workspaceId)
       .eq("id", companyId)
       .maybeSingle();
@@ -130,7 +131,8 @@ export async function buildMergeContext(
     company = data;
   }
 
-  if (source) company = source.company;
+  if (source) company = mergeCompanyParty(source.company, company);
+  else company = mergeCompanyParty(company, null);
   // Contratante sem endereço: usa o endereço oficial do CNPJ só no documento (não grava cadastro).
   if (company && shouldAutofillAddress(company.address)) {
     const addr = await lookupCnpjAddress(company.cnpj);
