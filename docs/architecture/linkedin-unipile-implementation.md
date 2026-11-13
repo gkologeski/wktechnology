@@ -28,7 +28,7 @@ Escopo autorizado: auditoria e implementação de LinkedIn via Unipile; Facebook
 | D | Reserva atômica, cotas dia/semana, pausa/Retry-After, recibos e adiamento sem pular etapas | Implementado localmente; testes SQL e regressão executados | Aceite externo no G |
 | E | LinkedIn no registry e Inbox; conta pessoal, permissão e associação CRM | Implementado; testes SQL, transporte e tela executados em ambiente isolado | Pronto para aceite de publicação |
 | F | LinkedIn nas sequências e agentes; conta explícita, interrupção por resposta/recusa | Implementado; fila SDR e ciclo recibo→resposta→sequência validados em PostgreSQL isolado | Pronto para aceite de publicação |
-| G | Aceite integrado e preparação da publicação | Suíte global e cenários SQL executados; transporte real confirmado; gates da revisão final em encerramento. Publicação proibida neste turno. | Sem implementação funcional pendente; encerrar verificação/build/performance |
+| G | Aceite integrado e preparação da publicação | Gates finais aprovados na revisão integrada; transporte real confirmado; pronto para publicar. Publicação não executada. | Sem implementação funcional pendente; implantação aguarda autorização |
 
 Previsão inicial revisada: 24–40 h após auditoria. Restante após B–D: 15–25 h para E–G, mais disponibilidade da integradora para o aceite. A estimativa anterior 16–28 h não abrangia a correção das fronteiras legadas e da assinatura v2. Facebook/Instagram são uma frente posterior; não somar nem duplicar o esforço compartilhado sem novo levantamento.
 
@@ -107,3 +107,13 @@ Contrato: [Event types](https://developer.unipile.com/v2.0/reference/event-types
 ### Compatibilidade com a main em 13/11
 
 A branch incorporou a main `634605d2d`, preservando as novas funcionalidades e artigos das campanhas de ligação. O journal mantém integralmente as migrações de chamadas da main e acrescenta depois, ainda não aplicadas, as migrações deste pacote: `0336_unipile_personal_account_access`, `0337_unipile_secure_auth_flow`, `0338_unipile_atomic_limits`, `0339_unipile_inbound_idempotency`, `0340_unipile_delivery_receipts`, `0341_unipile_log_access`, `0342_linkedin_inbox`, `0343_linkedin_service_runtime` e `0344_linkedin_commercial_sequences`. Prefixos numéricos repetidos pertencem a arquivos distintos; usar a ordem e o nome completo do journal, nunca reaplicar arquivos de chamadas só por terem o mesmo número. Nenhuma migração SQL já existente na main foi alterada.
+
+## Aceite técnico final — 13/11/2026
+
+- Main de referência incorporada: `634605d2d`; nenhum push, merge na main ou deploy realizado.
+- Suíte global: 3138 testes aprovados; permissões, tipos e lint sem erros.
+- SQL isolado: 67 cenários incluídos na suíte, sem conexões de produção.
+- Verificação: 71.06 s; build: 136.74 s; Nitro: 61.49 s. Entrada gzip: 262262 bytes. Orçamentos existentes preservados.
+- Ajuda: 249/249 telas cobertas, 429 artigos; conteúdo desta integração atualizado.
+- Verify e build completos e imutáveis para o hash `742abddb4f8d00975595c47f0196ad61c960a05b5da2c684bc82b1a0db083eda`.
+- Resultado: implementação e preparação técnica concluídas; migrações de destino, publicação e aceite pós-implantação permanecem deliberadamente não executados.

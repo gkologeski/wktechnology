@@ -218,16 +218,14 @@ export const duplicateCampaign = createServerFn({ method: "POST" })
       .select("script_id, weight, segment_id, position")
       .eq("campaign_id", data.id);
     if (variants?.length) {
-      const { error: vErr } = await sb
-        .from("prospecting_campaign_variants")
-        .insert(
-          variants.map((v) => ({
-            ...v,
-            workspace_id: ws,
-            owner_id: context.userId,
-            campaign_id: id,
-          })),
-        );
+      const { error: vErr } = await sb.from("prospecting_campaign_variants").insert(
+        variants.map((v) => ({
+          ...v,
+          workspace_id: ws,
+          owner_id: context.userId,
+          campaign_id: id,
+        })),
+      );
       if (vErr) throw new Error(vErr.message);
     }
     return { id };
