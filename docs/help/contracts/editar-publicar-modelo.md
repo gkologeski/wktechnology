@@ -8,7 +8,7 @@ route_pattern: /contracts/templates/$id
 min_permission:
 audience: internal
 sort_order: 61
-version: 2
+version: 3
 is_published: true
 ---
 # Editar e publicar um modelo de contrato
@@ -38,3 +38,6 @@ Se a gravação falhar, confira o nome e a mensagem recebida do servidor.
 ## Relacionados
 - [Importar modelo](/ajuda/contracts/importar-modelo)
 - [Organizar modelos](/ajuda/contracts/gerenciar-modelos)
+
+## Valores por extenso
+Use `{{contract.total_value_extenso}}` e `{{contract.monthly_value_extenso}}` para escrever o valor em palavras. Ex.: `{{contract.total_value}} ({{contract.total_value_extenso}})` gera "R$ 18.870,00 (dezoito mil, oitocentos e setenta reais)".
