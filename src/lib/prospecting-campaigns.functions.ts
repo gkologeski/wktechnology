@@ -11,6 +11,9 @@ import {
   type AudienceRule,
 } from "@/lib/prospecting-audience.functions";
 import { isRetriableEndedReason } from "@/lib/prospecting-ended-reason";
+import { normalizeRecentContact } from "@/lib/prospecting/calls/recent-contact";
+import type { CallCampaignStats } from "@/lib/prospecting/calls/status-label";
+import type { CallAudienceConfig } from "@/lib/prospecting/calls/call-audience";
 
 // Carrega o cliente admin sob demanda (mantém o bundle do cliente limpo).
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -26,6 +29,7 @@ export type Campaign = {
   assignment_mode: "weighted" | "segment";
   max_attempts: number;
   retry_interval_minutes: number;
+  stats?: CallCampaignStats | null;
   source_type: "segment" | "saved_view" | "manual";
   source_ref: string | null;
   lead_ids: string[];
@@ -40,6 +44,9 @@ export type Campaign = {
   followup_template_name?: string | null;
   followup_template_language?: string;
   followup_answered_text?: string | null;
+  recent_contact_days?: number;
+  recent_contact_scope?: "calls" | "calls_whatsapp";
+  audience_config?: JsonValue | null;
 };
 
 export type Variant = {
@@ -75,6 +82,21 @@ type JsonValue = string | number | boolean | null | { [k: string]: JsonValue } |
 
 const ACTIVE_ATTEMPT_STATUSES = ["queued", "ringing", "in_progress"];
 
+const CallAudienceConfigSchema = z.object({
+  state: z.object({
+    mode: z.enum(["queue", "filter", "manual"]),
+    queueId: z.string().max(64).default(""),
+    base: z.enum(["leads", "contacts"]).default("leads"),
+    groups: z.array(z.unknown()).max(10).default([]),
+    groupsLogic: z.enum(["and", "or"]).default("or"),
+    recentOverrides: z.array(z.string().max(32)).max(5000).default([]),
+    excludeCustomers: z.boolean().default(true),
+    excludeOpenDeals: z.boolean().default(true),
+    commercialOverrides: z.array(z.string().max(32)).max(5000).default([]),
+  }),
+  manualRaw: z.string().max(200_000).default(""),
+});
+
 const CampaignInput = z.object({
   id: z.string().uuid().nullable().optional(),
   name: z.string().min(1).max(120),
@@ -109,6 +131,9 @@ const CampaignInput = z.object({
     .default([]),
   audience_mode: z.enum(["static", "dynamic"]).default("static"),
   audience_rules: AudienceRulesSchema.default([]),
+  recent_contact_days: z.number().int().min(0).max(365).default(7),
+  recent_contact_scope: z.enum(["calls", "calls_whatsapp"]).default("calls"),
+  audience_config: CallAudienceConfigSchema.nullable().optional(),
 });
 
 export const listCampaigns = createServerFn({ method: "POST" })
@@ -122,7 +147,90 @@ export const listCampaigns = createServerFn({ method: "POST" })
       .eq("workspace_id", ws)
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return (data ?? []) as unknown as Campaign[];
+    const list = (data ?? []) as unknown as Campaign[];
+    if (!list.length) return list;
+    // Contagens por campanha (cliente do usuário, RLS).
+    const { data: att, error: attErr } = await sb
+      .from("prospecting_call_attempts")
+      .select("campaign_id, status, created_at")
+      .eq("workspace_id", ws)
+      .in(
+        "campaign_id",
+        list.map((c) => c.id),
+      )
+      .limit(50000);
+    if (attErr) throw new Error(attErr.message);
+    const { summarizeCallAttempts } = await import("@/lib/prospecting/calls/status-label");
+    const stats = summarizeCallAttempts(
+      (att ?? []) as Array<{ campaign_id: string; status: string; created_at: string }>,
+    );
+    return list.map((c) => ({ ...c, stats: stats.get(c.id) ?? null }));
+  });
+
+export const duplicateCampaign = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "create")])
+  .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const sb = context.supabase;
+    const ws = await resolveActiveWorkspace(context.userId);
+    await assertSalesRecord(sb, "prospecting_campaigns", data.id, "view");
+    const { data: c, error } = await sb
+      .from("prospecting_campaigns")
+      .select("*")
+      .eq("id", data.id)
+      .eq("workspace_id", ws)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!c) throw new Error("Campanha não encontrada");
+    const src = c as Record<string, unknown>;
+    const copy: Record<string, unknown> = {};
+    for (const k of [
+      "name",
+      "assignment_mode",
+      "max_attempts",
+      "retry_interval_minutes",
+      "source_type",
+      "source_ref",
+      "lead_ids",
+      "dialing_window",
+      "audience_mode",
+      "audience_rules",
+      "recent_contact_days",
+      "recent_contact_scope",
+      "audience_config",
+      "followup_enabled",
+      "followup_sender_phone_number_id",
+      "followup_template_name",
+      "followup_template_language",
+      "followup_answered_text",
+    ])
+      if (k in src) copy[k] = src[k];
+    copy.name = `${String(src.name ?? "Campanha")} (cópia)`;
+    const { data: row, error: insErr } = await sb
+      .from("prospecting_campaigns")
+      .insert({ ...copy, workspace_id: ws, owner_id: context.userId, status: "draft" } as never)
+      .select("id")
+      .single();
+    if (insErr) throw new Error(insErr.message);
+    const id = (row as { id: string }).id;
+    const { data: variants } = await sb
+      .from("prospecting_campaign_variants")
+      .select("script_id, weight, segment_id, position")
+      .eq("campaign_id", data.id);
+    if (variants?.length) {
+      const { error: vErr } = await sb
+        .from("prospecting_campaign_variants")
+        .insert(
+          variants.map((v) => ({
+            ...v,
+            workspace_id: ws,
+            owner_id: context.userId,
+            campaign_id: id,
+          })),
+        );
+      if (vErr) throw new Error(vErr.message);
+    }
+    return { id };
   });
 
 export const getCampaign = createServerFn({ method: "POST" })
@@ -170,6 +278,18 @@ export const upsertCampaign = createServerFn({ method: "POST" })
     } else if (data.audience_mode === "dynamic") {
       resolvedLeadIds = [];
     }
+    if (data.audience_config) {
+      const { resolveCallAudience } = await import("@/lib/prospecting/calls/call-audience.server");
+      const r = await resolveCallAudience(
+        sb,
+        ws,
+        context.userId,
+        data.id ?? null,
+        data.audience_config,
+        normalizeRecentContact(data),
+      );
+      resolvedLeadIds = r.leadIds;
+    }
 
     const payload = {
       workspace_id: ws,
@@ -184,6 +304,15 @@ export const upsertCampaign = createServerFn({ method: "POST" })
       dialing_window: data.dialing_window,
       audience_mode: data.audience_mode,
       audience_rules: data.audience_rules,
+      recent_contact_days: data.recent_contact_days,
+      recent_contact_scope: data.recent_contact_scope,
+      ...(data.audience_config
+        ? {
+            audience_config: data.audience_config as never,
+            audience_mode: "static",
+            audience_rules: [],
+          }
+        : {}),
     };
 
     let id: string;
@@ -233,6 +362,15 @@ export const deleteCampaign = createServerFn({ method: "POST" })
 
     const sb = context.supabase;
     const ws = await resolveActiveWorkspace(context.userId);
+    const { data: cur } = await sb
+      .from("prospecting_campaigns")
+      .select("status")
+      .eq("id", data.id)
+      .eq("workspace_id", ws)
+      .maybeSingle();
+    const { canDeleteCallCampaign } = await import("@/lib/prospecting/calls/status-label");
+    if (cur && !canDeleteCallCampaign(String(cur.status)))
+      throw new Error("Pause a campanha antes de excluir.");
     const { error } = await sb
       .from("prospecting_campaigns")
       .delete()
@@ -272,11 +410,14 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
 
       const { data: c } = await sb
         .from("prospecting_campaigns")
-        .select("lead_ids, max_attempts, audience_mode, audience_rules")
+        .select(
+          "lead_ids, max_attempts, audience_mode, audience_rules, recent_contact_days, recent_contact_scope, audience_config",
+        )
         .eq("id", data.id)
         .eq("workspace_id", ws)
         .single();
       let leadIds = (c?.lead_ids ?? []) as string[];
+      let entity: "lead" | "contact" = "lead";
       const maxAttempts = (c?.max_attempts as number | undefined) ?? 1;
       const audienceMode = (c?.audience_mode as string | undefined) ?? "static";
       if (audienceMode === "dynamic") {
@@ -284,39 +425,71 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
         const resolved = await resolveAudienceServer(ws, rules, context.supabase);
         leadIds = resolved.lead_ids;
       }
+      const callCfg = (c as { audience_config?: unknown } | null)?.audience_config as
+        | CallAudienceConfig
+        | null
+        | undefined;
+      if (callCfg) {
+        const { resolveCallAudience } =
+          await import("@/lib/prospecting/calls/call-audience.server");
+        const r = await resolveCallAudience(
+          sb,
+          ws,
+          context.userId,
+          data.id,
+          callCfg,
+          normalizeRecentContact(c ?? {}),
+        );
+        entity = r.entity;
+        leadIds = r.ids;
+      }
+      const table = entity === "contact" ? "contacts" : "leads";
+      const col = entity === "contact" ? "contact_id" : "lead_id";
+      const noun = entity === "contact" ? "contatos" : "leads";
       if (leadIds.length) {
-        const { data: visibleLeads, error: leadError } = await sb
-          .from("leads")
-          .select("id")
+        const { data: visibleRows, error: leadError } = await sb
+          .from(table)
+          .select("id, phone")
           .in("id", leadIds)
           .eq("workspace_id", ws);
         if (leadError) throw new Error(leadError.message);
-        const visibleIds = new Set((visibleLeads ?? []).map((x) => x.id));
+        const visible = (visibleRows ?? []) as Array<{ id: string; phone: string | null }>;
+        const visibleIds = new Set(visible.map((x) => x.id));
         if (leadIds.some((id) => !visibleIds.has(id)))
           throw new Error(
-            "Há leads sem acesso atual no público da campanha. Revise a seleção antes de iniciar.",
+            `Há ${noun} sem acesso atual no público da campanha. Revise a seleção antes de iniciar.`,
           );
         const { data: existing } = await sb
           .from("prospecting_call_attempts")
-          .select("lead_id, status, attempt_number, ended_reason")
+          .select("lead_id, contact_id, status, attempt_number, ended_reason")
           .eq("campaign_id", data.id);
         const byLead = new Map<string, { blocking: boolean; lastAttempt: number }>();
         for (const x of (existing ?? []) as Array<{
-          lead_id: string;
+          lead_id: string | null;
+          contact_id: string | null;
           status: string;
           attempt_number: number;
           ended_reason: string | null;
         }>) {
-          const prev = byLead.get(x.lead_id) ?? { blocking: false, lastAttempt: 0 };
+          const key = x[col];
+          if (!key) continue;
+          const prev = byLead.get(key) ?? { blocking: false, lastAttempt: 0 };
           const isActive = ["queued", "ringing", "in_progress"].includes(x.status);
           const isTalked = x.status === "completed" && !isRetriableEndedReason(x.ended_reason);
-          byLead.set(x.lead_id, {
+          byLead.set(key, {
             blocking: prev.blocking || isActive || isTalked,
             lastAttempt: Math.max(prev.lastAttempt, x.attempt_number ?? 0),
           });
         }
+        // Público novo já descontou contatos recentes na resolução (com liberações manuais).
+        const recent = callCfg
+          ? new Map<string, string>()
+          : await (
+              await import("@/lib/prospecting/calls/recent-contact.server")
+            ).findRecentlyContacted(sb, ws, data.id, visible, normalizeRecentContact(c ?? {}));
         const rows = leadIds
           .filter((lid) => {
+            if (recent.has(lid)) return false;
             const prev = byLead.get(lid);
             return !prev || (!prev.blocking && prev.lastAttempt < maxAttempts);
           })
@@ -324,7 +497,7 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
             workspace_id: ws,
             owner_id: context.userId,
             campaign_id: data.id,
-            lead_id: lid,
+            [col]: lid,
             status: "queued" as const,
             attempt_number: (byLead.get(lid)?.lastAttempt ?? 0) + 1,
             scheduled_at: new Date().toISOString(),
@@ -348,7 +521,47 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .eq("workspace_id", ws);
     if (error) throw new Error(error.message);
+    if (data.status === "done") {
+      // Encerrar: tentativas ainda na fila deixam de ser discadas.
+      const { error: cErr } = await callQueue
+        .from("prospecting_call_attempts")
+        .update({
+          status: "canceled",
+          ended_at: new Date().toISOString(),
+          ended_reason: "campaign canceled",
+        })
+        .eq("campaign_id", data.id)
+        .eq("workspace_id", ws)
+        .eq("status", "queued");
+      if (cErr) throw new Error(cErr.message);
+    }
     return { ok: true };
+  });
+
+export const previewCallAudience = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
+  .inputValidator((i) =>
+    z
+      .object({
+        campaign_id: z.string().uuid().nullable(),
+        audience_config: CallAudienceConfigSchema,
+        recent_contact_days: z.number().int().min(0).max(365).default(7),
+        recent_contact_scope: z.enum(["calls", "calls_whatsapp"]).default("calls"),
+      })
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { resolveCallAudience } = await import("@/lib/prospecting/calls/call-audience.server");
+    const r = await resolveCallAudience(
+      context.supabase,
+      ws,
+      context.userId,
+      data.campaign_id,
+      data.audience_config,
+      normalizeRecentContact(data),
+    );
+    return r.preview;
   });
 
 export const listCampaignAttempts = createServerFn({ method: "POST" })
@@ -386,12 +599,15 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
     const ws = await resolveActiveWorkspace(context.userId);
     const { data: c } = await sb
       .from("prospecting_campaigns")
-      .select("lead_ids, max_attempts, audience_mode, audience_rules")
+      .select(
+        "lead_ids, max_attempts, audience_mode, audience_rules, recent_contact_days, recent_contact_scope, audience_config",
+      )
       .eq("id", data.campaign_id)
       .eq("workspace_id", ws)
       .single();
     if (!c) return [];
     let leadIds = (c.lead_ids ?? []) as string[];
+    let entity: "lead" | "contact" = "lead";
     const maxAttempts = (c.max_attempts as number | undefined) ?? 1;
     const audienceMode = (c.audience_mode as string | undefined) ?? "static";
     if (audienceMode === "dynamic") {
@@ -399,10 +615,29 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
       const resolved = await resolveAudienceServer(ws, rules, context.supabase);
       leadIds = resolved.lead_ids;
     }
+    const callCfg = (c as { audience_config?: unknown }).audience_config as
+      | CallAudienceConfig
+      | null
+      | undefined;
+    if (callCfg) {
+      const { resolveCallAudience } = await import("@/lib/prospecting/calls/call-audience.server");
+      const r = await resolveCallAudience(
+        sb,
+        ws,
+        context.userId,
+        data.campaign_id,
+        callCfg,
+        normalizeRecentContact(c),
+      );
+      entity = r.entity;
+      leadIds = r.ids;
+    }
+    const col = entity === "contact" ? "contact_id" : "lead_id";
+    const noun = entity === "contact" ? "Contato" : "Lead";
     if (!leadIds.length) return [];
 
     const { data: leads } = await sb
-      .from("leads")
+      .from(entity === "contact" ? "contacts" : "leads")
       .select("id, first_name, last_name, company_name, phone")
       .eq("workspace_id", ws)
       .in("id", leadIds);
@@ -423,7 +658,7 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
 
     const { data: existing } = await sb
       .from("prospecting_call_attempts")
-      .select("lead_id, status, attempt_number, created_at, ended_reason")
+      .select("lead_id, contact_id, status, attempt_number, created_at, ended_reason")
       .eq("campaign_id", data.campaign_id)
       .eq("workspace_id", ws)
       .order("created_at", { ascending: false });
@@ -436,13 +671,16 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
     };
     const agg = new Map<string, Agg>();
     for (const x of (existing ?? []) as Array<{
-      lead_id: string;
+      lead_id: string | null;
+      contact_id: string | null;
       status: string;
       attempt_number: number;
       created_at: string;
       ended_reason: string | null;
     }>) {
-      const a = agg.get(x.lead_id) ?? {
+      const key = x[col];
+      if (!key) continue;
+      const a = agg.get(key) ?? {
         count: 0,
         lastStatus: null,
         hasBlocking: null,
@@ -456,15 +694,27 @@ export const auditCampaignQueueability = createServerFn({ method: "POST" })
         a.hasBlocking = isTalked ? "conversed" : x.status;
       }
       a.lastAttempt = Math.max(a.lastAttempt, x.attempt_number ?? 0);
-      agg.set(x.lead_id, a);
+      agg.set(key, a);
     }
+
+    const { findRecentlyContacted } = await import("@/lib/prospecting/calls/recent-contact.server");
+    const recent = await findRecentlyContacted(
+      sb,
+      ws,
+      data.campaign_id,
+      [...leadMap.entries()].map(([id, v]) => ({ id, phone: v.phone })),
+      callCfg ? { days: 0, scope: "calls" } : normalizeRecentContact(c),
+      entity,
+    );
 
     return leadIds.map<LeadAudit>((lid) => {
       const a = agg.get(lid);
       const info = leadMap.get(lid);
       const reasons: string[] = [];
-      if (!info) reasons.push("Lead não encontrado no workspace");
-      if (info && !info.phone) reasons.push("Lead sem telefone");
+      if (!info) reasons.push(`${noun} não encontrado no workspace`);
+      const recentWhy = recent.get(lid);
+      if (recentWhy) reasons.push(recentWhy);
+      if (info && !info.phone) reasons.push(`${noun} sem telefone`);
       if (a?.hasBlocking) {
         reasons.push(
           a.hasBlocking === "conversed"

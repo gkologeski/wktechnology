@@ -1,0 +1,2 @@
+ALTER TABLE public.prospecting_campaigns ADD COLUMN IF NOT EXISTS audience_config jsonb;
+COMMENT ON COLUMN public.prospecting_campaigns.audience_config IS 'Quadro Público igual ao das campanhas de WhatsApp (fila, filtro ou lista manual de Leads); quando presente, substitui audience_rules.';

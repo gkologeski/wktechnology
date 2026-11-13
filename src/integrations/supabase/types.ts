@@ -22176,6 +22176,7 @@ export type Database = {
         Row: {
           attempt_number: number
           campaign_id: string | null
+          contact_id: string | null
           cost_usd: number | null
           created_at: string
           duration_seconds: number | null
@@ -22206,6 +22207,7 @@ export type Database = {
         Insert: {
           attempt_number?: number
           campaign_id?: string | null
+          contact_id?: string | null
           cost_usd?: number | null
           created_at?: string
           duration_seconds?: number | null
@@ -22236,6 +22238,7 @@ export type Database = {
         Update: {
           attempt_number?: number
           campaign_id?: string | null
+          contact_id?: string | null
           cost_usd?: number | null
           created_at?: string
           duration_seconds?: number | null
@@ -22269,6 +22272,20 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "prospecting_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_call_attempts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prospecting_call_attempts_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "shared_fields_contacts"
             referencedColumns: ["id"]
           },
           {
@@ -22370,6 +22387,7 @@ export type Database = {
         Row: {
           assigned_to: string | null
           assignment_mode: Database["public"]["Enums"]["prospecting_assignment_mode"]
+          audience_config: Json | null
           audience_mode: string
           audience_rules: Json
           created_at: string
@@ -22385,6 +22403,8 @@ export type Database = {
           max_attempts: number
           name: string
           owner_id: string
+          recent_contact_days: number
+          recent_contact_scope: string
           retry_interval_minutes: number
           source_ref: string | null
           source_type: Database["public"]["Enums"]["prospecting_source_type"]
@@ -22395,6 +22415,7 @@ export type Database = {
         Insert: {
           assigned_to?: string | null
           assignment_mode?: Database["public"]["Enums"]["prospecting_assignment_mode"]
+          audience_config?: Json | null
           audience_mode?: string
           audience_rules?: Json
           created_at?: string
@@ -22410,6 +22431,8 @@ export type Database = {
           max_attempts?: number
           name: string
           owner_id: string
+          recent_contact_days?: number
+          recent_contact_scope?: string
           retry_interval_minutes?: number
           source_ref?: string | null
           source_type?: Database["public"]["Enums"]["prospecting_source_type"]
@@ -22420,6 +22443,7 @@ export type Database = {
         Update: {
           assigned_to?: string | null
           assignment_mode?: Database["public"]["Enums"]["prospecting_assignment_mode"]
+          audience_config?: Json | null
           audience_mode?: string
           audience_rules?: Json
           created_at?: string
@@ -22435,6 +22459,8 @@ export type Database = {
           max_attempts?: number
           name?: string
           owner_id?: string
+          recent_contact_days?: number
+          recent_contact_scope?: string
           retry_interval_minutes?: number
           source_ref?: string | null
           source_type?: Database["public"]["Enums"]["prospecting_source_type"]

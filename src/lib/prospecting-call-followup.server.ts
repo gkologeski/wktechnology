@@ -15,7 +15,7 @@ export async function sendCallFollowup(attemptId: string): Promise<{ status: str
   const { data: att } = await sb
     .from("prospecting_call_attempts")
     .select(
-      "id, workspace_id, campaign_id, followup_campaign_id, lead_id, status, ended_reason, followup_status",
+      "id, workspace_id, campaign_id, followup_campaign_id, lead_id, contact_id, status, ended_reason, followup_status",
     )
     .eq("id", attemptId)
     .maybeSingle();
@@ -23,7 +23,10 @@ export async function sendCallFollowup(attemptId: string): Promise<{ status: str
   const kind = chooseFollowup(att.status, att.ended_reason);
   if (!kind) return { status: "skip" };
   const campaignId = att.campaign_id ?? att.followup_campaign_id;
-  if (!campaignId || !att.lead_id) return { status: "skip" };
+  if (!campaignId || (!att.lead_id && !att.contact_id)) return { status: "skip" };
+  const targetTable = att.contact_id ? "contacts" : "leads";
+  const targetId = (att.contact_id ?? att.lead_id) as string;
+  const noun = att.contact_id ? "Contato" : "Lead";
 
   const { data: camp } = await sb
     .from("prospecting_campaigns")
@@ -57,13 +60,19 @@ export async function sendCallFollowup(attemptId: string): Promise<{ status: str
   };
 
   try {
-    const { data: lead } = await sb
-      .from("leads")
-      .select("id, first_name, phone")
-      .eq("id", att.lead_id)
+    // WhatsApp: número de WhatsApp primeiro, depois celular/telefone.
+    const { data: row } = await sb
+      .from(targetTable)
+      .select(
+        att.contact_id
+          ? "id, first_name, phone, mobile_phone, whatsapp_e164"
+          : "id, first_name, phone, whatsapp_e164",
+      )
+      .eq("id", targetId)
       .eq("workspace_id", att.workspace_id)
       .maybeSingle();
-    if (!lead?.phone) return finish("skipped", "Lead sem telefone");
+    const lead = row ? { ...row, phone: row.whatsapp_e164 || row.mobile_phone || row.phone } : null;
+    if (!lead?.phone) return finish("skipped", `${noun} sem telefone`);
     const { normalizePhone, findConversationNumber, isWithinServiceWindow } =
       await import("@/lib/whatsapp/meta-channel.server");
     const to = normalizePhone(lead.phone);
@@ -81,7 +90,7 @@ export async function sendCallFollowup(attemptId: string): Promise<{ status: str
     // Quem executa a campanha precisa continuar com acesso ao lead e às campanhas.
     try {
       await assertSalesWorker(sb, "prospecting_campaigns", campaignId, [
-        { table: "leads", id: att.lead_id },
+        { table: targetTable, id: targetId },
         { resource: "techsales.marketing.campaigns", action: "create" },
       ]);
     } catch {

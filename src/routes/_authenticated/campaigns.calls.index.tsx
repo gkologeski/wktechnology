@@ -1,4 +1,10 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+  callCampaignStatusLabel,
+  canCancelCallCampaign,
+  canDeleteCallCampaign,
+  canEditCallCampaign,
+} from "@/lib/prospecting/calls/status-label";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent } from "@/components/ui/card";
@@ -13,7 +19,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Play, Pause, Trash2 } from "lucide-react";
+import { Plus, Play, Pause, Trash2, Pencil, Copy, X } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { toast } from "sonner";
@@ -23,6 +29,7 @@ import {
   upsertCampaign,
   deleteCampaign,
   setCampaignStatus,
+  duplicateCampaign,
   type Campaign,
 } from "@/lib/prospecting-campaigns.functions";
 
@@ -42,6 +49,51 @@ function CampaignsListPage() {
     "techsales.marketing.campaigns.create.team",
     "techsales.marketing.campaigns.create.workspace",
   ]);
+
+  const has = (a: string) =>
+    canAny(["own", "team", "workspace"].map((sc) => `techsales.marketing.campaigns.${a}.${sc}`));
+  const canUpdate = has("update");
+  const canDelete = has("delete");
+  const canManage = has("manage");
+  const dupFn = useServerFn(duplicateCampaign);
+  const run = async (kind: Action, c: Campaign) => {
+    try {
+      if (kind === "start") {
+        await statusFn({ data: { id: c.id, status: "running" } });
+        toast.success("Campanha iniciada");
+      } else if (kind === "pause") {
+        await statusFn({ data: { id: c.id, status: "paused" } });
+        toast.success("Campanha pausada");
+      } else if (kind === "cancel") {
+        if (
+          !(await confirmDialog(
+            `Encerrar "${c.name}"? As ligações ainda na fila não serão feitas. A campanha fica como Concluída.`,
+          ))
+        )
+          return;
+        await statusFn({ data: { id: c.id, status: "done" } });
+        toast.success("Campanha encerrada");
+      } else if (kind === "duplicate") {
+        const out = await dupFn({ data: { id: c.id } });
+        toast.success("Cópia criada como rascunho");
+        navigate({ to: "/campaigns/calls/$id", params: { id: out.id } });
+        return;
+      } else if (kind === "delete") {
+        if (
+          !(await confirmDialog(
+            `Excluir "${c.name}"${c.stats ? ` (${c.stats.total} tentativas)` : ""}? As ligações já feitas continuam registradas nas fichas.`,
+          ))
+        )
+          return;
+        await delFn({ data: { id: c.id } });
+        toast.success("Campanha excluída");
+      }
+      await refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível concluir a ação.");
+    }
+  };
+  const navigate = useNavigate();
 
   const [rows, setRows] = useState<Campaign[]>([]);
   const [open, setOpen] = useState(false);
@@ -110,9 +162,20 @@ function CampaignsListPage() {
                 <Link to="/campaigns/calls/$id" params={{ id: c.id }} className="flex-1 min-w-0">
                   <div className="font-medium truncate">{c.name}</div>
                   <div className="text-xs text-muted-foreground">
-                    {c.lead_ids?.length ?? 0} leads ·{" "}
-                    {c.assignment_mode === "weighted" ? "A/B por peso" : "Por segmento"}
+                    {(c.audience_config as { state?: { base?: string } } | null)?.state?.base ===
+                    "contacts"
+                      ? "Contatos"
+                      : `${c.lead_ids?.length ?? 0} leads`}{" "}
+                    · {c.assignment_mode === "weighted" ? "A/B por peso" : "Por segmento"}
                   </div>
+                  {c.stats && (
+                    <div className="text-xs text-muted-foreground">
+                      {c.stats.done} realizadas · {c.stats.failed} sem sucesso · {c.stats.pending}{" "}
+                      pendentes · {c.stats.total} tentativas
+                      {c.stats.startedAt &&
+                        ` · iniciou em ${new Date(c.stats.startedAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`}
+                    </div>
+                  )}
                 </Link>
                 <Badge
                   variant={
@@ -123,43 +186,16 @@ function CampaignsListPage() {
                         : "outline"
                   }
                 >
-                  {c.status}
+                  {callCampaignStatusLabel(c.status)}
                 </Badge>
-                {c.status !== "running" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={async () => {
-                      await statusFn({ data: { id: c.id, status: "running" } });
-                      refresh();
-                    }}
-                  >
-                    <Play className="h-3.5 w-3.5" />
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={async () => {
-                      await statusFn({ data: { id: c.id, status: "paused" } });
-                      refresh();
-                    }}
-                  >
-                    <Pause className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={async () => {
-                    if (await confirmDialog("Remover?")) {
-                      await delFn({ data: { id: c.id } });
-                      refresh();
-                    }
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                <CampaignActions
+                  c={c}
+                  canCreate={canCreate}
+                  canUpdate={canUpdate}
+                  canDelete={canDelete}
+                  canManage={canManage}
+                  run={run}
+                />
               </div>
             ))}
           </div>
@@ -183,6 +219,90 @@ function CampaignsListPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+type Action = "start" | "pause" | "cancel" | "duplicate" | "delete";
+
+function CampaignActions({
+  c,
+  canCreate,
+  canUpdate,
+  canDelete,
+  canManage,
+  run,
+}: {
+  c: Campaign;
+  canCreate: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+  canManage: boolean;
+  run: (k: Action, c: Campaign) => Promise<void>;
+}) {
+  const editable = canEditCallCampaign(c.status);
+  const deletable = canDeleteCallCampaign(c.status);
+  return (
+    <div className="flex flex-wrap items-center gap-1">
+      {editable && canUpdate ? (
+        <Button size="sm" variant="outline" asChild>
+          <Link to="/campaigns/calls/$id" params={{ id: c.id }}>
+            <Pencil className="h-3.5 w-3.5 mr-1" />
+            Editar
+          </Link>
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          variant="outline"
+          disabled
+          title={
+            editable
+              ? "Sem permissão para editar"
+              : "Só é possível editar campanhas em rascunho ou pausadas"
+          }
+        >
+          <Pencil className="h-3.5 w-3.5 mr-1" />
+          Editar
+        </Button>
+      )}
+      <Button size="sm" variant="outline" disabled={!canCreate} onClick={() => run("duplicate", c)}>
+        <Copy className="h-3.5 w-3.5 mr-1" />
+        Duplicar
+      </Button>
+      {c.status === "running" ? (
+        <Button size="sm" variant="outline" disabled={!canManage} onClick={() => run("pause", c)}>
+          <Pause className="h-3.5 w-3.5 mr-1" />
+          Pausar
+        </Button>
+      ) : c.status !== "done" ? (
+        <Button size="sm" variant="outline" disabled={!canManage} onClick={() => run("start", c)}>
+          <Play className="h-3.5 w-3.5 mr-1" />
+          {c.status === "paused" ? "Retomar" : "Iniciar"}
+        </Button>
+      ) : null}
+      {canCancelCallCampaign(c.status) && (
+        <Button
+          size="icon"
+          variant="ghost"
+          aria-label={`Encerrar campanha ${c.name}`}
+          title="Encerrar campanha"
+          disabled={!canManage}
+          onClick={() => run("cancel", c)}
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      )}
+      <Button
+        size="icon"
+        variant="ghost"
+        aria-label={`Excluir campanha ${c.name}`}
+        title={deletable ? "Excluir campanha" : "Pause a campanha antes de excluir"}
+        disabled={!canDelete || !deletable}
+        onClick={() => run("delete", c)}
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
     </div>
   );
 }
