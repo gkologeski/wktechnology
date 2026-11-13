@@ -198,7 +198,9 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           .from("prospecting_call_attempts")
           .update(updates)
           .eq("vapi_call_id", callId)
-          .select("id, workspace_id, owner_id, campaign_id, lead_id, contact_id, summary, attempt_number")
+          .select(
+            "id, workspace_id, owner_id, campaign_id, lead_id, contact_id, summary, attempt_number",
+          )
           .maybeSingle();
         if (error) {
           console.error("[vapi-hook]", error);

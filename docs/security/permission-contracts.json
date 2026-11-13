@@ -5472,7 +5472,7 @@
         }
       },
       "files": {
-        "src/routes/api/public/hooks/vapi.ts": "4e12066e3a7269cc288d0c20e4e218fee9f855d2cfee0c43c47b34acd1657d66"
+        "src/routes/api/public/hooks/vapi.ts": "8a0a19b53ac18690c1d3918eb19f2f540f014e2749c6c6478d6347e1ed3b35e7"
       }
     },
     {
@@ -11687,7 +11687,7 @@
         "src/lib/inbox/history-access.server.ts": "78ad0d293a36dc84279d4c635de507e86b166bd6ea55df97e19783ba09014240",
         "src/routes/_authenticated/inbox.linkedin.tsx": "27884efdbf7c5231a4d2bff5e3d504ca87e24d53de097258df704784ff9cfdac",
         "drizzle/migrations/0342_linkedin_inbox.sql": "2595d5ba26fb0778b42b3be2a15ffa08ce5399d266a70bc0aaa05bbff4c5db85",
-        "drizzle/migrations/0343_linkedin_service_runtime.sql": "631e624bab441f5ed49829951eaaa67fcebaee111243676ad36e76b0768a2a6f",
+        "drizzle/migrations/0343_linkedin_service_runtime.sql": "74b147192be5ba0f0fc391caa85330604c71f1d07c7961fee748564a7f00a110",
         "src/lib/inbox/message-history.ts": "30c5a5bfbebbc1cf65c363e370c895739a6321454522ab308a1e107d66a2c2ee",
         "src/components/inbox/inbox-workspace.tsx": "a44340b98a52765ddcc17c7d435ee612a3ee69e26066f976260892cf804bf7a2",
         "drizzle/migrations/0344_linkedin_commercial_sequences.sql": "1802949979c6a5efcb51f2ad6d66cdf9b4b5e7c1377bc22ad0f8426c87211214"

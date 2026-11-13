@@ -14,7 +14,9 @@ def check(sql,context,base,A,U,W,passed):
  sql('''CREATE TABLE permissions(key text PRIMARY KEY,module text,resource text,action text,scope text,label_pt text,description text,is_system boolean);
  CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $$SELECT coalesce(nullif(current_setting('request.jwt.claim.role',true),''),'service_role')$$;
  CREATE SCHEMA sales_private;
- CREATE FUNCTION sales_context_access(c jsonb,w uuid,r text,a text,responsibles uuid[]) RETURNS boolean LANGUAGE sql STABLE AS $$SELECT coalesce(c->>'workspace'=w::text AND (c->'keys'->>('techsales.'||r||'.'||a))::boolean,false)$$;
+ CREATE FUNCTION sales_context_access(c jsonb,w uuid,r text,a text,responsibles uuid[]) RETURNS boolean LANGUAGE sql STABLE AS $$
+ SELECT coalesce(c->>'workspace'=w::text AND (c->'keys'->>('techsales.'||r||'.'||a))::boolean,false)
+$$;
  CREATE FUNCTION sales_record_access(t text,i uuid,a text) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER AS $$DECLARE c jsonb:=work_access_context();j jsonb;BEGIN CASE t WHEN 'contacts','leads','companies','deals' THEN EXECUTE format('SELECT to_jsonb(x) FROM public.%I x WHERE id=$1',t) INTO j USING i;RETURN j->>'workspace_id'=c->>'workspace';ELSE RETURN false;END CASE;END$$;
  CREATE FUNCTION sales_private.record_access_ctx(c jsonb,t text,i uuid,a text) RETURNS boolean LANGUAGE plpgsql STABLE AS $$BEGIN CASE t WHEN 'contacts' THEN RETURN true;ELSE RETURN false;END CASE;END$$;
  CREATE FUNCTION sales_access_context() RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT work_access_context()$$;

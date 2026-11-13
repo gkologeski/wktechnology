@@ -21,8 +21,8 @@ BEGIN
  END LOOP;
  target_function:='public.sales_context_access(jsonb,uuid,text,text,uuid[])'::regprocedure;
  SELECT prosrc INTO body FROM pg_proc WHERE pg_proc.oid=target_function;
- IF ltrim(body) NOT LIKE 'SELECT %' THEN RAISE EXCEPTION 'Unexpected sales context definition';END IF;
- replacement:='SELECT CASE WHEN r=''techsales.inbox.linkedin'' THEN public.linkedin_inbox_access(c,w,(c->>''actor'')::uuid,CASE WHEN a IN(''update'',''assign'') THEN ''manage'' ELSE a END) AND (c->>''actor'')::uuid=ANY(responsibles) ELSE ('||regexp_replace(regexp_replace(trim(body),'^SELECT\s+','','i'),';\s*$','')||') END';
+ IF body !~* '^\s*SELECT\s' THEN RAISE EXCEPTION 'Unexpected sales context definition';END IF;
+ replacement:='SELECT CASE WHEN r=''techsales.inbox.linkedin'' THEN public.linkedin_inbox_access(c,w,(c->>''actor'')::uuid,CASE WHEN a IN(''update'',''assign'') THEN ''manage'' ELSE a END) AND (c->>''actor'')::uuid=ANY(responsibles) ELSE ('||regexp_replace(regexp_replace(body,'^\s*SELECT\s+','','i'),';\s*$','')||') END';
  definition:=pg_get_functiondef(target_function);EXECUTE replace(definition,body,replacement);
 END $patch$;
 
