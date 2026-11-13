@@ -67,7 +67,9 @@ export function UnifiedInboxPage({
   lockChannel?: boolean;
 } = {}) {
   const permissions = usePermissions();
-  const [channel, setChannel] = useState<"all" | "email" | "whatsapp" | "chat" | "call">(initialChannel);
+  const [channel, setChannel] = useState<"all" | "email" | "whatsapp" | "chat" | "call">(
+    initialChannel,
+  );
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
@@ -294,45 +296,48 @@ export function UnifiedInboxPage({
                 className="pl-8"
               />
             </div>
-            {!lockChannel && (<div className="flex flex-wrap gap-1">
-              <Button
-                size="sm"
-                variant={channel === "all" ? "default" : "outline"}
-                onClick={() => setChannel("all")}
-              >
-                Todos
-                {counts ? ` (${counts.email + counts.whatsapp + counts.chat + counts.call})` : ""}
-              </Button>
-              <Button
-                size="sm"
-                variant={channel === "email" ? "default" : "outline"}
-                onClick={() => setChannel("email")}
-              >
-                <Mail className="h-4 w-4 mr-1" /> E-mail{counts ? ` (${counts.email})` : ""}
-              </Button>
-              <Button
-                size="sm"
-                variant={channel === "whatsapp" ? "default" : "outline"}
-                onClick={() => setChannel("whatsapp")}
-              >
-                <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp
-                {counts ? ` (${counts.whatsapp})` : ""}
-              </Button>
-              <Button
-                size="sm"
-                variant={channel === "chat" ? "default" : "outline"}
-                onClick={() => setChannel("chat")}
-              >
-                <MessagesSquare className="mr-1 h-4 w-4" /> Chat{counts ? ` (${counts.chat})` : ""}
-              </Button>
-              <Button
-                size="sm"
-                variant={channel === "call" ? "default" : "outline"}
-                onClick={() => setChannel("call")}
-              >
-                <Phone className="mr-1 h-4 w-4" /> Ligações{counts ? ` (${counts.call})` : ""}
-              </Button>
-            </div>)}
+            {!lockChannel && (
+              <div className="flex flex-wrap gap-1">
+                <Button
+                  size="sm"
+                  variant={channel === "all" ? "default" : "outline"}
+                  onClick={() => setChannel("all")}
+                >
+                  Todos
+                  {counts ? ` (${counts.email + counts.whatsapp + counts.chat + counts.call})` : ""}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={channel === "email" ? "default" : "outline"}
+                  onClick={() => setChannel("email")}
+                >
+                  <Mail className="h-4 w-4 mr-1" /> E-mail{counts ? ` (${counts.email})` : ""}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={channel === "whatsapp" ? "default" : "outline"}
+                  onClick={() => setChannel("whatsapp")}
+                >
+                  <MessageCircle className="h-4 w-4 mr-1" /> WhatsApp
+                  {counts ? ` (${counts.whatsapp})` : ""}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={channel === "chat" ? "default" : "outline"}
+                  onClick={() => setChannel("chat")}
+                >
+                  <MessagesSquare className="mr-1 h-4 w-4" /> Chat
+                  {counts ? ` (${counts.chat})` : ""}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={channel === "call" ? "default" : "outline"}
+                  onClick={() => setChannel("call")}
+                >
+                  <Phone className="mr-1 h-4 w-4" /> Ligações{counts ? ` (${counts.call})` : ""}
+                </Button>
+              </div>
+            )}
           </InboxListHeader>
           <InboxConversationList>
             {pageQ.isError && items.length === 0 ? (

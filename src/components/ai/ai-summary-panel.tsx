@@ -1,5 +1,5 @@
 import { usePermissions } from "@/lib/access-control/use-permissions";
-import { SalesAction } from "@/components/sales-access";
+import { SalesAction, SalesCapabilityScope } from "@/components/sales-access";
 import { formatDateTime } from "@/lib/crm";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -198,84 +198,86 @@ export function AiSummaryPanel({ entity, entityId }: { entity: Entity; entityId:
             das interações.
           </p>
         )}
-        {rows.map((r, idx) => {
-          const open = openIds[r.id] ?? idx === 0;
-          return (
-            <Collapsible
-              key={r.id}
-              open={open}
-              onOpenChange={(v) => setOpenIds((s) => ({ ...s, [r.id]: v }))}
-              className="rounded-md border p-3 space-y-2"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <CollapsibleTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex min-w-0 flex-1 items-center gap-2 flex-wrap rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    aria-label={open ? "Recolher resumo" : "Expandir resumo"}
-                  >
-                    <ChevronDown
-                      className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
-                    />
-                    <Badge variant="outline" className="text-[10px] uppercase">
-                      {KIND_LABEL[r.kind] ?? r.kind}
-                    </Badge>
-                    {r.sentiment && (
-                      <Badge
-                        variant={SENTIMENT_VARIANT[r.sentiment] ?? "outline"}
-                        className="text-[10px]"
-                      >
-                        {r.sentiment}
+        <SalesCapabilityScope table="ai_summaries" ids={rows.map((r) => r.id)}>
+          {rows.map((r, idx) => {
+            const open = openIds[r.id] ?? idx === 0;
+            return (
+              <Collapsible
+                key={r.id}
+                open={open}
+                onOpenChange={(v) => setOpenIds((s) => ({ ...s, [r.id]: v }))}
+                className="rounded-md border p-3 space-y-2"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex min-w-0 flex-1 items-center gap-2 flex-wrap rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      aria-label={open ? "Recolher resumo" : "Expandir resumo"}
+                    >
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`}
+                      />
+                      <Badge variant="outline" className="text-[10px] uppercase">
+                        {KIND_LABEL[r.kind] ?? r.kind}
                       </Badge>
-                    )}
-                    <span className="text-[11px] text-muted-foreground">
-                      {r.source_count} msg · {formatDateTime(r.created_at)}
-                    </span>
-                  </button>
-                </CollapsibleTrigger>
-                <SalesAction table="ai_summaries" action="delete" id={r.id}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6"
-                    aria-label="Excluir resumo"
-                    onClick={() => remove(r.id)}
-                  >
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </SalesAction>
-              </div>
-              {!open && <p className="text-xs text-muted-foreground line-clamp-2">{r.summary}</p>}
-              <CollapsibleContent className="space-y-2">
-                <p className="text-sm whitespace-pre-wrap">{r.summary}</p>
-                {r.key_points.length > 0 && (
-                  <div>
-                    <p className="text-[11px] font-medium text-muted-foreground mb-1">
-                      Pontos-chave
-                    </p>
-                    <ul className="list-disc pl-4 space-y-0.5 text-xs">
-                      {r.key_points.map((k, i) => (
-                        <li key={i}>{k}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {r.next_actions.length > 0 && (
-                  <div>
-                    <p className="text-[11px] font-medium text-muted-foreground mb-1">
-                      Próximos passos
-                    </p>
-                    <ul className="list-disc pl-4 space-y-0.5 text-xs">
-                      {r.next_actions.map((k, i) => (
-                        <li key={i}>{k}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </CollapsibleContent>
-            </Collapsible>
-          );
-        })}
+                      {r.sentiment && (
+                        <Badge
+                          variant={SENTIMENT_VARIANT[r.sentiment] ?? "outline"}
+                          className="text-[10px]"
+                        >
+                          {r.sentiment}
+                        </Badge>
+                      )}
+                      <span className="text-[11px] text-muted-foreground">
+                        {r.source_count} msg · {formatDateTime(r.created_at)}
+                      </span>
+                    </button>
+                  </CollapsibleTrigger>
+                  <SalesAction table="ai_summaries" action="delete" id={r.id}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      aria-label="Excluir resumo"
+                      onClick={() => remove(r.id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </SalesAction>
+                </div>
+                {!open && <p className="text-xs text-muted-foreground line-clamp-2">{r.summary}</p>}
+                <CollapsibleContent className="space-y-2">
+                  <p className="text-sm whitespace-pre-wrap">{r.summary}</p>
+                  {r.key_points.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-medium text-muted-foreground mb-1">
+                        Pontos-chave
+                      </p>
+                      <ul className="list-disc pl-4 space-y-0.5 text-xs">
+                        {r.key_points.map((k, i) => (
+                          <li key={i}>{k}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {r.next_actions.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-medium text-muted-foreground mb-1">
+                        Próximos passos
+                      </p>
+                      <ul className="list-disc pl-4 space-y-0.5 text-xs">
+                        {r.next_actions.map((k, i) => (
+                          <li key={i}>{k}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
+            );
+          })}
+        </SalesCapabilityScope>
       </CardContent>
     </Card>
   );

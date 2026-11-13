@@ -39,7 +39,7 @@ let endpoint = "",
   started = false;
 let db: ReturnType<typeof postgres>;
 const accepted: string[] = [];
-const expected = 73;
+const expected = 92;
 let cleaned = false;
 function report() {
   mkdirSync(".verification", { recursive: true });
@@ -297,6 +297,19 @@ beforeAll(async () => {
   await db.unsafe(
     readFileSync("drizzle/migrations/0251_deal_related_activity_history.sql", "utf8"),
   );
+  await db.unsafe(`
+    GRANT SELECT(id,workspace_id) ON contacts TO authenticated;
+    CREATE TABLE calendar_events(id uuid PRIMARY KEY, workspace_id uuid, owner_id uuid,
+      calendar_account_id uuid, recurring_event_id text, title text, description text,
+      start_at timestamptz, end_at timestamptz, location text, html_link text, hangout_link text,
+      attendees jsonb, recording_url text, related_contact_id uuid, related_activity_id uuid,
+      created_at timestamptz);
+    GRANT SELECT ON calendar_events TO authenticated;
+    ALTER TABLE calendar_events ENABLE ROW LEVEL SECURITY;
+    CREATE POLICY calendar_ci_read ON calendar_events FOR SELECT TO authenticated
+      USING(public.sales_context_access((SELECT public.sales_access_context()),workspace_id,'system.calendars','view',ARRAY[owner_id]));
+  `);
+  await db.unsafe(readFileSync("drizzle/migrations/0353_sales_timeline_batch_reads.sql", "utf8"));
   await db.unsafe(readFileSync("tests/fixtures/inbox-ci.sql", "utf8"));
   // Use the production protected views and policies verbatim. Scaffold only the
   // unused identity columns as text; identifiers/workspace columns retain UUIDs.
@@ -334,6 +347,26 @@ beforeAll(async () => {
     await db.unsafe(line);
   }
   await db.unsafe(readFileSync("drizzle/migrations/0253_inbox_protected_identity.sql", "utf8"));
+  await db.unsafe(
+    sourceFunction(
+      "drizzle/migrations/0222_order4_sales_prepare.sql",
+      "sales_summary_context_access",
+    ),
+  );
+  await db.unsafe(`
+    CREATE TABLE ai_summaries(id uuid PRIMARY KEY,workspace_id uuid,owner_id uuid,entity text,entity_id uuid,source_refs jsonb);
+    GRANT SELECT ON ai_summaries TO authenticated;
+    ALTER TABLE ai_summaries ENABLE ROW LEVEL SECURITY;
+    CREATE POLICY summary_ci_read ON ai_summaries FOR SELECT TO authenticated USING(
+      public.sales_summary_context_access((SELECT public.sales_access_context()),workspace_id,owner_id,entity,entity_id,source_refs,'view'));
+    INSERT INTO sales_resource_catalog VALUES('activities','techsales.activities',ARRAY['assigned_to','owner_id'],false,NULL,NULL,'id');
+    INSERT INTO ai_summaries VALUES
+      ('94000000-0000-4000-8000-000000000001','aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000002','deal','50000000-0000-4000-8000-000000000001','[]'),
+      ('94000000-0000-4000-8000-000000000002','aaaaaaaa-0000-4000-8000-00000000000b','10000000-0000-4000-8000-000000000002','deal','50000000-0000-4000-8000-000000000003','[]');
+  `);
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0354_summary_capabilities_calendar_candidates.sql", "utf8"),
+  );
   await db.unsafe(
     "CREATE FUNCTION public.ci_delegated_probe() RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$ SELECT coalesce((public.work_subject_context('aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000003')->'keys')?'techsales.leads.view.own',false) $$;GRANT EXECUTE ON FUNCTION public.ci_delegated_probe() TO authenticated;",
   );
@@ -1431,4 +1464,254 @@ it("inbox SQL preserves cursor pagination and identity search", async () => {
     { keys: inboxKeys },
   );
   accepted.push("inbox-pagination");
+});
+
+const activityCapabilityIds = Array.from(
+  { length: 4 },
+  (_, i) => `80000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`,
+);
+const batchKeys = ["techsales.activities.view.workspace", "techsales.activities.update.workspace"];
+it("activity batch SQL preserves per-action results and note/task resources", async () => {
+  await subject(
+    async (tx) => {
+      const rows =
+        await tx`select * from sales_capabilities('activities',${activityCapabilityIds}::uuid[])`;
+      expect(rows).toHaveLength(3);
+      expect(rows.every((r) => r.can_view && r.can_update && !r.can_delete)).toBe(true);
+      await tx`reset role`;
+      await tx`update activities set type='note' where id=${activityCapabilityIds[0]}`;
+      await tx`update activities set type='task' where id=${activityCapabilityIds[1]}`;
+      await tx`set local role authenticated`;
+      expect(
+        (
+          await tx`select * from sales_capabilities('activities',${activityCapabilityIds}::uuid[])`
+        ).map((r) => r.id),
+      ).toEqual([activityCapabilityIds[2]]);
+    },
+    { keys: batchKeys },
+  );
+  accepted.push("activity-batch-allowed");
+});
+async function deniedActivityBatch(scenario: "missing" | "deny" | "workspace" | "inactive") {
+  let count = -1;
+  await subject(
+    async (tx) => {
+      count = (
+        await tx`select * from sales_capabilities('activities',${activityCapabilityIds}::uuid[])`
+      ).length;
+    },
+    {
+      keys: scenario === "missing" ? [] : batchKeys,
+      denies: scenario === "deny" ? [batchKeys[0]] : [],
+      workspace: scenario === "workspace" ? B : W,
+      inactive: scenario === "inactive",
+    },
+  );
+  accepted.push(`activity-batch-${scenario}`);
+  return count;
+}
+it("activity batch SQL denies missing", async () => {
+  expect(await deniedActivityBatch("missing")).toBe(0);
+});
+it("activity batch SQL denies deny", async () => {
+  expect(await deniedActivityBatch("deny")).toBe(0);
+});
+it("activity batch SQL denies workspace", async () => {
+  expect(await deniedActivityBatch("workspace")).toBe(0);
+});
+it("activity batch SQL denies inactive", async () => {
+  expect(await deniedActivityBatch("inactive")).toBe(0);
+});
+it("activity batch SQL respects reassigned ownership, empty input and cap", async () => {
+  await subject(
+    async (tx) => {
+      await tx`reset role`;
+      await tx`update activities set assigned_to=${P} where id=${activityCapabilityIds[1]}`;
+      await tx`set local role authenticated`;
+      const rows =
+        await tx`select * from sales_capabilities('activities',${activityCapabilityIds}::uuid[])`;
+      expect(rows.map((r) => r.id).sort()).toEqual([
+        activityCapabilityIds[0],
+        activityCapabilityIds[2],
+      ]);
+      expect(await tx`select * from sales_capabilities('activities','{}'::uuid[])`).toHaveLength(0);
+      expect(
+        await tx`select * from sales_capabilities('activities',${[activityCapabilityIds[0], activityCapabilityIds[0]]}::uuid[])`,
+      ).toHaveLength(2);
+      await expect(
+        tx`select * from sales_capabilities('activities',${Array(501).fill(activityCapabilityIds[0])}::uuid[])`,
+      ).rejects.toMatchObject({ code: "P0001" });
+    },
+    { keys: ["techsales.activities.view.own"] },
+  );
+  accepted.push("activity-batch-own-cap");
+});
+
+const calendarContact = "60000000-0000-4000-8000-000000000001";
+const calendarKeys = ["techsales.contacts.view.workspace", "system.calendars.view.workspace"];
+async function calendarFixture(tx: postgres.TransactionSql) {
+  await tx`reset role`;
+  await tx`insert into contacts(id,workspace_id,owner_id,assigned_to) values(${calendarContact},${W},${U},${U}) on conflict(id) do nothing`;
+  // Six visible siblings suppress a series, even when only one links to the contact.
+  // Foreign-workspace siblings must not contribute to the five-event series.
+  await tx.unsafe(`INSERT INTO calendar_events(id,workspace_id,owner_id,calendar_account_id,recurring_event_id,title,start_at,created_at,attendees,related_contact_id)
+    SELECT ('90000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,
+      CASE WHEN n=18 THEN '${B}'::uuid ELSE '${W}'::uuid END,
+      CASE WHEN n BETWEEN 2 AND 6 THEN '${P}'::uuid ELSE '${U}'::uuid END,
+      '91000000-0000-4000-8000-000000000001',
+      CASE WHEN n BETWEEN 7 AND 12 THEN 'recurring' END,
+      CASE WHEN n<=6 THEN 'six titles' WHEN n<=12 THEN 'changing title '||n ELSE 'five titles' END,
+      '2026-01-01'::timestamptz+n*interval '1 day','2026-01-01',
+      '[{"email":"member@wktechnology.com.br"}]',
+      CASE WHEN n IN (1,7,13,14,18) THEN '${calendarContact}'::uuid END
+    FROM generate_series(1,18) n`);
+  await tx`set local role authenticated`;
+}
+async function calendarPage(tx: postgres.TransactionSql, size = 40) {
+  return (
+    await tx`select get_timeline_calendar_page('contact',${calendarContact},p_page_size=>${size}) result`
+  )[0].result;
+}
+it("calendar batch SQL preserves series threshold, account and RLS semantics", async () => {
+  await subject(
+    async (tx) => {
+      await calendarFixture(tx);
+      const page = await calendarPage(tx, 1);
+      expect(page.total).toBe(2);
+      expect(page.has_more).toBe(true);
+      const second = (
+        await tx`select get_timeline_calendar_page('contact',${calendarContact},p_cursor_at=>${page.next_at}::timestamptz,p_cursor_id=>${page.next_id}::uuid,p_page_size=>1) result`
+      )[0].result;
+      expect(second.items).toHaveLength(1);
+      expect(second.items[0].id).not.toBe(page.items[0].id);
+      expect(second.has_more).toBe(false);
+    },
+    { keys: calendarKeys },
+  );
+  accepted.push("calendar-batch-allowed");
+});
+for (const scenario of ["missing", "deny", "workspace", "inactive"] as const) {
+  it(`calendar batch SQL denies ${scenario}`, async () => {
+    await subject(
+      async (tx) => {
+        await calendarFixture(tx);
+        expect((await calendarPage(tx)).total).toBe(0);
+      },
+      {
+        keys: scenario === "missing" ? [calendarKeys[0]] : calendarKeys,
+        denies: scenario === "deny" ? [calendarKeys[1]] : [],
+        workspace: scenario === "workspace" ? B : W,
+        inactive: scenario === "inactive",
+      },
+    );
+    accepted.push(`calendar-batch-${scenario}`);
+  });
+}
+it("calendar batch SQL counts only caller-visible siblings", async () => {
+  await subject(
+    async (tx) => {
+      await calendarFixture(tx);
+      const page = await calendarPage(tx);
+      // Five siblings owned by another user cannot suppress the one visible event.
+      expect(page.total).toBe(3);
+    },
+    { keys: [calendarKeys[0], "system.calendars.view.own"] },
+  );
+  accepted.push("calendar-batch-own-siblings");
+});
+
+const summaryIds = ["94000000-0000-4000-8000-000000000001", "94000000-0000-4000-8000-000000000002"];
+const summaryKeys = [
+  "techsales.ai_summaries.view.workspace",
+  "techsales.ai_summaries.delete.workspace",
+  "techsales.deals.view.workspace",
+  ...["activities", "notes", "tasks", "meetings", "inbox.email", "inbox.whatsapp"].map(
+    (r) => `techsales.${r}.view.workspace`,
+  ),
+];
+it("summary batch SQL preserves supported actions and provenance", async () => {
+  await subject(
+    async (tx) => {
+      const rows = await tx`select * from sales_capabilities('ai_summaries',${summaryIds}::uuid[])`;
+      expect(rows).toEqual([
+        {
+          id: summaryIds[0],
+          can_view: true,
+          can_update: false,
+          can_delete: true,
+          can_assign: false,
+          can_approve: false,
+          can_export: false,
+          can_manage: false,
+        },
+      ]);
+      await tx`reset role`;
+      await tx`update ai_summaries set source_refs=${tx.json([{ table: "activities", id: activityCapabilityIds[0] }])} where id=${summaryIds[0]}`;
+      await tx`set local role authenticated`;
+      expect(
+        await tx`select * from sales_capabilities('ai_summaries',${summaryIds}::uuid[])`,
+      ).toEqual(rows);
+    },
+    { keys: summaryKeys },
+  );
+  accepted.push("summary-batch-allowed");
+});
+async function summaryDenied(scenario: "missing" | "deny" | "workspace" | "inactive") {
+  let rows: readonly unknown[] = [];
+  await subject(
+    async (tx) => {
+      rows = await tx`select * from sales_capabilities('ai_summaries',${summaryIds}::uuid[])`;
+    },
+    {
+      keys:
+        scenario === "missing"
+          ? summaryKeys.filter((k) => !k.includes("ai_summaries.view"))
+          : summaryKeys,
+      denies: scenario === "deny" ? ["techsales.ai_summaries.view.workspace"] : [],
+      workspace: scenario === "workspace" ? B : W,
+      inactive: scenario === "inactive",
+    },
+  );
+  accepted.push(`summary-batch-${scenario}`);
+  return rows;
+}
+it("summary batch SQL denies missing", async () => {
+  expect(await summaryDenied("missing")).toEqual([]);
+});
+it("summary batch SQL denies deny", async () => {
+  expect(await summaryDenied("deny")).toEqual([]);
+});
+it("summary batch SQL denies workspace", async () => {
+  expect(await summaryDenied("workspace")).toEqual([]);
+});
+it("summary batch SQL denies inactive", async () => {
+  expect(await summaryDenied("inactive")).toEqual([]);
+});
+it("summary batch SQL rejects missing parent permission", async () => {
+  await subject(
+    async (tx) => {
+      expect(
+        await tx`select * from sales_capabilities('ai_summaries',${summaryIds}::uuid[])`,
+      ).toEqual([]);
+    },
+    { keys: summaryKeys.filter((k) => !k.includes("deals.view")) },
+  );
+  accepted.push("summary-batch-parent-denied");
+});
+it("summary batch SQL rejects source revocation and invalid legacy scope", async () => {
+  await subject(
+    async (tx) => {
+      expect(
+        await tx`select * from sales_capabilities('ai_summaries',${summaryIds}::uuid[])`,
+      ).toEqual([]);
+      await tx`reset role`;
+      await tx`update ai_summaries set source_refs=${tx.json([{ table: "activities", id: activityCapabilityIds[0] }])} where id=${summaryIds[0]}`;
+      await tx`set local role authenticated`;
+      expect(
+        await tx`select * from sales_capabilities('ai_summaries',${summaryIds}::uuid[])`,
+      ).toEqual([]);
+    },
+    { keys: summaryKeys, denies: ["techsales.activities.view.workspace"] },
+  );
+  accepted.push("summary-batch-source-denied");
 });

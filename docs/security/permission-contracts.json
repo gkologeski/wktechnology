@@ -2200,6 +2200,10 @@
         {
           "file": "src/lib/whatsapp/campaign-audience.ts",
           "symbol": "fieldsForBase"
+        },
+        {
+          "file": "src/components/inbox/unified-inbox-page.tsx",
+          "symbol": "UnifiedInboxPage"
         }
       ],
       "database": [
@@ -2273,7 +2277,7 @@
       "files": {
         "src/lib/whatsapp.functions.ts": "1134b8ac720de7dcd2dfb45acfbbcc23d3c55351755afad874ec9fb80ce87aac",
         "src/lib/whatsapp-campaigns.functions.ts": "4c0c8ef6eeb82931166481bb7a8d53e48238f941c9e762171a65e81aad06eed8",
-        "src/routes/_authenticated/inbox.index.tsx": "d73d5f367b5aea483b101ecbdb9def8e1f45cf4c83998933daa0d9c1dd3b3054",
+        "src/routes/_authenticated/inbox.index.tsx": "8e4a063b6cf862102f4a3547c98798386d325ca5e64bd0626fac34c3648d2d7a",
         "src/routes/_authenticated/inbox.whatsapp.tsx": "0dcbc7da3afdb6c7bce32228335bc62fa611f966c458e0ff642dd6cebecf95f1",
         "src/routes/_authenticated/campaigns.whatsapp.tsx": "c6eae748917f5de80b79433c10fa21aaacc17fa7f172e8a46589aa907dd148be",
         "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9",
@@ -2294,7 +2298,7 @@
         "src/lib/whatsapp/campaign-audience.ts": "e204fc3bea329059ab6ba9e2beee8dc1719a0c9db77292100fb81c77d5233c13",
         "src/components/whatsapp/campaign-audience-panel.tsx": "e77a981f32e8c84a3a84e8f7e0d27ac5d2fe711cad3688675fc9ae813822a797",
         "src/lib/whatsapp/campaign-rotation-guard.server.ts": "95cce5544afd6ea49a5f7beafec341d94bded38c22999b88c6e2aca2976c9476",
-        "src/components/inbox/unified-inbox-page.tsx": "7d15abc76f564eb34b3191acfcacd876faffba3013662fce6276dfeaef0d6873",
+        "src/components/inbox/unified-inbox-page.tsx": "c5eba8a11bfacdfe11e2149a6a8f20a7759941c74c823c85888220f0ecf60252",
         "src/routes/_authenticated/inbox.ligacoes.tsx": "c1423290125886a27d736c7fc39d2749c26e3e33ce479ef11f3a34592501e290"
       }
     },
@@ -2900,7 +2904,7 @@
       "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. LinkedIn navigation accepts personal view as well as workspace view; server and RLS remain independently enforced.",
       "files": {
         "src/lib/menu-config.ts": "3d6c4a115571c63f83952ef34f4ca754cac5b8baa00374fa1f103be2bdb6f257",
-        "src/lib/menu-resources.ts": "b99ce6f77e7af2415736f637d41dbe949682d362f0236944257a4b5136dc033d",
+        "src/lib/menu-resources.ts": "cf3ef25b61ec3a40e33917ee5f6fb594d593406cd6e44f6be2d6eefe338b8087",
         "src/lib/access-control/sales-resources.ts": "b52f747ccc294edc4f31c933224958a42ce7193b480c0e3e6f8145d3fb0d2b31"
       }
     },
@@ -7571,7 +7575,7 @@
       "permission_keys": [
         "system.whatsapp_suppressions.manage.workspace"
       ],
-      "rationale": "Numbers refused by Meta (131026 no WhatsApp: 90 days; 131049 engagement: 7 days, repeated within 30 days: 30 days) are recorded only by a SECURITY DEFINER trigger on whatsapp_messages (wa_record_suppression, EXECUTE service_role only) in the message workspace. Read: table SELECT policy is active workspace membership; record view loads only the phones of a Contact/Lead the caller can read by RLS and re-checks active membership (authorizeSuppressionRead); planning stats return totals only, without phones. Release (special action) requires active membership plus the new key system.whatsapp_suppressions.manage.workspace in the suppression workspace (authorizeSuppressionRelease, deny wins through user_effective_permissions), the UI hides the button without the effective key, and RPC wa_release_number_suppression re-checks session, membership, key and read-only \"view as\" in the database. The key is registered without automatic grant (owners/admins receive catalogue keys as today). Contact and Lead records only render the notice; their existing operations (properties, delete guard, timeline, associations) are unchanged. Review 07/11/2026: qualification dialog opens before the RLS-guarded stage update and closes on error/denial; no authorization change. Prefetches the questionnaire through the same authenticated server functions.",
+      "rationale": "Numbers refused by Meta (131026 no WhatsApp: 90 days; 131049 engagement: 7 days, repeated within 30 days: 30 days) are recorded only by a SECURITY DEFINER trigger on whatsapp_messages (wa_record_suppression, EXECUTE service_role only) in the message workspace. Read: table SELECT policy is active workspace membership; record view loads only the phones of a Contact/Lead the caller can read by RLS and re-checks active membership (authorizeSuppressionRead); planning stats return totals only, without phones. Release (special action) requires active membership plus the new key system.whatsapp_suppressions.manage.workspace in the suppression workspace (authorizeSuppressionRelease, deny wins through user_effective_permissions), the UI hides the button without the effective key, and RPC wa_release_number_suppression re-checks session, membership, key and read-only \"view as\" in the database. The key is registered without automatic grant (owners/admins receive catalogue keys as today). Contact and Lead records only render the notice; their existing operations (properties, delete guard, timeline, associations) are unchanged. Review 07/11/2026: qualification dialog opens before the RLS-guarded stage update and closes on error/denial; no authorization change. Prefetches the questionnaire through the same authenticated server functions. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access.",
       "controls": [
         {
           "file": "src/lib/whatsapp/whatsapp-suppression-access.ts",
@@ -7653,7 +7657,7 @@
         "src/lib/whatsapp/whatsapp-suppressions.functions.ts": "29ff4ac0a1f3ef1423da6d9a4c667b326da0e9245c05ad22666c0cbe79086258",
         "src/components/whatsapp/whatsapp-suppression-notice.tsx": "d182edffc770469e93d72228e935894c05fa33993d3a390c1cf3b5a8c775aa22",
         "src/components/whatsapp/use-whatsapp-suppression-stats.ts": "56df014da7f402b20f229a4a100a88e22b4a28a6e47de2cd9d1c4ce0150c3e64",
-        "src/routes/_authenticated/contacts.$id.tsx": "ba10412db75fabbee1d5f06403ad4487ce9c2f46b9086c45750759cf47805ebd",
+        "src/routes/_authenticated/contacts.$id.tsx": "b4887b93c9e6feb6bb1536db50579b40244d2e062bc1038423ab6a396356ab1a",
         "src/routes/_authenticated/leads.$id.tsx": "207528bc26cf0ab4c743e21097e4dba332e97cb18aeadc37987f7fadd4c97a1f",
         "drizzle/migrations/0301_whatsapp_number_suppressions.sql": "da7b9b5e869f341e06426924b4b62611a0e063640956ab6d29ba704dfc3594d2",
         "drizzle/migrations/0302_whatsapp_suppression_release_permission.sql": "e12325911933e88f4d8f3bee3a673d42a5c4e0b82cf9c8a900c4d64a7070599a"
@@ -10177,7 +10181,7 @@
         "techcontracts.contract_templates.view.workspace",
         "techsales.proposals.view.workspace"
       ],
-      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer.",
+      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access. Reviewed concurrent ENDERECO-ATUAL change: cep added to the same workspace-filtered user/RLS company projection, pure party merge retains commercial snapshot values.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -10275,13 +10279,13 @@
       "files": {
         "src/components/contracts/apply-contract-template-dialog.tsx": "f1b8f344a6a5bbc22cc7d8aa43c04bdd0b680fbf579de229b7da056b3025ef3c",
         "src/lib/contracts/contract-create.server.ts": "83d6a2580954f05b3340a2404a75ab876669bf256965de4e203b8bfb5bf3d66b",
-        "src/lib/contracts/template-merge.server.ts": "bfc909de9e72b2339610b53a2be76da66cad8fdbbda3df444cd29de734495664",
+        "src/lib/contracts/template-merge.server.ts": "1285008b1f151e9745a0055889165d953eda5bba69e4c0350ae5facf9976fe6b",
         "src/lib/contracts/templates.functions.ts": "175f4bcacace96cc72290990eaaebb80e3760cb1cb49c6af04c0acf429dcf7b1",
         "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
         "src/lib/sales-flow.server.ts": "1c90e8c729c98abbe2ca56c47f420c29baf6091fb110fc49828aead333eb8df6",
         "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
-        "src/components/contracts/contract-wizard.tsx": "96f1c391feb67de5ec0628570adfc0fc240d9427e4c2a8dd93e97ebd9b183987",
+        "src/components/contracts/contract-wizard.tsx": "8470a6bfae5a1cfd8f1151a364a6074ccfba8d60efbcd40f5e99a0b558a7f0f2",
         "src/lib/sales-flow.functions.ts": "3a15a8618f54e8003b75db6384fc3630f233ff6c696ec9de85a4a5406a3b1e6e",
         "src/components/proposals/proposal-wizard.tsx": "7a8cc40a602b79a5c1198be59d388c6a945a3c53a143fc206decd735ee2bb589",
         "src/lib/proposals/proposal-draft.server.ts": "73ed9f29defffbcb7e1646542a49fe6220a2d851264515b3b9c93254a7688a68",
@@ -10359,8 +10363,7 @@
         "review_by": "2027-03-01"
       },
       "files": {
-        "src/lib/contracts/template-tokens.ts": "833d64ea207bdeb4639777bff77ce84d7c6de1772fae2638a0809577c7129308",
-        "src/lib/format/currency-words-ptbr.ts": "6bb5f52bf5ad535b2524e15b7ee966d5c8d32c4dbe0f774c27bbd96f009c615e"
+        "src/lib/contracts/template-tokens.ts": "833d64ea207bdeb4639777bff77ce84d7c6de1772fae2638a0809577c7129308"
       }
     },
     {
@@ -11788,6 +11791,232 @@
         "drizzle/migrations/0352_inbox_unified_calls.sql": "046f0007784116da64a89f621811c55dcbaa1cbd2759682373fdfe287410e3e9",
         "src/hooks/use-call-attempt-card.ts": "dc6a0f45b0b8d6acb114f4384d3a32cd9ceae5f8b49b408c1e748f2af87dd8dd",
         "src/lib/inbox/unified-page.ts": "d39c8a5645a5349d660c74ceb695b293c421ee091998d3a80b61cb5d5087c118"
+      }
+    },
+    {
+      "id": "sales-timeline-batch-read-timeouts",
+      "kind": "business",
+      "resources": [
+        "techsales.activities",
+        "techsales.notes",
+        "techsales.tasks",
+        "system.calendars"
+      ],
+      "actions": [
+        "view",
+        "update",
+        "delete",
+        "assign",
+        "approve",
+        "export",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.activities.view.workspace",
+        "techsales.notes.view.workspace",
+        "techsales.tasks.view.workspace",
+        "system.calendars.view.workspace"
+      ],
+      "rationale": "Performance-only: SECURITY INVOKER activity capability batching preserves exact per-type resource, ownership and action checks under caller RLS. Calendar series are counted once over caller-visible siblings using the same six-event threshold and account/id or nonempty-title grouping. No new grants, keys, RLS changes or timeout increase.",
+      "files": {
+        "drizzle/migrations/0353_sales_timeline_batch_reads.sql": "797d2f9af887af8251d9b338d6b5ec262547c47eb89118497ac208e0d12a5654"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-capabilities.functions.ts",
+          "symbol": "getSalesCapabilities"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0353_sales_timeline_batch_reads.sql",
+          "symbol": "sales_capabilities"
+        },
+        {
+          "file": "drizzle/migrations/0353_sales_timeline_batch_reads.sql",
+          "symbol": "get_timeline_calendar_page"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "activity batch SQL preserves per-action results and note/task resources"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "activity batch SQL denies missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "activity batch SQL denies deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "activity batch SQL denies workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "activity batch SQL denies inactive"
+        }
+      }
+    },
+    {
+      "id": "currency-words-pure-format",
+      "kind": "presentation",
+      "rationale": "Pure local Portuguese currency-to-words formatting; no I/O, events, permissions or data access. Consumer retains its authorization boundary.",
+      "files": {
+        "src/lib/format/currency-words-ptbr.ts": "5059c12afb21a1524c6cc82001aa5536c33a8f75858520e5313c6e3100b9ad71"
+      }
+    },
+    {
+      "id": "cpf-pure-format",
+      "kind": "presentation",
+      "rationale": "Pure local CPF formatting/check digits, no data access, persistence or identity lookup.",
+      "files": {
+        "src/lib/format/cpf.ts": "0d3c76eb0ba172e38eb6792f8e34c2c67f286063f0d53d5bc2cabb47825fb988"
+      }
+    },
+    {
+      "id": "contact-signer-custom-fields",
+      "kind": "business",
+      "resources": [
+        "techsales.contacts"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.contacts.update.own",
+        "techsales.contacts.update.workspace"
+      ],
+      "rationale": "Contact signer/CPF editor delegates all writes to setCustomFieldValue: authenticated user client, active workspace and assertSalesRecord(update), existing contacts row guard/RLS. UI denies absent edit permission; each record is still checked by the server. No grants or new endpoint.",
+      "controls": [
+        {
+          "file": "src/lib/custom-properties.functions.ts",
+          "symbol": "setCustomFieldValue"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "sales_view"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      },
+      "files": {
+        "src/components/contacts/contact-signer-fields.tsx": "b512274c85fbbadad66d921e5120136cee72a19c4e2e79525f8bc383e2332f05"
+      }
+    },
+    {
+      "id": "company-party-pure-merge",
+      "kind": "presentation",
+      "rationale": "Pure merge/format of already-authorized current company data and accepted proposal snapshot. No I/O, query, action or grant. buildMergeContext retains workspace filters and user/RLS company access.",
+      "files": {
+        "src/lib/contracts/company-party.ts": "f236d39ef765d9fdc551abd8556241baaa8cc2079b1623fde3b92bbab3b434ed"
+      }
+    },
+    {
+      "id": "summary-capabilities-calendar-candidates",
+      "kind": "business",
+      "resources": [
+        "techsales.ai_summaries",
+        "system.calendars"
+      ],
+      "actions": [
+        "view",
+        "delete",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.ai_summaries.view.workspace",
+        "techsales.ai_summaries.delete.workspace",
+        "system.calendars.view.workspace"
+      ],
+      "rationale": "Reuse SalesCapabilityScope for all summary cards instead of simultaneous per-card requests. Summary capability batching reads user/RLS rows once and reuses unchanged view/parent/provenance checks for supported delete/manage actions; unsupported actions remain false. Calendar recurrence counting uses only series present among candidate contact events, at most six visible siblings per series, preserving the exact account/recurrence/title and caller RLS semantics. No grants or timeout changes.",
+      "files": {
+        "drizzle/migrations/0354_summary_capabilities_calendar_candidates.sql": "c2d536bced5f937b27914d030e754aab8d37394fff9d86a0ecf921b933420a83",
+        "src/components/ai/ai-summary-panel.tsx": "b9d7b7c4140c928bc22453de5930be65a7639aaa8b9d8fc95f7d0182579f1432"
+      },
+      "controls": [
+        {
+          "file": "src/components/sales-access.tsx",
+          "symbol": "SalesCapabilityScope"
+        },
+        {
+          "file": "src/components/sales-access.tsx",
+          "symbol": "SalesAction"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0354_summary_capabilities_calendar_candidates.sql",
+          "symbol": "sales_capabilities"
+        },
+        {
+          "file": "drizzle/migrations/0354_summary_capabilities_calendar_candidates.sql",
+          "symbol": "get_timeline_calendar_page"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "summary batch SQL preserves supported actions and provenance"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "summary batch SQL denies missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "summary batch SQL denies deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "summary batch SQL denies workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "summary batch SQL denies inactive"
+        }
       }
     }
   ],

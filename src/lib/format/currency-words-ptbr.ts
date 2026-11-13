@@ -1,25 +1,80 @@
 // Valor monetário (BRL) por extenso em PT-BR. Puro, client-safe.
-const UNI = ["", "um", "dois", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", "dez",
-  "onze", "doze", "treze", "quatorze", "quinze", "dezesseis", "dezessete", "dezoito", "dezenove"];
-const DEZ = ["", "", "vinte", "trinta", "quarenta", "cinquenta", "sessenta", "setenta", "oitenta", "noventa"];
-const CEN = ["", "cento", "duzentos", "trezentos", "quatrocentos", "quinhentos", "seiscentos",
-  "setecentos", "oitocentos", "novecentos"];
+const UNI = [
+  "",
+  "um",
+  "dois",
+  "três",
+  "quatro",
+  "cinco",
+  "seis",
+  "sete",
+  "oito",
+  "nove",
+  "dez",
+  "onze",
+  "doze",
+  "treze",
+  "quatorze",
+  "quinze",
+  "dezesseis",
+  "dezessete",
+  "dezoito",
+  "dezenove",
+];
+const DEZ = [
+  "",
+  "",
+  "vinte",
+  "trinta",
+  "quarenta",
+  "cinquenta",
+  "sessenta",
+  "setenta",
+  "oitenta",
+  "noventa",
+];
+const CEN = [
+  "",
+  "cento",
+  "duzentos",
+  "trezentos",
+  "quatrocentos",
+  "quinhentos",
+  "seiscentos",
+  "setecentos",
+  "oitocentos",
+  "novecentos",
+];
 
 function hundreds(n: number): string {
   if (n === 100) return "cem";
-  const c = Math.floor(n / 100), r = n % 100, parts: string[] = [];
+  const c = Math.floor(n / 100),
+    r = n % 100,
+    parts: string[] = [];
   if (c) parts.push(CEN[c]);
-  if (r < 20) { if (r) parts.push(UNI[r]); }
-  else { parts.push(DEZ[Math.floor(r / 10)] + (r % 10 ? ` e ${UNI[r % 10]}` : "")); }
+  if (r < 20) {
+    if (r) parts.push(UNI[r]);
+  } else {
+    parts.push(DEZ[Math.floor(r / 10)] + (r % 10 ? ` e ${UNI[r % 10]}` : ""));
+  }
   return parts.join(" e ");
 }
 
-const SCALES: [string, string][] = [["", ""], ["mil", "mil"], ["milhão", "milhões"], ["bilhão", "bilhões"], ["trilhão", "trilhões"]];
+const SCALES: [string, string][] = [
+  ["", ""],
+  ["mil", "mil"],
+  ["milhão", "milhões"],
+  ["bilhão", "bilhões"],
+  ["trilhão", "trilhões"],
+];
 
 function integerWords(n: number): string {
   if (n === 0) return "zero";
   const groups: number[] = [];
-  while (n > 0) { groups.push(n % 1000); n = Math.floor(n / 1000); }
+  while (n > 0) {
+    groups.push(n % 1000);
+    n = Math.floor(n / 1000);
+  }
   const chunks: { text: string; value: number }[] = [];
   for (let i = groups.length - 1; i >= 0; i--) {
     const g = groups[i];
@@ -46,7 +101,8 @@ export function currencyToWordsPtBr(input: unknown): string {
   } else return "";
   if (!Number.isFinite(n) || n <= 0) return "";
   const cents = Math.round(n * 100);
-  const reais = Math.floor(cents / 100), cent = cents % 100;
+  const reais = Math.floor(cents / 100),
+    cent = cents % 100;
   const parts: string[] = [];
   if (reais) {
     const w = integerWords(reais);
