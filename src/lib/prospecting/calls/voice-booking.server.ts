@@ -303,11 +303,12 @@ async function book(sb: Admin, c: Ctx, args: Record<string, unknown>): Promise<s
     return fail((e as Error).message.slice(0, 200), true);
   }
 
-  const { data: act } = await sb
+  const { data: act, error: actErr } = await sb
     .from("activities")
     .insert({
       workspace_id: c.attempt.workspace_id,
-      owner_id: c.attempt.workspace_id,
+      // Dono = especialista da reunião (o workspace não é usuário: violava a FK).
+      owner_id: c.hostId,
       assigned_to: c.hostId,
       type: "meeting",
       subject: title,
@@ -324,6 +325,7 @@ async function book(sb: Admin, c: Ctx, args: Record<string, unknown>): Promise<s
     })
     .select("id")
     .maybeSingle();
+  if (actErr) console.error("[voice-booking] activity", actErr.message);
   await sb
     .from("prospecting_call_attempts")
     .update({
