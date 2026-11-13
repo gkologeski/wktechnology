@@ -1,30 +1,37 @@
-# CONTROLES-LIGACAO — Lista de campanhas de ligação com os mesmos controles do WhatsApp
+# AJUSTES-LIGACAO — Cancelada, Ritmo e Modelo do pós-ligação
 
-Porte: M. Estimativa: 2–3 horas (inclui testes, permissões e Ajuda). Nada será publicado sem seu pedido.
+Porte **M**, estimativa **3–4 horas** (inclui migração, testes, Ajuda e conferência no navegador sem disparar ligações reais).
 
-## O que muda na tela "Campanhas de Ligação"
-Hoje cada campanha mostra só Iniciar/Pausar (ícone sem texto) e Excluir sem regras. Passará a ter, como no WhatsApp:
+## 1. Situação "Cancelada"
+- Hoje o banco só aceita Rascunho, Em andamento, Pausada e Concluída; o botão Encerrar grava "Concluída".
+- Nova situação **Cancelada**: o botão Encerrar (X) passa a gravar Cancelada; tentativas na fila continuam sendo canceladas.
+- Cancelada: não pode editar nem iniciar/retomar; pode **Duplicar** e **Excluir**; selo próprio na lista e na ficha; aparece no filtro de situação.
+- Campanhas já encerradas antes continuam como Concluída (sem reclassificar histórico, pois não dá para distinguir).
+- O discador e o agendador já só ligam campanhas "Em andamento"; será conferido que Cancelada fica fora.
 
-- **Editar** (botão com texto): abre a ficha em 5 passos; bloqueado com aviso "Só é possível editar campanhas em rascunho ou pausadas" quando em andamento/concluída.
-- **Duplicar**: cria cópia como Rascunho ("<nome> (cópia)") com público, roteiros/pesos, agenda e pós-ligação; não copia tentativas nem histórico.
-- **Excluir**: só fora de "Em andamento" (aviso "Pause a campanha antes de excluir"); confirmação com nome e quantidade de pessoas, explicando que ligações já feitas continuam nas fichas.
-- **Iniciar / Pausar** com texto; Iniciar some em concluídas/canceladas.
-- **Cancelar** (X): encerra a campanha (rascunho, em andamento ou pausada), com confirmação; tentativas pendentes deixam de ser discadas.
-- **Números na linha**: realizadas · sem sucesso · pendentes · total na lista · "iniciou em dd/mm hh:mm".
-- **Ritmo** (quando em andamento): próxima ligação prevista e término estimado, com base na agenda e no intervalo.
-- Situação "Cancelada" passa a existir nos rótulos em português.
+## 2. Ritmo (próxima ligação e término estimado)
+- Na linha da lista e no topo da ficha, quando "Em andamento": **Próxima ligação prevista: dd/mm hh:mm** e **Término estimado: dd/mm**.
+- Cálculo puro a partir de: tentativas pendentes, intervalo entre tentativas, janela de horário, dias da semana e próxima tentativa agendada mais cedo.
+- Fora da janela: mostra o próximo início da janela. Sem pendentes: "Sem ligações na fila". Pausada: "Pausada — sem previsão".
+- Texto indica que é estimativa.
 
-Fica igual: ficha em 5 passos, barra fixa da ficha, checklist do Iniciar, botão "Roteiros de ligação".
-
-## Fora do escopo
-Configuração de "Distribuição das conversas" e "limite por minuto" do WhatsApp não se aplicam a ligações (já existem tentativas/intervalo/janela na Agenda). Se quiser algo equivalente, trato em outro plano.
+## 3. Modelo aprovado no Pós-ligação
+- O campo hoje é texto livre. Passa a ser uma lista que **carrega sozinha** os modelos **aprovados** do remetente escolhido (e do número padrão).
+- Ao trocar o remetente, a lista recarrega; se o modelo salvo não existir no novo remetente, fica vazio com aviso "Escolha um modelo deste remetente".
+- Estados: carregando, nenhum modelo aprovado (com orientação), erro com "Tentar de novo".
+- O idioma do modelo é salvo junto, vindo do próprio modelo.
+- O servidor continua validando no envio (somente modelo aprovado), como hoje.
 
 ## Permissões
-Nenhuma chave nova: Editar/Duplicar/Cancelar = techsales.marketing.campaigns update/create; Excluir = delete; checados na tela e no servidor (deny prevalece, membro ativo, mesmo workspace). Testes dos 5 cenários no contrato.
+Nenhuma chave nova. Cancelar = techsales.marketing.campaigns update; listar modelos = mesma permissão de ver a campanha; checagem na tela e no servidor, membro ativo, mesmo workspace, deny prevalece. Contrato atualizado com os 5 cenários.
+
+## Ajuda
+Artigo "Configurar campanha de prospecção" v8: situação Cancelada, Ritmo e escolha do modelo; catálogo sincronizado.
 
 ## Detalhes técnicos
-- `prospecting-campaigns.functions.ts`: nova `duplicateCampaign`; `listCampaigns` devolve contagens agregadas de `prospecting_call_attempts` (completed/failed+no_answer+busy/pending) e `started_at`; `deleteCampaign` recusa status running; `setCampaignStatus` aceita `canceled` (marca tentativas `queued` como `canceled`). Verificar se o status já existe no banco; se não, migration aditiva no CHECK.
-- `status-label.ts`: `canEditCallCampaign`, `canDeleteCallCampaign`, rótulo Cancelada + testes puros.
-- `campaigns.calls.index.tsx`: botões/aria-labels como no WhatsApp, `confirmDialog`, toasts, estados disabled.
-- Ajuda `configurar-campanha-de-prospeccao.md` v7; contrato `prospecting-voice-campaigns` atualizado.
-- Validação: verify:changed, testes, e conferência no navegador (duplicar e editar na campanha de teste "adadas"; sem iniciar ligações reais).
+- Migração aditiva: `ALTER TYPE prospecting_campaign_status ADD VALUE 'canceled'`.
+- `setCampaignStatus` aceita `canceled` (Encerrar passa a usá-lo); `status-label.ts`: rótulo Cancelada, `canEdit/canDelete/canCancel` ajustados; novo `estimateCallPace()` puro + testes.
+- `listCampaigns`: devolve próxima `scheduled_at` pendente para o ritmo.
+- Nova server fn `listCallFollowupTemplates({ senderId })` usando `loadApprovedTemplates` de `src/lib/whatsapp/templates.server.ts` com cliente do usuário (RLS) e `requireSalesPermission`.
+- `campaign-call-followup.tsx`: troca Input por Select dependente do remetente.
+- Validação: permissions:check, verify:changed, testes, help:coverage, conferência no navegador (duplicar, trocar remetente e ver modelos; sem iniciar ligações).
