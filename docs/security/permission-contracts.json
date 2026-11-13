@@ -5403,7 +5403,7 @@
         "src/components/prospecting/campaign-call-meetings.tsx": "21e526e68ef24e9c657db3071e48cc48afbb8b67715bf41f2cba79c6bccc5000",
         "drizzle/migrations/0339_call_campaign_meeting_assignment.sql": "a6b1a97074c3a86f612241a2dfa3f3636202a98b1c3b6e3dd2d29774e4458e02",
         "drizzle/migrations/0340_call_meeting_hosts_with_calendar.sql": "233c9f7b0d27430ea1c323f509fffb2d87b449fe164d2224ff9dd7219dcb58b2",
-        "src/lib/prospecting/calls/voice-booking.server.ts": "e5ffe50c3db2f720e381f8bbc5e9de6a3f9d43e26e8d5cb30d50c4d65a5f6925",
+        "src/lib/prospecting/calls/voice-booking.server.ts": "fb4bec68030674865c75f9ec34298679eccc3a0729fe5a4777be8952894b0527",
         "drizzle/migrations/0341_call_attempt_voice_booking.sql": "4184eca818ebc74a465fb1cbe8122eac1ec6f4a1193ea219cace1ad677316e4e",
         "drizzle/migrations/0342_whatsapp_messages_call_attempt.sql": "48ddc6f280f77107530d043c8f7bb9b9a442f33aa79c1a0d283f5bb8be2db348",
         "src/lib/prospecting/calls/call-inbox.server.ts": "7ef4db80c5408d730484c93cbfdd4452b315d5e7cfab6c0727f6ab2a11ce11c5"
@@ -5464,7 +5464,7 @@
         }
       },
       "files": {
-        "src/routes/api/public/hooks/vapi.ts": "0f2c4354b1c1df38abf5103644d42bfc3f59ac081740f3d0ec6b1f3f1411978a"
+        "src/routes/api/public/hooks/vapi.ts": "4e12066e3a7269cc288d0c20e4e218fee9f855d2cfee0c43c47b34acd1657d66"
       }
     },
     {
