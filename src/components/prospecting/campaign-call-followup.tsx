@@ -4,7 +4,6 @@ import { Loader2, PhoneCall, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +17,7 @@ import {
 import {
   dialLeadNow,
   listCallFollowupSenders,
+  listCallFollowupTemplates,
   saveCampaignCallFollowup,
   type Campaign,
   type LeadAudit,
@@ -45,6 +45,12 @@ export function CampaignCallFollowup({
   const saveFn = useServerFn(saveCampaignCallFollowup);
   const sendersFn = useServerFn(listCallFollowupSenders);
   const dialFn = useServerFn(dialLeadNow);
+  const templatesFn = useServerFn(listCallFollowupTemplates);
+  const [templates, setTemplates] = useState<Array<{ name: string; language: string }>>([]);
+  const [tplState, setTplState] = useState<"loading" | "ready" | "error">("loading");
+  const [tplError, setTplError] = useState<string | null>(null);
+  const [tplReload, setTplReload] = useState(0);
+  const [language, setLanguage] = useState(campaign.followup_template_language ?? "pt_BR");
   const [senders, setSenders] = useState<Array<{ id: string; label: string }>>([]);
   const [enabled, setEnabled] = useState(!!campaign.followup_enabled);
   const [sender, setSender] = useState(campaign.followup_sender_phone_number_id ?? DEFAULT_SENDER);
@@ -61,6 +67,28 @@ export function CampaignCallFollowup({
       .catch(() => setSenders([]));
   }, [sendersFn]);
   useEffect(() => {
+    let alive = true;
+    setTplState("loading");
+    templatesFn({ data: { senderId: sender === DEFAULT_SENDER ? null : sender } })
+      .then((r) => {
+        if (!alive) return;
+        setTemplates(r.items);
+        setTplError(r.error);
+        setTplState(r.error ? "error" : "ready");
+      })
+      .catch(() => {
+        if (!alive) return;
+        setTemplates([]);
+        setTplError("Não foi possível carregar os modelos deste remetente.");
+        setTplState("error");
+      });
+    return () => {
+      alive = false;
+    };
+  }, [templatesFn, sender, tplReload]);
+  const templateMissing =
+    tplState === "ready" && !!template && !templates.some((t) => t.name === template);
+  useEffect(() => {
     if (!testScript && scripts[0]) setTestScript(scripts[0].id);
     if (!testLead && leads[0]) setTestLead(leads[0].lead_id);
   }, [scripts, leads, testScript, testLead]);
@@ -73,8 +101,8 @@ export function CampaignCallFollowup({
           id: campaign.id,
           followup_enabled: enabled,
           followup_sender_phone_number_id: sender === DEFAULT_SENDER ? null : sender,
-          followup_template_name: template.trim() || null,
-          followup_template_language: campaign.followup_template_language ?? "pt_BR",
+          followup_template_name: templateMissing ? null : template.trim() || null,
+          followup_template_language: language,
           followup_answered_text: answered.trim() || null,
         },
       });
@@ -134,12 +162,49 @@ export function CampaignCallFollowup({
           </div>
           <div className="space-y-1">
             <Label htmlFor="followup-template">Modelo aprovado (não atendeu)</Label>
-            <Input
-              id="followup-template"
-              value={template}
-              onChange={(e) => setTemplate(e.target.value)}
-              placeholder="prospeccao002"
-            />
+            {tplState === "loading" ? (
+              <p className="text-sm text-muted-foreground" aria-live="polite">
+                Carregando modelos aprovados…
+              </p>
+            ) : tplState === "error" ? (
+              <div className="flex items-center gap-2 text-sm text-destructive" role="alert">
+                {tplError}
+                <Button size="sm" variant="outline" onClick={() => setTplReload((n) => n + 1)}>
+                  Tentar de novo
+                </Button>
+              </div>
+            ) : templates.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Este remetente não tem modelos aprovados pela Meta. Aprove um modelo no WhatsApp ou
+                escolha outro remetente.
+              </p>
+            ) : (
+              <Select
+                value={templateMissing ? "" : template}
+                onValueChange={(v) => {
+                  const t = templates.find((x) => `${x.name}|${x.language}` === v || x.name === v);
+                  setTemplate(t?.name ?? v);
+                  if (t) setLanguage(t.language);
+                }}
+              >
+                <SelectTrigger id="followup-template" aria-label="Modelo aprovado (não atendeu)">
+                  <SelectValue placeholder="Escolha um modelo" />
+                </SelectTrigger>
+                <SelectContent>
+                  {templates.map((t) => (
+                    <SelectItem key={`${t.name}|${t.language}`} value={t.name}>
+                      {t.name} · {t.language}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            {templateMissing && (
+              <p className="text-xs text-destructive">
+                O modelo salvo ({template}) não existe neste remetente. Escolha um modelo deste
+                remetente.
+              </p>
+            )}
           </div>
         </div>
         <div className="space-y-1">

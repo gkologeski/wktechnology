@@ -25,7 +25,7 @@ async function sbAdmin(): Promise<any> {
 export type Campaign = {
   id: string;
   name: string;
-  status: "draft" | "running" | "paused" | "done";
+  status: "draft" | "running" | "paused" | "done" | "canceled";
   assignment_mode: "weighted" | "segment";
   max_attempts: number;
   retry_interval_minutes: number;
@@ -152,7 +152,7 @@ export const listCampaigns = createServerFn({ method: "POST" })
     // Contagens por campanha (cliente do usuário, RLS).
     const { data: att, error: attErr } = await sb
       .from("prospecting_call_attempts")
-      .select("campaign_id, status, created_at")
+      .select("campaign_id, status, created_at, scheduled_at")
       .eq("workspace_id", ws)
       .in(
         "campaign_id",
@@ -162,7 +162,12 @@ export const listCampaigns = createServerFn({ method: "POST" })
     if (attErr) throw new Error(attErr.message);
     const { summarizeCallAttempts } = await import("@/lib/prospecting/calls/status-label");
     const stats = summarizeCallAttempts(
-      (att ?? []) as Array<{ campaign_id: string; status: string; created_at: string }>,
+      (att ?? []) as Array<{
+        campaign_id: string;
+        status: string;
+        created_at: string;
+        scheduled_at?: string | null;
+      }>,
     );
     return list.map((c) => ({ ...c, stats: stats.get(c.id) ?? null }));
   });
@@ -384,7 +389,7 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("techsales.marketing.campaigns", "manage")])
   .inputValidator((i) =>
     z
-      .object({ id: z.string().uuid(), status: z.enum(["draft", "running", "paused", "done"]) })
+      .object({ id: z.string().uuid(), status: z.enum(["draft", "running", "paused", "done", "canceled"]) })
       .parse(i),
   )
   .handler(async ({ data, context }) => {
@@ -521,7 +526,7 @@ export const setCampaignStatus = createServerFn({ method: "POST" })
       .eq("id", data.id)
       .eq("workspace_id", ws);
     if (error) throw new Error(error.message);
-    if (data.status === "done") {
+    if (data.status === "done" || data.status === "canceled") {
       // Encerrar: tentativas ainda na fila deixam de ser discadas.
       const { error: cErr } = await callQueue
         .from("prospecting_call_attempts")
@@ -819,4 +824,24 @@ export const listCallFollowupSenders = createServerFn({ method: "POST" })
       id: String(n.phone_number_id),
       label: `${n.verified_name ?? "Meta"} · ${n.display_phone_number ?? ""}`,
     }));
+  });
+
+export const listCallFollowupTemplates = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
+  .inputValidator((i) => z.object({ senderId: z.string().max(64).nullable() }).parse(i))
+  .handler(async ({ data, context }) => {
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { loadApprovedTemplates } = await import("@/lib/whatsapp/templates.server");
+    try {
+      const items = await loadApprovedTemplates(context.supabase, ws, {
+        phoneNumberId: data.senderId,
+      });
+      return {
+        items: items.map((t) => ({ name: t.name, language: t.language ?? "pt_BR" })),
+        error: null as string | null,
+      };
+    } catch (e) {
+      console.error("listCallFollowupTemplates", e instanceof Error ? e.message : e);
+      return { items: [], error: "Não foi possível carregar os modelos deste remetente." };
+    }
   });

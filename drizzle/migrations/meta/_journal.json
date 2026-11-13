@@ -2367,6 +2367,13 @@
       "when": 1794531135418,
       "tag": "0337_call_attempts_contact_target",
       "breakpoints": true
+    },
+    {
+      "idx": 338,
+      "version": "7",
+      "when": 1794566692492,
+      "tag": "0338_prospecting_campaign_status_canceled",
+      "breakpoints": true
     }
   ]
 }

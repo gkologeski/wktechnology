@@ -3,6 +3,9 @@ import {
   canCancelCallCampaign,
   canDeleteCallCampaign,
   canEditCallCampaign,
+  estimateCallPace,
+  type CallCampaignStats,
+  type DialingWindow,
 } from "@/lib/prospecting/calls/status-label";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -67,11 +70,11 @@ function CampaignsListPage() {
       } else if (kind === "cancel") {
         if (
           !(await confirmDialog(
-            `Encerrar "${c.name}"? As ligações ainda na fila não serão feitas. A campanha fica como Concluída.`,
+            `Encerrar "${c.name}"? As ligações ainda na fila não serão feitas. A campanha fica como Cancelada.`,
           ))
         )
           return;
-        await statusFn({ data: { id: c.id, status: "done" } });
+        await statusFn({ data: { id: c.id, status: "canceled" } });
         toast.success("Campanha encerrada");
       } else if (kind === "duplicate") {
         const out = await dupFn({ data: { id: c.id } });
@@ -176,6 +179,7 @@ function CampaignsListPage() {
                         ` · iniciou em ${new Date(c.stats.startedAt).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}`}
                     </div>
                   )}
+                  <CallPaceLine c={c} />
                 </Link>
                 <Badge
                   variant={
@@ -275,7 +279,7 @@ function CampaignActions({
           <Pause className="h-3.5 w-3.5 mr-1" />
           Pausar
         </Button>
-      ) : c.status !== "done" ? (
+      ) : c.status !== "done" && c.status !== "canceled" ? (
         <Button size="sm" variant="outline" disabled={!canManage} onClick={() => run("start", c)}>
           <Play className="h-3.5 w-3.5 mr-1" />
           {c.status === "paused" ? "Retomar" : "Iniciar"}
@@ -303,6 +307,32 @@ function CampaignActions({
       >
         <Trash2 className="h-4 w-4" />
       </Button>
+    </div>
+  );
+}
+
+function fmtPace(d: Date, withTime: boolean): string {
+  return d.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    ...(withTime ? { hour: "2-digit", minute: "2-digit" } : {}),
+  });
+}
+
+function CallPaceLine({ c }: { c: { status: string; stats?: CallCampaignStats | null; dialing_window?: unknown } }) {
+  if (c.status !== "running" && c.status !== "paused") return null;
+  const pace = estimateCallPace({
+    status: c.status,
+    pending: c.stats?.pending ?? 0,
+    nextAt: c.stats?.nextAt ?? null,
+    window: (c.dialing_window as DialingWindow | null) ?? null,
+    now: new Date(),
+  });
+  return (
+    <div className="text-xs text-muted-foreground">
+      {pace.kind === "estimate"
+        ? `Estimativa: próxima ligação ${fmtPace(pace.nextAt, true)} · término ${fmtPace(pace.endAt, false)}`
+        : pace.label}
     </div>
   );
 }

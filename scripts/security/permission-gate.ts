@@ -334,7 +334,7 @@ function hasDefinition(root: string, ref: Ref): boolean {
     const clean = sqlDeclarations(source);
     const escaped = ref.symbol.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     return new RegExp(
-      `\\b(?:FUNCTION|POLICY|VIEW|TABLE)\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(?:public\\.)?${escaped}(?:\\s|\\(|$)`,
+      `\\b(?:FUNCTION|POLICY|VIEW|TABLE|TYPE)\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(?:public\\.)?${escaped}(?:\\s|\\(|$)`,
       "i",
     ).test(clean);
   }

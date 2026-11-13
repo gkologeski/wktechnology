@@ -18,6 +18,9 @@ import { ArrowLeft, Plus, Trash2, Save, Play, Pause, Check, AlertCircle } from "
 import {
   callCampaignChecklist,
   callCampaignStatusLabel,
+  estimateCallPace,
+  summarizeCallAttempts,
+  type DialingWindow,
 } from "@/lib/prospecting/calls/status-label";
 import { toast } from "sonner";
 import {
@@ -222,6 +225,37 @@ function CampaignDetailPage() {
           {callCampaignStatusLabel(campaign.status)}
         </Badge>
       </div>
+      {(campaign.status === "running" || campaign.status === "paused") &&
+        (() => {
+          const st = summarizeCallAttempts(
+            attempts.map((a) => ({
+              campaign_id: campaign.id,
+              status: a.status,
+              created_at: String((a as { created_at?: string }).created_at ?? ""),
+              scheduled_at: (a as { scheduled_at?: string | null }).scheduled_at ?? null,
+            })),
+          ).get(campaign.id);
+          const pace = estimateCallPace({
+            status: campaign.status,
+            pending: st?.pending ?? 0,
+            nextAt: st?.nextAt ?? null,
+            window: (campaign.dialing_window as DialingWindow | null) ?? null,
+            now: new Date(),
+          });
+          const f = (d: Date, t: boolean) =>
+            d.toLocaleString("pt-BR", {
+              day: "2-digit",
+              month: "2-digit",
+              ...(t ? { hour: "2-digit", minute: "2-digit" } : {}),
+            });
+          return (
+            <p className="text-sm text-muted-foreground" aria-live="polite">
+              {pace.kind === "estimate"
+                ? `Estimativa: próxima ligação ${f(pace.nextAt, true)} · término ${f(pace.endAt, false)}`
+                : pace.label}
+            </p>
+          );
+        })()}
 
       <nav aria-label="Passos da campanha" className="flex flex-wrap gap-2">
         {STEPS.map((label, i) => {

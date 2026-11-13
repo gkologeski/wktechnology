@@ -36927,7 +36927,12 @@ export type Database = {
         | "no_answer"
         | "busy"
         | "canceled"
-      prospecting_campaign_status: "draft" | "running" | "paused" | "done"
+      prospecting_campaign_status:
+        | "draft"
+        | "running"
+        | "paused"
+        | "done"
+        | "canceled"
       prospecting_source_type: "segment" | "saved_view" | "manual"
       prospecting_status: "pending" | "running" | "completed" | "failed"
       quote_status:
@@ -37246,7 +37251,13 @@ export const Constants = {
         "busy",
         "canceled",
       ],
-      prospecting_campaign_status: ["draft", "running", "paused", "done"],
+      prospecting_campaign_status: [
+        "draft",
+        "running",
+        "paused",
+        "done",
+        "canceled",
+      ],
       prospecting_source_type: ["segment", "saved_view", "manual"],
       prospecting_status: ["pending", "running", "completed", "failed"],
       quote_status: [

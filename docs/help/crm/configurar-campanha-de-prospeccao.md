@@ -8,7 +8,7 @@ route_pattern: /campaigns/calls/$id
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 402
-version: 7
+version: 8
 is_published: true
 ---
 # Configurar uma campanha de ligação em 5 passos
@@ -47,5 +47,13 @@ Em **Campanhas de Ligação**, cada campanha mostra quantas ligações foram rea
 - **Editar**: abre os 5 passos. Só funciona em campanhas em rascunho ou pausadas.
 - **Duplicar**: cria uma cópia em rascunho com público, roteiros, agenda e pós-ligação, sem as ligações já feitas.
 - **Iniciar / Retomar / Pausar**: controla a discagem.
-- **Encerrar** (X): finaliza a campanha como Concluída; as ligações que ainda estavam na fila não são feitas.
+- **Encerrar** (X): finaliza a campanha como **Cancelada**; as ligações que ainda estavam na fila não são feitas. Uma campanha cancelada não pode ser editada nem retomada, mas pode ser duplicada ou excluída.
 - **Excluir**: só fora de "Em andamento". As ligações já feitas continuam registradas nas fichas.
+
+### Ritmo
+
+Com a campanha em andamento, a lista e o topo da ficha mostram uma **estimativa** da próxima ligação e do término, calculada pelas ligações na fila, pela janela de horário e pelos dias de discagem (o discador faz até 10 ligações a cada 2 minutos). Pausada, a campanha mostra "Pausada — sem previsão".
+
+### Modelo aprovado no pós-ligação
+
+No passo **Pós-ligação**, ao escolher o remetente do WhatsApp, a lista **Modelo aprovado** carrega sozinha os modelos aprovados pela Meta desse remetente. Se você trocar de remetente e o modelo salvo não existir nele, escolha um modelo novo.
