@@ -10285,7 +10285,7 @@
         "src/lib/sales-flow.server.ts": "1c90e8c729c98abbe2ca56c47f420c29baf6091fb110fc49828aead333eb8df6",
         "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
-        "src/components/contracts/contract-wizard.tsx": "8470a6bfae5a1cfd8f1151a364a6074ccfba8d60efbcd40f5e99a0b558a7f0f2",
+        "src/components/contracts/contract-wizard.tsx": "c47cd2567326042905b92c83d60fcd77d1f5b142e23704c96f6428271e9ffdb8",
         "src/lib/sales-flow.functions.ts": "3a15a8618f54e8003b75db6384fc3630f233ff6c696ec9de85a4a5406a3b1e6e",
         "src/components/proposals/proposal-wizard.tsx": "7a8cc40a602b79a5c1198be59d388c6a945a3c53a143fc206decd735ee2bb589",
         "src/lib/proposals/proposal-draft.server.ts": "73ed9f29defffbcb7e1646542a49fe6220a2d851264515b3b9c93254a7688a68",
@@ -10363,7 +10363,7 @@
         "review_by": "2027-03-01"
       },
       "files": {
-        "src/lib/contracts/template-tokens.ts": "833d64ea207bdeb4639777bff77ce84d7c6de1772fae2638a0809577c7129308"
+        "src/lib/contracts/template-tokens.ts": "cf4259deba4243f878ad4fbecf097cb836c0471fd55394f383d4415bfb25c1bf"
       }
     },
     {

@@ -35,6 +35,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { clampInt } from "@/lib/contracts/contract-terms-defaults";
+import { templateMissingFieldsMessage } from "@/lib/contracts/template-tokens";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -353,8 +354,13 @@ export function ContractWizard({
       return "Informe um título.";
     if (step === 2 && origin.type === "template" && diagnoseQ.data?.error)
       return diagnoseQ.data.error;
-    if (step === 2 && origin.type === "template" && missingFields.length)
-      return `Faltam dados do modelo: ${missingFields.map((f) => f.label).join(", ")}.`;
+    if (step === 2 && origin.type === "template") {
+      const missingMessage = templateMissingFieldsMessage(
+        termsProposalId,
+        diagnoseQ.data?.fields ?? [],
+      );
+      if (missingMessage) return missingMessage;
+    }
     if (step === 2 && termsProposalId)
       return missingPaymentTermsMessage({
         installments: terms.installmentsCount,

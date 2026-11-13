@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 25
-version: 8
+version: 9
 is_published: true
 ---
 # Gerar contrato pelo diálogo de modelo publicado
@@ -73,7 +73,7 @@ Nos modelos, use `{{contract.payment_schedule}}` (Condições de pagamento) para
 
 ## Dados do modelo no Novo contrato
 
-No passo **Dados**, o quadro **Dados do modelo** lista cada variável que o modelo usa e mostra o valor que entrará no contrato ou **Falta**. O botão Avançar só continua quando nada falta.
+No passo **Dados**, o quadro **Dados do modelo** lista cada variável que o modelo usa e mostra o valor que entrará no contrato ou **Falta**. Com uma proposta aceita vinculada, o botão Avançar só continua quando nada falta. Sem proposta vinculada, os campos ausentes não impedem avançar: o contrato é gerado em rascunho com marcadores `[[nome do campo]]`, que devem ser preenchidos antes de finalizar o documento. Modelos que usam variáveis da proposta continuam exigindo uma proposta aceita.
 - **Escopo do serviço** e **Valor mensal (R$)** aparecem quando o modelo os usa e valem só para este contrato. O valor mensal por extenso é escrito automaticamente.
 - **Endereço** da empresa e **Nome/CPF do signatário** vêm do cadastro: preencha o endereço da empresa e marque um contato como signatário legal, com CPF. Use o link **Abrir a ficha da empresa**. Sem endereço cadastrado, o documento usa o endereço oficial do CNPJ, quando houver CNPJ.
 

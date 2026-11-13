@@ -147,6 +147,18 @@ export type TemplateFieldStatus = {
   missing: boolean;
 };
 
+/** Only proposal-linked contracts require complete variables before leaving Data. */
+export function templateMissingFieldsMessage(
+  proposalId: string | null | undefined,
+  fields: TemplateFieldStatus[],
+): string | null {
+  if (!proposalId) return null;
+  const missing = fields.filter((field) => field.missing);
+  return missing.length
+    ? `Faltam dados do modelo: ${missing.map((field) => field.label).join(", ")}.`
+    : null;
+}
+
 /** DADOS-ADITIVO: situação de cada variável usada no modelo (mesma regra do modo estrito). */
 export function templateFieldStatus(
   html: string | null | undefined,
