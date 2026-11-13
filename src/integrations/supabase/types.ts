@@ -30329,6 +30329,7 @@ export type Database = {
       whatsapp_messages: {
         Row: {
           body: string | null
+          call_attempt_id: string | null
           context_message_id: string | null
           conversation_id: string
           created_at: string
@@ -30359,6 +30360,7 @@ export type Database = {
         }
         Insert: {
           body?: string | null
+          call_attempt_id?: string | null
           context_message_id?: string | null
           conversation_id: string
           created_at?: string
@@ -30389,6 +30391,7 @@ export type Database = {
         }
         Update: {
           body?: string | null
+          call_attempt_id?: string | null
           context_message_id?: string | null
           conversation_id?: string
           created_at?: string

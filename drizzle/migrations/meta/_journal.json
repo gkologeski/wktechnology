@@ -2395,6 +2395,13 @@
       "when": 1794572682391,
       "tag": "0341_call_attempt_voice_booking",
       "breakpoints": true
+    },
+    {
+      "idx": 342,
+      "version": "7",
+      "when": 1794573640701,
+      "tag": "0342_whatsapp_messages_call_attempt",
+      "breakpoints": true
     }
   ]
 }

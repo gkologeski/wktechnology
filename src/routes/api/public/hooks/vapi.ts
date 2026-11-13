@@ -211,9 +211,16 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
             type: "call",
             related_lead_id: row.lead_id ?? null,
             related_contact_id: row.contact_id ?? null,
-            subject: "Chamada do agente de voz (Vapi)",
+            subject: "Ligação do agente de voz",
+            body: row.summary ?? (updates.transcript as string | undefined) ?? null,
             description: row.summary ?? (updates.transcript as string | undefined) ?? null,
+            external_ids: { call_attempt_id: row.id },
           });
+          // Cartão "Ligação" na conversa da Inbox (best-effort).
+          const { recordCallInInbox } = await import("@/lib/prospecting/calls/call-inbox.server");
+          await recordCallInInbox(row.id as string).catch((e) =>
+            console.error("[vapi-hook] inbox", e),
+          );
         }
 
         // Re-enfileira se o motivo não indica conversa real (silence, no-answer, error...).

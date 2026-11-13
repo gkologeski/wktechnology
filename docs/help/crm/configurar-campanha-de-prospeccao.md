@@ -8,7 +8,7 @@ route_pattern: /campaigns/calls/$id
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 402
-version: 10
+version: 11
 is_published: true
 ---
 # Configurar uma campanha de ligação em 5 passos
@@ -74,3 +74,6 @@ Para a assistente marcar a reunião na própria ligação, abra **Roteiros** e l
 3. A reunião entra na agenda Google do especialista com link de vídeo e aparece na ficha do Lead/Contato.
 4. Ao terminar a ligação, o cliente recebe o link pelo WhatsApp com o modelo aprovado escolhido ({{1}} nome, {{2}} data e hora, {{3}} link).
 Se a agenda não responder, a assistente diz que vai mandar os horários pelo WhatsApp. Em **Chamadas recentes**, a ligação mostra "Reunião dd/mm hh:mm" ou "Reunião não marcada".
+
+## Ligação na Inbox
+Ao terminar, cada ligação aparece como cartão **Ligação** na conversa do Lead/Contato na Inbox do WhatsApp (a mesma conversa quando o número é o mesmo): situação, duração, roteiro, reunião marcada (se houve), resumo, áudio da gravação e **Ver transcrição completa**. A conversa segue as regras da Inbox: só quem tem acesso à conversa vê. O resumo também passa a aparecer no evento **Ligação** da ficha.
