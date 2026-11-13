@@ -2,7 +2,12 @@
 // Origem -> Tipo -> Dados -> Serviços -> Revisão. Nada é gravado antes de
 // "Criar contrato".
 import { missingPaymentTermsMessage } from "@/lib/proposals/proposal-terms-check";
-import { parsePaymentTerms, validatePaymentTerms } from "@/lib/sales/payment-terms";
+import {
+  buildPaymentSchedule,
+  describePaymentTerms,
+  parsePaymentTerms,
+  validatePaymentTerms,
+} from "@/lib/sales/payment-terms";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   Select,
@@ -282,7 +287,25 @@ export function ContractWizard({
     const t = d ? parsePaymentTerms(d.payment_terms) : null;
     return !!t && validatePaymentTerms(t, Number(d?.total_amount ?? 0)).length === 0;
   })();
+  // RESUMO-PARCELAS: cronograma da proposta exibido no lugar dos campos crus.
+  const structuredSchedule = (() => {
+    if (!hasStructuredTerms) return null;
+    const d = proposalTermsQ.data;
+    const t = d ? parsePaymentTerms(d.payment_terms) : null;
+    if (!t) return null;
+    const total = Number(d?.total_amount ?? 0);
+    try {
+      return {
+        total,
+        summary: describePaymentTerms(t),
+        rows: buildPaymentSchedule(t, total, new Date()),
+      };
+    } catch {
+      return null;
+    }
+  })();
   const lineItems = form.prefill.data?.lineItems ?? [];
+  const fmtBRL = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const servicesDisabled = form.kind !== "provider";
   const blankTitle = String(form.values["title"] ?? "").trim();
 
@@ -572,26 +595,64 @@ export function ContractWizard({
                 </Select>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="cw-installments">Parcelas</Label>
-                  <Input
-                    id="cw-installments"
-                    inputMode="numeric"
-                    placeholder="Usar o da proposta"
-                    value={installmentsCount}
-                    onChange={(e) => setInstallmentsCount(e.target.value.replace(/\D/g, ""))}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cw-due-day">Dia de vencimento</Label>
-                  <Input
-                    id="cw-due-day"
-                    inputMode="numeric"
-                    placeholder="Usar o da proposta"
-                    value={installmentsDueDay}
-                    onChange={(e) => setInstallmentsDueDay(e.target.value.replace(/\D/g, ""))}
-                  />
-                </div>
+                {structuredSchedule ? (
+                  <section
+                    aria-label="Condições de pagamento da proposta"
+                    className="rounded-md border bg-muted/30 p-3 sm:col-span-2"
+                  >
+                    <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
+                      <p className="text-sm font-medium">Condições de pagamento da proposta</p>
+                      <p className="text-xs text-muted-foreground">
+                        Total {fmtBRL(structuredSchedule.total)}
+                      </p>
+                    </div>
+                    <ol className="divide-y rounded-md border bg-background">
+                      {structuredSchedule.rows.map((r) => (
+                        <li
+                          key={r.sequence}
+                          className="flex items-center justify-between gap-3 px-3 py-2 text-sm"
+                        >
+                          <span className="font-medium">{r.label}</span>
+                          <span className="text-muted-foreground">
+                            {r.dueDate
+                              ? `vence em ${new Date(`${r.dueDate}T12:00:00`).toLocaleDateString("pt-BR")}`
+                              : r.dueEvent === "signature"
+                                ? "na assinatura"
+                                : "na entrega/marco"}
+                          </span>
+                          <span className="tabular-nums">{fmtBRL(r.amount)}</span>
+                        </li>
+                      ))}
+                    </ol>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {structuredSchedule.summary}. O contrato herda este cronograma; não é preciso
+                      informar parcelas nem dia de vencimento.
+                    </p>
+                  </section>
+                ) : (
+                  <>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="cw-installments">Parcelas</Label>
+                      <Input
+                        id="cw-installments"
+                        inputMode="numeric"
+                        placeholder="Usar o da proposta"
+                        value={installmentsCount}
+                        onChange={(e) => setInstallmentsCount(e.target.value.replace(/\D/g, ""))}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="cw-due-day">Dia de vencimento</Label>
+                      <Input
+                        id="cw-due-day"
+                        inputMode="numeric"
+                        placeholder="Usar o da proposta"
+                        value={installmentsDueDay}
+                        onChange={(e) => setInstallmentsDueDay(e.target.value.replace(/\D/g, ""))}
+                      />
+                    </div>
+                  </>
+                )}
                 {termsProposalId && (
                   <p className="text-sm sm:col-span-2" aria-live="polite">
                     Vigência: começa hoje e vale {proposalTermsQ.data?.validity_days ?? 90} dias
