@@ -47,9 +47,9 @@ Previsão inicial revisada: 24–40 h após auditoria. Restante após B–D: 15�
 - Conta de teste definida: guilherme@wktechnology.com.br. Consulta apenas de metadados confirmou uma conta LinkedIn conectada, com provider ID e workspace; isso não comprova envio/recebimento.
 - Migrações 0336–0341 registradas no journal, em ordem. Credenciais somente nas variáveis seguras; novas contas precisam de Service Key apta a gerenciar Scopes. Reconexão de conta legada conhecida não a transfere para um Scope.
 - 42 cenários SQL em PostgreSQL 17 descartável: identidade sintética, DDL/RLS/RPC reais, concorrência e isolamento; não é autenticação GoTrue ou aceite na Unipile.
-- Suíte global passou 3.069 testes antes da última revisão do adiamento de sourcing; revalidar o código final. Lint sem erros; 16 arquivos de formatação conferidos por árvore sintática normalizada, sem diferença funcional.
-- O build preliminar Node 22 sequencial levou 181 s e ficou dentro do teto de 240 s, mas seu fingerprint foi invalidado por alterações posteriores. Não é evidência de release final.
-- Ajuda atualizada para versão 4, incluindo proteções e limitações. Sincronização editorial no banco ainda não executada.
+- Aceite local final: 3.080 testes Vitest aprovados, 42 cenários SQL incluídos em teste de integração, tipos e lint sem erros. Verify completo em 71.2 s. Os 16 arquivos de formatação foram conferidos por árvore sintática normalizada, sem diferença funcional.
+- Build final Node 22 sequencial aprovado em 162.1 s; Nitro em 72.2 s e entrada gzip em 262,223 bytes. Performance gate aprovado sem elevar limites. Verify e build conferem com o mesmo fingerprint: `3d06ca5b01dc84cbbe9d899b7c27fe6ee4e1a971e62405e03afa8a733545e398`.
+- Ajuda de workspace atualizada para versão 4 e guia pessoal criado na versão 1, com controle próprio de leitura. Cobertura: 248/248 telas, 428 artigos. Sincronização editorial no banco ainda não executada.
 - O recurso completo NÃO está pronto para publicar: faltam E, F e aceite externo de G. O lote B–D não deve ser apresentado como Inbox/SDR/automação comercial concluída.
 
 Fontes verificadas:
@@ -57,3 +57,10 @@ Fontes verificadas:
 - https://developer.unipile.com/v2.0/docs/scopes
 - https://developer.unipile.com/v2.0/docs/configure-a-webhook
 - https://developer.unipile.com/v2.0/docs/provider-limits-and-restrictions
+
+## Revisão complementar
+
+- URL e menu de LinkedIn usam `system.linkedin`, incluindo leitura pessoal, sem exigir administração genérica de integrações.
+- Tokens de candidatos são consultados com o cliente do usuário, `hr_record_access` e filtro de workspace antes de qualquer chamada externa; histórico exige a mesma visibilidade.
+- Recibos incertos pausam sourcing para revisão; backpressure agenda nova tentativa mantendo a etapa atual.
+- O código está registrado em commits locais; nenhum push, merge ou deploy realizado.
