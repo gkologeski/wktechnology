@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 25
-version: 6
+version: 7
 is_published: true
 ---
 # Gerar contrato pelo diálogo de modelo publicado
@@ -70,3 +70,9 @@ Ao gerar o contrato de uma proposta aceita, o início é a data de hoje e o tér
 Quando a proposta tem condições de pagamento (entrada e saldo mensal, periódico ou por marcos), o contrato recebe essas condições e mostra o cronograma no cartão **Condições de pagamento** da ficha. Nesse caso, **Parcelas** e **Dia de vencimento** no passo Dados são opcionais. A forma de pagamento da proposta também vai para o contrato.
 
 Nos modelos, use `{{contract.payment_schedule}}` (Condições de pagamento) para escrever o resumo das condições, por exemplo "entrada de 30% do total (vence na assinatura do contrato) · 1 marco de entrega". Sem condições, a variável usa o formato antigo: "N parcela(s), com vencimento todo dia X".
+
+## Dados do modelo no Novo contrato
+
+No passo **Dados**, o quadro **Dados do modelo** lista cada variável que o modelo usa e mostra o valor que entrará no contrato ou **Falta**. O botão Avançar só continua quando nada falta.
+- **Escopo do serviço** e **Valor mensal (R$)** aparecem quando o modelo os usa e valem só para este contrato. O valor mensal por extenso é escrito automaticamente.
+- **Endereço** da empresa e **Nome/CPF do signatário** vêm do cadastro: preencha o endereço da empresa e marque um contato como signatário legal, com CPF. Use o link **Abrir a ficha da empresa**. Sem endereço cadastrado, o documento usa o endereço oficial do CNPJ, quando houver CNPJ.

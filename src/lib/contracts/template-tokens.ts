@@ -140,6 +140,27 @@ export function mergeTemplateBody(
   });
 }
 
+export type TemplateFieldStatus = {
+  key: string;
+  label: string;
+  value: string | null;
+  missing: boolean;
+};
+
+/** DADOS-ADITIVO: situação de cada variável usada no modelo (mesma regra do modo estrito). */
+export function templateFieldStatus(
+  html: string | null | undefined,
+  ctx: Record<string, unknown>,
+): TemplateFieldStatus[] {
+  return usedTokens(html).map((key) => {
+    const raw = getPath(ctx, key);
+    const value = raw == null || String(raw).trim() === "" ? null : String(raw);
+    const known = TEMPLATE_TOKEN_KEYS.includes(key);
+    const label = CONTRACT_TEMPLATE_TOKENS.find((t) => t.token === `{{${key}}}`)?.label ?? key;
+    return { key, label, value, missing: !known || value == null };
+  });
+}
+
 /** Lista os tokens usados em um corpo de modelo (na ordem de aparição, sem repetição). */
 export function usedTokens(html: string | null | undefined): string[] {
   if (!html) return [];

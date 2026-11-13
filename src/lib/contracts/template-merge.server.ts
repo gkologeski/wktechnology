@@ -75,6 +75,9 @@ export type MergeInput = {
   contractingLegalEntityId?: string;
   installmentsCount?: number;
   installmentsDueDay?: number;
+  /** DADOS-ADITIVO: valores só do contrato informados no assistente. */
+  serviceScope?: string;
+  monthlyValue?: number;
 };
 
 export async function buildMergeContext(
@@ -268,7 +271,7 @@ export async function buildMergeContext(
     total_value: source
       ? (source.proposal.total_amount ?? 0)
       : ((defaults.total_value as number) ?? deal?.value ?? service?.base_price ?? 0),
-    monthly_value: (defaults.monthly_value as number) ?? null,
+    monthly_value: input.monthlyValue ?? (defaults.monthly_value as number) ?? null,
     currency: source
       ? (source.proposal.currency ?? "BRL")
       : ((defaults.currency as string) ?? deal?.currency ?? service?.currency ?? "BRL"),
@@ -285,7 +288,9 @@ export async function buildMergeContext(
       DEFAULT_PENALTY_PERCENT,
     ),
     service_type: template.service_type ?? service?.service_type ?? null,
-    service_scope: (defaults.service_scope as string) ?? service?.description ?? null,
+    service_scope:
+      input.serviceScope?.trim() ||
+      ((defaults.service_scope as string) ?? service?.description ?? null),
     service_location: (defaults.service_location as string) ?? null,
     jurisdiction: pickTerm<string>(
       null,

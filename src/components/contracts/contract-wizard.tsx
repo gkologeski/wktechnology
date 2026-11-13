@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +33,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { clampInt } from "@/lib/contracts/contract-terms-defaults";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -43,6 +44,7 @@ import { cn } from "@/lib/utils";
 import { createContract } from "@/lib/contracts.functions";
 import {
   createContractFromTemplate,
+  diagnoseContractTemplate,
   listContractTemplates,
   listContractTemplateSources,
 } from "@/lib/contracts/templates.functions";
@@ -124,6 +126,13 @@ export function ContractWizard({
   const [saving, setSaving] = useState(false);
   const [installmentsCount, setInstallmentsCount] = useState("");
   const [installmentsDueDay, setInstallmentsDueDay] = useState("");
+  // DADOS-ADITIVO: valores só do contrato, informados no passo Dados.
+  const [serviceScope, setServiceScope] = useState("");
+  const [monthlyValue, setMonthlyValue] = useState("");
+  const monthlyNumber = (() => {
+    const n = Number(monthlyValue.replace(/\./g, "").replace(",", "."));
+    return monthlyValue.trim() && Number.isFinite(n) && n >= 0 ? n : undefined;
+  })();
   const terms = {
     installmentsCount: clampInt(installmentsCount, 1, 120) ?? undefined,
     installmentsDueDay: clampInt(installmentsDueDay, 1, 31) ?? undefined,
@@ -304,6 +313,31 @@ export function ContractWizard({
       return null;
     }
   })();
+  const diagnose = useServerFn(diagnoseContractTemplate);
+  const templateInput =
+    origin.type === "template"
+      ? {
+          templateId: origin.id,
+          proposalId: templateProposalId === "none" ? undefined : templateProposalId,
+          contractingLegalEntityId: entityId === "none" ? undefined : entityId,
+          dealId: dealId ?? undefined,
+          companyId: source?.companyId ?? undefined,
+          title: templateTitle.trim() || undefined,
+          serviceScope: serviceScope.trim() || undefined,
+          monthlyValue: monthlyNumber,
+          ...terms,
+        }
+      : null;
+  const diagnoseQ = useQuery({
+    queryKey: ["contract-template-diagnose", templateInput],
+    enabled: open && step >= 2 && !!templateInput,
+    queryFn: () => diagnose({ data: templateInput! }),
+  });
+  const missingFields = (diagnoseQ.data?.fields ?? []).filter((f) => f.missing);
+  const usesScope = (diagnoseQ.data?.fields ?? []).some((f) => f.key === "contract.service_scope");
+  const usesMonthly = (diagnoseQ.data?.fields ?? []).some((f) =>
+    f.key.startsWith("contract.monthly_value"),
+  );
   const lineItems = form.prefill.data?.lineItems ?? [];
   const fmtBRL = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   const servicesDisabled = form.kind !== "provider";
@@ -317,6 +351,10 @@ export function ContractWizard({
     }
     if (step === 2 && origin.type === "template" && !templateTitle.trim())
       return "Informe um título.";
+    if (step === 2 && origin.type === "template" && diagnoseQ.data?.error)
+      return diagnoseQ.data.error;
+    if (step === 2 && origin.type === "template" && missingFields.length)
+      return `Faltam dados do modelo: ${missingFields.map((f) => f.label).join(", ")}.`;
     if (step === 2 && termsProposalId)
       return missingPaymentTermsMessage({
         installments: terms.installmentsCount,
@@ -356,6 +394,8 @@ export function ContractWizard({
             dealId: dealId ?? undefined,
             companyId: source?.companyId ?? undefined,
             title: templateTitle.trim(),
+            serviceScope: serviceScope.trim() || undefined,
+            monthlyValue: monthlyNumber,
             ...terms,
           },
         });
@@ -541,6 +581,102 @@ export function ContractWizard({
                 <p className="text-xs text-muted-foreground">
                   Empresa, valores e vigência vêm do negócio e do modelo.
                 </p>
+                {(usesScope || usesMonthly) && (
+                  <div className="grid gap-4 pt-2 sm:grid-cols-2">
+                    {usesScope && (
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <Label htmlFor="cw-scope">Escopo do serviço</Label>
+                        <Textarea
+                          id="cw-scope"
+                          rows={3}
+                          maxLength={5000}
+                          placeholder="Usar o do modelo ou do serviço"
+                          value={serviceScope}
+                          onChange={(e) => setServiceScope(e.target.value)}
+                        />
+                      </div>
+                    )}
+                    {usesMonthly && (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="cw-monthly">Valor mensal (R$)</Label>
+                        <Input
+                          id="cw-monthly"
+                          inputMode="decimal"
+                          placeholder="Ex.: 9.435,00"
+                          value={monthlyValue}
+                          onChange={(e) => setMonthlyValue(e.target.value.replace(/[^\d.,]/g, ""))}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          O valor por extenso é escrito automaticamente.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <section
+                  aria-label="Dados do modelo"
+                  aria-live="polite"
+                  className="mt-3 rounded-md border bg-muted/30 p-3"
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium">Dados do modelo</p>
+                    {diagnoseQ.isFetching && (
+                      <Loader2
+                        className="h-4 w-4 animate-spin text-muted-foreground"
+                        aria-label="Conferindo"
+                      />
+                    )}
+                  </div>
+                  {diagnoseQ.isError ? (
+                    <p role="alert" className="text-sm text-destructive">
+                      Não foi possível conferir os dados do modelo. Tente novamente.
+                    </p>
+                  ) : diagnoseQ.data?.error ? (
+                    <p className="text-sm text-destructive">{diagnoseQ.data.error}</p>
+                  ) : !diagnoseQ.data ? (
+                    <p className="text-sm text-muted-foreground">Conferindo…</p>
+                  ) : diagnoseQ.data.fields.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">O modelo não usa variáveis.</p>
+                  ) : (
+                    <>
+                      <ul className="max-h-56 divide-y overflow-y-auto rounded-md border bg-background">
+                        {diagnoseQ.data.fields.map((f) => (
+                          <li
+                            key={f.key}
+                            className="flex items-start justify-between gap-3 px-3 py-1.5 text-sm"
+                          >
+                            <span className="font-medium">{f.label}</span>
+                            {f.missing ? (
+                              <span className="shrink-0 text-destructive">Falta</span>
+                            ) : (
+                              <span className="line-clamp-1 max-w-[60%] text-right text-muted-foreground">
+                                {f.value}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                      {missingFields.some(
+                        (f) => f.key.startsWith("counterparty.") || f.key.startsWith("signer."),
+                      ) && (
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          Endereço e signatário vêm do cadastro da empresa e do contato marcado como
+                          signatário legal (com CPF).{" "}
+                          {diagnoseQ.data.companyId && (
+                            <Link
+                              to="/companies/$id"
+                              params={{ id: diagnoseQ.data.companyId }}
+                              target="_blank"
+                              className="font-medium text-primary underline"
+                            >
+                              Abrir a ficha da empresa
+                            </Link>
+                          )}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </section>
               </div>
             ) : (
               <p className="text-sm text-muted-foreground">

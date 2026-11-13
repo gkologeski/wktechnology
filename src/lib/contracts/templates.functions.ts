@@ -9,7 +9,7 @@ import { randomBytes } from "crypto";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
-import { mergeTemplateBody } from "@/lib/contracts/template-tokens";
+import { mergeTemplateBody, templateFieldStatus } from "@/lib/contracts/template-tokens";
 import { buildMergeContext } from "@/lib/contracts/template-merge.server";
 import { deleteByIdGuarded } from "@/lib/db/delete-guarded";
 
@@ -226,6 +226,8 @@ const applyInput = z.object({
   contractingLegalEntityId: z.string().uuid().optional(),
   installmentsCount: z.number().int().min(1).max(120).optional(),
   installmentsDueDay: z.number().int().min(1).max(31).optional(),
+  serviceScope: z.string().max(5000).optional(),
+  monthlyValue: z.number().min(0).max(1_000_000_000).optional(),
 });
 
 /** Pré-visualização: devolve o corpo já mesclado sem criar contrato. */
@@ -257,6 +259,43 @@ export const previewContractFromTemplate = createServerFn({ method: "POST" })
       body_html: mergeTemplateBody(template.body_html ?? "", ctx, { strict: !!source }),
       template_name: template.name,
     };
+  });
+
+/** DADOS-ADITIVO: diagnóstico sem gravar — quais variáveis do modelo estão preenchidas. */
+export const diagnoseContractTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => applyInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertAnyPermission(supabase, userId, workspaceId, VIEW);
+    const { data: template, error } = await supabase
+      .from("contract_templates")
+      .select("*")
+      .eq("id", data.templateId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!template) throw new Error("Modelo não encontrado");
+    try {
+      const { ctx, company } = await buildMergeContext(
+        supabase,
+        workspaceId,
+        userId,
+        data,
+        template,
+      );
+      return {
+        error: null as string | null,
+        companyId: (company?.id as string | undefined) ?? null,
+        fields: templateFieldStatus(template.body_html ?? "", ctx),
+      };
+    } catch (e) {
+      return {
+        error: e instanceof Error ? e.message : "Não foi possível conferir os dados do modelo.",
+        companyId: null,
+        fields: [],
+      };
+    }
   });
 
 /** Gera um contrato em rascunho a partir do modelo. */
