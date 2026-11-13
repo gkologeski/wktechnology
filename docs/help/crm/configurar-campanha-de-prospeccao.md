@@ -8,7 +8,7 @@ route_pattern: /campaigns/calls/$id
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 402
-version: 8
+version: 9
 is_published: true
 ---
 # Configurar uma campanha de ligação em 5 passos
@@ -57,3 +57,12 @@ Com a campanha em andamento, a lista e o topo da ficha mostram uma **estimativa*
 ### Modelo aprovado no pós-ligação
 
 No passo **Pós-ligação**, ao escolher o remetente do WhatsApp, a lista **Modelo aprovado** carrega sozinha os modelos aprovados pela Meta desse remetente. Se você trocar de remetente e o modelo salvo não existir nele, escolha um modelo novo.
+
+## Distribuição das reuniões
+No passo **4. Pós-ligação**, a seção **Distribuição das reuniões** define na agenda de quem a reunião é marcada, com as mesmas opções da campanha de WhatsApp:
+- **Responsável do Lead/Contato:** usa a agenda do responsável. Se ele não tiver agenda conectada, os horários seguem pelo WhatsApp.
+- **Membro específico:** todas as reuniões vão para a pessoa escolhida.
+- **Dividir entre membros da equipe:** rodízio igual entre os membros marcados (mínimo 2).
+- **Sem agendamento na ligação:** a assistente só combina de enviar os horários pelo WhatsApp (padrão).
+
+Só aparecem para escolha membros ativos com agenda Google conectada; os demais são listados como "Sem agenda conectada". Com distribuição ligada, escolha a duração, quantos dias à frente oferecer e o modelo aprovado do WhatsApp que levará o link. O botão **Iniciar** só libera quando essa seção estiver completa.

@@ -2374,6 +2374,20 @@
       "when": 1794566692492,
       "tag": "0338_prospecting_campaign_status_canceled",
       "breakpoints": true
+    },
+    {
+      "idx": 339,
+      "version": "7",
+      "when": 1794571531538,
+      "tag": "0339_call_campaign_meeting_assignment",
+      "breakpoints": true
+    },
+    {
+      "idx": 340,
+      "version": "7",
+      "when": 1794571719130,
+      "tag": "0340_call_meeting_hosts_with_calendar",
+      "breakpoints": true
     }
   ]
 }

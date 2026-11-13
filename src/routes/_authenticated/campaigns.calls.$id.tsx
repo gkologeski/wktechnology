@@ -45,6 +45,8 @@ import {
 } from "@/components/whatsapp/campaign-audience-panel";
 import { hasCallAudience, parseManualPhones } from "@/lib/prospecting/calls/call-audience";
 import { CampaignCallFollowup } from "@/components/prospecting/campaign-call-followup";
+import { CampaignCallMeetings } from "@/components/prospecting/campaign-call-meetings";
+import type { MeetingAssignment } from "@/lib/prospecting/calls/meeting-assignment";
 import { listScripts, type ProspectingScript } from "@/lib/prospecting-scripts.functions";
 
 export const Route = createFileRoute("/_authenticated/campaigns/calls/$id")({
@@ -80,10 +82,26 @@ function CampaignDetailPage() {
   const [manualRaw, setManualRaw] = useState("");
   const [useNewAudience, setUseNewAudience] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [meeting, setMeeting] = useState<MeetingAssignment>({
+    meeting_assignment_mode: "unassigned",
+    meeting_member_ids: [],
+    meeting_duration_minutes: 30,
+    meeting_horizon_days: 7,
+    meeting_template_name: null,
+    meeting_template_language: null,
+  });
 
   const refresh = async () => {
     const out = await getFn({ data: { id } });
     setCampaign(out.campaign);
+    setMeeting({
+      meeting_assignment_mode: out.campaign.meeting_assignment_mode ?? "unassigned",
+      meeting_member_ids: out.campaign.meeting_member_ids ?? [],
+      meeting_duration_minutes: out.campaign.meeting_duration_minutes ?? 30,
+      meeting_horizon_days: out.campaign.meeting_horizon_days ?? 7,
+      meeting_template_name: out.campaign.meeting_template_name ?? null,
+      meeting_template_language: out.campaign.meeting_template_language ?? null,
+    });
     setVariants(
       out.variants.map((v: Variant) => ({
         script_id: v.script_id,
@@ -166,6 +184,7 @@ function CampaignDetailPage() {
     days: campaign.dialing_window.days,
     start: campaign.dialing_window.start,
     end: campaign.dialing_window.end,
+    meeting,
   });
   const blockers = checklist.filter((c) => !c.ok);
   const canStart = blockers.length === 0;
@@ -200,6 +219,7 @@ function CampaignDetailPage() {
           recent_contact_days: campaign.recent_contact_days ?? 7,
           recent_contact_scope: campaign.recent_contact_scope ?? "calls",
           audience_config: useNewAudience ? callAudienceConfig : null,
+          meeting,
         },
       });
       toast.success("Salvo");
@@ -677,6 +697,11 @@ function CampaignDetailPage() {
             scripts={scripts.filter((s) => !s.archived_at)}
             leads={audit}
             onChanged={refresh}
+          />
+          <CampaignCallMeetings
+            value={meeting}
+            senderId={campaign.followup_sender_phone_number_id ?? null}
+            onChange={setMeeting}
           />
         </div>
       )}

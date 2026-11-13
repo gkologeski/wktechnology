@@ -20,6 +20,7 @@ export function callCampaignChecklist(i: {
   days: number[];
   start: string;
   end: string;
+  meeting?: { meeting_assignment_mode: string; meeting_member_ids: string[]; meeting_template_name: string | null };
 }): CallCampaignChecklist {
   const withScript = i.variants.filter((v) => v.script_id);
   const sum = withScript.reduce((s, v) => s + v.weight, 0);
@@ -45,6 +46,21 @@ export function callCampaignChecklist(i: {
       ok: i.days.length > 0 && i.start < i.end,
       hint: "Escolha ao menos um dia e um horário de início antes do fim no passo 3.",
     },
+    ...(i.meeting && i.meeting.meeting_assignment_mode !== "unassigned"
+      ? [
+          {
+            key: "meetings",
+            label: "Distribuição das reuniões completa",
+            ok:
+              !!i.meeting.meeting_template_name &&
+              (i.meeting.meeting_assignment_mode === "auto" ||
+                (i.meeting.meeting_assignment_mode === "member"
+                  ? i.meeting.meeting_member_ids.length === 1
+                  : i.meeting.meeting_member_ids.length >= 2)),
+            hint: "No passo 4, escolha quem recebe as reuniões e o modelo com o link.",
+          },
+        ]
+      : []),
   ];
 }
 

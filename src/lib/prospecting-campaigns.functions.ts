@@ -2,6 +2,10 @@ import { assertSalesArea, assertSalesRecord } from "@/lib/access-control/sales-c
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import {
+  MeetingAssignmentInput,
+  normalizeMeetingAssignment,
+} from "@/lib/prospecting/calls/meeting-assignment";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { startVapiCall } from "@/lib/prospecting-vapi-call.server";
@@ -47,6 +51,12 @@ export type Campaign = {
   recent_contact_days?: number;
   recent_contact_scope?: "calls" | "calls_whatsapp";
   audience_config?: JsonValue | null;
+  meeting_assignment_mode?: "auto" | "member" | "round_robin" | "unassigned";
+  meeting_member_ids?: string[];
+  meeting_duration_minutes?: number;
+  meeting_horizon_days?: number;
+  meeting_template_name?: string | null;
+  meeting_template_language?: string | null;
 };
 
 export type Variant = {
@@ -134,6 +144,7 @@ const CampaignInput = z.object({
   recent_contact_days: z.number().int().min(0).max(365).default(7),
   recent_contact_scope: z.enum(["calls", "calls_whatsapp"]).default("calls"),
   audience_config: CallAudienceConfigSchema.nullable().optional(),
+  meeting: MeetingAssignmentInput.optional(),
 });
 
 export const listCampaigns = createServerFn({ method: "POST" })
@@ -208,6 +219,12 @@ export const duplicateCampaign = createServerFn({ method: "POST" })
       "followup_template_name",
       "followup_template_language",
       "followup_answered_text",
+      "meeting_assignment_mode",
+      "meeting_member_ids",
+      "meeting_duration_minutes",
+      "meeting_horizon_days",
+      "meeting_template_name",
+      "meeting_template_language",
     ])
       if (k in src) copy[k] = src[k];
     copy.name = `${String(src.name ?? "Campanha")} (cópia)`;
@@ -296,7 +313,26 @@ export const upsertCampaign = createServerFn({ method: "POST" })
       resolvedLeadIds = r.leadIds;
     }
 
+    let meeting: Record<string, unknown> = {};
+    if (data.meeting) {
+      const m = normalizeMeetingAssignment(data.meeting);
+      if (m.meeting_member_ids.length) {
+        // Só membros ativos do workspace ativo (RLS do usuário).
+        const { data: mem, error: memErr } = await sb
+          .from("workspace_members")
+          .select("user_id")
+          .eq("workspace_id", ws)
+          .eq("status", "active")
+          .in("user_id", m.meeting_member_ids);
+        if (memErr) throw new Error("Não foi possível conferir os membros escolhidos.");
+        if ((mem ?? []).length !== m.meeting_member_ids.length)
+          throw new Error("Um dos membros escolhidos não está ativo neste workspace.");
+      }
+      meeting = m;
+    }
+
     const payload = {
+      ...meeting,
       workspace_id: ws,
       owner_id: context.userId,
       name: data.name,
@@ -844,4 +880,16 @@ export const listCallFollowupTemplates = createServerFn({ method: "POST" })
       console.error("listCallFollowupTemplates", e instanceof Error ? e.message : e);
       return { items: [], error: "Não foi possível carregar os modelos deste remetente." };
     }
+  });
+
+/** Ids dos membros ativos com agenda Google conectada (quem pode receber reuniões da ligação). */
+export const listMeetingHosts = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
+  .handler(async ({ context }) => {
+    const ws = await resolveActiveWorkspace(context.userId);
+    const { data, error } = await context.supabase.rpc("call_meeting_hosts_with_calendar", {
+      _workspace: ws,
+    });
+    if (error) throw new Error("Não foi possível carregar quem tem agenda conectada.");
+    return { userIds: ((data ?? []) as unknown as string[]).map(String) };
   });

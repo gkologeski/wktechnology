@@ -22186,8 +22186,10 @@ export type Database = {
           followup_error: string | null
           followup_sent_at: string | null
           followup_status: string | null
+          host_user_id: string | null
           id: string
           lead_id: string | null
+          meeting_id: string | null
           owner_id: string
           recording_url: string | null
           scheduled_at: string | null
@@ -22217,8 +22219,10 @@ export type Database = {
           followup_error?: string | null
           followup_sent_at?: string | null
           followup_status?: string | null
+          host_user_id?: string | null
           id?: string
           lead_id?: string | null
+          meeting_id?: string | null
           owner_id: string
           recording_url?: string | null
           scheduled_at?: string | null
@@ -22248,8 +22252,10 @@ export type Database = {
           followup_error?: string | null
           followup_sent_at?: string | null
           followup_status?: string | null
+          host_user_id?: string | null
           id?: string
           lead_id?: string | null
+          meeting_id?: string | null
           owner_id?: string
           recording_url?: string | null
           scheduled_at?: string | null
@@ -22401,6 +22407,13 @@ export type Database = {
           id: string
           lead_ids: string[]
           max_attempts: number
+          meeting_assignment_mode: string
+          meeting_duration_minutes: number
+          meeting_horizon_days: number
+          meeting_member_ids: string[]
+          meeting_rr_cursor: number
+          meeting_template_language: string | null
+          meeting_template_name: string | null
           name: string
           owner_id: string
           recent_contact_days: number
@@ -22429,6 +22442,13 @@ export type Database = {
           id?: string
           lead_ids?: string[]
           max_attempts?: number
+          meeting_assignment_mode?: string
+          meeting_duration_minutes?: number
+          meeting_horizon_days?: number
+          meeting_member_ids?: string[]
+          meeting_rr_cursor?: number
+          meeting_template_language?: string | null
+          meeting_template_name?: string | null
           name: string
           owner_id: string
           recent_contact_days?: number
@@ -22457,6 +22477,13 @@ export type Database = {
           id?: string
           lead_ids?: string[]
           max_attempts?: number
+          meeting_assignment_mode?: string
+          meeting_duration_minutes?: number
+          meeting_horizon_days?: number
+          meeting_member_ids?: string[]
+          meeting_rr_cursor?: number
+          meeting_template_language?: string | null
+          meeting_template_name?: string | null
           name?: string
           owner_id?: string
           recent_contact_days?: number
@@ -22973,6 +23000,7 @@ export type Database = {
       }
       prospecting_scripts: {
         Row: {
+          allow_booking: boolean
           archived_at: string | null
           assigned_to: string | null
           created_at: string
@@ -22989,6 +23017,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          allow_booking?: boolean
           archived_at?: string | null
           assigned_to?: string | null
           created_at?: string
@@ -23005,6 +23034,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          allow_booking?: boolean
           archived_at?: string | null
           assigned_to?: string | null
           created_at?: string
@@ -32528,6 +32558,10 @@ export type Database = {
           _workspace: string
         }
         Returns: boolean
+      }
+      call_meeting_hosts_with_calendar: {
+        Args: { _workspace: string }
+        Returns: string[]
       }
       can_access_ats_job: { Args: { _job_id: string }; Returns: boolean }
       can_manage_access_scope: { Args: { _owner: string }; Returns: boolean }
