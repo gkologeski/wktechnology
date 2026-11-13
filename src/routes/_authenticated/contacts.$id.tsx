@@ -20,6 +20,7 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { deleteRowGuarded } from "@/lib/delete-guard";
 import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
 import { useIsLinkedOnly } from "@/hooks/use-rep-restricted";
+import { ContactSignerFields } from "@/components/contacts/contact-signer-fields";
 import { LinkedContactSummary } from "@/components/record/linked-record-summary";
 
 export const Route = createFileRoute("/_authenticated/contacts/$id")({
@@ -219,6 +220,12 @@ function ContactDetail() {
                 { key: "nivel_hierarquico", label: "Nível hierárquico", primary: true },
                 { key: "notes", label: "Notas" },
               ]}
+              onSaved={load}
+            />
+            <ContactSignerFields
+              key={`${contact.id}-${String((contact.custom_fields as Record<string, unknown> | null)?.cpf ?? "")}`}
+              contactId={contact.id}
+              customFields={contact.custom_fields as Record<string, unknown> | null}
               onSaved={load}
             />
           </>
