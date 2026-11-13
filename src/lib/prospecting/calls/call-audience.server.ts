@@ -56,9 +56,7 @@ export async function resolveCallAudience(
   cfg: CallAudienceConfig,
   recent: RecentContactConfig,
 ) {
-  const T0 = Date.now();
   await assertSalesArea(db, "techsales.marketing.campaigns", "view");
-  console.log("[call-aud] area", Date.now() - T0);
   const s = cfg.state;
   let leads: Lead[] = [];
   let found = 0;
@@ -96,12 +94,10 @@ export async function resolveCallAudience(
       leads.push({ id: r.sourceId, label: r.label, phone: ph });
     }
   }
-  console.log("[call-aud] rows", leads.length, Date.now() - T0);
   const noPhone = leads.filter((l) => !l.phone).length;
   const withPhone = leads.filter((l) => l.phone);
 
   const recentMap = await findRecentlyContacted(db, ws, campaignId ?? NIL, withPhone, recent);
-  console.log("[call-aud] recent", Date.now() - T0);
   const ov = new Set(s.recentOverrides);
   const recentRemoved = withPhone.filter((l) => recentMap.has(l.id) && !ov.has(l.phone!));
   const recentOverridden = withPhone.filter((l) => recentMap.has(l.id) && ov.has(l.phone!)).length;
@@ -121,7 +117,6 @@ export async function resolveCallAudience(
     { excludeCustomers: s.excludeCustomers, excludeOpenDeals: s.excludeOpenDeals },
     new Set(s.commercialOverrides),
   );
-  console.log("[call-aud] commercial", Date.now() - T0);
   return {
     leadIds: commercial.kept.map((l) => l.id),
     preview: {
