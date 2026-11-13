@@ -326,6 +326,7 @@ export const SIDEBAR_GROUPS: SidebarGroup[] = [
           { title: "WhatsApp", url: "/inbox/whatsapp", icon: MessageCircle },
           { title: "Chat ao vivo", url: "/inbox/chat", icon: MessageSquare },
           { title: "LinkedIn", url: "/inbox/linkedin", icon: Linkedin },
+          { title: "Ligações", url: "/inbox/ligacoes", icon: Phone },
         ],
       },
       { title: "Comunicações", url: "/communications", icon: MessageSquare },

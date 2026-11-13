@@ -134,6 +134,7 @@ import { Route as AuthenticatedHomeAccessRouteImport } from './routes/_authentic
 import { Route as AuthenticatedInboxIndexRouteImport } from './routes/_authenticated/inbox.index'
 import { Route as AuthenticatedInboxChatRouteImport } from './routes/_authenticated/inbox.chat'
 import { Route as AuthenticatedInboxEmailRouteImport } from './routes/_authenticated/inbox.email'
+import { Route as AuthenticatedInboxLigacoesRouteImport } from './routes/_authenticated/inbox.ligacoes'
 import { Route as AuthenticatedInboxLinkedinRouteImport } from './routes/_authenticated/inbox.linkedin'
 import { Route as AuthenticatedInboxWhatsappRouteImport } from './routes/_authenticated/inbox.whatsapp'
 import { Route as AuthenticatedIntegrationsIndexRouteImport } from './routes/_authenticated/integrations.index'
@@ -1116,6 +1117,12 @@ const AuthenticatedInboxEmailRoute = AuthenticatedInboxEmailRouteImport.update({
   path: '/inbox/email',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedInboxLigacoesRoute =
+  AuthenticatedInboxLigacoesRouteImport.update({
+    id: '/inbox/ligacoes',
+    path: '/inbox/ligacoes',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedInboxLinkedinRoute =
   AuthenticatedInboxLinkedinRouteImport.update({
     id: '/inbox/linkedin',
@@ -3022,6 +3029,7 @@ export interface FileRoutesByFullPath {
   '/home/access': typeof AuthenticatedHomeAccessRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
+  '/inbox/ligacoes': typeof AuthenticatedInboxLigacoesRoute
   '/inbox/linkedin': typeof AuthenticatedInboxLinkedinRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
@@ -3448,6 +3456,7 @@ export interface FileRoutesByTo {
   '/home/access': typeof AuthenticatedHomeAccessRoute
   '/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/inbox/email': typeof AuthenticatedInboxEmailRoute
+  '/inbox/ligacoes': typeof AuthenticatedInboxLigacoesRoute
   '/inbox/linkedin': typeof AuthenticatedInboxLinkedinRoute
   '/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
@@ -3880,6 +3889,7 @@ export interface FileRoutesById {
   '/_authenticated/home/access': typeof AuthenticatedHomeAccessRoute
   '/_authenticated/inbox/chat': typeof AuthenticatedInboxChatRoute
   '/_authenticated/inbox/email': typeof AuthenticatedInboxEmailRoute
+  '/_authenticated/inbox/ligacoes': typeof AuthenticatedInboxLigacoesRoute
   '/_authenticated/inbox/linkedin': typeof AuthenticatedInboxLinkedinRoute
   '/_authenticated/inbox/whatsapp': typeof AuthenticatedInboxWhatsappRoute
   '/_authenticated/integrations/$slug': typeof AuthenticatedIntegrationsSlugRoute
@@ -4313,6 +4323,7 @@ export interface FileRouteTypes {
     | '/home/access'
     | '/inbox/chat'
     | '/inbox/email'
+    | '/inbox/ligacoes'
     | '/inbox/linkedin'
     | '/inbox/whatsapp'
     | '/integrations/$slug'
@@ -4739,6 +4750,7 @@ export interface FileRouteTypes {
     | '/home/access'
     | '/inbox/chat'
     | '/inbox/email'
+    | '/inbox/ligacoes'
     | '/inbox/linkedin'
     | '/inbox/whatsapp'
     | '/integrations/$slug'
@@ -5170,6 +5182,7 @@ export interface FileRouteTypes {
     | '/_authenticated/home/access'
     | '/_authenticated/inbox/chat'
     | '/_authenticated/inbox/email'
+    | '/_authenticated/inbox/ligacoes'
     | '/_authenticated/inbox/linkedin'
     | '/_authenticated/inbox/whatsapp'
     | '/_authenticated/integrations/$slug'
@@ -6499,6 +6512,13 @@ declare module '@tanstack/react-router' {
       path: '/inbox/email'
       fullPath: '/inbox/email'
       preLoaderRoute: typeof AuthenticatedInboxEmailRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/inbox/ligacoes': {
+      id: '/_authenticated/inbox/ligacoes'
+      path: '/inbox/ligacoes'
+      fullPath: '/inbox/ligacoes'
+      preLoaderRoute: typeof AuthenticatedInboxLigacoesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/inbox/linkedin': {
@@ -9195,6 +9215,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedHomeAccessRoute: typeof AuthenticatedHomeAccessRoute
   AuthenticatedInboxChatRoute: typeof AuthenticatedInboxChatRoute
   AuthenticatedInboxEmailRoute: typeof AuthenticatedInboxEmailRoute
+  AuthenticatedInboxLigacoesRoute: typeof AuthenticatedInboxLigacoesRoute
   AuthenticatedInboxLinkedinRoute: typeof AuthenticatedInboxLinkedinRoute
   AuthenticatedInboxWhatsappRoute: typeof AuthenticatedInboxWhatsappRoute
   AuthenticatedLandingPagesIdRoute: typeof AuthenticatedLandingPagesIdRoute
@@ -9364,6 +9385,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedHomeAccessRoute: AuthenticatedHomeAccessRoute,
   AuthenticatedInboxChatRoute: AuthenticatedInboxChatRoute,
   AuthenticatedInboxEmailRoute: AuthenticatedInboxEmailRoute,
+  AuthenticatedInboxLigacoesRoute: AuthenticatedInboxLigacoesRoute,
   AuthenticatedInboxLinkedinRoute: AuthenticatedInboxLinkedinRoute,
   AuthenticatedInboxWhatsappRoute: AuthenticatedInboxWhatsappRoute,
   AuthenticatedLandingPagesIdRoute: AuthenticatedLandingPagesIdRoute,
