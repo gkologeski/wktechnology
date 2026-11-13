@@ -2486,6 +2486,13 @@
       "when": 1794600696953,
       "tag": "0354_summary_capabilities_calendar_candidates",
       "breakpoints": true
+    },
+    {
+      "idx": 355,
+      "version": "7",
+      "when": 1794602757372,
+      "tag": "0355_calendar_pending_meetings_index",
+      "breakpoints": true
     }
   ]
 }

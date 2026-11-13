@@ -12018,6 +12018,68 @@
           "name": "summary batch SQL denies inactive"
         }
       }
+    },
+    {
+      "id": "calendar-pending-meetings-read-index",
+      "kind": "business",
+      "resources": [
+        "techsales.activities",
+        "system.calendars"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.activities.view.workspace",
+        "system.calendars.view.workspace"
+      ],
+      "rationale": "Index-only performance follow-up for the unchanged Google Calendar pending-meetings read: owner_id, meeting type, non-null due_date, horizon ordering/limit. The partial composite index removes unrelated activity scans before the existing RLS checks. No rows, query predicates, jobs, grants or policies change. Table comment documents the existing protected surface.",
+      "files": {
+        "drizzle/migrations/0355_calendar_pending_meetings_index.sql": "9aeb457947861c2c461d156d4f4f2e9e76b5452578aa7039c95bddb8da9c0a2b"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-account-job.server.ts",
+          "symbol": "assertSalesAccountJob"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0355_calendar_pending_meetings_index.sql",
+          "symbol": "activities"
+        },
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "sales_view"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "activity batch SQL preserves per-action results and note/task resources"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "activity batch SQL denies missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "activity batch SQL denies deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "activity batch SQL denies workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "activity batch SQL denies inactive"
+        }
+      }
     }
   ],
   "retired": {
