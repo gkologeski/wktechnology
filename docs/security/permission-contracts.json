@@ -11948,6 +11948,76 @@
       "files": {
         "src/lib/contracts/company-party.ts": "f236d39ef765d9fdc551abd8556241baaa8cc2079b1623fde3b92bbab3b434ed"
       }
+    },
+    {
+      "id": "summary-capabilities-calendar-candidates",
+      "kind": "business",
+      "resources": [
+        "techsales.ai_summaries",
+        "system.calendars"
+      ],
+      "actions": [
+        "view",
+        "delete",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.ai_summaries.view.workspace",
+        "techsales.ai_summaries.delete.workspace",
+        "system.calendars.view.workspace"
+      ],
+      "rationale": "Reuse SalesCapabilityScope for all summary cards instead of simultaneous per-card requests. Summary capability batching reads user/RLS rows once and reuses unchanged view/parent/provenance checks for supported delete/manage actions; unsupported actions remain false. Calendar recurrence counting uses only series present among candidate contact events, at most six visible siblings per series, preserving the exact account/recurrence/title and caller RLS semantics. No grants or timeout changes.",
+      "files": {
+        "drizzle/migrations/0354_summary_capabilities_calendar_candidates.sql": "c2d536bced5f937b27914d030e754aab8d37394fff9d86a0ecf921b933420a83",
+        "src/components/ai/ai-summary-panel.tsx": "b9d7b7c4140c928bc22453de5930be65a7639aaa8b9d8fc95f7d0182579f1432"
+      },
+      "controls": [
+        {
+          "file": "src/components/sales-access.tsx",
+          "symbol": "SalesCapabilityScope"
+        },
+        {
+          "file": "src/components/sales-access.tsx",
+          "symbol": "SalesAction"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0354_summary_capabilities_calendar_candidates.sql",
+          "symbol": "sales_capabilities"
+        },
+        {
+          "file": "drizzle/migrations/0354_summary_capabilities_calendar_candidates.sql",
+          "symbol": "get_timeline_calendar_page"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "summary batch SQL preserves supported actions and provenance"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "summary batch SQL denies missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "summary batch SQL denies deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "summary batch SQL denies workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "summary batch SQL denies inactive"
+        }
+      }
     }
   ],
   "retired": {
