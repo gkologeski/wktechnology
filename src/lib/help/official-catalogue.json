@@ -1003,9 +1003,9 @@
     "min_permission": null,
     "audience": "internal",
     "sort_order": 61,
-    "version": 2,
+    "version": 3,
     "is_published": true,
-    "body_md": "# Editar e publicar um modelo de contrato\n**Para que serve:** Editar e publicar um modelo de contrato.\n**Quem pode fazer:** Atualização de techcontracts.contract_templates no registro.\n**Onde fica:** TechContracts > Contratos (/contracts/templates/$id).\n**Antes de começar:** Ter um modelo criado ou importado.\n\n## Passo a passo\n1. Abra o modelo.\n2. Preencha \"Nome do modelo\", \"Tipo de contrato\", \"Tipo de serviço\" e \"Descrição\".\n3. Revise \"Corpo do contrato\" e suas variáveis.\n4. Salve para manter a edição.\n5. Após a revisão, clique em \"Publicar\".\n![Tela: Editar e publicar um modelo de contrato, sem dados pessoais reais](/help-media/contracts/editar-publicar-modelo.webp)\n\n## Resultado esperado\n\"Modelo salvo.\" ou \"Modelo publicado.\", conforme a ação escolhida.\n\n## Regras e limites\n- Tipos de contrato: Prestação e Compra.\n- Revise as variáveis antes de publicar. Texto importado não é garantia de documento completo ou juridicamente adequado.\n\n## Erros comuns\nSe a gravação falhar, confira o nome e a mensagem recebida do servidor.\n\n## Relacionados\n- [Importar modelo](/ajuda/contracts/importar-modelo)\n- [Organizar modelos](/ajuda/contracts/gerenciar-modelos)"
+    "body_md": "# Editar e publicar um modelo de contrato\n**Para que serve:** Editar e publicar um modelo de contrato.\n**Quem pode fazer:** Atualização de techcontracts.contract_templates no registro.\n**Onde fica:** TechContracts > Contratos (/contracts/templates/$id).\n**Antes de começar:** Ter um modelo criado ou importado.\n\n## Passo a passo\n1. Abra o modelo.\n2. Preencha \"Nome do modelo\", \"Tipo de contrato\", \"Tipo de serviço\" e \"Descrição\".\n3. Revise \"Corpo do contrato\" e suas variáveis.\n4. Salve para manter a edição.\n5. Após a revisão, clique em \"Publicar\".\n![Tela: Editar e publicar um modelo de contrato, sem dados pessoais reais](/help-media/contracts/editar-publicar-modelo.webp)\n\n## Resultado esperado\n\"Modelo salvo.\" ou \"Modelo publicado.\", conforme a ação escolhida.\n\n## Regras e limites\n- Tipos de contrato: Prestação e Compra.\n- Revise as variáveis antes de publicar. Texto importado não é garantia de documento completo ou juridicamente adequado.\n\n## Erros comuns\nSe a gravação falhar, confira o nome e a mensagem recebida do servidor.\n\n## Relacionados\n- [Importar modelo](/ajuda/contracts/importar-modelo)\n- [Organizar modelos](/ajuda/contracts/gerenciar-modelos)\n\n## Valores por extenso\nUse `{{contract.total_value_extenso}}` e `{{contract.monthly_value_extenso}}` para escrever o valor em palavras. Ex.: `{{contract.total_value}} ({{contract.total_value_extenso}})` gera \"R$ 18.870,00 (dezoito mil, oitocentos e setenta reais)\"."
   },
   {
     "module_key": "contracts",
@@ -2686,6 +2686,20 @@
     "version": 2,
     "is_published": true,
     "body_md": "# Abrir pesquisas pelas configurações\n\n**Para que serve:** Abrir pesquisas pelas configurações, no contexto da tela `/settings/surveys`.\n\n**Quem pode fazer:** Membro ativo do workspace, com as permissões efetivas da tela e da ação. O gate de rota referencia `techsales.surveys`.\n\n**Onde fica:** Configurações ou navegação do workspace > `/settings/surveys`.\n\n**Antes de começar:** Confirme o workspace e o contexto corretos. Tenha autorização para a operação, e não apenas para consultar a tela.\n\n## Passo a passo\n1. Abra /settings/surveys.\n2. Consulte a listagem e o editor de pesquisas apresentado.\n\n## Resultado esperado\nA tela apresenta o resultado da consulta ou da ação descrita. Confira a confirmação e o estado exibidos; uma configuração gravada não prova execução no provedor externo.\n\n## Regras e limites\nRenderiza SurveysPage; pertence às pesquisas do TechSales, como /surveys.\n\n## Erros comuns\n- Se houver acesso negado, confira membership ativo, workspace e permissões da ação; não tente contornar por URL direta.\n- Se o link ou registro estiver indisponível, retorne à origem para verificar o contexto; não altere tokens para procurar outros registros.\n- Em falha de gravação ou integração, verifique a mensagem antes de repetir. Não compartilhe senha, token ou dados pessoais em chamados.\n\n## Relacionados\n- [Visão geral do Core](/ajuda/core/visao-geral)\n- [Permissões do Core](/ajuda/core/permissoes)\n- Módulo responsável: `crm`; consulte os artigos desse módulo em `/ajuda/crm`.\n\n![Tela: capturar /settings/surveys com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/crm/abrir-pesquisas-pelas-configuracoes.webp)"
+  },
+  {
+    "module_key": "crm",
+    "slug": "acompanhar-ligacoes-inbox",
+    "title": "Acompanhar ligações pela Inbox",
+    "summary": "Ver as ligações das campanhas com duração, resumo, áudio, transcrição e reunião marcada.",
+    "article_type": "howto",
+    "route_pattern": "/inbox/ligacoes",
+    "min_permission": null,
+    "audience": "internal",
+    "sort_order": 305,
+    "version": 1,
+    "is_published": true,
+    "body_md": "# Acompanhar ligações pela Inbox\n**Para que serve:** Ver todas as ligações das campanhas em uma lista própria, como no WhatsApp e no E-mail.\n**Quem pode fazer:** Quem já vê a Inbox unificada; cada pessoa vê somente as ligações das conversas a que tem acesso.\n**Onde fica:** Menu > TechSales > Inbox unificada > Ligações (`/inbox/ligacoes`).\n**Antes de começar:** Tenha uma campanha de ligações em andamento.\n\n## Passo a passo\n1. Abra \"Ligações\" no menu da Inbox.\n2. Busque pelo nome ou telefone, se necessário.\n3. Selecione a ligação para ver duração, resumo, áudio, transcrição e reunião marcada.\n4. Use \"Abrir no canal\" para continuar a conversa pelo WhatsApp.\n\n## Resultado esperado\nA ligação aparece na lista com o resumo e os detalhes completos ao ser selecionada.\n\n## Regras e limites\n- A tela é somente leitura: ligações não têm resposta direta.\n- Ligações seguem as mesmas permissões da Inbox unificada.\n\n## Erros comuns\n- **Lista vazia:** ainda não há ligações nas conversas que você pode ver.\n\n## Relacionados\n- [Atender pela Inbox unificada](atender-inbox-unificada)"
   },
   {
     "module_key": "crm",

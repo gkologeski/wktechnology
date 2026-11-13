@@ -51,6 +51,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/inbox/whatsapp": ["techsales.inbox.whatsapp"],
   "/inbox/linkedin": ["techsales.inbox.linkedin"],
   "/inbox/chat": ["techsales.inbox.chat"],
+  "/inbox/ligacoes": ["techsales.marketing.campaigns", "techsales.prospecting_voice"],
   "/communications": ["techsales.communications"],
   "/notes": ["techsales.notes"],
   "/meetings": ["techsales.meetings"],

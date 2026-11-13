@@ -1,4 +1,5 @@
 // Signatário legal + CPF do contato (SIGNATARIO-CONTATO). Usados nos contratos e propostas.
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -17,6 +18,14 @@ type Props = {
 };
 
 export function ContactSignerFields({ contactId, customFields, disabled, onSaved }: Props) {
+  const permissions = usePermissions();
+  const cannotEdit =
+    disabled ||
+    !permissions.canAny([
+      "techsales.contacts.update.own",
+      "techsales.contacts.update.team",
+      "techsales.contacts.update.workspace",
+    ]);
   const saveFn = useServerFn(setCustomFieldValue);
   const isSigner = String(customFields?.signatario_legal ?? "") === "true";
   const savedCpf = typeof customFields?.cpf === "string" ? customFields.cpf : "";
@@ -24,9 +33,12 @@ export function ContactSignerFields({ contactId, customFields, disabled, onSaved
   const [busy, setBusy] = useState(false);
 
   const save = async (key: string, value: unknown) => {
+    if (cannotEdit) return;
     setBusy(true);
     try {
-      await saveFn({ data: { entity: "contacts", entity_id: contactId, key, value: value as never } });
+      await saveFn({
+        data: { entity: "contacts", entity_id: contactId, key, value: value as never },
+      });
       toast.success("Atualizado");
       onSaved?.();
     } catch (e) {
@@ -57,7 +69,7 @@ export function ContactSignerFields({ contactId, customFields, disabled, onSaved
         <Switch
           id={`signer-${contactId}`}
           checked={isSigner}
-          disabled={disabled || busy}
+          disabled={cannotEdit || busy}
           onCheckedChange={(v) => void save("signatario_legal", v ? true : null)}
         />
       </div>
@@ -69,7 +81,7 @@ export function ContactSignerFields({ contactId, customFields, disabled, onSaved
             inputMode="numeric"
             placeholder="000.000.000-00"
             maxLength={14}
-            disabled={disabled || busy}
+            disabled={cannotEdit || busy}
             value={cpf}
             onChange={(e) => setCpf(formatCpf(e.target.value))}
             onKeyDown={(e) => e.key === "Enter" && saveCpf()}
@@ -77,7 +89,7 @@ export function ContactSignerFields({ contactId, customFields, disabled, onSaved
           <Button
             size="sm"
             variant="outline"
-            disabled={disabled || busy || cpf === savedCpf}
+            disabled={cannotEdit || busy || cpf === savedCpf}
             onClick={saveCpf}
           >
             Salvar

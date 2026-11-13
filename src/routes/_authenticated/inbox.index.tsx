@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { UnifiedInboxPage } from "@/components/inbox/unified-inbox-page";
 
-
 export const Route = createFileRoute("/_authenticated/inbox/")({
   head: () => ({
     meta: [
@@ -19,6 +18,5 @@ export const Route = createFileRoute("/_authenticated/inbox/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: UnifiedInboxPage,
+  component: () => <UnifiedInboxPage />,
 });
-

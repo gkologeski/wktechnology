@@ -2472,6 +2472,13 @@
       "when": 1794592843427,
       "tag": "0352_inbox_unified_calls",
       "breakpoints": true
+    },
+    {
+      "idx": 353,
+      "version": "7",
+      "when": 1794598487231,
+      "tag": "0353_sales_timeline_batch_reads",
+      "breakpoints": true
     }
   ]
 }
