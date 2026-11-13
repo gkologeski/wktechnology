@@ -138,5 +138,7 @@ export const CreateFromImportSchema = z.object({
   fields: ExtractedContractSchema,
   source_file_path: z.string().nullable().optional(),
   imported_from: z.enum(["pdf", "docx"]),
+  /** Corpo lido do arquivo (HTML); o servidor filtra antes de gravar. */
+  body_html: z.string().max(400_000).nullable().optional(),
 });
 export type CreateFromImportInput = z.infer<typeof CreateFromImportSchema>;

@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 23
-version: 4
+version: 5
 is_published: true
 ---
 # Importar e revisar um contrato PDF ou DOCX
@@ -29,6 +29,7 @@ is_published: true
 Rascunho criado na extração e atualizado após a finalização.
 
 ## Regras e limites
+- O texto do arquivo preenche o corpo do contrato: DOCX mantém a formatação; PDF vira parágrafos simples (PDF digitalizado, sem texto, deixa o corpo em branco). Revise o corpo antes de enviar.
 - A extração exige permissão de gerenciamento de importações; o diálogo bloqueia a chamada quando o acesso está ausente. As verificações do servidor e do banco continuam obrigatórias.
 - O rascunho é criado antes da revisão. Cancelar ou fechar não o apaga.
 - "Voltar" retorna ao upload; não é desfazer a criação.

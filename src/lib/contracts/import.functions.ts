@@ -390,6 +390,13 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       import_confidence: f.confidence ?? null,
     };
 
+    if (data.body_html) {
+      const { sanitizeTemplateHtml } = await import("@/lib/contracts/template-html-format");
+      const { hasBodyText } = await import("@/lib/contracts/import-body");
+      const clean = sanitizeTemplateHtml(data.body_html);
+      if (hasBodyText(clean)) insertPayload.body_html = clean;
+    }
+
     const { data: row, error } = await supabase
       .from("contracts")
       .insert(insertPayload as never)

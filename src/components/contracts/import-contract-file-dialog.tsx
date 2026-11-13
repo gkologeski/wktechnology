@@ -44,6 +44,7 @@ import {
 } from "@/components/contracts/import-progress";
 import type { ExtractedContract } from "@/lib/contracts/import-schemas";
 import { buildImportPatch } from "@/lib/contracts/import-patch";
+import { hasBodyText, plainTextToBodyHtml } from "@/lib/contracts/import-body";
 import {
   PAYMENT_METHODS,
   SERVICE_LOCATIONS,
@@ -86,6 +87,62 @@ async function docxToText(file: File): Promise<string> {
   const buf = await file.arrayBuffer();
   const { value } = await mammoth.extractRawText({ arrayBuffer: buf });
   return value ?? "";
+}
+
+/** Corpo do .docx com a formatação; se falhar, conversão simples. */
+async function docxToBodyHtml(file: File): Promise<string | null> {
+  const buf = await file.arrayBuffer();
+  try {
+    const [{ unzipSync, strFromU8 }, { docxXmlToHtml }] = await Promise.all([
+      import("fflate"),
+      import("@/lib/contracts/docx-formatted-html"),
+    ]);
+    const files = unzipSync(new Uint8Array(buf));
+    const read = (n: string) => (files[n] ? strFromU8(files[n]) : undefined);
+    const document = read("word/document.xml");
+    if (document) {
+      const html = docxXmlToHtml({
+        document,
+        numbering: read("word/numbering.xml"),
+        styles: read("word/styles.xml"),
+      });
+      if (hasBodyText(html)) return html;
+    }
+  } catch {
+    // segue para a conversão simples
+  }
+  try {
+    const mammoth = await import("mammoth/mammoth.browser");
+    const { value } = await mammoth.convertToHtml({ arrayBuffer: buf });
+    return hasBodyText(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Texto integral do PDF em parágrafos (PDF digitalizado sem texto devolve null). */
+async function pdfToBodyHtml(file: File): Promise<string | null> {
+  try {
+    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    const workerUrl = (await import("pdfjs-dist/legacy/build/pdf.worker.mjs?url")).default;
+    (pdfjs as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc =
+      workerUrl;
+    const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+    const pages: string[] = [];
+    for (let i = 1; i <= doc.numPages; i++) {
+      const page = await doc.getPage(i);
+      const tc = await page.getTextContent();
+      pages.push(
+        (tc.items as Array<{ str?: string; hasEOL?: boolean }>)
+          .map((it) => (typeof it.str === "string" ? it.str : "") + (it.hasEOL ? "\n" : ""))
+          .join(""),
+      );
+    }
+    const html = plainTextToBodyHtml(pages.join("\n\n"));
+    return hasBodyText(html) ? html : null;
+  } catch {
+    return null;
+  }
 }
 
 export function ImportContractFileDialog({ open, onOpenChange }: Props) {
@@ -205,12 +262,15 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
       // Persistir rascunho imediatamente para não perder o trabalho se a aba fechar.
       setProgress(progressFor("storing"));
       const path = await uploadOriginal(file);
+      const bodyHtml = kind === "pdf" ? await pdfToBodyHtml(file) : await docxToBodyHtml(file);
+      if (!bodyHtml) toast.warning("Não foi possível ler o texto do arquivo para o corpo do contrato.");
       setProgress(progressFor("draft"));
       const result = await createFromImport({
         data: {
           fields: extracted,
           source_file_path: path,
           imported_from: kind,
+          body_html: bodyHtml,
         },
       });
 
