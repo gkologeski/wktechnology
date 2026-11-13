@@ -31,6 +31,22 @@ export function transportCapabilities(
     context.isError
   )
     return denied;
+  if (channel === "linkedin") {
+    const view =
+      context.can("system.linkedin.view.own") || context.can("system.linkedin.view.workspace");
+    const manage =
+      view &&
+      (context.can("system.linkedin.manage.own") ||
+        context.can("system.linkedin.manage.workspace"));
+    return {
+      view,
+      create: manage,
+      update: manage,
+      remove: manage,
+      manage,
+      compose: manage && context.can("techsales.inbox.linkedin.create.own"),
+    };
+  }
   if (channel === "email") {
     const allowed = (action: string) => scopeAllows(context, "techsales.email_accounts", action);
     if (!allowed("view")) return denied;

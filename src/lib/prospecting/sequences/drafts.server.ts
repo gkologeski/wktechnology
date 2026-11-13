@@ -1,3 +1,4 @@
+import { linkedinProfileIdentifier } from "@/lib/unipile/profile-address";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { assertSalesArea } from "@/lib/access-control/sales-core.server";
 import { workRpc } from "@/lib/access-control/work-core.server";
@@ -61,6 +62,9 @@ export async function previewDraftAudience(
     truncated,
     email: rows.filter((r) => r.values[`${r.sourceType}.email`]?.trim()).length,
     phone: rows.filter((r) => r.phones?.some((p) => p?.trim()) || r.phone?.trim()).length,
+    linkedin: rows.filter(
+      (r) => !!linkedinProfileIdentifier(r.values[`${r.sourceType}.linkedin_url`]),
+    ).length,
     whatsapp: buildAudience(rows, {}, new Set()).recipients.length,
     samples: rows.slice(0, 8).map((r) => ({ id: r.sourceId, name: r.label })),
   };

@@ -9,7 +9,15 @@ const mocks = vi.hoisted(() => ({
 vi.mock("@/integrations/supabase/client.server", () => ({
   supabaseAdmin: { rpc: mocks.rpc, from: () => ({ update: mocks.update, insert: mocks.insert }) },
 }));
-import { sendLinkedinMessage, fetchProfile, verifyApiKey } from "./client.server";
+import {
+  sendLinkedinMessage,
+  sendLinkedinChatReply,
+  listLinkedinChats,
+  getLinkedinChatMessage,
+  normalizeSendMessageResult,
+  fetchProfile,
+  verifyApiKey,
+} from "./client.server";
 const ctx = { accountId: "account", ownerId: "owner", unipileAccountId: "provider" };
 beforeEach(() => {
   vi.resetAllMocks();
@@ -44,6 +52,11 @@ it("reserves a durable delivery before the provider request and confirms the rec
   );
   expect(mocks.rpc.mock.calls[1][1].p_status).toBe("sent");
   expect(mocks.fetch.mock.calls[0][1].redirect).toBe("manual");
+  expect(mocks.fetch.mock.calls[0][0]).toContain("/provider/inboxes/CLASSIC_PRIMARY/chats/send");
+  expect(JSON.parse(mocks.fetch.mock.calls[0][1].body)).toEqual({
+    users_ids: "recipient",
+    text: "Hello",
+  });
 });
 it("returns a confirmed receipt without sending again", async () => {
   mocks.rpc.mockResolvedValue({
@@ -90,4 +103,51 @@ it("credential validation never redirects the API key", async () => {
   await expect(verifyApiKey()).resolves.toMatchObject({ ok: false, status: 302 });
   expect(mocks.fetch.mock.calls[0][1].redirect).toBe("manual");
   expect(mocks.fetch.mock.calls[0][1].signal).toBeDefined();
+});
+
+it("never treats a chat identifier as a confirmed message receipt", () => {
+  expect(normalizeSendMessageResult({ object: "Chat", id: "chat-only" })).toEqual({
+    messageId: null,
+    chatId: "chat-only",
+  });
+  expect(normalizeSendMessageResult({ chat_id: "chat-only" })).toEqual({
+    messageId: null,
+    chatId: "chat-only",
+  });
+});
+it("replies to the exact chat with a stable operation key", async () => {
+  mocks.fetch.mockResolvedValue(Response.json({ id: "reply" }));
+  await sendLinkedinChatReply(ctx, {
+    chatId: "existing/chat",
+    text: "Teste",
+    requestKey: "stable-key",
+  });
+  expect(mocks.fetch.mock.calls[0][0]).toContain("/provider/chats/existing%2Fchat/messages/send");
+  expect(JSON.parse(mocks.fetch.mock.calls[0][1].body)).toMatchObject({ text: "Teste" });
+});
+
+it("lists personal LinkedIn chats through its Classic inbox", async () => {
+  mocks.fetch.mockResolvedValue(Response.json({ data: [] }));
+  await listLinkedinChats(ctx, { limit: 20 });
+  expect(mocks.fetch.mock.calls[0][0]).toContain(
+    "/provider/inboxes/CLASSIC_PRIMARY/chats?limit=20",
+  );
+});
+it("normalizes the ChatStarted receipt confirmed by the provider", () => {
+  expect(
+    normalizeSendMessageResult({
+      object: "ChatStarted",
+      chat_id: "CLASSIC_chat",
+      message_id: "CLASSIC_message",
+    }),
+  ).toEqual({ chatId: "CLASSIC_chat", messageId: "CLASSIC_message" });
+});
+
+it("hydrates only the exact opaque chat and message identifiers", async () => {
+  mocks.fetch.mockResolvedValue(Response.json({ id: "message" }));
+  await getLinkedinChatMessage(ctx, { chatId: "CLASSIC_a/b=", messageId: "CLASSIC_m/=" });
+  expect(mocks.fetch.mock.calls[0][0]).toContain(
+    "/provider/chats/CLASSIC_a%2Fb%3D/messages/CLASSIC_m%2F%3D",
+  );
+  expect(mocks.rpc.mock.calls[0][0]).toBe("unipile_request_reserve");
 });

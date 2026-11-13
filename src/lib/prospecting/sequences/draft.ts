@@ -44,6 +44,15 @@ export const stepSchema = z.discriminatedUnion("type", [
   z
     .object({
       ...stepBase,
+      type: z.literal("linkedin"),
+      accountId: nullableId,
+      body: text(8000),
+      agentId: nullableId,
+    })
+    .strict(),
+  z
+    .object({
+      ...stepBase,
       type: z.literal("wait"),
       duration: z.number().int().min(1).max(365),
       unit: z.enum(["minutes", "hours", "days", "business_days"]),
@@ -66,7 +75,14 @@ export const stepSchema = z.discriminatedUnion("type", [
     .object({
       ...stepBase,
       type: z.literal("condition"),
-      criteria: z.enum(["replied", "has_email", "has_whatsapp", "call_answered", "meeting_booked"]),
+      criteria: z.enum([
+        "replied",
+        "has_email",
+        "has_whatsapp",
+        "has_linkedin",
+        "call_answered",
+        "meeting_booked",
+      ]),
       yes: z.enum(["agent", "human", "end", "next"]),
       no: z.enum(["next", "human", "end"]),
     })
@@ -170,6 +186,7 @@ export type SequenceDraft = {
   can_edit: boolean;
 };
 export const STEP_LABELS: Record<SequenceStep["type"], string> = {
+  linkedin: "LinkedIn",
   email: "Enviar e-mail",
   whatsapp: "Enviar WhatsApp",
   wait: "Aguardar resposta",
@@ -182,6 +199,8 @@ export const STEP_LABELS: Record<SequenceStep["type"], string> = {
 export function newStep(type: SequenceStep["type"]): SequenceStep {
   const base = { id: crypto.randomUUID(), title: STEP_LABELS[type] };
   switch (type) {
+    case "linkedin":
+      return { ...base, type, accountId: null, body: "", agentId: null };
     case "email":
       return { ...base, type, accountId: null, subject: "", body: "", thread: "new" };
     case "whatsapp":

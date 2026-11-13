@@ -675,15 +675,20 @@ export function normalizeSendMessageResult(res: any): {
   chatId: string | null;
 } {
   const node = res?.data ?? res ?? {};
-  const chatId = pickString(node.chat_id, node.chat?.id, res?.chat_id);
+  const chatId = pickString(
+    node.chat_id,
+    node.chat?.id,
+    res?.chat_id,
+    node.object === "Chat" ? node.id : null,
+  );
   const messageId = pickString(
     node.message_id,
     node.message?.id,
     res?.message_id,
-    // v2 devolve apenas `id` do recurso criado.
-    node.id,
+    // A Chat.id is never proof of message delivery. Reply endpoints return Message.id.
+    node.object === "Chat" ? null : node.id,
   );
-  return { messageId: messageId ?? chatId, chatId };
+  return { messageId, chatId };
 }
 
 /**
@@ -710,12 +715,12 @@ export async function sendLinkedinMessage(
   ctx: ThrottleCtx,
   params: { attendeeProviderId: string; text: string; requestKey?: string },
 ) {
-  // v2: POST /:account_id/chats/send — os destinatários vão em `users_ids`.
+  // LinkedIn personal Classic requires an inbox-scoped start; a scalar recipient means 1:1, not a group.
   return call(ctx, {
     endpoint: "message.send",
     method: "POST",
-    path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats/send`,
-    body: { users_ids: [params.attendeeProviderId], text: params.text },
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/inboxes/CLASSIC_PRIMARY/chats/send`,
+    body: { users_ids: params.attendeeProviderId, text: params.text },
     requestKey: params.requestKey,
   });
 }
@@ -741,6 +746,28 @@ export async function sendLinkedinInvite(
   });
 }
 
+/** Reply to the exact existing chat, never create an unrelated conversation. */
+export async function sendLinkedinChatReply(
+  ctx: ThrottleCtx,
+  params: {
+    chatId: string;
+    text: string;
+    requestKey: string;
+    attachments?: Array<{ filename: string; content_type: string; data: string }>;
+  },
+) {
+  return call(ctx, {
+    endpoint: "message.send",
+    method: "POST",
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats/${encodeURIComponent(params.chatId)}/messages/send`,
+    body: {
+      text: params.text,
+      ...(params.attachments?.length ? { attachments: params.attachments } : {}),
+    },
+    requestKey: params.requestKey,
+  });
+}
+
 /** Lista chats (inbox) da conta LinkedIn conectada. */
 export async function listLinkedinChats(
   ctx: ThrottleCtx,
@@ -749,7 +776,7 @@ export async function listLinkedinChats(
   return call(ctx, {
     endpoint: "chat.list",
     method: "GET",
-    path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats`,
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/inboxes/CLASSIC_PRIMARY/chats`,
     query: { limit: params.limit ?? 20, cursor: params.cursor },
   });
 }
@@ -764,6 +791,18 @@ export async function listLinkedinChatMessages(
     method: "GET",
     path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats/${encodeURIComponent(params.chatId)}/messages`,
     query: { limit: params.limit ?? 50, cursor: params.cursor },
+  });
+}
+
+/** Fetch a single known chat message through the same private quota boundary. */
+export async function getLinkedinChatMessage(
+  ctx: ThrottleCtx,
+  params: { chatId: string; messageId: string },
+) {
+  return call(ctx, {
+    endpoint: "chat.list",
+    method: "GET",
+    path: `/${encodeURIComponent(ctx.unipileAccountId)}/chats/${encodeURIComponent(params.chatId)}/messages/${encodeURIComponent(params.messageId)}`,
   });
 }
 

@@ -21,6 +21,7 @@ export type ExecutionSignals = {
   hasPhone: boolean;
   callResultKnown?: boolean;
   hasEmail: boolean;
+  hasLinkedin?: boolean;
   hasWhatsApp: boolean;
   /** Número do cadastro bloqueado por recusa da Meta (131026/131049): etapa pulada com esse motivo. */
   whatsAppSuppressed?: "no_whatsapp" | "engagement_limit" | null;
@@ -146,12 +147,13 @@ export function decideExecution(input: {
   const previousOutreach = d.steps
     .slice(0, cursor)
     .reverse()
-    .find((s) => s.type === "email" || s.type === "whatsapp");
+    .find((s) => s.type === "email" || s.type === "whatsapp" || s.type === "linkedin");
   const responseAgent =
     s.responseAgentId !== undefined
       ? s.responseAgentId
-      : (previousOutreach?.type === "whatsapp" ? previousOutreach.agentId : null) ||
-        d.settings.agentId;
+      : (previousOutreach?.type === "whatsapp" || previousOutreach?.type === "linkedin"
+          ? previousOutreach.agentId
+          : null) || d.settings.agentId;
   if (s.replied && d.settings.stopOnReply) {
     const agentId = responseAgent;
     if (step?.type === "wait" && step.onReply === "human") return stop("human", "reply");
@@ -191,6 +193,7 @@ export function decideExecution(input: {
       replied: s.replied,
       has_email: s.hasEmail,
       has_whatsapp: s.hasWhatsApp,
+      has_linkedin: !!s.hasLinkedin,
       call_answered: s.callAnswered,
       meeting_booked: s.meetingBooked,
     };
@@ -202,6 +205,7 @@ export function decideExecution(input: {
         : stop("blocked", "agent_missing");
     return stop(branch === "end" ? "completed" : "human", "condition");
   }
+  if (step.type === "linkedin" && !s.hasLinkedin) return next(now, "missing_linkedin");
   if (step.type === "email" && !s.hasEmail) return next(now, "missing_email");
   if (step.type === "whatsapp" && !s.hasWhatsApp)
     return next(
@@ -228,5 +232,11 @@ export function decideExecution(input: {
 export class SequenceNotStartedError extends Error {
   constructor(public readonly code: "source_changed_before_send" | "sender_changed_before_send") {
     super(code);
+  }
+}
+
+export class SequenceDeferredError extends Error {
+  constructor(public dueAt: string) {
+    super("provider_backpressure");
   }
 }

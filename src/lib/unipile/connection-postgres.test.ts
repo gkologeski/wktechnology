@@ -13,8 +13,10 @@ it("enforces connection correlation, concurrent limits, receipts and private log
     production_connections: number;
   };
   expect(result.production_connections).toBe(0);
-  expect(result.count).toBeGreaterThanOrEqual(42);
+  expect(result.count).toBeGreaterThanOrEqual(67);
   expect(result.passed).toContain("daily quota holds under eight concurrent reads");
   expect(result.passed).toContain("uncertain delivery never automatically repeated");
   expect(result.passed).toContain("logs deny inactive");
+  expect(result.passed).toContain("sequence response keeps its selected agent and stops followup");
+  expect(result.passed).toContain("new nonce cannot bypass unresolved personal account delivery");
 }, 120000);

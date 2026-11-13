@@ -6,7 +6,7 @@
 // v2: o payload traz `event_type` (ex.: "account.connected",
 // "messaging.message_received") e é reduzido: normalmente só identificadores
 // (account_id, chat_id, message_id, state) + timestamp. Quando faltam dados
-// da mensagem, hidratamos via GET /v2/{account_id}/messages/{message_id}.
+// da mensagem, hidratamos via GET /v2/{account_id}/chats/{chat_id}/messages/{message_id}.
 //
 // Server-only.
 
@@ -49,7 +49,7 @@ function str(v: unknown): string {
 
 function firstString(...values: unknown[]): string | null {
   for (const v of values) {
-    if (v === null || v === undefined) continue;
+    if (typeof v !== "string" && typeof v !== "number") continue;
     const s = String(v).trim();
     if (s) return s;
   }
@@ -65,6 +65,7 @@ function classify(eventType: string): UnipileWebhookKind {
     e.includes("message_received") ||
     e.includes("new_message") ||
     e === "message.received" ||
+    e === "message.new" ||
     e === "messaging.received" ||
     e === "messaging.message_received" ||
     e === "message"
@@ -74,8 +75,12 @@ function classify(eventType: string): UnipileWebhookKind {
   // v2 sinaliza envio/leitura com o mesmo prefixo — não são respostas.
   if (e.startsWith("message") || e.startsWith("messaging")) return "unknown";
 
+  // Initial history sync does not determine whether a live account can receive messages.
+  if (e.startsWith("account.initial_sync.")) return "unknown";
+  if (e === "account.locked") return "account_failed";
+
   // --- Conta ---
-  if (e.includes("disconnect")) return "account_disconnected";
+  if (e === "account.remove" || e.includes("disconnect")) return "account_disconnected";
   if (e.includes("credentials_invalid") || e.includes("credentials.invalid")) {
     return "account_disconnected";
   }
@@ -97,6 +102,7 @@ function isSelfSent(payload: any): boolean {
     isSender === "1" ||
     direction === "out" ||
     direction === "outgoing" ||
+    direction === "outbound" ||
     payload?.sender?.is_self === true
   );
 }
@@ -120,6 +126,7 @@ export function parseUnipileWebhook(payload: any): NormalizedUnipileEvent {
     payload?.account_id,
     payload?.account?.id,
     payload?.data?.account_id,
+    payload?.payload?.account_id,
   );
 
   const connectToken = firstString(
@@ -137,7 +144,7 @@ export function parseUnipileWebhook(payload: any): NormalizedUnipileEvent {
 
   let message: NormalizedUnipileEvent["message"] = null;
   if (kind === "message_received") {
-    const node = payload?.message ?? payload?.data ?? payload;
+    const node = payload?.payload ?? payload?.message ?? payload?.data ?? payload;
     const senderProviderId = firstString(
       payload?.sender?.provider_id,
       payload?.sender_id,
@@ -163,8 +170,8 @@ export function parseUnipileWebhook(payload: any): NormalizedUnipileEvent {
       chatId,
       senderProviderId,
       text,
-      isSelfSent: isSelfSent(payload),
-      needsHydration: !senderProviderId && !!messageId,
+      isSelfSent: isSelfSent(payload) || isSelfSent(node),
+      needsHydration: (!senderProviderId || text === null || !chatId) && !!messageId,
     };
   }
 
@@ -173,37 +180,36 @@ export function parseUnipileWebhook(payload: any): NormalizedUnipileEvent {
 
 /**
  * Hidrata os dados da mensagem quando o webhook envia payload reduzido.
- * GET /v2/{account_id}/messages/{message_id}
- * Falhas são silenciosas (retorna null) — o handler segue com o que tem.
+ * GET /v2/{account_id}/chats/{chat_id}/messages/{message_id}
+ * A falha retorna null e o handler responde 503; nunca confirma ingestão incompleta.
  */
 export async function hydrateV2Message(
   unipileAccountId: string,
   messageId: string,
+  chatId: string | null,
 ): Promise<{
   senderProviderId: string | null;
   text: string | null;
   chatId: string | null;
   isSelfSent: boolean;
 } | null> {
-  const key = process.env.UNIPILE_API_KEY;
-  if (!key) return null;
-  const base = (process.env.UNIPILE_API_BASE_URL?.trim() || "https://api.unipile.com/v2").replace(
-    /\/$/,
-    "",
-  );
-
+  if (!chatId) return null; // Never guess a global message endpoint or another conversation.
   try {
-    const res = await fetch(
-      `${base}/${encodeURIComponent(unipileAccountId)}/messages/${encodeURIComponent(messageId)}`,
-      {
-        redirect: "manual",
-        signal: AbortSignal.timeout(15000),
-        headers: { "X-API-KEY": key, Accept: "application/json" },
-      },
-    );
-    if (!res.ok) return null;
-    const data: any = await res.json().catch(() => null);
-    if (!data) return null;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { loadAccountCtx, getLinkedinChatMessage } = await import("./client.server");
+    const account = await supabaseAdmin
+      .from("unipile_accounts")
+      .select("owner_id,workspace_id,status")
+      .eq("unipile_account_id", unipileAccountId)
+      .maybeSingle();
+    if (account.error || !account.data?.workspace_id || account.data.status !== "connected")
+      return null;
+    const ctx = await loadAccountCtx(account.data.owner_id, account.data.workspace_id);
+    if (ctx.unipileAccountId !== unipileAccountId) return null;
+    const raw: any = await getLinkedinChatMessage(ctx, { chatId, messageId });
+    const data = raw?.data ?? raw;
+    if (!data || (data.id && data.id !== messageId) || (data.chat_id && data.chat_id !== chatId))
+      return null;
     return {
       senderProviderId: firstString(
         data.sender_id,
@@ -211,7 +217,7 @@ export async function hydrateV2Message(
         data.sender_attendee_id,
       ),
       text: firstString(data.text, data.body),
-      chatId: firstString(data.chat_id),
+      chatId: firstString(data.chat_id, chatId),
       isSelfSent: isSelfSent(data),
     };
   } catch {

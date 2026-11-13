@@ -133,9 +133,9 @@ async function audienceIds(
 
 const SELECT: Record<AudienceBase, string> = {
   leads:
-    "id, first_name, last_name, email, phone, mobile_phone, whatsapp_e164, job_title, cargo_resumido, area_atuacao, nivel_hierarquico, company_name, source, status, company_id, assigned_to, converted_contact_id, converted_deal_id, created_at",
+    "id, first_name, last_name, email, linkedin_url, phone, mobile_phone, whatsapp_e164, job_title, cargo_resumido, area_atuacao, nivel_hierarquico, company_name, source, status, company_id, assigned_to, converted_contact_id, converted_deal_id, created_at",
   contacts:
-    "id, first_name, last_name, email, phone, mobile_phone, whatsapp_e164, job_title, cargo_resumido, area_atuacao, nivel_hierarquico, city, state, company_id, assigned_to, created_at",
+    "id, first_name, last_name, email, linkedin_url, phone, mobile_phone, whatsapp_e164, job_title, cargo_resumido, area_atuacao, nivel_hierarquico, city, state, company_id, assigned_to, created_at",
   companies: "id, name, industry, size_description, city, state, website, phone, assigned_to",
   deals:
     "id, name, service_line, source, stage, value, company_id, primary_contact_id, assigned_to, created_at, closed_at",
@@ -384,6 +384,7 @@ export async function loadAudienceRows(
     "lead.last_name": l?.last_name,
     "lead.full_name": l ? fullName(l.first_name, l.last_name) : null,
     "lead.email": l?.email,
+    "lead.linkedin_url": l?.linkedin_url,
     "lead.job_title": l?.job_title,
     "lead.cargo_resumido": l?.cargo_resumido,
     "lead.area_atuacao": l?.area_atuacao,
@@ -406,6 +407,7 @@ export async function loadAudienceRows(
     "contact.last_name": c?.last_name,
     "contact.full_name": c ? fullName(c.first_name, c.last_name) : null,
     "contact.email": c?.email,
+    "contact.linkedin_url": c?.linkedin_url,
     "contact.job_title": c?.job_title,
     "contact.cargo_resumido": c?.cargo_resumido,
     "contact.area_atuacao": c?.area_atuacao,

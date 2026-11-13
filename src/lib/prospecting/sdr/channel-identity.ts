@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Persona } from "./persona";
 
-export const ServiceChannelSchema = z.enum(["whatsapp", "email", "chat"]);
+export const ServiceChannelSchema = z.enum(["whatsapp", "email", "chat", "linkedin"]);
 export type ServiceChannel = z.infer<typeof ServiceChannelSchema>;
 
 /** Metadata supplied by the server after resolving the authorized channel account. */

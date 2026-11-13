@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/linkedin
 min_permission: system.linkedin.view.own
 audience: internal
 sort_order: 136
-version: 1
+version: 2
 is_published: true
 ---
 # Conectar o LinkedIn pessoal
@@ -44,7 +44,7 @@ Timeout ou resultado incerto de envio fica bloqueado para reconciliação, sem r
 
 Contas novas usam um escopo pessoal da Unipile. Contas legadas conhecidas reconectam no lugar, sem atribuição permanente automática a outro escopo. Desconectar no TechERP interrompe o uso local; não exclui a conta na Unipile.
 
-Este pacote não adiciona LinkedIn à Inbox comercial, ao Agente SDR ou às sequências de prospecção. Esses recursos dependem dos pacotes seguintes.
+Após habilitar sua conta em Canais, utilize a [Inbox LinkedIn](/ajuda/crm/atender-linkedin), vincule um agente publicado e selecione essa conta nas etapas LinkedIn das sequências. Cada área exige suas próprias permissões. Envios com resultado incerto bloqueiam novas tentativas da conta até conciliação; alterar o texto não contorna essa proteção.
 
 ## Erros comuns
 - Se houver acesso negado, confira membership ativo, workspace e permissões da ação; não tente contornar por URL direta.

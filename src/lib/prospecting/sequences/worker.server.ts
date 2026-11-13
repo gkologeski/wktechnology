@@ -1,3 +1,4 @@
+import { linkedinProfileIdentifier } from "@/lib/unipile/profile-address";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import { definitionSchema, type SequenceDefinition, type SequenceStep } from "./draft";
@@ -10,6 +11,7 @@ import {
 import {
   decideExecution,
   SequenceNotStartedError,
+  SequenceDeferredError,
   type ExecutionDecision,
   type ExecutionSignals,
   type ExecutionState,
@@ -29,7 +31,7 @@ export type RuntimeContext = {
   run: SequenceRun;
   definition: SequenceDefinition;
   person: { id: string; entity: "lead" | "contact" };
-  source: { email: string | null; phones: (string | null)[] };
+  source: { email: string | null; phones: (string | null)[]; linkedin_url?: string | null };
   signals: Omit<ExecutionSignals, "hasEmail" | "hasWhatsApp" | "hasPhone">;
   /** Bloqueios da Meta (131026/131049) dos telefones da pessoa; carregado só em etapa de WhatsApp. */
   suppressedPhones?: Map<string, SuppressionReason>;
@@ -84,6 +86,7 @@ export async function processSequenceRun(
       signals: {
         ...ctx.signals,
         hasPhone: validPhones.length > 0,
+        hasLinkedin: !!linkedinProfileIdentifier(ctx.source.linkedin_url),
         hasEmail: validateEmailAddress(ctx.source.email).ok,
         hasWhatsApp: whatsapp.pick.status === "ok",
         whatsAppSuppressed: whatsapp.pick.status === "ok" ? null : whatsapp.blockedBy,
@@ -184,6 +187,16 @@ export async function processSequenceRun(
     });
     return { id: run.id, status: advanced ? decision.kind : "stale_lease" };
   } catch (error) {
+    if (error instanceof SequenceDeferredError) {
+      await workRpc(admin, "prospecting_sequence_defer_delivery", {
+        p_run: run.id,
+        p_lease: run.lease_token,
+        p_effect: effect?.id ?? null,
+        p_token: effect?.token ?? null,
+        p_due: error.dueAt,
+      });
+      return { id: run.id, status: "deferred" };
+    }
     if (effect && error instanceof SequenceNotStartedError) {
       await workRpc(admin, "prospecting_sequence_effect_not_started", {
         p_effect: effect.id,

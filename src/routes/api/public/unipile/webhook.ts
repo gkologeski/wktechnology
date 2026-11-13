@@ -91,7 +91,7 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
             return json({ ok: true, event: "unmapped_or_inactive" });
           let msg = event.message!;
           if (msg.needsHydration && msg.messageId) {
-            const full = await hydrateV2Message(unipileAccountId, msg.messageId);
+            const full = await hydrateV2Message(unipileAccountId, msg.messageId, msg.chatId);
             if (!full) return json({ error: "Message hydration unavailable" }, 503);
             msg = {
               ...msg,

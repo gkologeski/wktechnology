@@ -8,7 +8,7 @@ route_pattern: /prospecting/sequences
 min_permission: system.automation.sequences.view.workspace
 audience: internal
 sort_order: 404
-version: 2
+version: 3
 is_published: true
 ---
 # Criar o fluxo de uma sequência multicanal
@@ -44,3 +44,9 @@ Nome até 120 caracteres. "Rascunhos recentes (até 100)" reabre rascunhos. Alte
 - [Configurar canais e planejamento de uma sequência](/ajuda/crm/configurar-canais-planejamento-de-sequencia)
 - [Validar e criar uma versão imutável de sequência](/ajuda/crm/validar-versionar-sequencia)
 - [Reservar o público de uma sequência](/ajuda/crm/reservar-publico-de-sequencia)
+
+## Etapa LinkedIn
+
+Adicione LinkedIn, selecione sua conta habilitada em Canais e escreva a mensagem. As variáveis seguem o mesmo seletor das outras etapas. O público precisa ter uma URL pessoal válida do LinkedIn; pessoas sem esse dado pulam somente essa etapa. Combine com e-mail, WhatsApp, espera e condições na ordem necessária. A etapa envia uma mensagem; não envia convite de conexão nem compra InMail automaticamente. Se o provedor não permitir o contato, a execução registra a falha.
+
+A resposta interrompe a cadência conforme a configuração e passa ao agente escolhido ou ao atendimento humano. O agente precisa estar habilitado para campanhas nessa conta. Limites e pausas Unipile adiam a mesma etapa, sem avançar e sem tentar contornar o bloqueio. Recibos confirmados alimentam a Inbox; resultados incertos exigem conciliação.

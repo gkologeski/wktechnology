@@ -21,5 +21,9 @@ export function bindingIssues(draft: BindingDraft): string[] {
 }
 
 export function campaignsLabel(channel: string): string {
-  return channel === "email" ? "Após sequências e campanhas por e-mail" : "Após campanhas WhatsApp";
+  return channel === "linkedin"
+    ? "Após sequências LinkedIn"
+    : channel === "email"
+      ? "Após sequências e campanhas por e-mail"
+      : "Após campanhas WhatsApp";
 }

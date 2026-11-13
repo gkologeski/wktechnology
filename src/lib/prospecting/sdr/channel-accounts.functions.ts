@@ -55,7 +55,7 @@ export type ServiceAccount = {
   id: string;
   workspace_id: string;
   routing_configured: boolean;
-  channel: "whatsapp" | "email" | "chat";
+  channel: "whatsapp" | "email" | "chat" | "linkedin";
   source_key: string;
   label: string;
   display_name: string;
@@ -180,6 +180,23 @@ export const discoverServiceChannels = createServerFn({ method: "POST" })
         source_key: access.workspace,
         label: "Chat do site",
       });
+    if (access.keys["system.linkedin.view.own"] || access.keys["system.linkedin.view.workspace"]) {
+      const linked = await db
+        .from("unipile_accounts")
+        .select("id,display_name,status")
+        .eq("workspace_id", access.workspace)
+        .eq("owner_id", context.userId)
+        .eq("provider", "linkedin");
+      if (linked.error) throw new Error("Não foi possível consultar a conta LinkedIn.");
+      for (const a of linked.data ?? [])
+        if (a.status === "connected")
+          rows.push({
+            workspace_id: access.workspace,
+            channel: "linkedin",
+            source_key: a.id,
+            label: a.display_name || "Meu LinkedIn",
+          });
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     if (rows.length) {
       const result = await (supabaseAdmin as any)

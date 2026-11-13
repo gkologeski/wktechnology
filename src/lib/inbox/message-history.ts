@@ -1,12 +1,13 @@
 // Histórico de mensagens paginado por conversa: cursor (created_at, id), junção sem
 // duplicar e redutor puro (descarta respostas de outro contexto pela chave).
 
-export type HistoryChannel = "email" | "whatsapp" | "chat";
+export type HistoryChannel = "email" | "whatsapp" | "chat" | "linkedin";
 export type HistoryCursor = { at: string; id: string };
 export type HistoryRow = { id: string; created_at: string };
 export type HistoryPage<Row> = { items: Row[]; hasMore: boolean };
 
 export const HISTORY_PAGE_SIZE: Record<HistoryChannel, number> = {
+  linkedin: 50,
   email: 20,
   whatsapp: 50,
   chat: 50,

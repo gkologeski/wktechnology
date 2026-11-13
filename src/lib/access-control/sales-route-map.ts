@@ -41,6 +41,7 @@ const routes: Record<string, readonly string[]> = {
   "/communications": ["techsales.communications"],
   "/inbox/email": ["techsales.inbox.email"],
   "/inbox/whatsapp": ["techsales.inbox.whatsapp"],
+  "/inbox/linkedin": ["techsales.inbox.linkedin"],
   "/inbox/chat": ["techsales.inbox.chat"],
   "/inbox": ["techsales.inbox.email", "techsales.inbox.whatsapp", "techsales.inbox.chat"],
   "/campaigns/email": ["techsales.marketing.campaigns"],

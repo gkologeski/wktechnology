@@ -61,7 +61,7 @@ async function channel(
   actor: string,
   workspace: string,
   accountId: string,
-  kind: "email" | "whatsapp",
+  kind: "email" | "whatsapp" | "linkedin",
 ): Promise<Account> {
   const access = await requireChannelAccess(client, actor, "view");
   if (access.workspace !== workspace) throw new Error("Conta indisponível.");
@@ -136,7 +136,9 @@ export async function preflightSequenceDefinition(
   if (definition.settings.agentId) agents.add(definition.settings.agentId);
   const senders = new Set(
     definition.steps
-      .flatMap((s) => (s.type === "email" || s.type === "whatsapp" ? [s.accountId] : []))
+      .flatMap((s) =>
+        s.type === "email" || s.type === "whatsapp" || s.type === "linkedin" ? [s.accountId] : [],
+      )
       .filter(Boolean),
   );
   if (senders.size > 10) add(null, "account_limit", "Use até dez contas distintas por sequência.");
@@ -181,6 +183,34 @@ export async function preflightSequenceDefinition(
             "Confira roteiro ativo, número de saída, voz, integração e permissões da telefonia.",
           );
         }
+      }
+      if (step.type === "linkedin" && step.accountId) {
+        try {
+          const { linkedinInboxAccess } = await import("@/lib/unipile/inbox-access");
+          const access = await workRpc<Parameters<typeof linkedinInboxAccess>[0]>(
+            client,
+            "work_access_context",
+            {},
+          );
+          linkedinInboxAccess(access, actor, "create");
+          const a = await channel(client, actor, workspaceId, step.accountId, "linkedin");
+          const owner = await (client as any)
+            .from("unipile_accounts")
+            .select("id,status")
+            .eq("id", a.source_key)
+            .eq("workspace_id", workspaceId)
+            .eq("owner_id", actor)
+            .single();
+          if (owner.error || owner.data?.status !== "connected")
+            throw new Error("Conta pessoal não conectada.");
+        } catch {
+          add(
+            step.id,
+            "linkedin_account_unavailable",
+            "Conecte e habilite sua conta pessoal LinkedIn, com permissão de leitura e envio.",
+          );
+        }
+        if (step.agentId) agents.add(step.agentId);
       }
       if (step.type === "email" && step.accountId && !checkedEmail.has(step.accountId)) {
         checkedEmail.add(step.accountId);
@@ -232,9 +262,13 @@ export async function preflightSequenceDefinition(
         }
         if (step.agentId) agents.add(step.agentId);
       }
-      if ((step.type === "email" || step.type === "whatsapp") && step.accountId) {
+      if (
+        (step.type === "email" || step.type === "whatsapp" || step.type === "linkedin") &&
+        step.accountId
+      ) {
         const agentId =
-          (step.type === "whatsapp" ? step.agentId : null) || definition.settings.agentId;
+          (step.type === "whatsapp" || step.type === "linkedin" ? step.agentId : null) ||
+          definition.settings.agentId;
         if (agentId) {
           const result = await client
             .from("service_channel_bindings" as never)

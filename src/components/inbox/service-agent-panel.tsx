@@ -14,7 +14,7 @@ export function ServiceAgentPanel({
   channel,
   sourceId,
 }: {
-  channel: "email" | "chat";
+  channel: "email" | "chat" | "linkedin";
   sourceId: string;
 }) {
   const permissions = usePermissions();

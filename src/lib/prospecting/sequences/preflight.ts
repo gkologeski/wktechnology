@@ -7,7 +7,10 @@ export function inspectSequence(definition: SequenceDefinition): SequenceIssue[]
   const add = (stepId: string | null, code: string, message: string) =>
     issues.push({ stepId, code, message });
   if (
-    !definition.steps.some((s) => s.type === "email" || s.type === "whatsapp" || s.type === "call")
+    !definition.steps.some(
+      (s) =>
+        s.type === "email" || s.type === "whatsapp" || s.type === "linkedin" || s.type === "call",
+    )
   )
     add(null, "no_outreach", "Inclua ao menos uma etapa de contato.");
   definition.steps.forEach((s, i) => {
@@ -17,6 +20,10 @@ export function inspectSequence(definition: SequenceDefinition): SequenceIssue[]
         "unreachable",
         "Há etapas depois do encerramento; mova o encerramento para o final.",
       );
+    if (s.type === "linkedin") {
+      if (!s.accountId) add(s.id, "sender_missing", "Escolha sua conta LinkedIn.");
+      if (!s.body.trim()) add(s.id, "linkedin_content", "Preencha a mensagem LinkedIn.");
+    }
     if (s.type === "email") {
       if (!s.accountId) add(s.id, "sender_missing", "Escolha a conta de e-mail.");
       if (!s.subject.trim() || !s.body.trim())
@@ -34,7 +41,9 @@ export function inspectSequence(definition: SequenceDefinition): SequenceIssue[]
     }
     if (
       s.type === "agent" &&
-      !definition.steps.slice(0, i).some((p) => p.type === "email" || p.type === "whatsapp")
+      !definition.steps
+        .slice(0, i)
+        .some((p) => p.type === "email" || p.type === "whatsapp" || p.type === "linkedin")
     )
       add(
         s.id,
@@ -44,17 +53,19 @@ export function inspectSequence(definition: SequenceDefinition): SequenceIssue[]
     if (s.type === "wait") {
       if (
         s.source === "previous" &&
-        !definition.steps.slice(0, i).some((p) => ["email", "whatsapp", "call"].includes(p.type))
+        !definition.steps
+          .slice(0, i)
+          .some((p) => ["email", "whatsapp", "linkedin", "call"].includes(p.type))
       )
         add(s.id, "wait_missing_contact", "A espera precisa de uma etapa de contato anterior.");
       const previous = definition.steps
         .slice(0, i)
         .reverse()
-        .find((s) => s.type === "email" || s.type === "whatsapp");
+        .find((s) => s.type === "email" || s.type === "whatsapp" || s.type === "linkedin");
       if (
         s.onReply === "agent" &&
         !definition.settings.agentId &&
-        !(previous?.type === "whatsapp" && previous.agentId)
+        !((previous?.type === "whatsapp" || previous?.type === "linkedin") && previous.agentId)
       )
         add(
           s.id,

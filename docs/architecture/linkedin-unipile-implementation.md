@@ -25,10 +25,10 @@ Escopo autorizado: auditoria e implementação de LinkedIn via Unipile; Facebook
 | A | Auditoria código/banco/documentação e desenho | Auditada; produção só leitura | Concluído nesta frente de auditoria |
 | B | Contas pessoais, owner+tenant, RLS e logs; correção dos bloqueios de lint | Implementado e validado localmente; sem aplicação/publicação | Aceite externo no G |
 | C | Hosted Auth v2, conta exata, state de uso único/expiração, Scope pessoal e reconexão legada; webhook assinado e idempotente | Implementado localmente; teste real com a integradora ainda pendente | Aceite externo no G |
-| D | Reserva atômica, cotas dia/semana/mês, pausa/Retry-After, recibos e adiamento sem pular etapas | Implementado localmente; testes SQL e regressão executados | Aceite externo no G |
-| E | LinkedIn no registry e Inbox; conta pessoal, permissão e associação CRM | Pendente | 6–10 h |
-| F | LinkedIn nas sequências e agentes; conta explícita, interrupção por resposta/recusa | Pendente | 6–10 h |
-| G | Aceite integrado, teste real autorizado e preparação/publicação | Validação local parcial; publicação fora do escopo deste turno | 3–5 h + dependências externas |
+| D | Reserva atômica, cotas dia/semana, pausa/Retry-After, recibos e adiamento sem pular etapas | Implementado localmente; testes SQL e regressão executados | Aceite externo no G |
+| E | LinkedIn no registry e Inbox; conta pessoal, permissão e associação CRM | Implementado; testes SQL, transporte e tela executados em ambiente isolado | Pronto para aceite de publicação |
+| F | LinkedIn nas sequências e agentes; conta explícita, interrupção por resposta/recusa | Implementado; fila SDR e ciclo recibo→resposta→sequência validados em PostgreSQL isolado | Pronto para aceite de publicação |
+| G | Aceite integrado e preparação da publicação | Suíte global e cenários SQL executados; transporte real confirmado; gates da revisão final em encerramento. Publicação proibida neste turno. | Sem implementação funcional pendente; encerrar verificação/build/performance |
 
 Previsão inicial revisada: 24–40 h após auditoria. Restante após B–D: 15–25 h para E–G, mais disponibilidade da integradora para o aceite. A estimativa anterior 16–28 h não abrangia a correção das fronteiras legadas e da assinatura v2. Facebook/Instagram são uma frente posterior; não somar nem duplicar o esforço compartilhado sem novo levantamento.
 
@@ -64,3 +64,42 @@ Fontes verificadas:
 - Tokens de candidatos são consultados com o cliente do usuário, `hr_record_access` e filtro de workspace antes de qualquer chamada externa; histórico exige a mesma visibilidade.
 - Recibos incertos pausam sourcing para revisão; backpressure agenda nova tentativa mantendo a etapa atual.
 - O código está registrado em commits locais; nenhum push, merge ou deploy realizado.
+
+## Revisão integrada de 13/11/2026 — ainda sem publicação
+
+- Inbox pessoal em `/inbox/linkedin`: histórico paginado e realtime filtrado por conversa, resposta na conversa exata, fechamento/reabertura e associação autorizada a Contato/Lead/Empresa/Negócio. Casco White Label compartilhado; testes verificam compositor presente e bloqueio de consulta/envio sem permissão.
+- Canais: descoberta só da conta pessoal no workspace, vínculo ao agente publicado e identidade do canal; receptivo e respostas de sequência configurados separadamente. Nenhuma credencial é copiada para o registro do canal.
+- SDR: mesma fila, persona publicada, ferramentas, auditoria e CAS dos outros canais. Limites adiam resposta; humano assume sem compartilhar a conta pessoal. Materiais privados limitados a 5 MB no LinkedIn.
+- Sequências: etapa LinkedIn com conta explícita, mensagem/variáveis, público compartilhado com URL LinkedIn, condição de perfil disponível, espera por resposta, agente ou humano. Recibo persiste antes da projeção na Inbox. Resposta acorda a sequência e conserva o agente selecionado.
+- Nenhum retry cego: novo texto/nonce não contorna recibo incerto na conta; backpressure só libera lease sem avançar etapa quando o envio não começou.
+- Três permissões próprias da Inbox registradas sem concessão automática: `techsales.inbox.linkedin.view.own`, `.create.own`, `.manage.own`. Conexão pessoal e permissões de sequência/canal continuam obrigatórias.
+- Migrações novas desta revisão: 0342 (Inbox), 0343 (runtime compartilhado), 0344 (sequências). A preparação anterior 0336–0341 também precisa estar aplicada, na ordem do journal. Não reaplicar migrações já registradas.
+
+### Limites explícitos da entrega
+
+A Inbox projeta o journal recebido e envios confirmados pelo TechERP; não importa automaticamente todo o histórico anterior nem envios feitos no aplicativo nativo LinkedIn. A etapa comercial é mensagem, sem convite automático/InMail comprado. O simulador numérico existente cobre e-mail/WhatsApp/chamadas e avisa que as cotas reais LinkedIn podem prolongar a duração. A autorização de envio não é garantia de entrega nem de ausência de restrição pelo provedor.
+
+### Preparação da publicação (não executada)
+
+1. Revisar o commit da branch `codex/linkedin-unipile`, mantendo a main e o aplicativo publicado inalterados até autorização.
+2. No ambiente de destino, confirmar variáveis Unipile já configuradas, escopo pessoal e webhook v2 assinado. Nunca colocar segredos no Git ou no relatório.
+3. Aplicar somente as migrações pendentes 0336–0344 e sincronizar os tipos; publicar o backend/frontend da mesma revisão.
+4. Conferir as chaves da Inbox na matriz, conectar a conta pessoal e atualizar contas em Canais. Habilitar explicitamente a conta e o agente publicado para cada finalidade.
+5. Rodar o aceite no destino: usuário proprietário, sem chave, deny, outro workspace e inativo; enviar somente ao perfil de teste autorizado da Andressa, conferir recibo, resposta na Inbox, pausa da sequência e atendimento humano. Não repetir o teste externo se houver resultado incerto.
+6. Se necessário, desativar o canal/binding e pausar as sequências LinkedIn antes de reverter o código. Preservar tabelas, journal e recibos; não apagar histórico para fazer rollback.
+
+O teste real de credencial no aplicativo existente retornou “Chave da API Unipile válida”. Isso não equivale ao teste de envio/recebimento da revisão nova. O diagnóstico externo único foi solicitado sem autorização de editar arquivos, migrar ou publicar; seu resultado fica registrado no relatório de aceite.
+
+### Correção confirmada no provedor (13/11)
+
+O diagnóstico real encontrou HTTP 501 no endpoint genérico `/{account}/chats/send`. A caixa pessoal habilitada foi consultada antes da correção: `CLASSIC_PRIMARY`. O adaptador de DM agora usa `/{account}/inboxes/CLASSIC_PRIMARY/chats/send` com `users_ids` como string para conversa 1:1, e a listagem usa a mesma caixa. Respostas a conversas existentes continuam usando `/{account}/chats/{chat}/messages/send`. A resposta `ChatStarted` fornece IDs distintos de chat e mensagem; um `Chat.id` isolado nunca é aceito como confirmação de mensagem.
+
+Uma única tentativa corrigida retornou HTTP 200 e a leitura posterior confirmou a mensagem exata e o mesmo recibo. O teste foi somente de transporte com a credencial existente, sem editar código remoto, aplicar migrações ou publicar. Por ser diagnóstico externo à aplicação, não foi inserido artificialmente nos contadores ou na Inbox do ERP. Os fluxos completos de Inbox/canais/SDR/sequências foram exercitados em PostgreSQL isolado. O aceite no aplicativo de destino continua sendo uma verificação pós-implantação, não uma alegação de publicação já realizada.
+
+Fontes do contrato v2: [Start a Chat from Inbox](https://developer.unipile.com/v2.0/reference/startchatfrominbox), [LinkedIn quickstart](https://developer.unipile.com/v2.0/docs/linkedin-quickstart). A entrega usa o produto LinkedIn pessoal Classic; não seleciona automaticamente Sales Navigator, Recruiter ou caixas de páginas de empresa.
+
+### Recebimento v2
+
+A revisão do contrato identificou também o evento `message.new` com o corpo da mensagem em `payload`. O parser agora aceita esse envelope, identifica `is_sender` dentro do payload para ignorar ecos de saída, preserva os eventos legados e não interpreta leitura/edição como resposta. Payload reduzido usa a conta exata, a conversa e a mensagem conhecidas na API v2, passando pela mesma reserva de leitura e verificação do proprietário; IDs divergentes são recusados. Falha de persistência responde 503 para retry idempotente. `account.remove` desativa a conta mapeada e `account.locked` a pausa; falha de sincronização de histórico não equivale a desconexão do atendimento ao vivo.
+
+Contrato: [Event types](https://developer.unipile.com/v2.0/reference/event-types-1) e [Configure a webhook](https://developer.unipile.com/v2.0/docs/configure-a-webhook).

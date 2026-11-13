@@ -35,7 +35,10 @@ export function createDbToolStore(
     jobId: string | null;
     conversationId: string;
     enrollmentId: string | null;
-    conversationReference?: { table: "email_threads" | "live_chat_sessions"; id: string };
+    conversationReference?: {
+      table: "email_threads" | "live_chat_sessions" | "linkedin_conversations";
+      id: string;
+    };
     customerScope?: { leadId: string | null; contactId: string | null };
     restrictCustomerContext?: boolean;
   },

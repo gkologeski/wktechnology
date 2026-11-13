@@ -1,3 +1,4 @@
+import { getLinkedinAccount } from "@/lib/unipile/accounts.functions";
 import { transportCapabilities } from "@/lib/prospecting/sdr/channel-permissions";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -23,6 +24,13 @@ export function ChannelHealth({ account }: { account: ServiceAccount }) {
     permissions,
     account.workspace_id,
   );
+  const linkedinFn = useServerFn(getLinkedinAccount);
+  const linkedin = useQuery({
+    queryKey: ["channel-linkedin-health", permissions.workspaceId, account.id],
+    queryFn: () => linkedinFn(),
+    enabled: account.channel === "linkedin" && canView,
+    refetchInterval: 30000,
+  });
   const waView = account.channel === "whatsapp" && canView;
   const emailView = account.channel === "email" && canView;
   const cloudFn = useServerFn(listCloudConnections);
@@ -66,6 +74,27 @@ export function ChannelHealth({ account }: { account: ServiceAccount }) {
     enabled: account.channel === "email" && emailView,
     staleTime: 30000,
   });
+  if (account.channel === "linkedin")
+    return (
+      <div className="text-xs text-muted-foreground">
+        {linkedin.isError ? (
+          "Não foi possível verificar a conta."
+        ) : linkedin.isPending ? (
+          "Verificando conta…"
+        ) : linkedin.data?.account?.id !== account.source_key ? (
+          "Conta pessoal indisponível"
+        ) : (
+          <>
+            <Badge variant={linkedin.data.account.status === "connected" ? "default" : "secondary"}>
+              {linkedin.data.account.status === "connected" ? "Conectado" : "Desconectado"}
+            </Badge>
+            {linkedin.data.account.paused_until
+              ? ` · Pausa técnica até ${formatDateTime(linkedin.data.account.paused_until)}`
+              : ""}
+          </>
+        )}
+      </div>
+    );
   if (account.channel === "chat")
     return canView ? (
       <p className="text-xs text-muted-foreground">

@@ -1,5 +1,7 @@
 """Real migrations in disposable PostgreSQL; identity context is a synthetic fixture."""
 import concurrent.futures,json,pathlib,subprocess,time,uuid,os,shutil
+import sys
+sys.dont_write_bytecode=True
 D=os.environ.get('DOCKER_BIN') or shutil.which('docker') or '/Applications/Docker.app/Contents/Resources/bin/docker'
 name='techerp-linkedin-limits-'+str(uuid.uuid4())
 U='10000000-0000-4000-8000-000000000001';W='aaaaaaaa-0000-4000-8000-00000000000a';A='50000000-0000-4000-8000-000000000001';F='60000000-0000-4000-8000-000000000001'
@@ -118,5 +120,7 @@ try:
  for label,c in [('missing key',{**base,'keys':{}}),('deny',{**base,'keys':{'system.linkedin.manage.own':True}}),('other workspace',{**base,'workspace':'aaaaaaaa-0000-4000-8000-00000000000b'}),('inactive',{})]:
   assert visible_logs(c)=='0';passed.append('logs deny '+label)
  context(base);sql("SET ROLE authenticated; UPDATE unipile_message_log SET status='sent';",fail=True);passed.append('direct outreach log forgery denied')
+ from inbox_runtime_sql import check as check_inbox_runtime
+ check_inbox_runtime(sql,context,base,A,U,W,passed)
  print(json.dumps({'passed':passed,'count':len(passed),'engine':'PostgreSQL17','production_connections':0,'fixture':'synthetic identity; real schema, migrations, row locks and grants'},indent=2))
 finally:run('rm','-f',name)

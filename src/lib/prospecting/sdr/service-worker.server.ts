@@ -85,7 +85,12 @@ export async function processServiceJob(
         .eq("workspace_id", job.workspace_id)
         .single(),
     ) as any;
-    const sourceTable = session.channel === "email" ? "email_threads" : "live_chat_sessions";
+    const sourceTable =
+      session.channel === "email"
+        ? "email_threads"
+        : session.channel === "linkedin"
+          ? "linkedin_conversations"
+          : "live_chat_sessions";
     const refs = [
       { table: sourceTable, id: session.source_id, action: "update" as const },
       ...[
@@ -517,20 +522,31 @@ export async function tickServiceAgents(admin: any, limit = 3, deps: ServiceWork
   const uncertain = must(
     await admin
       .from("service_agent_jobs")
-      .select("id,send_token,provider_message_id,draft_payload")
+      .select("id,send_token,provider_message_id,draft_payload,session_id")
       .eq("status", "uncertain")
       .not("provider_message_id", "is", null)
       .limit(limit),
   ) as any[];
   let reconciled = 0;
   for (const item of uncertain) {
-    if (!item.send_token || !item.draft_payload?.delivery_header) continue;
-    const result = await admin.rpc("service_agent_complete_email", {
-      p_job: item.id,
-      p_send_token: item.send_token,
-      p_provider_id: item.provider_message_id,
-      p_header: item.draft_payload.delivery_header,
-    });
+    if (!item.send_token) continue;
+    const session = await admin
+      .from("service_agent_sessions")
+      .select("channel")
+      .eq("id", item.session_id)
+      .maybeSingle();
+    if (session.error || !session.data) continue;
+    const linkedin = session.data.channel === "linkedin";
+    if (!linkedin && !item.draft_payload?.delivery_header) continue;
+    const result = await admin.rpc(
+      linkedin ? "service_agent_complete_linkedin" : "service_agent_complete_email",
+      {
+        p_job: item.id,
+        p_send_token: item.send_token,
+        p_provider_id: item.provider_message_id,
+        ...(!linkedin ? { p_header: item.draft_payload.delivery_header } : {}),
+      },
+    );
     if (!result.error) reconciled++;
   }
 
@@ -558,6 +574,7 @@ export async function tickServiceAgents(admin: any, limit = 3, deps: ServiceWork
       .from("service_agent_jobs")
       .select("id")
       .eq("status", "ready")
+      .lte("available_at", new Date().toISOString())
       .order("created_at")
       .limit(limit),
   ) as { id: string }[];
@@ -609,8 +626,12 @@ export async function tickServiceAgents(admin: any, limit = 3, deps: ServiceWork
       const beforeProvider =
         !!(error as { beforeProvider?: boolean; serviceGuard?: boolean }).beforeProvider ||
         !!(error as { serviceGuard?: boolean }).serviceGuard;
+      const deferMs = (error as { deferMs?: number }).deferMs;
       await finish(admin, job, {
-        status: beforeProvider ? "drafted" : "uncertain",
+        status: deferMs ? "ready" : beforeProvider ? "drafted" : "uncertain",
+        ...(deferMs
+          ? { available_at: new Date(Date.now() + deferMs).toISOString(), send_token: null }
+          : {}),
         error: (error as Error).message.slice(0, 500),
         ...(beforeProvider ? { send_started_at: null } : {}),
       });

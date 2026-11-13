@@ -8,6 +8,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Mail,
+  Linkedin,
   MessageSquare,
   Phone,
   Clock3,
@@ -54,6 +55,7 @@ import {
 } from "@/lib/prospecting/sequences/draft";
 const ICONS = {
   email: Mail,
+  linkedin: Linkedin,
   whatsapp: MessageSquare,
   call: Phone,
   wait: Clock3,
@@ -577,7 +579,8 @@ export function ProspectingSequencesPage() {
                             </span>
                           </label>
                         )}
-                        {(step.type === "whatsapp" ||
+                        {(step.type === "linkedin" ||
+                          step.type === "whatsapp" ||
                           (step.type === "email" && sender.data?.isAdmin)) && (
                           <Choice
                             label="Conta remetente"
@@ -590,10 +593,7 @@ export function ProspectingSequencesPage() {
                                   : "Selecionar conta",
                               ],
                               ...(channels.data?.accounts || [])
-                                .filter(
-                                  (a) =>
-                                    a.channel === (step.type === "email" ? "email" : "whatsapp"),
-                                )
+                                .filter((a) => a.channel === step.type)
                                 .map((a) => [a.id, a.label] as const),
                             ]}
                             onChange={(accountId) =>
@@ -609,6 +609,23 @@ export function ProspectingSequencesPage() {
                             }
                             disabled={!permissions.can("system.channels.view.workspace")}
                           />
+                        )}
+                        {step.type === "linkedin" && (
+                          <>
+                            <label className="block text-sm">
+                              Mensagem LinkedIn
+                              <Textarea
+                                value={step.body}
+                                onChange={(e) => updateStep({ body: e.target.value })}
+                                maxLength={8000}
+                              />
+                            </label>
+                            <p className="text-xs text-muted-foreground">
+                              Envio pela sua conta conectada, respeitando cotas e restrições da
+                              integradora. O destinatário precisa ter um perfil LinkedIn válido e
+                              aceitar mensagens da sua conta.
+                            </p>
+                          </>
                         )}
                         {step.type === "email" && (
                           <>
@@ -664,9 +681,9 @@ export function ProspectingSequencesPage() {
                             onChange={updateStep}
                           />
                         )}
-                        {step.type === "whatsapp" && (
+                        {(step.type === "whatsapp" || step.type === "linkedin") && (
                           <Choice
-                            label="Agente para respostas neste número"
+                            label="Agente para respostas nesta conta"
                             value={step.agentId || ""}
                             choices={[
                               ["", "Usar agente padrão das regras"],
@@ -812,6 +829,7 @@ export function ProspectingSequencesPage() {
                                 ["replied", "Respondeu"],
                                 ["has_email", "Possui e-mail"],
                                 ["has_whatsapp", "Possui WhatsApp"],
+                                ["has_linkedin", "Possui LinkedIn"],
                                 ["call_answered", "Chamada atendida"],
                                 ["meeting_booked", "Reunião confirmada"],
                               ]}
@@ -1064,6 +1082,7 @@ function SequenceAudience({
                 </p>
                 <div className="space-y-2 text-sm">
                   <p>Com e-mail cadastrado: {preview.data.email}</p>
+                  <p>Com perfil LinkedIn válido: {preview.data.linkedin}</p>
                   <p>Com telefone cadastrado: {preview.data.phone}</p>
                   <p>Números no padrão WhatsApp: {preview.data.whatsapp}</p>
                 </div>

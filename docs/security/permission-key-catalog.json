@@ -672,6 +672,9 @@
     "techcontracts.clauses.update.workspace",
     "techcontracts.clauses.view.workspace",
     "techcontracts.contract_activation.manage.workspace",
+    "techcontracts.contract_draft_approvers.manage.workspace",
+    "techcontracts.contract_drafts.approve.workspace",
+    "techcontracts.contract_drafts.view.workspace",
     "techcontracts.contract_templates.assign.workspace",
     "techcontracts.contract_templates.create.own",
     "techcontracts.contract_templates.create.team",
@@ -2005,6 +2008,9 @@
     "techsales.inbox.email.view.team",
     "techsales.inbox.email.view.workspace",
     "techsales.inbox.export.workspace",
+    "techsales.inbox.linkedin.create.own",
+    "techsales.inbox.linkedin.manage.own",
+    "techsales.inbox.linkedin.view.own",
     "techsales.inbox.update.own",
     "techsales.inbox.update.team",
     "techsales.inbox.update.workspace",
@@ -2792,10 +2798,7 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace",
-    "techcontracts.contract_drafts.view.workspace",
-    "techcontracts.contract_drafts.approve.workspace",
-    "techcontracts.contract_draft_approvers.manage.workspace"
+    "techservice.tickets.view.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -2956,6 +2959,15 @@
     },
     "techcontracts.contract_draft_approvers.manage.workspace": {
       "migration": "drizzle/migrations/0312_contract_draft_legal_review.sql"
+    },
+    "techsales.inbox.linkedin.view.own": {
+      "migration": "drizzle/migrations/0342_linkedin_inbox.sql"
+    },
+    "techsales.inbox.linkedin.create.own": {
+      "migration": "drizzle/migrations/0342_linkedin_inbox.sql"
+    },
+    "techsales.inbox.linkedin.manage.own": {
+      "migration": "drizzle/migrations/0342_linkedin_inbox.sql"
     }
   }
 }
