@@ -36551,6 +36551,10 @@ export type Database = {
         Returns: Json
       }
       try_iso_date: { Args: { p: string }; Returns: string }
+      unipile_personal_access: {
+        Args: { a: string; c: Json; o: string; w: string }
+        Returns: boolean
+      }
       user_can_act: {
         Args: {
           _action: string
