@@ -20,7 +20,10 @@ function withCep(address: string | null, cep: string | null | undefined): string
   return `${address}, CEP ${digits.slice(0, 2)}.${digits.slice(2, 5)}-${digits.slice(5)}`;
 }
 
-export function mergeCompanyParty<T extends Party>(snapshot: T | null, current: Party | null): T | null {
+export function mergeCompanyParty<T extends Party>(
+  snapshot: T | null,
+  current: Party | null,
+): T | null {
   if (!snapshot && !current) return null;
   const base = { ...(current ?? {}), ...(snapshot ?? {}) } as T;
   if (current) {
@@ -28,6 +31,9 @@ export function mergeCompanyParty<T extends Party>(snapshot: T | null, current: 
       if (filled(current[k])) (base as Party)[k] = current[k];
     }
   }
-  (base as Party).address = withCep((base.address as string | null) ?? null, base.cep as string | null);
+  (base as Party).address = withCep(
+    (base.address as string | null) ?? null,
+    base.cep as string | null,
+  );
   return base;
 }

@@ -10181,7 +10181,7 @@
         "techcontracts.contract_templates.view.workspace",
         "techsales.proposals.view.workspace"
       ],
-      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access.",
+      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access. Reviewed concurrent ENDERECO-ATUAL change: cep added to the same workspace-filtered user/RLS company projection, pure party merge retains commercial snapshot values.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -10279,7 +10279,7 @@
       "files": {
         "src/components/contracts/apply-contract-template-dialog.tsx": "f1b8f344a6a5bbc22cc7d8aa43c04bdd0b680fbf579de229b7da056b3025ef3c",
         "src/lib/contracts/contract-create.server.ts": "83d6a2580954f05b3340a2404a75ab876669bf256965de4e203b8bfb5bf3d66b",
-        "src/lib/contracts/template-merge.server.ts": "bfc909de9e72b2339610b53a2be76da66cad8fdbbda3df444cd29de734495664",
+        "src/lib/contracts/template-merge.server.ts": "1285008b1f151e9745a0055889165d953eda5bba69e4c0350ae5facf9976fe6b",
         "src/lib/contracts/templates.functions.ts": "175f4bcacace96cc72290990eaaebb80e3760cb1cb49c6af04c0acf429dcf7b1",
         "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
         "src/lib/sales-flow.server.ts": "1c90e8c729c98abbe2ca56c47f420c29baf6091fb110fc49828aead333eb8df6",
@@ -11939,6 +11939,14 @@
       },
       "files": {
         "src/components/contacts/contact-signer-fields.tsx": "b512274c85fbbadad66d921e5120136cee72a19c4e2e79525f8bc383e2332f05"
+      }
+    },
+    {
+      "id": "company-party-pure-merge",
+      "kind": "presentation",
+      "rationale": "Pure merge/format of already-authorized current company data and accepted proposal snapshot. No I/O, query, action or grant. buildMergeContext retains workspace filters and user/RLS company access.",
+      "files": {
+        "src/lib/contracts/company-party.ts": "f236d39ef765d9fdc551abd8556241baaa8cc2079b1623fde3b92bbab3b434ed"
       }
     }
   ],
