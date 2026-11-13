@@ -22189,7 +22189,14 @@ export type Database = {
           host_user_id: string | null
           id: string
           lead_id: string | null
+          meeting_error: string | null
+          meeting_event_id: string | null
           meeting_id: string | null
+          meeting_link: string | null
+          meeting_offers: Json
+          meeting_start_at: string | null
+          meeting_status: string | null
+          meeting_whatsapp_status: string | null
           owner_id: string
           recording_url: string | null
           scheduled_at: string | null
@@ -22222,7 +22229,14 @@ export type Database = {
           host_user_id?: string | null
           id?: string
           lead_id?: string | null
+          meeting_error?: string | null
+          meeting_event_id?: string | null
           meeting_id?: string | null
+          meeting_link?: string | null
+          meeting_offers?: Json
+          meeting_start_at?: string | null
+          meeting_status?: string | null
+          meeting_whatsapp_status?: string | null
           owner_id: string
           recording_url?: string | null
           scheduled_at?: string | null
@@ -22255,7 +22269,14 @@ export type Database = {
           host_user_id?: string | null
           id?: string
           lead_id?: string | null
+          meeting_error?: string | null
+          meeting_event_id?: string | null
           meeting_id?: string | null
+          meeting_link?: string | null
+          meeting_offers?: Json
+          meeting_start_at?: string | null
+          meeting_status?: string | null
+          meeting_whatsapp_status?: string | null
           owner_id?: string
           recording_url?: string | null
           scheduled_at?: string | null

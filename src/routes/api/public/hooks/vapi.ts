@@ -137,6 +137,15 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
         const callId = (call?.id as string | undefined) ?? (msg.callId as string | undefined);
         if (!callId) return Response.json({ ok: true, skipped: "no call id" });
 
+        // Funções da assistente durante a ligação (consultar/marcar agenda).
+        if (type === "tool-calls") {
+          const { parseVoiceToolCalls } = await import("@/lib/prospecting/calls/voice-booking");
+          const { handleVoiceToolCalls } =
+            await import("@/lib/prospecting/calls/voice-booking.server");
+          const results = await handleVoiceToolCalls(callId, parseVoiceToolCalls(msg));
+          return Response.json({ results });
+        }
+
         const updates: Record<string, unknown> = { updated_at: new Date().toISOString() };
 
         if (type === "status-update") {
@@ -223,6 +232,11 @@ export const Route = createFileRoute("/api/public/hooks/vapi")({
           const { sendCallFollowup } = await import("@/lib/prospecting-call-followup.server");
           await sendCallFollowup(row.id as string).catch((e) =>
             console.error("[vapi-hook] followup", e),
+          );
+          const { sendMeetingWhatsApp } =
+            await import("@/lib/prospecting/calls/voice-booking.server");
+          await sendMeetingWhatsApp(row.id as string).catch((e) =>
+            console.error("[vapi-hook] meeting whatsapp", e),
           );
         }
         if (!requeued) {

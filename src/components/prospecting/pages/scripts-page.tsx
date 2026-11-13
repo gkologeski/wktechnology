@@ -99,6 +99,7 @@ export function ScriptsPage() {
           voice_id: edit.voice_id ?? null,
           voice_provider: (edit.voice_provider ?? "elevenlabs") as "elevenlabs",
           variables: edit.variables ?? {},
+          allow_booking: !!edit.allow_booking,
         },
       });
       toast.success("Script salvo");
@@ -264,6 +265,20 @@ export function ScriptsPage() {
                 value={edit?.system_prompt ?? ""}
                 onChange={(e) => setEdit((f) => ({ ...f, system_prompt: e.target.value }))}
                 placeholder="Você é um SDR ligando para {{lead.name}} da empresa {{lead.company}}. Seu objetivo é..."
+              />
+            </div>
+            <div className="flex items-start justify-between gap-4 rounded-md border p-3">
+              <div>
+                <Label htmlFor="script-allow-booking">Agendar durante a ligação</Label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  A assistente consulta a agenda do especialista definido na campanha, oferece
+                  até 3 horários e marca a reunião. O link vai pelo WhatsApp depois da ligação.
+                </p>
+              </div>
+              <Switch
+                id="script-allow-booking"
+                checked={!!edit?.allow_booking}
+                onCheckedChange={(v) => setEdit((f) => ({ ...f, allow_booking: v }))}
               />
             </div>
             <p className="text-xs text-muted-foreground">
