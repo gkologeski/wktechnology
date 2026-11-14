@@ -1749,7 +1749,7 @@
       },
       "files": {
         "drizzle/migrations/0251_deal_related_activity_history.sql": "074748f2edde9e44c7e3a76e998e93223c0766f01dd1d43735e0cff118ae654a",
-        "src/components/activity/activity-timeline-item.tsx": "77a40ba178e3b549103593d119dfd88f81fccfca11e6896ec5cc9e5414503699"
+        "src/components/activity/activity-timeline-item.tsx": "15b71c0cc7292193aa9e768cebdd539a189122826e3be8a84992cbfe5d1d5297"
       }
     },
     {
@@ -5110,7 +5110,7 @@
         }
       },
       "files": {
-        "src/routes/_authenticated/tasks.tsx": "ff987eaf61823b4e1bc8b4b91babd0064a079b9c60c2a1a06daf3c4b865b4235"
+        "src/routes/_authenticated/tasks.tsx": "468a30c0f6fb73b891566e0920fd1c6ae0f6145bf914dc5647a0de3704335ae3"
       }
     },
     {
@@ -8130,7 +8130,7 @@
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
-        "src/components/hiring/contract-signature-card.tsx": "83d78cd0a9b5f423ace75238d977b0f23720efc90130dbc7806b969bb54a46f5",
+        "src/components/hiring/contract-signature-card.tsx": "798df8a0ed16952022afbb9ffadb13b81b5c3b08fca6b0587f3ea141da10584e",
         "src/components/hiring/recruitment-authorization-panel.tsx": "63999fab8527aaba7d5bce74450e4c9730b86a54a45104f9952d28de00ad4f8d",
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
@@ -9793,7 +9793,7 @@
       "files": {
         "drizzle/migrations/0311_0334_contract_draft_legal_review.sql": "34b15156ef6dd6be975fd1d42cfa7b47ef5fc1db73ab35486abe755b8a36a427",
         "drizzle/migrations/0312_contract_draft_legal_review.sql": "13ce7aa0ddad44bc26c81cccd662b1fb5a12f6cf606e87554beea542faed7e82",
-        "src/components/contracts/contract-draft-approvers-page.tsx": "10912b5af48d1d3b83214d0d1bfbbf069cb636f1813a8eaa98cd6d1a72801f1f",
+        "src/components/contracts/contract-draft-approvers-page.tsx": "928975186441b077e49da7e1ad26d65b64a2f4773cb63b3c0b88797e6b77a5d6",
         "src/components/contracts/contract-draft-review-page.tsx": "325977c088f63c012f69db71451c5975d8b982f0ef083e2d366690191eae2c6e",
         "src/lib/contracts/contract-drafts.functions.ts": "19ec7713c17e8f30f97d7335eaca5502585604fc4d21bf51d557ca1146f70fa4",
         "src/lib/workflows/engine/actions-contracts.server.ts": "ce77a960a2356639cd80d3245608044a2dabe2ef8d0dcd2dffa33f22ffb0c1d2",
@@ -12298,7 +12298,7 @@
       },
       "files": {
         "drizzle/migrations/0356_deal_contracting_journey.sql": "8fc0fa2805b2c5ae3f9508242532cb01fe3bf62cb0411d3f78eded6ac6bd5f6f",
-        "src/components/deals/deal-contracting-journey.tsx": "57803abfe46e9919f7d8af1c42eb11d356e469f2b89b20f36fc2b4f1964653f8",
+        "src/components/deals/deal-contracting-journey.tsx": "5a040621a8eeaedb874af723f1db57dc3fd0ae23186834f67281bc5c96cccf3f",
         "src/lib/deals/contracting-journey.functions.ts": "20e51a0e73599b7462b188572d108e1a28cf23256a11e7dd78a68b9584a7897d",
         "src/lib/deals/contracting-journey.server.ts": "a869db7a515d7206f15149c92f4712dcf7d89f42bcde42149143e828e4712068",
         "src/routes/_authenticated/deals.$id.tsx": "4a86b9805a7a53ae6cbf992dc059fa86fcefc8460d25cd5b0e0b1ee65ad98839",
@@ -12754,6 +12754,152 @@
       "rationale": "Pure input schema and contact DTO; no data reads, writes or permissions. Callers enforce workspace, contact access and signature preparation.",
       "files": {
         "src/lib/contracts/signers.ts": "3c53708810534c4f79533dd7954e691e689ddea54fdfcfd49cabec14f772e25a"
+      }
+    },
+    {
+      "id": "contract-handoff-orchestration",
+      "kind": "business",
+      "resources": [
+        "techcontracts.handoffs",
+        "techcontracts.contract_drafts",
+        "techcontracts.contracts",
+        "techcontracts.approvals",
+        "techsales.deals",
+        "techsales.tasks",
+        "techcontracts.contract_draft_approvers"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "create",
+        "assign",
+        "approve"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.handoffs.manage.workspace",
+        "techcontracts.contract_draft_approvers.manage.workspace",
+        "techcontracts.contract_drafts.view.workspace",
+        "techcontracts.contract_drafts.approve.workspace",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.approvals.approve.workspace",
+        "techsales.deals.view.own",
+        "techsales.deals.view.team",
+        "techsales.deals.view.workspace"
+      ],
+      "rationale": "Durable source-transition handoffs with current membership/deny/workspace checks. Summary reads inherit exact readable deal/contract source, revealing no document content or financial values. Settings/retry/reconcile require explicit manage and readonly rejection. Service-only bounded queue worker validates configured active operator and participant permissions before opening canonical drafts or creating source-bound tasks/notifications. No external signatures or approvals are performed. Tasks close only from source truth; FK/workspace and activity canonical guard remain enforced. Nothing is granted to roles in this schema migration. Existing task displays disable source-controlled completion/dates/assignment/delete using a non-authoritative metadata hint, while the database resolves the true link by activity id; existing task read/write permissions and RLS remain unchanged.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/cron-auth.server.ts",
+          "symbol": "requireCronAuth"
+        },
+        {
+          "file": "src/lib/activity-task-options.ts",
+          "symbol": "isContractHandoffTask"
+        },
+        {
+          "file": "src/lib/access-control/use-can-delete.tsx",
+          "symbol": "useCanDelete"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0362_contract_handoffs.sql",
+          "symbol": "contract_handoffs_read"
+        },
+        {
+          "file": "drizzle/migrations/0362_contract_handoffs.sql",
+          "symbol": "contract_handoff_settings_save"
+        },
+        {
+          "file": "drizzle/migrations/0362_contract_handoffs.sql",
+          "symbol": "contract_handoff_settings_get"
+        },
+        {
+          "file": "drizzle/migrations/0362_contract_handoffs.sql",
+          "symbol": "contract_handoff_retry"
+        },
+        {
+          "file": "drizzle/migrations/0362_contract_handoffs.sql",
+          "symbol": "contract_handoff_reconcile"
+        },
+        {
+          "file": "drizzle/migrations/0362_contract_handoffs.sql",
+          "symbol": "contract_handoff_tick"
+        },
+        {
+          "file": "drizzle/migrations/0362_contract_handoffs.sql",
+          "symbol": "contract_handoff_task_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/handoffs-postgres.test.ts",
+          "name": "handoff allows authorized active configuration"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/handoffs-postgres.test.ts",
+          "name": "handoff rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/handoffs-postgres.test.ts",
+          "name": "handoff rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/handoffs-postgres.test.ts",
+          "name": "handoff rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/handoffs-postgres.test.ts",
+          "name": "handoff rejects inactive membership"
+        }
+      },
+      "exception": {
+        "mechanism": "Only service_role executes the bounded worker through the existing CRON_SECRET-authenticated workflows-tick. Source triggers enqueue only trusted accepted/current commercial records in enabled workspaces. All internal helpers revoke public/anon/authenticated execute.",
+        "boundary": "No arbitrary task fields, SQL, workspace or recipient are accepted by the worker. It re-reads source ids, enabled settings, operator role/permissions and target permissions. No customer email is sent by this worker.",
+        "revocation": "Disable workspace setting, deactivate membership, explicit deny, source withdrawal or approval reset stop/block the handoff. Cron secret revocation blocks the route.",
+        "review_by": "2027-02-14"
+      },
+      "files": {
+        "drizzle/migrations/0362_contract_handoffs.sql": "6c00748bea9d41dec8334c0603abd3eedd48c1a8facc2d08e4e23d6301519811",
+        "src/lib/contracts/handoffs.functions.ts": "58db32e47fb0392a097f403ad628deda3bdf101c11a2120c36426ca144669288",
+        "src/components/contracts/contract-handoffs.tsx": "0d8a4034b23300f822c28ea3584908964cd7fd0fb495e3d638acecb4eb6ed90c",
+        "src/components/contracts/contract-handoff-settings.tsx": "3928bbe6690b74f487fab848d5a943f8c3f85802f3ef07a18f58f67ab95883ff",
+        "src/routes/api/public/hooks/workflows-tick.ts": "85680d6514fdd8d588f3f66a0f71b7252a746da94bbd1d8c46ef1029e78f7101",
+        "src/components/activity/activity-card-controls.tsx": "82420449efa44e8421c611d908f7857b7af2b8eda8a35bcda9a0b1b2a74bd483",
+        "src/routes/_authenticated/tasks.$id.tsx": "da49a3b7024c23bce2e0bbaaf72b2569abebb7369e77518aead863ddf2d7370e"
+      }
+    },
+    {
+      "id": "contract-task-presentation-hint",
+      "kind": "presentation",
+      "rationale": "Pure helper to hide controls for source-owned contract handoff tasks, no IO or permissions. Not authorization: SQL resolves canonical link by activity id and rejects changes independently of metadata.",
+      "files": {
+        "src/lib/activity-task-options.ts": "25e735ca8c3ce839b9281e8b3fb1d37490cd76164c764c2c0f7e2e3e564a9e5e"
       }
     }
   ],

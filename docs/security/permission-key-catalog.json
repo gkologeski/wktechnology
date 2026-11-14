@@ -724,6 +724,7 @@
     "techcontracts.esign_share.manage.workspace",
     "techcontracts.forsign.manage.workspace",
     "techcontracts.forsign_settings.manage.workspace",
+    "techcontracts.handoffs.manage.workspace",
     "techcontracts.imports.manage.workspace",
     "techcontracts.imports.view.workspace",
     "techcontracts.links.manage.workspace",
@@ -2981,6 +2982,10 @@
     },
     "techcontracts.forsign_settings.manage.workspace": {
       "migration": "drizzle/migrations/0359_forsign_integration.sql"
+    },
+    "techcontracts.handoffs.manage.workspace": {
+      "migration": "drizzle/migrations/0362_contract_handoffs.sql",
+      "rationale": "Workspace-scoped configuration and explicit retry/reconciliation, without grants."
     }
   }
 }

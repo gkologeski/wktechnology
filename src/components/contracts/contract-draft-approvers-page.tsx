@@ -1,3 +1,4 @@
+import { ContractHandoffSettingsPanel } from "./contract-handoff-settings";
 // ACEITE-MINUTA: Configurações → Fluxos de aprovação → Minuta de contrato.
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -65,7 +66,7 @@ function ApproversForm() {
     <div className="mx-auto max-w-3xl space-y-6 p-6">
       <PageHeader
         eyebrow="Fluxos de aprovação"
-        title="Minuta de contrato"
+        title="Minutas e encaminhamentos"
         description="Quem revisa e aprova a minuta enviada ao cliente depois que ele aceita a proposta. Cada aprovador também precisa da permissão “Aprovar minuta de contrato” no cargo."
         primaryAction={
           <Button
@@ -138,6 +139,7 @@ function ApproversForm() {
           )}
         </FormSection>
       )}
+      <ContractHandoffSettingsPanel />
     </div>
   );
 }

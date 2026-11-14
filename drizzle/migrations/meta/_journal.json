@@ -2535,6 +2535,13 @@
       "when": 1794684395200,
       "tag": "0361_service_billing_awaits_signature",
       "breakpoints": true
+    },
+    {
+      "idx": 362,
+      "version": "7",
+      "when": 1794693529596,
+      "tag": "0362_contract_handoffs",
+      "breakpoints": true
     }
   ]
 }

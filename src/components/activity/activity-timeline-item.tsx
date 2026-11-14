@@ -1,3 +1,4 @@
+import { isContractHandoffTask } from "@/lib/activity-task-options";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 // Card de uma atividade na timeline: cabeçalho, blocos por tipo (pesquisa,
 // reunião, e-mail, chamada), edição inline, anexos, ações e comentários.
@@ -183,6 +184,7 @@ export function ActivityTimelineItem({
             {a.type === "task" && (
               <Checkbox
                 checked={a.completed}
+                disabled={isContractHandoffTask(a)}
                 onCheckedChange={() => onToggleDone(a)}
                 aria-label="Marcar como concluída"
               />

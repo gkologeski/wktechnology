@@ -8,7 +8,7 @@ route_pattern: /tasks
 min_permission:
 audience: internal
 sort_order: 205
-version: 3
+version: 4
 is_published: true
 ---
 # Organizar tarefas
@@ -45,3 +45,6 @@ A lista apresenta as tarefas filtradas. Uma visualização salva mostra "Visuali
 ## Relacionados
 - [Concluir e atribuir uma tarefa](/ajuda/crm/concluir-atribuir-tarefa)
 - [Criar filas de tarefas](/ajuda/crm/criar-filas-tarefas)
+
+### Tarefas da jornada contratual
+Tarefas identificadas como jornada contratual são concluídas pela ação confirmada no documento de origem. Responsável, prazo, conclusão e exclusão não podem ser alterados como numa tarefa comum. Abra o negócio ou contrato indicado na descrição e execute a etapa. Os responsáveis e prazos são configurados em Configurações > Aprovação de minuta > Encaminhamentos da contratação. Operações em lote que tentem alterar esses campos também são recusadas pelo banco.

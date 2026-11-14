@@ -1,3 +1,4 @@
+import { isContractHandoffTask } from "@/lib/activity-task-options";
 import { createFileRoute, Link, Outlet, useLocation, useNavigate } from "@tanstack/react-router";
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRealtimeInvalidate } from "@/hooks/use-realtime-invalidate";
@@ -109,6 +110,7 @@ const BASE_TASK_KEYS = [
   "body",
   "type",
   "task_status",
+  "external_ids",
   "task_priority",
   "due_date",
   "completed",
@@ -1143,6 +1145,7 @@ function TasksHubspotView() {
                         <Td className="w-10">
                           <Checkbox
                             checked={t.completed}
+                            disabled={isContractHandoffTask(t)}
                             onCheckedChange={(v) => markComplete(t.id, !!v)}
                             onClick={(e) => e.stopPropagation()}
                           />
@@ -1170,12 +1173,16 @@ function TasksHubspotView() {
                               >
                                 Abrir
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => markComplete(t.id, !t.completed)}>
+                              <DropdownMenuItem
+                                disabled={isContractHandoffTask(t)}
+                                onClick={() => markComplete(t.id, !t.completed)}
+                              >
                                 {t.completed ? "Reabrir" : "Marcar concluída"}
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
+                                disabled={isContractHandoffTask(t)}
                                 onClick={() => removeOne(t.id)}
                               >
                                 Excluir

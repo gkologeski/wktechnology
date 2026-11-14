@@ -25,6 +25,7 @@ import { ActivityDueDatePicker } from "@/components/activity/activity-date-time-
 import { reminderLabel, REMINDER_OPTIONS } from "@/lib/activity-reminders";
 import {
   describeRecurrence,
+  isContractHandoffTask,
   TASK_PRIORITIES,
   TASK_STATUSES,
   TASK_TYPES,
@@ -49,6 +50,7 @@ export function ActivityActionsMenu({
   onFollowUp: () => void;
 }) {
   const [confirm, setConfirm] = useState(false);
+  const governed = isContractHandoffTask(a);
   const pinned = !!(a as { pinned_at?: string | null }).pinned_at;
   return (
     <>
@@ -59,7 +61,7 @@ export function ActivityActionsMenu({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {canEdit && <DropdownMenuItem onSelect={onEdit}>Editar</DropdownMenuItem>}
+          {canEdit && !governed && <DropdownMenuItem onSelect={onEdit}>Editar</DropdownMenuItem>}
           <DropdownMenuItem
             onSelect={() => onPatch({ pinned_at: pinned ? null : new Date().toISOString() })}
           >
@@ -74,7 +76,7 @@ export function ActivityActionsMenu({
             Copiar link
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={onFollowUp}>Criar tarefa de acompanhamento</DropdownMenuItem>
-          {canEdit && (
+          {canEdit && !governed && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-destructive" onSelect={() => setConfirm(true)}>
@@ -121,7 +123,8 @@ export function TaskFieldsGrid({
 }) {
   const rec = (a as { recurrence?: RecurrenceRule | null }).recurrence ?? null;
   const [editRec, setEditRec] = useState(false);
-  const status = a.task_status ?? (a.completed ? "completed" : "not_started");
+  const governed = isContractHandoffTask(a);
+  const status = a.task_status?.toLowerCase() ?? (a.completed ? "completed" : "not_started");
   const assigned = (a as { assigned_to?: string | null }).assigned_to ?? a.owner_id;
   const field = (label: string, node: React.ReactNode) => (
     <div className="flex flex-col gap-0.5 min-w-0">
@@ -131,11 +134,17 @@ export function TaskFieldsGrid({
   );
   return (
     <div className="mt-3 space-y-3 border-t border-border/60 pt-3">
+      {governed && (
+        <p className="text-xs text-muted-foreground">
+          Tarefa da jornada contratual. Responsável, prazo e conclusão são controlados pela ação no
+          documento de origem.
+        </p>
+      )}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {field(
           "Data de vencimento",
           <ActivityDueDatePicker
-            disabled={disabled}
+            disabled={disabled || governed}
             value={a.due_date}
             valueFormat="iso"
             onChange={(dueDate) => {
@@ -168,7 +177,7 @@ export function TaskFieldsGrid({
           </select>,
         )}
       </div>
-      {editRec && !disabled ? (
+      {editRec && !disabled && !governed ? (
         <div className="space-y-2">
           <RecurrenceControl
             idPrefix={`rec-${a.id}`}
@@ -189,7 +198,7 @@ export function TaskFieldsGrid({
       ) : (
         <button
           type="button"
-          disabled={disabled}
+          disabled={disabled || governed}
           onClick={() => setEditRec(true)}
           className="text-sm text-muted-foreground hover:text-foreground disabled:hover:text-muted-foreground"
         >
@@ -201,7 +210,7 @@ export function TaskFieldsGrid({
           "Fase da tarefa",
           <select
             className={inlineSel}
-            disabled={disabled}
+            disabled={disabled || governed}
             value={status}
             onChange={(e) =>
               onPatch({ task_status: e.target.value, completed: e.target.value === "completed" })
@@ -219,7 +228,7 @@ export function TaskFieldsGrid({
           "Tipo de tarefa",
           <select
             className={inlineSel}
-            disabled={disabled}
+            disabled={disabled || governed}
             value={a.task_type ?? "todo"}
             onChange={(e) => onPatch({ task_type: e.target.value })}
             aria-label="Tipo de tarefa"
@@ -235,8 +244,8 @@ export function TaskFieldsGrid({
           "Prioridade",
           <select
             className={inlineSel}
-            disabled={disabled}
-            value={a.task_priority ?? "none"}
+            disabled={disabled || governed}
+            value={a.task_priority?.toLowerCase() ?? "none"}
             onChange={(e) =>
               onPatch({ task_priority: e.target.value === "none" ? null : e.target.value })
             }
@@ -253,7 +262,7 @@ export function TaskFieldsGrid({
           "Atribuído a",
           <select
             className={inlineSel}
-            disabled={disabled}
+            disabled={disabled || governed}
             value={assigned ?? ""}
             onChange={(e) => onPatch({ assigned_to: e.target.value })}
             aria-label="Atribuído a"
