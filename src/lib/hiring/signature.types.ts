@@ -1,5 +1,6 @@
 export type SignatureContext = {
   hash: string;
+  witnesses_detected?: boolean;
   reason: string | null;
   deal_id: string | null;
   entity_id: string | null;

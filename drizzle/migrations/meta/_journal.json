@@ -2507,6 +2507,13 @@
       "when": 1794659471746,
       "tag": "0357_contract_signature_delivery",
       "breakpoints": true
+    },
+    {
+      "idx": 358,
+      "version": "7",
+      "when": 1794679575587,
+      "tag": "0358_contract_signer_contacts",
+      "breakpoints": true
     }
   ]
 }

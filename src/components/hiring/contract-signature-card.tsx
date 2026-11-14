@@ -8,7 +8,8 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { EmailInput } from "@/components/ui/email-input";
+import { SignerContactPicker } from "@/components/contracts/signer-contact-picker";
+import { contractSignersSchema, type SignerContact } from "@/lib/contracts/signers";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -84,10 +85,14 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
     [mode, setMode] = useState<"native" | "external" | "revoke" | null>(null);
   const [deal, setDeal] = useState(c.deal_id),
     [entity, setEntity] = useState(c.entity_id ?? "");
-  const [customerName, setCustomerName] = useState(""),
-    [customerEmail, setCustomerEmail] = useState(""),
-    [issuerName, setIssuerName] = useState(""),
-    [issuerEmail, setIssuerEmail] = useState("");
+  const [participants, setParticipants] = useState<
+    { role: string; contact: SignerContact | null }[]
+  >([
+    { role: "CONTRATANTE", contact: null },
+    { role: "CONTRATADO", contact: null },
+  ]);
+  const [extraRole, setExtraRole] = useState("");
+  const signerPayload = participants.map((p) => ({ role: p.role, contactId: p.contact?.id ?? "" }));
   const [pdf, setPdf] = useState<File | null>(null),
     [signedOn, setSignedOn] = useState(""),
     [reference, setReference] = useState(""),
@@ -273,7 +278,7 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
           if (!open && !busy) setMode(null);
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>
               {mode === "native"
@@ -289,34 +294,92 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
                 O documento será preparado a partir do contrato salvo e seus serviços. Depois,
                 confira os signatários e envie os convites por e-mail neste mesmo painel.
               </p>
-              <Label>Representante do cliente</Label>
-              <Input
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                maxLength={255}
-              />
-              <Label>E-mail do cliente</Label>
-              <EmailInput value={customerEmail} onChange={setCustomerEmail} />
-              <Label>Representante da entidade WK</Label>
-              <Input
-                value={issuerName}
-                onChange={(e) => setIssuerName(e.target.value)}
-                maxLength={255}
-              />
-              <Label>E-mail do representante WK</Label>
-              <EmailInput value={issuerEmail} onChange={setIssuerEmail} />
+              <p className="text-sm text-muted-foreground">
+                CONTRATANTE e CONTRATADO são obrigatórios. Testemunhas são opcionais; ao incluir
+                uma, a assinatura dela será exigida para concluir o documento. Cada participante
+                recebe seu próprio link.
+              </p>
+              {c.witnesses_detected && (
+                <p role="note" className="text-sm">
+                  Foram encontradas referências a testemunhas no documento. Confira se deseja
+                  incluí-las antes de preparar.
+                </p>
+              )}
+              {participants.map((p, i) => (
+                <div key={p.role} className="space-y-1">
+                  <SignerContactPicker
+                    role={p.role}
+                    value={p.contact}
+                    disabled={busy}
+                    onChange={(contact) =>
+                      setParticipants((old) => old.map((r, n) => (n === i ? { ...r, contact } : r)))
+                    }
+                  />
+                  {i > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={busy}
+                      onClick={() => setParticipants((old) => old.filter((_, n) => n !== i))}
+                    >
+                      Não incluir {p.role}
+                    </Button>
+                  )}
+                </div>
+              ))}
+              <div className="flex flex-wrap gap-2">
+                {["TESTEMUNHA 1", "TESTEMUNHA 2"]
+                  .filter((r) => !participants.some((p) => p.role === r))
+                  .map((role) => (
+                    <Button
+                      key={role}
+                      variant="outline"
+                      size="sm"
+                      disabled={busy || participants.length >= 20}
+                      onClick={() => setParticipants((old) => [...old, { role, contact: null }])}
+                    >
+                      + {role}
+                    </Button>
+                  ))}
+              </div>
+              <Label>Outro papel do documento</Label>
+              <div className="flex gap-2">
+                <Input
+                  aria-label="Outro papel do documento"
+                  placeholder="Ex.: INTERVENIENTE"
+                  value={extraRole}
+                  maxLength={80}
+                  onChange={(e) => setExtraRole(e.target.value.toUpperCase())}
+                />
+                <Button
+                  variant="outline"
+                  disabled={
+                    busy ||
+                    participants.length >= 20 ||
+                    !/^[A-Z0-9_ -]{2,80}$/.test(extraRole.trim()) ||
+                    participants.some((p) => p.role === extraRole.trim())
+                  }
+                  onClick={() => {
+                    setParticipants((old) => [...old, { role: extraRole.trim(), contact: null }]);
+                    setExtraRole("");
+                  }}
+                >
+                  Incluir
+                </Button>
+              </div>
               <Button
-                disabled={busy || !customerName || !issuerName || !customerEmail || !issuerEmail}
+                disabled={
+                  busy ||
+                  !contractSignersSchema.safeParse(signerPayload).success ||
+                  participants.some((p) => !p.contact?.email)
+                }
                 onClick={() =>
                   act(() =>
                     prepare({
                       data: {
                         contractId,
                         hash: c.hash,
-                        customerName,
-                        customerEmail,
-                        issuerName,
-                        issuerEmail,
+                        signers: signerPayload,
                       },
                     }),
                   )

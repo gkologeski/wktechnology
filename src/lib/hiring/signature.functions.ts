@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { assertPermission, getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import { workRpc } from "@/lib/access-control/work-core.server";
-import { emailSchema } from "@/lib/email-schema";
+import { contractSignersSchema } from "@/lib/contracts/signers";
 import type { SignatureContext } from "./signature.types";
 const id = z.string().uuid();
 const contract = z.object({ contractId: id });
@@ -28,10 +28,7 @@ export const prepareContractSignature = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(
     version.extend({
-      customerName: z.string().trim().min(2).max(255),
-      customerEmail: emailSchema(255),
-      issuerName: z.string().trim().min(2).max(255),
-      issuerEmail: emailSchema(255),
+      signers: contractSignersSchema,
     }),
   )
   .handler(async ({ context, data }) => {
@@ -42,14 +39,11 @@ export const prepareContractSignature = createServerFn({ method: "POST" })
       ws,
       "techcontracts.signature_evidence.manage.workspace",
     );
-    return workRpc<string>(context.supabase, "hiring_contract_native_prepare", {
+    return workRpc<string>(context.supabase, "hiring_contract_signers_prepare", {
       p_ws: ws,
       p_contract: data.contractId,
       p_hash: data.hash,
-      p_customer_name: data.customerName,
-      p_customer_email: data.customerEmail,
-      p_issuer_name: data.issuerName,
-      p_issuer_email: data.issuerEmail,
+      p_signers: data.signers,
     });
   });
 export const attestExternalSignature = createServerFn({ method: "POST" })

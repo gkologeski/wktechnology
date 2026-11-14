@@ -8126,11 +8126,11 @@
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
-        "src/components/hiring/contract-signature-card.tsx": "6dfeeb1d40608efee1d4f21b715fc9cb57c4169e3827ae8b983af353c5dd0a2f",
+        "src/components/hiring/contract-signature-card.tsx": "d378e389ce5c3146e0e18988faac737efff0f2fbb0fac177140db297bad00628",
         "src/components/hiring/recruitment-authorization-panel.tsx": "63999fab8527aaba7d5bce74450e4c9730b86a54a45104f9952d28de00ad4f8d",
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
-        "src/lib/hiring/signature.functions.ts": "fbd40253714587c00093d0dc56a57075f1d627cb29c41dadc428f8821efbcbcb",
+        "src/lib/hiring/signature.functions.ts": "4f291f2f4868068afb2f3ec1042df44fcfcaf42804b1b91c4784c5a4ba6fccc7",
         "src/routes/_authenticated/contracts.signatures.tsx": "4426d66ec9317c9f8ff3c3ad36f97d261c84d6d5f7206b074af990ea21ea5bf8"
       }
     },
@@ -8139,7 +8139,7 @@
       "kind": "presentation",
       "rationale": "Type-only DTO declarations; no IO, actions or values.",
       "files": {
-        "src/lib/hiring/signature.types.ts": "de3403e80787df8cc9bd3f7b5257682ce251e5f5c0277d7eaf613a5f4217081f"
+        "src/lib/hiring/signature.types.ts": "e17c484c8fbcf26da2797cd19c1dd320d6388957d0592b64d1f78ecca10aab48"
       }
     },
     {
@@ -12392,10 +12392,10 @@
       },
       "files": {
         "drizzle/migrations/0357_contract_signature_delivery.sql": "f2220b025cd82b9f9841c5572871ca9d995c227cefc4f1d5c298310afe17722d",
-        "src/components/contracts/contract-signature-delivery.tsx": "5b6801294071a121cb459e1ef6b81b6c09003a6a2301ea79f5c62ceb43892c31",
+        "src/components/contracts/contract-signature-delivery.tsx": "f4bc76f3231fb6b7e925cff2df506b852a9a735703f633bdc9b526de298a7018",
         "src/lib/contracts/signature-delivery.functions.ts": "7e54acfd8edc6821c6eddf8221b08de3d2f01e59ac4a3e24b993e7bc2d4c7100",
         "src/lib/contracts/signature-delivery.server.ts": "ee8265251df0c590c6937621005c7c16f81658512a890f4d7e3c2ada9a87a1a4",
-        "src/lib/esign.functions.ts": "3b0c45d8c48c21b1e2f088f7e3774fde0e2c62a3b3464e89d018c08ea6ed783d"
+        "src/lib/esign.functions.ts": "37d7dec2190628e15769933b537a8bb2832ea3f9e99a26ebd76f87d20485360d"
       },
       "exception": {
         "mechanism": "Unchanged public esign functions resolve a personal signing token to its persisted document and workspace, then execute token-validated contract_esign_public or ats_offer_sign RPCs. Invitation dispatch itself requires authenticated work scope.",
@@ -12410,6 +12410,105 @@
       "rationale": "Pure React email presentation for a source-validated recipient, personal URL and workspace brand; no queries, permissions or sending side effects. Dispatch authorization is contract-context-signature-delivery.",
       "files": {
         "src/lib/email-templates/contract-signature-request.tsx": "ed4407668bf68e8965d774b007d5a90141aadbd461eb5b1f3858727a7ffee013"
+      }
+    },
+    {
+      "id": "document-signers-contact-snapshots",
+      "kind": "business",
+      "resources": [
+        "techcontracts.signature_evidence",
+        "techcontracts.esign",
+        "techsales.contacts"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.signature_evidence.manage.workspace",
+        "techcontracts.signature_evidence.view.workspace",
+        "techcontracts.esign.create.workspace",
+        "techcontracts.esign.manage.workspace",
+        "techsales.contacts.view.own",
+        "techsales.contacts.view.team",
+        "techsales.contacts.view.workspace",
+        "techsales.contacts.create.own",
+        "techsales.contacts.create.team",
+        "techsales.contacts.create.workspace"
+      ],
+      "rationale": "Contact-backed contract participants; optional witnesses become mandatory when included. User/RLS contact search and creation, source-bound SQL preparation, immutable participant snapshots and legacy helper no longer callable by authenticated clients. No role grants; existing documents unchanged.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0358_contract_signer_contacts.sql",
+          "symbol": "hiring_contract_signers_prepare"
+        },
+        {
+          "file": "drizzle/migrations/0358_contract_signer_contacts.sql",
+          "symbol": "contract_signature_participants_read"
+        },
+        {
+          "file": "drizzle/migrations/0358_contract_signer_contacts.sql",
+          "symbol": "contract_participant_identity_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/signers-postgres.test.ts",
+          "name": "document participants allow an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/signers-postgres.test.ts",
+          "name": "document participants reject missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/signers-postgres.test.ts",
+          "name": "document participants reject explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/signers-postgres.test.ts",
+          "name": "document participants reject foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/signers-postgres.test.ts",
+          "name": "document participants reject inactive membership"
+        }
+      },
+      "files": {
+        "src/lib/contracts/signer-contacts.functions.ts": "f4012895b4c8ba11df9eed569ad6e440b4bab9bd73bfe1555bbdf761496689e5",
+        "src/components/contracts/signer-contact-picker.tsx": "0d70bd3e61582e9daf88d9b1e4c076a0d2235f4e447e40088994e925be8ce660",
+        "drizzle/migrations/0358_contract_signer_contacts.sql": "bed11a084066be96c408f68cfa867ae99a93b4a9881cc393aa55f25c0fc2c5bb"
+      }
+    },
+    {
+      "id": "contract-signer-input-schema",
+      "kind": "presentation",
+      "rationale": "Pure input schema and contact DTO; no data reads, writes or permissions. Callers enforce workspace, contact access and signature preparation.",
+      "files": {
+        "src/lib/contracts/signers.ts": "3859aeeee6f32bd54b83d846aa8f8c361e126c0f53e14c21a7d8d6b536557934"
       }
     }
   ],

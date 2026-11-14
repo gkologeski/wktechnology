@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 1
-version: 3
+version: 4
 is_published: true
 ---
 # Acompanhar a jornada comercial e contratação
@@ -54,3 +54,6 @@ Cotação → proposta aceita → minuta aprovada pelo cliente → contrato com 
 - [Revisar minuta](/ajuda/contracts/revisar-minuta)
 - [Registrar assinatura](/ajuda/contracts/registrar-assinatura)
 - [Ativar serviço](/ajuda/contracts/ativar-servico)
+
+## Signatários por papel
+Na preparação do contrato, escolha contatos para CONTRATANTE e CONTRATADO. Inclua testemunhas apenas quando necessário; uma vez incluídas, suas assinaturas são obrigatórias para concluir o documento. A busca permite cadastrar um novo contato com as permissões de contatos. O cadastro deve conter nome e e-mail válidos. Papéis adicionais podem ser incluídos explicitamente.
