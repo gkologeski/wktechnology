@@ -38,6 +38,8 @@ import { getContractSignature } from "@/lib/hiring/signature.functions";
 import { createContractFromSales } from "@/lib/sales-flow.functions";
 import { formatCurrency, formatDateTime, formatDateOnly } from "@/lib/crm";
 import { cn } from "@/lib/utils";
+import { PROPOSAL_STATUS_LABEL } from "@/lib/proposals/proposal-document-types";
+import { CONTRACT_FIELD_OPTIONS } from "@/lib/contracts/workflow-field-meta";
 import { DealQuotes } from "./deal-quotes";
 import { DealProposals } from "./deal-proposals";
 import { DealContracts } from "@/components/contracts/deal-contracts";
@@ -69,6 +71,15 @@ const ContractServices = lazy(() =>
 const DeliveryPanel = lazy(() =>
   import("./deal-delivery-panel").then((m) => ({ default: m.DealDeliveryPanel })),
 );
+const quoteStatusLabel: Record<string, string> = {
+  draft: "Rascunho",
+  published: "Publicada",
+  sent: "Enviada",
+  accepted: "Aceita",
+  declined: "Recusada",
+  expired: "Expirada",
+  canceled: "Cancelada",
+};
 const loading = (
   <p role="status" className="p-4 text-sm text-muted-foreground">
     Carregando…
@@ -393,7 +404,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
           )}
         </CardHeader>
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-none border-b bg-transparent px-4">
+          <TabsList className="grid h-auto w-full grid-cols-[repeat(auto-fit,minmax(90px,1fr))] gap-1 rounded-none border-b bg-transparent px-3 py-2">
             <TabsTrigger value="journey">Jornada</TabsTrigger>
             <TabsTrigger value="documents">Documentos</TabsTrigger>
             <TabsTrigger value="activity">Histórico</TabsTrigger>
@@ -403,7 +414,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
           </TabsList>
           <TabsContent value="journey" className="m-0 p-5">
             <ol
-              className="mb-6 flex overflow-x-auto border-b pb-5"
+              className="mb-6 grid grid-cols-[repeat(auto-fit,minmax(88px,1fr))] gap-x-2 gap-y-4 border-b pb-5"
               aria-label="Etapas da contratação"
             >
               {JOURNEY_STEPS.map((name, i) => {
@@ -415,7 +426,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
                   false,
                 ][i];
                 return (
-                  <li key={name} className="min-w-[78px] flex-1">
+                  <li key={name} className="min-w-0">
                     <button
                       type="button"
                       onClick={() => setViewed(i)}
@@ -678,7 +689,8 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
             <ul className="space-y-4 border-l pl-4 text-sm">
               {j.quote && (
                 <li>
-                  Cotação: {j.quote.title || j.quote.number} · {j.quote.status}
+                  Cotação: {j.quote.title || j.quote.number} ·{" "}
+                  {quoteStatusLabel[j.quote.status] ?? "Consultar cotação"}
                 </li>
               )}
               {j.proposal && (
@@ -686,7 +698,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
                   Proposta v{j.proposal.version}:{" "}
                   {j.proposalSigned
                     ? `Aceita em ${formatDateTime(j.proposal.decided_at!)}`
-                    : j.proposal.status}
+                    : (PROPOSAL_STATUS_LABEL[j.proposal.status] ?? "Consultar proposta")}
                 </li>
               )}
               {j.draft && (
@@ -702,7 +714,9 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
               )}
               {j.contract && (
                 <li>
-                  Contrato {j.contract.number}: {j.contract.status}
+                  Contrato {j.contract.number}:{" "}
+                  {CONTRACT_FIELD_OPTIONS.status.find((x) => x.value === j.contract!.status)
+                    ?.label ?? "Consultar contrato"}
                   {ready
                     ? " · Evidência válida da versão atual"
                     : " · Conferir assinatura e aprovações"}

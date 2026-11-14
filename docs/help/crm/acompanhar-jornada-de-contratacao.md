@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 1
-version: 1
+version: 2
 is_published: true
 ---
 # Acompanhar a jornada comercial e contratação
@@ -38,6 +38,7 @@ Cotação → proposta aceita → minuta aprovada pelo cliente → contrato com 
 - O resumo carrega até 100 documentos por categoria e avisa quando há mais. Use as listagens completas nesse caso.
 - O status **Ativo** não comprova assinatura. A liberação usa a evidência válida da versão atual e as regras do contrato.
 - Aditivos e renovações começam no contrato existente. Contratos avulsos ficam no TechContracts.
+- Em painéis estreitos, abas e etapas se organizam em mais de uma linha; o histórico usa rótulos de status em português.
 - O papel Financeiro identifica o responsável operacional; não concede privilégios nem fixa uma pessoa.
 
 ## Erros comuns
