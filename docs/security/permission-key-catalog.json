@@ -674,6 +674,7 @@
     "techcontracts.contract_activation.manage.workspace",
     "techcontracts.contract_draft_approvers.manage.workspace",
     "techcontracts.contract_drafts.approve.workspace",
+    "techcontracts.contract_drafts.create.workspace",
     "techcontracts.contract_drafts.view.workspace",
     "techcontracts.contract_templates.assign.workspace",
     "techcontracts.contract_templates.create.own",
@@ -2968,6 +2969,10 @@
     },
     "techsales.inbox.linkedin.manage.own": {
       "migration": "drizzle/migrations/0342_linkedin_inbox.sql"
+    },
+    "techcontracts.contract_drafts.create.workspace": {
+      "migration": "drizzle/migrations/0356_deal_contracting_journey.sql",
+      "rationale": "Abertura manual de minuta, sem grants autom\u00e1ticos."
     }
   }
 }

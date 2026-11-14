@@ -1,8 +1,6 @@
 import { SalesAction } from "@/components/sales-access";
 import { useSalesCapabilities } from "@/lib/access-control/use-sales-capabilities";
 import { useSalesSharing } from "@/lib/access-control/use-sales-sharing";
-import { usePermissions } from "@/lib/access-control/use-permissions";
-import { readViewAs } from "@/lib/view-as-client";
 // Quadro "Propostas" do negócio: cabeçalho com "+ Adicionar", cartões com menu
 // de ações e assistente passo a passo para criar/editar.
 import { useState } from "react";
@@ -17,7 +15,6 @@ import { sendProposal } from "@/lib/proposals.functions";
 import { cancelProposal } from "@/lib/proposals/proposal-cancel.functions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { ProposalWizard, type ProposalSource } from "@/components/proposals/proposal-wizard";
-import { ContractWizard, type ContractWizardSource } from "@/components/contracts/contract-wizard";
 import { DealDocumentCard, DealDocsHeader, type DocAction } from "./deal-document-card";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -31,19 +28,12 @@ const STATUS_LABEL: Record<string, string> = {
   canceled: "Cancelada",
 };
 
-export function DealProposals({
-  dealId,
-  companyId,
-}: {
-  dealId: string;
-  companyId?: string | null;
-}) {
+export function DealProposals({ dealId }: { dealId: string; companyId?: string | null }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const send = useServerFn(sendProposal);
   const cancel = useServerFn(cancelProposal);
   const [wizard, setWizard] = useState<ProposalSource | null>(null);
-  const [contractWizard, setContractWizard] = useState<ContractWizardSource | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["deal-proposals", dealId],
@@ -63,18 +53,6 @@ export function DealProposals({
     rows.map((p) => p.id),
   );
   const sharing = useSalesSharing("proposals");
-  const permissions = usePermissions();
-  const canCreateContract =
-    !permissions.isLoading &&
-    !permissions.isError &&
-    !readViewAs()?.readOnly &&
-    readViewAs()?.mode !== "role" &&
-    permissions.canAny(
-      ["own", "team", "workspace"].map((scope) => `techcontracts.contracts.create.${scope}`),
-    ) &&
-    permissions.canAny(
-      ["own", "team", "workspace"].map((scope) => `techcontracts.contracts.view.${scope}`),
-    );
   const refresh = () => void qc.invalidateQueries({ queryKey: ["deal-proposals", dealId] });
 
   async function run(fn: () => Promise<unknown>, ok: string) {
@@ -144,12 +122,6 @@ export function DealProposals({
           if (yes) void run(() => cancel({ data: { id: p.id } }), "Proposta cancelada.");
         },
       });
-    if (canCreateContract && p.status !== "canceled")
-      a.push({
-        kind: "item",
-        label: "Gerar contrato",
-        onSelect: () => setContractWizard({ proposalId: p.id, dealId, companyId }),
-      });
     if (cap.can_delete) a.push({ kind: "separator" });
     if (cap.can_delete)
       a.push({
@@ -168,11 +140,7 @@ export function DealProposals({
         singular="proposta"
         plural="propostas"
         onAdd={() => setWizard({ dealId })}
-        addControl={(button) => (
-          <SalesAction table="proposals" action="create">
-            {button}
-          </SalesAction>
-        )}
+        addControl={() => null}
       />
       {isLoading ? (
         <div className="h-16 animate-pulse rounded-md bg-muted" aria-busy="true" />
@@ -217,7 +185,6 @@ export function DealProposals({
         onOpenChange={(o) => !o && setWizard(null)}
         onDone={refresh}
       />
-      <ContractWizard source={contractWizard} onOpenChange={(o) => !o && setContractWizard(null)} />
     </div>
   );
 }

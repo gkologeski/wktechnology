@@ -28,10 +28,10 @@ import {
   DealLineItemsEditor,
   DealLineItemsCount,
 } from "@/components/deals/deal-line-items";
-import { DealQuotes } from "@/components/deals/deal-quotes";
-import { DealProposals } from "@/components/deals/deal-proposals";
-import { DealContracts } from "@/components/contracts/deal-contracts";
-import { DealDeliveryPanel } from "@/components/deals/deal-delivery-panel";
+import {
+  DealContractingJourney,
+  DealJourneySummary,
+} from "@/components/deals/deal-contracting-journey";
 import { RoleProfilesCard } from "@/components/deals/role-profiles/role-profiles-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DEAL_STAGES, formatCurrency, formatDateTime } from "@/lib/crm";
@@ -52,7 +52,11 @@ export const Route = createFileRoute("/_authenticated/deals/$id")({
   // `tab=perfis` é aceito apenas por compatibilidade com links antigos.
   validateSearch: (
     s: Record<string, unknown>,
-  ): { tab?: "perfis"; profile?: string; approval?: string } => ({
+  ): { tab?: "perfis"; profile?: string; approval?: string; journey?: string } => ({
+    ...(typeof s["journey"] === "string" &&
+    /^(proposal|quote|contract):[0-9a-f-]{36}$/i.test(s["journey"])
+      ? { journey: s["journey"] }
+      : {}),
     ...(s["tab"] === "perfis" ? { tab: "perfis" as const } : {}),
     ...(typeof s["profile"] === "string" && /^[0-9a-f-]{36}$/i.test(s["profile"])
       ? { profile: s["profile"] }
@@ -86,6 +90,14 @@ function DealDetail() {
   const capabilities = useSalesCapabilities("deals", [id]);
   const canUpdate = capabilities.for(id).can_update;
   const navigate = useNavigate();
+  const journeyOrigin = search.journey ?? null;
+  const setJourneyOrigin = (value: string) =>
+    void navigate({
+      to: "/deals/$id",
+      params: { id },
+      search: (prev) => ({ ...prev, journey: value }),
+      replace: true,
+    });
   const qc = useQueryClient();
   const { pipelines } = usePipelines("deal");
   const { can } = usePermissions();
@@ -432,13 +444,19 @@ function DealDetail() {
         }
         center={
           <>
+            <DealContractingJourney
+              dealId={deal.id}
+              companyId={deal.company_id}
+              origin={journeyOrigin}
+              onOriginChange={setJourneyOrigin}
+            />
             <AiSummaryPanel entity="deal" entityId={deal.id} />
-            <DealDeliveryPanel dealId={deal.id} />
             <ActivityTimeline relatedKey="related_deal_id" relatedId={deal.id} />
           </>
         }
         right={
           <>
+            <DealJourneySummary dealId={deal.id} origin={journeyOrigin} />
             <AssociationsPanel entity="deal" entityId={deal.id} companyId={deal.company_id} />
             <RoleProfilesCard
               dealId={deal.id}
@@ -475,30 +493,6 @@ function DealDetail() {
                   ownerId={deal.owner_id}
                   currency={deal.currency ?? "BRL"}
                 />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Cotações</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DealQuotes dealId={deal.id} />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Propostas</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DealProposals dealId={deal.id} companyId={deal.company_id ?? null} />
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base">Contratos</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <DealContracts dealId={deal.id} companyId={deal.company_id ?? null} />
               </CardContent>
             </Card>
           </>

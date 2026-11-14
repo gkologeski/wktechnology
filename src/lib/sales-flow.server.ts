@@ -273,6 +273,34 @@ export async function contractFromSales(
     ? await loadAcceptedProposalSource(supabase, workspaceId, input.proposalId)
     : null;
   const proposal = source?.proposal ?? null;
+  if (proposal && proposal.total_amount == null && !input.mainContractId)
+    throw new Error(
+      "A proposta aceita precisa ter valor estruturado. Obtenha novo aceite antes de preparar o contrato.",
+    );
+  // A minuta vigente aprovada pelo cliente é a fonte das cláusulas finais.
+  // Não regenerar o texto a partir de um modelo que pode ter mudado após o aceite.
+  let acceptedDraftBody: string | null = null;
+  let acceptedDraftTerms: { number?: string; starts_at?: string; ends_at?: string | null } = {};
+  if (source && !input.mainContractId) {
+    const { data: draft, error: draftError } = await (supabase as any)
+      .from("contract_drafts")
+      .select("body_html,client_decided_at,decided_at,prepared_terms")
+      .eq("workspace_id", workspaceId)
+      .eq("proposal_id", input.proposalId!)
+      .eq("status", "accepted")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (draftError) throw new Error(draftError.message);
+    if (!draft?.client_decided_at || !draft.decided_at)
+      throw new Error("Aguarde a aprovação jurídica e o aceite da minuta pelo cliente.");
+    acceptedDraftBody = draft.body_html;
+    acceptedDraftTerms = (draft.prepared_terms ?? {}) as {
+      starts_at?: string;
+      ends_at?: string | null;
+    };
+  }
+
   if (proposal && input.quoteId && input.quoteId !== proposal.quote_id)
     throw new Error("Cotação diferente da Proposta Comercial aceita.");
   const quoteId = input.quoteId ?? proposal?.quote_id ?? null;
@@ -402,7 +430,8 @@ export async function contractFromSales(
       },
       template,
     );
-    bodyHtml = mergeTemplateBody(template.body_html ?? "", ctx, { strict: !!source });
+    bodyHtml =
+      acceptedDraftBody ?? mergeTemplateBody(template.body_html ?? "", ctx, { strict: !!source });
     mergedNumber = contract.number;
     startsAt = contract.starts_at ?? null;
     endsAt = contract.ends_at ?? null;
@@ -443,34 +472,20 @@ export async function contractFromSales(
     workspaceId,
     userId,
     kind: "provider",
-    number: mergedNumber,
+    number: acceptedDraftTerms.number ?? mergedNumber,
     fields: {
       ...common,
       contracting_legal_entity_id: entityId,
+      ...(paymentMethod ? { payment_method: paymentMethod } : {}),
       title: `Contrato — ${baseTitle}`,
-      starts_at: startsAt,
-      ends_at: endsAt,
+      starts_at: acceptedDraftTerms.starts_at ?? startsAt,
+      ends_at: acceptedDraftTerms.starts_at ? (acceptedDraftTerms.ends_at ?? null) : endsAt,
     },
     dealId,
     items: loaded ? loaded.items : null,
-    bodyHtml,
+    bodyHtml: acceptedDraftBody ?? bodyHtml,
+    ...(contractTerms ? { paymentTerms: contractTerms } : {}),
   });
-  if (contractTerms || paymentMethod) {
-    const { error: ptErr } = await supabase
-      .from("contracts")
-      .update({
-        ...(contractTerms ? { payment_terms: contractTerms as never } : {}),
-        // Forma de pagamento da proposta, quando o contrato ainda não tem uma.
-        ...(paymentMethod && !(result.contract as { payment_method?: string | null }).payment_method
-          ? { payment_method: paymentMethod }
-          : {}),
-      })
-      .eq("id", (result.contract as { id: string }).id);
-    if (ptErr)
-      throw new Error(
-        `Contrato criado, mas as condições de pagamento não foram gravadas: ${ptErr.message}`,
-      );
-  }
   return {
     contract: result.contract,
     reused: false,

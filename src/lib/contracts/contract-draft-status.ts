@@ -19,6 +19,8 @@ export const CONTRACT_DRAFT_STATUS_LABEL: Record<ContractDraftStatus, string> = 
 };
 
 export const CONTRACT_DRAFT_EVENT_LABEL: Record<string, string> = {
+  terms_updated: "Vigência conferida na revisão jurídica",
+  reopened: "Nova revisão aberta; aceite e link anteriores revogados",
   opened: "Minuta aberta após o aceite da proposta",
   no_approvers: "Sem aprovador jurídico configurado",
   edited: "Minuta editada",

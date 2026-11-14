@@ -1,4 +1,3 @@
-import { WorkAction } from "@/components/work-action";
 import { useSalesSharing } from "@/lib/access-control/use-sales-sharing";
 import { SalesAction, SalesCapabilityScope } from "@/components/sales-access";
 import { useMemo, useState } from "react";
@@ -21,7 +20,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Plus, ExternalLink, MoreHorizontal } from "lucide-react";
 import { ProposalWizard } from "@/components/proposals/proposal-wizard";
-import { ContractWizard, type ContractWizardSource } from "@/components/contracts/contract-wizard";
 import { toast } from "sonner";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { supabase } from "@/integrations/supabase/client";
@@ -65,7 +63,6 @@ export function DealQuotes({ dealId }: { dealId: string }) {
   const payLink = useServerFn(createQuotePaymentLink);
 
   const [proposalQuoteId, setProposalQuoteId] = useState<string | null>(null);
-  const [contractWizard, setContractWizard] = useState<ContractWizardSource | null>(null);
   function genProposal(id: string) {
     setProposalQuoteId(id);
   }
@@ -396,18 +393,14 @@ export function DealQuotes({ dealId }: { dealId: string }) {
                             </SalesAction>
                           </SalesAction>
                         )}
-                        <SalesAction table="proposals" action="create">
-                          <DropdownMenuItem onSelect={() => genProposal(q.id)}>
-                            Gerar proposta
-                          </DropdownMenuItem>
-                        </SalesAction>
-                        <WorkAction resource="techcontracts.contracts" action="create">
-                          <DropdownMenuItem
-                            onSelect={() => setContractWizard({ quoteId: q.id, dealId })}
-                          >
-                            Gerar contrato
-                          </DropdownMenuItem>
-                        </WorkAction>
+                        {status === "accepted" && (
+                          <SalesAction table="proposals" action="create">
+                            <DropdownMenuItem onSelect={() => genProposal(q.id)}>
+                              Gerar proposta
+                            </DropdownMenuItem>
+                          </SalesAction>
+                        )}
+
                         <SalesAction
                           table="quotes"
                           action="manage"
@@ -453,7 +446,6 @@ export function DealQuotes({ dealId }: { dealId: string }) {
       )}
 
       <QuoteInternalPreview id={previewId} onClose={() => setPreviewId(null)} />
-      <ContractWizard source={contractWizard} onOpenChange={(o) => !o && setContractWizard(null)} />
       <ProposalWizard
         source={proposalQuoteId ? { quoteId: proposalQuoteId } : null}
         onOpenChange={(o) => !o && setProposalQuoteId(null)}
