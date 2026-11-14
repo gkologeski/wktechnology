@@ -6774,6 +6774,45 @@ export type Database = {
           },
         ]
       }
+      contract_draft_versions: {
+        Row: {
+          body_html: string
+          captured_at: string
+          draft_id: string
+          revision: number
+          workspace_id: string
+        }
+        Insert: {
+          body_html: string
+          captured_at?: string
+          draft_id: string
+          revision: number
+          workspace_id: string
+        }
+        Update: {
+          body_html?: string
+          captured_at?: string
+          draft_id?: string
+          revision?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_draft_versions_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: false
+            referencedRelation: "contract_drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_draft_versions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_drafts: {
         Row: {
           body_html: string
@@ -6789,6 +6828,7 @@ export type Database = {
           id: string
           legal_entity_id: string | null
           missing_template: boolean
+          prepared_terms: Json
           proposal_id: string | null
           public_token: string | null
           revision: number
@@ -6815,6 +6855,7 @@ export type Database = {
           id?: string
           legal_entity_id?: string | null
           missing_template?: boolean
+          prepared_terms?: Json
           proposal_id?: string | null
           public_token?: string | null
           revision?: number
@@ -6841,6 +6882,7 @@ export type Database = {
           id?: string
           legal_entity_id?: string | null
           missing_template?: boolean
+          prepared_terms?: Json
           proposal_id?: string | null
           public_token?: string | null
           revision?: number
@@ -33056,6 +33098,10 @@ export type Database = {
         Args: { p_channel: string; p_draft: string; p_to: string }
         Returns: Json
       }
+      contract_draft_merge_source: {
+        Args: { p_draft: string; p_template: string }
+        Returns: Json
+      }
       contract_draft_open: {
         Args: { p_actor: string; p_proposal: string; p_ws: string }
         Returns: Json
@@ -33070,6 +33116,10 @@ export type Database = {
         Returns: Json
       }
       contract_draft_public_get: { Args: { p_token: string }; Returns: Json }
+      contract_draft_reopen: {
+        Args: { p_draft: string; p_note: string; p_revision: number }
+        Returns: Json
+      }
       contract_draft_review: {
         Args: {
           p_body: string
@@ -33078,6 +33128,18 @@ export type Database = {
           p_note: string
           p_revision: number
           p_template: string
+        }
+        Returns: Json
+      }
+      contract_draft_review_prepared: {
+        Args: {
+          p_body: string
+          p_decision: string
+          p_draft: string
+          p_note: string
+          p_revision: number
+          p_template: string
+          p_terms?: Json
         }
         Returns: Json
       }
@@ -33172,6 +33234,10 @@ export type Database = {
       }
       current_user_workspaces: { Args: never; Returns: string[] }
       dashboard_metrics: { Args: never; Returns: Json }
+      deal_contract_draft_prepare: {
+        Args: { p_proposal: string }
+        Returns: Json
+      }
       deal_delivery_assert_user: {
         Args: { p_write: boolean; p_ws: string }
         Returns: undefined
