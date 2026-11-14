@@ -237,3 +237,21 @@ it("identifies restricted documents without claiming they do not exist", async (
   await render();
   expect(host.textContent).toContain("não confirma que não existam");
 });
+
+it("uses understandable Portuguese contract status in the journey history", async () => {
+  const d = fixture();
+  d.contracts = [{ ...contract, status: "awaiting_signature" }];
+  state.get.mockResolvedValue(d);
+  await render();
+  const tab =
+    host.querySelector('[role="tab"][data-state="inactive"][id$="activity"]') ??
+    Array.from(host.querySelectorAll('[role="tab"]')).find((t) => t.textContent === "Histórico");
+  expect(tab).toBeTruthy();
+  await act(async () => {
+    tab!.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0 }));
+    tab!.dispatchEvent(new MouseEvent("click", { bubbles: true, button: 0 }));
+  });
+  await flush();
+  expect(host.textContent).toContain("Aguardando assinatura");
+  expect(host.textContent).not.toContain("awaiting_signature");
+});
