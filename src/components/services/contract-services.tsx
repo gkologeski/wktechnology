@@ -1,3 +1,6 @@
+import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { readViewAs } from "@/lib/view-as-client";
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -67,6 +70,17 @@ export function ContractServices({
     queryFn: () => list({ data: { contractId } }),
   });
 
+  const permissions = usePermissions();
+  const capabilities = useWorkCapabilities(
+    "techservice.services",
+    rows.map((row) => row.id),
+  );
+  const writable =
+    !permissions.isLoading &&
+    !permissions.isError &&
+    !readViewAs()?.readOnly &&
+    readViewAs()?.mode !== "role";
+
   const { data: profiles = [] } = useQuery({
     queryKey: ["job-profile-options"],
     queryFn: () => listProfiles({ data: {} }) as Promise<{ id: string; name: string }[]>,
@@ -107,7 +121,11 @@ export function ContractServices({
         <span className="text-sm text-muted-foreground">
           {rows.length === 0 ? "Nenhum serviço" : `${rows.length} serviço(s)`}
         </span>
-        {canLink ? (
+        {canLink &&
+        writable &&
+        permissions.canAny(
+          ["own", "team", "workspace"].map((scope) => `techservice.services.create.${scope}`),
+        ) ? (
           <Button size="sm" variant="link" className="h-auto p-0" onClick={() => setOpenNew(true)}>
             <Link2 aria-hidden="true" className="h-3.5 w-3.5 mr-0.5" /> Associar serviço
           </Button>
@@ -205,7 +223,7 @@ export function ContractServices({
                     Diferente do negócio de origem: {divergenceFields(s.id).join(", ")}.
                   </p>
                 ) : null}
-                {s.status === "pending" ? (
+                {s.status === "pending" && writable && capabilities.for(s.id).can_update ? (
                   <div className="mt-2">
                     <Button
                       size="sm"
@@ -224,7 +242,11 @@ export function ContractServices({
         </div>
       )}
 
-      {canLink ? (
+      {canLink &&
+      writable &&
+      permissions.canAny(
+        ["own", "team", "workspace"].map((scope) => `techservice.services.create.${scope}`),
+      ) ? (
         <LinkCatalogServiceDialog
           open={openNew}
           onOpenChange={setOpenNew}

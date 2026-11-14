@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 201
-version: 2
+version: 3
 is_published: true
 ---
 # Atualizar um negócio
@@ -21,8 +21,8 @@ is_published: true
 1. Confira as propriedades e as associações do negócio.
 2. Para trocar o funil, use o seletor com a indicação "Selecione o funil".
 3. Confira a etapa e o substatus após a alteração.
-4. Consulte as áreas "Cotações", "Propostas" e "Contratos".
-5. Para criar uma cotação, adicione primeiro itens de linha ao negócio. Depois, na área "Cotações", clique em "Adicionar".
+4. Consulte a **Jornada comercial e contratação** no painel central. A aba **Documentos** reúne cotações, propostas, minutas e contratos.
+5. Para criar uma cotação, adicione primeiro itens de linha ao negócio. Depois, na jornada ou em Documentos > Cotações, prepare a cotação.
 6. Para excluir o negócio, use a ação de exclusão apenas se tiver permissão e confirme a solicitação.
 ![Tela: detalhe do negócio com seletor de funil e áreas Cotações, Propostas e Contratos](/help-media/crm/atualizar-negocio.webp)
 
@@ -43,3 +43,5 @@ O negócio passa a refletir o funil atualizado. Os documentos vinculados podem s
 ## Relacionados
 - [Acompanhar negócios](/ajuda/crm/acompanhar-negocios)
 - [Gerenciar cotações e gerar propostas](/ajuda/crm/gerenciar-cotacoes)
+
+- [Acompanhar a jornada comercial e contratação](/ajuda/crm/acompanhar-jornada-de-contratacao)

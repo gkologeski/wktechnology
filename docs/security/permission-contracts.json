@@ -9685,7 +9685,7 @@
         "techcontracts.contract_drafts.approve.workspace",
         "techcontracts.contract_draft_approvers.manage.workspace"
       ],
-      "rationale": "ACEITE-MINUTA Entrega 2. New catalogue keys granted to no role. Tables contract_drafts/contract_draft_approvers/contract_draft_events: SELECT-only grants for authenticated under RLS (active member + effective key; approvers must be listed), writes only via SECURITY DEFINER RPCs. contract_draft_open is service_role only (workflow engine, after authorizeWorkflowStep). contract_draft_review/template_body/templates require contract_draft_is_approver (listed + active member + effective approve key, deny removed by user_effective_permissions); review is CAS by revision. contract_draft_set_approvers requires the manage key in work_access_context and active members. UI gates (menu + screen) mirror the keys only. 0311_0334 file is an accidental no-op (DO block) migration with no effect. Entrega 3: issue_link/mark_sent require contract_draft_is_approver and an approved draft; deal substatus move is best-effort under the caller's own row guard.",
+      "rationale": "ACEITE-MINUTA Entrega 2. New catalogue keys granted to no role. Tables contract_drafts/contract_draft_approvers/contract_draft_events: SELECT-only grants for authenticated under RLS (active member + effective key; approvers must be listed), writes only via SECURITY DEFINER RPCs. contract_draft_open is service_role only (workflow engine, after authorizeWorkflowStep). contract_draft_review/template_body/templates require contract_draft_is_approver (listed + active member + effective approve key, deny removed by user_effective_permissions); review is CAS by revision. contract_draft_set_approvers requires the manage key in work_access_context and active members. UI gates (menu + screen) mirror the keys only. 0311_0334 file is an accidental no-op (DO block) migration with no effect. Entrega 3: issue_link/mark_sent require contract_draft_is_approver and an approved draft; deal substatus move is best-effort under the caller's own row guard. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável.",
       "controls": [
         {
           "file": "src/integrations/supabase/auth-middleware.ts",
@@ -9788,9 +9788,9 @@
         "drizzle/migrations/0311_0334_contract_draft_legal_review.sql": "34b15156ef6dd6be975fd1d42cfa7b47ef5fc1db73ab35486abe755b8a36a427",
         "drizzle/migrations/0312_contract_draft_legal_review.sql": "13ce7aa0ddad44bc26c81cccd662b1fb5a12f6cf606e87554beea542faed7e82",
         "src/components/contracts/contract-draft-approvers-page.tsx": "10912b5af48d1d3b83214d0d1bfbbf069cb636f1813a8eaa98cd6d1a72801f1f",
-        "src/components/contracts/contract-draft-review-page.tsx": "eea61d546dd02c931c3da8474db92533634d9260d044c33ab88204b7fec19e45",
-        "src/lib/contracts/contract-drafts.functions.ts": "b6194a8adbccbcd9d560abcf15b762014668afacab9b22fc55f8e6dca5b235cf",
-        "src/lib/workflows/engine/actions-contracts.server.ts": "8f9892132aafe489bd6a61b79fa342c84a74abd44307b0b0049f3147413a6574",
+        "src/components/contracts/contract-draft-review-page.tsx": "325977c088f63c012f69db71451c5975d8b982f0ef083e2d366690191eae2c6e",
+        "src/lib/contracts/contract-drafts.functions.ts": "19ec7713c17e8f30f97d7335eaca5502585604fc4d21bf51d557ca1146f70fa4",
+        "src/lib/workflows/engine/actions-contracts.server.ts": "ce77a960a2356639cd80d3245608044a2dabe2ef8d0dcd2dffa33f22ffb0c1d2",
         "src/routes/_authenticated/contracts.drafts.$id.tsx": "154ab4c2eb14d4003eadd589b90b7af808169de961cf7e5ac21554a8973daea2",
         "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "b8d35e6adaa94ec01c69e35a1c1f734c2543a48097a60910f7484519e812688c",
         "src/components/contracts/contract-draft-send-panel.tsx": "78b10003e87264f75e375c8b2cc67c79e0a45b8625af89ab3abd4d5495462200",
@@ -9800,9 +9800,9 @@
     {
       "id": "contract-draft-status-labels",
       "kind": "presentation",
-      "rationale": "Pure labels and the TS mirror of the SQL approver rule; no I/O.",
+      "rationale": "Pure labels and the TS mirror of the SQL approver rule; no I/O. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável.",
       "files": {
-        "src/lib/contracts/contract-draft-status.ts": "0f1ac36b0159d22625e5d5fd5c72eb0e1c9569dbd20a02d7dc889f480f6da165",
+        "src/lib/contracts/contract-draft-status.ts": "4e3ab7404769b2399550c311081a502ee8d1d8206d3ffff2796d88277f51157d",
         "src/lib/contracts/contract-draft-public-rules.ts": "b0ba0ea6350890b9262061980ec7b66a72bd69ba0f97d254fab02a53c58a50b8"
       }
     },
@@ -10183,7 +10183,7 @@
         "techcontracts.contract_templates.view.workspace",
         "techsales.proposals.view.workspace"
       ],
-      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access. Reviewed concurrent ENDERECO-ATUAL change: cep added to the same workspace-filtered user/RLS company projection, pure party merge retains commercial snapshot values.",
+      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access. Reviewed concurrent ENDERECO-ATUAL change: cep added to the same workspace-filtered user/RLS company projection, pure party merge retains commercial snapshot values. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -10280,11 +10280,11 @@
       },
       "files": {
         "src/components/contracts/apply-contract-template-dialog.tsx": "f1b8f344a6a5bbc22cc7d8aa43c04bdd0b680fbf579de229b7da056b3025ef3c",
-        "src/lib/contracts/contract-create.server.ts": "83d6a2580954f05b3340a2404a75ab876669bf256965de4e203b8bfb5bf3d66b",
+        "src/lib/contracts/contract-create.server.ts": "f76b919e90f4330533e1d5b146a49c530a4e165bd5bdc61d606f758f5016fdcb",
         "src/lib/contracts/template-merge.server.ts": "1285008b1f151e9745a0055889165d953eda5bba69e4c0350ae5facf9976fe6b",
         "src/lib/contracts/templates.functions.ts": "175f4bcacace96cc72290990eaaebb80e3760cb1cb49c6af04c0acf429dcf7b1",
         "src/lib/proposals/proposal-document.server.ts": "a045798a8a0897f3031d0c5c75bd641f63edeeaf821f4a425b89c8bdf39af589",
-        "src/lib/sales-flow.server.ts": "1c90e8c729c98abbe2ca56c47f420c29baf6091fb110fc49828aead333eb8df6",
+        "src/lib/sales-flow.server.ts": "c9eaa4d789a9a9501d5401e97e44ad8b63068e21f0a2ba96642f3be77d0ac6ac",
         "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "c47cd2567326042905b92c83d60fcd77d1f5b142e23704c96f6428271e9ffdb8",
@@ -10997,7 +10997,7 @@
       "permission_keys": [
         "techsales.proposals.update.workspace"
       ],
-      "rationale": "CANCELA-PROPOSTA: cancelProposal reuses techsales.proposals update (requireSalesPermission + assertSalesRecord per record, RLS client, compare-and-set on status). UI buttons gated by SalesAction update. Public token read already only exposes sent/accepted/rejected, so canceled proposals cannot be accepted. No schema, grant or policy change. Ficha also hosts the existing proposal email/send actions (same gates as before).",
+      "rationale": "CANCELA-PROPOSTA: cancelProposal reuses techsales.proposals update (requireSalesPermission + assertSalesRecord per record, RLS client, compare-and-set on status). UI buttons gated by SalesAction update. Public token read already only exposes sent/accepted/rejected, so canceled proposals cannot be accepted. No schema, grant or policy change. Ficha also hosts the existing proposal email/send actions (same gates as before). | Jornada: remover atalho de contrato e criação direta de proposta da ficha; ações da lista seguem capacidades por registro em useSalesCapabilities, cancelamento mantém a fronteira existente.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -11010,6 +11010,10 @@
         {
           "file": "src/components/sales-access.tsx",
           "symbol": "SalesAction"
+        },
+        {
+          "file": "src/lib/access-control/use-sales-capabilities.ts",
+          "symbol": "useSalesCapabilities"
         }
       ],
       "database": [
@@ -11043,7 +11047,7 @@
       "files": {
         "src/lib/proposals/proposal-cancel.functions.ts": "49841b802ff018e2f78b399f17c6cb1c86cee025ec7a5aa2b9ad49b2a3d082d6",
         "src/routes/_authenticated/proposals.$id.tsx": "3411b971106cb95f1f8c11810863a9f1d4e90f2af7a4f5980f6df44503cf6497",
-        "src/components/deals/deal-proposals.tsx": "ca731b749a8eb0346d0da39d0ffae68f387c931e8287ddfd50bc6f5738d92d2c"
+        "src/components/deals/deal-proposals.tsx": "f6beffa75d6ff176bd52ca4a021d1928b730ce41557965cdda0e80aee31b6e10"
       }
     },
     {
@@ -12163,6 +12167,137 @@
       "rationale": "Pure rules deciding whether the contract service form shows job profile fields and which billing type to suggest from the catalog. No I/O, routes, actions or data access.",
       "files": {
         "src/lib/services/catalog-service-form.ts": "d24657ea23f45dc8c673236db591f2d500a90c2eae3a768ef2a9dc3363289bbe"
+      }
+    },
+    {
+      "id": "deal-contracting-journey",
+      "kind": "business",
+      "resources": [
+        "techsales.deals",
+        "techsales.quotes",
+        "techsales.proposals",
+        "techcontracts.contract_drafts",
+        "techcontracts.contracts",
+        "techcontracts.signature_evidence",
+        "techservice.services"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "approve",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.deals.view.own",
+        "techsales.deals.view.team",
+        "techsales.deals.view.workspace",
+        "techcontracts.contract_drafts.create.workspace",
+        "techcontracts.contract_drafts.view.workspace",
+        "techcontracts.contract_drafts.approve.workspace",
+        "techcontracts.signature_evidence.view.workspace"
+      ],
+      "rationale": "Ficha aprovada: resumo somente de negócio autorizado, consultas opcionais precedidas por gate de cada área e filtradas por workspace/negócio sob RLS. Não retorna corpos, tokens ou arquivos. Uma origem explícita por jornada. Abertura de minuta manual exige create próprio, membro ativo e proposta/negócio visíveis e aceitos; advisory row lock e workflow interno idempotente. Nenhuma concessão automática. Novos contratos principais de proposta exigem minuta juridicamente aprovada e aceita; gatilho preserva corpo e proveniência e proíbe alterações posteriores. Contratos históricos preservados. Assinatura real via hiring_contract_signature_context; status ativo não basta. Ações existentes mantêm seus gates (sales/work capabilities, send/share/approve/esign/serviços); readonly nega novas ações. Textos anteriores capturados por trigger e SELECT RLS do pai, sem reconstruir histórico; carregamento de um corpo por vez. Revisão jurídica continua exigindo aprovador listado, CAS e nova aprovação do cliente; chamadas diretas sujeitas às mesmas invariantes.",
+      "controls": [
+        {
+          "file": "src/lib/deals/contracting-journey.server.ts",
+          "symbol": "loadDealContractingJourney"
+        },
+        {
+          "file": "src/lib/deals/contracting-journey.functions.ts",
+          "symbol": "prepareDealContractDraft"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/components/sales-access.tsx",
+          "symbol": "SalesAction"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0356_deal_contracting_journey.sql",
+          "symbol": "deal_contract_draft_prepare"
+        },
+        {
+          "file": "drizzle/migrations/0356_deal_contracting_journey.sql",
+          "symbol": "contract_accepted_draft_guard"
+        },
+        {
+          "file": "drizzle/migrations/0356_deal_contracting_journey.sql",
+          "symbol": "contract_draft_reopen"
+        },
+        {
+          "file": "drizzle/migrations/0356_deal_contracting_journey.sql",
+          "symbol": "contract_draft_merge_source"
+        },
+        {
+          "file": "drizzle/migrations/0356_deal_contracting_journey.sql",
+          "symbol": "contract_draft_ready_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/deals/contracting-journey-postgres.test.ts",
+          "name": "journey SQL allows an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/deals/contracting-journey-postgres.test.ts",
+          "name": "journey SQL rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/deals/contracting-journey-postgres.test.ts",
+          "name": "journey SQL rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/deals/contracting-journey-postgres.test.ts",
+          "name": "journey SQL rejects a foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/deals/contracting-journey-postgres.test.ts",
+          "name": "journey SQL rejects inactive membership"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0356_deal_contracting_journey.sql": "19cf8a7112a8967cb6feb71aff3b81758e25a6b8ffbb7ef4eb39836a1330e5bb",
+        "src/components/deals/deal-contracting-journey.tsx": "f53bf94f7940d484b1e582c00e749949e50c554aa343de7eee6b73379f9854c8",
+        "src/lib/deals/contracting-journey.functions.ts": "20e51a0e73599b7462b188572d108e1a28cf23256a11e7dd78a68b9584a7897d",
+        "src/lib/deals/contracting-journey.server.ts": "a869db7a515d7206f15149c92f4712dcf7d89f42bcde42149143e828e4712068",
+        "src/routes/_authenticated/deals.$id.tsx": "2b272b970ee6a1db7f6446031579722e12610d5666577fd2f12c12b2a82378b5",
+        "src/components/contracts/deal-contracts.tsx": "c3fe6970695d96ce3de60ee61402e6a29d146f387e3c0bd17060d42605eaeb77",
+        "src/components/services/contract-services.tsx": "3e7e119ba59184301bcbe6119636a88af1464c8272e3bfbc9a214626642b411b",
+        "src/lib/workflows/engine/accepted-commercial-source.server.ts": "fda10abfddc77a282eaa181dc07f400b8852a393386d4885f9b847ff1b9572ec",
+        "src/components/deals/deal-quotes.tsx": "c2dd3a60a071861cad60efb37769adc2c322e2b2f953a659d267afd6f5255909"
+      }
+    },
+    {
+      "id": "deal-contracting-journey-display-model",
+      "kind": "presentation",
+      "rationale": "Pure types, lineage selection and display stage derivation; no I/O, permission grants or mutation. Backend/RLS remains authoritative.",
+      "files": {
+        "src/lib/deals/contracting-journey.ts": "c1f50ffb0245223af9a0a4e59031b4427f201b391a5800cdc318dced4c0a1720"
       }
     }
   ],

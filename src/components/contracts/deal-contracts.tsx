@@ -1,4 +1,3 @@
-import { WorkAction } from "@/components/work-action";
 import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { readViewAs } from "@/lib/view-as-client";
@@ -130,13 +129,13 @@ export function DealContracts({
         count={rows.length}
         singular="contrato"
         plural="contratos"
-        onAdd={() => setWizard({ dealId, companyId })}
-        addControl={(button) => (
-          <WorkAction resource="techcontracts.contracts" action="create">
-            {button}
-          </WorkAction>
-        )}
+        onAdd={() => undefined}
+        addControl={() => null}
       />
+      <p className="text-xs text-muted-foreground">
+        Novos contratos deste negócio são preparados na Jornada, após o aceite da minuta. Aditivos
+        começam no contrato existente.
+      </p>
       {isLoading ? (
         <div className="h-16 animate-pulse rounded-md bg-muted" aria-busy="true" />
       ) : isError ? (

@@ -152,6 +152,8 @@ export type CreateContractArgs = {
   /** Se informado, copia só estes itens de linha. */
   lineItemIds?: string[] | null;
   bodyHtml?: string | null;
+  /** Commercial payment terms saved atomically with the new contract. */
+  paymentTerms?: unknown;
   status?: string;
   /** Itens explícitos (ex.: da cotação) — substituem os itens do negócio. */
   items?: DealLineItemRow[] | null;
@@ -224,16 +226,21 @@ export async function createContractShared(
   const { document_kind, role } = kindToColumns(args.kind, args.role ?? null);
 
   let dealFields: ContractDefaultsMap = {};
+  let dealSnapshot: DealSnapshot | null = null;
   let items: DealLineItemRow[] = [];
   if (args.dealId) {
     const loaded = await loadDealForContract(supabase, args.dealId);
+    dealSnapshot = loaded.deal;
     dealFields = contractFieldsFromDeal(loaded.deal, loaded.items);
     items = args.lineItemIds?.length
       ? loaded.items.filter((li) => args.lineItemIds?.includes(li.id))
       : loaded.items;
   }
 
-  if (args.items) items = args.items;
+  if (args.items) {
+    items = args.items;
+    if (dealSnapshot) dealFields = contractFieldsFromDeal(dealSnapshot, items);
+  }
 
   const bundle = await loadContractDefaults(supabase, args.workspaceId);
   const defaults = effectiveDefaults(bundle, args.kind);
@@ -252,6 +259,7 @@ export async function createContractShared(
     currency: (merged["currency"] as string) ?? "BRL",
     total_value: merged["total_value"] ?? 0,
     body_html: args.bodyHtml ?? null,
+    ...(args.paymentTerms !== undefined ? { payment_terms: args.paymentTerms } : {}),
     number: args.number ?? generateNumber(),
     public_token: tokenValue(),
     status: args.status ?? "draft",

@@ -9,6 +9,7 @@ import { createContractShared, loadDealForContract } from "@/lib/contracts/contr
 import { isContractKind, kindToColumns, type ContractKind } from "@/lib/contracts/contract-kinds";
 import { coerceContractFields } from "@/lib/contracts/contract-field-coerce";
 import type { RunCtx, RunnableAction } from "./run-context";
+import { loadWorkflowAcceptedCommercialSource } from "./accepted-commercial-source.server";
 import { authorizeWorkflowStep } from "./authorization.server";
 
 /** Aceita tanto o novo formato (prestação/compra/aditivo) quanto o antigo. */
@@ -50,9 +51,38 @@ export async function handleContractAction(
       "O responsável do workflow não possui as permissões atuais para criar este contrato e seus serviços.",
     );
   const kind = resolveKind(action.document_kind ?? action.role);
-  const { document_kind } = kindToColumns(kind, action.role ?? null);
+  const { document_kind, role } = kindToColumns(kind, action.role ?? null);
   const skipIfExists = action.skip_if_exists !== false;
 
+  // Preserve idempotence for historical jobs without rewriting their old contracts.
+  if (skipIfExists) {
+    const { data: existing, error: existingError } = await supabase
+      .from("contracts")
+      .select("id,title")
+      .eq("workspace_id", deal.workspace_id)
+      .eq("deal_id", deal.id)
+      .eq("document_kind", document_kind)
+      .eq("role", role)
+      .limit(1)
+      .maybeSingle();
+    if (existingError) throw new Error(existingError.message);
+    if (existing)
+      return {
+        at,
+        ok: true,
+        action: "create_contract_from_deal",
+        detail: { contract_id: existing.id, services: 0, title: existing.title, reused: true },
+      };
+  }
+  const commercialSource =
+    document_kind === "main" && role === "provider"
+      ? await loadWorkflowAcceptedCommercialSource(
+          supabase,
+          deal.workspace_id,
+          deal.id,
+          ctx.ownerId,
+        )
+      : null;
   let bodyHtml: string | null = null;
   if (action.template_id) {
     const { data: tpl } = await supabase
@@ -91,12 +121,18 @@ export async function handleContractAction(
     role: action.role ?? null,
     fields: {
       ...(extraValues as Record<string, string | number | boolean | null>),
+      ...(commercialSource?.fields ?? {}),
       title,
-      starts_at: startsAt ?? (extraValues["starts_at"] as string | null) ?? null,
+      starts_at:
+        (commercialSource?.fields.starts_at as string | null) ??
+        startsAt ??
+        (extraValues["starts_at"] as string | null) ??
+        null,
     },
     dealId: deal.id,
     copyLineItems: action.copy_line_items !== false,
-    bodyHtml,
+    bodyHtml: commercialSource?.bodyHtml ?? bodyHtml,
+    ...(commercialSource ? { items: commercialSource.items } : {}),
     status: action.status ?? "draft",
   });
 

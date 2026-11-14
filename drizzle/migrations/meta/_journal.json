@@ -2493,6 +2493,13 @@
       "when": 1794602757372,
       "tag": "0355_calendar_pending_meetings_index",
       "breakpoints": true
+    },
+    {
+      "idx": 356,
+      "version": "7",
+      "when": 1794632035979,
+      "tag": "0356_deal_contracting_journey",
+      "breakpoints": true
     }
   ]
 }
