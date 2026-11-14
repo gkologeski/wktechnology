@@ -7,7 +7,13 @@ export const signerRole = z
   .max(80)
   .regex(/^[A-Z0-9_ -]+$/, "Use letras sem acentos, números, espaços ou hífen no papel.");
 export const contractSignersSchema = z
-  .array(z.object({ role: signerRole, contactId: z.string().uuid() }))
+  .array(
+    z.object({
+      role: signerRole,
+      contactId: z.string().uuid(),
+      cpf: z.string().trim().max(20).nullable().optional(),
+    }),
+  )
   .min(2)
   .max(20)
   .superRefine((items, ctx) => {

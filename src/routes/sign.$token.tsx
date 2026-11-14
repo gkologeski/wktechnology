@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CheckCircle2, FileSignature, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { EsignBodyView } from "@/components/esign/esign-body-view";
 
 export const Route = createFileRoute("/sign/$token")({
   component: SignPage,
@@ -28,13 +29,12 @@ const SIGNER_LABEL: Record<string, string> = {
 function SignPage() {
   const { token } = Route.useParams();
   const qc = useQueryClient();
-  const get = useServerFn(getEsignSession);
   const submit = useServerFn(submitEsignSignature);
   const decline = useServerFn(declineEsign);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["esign-session", token],
-    queryFn: () => get({ data: { token } }),
+    queryFn: () => getEsignSession({ data: { token } }),
     retry: false,
   });
 
@@ -98,9 +98,10 @@ function SignPage() {
             <CardTitle className="text-base">Documento</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="rounded-md border bg-background p-4 whitespace-pre-wrap text-sm max-h-[60vh] overflow-y-auto">
-              {doc.body}
-            </div>
+            <EsignBodyView
+              body={doc.body}
+              className="rounded-md border bg-background p-6 max-h-[60vh] overflow-y-auto"
+            />
           </CardContent>
         </Card>
 

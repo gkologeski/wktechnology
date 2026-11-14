@@ -1,0 +1,2 @@
+# ForSign
+- ForSign e-signature lives in `src/lib/integrations/forsign/` (thin `forsign.functions.ts`, all HTTP/DB in `forsign-service.server.ts`); webhook/cron only point at operations that are re-read from the ForSign API and evidence is written only by service-only `forsign_record_evidence`; why: unsigned payloads never become signature evidence.

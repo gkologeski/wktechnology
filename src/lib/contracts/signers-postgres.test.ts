@@ -192,7 +192,11 @@ beforeAll(async () => {
   await db.unsafe(
     "CREATE FUNCTION sales_record_access(t text,i uuid,a text) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT EXISTS(SELECT 1 FROM contacts c JOIN profiles p ON p.id=auth.uid() WHERE c.id=i AND c.workspace_id=p.active_workspace_id AND is_workspace_member(c.workspace_id,auth.uid()) AND user_has_permission(auth.uid(),c.workspace_id,'techsales.contacts.view.workspace')) $$;",
   );
-  await db.unsafe(readFileSync("drizzle/migrations/0358_contract_signer_contacts.sql", "utf8"));
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0358_esign_formatted_contract_body.sql", "utf8"),
+  );
+  await db.unsafe("CREATE TABLE contract_forsign_operations(id uuid PRIMARY KEY);");
+  await db.unsafe(readFileSync("drizzle/migrations/0360_contract_signer_contacts.sql", "utf8"));
 }, 120000);
 afterAll(async () => {
   if (db) await db.end();

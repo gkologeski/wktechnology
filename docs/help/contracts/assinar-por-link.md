@@ -8,7 +8,7 @@ route_pattern: /sign/$token
 min_permission:
 audience: internal
 sort_order: 96
-version: 1
+version: 2
 is_published: true
 ---
 # Assinar ou recusar um documento por link
@@ -29,6 +29,7 @@ is_published: true
 A assinatura ou recusa fica registrada no documento.
 
 ## Regras e limites
+- O documento aparece com a mesma formatação do modelo do contrato (títulos, negrito, parágrafos e listas), para o cliente e para a empresa.
 - Nome com pelo menos dois caracteres e aceite são exigidos pelo botão.
 - Links inválidos, expirados ou documentos cancelados/rascunho não permitem assinatura.
 - A ordem é conferida novamente ao assinar.

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ContractSignatureDelivery } from "@/components/contracts/contract-signature-delivery";
+import { ContractForsignPanel } from "@/components/contracts/contract-forsign-panel";
 import { readViewAs } from "@/lib/view-as-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -8,7 +9,7 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { SignerContactPicker } from "@/components/contracts/signer-contact-picker";
+import { ContractSignersEditor } from "@/components/contracts/contract-signers-editor";
 import { contractSignersSchema, type SignerContact } from "@/lib/contracts/signers";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -91,7 +92,6 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
     { role: "CONTRATANTE", contact: null },
     { role: "CONTRATADO", contact: null },
   ]);
-  const [extraRole, setExtraRole] = useState("");
   const signerPayload = participants.map((p) => ({ role: p.role, contactId: p.contact?.id ?? "" }));
   const [pdf, setPdf] = useState<File | null>(null),
     [signedOn, setSignedOn] = useState(""),
@@ -215,6 +215,12 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
           </Button>
         </div>
       )}
+      <ContractForsignPanel
+        contractId={contractId}
+        hash={c.hash}
+        canManage={manage}
+        witnessesDetected={c.witnesses_detected}
+      />
       <div className="space-y-3">
         {c.evidence.length === 0 && (
           <p className="text-sm text-muted-foreground">Nenhuma evidência registrada.</p>
@@ -294,79 +300,12 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
                 O documento será preparado a partir do contrato salvo e seus serviços. Depois,
                 confira os signatários e envie os convites por e-mail neste mesmo painel.
               </p>
-              <p className="text-sm text-muted-foreground">
-                CONTRATANTE e CONTRATADO são obrigatórios. Testemunhas são opcionais; ao incluir
-                uma, a assinatura dela será exigida para concluir o documento. Cada participante
-                recebe seu próprio link.
-              </p>
-              {c.witnesses_detected && (
-                <p role="note" className="text-sm">
-                  Foram encontradas referências a testemunhas no documento. Confira se deseja
-                  incluí-las antes de preparar.
-                </p>
-              )}
-              {participants.map((p, i) => (
-                <div key={p.role} className="space-y-1">
-                  <SignerContactPicker
-                    role={p.role}
-                    value={p.contact}
-                    disabled={busy}
-                    onChange={(contact) =>
-                      setParticipants((old) => old.map((r, n) => (n === i ? { ...r, contact } : r)))
-                    }
-                  />
-                  {i > 1 && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={busy}
-                      onClick={() => setParticipants((old) => old.filter((_, n) => n !== i))}
-                    >
-                      Não incluir {p.role}
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <div className="flex flex-wrap gap-2">
-                {["TESTEMUNHA 1", "TESTEMUNHA 2"]
-                  .filter((r) => !participants.some((p) => p.role === r))
-                  .map((role) => (
-                    <Button
-                      key={role}
-                      variant="outline"
-                      size="sm"
-                      disabled={busy || participants.length >= 20}
-                      onClick={() => setParticipants((old) => [...old, { role, contact: null }])}
-                    >
-                      + {role}
-                    </Button>
-                  ))}
-              </div>
-              <Label>Outro papel do documento</Label>
-              <div className="flex gap-2">
-                <Input
-                  aria-label="Outro papel do documento"
-                  placeholder="Ex.: INTERVENIENTE"
-                  value={extraRole}
-                  maxLength={80}
-                  onChange={(e) => setExtraRole(e.target.value.toUpperCase())}
-                />
-                <Button
-                  variant="outline"
-                  disabled={
-                    busy ||
-                    participants.length >= 20 ||
-                    !/^[A-Z0-9_ -]{2,80}$/.test(extraRole.trim()) ||
-                    participants.some((p) => p.role === extraRole.trim())
-                  }
-                  onClick={() => {
-                    setParticipants((old) => [...old, { role: extraRole.trim(), contact: null }]);
-                    setExtraRole("");
-                  }}
-                >
-                  Incluir
-                </Button>
-              </div>
+              <ContractSignersEditor
+                value={participants}
+                onChange={setParticipants}
+                disabled={busy}
+                witnessesDetected={c.witnesses_detected}
+              />
               <Button
                 disabled={
                   busy ||

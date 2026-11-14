@@ -323,6 +323,7 @@ import { Route as AuthenticatedSettingsIntegrationsIndexRouteImport } from './ro
 import { Route as AuthenticatedSettingsIntegrationsSlugRouteImport } from './routes/_authenticated/settings.integrations.$slug'
 import { Route as AuthenticatedSettingsIntegrationsAiRouteImport } from './routes/_authenticated/settings.integrations.ai'
 import { Route as AuthenticatedSettingsIntegrationsContaazulRouteImport } from './routes/_authenticated/settings.integrations.contaazul'
+import { Route as AuthenticatedSettingsIntegrationsForsignRouteImport } from './routes/_authenticated/settings.integrations.forsign'
 import { Route as AuthenticatedSettingsIntegrationsLinkedinRouteImport } from './routes/_authenticated/settings.integrations.linkedin'
 import { Route as AuthenticatedSettingsMarketplaceIndexRouteImport } from './routes/_authenticated/settings.marketplace.index'
 import { Route as AuthenticatedSettingsMarketplaceSlugRouteImport } from './routes/_authenticated/settings.marketplace.$slug'
@@ -340,6 +341,8 @@ import { Route as ApiPublicBookingSlugRouteImport } from './routes/api/public/bo
 import { Route as ApiPublicFilesTokenRouteImport } from './routes/api/public/files/$token'
 import { Route as ApiPublicFormsSlugRouteImport } from './routes/api/public/forms/$slug'
 import { Route as ApiPublicFormsEmbedJsRouteImport } from './routes/api/public/forms/embed-js'
+import { Route as ApiPublicForsignSyncRouteImport } from './routes/api/public/forsign/sync'
+import { Route as ApiPublicForsignWebhookRouteImport } from './routes/api/public/forsign/webhook'
 import { Route as ApiPublicHealthIndexRouteImport } from './routes/api/public/health/index'
 import { Route as ApiPublicHealthReadyRouteImport } from './routes/api/public/health/ready'
 import { Route as ApiPublicHooksActivityRemindersTickRouteImport } from './routes/api/public/hooks/activity-reminders-tick'
@@ -2239,6 +2242,12 @@ const AuthenticatedSettingsIntegrationsContaazulRoute =
     path: '/integrations/contaazul',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsIntegrationsForsignRoute =
+  AuthenticatedSettingsIntegrationsForsignRouteImport.update({
+    id: '/integrations/forsign',
+    path: '/integrations/forsign',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsIntegrationsLinkedinRoute =
   AuthenticatedSettingsIntegrationsLinkedinRouteImport.update({
     id: '/integrations/linkedin',
@@ -2335,6 +2344,16 @@ const ApiPublicFormsSlugRoute = ApiPublicFormsSlugRouteImport.update({
 const ApiPublicFormsEmbedJsRoute = ApiPublicFormsEmbedJsRouteImport.update({
   id: '/api/public/forms/embed-js',
   path: '/api/public/forms/embed-js',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicForsignSyncRoute = ApiPublicForsignSyncRouteImport.update({
+  id: '/api/public/forsign/sync',
+  path: '/api/public/forsign/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicForsignWebhookRoute = ApiPublicForsignWebhookRouteImport.update({
+  id: '/api/public/forsign/webhook',
+  path: '/api/public/forsign/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHealthIndexRoute = ApiPublicHealthIndexRouteImport.update({
@@ -3220,6 +3239,7 @@ export interface FileRoutesByFullPath {
   '/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
   '/settings/integrations/ai': typeof AuthenticatedSettingsIntegrationsAiRoute
   '/settings/integrations/contaazul': typeof AuthenticatedSettingsIntegrationsContaazulRoute
+  '/settings/integrations/forsign': typeof AuthenticatedSettingsIntegrationsForsignRoute
   '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/settings/marketplace/$slug': typeof AuthenticatedSettingsMarketplaceSlugRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
@@ -3235,6 +3255,8 @@ export interface FileRoutesByFullPath {
   '/api/public/files/$token': typeof ApiPublicFilesTokenRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/forsign/sync': typeof ApiPublicForsignSyncRoute
+  '/api/public/forsign/webhook': typeof ApiPublicForsignWebhookRoute
   '/api/public/health/ready': typeof ApiPublicHealthReadyRoute
   '/api/public/hooks/activity-reminders-tick': typeof ApiPublicHooksActivityRemindersTickRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
@@ -3647,6 +3669,7 @@ export interface FileRoutesByTo {
   '/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
   '/settings/integrations/ai': typeof AuthenticatedSettingsIntegrationsAiRoute
   '/settings/integrations/contaazul': typeof AuthenticatedSettingsIntegrationsContaazulRoute
+  '/settings/integrations/forsign': typeof AuthenticatedSettingsIntegrationsForsignRoute
   '/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/settings/marketplace/$slug': typeof AuthenticatedSettingsMarketplaceSlugRoute
   '/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
@@ -3662,6 +3685,8 @@ export interface FileRoutesByTo {
   '/api/public/files/$token': typeof ApiPublicFilesTokenRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/forsign/sync': typeof ApiPublicForsignSyncRoute
+  '/api/public/forsign/webhook': typeof ApiPublicForsignWebhookRoute
   '/api/public/health/ready': typeof ApiPublicHealthReadyRoute
   '/api/public/hooks/activity-reminders-tick': typeof ApiPublicHooksActivityRemindersTickRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
@@ -4082,6 +4107,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/integrations/$slug': typeof AuthenticatedSettingsIntegrationsSlugRoute
   '/_authenticated/settings/integrations/ai': typeof AuthenticatedSettingsIntegrationsAiRoute
   '/_authenticated/settings/integrations/contaazul': typeof AuthenticatedSettingsIntegrationsContaazulRoute
+  '/_authenticated/settings/integrations/forsign': typeof AuthenticatedSettingsIntegrationsForsignRoute
   '/_authenticated/settings/integrations/linkedin': typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   '/_authenticated/settings/marketplace/$slug': typeof AuthenticatedSettingsMarketplaceSlugRoute
   '/_authenticated/settings/notifications/slack': typeof AuthenticatedSettingsNotificationsSlackRoute
@@ -4097,6 +4123,8 @@ export interface FileRoutesById {
   '/api/public/files/$token': typeof ApiPublicFilesTokenRoute
   '/api/public/forms/$slug': typeof ApiPublicFormsSlugRouteWithChildren
   '/api/public/forms/embed-js': typeof ApiPublicFormsEmbedJsRoute
+  '/api/public/forsign/sync': typeof ApiPublicForsignSyncRoute
+  '/api/public/forsign/webhook': typeof ApiPublicForsignWebhookRoute
   '/api/public/health/ready': typeof ApiPublicHealthReadyRoute
   '/api/public/hooks/activity-reminders-tick': typeof ApiPublicHooksActivityRemindersTickRoute
   '/api/public/hooks/ai-summary-tick': typeof ApiPublicHooksAiSummaryTickRoute
@@ -4517,6 +4545,7 @@ export interface FileRouteTypes {
     | '/settings/integrations/$slug'
     | '/settings/integrations/ai'
     | '/settings/integrations/contaazul'
+    | '/settings/integrations/forsign'
     | '/settings/integrations/linkedin'
     | '/settings/marketplace/$slug'
     | '/settings/notifications/slack'
@@ -4532,6 +4561,8 @@ export interface FileRouteTypes {
     | '/api/public/files/$token'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/forsign/sync'
+    | '/api/public/forsign/webhook'
     | '/api/public/health/ready'
     | '/api/public/hooks/activity-reminders-tick'
     | '/api/public/hooks/ai-summary-tick'
@@ -4944,6 +4975,7 @@ export interface FileRouteTypes {
     | '/settings/integrations/$slug'
     | '/settings/integrations/ai'
     | '/settings/integrations/contaazul'
+    | '/settings/integrations/forsign'
     | '/settings/integrations/linkedin'
     | '/settings/marketplace/$slug'
     | '/settings/notifications/slack'
@@ -4959,6 +4991,8 @@ export interface FileRouteTypes {
     | '/api/public/files/$token'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/forsign/sync'
+    | '/api/public/forsign/webhook'
     | '/api/public/health/ready'
     | '/api/public/hooks/activity-reminders-tick'
     | '/api/public/hooks/ai-summary-tick'
@@ -5378,6 +5412,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/integrations/$slug'
     | '/_authenticated/settings/integrations/ai'
     | '/_authenticated/settings/integrations/contaazul'
+    | '/_authenticated/settings/integrations/forsign'
     | '/_authenticated/settings/integrations/linkedin'
     | '/_authenticated/settings/marketplace/$slug'
     | '/_authenticated/settings/notifications/slack'
@@ -5393,6 +5428,8 @@ export interface FileRouteTypes {
     | '/api/public/files/$token'
     | '/api/public/forms/$slug'
     | '/api/public/forms/embed-js'
+    | '/api/public/forsign/sync'
+    | '/api/public/forsign/webhook'
     | '/api/public/health/ready'
     | '/api/public/hooks/activity-reminders-tick'
     | '/api/public/hooks/ai-summary-tick'
@@ -5562,6 +5599,8 @@ export interface RootRouteChildren {
   ApiPublicFilesTokenRoute: typeof ApiPublicFilesTokenRoute
   ApiPublicFormsSlugRoute: typeof ApiPublicFormsSlugRouteWithChildren
   ApiPublicFormsEmbedJsRoute: typeof ApiPublicFormsEmbedJsRoute
+  ApiPublicForsignSyncRoute: typeof ApiPublicForsignSyncRoute
+  ApiPublicForsignWebhookRoute: typeof ApiPublicForsignWebhookRoute
   ApiPublicHealthReadyRoute: typeof ApiPublicHealthReadyRoute
   ApiPublicHooksActivityRemindersTickRoute: typeof ApiPublicHooksActivityRemindersTickRoute
   ApiPublicHooksAiSummaryTickRoute: typeof ApiPublicHooksAiSummaryTickRoute
@@ -7850,6 +7889,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIntegrationsContaazulRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/integrations/forsign': {
+      id: '/_authenticated/settings/integrations/forsign'
+      path: '/integrations/forsign'
+      fullPath: '/settings/integrations/forsign'
+      preLoaderRoute: typeof AuthenticatedSettingsIntegrationsForsignRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/integrations/linkedin': {
       id: '/_authenticated/settings/integrations/linkedin'
       path: '/integrations/linkedin'
@@ -7967,6 +8013,20 @@ declare module '@tanstack/react-router' {
       path: '/api/public/forms/embed-js'
       fullPath: '/api/public/forms/embed-js'
       preLoaderRoute: typeof ApiPublicFormsEmbedJsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/forsign/sync': {
+      id: '/api/public/forsign/sync'
+      path: '/api/public/forsign/sync'
+      fullPath: '/api/public/forsign/sync'
+      preLoaderRoute: typeof ApiPublicForsignSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/forsign/webhook': {
+      id: '/api/public/forsign/webhook'
+      path: '/api/public/forsign/webhook'
+      fullPath: '/api/public/forsign/webhook'
+      preLoaderRoute: typeof ApiPublicForsignWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/health/': {
@@ -8930,6 +8990,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsIntegrationsSlugRoute: typeof AuthenticatedSettingsIntegrationsSlugRoute
   AuthenticatedSettingsIntegrationsAiRoute: typeof AuthenticatedSettingsIntegrationsAiRoute
   AuthenticatedSettingsIntegrationsContaazulRoute: typeof AuthenticatedSettingsIntegrationsContaazulRoute
+  AuthenticatedSettingsIntegrationsForsignRoute: typeof AuthenticatedSettingsIntegrationsForsignRoute
   AuthenticatedSettingsIntegrationsLinkedinRoute: typeof AuthenticatedSettingsIntegrationsLinkedinRoute
   AuthenticatedSettingsMarketplaceSlugRoute: typeof AuthenticatedSettingsMarketplaceSlugRoute
   AuthenticatedSettingsPlatformAlertsRoute: typeof AuthenticatedSettingsPlatformAlertsRoute
@@ -9056,6 +9117,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
     AuthenticatedSettingsIntegrationsAiRoute,
   AuthenticatedSettingsIntegrationsContaazulRoute:
     AuthenticatedSettingsIntegrationsContaazulRoute,
+  AuthenticatedSettingsIntegrationsForsignRoute:
+    AuthenticatedSettingsIntegrationsForsignRoute,
   AuthenticatedSettingsIntegrationsLinkedinRoute:
     AuthenticatedSettingsIntegrationsLinkedinRoute,
   AuthenticatedSettingsMarketplaceSlugRoute:
@@ -9649,6 +9712,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicFilesTokenRoute: ApiPublicFilesTokenRoute,
   ApiPublicFormsSlugRoute: ApiPublicFormsSlugRouteWithChildren,
   ApiPublicFormsEmbedJsRoute: ApiPublicFormsEmbedJsRoute,
+  ApiPublicForsignSyncRoute: ApiPublicForsignSyncRoute,
+  ApiPublicForsignWebhookRoute: ApiPublicForsignWebhookRoute,
   ApiPublicHealthReadyRoute: ApiPublicHealthReadyRoute,
   ApiPublicHooksActivityRemindersTickRoute:
     ApiPublicHooksActivityRemindersTickRoute,

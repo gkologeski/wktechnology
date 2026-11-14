@@ -1,3 +1,5 @@
+ALTER TABLE public.contract_forsign_operations ADD COLUMN requested_members jsonb;
+
 -- Document participants are contact snapshots. Optional witnesses become required once included.
 CREATE TABLE public.contract_signature_participants (
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid NOT NULL REFERENCES public.workspaces(id) ON DELETE CASCADE,

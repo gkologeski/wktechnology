@@ -36,6 +36,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Plus, Send, X, Trash2, Copy, ExternalLink, Eye, FileSignature } from "lucide-react";
 import { toast } from "sonner";
+import { EsignBodyView } from "@/components/esign/esign-body-view";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export const Route = createFileRoute("/_authenticated/contracts/signatures")({
@@ -421,9 +422,10 @@ function EsignDrawer({ id, onClose }: { id: string | null; onClose: () => void }
           <div className="space-y-5 mt-4">
             <div>
               <div className="text-xs uppercase text-muted-foreground mb-1">Conteúdo</div>
-              <div className="rounded-md border bg-muted/30 p-3 whitespace-pre-wrap text-sm max-h-60 overflow-y-auto">
-                {data.doc.body}
-              </div>
+              <EsignBodyView
+                body={data.doc.body}
+                className="rounded-md border bg-muted/30 p-3 max-h-60 overflow-y-auto"
+              />
             </div>
 
             <div>
