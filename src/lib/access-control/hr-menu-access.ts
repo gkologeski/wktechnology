@@ -1,6 +1,7 @@
 // Stage 4 scope only: legacy role fallbacks must not bypass these menu keys.
 const resources: Record<string, string> = {
   "/settings/esign": "techcontracts.esign",
+  "/contracts/signatures": "techcontracts.esign",
   "/projects/spaces": "techprojects.spaces",
   "/projects/settings/rates": "techprojects.rates",
   "/projects/settings/delivery": "techprojects.delivery",

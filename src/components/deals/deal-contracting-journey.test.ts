@@ -67,7 +67,7 @@ vi.mock("@/components/deals/deal-delivery-panel", () => ({
 vi.mock("@/components/services/contract-services", () => ({
   ContractServices: () => createElement("p", null, "Serviços do contrato"),
 }));
-import { DealContractingJourney } from "./deal-contracting-journey";
+import { DealContractingJourney, DealContractingPanel } from "./deal-contracting-journey";
 const id = "10000000-0000-4000-8000-000000000001";
 const proposal = {
   id,
@@ -134,13 +134,13 @@ async function flush() {
     await new Promise((r) => setTimeout(r, 25));
   });
 }
-async function render() {
+async function render(panel = false) {
   await act(async () => {
     root.render(
       createElement(
         QueryClientProvider,
         { client },
-        createElement(DealContractingJourney, {
+        createElement(panel ? DealContractingPanel : DealContractingJourney, {
           dealId: id,
           origin: null,
           onOriginChange: vi.fn(),
@@ -254,4 +254,15 @@ it("uses understandable Portuguese contract status in the journey history", asyn
   await flush();
   expect(host.textContent).toContain("Aguardando assinatura");
   expect(host.textContent).not.toContain("awaiting_signature");
+});
+
+it("keeps the complete journey closed until opened from the sidebar card", async () => {
+  await render(true);
+  expect(host.querySelector('ol[aria-label="Etapas da contratação"]')).toBeNull();
+  expect(host.textContent).toContain("Contratação");
+  await click("Abrir jornada e documentos");
+  expect(document.body.textContent).toContain("Contratação do negócio");
+  expect(
+    document.body.querySelector('ol[aria-label="Etapas da contratação"]')?.querySelectorAll("li"),
+  ).toHaveLength(5);
 });

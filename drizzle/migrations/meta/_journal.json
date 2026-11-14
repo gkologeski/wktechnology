@@ -2500,6 +2500,13 @@
       "when": 1794632035979,
       "tag": "0356_deal_contracting_journey",
       "breakpoints": true
+    },
+    {
+      "idx": 357,
+      "version": "7",
+      "when": 1794659471746,
+      "tag": "0357_contract_signature_delivery",
+      "breakpoints": true
     }
   ]
 }

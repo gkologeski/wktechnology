@@ -326,7 +326,7 @@
       },
       "files": {
         "src/lib/access-control/sales-route-map.ts": "1a0b7aaf3d644832266a45e09bb4c1d7cf4477c6714a891298cf2d9787ab8892",
-        "src/routes/_authenticated/settings.tsx": "89b93cbb5d5612b607b4b3b5489a3eca747b3e0beb639f021a52a198545ec321",
+        "src/routes/_authenticated/settings.tsx": "6654b09ffe560590a6b1b83c28b27035fff5acaed3c2af30e6e284a255413359",
         "src/routes/_authenticated.tsx": "7a8c57f0ef160cc66068271b9fec9cd8129b36b2895978317c59885dad3fa296",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
       }
@@ -2904,7 +2904,7 @@
       "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. LinkedIn navigation accepts personal view as well as workspace view; server and RLS remain independently enforced.",
       "files": {
         "src/lib/menu-config.ts": "3d6c4a115571c63f83952ef34f4ca754cac5b8baa00374fa1f103be2bdb6f257",
-        "src/lib/menu-resources.ts": "cf3ef25b61ec3a40e33917ee5f6fb594d593406cd6e44f6be2d6eefe338b8087",
+        "src/lib/menu-resources.ts": "d2d4782945eaa46e1af5a4378f0e9a61882c3574bb8bda612aaea79da81d0d26",
         "src/lib/access-control/sales-resources.ts": "b52f747ccc294edc4f31c933224958a42ce7193b480c0e3e6f8145d3fb0d2b31"
       }
     },
@@ -4332,7 +4332,7 @@
         "src/lib/integrations/clickup/clickup-plan.ts": "533a97467cf1f2c7b5da96d712d85d596da4bef664ea769de1e35051dc68918e",
         "src/components/projects/clockify-import/projects-imports-hub.tsx": "d27a05dc685ec8bcebe499543b467862fac4f823bef8e610fb88ca07351d558d",
         "src/lib/menu-config-projects.ts": "e5cf5532d181ad39b3007f631dbbab7ec3533c8ed7f2d942b923b938c70bf9e1",
-        "src/lib/access-control/hr-menu-access.ts": "e2627ae5b065c4a4c74d10a6f83387f8196f5e290631d661518e2a06174007a9"
+        "src/lib/access-control/hr-menu-access.ts": "1112bae5bc2feb33c97abb1f218d341f706a8bd6998237bdb4b879530eef0abb"
       }
     },
     {
@@ -8000,7 +8000,7 @@
       "rationale": "Email presentation and template registry only; no data reads, writes, credentials or recipients resolved here.",
       "files": {
         "src/lib/email-templates/hiring-demand-approval.tsx": "1ec191604ab92237bfee6311fe6c5f852409bf1d6310850dabc1f8368945f3b7",
-        "src/lib/email-templates/registry.ts": "c0624fef520c91f974889de81cbb3ba73742ed22176126bf3f21c4d8f8f71169"
+        "src/lib/email-templates/registry.ts": "cc7cd7e2184225f199f5ad8ea1c926f0a26808fd3b31e535a0d6979867f3c5f7"
       }
     },
     {
@@ -8043,7 +8043,7 @@
         "techsales.role_profiles.view.workspace",
         "techsales.role_profiles.manage.workspace"
       ],
-      "rationale": "Stage 3: explicit commercial contract/evidence binding; no timestamp/status inference. Signature actions require active selected workspace, effective view/manage keys plus current contract record read/update and read-only denial. Immutable private PDF objects are uploaded by the server only after authorization, hashed and bound to actor/contract revision; SQL matches immutable metadata before recording human external attestation. Native preparation reuses authenticated esign create/send/signing with two explicit parties and a sealed document; signing offer documents never qualifies. Recruitment reads require hiring demand view and HR row scope; linking requires update, CAS and same-tenant/client/deal. Before provider publishing, HR access/publish permission and a fresh SQL business preflight run; every relevant ATS write rechecks approval/signature/date/current source. Historical records are preserved and activation is per workspace. Background hiring runs after sales_worker_authorize then current application-derived business gate, and Hunting does not provision internal hiring. Existing record/field permissions and contract legal approvals remain active.",
+      "rationale": "Stage 3: explicit commercial contract/evidence binding; no timestamp/status inference. Signature actions require active selected workspace, effective view/manage keys plus current contract record read/update and read-only denial. Immutable private PDF objects are uploaded by the server only after authorization, hashed and bound to actor/contract revision; SQL matches immutable metadata before recording human external attestation. Native preparation reuses authenticated esign create/send/signing with two explicit parties and a sealed document; signing offer documents never qualifies. Recruitment reads require hiring demand view and HR row scope; linking requires update, CAS and same-tenant/client/deal. Before provider publishing, HR access/publish permission and a fresh SQL business preflight run; every relevant ATS write rechecks approval/signature/date/current source. Historical records are preserved and activation is per workspace. Background hiring runs after sales_worker_authorize then current application-derived business gate, and Hunting does not provision internal hiring. Existing record/field permissions and contract legal approvals remain active. | Signature operations moved to TechContracts; legacy settings URL only redirects to the same HrScreenAccess-protected destination. Contract/deal evidence stays source-bound; read-only sessions cannot prepare evidence.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -8123,14 +8123,15 @@
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
         "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
         "src/routes/_authenticated/contracts.$id.tsx": "f51782b750462067374edfb5caf55d4c56cffa290558331d19b91e935281fed8",
-        "src/routes/_authenticated/settings.esign.tsx": "3f34242a562fb3977f527789872cac53341b84205a943bf2c3fbcb884ce67e48",
+        "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
-        "src/components/hiring/contract-signature-card.tsx": "e0df8ed7dbf6b01c70b806258d35d1a05d0029e2e84dd43806ad65b5a3a8eb28",
+        "src/components/hiring/contract-signature-card.tsx": "6dfeeb1d40608efee1d4f21b715fc9cb57c4169e3827ae8b983af353c5dd0a2f",
         "src/components/hiring/recruitment-authorization-panel.tsx": "63999fab8527aaba7d5bce74450e4c9730b86a54a45104f9952d28de00ad4f8d",
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
-        "src/lib/hiring/signature.functions.ts": "fbd40253714587c00093d0dc56a57075f1d627cb29c41dadc428f8821efbcbcb"
+        "src/lib/hiring/signature.functions.ts": "fbd40253714587c00093d0dc56a57075f1d627cb29c41dadc428f8821efbcbcb",
+        "src/routes/_authenticated/contracts.signatures.tsx": "4426d66ec9317c9f8ff3c3ad36f97d261c84d6d5f7206b074af990ea21ea5bf8"
       }
     },
     {
@@ -9820,7 +9821,7 @@
       "kind": "presentation",
       "rationale": "Static TechContracts menu entry; visibility filtered by canSeeHrMenu with the manage key and the screen re-checks it; server functions use requireWorkPermission.",
       "files": {
-        "src/lib/menu-config-contracts.ts": "d53cdaa9cf8d0f09f3a6e5f7b952b50cdb4e24b6c30c30acc1966fc979a3a4e8"
+        "src/lib/menu-config-contracts.ts": "2f2703a6a2f1f6d8e5ce8d36d489de5db4b2555ff15521262c35def3cd0a3c96"
       }
     },
     {
@@ -12282,10 +12283,10 @@
       },
       "files": {
         "drizzle/migrations/0356_deal_contracting_journey.sql": "8fc0fa2805b2c5ae3f9508242532cb01fe3bf62cb0411d3f78eded6ac6bd5f6f",
-        "src/components/deals/deal-contracting-journey.tsx": "e107125023ef92b7731228eb33ebf029b197d7429eaf15dee03c3b84b94ee037",
+        "src/components/deals/deal-contracting-journey.tsx": "ba770c899a1c4f4636ae88cfb55fe14087699656a34017ded490cb088f770d28",
         "src/lib/deals/contracting-journey.functions.ts": "20e51a0e73599b7462b188572d108e1a28cf23256a11e7dd78a68b9584a7897d",
         "src/lib/deals/contracting-journey.server.ts": "a869db7a515d7206f15149c92f4712dcf7d89f42bcde42149143e828e4712068",
-        "src/routes/_authenticated/deals.$id.tsx": "2b272b970ee6a1db7f6446031579722e12610d5666577fd2f12c12b2a82378b5",
+        "src/routes/_authenticated/deals.$id.tsx": "4a86b9805a7a53ae6cbf992dc059fa86fcefc8460d25cd5b0e0b1ee65ad98839",
         "src/components/contracts/deal-contracts.tsx": "c3fe6970695d96ce3de60ee61402e6a29d146f387e3c0bd17060d42605eaeb77",
         "src/components/services/contract-services.tsx": "3e7e119ba59184301bcbe6119636a88af1464c8272e3bfbc9a214626642b411b",
         "src/lib/workflows/engine/accepted-commercial-source.server.ts": "fda10abfddc77a282eaa181dc07f400b8852a393386d4885f9b847ff1b9572ec",
@@ -12298,6 +12299,117 @@
       "rationale": "Pure types, lineage selection and display stage derivation; no I/O, permission grants or mutation. Backend/RLS remains authoritative.",
       "files": {
         "src/lib/deals/contracting-journey.ts": "c1f50ffb0245223af9a0a4e59031b4427f201b391a5800cdc318dced4c0a1720"
+      }
+    },
+    {
+      "id": "contract-context-signature-delivery",
+      "kind": "business",
+      "resources": [
+        "techcontracts.esign",
+        "techcontracts.signature_evidence",
+        "techcontracts.contracts",
+        "techcontracts.esign_send"
+      ],
+      "actions": [
+        "view",
+        "send",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.esign_send.manage.workspace",
+        "techcontracts.signature_evidence.view.workspace",
+        "techcontracts.esign.view.own",
+        "techcontracts.esign.view.team",
+        "techcontracts.esign.view.workspace"
+      ],
+      "rationale": "Invitations originate from a current non-revoked native contract evidence. Caller-authorized RPC validates active workspace, current contract fingerprint and record send scope before source-constrained service reads. No client-supplied recipients or URLs. Service reads only claimed delivery/signer ids within that workspace/document; persistent attempt ids deduplicate retries at the managed email provider. Client SELECT never exposes tokens via delivery records; service result writes are not granted to authenticated clients. UI checks current version, record capabilities and read-only mode. Provider acceptance is distinct from mailbox delivery and signature. The modified esign.functions authenticated getter only adds RLS-filtered delivery history. Existing public token functions are unchanged, using workspaceOfSource and offerRpc/workRpc capability validation; their exception remains source-bound.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        },
+        {
+          "file": "src/lib/workspace-source.server.ts",
+          "symbol": "workspaceOfSource"
+        },
+        {
+          "file": "src/lib/ats/offer-rpc.server.ts",
+          "symbol": "offerRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0357_contract_signature_delivery.sql",
+          "symbol": "contract_esign_request"
+        },
+        {
+          "file": "drizzle/migrations/0357_contract_signature_delivery.sql",
+          "symbol": "contract_esign_deliveries_read"
+        },
+        {
+          "file": "drizzle/migrations/0309_hiring_signature_evidence.sql",
+          "symbol": "hiring_contract_signature_context"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "contract_esign_manage"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/signature-delivery-postgres.test.ts",
+          "name": "contract invitation allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/signature-delivery-postgres.test.ts",
+          "name": "contract invitation rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/signature-delivery-postgres.test.ts",
+          "name": "contract invitation rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/signature-delivery-postgres.test.ts",
+          "name": "contract invitation rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/signature-delivery-postgres.test.ts",
+          "name": "contract invitation rejects inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0357_contract_signature_delivery.sql": "f2220b025cd82b9f9841c5572871ca9d995c227cefc4f1d5c298310afe17722d",
+        "src/components/contracts/contract-signature-delivery.tsx": "5b6801294071a121cb459e1ef6b81b6c09003a6a2301ea79f5c62ceb43892c31",
+        "src/lib/contracts/signature-delivery.functions.ts": "7e54acfd8edc6821c6eddf8221b08de3d2f01e59ac4a3e24b993e7bc2d4c7100",
+        "src/lib/contracts/signature-delivery.server.ts": "ee8265251df0c590c6937621005c7c16f81658512a890f4d7e3c2ada9a87a1a4",
+        "src/lib/esign.functions.ts": "3b0c45d8c48c21b1e2f088f7e3774fde0e2c62a3b3464e89d018c08ea6ed783d"
+      },
+      "exception": {
+        "mechanism": "Unchanged public esign functions resolve a personal signing token to its persisted document and workspace, then execute token-validated contract_esign_public or ats_offer_sign RPCs. Invitation dispatch itself requires authenticated work scope.",
+        "boundary": "No arbitrary workspace, recipient, email body or public URL is accepted from the invitation caller; public signing capability is distinct from authenticated invitation delivery.",
+        "revocation": "Expired/canceled documents, revoked/stale evidence, inactive membership and denied send scope block new invitations; personal token expiration/state enforced by existing public signing RPCs.",
+        "review_by": "2027-02-14"
+      }
+    },
+    {
+      "id": "contract-signature-invitation-template",
+      "kind": "presentation",
+      "rationale": "Pure React email presentation for a source-validated recipient, personal URL and workspace brand; no queries, permissions or sending side effects. Dispatch authorization is contract-context-signature-delivery.",
+      "files": {
+        "src/lib/email-templates/contract-signature-request.tsx": "ed4407668bf68e8965d774b007d5a90141aadbd461eb5b1f3858727a7ffee013"
       }
     }
   ],

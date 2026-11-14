@@ -28,10 +28,7 @@ import {
   DealLineItemsEditor,
   DealLineItemsCount,
 } from "@/components/deals/deal-line-items";
-import {
-  DealContractingJourney,
-  DealJourneySummary,
-} from "@/components/deals/deal-contracting-journey";
+import { DealContractingPanel } from "@/components/deals/deal-contracting-journey";
 import { RoleProfilesCard } from "@/components/deals/role-profiles/role-profiles-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DEAL_STAGES, formatCurrency, formatDateTime } from "@/lib/crm";
@@ -444,19 +441,18 @@ function DealDetail() {
         }
         center={
           <>
-            <DealContractingJourney
-              dealId={deal.id}
-              companyId={deal.company_id}
-              origin={journeyOrigin}
-              onOriginChange={setJourneyOrigin}
-            />
             <AiSummaryPanel entity="deal" entityId={deal.id} />
             <ActivityTimeline relatedKey="related_deal_id" relatedId={deal.id} />
           </>
         }
         right={
           <>
-            <DealJourneySummary dealId={deal.id} origin={journeyOrigin} />
+            <DealContractingPanel
+              dealId={deal.id}
+              companyId={deal.company_id}
+              origin={journeyOrigin}
+              onOriginChange={setJourneyOrigin}
+            />
             <AssociationsPanel entity="deal" entityId={deal.id} companyId={deal.company_id} />
             <RoleProfilesCard
               dealId={deal.id}

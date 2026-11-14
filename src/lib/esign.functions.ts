@@ -64,7 +64,26 @@ export const getEsignDocument = createServerFn({ method: "GET" })
       ...s,
       public_token: links.find((l) => l.id === s.id)?.public_token ?? null,
     }));
-    return { doc, signers: safeSigners, audit: audit ?? [] };
+    const { data: deliveries, error: deliveryError } = await (supabase as any)
+      .from("contract_esign_deliveries")
+      .select("id,signer_id,status,created_at,updated_at")
+      .eq("workspace_id", doc.workspace_id)
+      .eq("document_id", data.id)
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (deliveryError) throw new Error("Não foi possível consultar o histórico de convites.");
+    return {
+      doc,
+      signers: safeSigners,
+      audit: audit ?? [],
+      deliveries: (deliveries ?? []) as {
+        id: string;
+        signer_id: string;
+        status: string;
+        created_at: string;
+        updated_at: string;
+      }[],
+    };
   });
 
 export const createEsignDocument = createServerFn({ method: "POST" })

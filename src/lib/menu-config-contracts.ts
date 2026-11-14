@@ -4,6 +4,7 @@
 import {
   FileStack,
   FileText,
+  FileSignature,
   LayoutDashboard,
   Package,
   Scale,
@@ -20,6 +21,7 @@ export const CONTRACTS_SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Contratos",
     items: [
       { title: "Contratos", url: "/contracts", icon: FileText },
+      { title: "Assinaturas eletrônicas", url: "/contracts/signatures", icon: FileSignature },
       { title: "Modelos de contrato", url: "/contracts/templates", icon: FileStack },
       { title: "Serviços em execução", url: "/services", icon: Package },
       {

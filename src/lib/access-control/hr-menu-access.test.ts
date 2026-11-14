@@ -60,3 +60,10 @@ it("hours grants do not grant configuration, and esign is independent from role"
     canSeeHrMenu("/settings/esign", new Set(["techcontracts.esign.view.workspace"]), true),
   ).toBe(true);
 });
+
+it("guards the relocated signature center with the same explicit read key", () => {
+  expect(canSeeHrMenu("/contracts/signatures", new Set(), true)).toBe(false);
+  expect(
+    canSeeHrMenu("/contracts/signatures", new Set(["techcontracts.esign.view.workspace"]), true),
+  ).toBe(true);
+});

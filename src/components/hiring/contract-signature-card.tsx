@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { ContractSignatureDelivery } from "@/components/contracts/contract-signature-delivery";
+import { readViewAs } from "@/lib/view-as-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -49,7 +50,7 @@ export function ContractSignatureCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Assinatura e origem do recrutamento</CardTitle>
+        <CardTitle>Assinaturas do contrato</CardTitle>
       </CardHeader>
       <CardContent>
         {result.isLoading ? (
@@ -67,7 +68,11 @@ export function ContractSignatureCard({
 }
 function SignatureForm({ contractId, value: c }: { contractId: string; value: SignatureContext }) {
   const { can, canAny } = usePermissions();
-  const manage = c.can_manage && can("techcontracts.signature_evidence.manage.workspace");
+  const manage =
+    !readViewAs()?.readOnly &&
+    readViewAs()?.mode !== "role" &&
+    c.can_manage &&
+    can("techcontracts.signature_evidence.manage.workspace");
   const qc = useQueryClient();
   const prepare = useServerFn(prepareContractSignature),
     attest = useServerFn(attestExternalSignature),
@@ -221,13 +226,6 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
             </p>
             {e.revocation_reason && <p className="text-sm">{e.revocation_reason}</p>}
             <div className="mt-2 flex gap-2">
-              {e.document_id && (
-                <Button asChild variant="outline" size="sm">
-                  <Link to="/settings/esign" search={{ document: e.document_id }}>
-                    Abrir assinatura
-                  </Link>
-                </Button>
-              )}
               {e.kind === "external" && (
                 <Button
                   variant="outline"
@@ -258,6 +256,14 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
                 </Button>
               )}
             </div>
+            {e.document_id && (
+              <ContractSignatureDelivery
+                contractId={contractId}
+                documentId={e.document_id}
+                hash={c.hash}
+                current={e.current_version && !e.revoked_at}
+              />
+            )}
           </div>
         ))}
       </div>
@@ -280,8 +286,8 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
           {mode === "native" && (
             <div className="space-y-3">
               <p className="text-sm">
-                O documento será preparado a partir do contrato salvo e seus serviços. Envio e
-                coleta das assinaturas continuam na área de Assinaturas.
+                O documento será preparado a partir do contrato salvo e seus serviços. Depois,
+                confira os signatários e envie os convites por e-mail neste mesmo painel.
               </p>
               <Label>Representante do cliente</Label>
               <Input

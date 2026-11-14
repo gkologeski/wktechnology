@@ -113,6 +113,7 @@ import { Route as AuthenticatedContractsIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedContractsIdRouteImport } from './routes/_authenticated/contracts.$id'
 import { Route as AuthenticatedContractsDashboardRouteImport } from './routes/_authenticated/contracts.dashboard'
 import { Route as AuthenticatedContractsLinksRouteImport } from './routes/_authenticated/contracts.links'
+import { Route as AuthenticatedContractsSignaturesRouteImport } from './routes/_authenticated/contracts.signatures'
 import { Route as AuthenticatedDealsIdRouteImport } from './routes/_authenticated/deals.$id'
 import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance.index'
 import { Route as AuthenticatedFinanceAuditRouteImport } from './routes/_authenticated/finance.audit'
@@ -996,6 +997,12 @@ const AuthenticatedContractsLinksRoute =
   AuthenticatedContractsLinksRouteImport.update({
     id: '/contracts/links',
     path: '/contracts/links',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedContractsSignaturesRoute =
+  AuthenticatedContractsSignaturesRouteImport.update({
+    id: '/contracts/signatures',
+    path: '/contracts/signatures',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedDealsIdRoute = AuthenticatedDealsIdRouteImport.update({
@@ -3011,6 +3018,7 @@ export interface FileRoutesByFullPath {
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/contracts/dashboard': typeof AuthenticatedContractsDashboardRoute
   '/contracts/links': typeof AuthenticatedContractsLinksRoute
+  '/contracts/signatures': typeof AuthenticatedContractsSignaturesRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/finance/audit': typeof AuthenticatedFinanceAuditRoute
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -3438,6 +3446,7 @@ export interface FileRoutesByTo {
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/contracts/dashboard': typeof AuthenticatedContractsDashboardRoute
   '/contracts/links': typeof AuthenticatedContractsLinksRoute
+  '/contracts/signatures': typeof AuthenticatedContractsSignaturesRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/finance/audit': typeof AuthenticatedFinanceAuditRoute
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -3871,6 +3880,7 @@ export interface FileRoutesById {
   '/_authenticated/contracts/$id': typeof AuthenticatedContractsIdRoute
   '/_authenticated/contracts/dashboard': typeof AuthenticatedContractsDashboardRoute
   '/_authenticated/contracts/links': typeof AuthenticatedContractsLinksRoute
+  '/_authenticated/contracts/signatures': typeof AuthenticatedContractsSignaturesRoute
   '/_authenticated/deals/$id': typeof AuthenticatedDealsIdRoute
   '/_authenticated/finance/audit': typeof AuthenticatedFinanceAuditRoute
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -4305,6 +4315,7 @@ export interface FileRouteTypes {
     | '/contracts/$id'
     | '/contracts/dashboard'
     | '/contracts/links'
+    | '/contracts/signatures'
     | '/deals/$id'
     | '/finance/audit'
     | '/finance/bank-accounts'
@@ -4732,6 +4743,7 @@ export interface FileRouteTypes {
     | '/contracts/$id'
     | '/contracts/dashboard'
     | '/contracts/links'
+    | '/contracts/signatures'
     | '/deals/$id'
     | '/finance/audit'
     | '/finance/bank-accounts'
@@ -5164,6 +5176,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contracts/$id'
     | '/_authenticated/contracts/dashboard'
     | '/_authenticated/contracts/links'
+    | '/_authenticated/contracts/signatures'
     | '/_authenticated/deals/$id'
     | '/_authenticated/finance/audit'
     | '/_authenticated/finance/bank-accounts'
@@ -6365,6 +6378,13 @@ declare module '@tanstack/react-router' {
       path: '/contracts/links'
       fullPath: '/contracts/links'
       preLoaderRoute: typeof AuthenticatedContractsLinksRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/contracts/signatures': {
+      id: '/_authenticated/contracts/signatures'
+      path: '/contracts/signatures'
+      fullPath: '/contracts/signatures'
+      preLoaderRoute: typeof AuthenticatedContractsSignaturesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/deals/$id': {
@@ -9198,6 +9218,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedContractsIdRoute: typeof AuthenticatedContractsIdRoute
   AuthenticatedContractsDashboardRoute: typeof AuthenticatedContractsDashboardRoute
   AuthenticatedContractsLinksRoute: typeof AuthenticatedContractsLinksRoute
+  AuthenticatedContractsSignaturesRoute: typeof AuthenticatedContractsSignaturesRoute
   AuthenticatedFinanceAuditRoute: typeof AuthenticatedFinanceAuditRoute
   AuthenticatedFinanceBankAccountsRoute: typeof AuthenticatedFinanceBankAccountsRoute
   AuthenticatedFinanceBankingRoute: typeof AuthenticatedFinanceBankingRouteWithChildren
@@ -9365,6 +9386,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedContractsIdRoute: AuthenticatedContractsIdRoute,
   AuthenticatedContractsDashboardRoute: AuthenticatedContractsDashboardRoute,
   AuthenticatedContractsLinksRoute: AuthenticatedContractsLinksRoute,
+  AuthenticatedContractsSignaturesRoute: AuthenticatedContractsSignaturesRoute,
   AuthenticatedFinanceAuditRoute: AuthenticatedFinanceAuditRoute,
   AuthenticatedFinanceBankAccountsRoute: AuthenticatedFinanceBankAccountsRoute,
   AuthenticatedFinanceBankingRoute:

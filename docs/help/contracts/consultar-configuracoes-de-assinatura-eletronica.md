@@ -8,7 +8,7 @@ route_pattern: /settings/esign
 min_permission: 
 audience: internal
 sort_order: 124
-version: 2
+version: 3
 is_published: true
 ---
 # Consultar configurações de assinatura eletrônica
@@ -22,7 +22,7 @@ is_published: true
 **Antes de começar:** Confirme o workspace e o contexto corretos. Tenha autorização para a operação, e não apenas para consultar a tela.
 
 ## Passo a passo
-1. Abra /settings/esign.
+1. O endereço antigo /settings/esign redireciona para **TechContracts > Assinaturas eletrônicas**. Envio e acompanhamento de contratos ficam também na ficha do contrato e na contratação do negócio.
 2. Consulte as configurações e os registros autorizados.
 3. Execute criação ou remoção somente quando a ação estiver disponível.
 
