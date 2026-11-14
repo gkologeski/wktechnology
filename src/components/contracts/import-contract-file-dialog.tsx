@@ -44,7 +44,7 @@ import {
 } from "@/components/contracts/import-progress";
 import type { ExtractedContract } from "@/lib/contracts/import-schemas";
 import { buildImportPatch } from "@/lib/contracts/import-patch";
-import { hasBodyText, plainTextToBodyHtml } from "@/lib/contracts/import-body";
+import { fitBodyHtml, hasBodyText, plainTextToBodyHtml } from "@/lib/contracts/import-body";
 import {
   PAYMENT_METHODS,
   SERVICE_LOCATIONS,
@@ -241,6 +241,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
       return;
     }
     setProgress(progressFor("preparing"));
+    let stage = "Falha na leitura do arquivo pela IA";
     try {
       let extracted: ExtractedContract;
       if (kind === "pdf") {
@@ -250,29 +251,43 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
         extracted = await parsePdf({ data: { filename: file.name, base64: b64 } });
       } else {
         setProgress(progressFor("text"));
+        stage = "Falha ao ler o texto do .docx";
         const text = await docxToText(file);
         if (text.trim().length < 20) {
           throw new Error("Não foi possível extrair texto do .docx.");
         }
         setExtractedText(text);
         setProgress(progressFor("ai"));
+        stage = "Falha na leitura do arquivo pela IA";
         extracted = await parseText({ data: { filename: file.name, text } });
       }
 
       // Persistir rascunho imediatamente para não perder o trabalho se a aba fechar.
       setProgress(progressFor("storing"));
+      stage = "Falha ao enviar o arquivo original";
       const path = await uploadOriginal(file);
-      const bodyHtml = kind === "pdf" ? await pdfToBodyHtml(file) : await docxToBodyHtml(file);
-      if (!bodyHtml) toast.warning("Não foi possível ler o texto do arquivo para o corpo do contrato.");
+      // Corpo é opcional: qualquer falha aqui não impede o rascunho.
+      let rawBody: string | null = null;
+      try {
+        rawBody = kind === "pdf" ? await pdfToBodyHtml(file) : await docxToBodyHtml(file);
+      } catch {
+        rawBody = null;
+      }
+      const body = fitBodyHtml(rawBody);
+      if (!body.html) toast.warning("Não foi possível ler o texto do arquivo para o corpo do contrato.");
+      else if (body.truncated) toast.warning("Corpo do contrato muito longo: foi truncado.");
       setProgress(progressFor("draft"));
-      const result = await createFromImport({
-        data: {
-          fields: extracted,
-          source_file_path: path,
-          imported_from: kind,
-          body_html: bodyHtml,
-        },
-      });
+      stage = "Falha ao gravar o rascunho do contrato";
+      const payload = { fields: extracted, source_file_path: path, imported_from: kind };
+      let result: { id: string };
+      try {
+        result = await createFromImport({ data: { ...payload, body_html: body.html } });
+      } catch (e) {
+        if (!body.html) throw e;
+        // Tenta de novo sem o corpo para não perder a importação.
+        result = await createFromImport({ data: { ...payload, body_html: null } });
+        toast.warning("O corpo do contrato não pôde ser gravado; os demais dados foram salvos.");
+      }
 
       setFields(extracted);
       setSourceFilePath(path);
@@ -281,7 +296,8 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
       setProgress(progressFor("done"));
       toast.success("Rascunho criado. Revise e finalize.");
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Falha na extração";
+      const detail = err instanceof Error ? err.message : "";
+      const msg = detail && detail.startsWith("Falha") ? detail : detail ? `${stage}: ${detail}` : stage;
       setProgress(progressFor("error", msg));
       toast.error(msg);
     }

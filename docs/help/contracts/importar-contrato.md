@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 23
-version: 5
+version: 6
 is_published: true
 ---
 # Importar e revisar um contrato PDF ou DOCX
@@ -48,3 +48,5 @@ Rascunho criado na extração e atualizado após a finalização.
 - [Permissões](/ajuda/contracts/permissoes)
 
 > Dados de assinatura eletrônica (provedor e identificadores) lidos do arquivo não são gravados na importação: eles só são preenchidos pelo próprio fluxo de assinatura do sistema.
+
+> Se o texto do arquivo for muito longo, o corpo é truncado com um aviso; se não puder ser lido ou gravado, o rascunho é criado mesmo assim e o arquivo original continua disponível. Mensagens de erro indicam a etapa que falhou (IA, envio do arquivo, leitura ou gravação).

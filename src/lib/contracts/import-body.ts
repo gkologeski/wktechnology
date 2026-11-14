@@ -47,3 +47,15 @@ export function hasBodyText(html: string | null | undefined): boolean {
 }
 
 export const IMPORT_BODY_MAX = MAX_BODY;
+
+/** Ajusta o corpo ao limite do servidor sem cortar uma tag pela metade. */
+export function fitBodyHtml(html: string | null | undefined): { html: string | null; truncated: boolean } {
+  if (!hasBodyText(html)) return { html: null, truncated: false };
+  const h = html as string;
+  if (h.length <= MAX_BODY) return { html: h, truncated: false };
+  const note = "<p><em>[Corpo truncado: consulte o arquivo original para o texto completo.]</em></p>";
+  const cut = h.slice(0, MAX_BODY - note.length);
+  const end = cut.lastIndexOf("</p>");
+  const safe = end > 0 ? cut.slice(0, end + 4) : cut.slice(0, cut.lastIndexOf("<"));
+  return { html: safe + note, truncated: true };
+}
