@@ -487,7 +487,7 @@ function friendly(status: number) {
 export class ForsignClient {
   constructor(
     private readonly apiKey: string,
-    private readonly f: Fetch = fetch,
+    private readonly f: Fetch = (input, init) => globalThis.fetch(input, init),
   ) {}
 
   private async call<T>(path: string, init: RequestInit = {}): Promise<T> {
