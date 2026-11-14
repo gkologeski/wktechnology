@@ -6940,6 +6940,74 @@ export type Database = {
           },
         ]
       }
+      contract_esign_deliveries: {
+        Row: {
+          actor_id: string
+          contract_id: string
+          created_at: string
+          document_id: string
+          id: string
+          request_id: string
+          signer_id: string
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          actor_id: string
+          contract_id: string
+          created_at?: string
+          document_id: string
+          id?: string
+          request_id: string
+          signer_id: string
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string
+          contract_id?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          request_id?: string
+          signer_id?: string
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_esign_deliveries_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_esign_deliveries_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "esign_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_esign_deliveries_signer_id_fkey"
+            columns: ["signer_id"]
+            isOneToOne: false
+            referencedRelation: "esign_signers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_esign_deliveries_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_events: {
         Row: {
           actor_id: string | null
@@ -33185,6 +33253,15 @@ export type Database = {
           p_signature?: string
           p_token: string
           p_ua?: string
+        }
+        Returns: Json
+      }
+      contract_esign_request: {
+        Args: {
+          p_contract: string
+          p_document: string
+          p_hash: string
+          p_request: string
         }
         Returns: Json
       }
