@@ -25,7 +25,10 @@ import { template as roleProfileApproval } from "./role-profile-approval";
 
 import { template as hiringDemandApproval } from "./hiring-demand-approval";
 
+import { template as contractSignatureRequest } from "./contract-signature-request";
+
 export const TEMPLATES: Record<string, TemplateEntry> = {
+  "contract-signature-request": contractSignatureRequest,
   "mention-notification": mentionNotification,
   "workspace-invite": workspaceInvite,
   "dunning-notice": dunningNotice,

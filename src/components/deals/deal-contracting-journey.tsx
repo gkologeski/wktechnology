@@ -922,9 +922,69 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
   );
 }
 
-export function DealJourneySummary({ dealId, origin }: { dealId: string; origin: string | null }) {
+export function DealContractingPanel(props: Props) {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <DealJourneySummary
+        dealId={props.dealId}
+        origin={props.origin}
+        onOpen={() => setOpen(true)}
+      />
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent className="w-full sm:max-w-5xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle>Contratação do negócio</SheetTitle>
+            <SheetDescription>
+              Documentos, aprovações e assinaturas sem sair da ficha do negócio.
+            </SheetDescription>
+          </SheetHeader>
+          {open && (
+            <div className="mt-5">
+              <DealContractingJourney {...props} />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
+
+export function DealJourneySummary({
+  dealId,
+  origin,
+  onOpen,
+}: {
+  dealId: string;
+  origin: string | null;
+  onOpen?: () => void;
+}) {
   const { j, q, signature, permissions } = useJourney(dealId, origin);
-  if (!j || q.isError || permissions.isError || permissions.isLoading) return null;
+  if (q.isError || permissions.isError)
+    return (
+      <Card>
+        <CardContent className="space-y-3 p-4" role="alert">
+          <p>Não foi possível carregar a contratação.</p>
+          <Button
+            variant="outline"
+            onClick={() => {
+              void q.refetch();
+              permissions.refetch();
+            }}
+          >
+            Tentar novamente
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  if (!j || permissions.isLoading)
+    return (
+      <Card>
+        <CardContent className="p-4" role="status">
+          Carregando contratação…
+        </CardContent>
+      </Card>
+    );
   const ready =
     !!j.contract &&
     !j.ambiguous &&
@@ -934,9 +994,12 @@ export function DealJourneySummary({ dealId, origin }: { dealId: string; origin:
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-sm">Próximo passo da contratação</CardTitle>
+        <CardTitle className="text-sm">Contratação</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        <p className="text-xs text-muted-foreground">
+          Etapa {ready ? 5 : j.stage + 1} de 5 · {JOURNEY_STEPS[ready ? 4 : j.stage]}
+        </p>
         <p className="text-sm font-medium">
           {ready
             ? "Operações"
@@ -962,6 +1025,11 @@ export function DealJourneySummary({ dealId, origin }: { dealId: string; origin:
             </li>
           ))}
         </ul>
+        {onOpen && (
+          <Button className="w-full" onClick={onOpen}>
+            Abrir jornada e documentos
+          </Button>
+        )}
         <p className="rounded-md border-l-2 border-primary/30 bg-muted/40 p-3 text-xs leading-relaxed text-muted-foreground">
           {ready
             ? "Assinatura válida. Recrutamento e execução ainda respeitam as aprovações e alocações aplicáveis."

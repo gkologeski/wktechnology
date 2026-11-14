@@ -1,0 +1,9 @@
+# Correção da contratação no contexto do negócio
+
+Pedido aprovado em 14/11/2026. Estimativa inicial: 2–4 horas, incluindo validação e publicação; depende da CI e da hospedagem.
+
+1. **Layout:** centro preserva resumo/timeline; lateral direita reúne o quadro compacto Contratação, antes das associações. O botão abre a jornada completa em painel lateral, sem trocar a ficha nem misturar origens.
+2. **Assinaturas no contexto:** contrato e jornada usam o mesmo componente de signatários, confirmação de destinatários, convite por e-mail e reenvio a pendentes. Preparar não envia. O botão legado só disponibilizava links; o novo despacho utiliza o e-mail transacional existente, com resultado por signatário, tentativa idempotente e intervalo de 60 segundos. Aceite do provedor não é entrega na caixa postal nem assinatura.
+3. **Central e continuidade:** central operacional em TechContracts > Assinaturas eletrônicas; retirada do menu de Configurações. URL antiga mantém leitura autorizada e redireciona, preservando documento selecionado. Modelos/credenciais continuam nas áreas próprias.
+4. **Permissões e segurança:** reutiliza esign.view, esign_send.manage e signature_evidence.view; escopos e membership ativo continuam no RPC. Versão atual e evidência não revogada são obrigatórias. Sem grants a cargos. Leituras privilegiadas de destinatários/tokens limitam-se aos ids reivindicados pelo RPC do usuário. Tokens nunca entram no histórico de convites ou resposta de despacho. Cliente autenticado não pode forjar resultado do provedor.
+5. **Validação/publicação:** testes de interface, banco descartável, falhas/supressão do provedor e cinco cenários de autorização; Ajuda e catálogo; CI integral, build e performance; migração0357 aditiva; sincronização Git e publicação; comparar hash nos dois domínios e conferir centro/lateral, contrato, destinatários e redirecionamento em produção. Sem envio real a clientes no aceite.

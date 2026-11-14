@@ -4,25 +4,26 @@ slug: gerenciar-documentos-assinatura
 title: Preparar documentos para assinatura eletrônica
 summary: Preparar documentos para assinatura eletrônica no TechContracts, com as regras e limites disponíveis no sistema.
 article_type: howto
-route_pattern: /settings/esign
+route_pattern: /contracts/signatures
 min_permission:
 audience: internal
 sort_order: 95
-version: 2
+version: 3
 is_published: true
 ---
 # Preparar documentos para assinatura eletrônica
 **Para que serve:** Preparar documentos para assinatura eletrônica.
 **Quem pode fazer:** Permissões de techcontracts.esign conforme a ação: ler, criar, alterar, enviar, cancelar, excluir e gerenciar signatários.
-**Onde fica:** TechContracts > Contratos (/settings/esign).
+**Onde fica:** TechContracts > Contratos (/contracts/signatures).
 **Antes de começar:** Texto revisado e nomes/e-mails dos signatários; compartilhar links apenas com seus destinatários.
 
 ## Passo a passo
-1. Abra a área de assinatura eletrônica em Configurações (/settings/esign).
+1. Abra a área de assinatura eletrônica em TechContracts > Assinaturas eletrônicas (/contracts/signatures).
 2. Crie um documento com "Título", "Descrição" e "Conteúdo do documento".
 3. Informe os signatários, nome, e-mail e ordem. Configure assinatura ordenada quando necessário.
 4. Revise o documento e os signatários antes de enviar para assinatura.
-5. Use o compartilhamento/cópia do link individual para encaminhá-lo ao signatário.
+5. Para contratos, abra **Assinaturas do contrato** na ficha do contrato ou **Contratação > Abrir jornada e documentos > Contrato** na ficha do negócio. Confira os signatários e confirme **Enviar para assinatura por e-mail**. O histórico diferencia convite aceito pelo serviço de e-mail, supressão e falha. Reenvie somente aos pendentes; os que já assinaram não recebem outro convite.
+6. Para documentos avulsos na central, a disponibilização sela o texto e libera os links individuais; a cópia exige permissão de compartilhamento.
 ![Tela: Preparar documentos para assinatura eletrônica, sem dados pessoais reais](/help-media/contracts/gerenciar-documentos-assinatura.webp)
 
 ## Resultado esperado

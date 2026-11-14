@@ -8,13 +8,13 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 1
-version: 2
+version: 3
 is_published: true
 ---
 # Acompanhar a jornada comercial e contratação
 **Para que serve:** Reunir as etapas comerciais e contratuais, com o documento vigente, responsável operacional e próximo passo.
 **Quem pode fazer:** Membro ativo com acesso ao negócio. Cada documento e ação exige suas permissões próprias. Preparar uma minuta manualmente exige `techcontracts.contract_drafts.create.workspace`; revisar e enviar exige ser aprovador jurídico configurado e ter a permissão de aprovação. Contratos, assinaturas e serviços mantêm suas alçadas existentes.
-**Onde fica:** TechSales > Negócios > ficha do negócio > Jornada comercial e contratação (`/deals/$id`).
+**Onde fica:** TechSales > Negócios > ficha do negócio > lateral direita > Contratação > Abrir jornada e documentos (`/deals/$id`).
 **Antes de começar:** Vincule cliente, itens de linha e empresa prestadora WK. Confira o catálogo, o modelo jurídico e os aprovadores. Nenhum cargo recebe novas permissões automaticamente.
 
 ## Passo a passo
@@ -23,9 +23,9 @@ is_published: true
 3. Em **Minuta**, use a abertura pelo workflow ou **Preparar minuta para revisão**. O Jurídico confere o modelo, usa **Preencher dados da proposta**, resolve as pendências nos cadastros, confere a vigência e aprova o envio. O link público permite que o cliente aceite as cláusulas ou solicite ajustes.
 4. Ajustes passam novamente pelo Jurídico. **Preparar nova revisão** exige motivo e revoga o aceite e o link anteriores. Depois de criado o contrato definitivo, mudanças devem ser formalizadas por aditivo.
 5. Após o aceite da minuta, o **Financeiro** confere a origem e prepara o contrato. O texto é o da minuta aceita, sem regenerar cláusulas do modelo atual. Valores estruturados, itens, pagamento e vigência são preservados da origem aprovada. Se faltar valor estruturado, regularize a proposta antes de continuar. Criar não envia automaticamente para assinatura.
-6. Confira aprovações e assinaturas. O documento nativo é preparado e enviado pelos controles de Assinaturas; evidência externa exige o PDF e conferência autorizada. Assinatura parcial, evidência revogada ou conteúdo alterado não liberam a operação.
+6. Em **Contrato e assinaturas**, confira aprovações e signatários no próprio painel. Use **Enviar para assinatura por e-mail**, revise os destinatários e confirme. O convite é pessoal e seu resultado aparece por signatário. O reenvio alcança apenas pendentes, com intervalo mínimo de 60 segundos. Confira aprovações e assinaturas. O documento nativo é preparado e enviado pelos controles de Assinaturas; evidência externa exige o PDF e conferência autorizada. Assinatura parcial, evidência revogada ou conteúdo alterado não liberam a operação.
 7. Com assinatura verificável e aprovações válidas, organize a entrega e ative os serviços pelos controles existentes. A assinatura não dispensa as regras próprias de recrutamento, alocação e faturamento.
-8. Consulte **Documentos** e **Histórico** sem sair do contexto comercial. A timeline completa permanece abaixo.
+8. Consulte **Documentos** e **Histórico** sem sair do contexto comercial. A timeline permanece no centro da ficha. A jornada abre na lateral, sem ocupar o histórico.
 
 ## Resultado esperado
 Cotação → proposta aceita → minuta aprovada pelo cliente → contrato com assinatura válida → serviço. A preparação de projetos pode ocorrer em planejamento; a execução segue as validações operacionais existentes.

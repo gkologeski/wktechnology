@@ -169,6 +169,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/contracts": ["techcontracts.contracts"],
   "/contracts/templates": ["techcontracts.contract_templates"],
   "/settings/esign": ["techcontracts.esign"],
+  "/contracts/signatures": ["techcontracts.esign"],
   "/contracts/links": ["techcontracts.links"],
   "/settings/contract-defaults": ["techcontracts.defaults"],
   "/settings/contract-draft-approvers": ["techcontracts.contract_draft_approvers"],

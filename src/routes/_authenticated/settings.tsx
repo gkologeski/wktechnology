@@ -32,7 +32,6 @@ import {
   Filter,
   Package,
   FileText,
-  FileSignature,
   BookOpen,
   Repeat,
   Upload,
@@ -193,12 +192,6 @@ const sections: Section[] = [
         label: "Biblioteca de cláusulas",
         icon: BookOpen,
         need: "manager",
-      },
-      {
-        to: "/settings/esign",
-        label: "Assinaturas eletrônicas",
-        icon: FileSignature,
-        permission: "techcontracts.esign.view.workspace",
       },
       {
         to: "/settings/payments",
