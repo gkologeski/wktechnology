@@ -7063,6 +7063,7 @@ export type Database = {
           last_synced_at: string | null
           members: Json
           operation_id: number | null
+          requested_members: Json | null
           status: string
           updated_at: string
           workspace_id: string
@@ -7080,6 +7081,7 @@ export type Database = {
           last_synced_at?: string | null
           members?: Json
           operation_id?: number | null
+          requested_members?: Json | null
           status?: string
           updated_at?: string
           workspace_id: string
@@ -7097,6 +7099,7 @@ export type Database = {
           last_synced_at?: string | null
           members?: Json
           operation_id?: number | null
+          requested_members?: Json | null
           status?: string
           updated_at?: string
           workspace_id?: string
@@ -7186,6 +7189,65 @@ export type Database = {
             columns: ["target_contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_signature_participants: {
+        Row: {
+          contact_id: string
+          document_id: string
+          evidence_id: string
+          id: string
+          role: string
+          signer_id: string
+          workspace_id: string
+        }
+        Insert: {
+          contact_id: string
+          document_id: string
+          evidence_id: string
+          id?: string
+          role: string
+          signer_id: string
+          workspace_id: string
+        }
+        Update: {
+          contact_id?: string
+          document_id?: string
+          evidence_id?: string
+          id?: string
+          role?: string
+          signer_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_signature_participants_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "esign_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_signature_participants_evidence_id_fkey"
+            columns: ["evidence_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_contract_evidence"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_signature_participants_signer_id_fkey"
+            columns: ["signer_id"]
+            isOneToOne: false
+            referencedRelation: "esign_signers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_signature_participants_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -34154,6 +34216,15 @@ export type Database = {
       }
       hiring_contract_signature_reason: {
         Args: { p_contract: string; p_deal?: string; p_ws: string }
+        Returns: string
+      }
+      hiring_contract_signers_prepare: {
+        Args: {
+          p_contract: string
+          p_hash: string
+          p_signers: Json
+          p_ws: string
+        }
         Returns: string
       }
       hiring_cost_provision_access: {
