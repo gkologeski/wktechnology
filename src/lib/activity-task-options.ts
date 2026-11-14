@@ -159,3 +159,14 @@ export function followUpLabel(preset: FollowUpPreset, now = new Date()): string 
   const wdShort = wdRaw.charAt(0).toUpperCase() + wdRaw.slice(1);
   return `${base} (${wdShort}, ${d.toLocaleDateString("pt-BR")})`;
 }
+
+/** Presentation hint only: the database resolves the real queue link by activity id. */
+export function isContractHandoffTask(a: { external_ids?: unknown } | null | undefined): boolean {
+  const ids = a?.external_ids;
+  return (
+    !!ids &&
+    typeof ids === "object" &&
+    !Array.isArray(ids) &&
+    typeof (ids as Record<string, unknown>).contract_handoff_id === "string"
+  );
+}

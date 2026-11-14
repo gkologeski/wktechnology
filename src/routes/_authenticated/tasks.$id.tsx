@@ -1,3 +1,4 @@
+import { isContractHandoffTask } from "@/lib/activity-task-options";
 import { REMINDER_OPTIONS } from "@/lib/activity-reminders";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -62,7 +63,8 @@ function TaskDetail() {
   }, [task?.body]);
 
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techsales.activities");
-  const canDelete = !deletePermLoading && canDeleteRecord(task);
+  const governed = isContractHandoffTask(task);
+  const canDelete = !governed && !deletePermLoading && canDeleteRecord(task);
 
   if (!task) return <p className="text-sm text-muted-foreground">Carregando...</p>;
 
@@ -85,17 +87,19 @@ function TaskDetail() {
   };
 
   const complete = async () => {
+    if (governed) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase as any)
+    const { error } = await (supabase as any)
       .from("activities")
       .update({ completed: true, task_status: "COMPLETED" })
       .eq("id", task.id);
+    if (error) return toast.error(error.message);
     toast.success("Concluída");
     void load();
   };
 
   const reassign = async (newOwnerId: string) => {
-    if (!newOwnerId || newOwnerId === task.owner_id) return;
+    if (governed || !newOwnerId || newOwnerId === task.owner_id) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
       .from("activities")
@@ -157,7 +161,7 @@ function TaskDetail() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!task.completed && (
+            {!task.completed && !governed && (
               <Button variant="outline" size="sm" onClick={complete}>
                 <Check className="h-4 w-4 mr-1.5" /> Concluir
               </Button>
@@ -181,25 +185,33 @@ function TaskDetail() {
       {/* Body */}
       <div className="grid gap-6 grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)]">
         <aside className="space-y-4 min-w-0">
-          <PropertiesPanel
-            entity="activities"
-            table="activities"
-            row={task as unknown as Record<string, unknown> & { id: string }}
-            props={[
-              { key: "subject", label: "Assunto", primary: true },
-              { key: "task_status", label: "Status", primary: true },
-              { key: "task_priority", label: "Prioridade", primary: true },
-              { key: "due_date", label: "Vencimento", type: "datetime", primary: true },
-              {
-                key: "remind_before_minutes",
-                label: "Lembrete",
-                primary: true,
-                options: REMINDER_OPTIONS,
-              },
-              { key: "body", label: "Descrição" },
-            ]}
-            onSaved={load}
-          />
+          {governed && (
+            <p className="text-sm text-muted-foreground">
+              Tarefa da jornada contratual: responsável, prazo e conclusão dependem da ação no
+              documento de origem.
+            </p>
+          )}
+          {!governed && (
+            <PropertiesPanel
+              entity="activities"
+              table="activities"
+              row={task as unknown as Record<string, unknown> & { id: string }}
+              props={[
+                { key: "subject", label: "Assunto", primary: true },
+                { key: "task_status", label: "Status", primary: true },
+                { key: "task_priority", label: "Prioridade", primary: true },
+                { key: "due_date", label: "Vencimento", type: "datetime", primary: true },
+                {
+                  key: "remind_before_minutes",
+                  label: "Lembrete",
+                  primary: true,
+                  options: REMINDER_OPTIONS,
+                },
+                { key: "body", label: "Descrição" },
+              ]}
+              onSaved={load}
+            />
+          )}
         </aside>
 
         <div className="space-y-6 min-w-0">
@@ -224,7 +236,11 @@ function TaskDetail() {
               <User2 className="h-4 w-4 text-muted-foreground" />
               Responsável
             </h2>
-            <Select value={task.owner_id ?? ""} onValueChange={reassign}>
+            <Select
+              value={(governed ? task.assigned_to : task.owner_id) ?? ""}
+              onValueChange={reassign}
+              disabled={governed}
+            >
               <SelectTrigger className="w-full sm:w-80">
                 <SelectValue placeholder="Selecionar responsável" />
               </SelectTrigger>

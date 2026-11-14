@@ -1,3 +1,4 @@
+import { ContractHandoffs } from "@/components/contracts/contract-handoffs";
 import { lazy, Suspense, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -938,6 +939,7 @@ export function DealContractingPanel(props: Props) {
         origin={props.origin}
         onOpen={() => setOpen(true)}
       />
+      <ContractHandoffs dealId={props.dealId} />
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent className="w-full sm:max-w-5xl overflow-y-auto">
           <SheetHeader>

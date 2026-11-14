@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 1
-version: 4
+version: 5
 is_published: true
 ---
 # Acompanhar a jornada comercial e contratação
@@ -58,3 +58,12 @@ Cotação → proposta aceita → minuta aprovada pelo cliente → contrato com 
 
 ## Signatários por papel
 Na preparação do contrato, escolha contatos para CONTRATANTE e CONTRATADO. Inclua testemunhas apenas quando necessário; uma vez incluídas, suas assinaturas são obrigatórias para concluir o documento. A busca permite cadastrar um novo contato com as permissões de contatos. O cadastro deve conter nome e e-mail válidos. Papéis adicionais podem ser incluídos explicitamente.
+
+## Próximas ações, responsáveis e prazos
+O quadro **Próximas ações** fica na lateral direita e mostra os encaminhamentos automáticos, responsável, prazo e impedimentos. Proposta aceita → Jurídico prepara a minuta; minuta aceita → Financeiro prepara o contrato e conduz aprovações; contrato aprovado → responsável confere signatários e envia. O envio ao cliente não é automático.
+
+A tarefa vinculada ao negócio aparece em Tarefas e na timeline. Não pode ser encerrada nem ter responsável/prazo trocados fora da jornada. Vencimentos avisam o responsável e o escalonamento configurados. Administradores autorizados podem conferir fontes pendentes ou reprocessar impedimentos, sem duplicar tarefas. Processamento periódico normalmente em até dois minutos; contratos históricos não geram novas minutas apenas por reconciliação.
+
+As aprovações internas também geram tarefas: Jurídico primeiro; Financeiro somente após a aprovação jurídica. Cada solicitação usa o responsável da etapa vigente e o prazo configurado do departamento, sem reduzir a cadeia obrigatória.
+
+Um documento nativo já integralmente assinado também encerra a tarefa de envio, mesmo se os links foram compartilhados manualmente. Negócios removidos cancelam seus encaminhamentos pendentes.

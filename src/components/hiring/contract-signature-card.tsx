@@ -1,3 +1,4 @@
+import { ContractHandoffs } from "@/components/contracts/contract-handoffs";
 import { useState } from "react";
 import { ContractSignatureDelivery } from "@/components/contracts/contract-signature-delivery";
 import { ContractForsignPanel } from "@/components/contracts/contract-forsign-panel";
@@ -55,6 +56,7 @@ export function ContractSignatureCard({
         <CardTitle>Assinaturas do contrato</CardTitle>
       </CardHeader>
       <CardContent>
+        <ContractHandoffs contractId={contractId} />
         {result.isLoading ? (
           <p>Carregando evidências…</p>
         ) : result.error ? (

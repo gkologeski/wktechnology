@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 37
-version: 4
+version: 5
 is_published: true
 ---
 # Preparar e registrar evidência de assinatura no contrato
@@ -46,3 +46,6 @@ Documento preparado aguardando envio/conclusão, ou evidência externa registrad
 - [Documentos de assinatura](/ajuda/contracts/gerenciar-documentos-assinatura)
 
 Papéis e contatos são distintos; cada e-mail identifica um participante. O documento preserva um retrato dos signatários na preparação. Para mudar pessoas ou papéis depois, revogue a evidência e prepare novamente. A exclusão de um participante por outra tela é bloqueada. Documentos históricos não são alterados.
+
+## Encaminhamento após as aprovações
+Quando Jurídico e Financeiro concluem a cadeia vigente, o responsável configurado recebe tarefa e notificação para conferir as partes e enviar convites. O quadro **Próximas ações** exibe o prazo. A preparação sozinha, uma disponibilização de link ou falha/supressão de e-mail não concluem o encaminhamento: é necessário envio confirmado aos signatários pendentes ou operação ForSign efetivamente enviada da versão atual.

@@ -130,4 +130,3 @@ it("forsign parallel send puts every signer in the same position", () => {
   ]);
   expect(ms.map((m) => m.orderPosition)).toEqual([1, 1, 1]);
 });
-

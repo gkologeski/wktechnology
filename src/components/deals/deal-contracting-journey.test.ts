@@ -47,6 +47,7 @@ vi.mock("@/components/deals/deal-quotes", () => ({
   DealQuotes: () => createElement("p", null, "Controles de cotação"),
 }));
 vi.mock("@/components/deals/deal-proposals", () => ({ DealProposals: () => null }));
+vi.mock("@/components/contracts/contract-handoffs", () => ({ ContractHandoffs: () => null }));
 vi.mock("@/components/contracts/deal-contracts", () => ({ DealContracts: () => null }));
 vi.mock("@/components/contracts/contract-wizard", () => ({ ContractWizard: () => null }));
 vi.mock("@/components/deals/quote-internal-preview", () => ({ QuoteInternalPreview: () => null }));
