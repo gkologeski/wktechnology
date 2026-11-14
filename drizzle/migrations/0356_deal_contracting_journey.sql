@@ -59,6 +59,11 @@ CREATE OR REPLACE FUNCTION public.contract_accepted_draft_guard()
 RETURNS trigger LANGUAGE plpgsql SECURITY INVOKER SET search_path=public,pg_temp AS $$
 DECLARE d public.contract_drafts;s jsonb;
 BEGIN
+ -- Match the existing accepted-proposal guard: only trusted nested workspace
+ -- removal may clear foreign keys after the workspace itself has disappeared.
+ IF current_user IN('postgres','supabase_admin','service_role') AND pg_trigger_depth()>1 THEN
+  IF NOT EXISTS(SELECT 1 FROM public.workspaces WHERE id=NEW.workspace_id) THEN RETURN NEW;END IF;
+ END IF;
  IF TG_OP='UPDATE' THEN
   IF coalesce(OLD.metadata ? 'accepted_contract_draft',false) AND
     (NEW.body_html,NEW.contracting_legal_entity_id,NEW.total_value,NEW.currency,NEW.payment_method,NEW.payment_terms,NEW.metadata->'accepted_contract_draft') IS DISTINCT FROM
