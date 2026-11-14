@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 35
-version: 2
+version: 3
 is_published: true
 ---
 # Associar serviço do catálogo ao contrato
@@ -21,8 +21,8 @@ is_published: true
 1. Abra o contrato de prestação.
 2. No card "Serviços", clique em "Associar serviço".
 3. Em "Associar serviço ao contrato", escolha "Preset de contratação" se necessário e "Serviço do catálogo *".
-4. Revise "Cargo / perfil contratado", "Senioridade" e "Stack / competências".
-5. Preencha "Tipo de cobrança", "Cadência", "Quantidade", "Preço unitário", "Início" e "Fim".
+4. Em Outsourcing, Hunting ou Alocação, revise "Cargo / perfil contratado", "Senioridade" e "Stack / competências". Em serviços por escopo ou horas (como Consultoria Técnica e Fábrica de Software), esses campos ficam ocultos; use "Informar perfil mesmo assim" se precisar.
+5. O "Tipo de cobrança" já vem sugerido pelo catálogo (consultoria por hora: Por uso; hunting: Único; outsourcing: Recorrente). Confira e preencha "Tipo de cobrança", "Cadência", "Quantidade", "Preço unitário", "Início" e "Fim".
 6. Conclua a associação e confira "Serviço associado ao contrato.".
 ![Tela: Associar serviço do catálogo ao contrato, sem dados pessoais reais](/help-media/contracts/associar-servico.webp)
 
@@ -30,6 +30,7 @@ is_published: true
 Serviço operacional associado ao contrato; seu nome abre a ficha do serviço.
 
 ## Regras e limites
+- O botão "Associar serviço" fica desativado para quem não tem permissão de criar serviços.
 - Serviços são associados à prestação. Compra é aninhada sob prestação, não recebe a mesma associação direta.
 - O botão aparecer pelo tipo do contrato não comprova permissão de criação.
 - Catálogo ativo é obrigatório. Valor do serviço = quantidade × preço unitário.

@@ -12092,6 +12092,78 @@
         "src/lib/contracts/pdf-body.server.ts": "ec78df63e1f9f76605db53384ef85671beb599223a9c463e8fab5c812e635057",
         "src/lib/contracts/import-patch.ts": "b6a4640b0a8cd11ba590e497e7b0e9e9ef006f1957b42543e4a957cda025400a"
       }
+    },
+    {
+      "id": "contract-service-profile-fields",
+      "kind": "business",
+      "resources": [
+        "techservice.services"
+      ],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techservice.services.create.own",
+        "techservice.services.view.workspace",
+        "techservice.services.view.own",
+        "techservice.services.view.team"
+      ],
+      "rationale": "Associar serviço ao contrato: o formulário só esconde cargo/senioridade/stack para serviços de projeto e sugere a cobrança pelo catálogo (regra pura em catalog-service-form.ts). Leitura e gravação continuam pelas server functions existentes listCatalogServiceOptions (assertAnyPermission view) e linkCatalogServiceToContract (requireWorkPermission techservice.services create + RLS de services/service_catalog); nenhuma ação, rota ou acesso novo.",
+      "files": {
+        "src/components/services/link-catalog-service-dialog.tsx": "9856abd13d4558ebcdbe439018629afbccc15440ec4ecbac0d7ecaa54f8fb63a"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_area_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/services/activation-terms.write.test.ts",
+          "name": "service activation terms allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/services/activation-terms.write.test.ts",
+          "name": "service activation terms refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/services/activation-terms.write.test.ts",
+          "name": "service activation terms refuses an explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/services/activation-terms.write.test.ts",
+          "name": "service activation terms refuses a foreign workspace contract"
+        },
+        "inactive_member": {
+          "file": "src/lib/services/activation-terms.write.test.ts",
+          "name": "service activation terms refuses an inactive member"
+        }
+      }
+    },
+    {
+      "id": "contract-service-form-rules",
+      "kind": "presentation",
+      "rationale": "Pure rules deciding whether the contract service form shows job profile fields and which billing type to suggest from the catalog. No I/O, routes, actions or data access.",
+      "files": {
+        "src/lib/services/catalog-service-form.ts": "d24657ea23f45dc8c673236db591f2d500a90c2eae3a768ef2a9dc3363289bbe"
+      }
     }
   ],
   "retired": {
