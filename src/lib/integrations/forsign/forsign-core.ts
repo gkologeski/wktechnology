@@ -10,6 +10,14 @@ export type ForsignOpStatus =
   | "failed"
   | "stale";
 
+/** Rótulo do participante: na ordem sequencial do ForSign, quem ainda não recebeu o convite aparece "Na fila". */
+export function memberStatusLabel(m: { status?: string | null; stage?: string | null }) {
+  if (m.status === "Create" && m.stage === "WaitingToSend")
+    return "Na fila — recebe o convite após o anterior assinar";
+  if (m.status === "Create" && m.stage === "Sent") return "Convite enviado — aguardando assinatura";
+  return MEMBER_STATUS_PT[m.status ?? ""] ?? m.status ?? "";
+}
+
 /** Converte a situação da operação no ForSign para a situação local. */
 export function mapOperationStatus(
   remote: string | null | undefined,
@@ -30,7 +38,7 @@ export function mapOperationStatus(
 }
 
 export const MEMBER_STATUS_PT: Record<string, string> = {
-  Create: "Aguardando envio",
+  Create: "Aguardando assinatura",
   InProgress: "Pendente",
   Completed: "Assinou",
   Canceled: "Cancelado",

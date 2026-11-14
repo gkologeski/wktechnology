@@ -586,6 +586,7 @@ export class ForsignClient {
         email: String(m.email ?? "").toLowerCase(),
         role: (m.role as string | null) ?? null,
         status: String(m.status ?? ""),
+        stage: (m.stage as string | null) ?? null,
         completedAt: (m.completedAt as string | null) ?? null,
       })),
     };

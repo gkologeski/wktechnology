@@ -22,7 +22,7 @@ import {
   cancelContractForsign,
 } from "@/lib/integrations/forsign/forsign.functions";
 import { usePermissions } from "@/lib/access-control/use-permissions";
-import { MEMBER_STATUS_PT, OP_STATUS_PT } from "@/lib/integrations/forsign/forsign-core";
+import { memberStatusLabel, OP_STATUS_PT } from "@/lib/integrations/forsign/forsign-core";
 
 export function ContractForsignPanel({
   contractId,
@@ -135,7 +135,7 @@ export function ContractForsignPanel({
               <ul className="mt-1 text-muted-foreground">
                 {o.members.map((m) => (
                   <li key={m.email}>
-                    {m.name} ({m.role ?? "assinante"}) — {MEMBER_STATUS_PT[m.status] ?? m.status}
+                    {m.name} ({m.role ?? "assinante"}) — {memberStatusLabel(m)}
                     {m.completedAt ? ` em ${new Date(m.completedAt).toLocaleString("pt-BR")}` : ""}
                   </li>
                 ))}
