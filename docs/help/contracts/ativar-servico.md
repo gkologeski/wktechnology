@@ -8,7 +8,7 @@ route_pattern: /services/$id
 min_permission:
 audience: internal
 sort_order: 82
-version: 2
+version: 3
 is_published: true
 ---
 # Ativar um serviço
@@ -31,6 +31,8 @@ O procedimento de ativação do serviço é executado com as verificações de c
 - "Ativar" e salvar o campo Status são ações diferentes.
 - Não considere a ativação como envio automático de cobrança ao cliente.
 - Bloqueios de cobrança e permissões são verificados no servidor.
+- O serviço pode ser ativado antes da assinatura do contrato, mas a cobrança só começa depois dela. Enquanto isso aparece "Cobrança aguardando assinatura do contrato" e nenhum lançamento é criado.
+- Quando o contrato é assinado (no TechERP, pelo ForSign ou por assinatura externa registrada) ou ativado, as parcelas são geradas automaticamente uma única vez; as que vencem "na assinatura" usam a data real da assinatura.
 
 ## Erros comuns
 Se a ativação falhar, leia a mensagem e revise a configuração antes de tentar novamente.

@@ -27375,6 +27375,8 @@ export type Database = {
       services: {
         Row: {
           assigned_to: string | null
+          billing_hold: string | null
+          billing_hold_schedule: Json | null
           billing_model: Database["public"]["Enums"]["billing_model"] | null
           cadence: Database["public"]["Enums"]["service_cadence"] | null
           competencies: string[]
@@ -27407,6 +27409,8 @@ export type Database = {
         }
         Insert: {
           assigned_to?: string | null
+          billing_hold?: string | null
+          billing_hold_schedule?: Json | null
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           cadence?: Database["public"]["Enums"]["service_cadence"] | null
           competencies?: string[]
@@ -27439,6 +27443,8 @@ export type Database = {
         }
         Update: {
           assigned_to?: string | null
+          billing_hold?: string | null
+          billing_hold_schedule?: Json | null
           billing_model?: Database["public"]["Enums"]["billing_model"] | null
           cadence?: Database["public"]["Enums"]["service_cadence"] | null
           competencies?: string[]
@@ -33484,6 +33490,10 @@ export type Database = {
         }
         Returns: Json
       }
+      contract_is_signed_for_billing: {
+        Args: { c: Database["public"]["Tables"]["contracts"]["Row"] }
+        Returns: boolean
+      }
       contract_mutate: {
         Args: { p_contract: string; p_patch: Json }
         Returns: Json
@@ -37121,6 +37131,10 @@ export type Database = {
           p_name: string
         }
         Returns: undefined
+      }
+      service_release_signature_billing: {
+        Args: { p_contract: string }
+        Returns: number
       }
       services_next_billing: {
         Args: {

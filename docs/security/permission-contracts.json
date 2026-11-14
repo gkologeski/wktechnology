@@ -9817,7 +9817,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant.",
       "files": {
-        "src/integrations/supabase/types.ts": "48a44702c53121e06287ff8f1c30444603f935e2d6db67d05dc31323dfa19f47",
+        "src/integrations/supabase/types.ts": "36dcf6a5c8100a67b07c284f55dd5f0a9548958c72739824a74d86bf95027a00",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -10825,13 +10825,15 @@
         "techfinance.entries.create.own",
         "techfinance.entries.create.workspace"
       ],
-      "rationale": "CONDICOES-PAGAMENTO: activateService (requireWorkPermission techservice.services update) lê serviço e contrato pelo cliente do usuário (RLS) e, quando o contrato tem condições de pagamento válidas, chama service_activate_with_terms (0327, SECURITY DEFINER) com o cronograma calculado. A função exige sessão, repete as mesmas autorizações de service_bill_checked (work_area_authorize de serviço e billing, finance_scope_access e criação de lançamentos), confere contrato do mesmo workspace e soma igual ao valor do contrato, cria as contas uma única vez por contrato (external_ref) e desliga a cobrança automática do serviço para não cobrar em dobro. Recusa de autorização não cai na cobrança antiga. EXECUTE só para authenticated. O cartão da ficha do contrato é somente leitura sobre dados já autorizados.",
+      "rationale": "CONDICOES-PAGAMENTO: activateService (requireWorkPermission techservice.services update) lê serviço e contrato pelo cliente do usuário (RLS) e, quando o contrato tem condições de pagamento válidas, chama service_activate_with_terms (0327, SECURITY DEFINER) com o cronograma calculado. A função exige sessão, repete as mesmas autorizações de service_bill_checked (work_area_authorize de serviço e billing, finance_scope_access e criação de lançamentos), confere contrato do mesmo workspace e soma igual ao valor do contrato, cria as contas uma única vez por contrato (external_ref) e desliga a cobrança automática do serviço para não cobrar em dobro. Recusa de autorização não cai na cobrança antiga. EXECUTE só para authenticated. O cartão da ficha do contrato é somente leitura sobre dados já autorizados. ATIVA-COBRA 14/11/2026: activation stays authorized by the same RPC checks; when the linked contract is unsigned, the RPCs activate without creating entries and hold billing. Release runs only from the contracts trigger through service-only service_release_signature_billing (revoked from anon/authenticated). Services page only shows the hold badge.",
       "files": {
         "drizzle/migrations/0327_service_activate_payment_terms.sql": "13b08044f99e75576b63e6a01fdf667bbeb694f8904d19f3ef7966f5c70a00d6",
         "src/lib/services/activation-terms.ts": "cbcc49d31367a2a3e00306de4d1eb77b4a3f639eebb4864388c6d451490c3068",
         "src/lib/services/activation-terms.write.ts": "9188bd5a91297a19257babf48e4e03d7a1c38d3f3e85a530864c6de872ac9a63",
         "src/lib/services.functions.ts": "9d6a16a1b1a31b016d7de2a495c9b27eaf227a5eedebe608908b19fb239123a7",
-        "src/components/contracts/contract-payment-terms-card.tsx": "90a8279ecece45c912b0ffb6c84ff23a86088421fc40e9785bd25dc9f5037d24"
+        "src/components/contracts/contract-payment-terms-card.tsx": "90a8279ecece45c912b0ffb6c84ff23a86088421fc40e9785bd25dc9f5037d24",
+        "drizzle/migrations/0361_service_billing_awaits_signature.sql": "82a8098a1050b905ba2fe05113f587954177819f2ecdc421eec51f00a3583486",
+        "src/routes/_authenticated/services.$id.tsx": "82bf2f316c4f7a110caa9bef14929219c18cabe158d67b4e24e83b1801581888"
       },
       "controls": [
         {
@@ -10853,6 +10855,10 @@
         {
           "file": "src/lib/sales/payment-terms.ts",
           "symbol": "validatePaymentTerms"
+        },
+        {
+          "file": "src/components/work-action.tsx",
+          "symbol": "WorkAction"
         }
       ],
       "database": [
@@ -10863,6 +10869,10 @@
         {
           "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
           "symbol": "work_area_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0361_service_billing_awaits_signature.sql",
+          "symbol": "service_release_signature_billing"
         }
       ],
       "tests": {
@@ -12293,7 +12303,7 @@
         "src/lib/deals/contracting-journey.server.ts": "a869db7a515d7206f15149c92f4712dcf7d89f42bcde42149143e828e4712068",
         "src/routes/_authenticated/deals.$id.tsx": "4a86b9805a7a53ae6cbf992dc059fa86fcefc8460d25cd5b0e0b1ee65ad98839",
         "src/components/contracts/deal-contracts.tsx": "c3fe6970695d96ce3de60ee61402e6a29d146f387e3c0bd17060d42605eaeb77",
-        "src/components/services/contract-services.tsx": "3e7e119ba59184301bcbe6119636a88af1464c8272e3bfbc9a214626642b411b",
+        "src/components/services/contract-services.tsx": "4955f2c4e631f47e3b94592c4b0713562874ef9c17a1f17048325ccbb412ed9a",
         "src/lib/workflows/engine/accepted-commercial-source.server.ts": "fda10abfddc77a282eaa181dc07f400b8852a393386d4885f9b847ff1b9572ec",
         "src/components/deals/deal-quotes.tsx": "c2dd3a60a071861cad60efb37769adc2c322e2b2f953a659d267afd6f5255909"
       }

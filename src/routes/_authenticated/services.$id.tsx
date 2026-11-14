@@ -147,8 +147,12 @@ function ServiceDetail() {
 
   async function activateNow() {
     try {
-      await activate({ data: { id } });
-      toast.success("Serviço ativado.");
+      const res = (await activate({ data: { id } })) as { billing_hold?: string | null } | null;
+      toast.success(
+        res?.billing_hold === "awaiting_signature"
+          ? "Serviço ativado. A cobrança será gerada quando o contrato for assinado."
+          : "Serviço ativado.",
+      );
       qc.invalidateQueries({ queryKey: ["service", id] });
       qc.invalidateQueries({ queryKey: ["service-entries", id] });
     } catch (e) {
@@ -213,6 +217,11 @@ function ServiceDetail() {
           <Badge variant="outline" className={STATUS_TONE[row.status] ?? ""}>
             {STATUS_LABEL[row.status] ?? row.status}
           </Badge>
+          {row.billing_hold === "awaiting_signature" ? (
+            <Badge variant="outline" role="status">
+              Cobrança aguardando assinatura do contrato
+            </Badge>
+          ) : null}
         </div>
         <div className="flex items-center gap-2">
           {row.status === "pending" && canBill ? (

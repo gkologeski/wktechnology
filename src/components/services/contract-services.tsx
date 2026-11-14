@@ -104,8 +104,12 @@ export function ContractServices({
   async function activateOne(id: string) {
     setActivatingId(id);
     try {
-      await activate({ data: { id } });
-      toast.success("Serviço ativado.");
+      const res = (await activate({ data: { id } })) as { billing_hold?: string | null } | null;
+      toast.success(
+        res?.billing_hold === "awaiting_signature"
+          ? "Serviço ativado. A cobrança será gerada quando o contrato for assinado."
+          : "Serviço ativado.",
+      );
       qc.invalidateQueries({ queryKey: ["contract-services", contractId] });
       qc.invalidateQueries({ queryKey: ["services"] });
     } catch (e) {
@@ -221,6 +225,11 @@ export function ContractServices({
                 {divergenceFields(s.id).length > 0 ? (
                   <p className="mt-1 text-xs text-amber-600 dark:text-amber-500">
                     Diferente do negócio de origem: {divergenceFields(s.id).join(", ")}.
+                  </p>
+                ) : null}
+                {s.billing_hold === "awaiting_signature" ? (
+                  <p className="mt-1 text-xs text-muted-foreground" role="status">
+                    Cobrança aguardando assinatura do contrato.
                   </p>
                 ) : null}
                 {s.status === "pending" && writable && capabilities.for(s.id).can_update ? (
