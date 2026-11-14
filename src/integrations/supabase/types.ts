@@ -33931,6 +33931,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      hiring_contract_esign_body: {
+        Args: { p_contract: string; p_ws: string }
+        Returns: string
+      }
       hiring_contract_evidence_revoke: {
         Args: { p_evidence: string; p_note: string; p_ws: string }
         Returns: undefined

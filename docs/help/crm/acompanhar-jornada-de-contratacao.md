@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 1
-version: 3
+version: 4
 is_published: true
 ---
 # Acompanhar a jornada comercial e contratação
@@ -31,6 +31,7 @@ is_published: true
 Cotação → proposta aceita → minuta aprovada pelo cliente → contrato com assinatura válida → serviço. A preparação de projetos pode ocorrer em planejamento; a execução segue as validações operacionais existentes.
 
 ## Regras e limites
+- A etapa atual aparece com o círculo preenchido; a etapa que você está consultando aparece com o círculo vazado e borda mais grossa.
 - Quando houver várias origens, selecione a proposta/cotação correspondente. A jornada não mistura documentos de propostas diferentes.
 - Documentos restritos não são considerados inexistentes. Falhas de consulta aparecem como erro com opção de tentar novamente.
 - Contratos históricos continuam preservados; aceites antigos ausentes não são reconstruídos.

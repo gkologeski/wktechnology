@@ -8043,7 +8043,7 @@
         "techsales.role_profiles.view.workspace",
         "techsales.role_profiles.manage.workspace"
       ],
-      "rationale": "Stage 3: explicit commercial contract/evidence binding; no timestamp/status inference. Signature actions require active selected workspace, effective view/manage keys plus current contract record read/update and read-only denial. Immutable private PDF objects are uploaded by the server only after authorization, hashed and bound to actor/contract revision; SQL matches immutable metadata before recording human external attestation. Native preparation reuses authenticated esign create/send/signing with two explicit parties and a sealed document; signing offer documents never qualifies. Recruitment reads require hiring demand view and HR row scope; linking requires update, CAS and same-tenant/client/deal. Before provider publishing, HR access/publish permission and a fresh SQL business preflight run; every relevant ATS write rechecks approval/signature/date/current source. Historical records are preserved and activation is per workspace. Background hiring runs after sales_worker_authorize then current application-derived business gate, and Hunting does not provision internal hiring. Existing record/field permissions and contract legal approvals remain active. | Signature operations moved to TechContracts; legacy settings URL only redirects to the same HrScreenAccess-protected destination. Contract/deal evidence stays source-bound; read-only sessions cannot prepare evidence.",
+      "rationale": "Stage 3: explicit commercial contract/evidence binding; no timestamp/status inference. Signature actions require active selected workspace, effective view/manage keys plus current contract record read/update and read-only denial. Immutable private PDF objects are uploaded by the server only after authorization, hashed and bound to actor/contract revision; SQL matches immutable metadata before recording human external attestation. Native preparation reuses authenticated esign create/send/signing with two explicit parties and a sealed document; signing offer documents never qualifies. Recruitment reads require hiring demand view and HR row scope; linking requires update, CAS and same-tenant/client/deal. Before provider publishing, HR access/publish permission and a fresh SQL business preflight run; every relevant ATS write rechecks approval/signature/date/current source. Historical records are preserved and activation is per workspace. Background hiring runs after sales_worker_authorize then current application-derived business gate, and Hunting does not provision internal hiring. Existing record/field permissions and contract legal approvals remain active. | Signature operations moved to TechContracts; legacy settings URL only redirects to the same HrScreenAccess-protected destination. Contract/deal evidence stays source-bound; read-only sessions cannot prepare evidence. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -8094,6 +8094,10 @@
         {
           "file": "drizzle/migrations/0310_hiring_recruitment_authorization.sql",
           "symbol": "hiring_recruitment_execution_guard"
+        },
+        {
+          "file": "drizzle/migrations/0358_esign_formatted_contract_body.sql",
+          "symbol": "hiring_contract_native_prepare"
         }
       ],
       "tests": {
@@ -8131,7 +8135,8 @@
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
         "src/lib/hiring/signature.functions.ts": "fbd40253714587c00093d0dc56a57075f1d627cb29c41dadc428f8821efbcbcb",
-        "src/routes/_authenticated/contracts.signatures.tsx": "4426d66ec9317c9f8ff3c3ad36f97d261c84d6d5f7206b074af990ea21ea5bf8"
+        "src/routes/_authenticated/contracts.signatures.tsx": "6fa1182c3e26409de32729fb31c9f2cfcb251f0e8d298be4c8254488f588191d",
+        "drizzle/migrations/0358_esign_formatted_contract_body.sql": "c28f5c805a9be9020842a5e8714f180ffcfa71ae3833b9ffa6f3262dafdf6aa1"
       }
     },
     {
@@ -9810,9 +9815,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants.",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant.",
       "files": {
-        "src/integrations/supabase/types.ts": "02a355fea0b4c7cfdbae6d011aab9f1627c05900e3a159ec5fbc10e218ce3fa1",
+        "src/integrations/supabase/types.ts": "123e9edef678efbe2b9e8cc1ae1ca050fc1344dce3adf4cbc08100eef6fa02f5",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -12202,7 +12207,7 @@
         "techcontracts.contract_drafts.approve.workspace",
         "techcontracts.signature_evidence.view.workspace"
       ],
-      "rationale": "Ficha aprovada: resumo somente de negócio autorizado, consultas opcionais precedidas por gate de cada área e filtradas por workspace/negócio sob RLS. Não retorna corpos, tokens ou arquivos. Uma origem explícita por jornada. Abertura de minuta manual exige create próprio, membro ativo e proposta/negócio visíveis e aceitos; advisory row lock e workflow interno idempotente. Nenhuma concessão automática. Novos contratos principais de proposta exigem minuta juridicamente aprovada e aceita; gatilho preserva corpo e proveniência e proíbe alterações posteriores. Contratos históricos preservados. Assinatura real via hiring_contract_signature_context; status ativo não basta. Ações existentes mantêm seus gates (sales/work capabilities, send/share/approve/esign/serviços); readonly nega novas ações. Textos anteriores capturados por trigger e SELECT RLS do pai, sem reconstruir histórico; carregamento de um corpo por vez. Revisão jurídica continua exigindo aprovador listado, CAS e nova aprovação do cliente; chamadas diretas sujeitas às mesmas invariantes.",
+      "rationale": "Ficha aprovada: resumo somente de negócio autorizado, consultas opcionais precedidas por gate de cada área e filtradas por workspace/negócio sob RLS. Não retorna corpos, tokens ou arquivos. Uma origem explícita por jornada. Abertura de minuta manual exige create próprio, membro ativo e proposta/negócio visíveis e aceitos; advisory row lock e workflow interno idempotente. Nenhuma concessão automática. Novos contratos principais de proposta exigem minuta juridicamente aprovada e aceita; gatilho preserva corpo e proveniência e proíbe alterações posteriores. Contratos históricos preservados. Assinatura real via hiring_contract_signature_context; status ativo não basta. Ações existentes mantêm seus gates (sales/work capabilities, send/share/approve/esign/serviços); readonly nega novas ações. Textos anteriores capturados por trigger e SELECT RLS do pai, sem reconstruir histórico; carregamento de um corpo por vez. Revisão jurídica continua exigindo aprovador listado, CAS e nova aprovação do cliente; chamadas diretas sujeitas às mesmas invariantes. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant.",
       "controls": [
         {
           "file": "src/lib/deals/contracting-journey.server.ts",
@@ -12283,7 +12288,7 @@
       },
       "files": {
         "drizzle/migrations/0356_deal_contracting_journey.sql": "8fc0fa2805b2c5ae3f9508242532cb01fe3bf62cb0411d3f78eded6ac6bd5f6f",
-        "src/components/deals/deal-contracting-journey.tsx": "ba770c899a1c4f4636ae88cfb55fe14087699656a34017ded490cb088f770d28",
+        "src/components/deals/deal-contracting-journey.tsx": "57803abfe46e9919f7d8af1c42eb11d356e469f2b89b20f36fc2b4f1964653f8",
         "src/lib/deals/contracting-journey.functions.ts": "20e51a0e73599b7462b188572d108e1a28cf23256a11e7dd78a68b9584a7897d",
         "src/lib/deals/contracting-journey.server.ts": "a869db7a515d7206f15149c92f4712dcf7d89f42bcde42149143e828e4712068",
         "src/routes/_authenticated/deals.$id.tsx": "4a86b9805a7a53ae6cbf992dc059fa86fcefc8460d25cd5b0e0b1ee65ad98839",
@@ -12327,7 +12332,7 @@
         "techcontracts.esign.view.team",
         "techcontracts.esign.view.workspace"
       ],
-      "rationale": "Invitations originate from a current non-revoked native contract evidence. Caller-authorized RPC validates active workspace, current contract fingerprint and record send scope before source-constrained service reads. No client-supplied recipients or URLs. Service reads only claimed delivery/signer ids within that workspace/document; persistent attempt ids deduplicate retries at the managed email provider. Client SELECT never exposes tokens via delivery records; service result writes are not granted to authenticated clients. UI checks current version, record capabilities and read-only mode. Provider acceptance is distinct from mailbox delivery and signature. The modified esign.functions authenticated getter only adds RLS-filtered delivery history. Existing public token functions are unchanged, using workspaceOfSource and offerRpc/workRpc capability validation; their exception remains source-bound.",
+      "rationale": "Invitations originate from a current non-revoked native contract evidence. Caller-authorized RPC validates active workspace, current contract fingerprint and record send scope before source-constrained service reads. No client-supplied recipients or URLs. Service reads only claimed delivery/signer ids within that workspace/document; persistent attempt ids deduplicate retries at the managed email provider. Client SELECT never exposes tokens via delivery records; service result writes are not granted to authenticated clients. UI checks current version, record capabilities and read-only mode. Provider acceptance is distinct from mailbox delivery and signature. The modified esign.functions authenticated getter only adds RLS-filtered delivery history. Existing public token functions are unchanged, using workspaceOfSource and offerRpc/workRpc capability validation; their exception remains source-bound. | ETAPA-ASSINA 14/11/2026: the public signing page renders the token-bound getEsignSession result (signer capability token, source-validated) through the sanitized formatted body view; submit/decline unchanged.",
       "controls": [
         {
           "file": "src/lib/access-control/work-permission.middleware.ts",
@@ -12348,6 +12353,10 @@
         {
           "file": "src/lib/ats/offer-rpc.server.ts",
           "symbol": "offerRpc"
+        },
+        {
+          "file": "src/lib/esign.functions.ts",
+          "symbol": "getEsignSession"
         }
       ],
       "database": [
@@ -12395,7 +12404,8 @@
         "src/components/contracts/contract-signature-delivery.tsx": "5b6801294071a121cb459e1ef6b81b6c09003a6a2301ea79f5c62ceb43892c31",
         "src/lib/contracts/signature-delivery.functions.ts": "7e54acfd8edc6821c6eddf8221b08de3d2f01e59ac4a3e24b993e7bc2d4c7100",
         "src/lib/contracts/signature-delivery.server.ts": "ee8265251df0c590c6937621005c7c16f81658512a890f4d7e3c2ada9a87a1a4",
-        "src/lib/esign.functions.ts": "3b0c45d8c48c21b1e2f088f7e3774fde0e2c62a3b3464e89d018c08ea6ed783d"
+        "src/lib/esign.functions.ts": "3b0c45d8c48c21b1e2f088f7e3774fde0e2c62a3b3464e89d018c08ea6ed783d",
+        "src/routes/sign.$token.tsx": "5d70aa590628e0f1dd1586c15e48bf095c7a6f1213e3dcfac423e6434b4a831f"
       },
       "exception": {
         "mechanism": "Unchanged public esign functions resolve a personal signing token to its persisted document and workspace, then execute token-validated contract_esign_public or ats_offer_sign RPCs. Invitation dispatch itself requires authenticated work scope.",
@@ -12410,6 +12420,15 @@
       "rationale": "Pure React email presentation for a source-validated recipient, personal URL and workspace brand; no queries, permissions or sending side effects. Dispatch authorization is contract-context-signature-delivery.",
       "files": {
         "src/lib/email-templates/contract-signature-request.tsx": "ed4407668bf68e8965d774b007d5a90141aadbd461eb5b1f3858727a7ffee013"
+      }
+    },
+    {
+      "id": "esign-formatted-body-view",
+      "kind": "presentation",
+      "rationale": "ETAPA-ASSINA 14/11/2026: pure detection/sanitization of the stored esign body and its display (sanitizeTemplateHtml, closed tag/style list). The public signing page only swaps the text block for this view; its token-bound getEsignSession/submit/decline calls are unchanged. No new action, data, key or grant.",
+      "files": {
+        "src/components/esign/esign-body-view.tsx": "151e2b6b83f14e39216971310c57d759a056eb3567f25a552be1a53757bd6ec3",
+        "src/lib/esign/body-format.ts": "e5843e7ac2f4eae5924f7a252653edc23b7940dad9c18aaacc11cad3808552cd"
       }
     }
   ],

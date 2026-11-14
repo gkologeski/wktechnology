@@ -431,6 +431,7 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
                       type="button"
                       onClick={() => setViewed(i)}
                       aria-current={i === stage ? "step" : undefined}
+                      aria-pressed={viewedStage === i}
                       className={cn(
                         "w-full space-y-2 text-left text-xs",
                         viewedStage === i && "font-semibold text-primary",
@@ -441,6 +442,12 @@ export function DealContractingJourney({ dealId, companyId, origin, onOriginChan
                           "flex size-7 items-center justify-center rounded-full border bg-muted text-muted-foreground",
                           done && "border-primary/30 bg-primary/10 text-primary",
                           i === stage && "border-primary bg-primary text-primary-foreground",
+                          viewedStage === i &&
+                            i !== stage &&
+                            "border-[3px] border-primary bg-card text-primary",
+                          viewedStage === i &&
+                            i === stage &&
+                            "ring-2 ring-primary ring-offset-2 ring-offset-background",
                         )}
                       >
                         {done ? <Check className="size-3.5" /> : i + 1}
