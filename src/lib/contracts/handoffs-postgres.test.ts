@@ -180,6 +180,9 @@ beforeAll(async () => {
     'CREATE TRIGGER zzzz_sales_structure BEFORE INSERT OR UPDATE ON activities FOR EACH ROW EXECUTE FUNCTION sales_row_guard(\'[{"column":"related_deal_id","table":"deals","reference":"id"}]\');',
   );
   await db.unsafe(readFileSync("drizzle/migrations/0362_contract_handoffs.sql", "utf8"));
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0363_contract_handoff_terminal_state.sql", "utf8"),
+  );
 }, 120000);
 afterAll(async () => {
   if (db) await db.end();
@@ -585,4 +588,38 @@ it("internal approvals get sequential tasks and notifications for their actual a
     "pending",
   );
   expect(await db`select id from activities`).toHaveLength(5);
+});
+
+it("fully signed native evidence closes the send task even when links were shared manually", async () => {
+  await reset();
+  await acceptProposal();
+  await tick();
+  await acceptDraft();
+  await createAndApprove();
+  await ready();
+  const doc = "80000000-0000-4000-8000-000000000001";
+  const hash = (await db`select hiring_contract_fingerprint(${contract}) v`)[0].v;
+  await db`insert into esign_documents values(${doc},${W},'completed')`;
+  await db`insert into esign_signers values('80000000-0000-4000-8000-000000000002',${W},${doc},'signed')`;
+  await db`insert into hiring_contract_evidence(workspace_id,contract_id,kind,document_id,contract_hash) values(${W},${contract},'native',${doc},${hash})`;
+  await ready();
+  expect((await db`select status from contract_handoffs where step='signature'`)[0].status).toBe(
+    "done",
+  );
+  expect(
+    (
+      await db`select a.completed from activities a join contract_handoffs h on h.activity_id=a.id where h.step='signature'`
+    )[0].completed,
+  ).toBe(true);
+});
+it("soft-deleted business cancels its source-bound tasks without additional notifications", async () => {
+  await reset();
+  await acceptProposal();
+  await tick();
+  const count = (await db`select count(*)::int n from notifications`)[0].n;
+  await db`update deals set deleted_at=now() where id=${deal}`;
+  await ready();
+  expect((await db`select status from contract_handoffs`)[0].status).toBe("canceled");
+  expect((await db`select completed from activities`)[0].completed).toBe(true);
+  expect((await db`select count(*)::int n from notifications`)[0].n).toBe(count);
 });

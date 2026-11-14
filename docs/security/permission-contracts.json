@@ -12854,6 +12854,10 @@
         {
           "file": "drizzle/migrations/0362_contract_handoffs.sql",
           "symbol": "contract_handoff_task_guard"
+        },
+        {
+          "file": "drizzle/migrations/0363_contract_handoff_terminal_state.sql",
+          "symbol": "contract_handoff_state"
         }
       ],
       "tests": {
@@ -12891,7 +12895,8 @@
         "src/components/contracts/contract-handoff-settings.tsx": "3928bbe6690b74f487fab848d5a943f8c3f85802f3ef07a18f58f67ab95883ff",
         "src/routes/api/public/hooks/workflows-tick.ts": "85680d6514fdd8d588f3f66a0f71b7252a746da94bbd1d8c46ef1029e78f7101",
         "src/components/activity/activity-card-controls.tsx": "82420449efa44e8421c611d908f7857b7af2b8eda8a35bcda9a0b1b2a74bd483",
-        "src/routes/_authenticated/tasks.$id.tsx": "da49a3b7024c23bce2e0bbaaf72b2569abebb7369e77518aead863ddf2d7370e"
+        "src/routes/_authenticated/tasks.$id.tsx": "da49a3b7024c23bce2e0bbaaf72b2569abebb7369e77518aead863ddf2d7370e",
+        "drizzle/migrations/0363_contract_handoff_terminal_state.sql": "91e9dd8741fae95dfcd6397d20d15bdf115035d29eb10dec1aec2ad7e2a43791"
       }
     },
     {

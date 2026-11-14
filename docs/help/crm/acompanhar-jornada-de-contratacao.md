@@ -65,3 +65,5 @@ O quadro **Próximas ações** fica na lateral direita e mostra os encaminhament
 A tarefa vinculada ao negócio aparece em Tarefas e na timeline. Não pode ser encerrada nem ter responsável/prazo trocados fora da jornada. Vencimentos avisam o responsável e o escalonamento configurados. Administradores autorizados podem conferir fontes pendentes ou reprocessar impedimentos, sem duplicar tarefas. Processamento periódico normalmente em até dois minutos; contratos históricos não geram novas minutas apenas por reconciliação.
 
 As aprovações internas também geram tarefas: Jurídico primeiro; Financeiro somente após a aprovação jurídica. Cada solicitação usa o responsável da etapa vigente e o prazo configurado do departamento, sem reduzir a cadeia obrigatória.
+
+Um documento nativo já integralmente assinado também encerra a tarefa de envio, mesmo se os links foram compartilhados manualmente. Negócios removidos cancelam seus encaminhamentos pendentes.
