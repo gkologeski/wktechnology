@@ -2514,6 +2514,13 @@
       "when": 1794665005285,
       "tag": "0358_esign_formatted_contract_body",
       "breakpoints": true
+    },
+    {
+      "idx": 359,
+      "version": "7",
+      "when": 1794668720240,
+      "tag": "0359_forsign_integration",
+      "breakpoints": true
     }
   ]
 }

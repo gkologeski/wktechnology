@@ -7049,6 +7049,75 @@ export type Database = {
           },
         ]
       }
+      contract_forsign_operations: {
+        Row: {
+          completed_at: string | null
+          contract_hash: string
+          contract_id: string
+          created_at: string
+          created_by: string
+          document_ids: Json
+          evidence_id: string | null
+          id: string
+          last_error: string | null
+          last_synced_at: string | null
+          members: Json
+          operation_id: number | null
+          status: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          contract_hash: string
+          contract_id: string
+          created_at?: string
+          created_by: string
+          document_ids?: Json
+          evidence_id?: string | null
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          members?: Json
+          operation_id?: number | null
+          status?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          contract_hash?: string
+          contract_id?: string
+          created_at?: string
+          created_by?: string
+          document_ids?: Json
+          evidence_id?: string | null
+          id?: string
+          last_error?: string | null
+          last_synced_at?: string | null
+          members?: Json
+          operation_id?: number | null
+          status?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_forsign_operations_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_forsign_operations_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_link_ai_suggestions: {
         Row: {
           confidence: string
@@ -12113,6 +12182,94 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "forms_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forsign_connections: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          key_ciphertext: string | null
+          key_last4: string | null
+          last_error: string | null
+          last_tested_at: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+          webhook_secret_ciphertext: string | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          key_ciphertext?: string | null
+          key_last4?: string | null
+          last_error?: string | null
+          last_tested_at?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          webhook_secret_ciphertext?: string | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          key_ciphertext?: string | null
+          key_last4?: string | null
+          last_error?: string | null
+          last_tested_at?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+          webhook_secret_ciphertext?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forsign_connections_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forsign_webhook_events: {
+        Row: {
+          action: number
+          event_created_at: string
+          id: string
+          member_id: number | null
+          operation_id: number
+          received_at: string
+          workspace_id: string
+        }
+        Insert: {
+          action: number
+          event_created_at?: string
+          id?: string
+          member_id?: number | null
+          operation_id: number
+          received_at?: string
+          workspace_id: string
+        }
+        Update: {
+          action?: number
+          event_created_at?: string
+          id?: string
+          member_id?: number | null
+          operation_id?: number
+          received_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forsign_webhook_events_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "workspaces"
@@ -33681,6 +33838,15 @@ export type Database = {
         Returns: string
       }
       form_next_assignee: { Args: { _form_id: string }; Returns: string }
+      forsign_record_evidence: {
+        Args: {
+          p_file_hash: string
+          p_op: string
+          p_path: string
+          p_signed_on: string
+        }
+        Returns: string
+      }
       gcal_base_event_id: {
         Args: { provider_event_id: string }
         Returns: string
