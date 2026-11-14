@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 37
-version: 3
+version: 4
 is_published: true
 ---
 # Preparar e registrar evidência de assinatura no contrato
@@ -19,7 +19,8 @@ is_published: true
 
 ## Passo a passo
 1. Abra a aba **Aprovações e assinatura** da ficha do contrato e o quadro **Assinaturas do contrato**. A mesma operação está na jornada aberta pelo quadro **Contratação**, na lateral direita do negócio.
-2. Para assinatura interna, clique em "Preparar assinatura no TechERP" e preencha representantes/e-mails do cliente e da entidade WK.
+2. Para assinatura interna, clique em "Preparar assinatura no TechERP" e selecione os contatos para **CONTRATANTE** e **CONTRATADO**. Pesquise por nome ou e-mail. Se não existir, use **Cadastrar contato nesta busca** (exige criar e consultar contatos), informe nome/e-mail e salve para selecioná-lo. Contatos sem e-mail devem ser corrigidos no cadastro.
+3. Testemunhas são opcionais: inclua **TESTEMUNHA 1** e/ou **TESTEMUNHA 2** quando necessário. Referências a testemunhas no texto são sinalizadas para revisão. Outros papéis podem ser incluídos pelo nome e associados a contatos. Todos os participantes incluídos precisam assinar; nenhum contrato será concluído apenas pelas duas partes se houver testemunha pendente.
 3. Conclua a preparação, confira os nomes/e-mails e escolha **Enviar para assinatura por e-mail**. Revise os destinatários no diálogo e confirme. Acompanhe o status de cada signatário no mesmo quadro; reenvios alcançam apenas os pendentes e respeitam intervalo de 60 segundos.
 4. Para assinatura externa, clique em "Registrar assinatura externa".
 5. Informe "PDF assinado (até 5 MB)", "Data da assinatura", "Referência do provedor ou certificado" e "Como foi conferido". Faça a confirmação explícita antes de concluir.
@@ -43,3 +44,5 @@ Documento preparado aguardando envio/conclusão, ou evidência externa registrad
 ## Relacionados
 - [Consultar e revogar evidências](/ajuda/contracts/revogar-evidencia)
 - [Documentos de assinatura](/ajuda/contracts/gerenciar-documentos-assinatura)
+
+Papéis e contatos são distintos; cada e-mail identifica um participante. O documento preserva um retrato dos signatários na preparação. Para mudar pessoas ou papéis depois, revogue a evidência e prepare novamente. A exclusão de um participante por outra tela é bloqueada. Documentos históricos não são alterados.

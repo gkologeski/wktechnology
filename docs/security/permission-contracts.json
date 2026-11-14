@@ -8130,11 +8130,11 @@
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
-        "src/components/hiring/contract-signature-card.tsx": "a98d4f485d99e6cc990959410205751cd093785928d82f8e947eb154e396636f",
+        "src/components/hiring/contract-signature-card.tsx": "83d78cd0a9b5f423ace75238d977b0f23720efc90130dbc7806b969bb54a46f5",
         "src/components/hiring/recruitment-authorization-panel.tsx": "63999fab8527aaba7d5bce74450e4c9730b86a54a45104f9952d28de00ad4f8d",
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
-        "src/lib/hiring/signature.functions.ts": "fbd40253714587c00093d0dc56a57075f1d627cb29c41dadc428f8821efbcbcb",
+        "src/lib/hiring/signature.functions.ts": "4f291f2f4868068afb2f3ec1042df44fcfcaf42804b1b91c4784c5a4ba6fccc7",
         "src/routes/_authenticated/contracts.signatures.tsx": "6fa1182c3e26409de32729fb31c9f2cfcb251f0e8d298be4c8254488f588191d",
         "drizzle/migrations/0358_esign_formatted_contract_body.sql": "c28f5c805a9be9020842a5e8714f180ffcfa71ae3833b9ffa6f3262dafdf6aa1"
       }
@@ -8144,7 +8144,7 @@
       "kind": "presentation",
       "rationale": "Type-only DTO declarations; no IO, actions or values.",
       "files": {
-        "src/lib/hiring/signature.types.ts": "de3403e80787df8cc9bd3f7b5257682ce251e5f5c0277d7eaf613a5f4217081f"
+        "src/lib/hiring/signature.types.ts": "e17c484c8fbcf26da2797cd19c1dd320d6388957d0592b64d1f78ecca10aab48"
       }
     },
     {
@@ -12401,10 +12401,10 @@
       },
       "files": {
         "drizzle/migrations/0357_contract_signature_delivery.sql": "f2220b025cd82b9f9841c5572871ca9d995c227cefc4f1d5c298310afe17722d",
-        "src/components/contracts/contract-signature-delivery.tsx": "5b6801294071a121cb459e1ef6b81b6c09003a6a2301ea79f5c62ceb43892c31",
+        "src/components/contracts/contract-signature-delivery.tsx": "f4bc76f3231fb6b7e925cff2df506b852a9a735703f633bdc9b526de298a7018",
         "src/lib/contracts/signature-delivery.functions.ts": "7e54acfd8edc6821c6eddf8221b08de3d2f01e59ac4a3e24b993e7bc2d4c7100",
         "src/lib/contracts/signature-delivery.server.ts": "ee8265251df0c590c6937621005c7c16f81658512a890f4d7e3c2ada9a87a1a4",
-        "src/lib/esign.functions.ts": "3b0c45d8c48c21b1e2f088f7e3774fde0e2c62a3b3464e89d018c08ea6ed783d",
+        "src/lib/esign.functions.ts": "37d7dec2190628e15769933b537a8bb2832ea3f9e99a26ebd76f87d20485360d",
         "src/routes/sign.$token.tsx": "5d70aa590628e0f1dd1586c15e48bf095c7a6f1213e3dcfac423e6434b4a831f"
       },
       "exception": {
@@ -12505,6 +12505,10 @@
         {
           "file": "src/components/integrations/forsign-settings-page.tsx",
           "symbol": "ForsignSettingsPage"
+        },
+        {
+          "file": "src/lib/integrations/forsign/forsign-service.server.ts",
+          "symbol": "sendContractFromContacts"
         }
       ],
       "database": [
@@ -12545,10 +12549,10 @@
       },
       "files": {
         "drizzle/migrations/0359_forsign_integration.sql": "f299acdcbeeac81ca34b101e936070eb15e7b8adb28eaa5262d670fd780d688b",
-        "src/components/contracts/contract-forsign-panel.tsx": "74f05ef2bffc772de326d30fda6783907ed199b399fe739a67ad5fdff64ba348",
+        "src/components/contracts/contract-forsign-panel.tsx": "adb12e18e9567923c0391cde314324bd2cae3f120c789d48a96edf98f8108ec8",
         "src/components/integrations/forsign-settings-page.tsx": "91258abbf7bb58f8b9bfa3d98238f13af33b8a100fab4ed0c412185231e0e8dd",
-        "src/lib/integrations/forsign/forsign-service.server.ts": "b073319e904e682985c3c411ec015b7aa08250de634e6bcb446f0d4dfcc7a8ce",
-        "src/lib/integrations/forsign/forsign.functions.ts": "039756bd563683892055fd559a53a05242e3f49f4439038125395c9ec459782b",
+        "src/lib/integrations/forsign/forsign-service.server.ts": "d2455dc817dd55dc2440e68d71d2087613767156d2afa17b143ae144e9d4d0f2",
+        "src/lib/integrations/forsign/forsign.functions.ts": "d09d853289a03754e5180a570f9bfcf5399ee9c1fb5991b109d9388850e320ca",
         "src/routes/_authenticated/settings.integrations.forsign.tsx": "7dfc62e76ddcc1ec28fd44877c337ebbc3c0adcb091ba2da42caee9885813a81"
       }
     },
@@ -12632,9 +12636,114 @@
       "kind": "presentation",
       "rationale": "Pure ForSign helpers (status labels, HMAC/timestamp checks, HTML to PDF blocks, PDF layout) and the integration catalogue card. No data access, routes or actions.",
       "files": {
-        "src/lib/integrations/forsign/forsign-core.ts": "86c9ea749ab3a53128fcc78414a12411afd1c0e72f29dbe4dfb6fec3e3c8a100",
+        "src/lib/integrations/forsign/forsign-core.ts": "c1abbc3d2fb3944fed0fd38af1d450617fae755a079aa145fa31fd55cbda8be8",
         "src/lib/integrations/forsign/forsign-pdf.ts": "fea50d84e7eef29b2eaf2dc50d0f96b18318d0acb18c7a392e6b6e6be910cec9",
         "src/lib/integrations/registry.ts": "47e469de5587703f9ad87a7acda4d28c8b74ebf27c5fc35dc78fdab16571f5a2"
+      }
+    },
+    {
+      "id": "document-signers-contact-snapshots",
+      "kind": "business",
+      "resources": [
+        "techcontracts.signature_evidence",
+        "techcontracts.esign",
+        "techsales.contacts"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.signature_evidence.manage.workspace",
+        "techcontracts.signature_evidence.view.workspace",
+        "techcontracts.esign.create.workspace",
+        "techcontracts.esign.manage.workspace",
+        "techsales.contacts.view.own",
+        "techsales.contacts.view.team",
+        "techsales.contacts.view.workspace",
+        "techsales.contacts.create.own",
+        "techsales.contacts.create.team",
+        "techsales.contacts.create.workspace"
+      ],
+      "rationale": "Contact-backed contract participants; optional witnesses become mandatory when included. User/RLS contact search and creation, source-bound SQL preparation, immutable participant snapshots and legacy helper no longer callable by authenticated clients. No role grants; existing documents unchanged. ForSign uses the same contact resolver and an immutable requested roster; remote completion requires all requested members, including optional witnesses once included.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/components/contracts/signer-contact-picker.tsx",
+          "symbol": "SignerContactPicker"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0360_contract_signer_contacts.sql",
+          "symbol": "hiring_contract_signers_prepare"
+        },
+        {
+          "file": "drizzle/migrations/0360_contract_signer_contacts.sql",
+          "symbol": "contract_signature_participants_read"
+        },
+        {
+          "file": "drizzle/migrations/0360_contract_signer_contacts.sql",
+          "symbol": "contract_participant_identity_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/signers-postgres.test.ts",
+          "name": "document participants allow an authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/signers-postgres.test.ts",
+          "name": "document participants reject missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/signers-postgres.test.ts",
+          "name": "document participants reject explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/signers-postgres.test.ts",
+          "name": "document participants reject foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/signers-postgres.test.ts",
+          "name": "document participants reject inactive membership"
+        }
+      },
+      "files": {
+        "src/lib/contracts/signer-contacts.functions.ts": "f4012895b4c8ba11df9eed569ad6e440b4bab9bd73bfe1555bbdf761496689e5",
+        "src/components/contracts/signer-contact-picker.tsx": "0d70bd3e61582e9daf88d9b1e4c076a0d2235f4e447e40088994e925be8ce660",
+        "drizzle/migrations/0360_contract_signer_contacts.sql": "79618e3f5bf678fd362d8e0d64610e9a28073c586cea77801da303159369d84a",
+        "src/lib/contracts/signer-contacts.server.ts": "301632198163a84e393a2f1b1db70e3ec8ec147e68995ed2b1ed4410a53a6bc7",
+        "src/components/contracts/contract-signers-editor.tsx": "4568eea651f8f9ab689d0ed90b003e3ec5bb0e2d1d4e6c75c94b1df395369318"
+      }
+    },
+    {
+      "id": "contract-signer-input-schema",
+      "kind": "presentation",
+      "rationale": "Pure input schema and contact DTO; no data reads, writes or permissions. Callers enforce workspace, contact access and signature preparation.",
+      "files": {
+        "src/lib/contracts/signers.ts": "3c53708810534c4f79533dd7954e691e689ddea54fdfcfd49cabec14f772e25a"
       }
     }
   ],

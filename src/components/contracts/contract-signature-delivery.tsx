@@ -152,6 +152,7 @@ export function ContractSignatureDelivery({
           return (
             <li key={s.id} className="rounded-md border p-3 text-sm">
               <p className="font-medium">
+                {s.role ? `${s.role} — ` : ""}
                 {s.name} · {signerStatus[s.status] ?? "Consultar"}
               </p>
               <p className="break-all text-muted-foreground">{s.email}</p>
@@ -221,6 +222,7 @@ export function ContractSignatureDelivery({
           <ul className="space-y-2 text-sm">
             {pending.map((s) => (
               <li key={s.id}>
+                {s.role ? `${s.role} — ` : ""}
                 {s.name} · {s.email}
               </li>
             ))}

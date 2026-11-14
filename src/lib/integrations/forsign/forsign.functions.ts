@@ -1,14 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { emailSchema } from "@/lib/email-schema";
+import { contractSignersSchema } from "@/lib/contracts/signers";
 import {
   cancelForUser,
   getContractOps,
   getSettings,
   refreshForUser,
   saveSettings,
-  sendContract,
+  sendContractFromContacts,
   testSettings,
 } from "./forsign-service.server";
 
@@ -44,20 +44,15 @@ export const sendContractForsign = createServerFn({ method: "POST" })
     z.object({
       contractId: z.string().uuid(),
       hash: z.string().regex(/^[a-f0-9]{64}$/),
-      signers: z
-        .array(
-          z.object({
-            name: z.string().trim().min(2).max(255),
-            email: emailSchema(255),
-            cpf: z.string().trim().max(20).nullable().optional(),
-            role: z.string().trim().min(2).max(60),
-          }),
-        )
-        .min(1)
-        .max(10),
+      signers: contractSignersSchema.refine(
+        (s) => s.length <= 10,
+        "Máximo de 10 signatários no ForSign.",
+      ),
     }),
   )
-  .handler(async ({ context, data }) => sendContract(context.supabase, context.userId, data));
+  .handler(async ({ context, data }) =>
+    sendContractFromContacts(context.supabase, context.userId, data),
+  );
 
 export const refreshContractForsign = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

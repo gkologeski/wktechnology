@@ -4,8 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { EmailInput } from "@/components/ui/email-input";
+import { ContractSignersEditor, type ParticipantSelection } from "./contract-signers-editor";
+import { contractSignersSchema } from "@/lib/contracts/signers";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -24,17 +24,16 @@ import {
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { MEMBER_STATUS_PT, OP_STATUS_PT } from "@/lib/integrations/forsign/forsign-core";
 
-type Signer = { name: string; email: string; cpf: string; role: string };
-const empty = (role: string): Signer => ({ name: "", email: "", cpf: "", role });
-
 export function ContractForsignPanel({
   contractId,
   hash,
   canManage,
+  witnessesDetected,
 }: {
   contractId: string;
   hash: string;
   canManage: boolean;
+  witnessesDetected?: boolean;
 }) {
   const load = useServerFn(getContractForsign);
   const send = useServerFn(sendContractForsign);
@@ -51,7 +50,10 @@ export function ContractForsignPanel({
   });
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [signers, setSigners] = useState<Signer[]>([empty("Contratante"), empty("Contratada")]);
+  const [signers, setSigners] = useState<ParticipantSelection[]>([
+    { role: "CONTRATANTE", contact: null },
+    { role: "CONTRATADO", contact: null },
+  ]);
   const [cancelMsg, setCancelMsg] = useState("");
   const [cancelId, setCancelId] = useState<string | null>(null);
 
@@ -89,7 +91,15 @@ export function ContractForsignPanel({
       ) && o.contract_hash === hash,
   );
   const allowSend = canManage && d.canSend && d.ready && !active;
-  const valid = signers.every((s) => s.name.trim().length >= 2 && /\S+@\S+/.test(s.email));
+  const payload = signers.map((s) => ({
+    role: s.role,
+    contactId: s.contact?.id ?? "",
+    cpf: s.cpf || null,
+  }));
+  const valid =
+    signers.length <= 10 &&
+    contractSignersSchema.safeParse(payload).success &&
+    signers.every((s) => !!s.contact?.email);
 
   return (
     <div className="space-y-3 rounded-md border p-3">
@@ -165,7 +175,7 @@ export function ContractForsignPanel({
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Enviar pelo ForSign</DialogTitle>
             <DialogDescription>
@@ -174,60 +184,14 @@ export function ContractForsignPanel({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {signers.map((s, i) => (
-              <fieldset key={i} className="space-y-2 rounded-md border p-3">
-                <legend className="px-1 text-sm font-medium">
-                  {i === 0
-                    ? "Signatário do cliente"
-                    : i === 1
-                      ? "Signatário da WK"
-                      : `Assinante ${i + 1}`}
-                </legend>
-                {(["name", "cpf", "role"] as const).map((f) => (
-                  <div key={f} className="space-y-1">
-                    <Label htmlFor={`fs-${i}-${f}`}>
-                      {f === "name" ? "Nome" : f === "cpf" ? "CPF (opcional)" : "Papel"}
-                    </Label>
-                    <Input
-                      id={`fs-${i}-${f}`}
-                      value={s[f]}
-                      onChange={(e) =>
-                        setSigners((xs) =>
-                          xs.map((x, j) => (j === i ? { ...x, [f]: e.target.value } : x)),
-                        )
-                      }
-                    />
-                  </div>
-                ))}
-                <div className="space-y-1">
-                  <Label htmlFor={`fs-${i}-email`}>E-mail</Label>
-                  <EmailInput
-                    id={`fs-${i}-email`}
-                    value={s.email}
-                    onChange={(v) =>
-                      setSigners((xs) => xs.map((x, j) => (j === i ? { ...x, email: v } : x)))
-                    }
-                  />
-                </div>
-                {i > 1 && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setSigners((xs) => xs.filter((_, j) => j !== i))}
-                  >
-                    Remover assinante
-                  </Button>
-                )}
-              </fieldset>
-            ))}
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={signers.length >= 10}
-              onClick={() => setSigners((xs) => [...xs, empty("Testemunha")])}
-            >
-              Adicionar assinante
-            </Button>
+            <ContractSignersEditor
+              value={signers}
+              onChange={setSigners}
+              disabled={busy}
+              witnessesDetected={witnessesDetected}
+              max={10}
+              showCpf
+            />
             <div className="flex justify-end gap-2">
               <Button variant="ghost" onClick={() => setOpen(false)}>
                 Voltar
@@ -241,12 +205,7 @@ export function ContractForsignPanel({
                         data: {
                           contractId,
                           hash,
-                          signers: signers.map((s) => ({
-                            name: s.name,
-                            email: s.email,
-                            cpf: s.cpf || null,
-                            role: s.role || "Assinante",
-                          })),
+                          signers: payload,
                         },
                       }),
                     "Contrato enviado ao ForSign.",

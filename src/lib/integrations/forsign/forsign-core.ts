@@ -171,3 +171,31 @@ export function buildMembers(signers: SignerInput[]) {
     };
   });
 }
+
+/** Provider completion must cover the exact roster originally requested, including witnesses. */
+export function allRequestedSignersCompleted(expected: unknown, remote: unknown): boolean {
+  if (
+    !Array.isArray(expected) ||
+    expected.length < 2 ||
+    !Array.isArray(remote) ||
+    remote.length !== expected.length
+  )
+    return false;
+  const emails = (rows: unknown[]) =>
+    rows.map((v) =>
+      typeof v === "object" && v !== null && "email" in v && typeof v.email === "string"
+        ? v.email.trim().toLowerCase()
+        : "",
+    );
+  const wanted = emails(expected),
+    received = emails(remote);
+  if (
+    wanted.some((e) => !e) ||
+    new Set(wanted).size !== wanted.length ||
+    new Set(received).size !== received.length
+  )
+    return false;
+  return wanted.every((email) =>
+    remote.some((r: any) => r.email?.trim().toLowerCase() === email && r.status === "Completed"),
+  );
+}

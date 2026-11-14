@@ -94,3 +94,30 @@ describe("ForSign — webhook público", () => {
     expect(timestampFresh(String(Math.floor(now / 1000) - 86400), now)).toBe(false);
   });
 });
+
+it("requires all originally requested signers including witnesses", async () => {
+  const { allRequestedSignersCompleted } = await import("./forsign-core");
+  const roster = [
+    { email: "client@example.test" },
+    { email: "issuer@example.test" },
+    { email: "w1@example.test" },
+    { email: "w2@example.test" },
+  ];
+  const signed = roster.map((r) => ({ ...r, status: "Completed" }));
+  expect(allRequestedSignersCompleted(roster, signed)).toBe(true);
+  expect(allRequestedSignersCompleted(roster, signed.slice(0, 2))).toBe(false);
+  expect(
+    allRequestedSignersCompleted(roster, [
+      ...signed.slice(0, 3),
+      { ...signed[3], status: "InProgress" },
+    ]),
+  ).toBe(false);
+  expect(
+    allRequestedSignersCompleted(roster, [
+      ...signed.slice(0, 3),
+      { email: "other@example.test", status: "Completed" },
+    ]),
+  ).toBe(false);
+  expect(allRequestedSignersCompleted(roster, [...signed.slice(0, 3), signed[0]])).toBe(false);
+  expect(allRequestedSignersCompleted(roster.slice(0, 2), signed.slice(0, 2))).toBe(true);
+});

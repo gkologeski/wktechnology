@@ -9,7 +9,8 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { EmailInput } from "@/components/ui/email-input";
+import { ContractSignersEditor } from "@/components/contracts/contract-signers-editor";
+import { contractSignersSchema, type SignerContact } from "@/lib/contracts/signers";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -85,10 +86,13 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
     [mode, setMode] = useState<"native" | "external" | "revoke" | null>(null);
   const [deal, setDeal] = useState(c.deal_id),
     [entity, setEntity] = useState(c.entity_id ?? "");
-  const [customerName, setCustomerName] = useState(""),
-    [customerEmail, setCustomerEmail] = useState(""),
-    [issuerName, setIssuerName] = useState(""),
-    [issuerEmail, setIssuerEmail] = useState("");
+  const [participants, setParticipants] = useState<
+    { role: string; contact: SignerContact | null }[]
+  >([
+    { role: "CONTRATANTE", contact: null },
+    { role: "CONTRATADO", contact: null },
+  ]);
+  const signerPayload = participants.map((p) => ({ role: p.role, contactId: p.contact?.id ?? "" }));
   const [pdf, setPdf] = useState<File | null>(null),
     [signedOn, setSignedOn] = useState(""),
     [reference, setReference] = useState(""),
@@ -211,7 +215,12 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
           </Button>
         </div>
       )}
-      <ContractForsignPanel contractId={contractId} hash={c.hash} canManage={manage} />
+      <ContractForsignPanel
+        contractId={contractId}
+        hash={c.hash}
+        canManage={manage}
+        witnessesDetected={c.witnesses_detected}
+      />
       <div className="space-y-3">
         {c.evidence.length === 0 && (
           <p className="text-sm text-muted-foreground">Nenhuma evidência registrada.</p>
@@ -275,7 +284,7 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
           if (!open && !busy) setMode(null);
         }}
       >
-        <DialogContent>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>
               {mode === "native"
@@ -291,34 +300,25 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
                 O documento será preparado a partir do contrato salvo e seus serviços. Depois,
                 confira os signatários e envie os convites por e-mail neste mesmo painel.
               </p>
-              <Label>Representante do cliente</Label>
-              <Input
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                maxLength={255}
+              <ContractSignersEditor
+                value={participants}
+                onChange={setParticipants}
+                disabled={busy}
+                witnessesDetected={c.witnesses_detected}
               />
-              <Label>E-mail do cliente</Label>
-              <EmailInput value={customerEmail} onChange={setCustomerEmail} />
-              <Label>Representante da entidade WK</Label>
-              <Input
-                value={issuerName}
-                onChange={(e) => setIssuerName(e.target.value)}
-                maxLength={255}
-              />
-              <Label>E-mail do representante WK</Label>
-              <EmailInput value={issuerEmail} onChange={setIssuerEmail} />
               <Button
-                disabled={busy || !customerName || !issuerName || !customerEmail || !issuerEmail}
+                disabled={
+                  busy ||
+                  !contractSignersSchema.safeParse(signerPayload).success ||
+                  participants.some((p) => !p.contact?.email)
+                }
                 onClick={() =>
                   act(() =>
                     prepare({
                       data: {
                         contractId,
                         hash: c.hash,
-                        customerName,
-                        customerEmail,
-                        issuerName,
-                        issuerEmail,
+                        signers: signerPayload,
                       },
                     }),
                   )

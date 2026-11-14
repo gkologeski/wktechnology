@@ -60,8 +60,18 @@ export const getEsignDocument = createServerFn({ method: "GET" })
           { p_action: "share", p_id: data.id, p_data: {} },
         )
       : [];
+    const { data: participants, error: participantError } = await (supabase as any)
+      .from("contract_signature_participants")
+      .select("signer_id,role")
+      .eq("workspace_id", doc.workspace_id)
+      .eq("document_id", data.id);
+    if (participantError) throw new Error("Não foi possível consultar os papéis dos signatários.");
     const safeSigners = (signers ?? []).map((s) => ({
       ...s,
+      role:
+        (participants as { signer_id: string; role: string }[] | null)?.find(
+          (p) => p.signer_id === s.id,
+        )?.role ?? null,
       public_token: links.find((l) => l.id === s.id)?.public_token ?? null,
     }));
     const { data: deliveries, error: deliveryError } = await (supabase as any)

@@ -1,3 +1,4 @@
+import { resolveSignerContacts } from "@/lib/contracts/signer-contacts.server";
 // Serviço server-only do ForSign. Toda ação de usuário confere permissão no workspace ativo
 // com o cliente do próprio usuário antes de qualquer leitura com a conta de serviço.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -13,6 +14,7 @@ import { getPublicAppUrl } from "@/lib/app-url";
 import type { SignatureContext } from "@/lib/hiring/signature.types";
 import {
   buildMembers,
+  allRequestedSignersCompleted,
   mapOperationStatus,
   type ForsignOpStatus,
   type SignerInput,
@@ -191,12 +193,25 @@ async function authorizeSend(sb: SupabaseClient, userId: string, contractId: str
   return ws;
 }
 
+export async function sendContractFromContacts(
+  sb: SupabaseClient,
+  userId: string,
+  input: { contractId: string; hash: string; signers: { contactId: string; role: string }[] },
+) {
+  const ws = await authorizeSend(sb, userId, input.contractId, input.hash);
+  const signers = await resolveSignerContacts(sb, userId, ws, input.signers);
+  if (signers.length > 10) throw new Error("Máximo de 10 signatários no ForSign.");
+  return sendContract(sb, userId, { ...input, signers });
+}
+
 export async function sendContract(
   sb: SupabaseClient,
   userId: string,
-  input: { contractId: string; hash: string; signers: SignerInput[] },
+  input: { contractId: string; hash: string; signers: (SignerInput & { contactId?: string })[] },
 ) {
   const ws = await authorizeSend(sb, userId, input.contractId, input.hash);
+  if (input.signers.some((s) => !s.contactId))
+    throw new Error("Selecione contatos para todos os signatários.");
   const members = buildMembers(input.signers);
   const db = await admin();
   const { data: contract, error: ce } = await db
@@ -219,6 +234,12 @@ export async function sendContract(
       contract_id: input.contractId,
       contract_hash: input.hash,
       created_by: userId,
+      requested_members: input.signers.map((s) => ({
+        contact_id: s.contactId,
+        name: s.name,
+        email: s.email,
+        role: s.role,
+      })),
       members: members.map((m) => ({
         name: m.name,
         email: m.email,
@@ -335,10 +356,14 @@ export async function syncOperation(opId: string) {
     return { status: op.status as ForsignOpStatus };
   const client = await clientFor(op.workspace_id);
   const st = await client.status(Number(op.operation_id));
-  const status = mapOperationStatus(st.status, {
+  let status = mapOperationStatus(st.status, {
     current: st.progressCurrent,
     total: st.progressTotal,
   });
+  const incompleteRoster =
+    status === "completed" &&
+    !allRequestedSignersCompleted(op.requested_members ?? op.members, st.members);
+  if (incompleteRoster) status = "partially_signed";
   const now = new Date().toISOString();
   await db
     .from("contract_forsign_operations")
@@ -347,7 +372,9 @@ export async function syncOperation(opId: string) {
       members: st.members,
       completed_at: st.completedAt,
       last_synced_at: now,
-      last_error: null,
+      last_error: incompleteRoster
+        ? "O ForSign ainda não comprovou a assinatura de todos os participantes enviados."
+        : null,
       updated_at: now,
     })
     .eq("id", opId)

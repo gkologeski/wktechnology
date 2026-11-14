@@ -8,7 +8,7 @@ route_pattern: /contracts/signatures
 min_permission:
 audience: internal
 sort_order: 95
-version: 3
+version: 4
 is_published: true
 ---
 # Preparar documentos para assinatura eletrônica
@@ -43,3 +43,6 @@ Documento preparado e, após envio, disponibilizado para assinatura conforme sua
 ## Relacionados
 - [Assinar por link](/ajuda/contracts/assinar-por-link)
 - [Registrar evidência no contrato](/ajuda/contracts/registrar-assinatura)
+
+## Signatários por papel
+Na preparação do contrato, escolha contatos para CONTRATANTE e CONTRATADO. Inclua testemunhas apenas quando necessário; uma vez incluídas, suas assinaturas são obrigatórias para concluir o documento. A busca permite cadastrar um novo contato com as permissões de contatos. O cadastro deve conter nome e e-mail válidos. Papéis adicionais podem ser incluídos explicitamente.

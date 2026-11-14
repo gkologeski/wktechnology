@@ -2521,6 +2521,13 @@
       "when": 1794668720240,
       "tag": "0359_forsign_integration",
       "breakpoints": true
+    },
+    {
+      "idx": 360,
+      "version": "7",
+      "when": 1794680266529,
+      "tag": "0360_contract_signer_contacts",
+      "breakpoints": true
     }
   ]
 }
