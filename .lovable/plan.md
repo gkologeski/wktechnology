@@ -17,7 +17,7 @@ Causa confirmada: ao "Preparar assinatura no TechERP", o banco copia o corpo do 
 - Nova migração substitui a preparação da assinatura: guarda o corpo do contrato com sua formatação, precedido de um cabeçalho com título, número, partes, vigência e valor em formato brasileiro (R$ 18.870,00 e datas 14/11/2026).
 - A integridade (hash) continua sendo calculada sobre o conteúdo exato que o signatário vê; a trava contra edição do documento vinculado continua.
 - Página de assinatura (`/sign/$token`) e tela de Assinatura eletrônica: quando o documento é formatado, mostram com o mesmo estilo de documento usado na revisão do contrato, sempre passando pelo filtro de segurança de HTML; documentos antigos em texto continuam aparecendo como hoje.
-- Documentos já preparados não mudam (a assinatura deles vale para aquele conteúdo). O aditivo NEXID C-202611-5749 já está "enviado"; para o Gustavo receber a versão formatada, ofereço revogar a atual e preparar uma nova pela interface, só com sua confirmação.
+- O aditivo NEXID C-202611-5749 (já "enviado") recebe a versão formatada no mesmo documento, sem revogar nem reenviar: o texto do contrato continua idêntico, só a formatação muda. Uma correção pontual troca o corpo do documento de assinatura pelo formatado e atualiza a impressão digital (hash) registrada, ficando anotado no histórico que foi uma troca só de formatação. O Gustavo continua com o mesmo link; signatários e status ficam como estão. Antes de gravar, confiro que o texto sem marcações é o mesmo do atual. Demais documentos antigos continuam como estão.
 
 ## 3. Ajuda e permissões
 - Atualizar artigo da Ajuda de assinatura do contrato (bump de versão) e o do negócio/jornada.
