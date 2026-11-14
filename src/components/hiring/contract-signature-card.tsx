@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ContractSignatureDelivery } from "@/components/contracts/contract-signature-delivery";
+import { ContractForsignPanel } from "@/components/contracts/contract-forsign-panel";
 import { readViewAs } from "@/lib/view-as-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -210,6 +211,7 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
           </Button>
         </div>
       )}
+      <ContractForsignPanel contractId={contractId} hash={c.hash} canManage={manage} />
       <div className="space-y-3">
         {c.evidence.length === 0 && (
           <p className="text-sm text-muted-foreground">Nenhuma evidência registrada.</p>

@@ -722,6 +722,8 @@
     "techcontracts.esign_cancel.manage.workspace",
     "techcontracts.esign_send.manage.workspace",
     "techcontracts.esign_share.manage.workspace",
+    "techcontracts.forsign.manage.workspace",
+    "techcontracts.forsign_settings.manage.workspace",
     "techcontracts.imports.manage.workspace",
     "techcontracts.imports.view.workspace",
     "techcontracts.links.manage.workspace",
@@ -2972,7 +2974,13 @@
     },
     "techcontracts.contract_drafts.create.workspace": {
       "migration": "drizzle/migrations/0356_deal_contracting_journey.sql",
-      "rationale": "Abertura manual de minuta, sem grants autom\u00e1ticos."
+      "rationale": "Abertura manual de minuta, sem grants automáticos."
+    },
+    "techcontracts.forsign.manage.workspace": {
+      "migration": "drizzle/migrations/0359_forsign_integration.sql"
+    },
+    "techcontracts.forsign_settings.manage.workspace": {
+      "migration": "drizzle/migrations/0359_forsign_integration.sql"
     }
   }
 }

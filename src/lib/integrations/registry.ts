@@ -3,6 +3,7 @@ import {
   Building2,
   Briefcase,
   Cloud,
+  FileSignature,
   Linkedin,
   MapPin,
   MessageSquare,
@@ -19,6 +20,7 @@ export type ProviderSlug =
   | "contaazul"
   | "clickup"
   | "linkedin"
+  | "forsign"
   | "ai";
 
 export type Entity = "lead" | "contact" | "company" | "deal";
@@ -27,7 +29,15 @@ export type ProviderDef = {
   slug: ProviderSlug;
   name: string;
   description: string;
-  category: "crm" | "enrichment" | "address" | "finance" | "tasks" | "sourcing" | "ai";
+  category:
+    | "crm"
+    | "enrichment"
+    | "address"
+    | "finance"
+    | "tasks"
+    | "sourcing"
+    | "signature"
+    | "ai";
   icon: LucideIcon;
   color: string; // tailwind bg class
   authMode: "connector_gateway" | "api_key" | "oauth" | "personal_token_or_oauth" | "none";
@@ -143,6 +153,20 @@ export const PROVIDERS: ProviderDef[] = [
     href: "/settings/integrations/linkedin",
   },
   {
+    slug: "forsign",
+    name: "ForSign",
+    description:
+      "Envie contratos para assinatura no ForSign, acompanhe quem já assinou e receba o PDF assinado como evidência automaticamente.",
+    category: "signature",
+    icon: FileSignature,
+    color: "bg-emerald-600",
+    authMode: "api_key",
+    entities: [],
+    supports: {},
+    docs: "https://docs.forsign.digital/docs",
+    href: "/settings/integrations/forsign",
+  },
+  {
     slug: "ai",
     name: "Inteligência Artificial",
     description:
@@ -169,6 +193,7 @@ export const CATEGORY_LABELS: Record<ProviderDef["category"], string> = {
   finance: "Financeiro / ERP",
   tasks: "Tarefas",
   sourcing: "Sourcing & Mensageria",
+  signature: "Assinatura eletrônica",
   ai: "Inteligência Artificial",
 };
 
