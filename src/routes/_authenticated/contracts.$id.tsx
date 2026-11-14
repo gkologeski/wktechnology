@@ -69,6 +69,7 @@ import { ContractLinksHistoryCard } from "@/components/contracts/contract-links-
 import { AiLinkSuggestionsHistoryCard } from "@/components/contracts/ai-link-suggestions-history-card";
 
 import { ContractFileViewerDialog } from "@/components/contracts/contract-file-viewer-dialog";
+import { ContractBodyFromSourceButton } from "@/components/contracts/contract-body-from-source-button";
 import { formatCurrency, formatDateTime } from "@/lib/crm";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
@@ -686,6 +687,12 @@ function ContractDetail() {
               <CardTitle className="text-base">Cláusulas / corpo do contrato</CardTitle>
             </CardHeader>
             <CardContent>
+              <ContractBodyFromSourceButton
+                contract={contract}
+                bodyHtml={bodyHtml}
+                canUpdate={canUpdateContract}
+                onLoaded={() => void qc.invalidateQueries({ queryKey: ["contract", id] })}
+              />
               <WordEditor
                 value={bodyHtml}
                 onChange={setBodyHtml}

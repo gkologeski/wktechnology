@@ -8122,7 +8122,7 @@
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
         "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
-        "src/routes/_authenticated/contracts.$id.tsx": "2f83878ad639bffafe2136c0ed5f451d507aecd0f347c9d0e827d163ac05ff31",
+        "src/routes/_authenticated/contracts.$id.tsx": "f51782b750462067374edfb5caf55d4c56cffa290558331d19b91e935281fed8",
         "src/routes/_authenticated/settings.esign.tsx": "3f34242a562fb3977f527789872cac53341b84205a943bf2c3fbcb884ce67e48",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
@@ -10014,7 +10014,7 @@
       "kind": "presentation",
       "rationale": "Pure static value definitions and filtering only; no route, query, credentials or business action.",
       "files": {
-        "src/lib/contracts/import-schemas.ts": "1f6f7337a2d1b0aa73100261c3924a42c2b5015e8c180431bc7679f4cb1bd994",
+        "src/lib/contracts/import-schemas.ts": "c4ef0a61dd9e47cf878dffaeb80ceaea06788a35bd228d4490ca96bebbab82cc",
         "src/lib/contracts/workflow-field-meta.ts": "417fd4f63e8139ec0702adbbd71ce04d0956d88aceedcb8d4bd79b6e6ff760c6"
       }
     },
@@ -10046,7 +10046,7 @@
         "techcontracts.contracts.create.workspace",
         "techcontracts.links.manage.workspace"
       ],
-      "rationale": "Existing import endpoints enforce requireWorkPermission and assertAnyPermission; original file signing reads contract under user RLS first. Type options only changed in presentation and AI schema; legal-entity picker filters new assignments, label hydration retains saved value. Template editing retains WorkAction and HrScreenAccess; no grants changed. Merge review: the import UI checks its catalogue workspace key and fails closed while permissions load/fail; server middleware, creation scope checks, signed-file record access and active CNPJ assignment rules from main are preserved. Five import-boundary scenarios invoke the real work middleware. FORMATO-ORIGINAL: .docx formatting is parsed client-side (pure) and sent to the same authenticated template-import route, which keeps bearer auth, active workspace and assertAnyPermission(TEMPLATE_IMPORT_PERMISSIONS); the AI only returns variable suggestions applied to sanitized HTML. No new action, data or grant. The shared template body editor keeps its DOMPurify sanitizeRichHtml on load/update and only gains paragraph spacing attributes for imported formatting; editing and saving remain behind the template page WorkAction/HrScreenAccess and server update checks. ROLAGEM-CONTRATO: editor gains optional maxHeight with internal scroll; presentation only. ACOES-MODELO: list/detail share ContractTemplateActionsMenu (edit, duplicate, publish/draft/archive/reactivate, delete with confirmation); items are enabled only from usePermissions keys plus per-record work capabilities, disabled with a hint otherwise, and every action calls the existing server functions (contract_template_save_checked / assertAnyPermission + deleteByIdGuarded). No new action, key or grant. The status CHECK now also accepts 'archived' (value already offered by the UI/server schema); no grant or RLS change.",
+      "rationale": "Existing import endpoints enforce requireWorkPermission and assertAnyPermission; original file signing reads contract under user RLS first. Type options only changed in presentation and AI schema; legal-entity picker filters new assignments, label hydration retains saved value. Template editing retains WorkAction and HrScreenAccess; no grants changed. Merge review: the import UI checks its catalogue workspace key and fails closed while permissions load/fail; server middleware, creation scope checks, signed-file record access and active CNPJ assignment rules from main are preserved. Five import-boundary scenarios invoke the real work middleware. FORMATO-ORIGINAL: .docx formatting is parsed client-side (pure) and sent to the same authenticated template-import route, which keeps bearer auth, active workspace and assertAnyPermission(TEMPLATE_IMPORT_PERMISSIONS); the AI only returns variable suggestions applied to sanitized HTML. No new action, data or grant. The shared template body editor keeps its DOMPurify sanitizeRichHtml on load/update and only gains paragraph spacing attributes for imported formatting; editing and saving remain behind the template page WorkAction/HrScreenAccess and server update checks. ROLAGEM-CONTRATO: editor gains optional maxHeight with internal scroll; presentation only. ACOES-MODELO: list/detail share ContractTemplateActionsMenu (edit, duplicate, publish/draft/archive/reactivate, delete with confirmation); items are enabled only from usePermissions keys plus per-record work capabilities, disabled with a hint otherwise, and every action calls the existing server functions (contract_template_save_checked / assertAnyPermission + deleteByIdGuarded). No new action, key or grant. The status CHECK now also accepts 'archived' (value already offered by the UI/server schema); no grant or RLS change. CORPO-PDF: parseContractPdf keeps its middleware and permission checks and now also returns the PDF body read server-side (unpdf); control characters are stripped before insert. New reloadContractBodyFromSource requires requireWorkPermission(techcontracts.contracts, update), assertWorkRecord(update) and assertAnyPermission(update own/team/workspace), reads the row under user RLS, acts only on drafts without body and with source_file_path, uses the admin client only to download the stored object and writes through the user's contract_mutate RPC. The UI button is disabled without per-record can_update. No new key, grant or policy. Batch import now fails closed in the UI with usePermissions(techcontracts.imports.manage.workspace), same key as the single import; the body reload button also requires a techcontracts.contracts.update key plus per-record can_update.",
       "controls": [
         {
           "file": "src/lib/access-control/work-permission.middleware.ts",
@@ -10143,16 +10143,18 @@
       },
       "files": {
         "src/components/contracts/contract-form/contract-field-input.tsx": "5dfdf300f65db113dbae568d5e052d571495c348a48c9d7711960056f94d8aa4",
-        "src/components/contracts/import-contract-file-dialog.tsx": "dad6d438259eeb37e6ce6ec61beeb9689f9ed8c2997b3c8a6730cc73d2811cb7",
+        "src/components/contracts/import-contract-file-dialog.tsx": "160dbc8d87427e0f8ed379de005d2e142bb1e2198b2c2ec03b910d3ebe8fee20",
         "src/components/contracts/import-contract-template-dialog.tsx": "7df6975f4edea9277cdc7630c2e2e6ff9dbb8548443f51d56269d27f98f66aae",
-        "src/lib/contracts/import.functions.ts": "3f5acb990638e65a5ac2333d7ee37389dc42be17f7df1d332abfd19f418456d4",
+        "src/lib/contracts/import.functions.ts": "5c8d8983520c6a1efbd50c2301f0e9e3207872e4b39d07907179f5d3f816cba1",
         "src/lib/contracts/template-import.server.ts": "5c5d3a9ad8fc2ef9d2ffcfa801ed137918c8b8e87a24849a370683adafead285",
         "src/routes/_authenticated/contracts.templates.$id.tsx": "269e0f1483c1cd18f259b401bd00d8383fd1d22835b10141c4b1a2ef86e79176",
         "src/routes/api/contracts.template-import.ts": "e7df83c1225f941ccf71100af6fd0fb532206b0d1b3c4bd8e6efaafc783fd5d9",
         "src/components/word-editor.tsx": "635159803f5b02d857d1ca8accbaddb5b540f290a408dfc3f4f4006c2a25b1aa",
         "src/routes/_authenticated/contracts.templates.index.tsx": "804337a7c0fceceabd916f6a30232432d1c15efcf8edb84b2d006274002ce835",
         "src/components/contracts/contract-template-actions-menu.tsx": "a4d89311fce43da22b7d356cdb3258210fe63da0f4071ec6b002103186d56fe9",
-        "drizzle/migrations/0322_contract_templates_allow_archived.sql": "dbde6b67be72afbcfffeae038d38c5ca438bb430cab08d9010e1758856bf5e3c"
+        "drizzle/migrations/0322_contract_templates_allow_archived.sql": "dbde6b67be72afbcfffeae038d38c5ca438bb430cab08d9010e1758856bf5e3c",
+        "src/components/contracts/batch-import-contracts-dialog.tsx": "d68c858d7902fbbfb3f5edb9b0c6b09e01159f513d3d131435e70327cdd5027f",
+        "src/components/contracts/contract-body-from-source-button.tsx": "a55350285dc6125b298bc3f75f00efbb65988eb8b120f782b1176432d5110290"
       }
     },
     {
@@ -12079,6 +12081,16 @@
           "file": "src/lib/access-control/permission-postgres-ci.test.ts",
           "name": "activity batch SQL denies inactive"
         }
+      }
+    },
+    {
+      "id": "contract-import-body-helpers",
+      "kind": "presentation",
+      "rationale": "CORPO-PDF 14/11/2026: pure helpers for imported contract bodies and the import patch (text to paragraphs, control-character stripping, size fit, reload eligibility rule, server-side PDF text reading with unpdf, mapping of reviewed fields to the update patch). No data queries, writes, permission keys or grants; the callers (createContractFromImport, parseContractPdf, reloadContractBodyFromSource, updateContract) keep their own authorization boundaries.",
+      "files": {
+        "src/lib/contracts/import-body.ts": "5b3661357f35bb710bffbd96d10b4ca6db445a6501471b598664137d61d4475e",
+        "src/lib/contracts/pdf-body.server.ts": "ec78df63e1f9f76605db53384ef85671beb599223a9c463e8fab5c812e635057",
+        "src/lib/contracts/import-patch.ts": "b6a4640b0a8cd11ba590e497e7b0e9e9ef006f1957b42543e4a957cda025400a"
       }
     }
   ],

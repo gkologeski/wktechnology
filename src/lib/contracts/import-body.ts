@@ -17,9 +17,22 @@ function startsBlock(line: string): boolean {
   );
 }
 
+/**
+ * Remove caracteres de controle (ex.: NUL que o leitor de PDF devolve) que o
+ * banco recusa com "unsupported Unicode escape sequence". Mantém \t, \n e \r.
+ */
+// eslint-disable-next-line no-control-regex
+const CONTROL_CHARS = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g;
+export function stripControlChars(s: string): string {
+  return s.replace(CONTROL_CHARS, "");
+}
+
 /** Junta linhas quebradas pelo PDF em parágrafos e devolve HTML com <p>. */
 export function plainTextToBodyHtml(text: string): string {
-  const lines = text.replace(/\r\n?/g, "\n").split("\n").map((l) => l.replace(/\s+/g, " ").trim());
+  const lines = stripControlChars(text)
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((l) => l.replace(/\s+/g, " ").trim());
   const paragraphs: string[] = [];
   let cur: string[] = [];
   const flush = () => {
@@ -49,13 +62,39 @@ export function hasBodyText(html: string | null | undefined): boolean {
 export const IMPORT_BODY_MAX = MAX_BODY;
 
 /** Ajusta o corpo ao limite do servidor sem cortar uma tag pela metade. */
-export function fitBodyHtml(html: string | null | undefined): { html: string | null; truncated: boolean } {
+export function fitBodyHtml(html: string | null | undefined): {
+  html: string | null;
+  truncated: boolean;
+} {
   if (!hasBodyText(html)) return { html: null, truncated: false };
-  const h = html as string;
+  const h = stripControlChars(html as string);
   if (h.length <= MAX_BODY) return { html: h, truncated: false };
-  const note = "<p><em>[Corpo truncado: consulte o arquivo original para o texto completo.]</em></p>";
+  const note =
+    "<p><em>[Corpo truncado: consulte o arquivo original para o texto completo.]</em></p>";
   const cut = h.slice(0, MAX_BODY - note.length);
   const end = cut.lastIndexOf("</p>");
   const safe = end > 0 ? cut.slice(0, end + 4) : cut.slice(0, cut.lastIndexOf("<"));
   return { html: safe + note, truncated: true };
+}
+
+/** Texto de cada página do PDF (ordem original) → corpo em HTML ajustado ao limite. */
+export function pdfPagesToBodyHtml(pages: string[]): { html: string | null; truncated: boolean } {
+  return fitBodyHtml(plainTextToBodyHtml(pages.join("\n\n")));
+}
+
+export type PdfBodyError = "no_text" | "read_failed" | "too_many_pages";
+
+export const PDF_BODY_ERROR_MESSAGES: Record<PdfBodyError, string> = {
+  no_text: "O PDF não tem texto selecionável (parece digitalizado); o corpo ficou em branco.",
+  read_failed: "Não foi possível ler o texto do PDF; o corpo ficou em branco.",
+  too_many_pages: "PDF com páginas demais para ler o corpo; o corpo ficou em branco.",
+};
+
+/** Só recarrega o corpo de rascunhos sem corpo que tenham o arquivo original guardado. */
+export function canReloadBodyFromSource(row: {
+  status?: string | null;
+  body_html?: string | null;
+  source_file_path?: string | null;
+}): boolean {
+  return row.status === "draft" && !hasBodyText(row.body_html) && !!row.source_file_path;
 }

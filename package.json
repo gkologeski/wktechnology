@@ -140,6 +140,7 @@
     "tailwindcss": "^4.2.1",
     "tr46": "^7.0.0",
     "tw-animate-css": "^1.3.4",
+    "unpdf": "^2.1.0",
     "validator": "^13.15.35",
     "vaul": "^1.1.2",
     "vite-tsconfig-paths": "^6.0.2",

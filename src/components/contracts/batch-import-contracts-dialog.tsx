@@ -4,6 +4,7 @@
 import { Fragment, useCallback, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -114,6 +115,12 @@ async function docxToText(file: File): Promise<string> {
 }
 
 export function BatchImportContractsDialog({ open, onOpenChange, onImported }: Props) {
+  // Mesma chave da importação individual; nega enquanto as permissões carregam.
+  const permissions = usePermissions();
+  const canImport =
+    !permissions.isLoading &&
+    !permissions.isError &&
+    permissions.can("techcontracts.imports.manage.workspace");
   const parsePdf = useServerFn(parseContractPdf);
   const parseText = useServerFn(parseContractText);
   const createFromImport = useServerFn(createContractFromImport);
@@ -227,6 +234,10 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
   );
 
   const process = useCallback(async () => {
+    if (!canImport) {
+      toast.error("Você não tem permissão para importar contratos.");
+      return;
+    }
     const pending = items.filter((i) => i.status === "queued" || i.status === "error");
     if (!pending.length) return;
     // Principais primeiro: um aditivo pode apontar para um principal do mesmo lote.
@@ -249,9 +260,12 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
       });
       try {
         let extracted: ExtractedContract;
+        let bodyHtml: string | null = null;
         if (item.kind === "pdf") {
           const b64 = await fileToBase64(item.file);
-          extracted = await parsePdf({ data: { filename: item.file.name, base64: b64 } });
+          const parsed = await parsePdf({ data: { filename: item.file.name, base64: b64 } });
+          extracted = parsed.extracted;
+          bodyHtml = parsed.body_html;
         } else {
           const text = await docxToText(item.file);
           if (text.trim().length < 20) throw new Error("Não foi possível extrair texto do .docx.");
@@ -266,7 +280,7 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
         patchItem(item.key, { message: "Criando rascunho…" });
         const path = await uploadOriginal(item.file);
         const result = await createFromImport({
-          data: { fields, source_file_path: path, imported_from: item.kind },
+          data: { fields, source_file_path: path, imported_from: item.kind, body_html: bodyHtml },
         });
         createdByKey.set(item.key, result.id);
         if (item.docKind === "main") mainIds.push(result.id);
@@ -343,6 +357,7 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
     onImported?.();
     toast.success("Processamento concluído.");
   }, [
+    canImport,
     items,
     patchItem,
     parsePdf,
@@ -699,7 +714,11 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
               <Link2 className="h-4 w-4 mr-2" /> Vincular manualmente
             </Button>
           ) : null}
-          <Button onClick={process} disabled={!canProcess || processing}>
+          <Button
+            onClick={process}
+            disabled={!canProcess || processing || !canImport}
+            title={canImport ? undefined : "Você não tem permissão para importar contratos."}
+          >
             {processing ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Processando…

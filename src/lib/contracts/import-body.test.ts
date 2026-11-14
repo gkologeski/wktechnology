@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasBodyText, plainTextToBodyHtml } from "./import-body";
+import { fitBodyHtml, hasBodyText, plainTextToBodyHtml } from "./import-body";
 
 describe("plainTextToBodyHtml", () => {
   it("junta linhas quebradas e separa cláusulas", () => {
@@ -15,5 +15,19 @@ describe("plainTextToBodyHtml", () => {
   });
   it("considera vazio o corpo sem texto", () => {
     expect(hasBodyText("<p> </p>")).toBe(false);
+  });
+});
+
+describe("caracteres de controle do PDF", () => {
+  it("remove NUL que o banco recusa e mantém o texto", () => {
+    const html = plainTextToBodyHtml(
+      "CLÁUSULA 1\u0000 – OBJETO\nTexto do contrato com\u0000 serviços de consultoria.",
+    );
+    expect(html.includes("\u0000")).toBe(false);
+    expect(html).toContain("CLÁUSULA 1 – OBJETO");
+  });
+  it("fitBodyHtml limpa NUL vindo de qualquer leitor", () => {
+    const r = fitBodyHtml("<p>" + "Texto do contrato\u0000 ".repeat(5) + "</p>");
+    expect(r.html?.includes("\u0000")).toBe(false);
   });
 });

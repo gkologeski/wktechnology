@@ -154,6 +154,10 @@ export const parseContractPdf = createServerFn({ method: "POST" })
     ]);
 
     const dataUrl = `data:application/pdf;base64,${data.base64}`;
+    // Corpo lido no servidor em paralelo com a IA; falha aqui não impede a extração.
+    const bodyPromise = import("@/lib/contracts/pdf-body.server").then(({ extractPdfBodyHtml }) =>
+      extractPdfBodyHtml(new Uint8Array(Buffer.from(data.base64, "base64"))),
+    );
     const extracted = await callGeminiExtract([
       {
         type: "text",
@@ -164,7 +168,13 @@ export const parseContractPdf = createServerFn({ method: "POST" })
         file: { filename: data.filename, file_data: dataUrl },
       },
     ]);
-    return extracted;
+    const body = await bodyPromise;
+    return {
+      extracted,
+      body_html: body.html,
+      body_truncated: body.truncated,
+      body_error: body.error,
+    };
   });
 
 // ============= PARSE TEXT (docx já convertido no cliente) =============
@@ -392,8 +402,8 @@ export const createContractFromImport = createServerFn({ method: "POST" })
 
     if (data.body_html) {
       const { sanitizeTemplateHtml } = await import("@/lib/contracts/template-html-format");
-      const { hasBodyText } = await import("@/lib/contracts/import-body");
-      const clean = sanitizeTemplateHtml(data.body_html);
+      const { hasBodyText, stripControlChars } = await import("@/lib/contracts/import-body");
+      const clean = sanitizeTemplateHtml(stripControlChars(data.body_html));
       if (hasBodyText(clean)) insertPayload.body_html = clean;
     }
 
@@ -448,6 +458,89 @@ export const getContractSourceFileUrl = createServerFn({ method: "POST" })
       fileName,
       kind: (row.imported_from as string | null) ?? null,
     };
+  });
+
+// ============= RECARREGAR CORPO DO ARQUIVO ORIGINAL =============
+// Rascunho importado sem corpo: lê o PDF/DOCX guardado e grava o corpo.
+// Mesma autorização da edição de contrato (registro + chave update) e gravação
+// pelo cliente do usuário (contract_mutate, RLS). Admin só baixa o objeto.
+export const reloadContractBodyFromSource = createServerFn({ method: "POST" })
+  .middleware([requireWorkPermission("techcontracts.contracts", "update")])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertWorkRecord(supabase, "techcontracts.contracts", data.id, "update");
+    await assertAnyPermission(supabase, userId, workspaceId, [
+      "techcontracts.contracts.update.own",
+      "techcontracts.contracts.update.team",
+      "techcontracts.contracts.update.workspace",
+    ]);
+    const { data: row, error } = await supabase
+      .from("contracts")
+      .select("id, status, body_html, source_file_path, imported_from")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw error;
+    if (!row) throw new Error("Contrato não encontrado ou você não possui acesso a ele.");
+    const { canReloadBodyFromSource, PDF_BODY_ERROR_MESSAGES } =
+      await import("@/lib/contracts/import-body");
+    if (!canReloadBodyFromSource(row)) {
+      throw new Error("Disponível só para rascunhos sem corpo que tenham o arquivo original.");
+    }
+    const path = row.source_file_path as string;
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: blob, error: dErr } = await supabaseAdmin.storage
+      .from("contract-imports")
+      .download(path);
+    if (dErr || !blob) throw new Error("O arquivo original deste contrato não foi encontrado.");
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    const isPdf = row.imported_from === "pdf" || path.toLowerCase().endsWith(".pdf");
+    let html: string | null = null;
+    let truncated = false;
+    if (isPdf) {
+      const { extractPdfBodyHtml } = await import("@/lib/contracts/pdf-body.server");
+      const r = await extractPdfBodyHtml(bytes);
+      if (r.error) throw new Error(PDF_BODY_ERROR_MESSAGES[r.error]);
+      html = r.html;
+      truncated = r.truncated;
+    } else {
+      const [{ unzipSync, strFromU8 }, { docxXmlToHtml }, { fitBodyHtml }] = await Promise.all([
+        import("fflate"),
+        import("@/lib/contracts/docx-formatted-html"),
+        import("@/lib/contracts/import-body"),
+      ]);
+      try {
+        const files = unzipSync(bytes);
+        const read = (n: string) => (files[n] ? strFromU8(files[n]) : undefined);
+        const document = read("word/document.xml");
+        if (document) {
+          const fit = fitBodyHtml(
+            docxXmlToHtml({
+              document,
+              numbering: read("word/numbering.xml"),
+              styles: read("word/styles.xml"),
+            }),
+          );
+          html = fit.html;
+          truncated = fit.truncated;
+        }
+      } catch {
+        html = null;
+      }
+      if (!html) throw new Error("Não foi possível ler o texto do .docx original.");
+    }
+    const [{ sanitizeTemplateHtml }, { stripControlChars }] = await Promise.all([
+      import("@/lib/contracts/template-html-format"),
+      import("@/lib/contracts/import-body"),
+    ]);
+    const clean = sanitizeTemplateHtml(stripControlChars(html as string));
+    const { workRpc } = await import("@/lib/access-control/work-core.server");
+    await workRpc(supabase, "contract_mutate", {
+      p_contract: data.id,
+      p_patch: { body_html: clean },
+    });
+    return { ok: true as const, truncated };
   });
 
 // ============= VÍNCULO AUTOMÁTICO PRESTAÇÃO ↔ COMPRA =============

@@ -44,7 +44,13 @@ import {
 } from "@/components/contracts/import-progress";
 import type { ExtractedContract } from "@/lib/contracts/import-schemas";
 import { buildImportPatch } from "@/lib/contracts/import-patch";
-import { fitBodyHtml, hasBodyText, plainTextToBodyHtml } from "@/lib/contracts/import-body";
+import {
+  fitBodyHtml,
+  hasBodyText,
+  plainTextToBodyHtml,
+  PDF_BODY_ERROR_MESSAGES,
+  type PdfBodyError,
+} from "@/lib/contracts/import-body";
 import {
   PAYMENT_METHODS,
   SERVICE_LOCATIONS,
@@ -140,7 +146,11 @@ async function pdfToBodyHtml(file: File): Promise<string | null> {
     }
     const html = plainTextToBodyHtml(pages.join("\n\n"));
     return hasBodyText(html) ? html : null;
-  } catch {
+  } catch (e) {
+    console.warn(
+      "[contracts] leitor de PDF do navegador falhou:",
+      e instanceof Error ? e.name : "erro",
+    );
     return null;
   }
 }
@@ -244,11 +254,16 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
     let stage = "Falha na leitura do arquivo pela IA";
     try {
       let extracted: ExtractedContract;
+      let serverBody: string | null = null;
+      let serverBodyError: PdfBodyError | null = null;
       if (kind === "pdf") {
         setProgress(progressFor("text"));
         const b64 = await fileToBase64(file);
         setProgress(progressFor("ai"));
-        extracted = await parsePdf({ data: { filename: file.name, base64: b64 } });
+        const parsed = await parsePdf({ data: { filename: file.name, base64: b64 } });
+        extracted = parsed.extracted;
+        serverBody = parsed.body_html;
+        serverBodyError = parsed.body_error;
       } else {
         setProgress(progressFor("text"));
         stage = "Falha ao ler o texto do .docx";
@@ -267,15 +282,23 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
       stage = "Falha ao enviar o arquivo original";
       const path = await uploadOriginal(file);
       // Corpo é opcional: qualquer falha aqui não impede o rascunho.
-      let rawBody: string | null = null;
-      try {
-        rawBody = kind === "pdf" ? await pdfToBodyHtml(file) : await docxToBodyHtml(file);
-      } catch {
-        rawBody = null;
+      // PDF: corpo lido no servidor; o leitor do navegador fica só como reserva.
+      let rawBody: string | null = serverBody;
+      if (!rawBody) {
+        try {
+          rawBody = kind === "pdf" ? await pdfToBodyHtml(file) : await docxToBodyHtml(file);
+        } catch {
+          rawBody = null;
+        }
       }
       const body = fitBodyHtml(rawBody);
-      if (!body.html) toast.warning("Não foi possível ler o texto do arquivo para o corpo do contrato.");
-      else if (body.truncated) toast.warning("Corpo do contrato muito longo: foi truncado.");
+      if (!body.html) {
+        toast.warning(
+          serverBodyError
+            ? PDF_BODY_ERROR_MESSAGES[serverBodyError]
+            : "Não foi possível ler o texto do arquivo para o corpo do contrato.",
+        );
+      } else if (body.truncated) toast.warning("Corpo do contrato muito longo: foi truncado.");
       setProgress(progressFor("draft"));
       stage = "Falha ao gravar o rascunho do contrato";
       const payload = { fields: extracted, source_file_path: path, imported_from: kind };
@@ -297,7 +320,8 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
       toast.success("Rascunho criado. Revise e finalize.");
     } catch (err) {
       const detail = err instanceof Error ? err.message : "";
-      const msg = detail && detail.startsWith("Falha") ? detail : detail ? `${stage}: ${detail}` : stage;
+      const msg =
+        detail && detail.startsWith("Falha") ? detail : detail ? `${stage}: ${detail}` : stage;
       setProgress(progressFor("error", msg));
       toast.error(msg);
     }
