@@ -281,6 +281,9 @@ export async function sendContract(
         operation_id: op.id,
         document_ids: op.files.map((f: { id: number }) => f.id),
         status: "sent",
+        last_error: op.sequential
+          ? "O ForSign registrou este envio em ordem: cada assinante só recebe o convite depois que o anterior assinar."
+          : null,
         last_synced_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })
@@ -569,6 +572,7 @@ export class ForsignClient {
     if (!op?.id) throw new ForsignApiError("O ForSign não devolveu o número da operação.", 502);
     return {
       id: Number(op.id),
+      sequential: op.order === true,
       files: (op.files ?? []).map((f: any) => ({ id: Number(f.id), name: String(f.name ?? "") })),
     };
   }

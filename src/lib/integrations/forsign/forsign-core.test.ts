@@ -121,3 +121,13 @@ it("requires all originally requested signers including witnesses", async () => 
   expect(allRequestedSignersCompleted(roster, [...signed.slice(0, 3), signed[0]])).toBe(false);
   expect(allRequestedSignersCompleted(roster.slice(0, 2), signed.slice(0, 2))).toBe(true);
 });
+
+it("forsign parallel send puts every signer in the same position", () => {
+  const ms = buildMembers([
+    { name: "A", email: "a@x.com", role: "CONTRATANTE" },
+    { name: "B", email: "b@x.com", role: "CONTRATADO" },
+    { name: "C", email: "c@x.com", role: "TESTEMUNHA 1" },
+  ]);
+  expect(ms.map((m) => m.orderPosition)).toEqual([1, 1, 1]);
+});
+

@@ -12561,7 +12561,7 @@
         "drizzle/migrations/0359_forsign_integration.sql": "f299acdcbeeac81ca34b101e936070eb15e7b8adb28eaa5262d670fd780d688b",
         "src/components/contracts/contract-forsign-panel.tsx": "e5f1b3dd4805f38bad8fcf4c10450920d559e5144f15364ab4fd4eb3b157d662",
         "src/components/integrations/forsign-settings-page.tsx": "91258abbf7bb58f8b9bfa3d98238f13af33b8a100fab4ed0c412185231e0e8dd",
-        "src/lib/integrations/forsign/forsign-service.server.ts": "0b9ec36510557c59934613bdf3dde05e0fa87be7acd27cb2253c3c9416986770",
+        "src/lib/integrations/forsign/forsign-service.server.ts": "b8e512abcfcdf6287bbe7455e342ba999aecc137739b03e98b9be23e46ef5a81",
         "src/lib/integrations/forsign/forsign.functions.ts": "d09d853289a03754e5180a570f9bfcf5399ee9c1fb5991b109d9388850e320ca",
         "src/routes/_authenticated/settings.integrations.forsign.tsx": "7dfc62e76ddcc1ec28fd44877c337ebbc3c0adcb091ba2da42caee9885813a81"
       }
@@ -12646,7 +12646,7 @@
       "kind": "presentation",
       "rationale": "Pure ForSign helpers (status labels, HMAC/timestamp checks, HTML to PDF blocks, PDF layout) and the integration catalogue card. No data access, routes or actions.",
       "files": {
-        "src/lib/integrations/forsign/forsign-core.ts": "c2f6bad849621a3e5901b73749bff7dcfdc806d6a0220c455f1d2d77edd7b5ee",
+        "src/lib/integrations/forsign/forsign-core.ts": "f211148cef45aad374a29a61d1e5357e1e2815c8964f56b6ed3d5b147bf5ce96",
         "src/lib/integrations/forsign/forsign-pdf.ts": "fea50d84e7eef29b2eaf2dc50d0f96b18318d0acb18c7a392e6b6e6be910cec9",
         "src/lib/integrations/registry.ts": "47e469de5587703f9ad87a7acda4d28c8b74ebf27c5fc35dc78fdab16571f5a2"
       }

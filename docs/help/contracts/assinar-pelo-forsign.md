@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/forsign
 min_permission: techcontracts.forsign_settings.manage.workspace
 audience: internal
 sort_order: 97
-version: 2
+version: 3
 is_published: true
 ---
 # Enviar contratos para assinatura pelo ForSign
@@ -53,3 +53,9 @@ Quando todos assinam, o PDF final do ForSign (com a trilha de auditoria) é guar
 
 ## Seleção dos signatários
 Escolha contatos para CONTRATANTE e CONTRATADO. A pesquisa por nome/e-mail permite cadastrar um contato no mesmo contexto, com os acessos de contatos. Testemunhas são opcionais antes do envio; todas as incluídas precisam assinar. Inclua outros papéis quando necessário. O TechERP conserva a lista enviada e só registra a evidência quando o ForSign comprova todos os participantes dessa lista, sem omissões. Máximo de dez participantes no ForSign.
+
+## Envio para todos ao mesmo tempo
+
+- O TechERP envia o convite a todos os assinantes ao mesmo tempo, sem ordem de assinatura.
+- No quadro ForSign, cada pessoa aparece como "Convite enviado — aguardando assinatura", "Na fila" (só em envios antigos feitos em ordem) ou "Assinou".
+- Se o ForSign registrar um envio em ordem, o quadro mostra um aviso.

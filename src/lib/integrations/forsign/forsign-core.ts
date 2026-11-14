@@ -163,7 +163,7 @@ export type SignerInput = { name: string; email: string; cpf?: string | null; ro
 /** Monta os assinantes da operação no ForSign (paralelo, notificação por e-mail). */
 export function buildMembers(signers: SignerInput[]) {
   const seen = new Set<string>();
-  return signers.map((s, i) => {
+  return signers.map((s) => {
     const email = s.email.trim().toLowerCase();
     if (seen.has(email)) throw new Error("Os assinantes precisam ter e-mails diferentes.");
     seen.add(email);
@@ -172,7 +172,8 @@ export function buildMembers(signers: SignerInput[]) {
       name: s.name.trim(),
       email,
       role: s.role,
-      orderPosition: i,
+      // Mesma posição para todos = assinatura em paralelo (posições distintas viram fila no ForSign).
+      orderPosition: 1,
       observer: false,
       notificationChannel: "Email",
       ...(cpf.length === 11 ? { cpf } : {}),
