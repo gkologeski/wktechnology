@@ -111,6 +111,7 @@ import { Route as AuthenticatedCompaniesIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedContactsIdRouteImport } from './routes/_authenticated/contacts.$id'
 import { Route as AuthenticatedContractsIndexRouteImport } from './routes/_authenticated/contracts.index'
 import { Route as AuthenticatedContractsIdRouteImport } from './routes/_authenticated/contracts.$id'
+import { Route as AuthenticatedContractsContractingFlowRouteImport } from './routes/_authenticated/contracts.contracting-flow'
 import { Route as AuthenticatedContractsDashboardRouteImport } from './routes/_authenticated/contracts.dashboard'
 import { Route as AuthenticatedContractsLinksRouteImport } from './routes/_authenticated/contracts.links'
 import { Route as AuthenticatedContractsSignaturesRouteImport } from './routes/_authenticated/contracts.signatures'
@@ -988,6 +989,12 @@ const AuthenticatedContractsIdRoute =
   AuthenticatedContractsIdRouteImport.update({
     id: '/contracts/$id',
     path: '/contracts/$id',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedContractsContractingFlowRoute =
+  AuthenticatedContractsContractingFlowRouteImport.update({
+    id: '/contracts/contracting-flow',
+    path: '/contracts/contracting-flow',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedContractsDashboardRoute =
@@ -3035,6 +3042,7 @@ export interface FileRoutesByFullPath {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
+  '/contracts/contracting-flow': typeof AuthenticatedContractsContractingFlowRoute
   '/contracts/dashboard': typeof AuthenticatedContractsDashboardRoute
   '/contracts/links': typeof AuthenticatedContractsLinksRoute
   '/contracts/signatures': typeof AuthenticatedContractsSignaturesRoute
@@ -3466,6 +3474,7 @@ export interface FileRoutesByTo {
   '/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/contracts/$id': typeof AuthenticatedContractsIdRoute
+  '/contracts/contracting-flow': typeof AuthenticatedContractsContractingFlowRoute
   '/contracts/dashboard': typeof AuthenticatedContractsDashboardRoute
   '/contracts/links': typeof AuthenticatedContractsLinksRoute
   '/contracts/signatures': typeof AuthenticatedContractsSignaturesRoute
@@ -3903,6 +3912,7 @@ export interface FileRoutesById {
   '/_authenticated/companies/$id': typeof AuthenticatedCompaniesIdRoute
   '/_authenticated/contacts/$id': typeof AuthenticatedContactsIdRoute
   '/_authenticated/contracts/$id': typeof AuthenticatedContractsIdRoute
+  '/_authenticated/contracts/contracting-flow': typeof AuthenticatedContractsContractingFlowRoute
   '/_authenticated/contracts/dashboard': typeof AuthenticatedContractsDashboardRoute
   '/_authenticated/contracts/links': typeof AuthenticatedContractsLinksRoute
   '/_authenticated/contracts/signatures': typeof AuthenticatedContractsSignaturesRoute
@@ -4341,6 +4351,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/contacts/$id'
     | '/contracts/$id'
+    | '/contracts/contracting-flow'
     | '/contracts/dashboard'
     | '/contracts/links'
     | '/contracts/signatures'
@@ -4772,6 +4783,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/contacts/$id'
     | '/contracts/$id'
+    | '/contracts/contracting-flow'
     | '/contracts/dashboard'
     | '/contracts/links'
     | '/contracts/signatures'
@@ -5208,6 +5220,7 @@ export interface FileRouteTypes {
     | '/_authenticated/companies/$id'
     | '/_authenticated/contacts/$id'
     | '/_authenticated/contracts/$id'
+    | '/_authenticated/contracts/contracting-flow'
     | '/_authenticated/contracts/dashboard'
     | '/_authenticated/contracts/links'
     | '/_authenticated/contracts/signatures'
@@ -6403,6 +6416,13 @@ declare module '@tanstack/react-router' {
       path: '/contracts/$id'
       fullPath: '/contracts/$id'
       preLoaderRoute: typeof AuthenticatedContractsIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/contracts/contracting-flow': {
+      id: '/_authenticated/contracts/contracting-flow'
+      path: '/contracts/contracting-flow'
+      fullPath: '/contracts/contracting-flow'
+      preLoaderRoute: typeof AuthenticatedContractsContractingFlowRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/contracts/dashboard': {
@@ -9279,6 +9299,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCatalogJobProfilesRoute: typeof AuthenticatedCatalogJobProfilesRoute
   AuthenticatedCatalogServicesRoute: typeof AuthenticatedCatalogServicesRoute
   AuthenticatedContractsIdRoute: typeof AuthenticatedContractsIdRoute
+  AuthenticatedContractsContractingFlowRoute: typeof AuthenticatedContractsContractingFlowRoute
   AuthenticatedContractsDashboardRoute: typeof AuthenticatedContractsDashboardRoute
   AuthenticatedContractsLinksRoute: typeof AuthenticatedContractsLinksRoute
   AuthenticatedContractsSignaturesRoute: typeof AuthenticatedContractsSignaturesRoute
@@ -9447,6 +9468,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCatalogJobProfilesRoute: AuthenticatedCatalogJobProfilesRoute,
   AuthenticatedCatalogServicesRoute: AuthenticatedCatalogServicesRoute,
   AuthenticatedContractsIdRoute: AuthenticatedContractsIdRoute,
+  AuthenticatedContractsContractingFlowRoute:
+    AuthenticatedContractsContractingFlowRoute,
   AuthenticatedContractsDashboardRoute: AuthenticatedContractsDashboardRoute,
   AuthenticatedContractsLinksRoute: AuthenticatedContractsLinksRoute,
   AuthenticatedContractsSignaturesRoute: AuthenticatedContractsSignaturesRoute,

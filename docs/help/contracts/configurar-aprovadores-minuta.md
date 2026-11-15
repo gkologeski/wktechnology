@@ -4,17 +4,17 @@ slug: configurar-aprovadores-minuta
 title: Escolher os aprovadores jurídicos da minuta
 summary: Definir quem revisa e aprova a minuta de contrato enviada após o aceite da proposta.
 article_type: howto
-route_pattern: /settings/contract-draft-approvers
+route_pattern: /contracts/contracting-flow
 min_permission: techcontracts.contract_draft_approvers.manage.workspace
 audience: internal
 sort_order: 41
-version: 2
+version: 3
 is_published: true
 ---
 # Escolher os aprovadores jurídicos da minuta
 **Para que serve:** Indicar quem recebe o aviso "Minuta aguardando revisão".
 **Quem pode fazer:** Quem tem "Gerenciar aprovadores de minuta" no cargo.
-**Onde fica:** TechContracts > Configurações > Aprovação de minuta (/settings/contract-draft-approvers).
+**Onde fica:** TechContracts > Fluxo de contratação (/contracts/contracting-flow).
 
 **Antes de começar:** Ter os aprovadores definidos com o jurídico.
 
@@ -49,3 +49,6 @@ As tarefas aparecem em Tarefas e no histórico do negócio. Vencimentos avisam o
 O envio para assinatura requer conferência de signatários e confirmação humana. A tarefa só conclui após a ação real; marcar a atividade como feita não substitui o aceite, as aprovações ou o envio.
 
 As aprovações internas também geram tarefas: Jurídico primeiro; Financeiro somente após a aprovação jurídica. Cada solicitação usa o responsável da etapa vigente e o prazo configurado do departamento, sem reduzir a cadeia obrigatória.
+
+## Navegação no TechContracts
+No seletor de módulos, escolha **TechContracts** e abra **Fluxo de contratação** no menu lateral. A página mantém o menu do módulo e o breadcrumb Contratos > Fluxo de contratação. A seção **Encaminhamentos automáticos** fica abaixo da lista dos aprovadores e exige sua permissão específica. O endereço antigo de Configurações redireciona para esta página; aprovadores, responsáveis, prazos e permissões salvos são preservados.
