@@ -38,6 +38,9 @@ vi.mock("@/lib/deals/contracting-journey.functions", () => ({
   prepareDealContractDraft: state.prepare,
 }));
 vi.mock("@/lib/hiring/signature.functions", () => ({ getContractSignature: state.signature }));
+vi.mock("@/lib/integrations/forsign/forsign.functions", () => ({
+  getContractForsign: vi.fn().mockResolvedValue({ operations: [] }),
+}));
 vi.mock("@/lib/sales-flow.functions", () => ({ createContractFromSales: state.create }));
 vi.mock("@/lib/audit-session", () => ({
   beginAuditSession: () => "test-session",
