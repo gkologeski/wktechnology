@@ -2904,7 +2904,7 @@
       "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. LinkedIn navigation accepts personal view as well as workspace view; server and RLS remain independently enforced.",
       "files": {
         "src/lib/menu-config.ts": "3d6c4a115571c63f83952ef34f4ca754cac5b8baa00374fa1f103be2bdb6f257",
-        "src/lib/menu-resources.ts": "d2d4782945eaa46e1af5a4378f0e9a61882c3574bb8bda612aaea79da81d0d26",
+        "src/lib/menu-resources.ts": "dc05b3e08af7f0261f9f5899b84035364438f975e0671a427ee8259db692b7eb",
         "src/lib/access-control/sales-resources.ts": "b52f747ccc294edc4f31c933224958a42ce7193b480c0e3e6f8145d3fb0d2b31"
       }
     },
@@ -4223,7 +4223,7 @@
       "files": {
         "src/lib/access-control/resource-labels.ts": "b9486bd90fbd4e5aa1cf7af67fbb77163e7c88ac9d2a95dffcd041df79abfcef",
         "src/lib/menu-config-finance.ts": "634465260359b9d97cfd6a635ae5bd7ade12cb9ab9a83ec9e96e507d83194e1d",
-        "src/lib/breadcrumb-labels.ts": "44c31c465cce8d212398e5b4fe28cf90c2f1d7c49f0871ee5e788b73151d4808"
+        "src/lib/breadcrumb-labels.ts": "35e677736af4fa092a8d178002a33051c55462ea70a6eda16a1c583d1ddb75d3"
       }
     },
     {
@@ -4332,7 +4332,7 @@
         "src/lib/integrations/clickup/clickup-plan.ts": "533a97467cf1f2c7b5da96d712d85d596da4bef664ea769de1e35051dc68918e",
         "src/components/projects/clockify-import/projects-imports-hub.tsx": "d27a05dc685ec8bcebe499543b467862fac4f823bef8e610fb88ca07351d558d",
         "src/lib/menu-config-projects.ts": "e5cf5532d181ad39b3007f631dbbab7ec3533c8ed7f2d942b923b938c70bf9e1",
-        "src/lib/access-control/hr-menu-access.ts": "1112bae5bc2feb33c97abb1f218d341f706a8bd6998237bdb4b879530eef0abb"
+        "src/lib/access-control/hr-menu-access.ts": "d3c5cb3e66cbeaeb0ddc921656b7448e6c986bb40f498ff42ee1bfe2fdadfd47"
       }
     },
     {
@@ -9470,7 +9470,7 @@
         }
       },
       "files": {
-        "src/components/workflows/builder/step-config-panel.tsx": "a3ea5ca2f027d50b86a2d605658155e8c4a7fcf4e80400aede7b3e467f3baad9"
+        "src/components/workflows/builder/step-config-panel.tsx": "03416607056b9817ff0b2c6cf1fb82176ea7c04133a7613f357815e9e888c279"
       }
     },
     {
@@ -9691,7 +9691,7 @@
         "techcontracts.contract_drafts.approve.workspace",
         "techcontracts.contract_draft_approvers.manage.workspace"
       ],
-      "rationale": "ACEITE-MINUTA Entrega 2. New catalogue keys granted to no role. Tables contract_drafts/contract_draft_approvers/contract_draft_events: SELECT-only grants for authenticated under RLS (active member + effective key; approvers must be listed), writes only via SECURITY DEFINER RPCs. contract_draft_open is service_role only (workflow engine, after authorizeWorkflowStep). contract_draft_review/template_body/templates require contract_draft_is_approver (listed + active member + effective approve key, deny removed by user_effective_permissions); review is CAS by revision. contract_draft_set_approvers requires the manage key in work_access_context and active members. UI gates (menu + screen) mirror the keys only. 0311_0334 file is an accidental no-op (DO block) migration with no effect. Entrega 3: issue_link/mark_sent require contract_draft_is_approver and an approved draft; deal substatus move is best-effort under the caller's own row guard. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável.",
+      "rationale": "ACEITE-MINUTA Entrega 2. New catalogue keys granted to no role. Tables contract_drafts/contract_draft_approvers/contract_draft_events: SELECT-only grants for authenticated under RLS (active member + effective key; approvers must be listed), writes only via SECURITY DEFINER RPCs. contract_draft_open is service_role only (workflow engine, after authorizeWorkflowStep). contract_draft_review/template_body/templates require contract_draft_is_approver (listed + active member + effective approve key, deny removed by user_effective_permissions); review is CAS by revision. contract_draft_set_approvers requires the manage key in work_access_context and active members. UI gates (menu + screen) mirror the keys only. 0311_0334 file is an accidental no-op (DO block) migration with no effect. Entrega 3: issue_link/mark_sent require contract_draft_is_approver and an approved draft; deal substatus move is best-effort under the caller's own row guard. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | 15/11/2026: same guarded approver/handoff screen moved into /contracts/contracting-flow; no grants, tables, RPCs or saved settings change. Legacy /settings/contract-draft-approvers only redirects with history replacement. Menu requires the same manage key; handoff panel still independently requires handoffs.manage.",
       "controls": [
         {
           "file": "src/integrations/supabase/auth-middleware.ts",
@@ -9793,14 +9793,15 @@
       "files": {
         "drizzle/migrations/0311_0334_contract_draft_legal_review.sql": "34b15156ef6dd6be975fd1d42cfa7b47ef5fc1db73ab35486abe755b8a36a427",
         "drizzle/migrations/0312_contract_draft_legal_review.sql": "13ce7aa0ddad44bc26c81cccd662b1fb5a12f6cf606e87554beea542faed7e82",
-        "src/components/contracts/contract-draft-approvers-page.tsx": "928975186441b077e49da7e1ad26d65b64a2f4773cb63b3c0b88797e6b77a5d6",
+        "src/components/contracts/contract-draft-approvers-page.tsx": "fd9f5b3f844bd1c641ae8f5cc67ee45bd354f9ef06ea3200e27f4027a7007376",
         "src/components/contracts/contract-draft-review-page.tsx": "325977c088f63c012f69db71451c5975d8b982f0ef083e2d366690191eae2c6e",
         "src/lib/contracts/contract-drafts.functions.ts": "19ec7713c17e8f30f97d7335eaca5502585604fc4d21bf51d557ca1146f70fa4",
         "src/lib/workflows/engine/actions-contracts.server.ts": "ce77a960a2356639cd80d3245608044a2dabe2ef8d0dcd2dffa33f22ffb0c1d2",
         "src/routes/_authenticated/contracts.drafts.$id.tsx": "154ab4c2eb14d4003eadd589b90b7af808169de961cf7e5ac21554a8973daea2",
-        "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "b8d35e6adaa94ec01c69e35a1c1f734c2543a48097a60910f7484519e812688c",
+        "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "da7a3d3851d63c0e4409355465670d75feea86c2da22708494bc3851962b6d08",
         "src/components/contracts/contract-draft-send-panel.tsx": "78b10003e87264f75e375c8b2cc67c79e0a45b8625af89ab3abd4d5495462200",
-        "drizzle/migrations/0313_contract_draft_client_acceptance.sql": "64d071e18989e467bbd1814dc101de073e6e85ca5eb195867879f101b1943a33"
+        "drizzle/migrations/0313_contract_draft_client_acceptance.sql": "64d071e18989e467bbd1814dc101de073e6e85ca5eb195867879f101b1943a33",
+        "src/routes/_authenticated/contracts.contracting-flow.tsx": "d1a63f047503b314a2bed68a549d9591edd02695bd0cc54f1f09af2d43a2f2c5"
       }
     },
     {
@@ -9826,7 +9827,7 @@
       "kind": "presentation",
       "rationale": "Static TechContracts menu entry; visibility filtered by canSeeHrMenu with the manage key and the screen re-checks it; server functions use requireWorkPermission.",
       "files": {
-        "src/lib/menu-config-contracts.ts": "2f2703a6a2f1f6d8e5ce8d36d489de5db4b2555ff15521262c35def3cd0a3c96"
+        "src/lib/menu-config-contracts.ts": "634ee1bb9128e91b65afc618ae2acffad9bbe14a44d38fba2d501ebfb73f65f5"
       }
     },
     {

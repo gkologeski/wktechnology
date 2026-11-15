@@ -1,11 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { ContractDraftApproversPage } from "@/components/contracts/contract-draft-approvers-page";
 
+// Preserve existing bookmarks and notification links without rendering Settings.
 export const Route = createFileRoute("/_authenticated/settings/contract-draft-approvers")({
-  head: () => ({ meta: [{ title: "Fluxos de aprovação — Minuta de contrato" }] }),
-  component: ApproversRoute,
+  beforeLoad: () => {
+    throw redirect({ to: "/contracts/contracting-flow", replace: true });
+  },
+  component: () => <ContractDraftApproversPage />,
 });
-
-function ApproversRoute() {
-  return <ContractDraftApproversPage />;
-}

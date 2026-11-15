@@ -26,7 +26,7 @@ const resources: Record<string, string> = {
   "/candidates": "techhire.candidates",
 };
 export function canSeeHrMenu(url: string, keys: ReadonlySet<string>, ready: boolean): boolean {
-  if (url === "/settings/contract-draft-approvers")
+  if (url === "/settings/contract-draft-approvers" || url === "/contracts/contracting-flow")
     return ready && keys.has("techcontracts.contract_draft_approvers.manage.workspace");
   if (url === "/projects/dashboard")
     return (

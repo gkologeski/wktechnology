@@ -1,5 +1,5 @@
 import { ContractHandoffSettingsPanel } from "./contract-handoff-settings";
-// ACEITE-MINUTA: Configurações → Fluxos de aprovação → Minuta de contrato.
+// Fluxo de contratação no TechContracts; mesmas permissões e dados dos aprovadores.
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -65,8 +65,8 @@ function ApproversForm() {
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
       <PageHeader
-        eyebrow="Fluxos de aprovação"
-        title="Minutas e encaminhamentos"
+        eyebrow="TechContracts"
+        title="Fluxo de contratação"
         description="Quem revisa e aprova a minuta enviada ao cliente depois que ele aceita a proposta. Cada aprovador também precisa da permissão “Aprovar minuta de contrato” no cargo."
         primaryAction={
           <Button

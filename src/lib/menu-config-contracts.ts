@@ -30,8 +30,8 @@ export const CONTRACTS_SIDEBAR_GROUPS: SidebarGroup[] = [
         icon: SlidersHorizontal,
       },
       {
-        title: "Aprovação de minuta",
-        url: "/settings/contract-draft-approvers",
+        title: "Fluxo de contratação",
+        url: "/contracts/contracting-flow",
         icon: Scale,
       },
     ],
