@@ -252,3 +252,15 @@ export function allRequestedSignersCompleted(expected: unknown, remote: unknown)
     remote.some((r: any) => r.email?.trim().toLowerCase() === email && r.status === "Completed"),
   );
 }
+
+/** Progresso do envio ForSign em andamento mais recente (null se nenhum ativo). */
+export function activeForsignProgress(
+  ops: { status: ForsignOpStatus; members: { status: string }[] }[],
+): { signed: number; total: number } | null {
+  const op = ops.find((o) => ["creating", "sent", "partially_signed"].includes(o.status));
+  if (!op) return null;
+  return {
+    signed: op.members.filter((m) => m.status === "Completed").length,
+    total: op.members.length,
+  };
+}

@@ -18,6 +18,10 @@ function fixture(denied = false, queryError = false) {
         return chain;
       }),
       order: vi.fn(() => chain),
+      in: vi.fn(async () => ({
+        data: [{ contract_id: "contracts", status: "approved", superseded_at: null }],
+        error: null,
+      })),
       limit: vi.fn(async () => ({
         data: [{ id: table }],
         error: queryError ? { message: "statement timeout" } : null,
@@ -38,8 +42,10 @@ it("journey read allows an authorized visible deal with explicit workspace predi
   const f = fixture();
   const d = await loadDealContractingJourney(f.client, "u", "deal");
   expect(mocks.record).toHaveBeenCalledWith(f.client, "deals", "deal", "view");
-  expect(f.filters.filter((v) => v[0] === "workspace_id")).toHaveLength(4);
+  expect(f.filters.filter((v) => v[0] === "workspace_id")).toHaveLength(5);
   expect(f.filters).toContainEqual(["deal_id", "deal"]);
+  expect(f.filters).toContainEqual(["stage", "legal"]);
+  expect(d.contracts[0]?.legal_approved).toBe(true);
   expect(d.access.drafts).toBe(true);
   expect(f.filters).toContainEqual(["role", "provider"]);
   expect(f.filters).toContainEqual(["document_kind", "main"]);

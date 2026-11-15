@@ -36,6 +36,9 @@ import {
   type ContractDraftStatus,
 } from "@/lib/contracts/contract-draft-status";
 import { getContractSignature } from "@/lib/hiring/signature.functions";
+import { getContractForsign } from "@/lib/integrations/forsign/forsign.functions";
+import { activeForsignProgress } from "@/lib/integrations/forsign/forsign-core";
+import { SignatureStatusIcon } from "@/components/contracts/signature-status-indicator";
 import { createContractFromSales } from "@/lib/sales-flow.functions";
 import { formatCurrency, formatDateTime, formatDateOnly } from "@/lib/crm";
 import { cn } from "@/lib/utils";
@@ -969,6 +972,18 @@ export function DealJourneySummary({
   onOpen?: () => void;
 }) {
   const { j, q, signature, permissions } = useJourney(dealId, origin);
+  const forsignFn = useServerFn(getContractForsign);
+  const forsign = useQuery({
+    queryKey: ["contract-forsign", j?.contract?.id, "journey-summary"],
+    queryFn: () => forsignFn({ data: { contractId: j!.contract!.id } }),
+    enabled:
+      !!j?.contract &&
+      !j.ambiguous &&
+      permissions.can("techcontracts.signature_evidence.view.workspace"),
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+    retry: false,
+  });
   if (q.isError || permissions.isError)
     return (
       <Card>
@@ -1000,6 +1015,25 @@ export function DealJourneySummary({
     permissions.can("techcontracts.signature_evidence.view.workspace") &&
     signature.isSuccess &&
     signature.data.reason === null;
+  const progress = ready ? null : activeForsignProgress(forsign.data?.operations ?? []);
+  type Item = { label: string; tone: "signed" | "waiting" | "pending"; hint?: string };
+  const items: Item[] = [
+    { label: "Proposta aceita pelo cliente", tone: j.proposalSigned ? "signed" : "pending" },
+    {
+      label: "Cláusulas aprovadas",
+      tone: j.clausesApproved ? "signed" : "pending",
+      hint: j.clausesSource === "contract" ? "Aprovadas pelo Jurídico no contrato" : undefined,
+    },
+    ready
+      ? { label: "Assinatura verificável da versão atual", tone: "signed" }
+      : progress
+        ? {
+            label: `Em assinatura — ${progress.signed} de ${progress.total} assinaram`,
+            tone: "waiting",
+            hint: "Envio pelo ForSign",
+          }
+        : { label: "Assinatura verificável da versão atual", tone: "pending" },
+  ];
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -1013,24 +1047,29 @@ export function DealJourneySummary({
           {ready
             ? "Operações"
             : j.stage === 3
-              ? "Financeiro"
+              ? progress
+                ? "Financeiro · assinaturas em andamento"
+                : "Financeiro"
               : j.stage === 2
                 ? "Comercial + Jurídico"
                 : "Comercial"}
         </p>
         <ul className="space-y-2 text-xs">
-          {[
-            [j.proposalSigned, "Proposta aceita pelo cliente"],
-            [j.clausesApproved, "Cláusulas aprovadas"],
-            [ready, "Assinatura verificável da versão atual"],
-          ].map(([done, label]) => (
-            <li key={String(label)} className="flex gap-2">
-              {done ? (
-                <Check className="size-4 shrink-0 text-primary" />
+          {items.map((it) => (
+            <li key={it.label} className="flex gap-2">
+              {it.tone === "signed" ? (
+                <Check aria-hidden className="size-4 shrink-0 text-primary" />
+              ) : it.tone === "waiting" ? (
+                <SignatureStatusIcon tone="waiting" className="mt-0 size-4" />
               ) : (
-                <span className="size-4 text-center text-muted-foreground">○</span>
+                <span aria-hidden className="size-4 text-center text-muted-foreground">
+                  ○
+                </span>
               )}
-              <span>{label}</span>
+              <span>
+                {it.label}
+                {it.hint && <span className="block text-muted-foreground">{it.hint}</span>}
+              </span>
             </li>
           ))}
         </ul>

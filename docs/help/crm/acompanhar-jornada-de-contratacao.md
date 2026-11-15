@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 1
-version: 5
+version: 6
 is_published: true
 ---
 # Acompanhar a jornada comercial e contratação
@@ -36,6 +36,8 @@ Cotação → proposta aceita → minuta aprovada pelo cliente → contrato com 
 - Documentos restritos não são considerados inexistentes. Falhas de consulta aparecem como erro com opção de tentar novamente.
 - Contratos históricos continuam preservados; aceites antigos ausentes não são reconstruídos.
 - Revisões de texto são preservadas a partir desta implantação. O histórico existente não é inventado; consulte cada revisão sob demanda.
+- No quadro lateral "Contratação", "Cláusulas aprovadas" fica marcado quando o cliente aceitou a minuta ou, se o contrato foi gerado sem minuta, quando o Jurídico aprovou o próprio contrato (aparece "Aprovadas pelo Jurídico no contrato").
+- Durante a assinatura pelo ForSign, o último item mostra um relógio âmbar e "Em assinatura — X de Y assinaram". O visto verde só aparece quando todas as assinaturas da versão atual estiverem concluídas e verificáveis; só então a etapa passa para Operações.
 - O resumo carrega até 100 documentos por categoria e avisa quando há mais. Use as listagens completas nesse caso.
 - O status **Ativo** não comprova assinatura. A liberação usa a evidência válida da versão atual e as regras do contrato.
 - Aditivos e renovações começam no contrato existente. Contratos avulsos ficam no TechContracts.

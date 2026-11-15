@@ -162,3 +162,24 @@ it("operation tone keeps a signed document apart from a partial or broken sendin
   expect(opStatusTone("expired")).toBe("failed");
   expect(opStatusTone("stale")).toBe("neutral");
 });
+
+describe("activeForsignProgress", () => {
+  it("counts signed members of the newest active operation", async () => {
+    const { activeForsignProgress } = await import("./forsign-core");
+    expect(
+      activeForsignProgress([
+        { status: "canceled", members: [] },
+        {
+          status: "partially_signed",
+          members: [
+            { status: "Completed" },
+            { status: "Completed" },
+            { status: "Create" },
+            { status: "Create" },
+          ],
+        },
+      ]),
+    ).toEqual({ signed: 2, total: 4 });
+    expect(activeForsignProgress([{ status: "completed", members: [] }])).toBeNull();
+  });
+});

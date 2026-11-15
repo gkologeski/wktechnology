@@ -12218,7 +12218,7 @@
         "techcontracts.contract_drafts.approve.workspace",
         "techcontracts.signature_evidence.view.workspace"
       ],
-      "rationale": "Ficha aprovada: resumo somente de negócio autorizado, consultas opcionais precedidas por gate de cada área e filtradas por workspace/negócio sob RLS. Não retorna corpos, tokens ou arquivos. Uma origem explícita por jornada. Abertura de minuta manual exige create próprio, membro ativo e proposta/negócio visíveis e aceitos; advisory row lock e workflow interno idempotente. Nenhuma concessão automática. Novos contratos principais de proposta exigem minuta juridicamente aprovada e aceita; gatilho preserva corpo e proveniência e proíbe alterações posteriores. Contratos históricos preservados. Assinatura real via hiring_contract_signature_context; status ativo não basta. Ações existentes mantêm seus gates (sales/work capabilities, send/share/approve/esign/serviços); readonly nega novas ações. Textos anteriores capturados por trigger e SELECT RLS do pai, sem reconstruir histórico; carregamento de um corpo por vez. Revisão jurídica continua exigindo aprovador listado, CAS e nova aprovação do cliente; chamadas diretas sujeitas às mesmas invariantes. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant.",
+      "rationale": "Ficha aprovada: resumo somente de negócio autorizado, consultas opcionais precedidas por gate de cada área e filtradas por workspace/negócio sob RLS. Não retorna corpos, tokens ou arquivos. Uma origem explícita por jornada. Abertura de minuta manual exige create próprio, membro ativo e proposta/negócio visíveis e aceitos; advisory row lock e workflow interno idempotente. Nenhuma concessão automática. Novos contratos principais de proposta exigem minuta juridicamente aprovada e aceita; gatilho preserva corpo e proveniência e proíbe alterações posteriores. Contratos históricos preservados. Assinatura real via hiring_contract_signature_context; status ativo não basta. Ações existentes mantêm seus gates (sales/work capabilities, send/share/approve/esign/serviços); readonly nega novas ações. Textos anteriores capturados por trigger e SELECT RLS do pai, sem reconstruir histórico; carregamento de um corpo por vez. Revisão jurídica continua exigindo aprovador listado, CAS e nova aprovação do cliente; chamadas diretas sujeitas às mesmas invariantes. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant.",
       "controls": [
         {
           "file": "src/lib/deals/contracting-journey.server.ts",
@@ -12299,9 +12299,9 @@
       },
       "files": {
         "drizzle/migrations/0356_deal_contracting_journey.sql": "8fc0fa2805b2c5ae3f9508242532cb01fe3bf62cb0411d3f78eded6ac6bd5f6f",
-        "src/components/deals/deal-contracting-journey.tsx": "5a040621a8eeaedb874af723f1db57dc3fd0ae23186834f67281bc5c96cccf3f",
+        "src/components/deals/deal-contracting-journey.tsx": "3f2a2ebbdd9c844c254ec93e023416ebb706f3e711d69b68c19cb31a27306672",
         "src/lib/deals/contracting-journey.functions.ts": "20e51a0e73599b7462b188572d108e1a28cf23256a11e7dd78a68b9584a7897d",
-        "src/lib/deals/contracting-journey.server.ts": "a869db7a515d7206f15149c92f4712dcf7d89f42bcde42149143e828e4712068",
+        "src/lib/deals/contracting-journey.server.ts": "240a1ce451c963852ab4d0f78b0def572f30a80337d1d5be3edb40e01bc28e4a",
         "src/routes/_authenticated/deals.$id.tsx": "4a86b9805a7a53ae6cbf992dc059fa86fcefc8460d25cd5b0e0b1ee65ad98839",
         "src/components/contracts/deal-contracts.tsx": "c3fe6970695d96ce3de60ee61402e6a29d146f387e3c0bd17060d42605eaeb77",
         "src/components/services/contract-services.tsx": "4955f2c4e631f47e3b94592c4b0713562874ef9c17a1f17048325ccbb412ed9a",
@@ -12312,9 +12312,9 @@
     {
       "id": "deal-contracting-journey-display-model",
       "kind": "presentation",
-      "rationale": "Pure types, lineage selection and display stage derivation; no I/O, permission grants or mutation. Backend/RLS remains authoritative.",
+      "rationale": "Pure types, lineage selection and display stage derivation; no I/O, permission grants or mutation. Backend/RLS remains authoritative. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant.",
       "files": {
-        "src/lib/deals/contracting-journey.ts": "c1f50ffb0245223af9a0a4e59031b4427f201b391a5800cdc318dced4c0a1720"
+        "src/lib/deals/contracting-journey.ts": "0e5c7486a16169907bb4eb5e63a1dc31654148b927795891cfb2ac027dc3234e"
       }
     },
     {
@@ -12645,9 +12645,9 @@
     {
       "id": "forsign-presentation",
       "kind": "presentation",
-      "rationale": "Pure ForSign helpers (status labels, HMAC/timestamp checks, HTML to PDF blocks, PDF layout) and the integration catalogue card. No data access, routes or actions.",
+      "rationale": "Pure ForSign helpers (status labels, HMAC/timestamp checks, HTML to PDF blocks, PDF layout) and the integration catalogue card. No data access, routes or actions. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant.",
       "files": {
-        "src/lib/integrations/forsign/forsign-core.ts": "9a53ae388344f4c14b263ef2b1977468318239cedd551fda274356ae340a6ebd",
+        "src/lib/integrations/forsign/forsign-core.ts": "8f8f6a838c4aabcc6f1b297329b2b818352d337407c3d0e5dcdac8d1565d93aa",
         "src/lib/integrations/forsign/forsign-pdf.ts": "fea50d84e7eef29b2eaf2dc50d0f96b18318d0acb18c7a392e6b6e6be910cec9",
         "src/lib/integrations/registry.ts": "47e469de5587703f9ad87a7acda4d28c8b74ebf27c5fc35dc78fdab16571f5a2"
       }

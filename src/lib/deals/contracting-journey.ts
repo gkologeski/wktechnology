@@ -36,6 +36,8 @@ export type JourneyContract = JourneyDocument & {
   document_kind: string;
   starts_at: string | null;
   ends_at: string | null;
+  /** Aprovação jurídica vigente do próprio contrato (usada quando não houve minuta). */
+  legal_approved?: boolean;
 };
 export type JourneyData = {
   quotes: JourneyQuote[];
@@ -90,7 +92,14 @@ export function selectJourney(d: JourneyData, origin: string | null) {
   contract = contract ?? candidates[0] ?? null;
   const proposalSigned =
     !!proposal && proposal.status === "accepted" && proposal.locked && !!proposal.decided_at;
-  const clausesApproved = !!draft && draft.status === "accepted" && !!draft.client_decided_at;
+  const draftAccepted = !!draft && draft.status === "accepted" && !!draft.client_decided_at;
+  // Sem minuta, as cláusulas contam como aprovadas quando o Jurídico aprovou o próprio contrato.
+  const clausesApproved = draftAccepted || (!draft && !!contract?.legal_approved);
+  const clausesSource: "draft" | "contract" | null = draftAccepted
+    ? "draft"
+    : clausesApproved
+      ? "contract"
+      : null;
   const stage =
     contract || clausesApproved
       ? 3
@@ -109,6 +118,7 @@ export function selectJourney(d: JourneyData, origin: string | null) {
     contract,
     proposalSigned,
     clausesApproved,
+    clausesSource,
     stage,
     ambiguous: candidates.length > 1,
     historical: !!contract && !proposal,

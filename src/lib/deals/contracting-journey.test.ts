@@ -117,4 +117,18 @@ describe("deal contracting journey lineage", () => {
     d.quotes.push({ ...q, id: "q2" });
     expect(selectJourney(d, "quote:q2").proposal).toBeNull();
   });
+  it("without a draft, counts clauses approved by legal approval on the contract", () => {
+    const d = { ...data(), drafts: [], contracts: [{ ...contract, legal_approved: true }] };
+    const j = selectJourney(d, null);
+    expect(j.clausesApproved).toBe(true);
+    expect(j.clausesSource).toBe("contract");
+  });
+  it("without a draft and pending legal approval, clauses stay pending", () => {
+    const d = { ...data(), drafts: [], contracts: [{ ...contract, legal_approved: false }] };
+    expect(selectJourney(d, null).clausesApproved).toBe(false);
+  });
+  it("with a non-accepted draft, legal approval on the contract does not override the draft", () => {
+    const d = { ...data(), contracts: [{ ...contract, legal_approved: true }] };
+    expect(selectJourney(d, null).clausesApproved).toBe(false);
+  });
 });

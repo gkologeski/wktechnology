@@ -57,11 +57,31 @@ export async function loadDealContractingJourney(
       contracts,
     ),
   ]);
+  const contractRows = c.slice(0, 100) as { id: string }[];
+  const legal = new Map<string, boolean>();
+  if (contractRows.length) {
+    const { data: approvals, error } = await (client.from as any)("contract_approvals")
+      .select("contract_id,status,superseded_at")
+      .eq("workspace_id", ws)
+      .eq("stage", "legal")
+      .in(
+        "contract_id",
+        contractRows.map((x) => x.id),
+      );
+    if (error && error.code !== "42501") throw new Error(error.message);
+    for (const a of (approvals ?? []) as {
+      contract_id: string;
+      status: string;
+      superseded_at: string | null;
+    }[])
+      if (!a.superseded_at)
+        legal.set(a.contract_id, (legal.get(a.contract_id) ?? true) && a.status === "approved");
+  }
   return {
     quotes: q.slice(0, 100),
     proposals: p.slice(0, 100),
     drafts: d.slice(0, 100),
-    contracts: c.slice(0, 100),
+    contracts: contractRows.map((x) => ({ ...x, legal_approved: legal.get(x.id) ?? false })) as any,
     access: { quotes, proposals, drafts, contracts },
     truncated: [q, p, d, c].some((x) => x.length > 100),
   };
