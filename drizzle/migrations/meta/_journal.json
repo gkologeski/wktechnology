@@ -2556,6 +2556,13 @@
       "when": 1794778678501,
       "tag": "0364_global_search_indexed_rls_gateway",
       "breakpoints": true
+    },
+    {
+      "idx": 365,
+      "version": "7",
+      "when": 1794783281632,
+      "tag": "0365_global_search_content_cursor",
+      "breakpoints": true
     }
   ]
 }

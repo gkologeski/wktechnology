@@ -3,7 +3,7 @@ import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery, useQueryClient, type Query } from "@tanstack/react-query";
 import {
   CommandDialog,
   CommandEmpty,
@@ -94,6 +94,7 @@ export function GlobalSearch() {
   const debouncedQ = useDebounced(q, 250);
   const navigate = useNavigate();
 
+  const queryClient = useQueryClient();
   const search = useServerFn(globalSearch);
   const recent = useServerFn(listRecent);
   const pinned = useServerFn(listPinned);
@@ -130,13 +131,37 @@ export function GlobalSearch() {
     }
   }, [open]);
 
-  const isCommandMode = debouncedQ.startsWith("/");
+  const isCommandMode = q.trim().startsWith("/");
+  const contextReady =
+    !!user && !!permissions.workspaceId && !permissions.isLoading && !permissions.isError;
+  const permissionScope = [...(permissions.permissions ?? [])]
+    .filter((key) =>
+      /^(techsales\.(contacts|companies|deals|tickets|activities|notes|tasks)|techhire\.(candidates|jobs))\.view\./.test(
+        key,
+      ),
+    )
+    .sort()
+    .join("|");
+  const termReady = q.trim() === debouncedQ.trim();
+  useEffect(() => {
+    if (!open || !termReady || aiMode || !contextReady) {
+      void queryClient.cancelQueries({
+        queryKey: ["global-search", user?.id, permissions.workspaceId],
+      });
+      if (!open || !contextReady) {
+        void queryClient.cancelQueries({
+          queryKey: ["global-search-recent", user?.id, permissions.workspaceId],
+        });
+        void queryClient.cancelQueries({
+          queryKey: ["global-search-pinned", user?.id, permissions.workspaceId],
+        });
+      }
+    }
+  }, [open, termReady, aiMode, contextReady, user?.id, permissions.workspaceId, queryClient]);
   const searchEnabled =
     open &&
-    !!user &&
-    !!permissions.workspaceId &&
-    !permissions.isLoading &&
-    !permissions.isError &&
+    contextReady &&
+    termReady &&
     !isCommandMode &&
     debouncedQ.trim().length >= MIN_QUERY &&
     !aiMode;
@@ -144,41 +169,88 @@ export function GlobalSearch() {
   // Uma consulta por tipo: cada grupo aparece assim que fica pronto e uma
   // falha isolada não derruba os demais.
   const activeTypes = types.length ? types : SEARCH_TYPES;
+  const requests = activeTypes.flatMap<{
+    type: SearchHit["entity_type"];
+    part: "subject" | "content" | undefined;
+  }>((type) =>
+    type === "activity"
+      ? [
+          { type, part: "subject" as const },
+          { type, part: "content" as const },
+        ]
+      : [{ type, part: undefined }],
+  );
   const perType = useQueries({
-    queries: activeTypes.map((t) => ({
-      queryKey: ["global-search", user?.id, permissions.workspaceId, debouncedQ, t],
+    queries: requests.map(({ type, part }) => ({
+      queryKey: [
+        "global-search",
+        user?.id,
+        permissions.workspaceId,
+        permissionScope,
+        debouncedQ.trim(),
+        type,
+        part,
+      ],
       queryFn: ({ signal }: { signal: AbortSignal }) =>
-        search({ data: { q: debouncedQ, types: [t] }, signal }),
+        search({ data: { q: debouncedQ.trim(), types: [type], activityPart: part }, signal }),
       enabled: searchEnabled,
-      staleTime: 30_000,
+      staleTime: (query: Query<Awaited<ReturnType<typeof globalSearch>>>) =>
+        query.state.data?.partial ? 0 : 30_000,
+      gcTime: 60_000,
       retry: false,
+      refetchOnWindowFocus: false,
     })),
   });
+  const contentIndex = requests.findIndex((r) => r.part === "content");
   const results = {
     isLoading: searchEnabled && perType.every((r) => r.isLoading),
     isFetchingSome: searchEnabled && perType.some((r) => r.isFetching),
     failed: searchEnabled && perType.some((r) => r.isError),
     partial: searchEnabled && perType.some((r) => r.data?.partial),
+    contentPending: searchEnabled && contentIndex >= 0 && perType[contentIndex].isFetching,
     data: {
-      groups: SEARCH_TYPES.flatMap((t) => {
-        const i = activeTypes.indexOf(t);
-        return i < 0 ? [] : (perType[i]?.data?.groups ?? []);
-      }),
+      groups: !searchEnabled
+        ? []
+        : SEARCH_TYPES.flatMap((type) => {
+            const hits = new Map<string, SearchHit>();
+            let label = "";
+            requests.forEach((r, i) => {
+              if (r.type !== type) return;
+              for (const group of perType[i]?.data?.groups ?? []) {
+                label = group.label;
+                for (const item of group.items) {
+                  const old = hits.get(item.entity_id);
+                  // Content enriches a subject hit without rendering it twice.
+                  hits.set(
+                    item.entity_id,
+                    old
+                      ? { ...old, subtitle: r.part === "content" ? item.subtitle : old.subtitle }
+                      : item,
+                  );
+                }
+              }
+            });
+            return hits.size ? [{ type, label, items: [...hits.values()].slice(0, 5) }] : [];
+          }),
     },
   };
 
   const recents = useQuery({
-    queryKey: ["global-search-recent", user?.id, permissions.workspaceId],
-    queryFn: () => recent(),
-    enabled: open,
-    staleTime: 60_000,
+    queryKey: ["global-search-recent", user?.id, permissions.workspaceId, permissionScope],
+    queryFn: ({ signal }) => recent({ signal }),
+    enabled: open && contextReady,
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
   });
 
   const pinneds = useQuery({
-    queryKey: ["global-search-pinned", user?.id, permissions.workspaceId],
-    queryFn: () => pinned(),
-    enabled: open,
-    staleTime: 60_000,
+    queryKey: ["global-search-pinned", user?.id, permissions.workspaceId, permissionScope],
+    queryFn: ({ signal }) => pinned({ signal }),
+    enabled: open && contextReady,
+    staleTime: 0,
+    gcTime: 0,
+    retry: false,
   });
 
   const filteredCommands = useMemo(() => {
@@ -234,9 +306,10 @@ export function GlobalSearch() {
   }
 
   const groups = results.data?.groups ?? [];
-  const hasQuery = debouncedQ.trim().length > 0;
+  const hasQuery = q.trim().length > 0;
   const hasResults = groups.some((g) => g.items.length > 0);
   const showEmpty =
+    searchEnabled &&
     hasQuery &&
     debouncedQ.trim().length >= MIN_QUERY &&
     !isCommandMode &&
@@ -289,6 +362,11 @@ export function GlobalSearch() {
       )}
 
       <CommandList className="max-h-[420px]">
+        {results.contentPending && (
+          <p role="status" className="px-4 py-2 text-xs text-muted-foreground">
+            Buscando no conteúdo das atividades… Os demais resultados já podem ser abertos.
+          </p>
+        )}
         {results.partial && !aiMode && !isCommandMode && (
           <p role="status" className="px-4 py-2 text-xs text-muted-foreground">
             Resultados parciais: a busca no conteúdo das atividades não terminou. Refine o termo e
@@ -355,10 +433,15 @@ export function GlobalSearch() {
           </>
         )}
 
+        {!hasQuery && (recents.isError || pinneds.isError) && (
+          <p role="status" className="px-4 py-2 text-xs text-muted-foreground">
+            Não foi possível carregar recentes ou fixados. A busca continua disponível.
+          </p>
+        )}
         {/* Default (no query): pinned + recent */}
-        {!aiMode && !isCommandMode && !hasQuery && (
+        {!aiMode && !isCommandMode && !hasQuery && contextReady && (
           <>
-            {(pinneds.data?.items?.length ?? 0) > 0 && (
+            {!pinneds.isFetching && !pinneds.isError && (pinneds.data?.items?.length ?? 0) > 0 && (
               <CommandGroup heading="Fixados">
                 {pinneds.data!.items.map((it) => (
                   <CommandItem
@@ -375,7 +458,7 @@ export function GlobalSearch() {
                 ))}
               </CommandGroup>
             )}
-            {(recents.data?.items?.length ?? 0) > 0 && (
+            {!recents.isFetching && !recents.isError && (recents.data?.items?.length ?? 0) > 0 && (
               <CommandGroup heading="Recentes">
                 {recents.data!.items.map((it) => (
                   <CommandItem
@@ -392,7 +475,14 @@ export function GlobalSearch() {
                 ))}
               </CommandGroup>
             )}
-            {(pinneds.data?.items?.length ?? 0) === 0 &&
+            {(recents.isFetching || pinneds.isFetching) && (
+              <p role="status" className="px-4 py-2 text-xs text-muted-foreground">
+                Atualizando recentes e fixados…
+              </p>
+            )}
+            {!recents.isFetching &&
+              !pinneds.isFetching &&
+              (pinneds.data?.items?.length ?? 0) === 0 &&
               (recents.data?.items?.length ?? 0) === 0 && (
                 <div className="p-6 text-center text-sm text-muted-foreground">
                   Comece a digitar para buscar em contatos, empresas, negócios, tickets, candidatos,
@@ -405,10 +495,15 @@ export function GlobalSearch() {
         {/* Search results */}
         {!aiMode && !isCommandMode && hasQuery && (
           <>
-            {debouncedQ.trim().length < MIN_QUERY && (
+            {q.trim().length < MIN_QUERY && (
               <div className="p-4 text-sm text-muted-foreground">
                 Digite pelo menos {MIN_QUERY} caracteres para buscar.
               </div>
+            )}
+            {q.trim().length >= MIN_QUERY && !termReady && (
+              <p role="status" className="px-4 py-2 text-xs text-muted-foreground">
+                Preparando busca…
+              </p>
             )}
             {results.isFetchingSome && (
               <div
@@ -422,6 +517,18 @@ export function GlobalSearch() {
               <div className="px-4 py-2 text-xs text-muted-foreground" role="status">
                 Alguns grupos não puderam ser buscados agora. Tente de novo em instantes.
               </div>
+            )}
+            {!results.isFetchingSome && (results.failed || results.partial) && (
+              <button
+                type="button"
+                className="mx-4 mb-2 text-xs text-primary underline"
+                onClick={() => {
+                  for (const result of perType)
+                    if (result.isError || result.data?.partial) void result.refetch();
+                }}
+              >
+                Tentar grupos pendentes
+              </button>
             )}
             {groups.map((g) => {
               const Icon = ICONS[g.type];

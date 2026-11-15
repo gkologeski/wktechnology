@@ -42,7 +42,7 @@ let endpoint = "",
   started = false;
 let db: ReturnType<typeof postgres>;
 const accepted: string[] = [];
-const expected = 101;
+const expected = 103;
 let cleaned = false;
 function report() {
   mkdirSync(".verification", { recursive: true });
@@ -439,6 +439,7 @@ beforeAll(async () => {
   await db.unsafe(
     readFileSync("drizzle/migrations/0364_global_search_indexed_rls_gateway.sql", "utf8"),
   );
+  await db.unsafe(readFileSync("drizzle/migrations/0365_global_search_content_cursor.sql", "utf8"));
   for (const table of ["contacts", "companies", "activities"])
     await db.unsafe(
       `CREATE POLICY search_ci_restriction ON ${table} AS RESTRICTIVE FOR SELECT TO authenticated USING(id::text<>coalesce(current_setting('test.search_hidden_id',true),''))`,
@@ -1904,6 +1905,11 @@ it("search gateway SQL private index and gateway role cannot be assumed", async 
       ).toBe(false);
       expect(
         (
+          await tx`select has_function_privilege(current_user,(SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='global_search_private' AND p.proname='activity_page'),'execute') ok`
+        )[0].ok,
+      ).toBe(false);
+      expect(
+        (
           await tx`select rolcanlogin or rolbypassrls or rolsuper unsafe from pg_roles where rolname='techerp_search_gateway'`
         )[0].unsafe,
       ).toBe(false);
@@ -1925,4 +1931,53 @@ it("search gateway SQL retains restrictive RLS policies", async () => {
     { keys: searchKeys },
   );
   accepted.push("search-restrictive-policy");
+});
+
+it("search cursor skips invisible pages without losing an older authorized hit", async () => {
+  await subject(
+    async (tx) => {
+      await tx`reset role`;
+      await tx`update activities set subject='Lacunacursor',body='Lacunacursor visivel',created_at=now()-interval '2 days' where id='97000000-0000-4000-8000-000000000001'`;
+      await tx`insert into activities(id,workspace_id,owner_id,type,subject,body,created_at) select ('98000000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid,${W},${P},'email','Lacunacursor','Lacunacursor invisivel',now()-i*interval '1 second' from generate_series(1,600)i`;
+      await tx`set local role authenticated`;
+      expect(
+        (await tx`select id from global_search_activity_body_ids('Lacunacursor',5)`).map(
+          (r) => r.id,
+        ),
+      ).toEqual(["97000000-0000-4000-8000-000000000001"]);
+      expect(
+        (await tx`select global_search_candidate_ids('activity','Lacunacursor',5) id`).map(
+          (r) => r.id,
+        ),
+      ).toEqual(["97000000-0000-4000-8000-000000000001"]);
+      expect(
+        (await tx`select global_search_candidate_ids('activity','Lacunacursor',200) id`).map(
+          (r) => r.id,
+        ),
+      ).toEqual(["97000000-0000-4000-8000-000000000001"]);
+    },
+    { keys: searchKeys.map((k) => k.replace(".workspace", ".own")) },
+  );
+  accepted.push("search-cursor-invisible-pages");
+});
+it("search cursor respects note and task resources without an activity grant", async () => {
+  for (const [type, key, index] of [
+    ["note", "techsales.notes.view.workspace", "1"],
+    ["task", "techsales.tasks.view.workspace", "2"],
+  ]) {
+    await subject(
+      async (tx) => {
+        await tx`reset role`;
+        await tx`update activities set type=${type} where id=${"97000000-0000-4000-8000-00000000000" + index}`;
+        await tx`set local role authenticated`;
+        expect(
+          (await tx`select id from global_search_activity_body_ids('Governanca',5)`).map(
+            (r) => r.id,
+          ),
+        ).toEqual(["97000000-0000-4000-8000-00000000000" + index]);
+      },
+      { keys: [key] },
+    );
+  }
+  accepted.push("search-note-task-resource");
 });
