@@ -1044,7 +1044,7 @@ function StepConfigForm({
       return (
         <p className="text-sm text-muted-foreground">
           Abre a minuta com o modelo padrão do serviço da proposta aceita e avisa os aprovadores
-          jurídicos configurados em Contratos → Aprovação de minuta.
+          jurídicos configurados em TechContracts → Fluxo de contratação.
         </p>
       );
     default: {
