@@ -7121,6 +7121,209 @@ export type Database = {
           },
         ]
       }
+      contract_handoff_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          detail: Json
+          handoff_id: string | null
+          id: string
+          kind: string
+          workspace_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          handoff_id?: string | null
+          id?: string
+          kind: string
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          detail?: Json
+          handoff_id?: string | null
+          id?: string
+          kind?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_handoff_events_handoff_id_fkey"
+            columns: ["handoff_id"]
+            isOneToOne: false
+            referencedRelation: "contract_handoffs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_handoff_settings: {
+        Row: {
+          enabled: boolean
+          escalation_user_id: string | null
+          finance_days: number
+          finance_user_id: string | null
+          legal_days: number
+          legal_user_id: string | null
+          operator_user_id: string | null
+          signature_days: number
+          signature_user_id: string | null
+          timezone: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          enabled?: boolean
+          escalation_user_id?: string | null
+          finance_days?: number
+          finance_user_id?: string | null
+          legal_days?: number
+          legal_user_id?: string | null
+          operator_user_id?: string | null
+          signature_days?: number
+          signature_user_id?: string | null
+          timezone?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          enabled?: boolean
+          escalation_user_id?: string | null
+          finance_days?: number
+          finance_user_id?: string | null
+          legal_days?: number
+          legal_user_id?: string | null
+          operator_user_id?: string | null
+          signature_days?: number
+          signature_user_id?: string | null
+          timezone?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_handoff_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_handoffs: {
+        Row: {
+          activity_id: string
+          actor_id: string | null
+          assignee_id: string | null
+          assignee_name: string | null
+          attempt: number
+          blocked_reason: string | null
+          body: string
+          closed_at: string | null
+          contract_id: string | null
+          created_at: string
+          cycle: string
+          deal_id: string
+          draft_id: string | null
+          due_at: string
+          escalated_at: string | null
+          href: string
+          id: string
+          next_check_at: string
+          proposal_id: string | null
+          requested_user_id: string | null
+          source_id: string
+          status: string
+          step: string
+          subject: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          activity_id?: string
+          actor_id?: string | null
+          assignee_id?: string | null
+          assignee_name?: string | null
+          attempt?: number
+          blocked_reason?: string | null
+          body?: string
+          closed_at?: string | null
+          contract_id?: string | null
+          created_at?: string
+          cycle: string
+          deal_id: string
+          draft_id?: string | null
+          due_at: string
+          escalated_at?: string | null
+          href: string
+          id?: string
+          next_check_at?: string
+          proposal_id?: string | null
+          requested_user_id?: string | null
+          source_id: string
+          status?: string
+          step: string
+          subject: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          activity_id?: string
+          actor_id?: string | null
+          assignee_id?: string | null
+          assignee_name?: string | null
+          attempt?: number
+          blocked_reason?: string | null
+          body?: string
+          closed_at?: string | null
+          contract_id?: string | null
+          created_at?: string
+          cycle?: string
+          deal_id?: string
+          draft_id?: string | null
+          due_at?: string
+          escalated_at?: string | null
+          href?: string
+          id?: string
+          next_check_at?: string
+          proposal_id?: string | null
+          requested_user_id?: string | null
+          source_id?: string
+          status?: string
+          step?: string
+          subject?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_handoffs_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_handoffs_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "shared_fields_deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_handoffs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_link_ai_suggestions: {
         Row: {
           confidence: string
@@ -33489,6 +33692,42 @@ export type Database = {
           p_request: string
         }
         Returns: Json
+      }
+      contract_handoff_block: {
+        Args: { p_id: string; p_reason: string }
+        Returns: undefined
+      }
+      contract_handoff_due: {
+        Args: { p_at: string; p_days: number; p_zone: string }
+        Returns: string
+      }
+      contract_handoff_enqueue: {
+        Args: { p_source: string; p_step: string }
+        Returns: string
+      }
+      contract_handoff_escalation: {
+        Args: { p_preferred: string; p_ws: string }
+        Returns: string
+      }
+      contract_handoff_member: {
+        Args: { p_user: string; p_ws: string }
+        Returns: boolean
+      }
+      contract_handoff_reconcile: { Args: { p_deal: string }; Returns: number }
+      contract_handoff_retry: {
+        Args: { p_handoff: string }
+        Returns: undefined
+      }
+      contract_handoff_settings_get: { Args: never; Returns: Json }
+      contract_handoff_settings_save: { Args: { p_data: Json }; Returns: Json }
+      contract_handoff_state: {
+        Args: { p_h: Database["public"]["Tables"]["contract_handoffs"]["Row"] }
+        Returns: string
+      }
+      contract_handoff_tick: { Args: { p_limit?: number }; Returns: Json }
+      contract_handoff_user_ready: {
+        Args: { p_step: string; p_user: string; p_ws: string }
+        Returns: boolean
       }
       contract_is_signed_for_billing: {
         Args: { c: Database["public"]["Tables"]["contracts"]["Row"] }
