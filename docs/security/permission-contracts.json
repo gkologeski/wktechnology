@@ -9818,7 +9818,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant.",
       "files": {
-        "src/integrations/supabase/types.ts": "36dcf6a5c8100a67b07c284f55dd5f0a9548958c72739824a74d86bf95027a00",
+        "src/integrations/supabase/types.ts": "c2b0c5de881c3059b53c89a2ac49727f46593ef2a13cb792cc53eb2c8e694610",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -12412,7 +12412,7 @@
       },
       "files": {
         "drizzle/migrations/0357_contract_signature_delivery.sql": "f2220b025cd82b9f9841c5572871ca9d995c227cefc4f1d5c298310afe17722d",
-        "src/components/contracts/contract-signature-delivery.tsx": "f4bc76f3231fb6b7e925cff2df506b852a9a735703f633bdc9b526de298a7018",
+        "src/components/contracts/contract-signature-delivery.tsx": "de3c0bb080332a72f550eff06a496e5f978636c361dd8bb9566811214448a62f",
         "src/lib/contracts/signature-delivery.functions.ts": "7e54acfd8edc6821c6eddf8221b08de3d2f01e59ac4a3e24b993e7bc2d4c7100",
         "src/lib/contracts/signature-delivery.server.ts": "ee8265251df0c590c6937621005c7c16f81658512a890f4d7e3c2ada9a87a1a4",
         "src/lib/esign.functions.ts": "37d7dec2190628e15769933b537a8bb2832ea3f9e99a26ebd76f87d20485360d",
@@ -12560,7 +12560,7 @@
       },
       "files": {
         "drizzle/migrations/0359_forsign_integration.sql": "f299acdcbeeac81ca34b101e936070eb15e7b8adb28eaa5262d670fd780d688b",
-        "src/components/contracts/contract-forsign-panel.tsx": "e5f1b3dd4805f38bad8fcf4c10450920d559e5144f15364ab4fd4eb3b157d662",
+        "src/components/contracts/contract-forsign-panel.tsx": "148142742c9b63588deb922c29177d42af5d001028d5dfea20f55813f1c0e941",
         "src/components/integrations/forsign-settings-page.tsx": "91258abbf7bb58f8b9bfa3d98238f13af33b8a100fab4ed0c412185231e0e8dd",
         "src/lib/integrations/forsign/forsign-service.server.ts": "b8e512abcfcdf6287bbe7455e342ba999aecc137739b03e98b9be23e46ef5a81",
         "src/lib/integrations/forsign/forsign.functions.ts": "d09d853289a03754e5180a570f9bfcf5399ee9c1fb5991b109d9388850e320ca",
@@ -12647,7 +12647,7 @@
       "kind": "presentation",
       "rationale": "Pure ForSign helpers (status labels, HMAC/timestamp checks, HTML to PDF blocks, PDF layout) and the integration catalogue card. No data access, routes or actions.",
       "files": {
-        "src/lib/integrations/forsign/forsign-core.ts": "f211148cef45aad374a29a61d1e5357e1e2815c8964f56b6ed3d5b147bf5ce96",
+        "src/lib/integrations/forsign/forsign-core.ts": "9a53ae388344f4c14b263ef2b1977468318239cedd551fda274356ae340a6ebd",
         "src/lib/integrations/forsign/forsign-pdf.ts": "fea50d84e7eef29b2eaf2dc50d0f96b18318d0acb18c7a392e6b6e6be910cec9",
         "src/lib/integrations/registry.ts": "47e469de5587703f9ad87a7acda4d28c8b74ebf27c5fc35dc78fdab16571f5a2"
       }
@@ -12906,6 +12906,15 @@
       "rationale": "Pure helper to hide controls for source-owned contract handoff tasks, no IO or permissions. Not authorization: SQL resolves canonical link by activity id and rejects changes independently of metadata.",
       "files": {
         "src/lib/activity-task-options.ts": "25e735ca8c3ce839b9281e8b3fb1d37490cd76164c764c2c0f7e2e3e564a9e5e"
+      }
+    },
+    {
+      "id": "contract-signature-status-visuals",
+      "kind": "presentation",
+      "rationale": "Ícones, tons e selos da situação de assinatura (remessa ForSign e documento nativo): só apresentam status já carregado na tela, sem acesso a dados, rotas, ações ou permissões.",
+      "files": {
+        "src/components/contracts/signature-status-indicator.tsx": "6a6e35582314f4ca31a4633eeb17b02500e17790d920356c1366c61da92202b8",
+        "src/components/contracts/signature-status-tone.ts": "bd38efb40ef90f906d4d4a50ce105b4e3a7918cbe721f8f7892f528b97505ef1"
       }
     }
   ],

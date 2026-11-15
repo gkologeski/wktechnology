@@ -8,7 +8,7 @@ route_pattern: /contracts/signatures
 min_permission:
 audience: internal
 sort_order: 95
-version: 4
+version: 5
 is_published: true
 ---
 # Preparar documentos para assinatura eletrônica
@@ -46,3 +46,15 @@ Documento preparado e, após envio, disponibilizado para assinatura conforme sua
 
 ## Signatários por papel
 Na preparação do contrato, escolha contatos para CONTRATANTE e CONTRATADO. Inclua testemunhas apenas quando necessário; uma vez incluídas, suas assinaturas são obrigatórias para concluir o documento. A busca permite cadastrar um novo contato com as permissões de contatos. O cadastro deve conter nome e e-mail válidos. Papéis adicionais podem ser incluídos explicitamente.
+
+## Como ler a situação de cada signatário
+Cada signatário aparece com um ícone antes do nome e o rótulo na mesma cor:
+
+- Círculo verde com visto: assinou.
+- Relógio em amarelo: pendente, ainda não assinou.
+- Olho: abriu o documento, mas ainda não assinou.
+- X em vermelho: recusou.
+- No topo, o selo do documento mostra se está preparado, disponível, assinado parcialmente, concluído, recusado, expirado ou cancelado.
+
+O ícone reforça o texto ao lado e não muda o que cada pessoa pode fazer: enviar, assinar e ver
+continuam dependendo das permissões de assinatura eletrônica e das evidências da versão atual.

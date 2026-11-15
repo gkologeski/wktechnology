@@ -10,12 +10,35 @@ export type ForsignOpStatus =
   | "failed"
   | "stale";
 
-/** Rótulo do participante: na ordem sequencial do ForSign, quem ainda não recebeu o convite aparece "Na fila". */
-export function memberStatusLabel(m: { status?: string | null; stage?: string | null }) {
+/** Tom visual da situação (só apresentação: ícone e cor). */
+export type ForsignMemberTone = "signed" | "waiting" | "queued" | "failed" | "neutral";
+export type ForsignOpTone = "signed" | "partial" | "waiting" | "sending" | "failed" | "neutral";
+
+const MEMBER_TONE: Record<string, ForsignMemberTone> = {
+  Create: "waiting",
+  InProgress: "waiting",
+  Completed: "signed",
+  Canceled: "failed",
+};
+
+/** Rótulo e tom do participante: na ordem sequencial do ForSign, quem ainda não recebeu o convite aparece "Na fila". */
+export function memberStatusInfo(m: { status?: string | null; stage?: string | null }): {
+  label: string;
+  tone: ForsignMemberTone;
+} {
   if (m.status === "Create" && m.stage === "WaitingToSend")
-    return "Na fila — recebe o convite após o anterior assinar";
-  if (m.status === "Create" && m.stage === "Sent") return "Convite enviado — aguardando assinatura";
-  return MEMBER_STATUS_PT[m.status ?? ""] ?? m.status ?? "";
+    return { label: "Na fila — recebe o convite após o anterior assinar", tone: "queued" };
+  if (m.status === "Create" && m.stage === "Sent")
+    return { label: "Convite enviado — aguardando assinatura", tone: "waiting" };
+  return {
+    label: MEMBER_STATUS_PT[m.status ?? ""] ?? m.status ?? "",
+    tone: MEMBER_TONE[m.status ?? ""] ?? "neutral",
+  };
+}
+
+/** Rótulo do participante, sem o tom. */
+export function memberStatusLabel(m: { status?: string | null; stage?: string | null }) {
+  return memberStatusInfo(m).label;
 }
 
 /** Converte a situação da operação no ForSign para a situação local. */
@@ -55,6 +78,27 @@ export const OP_STATUS_PT: Record<ForsignOpStatus, string> = {
   failed: "Falhou",
   stale: "Versão não vigente",
 };
+
+/** Tom da situação da remessa, para o ícone e a cor do quadro. */
+export function opStatusTone(status: ForsignOpStatus): ForsignOpTone {
+  switch (status) {
+    case "completed":
+    case "evidence_recorded":
+      return "signed";
+    case "partially_signed":
+      return "partial";
+    case "sent":
+      return "waiting";
+    case "creating":
+      return "sending";
+    case "canceled":
+    case "expired":
+    case "failed":
+      return "failed";
+    default:
+      return "neutral";
+  }
+}
 
 /** Envios que ainda dependem do ForSign (sincronização periódica). */
 export const PENDING_STATUSES: ForsignOpStatus[] = ["sent", "partially_signed", "completed"];

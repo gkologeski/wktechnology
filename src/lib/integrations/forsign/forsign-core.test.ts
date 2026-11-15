@@ -3,6 +3,8 @@ import {
   buildMembers,
   htmlToBlocks,
   mapOperationStatus,
+  memberStatusInfo,
+  opStatusTone,
   timestampFresh,
   toWinAnsi,
   verifyForsignSignature,
@@ -129,4 +131,34 @@ it("forsign parallel send puts every signer in the same position", () => {
     { name: "C", email: "c@x.com", role: "TESTEMUNHA 1" },
   ]);
   expect(ms.map((m) => m.orderPosition)).toEqual([1, 1, 1]);
+});
+
+it("member status tone separates who signed, who waits and who is still in line", () => {
+  expect(memberStatusInfo({ status: "Completed", stage: "Signed" }).tone).toBe("signed");
+  expect(memberStatusInfo({ status: "Create", stage: "Sent" }).tone).toBe("waiting");
+  expect(memberStatusInfo({ status: "Create", stage: "WaitingToSend" }).tone).toBe("queued");
+  expect(memberStatusInfo({ status: "InProgress" }).tone).toBe("waiting");
+  expect(memberStatusInfo({ status: "Canceled" }).tone).toBe("failed");
+  expect(memberStatusInfo({ status: "AlgoNovo" }).tone).toBe("neutral");
+});
+
+it("member status labels stay exactly as before the tone split", () => {
+  expect(memberStatusInfo({ status: "Create", stage: "WaitingToSend" }).label).toBe(
+    "Na fila — recebe o convite após o anterior assinar",
+  );
+  expect(memberStatusInfo({ status: "Create", stage: "Sent" }).label).toBe(
+    "Convite enviado — aguardando assinatura",
+  );
+  expect(memberStatusInfo({ status: "Completed" }).label).toBe("Assinou");
+});
+
+it("operation tone keeps a signed document apart from a partial or broken sending", () => {
+  expect(opStatusTone("evidence_recorded")).toBe("signed");
+  expect(opStatusTone("completed")).toBe("signed");
+  expect(opStatusTone("partially_signed")).toBe("partial");
+  expect(opStatusTone("sent")).toBe("waiting");
+  expect(opStatusTone("creating")).toBe("sending");
+  expect(opStatusTone("failed")).toBe("failed");
+  expect(opStatusTone("expired")).toBe("failed");
+  expect(opStatusTone("stale")).toBe("neutral");
 });

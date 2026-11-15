@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/forsign
 min_permission: techcontracts.forsign_settings.manage.workspace
 audience: internal
 sort_order: 97
-version: 3
+version: 4
 is_published: true
 ---
 # Enviar contratos para assinatura pelo ForSign
@@ -58,4 +58,18 @@ Escolha contatos para CONTRATANTE e CONTRATADO. A pesquisa por nome/e-mail permi
 
 - O TechERP envia o convite a todos os assinantes ao mesmo tempo, sem ordem de assinatura.
 - No quadro ForSign, cada pessoa aparece como "Convite enviado — aguardando assinatura", "Na fila" (só em envios antigos feitos em ordem) ou "Assinou".
+
+## Como ler a situação no quadro
+
+Cada linha traz um ícone antes do nome, e a cor do rótulo repete o mesmo código em qualquer módulo:
+
+- Círculo verde com visto: a pessoa assinou (e o horário aparece junto).
+- Relógio em amarelo: o convite foi enviado e a pessoa ainda não assinou.
+- Círculo tracejado em cinza: está na fila, ou a remessa é de uma versão anterior do contrato.
+- X em vermelho: assinatura cancelada, remessa expirada ou com falha.
+- Olho: o signatário abriu o documento mas ainda não assinou (aparece no fluxo nativo do TechERP).
+- No alto do quadro, o selo da remessa mostra a situação geral e o contador "X de Y assinaram".
+
+O ícone é apenas um reforço visual: o texto ao lado continua sendo o que define a situação, e nada
+disso altera quem pode enviar, assinar ou ver o contrato.
 - Se o ForSign registrar um envio em ordem, o quadro mostra um aviso.

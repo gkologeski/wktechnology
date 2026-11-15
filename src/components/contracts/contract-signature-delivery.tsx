@@ -9,7 +9,11 @@ import { readViewAs } from "@/lib/view-as-client";
 import { formatDateTime } from "@/lib/crm";
 import { getPublicAppUrl } from "@/lib/app-url";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {
+  SignatureStatusBadge,
+  SignatureStatusIcon,
+} from "@/components/contracts/signature-status-indicator";
+import { signatureToneInk, type SignatureTone } from "@/components/contracts/signature-status-tone";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +37,21 @@ const signerStatus: Record<string, string> = {
   viewed: "Visualizado",
   signed: "Assinado",
   declined: "Recusado",
+};
+const documentTone: Record<string, SignatureTone> = {
+  draft: "neutral",
+  sent: "waiting",
+  partially_signed: "partial",
+  completed: "signed",
+  declined: "failed",
+  expired: "failed",
+  canceled: "failed",
+};
+const signerTone: Record<string, SignatureTone> = {
+  pending: "waiting",
+  viewed: "viewed",
+  signed: "signed",
+  declined: "failed",
 };
 const deliveryStatus: Record<string, string> = {
   pending: "Convite aguardando confirmação de envio",
@@ -134,7 +153,9 @@ export function ContractSignatureDelivery({
   return (
     <section className="space-y-3 border-t pt-3" aria-label="Envio e acompanhamento de assinaturas">
       <p className="text-sm font-medium">{doc.title}</p>
-      <Badge variant="outline">{documentStatus[doc.status] ?? "Consulte o documento"}</Badge>
+      <SignatureStatusBadge tone={documentTone[doc.status] ?? "neutral"}>
+        {documentStatus[doc.status] ?? "Consulte o documento"}
+      </SignatureStatusBadge>
       {!current && (
         <p role="note" className="text-sm text-muted-foreground">
           Esta evidência foi revogada ou pertence a outra versão. Prepare uma assinatura da versão
@@ -151,9 +172,15 @@ export function ContractSignatureDelivery({
           const latest = deliveries?.find((d) => d.signer_id === s.id);
           return (
             <li key={s.id} className="rounded-md border p-3 text-sm">
-              <p className="font-medium">
-                {s.role ? `${s.role} — ` : ""}
-                {s.name} · {signerStatus[s.status] ?? "Consultar"}
+              <p className="flex items-start gap-2 font-medium">
+                <SignatureStatusIcon tone={signerTone[s.status] ?? "neutral"} />
+                <span>
+                  {s.role ? `${s.role} — ` : ""}
+                  {s.name} ·{" "}
+                  <span className={signatureToneInk(signerTone[s.status] ?? "neutral")}>
+                    {signerStatus[s.status] ?? "Consultar"}
+                  </span>
+                </span>
               </p>
               <p className="break-all text-muted-foreground">{s.email}</p>
               {s.signed_at && <p>Assinado em {formatDateTime(s.signed_at)}</p>}
