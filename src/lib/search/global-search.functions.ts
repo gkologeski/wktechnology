@@ -1,6 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { orSafeTerm } from "@/lib/postgrest-search";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type SearchHit = {
@@ -14,20 +16,33 @@ export type SearchHit = {
 export type SearchGroup = { type: SearchHit["entity_type"]; label: string; items: SearchHit[] };
 
 const InputSchema = z.object({
-  q: z.string().trim().min(1).max(200),
-  types: z.array(z.string()).optional(),
+  q: z.string().trim().min(3).max(200),
+  types: z
+    .array(z.enum(["contact", "company", "deal", "ticket", "activity", "candidate", "job"]))
+    .optional(),
   limit: z.number().int().min(1).max(20).optional(),
 });
+
+async function requireSearchContext(client: SupabaseClient): Promise<string> {
+  const { data, error } = await client.rpc("work_access_context");
+  if (error) throw new Error(error.message);
+  const context = data as { workspace?: string; actor?: string } | null;
+  if (!context?.workspace || !context.actor) throw new Error("Sem acesso a um workspace ativo.");
+  return context.workspace;
+}
 
 export const globalSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
+    const signal = getRequest().signal;
+    const workspaceId = await requireSearchContext(supabase);
     const limit = data.limit ?? 5;
     const raw = orSafeTerm(data.q);
     const pattern = `%${raw}%`;
-    const allow = (t: string) => !data.types || data.types.length === 0 || data.types.includes(t);
+    const allow = (t: SearchHit["entity_type"]) =>
+      !data.types || data.types.length === 0 || data.types.includes(t);
     const t0 = Date.now();
 
     const run = async <T>(
@@ -42,10 +57,13 @@ export const globalSearch = createServerFn({ method: "POST" })
     // Tabelas grandes: IDs candidatos via índice (função restrita aos workspaces
     // do usuário) e depois leitura normal com RLS, que decide o que ele vê.
     const candidateIds = async (entity: "contact" | "company" | "activity") => {
-      const { data: ids, error } = await supabase.rpc("global_search_candidate_ids", {
-        _entity: entity,
-        _q: data.q,
-      });
+      const { data: ids, error } = await supabase
+        .rpc("global_search_candidate_ids", {
+          _entity: entity,
+          _q: data.q,
+          _limit: limit,
+        })
+        .abortSignal(signal);
       if (error) throw new Error(error.message);
       return ((ids ?? []) as string[]).slice(0, 200);
     };
@@ -66,13 +84,21 @@ export const globalSearch = createServerFn({ method: "POST" })
             supabase
               .from("contacts")
               .select("id, first_name, last_name, email, job_title")
+              .eq("workspace_id", workspaceId)
               .in("id", ids)
-              .limit(limit),
+              .limit(limit)
+              .abortSignal(signal),
           )
         : run(null),
       allow("company")
         ? viaIds("company", (ids) =>
-            supabase.from("companies").select("id, name, domain").in("id", ids).limit(limit),
+            supabase
+              .from("companies")
+              .select("id, name, domain")
+              .eq("workspace_id", workspaceId)
+              .in("id", ids)
+              .limit(limit)
+              .abortSignal(signal),
           )
         : run(null),
       allow("deal")
@@ -80,8 +106,10 @@ export const globalSearch = createServerFn({ method: "POST" })
             supabase
               .from("deals")
               .select("id, name, stage, value, currency")
+              .eq("workspace_id", workspaceId)
               .ilike("name", pattern)
-              .limit(limit),
+              .limit(limit)
+              .abortSignal(signal),
           )
         : run(null),
       allow("ticket")
@@ -89,8 +117,10 @@ export const globalSearch = createServerFn({ method: "POST" })
             supabase
               .from("tickets")
               .select("id, subject, status, priority")
+              .eq("workspace_id", workspaceId)
               .or(`subject.ilike.${pattern},description.ilike.${pattern}`)
-              .limit(limit),
+              .limit(limit)
+              .abortSignal(signal),
           )
         : run(null),
       allow("activity")
@@ -98,12 +128,16 @@ export const globalSearch = createServerFn({ method: "POST" })
             // Assunto (trigram) + texto (busca por palavras, índice FTS). O texto
             // tem limite de tempo: se estourar, o grupo fica só com o assunto.
             const bodyRpc = Promise.resolve(
-              supabase.rpc("global_search_activity_body_ids", { _q: data.q, _limit: 40 }),
-            ).then((r) => (r.data ?? []) as Array<{ id: string; snippet: string | null }>);
-            const timeout = new Promise<null>((res) => setTimeout(() => res(null), 4000));
+              supabase
+                .rpc("global_search_activity_body_ids", { _q: data.q, _limit: limit })
+                .abortSignal(AbortSignal.any([signal, AbortSignal.timeout(1500)])),
+            ).then((r) => {
+              if (r.error) throw new Error(r.error.message);
+              return (r.data ?? []) as Array<{ id: string; snippet: string | null }>;
+            });
             const [subjectIds, bodyHits] = await Promise.all([
               candidateIds("activity"),
-              Promise.race([bodyRpc.catch(() => null), timeout]),
+              bodyRpc.catch(() => null),
             ]);
             const snippets = new Map<string, string>();
             for (const h of bodyHits ?? []) if (h.snippet) snippets.set(h.id, h.snippet);
@@ -112,7 +146,9 @@ export const globalSearch = createServerFn({ method: "POST" })
             const { data: rows, error } = await supabase
               .from("activities")
               .select("id, subject, type, due_date")
-              .in("id", order.slice(0, 200));
+              .eq("workspace_id", workspaceId)
+              .in("id", order.slice(0, 200))
+              .abortSignal(signal);
             if (error) throw new Error(error.message);
             const byId = new Map(
               ((rows ?? []) as Array<Record<string, unknown>>).map((r) => [String(r.id), r]),
@@ -130,8 +166,10 @@ export const globalSearch = createServerFn({ method: "POST" })
             supabase
               .from("ats_candidates")
               .select("id, full_name, email, current_position")
+              .eq("workspace_id", workspaceId)
               .or(`full_name.ilike.${pattern},email.ilike.${pattern}`)
-              .limit(limit),
+              .limit(limit)
+              .abortSignal(signal),
           )
         : run(null),
       allow("job")
@@ -139,8 +177,10 @@ export const globalSearch = createServerFn({ method: "POST" })
             supabase
               .from("ats_jobs")
               .select("id, title, status, location")
+              .eq("workspace_id", workspaceId)
               .ilike("title", pattern)
-              .limit(limit),
+              .limit(limit)
+              .abortSignal(signal),
           )
         : run(null),
     ]);
@@ -235,5 +275,9 @@ export const globalSearch = createServerFn({ method: "POST" })
       })),
     );
 
-    return { groups, took_ms: Date.now() - t0 };
+    return {
+      groups,
+      took_ms: Date.now() - t0,
+      partial: "bodyPartial" in activities && activities.bodyPartial === true,
+    };
   });

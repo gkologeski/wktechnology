@@ -51,6 +51,9 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
   const requestVersion = useRef(0);
   const sessionRef = useRef<TimelineFeedSession | null>(null);
   const loadedCountRef = useRef(0);
+  const activeLoad = useRef<Promise<void> | null>(null);
+  const loadController = useRef<AbortController | null>(null);
+  const dirtyDuringLoad = useRef(false);
 
   // Filtros no padrão HubSpot, salvos por tipo de ficha neste navegador.
   const storageKey = `timeline-filters:${relatedKey}`;
@@ -109,40 +112,64 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
    * scroll e rascunhos (que vivem fora da lista) são preservados.
    */
   const load = useCallback(
-    async (opts?: { silent?: boolean }) => {
-      const version = ++requestVersion.current;
-      const target = opts?.silent
-        ? Math.max(TIMELINE_PAGE_SIZE, loadedCountRef.current)
-        : TIMELINE_PAGE_SIZE;
-      if (opts?.silent) setRefreshing(true);
-      else setLoading(true);
-      try {
-        const session = createTimelineFeed({
-          relatedKey,
-          relatedId,
-          datePreset,
-          dateCustom,
-          filters: serverFilters,
-        });
-        const page = await nextTimelinePage(session, target);
-        if (version !== requestVersion.current) return;
-        sessionRef.current = session;
-        loadedCountRef.current = page.activities.length + page.historyGroups.length;
-        setItems(page.activities);
-        setHistoryGroups(page.historyGroups);
-        setEmailMeta(page.emailMeta);
-        setHasMore(page.hasMore);
-        setTotalCount(page.totalCount);
-        setServerCounts(page.categoryCounts);
-      } catch (error) {
-        // Falha não vira lista vazia: mantém o que já estava na tela.
-        if (version === requestVersion.current) toast.error((error as Error).message);
-      } finally {
-        if (version === requestVersion.current) {
-          setLoading(false);
-          setRefreshing(false);
-        }
+    (opts?: { silent?: boolean; changed?: boolean }): Promise<void> => {
+      // Focus, visibility and subscription acknowledgements share the current read.
+      // Actual mutations during a read request one trailing reconciliation.
+      if (opts?.silent && activeLoad.current) {
+        if (opts.changed) dirtyDuringLoad.current = true;
+        return activeLoad.current;
       }
+      loadController.current?.abort();
+      const controller = new AbortController();
+      loadController.current = controller;
+      dirtyDuringLoad.current = false;
+      const operation = (async () => {
+        const version = ++requestVersion.current;
+        const target = opts?.silent
+          ? Math.max(TIMELINE_PAGE_SIZE, loadedCountRef.current)
+          : TIMELINE_PAGE_SIZE;
+        if (opts?.silent) setRefreshing(true);
+        else setLoading(true);
+        try {
+          const session = createTimelineFeed({
+            relatedKey,
+            relatedId,
+            datePreset,
+            dateCustom,
+            filters: serverFilters,
+            signal: controller.signal,
+          });
+          const page = await nextTimelinePage(session, target);
+          if (version !== requestVersion.current) return;
+          sessionRef.current = session;
+          loadedCountRef.current = page.activities.length + page.historyGroups.length;
+          setItems(page.activities);
+          setHistoryGroups(page.historyGroups);
+          setEmailMeta(page.emailMeta);
+          setHasMore(page.hasMore);
+          setTotalCount(page.totalCount);
+          setServerCounts(page.categoryCounts);
+        } catch (error) {
+          // Falha não vira lista vazia: mantém o que já estava na tela.
+          if (!controller.signal.aborted && version === requestVersion.current)
+            toast.error((error as Error).message);
+        } finally {
+          if (version === requestVersion.current) {
+            setLoading(false);
+            setRefreshing(false);
+          }
+        }
+      })();
+      activeLoad.current = operation;
+      void operation.finally(() => {
+        if (activeLoad.current !== operation) return;
+        activeLoad.current = null;
+        if (dirtyDuringLoad.current && !controller.signal.aborted) {
+          dirtyDuringLoad.current = false;
+          void loadRef.current({ silent: true });
+        }
+      });
+      return operation;
     },
     [relatedKey, relatedId, datePreset, dateCustom, serverFilters],
   );
@@ -179,6 +206,9 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     void load();
     return () => {
       requestVersion.current += 1;
+      loadController.current?.abort();
+      activeLoad.current = null;
+      dirtyDuringLoad.current = false;
     };
   }, [load, filtersReady]);
 
@@ -232,7 +262,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
 
   // Re-sincroniza silenciosamente quando a janela volta a focar ou um modal fecha
   useRefreshCallback(() => {
-    void loadRef.current({ silent: true });
+    return loadRef.current({ silent: true });
   });
 
   // Recarrega quando uma associação é criada/removida em outro componente
@@ -241,7 +271,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
     const handler = () => {
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
-        void loadRef.current({ silent: true });
+        void loadRef.current({ silent: true, changed: true });
       }, 150);
     };
     window.addEventListener("timeline:refresh", handler);
@@ -279,7 +309,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
             table: "activities",
             filter: `${relatedKey}=eq.${relatedId}`,
           },
-          () => schedule(() => void loadRef.current({ silent: true })),
+          () => schedule(() => void loadRef.current({ silent: true, changed: true })),
         )
         // DELETE is reconciled by workspace-scoped opaque signals in the root.
         // Histórico de propriedades e agenda: filtros limitados a esta ficha e coalescidos
@@ -292,7 +322,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
             table: "property_history",
             filter: `entity_id=eq.${relatedId}`,
           },
-          () => schedule(() => void loadRef.current({ silent: true })),
+          () => schedule(() => void loadRef.current({ silent: true, changed: true })),
         );
       if (relatedKey === "related_contact_id") {
         // calendar_events só tem vínculo direto com contato; demais fichas reconciliam
@@ -305,7 +335,7 @@ export function useTimelineFeed(relatedKey: RelatedKey, relatedId: string) {
             table: "calendar_events",
             filter: `related_contact_id=eq.${relatedId}`,
           },
-          () => schedule(() => void loadRef.current({ silent: true })),
+          () => schedule(() => void loadRef.current({ silent: true, changed: true })),
         );
       }
       channel = channel

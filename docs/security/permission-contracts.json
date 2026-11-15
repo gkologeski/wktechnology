@@ -1708,7 +1708,7 @@
         "techsales.notes.view.workspace",
         "techsales.tasks.view.workspace"
       ],
-      "rationale": "User explicitly requested related contact/company history, identified as such, without moving source activity links. Invoker RPC requires a visible parent deal and keeps the existing per-activity RLS including note/task classification; same-workspace filter precedes pagination. No record mutation or permission grant. UI labels related history and other-deal provenance. Fixtures exercise production resolver with the activity resource CASE, plus separate full-schema real-JWT acceptance. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations.",
+      "rationale": "User explicitly requested related contact/company history, identified as such, without moving source activity links. Invoker RPC requires a visible parent deal and keeps the existing per-activity RLS including note/task classification; same-workspace filter precedes pagination. No record mutation or permission grant. UI labels related history and other-deal provenance. Fixtures exercise production resolver with the activity resource CASE, plus separate full-schema real-JWT acceptance. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 15/11/2026: coalesce focus/visibility/reconnect reads, cancel superseded feed RPCs, and reconcile actual mutations once after an in-flight read; unchanged invoker RLS and complete pagination.",
       "controls": [
         {
           "file": "drizzle/migrations/0251_deal_related_activity_history.sql",
@@ -1717,6 +1717,14 @@
         {
           "file": "src/lib/access-control/use-permissions.tsx",
           "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/timeline/activity-fetch.ts",
+          "symbol": "createTimelineFeed"
+        },
+        {
+          "file": "src/lib/timeline/activity-fetch.ts",
+          "symbol": "rpcPage"
         }
       ],
       "database": [
@@ -1749,7 +1757,9 @@
       },
       "files": {
         "drizzle/migrations/0251_deal_related_activity_history.sql": "074748f2edde9e44c7e3a76e998e93223c0766f01dd1d43735e0cff118ae654a",
-        "src/components/activity/activity-timeline-item.tsx": "15b71c0cc7292193aa9e768cebdd539a189122826e3be8a84992cbfe5d1d5297"
+        "src/components/activity/activity-timeline-item.tsx": "15b71c0cc7292193aa9e768cebdd539a189122826e3be8a84992cbfe5d1d5297",
+        "src/components/activity/use-timeline-feed.ts": "9edf4e5c9ab899201c7bea0c50bfa381030911f5211c92b8992780aea142d07c",
+        "src/lib/timeline/activity-fetch.ts": "01ba7435b3f5f7f5deab3e320b418aa0b935f8accb6ef12d48c8b0d4528355e1"
       }
     },
     {
@@ -12915,6 +12925,97 @@
       "files": {
         "src/components/contracts/signature-status-indicator.tsx": "6a6e35582314f4ca31a4633eeb17b02500e17790d920356c1366c61da92202b8",
         "src/components/contracts/signature-status-tone.ts": "bd38efb40ef90f906d4d4a50ce105b4e3a7918cbe721f8f7892f528b97505ef1"
+      }
+    },
+    {
+      "id": "global-search-indexed-rls-gateway",
+      "kind": "business",
+      "resources": [
+        "techsales.contacts",
+        "techsales.companies",
+        "techsales.deals",
+        "techsales.tickets",
+        "techsales.activities",
+        "techsales.notes",
+        "techsales.tasks",
+        "techhire.candidates",
+        "techhire.jobs"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace",
+        "custom"
+      ],
+      "permission_keys": [
+        "techsales.contacts.view.workspace",
+        "techsales.companies.view.workspace",
+        "techsales.deals.view.workspace",
+        "techsales.tickets.view.workspace",
+        "techsales.activities.view.workspace",
+        "techsales.notes.view.workspace",
+        "techsales.tasks.view.workspace",
+        "techhire.candidates.view.workspace",
+        "techhire.jobs.view.workspace"
+      ],
+      "rationale": "Timeout correction: global search keeps authenticated user claims and active workspace. Private indexed candidate discovery is postgres-owned and executable only by a dedicated NOLOGIN NOSUPERUSER NOBYPASSRLS gateway owner, never authenticated/anon/service clients. Public existing search RPCs run as that non-bypass role inheriting authenticated policies, with final raw-table RLS and shared_fields_contacts predicate recheck before IDs/snippets return. No job-role grants, no policy changes; deny, own/team restrictions and hidden contact email remain enforced. Browser requests consume AbortSignal, cache is actor/workspace scoped, search requires three characters and activity body results are marked partial on bounded transport timeout. Client usePermissions is only a ready/workspace guard; RLS is authoritative. Native SQL test runner is explicit macOS-only opt-in, while CI continues disposable Docker.",
+      "controls": [
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/search/global-search.functions.ts",
+          "symbol": "requireSearchContext"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0364_global_search_indexed_rls_gateway.sql",
+          "symbol": "global_search_candidate_ids"
+        },
+        {
+          "file": "drizzle/migrations/0364_global_search_indexed_rls_gateway.sql",
+          "symbol": "global_search_activity_body_ids"
+        },
+        {
+          "file": "drizzle/migrations/0364_global_search_indexed_rls_gateway.sql",
+          "symbol": "global_search_private.index_ids"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "search gateway SQL allows authorized results"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "search gateway SQL rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "search gateway SQL preserves explicit deny"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "search gateway SQL rejects inactive membership"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/permission-postgres-ci.test.ts",
+          "name": "search gateway SQL rejects foreign workspace"
+        }
+      },
+      "files": {
+        "src/components/global-search/global-search.tsx": "f1c4b66bea123cb2a6a9d633ac6ebc69921ab723a40c1dbb38b9b6d5c1952e0d",
+        "src/lib/search/global-search.functions.ts": "0fcd1c79bbdfe2df975d5b0684ac7a27012410dfd2b0fda709cebdc5ea986b9c",
+        "drizzle/migrations/0364_global_search_indexed_rls_gateway.sql": "65b2c61aa63ec653a2686c47e8ca3a3aa8d8e4852c443d954a280f8b3539b069"
       }
     }
   ],

@@ -8,7 +8,7 @@ route_pattern: /companies/$id
 min_permission:
 audience: internal
 sort_order: 128
-version: 2
+version: 3
 is_published: true
 ---
 # Consultar timeline de empresa
@@ -31,3 +31,5 @@ A timeline pode reunir atividades e mudanças de propriedades. Resumos de regist
 "Nenhum item corresponde aos filtros.": clique em "Limpar filtros" ou amplie o período.
 ## Relacionados
 [Permissões](/ajuda/crm/permissoes) · [Campos e status](/ajuda/crm/campos-e-status)
+
+Ao retornar de outro aplicativo, a timeline atualiza silenciosamente, preservando as páginas e os filtros. Eventos simultâneos de foco e reconexão compartilham a mesma consulta. Uma falha de atualização mantém o histórico já exibido e informa o erro.

@@ -92,6 +92,7 @@ export type TimelineFeedSession = {
   sources: FeedSourceState<FeedItem>[];
   totals: { activity: number; calendar: number; history: number };
   counts: Map<TimelineCategory, number>;
+  signal?: AbortSignal;
 };
 
 import type { EmailMeta } from "@/components/activity/timeline-shared";
@@ -132,9 +133,14 @@ function pagedSource<T>(
   };
 }
 
-async function rpcPage<T>(name: string, args: Record<string, unknown>): Promise<PagePayload<T>> {
+async function rpcPage<T>(
+  name: string,
+  args: Record<string, unknown>,
+  signal?: AbortSignal,
+): Promise<PagePayload<T>> {
   // Nomes de RPC tipados no cliente gerado; o payload jsonb é validado abaixo.
-  const { data, error } = await supabase.rpc(name as "get_timeline_activity_page", args as never);
+  const query = supabase.rpc(name as "get_timeline_activity_page", args as never);
+  const { data, error } = await (signal ? query.abortSignal(signal) : query);
   if (error) throw new Error(error.message);
   return (data ?? {}) as unknown as PagePayload<T>;
 }
@@ -191,12 +197,14 @@ export function createTimelineFeed({
   datePreset,
   dateCustom,
   filters,
+  signal,
 }: {
   relatedKey: RelatedKey;
   relatedId: string;
   datePreset: DatePreset;
   dateCustom: CustomRange;
   filters: TimelineFilters;
+  signal?: AbortSignal;
 }): TimelineFeedSession {
   const range = getDateRange(datePreset, new Date(), dateCustom);
   const since = range.start?.toISOString();
@@ -216,6 +224,7 @@ export function createTimelineFeed({
   const historyEntity = HISTORY_ENTITY[relatedKey];
 
   const session: TimelineFeedSession = {
+    signal,
     sources: [],
     totals: { activity: 0, calendar: 0, history: 0 },
     counts: new Map(),
@@ -231,20 +240,24 @@ export function createTimelineFeed({
     session.sources.push(
       pagedSource<Activity>(
         (cursor) =>
-          rpcPage("get_timeline_activity_page", {
-            p_entity_kind: kind,
-            p_entity_id: relatedId,
-            p_since: since,
-            p_until: until,
-            p_categories:
-              activityCats.length === ACTIVITY_CATEGORIES.length ? undefined : activityCats,
-            p_assignees: assigneeIds.length ? assigneeIds : undefined,
-            p_include_unassigned: includeUnassigned,
-            p_search: search,
-            p_cursor_at: cursor?.at,
-            p_cursor_id: cursor?.id,
-            p_page_size: TIMELINE_PAGE_SIZE,
-          }),
+          rpcPage(
+            "get_timeline_activity_page",
+            {
+              p_entity_kind: kind,
+              p_entity_id: relatedId,
+              p_since: since,
+              p_until: until,
+              p_categories:
+                activityCats.length === ACTIVITY_CATEGORIES.length ? undefined : activityCats,
+              p_assignees: assigneeIds.length ? assigneeIds : undefined,
+              p_include_unassigned: includeUnassigned,
+              p_search: search,
+              p_cursor_at: cursor?.at,
+              p_cursor_id: cursor?.id,
+              p_page_size: TIMELINE_PAGE_SIZE,
+            },
+            signal,
+          ),
         (a) => ({
           at: timeOf(a.hs_createdate ?? a.created_at),
           rank: RANK.activity,
@@ -265,16 +278,20 @@ export function createTimelineFeed({
     session.sources.push(
       pagedSource<CalRow>(
         (cursor) =>
-          rpcPage("get_timeline_calendar_page", {
-            p_entity_kind: kind,
-            p_entity_id: relatedId,
-            p_since: since,
-            p_until: until,
-            p_search: search,
-            p_cursor_at: cursor?.at,
-            p_cursor_id: cursor?.id,
-            p_page_size: TIMELINE_PAGE_SIZE,
-          }),
+          rpcPage(
+            "get_timeline_calendar_page",
+            {
+              p_entity_kind: kind,
+              p_entity_id: relatedId,
+              p_since: since,
+              p_until: until,
+              p_search: search,
+              p_cursor_at: cursor?.at,
+              p_cursor_id: cursor?.id,
+              p_page_size: TIMELINE_PAGE_SIZE,
+            },
+            signal,
+          ),
         (e) => {
           const activity = calendarToActivity(e, relatedKey, relatedId);
           return {
@@ -303,20 +320,24 @@ export function createTimelineFeed({
     session.sources.push(
       pagedSource<HistRow>(
         (cursor) =>
-          rpcPage("get_timeline_history_page", {
-            p_entity: historyEntity,
-            p_entity_id: relatedId,
-            p_since: since,
-            p_until: until,
-            p_categories:
-              historyCats.length === HISTORY_CATEGORIES.length ? undefined : historyCats,
-            p_actors: assigneeIds.length ? assigneeIds : undefined,
-            p_include_unassigned: includeUnassigned,
-            p_search: search,
-            p_cursor_at: cursor?.at,
-            p_cursor_id: cursor?.id,
-            p_page_size: TIMELINE_PAGE_SIZE,
-          }),
+          rpcPage(
+            "get_timeline_history_page",
+            {
+              p_entity: historyEntity,
+              p_entity_id: relatedId,
+              p_since: since,
+              p_until: until,
+              p_categories:
+                historyCats.length === HISTORY_CATEGORIES.length ? undefined : historyCats,
+              p_actors: assigneeIds.length ? assigneeIds : undefined,
+              p_include_unassigned: includeUnassigned,
+              p_search: search,
+              p_cursor_at: cursor?.at,
+              p_cursor_id: cursor?.id,
+              p_page_size: TIMELINE_PAGE_SIZE,
+            },
+            signal,
+          ),
         (g) => ({
           at: timeOf(g.changed_at),
           rank: RANK.history,
@@ -380,13 +401,16 @@ export async function nextTimelinePage(
   session: TimelineFeedSession,
   size = TIMELINE_PAGE_SIZE,
 ): Promise<TimelinePage> {
+  session.signal?.throwIfAborted();
   const items = await takeMerged(session.sources, size, (i) => i);
+  session.signal?.throwIfAborted();
   const activities = items.flatMap((i) => (i.activity ? [i.activity] : []));
   const historyGroups = items.flatMap((i) => (i.history ? [i.history] : []));
   const [emailMeta] = await Promise.all([
     loadEmailSummaries(activities),
     applyCalendarRecordings(activities),
   ]);
+  session.signal?.throwIfAborted();
   return {
     activities,
     historyGroups,
