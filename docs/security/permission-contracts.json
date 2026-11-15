@@ -12961,7 +12961,7 @@
         "techhire.candidates.view.workspace",
         "techhire.jobs.view.workspace"
       ],
-      "rationale": "Timeout correction: global search keeps authenticated user claims and active workspace. Private indexed candidate discovery is postgres-owned and executable only by a dedicated NOLOGIN NOSUPERUSER NOBYPASSRLS gateway owner, never authenticated/anon/service clients. Public existing search RPCs run as that non-bypass role inheriting authenticated policies, with final raw-table RLS and shared_fields_contacts predicate recheck before IDs/snippets return. No job-role grants, no policy changes; deny, own/team restrictions and hidden contact email remain enforced. Browser requests consume AbortSignal, cache is actor/workspace scoped, search requires three characters and activity body results are marked partial on bounded transport timeout. Client usePermissions is only a ready/workspace guard; RLS is authoritative. Native SQL test runner is explicit macOS-only opt-in, while CI continues disposable Docker.",
+      "rationale": "Timeout correction: global search keeps authenticated user claims and active workspace. Private indexed candidate discovery is postgres-owned and executable only by a dedicated NOLOGIN NOSUPERUSER NOBYPASSRLS gateway owner, never authenticated/anon/service clients. Public existing search RPCs run as that non-bypass role inheriting authenticated policies, with final raw-table RLS and shared_fields_contacts predicate recheck before IDs/snippets return. No job-role grants, no policy changes; deny, own/team restrictions and hidden contact email remain enforced. Browser requests consume AbortSignal, cache is actor/workspace scoped, search requires three characters and activity body results are marked partial on bounded transport timeout. Client usePermissions is only a ready/workspace guard; RLS is authoritative. Native SQL test runner is explicit macOS-only opt-in, while CI continues disposable Docker. Completion: independent subject/content requests retain the same RLS RPCs and masked projections; cancellation on close/edit, permission-scoped cache and no stale term results. Recent/pinned labels are reread from visible records in the active workspace, never trusted from stored display metadata; failures are explicit. Existing personal recent/pin writes remain auth.uid-owned, with original shared_source_* RLS checks and no added business grant; the new caller equality/context check strengthens their existing boundary. Broad-content correction: private keyset pages are followed by authoritative non-bypass RLS checks and continue past invisible pages; no candidate cutoff can hide an older permitted hit. Both SQL and server short-circuit missing resource grants, including note/task-specific view grants.",
       "controls": [
         {
           "file": "src/integrations/supabase/auth-middleware.ts",
@@ -12972,8 +12972,12 @@
           "symbol": "usePermissions"
         },
         {
-          "file": "src/lib/search/global-search.functions.ts",
+          "file": "src/lib/search/search-collection.server.ts",
           "symbol": "requireSearchContext"
+        },
+        {
+          "file": "src/lib/search/search-collection.server.ts",
+          "symbol": "readSearchCollection"
         }
       ],
       "database": [
@@ -12988,6 +12992,22 @@
         {
           "file": "drizzle/migrations/0364_global_search_indexed_rls_gateway.sql",
           "symbol": "global_search_private.index_ids"
+        },
+        {
+          "file": "drizzle/migrations/0227_order5_shared_prepare.sql",
+          "symbol": "shared_search_item_access"
+        },
+        {
+          "file": "drizzle/migrations/0365_global_search_content_cursor.sql",
+          "symbol": "global_search_candidate_ids"
+        },
+        {
+          "file": "drizzle/migrations/0365_global_search_content_cursor.sql",
+          "symbol": "global_search_activity_body_ids"
+        },
+        {
+          "file": "drizzle/migrations/0365_global_search_content_cursor.sql",
+          "symbol": "global_search_private.activity_page"
         }
       ],
       "tests": {
@@ -13013,9 +13033,12 @@
         }
       },
       "files": {
-        "src/components/global-search/global-search.tsx": "f1c4b66bea123cb2a6a9d633ac6ebc69921ab723a40c1dbb38b9b6d5c1952e0d",
-        "src/lib/search/global-search.functions.ts": "0fcd1c79bbdfe2df975d5b0684ac7a27012410dfd2b0fda709cebdc5ea986b9c",
-        "drizzle/migrations/0364_global_search_indexed_rls_gateway.sql": "65b2c61aa63ec653a2686c47e8ca3a3aa8d8e4852c443d954a280f8b3539b069"
+        "src/components/global-search/global-search.tsx": "e8aa1e192558de89b74ed32033608e09700980e9065d78faa544d33c694f1ee2",
+        "src/lib/search/global-search.functions.ts": "f91f94e171efeeb0f85fd41a2536906026a57a510b98ac3aca6c49410c5349bf",
+        "drizzle/migrations/0364_global_search_indexed_rls_gateway.sql": "65b2c61aa63ec653a2686c47e8ca3a3aa8d8e4852c443d954a280f8b3539b069",
+        "src/lib/search/search-collection.server.ts": "86c3c615fc4c04300453b44782a04b01568816d1821c12e0e4efbf8010903708",
+        "src/lib/search/recent-pinned.functions.ts": "ed594f4d40ae4a993f8618971e9a9e7c186104e164eaea00a3a66758b86b9f5a",
+        "drizzle/migrations/0365_global_search_content_cursor.sql": "637f3a7fae7845f421dfcb29126137fb49d31293da5418e8dc87bc9b95bfb209"
       }
     }
   ],

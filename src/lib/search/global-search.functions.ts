@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { orSafeTerm } from "@/lib/postgrest-search";
 import { z } from "zod";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import { requireSearchContext } from "./search-collection.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type SearchHit = {
@@ -20,29 +20,37 @@ const InputSchema = z.object({
   types: z
     .array(z.enum(["contact", "company", "deal", "ticket", "activity", "candidate", "job"]))
     .optional(),
+  activityPart: z.enum(["subject", "content"]).optional(),
   limit: z.number().int().min(1).max(20).optional(),
 });
-
-async function requireSearchContext(client: SupabaseClient): Promise<string> {
-  const { data, error } = await client.rpc("work_access_context");
-  if (error) throw new Error(error.message);
-  const context = data as { workspace?: string; actor?: string } | null;
-  if (!context?.workspace || !context.actor) throw new Error("Sem acesso a um workspace ativo.");
-  return context.workspace;
-}
 
 export const globalSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
     const signal = getRequest().signal;
-    const workspaceId = await requireSearchContext(supabase);
+    const searchContext = await requireSearchContext(supabase, userId, signal);
+    const workspaceId = searchContext.workspace;
     const limit = data.limit ?? 5;
     const raw = orSafeTerm(data.q);
     const pattern = `%${raw}%`;
+    const resources: Record<SearchHit["entity_type"], string[]> = {
+      contact: ["techsales.contacts"],
+      company: ["techsales.companies"],
+      deal: ["techsales.deals"],
+      ticket: ["techsales.tickets"],
+      activity: ["techsales.activities", "techsales.notes", "techsales.tasks"],
+      candidate: ["techhire.candidates"],
+      job: ["techhire.jobs"],
+    };
     const allow = (t: SearchHit["entity_type"]) =>
-      !data.types || data.types.length === 0 || data.types.includes(t);
+      (!data.types || data.types.length === 0 || data.types.includes(t)) &&
+      resources[t].some((resource) =>
+        ["own", "team", "workspace", "custom"].some(
+          (scope) => searchContext.keys[`${resource}.view.${scope}`] === true,
+        ),
+      );
     const t0 = Date.now();
 
     const run = async <T>(
@@ -127,16 +135,21 @@ export const globalSearch = createServerFn({ method: "POST" })
         ? (async () => {
             // Assunto (trigram) + texto (busca por palavras, índice FTS). O texto
             // tem limite de tempo: se estourar, o grupo fica só com o assunto.
-            const bodyRpc = Promise.resolve(
-              supabase
-                .rpc("global_search_activity_body_ids", { _q: data.q, _limit: limit })
-                .abortSignal(AbortSignal.any([signal, AbortSignal.timeout(1500)])),
-            ).then((r) => {
-              if (r.error) throw new Error(r.error.message);
-              return (r.data ?? []) as Array<{ id: string; snippet: string | null }>;
-            });
+            const bodyRpc =
+              data.activityPart === "subject"
+                ? Promise.resolve([] as Array<{ id: string; snippet: string | null }>)
+                : Promise.resolve(
+                    supabase
+                      .rpc("global_search_activity_body_ids", { _q: data.q, _limit: limit })
+                      .abortSignal(AbortSignal.any([signal, AbortSignal.timeout(1500)])),
+                  ).then((r) => {
+                    if (r.error) throw new Error(r.error.message);
+                    return (r.data ?? []) as Array<{ id: string; snippet: string | null }>;
+                  });
             const [subjectIds, bodyHits] = await Promise.all([
-              candidateIds("activity"),
+              data.activityPart === "content"
+                ? Promise.resolve([] as string[])
+                : candidateIds("activity"),
               bodyRpc.catch(() => null),
             ]);
             const snippets = new Map<string, string>();

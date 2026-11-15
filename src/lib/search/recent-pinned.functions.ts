@@ -1,4 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
+import { readSearchCollection, requireSearchContext } from "./search-collection.server";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -29,6 +31,7 @@ export const recordRecent = createServerFn({ method: "POST" })
   .inputValidator((input) => ItemSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    await requireSearchContext(supabase, userId, getRequest().signal);
     const write = await supabase.from("search_recent").upsert(
       {
         user_id: userId,
@@ -62,35 +65,22 @@ export const recordRecent = createServerFn({ method: "POST" })
 
 export const listRecent = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    const { data } = await supabase
-      .from("search_recent")
-      .select("entity_type, entity_id, title, url, opened_at")
-      .eq("user_id", userId)
-      .order("opened_at", { ascending: false })
-      .limit(10);
-    return { items: (data ?? []) as Array<RecentPinnedItem & { opened_at: string }> };
-  });
+  .handler(async ({ context }) =>
+    readSearchCollection(context.supabase, context.userId, "search_recent", getRequest().signal),
+  );
 
 export const listPinned = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    const { data } = await supabase
-      .from("search_pinned")
-      .select("entity_type, entity_id, title, url, pinned_at")
-      .eq("user_id", userId)
-      .order("pinned_at", { ascending: false })
-      .limit(10);
-    return { items: (data ?? []) as Array<RecentPinnedItem & { pinned_at: string }> };
-  });
+  .handler(async ({ context }) =>
+    readSearchCollection(context.supabase, context.userId, "search_pinned", getRequest().signal),
+  );
 
 export const togglePin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => ItemSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    await requireSearchContext(supabase, userId, getRequest().signal);
     const { data: existing } = await supabase
       .from("search_pinned")
       .select("id")
