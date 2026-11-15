@@ -13,6 +13,9 @@ const docker =
     ? "/Applications/Docker.app/Contents/Resources/bin/docker"
     : "docker";
 const image = "postgres@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b";
+const native = process.platform === "darwin" && process.env.TECHERP_NATIVE_PG === "1";
+const pgBin = "/Applications/Postgres.app/Contents/Versions/16/bin/";
+let nativeStarted = false;
 const container = "techerp-permission-ci-" + randomUUID();
 const W = "aaaaaaaa-0000-4000-8000-00000000000a",
   B = "aaaaaaaa-0000-4000-8000-00000000000b";
@@ -39,7 +42,7 @@ let endpoint = "",
   started = false;
 let db: ReturnType<typeof postgres>;
 const accepted: string[] = [];
-const expected = 92;
+const expected = 101;
 let cleaned = false;
 function report() {
   mkdirSync(".verification", { recursive: true });
@@ -83,49 +86,91 @@ function sourceFunction(file: string, name: string) {
 }
 beforeAll(async () => {
   report();
-  if (process.platform === "darwin" && !existsSync(docker))
-    throw Error("Docker Desktop is required for mandatory SQL permission tests.");
-  endpoint = execFileSync(
-    docker,
-    ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"],
-    { encoding: "utf8", timeout: 10000 },
-  ).trim();
-  if (!endpoint.startsWith("unix://")) throw Error("Only a local Unix Docker socket is allowed.");
-  temporary = mkdtempSync(join(tmpdir(), "techerp-permission-ci-"));
-  const password = randomUUID() + randomUUID(),
-    envFile = join(temporary, "postgres.env");
-  writeFileSync(
-    envFile,
-    "POSTGRES_DB=techerp_permission_ci\nPOSTGRES_PASSWORD=" + password + "\n",
-    { mode: 0o600 },
-  );
-  dockerRun(
-    "run",
-    "-d",
-    "--rm",
-    "--name",
-    container,
-    "--env-file",
-    envFile,
-    "-p",
-    "127.0.0.1::5432",
-    image,
-    "-c",
-    "fsync=off",
-  );
-  started = true;
-  const mapped = dockerRun("port", container, "5432/tcp");
-  if (!/^127\.0\.0\.1:\d+$/.test(mapped)) throw Error("Unexpected disposable DB binding");
-  db = postgres({
-    host: "127.0.0.1",
-    port: Number(mapped.split(":")[1]),
-    database: "techerp_permission_ci",
-    username: "postgres",
-    password,
-    max: 1,
-    connect_timeout: 1,
-    onnotice: () => {},
-  });
+  if (native) {
+    temporary = mkdtempSync(join(tmpdir(), "techerp-journey-pg-"));
+    execFileSync(
+      pgBin + "initdb",
+      [
+        "-D",
+        join(temporary, "data"),
+        "-U",
+        "postgres",
+        "--auth-local=trust",
+        "--auth-host=reject",
+        "--no-locale",
+        "--encoding=UTF8",
+      ],
+      { stdio: "pipe", timeout: 30000 },
+    );
+    execFileSync(
+      pgBin + "pg_ctl",
+      [
+        "-D",
+        join(temporary, "data"),
+        "-l",
+        join(temporary, "postgres.log"),
+        "-o",
+        "-k " + temporary + " -h '' -F",
+        "-w",
+        "start",
+      ],
+      { stdio: "pipe", timeout: 30000 },
+    );
+    nativeStarted = true;
+    db = postgres({
+      host: temporary,
+      port: 5432,
+      database: "postgres",
+      username: "postgres",
+      max: 1,
+      connect_timeout: 1,
+      onnotice: () => {},
+    });
+  } else {
+    if (process.platform === "darwin" && !existsSync(docker))
+      throw Error("Docker Desktop is required for mandatory SQL permission tests.");
+    endpoint = execFileSync(
+      docker,
+      ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"],
+      { encoding: "utf8", timeout: 10000 },
+    ).trim();
+    if (!endpoint.startsWith("unix://")) throw Error("Only a local Unix Docker socket is allowed.");
+    temporary = mkdtempSync(join(tmpdir(), "techerp-permission-ci-"));
+    const password = randomUUID() + randomUUID(),
+      envFile = join(temporary, "postgres.env");
+    writeFileSync(
+      envFile,
+      "POSTGRES_DB=techerp_permission_ci\nPOSTGRES_PASSWORD=" + password + "\n",
+      { mode: 0o600 },
+    );
+    dockerRun(
+      "run",
+      "-d",
+      "--rm",
+      "--name",
+      container,
+      "--env-file",
+      envFile,
+      "-p",
+      "127.0.0.1::5432",
+      image,
+      "-c",
+      "fsync=off",
+    );
+    started = true;
+    const mapped = dockerRun("port", container, "5432/tcp");
+    if (!/^127\.0\.0\.1:\d+$/.test(mapped)) throw Error("Unexpected disposable DB binding");
+    db = postgres({
+      host: "127.0.0.1",
+      port: Number(mapped.split(":")[1]),
+      database: "techerp_permission_ci",
+      username: "postgres",
+      password,
+      max: 1,
+      connect_timeout: 1,
+      onnotice: () => {},
+    });
+  }
   let ready = false;
   for (let attempt = 0; attempt < 100; attempt++) {
     try {
@@ -367,6 +412,37 @@ beforeAll(async () => {
   await db.unsafe(
     readFileSync("drizzle/migrations/0354_summary_capabilities_calendar_candidates.sql", "utf8"),
   );
+  // The indexed search gateway must keep actual RLS and protected field views.
+  await db.unsafe("CREATE EXTENSION IF NOT EXISTS pg_trgm");
+  for (const name of ["search_fold", "activity_body_plain", "activity_body_search_doc"])
+    await db.unsafe(
+      sourceFunction("drizzle/migrations/0150_global_search_activity_body_fts.sql", name),
+    );
+  await db.unsafe(`
+    ALTER TABLE companies ADD COLUMN name text, ADD COLUMN domain text;
+    GRANT SELECT(id,workspace_id) ON companies TO authenticated;
+    ALTER TABLE companies ENABLE ROW LEVEL SECURITY;
+    CREATE POLICY companies_search_ci_read ON companies FOR SELECT TO authenticated
+      USING(public.sales_context_access((SELECT public.sales_access_context()),workspace_id,'techsales.companies','view',ARRAY[coalesce(assigned_to,owner_id)]));
+    CREATE INDEX search_ci_activity_subject ON activities USING gin(subject gin_trgm_ops);
+    CREATE INDEX search_ci_activity_body ON activities USING gin(public.activity_body_search_doc(body));
+    CREATE INDEX search_ci_company_name ON companies USING gin(name gin_trgm_ops);
+  `);
+  for (let i = 1; i <= 3; i++) {
+    const id = "97000000-0000-4000-8000-00000000000" + i;
+    const w = i === 3 ? B : W,
+      owner = i === 2 ? P : U;
+    await db`insert into companies(id,workspace_id,owner_id,name,domain) values(${id},${w},${owner},'Helix search company','helix.example')`;
+    await db`insert into contacts(id,workspace_id,owner_id,first_name,last_name,email) values(${id},${w},${owner},'Helix','Search','hidden@search.example')`;
+    await db`insert into activities(id,workspace_id,owner_id,type,subject,body,created_at) values(${id},${w},${owner},'email','Helix search activity','Governanca helix search content',now())`;
+  }
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0364_global_search_indexed_rls_gateway.sql", "utf8"),
+  );
+  for (const table of ["contacts", "companies", "activities"])
+    await db.unsafe(
+      `CREATE POLICY search_ci_restriction ON ${table} AS RESTRICTIVE FOR SELECT TO authenticated USING(id::text<>coalesce(current_setting('test.search_hidden_id',true),''))`,
+    );
   await db.unsafe(
     "CREATE FUNCTION public.ci_delegated_probe() RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$ SELECT coalesce((public.work_subject_context('aaaaaaaa-0000-4000-8000-00000000000a','10000000-0000-4000-8000-000000000003')->'keys')?'techsales.leads.view.own',false) $$;GRANT EXECUTE ON FUNCTION public.ci_delegated_probe() TO authenticated;",
   );
@@ -378,6 +454,12 @@ afterAll(async () => {
     } finally {
       try {
         if (started) dockerRun("rm", "-f", container);
+        if (nativeStarted)
+          execFileSync(
+            pgBin + "pg_ctl",
+            ["-D", join(temporary, "data"), "-m", "immediate", "-w", "stop"],
+            { stdio: "pipe", timeout: 30000 },
+          );
       } finally {
         if (temporary) rmSync(temporary, { recursive: true, force: true });
       }
@@ -1714,4 +1796,133 @@ it("summary batch SQL rejects source revocation and invalid legacy scope", async
     { keys: summaryKeys, denies: ["techsales.activities.view.workspace"] },
   );
   accepted.push("summary-batch-source-denied");
+});
+
+const searchKeys = [
+  "techsales.contacts.view.workspace",
+  "techsales.companies.view.workspace",
+  "techsales.activities.view.workspace",
+];
+async function searchResults(tx: postgres.TransactionSql) {
+  const result: Record<string, string[]> = {};
+  for (const entity of ["contact", "company", "activity"])
+    result[entity] = (await tx`select global_search_candidate_ids(${entity},'Helix') id`).map(
+      (r) => r.id,
+    );
+  result.body = (await tx`select id from global_search_activity_body_ids('Governanca')`).map(
+    (r) => r.id,
+  );
+  return result;
+}
+it("search gateway SQL allows authorized results", async () => {
+  await subject(
+    async (tx) => {
+      for (const ids of Object.values(await searchResults(tx)))
+        expect(ids.sort()).toEqual([
+          "97000000-0000-4000-8000-000000000001",
+          "97000000-0000-4000-8000-000000000002",
+        ]);
+    },
+    { keys: searchKeys },
+  );
+  accepted.push("search-allowed");
+});
+it("search gateway SQL rejects missing permission", async () => {
+  await subject(
+    async (tx) => {
+      for (const ids of Object.values(await searchResults(tx))) expect(ids).toEqual([]);
+    },
+    { keys: [] },
+  );
+  accepted.push("search-missing");
+});
+it("search gateway SQL preserves explicit deny", async () => {
+  await subject(
+    async (tx) => {
+      for (const ids of Object.values(await searchResults(tx))) expect(ids).toEqual([]);
+    },
+    { keys: searchKeys, denies: searchKeys },
+  );
+  accepted.push("search-deny");
+});
+it("search gateway SQL rejects foreign workspace", async () => {
+  await subject(
+    async (tx) => {
+      for (const ids of Object.values(await searchResults(tx))) expect(ids).toEqual([]);
+    },
+    { keys: searchKeys, workspace: B },
+  );
+  accepted.push("search-workspace");
+});
+it("search gateway SQL rejects inactive membership", async () => {
+  await subject(
+    async (tx) => {
+      for (const ids of Object.values(await searchResults(tx))) expect(ids).toEqual([]);
+    },
+    { keys: searchKeys, inactive: true },
+  );
+  accepted.push("search-inactive");
+});
+it("search gateway SQL preserves own records", async () => {
+  await subject(
+    async (tx) => {
+      for (const ids of Object.values(await searchResults(tx)))
+        expect(ids).toEqual(["97000000-0000-4000-8000-000000000001"]);
+    },
+    { keys: searchKeys.map((k) => k.replace(".workspace", ".own")) },
+  );
+  accepted.push("search-own");
+});
+it("search gateway SQL hidden email cannot influence a result", async () => {
+  await subject(
+    async (tx) => {
+      expect(
+        await tx`select * from global_search_candidate_ids('contact','hidden@search.example')`,
+      ).toEqual([]);
+      expect((await tx`select * from global_search_candidate_ids('contact','Helix')`).length).toBe(
+        2,
+      );
+    },
+    { keys: searchKeys, hiddenContactEmail: true },
+  );
+  accepted.push("search-hidden-field");
+});
+it("search gateway SQL private index and gateway role cannot be assumed", async () => {
+  await subject(
+    async (tx) => {
+      expect(
+        (await tx`select has_schema_privilege(current_user,'global_search_private','usage') ok`)[0]
+          .ok,
+      ).toBe(false);
+      expect(
+        (
+          await tx`select has_function_privilege(current_user,(SELECT p.oid FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='global_search_private' AND p.proname='index_ids'),'execute') ok`
+        )[0].ok,
+      ).toBe(false);
+      expect(
+        (await tx`select pg_has_role(current_user,'techerp_search_gateway','MEMBER') ok`)[0].ok,
+      ).toBe(false);
+      expect(
+        (
+          await tx`select rolcanlogin or rolbypassrls or rolsuper unsafe from pg_roles where rolname='techerp_search_gateway'`
+        )[0].unsafe,
+      ).toBe(false);
+      expect(await tx`select * from global_search_activity_body_ids('!!!')`).toEqual([]);
+      expect(await tx`select * from global_search_candidate_ids('activity','he')`).toEqual([]);
+    },
+    { keys: searchKeys },
+  );
+  accepted.push("search-private-boundary");
+});
+
+it("search gateway SQL retains restrictive RLS policies", async () => {
+  await subject(
+    async (tx) => {
+      await tx`select set_config('test.search_hidden_id','97000000-0000-4000-8000-000000000002',true)`;
+      for (const ids of Object.values(await searchResults(tx)))
+        expect(ids).toEqual(["97000000-0000-4000-8000-000000000001"]);
+    },
+    { keys: searchKeys },
+  );
+  accepted.push("search-restrictive-policy");
 });

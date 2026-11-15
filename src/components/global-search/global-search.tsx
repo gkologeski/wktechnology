@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueries, useQuery } from "@tanstack/react-query";
@@ -59,7 +61,7 @@ const TYPE_LABELS: Array<{ id: SearchHit["entity_type"]; label: string }> = [
 ];
 
 /** Mínimo de caracteres: 1 letra casa com quase tudo e não ajuda a achar. */
-const MIN_QUERY = 2;
+const MIN_QUERY = 3;
 const SEARCH_TYPES: SearchHit["entity_type"][] = [
   "contact",
   "company",
@@ -80,6 +82,8 @@ function useDebounced<T>(value: T, delay = 150): T {
 }
 
 export function GlobalSearch() {
+  const { user } = useAuth();
+  const permissions = usePermissions();
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
   const [types, setTypes] = useState<SearchHit["entity_type"][]>([]);
@@ -127,15 +131,24 @@ export function GlobalSearch() {
   }, [open]);
 
   const isCommandMode = debouncedQ.startsWith("/");
-  const searchEnabled = open && !isCommandMode && debouncedQ.trim().length >= MIN_QUERY && !aiMode;
+  const searchEnabled =
+    open &&
+    !!user &&
+    !!permissions.workspaceId &&
+    !permissions.isLoading &&
+    !permissions.isError &&
+    !isCommandMode &&
+    debouncedQ.trim().length >= MIN_QUERY &&
+    !aiMode;
 
   // Uma consulta por tipo: cada grupo aparece assim que fica pronto e uma
   // falha isolada não derruba os demais.
   const activeTypes = types.length ? types : SEARCH_TYPES;
   const perType = useQueries({
     queries: activeTypes.map((t) => ({
-      queryKey: ["global-search", debouncedQ, t],
-      queryFn: () => search({ data: { q: debouncedQ, types: [t] } }),
+      queryKey: ["global-search", user?.id, permissions.workspaceId, debouncedQ, t],
+      queryFn: ({ signal }: { signal: AbortSignal }) =>
+        search({ data: { q: debouncedQ, types: [t] }, signal }),
       enabled: searchEnabled,
       staleTime: 30_000,
       retry: false,
@@ -144,7 +157,8 @@ export function GlobalSearch() {
   const results = {
     isLoading: searchEnabled && perType.every((r) => r.isLoading),
     isFetchingSome: searchEnabled && perType.some((r) => r.isFetching),
-    failed: perType.some((r) => r.isError),
+    failed: searchEnabled && perType.some((r) => r.isError),
+    partial: searchEnabled && perType.some((r) => r.data?.partial),
     data: {
       groups: SEARCH_TYPES.flatMap((t) => {
         const i = activeTypes.indexOf(t);
@@ -154,14 +168,14 @@ export function GlobalSearch() {
   };
 
   const recents = useQuery({
-    queryKey: ["global-search-recent"],
+    queryKey: ["global-search-recent", user?.id, permissions.workspaceId],
     queryFn: () => recent(),
     enabled: open,
     staleTime: 60_000,
   });
 
   const pinneds = useQuery({
-    queryKey: ["global-search-pinned"],
+    queryKey: ["global-search-pinned", user?.id, permissions.workspaceId],
     queryFn: () => pinned(),
     enabled: open,
     staleTime: 60_000,
@@ -228,6 +242,7 @@ export function GlobalSearch() {
     !isCommandMode &&
     !results.isFetchingSome &&
     !results.failed &&
+    !results.partial &&
     !hasResults &&
     !aiMode;
 
@@ -274,6 +289,12 @@ export function GlobalSearch() {
       )}
 
       <CommandList className="max-h-[420px]">
+        {results.partial && !aiMode && !isCommandMode && (
+          <p role="status" className="px-4 py-2 text-xs text-muted-foreground">
+            Resultados parciais: a busca no conteúdo das atividades não terminou. Refine o termo e
+            tente novamente.
+          </p>
+        )}
         {/* AI mode */}
         {aiMode && (
           <div className="p-4 space-y-3">
@@ -386,7 +407,7 @@ export function GlobalSearch() {
           <>
             {debouncedQ.trim().length < MIN_QUERY && (
               <div className="p-4 text-sm text-muted-foreground">
-                Digite pelo menos {MIN_QUERY} letras para buscar.
+                Digite pelo menos {MIN_QUERY} caracteres para buscar.
               </div>
             )}
             {results.isFetchingSome && (
@@ -409,9 +430,10 @@ export function GlobalSearch() {
                   (p) => p.entity_type === hit.entity_type && p.entity_id === hit.entity_id,
                 );
               return (
-                <CommandGroup key={g.type} heading={g.label}>
+                <CommandGroup forceMount key={g.type} heading={g.label}>
                   {g.items.map((hit) => (
                     <CommandItem
+                      forceMount
                       key={`${hit.entity_type}-${hit.entity_id}`}
                       value={`${hit.entity_type}-${hit.entity_id}-${hit.title}`}
                       onSelect={() => handleSelect(hit)}

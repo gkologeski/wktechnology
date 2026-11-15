@@ -2549,6 +2549,13 @@
       "when": 1794696820140,
       "tag": "0363_contract_handoff_terminal_state",
       "breakpoints": true
+    },
+    {
+      "idx": 364,
+      "version": "7",
+      "when": 1794778678501,
+      "tag": "0364_global_search_indexed_rls_gateway",
+      "breakpoints": true
     }
   ]
 }
