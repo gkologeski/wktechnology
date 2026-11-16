@@ -6885,6 +6885,9 @@ export type Database = {
       contract_drafts: {
         Row: {
           body_html: string
+          client_acceptance_bypass_reason: string | null
+          client_acceptance_bypassed_at: string | null
+          client_acceptance_bypassed_by: string | null
           client_decided_at: string | null
           client_name: string | null
           client_note: string | null
@@ -6912,6 +6915,9 @@ export type Database = {
         }
         Insert: {
           body_html?: string
+          client_acceptance_bypass_reason?: string | null
+          client_acceptance_bypassed_at?: string | null
+          client_acceptance_bypassed_by?: string | null
           client_decided_at?: string | null
           client_name?: string | null
           client_note?: string | null
@@ -6939,6 +6945,9 @@ export type Database = {
         }
         Update: {
           body_html?: string
+          client_acceptance_bypass_reason?: string | null
+          client_acceptance_bypassed_at?: string | null
+          client_acceptance_bypassed_by?: string | null
           client_decided_at?: string | null
           client_name?: string | null
           client_note?: string | null
@@ -33724,6 +33733,10 @@ export type Database = {
         Returns: Json
       }
       contract_defaults_resolve: { Args: { p_ws: string }; Returns: Json }
+      contract_draft_bypass_client_acceptance: {
+        Args: { p_draft: string; p_reason: string }
+        Returns: Json
+      }
       contract_draft_is_approver: {
         Args: { p_user: string; p_ws: string }
         Returns: boolean

@@ -20,7 +20,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { AlertTriangle, Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { contractDraftGate, DRAFT_GATE_MESSAGE } from "@/lib/contracts/contract-draft-status";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -217,6 +218,34 @@ export function ContractWizard({
       : origin.type === "proposal"
         ? { proposalId: origin.id }
         : null;
+
+  // MINUTA-BLOQUEIO: contrato novo de proposta exige minuta aprovada e aceita (ou dispensada).
+  const draftGateQ = useQuery({
+    queryKey: ["contract-wizard-draft-gate", origin.type === "proposal" ? origin.id : null],
+    enabled: open && origin.type === "proposal",
+    queryFn: async () => {
+      const { data, error } = await (supabase as any)
+        .from("contract_drafts")
+        .select("id,status,decided_at,client_decided_at")
+        .eq("proposal_id", (origin as { id: string }).id)
+        .neq("status", "canceled")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data as {
+        id: string;
+        status: string;
+        decided_at: string | null;
+        client_decided_at: string | null;
+      } | null;
+    },
+  });
+  const draftGate =
+    origin.type === "proposal" && choice === "new" && draftGateQ.isSuccess
+      ? contractDraftGate(draftGateQ.data)
+      : "ready";
+  const draftBlocked = draftGate !== "ready";
 
   // Reinicia ao abrir.
   useEffect(() => {
@@ -921,6 +950,22 @@ export function ContractWizard({
           )}
         </div>
 
+        {draftBlocked && (
+          <div
+            role="alert"
+            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-muted p-3 text-sm"
+          >
+            <span className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" aria-hidden />
+              {DRAFT_GATE_MESSAGE[draftGate as Exclude<typeof draftGate, "ready">]}
+            </span>
+            {draftGateQ.data?.id && (
+              <Button asChild size="sm" variant="outline">
+                <a href={`/contracts/drafts/${draftGateQ.data.id}`}>Abrir minuta</a>
+              </Button>
+            )}
+          </div>
+        )}
         <DialogFooter className="flex-col-reverse gap-2 sm:flex-row sm:justify-between">
           <div className="flex items-center gap-2">
             {step > 0 && (
@@ -937,7 +982,7 @@ export function ContractWizard({
               Avançar <ChevronRight className="ml-1 h-4 w-4" />
             </Button>
           ) : (
-            <Button onClick={() => void submit()} disabled={saving}>
+            <Button onClick={() => void submit()} disabled={saving || draftBlocked}>
               {saving && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
               Criar contrato
             </Button>

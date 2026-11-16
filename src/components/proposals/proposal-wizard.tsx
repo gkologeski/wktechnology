@@ -72,6 +72,7 @@ import {
   legacyInstallments,
   parsePaymentTerms,
   suggestPaymentTerms,
+  recurringTotal,
   validatePaymentTerms,
   type PaymentTerms,
 } from "@/lib/sales/payment-terms";
@@ -213,13 +214,19 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
     setEntityId(pick.id);
     setOriginInactive(pick.originInactive);
     // Condições: as gravadas (da proposta ou da cotação) vencem; sem elas, parcelas antigas ou sugestão.
-    setPayTerms(
-      parsePaymentTerms(draft.payment_terms) ??
-        suggestPaymentTerms(
-          draft.items.map((i) => i.name),
-          { installmentsCount: draft.installments_count, dueDay: draft.installments_due_day },
-        ),
-    );
+    const stored = parsePaymentTerms(draft.payment_terms);
+    const suggested =
+      stored ??
+      suggestPaymentTerms(
+        draft.items.map((i) => i.name),
+        { installmentsCount: draft.installments_count, dueDay: draft.installments_due_day },
+      );
+    // PRAZO-MENSAL: na sugestão recorrente, o valor dos itens é a mensalidade.
+    if (!stored && suggested.term && suggested.plan.kind === "monthly" && draft.total_amount) {
+      suggested.monthlyAmount = draft.total_amount;
+      setAmount(recurringTotal(draft.total_amount, suggested.plan.months));
+    }
+    setPayTerms(suggested);
   }, [draft]);
 
   // Parcelas/dia continuam existindo para os modelos de contrato: derivados das condições.
@@ -626,6 +633,7 @@ export function ProposalWizard({ source, onOpenChange, onDone }: Props) {
                       total={amount ?? 0}
                       currency={currency}
                       description="Vêm da cotação; ajuste se a negociação mudou."
+                      onTotalChange={setAmount}
                     />
                   </fieldset>
                 )}

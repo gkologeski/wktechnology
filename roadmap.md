@@ -402,3 +402,6 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [x] Fase 5: contas a receber na ativação do serviço (0327 `service_activate_with_terms`)
 - [x] Fase 6: Ajuda `definir-condicoes-de-pagamento` + permissões
 - [ ] Validar na tela: proposta → contrato → ativação com dados reais; publicar
+
+- [ ] PRAZO-MENSAL: mensalidade recorrente × prazo; prazo mínimo 3 meses e aviso prévio 30 dias editáveis
+- [ ] MINUTA-BLOQUEIO: bloquear "Criar contrato" até minuta aceita; dispensa do aceite do cliente

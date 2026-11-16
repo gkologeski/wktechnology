@@ -1,3 +1,4 @@
+import { parsePaymentTerms } from "@/lib/sales/payment-terms";
 // Monta o contexto de variáveis ({{...}}) de um modelo de contrato.
 // Server-only: usado pelos modelos e pela conversão Proposta/Cotação -> Contrato.
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -238,6 +239,7 @@ export async function buildMergeContext(
     .eq("id", userId)
     .maybeSingle();
 
+  const proposalTerm = parsePaymentTerms(proposalTerms?.payment_terms);
   const now = new Date();
   const title =
     input.title?.trim() ||
@@ -269,11 +271,17 @@ export async function buildMergeContext(
       input.installmentsCount ?? proposalTerms?.installments_count ?? null,
       input.installmentsDueDay ?? proposalTerms?.installments_due_day ?? null,
     ),
-    notice_days: (defaults.notice_days as number) ?? 30,
+    // PRAZO-MENSAL: prazo e mensalidade da proposta aceita vencem os padrões.
+    notice_days: proposalTerm?.term?.noticeDays ?? (defaults.notice_days as number) ?? 30,
+    minimum_term_months: proposalTerm?.term?.minimumMonths ?? null,
     total_value: source
       ? (source.proposal.total_amount ?? 0)
       : ((defaults.total_value as number) ?? deal?.value ?? service?.base_price ?? 0),
-    monthly_value: input.monthlyValue ?? (defaults.monthly_value as number) ?? null,
+    monthly_value:
+      input.monthlyValue ??
+      proposalTerm?.monthlyAmount ??
+      (defaults.monthly_value as number) ??
+      null,
     currency: source
       ? (source.proposal.currency ?? "BRL")
       : ((defaults.currency as string) ?? deal?.currency ?? service?.currency ?? "BRL"),

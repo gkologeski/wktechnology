@@ -20,6 +20,11 @@ export const CONTRACT_TEMPLATE_TOKENS: MessageToken[] = [
   { token: "{{contract.starts_at}}", label: "Início da vigência", group: "Contrato" },
   { token: "{{contract.ends_at}}", label: "Fim da vigência", group: "Contrato" },
   { token: "{{contract.notice_days}}", label: "Aviso prévio (dias)", group: "Contrato" },
+  {
+    token: "{{contract.minimum_term_months}}",
+    label: "Prazo mínimo (meses)",
+    group: "Contrato",
+  },
   { token: "{{contract.total_value}}", label: "Valor total", group: "Contrato" },
   {
     token: "{{contract.total_value_extenso}}",

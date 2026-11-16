@@ -45,6 +45,7 @@ import {
   type ContractDraftStatus,
 } from "@/lib/contracts/contract-draft-status";
 import { ContractDraftSendPanel } from "@/components/contracts/contract-draft-send-panel";
+import { ContractDraftBypassButton } from "@/components/contracts/contract-draft-bypass-button";
 import { usedTokens } from "@/lib/contracts/template-tokens";
 import { sanitizeTemplateHtml } from "@/lib/contracts/template-html-format";
 import { IsoDatePicker } from "@/components/iso-date-picker";
@@ -353,6 +354,9 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
             sent={status === "sent"}
             onDone={() => q.refetch()}
           />
+          <div className="mt-2">
+            <ContractDraftBypassButton draftId={draft.id} onDone={() => q.refetch()} />
+          </div>
         </section>
       )}
       {draft.client_decided_at && (
