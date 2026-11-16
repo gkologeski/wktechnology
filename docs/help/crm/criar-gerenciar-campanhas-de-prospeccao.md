@@ -8,7 +8,7 @@ route_pattern: /campaigns/calls
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 401
-version: 3
+version: 4
 is_published: true
 ---
 # Criar e gerenciar campanhas de ligação
@@ -39,3 +39,7 @@ O nome é obrigatório. A campanha nasce com 3 tentativas, intervalo de 240 minu
 ## Relacionados
 - [Configurar público e roteiros de uma campanha](/ajuda/crm/configurar-campanha-de-prospeccao)
 - [Criar e editar roteiros de ligação](/ajuda/crm/criar-editar-roteiros-de-ligacao)
+
+## Chamadas recentes
+- Mostra só as ligações já discadas, das mais recentes para as mais antigas. Contatos que ainda esperam a vez (inclusive novas tentativas) ficam fora dessa lista.
+- Abra uma chamada para ver resumo, transcrição e ouvir a gravação ali mesmo.

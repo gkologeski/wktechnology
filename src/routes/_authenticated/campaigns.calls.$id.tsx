@@ -1,3 +1,5 @@
+import { CallRecordingAudio } from "@/components/voice/call-recording-audio";
+import { selectRecentCalls } from "@/lib/prospecting/calls/recent-calls";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -71,6 +73,8 @@ function CampaignDetailPage() {
   const [variants, setVariants] = useState<VariantForm[]>([]);
   const [scripts, setScripts] = useState<ProspectingScript[]>([]);
   const [attempts, setAttempts] = useState<Attempt[]>([]);
+  // Gravação só é buscada quando a chamada é aberta (link assinado sob demanda).
+  const [openCalls, setOpenCalls] = useState<Set<string>>(() => new Set());
   const [audienceMode, setAudienceMode] = useState<"static" | "dynamic">("static");
   const [audienceRules, setAudienceRules] = useState<AudienceRule[]>([]);
   const [audit, setAudit] = useState<LeadAudit[]>([]);
@@ -128,12 +132,14 @@ function CampaignDetailPage() {
     } else {
       setAudienceRules(rawRules);
     }
-    const [att, aud] = await Promise.all([
+    // Independentes: falha na auditoria da fila não pode esconder as chamadas.
+    const [att, aud] = await Promise.allSettled([
       attemptsFn({ data: { campaign_id: id } }),
       auditFn({ data: { campaign_id: id } }),
     ]);
-    setAttempts(att);
-    setAudit(aud);
+    if (att.status === "fulfilled") setAttempts(att.value);
+    else toast.error("Não foi possível carregar as chamadas da campanha.");
+    if (aud.status === "fulfilled") setAudit(aud.value);
   };
   useEffect(() => {
     refresh();
@@ -158,6 +164,8 @@ function CampaignDetailPage() {
     }
     return byVariant;
   }, [attempts]);
+  // Chamadas recentes = já discadas (fila em espera fica fora), mais recentes primeiro.
+  const recentCalls = useMemo(() => selectRecentCalls(attempts), [attempts]);
 
   if (!campaign) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
 
@@ -887,14 +895,28 @@ function CampaignDetailPage() {
           <CardTitle>Chamadas recentes</CardTitle>
         </CardHeader>
         <CardContent>
-          {attempts.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhuma chamada.</p>
+          {recentCalls.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhuma chamada discada ainda. Contatos aguardando aparecem na fila acima.
+            </p>
           ) : (
             <div className="space-y-3">
-              {attempts.slice(0, 50).map((a) => {
+              {recentCalls.map((a) => {
                 const failed = a.status === "failed" || !!a.ended_reason;
                 return (
-                  <details key={a.id} className="border rounded-md p-2 text-sm">
+                  <details
+                    key={a.id}
+                    className="border rounded-md p-2 text-sm"
+                    onToggle={(e) => {
+                      const open = e.currentTarget.open;
+                      setOpenCalls((prev) => {
+                        const next = new Set(prev);
+                        if (open) next.add(a.id);
+                        else next.delete(a.id);
+                        return next;
+                      });
+                    }}
+                  >
                     <summary className="cursor-pointer flex items-center gap-2">
                       <Badge
                         variant={
@@ -925,18 +947,15 @@ function CampaignDetailPage() {
                         {a.duration_seconds ?? 0}s
                       </span>
                       {a.recording_url && (
-                        <a
-                          className="text-xs text-primary underline"
-                          href={a.recording_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                        >
+                        <span className="text-xs text-primary" aria-label="Tem gravação">
                           ▶
-                        </a>
+                        </span>
                       )}
                     </summary>
                     <div className="mt-2 space-y-2 text-xs">
+                      {a.recording_url && openCalls.has(a.id) && (
+                        <CallRecordingAudio attemptId={a.id} />
+                      )}
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <span className="text-muted-foreground">Vapi call ID:</span>{" "}

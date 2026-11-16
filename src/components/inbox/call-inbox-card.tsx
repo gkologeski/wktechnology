@@ -1,4 +1,5 @@
 import { Phone } from "lucide-react";
+import { CallRecordingAudio } from "@/components/voice/call-recording-audio";
 import { WhatsAppMediaBubble } from "@/components/whatsapp/whatsapp-media-bubble";
 import { CALL_PREFIX, splitCallInboxBody } from "@/lib/prospecting/calls/call-inbox";
 
@@ -6,9 +7,12 @@ import { CALL_PREFIX, splitCallInboxBody } from "@/lib/prospecting/calls/call-in
 export function CallInboxCard({
   body,
   recordingUrl,
+  attemptId,
 }: {
   body: string;
   recordingUrl: string | null;
+  /** Com a tentativa, o áudio vem de um link assinado (gravações privadas da Vapi). */
+  attemptId?: string | null;
 }) {
   const { head, transcript } = splitCallInboxBody(body);
   const [title, ...rest] = head.split("\n");
@@ -19,7 +23,11 @@ export function CallInboxCard({
         <span>{title?.replace(`${CALL_PREFIX} · `, "Ligação · ")}</span>
       </div>
       {rest.length ? <div className="whitespace-pre-wrap text-sm">{rest.join("\n")}</div> : null}
-      {recordingUrl ? <WhatsAppMediaBubble url={recordingUrl} contentType="audio/wav" /> : null}
+      {recordingUrl && attemptId ? (
+        <CallRecordingAudio attemptId={attemptId} />
+      ) : recordingUrl ? (
+        <WhatsAppMediaBubble url={recordingUrl} contentType="audio/wav" />
+      ) : null}
       {transcript ? (
         <details className="text-sm">
           <summary className="cursor-pointer text-xs underline">Ver transcrição completa</summary>

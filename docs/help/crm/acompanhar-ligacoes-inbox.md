@@ -8,7 +8,7 @@ route_pattern: /inbox/ligacoes
 min_permission:
 audience: internal
 sort_order: 305
-version: 1
+version: 2
 is_published: true
 ---
 # Acompanhar ligações pela Inbox
@@ -35,3 +35,8 @@ A ligação aparece na lista com o resumo e os detalhes completos ao ser selecio
 
 ## Relacionados
 - [Atender pela Inbox unificada](atender-inbox-unificada)
+
+## Ouvir a gravação
+- O áudio carrega dentro do cartão da ligação. As gravações ficam guardadas com segurança no provedor de voz; o TechERP busca um link temporário toda vez que você abre a conversa.
+- Só toca a gravação quem tem acesso àquela ligação.
+- Se aparecer "Gravação indisponível no momento", clique em **Tentar de novo**.

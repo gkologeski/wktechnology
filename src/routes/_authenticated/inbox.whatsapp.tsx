@@ -678,7 +678,11 @@ function WhatsAppInbox() {
                       status={m.direction === "outbound" && !m.call_attempt_id ? m.status : null}
                     >
                       {m.call_attempt_id ? (
-                        <CallInboxCard body={m.body ?? ""} recordingUrl={m.media_url} />
+                        <CallInboxCard
+                          body={m.body ?? ""}
+                          recordingUrl={m.media_url}
+                          attemptId={m.call_attempt_id}
+                        />
                       ) : null}
                       {!m.call_attempt_id && m.media_url && (
                         <div className="mb-1">

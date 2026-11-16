@@ -614,7 +614,9 @@ function CallAttemptPanel({ attemptId, when }: { attemptId: string; when: string
   if (q.isError || !q.data) return <InboxError onRetry={() => void q.refetch()} />;
   return (
     <InboxMessageBubble outbound when={when}>
-      <CallInboxCard body={q.data.body} recordingUrl={q.data.recordingUrl} />
+      <CallInboxCard body={q.data.body} recordingUrl={q.data.recordingUrl}
+        attemptId={attemptId}
+      />
     </InboxMessageBubble>
   );
 }
