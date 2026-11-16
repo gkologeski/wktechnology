@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 30
-version: 7
+version: 8
 is_published: true
 ---
 # Editar a ficha de um contrato
@@ -59,6 +59,7 @@ Alterações persistidas na ficha.
 "Contrato não encontrado.": use "Voltar". Salvar desabilitado: confira acesso, gravação em andamento ou principal ausente no aditivo.
 
 ## Relacionados
+- [Anexar cotação, proposta e arquivos ao contrato](/ajuda/contracts/anexar-documentos-ao-contrato)
 - [Alterar status](/ajuda/contracts/alterar-status)
 - [Registrar assinatura](/ajuda/contracts/registrar-assinatura)
 

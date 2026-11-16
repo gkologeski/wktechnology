@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/forsign
 min_permission: techcontracts.forsign_settings.manage.workspace
 audience: internal
 sort_order: 97
-version: 6
+version: 7
 is_published: true
 ---
 # Enviar contratos para assinatura pelo ForSign
@@ -48,6 +48,7 @@ Quando todos assinam, o PDF final do ForSign (com a trilha de auditoria) é guar
 - O envio ficou em "Falhou": leia a mensagem no quadro, corrija (por exemplo e-mail inválido) e envie de novo.
 
 ## Relacionados
+- [Anexar cotação, proposta e arquivos ao contrato](/ajuda/contracts/anexar-documentos-ao-contrato)
 - Assinar ou recusar um documento por link
 - Registrar assinatura externa de um contrato
 

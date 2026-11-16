@@ -8,7 +8,7 @@ route_pattern: /sign/$token
 min_permission:
 audience: internal
 sort_order: 96
-version: 4
+version: 5
 is_published: true
 ---
 # Assinar ou recusar um documento por link
@@ -41,6 +41,7 @@ A assinatura ou recusa fica registrada no documento.
 "Assinatura indisponível.": confira a situação do documento com o responsável.
 
 ## Relacionados
+- [Anexar cotação, proposta e arquivos ao contrato](/ajuda/contracts/anexar-documentos-ao-contrato)
 - [Preparar documentos](/ajuda/contracts/gerenciar-documentos-assinatura)
 
 ## Conferir anexos antes de preparar ou enviar
