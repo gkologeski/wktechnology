@@ -2802,7 +2802,8 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace"
+    "techservice.tickets.view.workspace",
+    "techcontracts.contract_draft_client_bypass.approve.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -2986,6 +2987,9 @@
     "techcontracts.handoffs.manage.workspace": {
       "migration": "drizzle/migrations/0362_contract_handoffs.sql",
       "rationale": "Workspace-scoped configuration and explicit retry/reconciliation, without grants."
+    },
+    "techcontracts.contract_draft_client_bypass.approve.workspace": {
+      "migration": "drizzle/migrations/0369_contract_draft_client_acceptance_bypass.sql"
     }
   }
 }

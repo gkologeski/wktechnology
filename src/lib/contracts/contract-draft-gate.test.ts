@@ -36,10 +36,21 @@ describe("MINUTA-BLOQUEIO", () => {
   it("dispensa permitida a aprovador com a chave, após o Jurídico", () => {
     expect(canBypassClientAcceptance("sent", "w1", reviewer(both))).toBe(true);
   });
-  it("dispensa negada sem a chave, outro workspace, inativo ou sem Jurídico", () => {
-    expect(canBypassClientAcceptance("sent", "w1", reviewer([CONTRACT_DRAFT_APPROVE_KEY]))).toBe(false);
-    expect(canBypassClientAcceptance("sent", "w1", reviewer(both, { ws: "w2" }))).toBe(false);
-    expect(canBypassClientAcceptance("sent", "w1", reviewer(both, { active: false }))).toBe(false);
+  it("dispensa negada sem a chave de dispensa", () => {
+    expect(canBypassClientAcceptance("sent", "w1", reviewer([CONTRACT_DRAFT_APPROVE_KEY]))).toBe(
+      false,
+    );
+  });
+  it("dispensa negada com deny (chave removida das efetivas) e sem Jurídico", () => {
+    expect(canBypassClientAcceptance("sent", "w1", reviewer([CONTRACT_DRAFT_BYPASS_KEY]))).toBe(
+      false,
+    );
     expect(canBypassClientAcceptance("pending_legal", "w1", reviewer(both))).toBe(false);
+  });
+  it("dispensa negada em outro workspace", () => {
+    expect(canBypassClientAcceptance("sent", "w1", reviewer(both, { ws: "w2" }))).toBe(false);
+  });
+  it("dispensa negada a membro inativo", () => {
+    expect(canBypassClientAcceptance("sent", "w1", reviewer(both, { active: false }))).toBe(false);
   });
 });
