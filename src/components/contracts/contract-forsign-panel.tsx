@@ -32,6 +32,7 @@ import {
   SignatureStatusIcon,
 } from "@/components/contracts/signature-status-indicator";
 import { signatureToneInk } from "@/components/contracts/signature-status-tone";
+import { SignatureAttachmentsSummary } from "./signature-attachments-summary";
 
 export function ContractForsignPanel({
   contractId,
@@ -217,6 +218,7 @@ export function ContractForsignPanel({
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <SignatureAttachmentsSummary contractId={contractId} />
             <ContractSignersEditor
               value={signers}
               onChange={setSigners}

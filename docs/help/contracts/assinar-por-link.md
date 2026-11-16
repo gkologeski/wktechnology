@@ -8,7 +8,7 @@ route_pattern: /sign/$token
 min_permission:
 audience: internal
 sort_order: 96
-version: 3
+version: 4
 is_published: true
 ---
 # Assinar ou recusar um documento por link
@@ -42,3 +42,6 @@ A assinatura ou recusa fica registrada no documento.
 
 ## Relacionados
 - [Preparar documentos](/ajuda/contracts/gerenciar-documentos-assinatura)
+
+## Conferir anexos antes de preparar ou enviar
+Nos formulários **Preparar assinatura no TechERP** e **Enviar pelo ForSign**, o quadro **Documentos incluídos na assinatura** lista os anexos e identifica as cópias congeladas. Use **Baixar prévia do contrato e anexos** para conferir o PDF completo antes de continuar. Abrir o formulário não gera o pacote nem envia convites. A prévia exige as mesmas permissões da ficha do contrato e não consome créditos do ForSign. Se a consulta falhar, use **Tentar novamente**; uma falha não é apresentada como ausência de anexos.

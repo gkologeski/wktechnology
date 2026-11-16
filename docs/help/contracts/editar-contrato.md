@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 30
-version: 6
+version: 7
 is_published: true
 ---
 # Editar a ficha de um contrato
@@ -61,3 +61,6 @@ Alterações persistidas na ficha.
 ## Relacionados
 - [Alterar status](/ajuda/contracts/alterar-status)
 - [Registrar assinatura](/ajuda/contracts/registrar-assinatura)
+
+## Conferir anexos antes de preparar ou enviar
+Nos formulários **Preparar assinatura no TechERP** e **Enviar pelo ForSign**, o quadro **Documentos incluídos na assinatura** lista os anexos e identifica as cópias congeladas. Use **Baixar prévia do contrato e anexos** para conferir o PDF completo antes de continuar. Abrir o formulário não gera o pacote nem envia convites. A prévia exige as mesmas permissões da ficha do contrato e não consome créditos do ForSign. Se a consulta falhar, use **Tentar novamente**; uma falha não é apresentada como ausência de anexos.
