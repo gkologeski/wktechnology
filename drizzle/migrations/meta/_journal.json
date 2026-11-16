@@ -2570,6 +2570,13 @@
       "when": 1794791966671,
       "tag": "0366_contract_attachments",
       "breakpoints": true
+    },
+    {
+      "idx": 367,
+      "version": "7",
+      "when": 1794816940553,
+      "tag": "0367_contract_signature_packages",
+      "breakpoints": true
     }
   ]
 }

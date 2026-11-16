@@ -27,6 +27,7 @@ import {
   finishContractAttachment,
   removeContractAttachment,
   downloadContractAttachment,
+  previewContractSignaturePackage,
   CONTRACT_ATTACHMENT_MAX_BYTES,
   CONTRACT_ATTACHMENT_TYPES,
 } from "@/lib/contracts/attachments.functions";
@@ -48,7 +49,8 @@ export function ContractAttachmentsCard({
     reserve = useServerFn(reserveContractAttachment),
     finish = useServerFn(finishContractAttachment),
     remove = useServerFn(removeContractAttachment),
-    download = useServerFn(downloadContractAttachment);
+    download = useServerFn(downloadContractAttachment),
+    preview = useServerFn(previewContractSignaturePackage);
   const qc = useQueryClient(),
     input = useRef<HTMLInputElement>(null);
   const [selected, setSelected] = useState(""),
@@ -71,7 +73,13 @@ export function ContractAttachmentsCard({
     queryFn: () => sources({ data: { contractId } }),
     enabled: canEdit,
   });
-  const refresh = () => qc.invalidateQueries({ queryKey: key });
+  const refresh = async () => {
+    await Promise.all([
+      qc.invalidateQueries({ queryKey: key }),
+      qc.invalidateQueries({ queryKey: ["contract-signature", contractId] }),
+      qc.invalidateQueries({ queryKey: ["contract-forsign", contractId] }),
+    ]);
+  };
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
     try {
@@ -118,8 +126,8 @@ export function ContractAttachmentsCard({
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
           Vincule a cotação ou a proposta do negócio, ou envie outro documento. Vínculos exibem a
-          versão atual da origem. Estes documentos de apoio não alteram o contrato nem são enviados
-          automaticamente para assinatura.
+          versão atual da origem. Todos os anexos serão incluídos no pacote de assinatura, com a
+          versão congelada na preparação do envio.
         </p>
         {canEdit && (
           <div className="flex flex-wrap items-center gap-2">
@@ -136,7 +144,13 @@ export function ContractAttachmentsCard({
               </SelectTrigger>
               <SelectContent>
                 {(available.data ?? []).map((s) => (
-                  <SelectItem key={s.kind + s.id} value={`${s.kind}:${s.id}`}>
+                  <SelectItem
+                    key={s.kind + s.id}
+                    value={`${s.kind}:${s.id}`}
+                    disabled={attachments.data?.some(
+                      (a) => a.kind === s.kind && a.source_id === s.id,
+                    )}
+                  >
                     {s.kind === "quote" ? "Cotação" : "Proposta"} — {s.title}
                   </SelectItem>
                 ))}
@@ -207,9 +221,12 @@ export function ContractAttachmentsCard({
                 <span className="min-w-0 break-words text-sm">
                   {a.kind === "quote" ? "Cotação: " : a.kind === "proposal" ? "Proposta: " : ""}
                   {a.name}
+                  {a.frozen && (
+                    <span className="ml-2 text-xs text-muted-foreground">Cópia congelada</span>
+                  )}
                 </span>
                 <div className="flex shrink-0 items-center gap-1">
-                  {a.kind === "proposal" && a.source_id ? (
+                  {a.kind === "proposal" && a.source_id && !a.frozen ? (
                     <Button variant="outline" size="sm" asChild>
                       <Link to="/proposals/$id" params={{ id: a.source_id }}>
                         Ver proposta
@@ -221,7 +238,7 @@ export function ContractAttachmentsCard({
                       size="sm"
                       disabled={busy}
                       onClick={() =>
-                        a.kind === "quote"
+                        a.kind === "quote" && !a.frozen
                           ? setQuote(a.source_id)
                           : void run(async () => {
                               const result = await download({ data: { contractId, id: a.id } });
@@ -230,7 +247,11 @@ export function ContractAttachmentsCard({
                       }
                     >
                       <Eye className="mr-1 h-4 w-4" />
-                      {a.kind === "quote" ? "Ver cotação" : "Baixar"}
+                      {a.frozen
+                        ? "Ver cópia anexada"
+                        : a.kind === "quote"
+                          ? "Ver cotação"
+                          : "Baixar"}
                     </Button>
                   )}
                   {canEdit && (
@@ -261,6 +282,20 @@ export function ContractAttachmentsCard({
               </li>
             ))}
           </ul>
+        )}
+        {canEdit && permissions.can("techcontracts.signature_evidence.manage.workspace") && (
+          <Button
+            variant="outline"
+            disabled={busy || !attachments.data?.length}
+            onClick={() =>
+              void run(async () => {
+                const result = await preview({ data: { contractId } });
+                window.location.assign(result.url);
+              })
+            }
+          >
+            Baixar prévia para assinatura
+          </Button>
         )}
         <p className="text-xs text-muted-foreground">
           Até 20 MB por arquivo · PDF, DOCX, XLSX, JPG, PNG e TXT. Acesso privado conforme as

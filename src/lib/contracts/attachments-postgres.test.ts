@@ -209,6 +209,44 @@ afterAll(async () => {
   if (temporary) rmSync(temporary, { recursive: true, force: true });
 }, 30000);
 
+beforeAll(async () => {
+  await db.unsafe(`CREATE SCHEMA extensions; CREATE EXTENSION pgcrypto SCHEMA extensions;
+ ALTER TABLE storage.objects ADD COLUMN user_metadata jsonb;
+ ALTER TABLE profiles ADD COLUMN full_name text;
+ ALTER TABLE contracts ADD COLUMN title text DEFAULT 'Contrato',ADD COLUMN number text,ADD COLUMN contracting_legal_entity_id uuid,ADD COLUMN counterparty_company_id uuid,ADD COLUMN starts_at date,ADD COLUMN ends_at date,ADD COLUMN total_value numeric,ADD COLUMN currency text,ADD COLUMN body_html text DEFAULT '<p>Contrato de teste</p>';
+ ALTER TABLE quotes ADD COLUMN company_id uuid,ADD COLUMN contact_id uuid,ADD COLUMN template_id uuid;
+ ALTER TABLE proposals ADD COLUMN company_id uuid,ADD COLUMN contact_id uuid,ADD COLUMN quote_id uuid;
+ ALTER TABLE companies ADD COLUMN name text,ADD COLUMN cnpj text,ADD COLUMN website text;
+ ALTER TABLE contacts ADD COLUMN first_name text,ADD COLUMN last_name text,ADD COLUMN email text;
+ CREATE TABLE legal_entities(id uuid PRIMARY KEY,workspace_id uuid,name text,cnpj text);
+ CREATE TABLE hiring_contract_evidence(document_id uuid,workspace_id uuid,contract_id uuid,contract_hash text,kind text,revoked_at timestamptz);
+ CREATE TYPE esign_doc_status AS ENUM('draft','sent','partially_signed','completed','declined','expired','canceled');
+ CREATE TYPE esign_signer_status AS ENUM('pending','viewed','signed','declined');
+ CREATE TABLE esign_documents(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,owner_id uuid,title text,description text,body text,status esign_doc_status,ordered boolean DEFAULT false,expires_at timestamptz,sent_at timestamptz,completed_at timestamptz,content_hash text,sealed_at timestamptz);
+ CREATE TABLE esign_signers(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),document_id uuid,workspace_id uuid,owner_id uuid,name text,email text,sign_order int,status esign_signer_status DEFAULT 'pending',public_token text,signed_name text,signature_data text,signed_at timestamptz,declined_at timestamptz,decline_reason text,viewed_at timestamptz,ip_address text,user_agent text);
+ CREATE TABLE esign_audit(document_id uuid,workspace_id uuid,signer_id uuid,owner_id uuid,event text,metadata jsonb,ip_address text,user_agent text);
+ CREATE TABLE ats_offers(id uuid,esign_document_id uuid);
+ CREATE TABLE services(id uuid PRIMARY KEY,workspace_id uuid,contract_id uuid,name text,quantity numeric,unit_price numeric,currency text);
+ CREATE TABLE quote_line_items(id uuid PRIMARY KEY,workspace_id uuid,quote_id uuid,service_catalog_id uuid,contracting_preset_id uuid);
+ CREATE TABLE deal_line_items(id uuid PRIMARY KEY,workspace_id uuid,deal_id uuid,service_catalog_id uuid,contracting_preset_id uuid);
+ CREATE TABLE service_catalog(id uuid PRIMARY KEY,workspace_id uuid,name text);
+ CREATE TABLE contracting_presets(id uuid PRIMARY KEY,workspace_id uuid,name text);
+ CREATE TABLE quote_templates(id uuid PRIMARY KEY,workspace_id uuid,html text);
+ GRANT USAGE ON SCHEMA extensions TO authenticated;`);
+  await db.unsafe(
+    sourceFunction(
+      "supabase/migrations/20260702201807_dbc392d9-6c74-4c4e-a34f-e3949206f95f.sql",
+      "user_has_permission",
+    ),
+  );
+  await db.unsafe(
+    sourceFunction(
+      "drizzle/migrations/0309_hiring_signature_evidence.sql",
+      "hiring_signature_access",
+    ),
+  );
+  await db.unsafe(readFileSync("drizzle/migrations/0367_contract_signature_packages.sql", "utf8"));
+}, 30000);
 async function subject(
   fn: (tx: postgres.TransactionSql) => Promise<void>,
   options: {
@@ -231,6 +269,8 @@ async function subject(
         "techcontracts.contracts.update.workspace",
         "techsales.quotes.view.workspace",
         "techsales.proposals.view.workspace",
+        "techcontracts.signature_evidence.view.workspace",
+        "techcontracts.signature_evidence.manage.workspace",
       ]) {
         if (options.keys !== false && (!options.readOnlyPermissions || !key.includes(".update.")))
           await tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${R},${key},${options.deny ? "deny" : "grant"})`;
@@ -244,8 +284,11 @@ async function subject(
     if (e !== rollback) throw e;
   }
 }
-const rpc = (tx: postgres.TransactionSql, action: string, data: Record<string, string | number | null> = {}) =>
-  tx`select contract_attachment_manage(${IDs[0]},${action},${tx.json(data)}::jsonb) result`;
+const rpc = (
+  tx: postgres.TransactionSql,
+  action: string,
+  data: Record<string, string | number | null> = {},
+) => tx`select contract_attachment_manage(${IDs[0]},${action},${tx.json(data)}::jsonb) result`;
 it("attachments allow active authorized member and idempotent source links", () =>
   subject(async (tx) => {
     expect((await rpc(tx, "sources"))[0].result).toHaveLength(2);
@@ -312,7 +355,7 @@ it("attachments hide pending files and enforce immutable storage", () =>
     const file = (await rpc(tx, "reserve", { name: "teste.pdf" }))[0].result;
     expect((await rpc(tx, "list"))[0].result).toHaveLength(0);
     await tx`insert into storage.objects(bucket_id,name,metadata) values('contract-attachments',${file.path},${tx.json({ size: 12 })}::jsonb)`;
-    await rpc(tx, "finish", { id: file.id });
+    await rpc(tx, "finish", { id: file.id, sha256: "a".repeat(64) });
     expect((await rpc(tx, "list"))[0].result).toHaveLength(1);
     expect(await tx`select * from storage.objects where name=${file.path}`).toHaveLength(1);
     expect(
@@ -354,7 +397,7 @@ it("attachments reject missing upload and path traversal", async () => {
   await expect(
     subject(async (tx) => {
       const file = (await rpc(tx, "reserve", { name: "teste.pdf" }))[0].result;
-      await rpc(tx, "finish", { id: file.id });
+      await rpc(tx, "finish", { id: file.id, sha256: "a".repeat(64) });
     }),
   ).rejects.toThrow("Upload não concluído");
   await expect(
@@ -369,4 +412,178 @@ it("attachments cannot write storage without an authorized reservation", async (
       await tx`insert into storage.objects(bucket_id,name,metadata) values('contract-attachments','foreign/path',${tx.json({ size: 12 })})`;
     }),
   ).rejects.toThrow("row-level security");
+});
+
+async function fingerprint(tx: postgres.TransactionSql) {
+  await tx.unsafe("RESET ROLE");
+  const hash = (await tx`select hiring_contract_fingerprint(${IDs[0]}) value`)[0].value as string;
+  await tx.unsafe("SET LOCAL ROLE authenticated");
+  return hash;
+}
+it("signature package preserves old fingerprint when there are no attachments", () =>
+  subject(async (tx) => {
+    const hash = await fingerprint(tx);
+    await tx.unsafe("RESET ROLE");
+    expect(
+      (await tx`select hiring_contract_fingerprint_without_attachments(${IDs[0]}) value`)[0].value,
+    ).toBe(hash);
+  }));
+it("signature package invalidates the version on source changes and refuses stale input", async () => {
+  await expect(
+    subject(async (tx) => {
+      await rpc(tx, "link", { kind: "quote", source_id: IDs[1] });
+      const hash = await fingerprint(tx);
+      await tx.unsafe("RESET ROLE");
+      await tx`update quotes set title='Cotação revisada' where id=${IDs[1]}`;
+      await tx.unsafe("SET LOCAL ROLE authenticated");
+      expect(await fingerprint(tx)).not.toBe(hash);
+      await tx`select contract_attachment_signing_context(${IDs[0]},${hash})`;
+    }),
+  ).rejects.toThrow("anexos alterados");
+});
+it("signature package requires all selected source permissions", async () => {
+  await expect(
+    subject(async (tx) => {
+      await rpc(tx, "link", { kind: "quote", source_id: IDs[1] });
+      const hash = await fingerprint(tx);
+      await tx.unsafe("RESET ROLE");
+      await tx`delete from job_role_permission_overrides where role_id=${R} and permission_key='techsales.quotes.view.workspace'`;
+      await tx.unsafe("SET LOCAL ROLE authenticated");
+      await tx`select contract_attachment_signing_context(${IDs[0]},${hash})`;
+    }),
+  ).rejects.toThrow("anexo comercial");
+});
+it("signature package includes selected sources for an authorized active member", () =>
+  subject(async (tx) => {
+    await rpc(tx, "link", { kind: "quote", source_id: IDs[1] });
+    const hash = await fingerprint(tx);
+    const c = (await tx`select contract_attachment_signing_context(${IDs[0]},${hash}) value`)[0]
+      .value;
+    expect(c.attachments).toHaveLength(1);
+    expect(c.attachments[0].stamp).toHaveLength(64);
+    expect(c.body).toContain("Contrato");
+  }));
+it("signature package rejects missing permission", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select contract_attachment_signing_context(${IDs[0]},${"a".repeat(64)})`;
+      },
+      { keys: false },
+    ),
+  ).rejects.toThrow("Sem permissão");
+});
+it("signature package rejects explicit deny", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select contract_attachment_signing_context(${IDs[0]},${"a".repeat(64)})`;
+      },
+      { deny: true },
+    ),
+  ).rejects.toThrow("Sem permissão");
+});
+it("signature package rejects foreign workspace", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select contract_attachment_signing_context(${IDs[0]},${"a".repeat(64)})`;
+      },
+      { workspace: B },
+    ),
+  ).rejects.toThrow("Sem permissão");
+});
+it("signature package rejects inactive member", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await tx`select contract_attachment_signing_context(${IDs[0]},${"a".repeat(64)})`;
+      },
+      { inactive: true },
+    ),
+  ).rejects.toThrow("Sem permissão");
+});
+it("signature package cannot be forged directly by an authenticated client", async () => {
+  await expect(
+    subject(async (tx) => {
+      await tx`select contract_signature_package_store(${W},${IDs[0]},${U},${"a".repeat(64)},'fake/path',${"b".repeat(64)},'[]'::jsonb,1)`;
+    }),
+  ).rejects.toThrow("permission denied");
+});
+it("signature package is mandatory before native body preparation with annexes", async () => {
+  await expect(
+    subject(async (tx) => {
+      await rpc(tx, "link", { kind: "quote", source_id: IDs[1] });
+      await tx.unsafe("RESET ROLE");
+      await tx`select hiring_contract_esign_body(${W},${IDs[0]})`;
+    }),
+  ).rejects.toThrow("Prepare o pacote");
+});
+it("signature package seals the PDF identity into the native signature body", () =>
+  subject(async (tx) => {
+    await rpc(tx, "link", { kind: "quote", source_id: IDs[1] });
+    const hash = await fingerprint(tx);
+    const path = `${W}/${IDs[0]}/${hash}/packet.pdf`,
+      digest = "b".repeat(64);
+    const stamp = (await tx`select contract_attachment_signing_context(${IDs[0]},${hash}) value`)[0]
+      .value.attachments[0].stamp;
+    const sourcePath = `${W}/${IDs[0]}/${hash}/quote.pdf`;
+    const manifest = [
+      {
+        id: (await rpc(tx, "list"))[0].result[0].id,
+        kind: "quote",
+        stamp,
+        source_pdf_path: sourcePath,
+        name: "Cotação <teste>",
+        sha256: "c".repeat(64),
+      },
+    ];
+    await tx.unsafe("RESET ROLE");
+    await tx`insert into storage.objects(bucket_id,name,user_metadata) values('contract-signature-packages',${path},${tx.json({ sha256: digest })})`;
+    await tx`insert into storage.objects(bucket_id,name,user_metadata) values('contract-signature-packages',${sourcePath},${tx.json({ sha256: "c".repeat(64) })})`;
+    await tx.unsafe("SET LOCAL ROLE service_role");
+    const row = (
+      await tx`select contract_signature_package_store(${W},${IDs[0]},${U},${hash},${path},${digest},${tx.json(manifest)},3) value`
+    )[0].value;
+    expect(row.sha256).toBe(digest);
+    await tx.unsafe("RESET ROLE");
+    const body = (await tx`select hiring_contract_esign_body(${W},${IDs[0]}) value`)[0]
+      .value as string;
+    expect(body).toContain(`pacote PDF de SHA-256 ${digest}`);
+    expect(body).toContain("Cotação &lt;teste&gt;");
+    const document = (
+      await tx`insert into esign_documents(workspace_id,owner_id,title,body,status,content_hash,sealed_at) values(${W},${U},'Contrato',${body},'sent','sealed',now()) returning id`
+    )[0].id;
+    const secret = "allowed-signer-token-0000001";
+    await tx`insert into esign_signers(document_id,workspace_id,owner_id,name,email,sign_order,public_token) values(${document},${W},${U},'Cliente','cliente@example.test',1,${secret})`;
+    await tx`insert into hiring_contract_evidence(document_id,workspace_id,contract_id,contract_hash,kind) values(${document},${W},${IDs[0]},${hash},'native')`;
+    await tx.unsafe("SET LOCAL ROLE service_role");
+    expect((await tx`select contract_esign_public(${secret},'view') value`)[0].value.canSign).toBe(
+      true,
+    );
+    await tx.unsafe("RESET ROLE");
+
+    expect((await tx`select hiring_contract_fingerprint(${IDs[0]}) value`)[0].value).toBe(hash);
+    await tx`update quotes set title='Outra versão futura' where id=${IDs[1]}`;
+    expect((await tx`select hiring_contract_fingerprint(${IDs[0]}) value`)[0].value).toBe(hash);
+
+    await tx.unsafe("SET LOCAL ROLE authenticated");
+    expect(
+      await tx`select * from storage.objects where bucket_id='contract-signature-packages'`,
+    ).toHaveLength(0);
+  }));
+
+it("signature package rejects a direct signature when its package was revoked or not registered", async () => {
+  await expect(
+    subject(async (tx) => {
+      await tx.unsafe("RESET ROLE");
+      const document = (
+        await tx`insert into esign_documents(workspace_id,owner_id,title,body,status) values(${W},${U},'Contrato','<!--techerp:contract-package:unregistered:hash-->','sent') returning id`
+      )[0].id;
+      const secret = "invalid-packet-signer-token-0001";
+      await tx`insert into esign_signers(document_id,workspace_id,owner_id,name,email,sign_order,public_token) values(${document},${W},${U},'Cliente','cliente@example.test',1,${secret})`;
+      await tx.unsafe("SET LOCAL ROLE service_role");
+      await tx`select contract_esign_public(${secret},'sign','Cliente Teste')`;
+    }),
+  ).rejects.toThrow("Pacote de assinatura revogado");
 });

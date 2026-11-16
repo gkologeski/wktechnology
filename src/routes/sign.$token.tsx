@@ -38,6 +38,7 @@ function SignPage() {
     retry: false,
   });
 
+  const [openingPdf, setOpeningPdf] = useState(false);
   const [name, setName] = useState("");
   const [accept, setAccept] = useState(false);
   const [reason, setReason] = useState("");
@@ -77,7 +78,7 @@ function SignPage() {
     );
   }
 
-  const { doc, signer, signers, canSign } = data;
+  const { doc, signer, signers, canSign, signaturePackage } = data;
   const alreadySigned = signer.status === "signed";
   const alreadyDeclined = signer.status === "declined";
 
@@ -98,6 +99,36 @@ function SignPage() {
             <CardTitle className="text-base">Documento</CardTitle>
           </CardHeader>
           <CardContent>
+            {signaturePackage && (
+              <div className="mb-4 space-y-2 rounded-md border p-4">
+                <p className="text-sm font-medium">
+                  Sua assinatura inclui o contrato e {signaturePackage.attachments} anexo(s), em{" "}
+                  {signaturePackage.pageCount} páginas.
+                </p>
+                <Button
+                  variant="outline"
+                  disabled={openingPdf}
+                  onClick={async () => {
+                    setOpeningPdf(true);
+                    try {
+                      const fresh = await getEsignSession({ data: { token } });
+                      if (!fresh.signaturePackage)
+                        throw new Error("Pacote de assinatura indisponível.");
+                      window.location.assign(fresh.signaturePackage.url);
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : "Não foi possível abrir o PDF.");
+                    } finally {
+                      setOpeningPdf(false);
+                    }
+                  }}
+                >
+                  {openingPdf ? "Abrindo PDF…" : "Abrir contrato completo com anexos (PDF)"}
+                </Button>
+                <p className="break-all text-xs text-muted-foreground">
+                  SHA-256: {signaturePackage.sha256}
+                </p>
+              </div>
+            )}
             <EsignBodyView
               body={doc.body}
               className="rounded-md border bg-background p-6 max-h-[60vh] overflow-y-auto"

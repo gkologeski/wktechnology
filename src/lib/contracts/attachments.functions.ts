@@ -20,6 +20,7 @@ export type ContractAttachment = {
   source_id: string | null;
   name: string;
   created_at: string;
+  frozen?: boolean;
 };
 export type ContractAttachmentSource = { id: string; kind: "quote" | "proposal"; title: string };
 const contractInput = z.object({ contractId: z.string().uuid() });
@@ -84,13 +85,30 @@ export const reserveContractAttachment = createServerFn({ method: "POST" })
 export const finishContractAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(contractInput.extend({ id: z.string().uuid() }))
-  .handler(async ({ data, context }) =>
-    workRpc<{ ok: boolean }>(context.supabase, "contract_attachment_manage", {
+  .handler(async ({ data, context }) => {
+    await assertWorkRecord(context.supabase, "techcontracts.contracts", data.contractId, "update");
+    const { data: row, error } = await context.supabase
+      .from("contract_attachments" as never)
+      .select("storage_path")
+      .eq("id", data.id)
+      .eq("contract_id", data.contractId)
+      .maybeSingle();
+    const path = (row as { storage_path: string } | null)?.storage_path;
+    if (error || !path) throw new Error("Anexo indisponível.");
+    const file = await context.supabase.storage.from("contract-attachments").download(path);
+    if (file.error || !file.data) throw new Error("Não foi possível validar o arquivo enviado.");
+    if (file.data.size === 0 || file.data.size > CONTRACT_ATTACHMENT_MAX_BYTES)
+      throw new Error("Arquivo excede o limite.");
+    const { createHash } = await import("node:crypto");
+    const sha256 = createHash("sha256")
+      .update(new Uint8Array(await file.data.arrayBuffer()))
+      .digest("hex");
+    return workRpc<{ ok: boolean }>(context.supabase, "contract_attachment_manage", {
       p_contract: data.contractId,
       p_action: "finish",
-      p_data: { id: data.id },
-    }),
-  );
+      p_data: { id: data.id, sha256 },
+    });
+  });
 export const removeContractAttachment = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator(contractInput.extend({ id: z.string().uuid() }))
@@ -109,16 +127,63 @@ export const downloadContractAttachment = createServerFn({ method: "POST" })
     // Use the caller's RLS client for both metadata and the short-lived URL.
     const { data: row, error } = await context.supabase
       .from("contract_attachments" as never)
-      .select("storage_path,file_name,ready")
+      .select("storage_path,file_name,ready,source_snapshot_path,source_name")
       .eq("id", data.id)
       .eq("contract_id", data.contractId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    const file = row as { storage_path: string | null; file_name: string; ready: boolean } | null;
+    const file = row as {
+      storage_path: string | null;
+      file_name: string;
+      ready: boolean;
+      source_snapshot_path: string | null;
+      source_name: string | null;
+    } | null;
+    if (file?.ready && file.source_snapshot_path) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const frozen = await supabaseAdmin.storage
+        .from("contract-signature-packages")
+        .createSignedUrl(file.source_snapshot_path, 60, {
+          download: `${file.source_name ?? "Anexo"}.pdf`,
+        });
+      if (frozen.error || !frozen.data) throw new Error("Cópia do anexo indisponível.");
+      return { url: frozen.data.signedUrl };
+    }
     if (!file?.ready || !file.storage_path) throw new Error("Anexo indisponível.");
     const { data: signed, error: signError } = await context.supabase.storage
       .from("contract-attachments")
       .createSignedUrl(file.storage_path, 60, { download: file.file_name });
     if (signError || !signed) throw new Error(signError?.message ?? "Arquivo indisponível.");
     return { url: signed.signedUrl };
+  });
+
+export const previewContractSignaturePackage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(contractInput)
+  .handler(async ({ data, context }) => {
+    const { getActiveWorkspaceId } = await import("@/lib/access-control/enforce.server");
+    const ws = await getActiveWorkspaceId(context.supabase, context.userId);
+    const signature = await workRpc<{ hash: string }>(
+      context.supabase,
+      "hiring_contract_signature_context",
+      { p_ws: ws, p_contract: data.contractId },
+    );
+    const { prepareSignaturePackage } = await import("./signature-package.server");
+    const pack = await prepareSignaturePackage(
+      context.supabase,
+      context.userId,
+      data.contractId,
+      signature.hash,
+    );
+    if (!pack) throw new Error("Inclua ao menos um anexo para gerar a prévia do pacote.");
+    await workRpc(context.supabase, "contract_attachment_signing_context", {
+      p_contract: data.contractId,
+      p_hash: signature.hash,
+    });
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const result = await supabaseAdmin.storage
+      .from("contract-signature-packages")
+      .createSignedUrl(pack.storage_path, 60, { download: "Previa-contrato-e-anexos.pdf" });
+    if (result.error || !result.data) throw new Error("Não foi possível abrir a prévia do pacote.");
+    return { url: result.data.signedUrl };
   });
