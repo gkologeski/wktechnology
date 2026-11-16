@@ -355,7 +355,12 @@ function DraftReview({ id, embedded }: { id: string; embedded: boolean }) {
             onDone={() => q.refetch()}
           />
           <div className="mt-2">
-            <ContractDraftBypassButton draftId={draft.id} onDone={() => q.refetch()} />
+            <ContractDraftBypassButton
+              draftId={draft.id}
+              status={status}
+              workspaceId={draft.workspace_id}
+              onDone={() => q.refetch()}
+            />
           </div>
         </section>
       )}

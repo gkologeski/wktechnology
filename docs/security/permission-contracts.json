@@ -1074,10 +1074,14 @@
         "system.audit.view.team",
         "system.audit.view.workspace"
       ],
-      "rationale": "Audit view requires active selected tenant, explicit audit read and current entity record read. Snapshot tenant must be unambiguous; historical owner ids never infer a tenant. Raw payload SELECT is revoked; safe projection applies current field masks and removes credential columns/free-form metadata. No role assignments or historical rows are changed. 0368 replaces dynamic SQL in this and sibling SECURITY DEFINER checks with fixed per-table queries and revokes anon execute; access rules unchanged.",
+      "rationale": "Audit view requires active selected tenant, explicit audit read and current entity record read. Snapshot tenant must be unambiguous; historical owner ids never infer a tenant. Raw payload SELECT is revoked; safe projection applies current field masks and removes credential columns/free-form metadata. No role assignments or historical rows are changed. 0368 replaces dynamic SQL in this and sibling SECURITY DEFINER checks with fixed per-table queries and revokes anon execute; access rules unchanged. 0368 replaces dynamic SQL in this and sibling SECURITY DEFINER checks with fixed per-table queries and revokes anon execute; access rules unchanged.",
       "database": [
         {
           "file": "drizzle/migrations/0245_audit_read_boundary.sql",
+          "symbol": "shared_audit_read_access"
+        },
+        {
+          "file": "drizzle/migrations/0368_remove_dynamic_sql_definer_functions.sql",
           "symbol": "shared_audit_read_access"
         },
         {
@@ -9817,7 +9821,7 @@
         "drizzle/migrations/0311_0334_contract_draft_legal_review.sql": "34b15156ef6dd6be975fd1d42cfa7b47ef5fc1db73ab35486abe755b8a36a427",
         "drizzle/migrations/0312_contract_draft_legal_review.sql": "13ce7aa0ddad44bc26c81cccd662b1fb5a12f6cf606e87554beea542faed7e82",
         "src/components/contracts/contract-draft-approvers-page.tsx": "fd9f5b3f844bd1c641ae8f5cc67ee45bd354f9ef06ea3200e27f4027a7007376",
-        "src/components/contracts/contract-draft-review-page.tsx": "0d63558e36d440e8b50fc60e2b8f76712fc398079c31d36f0caf5f6f43185f40",
+        "src/components/contracts/contract-draft-review-page.tsx": "6e50ced18fcec1473898b2afe75999a4426da846bd83d3823892b21186283dc1",
         "src/lib/contracts/contract-drafts.functions.ts": "326db598407c747b0009222ead87aae879a6143183105471434b435f1d541fe5",
         "src/lib/workflows/engine/actions-contracts.server.ts": "ce77a960a2356639cd80d3245608044a2dabe2ef8d0dcd2dffa33f22ffb0c1d2",
         "src/routes/_authenticated/contracts.drafts.$id.tsx": "154ab4c2eb14d4003eadd589b90b7af808169de961cf7e5ac21554a8973daea2",
@@ -13373,7 +13377,7 @@
       },
       "files": {
         "drizzle/migrations/0369_contract_draft_client_acceptance_bypass.sql": "b13f991b6b3447ce22d213a3a217ff56f1faed00b822cd89648e236499e9256a",
-        "src/components/contracts/contract-draft-bypass-button.tsx": "d7ac716d317c7f8c559aaafb178cee92aff858a6a47cf722fa787a3f17ac6f45"
+        "src/components/contracts/contract-draft-bypass-button.tsx": "23fd6da60d2cc52dc18de7783f861cf72458d036b43deb2b9f94b52e5ac330e2"
       }
     }
   ],

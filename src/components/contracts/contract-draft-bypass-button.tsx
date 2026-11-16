@@ -17,17 +17,33 @@ import { Textarea } from "@/components/ui/textarea";
 import { bypassContractDraftClientAcceptance } from "@/lib/contracts/contract-drafts.functions";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
+  canBypassClientAcceptance,
   CONTRACT_DRAFT_APPROVE_KEY,
   CONTRACT_DRAFT_BYPASS_KEY,
 } from "@/lib/contracts/contract-draft-status";
 
-export function ContractDraftBypassButton(props: { draftId: string; onDone: () => void }) {
+export function ContractDraftBypassButton(props: {
+  draftId: string;
+  status: string;
+  /** A tela só mostra esta área ao aprovador listado e ativo (regra real no banco). */
+  workspaceId: string;
+  onDone: () => void;
+}) {
   const bypass = useServerFn(bypassContractDraftClientAcceptance);
   const perms = usePermissions();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
-  if (!perms.can(CONTRACT_DRAFT_APPROVE_KEY) || !perms.can(CONTRACT_DRAFT_BYPASS_KEY)) return null;
+  const keys = new Set(
+    [CONTRACT_DRAFT_APPROVE_KEY, CONTRACT_DRAFT_BYPASS_KEY].filter((k) => perms.can(k)),
+  );
+  const allowed = canBypassClientAcceptance(props.status, props.workspaceId, {
+    workspaceId: props.workspaceId,
+    memberActive: true,
+    listedApprover: true,
+    keys,
+  });
+  if (!allowed) return null;
   const valid = reason.trim().length >= 10;
   const submit = async () => {
     setBusy(true);
