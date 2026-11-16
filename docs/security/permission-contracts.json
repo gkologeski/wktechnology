@@ -8136,7 +8136,7 @@
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
         "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
-        "src/routes/_authenticated/contracts.$id.tsx": "f51782b750462067374edfb5caf55d4c56cffa290558331d19b91e935281fed8",
+        "src/routes/_authenticated/contracts.$id.tsx": "902471581c3eefdc07b37cbab97a02715563cd72c7616a47de20f3abfc560ae0",
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
@@ -13039,6 +13039,92 @@
         "src/lib/search/search-collection.server.ts": "86c3c615fc4c04300453b44782a04b01568816d1821c12e0e4efbf8010903708",
         "src/lib/search/recent-pinned.functions.ts": "ed594f4d40ae4a993f8618971e9a9e7c186104e164eaea00a3a66758b86b9f5a",
         "drizzle/migrations/0365_global_search_content_cursor.sql": "637f3a7fae7845f421dfcb29126137fb49d31293da5418e8dc87bc9b95bfb209"
+      }
+    },
+    {
+      "id": "contract-supporting-attachments",
+      "kind": "business",
+      "resources": [
+        "techcontracts.contracts",
+        "techsales.quotes",
+        "techsales.proposals"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.contracts.view.own",
+        "techcontracts.contracts.view.team",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.update.own",
+        "techcontracts.contracts.update.team",
+        "techcontracts.contracts.update.workspace"
+      ],
+      "rationale": "Supporting attachments reuse contract view/update, with current source read access for quote/proposal references restricted to the same deal or explicit contract origin. Uploaded files use a private immutable bucket, ready-state validation, caller-scoped signed URLs and active workspace/deny-aware canonical resolvers. Attachments do not change the signed document or automatically enter signature packages. No new role grants.",
+      "controls": [
+        {
+          "file": "src/lib/contracts/attachments.functions.ts",
+          "symbol": "downloadContractAttachment"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/contracts/attachments.functions.ts",
+          "symbol": "listContractAttachments"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0366_contract_attachments.sql",
+          "symbol": "contract_attachment_manage"
+        },
+        {
+          "file": "drizzle/migrations/0366_contract_attachments.sql",
+          "symbol": "contract_attachment_storage_allowed"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/attachments-postgres.test.ts",
+          "name": "attachments allow active authorized member and idempotent source links"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/attachments-postgres.test.ts",
+          "name": "attachments reject missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/attachments-postgres.test.ts",
+          "name": "attachments reject explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/attachments-postgres.test.ts",
+          "name": "attachments reject foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/attachments-postgres.test.ts",
+          "name": "attachments reject inactive member"
+        }
+      },
+      "files": {
+        "src/lib/contracts/attachments.functions.ts": "a2ec1ae14282418019888a4c0ddafa35340027a2395f75335de3107eb3a65bf4",
+        "src/components/contracts/contract-attachments-card.tsx": "ef2860718171ccc19646f48e0fc717bf7da2517c287df4f862362df7344f172a",
+        "drizzle/migrations/0366_contract_attachments.sql": "572bbe652ee2afe4a50a84d785ba6c633b44d522cfa34f4947a2844944d9ddd7"
       }
     }
   ],

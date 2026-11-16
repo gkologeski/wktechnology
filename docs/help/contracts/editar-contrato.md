@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 30
-version: 4
+version: 5
 is_published: true
 ---
 # Editar a ficha de um contrato
@@ -34,11 +34,18 @@ Botões desabilitados mostram o motivo (ex.: "Sem permissão"). Fluxo do contrat
 6. Use "Mais ações" › "Visualizar arquivo original" para abrir o arquivo original quando essa ação estiver disponível.
 ![Tela: Editar a ficha de um contrato, sem dados pessoais reais](/help-media/contracts/editar-contrato.webp)
 
+## Anexos do contrato
+Na aba Documento, use **Anexos do contrato**. Escolha uma cotação ou proposta do mesmo negócio e clique em **Vincular documento**, ou use **Enviar arquivo** para um PDF, DOCX, XLSX, JPG, PNG ou TXT de até 20 MB. É possível incluir vários anexos, um de cada vez.
+
+Os vínculos comerciais exibem o documento atual da origem; exigem leitura desse documento além da leitura do contrato. Arquivos enviados ficam privados. Para incluir ou remover anexos é necessário poder atualizar o contrato. Remover o vínculo não exclui a cotação/proposta original.
+
+São documentos de apoio: não substituem o corpo, não alteram evidências já assinadas e não são enviados automaticamente para assinatura. Para preservar uma versão fixa, envie o PDF correspondente.
+
 ## Resultado esperado
 Alterações persistidas na ficha.
 
 ## Regras e limites
-- Corpo é campo de texto/HTML, não editor rico.
+- O editor formatado grava o corpo em HTML.
 - "Detalhes extraídos" exibe informações disponíveis em leitura; não torna todos os campos extraídos editáveis.
 - Campos alterados localmente só são gravados após salvar.
 - Conteúdo, partes e condições alterados podem exigir nova evidência de assinatura.
