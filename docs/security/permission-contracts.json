@@ -5412,7 +5412,7 @@
         "drizzle/migrations/0293_prospecting_scripts_archived_at.sql": "a6e8cce47013518da00c651e96d47f4b4cfbb1b847aed5cf720cd405d6d6fd91",
         "src/components/prospecting/pages/scripts-page.tsx": "f8045dec522334f4c908119196d94e39b84838029aea352d250e215f7cfd4b7e",
         "src/routes/_authenticated/settings.prospecting-scripts.tsx": "fc214bca25673208de5b62482ad0e0b55e4a7c4f491f6a25ceecdd2113582f58",
-        "src/routes/_authenticated/campaigns.calls.$id.tsx": "2b5a333a4ec0c4cd011d244d49de53d6375786850fe9574db08ac29fd0e4554b",
+        "src/routes/_authenticated/campaigns.calls.$id.tsx": "db594a7c22d1c96f0c1fb23f5adb01f51a020b7b0acb0a70265e21388257e108",
         "src/routes/_authenticated/campaigns.calls.index.tsx": "ea9b2540da5e50f7e7d6d93d7042da67f38240f9d73e571b90f33a52a4779c83",
         "src/routes/_authenticated/campaigns.calls.scripts.tsx": "e10a8fabc26c1fa80f67e84252f1543ec5e027c3548482855a70640ab3d91c52",
         "src/routes/_authenticated/prospecting.index.tsx": "acdb05cf4eb061d89e8a7826b78d01600d860d1025e9a643051bf06b5832a7be",
@@ -11326,7 +11326,7 @@
         "src/lib/prospecting/calls/voice-booking.ts": "9258746876bfd0710e69b47d5cfd20368830fc352fd570434192ce77808f7810",
         "src/lib/prospecting/calls/call-inbox.ts": "a9e4198778916ea7e8e377914e7563bacd6adc0ec2c96d7c9a0d2224b5163709",
         "src/components/inbox/call-inbox-card.tsx": "d0c538b2029562ce577a1b9baa3b054f46c553579e4d70843965ff929b96899e",
-        "src/lib/prospecting/calls/recent-calls.ts": "a23aa1d65a0ea621bb279bfb739d8c75223926170db2b223dd99dc6d2913c830"
+        "src/lib/prospecting/calls/recent-calls.ts": "797a0952fe5d8eb9c349f3857b2419a07fe48d7cd15c24d806c712d7fed272ab"
       }
     },
     {

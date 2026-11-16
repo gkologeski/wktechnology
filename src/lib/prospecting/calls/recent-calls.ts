@@ -43,5 +43,6 @@ const REASONS: Record<string, string> = {
 
 export function callEndedReasonLabel(reason?: string | null): string | null {
   if (!reason) return null;
+  if (/^stale active call/i.test(reason)) return "Sem retorno final do provedor";
   return REASONS[reason] ?? reason;
 }

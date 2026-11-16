@@ -926,7 +926,9 @@ function CampaignDetailPage() {
                       <SignatureStatusBadge tone={view.tone}>{view.label}</SignatureStatusBadge>
                       <span className="font-medium">{scriptName(a.script_id)}</span>
                       <span className="text-xs text-muted-foreground truncate flex-1">
-                        {callEndedReasonLabel(a.ended_reason) ?? a.summary ?? a.vapi_call_id ?? "—"}
+                        {callEndedReasonLabel(a.ended_reason) ??
+                          a.summary ??
+                          (view.tone === "sending" ? "Ligação em curso" : "—")}
                       </span>
                       {a.meeting_status === "booked" && a.meeting_start_at && (
                         <Badge variant="secondary">

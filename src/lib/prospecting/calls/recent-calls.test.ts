@@ -44,3 +44,8 @@ describe("callStatusView", () => {
     expect(callEndedReasonLabel("customer-ended-call")).toBe("Cliente desligou");
   });
 });
+it("traduz chamada sem retorno final", () => {
+  expect(callEndedReasonLabel("stale active call: no final status received")).toBe(
+    "Sem retorno final do provedor",
+  );
+});
