@@ -8,7 +8,7 @@ route_pattern: /campaigns/calls/scripts
 min_permission: techsales.prospecting_scripts.view.workspace
 audience: internal
 sort_order: 409
-version: 5
+version: 6
 is_published: true
 ---
 # Criar e editar roteiros de ligação
@@ -38,7 +38,9 @@ Roteiros em uso são arquivados, não excluídos. Abertura e prompt aceitam vari
 
 ## Regras fixas em toda ligação
 
-A IA sempre chama o cliente só pelo primeiro nome. Se o cliente ficar mais de 10 segundos em silêncio, ela pergunta "Você ainda está aí?" (até 2 vezes) antes de encerrar a ligação por silêncio.
+A IA sempre chama o cliente só pelo primeiro nome. Se o cliente ficar mais de 10 segundos em silêncio, ela pergunta "Você ainda está aí?" uma vez e, se o silêncio continuar, despede-se e encerra.
+
+Se o cliente pedir pouco tempo ("só 1 minuto", "estou ocupado"), a IA resume a proposta em uma frase, faz uma pergunta e oferece retornar depois. Quando atende uma URA (menu "digite 1") ou caixa postal, mesmo com a gravação cortada, a IA não conversa nem deixa recado: encerra na hora. Ela só segue o roteiro depois de ouvir uma pessoa.
 
 Ao final de cada ligação, o resumo e a avaliação são gerados sempre em português do Brasil.
 

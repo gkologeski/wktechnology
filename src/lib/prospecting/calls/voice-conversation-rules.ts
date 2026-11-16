@@ -8,17 +8,57 @@ export function firstNameOf(firstName?: string | null, fullName?: string | null)
   return (fullName ?? "").trim().split(/\s+/)[0] ?? "";
 }
 
+export const AUTOMATED_PHRASES = {
+  ura: [
+    '"digite 1"',
+    '"tecle"',
+    '"para falar com"',
+    '"menu"',
+    '"aguarde na linha"',
+    '"sua ligação é muito importante"',
+  ],
+  voicemail: [
+    '"deixe sua mensagem"',
+    '"após o sinal"',
+    '"não está disponível"',
+    '"caixa postal"',
+    '"será encaminhada"',
+    '"o número chamado"',
+    '"fora da área de cobertura"',
+  ],
+};
+
 export const VOICE_CONVERSATION_RULES = `
 
 ## Regras de conversa (obrigatórias)
 - Chame o cliente apenas pelo primeiro nome. Nunca use nome e sobrenome juntos.
-- Se o cliente ficar mais de ${IDLE_TIMEOUT_SECONDS} segundos sem responder, pergunte: "${IDLE_QUESTION}"`;
+- Se o cliente ficar mais de ${IDLE_TIMEOUT_SECONDS} segundos sem responder, pergunte uma única vez: "${IDLE_QUESTION}". Se continuar em silêncio, despeça-se e encerre.
+
+## Pedido de tempo do cliente (VOZ-HUMANO-URA)
+- Se o cliente disser "só 1 minuto", "rapidinho", "estou ocupado", "não posso falar agora" ou parecido: resuma a proposta em UMA frase curta, faça UMA pergunta e ofereça retornar em outro horário. Não continue o roteiro completo.
+
+## Atendimento automático × humano (VOZ-HUMANO-URA)
+- Só siga o roteiro depois de ouvir uma fala de pessoa (cumprimento, "alô", "quem fala?", resposta à sua pergunta).
+- URA / menu automático (ex.: ${AUTOMATED_PHRASES.ura.join(", ")}): NÃO fale com a URA; chame imediatamente a função de encerrar a ligação, sem dizer nada.
+- Caixa postal / gravação (ex.: ${AUTOMATED_PHRASES.voicemail.join(", ")}), mesmo que a frase chegue pela metade: isso NÃO é o cliente. Não responda, não deixe recado; encerre imediatamente.
+- Na dúvida, pergunte uma única vez "Alô, aqui é da WK Technology, com quem eu falo?". Se vier outra gravação ou menu, encerre.`;
 
 export const voiceIdleMessagePlan = {
   idleMessages: [IDLE_QUESTION],
   idleTimeoutSeconds: IDLE_TIMEOUT_SECONDS,
-  idleMessageMaxSpokenCount: 2,
+  idleMessageMaxSpokenCount: 1,
 };
+
+/** Detecção de caixa postal no provedor: encerra sem deixar recado (VOZ-HUMANO-URA). */
+export const voiceVoicemailDetection = { provider: "vapi" as const };
+
+export const VOICE_END_CALL_PHRASES = [
+  "tenha um ótimo dia",
+  "tenha uma ótima semana",
+  "até mais",
+  "tchau",
+  "até logo",
+];
 
 /** Resumo e avaliação pós-ligação sempre em português do Brasil (RESUMO-PTBR-VOZ). */
 export const voiceAnalysisPlan = {

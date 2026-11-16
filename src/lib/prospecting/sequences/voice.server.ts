@@ -49,8 +49,13 @@ export async function prepareSequenceVoice(
   const apiKey = process.env.VAPI_API_KEY,
     secret = process.env.VAPI_WEBHOOK_SECRET;
   if (!apiKey || !secret) throw new Error("Integração de telefonia indisponível.");
-  const { VOICE_CONVERSATION_RULES, voiceIdleMessagePlan, voiceAnalysisPlan } =
-    await import("@/lib/prospecting/calls/voice-conversation-rules");
+  const {
+    VOICE_CONVERSATION_RULES,
+    voiceIdleMessagePlan,
+    voiceAnalysisPlan,
+    voiceVoicemailDetection,
+    VOICE_END_CALL_PHRASES,
+  } = await import("@/lib/prospecting/calls/voice-conversation-rules");
   const prompt = render(cfg.script.prompt, ctx.source) + VOICE_CONVERSATION_RULES,
     firstMessage = render(cfg.script.firstMessage, ctx.source);
   return async (effect: EffectReservation) => {
@@ -94,6 +99,8 @@ export async function prepareSequenceVoice(
           endCallFunctionEnabled: true,
           messagePlan: voiceIdleMessagePlan,
           analysisPlan: voiceAnalysisPlan,
+          voicemailDetection: voiceVoicemailDetection,
+          endCallPhrases: VOICE_END_CALL_PHRASES,
           silenceTimeoutSeconds: 35,
           serverMessages: ["status-update", "end-of-call-report"],
           server: { url: `${publicAppOrigin()}/api/public/hooks/vapi`, secret },

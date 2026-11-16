@@ -137,8 +137,13 @@ export async function startVapiCall(opts: {
   }
 
   const leadName = [lead.first_name, lead.last_name].filter(Boolean).join(" ").trim();
-  const { firstNameOf, VOICE_CONVERSATION_RULES, voiceIdleMessagePlan, voiceAnalysisPlan } =
-    await import("@/lib/prospecting/calls/voice-conversation-rules");
+  const {
+    firstNameOf,
+    VOICE_CONVERSATION_RULES,
+    voiceIdleMessagePlan,
+    voiceAnalysisPlan,
+    voiceVoicemailDetection,
+  } = await import("@/lib/prospecting/calls/voice-conversation-rules");
   const ctx = {
     lead: {
       name: firstNameOf(lead.first_name as string | null, leadName),
@@ -174,6 +179,7 @@ export async function startVapiCall(opts: {
     // Pergunta "Você ainda está aí?" após 10 s; só encerra depois das tentativas.
     messagePlan: voiceIdleMessagePlan,
     analysisPlan: voiceAnalysisPlan,
+    voicemailDetection: voiceVoicemailDetection,
     silenceTimeoutSeconds: 35,
     // Force Portuguese (Brazil) transcription so the model understands pt-BR audio.
     transcriber: { provider: "deepgram", model: "nova-2", language: "pt-BR" },

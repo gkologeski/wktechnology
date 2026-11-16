@@ -25,3 +25,12 @@ describe("voiceAnalysisPlan", () => {
     expect(voiceAnalysisPlan.summaryPlan.messages[1].content).toContain("{{transcript}}");
   });
 });
+
+describe("VOZ-HUMANO-URA", () => {
+  it("respeita pedido de tempo e desliga em URA/caixa postal", () => {
+    expect(VOICE_CONVERSATION_RULES).toContain("só 1 minuto");
+    expect(VOICE_CONVERSATION_RULES).toContain("URA");
+    expect(VOICE_CONVERSATION_RULES).toContain("Caixa postal");
+    expect(voiceIdleMessagePlan.idleMessageMaxSpokenCount).toBe(1);
+  });
+});
