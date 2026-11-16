@@ -2321,7 +2321,7 @@
         "src/lib/whatsapp/campaign-audience.ts": "e204fc3bea329059ab6ba9e2beee8dc1719a0c9db77292100fb81c77d5233c13",
         "src/components/whatsapp/campaign-audience-panel.tsx": "e77a981f32e8c84a3a84e8f7e0d27ac5d2fe711cad3688675fc9ae813822a797",
         "src/lib/whatsapp/campaign-rotation-guard.server.ts": "95cce5544afd6ea49a5f7beafec341d94bded38c22999b88c6e2aca2976c9476",
-        "src/components/inbox/unified-inbox-page.tsx": "9b620f9a04e207d8dab8b9c5b9bfae9bb2f6e96ee50bb28f20e99d467058519d",
+        "src/components/inbox/unified-inbox-page.tsx": "6aab1a6b7c1de0cab60cbcea6fcef2dd50c619743c2d4f8f1126a5b712109d79",
         "src/routes/_authenticated/inbox.ligacoes.tsx": "c1423290125886a27d736c7fc39d2749c26e3e33ce479ef11f3a34592501e290"
       }
     },
@@ -8161,7 +8161,7 @@
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
-        "src/components/hiring/contract-signature-card.tsx": "798df8a0ed16952022afbb9ffadb13b81b5c3b08fca6b0587f3ea141da10584e",
+        "src/components/hiring/contract-signature-card.tsx": "a884911a875e118c87181d0e12ca6a9fbb16f049a6f25dc0b24762d5f08564fb",
         "src/components/hiring/recruitment-authorization-panel.tsx": "63999fab8527aaba7d5bce74450e4c9730b86a54a45104f9952d28de00ad4f8d",
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
@@ -12627,7 +12627,7 @@
       },
       "files": {
         "drizzle/migrations/0359_forsign_integration.sql": "f299acdcbeeac81ca34b101e936070eb15e7b8adb28eaa5262d670fd780d688b",
-        "src/components/contracts/contract-forsign-panel.tsx": "148142742c9b63588deb922c29177d42af5d001028d5dfea20f55813f1c0e941",
+        "src/components/contracts/contract-forsign-panel.tsx": "3af5aa9d2c67ae0ae05cb1314010f2c10d7961071684d59ea6adf6f42fe5aaad",
         "src/components/integrations/forsign-settings-page.tsx": "91258abbf7bb58f8b9bfa3d98238f13af33b8a100fab4ed0c412185231e0e8dd",
         "src/lib/integrations/forsign/forsign-service.server.ts": "60673ead81f7896e3ddfb55191c9d97bc55a303b0a338990fbe66bb0fad73295",
         "src/lib/integrations/forsign/forsign.functions.ts": "d09d853289a03754e5180a570f9bfcf5399ee9c1fb5991b109d9388850e320ca",
@@ -13180,6 +13180,10 @@
         {
           "file": "src/lib/integrations/forsign/forsign-pdf.ts",
           "symbol": "contractHtmlToPdf"
+        },
+        {
+          "file": "src/components/contracts/signature-attachments-summary.tsx",
+          "symbol": "SignatureAttachmentsSummary"
         }
       ],
       "database": [
@@ -13254,7 +13258,8 @@
         "src/lib/contracts/signature-package-pdf.server.ts": "3fdc7bc18c0a461c9c4ed10c7780f9b9152c4af11324b3d9b1bedf6c120f17e7",
         "src/lib/contracts/quote-pdf.server.ts": "989695b7a69f55577314fc0535ce4dafb540f729f9c263b555ceaa1bbdb5ab19",
         "src/lib/contracts/proposal-pdf.server.ts": "f60f92f473f0af768e76302ae842a2e50fbfecb2b94514c2c1d0b754bf30124b",
-        "drizzle/migrations/0367_contract_signature_packages.sql": "2479a6a3f1af4f49c966969646e32b901b75922cd15649e2b798794d8fd91acf"
+        "drizzle/migrations/0367_contract_signature_packages.sql": "2479a6a3f1af4f49c966969646e32b901b75922cd15649e2b798794d8fd91acf",
+        "src/components/contracts/signature-attachments-summary.tsx": "54d10a50d820e76eedc5cc947f7c4df41d7c77e30c027b2fd2f15582e263e3e1"
       }
     },
     {

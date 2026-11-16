@@ -2,6 +2,7 @@ import { ContractHandoffs } from "@/components/contracts/contract-handoffs";
 import { useState } from "react";
 import { ContractSignatureDelivery } from "@/components/contracts/contract-signature-delivery";
 import { ContractForsignPanel } from "@/components/contracts/contract-forsign-panel";
+import { SignatureAttachmentsSummary } from "@/components/contracts/signature-attachments-summary";
 import { readViewAs } from "@/lib/view-as-client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -299,9 +300,10 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
           {mode === "native" && (
             <div className="space-y-3">
               <p className="text-sm">
-                O documento será preparado a partir do contrato salvo e seus serviços. Depois,
-                confira os signatários e envie os convites por e-mail neste mesmo painel.
+                O documento será preparado a partir do contrato salvo, seus serviços e anexos.
+                Depois, confira os signatários e envie os convites por e-mail neste mesmo painel.
               </p>
+              <SignatureAttachmentsSummary contractId={contractId} />
               <ContractSignersEditor
                 value={participants}
                 onChange={setParticipants}

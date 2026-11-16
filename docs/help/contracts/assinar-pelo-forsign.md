@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/forsign
 min_permission: techcontracts.forsign_settings.manage.workspace
 audience: internal
 sort_order: 97
-version: 5
+version: 6
 is_published: true
 ---
 # Enviar contratos para assinatura pelo ForSign
@@ -76,3 +76,6 @@ disso altera quem pode enviar, assinar ou ver o contrato.
 
 ## Anexos no envio
 Inclua as cotações, propostas e arquivos em **Contrato > Documento > Anexos do contrato**. Use **Baixar prévia para assinatura** para revisar o PDF completo. O ForSign recebe o pacote inteiro, com o contrato e todos os anexos, em vez de apenas o corpo principal. Falhas na conversão ou na integridade de qualquer anexo bloqueiam a operação, sem enviar convites incompletos. A cópia enviada permanece congelada; revisões posteriores na origem comercial não alteram esse contrato assinado.
+
+## Conferir anexos antes de preparar ou enviar
+Nos formulários **Preparar assinatura no TechERP** e **Enviar pelo ForSign**, o quadro **Documentos incluídos na assinatura** lista os anexos e identifica as cópias congeladas. Use **Baixar prévia do contrato e anexos** para conferir o PDF completo antes de continuar. Abrir o formulário não gera o pacote nem envia convites. A prévia exige as mesmas permissões da ficha do contrato e não consome créditos do ForSign. Se a consulta falhar, use **Tentar novamente**; uma falha não é apresentada como ausência de anexos.
