@@ -264,16 +264,25 @@ async function subject(
       await tx`update profiles set active_workspace_id=${options.workspace ?? W} where id=${U}`;
       if (options.inactive)
         await tx`update workspace_members set status='inactive' where user_id=${U}`;
-      for (const key of [
+      const keys = [
         "techcontracts.contracts.view.workspace",
         "techcontracts.contracts.update.workspace",
         "techsales.quotes.view.workspace",
         "techsales.proposals.view.workspace",
         "techcontracts.signature_evidence.view.workspace",
         "techcontracts.signature_evidence.manage.workspace",
-      ]) {
+      ];
+      for (const key of keys) {
         if (options.keys !== false && (!options.readOnlyPermissions || !key.includes(".update.")))
           await tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${R},${key},${options.deny ? "deny" : "grant"})`;
+      }
+      if (options.workspace && options.workspace !== W) {
+        const role = "30000000-0000-4000-8000-0000000000b8";
+        await tx`insert into workspace_members(workspace_id,user_id,status) values(${options.workspace},${U},'active')`;
+        await tx`insert into job_roles(id,workspace_id) values(${role},${options.workspace})`;
+        await tx`insert into user_job_roles(role_id,user_id,workspace_id,owner_id) values(${role},${U},${options.workspace},${U})`;
+        for (const key of keys)
+          await tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${options.workspace},${role},${key},'grant')`;
       }
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: U, role: "authenticated" })},true)`;
       await tx.unsafe("SET LOCAL ROLE authenticated");
@@ -587,3 +596,26 @@ it("signature package rejects a direct signature when its package was revoked or
     }),
   ).rejects.toThrow("Pacote de assinatura revogado");
 });
+
+it("signature package rejects an empty main contract before assembling annexes", async () => {
+  await expect(
+    subject(async (tx) => {
+      await rpc(tx, "link", { kind: "quote", source_id: IDs[1] });
+      await tx.unsafe("RESET ROLE");
+      await tx`update contracts set body_html='' where id=${IDs[0]}`;
+      await tx.unsafe("SET LOCAL ROLE authenticated");
+      const hash = await fingerprint(tx);
+      await tx`select contract_attachment_signing_context(${IDs[0]},${hash})`;
+    }),
+  ).rejects.toThrow("Preencha o corpo do contrato");
+});
+
+it("foreign workspace fixture is active and has its own workspace grants", () =>
+  subject(
+    async (tx) => {
+      const context = (await tx`select work_access_context() value`)[0].value;
+      expect(context.workspace).toBe(B);
+      expect(context.keys["techcontracts.contracts.view.workspace"]).toBe(true);
+    },
+    { workspace: B },
+  ));

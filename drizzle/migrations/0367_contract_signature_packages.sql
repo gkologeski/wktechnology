@@ -92,6 +92,7 @@ BEGIN
  rows:=rows||jsonb_build_array(jsonb_build_object('id',a.id,'kind',a.kind,'name',n,'source_id',a.source_id,'storage_path',a.storage_path,'source_snapshot_path',a.source_snapshot_path,'source_snapshot_sha256',a.source_snapshot_sha256,'stamp',coalesce(a.source_stamp,public.contract_attachment_source_stamp(a.id))));
  END LOOP;
  IF jsonb_array_length(rows)>30 THEN RAISE EXCEPTION 'Máximo de 30 anexos no pacote de assinatura.';END IF;
+ IF jsonb_array_length(rows)>0 AND NOT EXISTS(SELECT 1 FROM public.contracts WHERE id=p_contract AND workspace_id=w AND nullif(btrim(body_html),'') IS NOT NULL) THEN RAISE EXCEPTION 'Preencha o corpo do contrato antes de preparar o pacote com anexos.';END IF;
  RETURN jsonb_build_object('workspace_id',w,'attachments',rows,'body',public.hiring_contract_esign_body_without_attachments(w,p_contract));
 END $$;
 REVOKE ALL ON FUNCTION public.contract_attachment_signing_context(uuid,text) FROM PUBLIC,anon;
