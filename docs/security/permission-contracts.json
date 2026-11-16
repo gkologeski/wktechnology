@@ -2321,7 +2321,7 @@
         "src/lib/whatsapp/campaign-audience.ts": "e204fc3bea329059ab6ba9e2beee8dc1719a0c9db77292100fb81c77d5233c13",
         "src/components/whatsapp/campaign-audience-panel.tsx": "e77a981f32e8c84a3a84e8f7e0d27ac5d2fe711cad3688675fc9ae813822a797",
         "src/lib/whatsapp/campaign-rotation-guard.server.ts": "95cce5544afd6ea49a5f7beafec341d94bded38c22999b88c6e2aca2976c9476",
-        "src/components/inbox/unified-inbox-page.tsx": "9b620f9a04e207d8dab8b9c5b9bfae9bb2f6e96ee50bb28f20e99d467058519d",
+        "src/components/inbox/unified-inbox-page.tsx": "6aab1a6b7c1de0cab60cbcea6fcef2dd50c619743c2d4f8f1126a5b712109d79",
         "src/routes/_authenticated/inbox.ligacoes.tsx": "c1423290125886a27d736c7fc39d2749c26e3e33ce479ef11f3a34592501e290"
       }
     },
