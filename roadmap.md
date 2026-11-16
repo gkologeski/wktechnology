@@ -403,5 +403,5 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [x] Fase 6: Ajuda `definir-condicoes-de-pagamento` + permissões
 - [ ] Validar na tela: proposta → contrato → ativação com dados reais; publicar
 
-- [ ] PRAZO-MENSAL: mensalidade recorrente × prazo; prazo mínimo 3 meses e aviso prévio 30 dias editáveis
-- [ ] MINUTA-BLOQUEIO: bloquear "Criar contrato" até minuta aceita; dispensa do aceite do cliente
+- [x] PRAZO-MENSAL: mensalidade recorrente × prazo; prazo mínimo 3 meses e aviso prévio 30 dias editáveis
+- [x] MINUTA-BLOQUEIO: bloquear "Criar contrato" até minuta aceita; dispensa do aceite do cliente
