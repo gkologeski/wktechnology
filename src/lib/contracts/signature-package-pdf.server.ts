@@ -49,8 +49,14 @@ export async function attachmentAsPdf(
     throw new Error("O serviço de conversão para PDF precisa estar configurado para DOCX/XLSX.");
   let html = "";
   if (part.mime === "application/vnd.openxmlformats-officedocument.wordprocessingml.document") {
-    const mammoth = await import("mammoth");
-    const result = await mammoth.convertToHtml({ buffer: Buffer.from(part.bytes) });
+    const imported = await import("mammoth");
+    const mammoth = imported.default ?? imported;
+    // Nitro/Cloudflare resolves Mammoth's browser build (ArrayBuffer input),
+    // while Node resolves its Buffer build. Both use the exact same bytes.
+    const result = await mammoth.convertToHtml({
+      buffer: Buffer.from(part.bytes.buffer, part.bytes.byteOffset, part.bytes.byteLength),
+      arrayBuffer: part.bytes.slice().buffer,
+    });
     html = result.value;
   } else if (part.mime === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") {
     const xlsx = await import("xlsx");

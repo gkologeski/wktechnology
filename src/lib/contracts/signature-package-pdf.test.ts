@@ -3,6 +3,10 @@ vi.mock("@/lib/pdf/print-html.server", () => ({
   renderPdfViaBrowserless: renderer,
   wrapForPrint: (html: string) => html,
 }));
+vi.mock("mammoth", async () => {
+  const { createRequire } = await import("node:module");
+  return { default: createRequire(import.meta.url)("mammoth/mammoth.browser.js") };
+});
 import { expect, it, vi } from "vitest";
 import { PDFDocument } from "pdf-lib";
 import {
@@ -93,4 +97,39 @@ it("signature package converts spreadsheet values without external network reque
   expect((await PDFDocument.load(pdf)).getPageCount()).toBeGreaterThan(0);
   expect(renderer).toHaveBeenCalledWith(expect.stringContaining("Integração"), "renderer-test");
   expect(renderer.mock.calls.at(-1)?.[0]).toContain("111");
+});
+
+it("signature package converts DOCX with the default-only browser export selected by Cloudflare", async () => {
+  const { createRequire } = await import("node:module");
+  const { dirname } = await import("node:path");
+  const require = createRequire(import.meta.url);
+  const Zip = require(
+    require.resolve("jszip", { paths: [dirname(require.resolve("mammoth/package.json"))] }),
+  );
+  const zip = new Zip();
+  zip.file(
+    "[Content_Types].xml",
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>',
+  );
+  zip.file(
+    "_rels/.rels",
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>',
+  );
+  zip.file(
+    "word/document.xml",
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>Escopo técnico do serviço</w:t></w:r></w:p></w:body></w:document>',
+  );
+  const bytes = await zip.generateAsync({ type: "uint8array" });
+  const expected = await contractHtmlToPdf("<p>Convertido</p>", "DOCX");
+  renderer.mockResolvedValue(expected.buffer);
+  const p = await sample();
+  await attachmentAsPdf(
+    {
+      ...p,
+      bytes,
+      mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    },
+    "renderer-test",
+  );
+  expect(renderer.mock.calls.at(-1)?.[0]).toContain("Escopo técnico do serviço");
 });
