@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 31
-version: 1
+version: 2
 is_published: true
 ---
 # Anexar cotação, proposta e arquivos ao contrato
@@ -19,7 +19,7 @@ is_published: true
 
 ## Passo a passo
 
-![Quadro Anexos do contrato na ficha, com o seletor de cotação ou proposta, os botões Vincular documento e Enviar arquivo, um arquivo de teste anexado e o botão Baixar prévia para assinatura](/help/contracts/contrato-anexos-ficha.png)
+![Quadro Anexos do contrato na ficha, com o seletor de cotação ou proposta, os botões Vincular documento e Enviar arquivo, um arquivo de teste anexado e o botão Baixar prévia para assinatura](/__l5e/assets-v1/d37a1edb-e192-482b-ba52-8c1dc30e8923/contrato-anexos-ficha.png)
 
 *Quadro **Anexos do contrato**. Neste exemplo o contrato de teste não tinha cotação nem proposta vinculada; por isso aparece o aviso "Nenhuma cotação ou proposta vinculada..." e só um arquivo enviado (anexo-qa.pdf).*
 
@@ -51,7 +51,7 @@ Formatos aceitos: PDF, DOCX, XLSX, JPG, PNG e TXT, até 20 MB por arquivo.
 
 ### Assinatura no TechERP (nativa)
 
-![Formulário Preparar assinatura do contrato com o quadro Documentos incluídos na assinatura listando 1 anexo e o botão Baixar prévia do contrato e anexos](/help/contracts/contrato-assinatura-nativa.png)
+![Formulário Preparar assinatura do contrato com o quadro Documentos incluídos na assinatura listando 1 anexo e o botão Baixar prévia do contrato e anexos](/__l5e/assets-v1/d89f111b-0c20-4632-ad50-7014f08180af/contrato-assinatura-nativa.png)
 
 *Formulário **Preparar assinatura do contrato**, com o quadro **Documentos incluídos na assinatura**.*
 
@@ -63,7 +63,7 @@ Formatos aceitos: PDF, DOCX, XLSX, JPG, PNG e TXT, até 20 MB por arquivo.
 
 ### Envio pelo ForSign
 
-![Formulário Enviar pelo ForSign com o aviso de consumo de créditos, o quadro Documentos incluídos na assinatura e o botão Baixar prévia do contrato e anexos](/help/contracts/contrato-forsign.png)
+![Formulário Enviar pelo ForSign com o aviso de consumo de créditos, o quadro Documentos incluídos na assinatura e o botão Baixar prévia do contrato e anexos](/__l5e/assets-v1/9760864f-e4df-4ca0-8b56-a3b93735f6c6/contrato-forsign.png)
 
 *Formulário **Enviar pelo ForSign**. A integração ForSign precisa estar conectada.*
 
