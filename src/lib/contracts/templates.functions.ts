@@ -360,6 +360,7 @@ export const createContractFromTemplate = createServerFn({ method: "POST" })
         service_location: contract.service_location,
         jurisdiction: contract.jurisdiction,
         governing_law: contract.governing_law,
+        ...(contract.payment_terms ? { payment_terms: contract.payment_terms as never } : {}),
         body_html: mergeTemplateBody(template.body_html ?? "", ctx, { strict: !!source }),
         metadata: { contract_template_id: template.id, contract_template_name: template.name },
       })

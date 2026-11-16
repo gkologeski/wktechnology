@@ -271,6 +271,8 @@ export async function buildMergeContext(
       input.installmentsCount ?? proposalTerms?.installments_count ?? null,
       input.installmentsDueDay ?? proposalTerms?.installments_due_day ?? null,
     ),
+    // TERMOS-MODELO: condições da proposta aceita seguem para o contrato (gera contas a receber na ativação).
+    payment_terms: source && proposalTerm ? (proposalTerms?.payment_terms ?? null) : null,
     // PRAZO-MENSAL: prazo e mensalidade da proposta aceita vencem os padrões.
     notice_days: proposalTerm?.term?.noticeDays ?? (defaults.notice_days as number) ?? 30,
     minimum_term_months: proposalTerm?.term?.minimumMonths ?? null,
