@@ -8,7 +8,7 @@ route_pattern: /inbox/whatsapp
 min_permission:
 audience: internal
 sort_order: 304
-version: 2
+version: 3
 is_published: true
 ---
 # Atender conversas de WhatsApp
@@ -47,3 +47,7 @@ A mensagem fica registrada na conversa.
 ## Relacionados
 - [Enviar um modelo aprovado no WhatsApp](/ajuda/crm/enviar-modelo-aprovado-whatsapp)
 - [Criar uma campanha de WhatsApp](/ajuda/crm/criar-campanha-whatsapp)
+
+## Ligações ficam fora desta aba
+
+A aba WhatsApp mostra somente conversas e mensagens de WhatsApp. Ligações feitas pela IA aparecem na aba **Ligações** e na Inbox unificada, nunca aqui.

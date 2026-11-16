@@ -24,6 +24,7 @@ export const listConversationMessages = createServerFn({ method: "POST" })
         before: cursorSchema.optional(),
         after: cursorSchema.optional(),
         limit: z.number().int().min(1).max(100).optional(),
+        exclude_calls: z.boolean().optional(),
       })
       .refine((v) => !(v.before && v.after), "use before ou after")
       .parse(i),
@@ -33,6 +34,7 @@ export const listConversationMessages = createServerFn({ method: "POST" })
     type Res = { data: unknown[] | null; error: { message: string } | null };
     type Q = PromiseLike<Res> & {
       eq(c: string, v: string): Q;
+      is(c: string, v: null): Q;
       or(f: string): Q;
       order(c: string, o: { ascending: boolean }): Q;
       limit(n: number): Q;
@@ -76,6 +78,8 @@ export const listConversationMessages = createServerFn({ method: "POST" })
       const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
       q = q.eq("owner_id", await resolveActiveWorkspace(context.userId));
     }
+    // Aba WhatsApp: ligações (call_attempt_id) ficam só na aba Ligações/unificada.
+    if (data.channel === "whatsapp" && data.exclude_calls) q = q.is("call_attempt_id", null);
     const cur = data.before ?? data.after;
     const asc = !!data.after;
     if (cur) {

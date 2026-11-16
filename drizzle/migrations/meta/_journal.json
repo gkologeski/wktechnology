@@ -2591,6 +2591,13 @@
       "when": 1794840239887,
       "tag": "0369_contract_draft_client_acceptance_bypass",
       "breakpoints": true
+    },
+    {
+      "idx": 370,
+      "version": "7",
+      "when": 1794858278220,
+      "tag": "0370_inbox_whatsapp_only_messages",
+      "breakpoints": true
     }
   ]
 }

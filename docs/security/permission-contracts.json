@@ -2273,6 +2273,10 @@
         {
           "file": "drizzle/migrations/0289_sales_row_guard_child_skip_context.sql",
           "symbol": "sales_row_guard"
+        },
+        {
+          "file": "drizzle/migrations/0370_inbox_whatsapp_only_messages.sql",
+          "symbol": "get_inbox_channel_page"
         }
       ],
       "tests": {
@@ -2301,7 +2305,7 @@
         "src/lib/whatsapp.functions.ts": "1134b8ac720de7dcd2dfb45acfbbcc23d3c55351755afad874ec9fb80ce87aac",
         "src/lib/whatsapp-campaigns.functions.ts": "4c0c8ef6eeb82931166481bb7a8d53e48238f941c9e762171a65e81aad06eed8",
         "src/routes/_authenticated/inbox.index.tsx": "8e4a063b6cf862102f4a3547c98798386d325ca5e64bd0626fac34c3648d2d7a",
-        "src/routes/_authenticated/inbox.whatsapp.tsx": "a2922816433982e5243844b6997dbf1880b6522cb8ffb9f33dd87368b479429f",
+        "src/routes/_authenticated/inbox.whatsapp.tsx": "faf6c7c0c1169bdd0ad7dfbe74a744a18e533a643f58cbbc0a76b54643ac2533",
         "src/routes/_authenticated/campaigns.whatsapp.tsx": "c6eae748917f5de80b79433c10fa21aaacc17fa7f172e8a46589aa907dd148be",
         "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9",
         "drizzle/migrations/0263_wa_outbound_activity_trigger.sql": "6c6a9521a5cfa09cd1724061fd78939fa94d56344ccb8c3052418ea9426a96e0",
@@ -2322,7 +2326,8 @@
         "src/components/whatsapp/campaign-audience-panel.tsx": "e77a981f32e8c84a3a84e8f7e0d27ac5d2fe711cad3688675fc9ae813822a797",
         "src/lib/whatsapp/campaign-rotation-guard.server.ts": "95cce5544afd6ea49a5f7beafec341d94bded38c22999b88c6e2aca2976c9476",
         "src/components/inbox/unified-inbox-page.tsx": "6aab1a6b7c1de0cab60cbcea6fcef2dd50c619743c2d4f8f1126a5b712109d79",
-        "src/routes/_authenticated/inbox.ligacoes.tsx": "c1423290125886a27d736c7fc39d2749c26e3e33ce479ef11f3a34592501e290"
+        "src/routes/_authenticated/inbox.ligacoes.tsx": "c1423290125886a27d736c7fc39d2749c26e3e33ce479ef11f3a34592501e290",
+        "drizzle/migrations/0370_inbox_whatsapp_only_messages.sql": "915ebe14ae0a2dd5e88472e7094cc84aeda6f23aea3594096715d096b0832417"
       }
     },
     {
@@ -3614,7 +3619,7 @@
         }
       },
       "files": {
-        "src/lib/inbox/message-history.functions.ts": "ed83611cbb5f3ab2d6673b7a2c64ca48b6a215101a77ffa25ee892f9b25caac3"
+        "src/lib/inbox/message-history.functions.ts": "5037958df236e1484b8a9e6487b240c00e399cbf70805d78070ca93fa5054b4a"
       }
     },
     {
@@ -9847,9 +9852,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change.",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant.",
       "files": {
-        "src/integrations/supabase/types.ts": "bc85d350802626b352049ed766875ccac1ef61e82ff53b9415e10236cd8e89ed",
+        "src/integrations/supabase/types.ts": "49b5635d9a8d72f7383a4eb5f1db40dd3b023a25fa80615e9923c044dec21af8",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },

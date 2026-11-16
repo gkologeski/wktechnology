@@ -183,7 +183,7 @@ function WhatsAppInbox() {
     contextKey: selected && user?.id ? `${user.id}:whatsapp:${selected}` : null,
     fetchPage: ({ signal, ...cur }) =>
       msgsFn({
-        data: { channel: "whatsapp", conversation_id: selected!, ...cur },
+        data: { channel: "whatsapp", conversation_id: selected!, exclude_calls: true, ...cur },
         signal,
       }) as Promise<HistoryPage<WaMessageRow>>,
     realtime: selected
@@ -407,7 +407,7 @@ function WhatsAppInbox() {
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const messages = history.items;
+  const messages = useMemo(() => history.items.filter((m) => !m.call_attempt_id), [history.items]);
 
   // Rascunho automático da mensagem em digitação por conversa.
   const messageDraft = useMessageDraft({

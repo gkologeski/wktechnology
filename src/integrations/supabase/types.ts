@@ -31201,6 +31201,8 @@ export type Database = {
           last_inbound_at: string | null
           last_message_at: string | null
           last_message_preview: string | null
+          last_wa_message_at: string | null
+          last_wa_message_preview: string | null
           lead_id: string | null
           origin_campaign_id: string | null
           origin_template_name: string | null
@@ -31228,6 +31230,8 @@ export type Database = {
           last_inbound_at?: string | null
           last_message_at?: string | null
           last_message_preview?: string | null
+          last_wa_message_at?: string | null
+          last_wa_message_preview?: string | null
           lead_id?: string | null
           origin_campaign_id?: string | null
           origin_template_name?: string | null
@@ -31255,6 +31259,8 @@ export type Database = {
           last_inbound_at?: string | null
           last_message_at?: string | null
           last_message_preview?: string | null
+          last_wa_message_at?: string | null
+          last_wa_message_preview?: string | null
           lead_id?: string | null
           origin_campaign_id?: string | null
           origin_template_name?: string | null
