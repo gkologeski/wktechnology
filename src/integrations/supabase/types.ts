@@ -6662,6 +6662,75 @@ export type Database = {
           },
         ]
       }
+      contract_attachments: {
+        Row: {
+          contract_id: string
+          created_at: string
+          created_by: string
+          file_name: string | null
+          id: string
+          kind: string
+          ready: boolean
+          sha256: string | null
+          source_id: string | null
+          source_name: string | null
+          source_snapshot_path: string | null
+          source_snapshot_sha256: string | null
+          source_stamp: string | null
+          storage_path: string | null
+          workspace_id: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          created_by: string
+          file_name?: string | null
+          id?: string
+          kind: string
+          ready?: boolean
+          sha256?: string | null
+          source_id?: string | null
+          source_name?: string | null
+          source_snapshot_path?: string | null
+          source_snapshot_sha256?: string | null
+          source_stamp?: string | null
+          storage_path?: string | null
+          workspace_id: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          created_by?: string
+          file_name?: string | null
+          id?: string
+          kind?: string
+          ready?: boolean
+          sha256?: string | null
+          source_id?: string | null
+          source_name?: string | null
+          source_snapshot_path?: string | null
+          source_snapshot_sha256?: string | null
+          source_stamp?: string | null
+          storage_path?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_attachments_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_attachments_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_defaults: {
         Row: {
           created_at: string
@@ -7392,6 +7461,60 @@ export type Database = {
             columns: ["target_contract_id"]
             isOneToOne: false
             referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contract_signature_packages: {
+        Row: {
+          contract_hash: string
+          contract_id: string
+          created_at: string
+          created_by: string
+          id: string
+          manifest: Json
+          page_count: number
+          sha256: string
+          storage_path: string
+          workspace_id: string
+        }
+        Insert: {
+          contract_hash: string
+          contract_id: string
+          created_at?: string
+          created_by: string
+          id?: string
+          manifest: Json
+          page_count: number
+          sha256: string
+          storage_path: string
+          workspace_id: string
+        }
+        Update: {
+          contract_hash?: string
+          contract_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          manifest?: Json
+          page_count?: number
+          sha256?: string
+          storage_path?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_signature_packages_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_signature_packages_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
             referencedColumns: ["id"]
           },
         ]
@@ -33572,6 +33695,22 @@ export type Database = {
         Args: { p_contract: string; p_reset?: boolean; p_stages?: string[] }
         Returns: Json
       }
+      contract_attachment_manage: {
+        Args: { p_action: string; p_contract: string; p_data?: Json }
+        Returns: Json
+      }
+      contract_attachment_signing_context: {
+        Args: { p_contract: string; p_hash: string }
+        Returns: Json
+      }
+      contract_attachment_source_stamp: {
+        Args: { p_id: string }
+        Returns: string
+      }
+      contract_attachment_storage_allowed: {
+        Args: { p_path: string; p_write: boolean }
+        Returns: boolean
+      }
       contract_audit_annotate: {
         Args: { p_contract: string; p_evidence: Json }
         Returns: undefined
@@ -33735,6 +33874,19 @@ export type Database = {
       }
       contract_mutate: {
         Args: { p_contract: string; p_patch: Json }
+        Returns: Json
+      }
+      contract_signature_package_store: {
+        Args: {
+          p_actor: string
+          p_contract: string
+          p_hash: string
+          p_manifest: Json
+          p_pages: number
+          p_path: string
+          p_sha: string
+          p_ws: string
+        }
         Returns: Json
       }
       contract_template_save_checked: {
@@ -34412,6 +34564,10 @@ export type Database = {
         Args: { p_contract: string; p_ws: string }
         Returns: string
       }
+      hiring_contract_esign_body_without_attachments: {
+        Args: { p_contract: string; p_ws: string }
+        Returns: string
+      }
       hiring_contract_evidence_revoke: {
         Args: { p_evidence: string; p_note: string; p_ws: string }
         Returns: undefined
@@ -34430,6 +34586,10 @@ export type Database = {
         Returns: string
       }
       hiring_contract_fingerprint: {
+        Args: { p_contract: string }
+        Returns: string
+      }
+      hiring_contract_fingerprint_without_attachments: {
         Args: { p_contract: string }
         Returns: string
       }
