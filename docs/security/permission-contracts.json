@@ -8094,6 +8094,14 @@
         {
           "file": "src/lib/access-control/enforce.server.ts",
           "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/contracts/signature-package.server.ts",
+          "symbol": "prepareSignaturePackage"
+        },
+        {
+          "file": "src/lib/contracts/signature-package.server.ts",
+          "symbol": "signerSignaturePackage"
         }
       ],
       "database": [
@@ -8136,7 +8144,7 @@
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
         "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
-        "src/routes/_authenticated/contracts.$id.tsx": "f51782b750462067374edfb5caf55d4c56cffa290558331d19b91e935281fed8",
+        "src/routes/_authenticated/contracts.$id.tsx": "902471581c3eefdc07b37cbab97a02715563cd72c7616a47de20f3abfc560ae0",
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
@@ -8144,7 +8152,7 @@
         "src/components/hiring/recruitment-authorization-panel.tsx": "63999fab8527aaba7d5bce74450e4c9730b86a54a45104f9952d28de00ad4f8d",
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
-        "src/lib/hiring/signature.functions.ts": "4f291f2f4868068afb2f3ec1042df44fcfcaf42804b1b91c4784c5a4ba6fccc7",
+        "src/lib/hiring/signature.functions.ts": "190fb220cfa631b679c0642ceeff80006798550f253e4a306f3c6e0d95c23df7",
         "src/routes/_authenticated/contracts.signatures.tsx": "6fa1182c3e26409de32729fb31c9f2cfcb251f0e8d298be4c8254488f588191d",
         "drizzle/migrations/0358_esign_formatted_contract_body.sql": "c28f5c805a9be9020842a5e8714f180ffcfa71ae3833b9ffa6f3262dafdf6aa1"
       }
@@ -10518,6 +10526,14 @@
         {
           "file": "src/lib/proposals/proposal-pdf-rules.ts",
           "symbol": "isValidProposalToken"
+        },
+        {
+          "file": "src/lib/contracts/quote-pdf.server.ts",
+          "symbol": "renderQuotePdf"
+        },
+        {
+          "file": "src/lib/contracts/proposal-pdf.server.ts",
+          "symbol": "renderProposalPdf"
         }
       ],
       "database": [
@@ -10549,7 +10565,7 @@
         }
       },
       "files": {
-        "src/routes/api/public/proposals/$token.pdf.ts": "80257dfa0aaa31ed63011a41d752864450ee70d5013aeb668d2b42a7172a4ffb"
+        "src/routes/api/public/proposals/$token.pdf.ts": "3cbcc4ee3682cf6472c9d8589241256dc5c8472211127e7596c93478afbbc93a"
       },
       "exception": {
         "mechanism": "Random public_token issued when the proposal is sent; server loads only the proposal matching the token.",
@@ -12378,6 +12394,14 @@
         {
           "file": "src/lib/esign.functions.ts",
           "symbol": "getEsignSession"
+        },
+        {
+          "file": "src/lib/contracts/signature-package.server.ts",
+          "symbol": "prepareSignaturePackage"
+        },
+        {
+          "file": "src/lib/contracts/signature-package.server.ts",
+          "symbol": "signerSignaturePackage"
         }
       ],
       "database": [
@@ -12425,8 +12449,8 @@
         "src/components/contracts/contract-signature-delivery.tsx": "de3c0bb080332a72f550eff06a496e5f978636c361dd8bb9566811214448a62f",
         "src/lib/contracts/signature-delivery.functions.ts": "7e54acfd8edc6821c6eddf8221b08de3d2f01e59ac4a3e24b993e7bc2d4c7100",
         "src/lib/contracts/signature-delivery.server.ts": "ee8265251df0c590c6937621005c7c16f81658512a890f4d7e3c2ada9a87a1a4",
-        "src/lib/esign.functions.ts": "37d7dec2190628e15769933b537a8bb2832ea3f9e99a26ebd76f87d20485360d",
-        "src/routes/sign.$token.tsx": "5d70aa590628e0f1dd1586c15e48bf095c7a6f1213e3dcfac423e6434b4a831f"
+        "src/lib/esign.functions.ts": "c06070010bda0b9e850a40ea0f3fec2250eb7c36c13557e55db1a9e2728c29e8",
+        "src/routes/sign.$token.tsx": "6d359f38fe74dc9f8b5e11eeb4a01bd881cf37fb36487ffe0f4689495a547baa"
       },
       "exception": {
         "mechanism": "Unchanged public esign functions resolve a personal signing token to its persisted document and workspace, then execute token-validated contract_esign_public or ats_offer_sign RPCs. Invitation dispatch itself requires authenticated work scope.",
@@ -12530,6 +12554,14 @@
         {
           "file": "src/lib/integrations/forsign/forsign-service.server.ts",
           "symbol": "sendContractFromContacts"
+        },
+        {
+          "file": "src/lib/contracts/signature-package.server.ts",
+          "symbol": "prepareSignaturePackage"
+        },
+        {
+          "file": "src/lib/contracts/signature-package.server.ts",
+          "symbol": "signerSignaturePackage"
         }
       ],
       "database": [
@@ -12572,7 +12604,7 @@
         "drizzle/migrations/0359_forsign_integration.sql": "f299acdcbeeac81ca34b101e936070eb15e7b8adb28eaa5262d670fd780d688b",
         "src/components/contracts/contract-forsign-panel.tsx": "148142742c9b63588deb922c29177d42af5d001028d5dfea20f55813f1c0e941",
         "src/components/integrations/forsign-settings-page.tsx": "91258abbf7bb58f8b9bfa3d98238f13af33b8a100fab4ed0c412185231e0e8dd",
-        "src/lib/integrations/forsign/forsign-service.server.ts": "b8e512abcfcdf6287bbe7455e342ba999aecc137739b03e98b9be23e46ef5a81",
+        "src/lib/integrations/forsign/forsign-service.server.ts": "60673ead81f7896e3ddfb55191c9d97bc55a303b0a338990fbe66bb0fad73295",
         "src/lib/integrations/forsign/forsign.functions.ts": "d09d853289a03754e5180a570f9bfcf5399ee9c1fb5991b109d9388850e320ca",
         "src/routes/_authenticated/settings.integrations.forsign.tsx": "7dfc62e76ddcc1ec28fd44877c337ebbc3c0adcb091ba2da42caee9885813a81"
       }
@@ -13039,6 +13071,233 @@
         "src/lib/search/search-collection.server.ts": "86c3c615fc4c04300453b44782a04b01568816d1821c12e0e4efbf8010903708",
         "src/lib/search/recent-pinned.functions.ts": "ed594f4d40ae4a993f8618971e9a9e7c186104e164eaea00a3a66758b86b9f5a",
         "drizzle/migrations/0365_global_search_content_cursor.sql": "637f3a7fae7845f421dfcb29126137fb49d31293da5418e8dc87bc9b95bfb209"
+      }
+    },
+    {
+      "id": "contract-supporting-attachments",
+      "kind": "business",
+      "resources": [
+        "techcontracts.contracts",
+        "techsales.quotes",
+        "techsales.proposals",
+        "techcontracts.signature_evidence"
+      ],
+      "actions": [
+        "view",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techcontracts.contracts.view.own",
+        "techcontracts.contracts.view.team",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.update.own",
+        "techcontracts.contracts.update.team",
+        "techcontracts.contracts.update.workspace",
+        "techcontracts.signature_evidence.view.workspace",
+        "techcontracts.signature_evidence.manage.workspace"
+      ],
+      "rationale": "Contract attachments reuse contract view/update plus current commercial source view. Signature preparation reuses signature_evidence view/manage, active membership and per-contract scope. The signed PDF package is frozen with exact hashes, integrated into native signature body/ForSign, stored service-only after live caller checks before and after rendering; public downloads are bound to a validated signer token and sealed body. No role grants. Existing public commercial PDF endpoints keep token/status checks and share rendering with authenticated source reads. The new upload bucket is explicitly dispatched through the existing global restrictive Storage read/create policies; all other buckets retain shared_storage_object_access unchanged.",
+      "controls": [
+        {
+          "file": "src/lib/contracts/attachments.functions.ts",
+          "symbol": "downloadContractAttachment"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/contracts/attachments.functions.ts",
+          "symbol": "listContractAttachments"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        },
+        {
+          "file": "src/lib/contracts/signature-package.server.ts",
+          "symbol": "prepareSignaturePackage"
+        },
+        {
+          "file": "src/lib/contracts/signature-package.server.ts",
+          "symbol": "signerSignaturePackage"
+        },
+        {
+          "file": "src/lib/contracts/signature-package.server.ts",
+          "symbol": "loadPackageBytes"
+        },
+        {
+          "file": "src/lib/contracts/signature-package-pdf.server.ts",
+          "symbol": "assembleSignaturePackage"
+        },
+        {
+          "file": "src/lib/pdf/print-html.server.ts",
+          "symbol": "renderPdfViaBrowserless"
+        },
+        {
+          "file": "src/lib/contracts/quote-pdf.server.ts",
+          "symbol": "renderQuotePdf"
+        },
+        {
+          "file": "src/lib/contracts/proposal-pdf.server.ts",
+          "symbol": "renderProposalPdf"
+        },
+        {
+          "file": "src/lib/integrations/forsign/forsign-pdf.ts",
+          "symbol": "contractHtmlToPdf"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0366_contract_attachments.sql",
+          "symbol": "contract_attachment_manage"
+        },
+        {
+          "file": "drizzle/migrations/0366_contract_attachments.sql",
+          "symbol": "contract_attachment_storage_allowed"
+        },
+        {
+          "file": "drizzle/migrations/0367_contract_signature_packages.sql",
+          "symbol": "contract_attachment_signing_context"
+        },
+        {
+          "file": "drizzle/migrations/0367_contract_signature_packages.sql",
+          "symbol": "contract_signature_package_store"
+        },
+        {
+          "file": "drizzle/migrations/0367_contract_signature_packages.sql",
+          "symbol": "hiring_contract_fingerprint"
+        },
+        {
+          "file": "drizzle/migrations/0367_contract_signature_packages.sql",
+          "symbol": "hiring_contract_esign_body"
+        },
+        {
+          "file": "drizzle/migrations/0367_contract_signature_packages.sql",
+          "symbol": "contract_attachment_manage"
+        },
+        {
+          "file": "drizzle/migrations/0367_contract_signature_packages.sql",
+          "symbol": "contract_attachment_storage_allowed"
+        },
+        {
+          "file": "drizzle/migrations/0367_contract_signature_packages.sql",
+          "symbol": "contract_esign_public"
+        },
+        {
+          "file": "drizzle/migrations/0227_order5_shared_prepare.sql",
+          "symbol": "shared_storage_session_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/attachments-postgres.test.ts",
+          "name": "attachments allow active authorized member and idempotent source links"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/attachments-postgres.test.ts",
+          "name": "attachments reject missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/attachments-postgres.test.ts",
+          "name": "attachments reject explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/attachments-postgres.test.ts",
+          "name": "attachments reject foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/attachments-postgres.test.ts",
+          "name": "attachments reject inactive member"
+        }
+      },
+      "files": {
+        "src/lib/contracts/attachments.functions.ts": "2e9890124119ecc27ba3579136f95e05fbb55b515c6c1188ffc5b7bd4227fe64",
+        "src/components/contracts/contract-attachments-card.tsx": "56c77829a31f6560ca6730ad4731ce585e5d1d1434fb5beac65a3766d1a1df77",
+        "drizzle/migrations/0366_contract_attachments.sql": "572bbe652ee2afe4a50a84d785ba6c633b44d522cfa34f4947a2844944d9ddd7",
+        "src/lib/contracts/signature-package.server.ts": "0ce2a44e6d6a9fdc358cd00901608235a93e399df9914bd471833dcc880f9938",
+        "src/lib/contracts/signature-package-pdf.server.ts": "3fdc7bc18c0a461c9c4ed10c7780f9b9152c4af11324b3d9b1bedf6c120f17e7",
+        "src/lib/contracts/quote-pdf.server.ts": "989695b7a69f55577314fc0535ce4dafb540f729f9c263b555ceaa1bbdb5ab19",
+        "src/lib/contracts/proposal-pdf.server.ts": "f60f92f473f0af768e76302ae842a2e50fbfecb2b94514c2c1d0b754bf30124b",
+        "drizzle/migrations/0367_contract_signature_packages.sql": "2479a6a3f1af4f49c966969646e32b901b75922cd15649e2b798794d8fd91acf"
+      }
+    },
+    {
+      "id": "quote-public-pdf-shared-renderer",
+      "kind": "public",
+      "resources": [
+        "techsales.quotes"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.quotes.view.workspace"
+      ],
+      "rationale": "Existing public quote PDF keeps its random token lookup and published/sent/accepted/declined/expired status gate; only renderer moved to a shared server module used by the authorized signature assembler. No new public data or identifier query.",
+      "controls": [
+        {
+          "file": "src/lib/proposals/proposal-pdf-rules.ts",
+          "symbol": "isValidProposalToken"
+        },
+        {
+          "file": "src/lib/contracts/quote-pdf.server.ts",
+          "symbol": "renderQuotePdf"
+        },
+        {
+          "file": "src/lib/contracts/proposal-pdf.server.ts",
+          "symbol": "renderProposalPdf"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0223_order4_sales_activate.sql",
+          "symbol": "sales_view"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/quote-pdf-route.test.ts",
+          "name": "quote pdf exports only the matching published token"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/quote-pdf-route.test.ts",
+          "name": "quote pdf rejects missing token"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/quote-pdf-route.test.ts",
+          "name": "quote pdf rejects draft document"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/quote-pdf-route.test.ts",
+          "name": "quote pdf rejects a token with no matching document"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/quote-pdf-route.test.ts",
+          "name": "quote pdf rejects a revoked token"
+        }
+      },
+      "files": {
+        "src/routes/api/public/quotes/$token.pdf.ts": "6cc59258bf60a1b47575bf1b65552dc7dd347aefb90f8d1b97acd925ff2b7aa0"
+      },
+      "exception": {
+        "mechanism": "Random quote public_token matched exactly by the server; only published status permits rendering.",
+        "boundary": "One matching published quote; no listing or arbitrary UUID input.",
+        "revocation": "Clear/regenerate token or return quote to draft; database lookup rechecks every request.",
+        "review_by": "2027-05-16"
       }
     }
   ],

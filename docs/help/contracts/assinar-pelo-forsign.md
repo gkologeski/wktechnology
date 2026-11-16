@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/forsign
 min_permission: techcontracts.forsign_settings.manage.workspace
 audience: internal
 sort_order: 97
-version: 4
+version: 5
 is_published: true
 ---
 # Enviar contratos para assinatura pelo ForSign
@@ -73,3 +73,6 @@ Cada linha traz um ícone antes do nome, e a cor do rótulo repete o mesmo códi
 O ícone é apenas um reforço visual: o texto ao lado continua sendo o que define a situação, e nada
 disso altera quem pode enviar, assinar ou ver o contrato.
 - Se o ForSign registrar um envio em ordem, o quadro mostra um aviso.
+
+## Anexos no envio
+Inclua as cotações, propostas e arquivos em **Contrato > Documento > Anexos do contrato**. Use **Baixar prévia para assinatura** para revisar o PDF completo. O ForSign recebe o pacote inteiro, com o contrato e todos os anexos, em vez de apenas o corpo principal. Falhas na conversão ou na integridade de qualquer anexo bloqueiam a operação, sem enviar convites incompletos. A cópia enviada permanece congelada; revisões posteriores na origem comercial não alteram esse contrato assinado.

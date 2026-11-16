@@ -1,3 +1,4 @@
+import { ContractAttachmentsCard } from "@/components/contracts/contract-attachments-card";
 import { serviceTypeLabel } from "@/lib/contracts/import-schemas";
 import { ContractSignatureCard } from "@/components/hiring/contract-signature-card";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -704,6 +705,7 @@ function ContractDetail() {
             </CardContent>
           </Card>
 
+          <ContractAttachmentsCard contractId={id} canEdit={canUpdateContract} />
           <ImportedFieldsCard contract={contract} />
         </TabsContent>
         <TabsContent value="approvals" className="space-y-5 pt-3">

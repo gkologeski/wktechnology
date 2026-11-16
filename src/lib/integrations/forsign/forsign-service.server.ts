@@ -221,6 +221,9 @@ export async function sendContract(
     .eq("workspace_id", ws)
     .single();
   if (ce || !contract) throw new Error("Contrato não encontrado.");
+  const { prepareSignaturePackage, loadPackageBytes } =
+    await import("@/lib/contracts/signature-package.server");
+  const signaturePackage = await prepareSignaturePackage(sb, userId, input.contractId, input.hash);
   const { data: html, error: he } = await db.rpc("hiring_contract_esign_body", {
     p_ws: ws,
     p_contract: input.contractId,
@@ -259,9 +262,12 @@ export async function sendContract(
   try {
     const title = `${contract.title}${contract.number ? ` (${contract.number})` : ""}`;
     const { contractHtmlToPdf } = await import("./forsign-pdf");
-    const pdf = await contractHtmlToPdf(String(html), title);
+    const pdf = signaturePackage
+      ? await loadPackageBytes(signaturePackage)
+      : await contractHtmlToPdf(String(html), title);
     const fileName = `${(contract.number ?? contract.id).replace(/[^\w.-]+/g, "_")}.pdf`;
     const docId = await client.uploadPdf(pdf, fileName);
+    await authorizeSend(sb, userId, input.contractId, input.hash);
     const op = await client.createOperation({
       name: title.slice(0, 200),
       files: [{ id: docId, description: fileName }],

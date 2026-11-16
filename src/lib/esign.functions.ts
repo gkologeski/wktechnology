@@ -281,12 +281,18 @@ export const getEsignSession = createServerFn({ method: "GET" })
       await offerRpc(supabaseAdmin, "ats_offer_sign", { _token: data.token, _action: "view" });
     } else {
       const { workRpc } = await import("@/lib/access-control/work-core.server");
-      return workRpc<EsignSession>(supabaseAdmin, "contract_esign_public", {
+      const session = await workRpc<EsignSession>(supabaseAdmin, "contract_esign_public", {
         p_token: data.token,
         p_action: "view",
       });
+      const { signerSignaturePackage } = await import("@/lib/contracts/signature-package.server");
+      return {
+        ...session,
+        signaturePackage: await signerSignaturePackage(session.doc, workspaceId),
+      };
     }
     return {
+      signaturePackage: null,
       doc,
       signer: {
         id: signer.id,

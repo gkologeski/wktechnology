@@ -8,7 +8,7 @@ route_pattern: /sign/$token
 min_permission:
 audience: internal
 sort_order: 96
-version: 2
+version: 3
 is_published: true
 ---
 # Assinar ou recusar um documento por link
@@ -18,7 +18,7 @@ is_published: true
 **Antes de começar:** Receber um link válido. Não compartilhe o link individual com terceiros.
 
 ## Passo a passo
-1. Abra o link recebido e leia o documento.
+1. Abra o link recebido e leia o documento. Se houver anexos, use **Abrir contrato completo com anexos (PDF)** e confira o pacote inteiro; a tela informa a quantidade de anexos, páginas e o hash de integridade. A assinatura abrange o contrato e todos os anexos desse pacote congelado.
 2. Consulte a situação dos signatários e aguarde os anteriores se houver assinatura ordenada.
 3. Digite seu nome completo e marque o aceite.
 4. Clique em "Assinar agora".

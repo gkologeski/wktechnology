@@ -39,6 +39,8 @@ export const prepareContractSignature = createServerFn({ method: "POST" })
       ws,
       "techcontracts.signature_evidence.manage.workspace",
     );
+    const { prepareSignaturePackage } = await import("@/lib/contracts/signature-package.server");
+    await prepareSignaturePackage(context.supabase, context.userId, data.contractId, data.hash);
     return workRpc<string>(context.supabase, "hiring_contract_signers_prepare", {
       p_ws: ws,
       p_contract: data.contractId,
