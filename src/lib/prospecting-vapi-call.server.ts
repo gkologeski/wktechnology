@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { assertSalesArea, assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 import { isValidE164 } from "@/lib/phone/e164";
+import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
 
 // Discagem Vapi (server-only). Fica fora de prospecting-campaigns.functions.ts
 // porque é usada também pelo cron de discagem: exportada de um arquivo
@@ -88,15 +89,20 @@ export async function startVapiCall(opts: {
     .from(targetTable)
     .select(
       opts.contactId
-        ? "id, first_name, last_name, company_name, phone, mobile_phone"
-        : "id, first_name, last_name, company_name, phone",
+        ? "id, first_name, last_name, company_name, phone, mobile_phone, whatsapp_e164"
+        : "id, first_name, last_name, company_name, phone, whatsapp_e164",
     )
     .eq("id", targetId)
     .eq("workspace_id", opts.workspaceId)
     .single();
-  // Contato: celular primeiro, depois telefone.
+  // Celular (WhatsApp → Celular → Telefone) primeiro; fixo só se não houver celular.
+  const r = row as Record<string, string | null> | null;
+  const mobilePick = r ? pickWhatsAppNumber([r.whatsapp_e164, r.mobile_phone, r.phone]) : null;
   const lead = row
-    ? { ...row, phone: (row.mobile_phone as string | null) || (row.phone as string | null) }
+    ? {
+        ...row,
+        phone: mobilePick?.status === "ok" ? mobilePick.e164 : r?.mobile_phone || r?.phone || null,
+      }
     : null;
   if (!lead?.phone) {
     await persistDiag({ vapi_response: { error: `${noun} sem telefone`, target_id: targetId } });

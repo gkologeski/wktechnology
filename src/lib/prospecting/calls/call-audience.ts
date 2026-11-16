@@ -1,3 +1,4 @@
+import { pickWhatsAppNumber } from "@/lib/phone/whatsapp-e164";
 // Público das Campanhas de Ligação no mesmo formato do quadro do WhatsApp.
 // Ligações discam para Leads ou Contatos (base escolhida no quadro).
 export type CallAudienceState = {
@@ -31,4 +32,13 @@ export function hasCallAudience(cfg: CallAudienceConfig | null | undefined): boo
   if (s.mode === "queue") return !!s.queueId;
   if (s.mode === "filter") return true;
   return parseManualPhones(cfg.manualRaw).length > 0;
+}
+
+/** Campanha de voz só disca celular (mesma regra do WhatsApp); fixo fica fora. */
+export function pickCallMobile(fields: Array<string | null | undefined>): {
+  phone: string | null;
+  landline: boolean;
+} {
+  const p = pickWhatsAppNumber(fields);
+  return { phone: p.status === "ok" ? p.e164 : null, landline: p.status === "landline" };
 }
