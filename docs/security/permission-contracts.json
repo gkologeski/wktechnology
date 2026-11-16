@@ -1074,10 +1074,14 @@
         "system.audit.view.team",
         "system.audit.view.workspace"
       ],
-      "rationale": "Audit view requires active selected tenant, explicit audit read and current entity record read. Snapshot tenant must be unambiguous; historical owner ids never infer a tenant. Raw payload SELECT is revoked; safe projection applies current field masks and removes credential columns/free-form metadata. No role assignments or historical rows are changed. 0368 replaces dynamic SQL in this and sibling SECURITY DEFINER checks with fixed per-table queries and revokes anon execute; access rules unchanged. 0368 replaces dynamic SQL in this and sibling SECURITY DEFINER checks with fixed per-table queries and revokes anon execute; access rules unchanged.",
+      "rationale": "Audit view requires active selected tenant, explicit audit read and current entity record read. Snapshot tenant must be unambiguous; historical owner ids never infer a tenant. Raw payload SELECT is revoked; safe projection applies current field masks and removes credential columns/free-form metadata. No role assignments or historical rows are changed. 0368 replaces dynamic SQL in this and sibling SECURITY DEFINER checks with fixed per-table queries and revokes anon execute; access rules unchanged. 0368 replaces dynamic SQL in this and sibling SECURITY DEFINER checks with fixed per-table queries and revokes anon execute; access rules unchanged. 0368 replaces dynamic SQL in this and sibling SECURITY DEFINER checks with fixed per-table queries and revokes anon execute; access rules unchanged.",
       "database": [
         {
           "file": "drizzle/migrations/0245_audit_read_boundary.sql",
+          "symbol": "shared_audit_read_access"
+        },
+        {
+          "file": "drizzle/migrations/0368_remove_dynamic_sql_definer_functions.sql",
           "symbol": "shared_audit_read_access"
         },
         {
@@ -9822,7 +9826,7 @@
         "drizzle/migrations/0312_contract_draft_legal_review.sql": "13ce7aa0ddad44bc26c81cccd662b1fb5a12f6cf606e87554beea542faed7e82",
         "src/components/contracts/contract-draft-approvers-page.tsx": "fd9f5b3f844bd1c641ae8f5cc67ee45bd354f9ef06ea3200e27f4027a7007376",
         "src/components/contracts/contract-draft-review-page.tsx": "6e50ced18fcec1473898b2afe75999a4426da846bd83d3823892b21186283dc1",
-        "src/lib/contracts/contract-drafts.functions.ts": "326db598407c747b0009222ead87aae879a6143183105471434b435f1d541fe5",
+        "src/lib/contracts/contract-drafts.functions.ts": "893de1e28acc1664e6867e96f354bd21e09ed76681047ed302f6086ebf6762db",
         "src/lib/workflows/engine/actions-contracts.server.ts": "ce77a960a2356639cd80d3245608044a2dabe2ef8d0dcd2dffa33f22ffb0c1d2",
         "src/routes/_authenticated/contracts.drafts.$id.tsx": "154ab4c2eb14d4003eadd589b90b7af808169de961cf7e5ac21554a8973daea2",
         "src/routes/_authenticated/settings.contract-draft-approvers.tsx": "da7a3d3851d63c0e4409355465670d75feea86c2da22708494bc3851962b6d08",
@@ -9836,7 +9840,7 @@
       "kind": "presentation",
       "rationale": "Pure labels and the TS mirror of the SQL approver rule; no I/O. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável.",
       "files": {
-        "src/lib/contracts/contract-draft-status.ts": "6843e1ab6aaf891d3336687a3be8da58d103ad6c1e9019b74fb2067777864151",
+        "src/lib/contracts/contract-draft-status.ts": "9380dc38f4d977d49d7c12fa51f30fba71f3c4442352856e331c04ade26a10da",
         "src/lib/contracts/contract-draft-public-rules.ts": "b0ba0ea6350890b9262061980ec7b66a72bd69ba0f97d254fab02a53c58a50b8"
       }
     },
@@ -10827,10 +10831,10 @@
       },
       "files": {
         "drizzle/migrations/0325_quote_payment_terms.sql": "cb6ba51e5baa85548e547d5c7d01dd89a6f96a1217a3ec524ff05d056f21e861",
-        "src/lib/sales/payment-terms.ts": "e8648c8aa5458d837d8b9772e0aee9e03928317e6ec232625f5e250f1ed12c53",
+        "src/lib/sales/payment-terms.ts": "46d0f740dcf352d29fd854fed1ce98cf30b9d476ff8638d2a0887beb3178bb54",
         "src/lib/sales/quote-payment-terms.write.ts": "53bd243aa624ab155416251f9977ef77dcdc801851d2be2443034f4924cfe836",
         "src/lib/sales/quote-payment-terms.functions.ts": "5d76c67e6afe9903722e51c0948844e8db097c5b5ef3cf5be8bbf2eeddade7b3",
-        "src/components/sales/payment-terms-editor.tsx": "9ff7214e3021913938134395e73741543282b0a6bf3888132578f999c17271e9",
+        "src/components/sales/payment-terms-editor.tsx": "3ca019849dbbe8d3c93d8a9138a003d88648b6d020ed122d6530334a7d572d56",
         "src/components/deals/quote-wizard.tsx": "8ae23a5d321b35b2ae33898a7c813ba256bbaa9af8de01771aeedad2d29664ae",
         "drizzle/migrations/0326_grant_payment_terms_columns.sql": "fcc41e114bbb3c0bd713ff8a256e30913f4cf72904a756800aea7e499b1701ec"
       }
@@ -13377,7 +13381,7 @@
       },
       "files": {
         "drizzle/migrations/0369_contract_draft_client_acceptance_bypass.sql": "b13f991b6b3447ce22d213a3a217ff56f1faed00b822cd89648e236499e9256a",
-        "src/components/contracts/contract-draft-bypass-button.tsx": "23fd6da60d2cc52dc18de7783f861cf72458d036b43deb2b9f94b52e5ac330e2"
+        "src/components/contracts/contract-draft-bypass-button.tsx": "a4826abbee52d168c0a7dc79b4f192c24586a0ff553d9a7c00cdfa6587bac2df"
       }
     }
   ],

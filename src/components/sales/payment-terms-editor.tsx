@@ -375,7 +375,6 @@ function Field({
   );
 }
 
-
 /** PRAZO-MENSAL: prazo mínimo, aviso prévio, renovação e mensalidade cheia. */
 function ContractTermBlock({
   terms,
@@ -396,9 +395,7 @@ function ContractTermBlock({
       ...terms,
       term: nextTerm,
       plan:
-        syncMonths && plan.kind === "monthly"
-          ? { ...plan, months: nextTerm.minimumMonths }
-          : plan,
+        syncMonths && plan.kind === "monthly" ? { ...plan, months: nextTerm.minimumMonths } : plan,
     });
   };
   return (

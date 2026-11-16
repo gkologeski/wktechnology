@@ -312,9 +312,7 @@ export const getContractDraftVersion = createServerFn({ method: "POST" })
 // MINUTA-BLOQUEIO: dispensa do aceite do cliente (a regra real está no banco).
 export const bypassContractDraftClientAcceptance = createServerFn({ method: "POST" })
   .middleware([requireWorkPermission("techcontracts.contract_draft_client_bypass", "approve")])
-  .inputValidator(
-    z.object({ id: z.string().uuid(), reason: z.string().trim().min(10).max(2000) }),
-  )
+  .inputValidator(z.object({ id: z.string().uuid(), reason: z.string().trim().min(10).max(2000) }))
   .handler(async ({ data, context }) => {
     const { workRpc } = await import("@/lib/access-control/work-core.server");
     return workRpc<{ id: string; status: string; deal_moved: boolean }>(

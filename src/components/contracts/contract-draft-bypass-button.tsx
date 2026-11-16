@@ -69,8 +69,8 @@ export function ContractDraftBypassButton(props: {
           <DialogHeader>
             <DialogTitle>Dispensar aceite do cliente</DialogTitle>
             <DialogDescription>
-              A minuta passa a contar como aceita e o contrato pode ser criado. Seu nome, o horário e
-              o motivo ficam no histórico.
+              A minuta passa a contar como aceita e o contrato pode ser criado. Seu nome, o horário
+              e o motivo ficam no histórico.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1">

@@ -77,7 +77,6 @@ export function downPaymentDueOf(t: PaymentTerms): DownPaymentDue {
   return t.downPaymentDue ?? { kind: "signature" };
 }
 
-
 function dateFor(start: Date, monthsAhead: number, dueDay: number): string {
   const y = start.getUTCFullYear();
   const m = start.getUTCMonth() + monthsAhead;

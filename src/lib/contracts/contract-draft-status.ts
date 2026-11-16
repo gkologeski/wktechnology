@@ -70,7 +70,8 @@ export function canReviewContractDraft(
   );
 }
 
-export const CONTRACT_DRAFT_BYPASS_KEY = "techcontracts.contract_draft_client_bypass.approve.workspace";
+export const CONTRACT_DRAFT_BYPASS_KEY =
+  "techcontracts.contract_draft_client_bypass.approve.workspace";
 CONTRACT_DRAFT_EVENT_LABEL.client_acceptance_bypassed = "Aceite do cliente dispensado";
 
 /** MINUTA-BLOQUEIO: dispensa só após o Jurídico, por aprovador com a chave de dispensa. */
@@ -101,5 +102,6 @@ export function contractDraftGate(
 export const DRAFT_GATE_MESSAGE: Record<Exclude<DraftGateState, "ready">, string> = {
   missing: "Minuta não enviada: o contrato só pode ser criado depois da minuta aprovada e aceita.",
   pending_legal: "Aguardando o Jurídico aprovar a minuta antes de criar o contrato.",
-  awaiting_client: "Aguardando o aceite da minuta pelo cliente (ou a dispensa registrada do aceite).",
+  awaiting_client:
+    "Aguardando o aceite da minuta pelo cliente (ou a dispensa registrada do aceite).",
 };
