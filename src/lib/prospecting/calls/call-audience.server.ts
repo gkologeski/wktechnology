@@ -6,11 +6,11 @@ import { assertSalesArea } from "@/lib/access-control/sales-core.server";
 import { brPhoneVariants } from "@/lib/whatsapp/phone-variants";
 import { findRecentlyContacted } from "./recent-contact.server";
 import type { RecentContactConfig } from "./recent-contact";
-import { parseManualPhones, type CallAudienceConfig } from "./call-audience";
+import { parseManualPhones, pickCallMobile, type CallAudienceConfig } from "./call-audience";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Db = SupabaseClient<any>;
-type Lead = { id: string; label: string; phone: string | null };
+type Lead = { id: string; label: string; phone: string | null; landline?: boolean };
 
 const NIL = "00000000-0000-0000-0000-000000000000";
 
@@ -37,7 +37,8 @@ async function contactsFromManual(db: Db, ws: string, raw: string) {
       .or(`whatsapp_e164.in.(${list}),phone.in.(${list}),mobile_phone.in.(${list})`);
     if (error) throw new Error(error.message);
     for (const c of data ?? []) {
-      const ph = e164(c.mobile_phone) ?? e164(c.phone) ?? e164(c.whatsapp_e164);
+      const pick = pickCallMobile([c.whatsapp_e164, c.mobile_phone, c.phone]);
+      const ph = pick.phone;
       found.set(c.id, {
         id: c.id,
         label: [c.first_name, c.last_name].filter(Boolean).join(" ") || c.company_name || "",
@@ -66,7 +67,8 @@ async function leadsFromManual(db: Db, ws: string, raw: string) {
       .or(`whatsapp_e164.in.(${list}),phone.in.(${list})`);
     if (error) throw new Error(error.message);
     for (const l of data ?? []) {
-      const ph = e164(l.whatsapp_e164) ?? e164(l.phone);
+      const pick = pickCallMobile([l.whatsapp_e164, l.phone]);
+      const ph = pick.phone;
       found.set(l.id, {
         id: l.id,
         label: [l.first_name, l.last_name].filter(Boolean).join(" ") || l.company_name || "",
@@ -126,11 +128,12 @@ export async function resolveCallAudience(
     for (const r of res.rows) {
       if (seen.has(r.sourceId)) continue;
       seen.add(r.sourceId);
-      const ph = (r.phones ?? [r.phone]).map(e164).find(Boolean) ?? null;
-      leads.push({ id: r.sourceId, label: r.label, phone: ph });
+      const pick = pickCallMobile(r.phones ?? [r.phone]);
+      leads.push({ id: r.sourceId, label: r.label, phone: pick.phone, landline: pick.landline });
     }
   }
-  const noPhone = leads.filter((l) => !l.phone).length;
+  const landlineOnly = leads.filter((l) => !l.phone && l.landline).length;
+  const noPhone = leads.filter((l) => !l.phone && !l.landline).length;
   const withPhone = leads.filter((l) => l.phone);
 
   const recentMap = await findRecentlyContacted(
@@ -171,7 +174,7 @@ export async function resolveCallAudience(
       truncated,
       included: commercial.kept.length,
       notFound,
-      excluded: { no_phone: noPhone, invalid_phone: 0, duplicate: 0, opted_out: 0 },
+      excluded: { no_phone: noPhone, invalid_phone: landlineOnly, duplicate: 0, opted_out: 0 },
       recentRemovedCount: recentRemoved.length,
       recentOverriddenCount: recentOverridden,
       recentRemoved: recentRemoved.slice(0, 200).map((l) => ({

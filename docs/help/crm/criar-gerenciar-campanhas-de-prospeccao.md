@@ -8,7 +8,7 @@ route_pattern: /campaigns/calls
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 401
-version: 5
+version: 6
 is_published: true
 ---
 # Criar e gerenciar campanhas de ligação
@@ -31,7 +31,7 @@ is_published: true
 "Campanha criada" confirma. A tela abre os detalhes da campanha.
 
 ## Regras e limites
-O nome é obrigatório. A campanha nasce com 3 tentativas, intervalo de 240 minutos e janela de segunda a sexta, 09:00–18:00 (America/Sao_Paulo), sem leads e sem roteiros.
+O nome é obrigatório. A campanha nasce com 3 tentativas, intervalo de 240 minutos e janela de segunda a sexta, 09:00–18:00 (America/Sao_Paulo), sem leads e sem roteiros. A campanha liga só para celulares (mesma regra do WhatsApp): telefone fixo fica fora do público e aparece na contagem "telefone inválido".
 
 ## Erros comuns
 "Nenhuma campanha ainda." indica lista vazia. Se "Criar" não fizer nada, confira o "Nome".
