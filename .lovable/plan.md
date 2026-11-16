@@ -34,3 +34,24 @@ Cotações, propostas e contratos antigos não mudam. A proposta atual pode ser 
 - Permissões: as chaves de edição de cotação, proposta e contrato são reaproveitadas, com contratos de hash atualizados. Os padrões do workspace usam a permissão existente de configurações de contrato.
 - Testes: 22.000 × 3 = 66.000 com 3 parcelas de 22.000; 12 meses = 264.000; padrão 3 meses/30 dias; serviço por projeto segue dividindo.
 - Ajuda: artigos de condições de pagamento e proposta com versão incrementada; gates permissions:check, help:coverage e build.
+
+---
+
+# MINUTA-BLOQUEIO — Contrato só depois da minuta, com dispensa controlada
+
+Porte P/M · estimativa +1h30 a 2h (total do plano: 4h30 a 6h).
+
+## Problema
+Hoje o assistente "Novo contrato" deixa chegar até a Revisão e só recusa no clique final, com o aviso "Aguarde a aprovação jurídica e o aceite da minuta pelo cliente".
+
+## Mudança
+- Já na etapa Origem, se a proposta escolhida exigir minuta ainda não aceita, o botão "Criar contrato" fica desabilitado. Aparece um aviso fixo com a situação ("Minuta não enviada", "Aguardando Jurídico" ou "Aguardando cliente") e o botão "Abrir minuta".
+- **Dispensar aceite do cliente** (na minuta, depois da aprovação jurídica): uma ação nova com confirmação e justificativa obrigatória. A minuta fica como "Aceite dispensado", o negócio segue para "Contrato em elaboração" como no aceite normal, e o registro aparece no histórico (quem, quando, motivo).
+- A aprovação jurídica continua obrigatória e não pode ser dispensada.
+
+## Detalhes técnicos
+- Nova permissão `contracts.drafts.bypass_client_acceptance` (escopo workspace), cadastrada no catálogo e em /settings/permissions. Não é concedida automaticamente a ninguém, apenas a admin/owner pelo bypass padrão.
+- RPC SECURITY DEFINER com consulta fixa: valida o membro ativo, o workspace, a permissão (deny prevalece) e o status jurídico aprovado. Grava `client_acceptance_bypassed_at/by/reason` em contract_drafts e um evento em contract_draft_events, e reaproveita o gatilho do aceite.
+- A regra do servidor que hoje recusa a criação passa a aceitar "aceita ou dispensada". O assistente usa a mesma regra pura para desabilitar o botão.
+- Testes: botão desabilitado sem minuta; habilitado com aceite; habilitado com dispensa; dispensa negada sem permissão, de outro workspace, de membro inativo ou sem aprovação jurídica.
+- Ajuda: artigos da minuta e do assistente de contrato com versão incrementada.
