@@ -5412,7 +5412,7 @@
         "drizzle/migrations/0293_prospecting_scripts_archived_at.sql": "a6e8cce47013518da00c651e96d47f4b4cfbb1b847aed5cf720cd405d6d6fd91",
         "src/components/prospecting/pages/scripts-page.tsx": "f8045dec522334f4c908119196d94e39b84838029aea352d250e215f7cfd4b7e",
         "src/routes/_authenticated/settings.prospecting-scripts.tsx": "fc214bca25673208de5b62482ad0e0b55e4a7c4f491f6a25ceecdd2113582f58",
-        "src/routes/_authenticated/campaigns.calls.$id.tsx": "4beff502f06280fc1be0307b10d0f4aa717ba9a873d632d0bd57cab378baaa18",
+        "src/routes/_authenticated/campaigns.calls.$id.tsx": "2b5a333a4ec0c4cd011d244d49de53d6375786850fe9574db08ac29fd0e4554b",
         "src/routes/_authenticated/campaigns.calls.index.tsx": "ea9b2540da5e50f7e7d6d93d7042da67f38240f9d73e571b90f33a52a4779c83",
         "src/routes/_authenticated/campaigns.calls.scripts.tsx": "e10a8fabc26c1fa80f67e84252f1543ec5e027c3548482855a70640ab3d91c52",
         "src/routes/_authenticated/prospecting.index.tsx": "acdb05cf4eb061d89e8a7826b78d01600d860d1025e9a643051bf06b5832a7be",
@@ -11317,7 +11317,7 @@
     {
       "id": "call-campaign-pure-rules",
       "kind": "presentation",
-      "rationale": "Pure helpers for call campaigns: PT-BR status labels, start checklist and recent-contact window math. No I/O, routes, actions, grants or data access; enforcement stays in prospecting-voice-campaigns server functions. Adds pure edit/delete/cancel predicates and attempt summarization (no I/O). Adds canceled label and pure pace estimate (no I/O). Adds pure meeting-distribution normalization and checklist item (no I/O). Adds pure voice-booking helpers (host choice, tool-call parsing, offer matching, template variables; no I/O). Adds pure call card text builder/splitter for the Inbox (no I/O). Adds presentational call card (props only, no data access). VOZ-AUDIO-FILA 16/11/2026: pure recent-calls selector (drops queued attempts, sorts by started_at; no I/O); call card only forwards attemptId to the recording player.",
+      "rationale": "Pure helpers for call campaigns: PT-BR status labels, start checklist and recent-contact window math. No I/O, routes, actions, grants or data access; enforcement stays in prospecting-voice-campaigns server functions. Adds pure edit/delete/cancel predicates and attempt summarization (no I/O). Adds canceled label and pure pace estimate (no I/O). Adds pure meeting-distribution normalization and checklist item (no I/O). Adds pure voice-booking helpers (host choice, tool-call parsing, offer matching, template variables; no I/O). Adds pure call card text builder/splitter for the Inbox (no I/O). Adds presentational call card (props only, no data access). VOZ-AUDIO-FILA 16/11/2026: pure recent-calls selector (drops queued attempts, sorts by started_at; no I/O); call card only forwards attemptId to the recording player. STATUS-CHAMADA 16/11/2026: pure call status tone/label and ended-reason PT-BR labels (no I/O).",
       "files": {
         "src/lib/prospecting/calls/recent-contact.ts": "315ab9adb2de70bf31c0514a79c27e779a54c27fcc7723eae4815a1b8ce3b8aa",
         "src/lib/prospecting/calls/status-label.ts": "92a5ec4f16741e4104011c8d59b579558dbbbc44c7fdfdb6d4932d61cc551505",
@@ -11326,7 +11326,7 @@
         "src/lib/prospecting/calls/voice-booking.ts": "9258746876bfd0710e69b47d5cfd20368830fc352fd570434192ce77808f7810",
         "src/lib/prospecting/calls/call-inbox.ts": "a9e4198778916ea7e8e377914e7563bacd6adc0ec2c96d7c9a0d2224b5163709",
         "src/components/inbox/call-inbox-card.tsx": "d0c538b2029562ce577a1b9baa3b054f46c553579e4d70843965ff929b96899e",
-        "src/lib/prospecting/calls/recent-calls.ts": "f719fc4c41df69a9574418d51c99a906b23f5922546b9ac3ddd524790d872729"
+        "src/lib/prospecting/calls/recent-calls.ts": "a23aa1d65a0ea621bb279bfb739d8c75223926170db2b223dd99dc6d2913c830"
       }
     },
     {

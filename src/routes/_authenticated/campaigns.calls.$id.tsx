@@ -1,5 +1,10 @@
+import { SignatureStatusBadge } from "@/components/contracts/signature-status-indicator";
 import { CallRecordingAudio } from "@/components/voice/call-recording-audio";
-import { selectRecentCalls } from "@/lib/prospecting/calls/recent-calls";
+import {
+  selectRecentCalls,
+  callStatusView,
+  callEndedReasonLabel,
+} from "@/lib/prospecting/calls/recent-calls";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -902,7 +907,7 @@ function CampaignDetailPage() {
           ) : (
             <div className="space-y-3">
               {recentCalls.map((a) => {
-                const failed = a.status === "failed" || !!a.ended_reason;
+                const view = callStatusView(a.status, a.ended_reason);
                 return (
                   <details
                     key={a.id}
@@ -918,16 +923,10 @@ function CampaignDetailPage() {
                     }}
                   >
                     <summary className="cursor-pointer flex items-center gap-2">
-                      <Badge
-                        variant={
-                          failed ? "destructive" : a.status === "completed" ? "default" : "outline"
-                        }
-                      >
-                        {a.status}
-                      </Badge>
+                      <SignatureStatusBadge tone={view.tone}>{view.label}</SignatureStatusBadge>
                       <span className="font-medium">{scriptName(a.script_id)}</span>
                       <span className="text-xs text-muted-foreground truncate flex-1">
-                        {a.ended_reason ?? a.summary ?? a.vapi_call_id ?? "—"}
+                        {callEndedReasonLabel(a.ended_reason) ?? a.summary ?? a.vapi_call_id ?? "—"}
                       </span>
                       {a.meeting_status === "booked" && a.meeting_start_at && (
                         <Badge variant="secondary">

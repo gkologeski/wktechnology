@@ -25,3 +25,22 @@ describe("selectRecentCalls", () => {
     expect(r[0].status).toBe("completed");
   });
 });
+
+import { callStatusView, callEndedReasonLabel } from "./recent-calls";
+describe("callStatusView", () => {
+  it("concluída com motivo de término é sucesso", () => {
+    expect(callStatusView("completed", "customer-ended-call")).toEqual({
+      tone: "signed",
+      label: "Concluída",
+    });
+  });
+  it("falha é erro", () => {
+    expect(callStatusView("failed", "twilio-failed-to-connect-call").tone).toBe("failed");
+  });
+  it("não atendeu é aviso", () => {
+    expect(callStatusView("completed", "customer-did-not-answer").tone).toBe("partial");
+  });
+  it("traduz motivo", () => {
+    expect(callEndedReasonLabel("customer-ended-call")).toBe("Cliente desligou");
+  });
+});
