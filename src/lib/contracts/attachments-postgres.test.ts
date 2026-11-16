@@ -189,6 +189,17 @@ beforeAll(async () => {
     sales.lastIndexOf("CREATE OR REPLACE FUNCTION public.sales_record_access("),
   );
   await db.unsafe(tail.slice(0, tail.indexOf("END $$;") + 7));
+  for (const name of ["shared_storage_session_access", "shared_storage_object_access"])
+    await db.unsafe(
+      sourceFunction(
+        name === "shared_storage_session_access"
+          ? "drizzle/migrations/0227_order5_shared_prepare.sql"
+          : "drizzle/migrations/0234_order5_legacy_storage_prepare.sql",
+        name,
+      ),
+    );
+  await db.unsafe(`CREATE POLICY shared_storage_read ON storage.objects AS RESTRICTIVE FOR SELECT TO authenticated USING(public.shared_storage_object_access(bucket_id,name,'view'));
+  CREATE POLICY shared_storage_create ON storage.objects AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK(public.shared_storage_object_access(bucket_id,name,'create'));`);
   await db.unsafe(readFileSync("drizzle/migrations/0366_contract_attachments.sql", "utf8"));
   await db`insert into workspaces(id) values(${W}),(${B})`;
   await db`insert into auth.users(id) values(${U})`;

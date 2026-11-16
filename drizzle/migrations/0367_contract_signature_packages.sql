@@ -227,3 +227,11 @@ END $$;
 
 REVOKE ALL ON FUNCTION public.contract_esign_public(text,text,text,text,text,text,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.contract_esign_public(text,text,text,text,text,text,text) TO service_role;
+-- Integrate the explicit bucket with the existing deny-by-default global
+-- Storage boundary. All other buckets still use the unchanged resolver.
+ALTER POLICY shared_storage_read ON storage.objects USING(
+ CASE WHEN bucket_id='contract-attachments' THEN public.shared_storage_session_access('view') AND public.contract_attachment_storage_allowed(name,false)
+ ELSE public.shared_storage_object_access(bucket_id,name,'view') END);
+ALTER POLICY shared_storage_create ON storage.objects WITH CHECK(
+ CASE WHEN bucket_id='contract-attachments' THEN public.shared_storage_session_access('create') AND public.contract_attachment_storage_allowed(name,true)
+ ELSE public.shared_storage_object_access(bucket_id,name,'create') END);

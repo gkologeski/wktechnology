@@ -13102,7 +13102,7 @@
         "techcontracts.signature_evidence.view.workspace",
         "techcontracts.signature_evidence.manage.workspace"
       ],
-      "rationale": "Contract attachments reuse contract view/update plus current commercial source view. Signature preparation reuses signature_evidence view/manage, active membership and per-contract scope. The signed PDF package is frozen with exact hashes, integrated into native signature body/ForSign, stored service-only after live caller checks before and after rendering; public downloads are bound to a validated signer token and sealed body. No role grants. Existing public commercial PDF endpoints keep token/status checks and share rendering with authenticated source reads.",
+      "rationale": "Contract attachments reuse contract view/update plus current commercial source view. Signature preparation reuses signature_evidence view/manage, active membership and per-contract scope. The signed PDF package is frozen with exact hashes, integrated into native signature body/ForSign, stored service-only after live caller checks before and after rendering; public downloads are bound to a validated signer token and sealed body. No role grants. Existing public commercial PDF endpoints keep token/status checks and share rendering with authenticated source reads. The new upload bucket is explicitly dispatched through the existing global restrictive Storage read/create policies; all other buckets retain shared_storage_object_access unchanged.",
       "controls": [
         {
           "file": "src/lib/contracts/attachments.functions.ts",
@@ -13193,6 +13193,10 @@
         {
           "file": "drizzle/migrations/0367_contract_signature_packages.sql",
           "symbol": "contract_esign_public"
+        },
+        {
+          "file": "drizzle/migrations/0227_order5_shared_prepare.sql",
+          "symbol": "shared_storage_session_access"
         }
       ],
       "tests": {
@@ -13225,7 +13229,7 @@
         "src/lib/contracts/signature-package-pdf.server.ts": "56ff72d5ff1b42b71ce17932b12ea02975520ad237b028fca7a9244d07ec3252",
         "src/lib/contracts/quote-pdf.server.ts": "989695b7a69f55577314fc0535ce4dafb540f729f9c263b555ceaa1bbdb5ab19",
         "src/lib/contracts/proposal-pdf.server.ts": "f60f92f473f0af768e76302ae842a2e50fbfecb2b94514c2c1d0b754bf30124b",
-        "drizzle/migrations/0367_contract_signature_packages.sql": "214eeb58a8397a0e8ecf2c5d05b8b7dd7975280a5c10b357e8a06bb48a6cb1aa"
+        "drizzle/migrations/0367_contract_signature_packages.sql": "2479a6a3f1af4f49c966969646e32b901b75922cd15649e2b798794d8fd91acf"
       }
     },
     {
