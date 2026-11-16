@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/table";
 import {
   buildPaymentSchedule,
+  CONTRACT_TERM_MONTH_SHORTCUTS,
+  DEFAULT_CONTRACT_TERM,
+  recurringTotal,
   downPaymentAmount,
   downPaymentDueOf,
   validatePaymentTerms,
@@ -22,6 +25,8 @@ import {
 } from "@/lib/sales/payment-terms";
 import { formatCurrency } from "@/lib/crm";
 import { IsoDatePicker } from "@/components/iso-date-picker";
+import { CurrencyInput } from "@/components/ui/currency-input";
+import { Switch } from "@/components/ui/switch";
 
 const fmtDate = (iso: string | null, event?: "signature" | "milestone") =>
   iso
@@ -39,6 +44,8 @@ type Props = {
   currency?: string;
   /** Descrição do painel; o padrão vale para cotação, proposta e contrato. */
   description?: string;
+  /** PRAZO-MENSAL: quando informado, mensalidade × meses atualiza o total. */
+  onTotalChange?: (total: number) => void;
 };
 
 /**
@@ -51,6 +58,7 @@ export function PaymentTermsEditor({
   total,
   currency = "BRL",
   description = "Sugeridas pelo tipo dos itens; ajuste à vontade.",
+  onTotalChange,
 }: Props) {
   const plan = terms.plan;
   const dp = terms.downPayment;
@@ -190,11 +198,28 @@ export function PaymentTermsEditor({
           )}
 
           {plan.kind === "monthly" && (
+            <ContractTermBlock
+              terms={terms}
+              currency={currency}
+              canSetTotal={!!onTotalChange}
+              onChange={(next) => {
+                onChange(next);
+                if (onTotalChange && next.plan.kind === "monthly" && (next.monthlyAmount ?? 0) > 0)
+                  onTotalChange(recurringTotal(next.monthlyAmount!, next.plan.months));
+              }}
+            />
+          )}
+          {plan.kind === "monthly" && (
             <div className="grid grid-cols-2 gap-3">
               <Field
-                label="Meses"
+                label="Mensalidades"
                 value={plan.months}
-                onChange={(v) => onChange({ ...terms, plan: { ...plan, months: num(v) } })}
+                onChange={(v) => {
+                  const next = { ...terms, plan: { ...plan, months: num(v) } };
+                  onChange(next);
+                  if (onTotalChange && (terms.monthlyAmount ?? 0) > 0)
+                    onTotalChange(recurringTotal(terms.monthlyAmount!, num(v)));
+                }}
               />
               <Field
                 label="Dia de vencimento"
@@ -346,6 +371,97 @@ function Field({
     <div className="flex flex-col gap-1">
       <Label htmlFor={id}>{label}</Label>
       <Input id={id} type="number" value={value} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
+
+/** PRAZO-MENSAL: prazo mínimo, aviso prévio, renovação e mensalidade cheia. */
+function ContractTermBlock({
+  terms,
+  currency,
+  canSetTotal,
+  onChange,
+}: {
+  terms: PaymentTerms;
+  currency: string;
+  canSetTotal: boolean;
+  onChange: (t: PaymentTerms) => void;
+}) {
+  const term = terms.term ?? DEFAULT_CONTRACT_TERM;
+  const plan = terms.plan;
+  const setTerm = (patch: Partial<typeof term>, syncMonths = false) => {
+    const nextTerm = { ...term, ...patch };
+    onChange({
+      ...terms,
+      term: nextTerm,
+      plan:
+        syncMonths && plan.kind === "monthly" ? { ...plan, months: nextTerm.minimumMonths } : plan,
+    });
+  };
+  return (
+    <div className="flex flex-col gap-3 rounded-md border border-border p-3">
+      <p className="text-sm font-medium">Prazo do contrato</p>
+      {canSetTotal && (
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="pt-monthly">Valor da mensalidade</Label>
+          <CurrencyInput
+            id="pt-monthly"
+            value={terms.monthlyAmount ?? null}
+            currency={currency}
+            onValueChange={(v) => onChange({ ...terms, monthlyAmount: v ?? 0 })}
+          />
+          <p className="text-xs text-muted-foreground">
+            Cada mensalidade sai com o valor cheio; o total vira mensalidade × meses.
+          </p>
+        </div>
+      )}
+      <div className="flex flex-col gap-1">
+        <Label>Prazo mínimo (meses)</Label>
+        <div className="flex flex-wrap items-center gap-2">
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            className="justify-start flex-wrap"
+            aria-label="Atalhos de prazo mínimo"
+            value={String(term.minimumMonths)}
+            onValueChange={(v) => v && setTerm({ minimumMonths: Number(v) }, true)}
+          >
+            {CONTRACT_TERM_MONTH_SHORTCUTS.map((m) => (
+              <ToggleGroupItem key={m} value={String(m)}>
+                {m}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+          <Input
+            aria-label="Prazo mínimo em meses"
+            type="number"
+            className="w-24"
+            value={term.minimumMonths}
+            onChange={(e) => setTerm({ minimumMonths: num(e.target.value) }, true)}
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="pt-notice">Aviso prévio (dias)</Label>
+          <Input
+            id="pt-notice"
+            type="number"
+            value={term.noticeDays}
+            onChange={(e) => setTerm({ noticeDays: num(e.target.value) })}
+          />
+        </div>
+        <div className="flex items-center gap-2 pt-6">
+          <Switch
+            id="pt-renew"
+            checked={term.autoRenew}
+            onCheckedChange={(v) => setTerm({ autoRenew: v })}
+          />
+          <Label htmlFor="pt-renew" className="text-sm font-normal">
+            Renova mês a mês após o mínimo
+          </Label>
+        </div>
+      </div>
     </div>
   );
 }

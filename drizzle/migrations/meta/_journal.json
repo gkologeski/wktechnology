@@ -2584,6 +2584,13 @@
       "when": 1794838587324,
       "tag": "0368_remove_dynamic_sql_definer_functions",
       "breakpoints": true
+    },
+    {
+      "idx": 369,
+      "version": "7",
+      "when": 1794840239887,
+      "tag": "0369_contract_draft_client_acceptance_bypass",
+      "breakpoints": true
     }
   ]
 }

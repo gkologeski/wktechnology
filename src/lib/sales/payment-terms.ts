@@ -6,6 +6,8 @@
 
 import { z } from "zod";
 
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
 export type DownPayment =
   | { kind: "none" }
   | { kind: "amount"; value: number }
@@ -21,10 +23,43 @@ export type InstallmentPlan =
 /** Vencimento da entrada: data fixa ou na assinatura do contrato (padrão). */
 export type DownPaymentDue = { kind: "signature" } | { kind: "date"; date: string };
 
+/** PRAZO-MENSAL: prazo mínimo, aviso prévio e renovação após o mínimo. */
+export interface ContractTerm {
+  minimumMonths: number;
+  noticeDays: number;
+  autoRenew: boolean;
+}
+
+/** Padrão comercial da WK: 3 meses de prazo mínimo e 30 dias de aviso prévio. */
+export const DEFAULT_CONTRACT_TERM: ContractTerm = {
+  minimumMonths: 3,
+  noticeDays: 30,
+  autoRenew: true,
+};
+export const CONTRACT_TERM_MONTH_SHORTCUTS = [3, 6, 12, 24] as const;
+
 export interface PaymentTerms {
   downPayment: DownPayment;
   plan: InstallmentPlan;
   downPaymentDue?: DownPaymentDue;
+  /** Prazo do contrato (serviços recorrentes). */
+  term?: ContractTerm;
+  /** Valor de cada mensalidade quando o serviço é recorrente; total = mensalidade × meses. */
+  monthlyAmount?: number;
+}
+
+/** Total de um serviço recorrente: mensalidade cheia × meses do prazo. */
+export function recurringTotal(monthly: number, months: number): number {
+  return round2(Math.max(0, monthly) * Math.max(0, Math.trunc(months)));
+}
+
+/** Resumo do prazo em português para proposta, contrato e revisão. */
+export function describeContractTerm(t: ContractTerm): string {
+  const m = `${t.minimumMonths} ${t.minimumMonths === 1 ? "mês" : "meses"}`;
+  const renew = t.autoRenew
+    ? "renovação automática mês a mês após o prazo mínimo"
+    : "término ao final do prazo";
+  return `Prazo mínimo de ${m}, aviso prévio de ${t.noticeDays} dias, ${renew}`;
 }
 
 export interface ScheduledPayment {
@@ -41,8 +76,6 @@ export interface ScheduledPayment {
 export function downPaymentDueOf(t: PaymentTerms): DownPaymentDue {
   return t.downPaymentDue ?? { kind: "signature" };
 }
-
-const round2 = (n: number) => Math.round(n * 100) / 100;
 
 function dateFor(start: Date, monthsAhead: number, dueDay: number): string {
   const y = start.getUTCFullYear();
@@ -74,6 +107,12 @@ export function validatePaymentTerms(t: PaymentTerms, total: number): string[] {
   const p = t.plan;
   if (p.kind === "monthly" && !(p.months >= 1 && p.months <= 120))
     errors.push("Meses devem estar entre 1 e 120.");
+  if (t.term) {
+    if (!(t.term.minimumMonths >= 1 && t.term.minimumMonths <= 120))
+      errors.push("O prazo mínimo deve estar entre 1 e 120 meses.");
+    if (!(t.term.noticeDays >= 0 && t.term.noticeDays <= 365))
+      errors.push("O aviso prévio deve estar entre 0 e 365 dias.");
+  }
   if (p.kind === "periodic") {
     if (!(p.count >= 1 && p.count <= 120)) errors.push("Parcelas devem estar entre 1 e 120.");
     if (!(p.intervalMonths >= 1 && p.intervalMonths <= 12))
@@ -183,7 +222,11 @@ export function suggestPaymentTerms(
   }
   const k = itemKinds.map((s) => s.toLowerCase());
   if (k.some((s) => s.includes("outsourcing") || s.includes("alocação") || s.includes("alocacao")))
-    return { downPayment: { kind: "none" }, plan: { kind: "monthly", months: 12, dueDay: 10 } };
+    return {
+      downPayment: { kind: "none" },
+      plan: { kind: "monthly", months: DEFAULT_CONTRACT_TERM.minimumMonths, dueDay: 10 },
+      term: { ...DEFAULT_CONTRACT_TERM },
+    };
   return {
     downPayment: { kind: "percent", value: 30 },
     plan: { kind: "milestones", milestones: [{ label: "Entrega final", percent: 100 }] },
@@ -228,10 +271,18 @@ export const downPaymentDueSchema = z.union([
   z.object({ kind: z.literal("date"), date: z.string().max(10) }),
 ]);
 
+export const contractTermSchema = z.object({
+  minimumMonths: z.number().int().min(1).max(120),
+  noticeDays: z.number().int().min(0).max(365),
+  autoRenew: z.boolean(),
+});
+
 export const paymentTermsSchema = z.object({
   downPayment: downPaymentSchema,
   plan: installmentPlanSchema,
   downPaymentDue: downPaymentDueSchema.optional(),
+  term: contractTermSchema.optional(),
+  monthlyAmount: z.number().min(0).optional(),
 });
 
 /** null quando o valor guardado não é uma condição de pagamento válida. */
@@ -288,5 +339,6 @@ export function describePaymentTerms(t: PaymentTerms): string {
         : p.kind === "fixed_date"
           ? `saldo em parcela única em ${p.date.split("-").reverse().join("/")}`
           : `${p.milestones.length} ${p.milestones.length === 1 ? "marco" : "marcos"} de entrega`;
-  return `${entry}${entryDue} · ${balance}`;
+  const term = t.term ? ` · ${describeContractTerm(t.term)}` : "";
+  return `${entry}${entryDue} · ${balance}${term}`;
 }

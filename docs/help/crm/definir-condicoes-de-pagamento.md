@@ -8,7 +8,7 @@ route_pattern: /deals/$id
 min_permission:
 audience: internal
 sort_order: 205
-version: 3
+version: 4
 is_published: true
 ---
 # Definir as condições de pagamento da cotação
@@ -55,3 +55,12 @@ A cotação, a proposta e o contrato mostram as mesmas condições, e as contas 
 ## Na proposta e no contrato
 
 Na proposta, as condições aparecem no quadro **Condições comerciais** (tela, link do cliente e PDF). Ao trocar o modelo de proposta, confirme em **Usar modelo**; o assistente continua aberto. No contrato gerado da proposta aceita, as condições aparecem na ficha e no texto do modelo pela variável **Condições de pagamento**.
+
+## Prazo do contrato e mensalidade
+Quando o saldo é **Mensal**, aparece o bloco **Prazo do contrato**:
+- **Prazo mínimo (meses):** o padrão é 3. Use os atalhos 3, 6, 12 ou 24, ou digite outro valor. O número de mensalidades acompanha o prazo.
+- **Aviso prévio (dias):** o padrão é 30.
+- **Renova mês a mês após o mínimo:** ligado por padrão. Desligue se o contrato termina no fim do prazo.
+- **Valor da mensalidade** (na proposta): cada mensalidade sai com o valor cheio, e o total da proposta vira mensalidade × meses. Exemplo: R$ 22.000 por 3 meses dá R$ 66.000, em 3 mensalidades de R$ 22.000.
+
+O prazo aparece no resumo das condições da proposta e segue para o contrato nas variáveis {{contract.minimum_term_months}}, {{contract.notice_days}} e {{contract.monthly_value}}.

@@ -69,3 +69,39 @@ export function canReviewContractDraft(
     r.keys.has(CONTRACT_DRAFT_APPROVE_KEY)
   );
 }
+
+export const CONTRACT_DRAFT_BYPASS_KEY =
+  "techcontracts.contract_draft_client_bypass.approve.workspace";
+CONTRACT_DRAFT_EVENT_LABEL.client_acceptance_bypassed = "Aceite do cliente dispensado";
+
+/** MINUTA-BLOQUEIO: dispensa só após o Jurídico, por aprovador com a chave de dispensa. */
+export function canBypassClientAcceptance(
+  status: string,
+  draftWorkspaceId: string,
+  r: ContractDraftReviewer,
+): boolean {
+  return (
+    (status === "approved" || status === "sent") &&
+    canReviewContractDraft(draftWorkspaceId, r) &&
+    r.keys.has(CONTRACT_DRAFT_BYPASS_KEY)
+  );
+}
+
+export type DraftGateState = "missing" | "pending_legal" | "awaiting_client" | "ready";
+
+/** Situação da minuta para liberar "Criar contrato" (espelho do gatilho do banco). */
+export function contractDraftGate(
+  draft: { status: string; decided_at: string | null; client_decided_at: string | null } | null,
+): DraftGateState {
+  if (!draft) return "missing";
+  if (draft.status === "accepted" && draft.decided_at && draft.client_decided_at) return "ready";
+  if (draft.status === "approved" || draft.status === "sent") return "awaiting_client";
+  return "pending_legal";
+}
+
+export const DRAFT_GATE_MESSAGE: Record<Exclude<DraftGateState, "ready">, string> = {
+  missing: "Minuta não enviada: o contrato só pode ser criado depois da minuta aprovada e aceita.",
+  pending_legal: "Aguardando o Jurídico aprovar a minuta antes de criar o contrato.",
+  awaiting_client:
+    "Aguardando o aceite da minuta pelo cliente (ou a dispensa registrada do aceite).",
+};
