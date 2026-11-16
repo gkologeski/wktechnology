@@ -2598,6 +2598,13 @@
       "when": 1794858278220,
       "tag": "0370_inbox_whatsapp_only_messages",
       "breakpoints": true
+    },
+    {
+      "idx": 371,
+      "version": "7",
+      "when": 1794858725417,
+      "tag": "0371_inbox_unified_whatsapp_only",
+      "breakpoints": true
     }
   ]
 }

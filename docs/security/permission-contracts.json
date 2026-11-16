@@ -2277,6 +2277,10 @@
         {
           "file": "drizzle/migrations/0370_inbox_whatsapp_only_messages.sql",
           "symbol": "get_inbox_channel_page"
+        },
+        {
+          "file": "drizzle/migrations/0371_inbox_unified_whatsapp_only.sql",
+          "symbol": "get_inbox_unified_page"
         }
       ],
       "tests": {
@@ -2327,7 +2331,8 @@
         "src/lib/whatsapp/campaign-rotation-guard.server.ts": "95cce5544afd6ea49a5f7beafec341d94bded38c22999b88c6e2aca2976c9476",
         "src/components/inbox/unified-inbox-page.tsx": "6aab1a6b7c1de0cab60cbcea6fcef2dd50c619743c2d4f8f1126a5b712109d79",
         "src/routes/_authenticated/inbox.ligacoes.tsx": "c1423290125886a27d736c7fc39d2749c26e3e33ce479ef11f3a34592501e290",
-        "drizzle/migrations/0370_inbox_whatsapp_only_messages.sql": "915ebe14ae0a2dd5e88472e7094cc84aeda6f23aea3594096715d096b0832417"
+        "drizzle/migrations/0370_inbox_whatsapp_only_messages.sql": "915ebe14ae0a2dd5e88472e7094cc84aeda6f23aea3594096715d096b0832417",
+        "drizzle/migrations/0371_inbox_unified_whatsapp_only.sql": "d2551220b67fa510242623990eb6bba2e874f008458b6a603c79a40985073c4e"
       }
     },
     {
