@@ -8,7 +8,7 @@ route_pattern: /contracts/drafts/$id
 min_permission: techcontracts.contract_drafts.view.workspace
 audience: internal
 sort_order: 40
-version: 2
+version: 3
 is_published: true
 ---
 # Revisar e aprovar a minuta de contrato
@@ -43,3 +43,10 @@ Cada passo fica no histórico. Ao enviar, o negócio vai para "Minuta enviada". 
 ## Relacionados
 - [Revisar e aprovar a minuta de contrato](/help/contracts/revisar-minuta)
 - [Escolher os aprovadores jurídicos da minuta](/help/contracts/configurar-aprovadores-minuta)
+
+## Dispensar o aceite do cliente
+Depois da aprovação jurídica, quem tem a permissão **"Dispensar aceite do cliente na minuta"** vê o botão **Dispensar aceite do cliente**. Use quando o cliente já concordou por outro meio.
+1. Clique em **Dispensar aceite do cliente**.
+2. Escreva o motivo (mínimo de 10 caracteres) e confirme.
+
+A minuta passa a contar como aceita, o negócio vai para "Contrato em elaboração" e o histórico registra quem dispensou, quando e por quê. A aprovação jurídica não pode ser dispensada. A permissão não é dada automaticamente a nenhum cargo: o administrador libera em Configurações › Permissões.

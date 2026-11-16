@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 22
-version: 2
+version: 3
 is_published: true
 ---
 # Criar contrato a partir de cotação, proposta ou modelo
@@ -42,3 +42,6 @@ Contrato criado com a origem comercial registrada; caso a origem já tenha gerad
 ## Relacionados
 - [Criar contrato em branco](/ajuda/contracts/criar-contrato)
 - [Organizar modelos](/ajuda/contracts/gerenciar-modelos)
+
+## Contrato bloqueado enquanto falta a minuta
+Ao escolher uma proposta como origem de um contrato novo, o assistente confere a minuta. Se ela ainda não foi enviada, está com o Jurídico ou aguarda o cliente, aparece um aviso e o botão **Criar contrato** fica desabilitado. Use **Abrir minuta** para seguir com a minuta. O botão é liberado quando o cliente aceita a minuta ou quando o aceite é dispensado e registrado. Aditivos não passam por essa regra.
