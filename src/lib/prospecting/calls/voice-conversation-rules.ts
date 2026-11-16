@@ -19,3 +19,31 @@ export const voiceIdleMessagePlan = {
   idleTimeoutSeconds: IDLE_TIMEOUT_SECONDS,
   idleMessageMaxSpokenCount: 2,
 };
+
+/** Resumo e avaliação pós-ligação sempre em português do Brasil (RESUMO-PTBR-VOZ). */
+export const voiceAnalysisPlan = {
+  summaryPlan: {
+    messages: [
+      {
+        role: "system",
+        content:
+          "Você é um analista comercial. Resuma a ligação em português do Brasil, em 2 a 3 frases objetivas: quem atendeu (pessoa, URA, caixa postal), o que foi conversado e o desfecho. Nunca responda em inglês.",
+      },
+      {
+        role: "user",
+        content: "Transcrição:\n\n{{transcript}}\n\nMotivo do encerramento: {{endedReason}}",
+      },
+    ],
+  },
+  successEvaluationPlan: {
+    rubric: "PassFail",
+    messages: [
+      {
+        role: "system",
+        content:
+          "Avalie, em português do Brasil, se a ligação atingiu o objetivo do roteiro abaixo. Responda apenas true ou false.\n\n{{systemPrompt}}",
+      },
+      { role: "user", content: "Transcrição:\n\n{{transcript}}" },
+    ],
+  },
+};

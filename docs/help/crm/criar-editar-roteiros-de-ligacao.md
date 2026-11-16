@@ -8,7 +8,7 @@ route_pattern: /campaigns/calls/scripts
 min_permission: techsales.prospecting_scripts.view.workspace
 audience: internal
 sort_order: 409
-version: 4
+version: 5
 is_published: true
 ---
 # Criar e editar roteiros de ligação
@@ -39,6 +39,8 @@ Roteiros em uso são arquivados, não excluídos. Abertura e prompt aceitam vari
 ## Regras fixas em toda ligação
 
 A IA sempre chama o cliente só pelo primeiro nome. Se o cliente ficar mais de 10 segundos em silêncio, ela pergunta "Você ainda está aí?" (até 2 vezes) antes de encerrar a ligação por silêncio.
+
+Ao final de cada ligação, o resumo e a avaliação são gerados sempre em português do Brasil.
 
 ## Erros comuns
 - "Defina uma voz e a mensagem de abertura primeiro": preencha os dois campos.

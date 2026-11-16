@@ -4758,7 +4758,7 @@
       },
       "files": {
         "src/lib/prospecting-campaigns.functions.ts": "2b8cc86d312c3937c9b701f49a431023093ade1db2dfe0967732c9bf43bf17c4",
-        "src/lib/prospecting-vapi-call.server.ts": "15162f3547cf0d99951a02b24af38b602af645d7c8c799e76806c30a48f46f39",
+        "src/lib/prospecting-vapi-call.server.ts": "0ef264bfda1f0cd880f4803b1baecbf3e9c1ad66ef56c68620dbf1b839acce36",
         "src/routes/api/public/hooks/prospecting-dial-tick.ts": "cd24b1480e6d24b556bc2ba777941fad47e50959c0af62f611512daa403919e3",
         "drizzle/migrations/0290_prospecting_call_whatsapp_followup.sql": "df467dc2e493da88db8bfcd28c8007c8659f1fab510b1ba1aea9bd45b061a87d",
         "src/components/prospecting/campaign-call-followup.tsx": "9b92d9da2e37d13887c8b96b68c9b189d044c1784bf5ae4c11fac164c3a22d55",
@@ -5996,7 +5996,7 @@
       "files": {
         "drizzle/migrations/0303_prospecting_sequence_voice.sql": "3a7cf002f5970eaf96e0bc45cf92a8073c0e66f7ba5f05b61e82a703bbcd50a9",
         "drizzle/migrations/0296_sequence_call_failed_is_known.sql": "831661750eed1e86deb27ee12265fae6b8b7a73bf392209aa5d67a3d4e99ae42",
-        "src/lib/prospecting/sequences/voice.server.ts": "3b58cd65f12479ac54aca32535dc6e995659b4a55e31e18eae4ec09af79ee19f"
+        "src/lib/prospecting/sequences/voice.server.ts": "e03df2b4d9db219e3f1e44731bc237c0116c52a936eb67685e9c0e5340dc9ac6"
       },
       "resources": [
         "system.automation.sequences",
@@ -10161,7 +10161,7 @@
         "src/lib/prospecting/calls/call-inbox.ts": "a9e4198778916ea7e8e377914e7563bacd6adc0ec2c96d7c9a0d2224b5163709",
         "src/components/inbox/call-inbox-card.tsx": "d0c538b2029562ce577a1b9baa3b054f46c553579e4d70843965ff929b96899e",
         "src/lib/prospecting/calls/recent-calls.ts": "797a0952fe5d8eb9c349f3857b2419a07fe48d7cd15c24d806c712d7fed272ab",
-        "src/lib/prospecting/calls/voice-conversation-rules.ts": "7f200f484ac7f2bcc151664d953e0da7c1551e95b292dcf60ed3429ecb80fe67"
+        "src/lib/prospecting/calls/voice-conversation-rules.ts": "2f1c3416cc7a8f70d70ce67cb5c4533f6c2e4e042476d5c50f3d79d52640b4d0"
       }
     },
     {
