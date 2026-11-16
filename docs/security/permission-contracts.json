@@ -13259,7 +13259,7 @@
         "src/lib/contracts/quote-pdf.server.ts": "989695b7a69f55577314fc0535ce4dafb540f729f9c263b555ceaa1bbdb5ab19",
         "src/lib/contracts/proposal-pdf.server.ts": "f60f92f473f0af768e76302ae842a2e50fbfecb2b94514c2c1d0b754bf30124b",
         "drizzle/migrations/0367_contract_signature_packages.sql": "2479a6a3f1af4f49c966969646e32b901b75922cd15649e2b798794d8fd91acf",
-        "src/components/contracts/signature-attachments-summary.tsx": "82b4bb7e6a1b273c437c6cb47c20406e6788f5ebf37e62e7a6bad3c0c00eba7f"
+        "src/components/contracts/signature-attachments-summary.tsx": "54d10a50d820e76eedc5cc947f7c4df41d7c77e30c027b2fd2f15582e263e3e1"
       }
     },
     {

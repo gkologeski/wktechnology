@@ -69,11 +69,13 @@ export function SignatureAttachmentsSummary({ contractId }: { contractId: string
         </div>
       ) : attachments.data.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Nenhum anexo incluído. Somente o contrato será enviado.
+          Nenhum anexo disponível no seu acesso. Confira os documentos na ficha do contrato.
         </p>
       ) : (
         <>
-          <p className="text-sm font-medium">{attachments.data.length} anexo(s)</p>
+          <p className="text-sm font-medium">
+            {attachments.data.length} anexo(s) disponível(is) no seu acesso
+          </p>
           <ul
             aria-label="Anexos que acompanham o contrato"
             className="max-h-48 space-y-2 overflow-y-auto text-sm"
@@ -121,8 +123,9 @@ export function SignatureAttachmentsSummary({ contractId }: { contractId: string
             </p>
           )}
           <p className="text-xs text-muted-foreground">
-            Confira o PDF completo antes de continuar. A prévia congela as versões dos documentos
-            comerciais. Gerar a prévia não envia convites nem consome créditos do ForSign.
+            Confira o PDF completo antes de continuar. A assinatura exige validação de todos os
+            anexos. A prévia congela as versões dos documentos comerciais. Gerar a prévia não envia
+            convites nem consome créditos do ForSign.
           </p>
         </>
       )}

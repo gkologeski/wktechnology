@@ -119,7 +119,7 @@ it("distinguishes a read failure from an empty list and supports retry", async (
   m.list.mockRejectedValueOnce(new Error("denied"));
   await render();
   expect(host.querySelector('[role="alert"]')).not.toBeNull();
-  expect(host.textContent).not.toContain("Nenhum anexo incluído");
+  expect(host.textContent).not.toContain("Nenhum anexo disponível no seu acesso");
   expect(m.preview).not.toHaveBeenCalled();
   await click("Tentar novamente");
   expect(host.textContent).toContain("Anexo técnico.pdf");
@@ -127,7 +127,7 @@ it("distinguishes a read failure from an empty list and supports retry", async (
 it("shows an empty list without offering a package preview", async () => {
   m.list.mockResolvedValue([]);
   await render();
-  expect(host.textContent).toContain("Somente o contrato será enviado");
+  expect(host.textContent).toContain("Nenhum anexo disponível no seu acesso");
   expect(host.querySelector("button")).toBeNull();
 });
 it("keeps separate caches for users and workspaces", async () => {
