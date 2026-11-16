@@ -15,9 +15,10 @@ async function sbAdmin(): Promise<any> {
   return supabaseAdmin;
 }
 
-function renderTemplate(tpl: string, ctx: { lead: { name: string; company: string } }): string {
+function renderTemplate(tpl: string, ctx: { lead: Record<string, string> }): string {
   return tpl
     .replaceAll("{{lead.name}}", ctx.lead.name)
+    .replaceAll("{{lead.full_name}}", ctx.lead.full_name ?? ctx.lead.name)
     .replaceAll("{{lead.company}}", ctx.lead.company);
 }
 
@@ -136,9 +137,18 @@ export async function startVapiCall(opts: {
   }
 
   const leadName = [lead.first_name, lead.last_name].filter(Boolean).join(" ").trim();
-  const ctx = { lead: { name: leadName, company: lead.company_name ?? "" } };
+  const { firstNameOf, VOICE_CONVERSATION_RULES, voiceIdleMessagePlan } =
+    await import("@/lib/prospecting/calls/voice-conversation-rules");
+  const ctx = {
+    lead: {
+      name: firstNameOf(lead.first_name as string | null, leadName),
+      first_name: firstNameOf(lead.first_name as string | null, leadName),
+      full_name: leadName,
+      company: lead.company_name ?? "",
+    },
+  };
   const renderedFirst = renderTemplate(script.first_message ?? "", ctx);
-  const renderedPrompt = renderTemplate(script.system_prompt ?? "", ctx);
+  const renderedPrompt = renderTemplate(script.system_prompt ?? "", ctx) + VOICE_CONVERSATION_RULES;
   const voiceId =
     (script.voice_id as string | null) ?? (cfg?.default_voice_id as string | undefined);
 
@@ -161,7 +171,9 @@ export async function startVapiCall(opts: {
       "tchau",
       "até logo",
     ],
-    silenceTimeoutSeconds: 20,
+    // Pergunta "Você ainda está aí?" após 10 s; só encerra depois das tentativas.
+    messagePlan: voiceIdleMessagePlan,
+    silenceTimeoutSeconds: 35,
     // Force Portuguese (Brazil) transcription so the model understands pt-BR audio.
     transcriber: { provider: "deepgram", model: "nova-2", language: "pt-BR" },
   };

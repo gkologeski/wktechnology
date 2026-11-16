@@ -49,7 +49,9 @@ export async function prepareSequenceVoice(
   const apiKey = process.env.VAPI_API_KEY,
     secret = process.env.VAPI_WEBHOOK_SECRET;
   if (!apiKey || !secret) throw new Error("Integração de telefonia indisponível.");
-  const prompt = render(cfg.script.prompt, ctx.source),
+  const { VOICE_CONVERSATION_RULES, voiceIdleMessagePlan } =
+    await import("@/lib/prospecting/calls/voice-conversation-rules");
+  const prompt = render(cfg.script.prompt, ctx.source) + VOICE_CONVERSATION_RULES,
     firstMessage = render(cfg.script.firstMessage, ctx.source);
   return async (effect: EffectReservation) => {
     if (
@@ -90,6 +92,8 @@ export async function prepareSequenceVoice(
           transcriber: { provider: "deepgram", model: "nova-2", language: cfg.language },
           maxDurationSeconds: cfg.maxDurationSeconds,
           endCallFunctionEnabled: true,
+          messagePlan: voiceIdleMessagePlan,
+          silenceTimeoutSeconds: 35,
           serverMessages: ["status-update", "end-of-call-report"],
           server: { url: `${publicAppOrigin()}/api/public/hooks/vapi`, secret },
         },

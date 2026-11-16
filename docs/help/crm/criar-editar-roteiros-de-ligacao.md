@@ -8,7 +8,7 @@ route_pattern: /campaigns/calls/scripts
 min_permission: techsales.prospecting_scripts.view.workspace
 audience: internal
 sort_order: 409
-version: 3
+version: 4
 is_published: true
 ---
 # Criar e editar roteiros de ligação
@@ -34,7 +34,11 @@ is_published: true
 "Script salvo", "Roteiro arquivado", "Roteiro restaurado" ou "Roteiro excluído".
 
 ## Regras e limites
-Roteiros em uso são arquivados, não excluídos. Abertura e prompt aceitam variáveis como {{lead.name}} e {{lead.company}}.
+Roteiros em uso são arquivados, não excluídos. Abertura e prompt aceitam variáveis como {{lead.name}} (primeiro nome), {{lead.full_name}} (nome completo) e {{lead.company}}.
+
+## Regras fixas em toda ligação
+
+A IA sempre chama o cliente só pelo primeiro nome. Se o cliente ficar mais de 10 segundos em silêncio, ela pergunta "Você ainda está aí?" (até 2 vezes) antes de encerrar a ligação por silêncio.
 
 ## Erros comuns
 - "Defina uma voz e a mensagem de abertura primeiro": preencha os dois campos.
