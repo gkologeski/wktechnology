@@ -5414,7 +5414,7 @@
       },
       "files": {
         "src/lib/prospecting-campaigns.functions.ts": "2b8cc86d312c3937c9b701f49a431023093ade1db2dfe0967732c9bf43bf17c4",
-        "src/lib/prospecting-vapi-call.server.ts": "493151004559a59b9da8a38a0ae10377cdd94ede53d039e6b39a809c804eac34",
+        "src/lib/prospecting-vapi-call.server.ts": "b9de6b3ccba1854c4e6d7d2db5f15f1088fbf540a4239a5a34db2dfb6a9c23e3",
         "src/routes/api/public/hooks/prospecting-dial-tick.ts": "cd24b1480e6d24b556bc2ba777941fad47e50959c0af62f611512daa403919e3",
         "drizzle/migrations/0290_prospecting_call_whatsapp_followup.sql": "df467dc2e493da88db8bfcd28c8007c8659f1fab510b1ba1aea9bd45b061a87d",
         "src/components/prospecting/campaign-call-followup.tsx": "9b92d9da2e37d13887c8b96b68c9b189d044c1784bf5ae4c11fac164c3a22d55",
