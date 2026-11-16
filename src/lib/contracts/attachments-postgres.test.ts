@@ -168,6 +168,8 @@ beforeAll(async () => {
  CREATE TABLE storage.buckets(id text PRIMARY KEY,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
  CREATE TABLE storage.objects(id uuid DEFAULT gen_random_uuid(),bucket_id text,name text,metadata jsonb);
  ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;GRANT SELECT,INSERT,UPDATE,DELETE ON storage.objects TO authenticated;
+ GRANT USAGE ON SCHEMA storage TO anon;GRANT SELECT ON storage.objects TO anon;
+ CREATE POLICY legacy_fixture_storage ON storage.objects FOR ALL TO PUBLIC USING(true) WITH CHECK(true);
  CREATE TABLE contracts(id uuid PRIMARY KEY,workspace_id uuid,owner_id uuid,assigned_to uuid,deal_id uuid,quote_id uuid,proposal_id uuid);
  CREATE TABLE quotes(id uuid PRIMARY KEY,workspace_id uuid,owner_id uuid,assigned_to uuid,deal_id uuid,title text);
  CREATE TABLE proposals(id uuid PRIMARY KEY,workspace_id uuid,owner_id uuid,assigned_to uuid,deal_id uuid,title text,version int);
@@ -275,6 +277,13 @@ async function subject(
       for (const key of keys) {
         if (options.keys !== false && (!options.readOnlyPermissions || !key.includes(".update.")))
           await tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${R},${key},${options.deny ? "deny" : "grant"})`;
+      }
+      if (options.deny) {
+        const set = "40000000-0000-4000-8000-0000000000d1";
+        await tx`insert into permission_sets(id,workspace_id,module) values(${set},${W},'techcontracts')`;
+        await tx`insert into user_permission_sets(user_id,set_id,workspace_id,owner_id) values(${U},${set},${W},${U})`;
+        for (const key of keys)
+          await tx`insert into permission_set_items(set_id,permission_key) values(${set},${key})`;
       }
       if (options.workspace && options.workspace !== W) {
         const role = "30000000-0000-4000-8000-0000000000b8";
@@ -619,3 +628,12 @@ it("foreign workspace fixture is active and has its own workspace grants", () =>
     },
     { workspace: B },
   ));
+
+it("anonymous legacy storage grants cannot disclose contract attachments or packages", () =>
+  subject(async (tx) => {
+    await tx.unsafe("RESET ROLE");
+    await tx`insert into storage.objects(bucket_id,name,metadata) values('contract-attachments','private-test-file',${tx.json({ size: 12 })}),('contract-signature-packages','private-test-package',${tx.json({ size: 12 })})`;
+    await tx`select set_config('request.jwt.claims','{}',true)`;
+    await tx.unsafe("SET LOCAL ROLE anon");
+    expect(await tx`select * from storage.objects`).toHaveLength(0);
+  }));
