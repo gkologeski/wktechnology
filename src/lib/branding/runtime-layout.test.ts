@@ -184,3 +184,27 @@ it("flattens neutral sections only in Essential, preserving alerts and selection
   scope.remove();
   style.remove();
 });
+
+it("opens neutral Dashboard shells without removing field, action or classic boundaries", () => {
+  document.documentElement.removeAttribute("data-workspace-layout");
+  const style = document.createElement("style");
+  style.textContent = readFileSync("src/styles/workspace-layout.css", "utf8");
+  document.head.appendChild(style);
+  const rule = Array.from(style.sheet!.cssRules).find(
+    (rule) => "selectorText" in rule && String(rule.selectorText).includes(".bg-surface-2"),
+  ) as CSSStyleRule;
+  const scope = document.createElement("section");
+  scope.dataset.workspaceLayout = "attio";
+  scope.innerHTML =
+    '<main class="authenticated-content"><div class="border border-border-subtle bg-surface-2"></div><div class="border border-product-divider bg-product-toolbar"></div><input class="border border-input bg-background" /><div role="button" class="border border-border-subtle bg-surface-2"></div><div aria-selected="true" class="border border-border-subtle bg-surface-2"></div></main>';
+  document.body.appendChild(scope);
+  const nodes = Array.from(scope.querySelector("main")!.children);
+  expect(nodes[0].matches(rule.selectorText)).toBe(true);
+  expect(nodes[1].matches(rule.selectorText)).toBe(true);
+  for (const node of nodes.slice(2)) expect(node.matches(rule.selectorText)).toBe(false);
+  scope.dataset.workspaceLayout = "classic";
+  expect(nodes[0].matches(rule.selectorText)).toBe(false);
+  expect(nodes[1].matches(rule.selectorText)).toBe(false);
+  scope.remove();
+  style.remove();
+});
