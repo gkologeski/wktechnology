@@ -19,10 +19,14 @@ export function LayoutSelector({
   value,
   onChange,
   disabled,
+  colorMode,
+  onColorModeChange,
 }: {
   value: WorkspaceLayout;
   onChange: (value: WorkspaceLayout) => void;
   disabled?: boolean;
+  colorMode: "light" | "dark";
+  onColorModeChange: (mode: "light" | "dark") => void;
 }) {
   const canView = useSharedAction("system.branding", "view");
   if (!canView) return null;
@@ -52,6 +56,32 @@ export function LayoutSelector({
           </span>
         </label>
       ))}
+      <fieldset className="space-y-2">
+        <legend className="mb-2 text-sm font-semibold">Aparência do workspace</legend>
+        <div className="flex gap-4">
+          {(
+            [
+              { id: "light", label: "Claro" },
+              { id: "dark", label: "Escuro" },
+            ] as const
+          ).map((mode) => (
+            <label key={mode.id} className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="workspace-color-mode"
+                value={mode.id}
+                checked={colorMode === mode.id}
+                onChange={() => onColorModeChange(mode.id)}
+                className="accent-primary"
+              />
+              {mode.label}
+            </label>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Aplica a paleta clara ou escura já configurada no White Label após salvar.
+        </p>
+      </fieldset>
       <p className="text-xs text-muted-foreground">
         Confira a prévia e clique em Salvar alterações para aplicar. Descartar mantém a configuração
         salva.

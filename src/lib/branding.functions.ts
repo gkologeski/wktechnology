@@ -36,6 +36,7 @@ export const getBranding = createServerFn({ method: "GET" })
 const themeSchema = z
   .object({
     layout: z.enum(["classic", "attio"]).optional(),
+    colorMode: z.enum(["light", "dark"]).optional(),
     light: z.record(z.string(), z.string()).optional(),
     dark: z.record(z.string(), z.string()).optional(),
     icons: z

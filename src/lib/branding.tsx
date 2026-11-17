@@ -15,6 +15,7 @@ import {
   sanitizeTheme,
   type BrandTheme,
   workspaceLayout,
+  workspaceColorMode,
 } from "@/lib/branding/tokens";
 
 export type Branding = {
@@ -67,9 +68,11 @@ function applyBranding(branding: Branding | null) {
     root.style.removeProperty("--font-body");
     root.removeAttribute("data-density");
     root.removeAttribute("data-workspace-layout");
+    root.classList.remove("dark");
     return;
   }
   root.setAttribute("data-workspace-layout", workspaceLayout(branding.theme));
+  root.classList.toggle("dark", workspaceColorMode(branding.theme) === "dark");
   if (branding.primary_color) root.style.setProperty("--primary", branding.primary_color);
   if (branding.accent_color) root.style.setProperty("--accent", branding.accent_color);
   if (branding.radius) root.style.setProperty("--radius", branding.radius);

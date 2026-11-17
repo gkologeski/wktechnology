@@ -13,6 +13,7 @@ import {
   EMPTY_THEME,
   type BrandTheme,
   workspaceLayout,
+  workspaceColorMode,
 } from "@/lib/branding/tokens";
 import { ControlsPanel, type BuilderForm } from "./controls-panel";
 import { ThemeEditor } from "./theme-editor";
@@ -100,6 +101,7 @@ export function BrandingBuilder() {
           };
           setState(next);
           setSaved(next);
+          setPreviewMode(workspaceColorMode(next.theme));
         }
       } catch (error) {
         if (!disposed && current === sequence) toast.error((error as Error).message);
@@ -267,6 +269,11 @@ export function BrandingBuilder() {
             <TabsContent value="layout" className="mt-0 p-4">
               <LayoutSelector
                 value={workspaceLayout(theme)}
+                colorMode={workspaceColorMode(theme)}
+                onColorModeChange={(colorMode) => {
+                  setTheme({ ...theme, colorMode });
+                  setPreviewMode(colorMode);
+                }}
                 disabled={!canEdit || busy}
                 onChange={(layout) => setTheme({ ...theme, layout })}
               />

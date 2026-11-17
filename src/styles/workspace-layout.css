@@ -54,7 +54,13 @@
   border-radius: max(10px, var(--radius));
 }
 /* Keep alert, dialog and editor boundaries: flatten only operational cards. */
-:where([data-workspace-layout="attio"]) .authenticated-content [data-slot="card"] {
+:where([data-workspace-layout="attio"])
+  .authenticated-content
+  [data-slot="card"]:not([role="alert"]):not([aria-selected="true"]):not(
+    [class*="destructive"]
+  ):not([class*="warning"]):not([class*="success"]):not([class*="border-primary"]):not(
+    [class*="ring-"]
+  ) {
   border-color: transparent;
   border-radius: 0;
   box-shadow: none;

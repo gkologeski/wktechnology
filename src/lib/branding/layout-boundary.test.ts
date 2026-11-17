@@ -127,6 +127,12 @@ describe("workspace layout save authorization", () => {
     await expect(call.result).resolves.toEqual({ ok: true });
     expect(call.upsert.mock.calls[0][0]).not.toHaveProperty("expected_workspace_id");
   });
+  it("rejects an unsupported workspace color mode", () => {
+    expect(() => state.save!.validate({ theme: { colorMode: "script" } })).toThrow();
+    expect(state.save!.validate({ theme: { layout: "attio", colorMode: "dark" } })).toMatchObject({
+      theme: { layout: "attio", colorMode: "dark" },
+    });
+  });
   it("rejects arbitrary layouts and ignores a supplied workspace id", () => {
     expect(() => state.save!.validate({ theme: { layout: "custom-script" } })).toThrow();
     expect(state.save!.validate({ ...row, workspace_id: "workspace-b" })).not.toHaveProperty(

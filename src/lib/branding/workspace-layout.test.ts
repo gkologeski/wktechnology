@@ -1,12 +1,25 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { mergeThemes, sanitizeTheme, themeToCss, workspaceLayout, type BrandTheme } from "./tokens";
+import {
+  mergeThemes,
+  sanitizeTheme,
+  themeToCss,
+  workspaceLayout,
+  workspaceColorMode,
+  type BrandTheme,
+} from "./tokens";
 import { applyBrandArchetype, BRAND_ARCHETYPES } from "./archetypes";
 
 describe("workspace layout compatibility", () => {
   it("defaults legacy, empty and unsupported themes to classic", () => {
     for (const theme of [undefined, null, {}, { layout: "unknown" } as unknown as BrandTheme])
       expect(workspaceLayout(sanitizeTheme(theme))).toBe("classic");
+  });
+  it("keeps light as legacy default and preserves dark mode across palette edits", () => {
+    expect(workspaceColorMode(undefined)).toBe("light");
+    const theme: BrandTheme = { layout: "attio", colorMode: "dark" };
+    expect(workspaceColorMode(sanitizeTheme(theme))).toBe("dark");
+    expect(applyBrandArchetype(BRAND_ARCHETYPES[0], theme).theme.colorMode).toBe("dark");
   });
   it("round-trips the opt-in layout without changing identity or palette", () => {
     const theme = {

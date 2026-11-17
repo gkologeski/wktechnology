@@ -321,8 +321,13 @@ export function workspaceLayout(theme: BrandTheme | null | undefined): Workspace
   return theme?.layout === "attio" ? "attio" : "classic";
 }
 
+export function workspaceColorMode(theme: BrandTheme | null | undefined): "light" | "dark" {
+  return theme?.colorMode === "dark" ? "dark" : "light";
+}
+
 export type BrandTheme = {
   layout?: WorkspaceLayout;
+  colorMode?: "light" | "dark";
   light?: Record<string, string>;
   dark?: Record<string, string>;
   icons?: BrandIcons;
@@ -337,6 +342,7 @@ export function mergeThemes(...themes: Array<BrandTheme | null | undefined>): Br
   for (const t of themes) {
     if (!t) continue;
     if (t.layout === "classic" || t.layout === "attio") out.layout = t.layout;
+    if (t.colorMode === "light" || t.colorMode === "dark") out.colorMode = t.colorMode;
     Object.assign(out.light!, t.light ?? {});
     Object.assign(out.dark!, t.dark ?? {});
     Object.assign(out.icons!, t.icons ?? {});
@@ -373,6 +379,9 @@ export function sanitizeTheme(theme: BrandTheme | null | undefined): BrandTheme 
 
   return {
     ...(theme?.layout === "classic" || theme?.layout === "attio" ? { layout: theme.layout } : {}),
+    ...(theme?.colorMode === "light" || theme?.colorMode === "dark"
+      ? { colorMode: theme.colorMode }
+      : {}),
     light: pickColors(theme?.light),
     dark: pickColors(theme?.dark),
     icons,

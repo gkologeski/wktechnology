@@ -27,9 +27,10 @@ is_published: true
 1. Abra **Configurações → Workspace → White-label → Workspace (ERP)**.
 2. No Construtor de marca, abra **Layout**.
 3. Escolha **Clássico · atual** para manter a interface tradicional ou **Essencial · inspirado no Attio** para usar canvas aberto, controles discretos e menos caixas.
-4. Confira a prévia nas telas Ficha, Negócios, Dashboard e Inbox; alterne Claro/Escuro para comparar. Os dados da prévia são ilustrativos.
-5. Clique em **Salvar alterações**. A alteração vale para o workspace atual e é recebida pelas sessões conectadas. Se necessário, recarregue a tela.
-6. Para retornar, selecione **Clássico · atual** e salve. **Descartar** cancela somente as alterações ainda não salvas.
+4. Em **Aparência do workspace**, escolha **Claro** ou **Escuro** para usar a paleta correspondente já configurada. Sem escolha anterior, o sistema mantém o modo claro.
+5. Confira a prévia nas telas Ficha, Negócios, Dashboard e Inbox; alterne Claro/Escuro para comparar. Os dados da prévia são ilustrativos.
+6. Clique em **Salvar alterações**. A alteração vale para o workspace atual e é recebida pelas sessões conectadas. Se necessário, recarregue a tela.
+7. Para retornar, selecione **Clássico · atual** e salve. **Descartar** cancela somente as alterações ainda não salvas.
 
 ## Regras e limites
 

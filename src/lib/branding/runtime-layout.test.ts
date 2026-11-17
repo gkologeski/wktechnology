@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readFileSync } from "node:fs";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 const state = vi.hoisted(() => ({
   user: { id: "user-a" } as { id: string } | null,
   workspace: "workspace-a" as string | null,
   layout: "attio",
+  colorMode: "light",
   moduleLayout: "classic",
   branding: true,
   onWorkspace: null as null | (() => void),
@@ -47,7 +49,7 @@ vi.mock("@/integrations/supabase/client", () => ({
                   ? {
                       brand_name: state.workspace,
                       primary_color: "workspace-color",
-                      theme: { layout: state.layout },
+                      theme: { layout: state.layout, colorMode: state.colorMode },
                     }
                   : null,
               };
@@ -84,6 +86,7 @@ beforeEach(() => {
     workspace: "workspace-a",
     layout: "attio",
     moduleLayout: "classic",
+    colorMode: "light",
     branding: true,
     pending: null,
   });
@@ -103,6 +106,16 @@ describe("workspace layout runtime isolation", () => {
     expect(document.getElementById("wk-branding-theme")?.textContent).toContain(
       "--primary:module-color",
     );
+  });
+  it("applies the saved dark palette mode and clears it on logout", async () => {
+    state.colorMode = "dark";
+    await render();
+    await flush();
+    expect(document.documentElement.classList.contains("dark")).toBe(true);
+    state.user = null;
+    await render();
+    await flush();
+    expect(document.documentElement.classList.contains("dark")).toBe(false);
   });
   it("clears appearance on logout and ignores the legacy cache", async () => {
     await render();
@@ -145,4 +158,29 @@ describe("workspace layout runtime isolation", () => {
     await flush();
     expect(document.documentElement.hasAttribute("data-workspace-layout")).toBe(false);
   });
+});
+
+// Status and selected-state boundaries must not disappear when cards are flattened.
+it("flattens neutral sections only in Essential, preserving alerts and selection", () => {
+  const style = document.createElement("style");
+  style.textContent = readFileSync("src/styles/workspace-layout.css", "utf8");
+  document.head.appendChild(style);
+  const rule = Array.from(style.sheet!.cssRules).find(
+    (rule) =>
+      "selectorText" in rule &&
+      String(rule.selectorText).includes(".authenticated-content") &&
+      String(rule.selectorText).includes('[data-slot="card"]'),
+  ) as CSSStyleRule;
+  const scope = document.createElement("section");
+  scope.dataset.workspaceLayout = "attio";
+  scope.innerHTML =
+    '<main class="authenticated-content"><div data-slot="card"></div><div data-slot="card" role="alert"></div><div data-slot="card" class="border-destructive"></div><div data-slot="card" class="bg-warning/10"></div><div data-slot="card" class="border-primary"></div><div data-slot="card" aria-selected="true"></div></main>';
+  document.body.appendChild(scope);
+  const cards = Array.from(scope.querySelectorAll('[data-slot="card"]'));
+  expect(cards[0].matches(rule.selectorText)).toBe(true);
+  for (const card of cards.slice(1)) expect(card.matches(rule.selectorText)).toBe(false);
+  scope.dataset.workspaceLayout = "classic";
+  expect(cards[0].matches(rule.selectorText)).toBe(false);
+  scope.remove();
+  style.remove();
 });

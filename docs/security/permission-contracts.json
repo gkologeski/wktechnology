@@ -13403,13 +13403,13 @@
       "id": "workspace-layout-choice",
       "kind": "business",
       "files": {
-        "src/components/branding/branding-builder.tsx": "c05dc1e8d886be6288be1ed0df50120fcf7ae4d5e5134442732d8b2ab3a31424",
+        "src/components/branding/branding-builder.tsx": "14df0cf0dcae6ed260fddeb12743cd31355a965e51fae7fbf7a3d664107a9fc9",
         "src/components/branding/live-preview.tsx": "8e785ad8d9aee7e1c6701c6517f0015f37bfb46cd1c0538186ec6b1bf4783dcf",
-        "src/lib/branding.functions.ts": "24e5981ea363f97deae0268c0b282e4356039e3800cf2c95b6ecb6c236e8866f",
+        "src/lib/branding.functions.ts": "62f97fa7cfd67ad6626d946d1139f26f69e68c0686b93bcc4405ecb94957e084",
         "src/components/branding/layout-preview.tsx": "2af4fbab153819627b4c3e03e3857330dedf26876436ba2e76644161238b727b",
-        "src/components/branding/layout-selector.tsx": "cf3683866ac95358ba6f51be87d10c51a17227dbc67f52397e7354b61f9feced"
+        "src/components/branding/layout-selector.tsx": "2337980c9308ad98d61f458b25115bbfe12d5b10d3bab2b46c326a4b895ba982"
       },
-      "rationale": "Workspace layout choice reuses the existing system.branding view/update gates. Save calls requireSharedPermission before the existing workspace-resolved user/RLS upsert; unknown layouts are rejected by Zod. Preview controls require view, actual save requires update and is disabled for read-only users. No migration, grant, role change, data action or change to identity. Classic is the default and remains reversible. Existing server getBranding retains authenticated user RLS reads and asset refresh unchanged. The editor resets on workspace changes and discards late loads; saves carry an expected-workspace id checked against the middleware-authorized workspace before the RLS upsert. The transport field is never persisted. Legacy callers keep the same active-workspace API.",
+      "rationale": "Workspace layout choice reuses the existing system.branding view/update gates. Save calls requireSharedPermission before the existing workspace-resolved user/RLS upsert; unknown layouts are rejected by Zod. Preview controls require view, actual save requires update and is disabled for read-only users. No migration, grant, role change, data action or change to identity. Classic is the default and remains reversible. Existing server getBranding retains authenticated user RLS reads and asset refresh unchanged. The editor resets on workspace changes and discards late loads; saves carry an expected-workspace id checked against the middleware-authorized workspace before the RLS upsert. The transport field is never persisted. Legacy callers keep the same active-workspace API. Approved light/dark appearance is selected from the existing palettes, validated as an enum, workspace-scoped and reset at logout; legacy theme defaults to light. No palette or identity rewrite.",
       "resources": [
         "system.branding"
       ],
@@ -13491,9 +13491,9 @@
       "id": "workspace-layout-runtime",
       "kind": "internal",
       "files": {
-        "src/lib/branding.tsx": "8c40718a46bf59eb2e3bffede7dfabdcab68533d092e9a4c5b81f78dc19c63c3"
+        "src/lib/branding.tsx": "5922b998ca81187795d1e753fc7302e9db60d939961d43492b0c5a55293be9d7"
       },
-      "rationale": "Authenticated workspace appearance only. Existing user/RLS reads remain filtered by the resolved active workspace. No unscoped cache or pre-auth appearance is applied; logout and workspace change clear structure, palette and module state. Only workspace theme selects layout, module tokens cannot replace structure. No new data or write action. Opt-in sidebar header reads the existing BrandingContext for workspace name and light/dark logo; existing menu permission filters and route destinations remain unchanged.",
+      "rationale": "Authenticated workspace appearance only. Existing user/RLS reads remain filtered by the resolved active workspace. No unscoped cache or pre-auth appearance is applied; logout and workspace change clear structure, palette and module state. Only workspace theme selects layout, module tokens cannot replace structure. No new data or write action. Opt-in sidebar header reads the existing BrandingContext for workspace name and light/dark logo; existing menu permission filters and route destinations remain unchanged. Approved light/dark appearance is selected from the existing palettes, validated as an enum, workspace-scoped and reset at logout; legacy theme defaults to light. No palette or identity rewrite.",
       "resources": [
         "system.branding"
       ],
@@ -13549,7 +13549,7 @@
       "id": "workspace-layout-archetypes",
       "kind": "presentation",
       "files": {
-        "src/lib/branding/archetypes.ts": "991cd763e92a066f18551aad6c42665e404b880a93020e886036966ca3157fc3"
+        "src/lib/branding/archetypes.ts": "41edabef6dbb9606ab6729559cdc3962de9f70bb876cb6cb617bc5e3ffafab83"
       },
       "rationale": "Presentation-only workspace layout catalogue, sanitization or scoped markup. No I/O, new routes, permissions, mutations or actions; preserves existing palette/assets and classic fallback."
     },
@@ -13557,7 +13557,7 @@
       "id": "workspace-layout-tokens",
       "kind": "presentation",
       "files": {
-        "src/lib/branding/tokens.ts": "26051274be0ae85fa8cf30e74e087c5026664caa6f6e6b6841af2954f44f03f8"
+        "src/lib/branding/tokens.ts": "a9b79122284a3a4e048883bc0f3fcae36d8c5c235c2831b9f5525975886ab2f8"
       },
       "rationale": "Presentation-only workspace layout catalogue, sanitization or scoped markup. No I/O, new routes, permissions, mutations or actions; preserves existing palette/assets and classic fallback."
     },
