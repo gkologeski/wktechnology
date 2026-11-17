@@ -8,7 +8,7 @@ route_pattern: /projects
 min_permission: techprojects.projects.view.own
 audience: internal
 sort_order: 30
-version: 2
+version: 3
 is_published: true
 ---
 # Consultar e criar projetos
@@ -43,3 +43,6 @@ O nome é obrigatório. Criar projeto exige capacidade de criação; consultar n
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
 ![Tela: Consultar e criar projetos](/help-media/projects/consultar-projetos.webp)
+
+## Atualização de navegação e consistência
+A coluna **Progresso informado** mostra o percentual cadastrado no projeto, não a proporção de tarefas concluídas do Dashboard.

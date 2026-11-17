@@ -41,7 +41,7 @@ export function OfflineTimeQueuePanel() {
       className="space-y-3 rounded-lg border border-border bg-card p-4"
     >
       <SectionHeader
-        title="Sem conexão"
+        title="Apontamento offline"
         description={`Opcional: quando ligado, um apontamento NOVO que não puder ser enviado fica guardado só neste aparelho por até ${OFFLINE_TIME_QUEUE_RETENTION_HOURS} h e é enviado quando a conexão voltar. Ao sair da conta, o que não foi enviado é apagado. O servidor confere tudo de novo no envio.`}
       />
       <div className="flex flex-wrap items-center gap-3">

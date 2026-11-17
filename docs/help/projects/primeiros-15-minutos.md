@@ -8,7 +8,7 @@ route_pattern:
 min_permission: 
 audience: internal
 sort_order: 300
-version: 1
+version: 2
 is_published: true
 ---
 # Primeiros 15 minutos no TechProjects
@@ -24,7 +24,7 @@ is_published: true
 ## Passo a passo
 1. Confira o workspace e abra Dashboard. Escolha um período e observe cobertura e filtros.
 2. Abra Projetos e consulte um projeto acessível; confira tarefas e origem. Não crie registros só para testar em ambiente real.
-3. Abra My Work para revisar Hoje, Atrasadas e Próximos 7 dias.
+3. Abra Meu trabalho para revisar Hoje, Atrasadas e Próximos 7 dias.
 4. Em Minhas Horas, examine a semana e as situações. Se for registrar trabalho real, use projeto e atividade corretos e confira a confirmação.
 5. Identifique com o administrador quem aprova suas horas; consulte a prévia de envio antes de enviar. Leia as permissões e erros comuns.
 

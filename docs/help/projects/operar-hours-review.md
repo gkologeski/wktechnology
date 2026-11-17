@@ -8,7 +8,7 @@ route_pattern: /projects/hours-review
 min_permission: techprojects.time_entries.approve.workspace
 audience: internal
 sort_order: 20
-version: 2
+version: 3
 is_published: true
 ---
 # Revisar e decidir horas
@@ -45,3 +45,6 @@ A fila é limitada ao que o usuário pode decidir. Ser gestor ou enxergar o menu
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
 ![Tela: Revisar e decidir horas](/help-media/projects/operar-hours-review.webp)
+
+## Atualização de navegação e consistência
+A fila **Pendências de todos os períodos** não é filtrada pela data do cabeçalho. Esse filtro aplica-se aos indicadores Enviado/Aprovado/Importado no período; a decisão sempre revalida o item e a alçada no servidor.

@@ -1,5 +1,12 @@
 export const SEGMENT_LABELS: Record<string, string> = {
   dashboard: "Início",
+  projects: "Projetos",
+  spaces: "Espaços",
+  lists: "Listas",
+  "my-work": "Meu trabalho",
+  "my-hours": "Minhas horas",
+  "hours-review": "Revisão de horas",
+  timesheet: "Folha de horas",
   leads: "Leads",
   contacts: "Contatos",
   catalog: "Cadastros",

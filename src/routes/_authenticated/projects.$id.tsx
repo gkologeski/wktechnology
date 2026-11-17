@@ -183,10 +183,14 @@ function ProjectDetailPage() {
 
       <div className="rounded-lg border bg-card p-4 space-y-2">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Progresso</span>
+          <span className="text-muted-foreground">Progresso informado</span>
           <span className="tabular-nums font-medium">{p.progress ?? 0}%</span>
         </div>
         <Progress value={p.progress ?? 0} />
+        <p className="text-xs text-muted-foreground">
+          Percentual cadastrado no projeto. A conclusão das tarefas é calculada separadamente no
+          Dashboard.
+        </p>
         <div className="flex flex-wrap gap-4 pt-2 text-xs text-muted-foreground">
           {p.contracts && (
             <span>

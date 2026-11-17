@@ -2,6 +2,7 @@
 import { useMemo, useState } from "react";
 import {
   addDays,
+  addMonths,
   endOfWeek,
   format,
   isSameDay,
@@ -73,7 +74,8 @@ export function CalendarView({ tasks, onOpen }: { tasks: Task[]; onOpen: (t: Tas
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={() => setCursor(subDays(monthStart, 1))}
+            aria-label="Mês anterior"
+            onClick={() => setCursor(addMonths(monthStart, -1))}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -89,7 +91,8 @@ export function CalendarView({ tasks, onOpen }: { tasks: Task[]; onOpen: (t: Tas
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            onClick={() => setCursor(addDays(endOfWeek(monthStart), 1))}
+            aria-label="Próximo mês"
+            onClick={() => setCursor(addMonths(monthStart, 1))}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -295,7 +298,7 @@ export function WorkloadView({ tasks }: { tasks: Task[] }) {
     return Array.from(map.entries()).sort((a, b) => b[1].hours - a[1].hours);
   }, [tasks, weekStart, weekEnd]);
 
-  const CAPACITY = 40; // horas/semana
+  // No individual work schedule is read here: never invent a capacity or overload.
 
   return (
     <div className="space-y-3">
@@ -338,8 +341,6 @@ export function WorkloadView({ tasks }: { tasks: Task[] }) {
       ) : (
         <div className="rounded-lg border bg-card divide-y">
           {byAssignee.map(([id, entry]) => {
-            const pct = Math.min(100, (entry.hours / CAPACITY) * 100);
-            const overload = entry.hours > CAPACITY;
             return (
               <div key={id} className="p-3 space-y-1.5">
                 <div className="flex items-center justify-between text-sm">
@@ -354,22 +355,18 @@ export function WorkloadView({ tasks }: { tasks: Task[] }) {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span
-                      className={`tabular-nums ${overload ? "text-rose-600 font-semibold" : "text-muted-foreground"}`}
-                    >
-                      {entry.hours.toFixed(1)}h / {CAPACITY}h
+                    <span className="tabular-nums text-muted-foreground">
+                      {entry.hours.toFixed(1)}h estimadas · capacidade não configurada
                     </span>
                     <Badge variant="outline" className="text-[10px]">
                       {entry.tasks.length} tarefas
                     </Badge>
                   </div>
                 </div>
-                <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all ${overload ? "bg-rose-500" : "bg-primary"}`}
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
+                <p className="text-xs text-muted-foreground">
+                  Estimativas das tarefas com prazo nesta semana, nesta lista. Sem jornada
+                  individual, não é possível indicar sobrecarga.
+                </p>
                 <div className="flex flex-wrap gap-1 pt-1">
                   {entry.tasks.slice(0, 6).map((t) => (
                     <Badge

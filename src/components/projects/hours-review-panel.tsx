@@ -1,3 +1,5 @@
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { HrAccessError } from "@/components/hr-access";
 // Fila do aprovador: só itens enviados que o usuário pode decidir (aprovador explícito do
 // projeto/profissional, delegação vigente, deny e autoaprovação respeitados no banco).
 // Cada decisão confere a revisão do apontamento: se mudou desde a leitura, o banco recusa.
@@ -29,7 +31,22 @@ import type { PendingItem } from "@/lib/projects/time-workflow.types";
 const PAGE = 50;
 const br = (iso: string) => iso.split("-").reverse().join("/");
 
-export function HoursReviewPanel({ from, to }: { from: string; to: string }) {
+export function HoursReviewPanel(props: { from: string; to: string }) {
+  const p = usePermissions();
+  if (p.isLoading) return <p role="status">Verificando acesso…</p>;
+  if (p.isError) return <HrAccessError retry={p.refetch} />;
+  if (
+    !p.workspaceId ||
+    !p.canAny([
+      "techprojects.time_entries.approve.workspace",
+      "techprojects.timesheet.approve.workspace",
+      "techprojects.time_entries.view.own",
+    ])
+  )
+    return <p role="alert">Você não tem permissão para consultar esta fila.</p>;
+  return <HoursReviewContent key={p.workspaceId} {...props} />;
+}
+function HoursReviewContent({ from, to }: { from: string; to: string }) {
   const qc = useQueryClient();
   const pendingFn = useServerFn(listPendingApprovals);
   const overviewFn = useServerFn(getTimesheetOverview);
@@ -95,9 +112,9 @@ export function HoursReviewPanel({ from, to }: { from: string; to: string }) {
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard
-          label="Aguardando sua decisão"
+          label="Pendências de todos os períodos"
           value={String(total)}
-          hint={formatSeconds(pending.data?.total_seconds ?? 0)}
+          hint={`${formatSeconds(pending.data?.total_seconds ?? 0)} · o filtro de período aplica-se aos indicadores ao lado`}
         />
         <MetricCard label="Enviado no período" value={formatSeconds(t?.submitted ?? 0)} />
         <MetricCard

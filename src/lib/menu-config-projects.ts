@@ -40,7 +40,7 @@ export const PROJECTS_SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Projetos",
     items: [
       {
-        title: "My Work",
+        title: "Meu trabalho",
         url: "/projects/my-work",
         icon: Sparkles,
         permissionAny: [

@@ -1,3 +1,4 @@
+import { taskStatusGroups } from "@/lib/projects/task-status-groups";
 import { useWorkRecordCapability } from "@/components/work-action";
 import { WorkAction, WorkCapabilityScope } from "@/components/work-action";
 import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
@@ -291,18 +292,37 @@ function BoardView({
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const draggingCapability = useWorkRecordCapability("techprojects.tasks", draggingId ?? "");
 
-  const byStatus = useMemo(() => {
-    const map = new Map<string, Task[]>();
-    for (const s of statuses) map.set(s.id, []);
-    for (const t of tasks) {
-      const list = t.custom_status_id && map.get(t.custom_status_id);
-      if (list) list.push(t);
-    }
-    return map;
-  }, [statuses, tasks]);
+  const { byStatus, unclassified } = useMemo(
+    () => taskStatusGroups(statuses, tasks),
+    [statuses, tasks],
+  );
 
   return (
     <div className="flex gap-3 overflow-x-auto pb-2">
+      {unclassified.length > 0 && (
+        <section
+          className="min-w-[280px] w-72 shrink-0 rounded-lg border bg-muted/30"
+          aria-label="Tarefas sem status da lista"
+        >
+          <div className="px-3 py-2 border-b font-medium">
+            Sem status da lista · {unclassified.length}
+          </div>
+          <p className="px-3 py-2 text-xs text-muted-foreground">
+            Os vínculos originais foram preservados. Abra a tarefa para conferir seus dados.
+          </p>
+          <div className="p-2 space-y-2">
+            {unclassified.map((t) => (
+              <TaskCard
+                key={t.id}
+                task={t}
+                onDragStart={() => setDraggingId(t.id)}
+                onChanged={onChanged}
+                onOpen={() => onOpen(t)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
       {statuses.map((s) => (
         <div
           key={s.id}
@@ -489,7 +509,7 @@ function ListRow({
             {status.name}
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground">—</span>
+          <span className="text-xs text-muted-foreground">Sem status da lista</span>
         )}
       </td>
       <td className="px-3 py-2">
