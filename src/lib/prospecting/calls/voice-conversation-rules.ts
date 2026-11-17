@@ -1,8 +1,9 @@
+import { CAREERS_CONTACT_EMAIL } from "@/lib/platform-domains";
 /** Regras fixas de conversa aplicadas a toda ligação da IA de voz (VOZ-PRIMEIRO-NOME). */
 export const IDLE_QUESTION = "Você ainda está aí?";
 export const IDLE_TIMEOUT_SECONDS = 10;
 /** E-mail para candidatos a emprego (VAGA-CURRICULO). */
-export const CAREERS_EMAIL = "rh@wktechnology.com.br";
+export const CAREERS_EMAIL = CAREERS_CONTACT_EMAIL;
 
 export function firstNameOf(firstName?: string | null, fullName?: string | null): string {
   const f = (firstName ?? "").trim();

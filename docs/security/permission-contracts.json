@@ -327,7 +327,7 @@
       "files": {
         "src/lib/access-control/sales-route-map.ts": "1a0b7aaf3d644832266a45e09bb4c1d7cf4477c6714a891298cf2d9787ab8892",
         "src/routes/_authenticated/settings.tsx": "6654b09ffe560590a6b1b83c28b27035fff5acaed3c2af30e6e284a255413359",
-        "src/routes/_authenticated.tsx": "7a8c57f0ef160cc66068271b9fec9cd8129b36b2895978317c59885dad3fa296",
+        "src/routes/_authenticated.tsx": "7c8525f0f33c6501b29c6ee3fe6316fcf608551f8c3f2f50a80d044bf2d6e708",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
       }
     },
@@ -3042,7 +3042,7 @@
       "permission_keys": [
         "system.channels.view.workspace"
       ],
-      "rationale": "Prompt formatting uses only server-resolved account identity. Published persona remains stored intact; only explicit variables and legacy self-introduction names are adapted in memory. Authorized worker and sandbox callers retain provider and permission enforcement. No public identity lookup or credential access. Review 29/10/2026: technical contract now describes referral classification (referral_name written by the customer) and follow-up non-repetition; prompt text only, no data access.",
+      "rationale": "Prompt formatting uses only server-resolved account identity. Published persona remains stored intact; only explicit variables and legacy self-introduction names are adapted in memory. Authorized worker and sandbox callers retain provider and permission enforcement. No public identity lookup or credential access. Review 29/10/2026: technical contract now describes referral classification (referral_name written by the customer) and follow-up non-repetition; prompt text only, no data access. Review 17/11/2026: main 28f54718e adds only CAREERS_EMAIL and the candidate guidance prompt; no endpoint, access, grant or delivery boundary changes.",
       "controls": [
         {
           "file": "src/lib/prospecting/sdr/channel-identity.ts",
@@ -3084,7 +3084,7 @@
         "review_by": "2027-01-27"
       },
       "files": {
-        "src/lib/prospecting/sdr/agent.server.ts": "780c6377b29fafc69b373f882e335597581c4deb4d0517a380daa685cbab7bc6"
+        "src/lib/prospecting/sdr/agent.server.ts": "27163df808b267e30e74a38d8aef7bc6f61b1057a6265971b7e4f2eb95de3692"
       }
     },
     {
@@ -11340,7 +11340,7 @@
     {
       "id": "call-campaign-pure-rules",
       "kind": "presentation",
-      "rationale": "Pure helpers for call campaigns: PT-BR status labels, start checklist and recent-contact window math. No I/O, routes, actions, grants or data access; enforcement stays in prospecting-voice-campaigns server functions. Adds pure edit/delete/cancel predicates and attempt summarization (no I/O). Adds canceled label and pure pace estimate (no I/O). Adds pure meeting-distribution normalization and checklist item (no I/O). Adds pure voice-booking helpers (host choice, tool-call parsing, offer matching, template variables; no I/O). Adds pure call card text builder/splitter for the Inbox (no I/O). Adds presentational call card (props only, no data access). VOZ-AUDIO-FILA 16/11/2026: pure recent-calls selector (drops queued attempts, sorts by started_at; no I/O); call card only forwards attemptId to the recording player. STATUS-CHAMADA 16/11/2026: pure call status tone/label and ended-reason PT-BR labels (no I/O). Adds pure voice conversation rules (first name, idle prompt constants; no I/O). VOZ-HUMANO-URA 16/11/2026: pure prompt constants only; no access change.",
+      "rationale": "Pure helpers for call campaigns: PT-BR status labels, start checklist and recent-contact window math. No I/O, routes, actions, grants or data access; enforcement stays in prospecting-voice-campaigns server functions. Adds pure edit/delete/cancel predicates and attempt summarization (no I/O). Adds canceled label and pure pace estimate (no I/O). Adds pure meeting-distribution normalization and checklist item (no I/O). Adds pure voice-booking helpers (host choice, tool-call parsing, offer matching, template variables; no I/O). Adds pure call card text builder/splitter for the Inbox (no I/O). Adds presentational call card (props only, no data access). VOZ-AUDIO-FILA 16/11/2026: pure recent-calls selector (drops queued attempts, sorts by started_at; no I/O); call card only forwards attemptId to the recording player. STATUS-CHAMADA 16/11/2026: pure call status tone/label and ended-reason PT-BR labels (no I/O). Adds pure voice conversation rules (first name, idle prompt constants; no I/O). VOZ-HUMANO-URA 16/11/2026: pure prompt constants only; no access change. Review 17/11/2026: main 28f54718e adds only CAREERS_EMAIL and the candidate guidance prompt; no endpoint, access, grant or delivery boundary changes. Centralized the unchanged careers email in platform-domains to satisfy the domain guard.",
       "files": {
         "src/lib/prospecting/calls/recent-contact.ts": "315ab9adb2de70bf31c0514a79c27e779a54c27fcc7723eae4815a1b8ce3b8aa",
         "src/lib/prospecting/calls/status-label.ts": "92a5ec4f16741e4104011c8d59b579558dbbbc44c7fdfdb6d4932d61cc551505",
@@ -11350,7 +11350,7 @@
         "src/lib/prospecting/calls/call-inbox.ts": "a9e4198778916ea7e8e377914e7563bacd6adc0ec2c96d7c9a0d2224b5163709",
         "src/components/inbox/call-inbox-card.tsx": "d0c538b2029562ce577a1b9baa3b054f46c553579e4d70843965ff929b96899e",
         "src/lib/prospecting/calls/recent-calls.ts": "797a0952fe5d8eb9c349f3857b2419a07fe48d7cd15c24d806c712d7fed272ab",
-        "src/lib/prospecting/calls/voice-conversation-rules.ts": "ab00f1aad1c3caa3c0396d444bd73fceb6deb6bb1a25523e15f2c350a97d6ab1"
+        "src/lib/prospecting/calls/voice-conversation-rules.ts": "6ba46602fcaef4b6490efd7d213bd271cd008177862972011723438e61c4f4da"
       }
     },
     {
@@ -11769,7 +11769,7 @@
         "drizzle/migrations/0342_linkedin_inbox.sql": "2595d5ba26fb0778b42b3be2a15ffa08ce5399d266a70bc0aaa05bbff4c5db85",
         "drizzle/migrations/0343_linkedin_service_runtime.sql": "74b147192be5ba0f0fc391caa85330604c71f1d07c7961fee748564a7f00a110",
         "src/lib/inbox/message-history.ts": "30c5a5bfbebbc1cf65c363e370c895739a6321454522ab308a1e107d66a2c2ee",
-        "src/components/inbox/inbox-workspace.tsx": "159231512d2c28b43644f8c8e703d21a725ce8fffaedc73565f4b8d81e5adb89",
+        "src/components/inbox/inbox-workspace.tsx": "40fc5c394545c1015a6cc1f18573126e2e495324336e70d3e16661d67ff45e7c",
         "drizzle/migrations/0344_linkedin_commercial_sequences.sql": "1802949979c6a5efcb51f2ad6d66cdf9b4b5e7c1377bc22ad0f8426c87211214"
       }
     },
@@ -13398,6 +13398,176 @@
         "drizzle/migrations/0369_contract_draft_client_acceptance_bypass.sql": "b13f991b6b3447ce22d213a3a217ff56f1faed00b822cd89648e236499e9256a",
         "src/components/contracts/contract-draft-bypass-button.tsx": "a4826abbee52d168c0a7dc79b4f192c24586a0ff553d9a7c00cdfa6587bac2df"
       }
+    },
+    {
+      "id": "workspace-layout-choice",
+      "kind": "business",
+      "files": {
+        "src/components/branding/branding-builder.tsx": "affe4388cc77943418d9e914b8d5f20249f418f7be0f2ed10f96d20f07da4906",
+        "src/components/branding/live-preview.tsx": "8e785ad8d9aee7e1c6701c6517f0015f37bfb46cd1c0538186ec6b1bf4783dcf",
+        "src/lib/branding.functions.ts": "efeeb30ea622f98b09b088791aa8aa542f02c7ab4ce4b4c9a5c9729b7f53d0c9",
+        "src/components/branding/layout-preview.tsx": "2af4fbab153819627b4c3e03e3857330dedf26876436ba2e76644161238b727b",
+        "src/components/branding/layout-selector.tsx": "cf3683866ac95358ba6f51be87d10c51a17227dbc67f52397e7354b61f9feced"
+      },
+      "rationale": "Workspace layout choice reuses the existing system.branding view/update gates. Save calls requireSharedPermission before the existing workspace-resolved user/RLS upsert; unknown layouts are rejected by Zod. Preview controls require view, actual save requires update and is disabled for read-only users. No migration, grant, role change, data action or change to identity. Classic is the default and remains reversible. Existing server getBranding retains authenticated user RLS reads and asset refresh unchanged.",
+      "resources": [
+        "system.branding"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.branding.view.workspace",
+        "system.branding.update.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/access-control/shared-permission.middleware.ts",
+          "symbol": "requireSharedPermission"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/use-shared-action.ts",
+          "symbol": "useSharedAction"
+        },
+        {
+          "file": "src/lib/branding.functions.ts",
+          "symbol": "resolveActiveWorkspace"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0227_order5_shared_prepare.sql",
+          "symbol": "shared_area_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/branding/layout-boundary.test.ts",
+          "name": "allows an authorized active member and saves only the resolved workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/branding/layout-boundary.test.ts",
+          "name": "rejects missing permission before reading or writing branding"
+        },
+        "explicit_deny": {
+          "file": "src/lib/branding/layout-boundary.test.ts",
+          "name": "rejects explicit deny before reading or writing branding"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/branding/layout-boundary.test.ts",
+          "name": "rejects foreign workspace before reading or writing branding"
+        },
+        "inactive_member": {
+          "file": "src/lib/branding/layout-boundary.test.ts",
+          "name": "rejects inactive member before reading or writing branding"
+        }
+      }
+    },
+    {
+      "id": "workspace-layout-record-layout",
+      "kind": "presentation",
+      "files": {
+        "src/components/record/record-layout.tsx": "119fbf83da51b47f241e699ccbe8e8bae94f075f98282076f3646296dc83b7e0"
+      },
+      "rationale": "Presentation-only workspace layout catalogue, sanitization or scoped markup. No I/O, new routes, permissions, mutations or actions; preserves existing palette/assets and classic fallback."
+    },
+    {
+      "id": "workspace-layout-route-breadcrumbs",
+      "kind": "presentation",
+      "files": {
+        "src/components/route-breadcrumbs.tsx": "daf401684cef7d1242e0d87e5fd831fb444faa64fde3811834c9c29a06d2c505"
+      },
+      "rationale": "Presentation-only workspace layout catalogue, sanitization or scoped markup. No I/O, new routes, permissions, mutations or actions; preserves existing palette/assets and classic fallback."
+    },
+    {
+      "id": "workspace-layout-runtime",
+      "kind": "internal",
+      "files": {
+        "src/lib/branding.tsx": "8c40718a46bf59eb2e3bffede7dfabdcab68533d092e9a4c5b81f78dc19c63c3"
+      },
+      "rationale": "Authenticated workspace appearance only. Existing user/RLS reads remain filtered by the resolved active workspace. No unscoped cache or pre-auth appearance is applied; logout and workspace change clear structure, palette and module state. Only workspace theme selects layout, module tokens cannot replace structure. No new data or write action.",
+      "resources": [
+        "system.branding"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [],
+      "controls": [
+        {
+          "file": "src/lib/auth.tsx",
+          "symbol": "useAuth"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0227_order5_shared_prepare.sql",
+          "symbol": "shared_area_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/branding/layout-boundary.test.ts",
+          "name": "allows an authorized active member and saves only the resolved workspace"
+        },
+        "missing_permission": {
+          "file": "src/lib/branding/layout-boundary.test.ts",
+          "name": "rejects missing permission before reading or writing branding"
+        },
+        "explicit_deny": {
+          "file": "src/lib/branding/layout-boundary.test.ts",
+          "name": "rejects explicit deny before reading or writing branding"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/branding/layout-boundary.test.ts",
+          "name": "rejects foreign workspace before reading or writing branding"
+        },
+        "inactive_member": {
+          "file": "src/lib/branding/layout-boundary.test.ts",
+          "name": "rejects inactive member before reading or writing branding"
+        }
+      },
+      "exception": {
+        "mechanism": "Existing authenticated member RLS reads for workspace appearance; no credentials or mutations.",
+        "boundary": "Appearance only; settings save remains system.branding.update.workspace, workspace and active membership gated.",
+        "revocation": "Logout, workspace switch and empty/inaccessible branding reset the document; no persistent cache.",
+        "review_by": "2027-02-17"
+      }
+    },
+    {
+      "id": "workspace-layout-archetypes",
+      "kind": "presentation",
+      "files": {
+        "src/lib/branding/archetypes.ts": "991cd763e92a066f18551aad6c42665e404b880a93020e886036966ca3157fc3"
+      },
+      "rationale": "Presentation-only workspace layout catalogue, sanitization or scoped markup. No I/O, new routes, permissions, mutations or actions; preserves existing palette/assets and classic fallback."
+    },
+    {
+      "id": "workspace-layout-tokens",
+      "kind": "presentation",
+      "files": {
+        "src/lib/branding/tokens.ts": "26051274be0ae85fa8cf30e74e087c5026664caa6f6e6b6841af2954f44f03f8"
+      },
+      "rationale": "Presentation-only workspace layout catalogue, sanitization or scoped markup. No I/O, new routes, permissions, mutations or actions; preserves existing palette/assets and classic fallback."
+    },
+    {
+      "id": "workspace-layout-domain-guard",
+      "kind": "presentation",
+      "files": {
+        "src/lib/platform-domains.ts": "37cd2a0dffa0837a46658aa1fa99d4857483c18d3c52b02a21edb479ac67a372"
+      },
+      "rationale": "Central catalogue for the existing unchanged careers contact email; no new data, endpoint, delivery, grant or permission. Fixes the main branch hardcode guard without changing the SDR guidance."
     }
   ],
   "retired": {

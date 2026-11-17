@@ -1,0 +1,146 @@
+/* Opt-in structure only. No brand color/font, permission, visibility or input-state changes.
+   The same scope is used by the builder preview and authenticated workspace. */
+:root[data-workspace-layout="attio"],
+:where([data-workspace-layout="attio"]) {
+  --product-canvas: var(--card);
+  --product-header: var(--card);
+  --product-toolbar: var(--card);
+  --product-panel: var(--card);
+  --product-panel-muted: var(--card);
+  --product-divider: var(--border-subtle);
+  --layout-control-radius: max(6px, var(--radius));
+}
+:where([data-workspace-layout="attio"]) [data-layout-part="topbar"] {
+  gap: 0.5rem;
+  border-color: var(--border-subtle);
+}
+:where([data-workspace-layout="attio"]) [data-layout-part="breadcrumbs"] {
+  height: 2.25rem;
+  border-bottom: 0;
+  font-size: 0.75rem;
+}
+:where([data-workspace-layout="attio"]) [data-sidebar="sidebar"] {
+  background: color-mix(in oklab, var(--sidebar) 55%, var(--card));
+  border-right: 1px solid var(--border-subtle);
+}
+:where([data-workspace-layout="attio"]) [data-sidebar="group-content"] > .rounded-2xl {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+:where([data-workspace-layout="attio"]) [data-sidebar="menu-button"] {
+  box-shadow: none;
+  border-radius: var(--layout-control-radius);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+:where([data-workspace-layout="attio"]) [data-sidebar="menu-button"] > span:first-child {
+  background: transparent;
+  border-radius: 0;
+}
+:where([data-workspace-layout="attio"]) [data-slot="button"] {
+  border-radius: var(--layout-control-radius);
+  box-shadow: none;
+  font-weight: 500;
+}
+:where([data-workspace-layout="attio"])
+  :is(input:not([type="checkbox"]):not([type="radio"]), textarea, [role="combobox"]) {
+  border-radius: var(--layout-control-radius);
+  box-shadow: none;
+}
+:where([data-workspace-layout="attio"])
+  :is([role="dialog"], [role="menu"], [data-radix-popper-content-wrapper] > *) {
+  border-radius: max(10px, var(--radius));
+}
+/* Keep alert, dialog and editor boundaries: flatten only operational cards. */
+:where([data-workspace-layout="attio"]) .authenticated-content [data-slot="card"] {
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--card);
+}
+:where([data-workspace-layout="attio"]) .authenticated-content [data-slot="card-header"] {
+  padding: 1rem 1.25rem 0.75rem;
+}
+:where([data-workspace-layout="attio"]) [data-layout-part="record-columns"] {
+  border-top: 0;
+}
+:where([data-workspace-layout="attio"])
+  :is([data-layout-part="record-properties"], [data-layout-part="record-associations"]) {
+  border-color: transparent;
+  background: var(--card);
+  padding: 1.25rem;
+}
+:where([data-workspace-layout="attio"]) [data-layout-part="record-timeline"] {
+  background: var(--card);
+  padding-top: 1.25rem;
+}
+:where([data-workspace-layout="attio"])
+  :is([data-layout-part="record-properties"] > div, [data-layout-part="record-associations"] .rounded-2xl) {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 0.5rem 0 1rem;
+}
+:where([data-workspace-layout="attio"]) [data-layout-part="record-timeline"] > div > .bg-card:first-child {
+  border: 0;
+  background: transparent;
+}
+:where([data-workspace-layout="attio"]) [data-slot="tabs-list"] {
+  background: transparent;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: 0.5rem;
+}
+:where([data-workspace-layout="attio"]) [data-slot="tabs-trigger"] {
+  border-radius: var(--layout-control-radius);
+  box-shadow: none;
+}
+:where([data-workspace-layout="attio"]) [data-slot="tabs-trigger"][data-state="active"] {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+:where([data-workspace-layout="attio"]) [data-slot="table-header"] {
+  background: transparent;
+  color: var(--muted-foreground);
+}
+:where([data-workspace-layout="attio"]) [data-slot="table-row"] {
+  border-color: var(--border-subtle);
+}
+:where([data-workspace-layout="attio"]) [data-slot="table-cell"] {
+  padding-block: 0.625rem;
+}
+:where([data-workspace-layout="attio"]) [data-layout-part="inbox"] > header,
+:where([data-workspace-layout="attio"]) [data-layout-part="inbox"] > div > :is(section, aside) {
+  border-radius: 0;
+  box-shadow: none;
+}
+:where([data-workspace-layout="attio"]) [data-layout-part="inbox"] > div {
+  gap: 1px;
+  background: var(--border-subtle);
+}
+@media (min-width: 1280px) {
+  :where([data-workspace-layout="attio"]) [data-layout-part="record-columns"] {
+    grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(260px, 310px);
+  }
+}
+@media (max-width: 767px) {
+  :where([data-workspace-layout="attio"]) [data-layout-part="topbar"] {
+    gap: 0.25rem;
+  }
+  :where([data-workspace-layout="attio"])
+    :is(
+      [data-layout-part="record-properties"],
+      [data-layout-part="record-associations"],
+      [data-layout-part="record-timeline"]
+    ) {
+    padding: 1rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where([data-workspace-layout="attio"]) * {
+    scroll-behavior: auto;
+  }
+}

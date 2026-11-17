@@ -9,7 +9,13 @@ import {
 import { useAuth } from "@/lib/auth";
 import { useActiveModule } from "@/lib/modules/active-module";
 import type { ModuleId } from "@/lib/modules/registry";
-import { mergeThemes, themeToCss, sanitizeTheme, type BrandTheme } from "@/lib/branding/tokens";
+import {
+  mergeThemes,
+  themeToCss,
+  sanitizeTheme,
+  type BrandTheme,
+  workspaceLayout,
+} from "@/lib/branding/tokens";
 
 export type Branding = {
   brand_name: string | null;
@@ -27,8 +33,6 @@ export type Branding = {
 };
 
 const BrandingContext = createContext<Branding | null>(null);
-const CACHE_KEY = "wk:branding-cache:v2";
-const MODULE_CACHE_KEY = "wk:module-branding-cache:v1";
 const STYLE_ID = "wk-branding-theme";
 
 function applyThemeCss(theme: BrandTheme | null) {
@@ -62,8 +66,10 @@ function applyBranding(branding: Branding | null) {
     root.style.removeProperty("--font-heading");
     root.style.removeProperty("--font-body");
     root.removeAttribute("data-density");
+    root.removeAttribute("data-workspace-layout");
     return;
   }
+  root.setAttribute("data-workspace-layout", workspaceLayout(branding.theme));
   if (branding.primary_color) root.style.setProperty("--primary", branding.primary_color);
   if (branding.accent_color) root.style.setProperty("--accent", branding.accent_color);
   if (branding.radius) root.style.setProperty("--radius", branding.radius);
@@ -82,54 +88,23 @@ function applyBranding(branding: Branding | null) {
   if (branding.brand_name) document.title = branding.brand_name;
 }
 
-function readJson<T>(key: string): T | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeJson(key: string, value: unknown) {
-  if (typeof window === "undefined") return;
-  try {
-    if (value) window.localStorage.setItem(key, JSON.stringify(value));
-    else window.localStorage.removeItem(key);
-  } catch {
-    /* ignore */
-  }
-}
-
-function readCachedBranding(): Branding | null {
-  return readJson<Branding>(CACHE_KEY);
-}
-
 type ModuleThemes = Partial<Record<ModuleId, BrandTheme>>;
 
-// Aplica o branding em cache o quanto antes (apenas no browser), antes do React
-// montar, para que um refresh não pisque a paleta padrão.
-if (typeof window !== "undefined") {
-  const cached = readCachedBranding();
-  if (cached) {
-    applyBranding(cached);
-    applyThemeCss(cached.theme ?? null);
-  }
-}
-
+// Never apply an unverified previous user/workspace cache before authentication.
 const BRANDING_COLUMNS =
   "brand_name, logo_url, favicon_url, primary_color, accent_color, support_email, footer_text, radius, density, heading_font, body_font, theme";
 
 export function BrandingProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const activeModule = useActiveModule();
-  const [branding, setBranding] = useState<Branding | null>(() => readCachedBranding());
-  const [moduleThemes, setModuleThemes] = useState<ModuleThemes>(
-    () => readJson<ModuleThemes>(MODULE_CACHE_KEY) ?? {},
-  );
+  const [branding, setBranding] = useState<Branding | null>(null);
+  const [moduleThemes, setModuleThemes] = useState<ModuleThemes>({});
 
   useEffect(() => {
+    setBranding(null);
+    setModuleThemes({});
+    applyBranding(null);
+    applyThemeCss(null);
     if (!user?.id) return;
     let cancelled = false;
     let loadedWorkspace: string | null = null;
@@ -218,7 +193,12 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
         workspaceId = member?.workspace_id;
       }
-      if (!workspaceId || cancelled || my !== seq) return;
+      if (cancelled || my !== seq) return;
+      if (!workspaceId) {
+        setBranding(null);
+        setModuleThemes({});
+        return;
+      }
 
       const [{ data }, { data: modules }] = await Promise.all([
         supabase
@@ -232,7 +212,6 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
 
       const next = (data as Branding | null) ?? null;
       setBranding(next);
-      writeJson(CACHE_KEY, next);
 
       const map: ModuleThemes = {};
       for (const row of modules ?? []) {
@@ -242,7 +221,6 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
         }
       }
       setModuleThemes(map);
-      writeJson(MODULE_CACHE_KEY, map);
 
       if (loadedWorkspace !== workspaceId || !channel) {
         loadedWorkspace = workspaceId;
@@ -261,7 +239,16 @@ export function BrandingProvider({ children }: { children: ReactNode }) {
     };
 
     void load();
-    const offWorkspace = onWorkspaceChanged(() => void load());
+    const offWorkspace = onWorkspaceChanged(() => {
+      ++seq;
+      loadedWorkspace = null;
+      unsubscribe();
+      setBranding(null);
+      setModuleThemes({});
+      applyBranding(null);
+      applyThemeCss(null);
+      void load();
+    });
     // Ao voltar à aba: reconcilia (pode ter perdido eventos) e reabre a assinatura.
     const onVis = () => {
       if (document.hidden) unsubscribe();

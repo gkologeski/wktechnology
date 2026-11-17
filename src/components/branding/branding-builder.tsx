@@ -7,10 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getBranding, saveBranding } from "@/lib/branding.functions";
 import { anyToHex } from "@/lib/color-utils";
-import { sanitizeTheme, EMPTY_THEME, type BrandTheme } from "@/lib/branding/tokens";
+import {
+  sanitizeTheme,
+  EMPTY_THEME,
+  type BrandTheme,
+  workspaceLayout,
+} from "@/lib/branding/tokens";
 import { ControlsPanel, type BuilderForm } from "./controls-panel";
 import { ThemeEditor } from "./theme-editor";
 import { LivePreview } from "./live-preview";
+import { LayoutSelector } from "./layout-selector";
 import { ArchetypeSelector } from "./archetype-selector";
 import type { PreviewEditorTab, PreviewMode, PreviewTarget } from "./preview-targets";
 import {
@@ -46,7 +52,7 @@ export function BrandingBuilder() {
   const [saved, setSaved] = useState<State>({ form: DEFAULT_FORM, theme: EMPTY_THEME });
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [editorTab, setEditorTab] = useState<PreviewEditorTab | "models">("models");
+  const [editorTab, setEditorTab] = useState<PreviewEditorTab | "models" | "layout">("layout");
   const [previewMode, setPreviewMode] = useState<PreviewMode>("light");
   const [selectedTarget, setSelectedTarget] = useState<PreviewTarget | null>(null);
   const [selectedArchetypeId, setSelectedArchetypeId] = useState<BrandArchetypeId | null>(null);
@@ -216,18 +222,26 @@ export function BrandingBuilder() {
           <Tabs
             value={editorTab}
             onValueChange={(value) => {
-              setEditorTab(value as PreviewEditorTab | "models");
+              setEditorTab(value as PreviewEditorTab | "models" | "layout");
               if (value !== "models") setSelectedArchetypeId(null);
             }}
             className="w-full"
           >
             <div className="px-4 pt-4">
-              <TabsList className="w-full grid grid-cols-3">
+              <TabsList className="w-full grid grid-cols-4">
+                <TabsTrigger value="layout">Layout</TabsTrigger>
                 <TabsTrigger value="models">Modelos</TabsTrigger>
                 <TabsTrigger value="basics">Marca</TabsTrigger>
                 <TabsTrigger value="theme">Tema</TabsTrigger>
               </TabsList>
             </div>
+            <TabsContent value="layout" className="mt-0 p-4">
+              <LayoutSelector
+                value={workspaceLayout(theme)}
+                disabled={!canEdit || busy}
+                onChange={(layout) => setTheme({ ...theme, layout })}
+              />
+            </TabsContent>
             <TabsContent value="models" className="mt-0">
               <ArchetypeSelector
                 activeId={activeArchetypeId}

@@ -1,3 +1,5 @@
+import { useSharedAction } from "@/lib/access-control/use-shared-action";
+import { LayoutPreview } from "./layout-preview";
 import { useState } from "react";
 import { Sun, Moon, Search, Plus, Bell, Inbox } from "lucide-react";
 import { readableForeground } from "@/lib/color-utils";
@@ -31,6 +33,7 @@ export function LivePreview({
   selectedTargetId,
   onSelectTarget,
 }: Props) {
+  const canView = useSharedAction("system.branding", "view");
   const [internalDark, setInternalDark] = useState(false);
   const dark = controlledMode ? controlledMode === "dark" : internalDark;
   const setDark = (next: boolean) => {
@@ -165,6 +168,18 @@ export function LivePreview({
       </div>
     </section>
   );
+
+  if (!canView) return null;
+
+  if (theme?.layout === "attio") {
+    return (
+      <LayoutPreview
+        settings={settings}
+        mode={dark ? "dark" : "light"}
+        onModeChange={(mode) => setDark(mode === "dark")}
+      />
+    );
+  }
 
   return (
     <div className="h-full flex flex-col">

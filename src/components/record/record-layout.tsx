@@ -31,9 +31,10 @@ export function RecordLayout({
   useProportionalScrollSync(centerRef, followers, synchronizedTimeline);
 
   return (
-    <div className="-m-4 min-h-full bg-product-canvas md:-m-6">
+    <div data-layout-part="record" className="-m-4 min-h-full bg-product-canvas md:-m-6">
       {header}
       <div
+        data-layout-part="record-columns"
         className={`grid grid-cols-1 border-t border-product-divider ${
           synchronizedTimeline
             ? "xl:grid-cols-[300px_minmax(0,1fr)_340px] 2xl:grid-cols-[320px_minmax(0,1fr)_360px]"
@@ -42,18 +43,21 @@ export function RecordLayout({
       >
         <aside
           ref={leftRef}
+          data-layout-part="record-properties"
           className={`min-w-0 space-y-4 border-b border-product-divider bg-product-panel-muted p-4 xl:border-b-0 xl:border-r ${synchronizedTimeline ? "xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto" : ""}`}
         >
           {left}
         </aside>
         <div
           ref={centerRef}
+          data-layout-part="record-timeline"
           className={`min-w-0 space-y-4 bg-product-canvas p-4 md:p-6 ${synchronizedTimeline ? "xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto" : ""}`}
         >
           {center}
         </div>
         <aside
           ref={rightRef}
+          data-layout-part="record-associations"
           className={`min-w-0 space-y-4 border-t border-product-divider bg-product-panel-muted p-4 xl:border-l xl:border-t-0 ${synchronizedTimeline ? "xl:max-h-[calc(100dvh-8rem)] xl:overflow-y-auto" : ""}`}
         >
           {right}
