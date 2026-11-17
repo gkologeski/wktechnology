@@ -8,7 +8,7 @@ route_pattern: /campaigns/whatsapp
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 310
-version: 6
+version: 7
 is_published: true
 ---
 # Criar uma campanha de WhatsApp
@@ -26,7 +26,7 @@ is_published: true
 6. Defina o público.
 7. Escolha a distribuição: "Central de Distribuição (padrão)", "Membro específico", "Dividir entre membros da equipe" ou "Desatribuídas".
 8. "Membro específico": um membro; dividir: ao menos dois.
-9. Para ativar o SDR, escolha um playbook.
+9. Para ativar o SDR, escolha um playbook. Com número próprio, o agente é preenchido e travado conforme o canal de atendimento do número principal; para trocar, altere em Canais de Atendimento.
 10. Ajuste velocidade e intervalos aleatórios.
 11. Clique em "Criar rascunho".
 ![Tela: campanha WhatsApp com remetente, template e distribuição](/help-media/crm/criar-campanha-whatsapp.webp)
@@ -41,6 +41,7 @@ is_published: true
 - O remetente não muda depois de iniciar.
 - Rodízio de números: até 5 números oficiais; cada contato recebe sempre pelo mesmo número (respostas e Lia seguem nele). Todos os modelos escolhidos precisam estar aprovados em todos os números. Se um número cair durante o disparo, os contatos novos seguem pelos outros; quem já estava preso a ele aguarda, sem trocar de número.
 - SDR só com template aprovado.
+- O agente segue o canal de atendimento do número remetente principal; número sem agente para campanhas só aceita SDR desligado.
 - Rodízio: até 5 modelos aprovados; cada contato recebe sempre o mesmo modelo; cada modelo tem as próprias variáveis, e só modelos aprovados na Meta para o número podem ser salvos. Em campanha pausada, ao salvar, as variáveis dos contatos ainda pendentes são atualizadas e as escolhas ficam salvas para a próxima edição, sem trocar o público.
 - Disparo pode atrasar cerca de 1 minuto além do intervalo sorteado.
 
@@ -50,6 +51,8 @@ is_published: true
 - "Escolha exatamente um membro para receber as conversas.".
 - "Escolha ao menos dois membros para dividir as conversas.".
 - "O SDR só pode ser ligado a campanhas com template aprovado.".
+- "O agente desta campanha precisa ser o do número escolhido.": mantenha o agente do canal.
+- "Este número não tem agente para campanhas; deixe o agente SDR desligado.".
 - "O público passa de 5.000 destinatários. Refine os filtros.".
 
 - "O modelo \"…\" não está aprovado na Meta para o número …".

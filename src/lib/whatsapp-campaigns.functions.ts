@@ -357,6 +357,16 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
             : [],
       );
     }
+    // Sem modelo aprovado o SDR não se aplica (sdrColumns já recusa).
+    if (data.template_name) {
+      const { assertCampaignAgentMatchesChannel } =
+        await import("@/lib/whatsapp/campaign-channel-agent-guard.server");
+      await assertCampaignAgentMatchesChannel(
+        workspaceId,
+        data.sender_phone_number_id,
+        data.sdr_playbook_id ?? null,
+      );
+    }
     const { guarded, recentDays, commercial } = await resolveCampaignRecipients(
       supabase,
       workspaceId,
@@ -632,6 +642,26 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
         data.id,
         data.refresh_variables.audience,
         data.refresh_variables.variable_map,
+      );
+    }
+    if (
+      data.template_name &&
+      (data.sdr_playbook_id !== undefined || data.sender_phone_number_id !== undefined)
+    ) {
+      const { data: cur, error: curErr } = await supabase
+        .from("whatsapp_campaigns")
+        .select("sdr_playbook_id")
+        .eq("id", data.id)
+        .single();
+      if (curErr) throw curErr;
+      const { assertCampaignAgentMatchesChannel } =
+        await import("@/lib/whatsapp/campaign-channel-agent-guard.server");
+      await assertCampaignAgentMatchesChannel(
+        await resolveActiveWorkspace(context.userId),
+        data.sender_phone_number_id !== undefined
+          ? data.sender_phone_number_id
+          : existing.sender_phone_number_id,
+        data.sdr_playbook_id !== undefined ? data.sdr_playbook_id : cur.sdr_playbook_id,
       );
     }
     const patch: Record<string, unknown> = {};
@@ -1006,4 +1036,17 @@ export const listAudienceFieldValues = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { audienceFieldSuggestions } = await import("@/lib/whatsapp/audience-suggestions.server");
     return audienceFieldSuggestions(context.supabase, context.userId, data);
+  });
+
+/** AGENTE-DO-NUMERO: agente do canal de atendimento do número remetente. */
+export const getCampaignSenderAgent = createServerFn({ method: "POST" })
+  .middleware([requireSalesPermission("techsales.marketing.campaigns", "view")])
+  .inputValidator((input) => z.object({ phone_number_id: z.string().min(1).max(64) }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { loadCampaignChannelAgent } =
+      await import("@/lib/whatsapp/campaign-channel-agent.server");
+    return loadCampaignChannelAgent(
+      await resolveActiveWorkspace(context.userId),
+      data.phone_number_id,
+    );
   });

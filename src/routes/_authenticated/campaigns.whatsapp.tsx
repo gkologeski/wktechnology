@@ -5,7 +5,7 @@ import { useSdrPlaybooks } from "@/hooks/use-default-sdr-agent";
 import { agentOptionLabel, sortDefaultFirst } from "@/lib/prospecting/sdr/default-agent";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Megaphone, Play, Pause, X, Plus, Pencil, Copy, Trash2, Loader2 } from "lucide-react";
 import {
   createWhatsAppCampaign,
@@ -15,6 +15,7 @@ import {
   listWhatsAppCampaigns,
   setWhatsAppCampaignStatus,
   updateWhatsAppCampaign,
+  getCampaignSenderAgent,
 } from "@/lib/whatsapp-campaigns.functions";
 import { canDeleteCampaign, canEditCampaign } from "@/lib/whatsapp/campaign-actions";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
@@ -130,6 +131,20 @@ function CampaignsPage() {
   const editFn = useServerFn(getWhatsAppCampaignForEdit);
   const [mediaUrl, setMediaUrl] = useState("");
   const [sdrPlaybook, setSdrPlaybook] = useState<string>("__none__");
+  // AGENTE-DO-NUMERO: o agente é definido pelo canal de atendimento do número.
+  const senderAgentFn = useServerFn(getCampaignSenderAgent);
+  const senderAgentQ = useQuery({
+    queryKey: ["wa-campaign-sender-agent", sender],
+    queryFn: () => senderAgentFn({ data: { phone_number_id: sender } }),
+    enabled: sender !== "lovable",
+    staleTime: 30_000,
+  });
+  const senderAgent = sender === "lovable" ? { kind: "free" as const } : senderAgentQ.data;
+  const agentLocked = sender !== "lovable" && senderAgent?.kind !== "free";
+  useEffect(() => {
+    if (!senderAgent || senderAgent.kind === "free") return;
+    setSdrPlaybook(senderAgent.kind === "locked" ? senderAgent.agentId : "__none__");
+  }, [senderAgent]);
   const [assignMode, setAssignMode] = useState<AssignmentMode>("auto");
   const [assignIds, setAssignIds] = useState<string[]>([]);
   const { data: activeMembers = [] } = useWorkspaceMembers();
@@ -861,7 +876,11 @@ function CampaignsPage() {
                     <label htmlFor="camp-sdr" className="text-xs text-muted-foreground">
                       Agente SDR após resposta (opcional)
                     </label>
-                    <Select value={sdrPlaybook} onValueChange={setSdrPlaybook}>
+                    <Select
+                      value={sdrPlaybook}
+                      onValueChange={setSdrPlaybook}
+                      disabled={agentLocked}
+                    >
                       <SelectTrigger id="camp-sdr">
                         <SelectValue />
                       </SelectTrigger>
@@ -874,6 +893,21 @@ function CampaignsPage() {
                         ))}
                       </SelectContent>
                     </Select>
+                    {agentLocked && (
+                      <p className="mt-1 text-xs text-muted-foreground" aria-live="polite">
+                        {senderAgentQ.isLoading
+                          ? "Verificando o agente do número…"
+                          : senderAgent?.kind === "none"
+                            ? "Sem agente neste canal: as respostas vão para a distribuição configurada. "
+                            : "Definido pelo canal de atendimento do número. "}
+                        Para trocar, altere em Canais de Atendimento.
+                      </p>
+                    )}
+                    {senderAgentQ.isError && (
+                      <p role="alert" className="mt-1 text-xs text-destructive">
+                        Não foi possível verificar o agente do número.
+                      </p>
+                    )}
                     <p className="mt-1 text-xs text-muted-foreground">
                       Quando o cliente responder, o SDR prepara a conversa para sua aprovação.
                     </p>
