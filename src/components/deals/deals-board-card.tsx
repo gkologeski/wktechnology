@@ -180,9 +180,7 @@ export function DealsBoardCard({
       </div>
 
       {has("value") && (
-        <div
-          className={`mt-1 text-[13px] font-semibold tabular-nums ${isHighValue ? "text-action-accent" : ""}`}
-        >
+        <div className="mt-1 text-[13px] font-semibold tabular-nums">
           {formatCurrency(Number(deal.value), deal.currency)}
         </div>
       )}
