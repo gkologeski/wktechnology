@@ -1,7 +1,8 @@
+import { HrScreenAccess } from "@/components/hr-access";
 // Timesheet semanal do TechProjects: totais por situação agregados no banco, lista paginada,
 // envio com prévia, cópia da semana anterior com prévia e atalho para a fila de aprovação.
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ChevronLeft, ChevronRight, Copy, Plus, Send } from "lucide-react";
@@ -55,7 +56,11 @@ export const Route = createFileRoute("/_authenticated/projects/timesheet")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: TimesheetPage,
+  component: () => (
+    <HrScreenAccess resources={["techprojects.timesheet", "techprojects.time_entries"]}>
+      <TimesheetPage />
+    </HrScreenAccess>
+  ),
 });
 
 function startOfWeek(d: Date): Date {
@@ -93,6 +98,7 @@ function TimesheetPage() {
   const [weekStart, setWeekStart] = useState<Date>(() => startOfWeek(new Date()));
   const [scope, setScope] = useState<"me" | "visible">("me");
   const [projectId, setProjectId] = useState<string>("all");
+  const [page, setPage] = useState(0);
   const [quickOpen, setQuickOpen] = useState(false);
   const [submitOpen, setSubmitOpen] = useState(false);
   const [copyOpen, setCopyOpen] = useState(false);
@@ -110,6 +116,7 @@ function TimesheetPage() {
   const to = toIso(days[6]!);
   const pid = projectId === "all" ? undefined : projectId;
 
+  useEffect(() => setPage(0), [from, to, scope, projectId]);
   const me = useCurrentUserId();
   const overview = useQuery({
     queryKey: ["timesheet-overview", from, to, scope, pid, me],
@@ -120,8 +127,8 @@ function TimesheetPage() {
     enabled: scope === "visible" || !!me,
   });
   const query = useQuery({
-    queryKey: ["timesheet", from, to, scope, pid],
-    queryFn: () => listFn({ data: { from, to, scope, projectId: pid } }),
+    queryKey: ["timesheet", from, to, scope, pid, page, me],
+    queryFn: () => listFn({ data: { from, to, scope, projectId: pid, page, pageSize: 200 } }),
   });
 
   const rows = (query.data ?? []) as unknown as Row[];
@@ -129,11 +136,7 @@ function TimesheetPage() {
   const totals = ov?.totals;
   const scheduleMissing = (ov?.by_user ?? []).filter((u) => !u.schedule_configured).length;
 
-  const perDay = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const r of rows) m.set(r.entry_date, (m.get(r.entry_date) ?? 0) + secsOf(r));
-    return m;
-  }, [rows]);
+  const perDay = new Map((ov?.by_day ?? []).map((d) => [d.date, d.registered]));
 
   const { sorted, sort, toggle, grid } = useClientSort(rows, {
     date: (r) => r.entry_date,
@@ -227,18 +230,32 @@ function TimesheetPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <MetricCard label="Registrado" value={formatSeconds(totals?.registered ?? 0)} />
-        <MetricCard label="Rascunho" value={formatSeconds(totals?.draft ?? 0)} />
-        <MetricCard label="Enviado" value={formatSeconds(totals?.submitted ?? 0)} />
-        <MetricCard label="Aprovado" value={formatSeconds(totals?.approved ?? 0)} tone="positive" />
-        <MetricCard label="Devolvido" value={formatSeconds(totals?.rejected ?? 0)} />
-        <MetricCard
-          label="Importado (histórico)"
-          value={formatSeconds(totals?.locked_import ?? 0)}
-          hint="Bloqueado, não aprovado"
-        />
-      </div>
+      {overview.isError && (
+        <div role="alert" className="rounded-md border p-3 text-sm">
+          Indicadores indisponíveis.{" "}
+          <Button variant="outline" onClick={() => void overview.refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+      {overview.data && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <MetricCard label="Registrado" value={formatSeconds(totals?.registered ?? 0)} />
+          <MetricCard label="Rascunho" value={formatSeconds(totals?.draft ?? 0)} />
+          <MetricCard label="Enviado" value={formatSeconds(totals?.submitted ?? 0)} />
+          <MetricCard
+            label="Aprovado"
+            value={formatSeconds(totals?.approved ?? 0)}
+            tone="positive"
+          />
+          <MetricCard label="Devolvido" value={formatSeconds(totals?.rejected ?? 0)} />
+          <MetricCard
+            label="Importado (histórico)"
+            value={formatSeconds(totals?.locked_import ?? 0)}
+            hint="Bloqueado, não aprovado"
+          />
+        </div>
+      )}
       {scheduleMissing > 0 && (
         <p className="text-xs text-muted-foreground" role="status">
           {scope === "me"
@@ -258,7 +275,11 @@ function TimesheetPage() {
             </div>
             <div className="text-sm font-medium">{d.toLocaleDateString("pt-BR")}</div>
             <div className="mt-1 text-lg font-semibold tabular-nums">
-              {formatSeconds(perDay.get(toIso(d)) ?? 0)}
+              {overview.isError
+                ? "Indisponível"
+                : overview.isPending
+                  ? "…"
+                  : formatSeconds(perDay.get(toIso(d)) ?? 0)}
             </div>
           </div>
         ))}
@@ -296,7 +317,7 @@ function TimesheetPage() {
         ) : rows.length === 0 ? (
           <EmptyState
             title="Sem apontamentos na semana"
-            description="Use Apontar horas ou o cronômetro."
+            description="Use Apontar horas para registrar o trabalho realizado."
           />
         ) : (
           <Table>
@@ -395,12 +416,28 @@ function TimesheetPage() {
             </TableBody>
           </Table>
         )}
-        {rows.length >= 200 && (
-          <p className="p-3 text-xs text-muted-foreground">
-            Mostrando os primeiros 200 apontamentos; os totais acima consideram todos. Filtre por
-            projeto para ver o restante.
-          </p>
-        )}
+        <div className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
+          <span>
+            Página {page + 1} · {rows.length} registros. Indicadores e dias consideram todo o
+            período; busca, ordenação e exportação usam esta página.
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              disabled={page === 0 || query.isFetching}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Página anterior
+            </Button>
+            <Button
+              variant="outline"
+              disabled={rows.length < 200 || query.isFetching}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Próxima página
+            </Button>
+          </div>
+        </div>
       </div>
 
       <QuickTimeEntryDialog

@@ -8,7 +8,7 @@ route_pattern: /projects/timesheet
 min_permission: techprojects.timesheet.view.team
 audience: internal
 sort_order: 190
-version: 2
+version: 3
 is_published: true
 ---
 # Consultar o timesheet da equipe
@@ -44,3 +44,6 @@ Meta depende da jornada configurada no People. Ausência de jornada não signifi
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
 ![Tela: Consultar o timesheet da equipe](/help-media/projects/operar-timesheet.webp)
+
+## Atualização de navegação e consistência
+Os indicadores e os totais por dia consideram todos os registros do período permitido. A lista tem páginas de até 200 registros; use Página anterior/Próxima página. Busca, ordenação e exportação locais usam a página exibida. Use **Apontar horas**; o cronômetro está indisponível.

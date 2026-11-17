@@ -1,9 +1,10 @@
-// Sprint E — Fase 4.4: My Work.
+import { HrScreenAccess } from "@/components/hr-access";
+// Sprint E — Fase 4.4: Meu trabalho.
 // Tela pessoal do TechProjects: tarefas de hoje/semana, timer ativo,
 // tarefas atrasadas. Reúne dados existentes de `project_tasks` e do timer.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { AlertTriangle, CalendarDays, ListTodo, Timer as TimerIcon } from "lucide-react";
 
@@ -12,22 +13,27 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { listAllProjectTasks } from "@/lib/projects.functions";
-import { getRunningTimer, listTimesheet } from "@/lib/project-timer.functions";
-import { formatSeconds } from "@/lib/projects/time-entry.shared";
+import { getTimesheetOverview } from "@/lib/projects/time-workflow.functions";
+import { useCurrentUserId } from "@/hooks/use-current-user-id";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/projects/my-work")({
   head: () => ({
     meta: [
-      { title: "My Work — TechProjects" },
+      { title: "Meu trabalho — TechProjects" },
       { name: "description", content: "Tarefas do dia, timer ativo e agenda semanal." },
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: MyWorkPage,
+  component: () => (
+    <HrScreenAccess resources={["techprojects.my_work"]}>
+      <MyWorkPage />
+    </HrScreenAccess>
+  ),
 });
 
 function toIsoDate(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  return d.toLocaleDateString("sv-SE");
 }
 function startOfWeek(d: Date): Date {
   const x = new Date(d);
@@ -38,8 +44,9 @@ function startOfWeek(d: Date): Date {
   return x;
 }
 function fmtHours(h: number): string {
-  const hh = Math.floor(h);
-  const mm = Math.round((h - hh) * 60);
+  const minutes = Math.round(h * 60);
+  const hh = Math.floor(minutes / 60);
+  const mm = minutes % 60;
   return `${hh}h${String(mm).padStart(2, "0")}`;
 }
 
@@ -54,8 +61,8 @@ type Task = {
 
 function MyWorkPage() {
   const tasksFn = useServerFn(listAllProjectTasks);
-  const timerFn = useServerFn(getRunningTimer);
-  const timesheetFn = useServerFn(listTimesheet);
+  const overviewFn = useServerFn(getTimesheetOverview);
+  const me = useCurrentUserId();
 
   const weekStart = useMemo(() => startOfWeek(new Date()), []);
   const weekEnd = useMemo(() => {
@@ -65,113 +72,142 @@ function MyWorkPage() {
   }, [weekStart]);
   const todayIso = toIsoDate(new Date());
 
-  const tasksQuery = useQuery({
-    queryKey: ["my-work", "tasks"],
-    queryFn: () => tasksFn({ data: { mineOnly: true } }),
-  });
-  const timerQuery = useQuery({
-    queryKey: ["timer", "running"],
-    queryFn: () => timerFn(),
-    refetchInterval: 30_000,
+  const tasksQuery = useInfiniteQuery({
+    queryKey: ["my-work", "tasks", me],
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) =>
+      tasksFn({ data: { mineOnly: true, offset: pageParam, limit: 500 } }),
+    getNextPageParam: (lastPage, pages) =>
+      lastPage.length === 500 ? pages.length * 500 : undefined,
+    enabled: !!me,
   });
   const weekQuery = useQuery({
-    queryKey: ["my-work", "timesheet", toIsoDate(weekStart), toIsoDate(weekEnd)],
-    queryFn: () => timesheetFn({ data: { from: toIsoDate(weekStart), to: toIsoDate(weekEnd) } }),
+    queryKey: ["my-work", "timesheet", me, toIsoDate(weekStart), toIsoDate(weekEnd)],
+    queryFn: () =>
+      overviewFn({ data: { from: toIsoDate(weekStart), to: toIsoDate(weekEnd), userId: me } }),
+    enabled: !!me,
   });
 
-  const allTasks = (tasksQuery.data ?? []) as Task[];
+  const allTasks = (tasksQuery.data?.pages.flat() ?? []) as Task[];
   const openTasks = allTasks.filter((t) => t.status !== "done");
   const today = openTasks.filter((t) => t.due_at && t.due_at.slice(0, 10) === todayIso);
   const overdue = openTasks.filter((t) => t.due_at && t.due_at.slice(0, 10) < todayIso);
   const weekAhead = openTasks.filter((t) => {
     if (!t.due_at) return false;
     const d = t.due_at.slice(0, 10);
-    return d > todayIso && d <= toIsoDate(weekEnd);
+    const end = new Date();
+    end.setDate(end.getDate() + 7);
+    return d > todayIso && d <= toIsoDate(end);
   });
 
-  const running = timerQuery.data ?? null;
-
-  const weekEntries = (weekQuery.data ?? []) as Array<{
-    hours: number | null;
-    billable: boolean;
-    approved_at: string | null;
-  }>;
-  const weekTotals = useMemo(() => {
-    let total = 0;
-    let billable = 0;
-    let approved = 0;
-    for (const e of weekEntries) {
-      const h = e.hours ?? 0;
-      total += h;
-      if (e.billable) billable += h;
-      if (e.approved_at) approved += h;
-    }
-    return { total, billable, approved };
-  }, [weekEntries]);
+  const weekTotal = weekQuery.data?.totals.registered;
+  const weekApproved = weekQuery.data?.totals.approved;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="My Work"
+        title="Meu trabalho"
         description="Seu foco do dia: tarefas atribuídas, timer e horas da semana."
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <MetricCard
           icon={<TimerIcon className="h-4 w-4" />}
-          label="Timer ativo"
-          value={
-            running
-              ? `${running.state === "paused" ? "Pausado · " : ""}${formatSeconds(running.work_seconds)}`
-              : "—"
-          }
-          hint={
-            running
-              ? (running.task_title ?? running.project_name ?? "Sem tarefa")
-              : "Nenhum cronômetro em execução"
-          }
+          label="Registro de horas"
+          value="Manual"
+          hint="Use Minhas Horas para apontar. O cronômetro está indisponível."
         />
         <MetricCard
           icon={<ListTodo className="h-4 w-4" />}
           label="Hoje"
-          value={String(today.length)}
+          value={
+            tasksQuery.isError
+              ? "Indisponível"
+              : `${today.length}${tasksQuery.hasNextPage ? "+" : ""}`
+          }
           hint="tarefas com vencimento hoje"
         />
         <MetricCard
           icon={<AlertTriangle className="h-4 w-4 text-destructive" />}
           label="Atrasadas"
-          value={String(overdue.length)}
+          value={
+            tasksQuery.isError
+              ? "Indisponível"
+              : `${overdue.length}${tasksQuery.hasNextPage ? "+" : ""}`
+          }
           hint="tarefas em aberto vencidas"
         />
         <MetricCard
           icon={<CalendarDays className="h-4 w-4" />}
           label="Horas na semana"
-          value={fmtHours(weekTotals.total)}
-          hint={`${fmtHours(weekTotals.billable)} billable · ${fmtHours(weekTotals.approved)} aprovadas`}
+          value={
+            weekQuery.isError
+              ? "Indisponível"
+              : weekTotal === undefined
+                ? "…"
+                : fmtHours(weekTotal / 3600)
+          }
+          hint={
+            weekApproved === undefined
+              ? "Aguardando consulta das horas"
+              : `${fmtHours(weekApproved / 3600)} aprovadas · total completo da semana`
+          }
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <TaskListCard
-          title="Hoje"
-          tasks={today}
-          loading={tasksQuery.isLoading}
-          empty="Nada vence hoje. Bom foco."
-        />
-        <TaskListCard
-          title="Atrasadas"
-          tasks={overdue}
-          loading={tasksQuery.isLoading}
-          empty="Nenhuma tarefa atrasada."
-          highlight
-        />
-        <TaskListCard
-          title="Próximos 7 dias"
-          tasks={weekAhead}
-          loading={tasksQuery.isLoading}
-          empty="Semana livre à frente."
-        />
-      </div>
+      {(tasksQuery.isError || weekQuery.isError) && (
+        <div role="alert" className="rounded-md border p-3 text-sm">
+          Não foi possível consultar {tasksQuery.isError ? "as tarefas" : "as horas"}. Ausência de
+          resposta não significa zero.
+          <Button
+            variant="outline"
+            onClick={() => {
+              void tasksQuery.refetch();
+              void weekQuery.refetch();
+            }}
+          >
+            Tentar novamente
+          </Button>
+        </div>
+      )}
+      {tasksQuery.hasNextPage && (
+        <div role="status" className="text-sm">
+          Indicadores das {allTasks.length} tarefas carregadas. Há mais resultados.
+          <Button
+            variant="outline"
+            disabled={tasksQuery.isFetchingNextPage}
+            onClick={() => void tasksQuery.fetchNextPage()}
+          >
+            Carregar mais tarefas
+          </Button>
+        </div>
+      )}
+      {!tasksQuery.isError && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <TaskListCard
+            title="Hoje"
+            tasks={today}
+            loading={tasksQuery.isLoading}
+            empty="Nada vence hoje. Bom foco."
+          />
+          <TaskListCard
+            title="Atrasadas"
+            tasks={overdue}
+            loading={tasksQuery.isLoading}
+            empty="Nenhuma tarefa atrasada."
+            highlight
+          />
+          <TaskListCard
+            title="Próximos 7 dias"
+            tasks={weekAhead}
+            loading={tasksQuery.isLoading}
+            empty="Semana livre à frente."
+          />
+        </div>
+      )}
+      <Button asChild variant="outline">
+        <Link to="/projects/my-hours">Apontar minhas horas</Link>
+      </Button>
     </div>
   );
 }
@@ -237,8 +273,8 @@ function TaskListCard({
           tasks.map((t) => (
             <Link
               key={t.id}
-              to="/projects/$id"
-              params={{ id: t.projects?.id ?? "" }}
+              to="/projects/tasks"
+              search={{ taskId: t.id }}
               className="block rounded-md border p-2 hover:bg-accent transition-colors"
             >
               <div className="text-sm font-medium truncate">{t.title}</div>

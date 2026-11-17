@@ -8,7 +8,7 @@ route_pattern: /projects/$id
 min_permission: techprojects.projects.view.own
 audience: internal
 sort_order: 10
-version: 2
+version: 3
 is_published: true
 ---
 # Operar a ficha do projeto
@@ -45,3 +45,6 @@ Tarefas, marcos e membros têm controles próprios. Custo/h e Bill/h são dados 
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
 ![Tela: Operar a ficha do projeto](/help-media/projects/operar-ficha-projeto.webp)
+
+## Atualização de navegação e consistência
+**Progresso informado** é o percentual cadastrado no projeto; não é a conclusão das tarefas calculada no Dashboard. Os dois indicadores têm significados distintos.

@@ -8,7 +8,7 @@ route_pattern: /projects/lists/$id
 min_permission: techprojects.spaces.view.team
 audience: internal
 sort_order: 40
-version: 2
+version: 3
 is_published: true
 ---
 # Trabalhar em uma lista
@@ -45,3 +45,6 @@ Gerenciar status, campos personalizados e templates não é a mesma permissão d
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
 ![Tela: Trabalhar em uma lista](/help-media/projects/trabalhar-lista.webp)
+
+## Atualização de navegação e consistência
+Tarefas importadas sem status da lista aparecem na coluna **Sem status da lista**; seus vínculos não são alterados automaticamente. O calendário avança por mês. A carga de trabalho mostra estimativas das tarefas com prazo na semana; sem jornada individual consultada, a capacidade fica **não configurada**, sem indicar sobrecarga presumida.

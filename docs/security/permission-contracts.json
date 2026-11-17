@@ -4256,7 +4256,7 @@
       "files": {
         "src/lib/access-control/resource-labels.ts": "b9486bd90fbd4e5aa1cf7af67fbb77163e7c88ac9d2a95dffcd041df79abfcef",
         "src/lib/menu-config-finance.ts": "634465260359b9d97cfd6a635ae5bd7ade12cb9ab9a83ec9e96e507d83194e1d",
-        "src/lib/breadcrumb-labels.ts": "35e677736af4fa092a8d178002a33051c55462ea70a6eda16a1c583d1ddb75d3"
+        "src/lib/breadcrumb-labels.ts": "d856caba463b0896a8163509622683ed10a440d393391ac01403cf4aa6cc43f1"
       }
     },
     {
@@ -4364,7 +4364,7 @@
       "files": {
         "src/lib/integrations/clickup/clickup-plan.ts": "533a97467cf1f2c7b5da96d712d85d596da4bef664ea769de1e35051dc68918e",
         "src/components/projects/clockify-import/projects-imports-hub.tsx": "d27a05dc685ec8bcebe499543b467862fac4f823bef8e610fb88ca07351d558d",
-        "src/lib/menu-config-projects.ts": "e5cf5532d181ad39b3007f631dbbab7ec3533c8ed7f2d942b923b938c70bf9e1",
+        "src/lib/menu-config-projects.ts": "014814122487224508d144158e4b20e9d4581eea25c03960a239a86c680337a9",
         "src/lib/access-control/hr-menu-access.ts": "d3c5cb3e66cbeaeb0ddc921656b7448e6c986bb40f498ff42ee1bfe2fdadfd47"
       }
     },
@@ -4438,7 +4438,7 @@
         "src/components/projects/task-core-fields.tsx": "2a74fe35cf612bd5368ccd7474083f8a18ea26ad9ab35bec20f972a2101d8069",
         "src/components/projects/task-details-sheet.tsx": "a621343a6749d977f6733bf53531821e64e428a6ed5a684afc2e35b0579c9494",
         "src/routes/_authenticated/projects.tasks.tsx": "8573bdf7bc21c0a5074829d0e2e93f7c4b18aaf0214125aa8991f0332457dcc3",
-        "src/routes/_authenticated/projects.$id.tsx": "ce167d2900210b66a556c0fed7f13edcdb3cd9859e5d51e05c80426b088a6235"
+        "src/routes/_authenticated/projects.$id.tsx": "6b252435829ee9af83645291c400361af03e7f670609ef1fd8724356b6951806"
       }
     },
     {
@@ -8893,7 +8893,7 @@
       "files": {
         "drizzle/migrations/0306_help_center.sql": "cca26ff8086c7ed3a1cc551edc2d837565381dd318a2a07c534e2ad6da8034dd",
         "drizzle/migrations/0307_help_seed_crm.sql": "04af96f7572e80fef5c5776afab4c0b0407c0ceb6841f9aefce9f31d04b4f9df",
-        "src/components/app-sidebar.tsx": "e671c20c771d5ec9d1d176fffbf0c785126e51c7eb1e23394ddea8a7e7a4b298",
+        "src/components/app-sidebar.tsx": "fc70e123219d3ee6221ab0165acf6326ca7d13ebb9e1c8e802527ba93b1b1529",
         "src/components/help/help-button.tsx": "2b268ebe99b3235468f0049cb9e1d33fe2339b72557ba964e10a4c524318462e",
         "src/lib/help/help-access.server.ts": "79d713e8056a7cb37e13076ff21c637ae056da1f913cdc7e7cee063ae24bd88e",
         "src/lib/help/help-access.ts": "1ae9593cb60c3aac19b401fdf0a5b0f7334c27e1f63ab7dfceb21ee272bfe5dd",
@@ -13568,6 +13568,293 @@
         "src/lib/platform-domains.ts": "37cd2a0dffa0837a46658aa1fa99d4857483c18d3c52b02a21edb479ac67a372"
       },
       "rationale": "Central catalogue for the existing unchanged careers contact email; no new data, endpoint, delivery, grant or permission. Fixes the main branch hardcode guard without changing the SDR guidance."
+    },
+    {
+      "id": "projects-ux-defects",
+      "kind": "business",
+      "resources": [
+        "techprojects.projects",
+        "techprojects.tasks",
+        "techprojects.milestones",
+        "techprojects.members",
+        "techprojects.time_entries",
+        "techprojects.profitability"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techprojects.projects.view.own",
+        "techprojects.projects.view.team",
+        "techprojects.projects.view.workspace",
+        "techprojects.projects.create.own",
+        "techprojects.projects.create.workspace",
+        "techprojects.projects.update.own",
+        "techprojects.projects.update.team",
+        "techprojects.projects.update.workspace",
+        "techprojects.projects.delete.own",
+        "techprojects.projects.delete.workspace",
+        "techprojects.tasks.view.own",
+        "techprojects.tasks.view.team",
+        "techprojects.tasks.view.workspace",
+        "techprojects.tasks.create.own",
+        "techprojects.tasks.create.team",
+        "techprojects.tasks.create.workspace",
+        "techprojects.tasks.update.own",
+        "techprojects.tasks.update.team",
+        "techprojects.tasks.update.workspace",
+        "techprojects.tasks.delete.own",
+        "techprojects.tasks.delete.team",
+        "techprojects.tasks.delete.workspace",
+        "techprojects.milestones.view.workspace",
+        "techprojects.milestones.create.workspace",
+        "techprojects.milestones.update.workspace",
+        "techprojects.milestones.delete.workspace",
+        "techprojects.members.view.workspace",
+        "techprojects.members.manage.workspace",
+        "techprojects.time_entries.view.own",
+        "techprojects.time_entries.view.workspace",
+        "techprojects.time_entries.create.own",
+        "techprojects.time_entries.delete.workspace",
+        "techprojects.profitability.view.workspace"
+      ],
+      "rationale": "UX fixes using existing user/RLS reads and per-record capabilities: keep orphaned tasks visible without changing links, correct calendar, never guess capacity, label recorded progress, own task pagination and complete weekly/day time aggregates via existing project_timesheet_overview. Pending approval queue explicitly spans all periods; summary date range separate. No timer activation, new grants, SQL, scope expansion or silent data repair. Screen mounts also check effective menu-equivalent view/approval keys before queries; loading/error/inaccessible workspace deny by default. Existing server/RPC authorization remains mandatory.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workCanRead"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workTimeCan"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "assertWorkTimeCan"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/db/delete-guarded.ts",
+          "symbol": "deleteByIdGuarded"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkScreenAccess"
+        },
+        {
+          "file": "src/components/work-action.tsx",
+          "symbol": "WorkCapabilityScope"
+        },
+        {
+          "file": "src/components/work-action.tsx",
+          "symbol": "WorkAction"
+        },
+        {
+          "file": "src/lib/projects.functions.ts",
+          "symbol": "listAllProjectTasks"
+        },
+        {
+          "file": "src/lib/project-timer.functions.ts",
+          "symbol": "listTimesheet"
+        },
+        {
+          "file": "src/lib/projects/time-workflow.functions.ts",
+          "symbol": "getTimesheetOverview"
+        },
+        {
+          "file": "src/lib/projects/time-workflow.functions.ts",
+          "symbol": "listPendingApprovals"
+        },
+        {
+          "file": "src/hooks/use-offline-time-queue.ts",
+          "symbol": "useOfflineTimeQueue"
+        },
+        {
+          "file": "src/hooks/use-workspace-members.ts",
+          "symbol": "useWorkspaceMembers"
+        },
+        {
+          "file": "src/components/hr-access.tsx",
+          "symbol": "HrScreenAccess"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_area_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_time_context"
+        },
+        {
+          "file": "drizzle/migrations/0270_project_tasks_list_order_idx.sql",
+          "symbol": "project_tasks"
+        },
+        {
+          "file": "drizzle/migrations/0271_project_tasks_project_status_sort_idx.sql",
+          "symbol": "project_tasks"
+        },
+        {
+          "file": "drizzle/migrations/0272_project_tasks_status_partial_idx.sql",
+          "symbol": "project_tasks"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate allows an authorized active member to list tasks"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate denies listing without a view key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate denies listing under explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate denies listing for another workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/work-read-gate.test.ts",
+          "name": "work read gate denies listing for an inactive member"
+        }
+      },
+      "files": {
+        "src/components/projects/hours-review-panel.tsx": "ff6256403a32943a776b93c959c4bf3a231d704ef7ddf44d2ad503ca0e70d71a",
+        "src/components/projects/list-views.tsx": "0bb5d48191a346f8fcb4a60936dd524edd5beeb3b5eee33b81497601ee034286",
+        "src/components/projects/offline-time-queue-panel.tsx": "aa7c7ec33e6ffdf47618ecc3c1fcc6081c984704ba4741202ec8c8e00b5d6f66",
+        "src/routes/_authenticated/projects.index.tsx": "7dd644869aaf2eacf5db4c17b0cc8897ac955edb4d013f2415252a1784f6ae4a",
+        "src/routes/_authenticated/projects.lists.$id.tsx": "c090a1e030f85595a559ef1c0ddceb9be7c1d80c1781706ab61d4a932f2987b3",
+        "src/routes/_authenticated/projects.my-work.tsx": "21c286331e54ae5cd266e1cb24cf6355ecfb7fe385a53e5f7f2b7b6f6318648a",
+        "src/routes/_authenticated/projects.timesheet.tsx": "03c3f521b28e1c0d5514b0849d461276b5c24c42fd77cbb46b3d4b16950a8a4a"
+      }
+    },
+    {
+      "id": "upstream-deal-card-checkpoint-review",
+      "kind": "business",
+      "resources": [
+        "techsales.quotes",
+        "techsales.deals",
+        "techsales.proposals",
+        "techsales.leads",
+        "techsales.contacts",
+        "techsales.companies"
+      ],
+      "actions": [
+        "view",
+        "update",
+        "delete",
+        "assign",
+        "approve",
+        "export",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.quotes.view.workspace",
+        "techsales.deals.view.workspace",
+        "techsales.proposals.view.workspace",
+        "techsales.leads.view.workspace",
+        "techsales.contacts.view.workspace",
+        "techsales.companies.view.workspace"
+      ],
+      "rationale": "Reviewed upstream checkpoint 7761b729c: removes a conditional color class only. Existing props, selection/drag callbacks and substatus per-record capabilities unchanged. This declaration preserves main exactly; no implementation change in this file. Parent sales_capabilities/RLS and substatus guards remain authoritative.",
+      "files": {
+        "src/components/deals/deals-board-card.tsx": "937cbb1ac7b664f2b375a4342fb0a1cdefd542cd735066f3b48d6e0d39e42483"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-capabilities.functions.ts",
+          "symbol": "getSalesCapabilities"
+        },
+        {
+          "file": "src/components/pipelines/substatus-quick-picker.tsx",
+          "symbol": "SubstatusQuickPicker"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0329_sales_capabilities_set_based.sql",
+          "symbol": "sales_capabilities"
+        },
+        {
+          "file": "drizzle/migrations/0328_sales_capabilities_single_context.sql",
+          "symbol": "sales_capabilities"
+        },
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_context_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      }
+    },
+    {
+      "id": "project-status-groups-presentation",
+      "kind": "presentation",
+      "resources": [],
+      "permission_keys": [],
+      "actions": [],
+      "scopes": [],
+      "rationale": "Pure read-only grouping of already authorized task props. No I/O, mutations, events, server functions or permissions. Unknown statuses stay visible.",
+      "files": {
+        "src/lib/projects/task-status-groups.ts": "38e2c296ce831599b38258d04e82b067352928f5e93af0ae88bad6e5e0ddb3a8"
+      }
     }
   ],
   "retired": {

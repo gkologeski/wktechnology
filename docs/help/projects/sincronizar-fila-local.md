@@ -8,7 +8,7 @@ route_pattern:
 min_permission: 
 audience: internal
 sort_order: 250
-version: 1
+version: 2
 is_published: true
 ---
 # Guardar e sincronizar novos apontamentos sem conexão
@@ -44,3 +44,6 @@ Opt-in por usuário e workspace. Apenas apontamento novo com atividade existente
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
 <!-- screenshot: Guardar e sincronizar novos apontamentos sem conexão; usar workspace demonstrativo, sem nomes, horas, valores ou credenciais reais. -->
+
+## Atualização de navegação e consistência
+O painel **Apontamento offline** configura a opção de guardar novos registros; o estado **Conectado** ou **Sem conexão agora** indica a situação atual da rede. Não se confunde com confirmação de gravação no servidor.

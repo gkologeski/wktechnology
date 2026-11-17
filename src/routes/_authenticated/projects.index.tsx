@@ -150,7 +150,7 @@ function ProjectsPage() {
       { key: "due", label: "Prazo entre", type: "date", get: (p) => p.due_at },
       {
         key: "progress",
-        label: "Progresso (%)",
+        label: "Progresso informado (%)",
         type: "number",
         get: (p) => Number(p.progress ?? 0),
       },
@@ -369,7 +369,7 @@ function ProjectsPage() {
                     name: "Nome",
                     contract: "Contrato",
                     status: "Status",
-                    progress: "Progresso",
+                    progress: "Progresso informado",
                     due: "Prazo",
                   }}
                   search={false}
@@ -409,7 +409,7 @@ function ProjectsPage() {
                         onSort={() => toggle("status")}
                       />
                       <SortableTableHead
-                        label="Progresso"
+                        label="Progresso informado"
                         active={sort?.key === "progress"}
                         dir={sort?.dir}
                         onSort={() => toggle("progress")}

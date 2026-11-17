@@ -67,7 +67,10 @@ export function AppSidebar() {
 
   const perms: Perms = { isAdmin, isManager, isPlatformAdmin, permissions: grantedPermissions };
   const isActive = (url: string) =>
-    path === url || (!path.endsWith("/dashboard") && path.startsWith(url + "/"));
+    path === url ||
+    (!path.endsWith("/dashboard") &&
+      path.startsWith(url + "/") &&
+      (url !== "/projects" || /^\/projects\/[0-9a-f-]{36}(?:\/|$)/i.test(path)));
 
   // Neutro no Workspace/ERP Home: exibe shell "ERP" independente do módulo.
   const workspaceShell = isWorkspacePathname(path);

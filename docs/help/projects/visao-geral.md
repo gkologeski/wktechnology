@@ -8,7 +8,7 @@ route_pattern:
 min_permission: 
 audience: internal
 sort_order: 290
-version: 1
+version: 2
 is_published: true
 ---
 # Visão geral do TechProjects
@@ -16,7 +16,7 @@ is_published: true
 O TechProjects reúne projetos, tarefas organizadas em espaços/pastas/listas, trabalho pessoal, horas, revisão, entrega e acompanhamento financeiro. O Dashboard fica em Visão geral; a listagem de projetos tem rota própria.
 ## Navegação
 - Visão geral > Dashboard.
-- Projetos > My Work, Espaços, Projetos e Tarefas.
+- Projetos > Meu trabalho, Espaços, Projetos e Tarefas.
 - Horas > Minhas Horas, Revisão de Horas e Timesheet.
 - Configurações > importadores Clockify, Jibble e ClickUp, Conciliação de horas, Entrega de negócios, Política de horas e modelos, Tarifas e custos, Operação e saúde.
 - Na ficha do projeto: tarefas, marcos, timesheet, membros; telas específicas de entrega, horas/aprovação e financeiro.
