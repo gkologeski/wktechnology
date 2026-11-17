@@ -121,6 +121,8 @@ export function applyBrandArchetype(
   return {
     style: { ...archetype.style },
     theme: sanitizeTheme({
+      layout: currentTheme.layout,
+      colorMode: currentTheme.colorMode,
       light: { ...archetype.theme.light },
       dark: { ...archetype.theme.dark },
       icons: { ...archetype.theme.icons },

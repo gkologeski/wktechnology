@@ -61,7 +61,10 @@ export function InboxWorkspace({
   const showContext = !!context && resolvedContextOpen;
 
   return (
-    <div className="relative flex h-full min-h-[32rem] flex-col overflow-hidden bg-product-canvas font-[var(--font-body)]">
+    <div
+      data-layout-part="inbox"
+      className="relative flex h-full min-h-[32rem] flex-col overflow-hidden bg-product-canvas font-[var(--font-body)]"
+    >
       <header className="mb-1.5 shrink-0 overflow-hidden rounded-md bg-product-header ring-1 ring-border-subtle">
         <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-0.5 px-3 py-0.5 xl:px-4">
           <div className="min-w-0 shrink-0" title={description}>

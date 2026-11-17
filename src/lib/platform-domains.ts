@@ -20,6 +20,8 @@ export const PRODUCTION_APP_HOSTS: ReadonlySet<string> = new Set([
 
 export const GOOGLE_OAUTH_ORIGIN = "https://crm.wktechnology.com.br";
 
+export const CAREERS_CONTACT_EMAIL = "rh@wktechnology.com.br";
+
 export const EMAIL_SENDER_DOMAIN = "notify.crm.wktechnology.com.br";
 
 export const INTERNAL_EMAIL_DOMAINS: readonly string[] = [

@@ -313,7 +313,21 @@ export type BrandAssets = {
 
 export const DEFAULT_ICONS: Required<BrandIcons> = { stroke: 2, size: 16 };
 
+export const WORKSPACE_LAYOUTS = ["classic", "attio"] as const;
+export type WorkspaceLayout = (typeof WORKSPACE_LAYOUTS)[number];
+
+/** Workspace structure is independent from palette and module overrides. */
+export function workspaceLayout(theme: BrandTheme | null | undefined): WorkspaceLayout {
+  return theme?.layout === "attio" ? "attio" : "classic";
+}
+
+export function workspaceColorMode(theme: BrandTheme | null | undefined): "light" | "dark" {
+  return theme?.colorMode === "dark" ? "dark" : "light";
+}
+
 export type BrandTheme = {
+  layout?: WorkspaceLayout;
+  colorMode?: "light" | "dark";
   light?: Record<string, string>;
   dark?: Record<string, string>;
   icons?: BrandIcons;
@@ -327,6 +341,8 @@ export function mergeThemes(...themes: Array<BrandTheme | null | undefined>): Br
   const out: BrandTheme = { light: {}, dark: {}, icons: {}, assets: {} };
   for (const t of themes) {
     if (!t) continue;
+    if (t.layout === "classic" || t.layout === "attio") out.layout = t.layout;
+    if (t.colorMode === "light" || t.colorMode === "dark") out.colorMode = t.colorMode;
     Object.assign(out.light!, t.light ?? {});
     Object.assign(out.dark!, t.dark ?? {});
     Object.assign(out.icons!, t.icons ?? {});
@@ -361,7 +377,16 @@ export function sanitizeTheme(theme: BrandTheme | null | undefined): BrandTheme 
   if (typeof theme?.icons?.stroke === "number") icons.stroke = theme.icons.stroke;
   if (typeof theme?.icons?.size === "number") icons.size = theme.icons.size;
 
-  return { light: pickColors(theme?.light), dark: pickColors(theme?.dark), icons, assets };
+  return {
+    ...(theme?.layout === "classic" || theme?.layout === "attio" ? { layout: theme.layout } : {}),
+    ...(theme?.colorMode === "light" || theme?.colorMode === "dark"
+      ? { colorMode: theme.colorMode }
+      : {}),
+    light: pickColors(theme?.light),
+    dark: pickColors(theme?.dark),
+    icons,
+    assets,
+  };
 }
 
 /** Gera o CSS (`:root` + `.dark`) para as variáveis definidas no tema. */

@@ -1,3 +1,4 @@
+import { onWorkspaceChanged } from "@/lib/workspace-events";
 import { useSharedAction } from "@/lib/access-control/use-shared-action";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,10 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getBranding, saveBranding } from "@/lib/branding.functions";
 import { anyToHex } from "@/lib/color-utils";
-import { sanitizeTheme, EMPTY_THEME, type BrandTheme } from "@/lib/branding/tokens";
+import {
+  sanitizeTheme,
+  EMPTY_THEME,
+  type BrandTheme,
+  workspaceLayout,
+  workspaceColorMode,
+} from "@/lib/branding/tokens";
 import { ControlsPanel, type BuilderForm } from "./controls-panel";
 import { ThemeEditor } from "./theme-editor";
 import { LivePreview } from "./live-preview";
+import { LayoutSelector } from "./layout-selector";
 import { ArchetypeSelector } from "./archetype-selector";
 import type { PreviewEditorTab, PreviewMode, PreviewTarget } from "./preview-targets";
 import {
@@ -46,16 +54,31 @@ export function BrandingBuilder() {
   const [saved, setSaved] = useState<State>({ form: DEFAULT_FORM, theme: EMPTY_THEME });
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [editorTab, setEditorTab] = useState<PreviewEditorTab | "models">("models");
+  const [editorTab, setEditorTab] = useState<PreviewEditorTab | "models" | "layout">("layout");
   const [previewMode, setPreviewMode] = useState<PreviewMode>("light");
   const [selectedTarget, setSelectedTarget] = useState<PreviewTarget | null>(null);
   const [selectedArchetypeId, setSelectedArchetypeId] = useState<BrandArchetypeId | null>(null);
   const builderRef = useRef<HTMLDivElement>(null);
+  const loadedWorkspaceRef = useRef<string | null>(null);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
+    let disposed = false;
+    let sequence = 0;
+    const refresh = async () => {
+      const current = ++sequence;
+      loadedWorkspaceRef.current = null;
+      setWorkspaceId(null);
+      setLoading(true);
+      setState({ form: DEFAULT_FORM, theme: EMPTY_THEME });
+      setSaved({ form: DEFAULT_FORM, theme: EMPTY_THEME });
+      setSelectedArchetypeId(null);
+      setSelectedTarget(null);
       try {
         const r = await load({});
+        if (disposed || current !== sequence) return;
+        loadedWorkspaceRef.current = r.workspace_id;
+        setWorkspaceId(r.workspace_id);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const b = r.branding as any;
         if (b) {
@@ -78,11 +101,21 @@ export function BrandingBuilder() {
           };
           setState(next);
           setSaved(next);
+          setPreviewMode(workspaceColorMode(next.theme));
         }
+      } catch (error) {
+        if (!disposed && current === sequence) toast.error((error as Error).message);
       } finally {
-        setLoading(false);
+        if (!disposed && current === sequence) setLoading(false);
       }
-    })();
+    };
+    void refresh();
+    const off = onWorkspaceChanged(() => void refresh());
+    return () => {
+      disposed = true;
+      ++sequence;
+      off();
+    };
   }, [load]);
 
   const form = state.form;
@@ -111,10 +144,13 @@ export function BrandingBuilder() {
   );
 
   const submit = async () => {
+    if (!workspaceId || loadedWorkspaceRef.current !== workspaceId) return;
+    const submittedWorkspace = workspaceId;
     setBusy(true);
     try {
       const payload = {
         ...form,
+        expected_workspace_id: submittedWorkspace,
         brand_name: form.brand_name || null,
         logo_url: form.logo_url || null,
         favicon_url: form.favicon_url || null,
@@ -124,6 +160,7 @@ export function BrandingBuilder() {
         theme: sanitizeTheme(theme),
       };
       await save({ data: payload as never });
+      if (loadedWorkspaceRef.current !== submittedWorkspace) return;
       setSaved(state);
       toast.success("Marca salva. Recarregue para aplicar em toda a plataforma.");
     } catch (e) {
@@ -216,18 +253,31 @@ export function BrandingBuilder() {
           <Tabs
             value={editorTab}
             onValueChange={(value) => {
-              setEditorTab(value as PreviewEditorTab | "models");
+              setEditorTab(value as PreviewEditorTab | "models" | "layout");
               if (value !== "models") setSelectedArchetypeId(null);
             }}
             className="w-full"
           >
             <div className="px-4 pt-4">
-              <TabsList className="w-full grid grid-cols-3">
+              <TabsList className="w-full grid grid-cols-4">
+                <TabsTrigger value="layout">Layout</TabsTrigger>
                 <TabsTrigger value="models">Modelos</TabsTrigger>
                 <TabsTrigger value="basics">Marca</TabsTrigger>
                 <TabsTrigger value="theme">Tema</TabsTrigger>
               </TabsList>
             </div>
+            <TabsContent value="layout" className="mt-0 p-4">
+              <LayoutSelector
+                value={workspaceLayout(theme)}
+                colorMode={workspaceColorMode(theme)}
+                onColorModeChange={(colorMode) => {
+                  setTheme({ ...theme, colorMode });
+                  setPreviewMode(colorMode);
+                }}
+                disabled={!canEdit || busy}
+                onChange={(layout) => setTheme({ ...theme, layout })}
+              />
+            </TabsContent>
             <TabsContent value="models" className="mt-0">
               <ArchetypeSelector
                 activeId={activeArchetypeId}
@@ -292,7 +342,7 @@ export function BrandingBuilder() {
           <Button variant="ghost" disabled={!dirty || busy || !canEdit} onClick={discard}>
             Descartar
           </Button>
-          <Button disabled={!dirty || busy || !canEdit} onClick={submit}>
+          <Button disabled={!dirty || busy || !canEdit || !workspaceId} onClick={submit}>
             {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Salvar alterações
           </Button>

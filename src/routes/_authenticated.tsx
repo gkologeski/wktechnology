@@ -179,7 +179,10 @@ function AuthenticatedLayout() {
           <div className="flex h-screen w-full overflow-hidden bg-product-canvas">
             <AppSidebar />
             <div className="flex-1 flex flex-col min-w-0">
-              <header className="h-14 flex min-w-0 items-center gap-2 border-b border-product-divider bg-product-header px-3">
+              <header
+                data-layout-part="topbar"
+                className="h-14 flex min-w-0 items-center gap-2 border-b border-product-divider bg-product-header px-3"
+              >
                 <SidebarTrigger className="shrink-0" />
                 <ModuleSwitcher className="min-w-0 shrink" />
                 <GlobalSearchTrigger />

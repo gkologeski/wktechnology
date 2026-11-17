@@ -35,6 +35,8 @@ export const getBranding = createServerFn({ method: "GET" })
 
 const themeSchema = z
   .object({
+    layout: z.enum(["classic", "attio"]).optional(),
+    colorMode: z.enum(["light", "dark"]).optional(),
     light: z.record(z.string(), z.string()).optional(),
     dark: z.record(z.string(), z.string()).optional(),
     icons: z
@@ -52,6 +54,7 @@ export const saveBranding = createServerFn({ method: "POST" })
   .middleware([requireSharedPermission("system.branding", "update")])
   .inputValidator(
     (d: {
+      expected_workspace_id?: string;
       brand_name?: string | null;
       logo_url?: string | null;
       favicon_url?: string | null;
@@ -68,6 +71,7 @@ export const saveBranding = createServerFn({ method: "POST" })
     }) =>
       z
         .object({
+          expected_workspace_id: z.string().uuid().optional(),
           brand_name: z.string().max(120).nullable().optional(),
           logo_url: z.string().url().nullable().optional(),
           favicon_url: z.string().url().nullable().optional(),
@@ -86,12 +90,16 @@ export const saveBranding = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const workspaceId = await resolveActiveWorkspace(supabase, userId);
+    const workspaceId = context.sharedWorkspaceId;
+    const { expected_workspace_id, ...brandingData } = data;
+    if (expected_workspace_id && expected_workspace_id !== workspaceId) {
+      throw new Error("O workspace mudou. Reabra o White Label antes de salvar.");
+    }
     const { error } = await supabase.from("workspace_branding").upsert(
       {
         owner_id: userId,
         workspace_id: workspaceId,
-        ...data,
+        ...brandingData,
       },
       { onConflict: "workspace_id" },
     );
