@@ -101,7 +101,7 @@ export async function assertSendersApproved(
   const { resolveWaNumber } = await import("./meta-channel.server");
   for (const id of extras) {
     const num = await resolveWaNumber(workspaceId, id).catch(() => null);
-    if (!num || num.provider !== "cloud" || num.phoneNumberId !== id)
+    if (!num || num.phoneNumberId !== id)
       throw new Error(`O número ${id} não está ativo neste workspace.`);
     const approved = await loadApprovedTemplates(supabase, workspaceId, { phoneNumberId: id });
     for (const t of templates) {

@@ -211,27 +211,50 @@ export const listCloudSenders = createServerFn({ method: "GET" })
     if (membership.error || !membership.data) throw new Error("Membro ativo obrigatório.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const admin = supabaseAdmin as any;
+    type Sender = {
+      phone_number_id: string;
+      display_phone_number: string;
+      verified_name: string | null;
+      quality_rating: string | null;
+      via_gateway?: boolean;
+    };
+    // UNIFICA-CONECTOR: número do conector Lovable entra na lista (principal e rodízio).
+    const { gatewayConfigured, getConnectedPhone } = await import(
+      "@/lib/whatsapp/gateway-channel.server"
+    );
+    let gateway: Sender | null = null;
+    if (gatewayConfigured()) {
+      const info = await getConnectedPhone().catch(() => null);
+      if (info?.id)
+        gateway = {
+          phone_number_id: String(info.id),
+          display_phone_number: String(info.display_phone_number ?? info.id),
+          verified_name: (info as { verified_name?: string }).verified_name ?? null,
+          quality_rating: (info as { quality_rating?: string }).quality_rating ?? null,
+          via_gateway: true,
+        };
+    }
     const connections = await admin
       .from("wa_cloud_connections")
       .select("id")
       .eq("workspace_id", workspaceId)
       .eq("enabled", true);
     if (connections.error) throw new Error("Não foi possível consultar os remetentes.");
-    if (!connections.data.length) return [];
-    const numbers = await admin
-      .from("wa_cloud_numbers")
-      .select("phone_number_id,display_phone_number,verified_name,quality_rating")
-      .eq("workspace_id", workspaceId)
-      .eq("available", true)
-      .in(
-        "connection_id",
-        connections.data.map((row: any) => row.id),
-      );
-    if (numbers.error) throw new Error("Não foi possível consultar os remetentes.");
-    return numbers.data as {
-      phone_number_id: string;
-      display_phone_number: string;
-      verified_name: string | null;
-      quality_rating: string | null;
-    }[];
+    let cloud: Sender[] = [];
+    if (connections.data.length) {
+      const numbers = await admin
+        .from("wa_cloud_numbers")
+        .select("phone_number_id,display_phone_number,verified_name,quality_rating")
+        .eq("workspace_id", workspaceId)
+        .eq("available", true)
+        .in(
+          "connection_id",
+          connections.data.map((row: any) => row.id),
+        );
+      if (numbers.error) throw new Error("Não foi possível consultar os remetentes.");
+      cloud = numbers.data as Sender[];
+    }
+    if (gateway && !cloud.some((n) => n.phone_number_id === gateway!.phone_number_id))
+      return [...cloud, gateway];
+    return cloud;
   });

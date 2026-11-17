@@ -90,6 +90,11 @@ function CampaignsPage() {
   const [consentEvidence, setConsentEvidence] = useState("");
   const sendersFn = useServerFn(listCloudSenders);
   const senders = useQuery({ queryKey: ["wa-cloud-senders"], queryFn: () => sendersFn() });
+  const gatewaySender = senders.data?.find((n) => n.via_gateway) ?? null;
+  const senderReal = sender === "lovable" ? (gatewaySender?.phone_number_id ?? "") : sender;
+  // Conector Lovable sem rodízio continua salvo como antes (sem número fixo).
+  const senderIdForSave =
+    sender === "lovable" ? (extraSenders.length ? senderReal || null : null) : sender;
   const qc = useQueryClient();
   const listFn = useServerFn(listWhatsAppCampaigns);
   const tmplFn = useServerFn(getWhatsAppTemplateCatalog);
@@ -279,7 +284,12 @@ function CampaignsPage() {
           });
         }
         setBody(full.body_template ?? "");
-        setSender(full.sender_phone_number_id || "lovable");
+        setSender(
+          !full.sender_phone_number_id ||
+            full.sender_phone_number_id === gatewaySender?.phone_number_id
+            ? "lovable"
+            : full.sender_phone_number_id,
+        );
         setExtraSenders(Array.isArray(full.sender_rotation) ? full.sender_rotation : []);
         setSenderMode(full.sender_rotation_mode === "random" ? "random" : "sequential");
         setConsentEvidence(full.consent_evidence || "");
@@ -370,8 +380,8 @@ function CampaignsPage() {
             name,
             body_template: selectedTpl?.body ?? body,
             template_name: templateName !== "__none__" ? templateName : null,
-            sender_phone_number_id: sender === "lovable" ? null : sender,
-            sender_rotation: sender === "lovable" ? [] : extraSenders.filter((n) => n !== sender),
+            sender_phone_number_id: senderIdForSave,
+            sender_rotation: extraSenders.filter((n) => n !== senderIdForSave),
             sender_rotation_mode: senderMode,
             consent_evidence: sender === "lovable" ? null : consentEvidence,
             template_language: selectedTpl?.language ?? null,
@@ -410,8 +420,8 @@ function CampaignsPage() {
           name,
           body_template: selectedTpl?.body ?? body,
           template_name: templateName !== "__none__" ? templateName : undefined,
-          sender_phone_number_id: sender === "lovable" ? null : sender,
-          sender_rotation: sender === "lovable" ? [] : extraSenders.filter((n) => n !== sender),
+          sender_phone_number_id: senderIdForSave,
+          sender_rotation: extraSenders.filter((n) => n !== senderIdForSave),
           sender_rotation_mode: senderMode,
           consent_evidence: sender === "lovable" ? null : consentEvidence,
           template_language: selectedTpl?.language ?? undefined,
@@ -525,8 +535,9 @@ function CampaignsPage() {
                     disabled={isEditing && editStatus !== "draft"}
                     onValueChange={(value) => {
                       setSender(value);
-                      if (value === "lovable") setExtraSenders([]);
-                      else setExtraSenders((xs) => xs.filter((x) => x !== value));
+                      const real =
+                        value === "lovable" ? gatewaySender?.phone_number_id : value;
+                      setExtraSenders((xs) => xs.filter((x) => x !== real));
                       setTemplateName("__none__");
                     }}
                   >
@@ -534,8 +545,12 @@ function CampaignsPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="lovable">Conector Lovable atual</SelectItem>
-                      {senders.data?.map((number) => (
+                      <SelectItem value="lovable">
+                        {gatewaySender
+                          ? `${gatewaySender.display_phone_number} · ${gatewaySender.verified_name || "Meta"} (Conector Lovable)`
+                          : "Conector Lovable atual"}
+                      </SelectItem>
+                      {senders.data?.filter((n) => !n.via_gateway).map((number) => (
                         <SelectItem
                           key={number.phone_number_id}
                           value={number.phone_number_id}
@@ -555,7 +570,7 @@ function CampaignsPage() {
                     Cada contato recebe sempre pelo mesmo número. O número principal só muda em
                     rascunho; o rodízio também pode ser ajustado com a campanha pausada.
                   </p>
-                  {sender !== "lovable" && (
+                  {(sender !== "lovable" || gatewaySender) && (
                     <div className="mt-3 space-y-2 rounded-md border border-border p-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <div>
@@ -580,7 +595,7 @@ function CampaignsPage() {
                         </Select>
                       </div>
                       <ul className="space-y-1">
-                        {[sender, ...extraSenders].map((id, idx) => {
+                        {[senderReal, ...extraSenders].map((id, idx) => {
                           const n = senders.data?.find((x) => x.phone_number_id === id);
                           return (
                             <li key={id} className="flex items-center gap-2 text-sm">
@@ -619,7 +634,7 @@ function CampaignsPage() {
                       {extraSenders.length < 4 &&
                         (senders.data ?? []).some(
                           (x) =>
-                            x.phone_number_id !== sender &&
+                            x.phone_number_id !== senderReal &&
                             !extraSenders.includes(x.phone_number_id) &&
                             x.quality_rating !== "RED",
                         ) && (
@@ -637,7 +652,7 @@ function CampaignsPage() {
                               {(senders.data ?? [])
                                 .filter(
                                   (x) =>
-                                    x.phone_number_id !== sender &&
+                                    x.phone_number_id !== senderReal &&
                                     !extraSenders.includes(x.phone_number_id) &&
                                     x.quality_rating !== "RED",
                                 )

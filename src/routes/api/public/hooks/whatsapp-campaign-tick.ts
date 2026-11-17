@@ -126,14 +126,12 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
     return { processed: 0, error: message };
   }
   // ROTACAO-NUMEROS: números oficiais adicionais; o indisponível sai do rodízio nesta rodada.
-  const senderList =
-    primaryNum.provider === "cloud"
-      ? buildSenderRotation(camp.sender_phone_number_id, camp.sender_rotation)
-      : [];
+  // UNIFICA-CONECTOR: o número do conector Lovable também pode participar do rodízio.
+  const senderList = buildSenderRotation(camp.sender_phone_number_id, camp.sender_rotation);
   const senderNums = new Map<string, WaNumber>([[primaryNum.phoneNumberId, primaryNum]]);
   for (const id of senderList.slice(1)) {
     const n = await resolveWaNumber(camp.workspace_id, id).catch(() => null);
-    if (n && n.provider === "cloud" && n.phoneNumberId === id) senderNums.set(id, n);
+    if (n && n.phoneNumberId === id) senderNums.set(id, n);
   }
   const availableSenders = new Set(senderNums.keys());
   const rotatingSenders = senderList.length > 1;
