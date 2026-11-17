@@ -22,7 +22,7 @@ is_published: true
 
 **Antes de começar:** Confirme o workspace e o contexto corretos. Tenha autorização para a operação, e não apenas para consultar a tela.
 
-## Escolher o layout do workspace
+## Passo a passo
 
 1. Abra **Configurações → Workspace → White-label → Workspace (ERP)**.
 2. No Construtor de marca, abra **Layout**.
@@ -31,7 +31,7 @@ is_published: true
 5. Clique em **Salvar alterações**. A alteração vale para o workspace atual e é recebida pelas sessões conectadas. Se necessário, recarregue a tela.
 6. Para retornar, selecione **Clássico · atual** e salve. **Descartar** cancela somente as alterações ainda não salvas.
 
-## Marca, cores e módulos
+## Regras e limites
 
 A troca de layout preserva logotipo, nome, cores, fontes, densidade e configurações salvas. As abas Marca, Modelos e Tema continuam disponíveis. Aplicar um modelo de cores preserva a escolha de layout, mas altera os atributos de estilo indicados na prévia do modelo.
 
