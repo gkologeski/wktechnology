@@ -8,7 +8,7 @@ route_pattern: /campaigns/whatsapp
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 310
-version: 5
+version: 6
 is_published: true
 ---
 # Criar uma campanha de WhatsApp
@@ -20,7 +20,7 @@ is_published: true
 ## Passo a passo
 1. Clique em "Nova campanha".
 2. Preencha "Nome da campanha".
-3. Escolha o remetente.
+3. Escolha o remetente. Com número oficial, use "Adicionar número" em "Rodízio de números" (até 4 números extras) e escolha "Intercalar em sequência" ou "Sortear".
 4. Em número oficial, preencha "Origem da autorização dos destinatários".
 5. Escolha "Template" e preencha as variáveis. Para rodízio, use "Adicionar modelo ao rodízio" (até 4 modelos extras) e escolha "Sequencial (A, B, C…)" ou "Aleatório com peso". Em "Variáveis do modelo", cada modelo do rodízio aparece com o próprio quadro: escolha o campo de cada variável de cada modelo.
 6. Defina o público.
@@ -39,6 +39,7 @@ is_published: true
 - Telefone no CRM não comprova consentimento.
 - Números com qualidade `RED` ficam indisponíveis.
 - O remetente não muda depois de iniciar.
+- Rodízio de números: até 5 números oficiais; cada contato recebe sempre pelo mesmo número (respostas e Lia seguem nele). Todos os modelos escolhidos precisam estar aprovados em todos os números. Se um número cair durante o disparo, os contatos novos seguem pelos outros; quem já estava preso a ele aguarda, sem trocar de número.
 - SDR só com template aprovado.
 - Rodízio: até 5 modelos aprovados; cada contato recebe sempre o mesmo modelo; cada modelo tem as próprias variáveis, e só modelos aprovados na Meta para o número podem ser salvos. Em campanha pausada, ao salvar, as variáveis dos contatos ainda pendentes são atualizadas e as escolhas ficam salvas para a próxima edição, sem trocar o público.
 - Disparo pode atrasar cerca de 1 minuto além do intervalo sorteado.
@@ -50,6 +51,8 @@ is_published: true
 - "Escolha ao menos dois membros para dividir as conversas.".
 - "O SDR só pode ser ligado a campanhas com template aprovado.".
 - "O público passa de 5.000 destinatários. Refine os filtros.".
+
+- "O modelo \"…\" não está aprovado na Meta para o número …".
 
 ## Relacionados
 - [Controlar campanhas e entender bloqueios de números](/ajuda/crm/controlar-campanhas-bloqueios-whatsapp)

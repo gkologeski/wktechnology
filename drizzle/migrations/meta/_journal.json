@@ -2605,6 +2605,13 @@
       "when": 1794858725417,
       "tag": "0371_inbox_unified_whatsapp_only",
       "breakpoints": true
+    },
+    {
+      "idx": 372,
+      "version": "7",
+      "when": 1794940446330,
+      "tag": "0372_whatsapp_campaign_sender_rotation",
+      "breakpoints": true
     }
   ]
 }

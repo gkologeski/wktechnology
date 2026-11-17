@@ -83,6 +83,9 @@ function parseRecipients(raw: string): { phone: string; variables: Record<string
 function CampaignsPage() {
   const permissions = usePermissions();
   const [sender, setSender] = useState("lovable");
+  // ROTACAO-NUMEROS: números oficiais adicionais (máx. 4 + principal).
+  const [extraSenders, setExtraSenders] = useState<string[]>([]);
+  const [senderMode, setSenderMode] = useState<"sequential" | "random">("sequential");
   const [consentEvidence, setConsentEvidence] = useState("");
   const sendersFn = useServerFn(listCloudSenders);
   const senders = useQuery({ queryKey: ["wa-cloud-senders"], queryFn: () => sendersFn() });
@@ -193,6 +196,8 @@ function CampaignsPage() {
 
   function resetForm() {
     setSender("lovable");
+    setExtraSenders([]);
+    setSenderMode("sequential");
     setConsentEvidence("");
     setEditingId(null);
     setEditStatus("");
@@ -260,6 +265,8 @@ function CampaignsPage() {
         }
         setBody(full.body_template ?? "");
         setSender(full.sender_phone_number_id || "lovable");
+        setExtraSenders(Array.isArray(full.sender_rotation) ? full.sender_rotation : []);
+        setSenderMode(full.sender_rotation_mode === "random" ? "random" : "sequential");
         setConsentEvidence(full.consent_evidence || "");
         setTemplateName(full.template_name || "__none__");
         {
@@ -349,6 +356,8 @@ function CampaignsPage() {
             body_template: selectedTpl?.body ?? body,
             template_name: templateName !== "__none__" ? templateName : null,
             sender_phone_number_id: sender === "lovable" ? null : sender,
+            sender_rotation: sender === "lovable" ? [] : extraSenders.filter((n) => n !== sender),
+            sender_rotation_mode: senderMode,
             consent_evidence: sender === "lovable" ? null : consentEvidence,
             template_language: selectedTpl?.language ?? null,
             content_variables_template,
@@ -387,6 +396,8 @@ function CampaignsPage() {
           body_template: selectedTpl?.body ?? body,
           template_name: templateName !== "__none__" ? templateName : undefined,
           sender_phone_number_id: sender === "lovable" ? null : sender,
+          sender_rotation: sender === "lovable" ? [] : extraSenders.filter((n) => n !== sender),
+          sender_rotation_mode: senderMode,
           consent_evidence: sender === "lovable" ? null : consentEvidence,
           template_language: selectedTpl?.language ?? undefined,
           content_variables_template,
@@ -499,6 +510,8 @@ function CampaignsPage() {
                     disabled={isEditing && editStatus !== "draft"}
                     onValueChange={(value) => {
                       setSender(value);
+                      if (value === "lovable") setExtraSenders([]);
+                      else setExtraSenders((xs) => xs.filter((x) => x !== value));
                       setTemplateName("__none__");
                     }}
                   >
@@ -524,9 +537,101 @@ function CampaignsPage() {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    O remetente permanece fixo após o início da campanha. Não há alternância
-                    automática por restrição.
+                    Cada contato recebe sempre pelo mesmo número. Os números só podem ser alterados
+                    enquanto a campanha está em rascunho.
                   </p>
+                  {sender !== "lovable" && (
+                    <div className="mt-3 space-y-2 rounded-md border border-border p-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-medium">Rodízio de números</p>
+                          <p className="text-xs text-muted-foreground">
+                            Adicione até 4 números oficiais para intercalar os envios. Os modelos
+                            escolhidos precisam estar aprovados em todos eles.
+                          </p>
+                        </div>
+                        <Select
+                          value={senderMode}
+                          disabled={isEditing && editStatus !== "draft"}
+                          onValueChange={(v) => setSenderMode(v as "sequential" | "random")}
+                        >
+                          <SelectTrigger className="w-48" aria-label="Modo de rodízio de números">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="sequential">Intercalar em sequência</SelectItem>
+                            <SelectItem value="random">Sortear</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <ul className="space-y-1">
+                        {[sender, ...extraSenders].map((id, idx) => {
+                          const n = senders.data?.find((x) => x.phone_number_id === id);
+                          return (
+                            <li key={id} className="flex items-center gap-2 text-sm">
+                              <span className="flex-1 truncate">
+                                {n
+                                  ? `${n.display_phone_number} · ${n.verified_name || "Meta"}`
+                                  : id}
+                                {idx === 0 && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {" "}
+                                    · principal
+                                  </span>
+                                )}
+                              </span>
+                              {idx > 0 && (
+                                <Button
+                                  type="button"
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-8 w-8"
+                                  disabled={isEditing && editStatus !== "draft"}
+                                  aria-label={`Remover número ${n?.display_phone_number ?? id}`}
+                                  onClick={() =>
+                                    setExtraSenders((xs) => xs.filter((x) => x !== id))
+                                  }
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      {extraSenders.length < 4 &&
+                        (senders.data ?? []).some(
+                          (x) =>
+                            x.phone_number_id !== sender &&
+                            !extraSenders.includes(x.phone_number_id) &&
+                            x.quality_rating !== "RED",
+                        ) && (
+                          <Select
+                            value=""
+                            disabled={isEditing && editStatus !== "draft"}
+                            onValueChange={(v) => setExtraSenders((xs) => [...xs, v])}
+                          >
+                            <SelectTrigger aria-label="Adicionar número ao rodízio">
+                              <SelectValue placeholder="Adicionar número" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {(senders.data ?? [])
+                                .filter(
+                                  (x) =>
+                                    x.phone_number_id !== sender &&
+                                    !extraSenders.includes(x.phone_number_id) &&
+                                    x.quality_rating !== "RED",
+                                )
+                                .map((x) => (
+                                  <SelectItem key={x.phone_number_id} value={x.phone_number_id}>
+                                    {x.display_phone_number} · {x.verified_name || "Meta"}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                    </div>
+                  )}
                   {sender !== "lovable" && (
                     <div className="mt-2">
                       <label className="text-xs text-muted-foreground">

@@ -82,3 +82,36 @@ export async function refreshPendingVariables(
   }
   return updated;
 }
+
+/**
+ * ROTACAO-NUMEROS: cada número adicional precisa ser oficial do workspace e ter
+ * TODOS os modelos da campanha (principal + rodízio) aprovados na Meta.
+ */
+export async function assertSendersApproved(
+  supabase: any,
+  workspaceId: string,
+  primary: string | null | undefined,
+  extras: string[] | undefined,
+  templates: { name: string; language?: string | null }[],
+): Promise<void> {
+  if (!extras || extras.length === 0) return;
+  if (!primary) throw new Error("Escolha um número oficial principal antes de adicionar outros.");
+  if (templates.length === 0)
+    throw new Error("Rodízio de números exige modelo aprovado pela Meta.");
+  const { resolveWaNumber } = await import("./meta-channel.server");
+  for (const id of extras) {
+    const num = await resolveWaNumber(workspaceId, id).catch(() => null);
+    if (!num || num.provider !== "cloud" || num.phoneNumberId !== id)
+      throw new Error(`O número ${id} não está ativo neste workspace.`);
+    const approved = await loadApprovedTemplates(supabase, workspaceId, { phoneNumberId: id });
+    for (const t of templates) {
+      const hit = approved.find(
+        (a) => a.name === t.name && (!t.language || a.language === t.language),
+      );
+      if (!hit)
+        throw new Error(
+          `O modelo "${t.name}" não está aprovado na Meta para o número ${num.displayPhoneNumber}.`,
+        );
+    }
+  }
+}

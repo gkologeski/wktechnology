@@ -38,6 +38,11 @@ const CreateInput = z.object({
     .max(5)
     .optional(),
   rotation_mode: z.enum(["sequential", "weighted"]).optional(),
+  sender_rotation: z
+    .array(z.string().regex(/^\d{5,30}$/))
+    .max(4)
+    .optional(),
+  sender_rotation_mode: z.enum(["sequential", "random"]).optional(),
   media_url: z.string().url().optional().or(z.literal("")),
   media_content_type: z.string().max(120).optional(),
   rate_per_minute: z.number().int().min(1).max(120).default(10),
@@ -338,6 +343,19 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         data.template_name ? data.template_rotation : undefined,
         data.sender_phone_number_id,
       );
+      const { assertSendersApproved } =
+        await import("@/lib/whatsapp/campaign-rotation-guard.server");
+      await assertSendersApproved(
+        supabase,
+        workspaceId,
+        data.sender_phone_number_id,
+        data.sender_rotation,
+        data.template_rotation?.length
+          ? data.template_rotation
+          : data.template_name
+            ? [{ name: data.template_name, language: data.template_language ?? null }]
+            : [],
+      );
     }
     const { guarded, recentDays, commercial } = await resolveCampaignRecipients(
       supabase,
@@ -363,6 +381,10 @@ export const createWhatsAppCampaign = createServerFn({ method: "POST" })
         content_variables_template: data.content_variables_template ?? {},
         template_rotation: data.template_name ? (data.template_rotation ?? []) : [],
         rotation_mode: data.rotation_mode ?? "sequential",
+        sender_rotation: data.sender_phone_number_id
+          ? (data.sender_rotation ?? []).filter((n) => n !== data.sender_phone_number_id)
+          : [],
+        sender_rotation_mode: data.sender_rotation_mode ?? "sequential",
         media_url: data.media_url || null,
         media_content_type: data.media_content_type || null,
         rate_per_minute: data.rate_per_minute,
@@ -520,6 +542,11 @@ const UpdateInput = z.object({
     .max(5)
     .optional(),
   rotation_mode: z.enum(["sequential", "weighted"]).optional(),
+  sender_rotation: z
+    .array(z.string().regex(/^\d{5,30}$/))
+    .max(4)
+    .optional(),
+  sender_rotation_mode: z.enum(["sequential", "random"]).optional(),
   media_url: z.string().url().nullable().optional().or(z.literal("")),
   media_content_type: z.string().max(120).nullable().optional(),
   rate_per_minute: z.number().int().min(1).max(120).optional(),
@@ -554,7 +581,9 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
     const { supabase } = context;
     const { data: existing, error: getErr } = await supabase
       .from("whatsapp_campaigns")
-      .select("id, status, sender_phone_number_id, audience_config")
+      .select(
+        "id, status, sender_phone_number_id, audience_config, template_name, template_language, template_rotation",
+      )
       .eq("id", data.id)
       .single();
     if (getErr) throw getErr;
@@ -569,6 +598,28 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
         await resolveActiveWorkspace(context.userId),
         data.template_rotation,
         data.sender_phone_number_id ?? existing.sender_phone_number_id,
+      );
+    }
+    if (data.sender_rotation !== undefined && data.sender_rotation.length > 0) {
+      const { assertSendersApproved } =
+        await import("@/lib/whatsapp/campaign-rotation-guard.server");
+      const tplName =
+        data.template_name === undefined ? existing.template_name : data.template_name;
+      const tplLang =
+        data.template_language === undefined ? existing.template_language : data.template_language;
+      const rot = data.template_rotation ?? (existing.template_rotation as never) ?? [];
+      await assertSendersApproved(
+        supabase,
+        await resolveActiveWorkspace(context.userId),
+        data.sender_phone_number_id === undefined
+          ? existing.sender_phone_number_id
+          : data.sender_phone_number_id,
+        data.sender_rotation,
+        Array.isArray(rot) && rot.length
+          ? rot
+          : tplName
+            ? [{ name: tplName, language: tplLang ?? null }]
+            : [],
       );
     }
     if (data.refresh_variables && !data.replace_audience) {
@@ -610,6 +661,15 @@ export const updateWhatsAppCampaign = createServerFn({ method: "POST" })
     if (data.template_rotation !== undefined)
       patch.template_rotation = data.template_name === null ? [] : data.template_rotation;
     if (data.rotation_mode !== undefined) patch.rotation_mode = data.rotation_mode;
+    if (data.sender_rotation !== undefined) {
+      const primary =
+        data.sender_phone_number_id === undefined
+          ? existing.sender_phone_number_id
+          : data.sender_phone_number_id;
+      patch.sender_rotation = primary ? data.sender_rotation.filter((n) => n !== primary) : [];
+    } else if (data.sender_phone_number_id === null) patch.sender_rotation = [];
+    if (data.sender_rotation_mode !== undefined)
+      patch.sender_rotation_mode = data.sender_rotation_mode;
     if (data.media_url !== undefined) patch.media_url = data.media_url || null;
     if (data.media_content_type !== undefined)
       patch.media_content_type = data.media_content_type || null;
@@ -919,7 +979,7 @@ export const getWhatsAppCampaignForEdit = createServerFn({ method: "POST" })
     const { data: camp, error } = await context.supabase
       .from("whatsapp_campaigns")
       .select(
-        "id, status, total, body_template, template_name, sender_phone_number_id, consent_evidence, media_url, sdr_playbook_id, recent_contact_days, exclude_customers, exclude_open_deals, audience_config, assignment_mode, assignment_member_ids, template_rotation, rotation_mode",
+        "id, status, total, body_template, template_name, sender_phone_number_id, consent_evidence, media_url, sdr_playbook_id, recent_contact_days, exclude_customers, exclude_open_deals, audience_config, assignment_mode, assignment_member_ids, template_rotation, rotation_mode, sender_rotation, sender_rotation_mode",
       )
       .eq("id", data.id)
       .single();

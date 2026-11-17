@@ -30980,6 +30980,7 @@ export type Database = {
           owner_id: string
           phone: string
           quota_reserved_until: string | null
+          sender_phone_number_id: string | null
           sent_at: string | null
           status: string
           template_language: string | null
@@ -31000,6 +31001,7 @@ export type Database = {
           owner_id: string
           phone: string
           quota_reserved_until?: string | null
+          sender_phone_number_id?: string | null
           sent_at?: string | null
           status?: string
           template_language?: string | null
@@ -31020,6 +31022,7 @@ export type Database = {
           owner_id?: string
           phone?: string
           quota_reserved_until?: string | null
+          sender_phone_number_id?: string | null
           sent_at?: string | null
           status?: string
           template_language?: string | null
@@ -31078,6 +31081,8 @@ export type Database = {
           send_interval_max_s: number | null
           send_interval_min_s: number | null
           sender_phone_number_id: string | null
+          sender_rotation: string[]
+          sender_rotation_mode: string
           sent: number
           started_at: string | null
           status: string
@@ -31119,6 +31124,8 @@ export type Database = {
           send_interval_max_s?: number | null
           send_interval_min_s?: number | null
           sender_phone_number_id?: string | null
+          sender_rotation?: string[]
+          sender_rotation_mode?: string
           sent?: number
           started_at?: string | null
           status?: string
@@ -31160,6 +31167,8 @@ export type Database = {
           send_interval_max_s?: number | null
           send_interval_min_s?: number | null
           sender_phone_number_id?: string | null
+          sender_rotation?: string[]
+          sender_rotation_mode?: string
           sent?: number
           started_at?: string | null
           status?: string

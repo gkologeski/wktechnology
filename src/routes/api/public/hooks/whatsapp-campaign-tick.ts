@@ -30,6 +30,7 @@ import {
   variablesForTemplate,
   positionalVariables,
 } from "@/lib/whatsapp/campaign-template-rotation";
+import { buildSenderRotation, pickSender } from "@/lib/whatsapp/campaign-sender-rotation";
 
 function applyTemplate(body: string, vars: Record<string, string>): string {
   return body.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? "");
@@ -60,6 +61,8 @@ type Campaign = {
   assignment_mode?: string | null;
   template_rotation?: unknown;
   rotation_mode?: string | null;
+  sender_rotation?: unknown;
+  sender_rotation_mode?: string | null;
 };
 
 /** Variáveis posicionais do template, renderizadas com os dados do destinatário. */
@@ -86,7 +89,9 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
   const batch = Math.min(allowed, batchOverride ?? 20);
   const { data: recips } = await supabaseAdmin
     .from("whatsapp_campaign_recipients")
-    .select("id, phone, variables, contact_id, override_recent, override_commercial, template_name")
+    .select(
+      "id, phone, variables, contact_id, override_recent, override_commercial, template_name, sender_phone_number_id",
+    )
     .eq("campaign_id", camp.id)
     .eq("status", "pending")
     .limit(batch);
@@ -106,9 +111,10 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
   }
 
   // Número oficial da Meta do workspace (obrigatório).
-  let num: WaNumber;
+  let primaryNum: WaNumber;
   try {
-    num = await resolveWaNumber(camp.workspace_id, camp.sender_phone_number_id ?? null);
+    primaryNum = await resolveWaNumber(camp.workspace_id, camp.sender_phone_number_id ?? null);
+    const num = primaryNum;
     if (num.provider === "cloud" && !camp.template_name)
       throw new Error("Campanhas Meta diretas exigem template aprovado.");
   } catch (e) {
@@ -119,6 +125,18 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
       .eq("id", camp.id);
     return { processed: 0, error: message };
   }
+  // ROTACAO-NUMEROS: números oficiais adicionais; o indisponível sai do rodízio nesta rodada.
+  const senderList =
+    primaryNum.provider === "cloud"
+      ? buildSenderRotation(camp.sender_phone_number_id, camp.sender_rotation)
+      : [];
+  const senderNums = new Map<string, WaNumber>([[primaryNum.phoneNumberId, primaryNum]]);
+  for (const id of senderList.slice(1)) {
+    const n = await resolveWaNumber(camp.workspace_id, id).catch(() => null);
+    if (n && n.provider === "cloud" && n.phoneNumberId === id) senderNums.set(id, n);
+  }
+  const availableSenders = new Set(senderNums.keys());
+  const rotatingSenders = senderList.length > 1;
 
   const rotation = buildRotation(
     {
@@ -292,6 +310,40 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         .eq("id", r.id);
       if (fix.error) throw new Error("Não foi possível fixar o modelo do destinatário.");
     }
+    let num: WaNumber = primaryNum;
+    if (rotatingSenders) {
+      const sp = pickSender(
+        senderList,
+        availableSenders,
+        camp.sender_rotation_mode === "random" ? "random" : "sequential",
+        (camp.sent ?? 0) + (camp.failed ?? 0) + sentInc + failedInc,
+        Math.random(),
+        (r as { sender_phone_number_id?: string | null }).sender_phone_number_id ?? null,
+      );
+      if (sp.kind === "none") {
+        await supabaseAdmin
+          .from("whatsapp_campaigns")
+          .update({ status: "paused", last_tick_at: new Date().toISOString() })
+          .eq("id", camp.id);
+        break;
+      }
+      if (sp.kind === "fixed_unavailable") {
+        // Fica pendente: nunca troca o número de quem já recebeu por outro.
+        await supabaseAdmin
+          .from("whatsapp_campaign_recipients")
+          .update({ error: "Aguardando o número remetente deste contato voltar a ficar ativo" })
+          .eq("id", r.id);
+        continue;
+      }
+      num = senderNums.get(sp.sender) as WaNumber;
+      if (sp.fixedNow) {
+        const fixS = await supabaseAdmin
+          .from("whatsapp_campaign_recipients")
+          .update({ sender_phone_number_id: sp.sender })
+          .eq("id", r.id);
+        if (fixS.error) throw new Error("Não foi possível fixar o número do destinatário.");
+      }
+    }
     const body = applyTemplate(
       (picked && rotation.length > 1 ? picked.body : camp.body_template) ?? "",
       pickedVars,
@@ -440,7 +492,8 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         }
       }
     } catch (e) {
-      if (num.provider === "cloud") {
+      if (rotatingSenders) availableSenders.delete(num.phoneNumberId);
+      if (num.provider === "cloud" && (!rotatingSenders || availableSenders.size === 0)) {
         // Never retry a rejected/uncertain delivery on another phone number.
         await supabaseAdmin
           .from("whatsapp_campaigns")
@@ -457,7 +510,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
         .eq("id", r.id);
       failedInc += 1;
       handled += 1;
-      if (num.provider === "cloud") break;
+      if (num.provider === "cloud" && (!rotatingSenders || availableSenders.size === 0)) break;
     }
   }
 
@@ -489,7 +542,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
 const CAMPAIGN_COLUMNS =
-  "id, owner_id, body_template, template_name, sender_phone_number_id, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, dispatch_lease_until, recent_contact_days, exclude_customers, exclude_open_deals, assignment_mode, template_rotation, rotation_mode";
+  "id, owner_id, body_template, template_name, sender_phone_number_id, template_language, content_variables_template, media_url, media_content_type, rate_per_minute, total, sent, failed, scheduled_at, workspace_id, send_interval_min_s, send_interval_max_s, next_send_at, dispatch_lease_until, recent_contact_days, exclude_customers, exclude_open_deals, assignment_mode, template_rotation, rotation_mode, sender_rotation, sender_rotation_mode";
 
 type PacedRun = { budgetMs: number; idle: boolean; hop: number };
 
