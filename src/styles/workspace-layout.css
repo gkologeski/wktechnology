@@ -251,3 +251,39 @@
 :where([data-workspace-layout="attio"]) [data-layout-part="record"] > header > .mt-2.border-t {
   border-top-color: transparent;
 }
+/* Mobile: stack the record header so the title is never compressed by the actions. */
+@media (max-width: 767px) {
+  :where([data-workspace-layout="attio"]) [data-layout-part="record"] > header > div:first-child {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  :where([data-workspace-layout="attio"])
+    [data-layout-part="record"]
+    > header
+    > div:first-child
+    > div:first-child {
+    width: 100%;
+    min-width: 0;
+  }
+  :where([data-workspace-layout="attio"])
+    [data-layout-part="record"]
+    > header
+    > div:first-child
+    > div:first-child
+    > div:last-child {
+    flex: 1;
+  }
+  :where([data-workspace-layout="attio"]) [data-layout-part="record"] > header h1 {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  :where([data-workspace-layout="attio"])
+    [data-layout-part="record"]
+    > header
+    > div:first-child
+    > div:last-child {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
