@@ -13403,13 +13403,13 @@
       "id": "workspace-layout-choice",
       "kind": "business",
       "files": {
-        "src/components/branding/branding-builder.tsx": "affe4388cc77943418d9e914b8d5f20249f418f7be0f2ed10f96d20f07da4906",
+        "src/components/branding/branding-builder.tsx": "c05dc1e8d886be6288be1ed0df50120fcf7ae4d5e5134442732d8b2ab3a31424",
         "src/components/branding/live-preview.tsx": "8e785ad8d9aee7e1c6701c6517f0015f37bfb46cd1c0538186ec6b1bf4783dcf",
-        "src/lib/branding.functions.ts": "efeeb30ea622f98b09b088791aa8aa542f02c7ab4ce4b4c9a5c9729b7f53d0c9",
+        "src/lib/branding.functions.ts": "24e5981ea363f97deae0268c0b282e4356039e3800cf2c95b6ecb6c236e8866f",
         "src/components/branding/layout-preview.tsx": "2af4fbab153819627b4c3e03e3857330dedf26876436ba2e76644161238b727b",
         "src/components/branding/layout-selector.tsx": "cf3683866ac95358ba6f51be87d10c51a17227dbc67f52397e7354b61f9feced"
       },
-      "rationale": "Workspace layout choice reuses the existing system.branding view/update gates. Save calls requireSharedPermission before the existing workspace-resolved user/RLS upsert; unknown layouts are rejected by Zod. Preview controls require view, actual save requires update and is disabled for read-only users. No migration, grant, role change, data action or change to identity. Classic is the default and remains reversible. Existing server getBranding retains authenticated user RLS reads and asset refresh unchanged.",
+      "rationale": "Workspace layout choice reuses the existing system.branding view/update gates. Save calls requireSharedPermission before the existing workspace-resolved user/RLS upsert; unknown layouts are rejected by Zod. Preview controls require view, actual save requires update and is disabled for read-only users. No migration, grant, role change, data action or change to identity. Classic is the default and remains reversible. Existing server getBranding retains authenticated user RLS reads and asset refresh unchanged. The editor resets on workspace changes and discards late loads; saves carry an expected-workspace id checked against the middleware-authorized workspace before the RLS upsert. The transport field is never persisted. Legacy callers keep the same active-workspace API.",
       "resources": [
         "system.branding"
       ],

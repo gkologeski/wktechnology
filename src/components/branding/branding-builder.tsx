@@ -1,3 +1,4 @@
+import { onWorkspaceChanged } from "@/lib/workspace-events";
 import { useSharedAction } from "@/lib/access-control/use-shared-action";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -57,11 +58,26 @@ export function BrandingBuilder() {
   const [selectedTarget, setSelectedTarget] = useState<PreviewTarget | null>(null);
   const [selectedArchetypeId, setSelectedArchetypeId] = useState<BrandArchetypeId | null>(null);
   const builderRef = useRef<HTMLDivElement>(null);
+  const loadedWorkspaceRef = useRef<string | null>(null);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
+    let disposed = false;
+    let sequence = 0;
+    const refresh = async () => {
+      const current = ++sequence;
+      loadedWorkspaceRef.current = null;
+      setWorkspaceId(null);
+      setLoading(true);
+      setState({ form: DEFAULT_FORM, theme: EMPTY_THEME });
+      setSaved({ form: DEFAULT_FORM, theme: EMPTY_THEME });
+      setSelectedArchetypeId(null);
+      setSelectedTarget(null);
       try {
         const r = await load({});
+        if (disposed || current !== sequence) return;
+        loadedWorkspaceRef.current = r.workspace_id;
+        setWorkspaceId(r.workspace_id);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const b = r.branding as any;
         if (b) {
@@ -85,10 +101,19 @@ export function BrandingBuilder() {
           setState(next);
           setSaved(next);
         }
+      } catch (error) {
+        if (!disposed && current === sequence) toast.error((error as Error).message);
       } finally {
-        setLoading(false);
+        if (!disposed && current === sequence) setLoading(false);
       }
-    })();
+    };
+    void refresh();
+    const off = onWorkspaceChanged(() => void refresh());
+    return () => {
+      disposed = true;
+      ++sequence;
+      off();
+    };
   }, [load]);
 
   const form = state.form;
@@ -117,10 +142,13 @@ export function BrandingBuilder() {
   );
 
   const submit = async () => {
+    if (!workspaceId || loadedWorkspaceRef.current !== workspaceId) return;
+    const submittedWorkspace = workspaceId;
     setBusy(true);
     try {
       const payload = {
         ...form,
+        expected_workspace_id: submittedWorkspace,
         brand_name: form.brand_name || null,
         logo_url: form.logo_url || null,
         favicon_url: form.favicon_url || null,
@@ -130,6 +158,7 @@ export function BrandingBuilder() {
         theme: sanitizeTheme(theme),
       };
       await save({ data: payload as never });
+      if (loadedWorkspaceRef.current !== submittedWorkspace) return;
       setSaved(state);
       toast.success("Marca salva. Recarregue para aplicar em toda a plataforma.");
     } catch (e) {
@@ -306,7 +335,7 @@ export function BrandingBuilder() {
           <Button variant="ghost" disabled={!dirty || busy || !canEdit} onClick={discard}>
             Descartar
           </Button>
-          <Button disabled={!dirty || busy || !canEdit} onClick={submit}>
+          <Button disabled={!dirty || busy || !canEdit || !workspaceId} onClick={submit}>
             {busy && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Salvar alterações
           </Button>

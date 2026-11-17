@@ -35,6 +35,8 @@ is_published: true
 
 A troca de layout preserva logotipo, nome, cores, fontes, densidade e configurações salvas. As abas Marca, Modelos e Tema continuam disponíveis. Aplicar um modelo de cores preserva a escolha de layout, mas altera os atributos de estilo indicados na prévia do modelo.
 
+Ao trocar de workspace, os rascunhos não salvos do White Label são descartados. Se o contexto mudar durante o salvamento, reabra o White Label antes de tentar novamente.
+
 O layout estrutural é único por workspace. As personalizações de cores dos módulos continuam valendo, sem substituir o layout do workspace. Workspaces sem escolha explícita continuam no Clássico.
 
 ## Resultado esperado

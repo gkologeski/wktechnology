@@ -43,7 +43,9 @@ vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth:
 vi.mock("@/lib/access-control/checked-mutation-client", () => ({
   checkedMutationClient: (client: unknown) => client,
 }));
-vi.mock("@/lib/active-workspace.server", () => ({ resolveActiveWorkspace: () => "workspace-a" }));
+vi.mock("@/lib/active-workspace.server", () => ({
+  resolveActiveWorkspace: () => "aaaaaaaa-0000-4000-8000-00000000000a",
+}));
 import { saveBranding } from "../branding.functions";
 void saveBranding;
 const row = {
@@ -54,19 +56,19 @@ const row = {
   },
 };
 beforeEach(() => vi.clearAllMocks());
-function invoke(error?: string) {
+function invoke(error?: string, input: unknown = row) {
   const rpc = vi
     .fn()
     .mockResolvedValue(
       error
         ? { data: null, error: { message: error } }
-        : { data: { workspace: "workspace-a" }, error: null },
+        : { data: { workspace: "aaaaaaaa-0000-4000-8000-00000000000a" }, error: null },
     );
   const upsert = vi.fn().mockResolvedValue({ error: null });
   const from = vi.fn().mockReturnValue({ upsert });
   const context = { supabase: { rpc, from }, userId: "user-a", user: { id: "user-a" } };
   const next = vi.fn(async ({ context: guarded }: { context: unknown }) =>
-    state.save!.handle({ context: guarded, data: state.save!.validate(row) }),
+    state.save!.handle({ context: guarded, data: state.save!.validate(input) }),
   );
   const result = state.permission!({ context, next: next as (input: unknown) => unknown });
   return { result, rpc, upsert, from, next };
@@ -81,7 +83,7 @@ describe("workspace layout save authorization", () => {
     });
     expect(call.from).toHaveBeenCalledWith("workspace_branding");
     expect(call.upsert).toHaveBeenCalledWith(
-      { owner_id: "user-a", workspace_id: "workspace-a", ...row },
+      { owner_id: "user-a", workspace_id: "aaaaaaaa-0000-4000-8000-00000000000a", ...row },
       { onConflict: "workspace_id" },
     );
   });
@@ -108,6 +110,22 @@ describe("workspace layout save authorization", () => {
     await expect(call.result).rejects.toThrow("Membro inativo");
     expect(call.upsert).not.toHaveBeenCalled();
     expect(call.next).not.toHaveBeenCalled();
+  });
+  it("rejects an editor draft loaded in another workspace", async () => {
+    const call = invoke(undefined, {
+      ...row,
+      expected_workspace_id: "aaaaaaaa-0000-4000-8000-00000000000b",
+    });
+    await expect(call.result).rejects.toThrow("O workspace mudou");
+    expect(call.upsert).not.toHaveBeenCalled();
+  });
+  it("does not persist the expected-workspace transport field", async () => {
+    const call = invoke(undefined, {
+      ...row,
+      expected_workspace_id: "aaaaaaaa-0000-4000-8000-00000000000a",
+    });
+    await expect(call.result).resolves.toEqual({ ok: true });
+    expect(call.upsert.mock.calls[0][0]).not.toHaveProperty("expected_workspace_id");
   });
   it("rejects arbitrary layouts and ignores a supplied workspace id", () => {
     expect(() => state.save!.validate({ theme: { layout: "custom-script" } })).toThrow();
