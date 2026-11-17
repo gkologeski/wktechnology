@@ -1,3 +1,5 @@
+import { useBranding } from "@/lib/branding";
+import { workspaceLayout } from "@/lib/branding/tokens";
 import { salesRouteResources, canViewSalesRoute } from "@/lib/access-control/sales-route-map";
 import { canSeeHrMenu } from "@/lib/access-control/hr-menu-access";
 import { useEffect, useMemo, useState } from "react";
@@ -42,6 +44,10 @@ import { useActiveModule } from "@/lib/modules/active-module";
 import { useActiveModuleDefinition } from "@/lib/modules/active-module-definition";
 
 export function AppSidebar() {
+  const branding = useBranding();
+  const essential = workspaceLayout(branding?.theme) === "attio";
+  const lightLogo = branding?.theme?.assets?.logo_light || branding?.logo_url;
+  const darkLogo = branding?.theme?.assets?.logo_dark || lightLogo;
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { isAdmin, isManager } = useMyRole();
   const {
@@ -144,21 +150,38 @@ export function AppSidebar() {
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="px-3 py-4 gap-3">
         <Link to={shellBrand.defaultRoute} className="flex items-center gap-2.5">
-          <div
-            className="h-9 w-9 shrink-0 rounded-xl text-white grid place-items-center text-sm font-bold shadow-md"
-            style={{
-              backgroundColor: shellBrand.defaultColor,
-              boxShadow: `0 4px 12px ${shellBrand.defaultColor}33`,
-            }}
-          >
-            {shellBrand.productName.slice(0, 2).toUpperCase()}
-          </div>
+          {essential && (lightLogo || darkLogo) ? (
+            <span className="h-9 w-9 shrink-0">
+              <img
+                src={lightLogo || darkLogo || undefined}
+                alt={branding?.brand_name || "Marca do workspace"}
+                className="h-9 w-9 object-contain dark:hidden"
+              />
+              <img
+                src={darkLogo || lightLogo || undefined}
+                alt={branding?.brand_name || "Marca do workspace"}
+                className="hidden h-9 w-9 object-contain dark:block"
+              />
+            </span>
+          ) : (
+            <div
+              className="h-9 w-9 shrink-0 rounded-xl text-white grid place-items-center text-sm font-bold shadow-md"
+              style={{
+                backgroundColor: shellBrand.defaultColor,
+                boxShadow: `0 4px 12px ${shellBrand.defaultColor}33`,
+              }}
+            >
+              {shellBrand.productName.slice(0, 2).toUpperCase()}
+            </div>
+          )}
           <div className="group-data-[collapsible=icon]:hidden min-w-0">
             <h2 className="text-base font-bold tracking-tight leading-tight truncate">
-              {shellBrand.productName} {shellBrand.name}
+              {essential
+                ? branding?.brand_name || shellBrand.name
+                : `${shellBrand.productName} ${shellBrand.name}`}
             </h2>
             <p className="text-[11px] text-muted-foreground leading-tight truncate">
-              {shellBrand.shortDescription}
+              {essential ? shellBrand.productName : shellBrand.shortDescription}
             </p>
           </div>
         </Link>

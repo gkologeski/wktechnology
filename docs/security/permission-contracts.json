@@ -8783,7 +8783,7 @@
         "techservice.kb.manage.workspace",
         "techservice.kb.update.workspace"
       ],
-      "rationale": "Help and Training area (/ajuda, header '?' button, sidebar link). Global platform content without workspace_id. Read: active member of the active workspace, published internal article, module allowed by the same rule as the menu (license ∩ effective keys, workspace admin unrestricted, core = any active member, platform = platform admin) and optional min_permission effective key (deny wins); enforced in every server function by loadHelpAccessInput + canReadHelpModule/filterReadableArticles and in the database by help_can_read RLS. Edit: platform admin or active member with existing knowledge base keys (help_can_edit RLS); no edit UI in this phase. Feedback and route misses are own-row only. No new key, no grant to roles. Official fixed-catalogue release is editor-authorized before dynamic import; user client/RLS only, no arbitrary input or admin client. Strictly higher versions replace existing content; repeat preserves applied versions. No schema/grant change.",
+      "rationale": "Help and Training area (/ajuda, header '?' button, sidebar link). Global platform content without workspace_id. Read: active member of the active workspace, published internal article, module allowed by the same rule as the menu (license ∩ effective keys, workspace admin unrestricted, core = any active member, platform = platform admin) and optional min_permission effective key (deny wins); enforced in every server function by loadHelpAccessInput + canReadHelpModule/filterReadableArticles and in the database by help_can_read RLS. Edit: platform admin or active member with existing knowledge base keys (help_can_edit RLS); no edit UI in this phase. Feedback and route misses are own-row only. No new key, no grant to roles. Official fixed-catalogue release is editor-authorized before dynamic import; user client/RLS only, no arbitrary input or admin client. Strictly higher versions replace existing content; repeat preserves applied versions. No schema/grant change. Layout Essencial: workspace light/dark logo and brand name are read from the existing member/RLS BrandingContext; menu permission filters and route destinations unchanged.",
       "controls": [
         {
           "file": "src/lib/help/help-access.server.ts",
@@ -8893,7 +8893,7 @@
       "files": {
         "drizzle/migrations/0306_help_center.sql": "cca26ff8086c7ed3a1cc551edc2d837565381dd318a2a07c534e2ad6da8034dd",
         "drizzle/migrations/0307_help_seed_crm.sql": "04af96f7572e80fef5c5776afab4c0b0407c0ceb6841f9aefce9f31d04b4f9df",
-        "src/components/app-sidebar.tsx": "f96c98a0f167785dba906197d9d3f52bac4f9563b7243880c375b895745f8967",
+        "src/components/app-sidebar.tsx": "0fcd6690f5e8991e42d83f6681244e62b83544fbe22e6854e69c360218902c88",
         "src/components/help/help-button.tsx": "2b268ebe99b3235468f0049cb9e1d33fe2339b72557ba964e10a4c524318462e",
         "src/lib/help/help-access.server.ts": "79d713e8056a7cb37e13076ff21c637ae056da1f913cdc7e7cee063ae24bd88e",
         "src/lib/help/help-access.ts": "1ae9593cb60c3aac19b401fdf0a5b0f7334c27e1f63ab7dfceb21ee272bfe5dd",
@@ -13493,7 +13493,7 @@
       "files": {
         "src/lib/branding.tsx": "8c40718a46bf59eb2e3bffede7dfabdcab68533d092e9a4c5b81f78dc19c63c3"
       },
-      "rationale": "Authenticated workspace appearance only. Existing user/RLS reads remain filtered by the resolved active workspace. No unscoped cache or pre-auth appearance is applied; logout and workspace change clear structure, palette and module state. Only workspace theme selects layout, module tokens cannot replace structure. No new data or write action.",
+      "rationale": "Authenticated workspace appearance only. Existing user/RLS reads remain filtered by the resolved active workspace. No unscoped cache or pre-auth appearance is applied; logout and workspace change clear structure, palette and module state. Only workspace theme selects layout, module tokens cannot replace structure. No new data or write action. Opt-in sidebar header reads the existing BrandingContext for workspace name and light/dark logo; existing menu permission filters and route destinations remain unchanged.",
       "resources": [
         "system.branding"
       ],
