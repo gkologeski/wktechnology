@@ -182,3 +182,72 @@
 :where([data-workspace-layout="attio"]) [data-layout-part="record-associations"] h3 {
   font-weight: 600;
 }
+/* Shared Dashboard metrics/charts and filter bars have their own neutral shells.
+   Flatten only those shells; interactive fields, alerts and selected states remain. */
+:where([data-workspace-layout="attio"])
+  .authenticated-content
+  :is(div, section).border.border-border-subtle.bg-surface-2:not([role="button"]):not(
+    [role="dialog"]
+  ):not([aria-selected]):not([data-state]),
+:where([data-workspace-layout="attio"])
+  .authenticated-content
+  div.border.border-product-divider.bg-product-toolbar:not([role]) {
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+/* Preserve every stage/action and its disabled state, with compact chip controls. */
+:where([data-workspace-layout="attio"])
+  [data-layout-part="record"]
+  > header
+  .items-stretch.bg-card {
+  width: max-content;
+  max-width: 100%;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+:where([data-workspace-layout="attio"])
+  [data-layout-part="record"]
+  > header
+  .items-stretch.bg-card
+  > button {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  border: 0;
+  border-radius: var(--layout-control-radius);
+  background: transparent;
+  color: var(--muted-foreground);
+}
+:where([data-workspace-layout="attio"])
+  [data-layout-part="record"]
+  > header
+  .items-stretch.bg-card
+  > button.bg-slate-700 {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+:where([data-workspace-layout="attio"])
+  [data-layout-part="record"]
+  > header
+  .items-stretch.bg-card
+  > button:enabled:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+:where([data-workspace-layout="attio"])
+  [data-layout-part="record"]
+  > header
+  .items-stretch.bg-card
+  > button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+:where([data-workspace-layout="attio"]) [data-layout-part="record"] > header > .mt-2.border-t {
+  border-top-color: transparent;
+}
