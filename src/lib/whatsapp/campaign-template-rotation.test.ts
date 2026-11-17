@@ -71,3 +71,21 @@ _d("variáveis por modelo do rodízio", () => {
     ).toEqual(["b {{2}}"]);
   });
 });
+
+import { sendersForTemplate as _sft, buildRotation as _br } from "./campaign-template-rotation";
+describe("MODELOS-POR-NUMERO", () => {
+  it("modelo ligado a um número só sai por esse número", () => {
+    expect(_sft({ senders: ["222222"] }, ["111111", "222222", "333333"])).toEqual(["222222"]);
+  });
+  it("modelo sem números (campanha antiga) usa todos", () => {
+    expect(_sft({}, ["111111", "222222"])).toEqual(["111111", "222222"]);
+  });
+  it("buildRotation preserva os números do principal e dos extras", () => {
+    const r = _br({ name: "a", language: "pt_BR", body: null }, [
+      { name: "a", weight: 1, senders: ["111111"] },
+      { name: "b", weight: 1, senders: ["222222", "x"] },
+    ]);
+    expect(r[0].senders).toEqual(["111111"]);
+    expect(r[1].senders).toEqual(["222222"]);
+  });
+});

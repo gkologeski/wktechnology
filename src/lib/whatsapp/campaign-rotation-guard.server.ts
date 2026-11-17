@@ -4,26 +4,42 @@ import { buildAudience, fieldsForBase } from "./campaign-audience";
 import { countTemplateVariables } from "./meeting-reminders";
 import { loadApprovedTemplates } from "./templates.server";
 
-type RotationItem = { name: string; language?: string | null; variableCount: number };
+type RotationItem = {
+  name: string;
+  language?: string | null;
+  variableCount: number;
+  senders?: string[];
+};
 
-/** Todo modelo do rodízio precisa estar APROVADO e com o nº de variáveis correto. */
+/**
+ * Todo modelo do rodízio precisa estar APROVADO e com o nº de variáveis correto
+ * em cada número a que está ligado (MODELOS-POR-NUMERO); sem números, no principal.
+ */
 export async function assertRotationApproved(
   supabase: any,
   workspaceId: string,
   rotation: RotationItem[] | undefined,
   phoneNumberId: string | null | undefined,
 ): Promise<void> {
-  if (!rotation || rotation.length <= 1) return;
-  const approved = await loadApprovedTemplates(supabase, workspaceId, {
-    phoneNumberId: phoneNumberId ?? null,
-  });
+  if (!rotation || rotation.length === 0) return;
+  if (rotation.length <= 1 && !rotation[0]?.senders?.length) return;
+  const cache = new Map<string, Awaited<ReturnType<typeof loadApprovedTemplates>>>();
+  const load = async (id: string | null) => {
+    const k = id ?? "";
+    if (!cache.has(k))
+      cache.set(k, await loadApprovedTemplates(supabase, workspaceId, { phoneNumberId: id }));
+    return cache.get(k)!;
+  };
   for (const t of rotation) {
-    const hit = approved.find(
-      (a) => a.name === t.name && (!t.language || a.language === t.language),
-    );
-    if (!hit) throw new Error(`O modelo "${t.name}" não está aprovado na Meta para este número.`);
-    if (countTemplateVariables(hit.components) !== t.variableCount)
-      throw new Error(`O modelo "${t.name}" mudou na Meta. Atualize os modelos e salve novamente.`);
+    const nums = t.senders?.length ? t.senders : [phoneNumberId ?? null];
+    for (const id of nums) {
+      const hit = (await load(id)).find(
+        (a) => a.name === t.name && (!t.language || a.language === t.language),
+      );
+      if (!hit) throw new Error(`O modelo "${t.name}" não está aprovado na Meta para este número.`);
+      if (countTemplateVariables(hit.components) !== t.variableCount)
+        throw new Error(`O modelo "${t.name}" mudou na Meta. Atualize os modelos e salve novamente.`);
+    }
   }
 }
 
@@ -92,19 +108,26 @@ export async function assertSendersApproved(
   workspaceId: string,
   primary: string | null | undefined,
   extras: string[] | undefined,
-  templates: { name: string; language?: string | null }[],
+  templates: { name: string; language?: string | null; senders?: string[] }[],
 ): Promise<void> {
   if (!extras || extras.length === 0) return;
   if (!primary) throw new Error("Escolha um número oficial principal antes de adicionar outros.");
   if (templates.length === 0)
     throw new Error("Rodízio de números exige modelo aprovado pela Meta.");
   const { resolveWaNumber } = await import("./meta-channel.server");
+  const chosen = [primary, ...extras];
+  // MODELOS-POR-NUMERO: modelo ligado a números só pode usar números do rodízio.
+  for (const t of templates) {
+    if (t.senders?.length && !t.senders.some((s) => chosen.includes(s)))
+      throw new Error(`O modelo "${t.name}" não está ligado a nenhum número do rodízio.`);
+  }
   for (const id of extras) {
     const num = await resolveWaNumber(workspaceId, id).catch(() => null);
     if (!num || num.phoneNumberId !== id)
       throw new Error(`O número ${id} não está ativo neste workspace.`);
     const approved = await loadApprovedTemplates(supabase, workspaceId, { phoneNumberId: id });
     for (const t of templates) {
+      if (t.senders?.length) continue; // validado por par em assertRotationApproved
       const hit = approved.find(
         (a) => a.name === t.name && (!t.language || a.language === t.language),
       );

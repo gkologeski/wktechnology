@@ -33,6 +33,10 @@ const CreateInput = z.object({
         body: z.string().max(1600).nullable().optional(),
         variableCount: z.number().int().min(0).max(20),
         weight: z.number().min(1).max(100),
+        senders: z
+          .array(z.string().regex(/^\d{5,30}$/))
+          .max(5)
+          .optional(),
       }),
     )
     .max(5)
@@ -547,6 +551,10 @@ const UpdateInput = z.object({
         body: z.string().max(1600).nullable().optional(),
         variableCount: z.number().int().min(0).max(20),
         weight: z.number().min(1).max(100),
+        senders: z
+          .array(z.string().regex(/^\d{5,30}$/))
+          .max(5)
+          .optional(),
       }),
     )
     .max(5)

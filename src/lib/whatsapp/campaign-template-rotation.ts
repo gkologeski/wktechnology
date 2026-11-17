@@ -13,7 +13,25 @@ export type RotationTemplate = {
   body: string | null;
   variableCount: number;
   weight: number;
+  /** MODELOS-POR-NUMERO: números em que o modelo está aprovado (vazio = todos). */
+  senders?: string[];
 };
+
+function cleanSenders(v: unknown): string[] | undefined {
+  if (!Array.isArray(v)) return undefined;
+  const out = v.filter((x): x is string => typeof x === "string" && /^\d{5,30}$/.test(x));
+  return out.length ? [...new Set(out)] : undefined;
+}
+
+/** Números que podem enviar o modelo: os dele dentro do rodízio; sem dono, todos. */
+export function sendersForTemplate(
+  picked: Pick<RotationTemplate, "senders"> | null | undefined,
+  list: string[],
+): string[] {
+  if (!picked?.senders?.length) return list;
+  const own = list.filter((s) => picked.senders!.includes(s));
+  return own.length ? own : list;
+}
 
 /** Junta o principal com os adicionais, sem duplicar nomes, limitado a 5. */
 export function buildRotation(
@@ -38,6 +56,7 @@ export function buildRotation(
       body: t?.body ?? null,
       variableCount: Math.max(0, Math.floor(Number(t?.variableCount) || 0)),
       weight: Number.isFinite(w) && w > 0 ? w : 1,
+      ...(cleanSenders(t?.senders) ? { senders: cleanSenders(t?.senders) } : {}),
     });
   };
   if (primary.name) push({ ...primary, name: primary.name });
@@ -48,6 +67,8 @@ export function buildRotation(
     : undefined;
   if (out[0] && primaryExtra && Number(primaryExtra.weight) > 0)
     out[0].weight = Number(primaryExtra.weight);
+  if (out[0] && primaryExtra && cleanSenders(primaryExtra.senders))
+    out[0].senders = cleanSenders(primaryExtra.senders);
   return out;
 }
 

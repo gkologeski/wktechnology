@@ -27,6 +27,7 @@ import { z } from "zod";
 import {
   buildRotation,
   pickTemplate,
+  sendersForTemplate,
   variablesForTemplate,
   positionalVariables,
 } from "@/lib/whatsapp/campaign-template-rotation";
@@ -311,7 +312,7 @@ async function processCampaign(camp: Campaign, batchOverride?: number) {
     let num: WaNumber = primaryNum;
     if (rotatingSenders) {
       const sp = pickSender(
-        senderList,
+        sendersForTemplate(picked, senderList),
         availableSenders,
         camp.sender_rotation_mode === "random" ? "random" : "sequential",
         (camp.sent ?? 0) + (camp.failed ?? 0) + sentInc + failedInc,

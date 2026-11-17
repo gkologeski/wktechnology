@@ -4,7 +4,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSdrPlaybooks } from "@/hooks/use-default-sdr-agent";
 import { agentOptionLabel, sortDefaultFirst } from "@/lib/prospecting/sdr/default-agent";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Megaphone, Play, Pause, X, Plus, Pencil, Copy, Trash2, Loader2 } from "lucide-react";
 import {
@@ -112,7 +112,39 @@ function CampaignsPage() {
     queryFn: () => tmplFn({ data: { phoneNumberId: sender === "lovable" ? null : sender } }),
     staleTime: 60_000,
   });
-  const templates = catalogQ.data?.items ?? [];
+  // MODELOS-POR-NUMERO: catálogo de cada número extra do rodízio, unido ao do principal.
+  const extraCatalogs = useQueries({
+    queries: extraSenders
+      .filter((id) => id !== senderReal)
+      .map((id) => ({
+        queryKey: ["wa", "templates", "campaigns", id],
+        queryFn: () => tmplFn({ data: { phoneNumberId: id } }),
+        staleTime: 60_000,
+      })),
+  });
+  const extraIds = extraSenders.filter((id) => id !== senderReal);
+  const senderLabel = (id: string) =>
+    senders.data?.find((x) => x.phone_number_id === id)?.display_phone_number ?? id;
+  type CatalogItem = NonNullable<typeof catalogQ.data>["items"][number] & { senders: string[] };
+  const templates: CatalogItem[] = (() => {
+    const map = new Map<string, CatalogItem>();
+    const add = (items: NonNullable<typeof catalogQ.data>["items"], id: string) => {
+      for (const t of items) {
+        const cur = map.get(t.name);
+        if (!cur) map.set(t.name, { ...t, senders: t.approved && id ? [id] : [] });
+        else if (t.approved && id && !cur.senders.includes(id)) {
+          cur.senders.push(id);
+          if (!cur.approved) map.set(t.name, { ...t, senders: cur.senders });
+        }
+      }
+    };
+    add(catalogQ.data?.items ?? [], senderReal);
+    extraCatalogs.forEach((q, i) => add(q.data?.items ?? [], extraIds[i]));
+    return [...map.values()];
+  })();
+  const rotatingNumbers = extraIds.length > 0;
+  const numbersOf = (t: { senders: string[] }) =>
+    rotatingNumbers && t.senders.length ? ` · ${t.senders.map(senderLabel).join(", ")}` : "";
   // Erro, catálogo não sincronizado e catálogo vazio são estados distintos.
   const catalogState = composerPolicy({
     channelReady: catalogQ.data ? catalogQ.data.channelReady : catalogQ.isError ? false : null,
@@ -189,6 +221,7 @@ function CampaignsPage() {
           body: selectedTpl?.body ?? null,
           variableCount: selectedTpl?.variableCount ?? 0,
           weight: primaryWeight,
+          ...(rotatingNumbers ? { senders: selectedTpl?.senders ?? [] } : {}),
         },
         ...extraSelected.map((e) => ({
           name: e.name,
@@ -196,6 +229,7 @@ function CampaignsPage() {
           body: e.tpl?.body ?? null,
           variableCount: e.tpl?.variableCount ?? 0,
           weight: e.weight,
+          ...(rotatingNumbers ? { senders: e.tpl?.senders ?? [] } : {}),
         })),
       ]
     : [];
@@ -703,6 +737,7 @@ function CampaignsPage() {
                       {templates.map((t) => (
                         <SelectItem key={t.name} value={t.name}>
                           {t.name} {t.approved ? `· ${t.language}` : `· ${t.status}`}
+                          {numbersOf(t)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -731,7 +766,7 @@ function CampaignsPage() {
                         <p className="text-sm font-medium">Rodízio de modelos</p>
                         <p className="text-xs text-muted-foreground">
                           Adicione até 4 modelos aprovados. Cada contato recebe sempre o mesmo
-                          modelo.
+                          modelo, enviado por um dos números em que ele está aprovado.
                         </p>
                       </div>
                       <Select
@@ -761,6 +796,11 @@ function CampaignsPage() {
                             {t.name}
                             {t.primary && (
                               <span className="text-xs text-muted-foreground"> · principal</span>
+                            )}
+                            {rotatingNumbers && (
+                              <span className="text-xs text-muted-foreground">
+                                {numbersOf(templates.find((x) => x.name === t.name) ?? { senders: [] })}
+                              </span>
                             )}
                           </span>
                           {rotationMode === "weighted" && (
@@ -817,6 +857,7 @@ function CampaignsPage() {
                             .map((t) => (
                               <SelectItem key={t.name} value={t.name}>
                                 {t.name} · {t.language} · {t.variableCount} variáveis
+                                {numbersOf(t)}
                               </SelectItem>
                             ))}
                         </SelectContent>
