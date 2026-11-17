@@ -552,8 +552,8 @@ function CampaignsPage() {
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    Cada contato recebe sempre pelo mesmo número. Os números só podem ser alterados
-                    enquanto a campanha está em rascunho.
+                    Cada contato recebe sempre pelo mesmo número. O número principal só muda em
+                    rascunho; o rodízio também pode ser ajustado com a campanha pausada.
                   </p>
                   {sender !== "lovable" && (
                     <div className="mt-3 space-y-2 rounded-md border border-border p-3">
@@ -567,7 +567,7 @@ function CampaignsPage() {
                         </div>
                         <Select
                           value={senderMode}
-                          disabled={isEditing && editStatus !== "draft"}
+                          disabled={isEditing && editStatus !== "draft" && editStatus !== "paused"}
                           onValueChange={(v) => setSenderMode(v as "sequential" | "random")}
                         >
                           <SelectTrigger className="w-48" aria-label="Modo de rodízio de números">
@@ -601,7 +601,9 @@ function CampaignsPage() {
                                   size="icon"
                                   variant="ghost"
                                   className="h-8 w-8"
-                                  disabled={isEditing && editStatus !== "draft"}
+                                  disabled={
+                                    isEditing && editStatus !== "draft" && editStatus !== "paused"
+                                  }
                                   aria-label={`Remover número ${n?.display_phone_number ?? id}`}
                                   onClick={() =>
                                     setExtraSenders((xs) => xs.filter((x) => x !== id))
@@ -623,7 +625,9 @@ function CampaignsPage() {
                         ) && (
                           <Select
                             value=""
-                            disabled={isEditing && editStatus !== "draft"}
+                            disabled={
+                              isEditing && editStatus !== "draft" && editStatus !== "paused"
+                            }
                             onValueChange={(v) => setExtraSenders((xs) => [...xs, v])}
                           >
                             <SelectTrigger aria-label="Adicionar número ao rodízio">
