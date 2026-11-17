@@ -1,6 +1,8 @@
 /** Regras fixas de conversa aplicadas a toda ligação da IA de voz (VOZ-PRIMEIRO-NOME). */
 export const IDLE_QUESTION = "Você ainda está aí?";
 export const IDLE_TIMEOUT_SECONDS = 10;
+/** E-mail para candidatos a emprego (VAGA-CURRICULO). */
+export const CAREERS_EMAIL = "rh@wktechnology.com.br";
 
 export function firstNameOf(firstName?: string | null, fullName?: string | null): string {
   const f = (firstName ?? "").trim();
@@ -41,7 +43,10 @@ export const VOICE_CONVERSATION_RULES = `
 - Só siga o roteiro depois de ouvir uma fala de pessoa (cumprimento, "alô", "quem fala?", resposta à sua pergunta).
 - URA / menu automático (ex.: ${AUTOMATED_PHRASES.ura.join(", ")}): NÃO fale com a URA; chame imediatamente a função de encerrar a ligação, sem dizer nada.
 - Caixa postal / gravação (ex.: ${AUTOMATED_PHRASES.voicemail.join(", ")}), mesmo que a frase chegue pela metade: isso NÃO é o cliente. Não responda, não deixe recado; encerre imediatamente.
-- Na dúvida, pergunte uma única vez "Alô, aqui é da WK Technology, com quem eu falo?". Se vier outra gravação ou menu, encerre.`;
+- Na dúvida, pergunte uma única vez "Alô, aqui é da WK Technology, com quem eu falo?". Se vier outra gravação ou menu, encerre.
+
+## Candidatos a emprego (VAGA-CURRICULO)
+- Se a pessoa disser que procura emprego, vaga ou quer trabalhar na WK Technology (área de TI): agradeça o interesse em uma frase e oriente a enviar o currículo para ${CAREERS_EMAIL}, soletrando com calma: "rh, arroba, wktechnology, ponto com, ponto br". Não ofereça serviços, não qualifique como cliente e não prometa vaga nem retorno. Depois despeça-se e encerre.`;
 
 export const voiceIdleMessagePlan = {
   idleMessages: [IDLE_QUESTION],
