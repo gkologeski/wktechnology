@@ -8893,7 +8893,7 @@
       "files": {
         "drizzle/migrations/0306_help_center.sql": "cca26ff8086c7ed3a1cc551edc2d837565381dd318a2a07c534e2ad6da8034dd",
         "drizzle/migrations/0307_help_seed_crm.sql": "04af96f7572e80fef5c5776afab4c0b0407c0ceb6841f9aefce9f31d04b4f9df",
-        "src/components/app-sidebar.tsx": "0fcd6690f5e8991e42d83f6681244e62b83544fbe22e6854e69c360218902c88",
+        "src/components/app-sidebar.tsx": "e671c20c771d5ec9d1d176fffbf0c785126e51c7eb1e23394ddea8a7e7a4b298",
         "src/components/help/help-button.tsx": "2b268ebe99b3235468f0049cb9e1d33fe2339b72557ba964e10a4c524318462e",
         "src/lib/help/help-access.server.ts": "79d713e8056a7cb37e13076ff21c637ae056da1f913cdc7e7cee063ae24bd88e",
         "src/lib/help/help-access.ts": "1ae9593cb60c3aac19b401fdf0a5b0f7334c27e1f63ab7dfceb21ee272bfe5dd",

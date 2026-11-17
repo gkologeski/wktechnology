@@ -216,7 +216,10 @@ export function AppSidebar() {
                 <h3 className="px-2 mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-data-[collapsible=icon]:hidden">
                   {group.label}
                 </h3>
-                <div className="rounded-2xl border border-border bg-card p-1.5 shadow-sm group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:shadow-none group-data-[collapsible=icon]:p-0">
+                <div
+                  data-layout-part="sidebar-section"
+                  className="rounded-2xl border border-border bg-card p-1.5 shadow-sm group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:shadow-none group-data-[collapsible=icon]:p-0"
+                >
                   <SidebarMenu className="gap-0.5">
                     {group.items.map((it) => {
                       const hasChildren = !!(it.children && it.children.length > 0);

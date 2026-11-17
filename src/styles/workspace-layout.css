@@ -23,7 +23,7 @@
   background: color-mix(in oklab, var(--sidebar) 55%, var(--card));
   border-right: 1px solid var(--border-subtle);
 }
-:where([data-workspace-layout="attio"]) [data-sidebar="group-content"] > .rounded-2xl {
+:where([data-workspace-layout="attio"]) [data-layout-part="sidebar-section"] {
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -166,4 +166,13 @@
 }
 :where([data-workspace-layout="attio"])[data-density="compact"] [data-slot="table-cell"] {
   padding-block: 0.375rem;
+}
+
+:where([data-workspace-layout="attio"]) [data-layout-part="record-properties"] label {
+  text-transform: none;
+  letter-spacing: normal;
+  font-weight: 500;
+}
+:where([data-workspace-layout="attio"]) [data-layout-part="record-associations"] h3 {
+  font-weight: 600;
 }
