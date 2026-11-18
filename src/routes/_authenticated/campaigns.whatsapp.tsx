@@ -868,7 +868,7 @@ function CampaignsPage() {
                           <div>
                             <p className="text-sm font-medium">Rodízio de modelos</p>
                             <p className="text-xs text-muted-foreground">
-                              Adicione até 4 modelos aprovados. Cada contato recebe sempre o mesmo
+                              Adicione os modelos aprovados que quiser. Cada contato recebe sempre o mesmo
                               modelo, enviado por um dos números em que ele está aprovado.
                             </p>
                           </div>
@@ -964,8 +964,7 @@ function CampaignsPage() {
                               pick.name === templateName ||
                               extraSelected.some((e) => e.name === pick.name);
                             if (!inRotation) {
-                              if (extraSelected.length >= 4) return;
-                              setExtraTpls((xs) => [...xs, { name: pick.name, weight: 1 }]);
+                                                            setExtraTpls((xs) => [...xs, { name: pick.name, weight: 1 }]);
                               setTplSenders((m) => ({ ...m, [pick.name]: [pick.senderId] }));
                             } else {
                               setTplSenders((m) => {
@@ -993,7 +992,7 @@ function CampaignsPage() {
                                 const inRot =
                                   t.name === templateName ||
                                   extraSelected.some((e) => e.name === t.name);
-                                if (!inRot) return extraSelected.length < 4;
+                                if (!inRot) return true;
                                 const all = templates.find((x) => x.name === t.name)?.senders ?? [];
                                 return !chosenSenders(t.name, all).includes(g.senderId);
                               });

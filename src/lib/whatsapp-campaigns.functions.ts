@@ -4,6 +4,7 @@ import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { createServerFn } from "@tanstack/react-start";
 import { AssignmentInput } from "@/lib/whatsapp/campaign-assignment";
 import { z } from "zod";
+import { MAX_ROTATION_TEMPLATES } from "@/lib/whatsapp/campaign-template-rotation";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { campaignIntervalColumns } from "@/lib/whatsapp/campaign-pacing";
 
@@ -39,7 +40,7 @@ const CreateInput = z.object({
           .optional(),
       }),
     )
-    .max(5)
+    .max(MAX_ROTATION_TEMPLATES)
     .optional(),
   rotation_mode: z.enum(["sequential", "weighted"]).optional(),
   sender_rotation: z
@@ -557,7 +558,7 @@ const UpdateInput = z.object({
           .optional(),
       }),
     )
-    .max(5)
+    .max(MAX_ROTATION_TEMPLATES)
     .optional(),
   rotation_mode: z.enum(["sequential", "weighted"]).optional(),
   sender_rotation: z

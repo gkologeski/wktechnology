@@ -32,12 +32,13 @@ describe("rodízio de modelos", () => {
     expect(pickTemplate(w, "weighted", 0, 0.79)?.name).toBe("b");
     expect(pickTemplate(w, "weighted", 0, 0.81)?.name).toBe("c");
   });
-  it("limita a 5 modelos e não duplica", () => {
+  it("aceita mais de 5 modelos e não duplica", () => {
+    const names = ["a", "b", "c", "d", "e", "f", "g", "h"];
     const many = buildRotation(
       p,
-      ["a", "b", "c", "d", "e", "f"].map((name) => ({ name })),
+      [...names, "a"].map((name) => ({ name })),
     );
-    expect(many.map((t) => t.name)).toEqual(["a", "b", "c", "d", "e"]);
+    expect(many.map((t) => t.name)).toEqual(names);
   });
   it("exige mapear o maior número de variáveis", () => {
     expect(maxVariableCount(list)).toBe(2);

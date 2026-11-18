@@ -3,7 +3,7 @@
  * Regra pura: o modelo principal da campanha + até 4 adicionais.
  * O modelo escolhido é fixado no destinatário no primeiro envio.
  */
-export const MAX_ROTATION_TEMPLATES = 5;
+export const MAX_ROTATION_TEMPLATES = 100;
 
 export type RotationMode = "sequential" | "weighted";
 

@@ -8,7 +8,7 @@ route_pattern: /campaigns/whatsapp
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 310
-version: 9
+version: 10
 is_published: true
 ---
 # Criar uma campanha de WhatsApp
@@ -21,7 +21,7 @@ is_published: true
 A campanha é montada em 5 etapas, mostradas no topo: "Números", "Mensagem", "Público", "Atendimento" e "Ritmo e revisão". Use "Continuar" e "Voltar", ou clique numa etapa para ir direto a ela.
 1. Clique em "Nova campanha".
 2. Etapa "Números": preencha "Nome da campanha" e escolha o remetente. Com número oficial, use "Adicionar número" em "Rodízio de números" (até 4 números extras) e escolha "Intercalar em sequência" ou "Sortear". Em número oficial, preencha "Origem da autorização dos destinatários".
-3. Etapa "Mensagem": em "Template", os modelos aparecem separados por número, no formato "6137-0317 › nome_do_modelo". Um modelo com o mesmo nome em dois números aparece duas vezes, uma em cada número. Para rodízio, use "Adicionar modelo ao rodízio" (até 4 modelos extras); escolher o mesmo modelo em outro número faz ele também sair por esse número. Escolha "Sequencial (A, B, C…)" ou "Aleatório com peso".
+3. Etapa "Mensagem": em "Template", os modelos aparecem separados por número, no formato "6137-0317 › nome_do_modelo". Um modelo com o mesmo nome em dois números aparece duas vezes, uma em cada número. Para rodízio, use "Adicionar modelo ao rodízio"; escolher o mesmo modelo em outro número faz ele também sair por esse número. Escolha "Sequencial (A, B, C…)" ou "Aleatório com peso".
 4. Etapa "Público": defina o público e, em "Variáveis do modelo", o campo de cada variável de cada modelo.
 5. Etapa "Atendimento": para ativar o SDR, escolha um playbook (com número próprio, o agente vem travado pelo canal de atendimento). Escolha a distribuição: "Central de Distribuição (padrão)", "Membro específico" (um membro), "Dividir entre membros da equipe" (ao menos dois) ou "Desatribuídas".
 6. Etapa "Ritmo e revisão": ajuste velocidade e intervalos, confira o resumo (use "Editar" para voltar a uma etapa) e clique em "Criar rascunho".
@@ -39,7 +39,7 @@ Ao editar uma campanha pausada, a tela abre direto em "Ritmo e revisão"; "Salva
 - Rodízio de números: até 5 números oficiais; cada contato recebe sempre pelo mesmo número (respostas e Lia seguem nele). As listas "Template" e "Rodízio de modelos" mostram os modelos aprovados de todos os números escolhidos, com os números em que cada um está aprovado; o contato recebe o modelo por um desses números. Se um número cair durante o disparo, os contatos novos seguem pelos outros; quem já estava preso a ele aguarda, sem trocar de número.
 - SDR só com template aprovado.
 - O agente segue o canal de atendimento do número remetente principal; número sem agente para campanhas só aceita SDR desligado.
-- Rodízio: até 5 modelos aprovados; cada contato recebe sempre o mesmo modelo; cada modelo tem as próprias variáveis, e só modelos aprovados na Meta para o número podem ser salvos. Em campanha pausada, ao salvar, as variáveis dos contatos ainda pendentes são atualizadas e as escolhas ficam salvas para a próxima edição, sem trocar o público.
+- Rodízio: quantos modelos aprovados quiser; cada contato recebe sempre o mesmo modelo; cada modelo tem as próprias variáveis, e só modelos aprovados na Meta para o número podem ser salvos. Em campanha pausada, ao salvar, as variáveis dos contatos ainda pendentes são atualizadas e as escolhas ficam salvas para a próxima edição, sem trocar o público.
 - Disparo pode atrasar cerca de 1 minuto além do intervalo sorteado.
 
 ## Erros comuns
