@@ -8,7 +8,7 @@ route_pattern: /campaigns/whatsapp
 min_permission: techsales.marketing.campaigns.view.workspace
 audience: internal
 sort_order: 310
-version: 8
+version: 9
 is_published: true
 ---
 # Criar uma campanha de WhatsApp
@@ -18,17 +18,14 @@ is_published: true
 **Antes de começar:** Tenha público autorizado, canal e template aprovado.
 
 ## Passo a passo
+A campanha é montada em 5 etapas, mostradas no topo: "Números", "Mensagem", "Público", "Atendimento" e "Ritmo e revisão". Use "Continuar" e "Voltar", ou clique numa etapa para ir direto a ela.
 1. Clique em "Nova campanha".
-2. Preencha "Nome da campanha".
-3. Escolha o remetente. Com número oficial, use "Adicionar número" em "Rodízio de números" (até 4 números extras) e escolha "Intercalar em sequência" ou "Sortear".
-4. Em número oficial, preencha "Origem da autorização dos destinatários".
-5. Escolha "Template" e preencha as variáveis. Para rodízio, use "Adicionar modelo ao rodízio" (até 4 modelos extras) e escolha "Sequencial (A, B, C…)" ou "Aleatório com peso". Em "Variáveis do modelo", cada modelo do rodízio aparece com o próprio quadro: escolha o campo de cada variável de cada modelo.
-6. Defina o público.
-7. Escolha a distribuição: "Central de Distribuição (padrão)", "Membro específico", "Dividir entre membros da equipe" ou "Desatribuídas".
-8. "Membro específico": um membro; dividir: ao menos dois.
-9. Para ativar o SDR, escolha um playbook. Com número próprio, o agente é preenchido e travado conforme o canal de atendimento do número principal; para trocar, altere em Canais de Atendimento.
-10. Ajuste velocidade e intervalos aleatórios.
-11. Clique em "Criar rascunho".
+2. Etapa "Números": preencha "Nome da campanha" e escolha o remetente. Com número oficial, use "Adicionar número" em "Rodízio de números" (até 4 números extras) e escolha "Intercalar em sequência" ou "Sortear". Em número oficial, preencha "Origem da autorização dos destinatários".
+3. Etapa "Mensagem": em "Template", os modelos aparecem separados por número, no formato "6137-0317 › nome_do_modelo". Um modelo com o mesmo nome em dois números aparece duas vezes, uma em cada número. Para rodízio, use "Adicionar modelo ao rodízio" (até 4 modelos extras); escolher o mesmo modelo em outro número faz ele também sair por esse número. Escolha "Sequencial (A, B, C…)" ou "Aleatório com peso".
+4. Etapa "Público": defina o público e, em "Variáveis do modelo", o campo de cada variável de cada modelo.
+5. Etapa "Atendimento": para ativar o SDR, escolha um playbook (com número próprio, o agente vem travado pelo canal de atendimento). Escolha a distribuição: "Central de Distribuição (padrão)", "Membro específico" (um membro), "Dividir entre membros da equipe" (ao menos dois) ou "Desatribuídas".
+6. Etapa "Ritmo e revisão": ajuste velocidade e intervalos, confira o resumo (use "Editar" para voltar a uma etapa) e clique em "Criar rascunho".
+Ao editar uma campanha pausada, a tela abre direto em "Ritmo e revisão"; "Salvar alterações" fica disponível em todas as etapas.
 ![Tela: campanha WhatsApp com remetente, template e distribuição](/help-media/crm/criar-campanha-whatsapp.webp)
 
 ## Resultado esperado

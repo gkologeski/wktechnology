@@ -49,7 +49,9 @@ import {
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -60,6 +62,14 @@ import {
   missingRotationVariables,
   rotationVariableKey,
 } from "@/lib/whatsapp/campaign-template-rotation";
+import {
+  addSenderPick,
+  groupTemplatesBySender,
+  parsePick,
+  pickValue,
+} from "@/lib/whatsapp/campaign-template-groups";
+
+const WIZARD_STEPS = ["Números", "Mensagem", "Público", "Atendimento", "Ritmo e revisão"] as const;
 
 export const Route = createFileRoute("/_authenticated/campaigns/whatsapp")({
   component: CampaignsPage,
@@ -143,8 +153,6 @@ function CampaignsPage() {
     return [...map.values()];
   })();
   const rotatingNumbers = extraIds.length > 0;
-  const numbersOf = (t: { senders: string[] }) =>
-    rotatingNumbers && t.senders.length ? ` · ${t.senders.map(senderLabel).join(", ")}` : "";
   // Erro, catálogo não sincronizado e catálogo vazio são estados distintos.
   const catalogState = composerPolicy({
     channelReady: catalogQ.data ? catalogQ.data.channelReady : catalogQ.isError ? false : null,
@@ -205,6 +213,25 @@ function CampaignsPage() {
   // Rodízio: modelos adicionais aprovados (máx. 4 + principal).
   const [extraTpls, setExtraTpls] = useState<{ name: string; weight: number }[]>([]);
   const [primaryWeight, setPrimaryWeight] = useState(1);
+  // WIZARD-CAMPANHA-WA: números escolhidos para cada modelo (opção número › modelo).
+  const [tplSenders, setTplSenders] = useState<Record<string, string[]>>({});
+  const [step, setStep] = useState(0);
+  const groups = groupTemplatesBySender([
+    { senderId: senderReal || "primary", items: catalogQ.data?.items ?? [] },
+    ...extraIds.map((id, i) => ({ senderId: id, items: extraCatalogs[i]?.data?.items ?? [] })),
+  ]);
+  const shortNum = (id: string) => {
+    const d = senderLabel(id).replace(/\D/g, "");
+    return d.length >= 8 ? `${d.slice(-8, -4)}-${d.slice(-4)}` : senderLabel(id);
+  };
+  const groupLabel = (id: string) => {
+    const n = senders.data?.find((x) => x.phone_number_id === id);
+    return n ? `${n.display_phone_number} · ${n.verified_name || "Meta"}` : "Número principal";
+  };
+  const chosenSenders = (name: string, approved: string[]) => {
+    const picked = (tplSenders[name] ?? []).filter((id) => approved.includes(id));
+    return picked.length ? picked : approved;
+  };
   const [rotationMode, setRotationMode] = useState<"sequential" | "weighted">("sequential");
   const extraSelected = extraTpls
     .map((e) => ({ ...e, tpl: templates.find((t) => t.name === e.name) }))
@@ -221,7 +248,9 @@ function CampaignsPage() {
           body: selectedTpl?.body ?? null,
           variableCount: selectedTpl?.variableCount ?? 0,
           weight: primaryWeight,
-          ...(rotatingNumbers ? { senders: selectedTpl?.senders ?? [] } : {}),
+          ...(rotatingNumbers
+            ? { senders: chosenSenders(templateName, selectedTpl?.senders ?? []) }
+            : {}),
         },
         ...extraSelected.map((e) => ({
           name: e.name,
@@ -229,7 +258,7 @@ function CampaignsPage() {
           body: e.tpl?.body ?? null,
           variableCount: e.tpl?.variableCount ?? 0,
           weight: e.weight,
-          ...(rotatingNumbers ? { senders: e.tpl?.senders ?? [] } : {}),
+          ...(rotatingNumbers ? { senders: chosenSenders(e.name, e.tpl?.senders ?? []) } : {}),
         })),
       ]
     : [];
@@ -263,6 +292,8 @@ function CampaignsPage() {
     setTemplateName("__none__");
     setExtraTpls([]);
     setPrimaryWeight(1);
+    setTplSenders({});
+    setStep(0);
     setRotationMode("sequential");
     setRate(10);
     setRecipientsRaw("");
@@ -294,6 +325,8 @@ function CampaignsPage() {
     setEditTotal(c.total ?? 0);
     setHasStoredAudience(false);
     setAudienceTouched(false);
+    setTplSenders({});
+    setStep(c.status === "paused" ? 4 : 0);
     setOpen(true);
     void editFn({ data: { id: c.id } })
       .then((full) => {
@@ -332,7 +365,13 @@ function CampaignsPage() {
           const rot = (Array.isArray(full.template_rotation) ? full.template_rotation : []) as {
             name: string;
             weight?: number;
+            senders?: string[];
           }[];
+          setTplSenders(
+            Object.fromEntries(
+              rot.filter((t) => t.senders?.length).map((t) => [t.name, t.senders as string[]]),
+            ),
+          );
           setPrimaryWeight(rot.find((t) => t.name === full.template_name)?.weight ?? 1);
           setExtraTpls(
             rot
@@ -541,528 +580,726 @@ function CampaignsPage() {
             <DialogHeader>
               <DialogTitle>{isEditing ? "Editar campanha" : "Nova campanha"}</DialogTitle>
             </DialogHeader>
-            <div>
-              <FormSection title="Identificação" className="gap-3 py-4 md:grid-cols-1">
-                <div>
-                  <label htmlFor="camp-name" className="text-xs text-muted-foreground">
-                    Nome da campanha
-                  </label>
-                  <Input
-                    id="camp-name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Black Friday Outubro"
-                  />
-                </div>
-              </FormSection>
-              <FormSection
-                title="Remetente"
-                description="Número que envia as mensagens desta campanha."
-                className="gap-3 py-4 md:grid-cols-1"
-              >
-                <div>
-                  <label htmlFor="camp-sender" className="text-xs text-muted-foreground">
-                    Número remetente
-                  </label>
-                  <Select
-                    value={sender}
-                    disabled={isEditing && editStatus !== "draft"}
-                    onValueChange={(value) => {
-                      setSender(value);
-                      const real =
-                        value === "lovable" ? gatewaySender?.phone_number_id : value;
-                      setExtraSenders((xs) => xs.filter((x) => x !== real));
-                      setTemplateName("__none__");
-                    }}
+            <nav aria-label="Etapas da campanha" className="mb-2">
+              <ol className="flex flex-wrap gap-1">
+                {WIZARD_STEPS.map((label, i) => (
+                  <li key={label}>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={i === step ? "default" : "ghost"}
+                      aria-current={i === step ? "step" : undefined}
+                      disabled={i > step && !name}
+                      onClick={() => setStep(i)}
+                    >
+                      {i + 1}. {label}
+                    </Button>
+                  </li>
+                ))}
+              </ol>
+            </nav>
+            <div className="max-h-[60vh] overflow-y-auto pr-1">
+              {step === 0 && (
+                <>
+                  <FormSection title="Identificação" className="gap-3 py-4 md:grid-cols-1">
+                    <div>
+                      <label htmlFor="camp-name" className="text-xs text-muted-foreground">
+                        Nome da campanha
+                      </label>
+                      <Input
+                        id="camp-name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Black Friday Outubro"
+                      />
+                    </div>
+                  </FormSection>
+                  <FormSection
+                    title="Remetente"
+                    description="Número que envia as mensagens desta campanha."
+                    className="gap-3 py-4 md:grid-cols-1"
                   >
-                    <SelectTrigger id="camp-sender">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="lovable">
-                        {gatewaySender
-                          ? `${gatewaySender.display_phone_number} · ${gatewaySender.verified_name || "Meta"} (Conector Lovable)`
-                          : "Conector Lovable atual"}
-                      </SelectItem>
-                      {senders.data?.filter((n) => !n.via_gateway).map((number) => (
-                        <SelectItem
-                          key={number.phone_number_id}
-                          value={number.phone_number_id}
-                          disabled={number.quality_rating === "RED"}
-                        >
-                          {number.display_phone_number} · {number.verified_name || "Meta"}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {senders.isError && (
-                    <p role="alert" className="text-sm text-destructive">
-                      Não foi possível consultar os números oficiais.
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Cada contato recebe sempre pelo mesmo número. O número principal só muda em
-                    rascunho; o rodízio também pode ser ajustado com a campanha pausada.
-                  </p>
-                  {(sender !== "lovable" || gatewaySender) && (
-                    <div className="mt-3 space-y-2 rounded-md border border-border p-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <p className="text-sm font-medium">Rodízio de números</p>
+                    <div>
+                      <label htmlFor="camp-sender" className="text-xs text-muted-foreground">
+                        Número remetente
+                      </label>
+                      <Select
+                        value={sender}
+                        disabled={isEditing && editStatus !== "draft"}
+                        onValueChange={(value) => {
+                          setSender(value);
+                          const real = value === "lovable" ? gatewaySender?.phone_number_id : value;
+                          setExtraSenders((xs) => xs.filter((x) => x !== real));
+                          setTemplateName("__none__");
+                        }}
+                      >
+                        <SelectTrigger id="camp-sender">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="lovable">
+                            {gatewaySender
+                              ? `${gatewaySender.display_phone_number} · ${gatewaySender.verified_name || "Meta"} (Conector Lovable)`
+                              : "Conector Lovable atual"}
+                          </SelectItem>
+                          {senders.data
+                            ?.filter((n) => !n.via_gateway)
+                            .map((number) => (
+                              <SelectItem
+                                key={number.phone_number_id}
+                                value={number.phone_number_id}
+                                disabled={number.quality_rating === "RED"}
+                              >
+                                {number.display_phone_number} · {number.verified_name || "Meta"}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      {senders.isError && (
+                        <p role="alert" className="text-sm text-destructive">
+                          Não foi possível consultar os números oficiais.
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Cada contato recebe sempre pelo mesmo número. O número principal só muda em
+                        rascunho; o rodízio também pode ser ajustado com a campanha pausada.
+                      </p>
+                      {(sender !== "lovable" || gatewaySender) && (
+                        <div className="mt-3 space-y-2 rounded-md border border-border p-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-medium">Rodízio de números</p>
+                              <p className="text-xs text-muted-foreground">
+                                Adicione até 4 números oficiais para intercalar os envios. Os
+                                modelos escolhidos precisam estar aprovados em todos eles.
+                              </p>
+                            </div>
+                            <Select
+                              value={senderMode}
+                              disabled={
+                                isEditing && editStatus !== "draft" && editStatus !== "paused"
+                              }
+                              onValueChange={(v) => setSenderMode(v as "sequential" | "random")}
+                            >
+                              <SelectTrigger
+                                className="w-48"
+                                aria-label="Modo de rodízio de números"
+                              >
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="sequential">Intercalar em sequência</SelectItem>
+                                <SelectItem value="random">Sortear</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <ul className="space-y-1">
+                            {[senderReal, ...extraSenders].map((id, idx) => {
+                              const n = senders.data?.find((x) => x.phone_number_id === id);
+                              return (
+                                <li key={id} className="flex items-center gap-2 text-sm">
+                                  <span className="flex-1 truncate">
+                                    {n
+                                      ? `${n.display_phone_number} · ${n.verified_name || "Meta"}`
+                                      : id}
+                                    {idx === 0 && (
+                                      <span className="text-xs text-muted-foreground">
+                                        {" "}
+                                        · principal
+                                      </span>
+                                    )}
+                                  </span>
+                                  {idx > 0 && (
+                                    <Button
+                                      type="button"
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-8 w-8"
+                                      disabled={
+                                        isEditing &&
+                                        editStatus !== "draft" &&
+                                        editStatus !== "paused"
+                                      }
+                                      aria-label={`Remover número ${n?.display_phone_number ?? id}`}
+                                      onClick={() =>
+                                        setExtraSenders((xs) => xs.filter((x) => x !== id))
+                                      }
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </li>
+                              );
+                            })}
+                          </ul>
+                          {extraSenders.length < 4 &&
+                            (senders.data ?? []).some(
+                              (x) =>
+                                x.phone_number_id !== senderReal &&
+                                !extraSenders.includes(x.phone_number_id) &&
+                                x.quality_rating !== "RED",
+                            ) && (
+                              <Select
+                                value=""
+                                disabled={
+                                  isEditing && editStatus !== "draft" && editStatus !== "paused"
+                                }
+                                onValueChange={(v) => setExtraSenders((xs) => [...xs, v])}
+                              >
+                                <SelectTrigger aria-label="Adicionar número ao rodízio">
+                                  <SelectValue placeholder="Adicionar número" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(senders.data ?? [])
+                                    .filter(
+                                      (x) =>
+                                        x.phone_number_id !== senderReal &&
+                                        !extraSenders.includes(x.phone_number_id) &&
+                                        x.quality_rating !== "RED",
+                                    )
+                                    .map((x) => (
+                                      <SelectItem key={x.phone_number_id} value={x.phone_number_id}>
+                                        {x.display_phone_number} · {x.verified_name || "Meta"}
+                                      </SelectItem>
+                                    ))}
+                                </SelectContent>
+                              </Select>
+                            )}
+                        </div>
+                      )}
+                      {sender !== "lovable" && (
+                        <div className="mt-2">
+                          <label className="text-xs text-muted-foreground">
+                            Origem da autorização dos destinatários
+                          </label>
+                          <Textarea
+                            value={consentEvidence}
+                            onChange={(event) => setConsentEvidence(event.target.value)}
+                            placeholder="Informe onde estão registrados os consentimentos desta lista: formulário, data, campanha ou referência verificável."
+                            maxLength={2000}
+                          />
                           <p className="text-xs text-muted-foreground">
-                            Adicione até 4 números oficiais para intercalar os envios. Os modelos
-                            escolhidos precisam estar aprovados em todos eles.
+                            Este registro é uma declaração do responsável. Ter o telefone no CRM ou
+                            um template aprovado não comprova consentimento.
                           </p>
                         </div>
-                        <Select
-                          value={senderMode}
-                          disabled={isEditing && editStatus !== "draft" && editStatus !== "paused"}
-                          onValueChange={(v) => setSenderMode(v as "sequential" | "random")}
-                        >
-                          <SelectTrigger className="w-48" aria-label="Modo de rodízio de números">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="sequential">Intercalar em sequência</SelectItem>
-                            <SelectItem value="random">Sortear</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <ul className="space-y-1">
-                        {[senderReal, ...extraSenders].map((id, idx) => {
-                          const n = senders.data?.find((x) => x.phone_number_id === id);
-                          return (
-                            <li key={id} className="flex items-center gap-2 text-sm">
+                      )}
+                    </div>
+                  </FormSection>
+                </>
+              )}
+              {step === 1 && (
+                <>
+                  <FormSection
+                    title="Mensagem"
+                    description="Modelo aprovado ou texto livre, e mídia opcional."
+                    className="gap-3 py-4 md:grid-cols-1"
+                  >
+                    <div>
+                      <label htmlFor="camp-template" className="text-xs text-muted-foreground">
+                        Template
+                      </label>
+                      <Select
+                        value={
+                          templateName === "__none__"
+                            ? "__none__"
+                            : pickValue(
+                                (tplSenders[templateName] ?? selectedTpl?.senders ?? [])[0] ||
+                                  senderReal ||
+                                  "primary",
+                                templateName,
+                              )
+                        }
+                        onValueChange={(v) => {
+                          const pick = parsePick(v);
+                          if (!pick) return setTemplateName("__none__");
+                          setTemplateName(pick.name);
+                          setExtraTpls((xs) => xs.filter((x) => x.name !== pick.name));
+                          setTplSenders((m) => ({ ...m, [pick.name]: [pick.senderId] }));
+                        }}
+                      >
+                        <SelectTrigger id="camp-template">
+                          <SelectValue placeholder="Nenhum (texto livre)" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">Nenhum (texto livre)</SelectItem>
+                          {groups.map((g) => (
+                            <SelectGroup key={g.senderId}>
+                              <SelectLabel>{groupLabel(g.senderId)}</SelectLabel>
+                              {g.items.map((t) => (
+                                <SelectItem
+                                  key={pickValue(g.senderId, t.name)}
+                                  value={pickValue(g.senderId, t.name)}
+                                >
+                                  {shortNum(g.senderId)} › {t.name}{" "}
+                                  {t.approved ? `· ${t.language}` : `· ${t.status}`}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {catalogState !== "ready" && (
+                        <div className="mt-1 flex items-center gap-2 text-xs" aria-live="polite">
+                          <span
+                            className={
+                              catalogState === "error"
+                                ? "text-destructive"
+                                : "text-muted-foreground"
+                            }
+                          >
+                            {catalogMessage(catalogState)}
+                          </span>
+                          {(catalogState === "error" || catalogState === "empty") && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => void catalogQ.refetch()}
+                            >
+                              Atualizar modelos
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    {isHsm && (
+                      <div className="space-y-2 rounded-md border border-border p-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-medium">Rodízio de modelos</p>
+                            <p className="text-xs text-muted-foreground">
+                              Adicione até 4 modelos aprovados. Cada contato recebe sempre o mesmo
+                              modelo, enviado por um dos números em que ele está aprovado.
+                            </p>
+                          </div>
+                          <Select
+                            value={rotationMode}
+                            onValueChange={(v) => setRotationMode(v as "sequential" | "weighted")}
+                          >
+                            <SelectTrigger className="w-48" aria-label="Modo de rodízio">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="sequential">Sequencial (A, B, C…)</SelectItem>
+                              <SelectItem value="weighted">Aleatório com peso</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <ul className="space-y-1">
+                          {[
+                            { name: templateName, weight: primaryWeight, primary: true },
+                            ...extraSelected.map((e) => ({
+                              name: e.name,
+                              weight: e.weight,
+                              primary: false,
+                            })),
+                          ].map((t) => (
+                            <li key={t.name} className="flex items-center gap-2 text-sm">
                               <span className="flex-1 truncate">
-                                {n
-                                  ? `${n.display_phone_number} · ${n.verified_name || "Meta"}`
-                                  : id}
-                                {idx === 0 && (
+                                {t.name}
+                                {t.primary && (
                                   <span className="text-xs text-muted-foreground">
                                     {" "}
                                     · principal
                                   </span>
                                 )}
+                                {rotatingNumbers && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {" · "}
+                                    {chosenSenders(
+                                      t.name,
+                                      templates.find((x) => x.name === t.name)?.senders ?? [],
+                                    )
+                                      .map(shortNum)
+                                      .join(", ")}
+                                  </span>
+                                )}
                               </span>
-                              {idx > 0 && (
+                              {rotationMode === "weighted" && (
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={100}
+                                  className="h-8 w-20"
+                                  aria-label={`Peso do modelo ${t.name}`}
+                                  value={t.weight}
+                                  onChange={(e) => {
+                                    const w = Math.min(
+                                      100,
+                                      Math.max(1, Number(e.target.value) || 1),
+                                    );
+                                    if (t.primary) setPrimaryWeight(w);
+                                    else
+                                      setExtraTpls((xs) =>
+                                        xs.map((x) =>
+                                          x.name === t.name ? { ...x, weight: w } : x,
+                                        ),
+                                      );
+                                  }}
+                                />
+                              )}
+                              {!t.primary && (
                                 <Button
                                   type="button"
                                   size="icon"
                                   variant="ghost"
                                   className="h-8 w-8"
-                                  disabled={
-                                    isEditing && editStatus !== "draft" && editStatus !== "paused"
-                                  }
-                                  aria-label={`Remover número ${n?.display_phone_number ?? id}`}
+                                  aria-label={`Remover modelo ${t.name}`}
                                   onClick={() =>
-                                    setExtraSenders((xs) => xs.filter((x) => x !== id))
+                                    setExtraTpls((xs) => xs.filter((x) => x.name !== t.name))
                                   }
                                 >
                                   <X className="h-4 w-4" />
                                 </Button>
                               )}
                             </li>
-                          );
-                        })}
-                      </ul>
-                      {extraSenders.length < 4 &&
-                        (senders.data ?? []).some(
-                          (x) =>
-                            x.phone_number_id !== senderReal &&
-                            !extraSenders.includes(x.phone_number_id) &&
-                            x.quality_rating !== "RED",
-                        ) && (
-                          <Select
-                            value=""
-                            disabled={
-                              isEditing && editStatus !== "draft" && editStatus !== "paused"
+                          ))}
+                        </ul>
+                        <Select
+                          value=""
+                          onValueChange={(v) => {
+                            const pick = parsePick(v);
+                            if (!pick) return;
+                            const inRotation =
+                              pick.name === templateName ||
+                              extraSelected.some((e) => e.name === pick.name);
+                            if (!inRotation) {
+                              if (extraSelected.length >= 4) return;
+                              setExtraTpls((xs) => [...xs, { name: pick.name, weight: 1 }]);
+                              setTplSenders((m) => ({ ...m, [pick.name]: [pick.senderId] }));
+                            } else {
+                              setTplSenders((m) => {
+                                const base = m[pick.name]?.length
+                                  ? m
+                                  : {
+                                      ...m,
+                                      [pick.name]: chosenSenders(
+                                        pick.name,
+                                        templates.find((x) => x.name === pick.name)?.senders ?? [],
+                                      ).slice(0, 1),
+                                    };
+                                return addSenderPick(base, pick.name, pick.senderId);
+                              });
                             }
-                            onValueChange={(v) => setExtraSenders((xs) => [...xs, v])}
-                          >
-                            <SelectTrigger aria-label="Adicionar número ao rodízio">
-                              <SelectValue placeholder="Adicionar número" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {(senders.data ?? [])
-                                .filter(
-                                  (x) =>
-                                    x.phone_number_id !== senderReal &&
-                                    !extraSenders.includes(x.phone_number_id) &&
-                                    x.quality_rating !== "RED",
-                                )
-                                .map((x) => (
-                                  <SelectItem key={x.phone_number_id} value={x.phone_number_id}>
-                                    {x.display_phone_number} · {x.verified_name || "Meta"}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                        )}
-                    </div>
-                  )}
-                  {sender !== "lovable" && (
-                    <div className="mt-2">
-                      <label className="text-xs text-muted-foreground">
-                        Origem da autorização dos destinatários
+                          }}
+                        >
+                          <SelectTrigger aria-label="Adicionar modelo ao rodízio">
+                            <SelectValue placeholder="Adicionar modelo ao rodízio" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {groups.map((g) => {
+                              const opts = g.items.filter((t) => {
+                                if (!t.approved) return false;
+                                const inRot =
+                                  t.name === templateName ||
+                                  extraSelected.some((e) => e.name === t.name);
+                                if (!inRot) return extraSelected.length < 4;
+                                const all = templates.find((x) => x.name === t.name)?.senders ?? [];
+                                return !chosenSenders(t.name, all).includes(g.senderId);
+                              });
+                              if (!opts.length) return null;
+                              return (
+                                <SelectGroup key={g.senderId}>
+                                  <SelectLabel>{groupLabel(g.senderId)}</SelectLabel>
+                                  {opts.map((t) => (
+                                    <SelectItem
+                                      key={pickValue(g.senderId, t.name)}
+                                      value={pickValue(g.senderId, t.name)}
+                                    >
+                                      {shortNum(g.senderId)} › {t.name} · {t.language} ·{" "}
+                                      {t.variableCount} variáveis
+                                    </SelectItem>
+                                  ))}
+                                </SelectGroup>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <div>
+                      <label htmlFor="camp-body" className="text-xs text-muted-foreground">
+                        Mensagem (use {`{{1}}, {{2}}`} para variáveis)
                       </label>
                       <Textarea
-                        value={consentEvidence}
-                        onChange={(event) => setConsentEvidence(event.target.value)}
-                        placeholder="Informe onde estão registrados os consentimentos desta lista: formulário, data, campanha ou referência verificável."
-                        maxLength={2000}
+                        id="camp-body"
+                        rows={isHsm ? 5 : 3}
+                        value={isHsm ? (selectedTpl?.body ?? "") : body}
+                        disabled={isHsm}
+                        aria-describedby={isHsm ? "camp-body-hint" : undefined}
+                        placeholder={isHsm ? "Prévia indisponível para este modelo" : undefined}
+                        onChange={(e) => setBody(e.target.value)}
                       />
-                      <p className="text-xs text-muted-foreground">
-                        Este registro é uma declaração do responsável. Ter o telefone no CRM ou um
-                        template aprovado não comprova consentimento.
+                    </div>
+                    {isHsm && (
+                      <p id="camp-body-hint" className="text-xs text-muted-foreground">
+                        Texto do modelo aprovado pela Meta ({selectedTpl?.language}) — não pode ser
+                        editado. Defina as {varCount} variáveis no quadro abaixo.
                       </p>
+                    )}
+                    <div>
+                      <label htmlFor="camp-media" className="text-xs text-muted-foreground">
+                        URL de mídia (opcional)
+                      </label>
+                      <Input
+                        id="camp-media"
+                        value={mediaUrl}
+                        onChange={(e) => setMediaUrl(e.target.value)}
+                        placeholder="https://..."
+                      />
                     </div>
-                  )}
-                </div>
-              </FormSection>
-              <FormSection
-                title="Mensagem"
-                description="Modelo aprovado ou texto livre, e mídia opcional."
-                className="gap-3 py-4 md:grid-cols-1"
-              >
-                <div>
-                  <label htmlFor="camp-template" className="text-xs text-muted-foreground">
-                    Template
-                  </label>
-                  <Select value={templateName} onValueChange={setTemplateName}>
-                    <SelectTrigger id="camp-template">
-                      <SelectValue placeholder="Nenhum (texto livre)" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">Nenhum (texto livre)</SelectItem>
-                      {templates.map((t) => (
-                        <SelectItem key={t.name} value={t.name}>
-                          {t.name} {t.approved ? `· ${t.language}` : `· ${t.status}`}
-                          {numbersOf(t)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {catalogState !== "ready" && (
-                    <div className="mt-1 flex items-center gap-2 text-xs" aria-live="polite">
-                      <span
-                        className={
-                          catalogState === "error" ? "text-destructive" : "text-muted-foreground"
-                        }
-                      >
-                        {catalogMessage(catalogState)}
-                      </span>
-                      {(catalogState === "error" || catalogState === "empty") && (
-                        <Button size="sm" variant="outline" onClick={() => void catalogQ.refetch()}>
-                          Atualizar modelos
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
-                {isHsm && (
-                  <div className="space-y-2 rounded-md border border-border p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
+                  </FormSection>
+                </>
+              )}
+              {step === 2 && (
+                <>
+                  <FormSection
+                    title="Público"
+                    description="Quem vai receber a campanha."
+                    className="gap-3 py-4 md:grid-cols-1"
+                  >
+                    {isEditing && !hasStoredAudience && (
+                      <p className="text-xs text-muted-foreground" role="note">
+                        O público desta campanha não foi registrado (criada antes desta versão). Ela
+                        tem {editTotal} destinatário(s).
+                        {editStatus === "draft"
+                          ? " Para trocar, monte um novo público abaixo."
+                          : " Para mudar a lista, duplique a campanha."}
+                      </p>
+                    )}
+                    {(!isEditing || editStatus === "draft" || hasStoredAudience) && (
+                      <CampaignAudiencePanel
+                        value={audience}
+                        onChange={(v) => {
+                          setAudienceTouched(true);
+                          setAudience(v);
+                        }}
+                        readOnly={isEditing && editStatus !== "draft"}
+                        variableCount={isHsm ? varCount : 0}
+                        variableGroups={isHsm ? variableGroups : undefined}
+                        manualRaw={recipientsRaw}
+                        onManualRaw={(r) => {
+                          setAudienceTouched(true);
+                          setRecipientsRaw(r);
+                        }}
+                        manualCount={parseRecipients(recipientsRaw).length}
+                      />
+                    )}
+                  </FormSection>
+                </>
+              )}
+              {step === 3 && (
+                <>
+                  {isHsm && (
+                    <FormSection title="Após a resposta" className="gap-3 py-4 md:grid-cols-1">
                       <div>
-                        <p className="text-sm font-medium">Rodízio de modelos</p>
-                        <p className="text-xs text-muted-foreground">
-                          Adicione até 4 modelos aprovados. Cada contato recebe sempre o mesmo
-                          modelo, enviado por um dos números em que ele está aprovado.
-                        </p>
-                      </div>
-                      <Select
-                        value={rotationMode}
-                        onValueChange={(v) => setRotationMode(v as "sequential" | "weighted")}
-                      >
-                        <SelectTrigger className="w-48" aria-label="Modo de rodízio">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="sequential">Sequencial (A, B, C…)</SelectItem>
-                          <SelectItem value="weighted">Aleatório com peso</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <ul className="space-y-1">
-                      {[
-                        { name: templateName, weight: primaryWeight, primary: true },
-                        ...extraSelected.map((e) => ({
-                          name: e.name,
-                          weight: e.weight,
-                          primary: false,
-                        })),
-                      ].map((t) => (
-                        <li key={t.name} className="flex items-center gap-2 text-sm">
-                          <span className="flex-1 truncate">
-                            {t.name}
-                            {t.primary && (
-                              <span className="text-xs text-muted-foreground"> · principal</span>
-                            )}
-                            {rotatingNumbers && (
-                              <span className="text-xs text-muted-foreground">
-                                {numbersOf(templates.find((x) => x.name === t.name) ?? { senders: [] })}
-                              </span>
-                            )}
-                          </span>
-                          {rotationMode === "weighted" && (
-                            <Input
-                              type="number"
-                              min={1}
-                              max={100}
-                              className="h-8 w-20"
-                              aria-label={`Peso do modelo ${t.name}`}
-                              value={t.weight}
-                              onChange={(e) => {
-                                const w = Math.min(100, Math.max(1, Number(e.target.value) || 1));
-                                if (t.primary) setPrimaryWeight(w);
-                                else
-                                  setExtraTpls((xs) =>
-                                    xs.map((x) => (x.name === t.name ? { ...x, weight: w } : x)),
-                                  );
-                              }}
-                            />
-                          )}
-                          {!t.primary && (
-                            <Button
-                              type="button"
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8"
-                              aria-label={`Remover modelo ${t.name}`}
-                              onClick={() =>
-                                setExtraTpls((xs) => xs.filter((x) => x.name !== t.name))
-                              }
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                    {extraSelected.length < 4 && (
-                      <Select
-                        value=""
-                        onValueChange={(v) => setExtraTpls((xs) => [...xs, { name: v, weight: 1 }])}
-                      >
-                        <SelectTrigger aria-label="Adicionar modelo ao rodízio">
-                          <SelectValue placeholder="Adicionar modelo ao rodízio" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {templates
-                            .filter(
-                              (t) =>
-                                t.approved &&
-                                t.name !== templateName &&
-                                !extraSelected.some((e) => e.name === t.name),
-                            )
-                            .map((t) => (
-                              <SelectItem key={t.name} value={t.name}>
-                                {t.name} · {t.language} · {t.variableCount} variáveis
-                                {numbersOf(t)}
+                        <label htmlFor="camp-sdr" className="text-xs text-muted-foreground">
+                          Agente SDR após resposta (opcional)
+                        </label>
+                        <Select
+                          value={sdrPlaybook}
+                          onValueChange={setSdrPlaybook}
+                          disabled={agentLocked}
+                        >
+                          <SelectTrigger id="camp-sdr">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">Desligado</SelectItem>
+                            {playbooks.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {agentOptionLabel(p, defaultPlaybookId)}
                               </SelectItem>
                             ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-                )}
-                <div>
-                  <label htmlFor="camp-body" className="text-xs text-muted-foreground">
-                    Mensagem (use {`{{1}}, {{2}}`} para variáveis)
-                  </label>
-                  <Textarea
-                    id="camp-body"
-                    rows={isHsm ? 5 : 3}
-                    value={isHsm ? (selectedTpl?.body ?? "") : body}
-                    disabled={isHsm}
-                    aria-describedby={isHsm ? "camp-body-hint" : undefined}
-                    placeholder={isHsm ? "Prévia indisponível para este modelo" : undefined}
-                    onChange={(e) => setBody(e.target.value)}
-                  />
-                </div>
-                {isHsm && (
-                  <p id="camp-body-hint" className="text-xs text-muted-foreground">
-                    Texto do modelo aprovado pela Meta ({selectedTpl?.language}) — não pode ser
-                    editado. Defina as {varCount} variáveis no quadro abaixo.
-                  </p>
-                )}
-                <div>
-                  <label htmlFor="camp-media" className="text-xs text-muted-foreground">
-                    URL de mídia (opcional)
-                  </label>
-                  <Input
-                    id="camp-media"
-                    value={mediaUrl}
-                    onChange={(e) => setMediaUrl(e.target.value)}
-                    placeholder="https://..."
-                  />
-                </div>
-              </FormSection>
-              <FormSection
-                title="Público"
-                description="Quem vai receber a campanha."
-                className="gap-3 py-4 md:grid-cols-1"
-              >
-                {isEditing && !hasStoredAudience && (
-                  <p className="text-xs text-muted-foreground" role="note">
-                    O público desta campanha não foi registrado (criada antes desta versão). Ela tem{" "}
-                    {editTotal} destinatário(s).
-                    {editStatus === "draft"
-                      ? " Para trocar, monte um novo público abaixo."
-                      : " Para mudar a lista, duplique a campanha."}
-                  </p>
-                )}
-                {(!isEditing || editStatus === "draft" || hasStoredAudience) && (
-                  <CampaignAudiencePanel
-                    value={audience}
-                    onChange={(v) => {
-                      setAudienceTouched(true);
-                      setAudience(v);
-                    }}
-                    readOnly={isEditing && editStatus !== "draft"}
-                    variableCount={isHsm ? varCount : 0}
-                    variableGroups={isHsm ? variableGroups : undefined}
-                    manualRaw={recipientsRaw}
-                    onManualRaw={(r) => {
-                      setAudienceTouched(true);
-                      setRecipientsRaw(r);
-                    }}
-                    manualCount={parseRecipients(recipientsRaw).length}
-                  />
-                )}
-              </FormSection>
-              {isHsm && (
-                <FormSection title="Após a resposta" className="gap-3 py-4 md:grid-cols-1">
-                  <div>
-                    <label htmlFor="camp-sdr" className="text-xs text-muted-foreground">
-                      Agente SDR após resposta (opcional)
-                    </label>
-                    <Select
-                      value={sdrPlaybook}
-                      onValueChange={setSdrPlaybook}
-                      disabled={agentLocked}
-                    >
-                      <SelectTrigger id="camp-sdr">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none__">Desligado</SelectItem>
-                        {playbooks.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {agentOptionLabel(p, defaultPlaybookId)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {agentLocked && (
-                      <p className="mt-1 text-xs text-muted-foreground" aria-live="polite">
-                        {senderAgentQ.isLoading
-                          ? "Verificando o agente do número…"
-                          : senderAgent?.kind === "none"
-                            ? "Sem agente neste canal: as respostas vão para a distribuição configurada. "
-                            : "Definido pelo canal de atendimento do número. "}
-                        Para trocar, altere em Canais de Atendimento.
-                      </p>
-                    )}
-                    {senderAgentQ.isError && (
-                      <p role="alert" className="mt-1 text-xs text-destructive">
-                        Não foi possível verificar o agente do número.
-                      </p>
-                    )}
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Quando o cliente responder, o SDR prepara a conversa para sua aprovação.
-                    </p>
-                  </div>
-                </FormSection>
-              )}
-              <FormSection
-                title="Distribuição das conversas"
-                description="Quem fica responsável pelas conversas geradas por esta campanha."
-                className="gap-3 py-4 md:grid-cols-1"
-              >
-                <CampaignAssignmentSection
-                  mode={assignMode}
-                  memberIds={assignIds}
-                  members={activeMembers}
-                  onChange={(m, ids) => {
-                    setAssignMode(m);
-                    setAssignIds(ids);
-                  }}
-                />
-              </FormSection>
-              <FormSection
-                title="Ritmo de envio"
-                description="Velocidade e intervalo entre disparos."
-                className="gap-3 py-4 md:grid-cols-1"
-              >
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="camp-rate" className="text-xs text-muted-foreground">
-                      Msgs por minuto
-                    </label>
-                    <Input
-                      id="camp-rate"
-                      type="number"
-                      min={1}
-                      max={120}
-                      value={rate}
-                      onChange={(e) => setRate(Number(e.target.value))}
+                          </SelectContent>
+                        </Select>
+                        {agentLocked && (
+                          <p className="mt-1 text-xs text-muted-foreground" aria-live="polite">
+                            {senderAgentQ.isLoading
+                              ? "Verificando o agente do número…"
+                              : senderAgent?.kind === "none"
+                                ? "Sem agente neste canal: as respostas vão para a distribuição configurada. "
+                                : "Definido pelo canal de atendimento do número. "}
+                            Para trocar, altere em Canais de Atendimento.
+                          </p>
+                        )}
+                        {senderAgentQ.isError && (
+                          <p role="alert" className="mt-1 text-xs text-destructive">
+                            Não foi possível verificar o agente do número.
+                          </p>
+                        )}
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Quando o cliente responder, o SDR prepara a conversa para sua aprovação.
+                        </p>
+                      </div>
+                    </FormSection>
+                  )}
+                  <FormSection
+                    title="Distribuição das conversas"
+                    description="Quem fica responsável pelas conversas geradas por esta campanha."
+                    className="gap-3 py-4 md:grid-cols-1"
+                  >
+                    <CampaignAssignmentSection
+                      mode={assignMode}
+                      memberIds={assignIds}
+                      members={activeMembers}
+                      onChange={(m, ids) => {
+                        setAssignMode(m);
+                        setAssignIds(ids);
+                      }}
                     />
-                  </div>
-                  <fieldset className="space-y-1">
-                    <legend className="text-xs text-muted-foreground">
-                      Intervalo aleatório entre disparos (segundos)
-                    </legend>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        min={0}
-                        max={3600}
-                        aria-label="Intervalo mínimo em segundos"
-                        placeholder="padrão"
-                        value={ivMin}
-                        onChange={(e) => setIvMin(e.target.value)}
-                      />
-                      <span className="text-xs text-muted-foreground">a</span>
-                      <Input
-                        type="number"
-                        min={0}
-                        max={3600}
-                        aria-label="Intervalo máximo em segundos"
-                        placeholder="padrão"
-                        value={ivMax}
-                        onChange={(e) => setIvMax(e.target.value)}
-                      />
+                  </FormSection>
+                </>
+              )}
+              {step === 4 && (
+                <>
+                  <FormSection
+                    title="Ritmo de envio"
+                    description="Velocidade e intervalo entre disparos."
+                    className="gap-3 py-4 md:grid-cols-1"
+                  >
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="camp-rate" className="text-xs text-muted-foreground">
+                          Msgs por minuto
+                        </label>
+                        <Input
+                          id="camp-rate"
+                          type="number"
+                          min={1}
+                          max={120}
+                          value={rate}
+                          onChange={(e) => setRate(Number(e.target.value))}
+                        />
+                      </div>
+                      <fieldset className="space-y-1">
+                        <legend className="text-xs text-muted-foreground">
+                          Intervalo aleatório entre disparos (segundos)
+                        </legend>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min={0}
+                            max={3600}
+                            aria-label="Intervalo mínimo em segundos"
+                            placeholder="padrão"
+                            value={ivMin}
+                            onChange={(e) => setIvMin(e.target.value)}
+                          />
+                          <span className="text-xs text-muted-foreground">a</span>
+                          <Input
+                            type="number"
+                            min={0}
+                            max={3600}
+                            aria-label="Intervalo máximo em segundos"
+                            placeholder="padrão"
+                            value={ivMax}
+                            onChange={(e) => setIvMax(e.target.value)}
+                          />
+                        </div>
+                        <p
+                          className={`text-xs ${ivError ? "text-destructive" : "text-muted-foreground"}`}
+                        >
+                          {ivError ??
+                            "Em branco usa o padrão do workspace (Agente SDR › Configuração). Cada disparo espera um tempo sorteado nesse intervalo; pode atrasar até ~1 min além do sorteado."}
+                        </p>
+                      </fieldset>
                     </div>
-                    <p
-                      className={`text-xs ${ivError ? "text-destructive" : "text-muted-foreground"}`}
-                    >
-                      {ivError ??
-                        "Em branco usa o padrão do workspace (Agente SDR › Configuração). Cada disparo espera um tempo sorteado nesse intervalo; pode atrasar até ~1 min além do sorteado."}
-                    </p>
-                  </fieldset>
-                </div>
-              </FormSection>
+                  </FormSection>
+                  <FormSection title="Revisão" className="gap-2 py-4 md:grid-cols-1">
+                    <dl className="grid gap-2 text-sm sm:grid-cols-[10rem_minmax(0,1fr)]">
+                      {[
+                        [
+                          "Números",
+                          [senderReal, ...extraIds].filter(Boolean).map(shortNum).join(", ") ||
+                            "Conector Lovable",
+                          0,
+                        ],
+                        [
+                          "Modelos",
+                          isHsm
+                            ? rotationPayload
+                                .map(
+                                  (t) =>
+                                    `${t.name}${"senders" in t && t.senders?.length ? ` (${t.senders.map(shortNum).join(", ")})` : ""}`,
+                                )
+                                .join("; ")
+                            : "Texto livre",
+                          1,
+                        ],
+                        [
+                          "Público",
+                          audience.mode === "manual"
+                            ? `${parseRecipients(recipientsRaw).length} contato(s) digitados`
+                            : "Público configurado",
+                          2,
+                        ],
+                        [
+                          "Atendimento",
+                          sdrPlaybook !== "__none__" && isHsm
+                            ? "Agente SDR ligado"
+                            : "Sem agente SDR",
+                          3,
+                        ],
+                      ].map(([k, v, st]) => (
+                        <div key={String(k)} className="contents">
+                          <dt className="text-muted-foreground">{k}</dt>
+                          <dd className="flex min-w-0 items-start justify-between gap-2">
+                            <span className="min-w-0 break-words">{v}</span>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="link"
+                              className="h-auto p-0"
+                              onClick={() => setStep(Number(st))}
+                            >
+                              Editar
+                            </Button>
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </FormSection>
+                </>
+              )}
             </div>
             <DialogFooter>
               <Button variant="ghost" onClick={() => setOpen(false)}>
                 Cancelar
               </Button>
-              <Button
-                onClick={() => create.mutate()}
-                disabled={create.isPending || !name}
-                aria-busy={create.isPending}
-              >
-                {create.isPending && <Loader2 className="size-4 animate-spin" aria-hidden />}
-                <span aria-live="polite">
-                  {create.isPending
-                    ? isEditing
-                      ? "Salvando alterações…"
-                      : "Salvando rascunho e destinatários…"
-                    : isEditing
-                      ? "Salvar alterações"
-                      : "Criar rascunho"}
-                </span>
-              </Button>
+              {step > 0 && (
+                <Button variant="outline" onClick={() => setStep((n) => n - 1)}>
+                  Voltar
+                </Button>
+              )}
+              {step < WIZARD_STEPS.length - 1 && (
+                <Button
+                  variant={isEditing ? "outline" : "default"}
+                  disabled={!name}
+                  title={!name ? "Informe o nome da campanha" : undefined}
+                  onClick={() => setStep((n) => n + 1)}
+                >
+                  Continuar
+                </Button>
+              )}
+              {(step === WIZARD_STEPS.length - 1 || isEditing) && (
+                <Button
+                  onClick={() => create.mutate()}
+                  disabled={create.isPending || !name}
+                  aria-busy={create.isPending}
+                >
+                  {create.isPending && <Loader2 className="size-4 animate-spin" aria-hidden />}
+                  <span aria-live="polite">
+                    {create.isPending
+                      ? isEditing
+                        ? "Salvando alterações…"
+                        : "Salvando rascunho e destinatários…"
+                      : isEditing
+                        ? "Salvar alterações"
+                        : "Criar rascunho"}
+                  </span>
+                </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
