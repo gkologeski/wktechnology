@@ -8,7 +8,7 @@ route_pattern: /people/hiring-requests
 min_permission: techpeople.hiring_requests.view.workspace
 audience: internal
 sort_order: 35
-version: 12
+version: 13
 is_published: true
 ---
 
@@ -73,7 +73,7 @@ Alterações materiais de solicitação, referência, alçada, documento, anexos
 - A autorização exige aprovação gestor/CEO vigente para a revisão atual, formalização íntegra e assinatura completa verificável. Mudança de alçada, revisão, valor de referência ou documento bloqueia o início até nova aprovação/formalização.
 - O instrumento só passa a ativo por esta autorização; tentativas de ativação direta são recusadas.
 - Autorizar o início **não** concede acessos, não envia convites, não cria modelo de acesso e não gera lançamentos, provisões ou pagamentos.
-- Se a assinatura deixar de ser íntegra depois do início, novas alocações ficam bloqueadas e a ficha avisa.
+- Se a assinatura deixar de ser íntegra, a aprovação deixar de estar vigente ou o gestor da área perder sua permissão, ficar inativo ou mudar de workspace, novas operações dependentes do início (incluindo alocações) ficam bloqueadas. O início, os vínculos e as operações já registrados são preservados. Um administrador autorizado deve regularizar o acesso ou a alçada atual; não há substituição automática pelo CEO nem concessão automática de permissão.
 
 ## Resultado esperado
 
