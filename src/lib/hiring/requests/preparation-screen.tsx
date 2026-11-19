@@ -53,6 +53,7 @@ import {
   savePreparation,
   preparationHistory,
   searchPreparationPicker,
+  preparationReference,
 } from "./requests.functions";
 import {
   resourceFor,
@@ -63,6 +64,8 @@ import {
   type PreparationRow,
   type PreparationData,
   type PickerKind,
+  wizardSteps,
+  modalityLabels,
 } from "./types";
 function useDebounced(value: string) {
   const [v, set] = useState(value);
@@ -172,6 +175,11 @@ export function PreparationScreen({ kind }: { kind: RequestKind }) {
   const canView = useSharedAction(resource, "view"),
     canCreate = useSharedAction(resource, "create"),
     canUpdate = useSharedAction(resource, "update");
+  const canReadReference = useSharedAction(resource + ".reference", "view");
+  const canWriteReference = useSharedAction(resource + ".reference", "update");
+  const [step, setStep] = useState(0),
+    [referenceValue, setReferenceValue] = useState<number | null>(null),
+    [referenceDirty, setReferenceDirty] = useState(false);
   const cancelAllowed =
     !p.isLoading &&
     !p.isError &&
@@ -191,7 +199,20 @@ export function PreparationScreen({ kind }: { kind: RequestKind }) {
   const qc = useQueryClient(),
     listFn = useServerFn(listPreparation),
     saveFn = useServerFn(savePreparation),
-    historyFn = useServerFn(preparationHistory);
+    historyFn = useServerFn(preparationHistory),
+    referenceFn = useServerFn(preparationReference);
+  const reference = useQuery({
+    queryKey: ["preparation-reference", p.workspaceId, kind, row?.id, row?.revision],
+    enabled: open && !!row && canReadReference,
+    queryFn: () => referenceFn({ data: { kind, id: row?.id ?? "" } }),
+    retry: false,
+  });
+  useEffect(() => {
+    if (!canReadReference) {
+      setReferenceValue(null);
+      setReferenceDirty(false);
+    } else if (reference.data && !referenceDirty) setReferenceValue(reference.data.reference_value);
+  }, [canReadReference, reference.data, referenceDirty]);
   const pending = useRef<{ operation: string; fingerprint: string } | null>(null);
   const query = useQuery({
     queryKey: ["preparation-page", p.workspaceId, kind, term, offset],
@@ -211,7 +232,7 @@ export function PreparationScreen({ kind }: { kind: RequestKind }) {
       id: string | null;
       revision: number;
       operation: string;
-      form: PreparationData;
+      form: PreparationData & { reference_value?: number | null };
     }) => saveFn({ data: input }),
     onSuccess: (saved) => {
       pending.current = null;
@@ -219,6 +240,8 @@ export function PreparationScreen({ kind }: { kind: RequestKind }) {
       setForm(preparationData.parse(savedToForm(saved)));
       setError("");
       setCancel(false);
+      setReferenceDirty(false);
+      void qc.invalidateQueries({ queryKey: ["preparation-reference"] });
       void qc.invalidateQueries({ queryKey: ["preparation-page"] });
       void qc.invalidateQueries({ queryKey: ["preparation-history"] });
     },
@@ -226,7 +249,12 @@ export function PreparationScreen({ kind }: { kind: RequestKind }) {
   });
   function submit(data: PreparationData) {
     try {
-      const parsed = preparationData.parse(data);
+      const parsed = {
+        ...preparationData.parse(data),
+        ...(referenceDirty && canWriteReference && data.status !== "cancelled"
+          ? { reference_value: referenceValue }
+          : {}),
+      };
       const fingerprint = JSON.stringify({ id: row?.id, revision: row?.revision, data: parsed });
       if (pending.current?.fingerprint !== fingerprint)
         pending.current = { operation: crypto.randomUUID(), fingerprint };
@@ -244,6 +272,9 @@ export function PreparationScreen({ kind }: { kind: RequestKind }) {
     }
   }
   function edit(r: PreparationRow | null) {
+    setStep(r ? 3 : 0);
+    setReferenceValue(null);
+    setReferenceDirty(false);
     setRow(r);
     setForm(r ? savedToForm(r) : emptyPreparation(kind));
     setHistoryOffset(0);
@@ -370,100 +401,165 @@ export function PreparationScreen({ kind }: { kind: RequestKind }) {
           if (!save.isPending) setOpen(v);
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[90dvh] overflow-y-auto">
+        <DialogContent className="sm:max-w-6xl max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{row ? row.title : "Nova solicitação"}</DialogTitle>
           </DialogHeader>
-          <PreparationForm
-            kind={kind}
-            value={form}
-            onChange={setForm}
-            disabled={locked}
-            picker={(picker, label, value, onChange) => (
-              <EntityPicker
-                key={picker}
+          <nav aria-label="Etapas da solicitação" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {wizardSteps.map((label, index) => (
+              <Button
+                key={label}
+                variant={step === index ? "default" : "outline"}
+                aria-current={step === index ? "step" : undefined}
+                onClick={() => setStep(index)}
+              >
+                {index + 1}. {label}
+              </Button>
+            ))}
+          </nav>
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+            <div className="min-w-0">
+              <PreparationForm
+                step={step}
+                referenceValue={referenceValue}
+                canReadReference={canReadReference && (!row || reference.isSuccess)}
+                canWriteReference={canWriteReference && (!row || reference.isSuccess)}
+                onReferenceChange={(v) => {
+                  setReferenceValue(v);
+                  setReferenceDirty(true);
+                }}
                 kind={kind}
-                picker={picker}
-                label={label}
-                value={value}
-                onChange={onChange}
+                value={form}
+                onChange={setForm}
                 disabled={locked}
-                company={form.company_id}
-              />
-            )}
-          />
-          <FormSection title="Preparação">
-            <Label htmlFor="request-status">Situação</Label>
-            <Select
-              disabled={locked || !row}
-              value={form.status}
-              onValueChange={(v) => {
-                if (v === "draft" || v === "ready") setForm({ ...form, status: v });
-              }}
-            >
-              <SelectTrigger id="request-status">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="draft">Rascunho</SelectItem>
-                <SelectItem value="ready">Pronta para aprovação</SelectItem>
-                {form.status === "cancelled" && (
-                  <SelectItem value="cancelled">Cancelada</SelectItem>
+                picker={(picker, label, value, onChange) => (
+                  <EntityPicker
+                    key={picker}
+                    kind={kind}
+                    picker={picker}
+                    label={label}
+                    value={value}
+                    onChange={onChange}
+                    disabled={locked || step === 3}
+                    company={form.company_id}
+                  />
                 )}
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-muted-foreground">
-              Pronta para aprovação não significa aprovada. Não autoriza recrutamento, admissão,
-              contratos ou envio de mensagens.
-            </p>
-          </FormSection>
-          {row && (
-            <FormSection title={`Histórico · revisão ${row.revision}`}>
-              {history.isLoading ? (
-                <ListPageSkeleton />
-              ) : history.isError ? (
+              />
+              {step === 2 && row && canReadReference && reference.isError && (
                 <div role="alert">
-                  Não foi possível carregar o histórico.{" "}
-                  <Button variant="outline" onClick={() => void history.refetch()}>
+                  Não foi possível carregar o valor.{" "}
+                  <Button variant="outline" onClick={() => void reference.refetch()}>
                     Tentar novamente
                   </Button>
                 </div>
-              ) : (
-                <>
-                  <ol className="space-y-3">
-                    {history.data?.slice(0, 50).map((e) => (
-                      <li key={e.id} className="border-b py-2 text-sm">
-                        <strong>
-                          Revisão {e.revision} · {statusLabels[e.snapshot.status]}
-                        </strong>
-                        <p>{e.snapshot.title}</p>
-                        <p className="whitespace-pre-wrap break-words">{e.snapshot.scope_text}</p>
-                        <p className="text-muted-foreground">
-                          {new Date(e.created_at).toLocaleString("pt-BR")} · Autor {e.actor_id}
-                        </p>
-                      </li>
-                    ))}
-                  </ol>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      disabled={!historyOffset}
-                      onClick={() => setHistoryOffset(Math.max(0, historyOffset - 50))}
-                    >
-                      Mais recente
-                    </Button>
-                    <Button
-                      variant="outline"
-                      disabled={(history.data?.length ?? 0) <= 50}
-                      onClick={() => setHistoryOffset(historyOffset + 50)}
-                    >
-                      Mais antigo
-                    </Button>
-                  </div>
-                </>
               )}
-            </FormSection>
-          )}
+              {step === 3 && (
+                <FormSection title="Preparação">
+                  <Label htmlFor="request-status">Situação</Label>
+                  <Select
+                    disabled={locked || !row}
+                    value={form.status}
+                    onValueChange={(v) => {
+                      if (v === "draft" || v === "ready") setForm({ ...form, status: v });
+                    }}
+                  >
+                    <SelectTrigger id="request-status">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">Rascunho</SelectItem>
+                      <SelectItem value="ready">Pronta para aprovação</SelectItem>
+                      {form.status === "cancelled" && (
+                        <SelectItem value="cancelled">Cancelada</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    Pronta para aprovação não significa aprovada. Não autoriza recrutamento,
+                    admissão, contratos ou envio de mensagens.
+                  </p>
+                </FormSection>
+              )}
+              {row && (
+                <FormSection title={`Histórico · revisão ${row.revision}`}>
+                  {history.isLoading ? (
+                    <ListPageSkeleton />
+                  ) : history.isError ? (
+                    <div role="alert">
+                      Não foi possível carregar o histórico.{" "}
+                      <Button variant="outline" onClick={() => void history.refetch()}>
+                        Tentar novamente
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <ol className="space-y-3">
+                        {history.data?.slice(0, 50).map((e) => (
+                          <li key={e.id} className="border-b py-2 text-sm">
+                            <strong>
+                              Revisão {e.revision} · {statusLabels[e.snapshot.status]}
+                            </strong>
+                            <p>{e.snapshot.title}</p>
+                            <p className="whitespace-pre-wrap break-words">
+                              {e.snapshot.scope_text}
+                            </p>
+                            <p className="text-muted-foreground">
+                              {new Date(e.created_at).toLocaleString("pt-BR")} · Autor {e.actor_id}
+                            </p>
+                          </li>
+                        ))}
+                      </ol>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          disabled={!historyOffset}
+                          onClick={() => setHistoryOffset(Math.max(0, historyOffset - 50))}
+                        >
+                          Mais recente
+                        </Button>
+                        <Button
+                          variant="outline"
+                          disabled={(history.data?.length ?? 0) <= 50}
+                          onClick={() => setHistoryOffset(historyOffset + 50)}
+                        >
+                          Mais antigo
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </FormSection>
+              )}
+            </div>
+            <aside className="border-l pl-4 space-y-5 min-w-0">
+              <h2 className="font-semibold">Resumo e jornada</h2>
+              <p className="break-words">{form.title || "Nova solicitação"}</p>
+              <p>{modalityLabels[form.modality]}</p>
+              <p>
+                {statusLabels[form.status]} · Revisão {row?.revision ?? "inicial"}
+              </p>
+              <ol className="space-y-2">
+                {wizardSteps.map((label, index) => (
+                  <li key={label}>
+                    <Button
+                      variant="ghost"
+                      aria-current={step === index ? "step" : undefined}
+                      onClick={() => setStep(index)}
+                    >
+                      {label}
+                    </Button>
+                  </li>
+                ))}
+              </ol>
+              <h3 className="font-semibold">Responsáveis</h3>
+              <p className="text-sm break-words">
+                Solicitante: {row?.created_by ?? "Você ao salvar"}
+              </p>
+              <AreaSummary kind={kind} id={form.area_id} />
+              <p className="text-sm text-muted-foreground">
+                Aprovação não iniciada. Nenhum aprovador é atribuído neste pacote.
+              </p>
+            </aside>
+          </div>
           {error && (
             <div role="alert" className="text-destructive space-y-2">
               {error}
@@ -497,7 +593,20 @@ export function PreparationScreen({ kind }: { kind: RequestKind }) {
             <Button variant="outline" disabled={save.isPending} onClick={() => setOpen(false)}>
               Fechar
             </Button>
-            <Button disabled={locked || !form.title.trim()} onClick={() => submit(form)}>
+            <Button
+              variant="outline"
+              disabled={step === 0}
+              onClick={() => setStep(Math.max(0, step - 1))}
+            >
+              Voltar
+            </Button>
+            {step < 3 && <Button onClick={() => setStep(step + 1)}>Continuar</Button>}
+            <Button
+              disabled={
+                locked || !form.title.trim() || (canReadReference && !!row && !reference.isSuccess)
+              }
+              onClick={() => submit(form)}
+            >
               {save.isPending ? "Salvando…" : row ? "Salvar alterações" : "Criar rascunho"}
             </Button>
           </DialogFooter>
@@ -527,6 +636,26 @@ export function PreparationScreen({ kind }: { kind: RequestKind }) {
     </div>
   );
 }
+function AreaSummary({ kind, id }: { kind: RequestKind; id: string | null }) {
+  const { workspaceId } = usePermissions();
+  const fn = useServerFn(searchPreparationPicker);
+  const result = useQuery({
+    queryKey: ["preparation-area-summary", workspaceId, kind, id],
+    enabled: !!id,
+    queryFn: () => fn({ data: { kind, picker: "area", selected: id, search: "", company: null } }),
+    retry: false,
+  });
+  return (
+    <p className="text-sm break-words">
+      Área:{" "}
+      {!id
+        ? "Não definida"
+        : result.isLoading
+          ? "Carregando…"
+          : (result.data?.[0]?.label ?? "Indisponível para consulta")}
+    </p>
+  );
+}
 function savedToForm(r: PreparationRow): PreparationData {
   return {
     title: r.title,
@@ -542,5 +671,8 @@ function savedToForm(r: PreparationRow): PreparationData {
     project_id: r.project_id,
     commercial_contract_id: r.commercial_contract_id,
     status: r.status,
+    selection_mode: r.selection_mode,
+    modality: r.modality,
+    release_condition: r.release_condition,
   };
 }

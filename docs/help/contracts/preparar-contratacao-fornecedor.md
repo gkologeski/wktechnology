@@ -8,7 +8,7 @@ route_pattern: /contracts/supplier-requests
 min_permission: techcontracts.supplier_requests.view.workspace
 audience: internal
 sort_order: 36
-version: 1
+version: 2
 is_published: true
 ---
 # Preparar contratação de fornecedor
@@ -18,12 +18,13 @@ is_published: true
 **Antes de começar:** Cadastros canônicos de empresa, área responsável e entidade legal WK, visíveis ao seu usuário.
 
 ## Passo a passo
-1. Clique em **Nova solicitação** e preencha título e justificativa/escopo do serviço ou resultado.
-2. Escolha finalidade, área responsável e entidade legal WK.
-3. Escolha a empresa fornecedora. Se necessário, associe um contato pertencente a essa empresa.
-4. Vincule projeto opcional; negócio e contrato comercial só se a finalidade for cliente e o vínculo fizer sentido.
-5. Salve como **Criar rascunho**. Reabra para editar ou marcar **Pronta para aprovação**.
-6. Consulte o histórico; **Cancelar solicitação** exige confirmação e não inclui alterações ainda não salvas.
+1. Abra **Nova solicitação** e percorra **Demanda → Vínculos → Condições → Revisão**. Voltar preserva os dados ainda não salvos.
+2. Em **Demanda**, informe título, finalidade Cliente/Interno/Gestão compartilhada, área responsável, entidade WK e escopo.
+3. Em **Vínculos**, escolha empresa fornecedora canônica e contato opcional da mesma empresa. Projeto é opcional; negócio e contrato de origem estão disponíveis quando a finalidade é Cliente.
+4. Em **Condições**, selecione Por entrega/Por hora/Mensal/Mista. O valor de referência exige permissões específicas `techcontracts.supplier_requests.reference.view.workspace` para consultar e `.reference.update.workspace` para alterar. Não é retornado na lista ou no histórico comum.
+5. Para fornecedor, registre **Aceite WK + NF válida** ou **Aceite WK + NF válida + aceite cliente final**, somente como condição em rascunho para revisão. Não libera pagamentos.
+6. Em **Revisão**, confira demanda, vínculos e condições e salve o rascunho. Na ficha, o histórico fica ao centro e resumo/jornada/responsáveis à direita; não há aprovação simulada.
+7. Reabra para editar ou marcar Pronta para aprovação; cancelar exige confirmação e preserva histórico. Não inclui alterações ainda não salvas.
 
 ## Resultado esperado
 Preparação de compra WK versionada, sem contrato ou processo operacional criado.
@@ -36,7 +37,7 @@ Preparação de compra WK versionada, sem contrato ou processo operacional criad
 - Entidade legal divergente da origem cliente é bloqueada.
 - Preparação não autoriza recrutamento antes da assinatura e não configura aprovadores.
 - Não cria aprovação, vaga, admissão, contrato, assinatura, acesso, financeiro ou mensagens.
-- Não há orçamento ou salário; vínculos não concedem leitura de campos sensíveis.
+- Valor de referência protegido; vínculos não concedem leitura de salário ou outros campos sensíveis.
 - Lista de 50 por página, buscas de até 25 opções com acesso do usuário. Cancelada é terminal e preserva histórico.
 
 ## Erros comuns

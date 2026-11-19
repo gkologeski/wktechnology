@@ -68,3 +68,20 @@ Não foram criados dados operacionais, enviados convites/mensagens, configurados
 6. Testar mobile/desktop, claro/escuro/Essential e teclado; aplicar apenas os dois artigos via mecanismo editorial após aceite.
 
 Próximo passo recomendado: revisão independente desta migração e matriz; depois aceite transacional isolado/CI. Não aplicar ou publicar automaticamente. Aprovações/formalização/execução continuam fora do escopo.
+
+
+## Complemento do protótipo aprovado — 19/11/2026
+Porte M/G, previsão 1–2 h; **preparado/testado localmente, não aplicado nem publicado**.
+- Wizard Demanda → Vínculos → Condições → Revisão. Demanda inclui regime só para profissional. Vínculos aceitam profissional definido ou necessidade de seleção sem vaga; revisão mostra cadastros canônicos consultados pelo usuário.
+- Modalidades Por entrega/Por hora/Mensal/Mista. Fornecedor registra Aceite WK + NF válida ou também aceite cliente final como condição em preparação, nunca autorização de pagamento.
+- Valor de referência sai somente da RPC específica após `reference.view.workspace`. Alteração exige `reference.update.workspace` mais criação/edição da solicitação; valor ausente no payload mantém o anterior. Tabelas comuns/eventos/lista/RPC de gravação nunca retornam valor. Input idempotente sensível fica separado, sem SELECT para authenticated; eventos sensíveis são imutáveis.
+- Ficha: histórico central, resumo/jornada/responsáveis à direita. Área vem de busca canônica limitada; solicitante usa id auditável (não inventa nome). Revisão possui atalhos para os passos; nenhum aprovador/decisão falsa.
+- Novo arquivo `docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql`, aditivo após 0373, fora do journal, **não aplicado**. 0373 permanece byte-idêntico. Nenhum preset recebe chaves.
+- Alterados: types.ts, requests.functions.ts, preparation-screen.tsx, preparation-form.tsx, preparation-postgres.test.ts, AGENTS.md de requests, dois artigos Ajuda (v1→v2), catálogo oficial, contratos/catalogue de permissão, roadmap e este relatório. Nenhum arquivo removido. WhatsApp e o commit local `1cf5c5a49` não foram alterados/absorvidos.
+- `permissions:check`: 13 achados de WhatsApp preexistentes; nenhum restante deste complemento, gate global continua reprovado. Registro literal das quatro chaves novas aponta para a migração preparada; baseline intacto.
+- `verify:changed` com cinco alvos: passou tipos/lint e 22 testes SQL, dois avisos max-lines (tela/prova SQL). `bunx vitest run src/lib/hiring/requests/preparation-postgres.test.ts src/lib/hiring/requests/boundary.test.ts`: **27 passaram** (22 SQL + 5 boundary).
+- `help:coverage`: 254/254; `bun scripts/help-catalogue.ts`: somente os dois artigos do pacote v2 atualizados, não aplicados editorialmente no banco.
+- Erro inicial SQL (CASE na comparação idempotente sem parênteses) corrigido e prova repetida. Erro transitório de tipos no adaptador de formulário corrigido; última compilação automática conferida: build OK.
+- Playwright Chromium tentou novamente localhost:8080/people/hiring-requests: timeout 15 s; não houve validação visual ou transacional. Banco de produção continua sem as duas migrações por decisão do usuário. Não há prova de JWT/REST real ou CI completa.
+- Revisão de segurança: sem segredo, admin client, RLS ampliada, env nova, dependência nova, parcela/medição ou efeito operacional; escrita de valor só por RPC dedicada às permissões. Sem acesso específico, valor nem é consultado pela tela. Avisos de tamanho e validação mobile/claro/escuro/Essential permanecem para aceite.
+- Próximo passo: conciliação local do gate WhatsApp pelo usuário; revisar migrações 0373+0374 e testar wizard/create/edit/read com identidade real em ambiente isolado. Campos de liberação continuam rascunho para revisão mesmo quando a solicitação marca pronta; não configura aprovações/formalização/execução.

@@ -734,6 +734,8 @@
     "techcontracts.signature_evidence.view.workspace",
     "techcontracts.supplier_requests.cancel.update.workspace",
     "techcontracts.supplier_requests.create.workspace",
+    "techcontracts.supplier_requests.reference.update.workspace",
+    "techcontracts.supplier_requests.reference.view.workspace",
     "techcontracts.supplier_requests.update.workspace",
     "techcontracts.supplier_requests.view.workspace",
     "techfinance.audit.create.own",
@@ -1372,6 +1374,8 @@
     "techpeople.goals.view.workspace",
     "techpeople.hiring_requests.cancel.update.workspace",
     "techpeople.hiring_requests.create.workspace",
+    "techpeople.hiring_requests.reference.update.workspace",
+    "techpeople.hiring_requests.reference.view.workspace",
     "techpeople.hiring_requests.update.workspace",
     "techpeople.hiring_requests.view.workspace",
     "techpeople.import.create.own",
@@ -3022,6 +3026,22 @@
     },
     "techcontracts.supplier_requests.cancel.update.workspace": {
       "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+    },
+    "techpeople.hiring_requests.reference.view.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+      "rationale": "Prepared only; explicit sensitive-field permission, no grants to roles."
+    },
+    "techpeople.hiring_requests.reference.update.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+      "rationale": "Prepared only; explicit sensitive-field permission, no grants to roles."
+    },
+    "techcontracts.supplier_requests.reference.view.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+      "rationale": "Prepared only; explicit sensitive-field permission, no grants to roles."
+    },
+    "techcontracts.supplier_requests.reference.update.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+      "rationale": "Prepared only; explicit sensitive-field permission, no grants to roles."
     }
   }
 }

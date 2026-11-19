@@ -1,5 +1,7 @@
 # SOLICITA-PREPARA — pacote 2 (porte G, previsão 3–5 h)
 
+- [x] Código do complemento aprovado preparado e 27 testes locais passaram (M/G, 1–2 h): wizard Demanda → Vínculos → Condições → Revisão; modalidade, necessidade de seleção, liberação e valor isolado por permissão específica; ficha com histórico central e resumo à direita. Sem absorver commit local 1cf5c5a49, alterar WhatsApp, aplicar migração ou publicar.
+
 - [x] Auditar contratos de autorização e entidades canônicas; plano anterior não localizado, escopo literal deste pedido aplicado.
 - [x] Migração local preparada, 14 provas SQL reais aprovadas; não aplicada em produção.
 - [x] Código de listagem/criação/edição e histórico preparado nas duas entradas, seletores limitados; 19 testes direcionados passaram.

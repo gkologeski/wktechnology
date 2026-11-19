@@ -129,6 +129,12 @@ beforeAll(async () => {
   await db.unsafe(
     readFileSync("docs/architecture/prepared-migrations/0373_hiring_requests.sql", "utf8"),
   );
+  await db.unsafe(
+    readFileSync(
+      "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+      "utf8",
+    ),
+  );
   for (const table of [
     "user_groups",
     "legal_entities",
@@ -151,7 +157,7 @@ afterAll(async () => {
 });
 async function reset() {
   await db.unsafe(
-    "TRUNCATE hiring_preparation_events,hiring_preparation_requests,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_permission_sets,permission_sets,permission_set_items,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts CASCADE",
+    "TRUNCATE hiring_preparation_reference_events,hiring_preparation_reference_values,hiring_preparation_events,hiring_preparation_requests,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_permission_sets,permission_sets,permission_set_items,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts CASCADE",
   );
   await db`insert into workspaces(id) values(${W}),(${B})`;
   await db`insert into profiles values(${U},${W})`;
@@ -184,6 +190,9 @@ const form = (kind = "professional") => ({
   project_id: null,
   commercial_contract_id: null,
   status: "draft",
+  selection_mode: "needs_selection",
+  modality: "delivery",
+  release_condition: kind === "supplier" ? "wk_acceptance_invoice" : null,
 });
 const save = (
   tx: postgres.TransactionSql,
@@ -231,7 +240,7 @@ it("preparation rejects explicit deny", async () => {
   await db`insert into job_role_permission_overrides select ${W},${A},key,'deny' from permissions`;
   expect(
     (await db`select count(*)::int n from job_role_permission_overrides where effect='deny'`)[0].n,
-  ).toBe(8);
+  ).toBe(12);
   await blocked();
 });
 it("preparation rejects foreign workspace", async () => {
@@ -357,4 +366,117 @@ it("preparation cancellation cannot change title with cancel-only permission", a
     save(tx, "professional", { ...form(), status: "cancelled" }, r.id, 1),
   );
   expect(cancelled.status).toBe("cancelled");
+});
+
+it("preparation reference is absent from list history save and direct tables", async () => {
+  await reset();
+  const r = await user((tx) =>
+    save(tx, "supplier", { ...form("supplier"), reference_value: 12345.67 }),
+  );
+  expect(r).not.toHaveProperty("reference_value");
+  const amount = await user(
+    (tx) => tx`select hiring_preparation_reference(${W},'supplier',${r.id}) as v`,
+  );
+  expect(amount[0].v.reference_value).toBe(12345.67);
+  const page = await user((tx) => tx`select hiring_preparation_page(${W},'supplier','',0) as v`);
+  expect(JSON.stringify(page)).not.toContain("12345.67");
+  const history = await user(
+    (tx) => tx`select hiring_preparation_history(${W},'supplier',${r.id},0) as v`,
+  );
+  expect(JSON.stringify(history)).not.toContain("12345.67");
+  await expect(user((tx) => tx`select * from hiring_preparation_reference_values`)).rejects.toThrow(
+    "permission denied",
+  );
+  await user(async (tx) => {
+    const events = await tx`select payload,snapshot from hiring_preparation_events`;
+    expect(JSON.stringify(events)).not.toContain("12345.67");
+  });
+});
+it("preparation reference denies missing specific permission and preserves amount on ordinary edit", async () => {
+  await reset();
+  const r = await user((tx) => save(tx, "professional", { ...form(), reference_value: 22000 }));
+  await db`delete from job_role_permission_overrides where permission_key like '%.reference.%'`;
+  await expect(
+    user((tx) => tx`select hiring_preparation_reference(${W},'professional',${r.id})`),
+  ).rejects.toThrow("Sem permissão");
+  await expect(
+    user((tx) => save(tx, "professional", { ...form(), reference_value: 1 }, r.id, 1)),
+  ).rejects.toThrow("Sem permissão");
+  await user((tx) => save(tx, "professional", { ...form(), title: "Edited" }, r.id, 1));
+  expect(
+    (await db`select reference_value from hiring_preparation_reference_values`)[0].reference_value,
+  ).toBe("22000.00");
+});
+it("reference rejects explicit deny", async () => {
+  await reset();
+  const r = await user((tx) => save(tx, "professional", { ...form(), reference_value: 100 }));
+  await db`insert into job_role_permission_overrides values(${W},${A},'techpeople.hiring_requests.reference.view.workspace','deny')`;
+  await expect(
+    user((tx) => tx`select hiring_preparation_reference(${W},'professional',${r.id})`),
+  ).rejects.toThrow("Sem permissão");
+});
+it("reference rejects foreign workspace", async () => {
+  await reset();
+  const r = await user((tx) => save(tx, "professional", { ...form(), reference_value: 100 }));
+  await db`update profiles set active_workspace_id=${B}`;
+  await expect(
+    user((tx) => tx`select hiring_preparation_reference(${W},'professional',${r.id})`),
+  ).rejects.toThrow("Sem permissão");
+});
+it("reference rejects inactive member", async () => {
+  await reset();
+  const r = await user((tx) => save(tx, "professional", { ...form(), reference_value: 100 }));
+  await db`update workspace_members set status='inactive'`;
+  await expect(
+    user((tx) => tx`select hiring_preparation_reference(${W},'professional',${r.id})`),
+  ).rejects.toThrow("Sem permissão");
+});
+it("preparation selection defined requires real person and never opens recruitment", async () => {
+  await reset();
+  const r = await user((tx) => save(tx, "professional", form()));
+  await expect(
+    user((tx) =>
+      save(tx, "professional", { ...form(), selection_mode: "defined", status: "ready" }, r.id, 1),
+    ),
+  ).rejects.toThrow("pessoa real");
+  const ready = await user((tx) =>
+    save(tx, "professional", { ...form(), status: "ready" }, r.id, 1),
+  );
+  expect(ready.selection_mode).toBe("needs_selection");
+  expect(ready.status).toBe("ready");
+});
+it("preparation accepts four modalities and supplier release conditions only as draft terms", async () => {
+  await reset();
+  let r = await user((tx) => save(tx, "supplier", form("supplier")));
+  for (const modality of ["delivery", "hourly", "monthly", "mixed"]) {
+    r = await user((tx) =>
+      save(
+        tx,
+        "supplier",
+        { ...form("supplier"), modality, release_condition: "also_client_acceptance" },
+        r.id,
+        r.revision,
+      ),
+    );
+    expect(r.modality).toBe(modality);
+    expect(r.release_condition).toBe("also_client_acceptance");
+    expect(r.status).toBe("draft");
+  }
+});
+it("preparation sensitive idempotency rejects changed amount and immutable input cannot be edited", async () => {
+  await reset();
+  const operation = randomUUID();
+  const a = await user((tx) =>
+    save(tx, "professional", { ...form(), reference_value: 50 }, null, 0, operation),
+  );
+  const b = await user((tx) =>
+    save(tx, "professional", { ...form(), reference_value: 50 }, null, 0, operation),
+  );
+  expect(a.id).toBe(b.id);
+  await expect(
+    user((tx) => save(tx, "professional", { ...form(), reference_value: 60 }, null, 0, operation)),
+  ).rejects.toThrow("valor diferente");
+  await expect(db`update hiring_preparation_reference_events set input='{}'`).rejects.toThrow(
+    "imutável",
+  );
 });
