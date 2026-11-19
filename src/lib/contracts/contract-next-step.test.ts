@@ -53,3 +53,34 @@ describe("contractNextStep", () => {
     expect(contractNextStep({ ...base, status: "ended" }).primary).toBeNull();
   });
 });
+
+describe("contract next step — legacy (LEGADO-REGULARIZA)", () => {
+  const base = {
+    status: "draft",
+    startsAt: null,
+    endsAt: null,
+    totalValue: 0,
+    hasBody: true,
+    canUpdate: true,
+    canTransition: true,
+    canActivate: true,
+    today: new Date("2026-11-19T12:00:00"),
+  };
+  it("pending legacy never offers approval/signature", () => {
+    const s = contractNextStep({ ...base, legacy: "pending" });
+    expect(s.primary?.label).toBe("Revisar e regularizar");
+    expect(JSON.stringify(s)).not.toMatch(/aprovação"|Enviar para aprovação|Acompanhar assinatura/);
+  });
+  it("unknown legacy hides approval instead of assuming a normal contract", () => {
+    expect(contractNextStep({ ...base, legacy: "unknown" }).primary).toBeNull();
+  });
+  it("eligible draft offers explicit recognition", () => {
+    const s = contractNextStep({ ...base, legacyEligible: true });
+    expect(s.secondary.map((x) => x.label)).toContain("Reconhecer contrato legado");
+  });
+  it("regularized legacy keeps the canonical status flow without retroactive commercial steps", () => {
+    const s = contractNextStep({ ...base, status: "active", legacy: "regularized" });
+    expect(s.headline).toBe("Contrato em vigor");
+    expect(s.explanation).toMatch(/aditivo/);
+  });
+});

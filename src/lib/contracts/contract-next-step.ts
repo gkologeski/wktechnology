@@ -21,6 +21,9 @@ export type NextStepInput = {
   canTransition: boolean;
   canActivate: boolean;
   today: Date;
+  /** LEGADO-REGULARIZA: situação conhecida do contrato legado importado; ausente = contrato comum. */
+  legacy?: "none" | "pending" | "regularized" | "unknown";
+  legacyEligible?: boolean;
 };
 
 export type NextStep = {
@@ -60,6 +63,50 @@ function fmt(iso: string | null): string {
 const tab = (t: ContractDetailTab): NextStepTarget => ({ kind: "tab", tab: t });
 
 export function contractNextStep(input: NextStepInput): NextStep {
+  const legacy = legacyNextStep(input);
+  if (legacy) return legacy;
+  const step = commonNextStep(input);
+  if (input.legacy === "regularized")
+    return {
+      ...step,
+      explanation: `Contrato legado regularizado com o original assinado; alterações somente por aditivo. ${step.explanation}`,
+    };
+  if (input.legacyEligible && (input.status === "draft" || input.status === "in_negotiation"))
+    return {
+      ...step,
+      secondary: [
+        ...step.secondary,
+        { label: "Reconhecer contrato legado", target: tab("overview") },
+      ],
+    };
+  return step;
+}
+
+function legacyNextStep(input: NextStepInput): NextStep | null {
+  if (input.legacy === "pending")
+    return {
+      stageIndex: 0,
+      headline: "Contrato legado em regularização",
+      explanation:
+        "Revise documento, partes e datas e anexe o PDF original assinado. Não há envio para aprovação, cotação, proposta, minuta ou nova assinatura.",
+      primary: { label: "Revisar e regularizar", target: tab("overview") },
+      secondary: [{ label: "Revisar documento", target: tab("document") }],
+      checklist: [],
+    };
+  if (input.legacy === "unknown" && input.status === "draft")
+    return {
+      stageIndex: 0,
+      headline: "Verificando se é contrato legado",
+      explanation:
+        "Não foi possível confirmar a situação de legado. Ações de aprovação e assinatura ficam ocultas até a verificação.",
+      primary: null,
+      secondary: [{ label: "Revisar documento", target: tab("document") }],
+      checklist: [],
+    };
+  return null;
+}
+
+function commonNextStep(input: NextStepInput): NextStep {
   const { status } = input;
   const amendment: NextStepAction = {
     label: "Adicionar aditivo",

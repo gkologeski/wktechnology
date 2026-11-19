@@ -15,8 +15,8 @@ Base: `50f3300ae`. Revisão local em `codex/legacy-contracts-hardening`. Pacote 
 | Lote | Escopo | Estado |
 | --- | --- | --- |
 | A | Núcleo SQL 0385, modelos, servidor, testes | preparado (este) |
-| B | Server functions finas, painel na ficha (histórico central, ações à direita, White Label), Ajuda, `contract-next-step` ciente de legado | pendente |
-| C | Importador: marcar como "legado pendente" pela mesma RPC na importação, sem classificar automaticamente | pendente |
+| B | Server functions finas, painel na ficha (trilha central, ações à direita), próximo passo e cartão de assinatura cientes de legado; reforços do núcleo A | preparado |
+| C | Importador (marcar legado pendente pela mesma RPC, sem classificar automaticamente) e Ajuda | pendente |
 | D | Inventário assistido dos 18 rascunhos importados (ação humana, sem lote automático) | pendente |
 | Financeiro | Liberação de cobrança de legado: fluxo próprio do Financeiro | fora deste pacote |
 
@@ -49,3 +49,13 @@ Base: `50f3300ae`. Revisão local em `codex/legacy-contracts-hardening`. Pacote 
 - Escopo de equipe (`.team`) vale no caminho do usuário; no atestado de serviço só são revalidadas as chaves `.workspace`/`.own`.
 - As funções definer precisam ser criadas pelo papel dono que contorna `contract_process_guard` (postgres no Supabase), como nas migrações anteriores.
 - `contract-next-step` e `ContractSignatureCard` ainda não reconhecem legado (lote B).
+
+## Lote B — entregue
+
+- `legacy.functions.ts` (finos, `requireSupabaseAuth`) → `legacy.server.ts` com o cliente do usuário. Upload: valida PDF real, reserva pela RPC do usuário e só então grava/relê/atesta com o serviço no caminho devolvido; replay não reatesta. Download: RPC `open` do usuário e URL assinada de 60 s.
+- Leitura distingue negação (sem chave) de falha: falha mostra erro e oculta aprovação/assinatura; nunca vira "não legado".
+- Ficha: painel "Contrato legado" no topo da Visão geral (trilha central, ações à direita). Reconhecer só quando elegível, com motivo; pendente lista campos faltantes (edição normal do contrato), pede nova revisão quando o documento mudou, e o formulário de regularização exige PDF conferido, situação, data da assinatura com confirmação humana, vigência, renovação conferida, referência e justificativa. Vigência futura fica pendente com explicação. Regularizado mostra situação, evidência (prévia privada), trilha e "alterações por aditivo".
+- Próximo passo: pendente/desconhecido nunca oferece aprovação/assinatura; regularizado mantém o fluxo do status canônico sem exigência comercial retroativa. Aba de aprovações e cartão de assinatura ficam ocultos/informativos para legado.
+- Núcleo A reforçado (0385 ainda não aplicada): imutabilidade de todos os termos conferidos (valores, moeda, pagamento, identificadores, assinatura, aviso, reajuste, multas); pendente ou regularizado não aceita assinatura, proposta ou origem nova; inserção em pacotes de assinatura, entregas e-sign e ForSign bloqueada para legado; reserva trava contrato antes do registro (mesma ordem de rebase/regularização).
+- Testes: `legacy-postgres.test.ts` 40/40, `legacy.server.test.ts`, `legacy-view.test.ts`, `contract-next-step.test.ts` e regressão `deal-contracting-journey.test.ts` (75/75 no total). `permissions:check` sem achados; typecheck sem erros.
+- Não validado: tela no navegador (a prévia local não respondeu durante o lote), integração real dos demais gatilhos de `contracts` (o banco descartável usa versões simplificadas de assinatura/serviços/cobrança), usuários sem a chave de leitura continuam vendo o fluxo comum na tela (o banco bloqueia nova assinatura de legado).

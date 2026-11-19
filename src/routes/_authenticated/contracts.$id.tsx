@@ -1,6 +1,8 @@
 import { ContractAttachmentsCard } from "@/components/contracts/contract-attachments-card";
 import { serviceTypeLabel } from "@/lib/contracts/import-schemas";
 import { ContractSignatureCard } from "@/components/hiring/contract-signature-card";
+import { ContractLegacyPanel } from "@/components/contracts/legacy/contract-legacy-panel";
+import { useContractLegacy } from "@/components/contracts/legacy/use-contract-legacy";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { WorkScreenAccess, WorkRecordAccess } from "@/components/work-access";
 import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
@@ -218,6 +220,7 @@ function ContractDetail() {
     queryFn: () => get({ data: { id } }),
   });
 
+  const legacy = useContractLegacy(id, !!contract?.source_file_path);
   const access = useWorkCapabilities("techcontracts.contracts", [id]);
   const canUpdateContract = access.for(id).can_update;
   const { can } = usePermissions();
@@ -342,6 +345,8 @@ function ContractDetail() {
     canTransition,
     canActivate: can("techcontracts.contract_activation.manage.workspace"),
     today: new Date(),
+    legacy: legacy.gate,
+    legacyEligible: legacy.mode === "eligible",
   });
 
   const runNextStep = (action: NextStepAction) => {
@@ -458,6 +463,12 @@ function ContractDetail() {
           <TabsTrigger value="history">Histórico</TabsTrigger>
         </TabsList>
         <TabsContent value="overview" className="space-y-5 pt-3">
+          <ContractLegacyPanel
+            contract={contract}
+            mode={legacy.mode}
+            query={legacy.query}
+            canUpdateContract={canUpdateContract}
+          />
           <div className="grid gap-5 md:grid-cols-2">
             <Card>
               <CardHeader className="pb-3">
@@ -709,11 +720,12 @@ function ContractDetail() {
           <ImportedFieldsCard contract={contract} />
         </TabsContent>
         <TabsContent value="approvals" className="space-y-5 pt-3">
-          <ContractApprovalsPanel contractId={contract.id} />
+          {legacy.gate === "none" && <ContractApprovalsPanel contractId={contract.id} />}
           {can("techcontracts.signature_evidence.view.workspace") && (
             <ContractSignatureCard
               contractId={contract.id}
               revisionKey={contract.updated_at ?? ""}
+              legacy={legacy.gate}
             />
           )}
         </TabsContent>

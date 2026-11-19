@@ -182,6 +182,8 @@ BEGIN
  END IF;
  IF lower(coalesce(p_sha256,'')) !~ '^[0-9a-f]{64}$' OR p_size NOT BETWEEN 5 AND 5242880 OR length(btrim(coalesce(p_file_name,''))) NOT BETWEEN 1 AND 255 OR lower(p_file_name) !~ '\.pdf$' THEN
   RAISE EXCEPTION 'Envie um PDF do original assinado (até 5 MB).';END IF;
+ PERFORM 1 FROM contracts WHERE id=c.id FOR UPDATE;
+ SELECT * INTO c FROM contracts WHERE id=c.id;
  SELECT * INTO r FROM contract_legacy_records WHERE contract_id=c.id AND workspace_id=w FOR UPDATE;
  IF r.id IS NULL OR r.status<>'pending' THEN RAISE EXCEPTION 'Contrato não está pendente de regularização.' USING ERRCODE='23514';END IF;
  IF p_expected_revision IS DISTINCT FROM r.revision THEN RAISE EXCEPTION 'STALE: revisão esperada difere da atual.';END IF;
@@ -298,15 +300,41 @@ $$;
 
 -- Após a regularização o documento conferido é imutável (mudanças por aditivo); status manual já é bloqueado por contract_process_guard.
 CREATE FUNCTION public.contract_legacy_contract_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+DECLARE st text;
 BEGIN
- IF EXISTS(SELECT 1 FROM public.contract_legacy_records r WHERE r.contract_id=OLD.id AND r.status='regularized')
-  AND (NEW.source_file_path,NEW.body_html,NEW.role,NEW.counterparty_company_id,NEW.contracting_legal_entity_id,NEW.legal_entity_id,NEW.signed_at,NEW.starts_at,NEW.ends_at,NEW.auto_renew,NEW.document_kind,NEW.parent_contract_id)
-   IS DISTINCT FROM (OLD.source_file_path,OLD.body_html,OLD.role,OLD.counterparty_company_id,OLD.contracting_legal_entity_id,OLD.legal_entity_id,OLD.signed_at,OLD.starts_at,OLD.ends_at,OLD.auto_renew,OLD.document_kind,OLD.parent_contract_id) THEN
-  RAISE EXCEPTION 'Contrato legado regularizado: documento conferido é imutável. Formalize mudanças por aditivo.' USING ERRCODE='23514';
+ SELECT r.status INTO st FROM public.contract_legacy_records r WHERE r.contract_id=OLD.id;
+ IF st IS NULL THEN RETURN NEW;END IF;
+ -- Pendente ou regularizado: nenhuma origem governada/assinatura nova pode ser enxertada no legado.
+ IF (NEW.signature_provider,NEW.signature_document_id,NEW.signature_operation_id,NEW.signed_pdf_path,NEW.proposal_id,NEW.quote_id,NEW.hiring_request_origin)
+   IS DISTINCT FROM (OLD.signature_provider,OLD.signature_document_id,OLD.signature_operation_id,OLD.signed_pdf_path,OLD.proposal_id,OLD.quote_id,OLD.hiring_request_origin)
+  OR (st='pending' AND NEW.signed_at IS DISTINCT FROM OLD.signed_at AND current_user NOT IN('postgres','supabase_admin')) THEN
+  RAISE EXCEPTION 'Contrato legado: assinatura, proposta ou origem nova não podem ser vinculadas; regularize com o original assinado.' USING ERRCODE='23514';
+ END IF;
+ -- Regularizado: todos os termos conferidos ficam imutáveis (documento, partes, vigência, valores, moeda, pagamento, identificadores e assinatura).
+ IF st='regularized' AND (NEW.source_file_path,NEW.body_html,NEW.role,NEW.counterparty_company_id,NEW.contracting_legal_entity_id,NEW.legal_entity_id,NEW.signed_at,
+   NEW.starts_at,NEW.ends_at,NEW.auto_renew,NEW.notice_days,NEW.document_kind,NEW.parent_contract_id,NEW.number,NEW.total_value,NEW.monthly_value,NEW.currency,
+   NEW.payment_terms,NEW.payment_method,NEW.payment_day,NEW.hours_per_month,NEW.readjustment_index,NEW.readjustment_period,NEW.late_fee_percent,
+   NEW.late_interest_monthly_percent,NEW.penalty_percent,NEW.amendment_of_id,NEW.imported_from,NEW.workspace_id)
+  IS DISTINCT FROM (OLD.source_file_path,OLD.body_html,OLD.role,OLD.counterparty_company_id,OLD.contracting_legal_entity_id,OLD.legal_entity_id,OLD.signed_at,
+   OLD.starts_at,OLD.ends_at,OLD.auto_renew,OLD.notice_days,OLD.document_kind,OLD.parent_contract_id,OLD.number,OLD.total_value,OLD.monthly_value,OLD.currency,
+   OLD.payment_terms,OLD.payment_method,OLD.payment_day,OLD.hours_per_month,OLD.readjustment_index,OLD.readjustment_period,OLD.late_fee_percent,
+   OLD.late_interest_monthly_percent,OLD.penalty_percent,OLD.amendment_of_id,OLD.imported_from,OLD.workspace_id) THEN
+  RAISE EXCEPTION 'Contrato legado regularizado: termos conferidos são imutáveis. Formalize mudanças por aditivo.' USING ERRCODE='23514';
  END IF;
  RETURN NEW;
 END $$;
 CREATE TRIGGER zz_contract_legacy_guard BEFORE UPDATE ON public.contracts FOR EACH ROW EXECUTE FUNCTION public.contract_legacy_contract_guard();
+-- Assinatura nativa/ForSign/e-sign nunca recomeça em contrato legado (pendente ou regularizado), inclusive por serviço.
+CREATE FUNCTION public.contract_legacy_signature_block() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+BEGIN
+ IF EXISTS(SELECT 1 FROM public.contract_legacy_records r WHERE r.contract_id=NEW.contract_id) THEN
+  RAISE EXCEPTION 'Contrato legado não pode ser enviado para nova assinatura; use a regularização com o original assinado.' USING ERRCODE='23514';
+ END IF;
+ RETURN NEW;
+END $$;
+CREATE TRIGGER contract_legacy_no_signature_package BEFORE INSERT ON public.contract_signature_packages FOR EACH ROW EXECUTE FUNCTION public.contract_legacy_signature_block();
+CREATE TRIGGER contract_legacy_no_esign_delivery BEFORE INSERT ON public.contract_esign_deliveries FOR EACH ROW EXECUTE FUNCTION public.contract_legacy_signature_block();
+CREATE TRIGGER contract_legacy_no_forsign BEFORE INSERT ON public.contract_forsign_operations FOR EACH ROW EXECUTE FUNCTION public.contract_legacy_signature_block();
 
 -- Guarda comercial (0356): ignora a exigência de proposta/minuta SOMENTE para legado regularizado e validado,
 -- e só quando o vínculo alterado é o negócio (proposta, papel e tipo de documento inalterados).
@@ -375,7 +403,7 @@ REVOKE ALL ON FUNCTION public.contract_legacy_immutable_guard(),public.contract_
  public.contract_legacy_recognize(uuid,uuid,integer,text,uuid),public.contract_legacy_evidence_reserve(uuid,uuid,integer,text,bigint,text,uuid),
  public.contract_legacy_evidence_attest(uuid,uuid,uuid,text,bigint),
  public.contract_legacy_regularize(uuid,uuid,integer,text,date,boolean,date,date,date,boolean,boolean,uuid,text,text,text,uuid),
- public.contract_legacy_state(uuid,uuid),public.contract_legacy_evidence_open(uuid,uuid,uuid),public.contract_legacy_validated(uuid,uuid),public.contract_legacy_contract_guard() FROM PUBLIC,anon,authenticated,service_role;
+ public.contract_legacy_state(uuid,uuid),public.contract_legacy_evidence_open(uuid,uuid,uuid),public.contract_legacy_validated(uuid,uuid),public.contract_legacy_contract_guard(),public.contract_legacy_signature_block() FROM PUBLIC,anon,authenticated,service_role;
 GRANT EXECUTE ON FUNCTION public.contract_legacy_recognize(uuid,uuid,integer,text,uuid),public.contract_legacy_evidence_reserve(uuid,uuid,integer,text,bigint,text,uuid),
  public.contract_legacy_regularize(uuid,uuid,integer,text,date,boolean,date,date,date,boolean,boolean,uuid,text,text,text,uuid),
  public.contract_legacy_state(uuid,uuid),public.contract_legacy_evidence_open(uuid,uuid,uuid) TO authenticated;
