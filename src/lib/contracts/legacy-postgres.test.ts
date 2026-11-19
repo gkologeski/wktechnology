@@ -1,13 +1,21 @@
 import { afterAll, beforeAll, expect, it } from "vitest";
 import postgres from "postgres";
 import { execFileSync } from "node:child_process";
-import { chownSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import {
+  chownSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 
 // LEGADO-REGULARIZA lote A. Real PostgreSQL with production resolver bodies and the prepared 0385.
-// Never reads a configured database URL; native PostgreSQL 17 from nix on a private Unix socket.
+// Never reads a configured URL: nix PG17 when present, macOS TECHERP_NATIVE_PG=1 (Postgres.app 16, private socket), otherwise Docker PG17 pinned by digest on a local Unix socket (CI).
 const PREPARED = "docs/prepared-migrations/0385_contract_legacy_regularization.sql";
 const W = "aaaaaaaa-0000-4000-8000-0000000000c1",
   B = "aaaaaaaa-0000-4000-8000-0000000000c2",
@@ -18,20 +26,39 @@ const W = "aaaaaaaa-0000-4000-8000-0000000000c1",
   K = "eeeeeeee-0000-4000-8000-0000000000c1",
   DEAL = "ffffffff-0000-4000-8000-0000000000c1";
 const SHA = "a".repeat(64);
+let root = "",
+  started = false;
+let db: ReturnType<typeof postgres>;
 const nixPg =
   process.platform === "linux" && existsSync("/nix/store")
     ? readdirSync("/nix/store").find((n) => /-postgresql-17\.\d+$/.test(n))
     : undefined;
-const pgBin = nixPg ? `/nix/store/${nixPg}/bin/` : "";
-let root = "",
-  started = false;
-let db: ReturnType<typeof postgres>;
+const useNative =
+  !!nixPg || (process.platform === "darwin" && process.env.TECHERP_NATIVE_PG === "1");
+const pgBin = nixPg
+  ? `/nix/store/${nixPg}/bin/`
+  : "/Applications/Postgres.app/Contents/Versions/16/bin/";
 function native(binary: string, args: string[]) {
-  return execFileSync("runuser", ["-u", "nobody", "--", pgBin + binary, ...args], {
-    stdio: "pipe",
-    timeout: 30000,
-  });
+  return nixPg
+    ? execFileSync("runuser", ["-u", "nobody", "--", pgBin + binary, ...args], {
+        stdio: "pipe",
+        timeout: 30000,
+      })
+    : execFileSync(pgBin + binary, args, { stdio: "pipe", timeout: 30000 });
 }
+const docker =
+  process.platform === "darwin"
+    ? "/Applications/Docker.app/Contents/Resources/bin/docker"
+    : "docker";
+const image = "postgres@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b";
+const container = "techerp-contract-legacy-ci-" + randomUUID();
+let endpoint = "";
+const dockerRun = (...args: string[]) =>
+  execFileSync(docker, ["--host", endpoint, ...args], {
+    encoding: "utf8",
+    timeout: 90000,
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
 function body(path: string, name: string) {
   const sql = readFileSync(path, "utf8");
   const start = sql.indexOf("CREATE OR REPLACE FUNCTION " + name);
@@ -50,38 +77,94 @@ const allKeys = [
   "techcontracts.contracts.update.workspace",
 ];
 beforeAll(async () => {
-  if (!nixPg) throw Error("Native PostgreSQL 17 is required for this SQL permission test.");
   root = mkdtempSync(join(tmpdir(), "contract-legacy-pg-"));
-  chownSync(root, 65534, 65534);
-  native("initdb", [
-    "-D",
-    join(root, "data"),
-    "-U",
-    "postgres",
-    "--auth-local=trust",
-    "--auth-host=reject",
-    "--no-locale",
-    "--encoding=UTF8",
-  ]);
-  native("pg_ctl", [
-    "-D",
-    join(root, "data"),
-    "-l",
-    join(root, "server.log"),
-    "-o",
-    `-k ${root} -h '' -p 55461 -F -c jit=off`,
-    "-w",
-    "start",
-  ]);
-  started = true;
-  db = postgres({
-    host: root,
-    port: 55461,
-    username: "postgres",
-    database: "postgres",
-    max: 4,
-    onnotice: () => {},
-  });
+  if (nixPg) chownSync(root, 65534, 65534);
+  if (useNative) {
+    native("initdb", [
+      "-D",
+      join(root, "data"),
+      "-U",
+      "postgres",
+      "--auth-local=trust",
+      "--auth-host=reject",
+      "--no-locale",
+      "--encoding=UTF8",
+    ]);
+    native("pg_ctl", [
+      "-D",
+      join(root, "data"),
+      "-l",
+      join(root, "server.log"),
+      "-o",
+      `-k ${root} -h '' -p 55461 -F -c jit=off`,
+      "-w",
+      "start",
+    ]);
+    started = true;
+    db = postgres({
+      host: root,
+      port: 55461,
+      username: "postgres",
+      database: "postgres",
+      max: 4,
+      onnotice: () => {},
+    });
+  } else {
+    endpoint = execFileSync(
+      docker,
+      ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"],
+      { encoding: "utf8", timeout: 10000 },
+    ).trim();
+    if (!endpoint.startsWith("unix://")) throw Error("Only a local Unix Docker socket is allowed.");
+    const password = randomUUID() + randomUUID(),
+      envFile = join(root, "postgres.env");
+    writeFileSync(
+      envFile,
+      "POSTGRES_DB=techerp_permission_ci\nPOSTGRES_PASSWORD=" + password + "\n",
+      { mode: 0o600 },
+    );
+    dockerRun(
+      "run",
+      "-d",
+      "--rm",
+      "--name",
+      container,
+      "--env-file",
+      envFile,
+      "-p",
+      "127.0.0.1::5432",
+      image,
+      "-c",
+      "fsync=off",
+      // Match the deployed PostgreSQL setting; no permission, query or timeout is relaxed.
+      "-c",
+      "jit=off",
+    );
+    started = true;
+    const mapped = dockerRun("port", container, "5432/tcp");
+    if (!/^127\.0\.0\.1:\d+$/.test(mapped)) throw Error("Unexpected disposable DB binding");
+    db = postgres({
+      host: "127.0.0.1",
+      port: Number(mapped.split(":")[1]),
+      username: "postgres",
+      password,
+      database: "techerp_permission_ci",
+      max: 4,
+      connect_timeout: 1,
+      onnotice: () => {},
+    });
+    let ready = false;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      try {
+        await db`select 1`;
+        ready = true;
+        break;
+      } catch {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+    }
+    if (!ready) throw Error("Disposable PostgreSQL did not become ready");
+  }
   const fixture = readFileSync("tests/fixtures/hiring-preparation.sql", "utf8");
   const permission = fixture.match(/CREATE FUNCTION user_has_permission[^\n]+/)?.[0];
   if (!permission) throw Error("resolver missing");
@@ -147,10 +230,19 @@ beforeAll(async () => {
     CREATE TRIGGER zzzz_contract_process_guard BEFORE INSERT OR UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contract_process_guard();
     CREATE TRIGGER zz_contracts_release_service_billing AFTER UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contracts_release_service_billing_trg();
     GRANT SELECT ON contracts TO service_role;`);
+  // Open both sessions before deadlines; concurrency cases still run real overlapping RPCs.
+  const connections = await Promise.all([db.reserve(), db.reserve()]);
+  try {
+    await Promise.all(connections.map((connection) => connection`select 1`));
+  } finally {
+    for (const connection of connections) connection.release();
+  }
 }, 120000);
 afterAll(async () => {
   if (db) await db.end();
-  if (started) native("pg_ctl", ["-D", join(root, "data"), "-m", "fast", "-w", "stop"]);
+  if (started && useNative)
+    native("pg_ctl", ["-D", join(root, "data"), "-m", "fast", "-w", "stop"]);
+  if (started && !useNative) dockerRun("rm", "-f", container);
   if (root) rmSync(root, { recursive: true, force: true });
 });
 
@@ -431,12 +523,43 @@ it("direct table access and caller-forged classification are impossible", async 
     ),
   ).toMatch(/permission denied/);
 });
+it("imported active and ended contracts are recognizable; status is kept until human regularization", async () => {
+  for (const [status, situation, over] of [
+    ["active", "in_force", {}],
+    ["ended", "ended", { ends: "2024-01-31" }],
+    ["terminated", "terminated", { ends: "2024-12-31", term: "2024-06-30" }],
+  ] as const) {
+    await reset({ status, signed_at: "2022-01-01T12:00:00Z" });
+    const rec = await recognize();
+    expect(rec.status).toBe("pending");
+    const [row] =
+      await db`select r.prior_status, r.prior_signed_at::text p, c.status::text s, c.signed_at::text sa
+      from contract_legacy_records r join contracts c on c.id=r.contract_id where c.id=${K}`;
+    expect(row).toMatchObject({ prior_status: status, s: status });
+    expect(row.p).toBe(row.sa);
+    // Pending never moves the canonical status nor accepts a signature by direct update.
+    for (const q of ["signed_at=now()", "status='draft'"])
+      expect(
+        await err(as(U, (tx) => tx.unsafe(`update contracts set ${q} where id='${K}'`))),
+      ).toMatch(/Contrato legado/);
+    // Not even the table owner bypasses it without the private regularization marker.
+    expect(await err(db`update contracts set signed_at=now() where id=${K}`)).toMatch(
+      /Contrato legado/,
+    );
+    const ev = await attachEvidence();
+    expect(await err(regularize(ev, { situation, ...over }))).toBe("ok");
+    const [after] = await db`select status::text s from contracts where id=${K}`;
+    expect(after.s).toBe(status);
+    expect(Number((await db`select count(*) n from financial_entries`)[0].n)).toBe(0);
+  }
+});
 it("protected origins cannot be converted to legacy", async () => {
   for (const extra of [
     { hiring_request_origin: randomUUID() },
     { proposal_id: randomUUID() },
     { signature_provider: "forsign" },
-    { signed_at: "2024-01-01" },
+    { signed_pdf_path: "evidence/assinado.pdf" },
+    { status: "awaiting_signature" },
     { metadata: { commercial_journey_version: 1, accepted_proposal: {} } },
     { source_file_path: null },
   ]) {
@@ -626,7 +749,7 @@ it("regularized legacy keeps every conferred financial/identity term immutable",
   ])
     expect(
       await err(as(U, (tx) => tx.unsafe(`update contracts set ${set} where id='${K}'`))),
-    ).toMatch(/imutáveis|não podem ser vinculadas/);
+    ).toMatch(/imutáveis|não podem ser alterados/);
   expect(
     await err(as(U, (tx) => tx`update contracts set title='Título revisado' where id=${K}`)),
   ).toBe("ok");
@@ -644,10 +767,10 @@ it("pending legacy cannot be signed natively or have signature/proposal grafted"
     );
   expect(
     await err(as(U, (tx) => tx`update contracts set signature_provider='native' where id=${K}`)),
-  ).toMatch(/não podem ser vinculadas/);
+  ).toMatch(/não podem ser alterados/);
   expect(
     await err(as(U, (tx) => tx`update contracts set proposal_id=${randomUUID()} where id=${K}`)),
-  ).toMatch(/não podem ser vinculadas/);
+  ).toMatch(/não podem ser alterados/);
   // Missing data can still be completed through the canonical edit before regularizing (then rebase).
   expect(
     await err(as(U, (tx) => tx`update contracts set ends_at='2026-01-01' where id=${K}`)),

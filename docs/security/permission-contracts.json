@@ -9583,7 +9583,7 @@
       "kind": "presentation",
       "rationale": "PROXIMO-PASSO-CONTRATO: pure next-step rule and presentational stepper/card. No I/O; actions only switch tabs or navigate to existing gated screens whose permissions stay in their own contracts.",
       "files": {
-        "src/lib/contracts/contract-next-step.ts": "80443bbd34dcf93d79c9580e441ba09c2c5d3c781ef217ef5c7867bf34c89a7d"
+        "src/lib/contracts/contract-next-step.ts": "f1774f3a00efb5808330aad6ad7e5a7b360f58d162edb81e54c901b06fda10a7"
       }
     },
     {
