@@ -13501,7 +13501,7 @@
       "id": "hiring-economics-static",
       "kind": "presentation",
       "files": {
-        "src/lib/hiring/requests/economics-types.ts": "d72a4dc931a5221edf4b722c416c0b2ab993e70506e58f93f799d7309ceaa847"
+        "src/lib/hiring/requests/economics-types.ts": "a33ae4affec084a4867239816e43724597d4a340693e7dc4a01946e66bdf1bbc"
       },
       "rationale": "Static DTOs, labels, client-side mirror of component rules and month list only; no data access or actions."
     }

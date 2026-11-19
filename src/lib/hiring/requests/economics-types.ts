@@ -32,6 +32,7 @@ export const econEventLabel = {
 } as const;
 export const econIssueLabel: Record<string, string> = {
   not_accepted: "Entrega ainda sem aceite da versão precificada",
+  pending_time_sources: "Horas com aprovação, fechamento ou origem pendentes de conferência",
   delivery_version_changed: "Entrega mudou de versão; revise o plano",
 };
 
@@ -150,7 +151,7 @@ export type EconLine = {
   days?: number;
   month_days?: number;
   due_on?: string;
-  excluded?: { count: number; seconds: number };
+  excluded?: { count: number; seconds: number; pending_count?: number };
 };
 export type EconPreview = {
   hash: string;

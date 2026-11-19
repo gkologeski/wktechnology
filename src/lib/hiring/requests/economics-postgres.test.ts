@@ -1063,6 +1063,8 @@ it("econ hours count only approved, closed, non-imported entries of this engagem
   expect(v.lines[0]).toMatchObject({ type: "hourly", seconds: 7200, amount: 240 });
   expect(v.lines[0].entries).toHaveLength(2);
   expect(v.lines[0].excluded.count).toBe(5);
+  expect(v.totals.unknown_lines).toBe(1);
+  await expect(close(x.r, v.hash)).rejects.toThrow("fontes de horas pendentes");
   expect(v.lines[0].amount).not.toBe(Number(160 * 120));
 });
 it("econ provision closes only ended months with fresh sources and chained immutable revisions", async () => {

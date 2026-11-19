@@ -309,26 +309,26 @@ BEGIN
    -- Materialize source eligibility once; evaluate caller RLS in one bounded set, not one query per entry.
    WITH candidate AS MATERIALIZED (
     SELECT t.*,CASE WHEN t.status::text='approved' AND t.source::text NOT IN('import','locked_import') AND t.duration_seconds>0 THEN hiring_econ_time_eligible(w,s.id,t.id) ELSE false END eligible
-    FROM project_time_entries t WHERE t.workspace_id=w AND t.person_id=r.person_id AND t.entry_date BETWEEN a AND b AND (c->>'project_id' IS NULL OR t.project_id=(c->>'project_id')::uuid)
+    FROM project_time_entries t WHERE t.workspace_id=w AND t.person_id=r.person_id AND t.entry_date BETWEEN a AND b AND (c->>'project_id' IS NULL OR t.project_id=(c->>'project_id')::uuid) AND (t.allocation_id IS NULL OR EXISTS(SELECT 1 FROM people_allocations source_allocation WHERE source_allocation.id=t.allocation_id AND source_allocation.workspace_id=w AND source_allocation.hiring_engagement_id=s.engagement_id))
    )
    SELECT coalesce(sum(t.duration_seconds) FILTER(WHERE eligible),0) secs,
-    coalesce(array_agg(t.id) FILTER(WHERE eligible),'{}'::uuid[]) ids,
-    coalesce(array_agg(DISTINCT t.project_id) FILTER(WHERE eligible),'{}'::uuid[]) projects,
+    coalesce(array_agg(t.id),'{}'::uuid[]) ids,
+    coalesce(array_agg(DISTINCT t.project_id),'{}'::uuid[]) projects,
     coalesce(jsonb_agg(jsonb_build_object('id',t.id,'revision',t.revision,'closing',t.period_closing_id,'seconds',t.duration_seconds,'allocation_id',t.allocation_id,'entry_date',t.entry_date,'project_id',t.project_id,'approved_at',t.approved_at,'approved_by',t.approved_by) ORDER BY t.id) FILTER(WHERE eligible),'[]') src,
-    jsonb_build_object('count',count(*) FILTER(WHERE NOT eligible),'seconds',coalesce(sum(t.duration_seconds) FILTER(WHERE NOT eligible),0)) excluded
+    jsonb_build_object('count',count(*) FILTER(WHERE NOT eligible),'seconds',coalesce(sum(t.duration_seconds) FILTER(WHERE NOT eligible),0),'pending_count',count(*) FILTER(WHERE NOT eligible AND t.status::text<>'rejected')) excluded
     INTO x FROM candidate t;
    IF cardinality(x.ids)<>(SELECT count(*) FROM hiring_econ_visible_times(x.ids)) OR EXISTS(SELECT 1 FROM unnest(x.projects) source_project WHERE NOT hiring_delivery_reference_visible(source_project,NULL)) THEN RAISE EXCEPTION 'Fontes de horas indisponíveis para o seu usuário; cálculo não realizado.' USING ERRCODE='42501';END IF;
    excl:=x.excluded;
    IF a<=b THEN
     lines:=lines||jsonb_build_object('type','hourly','project_id',c->>'project_id','seconds',x.secs,'entries',x.src,'rate',(c->>'amount')::numeric,
-     'amount',round(x.secs*(c->>'amount')::numeric/3600,2),'excluded',excl,'competence',lo,'due_on',hi+(c->>'due_days')::int,'source_clause',c->>'source_clause');
+     'amount',round(x.secs*(c->>'amount')::numeric/3600,2),'excluded',excl,'issue',CASE WHEN (excl->>'pending_count')::int>0 THEN 'pending_time_sources' END,'competence',lo,'due_on',hi+(c->>'due_days')::int,'source_clause',c->>'source_clause');
    END IF;
   END IF;
  END LOOP;
  c:=jsonb_build_object('policy','hiring-econ-cost-v1','kind','cost','request_id',i,'start_id',s.id,'plan_id',pl.id,'plan_version',v.version,'plan_hash',v.content_hash,
   'contract_id',s.contract_id,'contract_hash',s.contract_hash,'request_revision',s.request_revision,'legal_entity_id',s.legal_entity_id,'currency',v.currency,'from',lo,'to',hi,
   'release_condition',v.release_condition,'lines',lines,
-  'totals',jsonb_build_object('known',(SELECT coalesce(sum((l->>'amount')::numeric),0) FROM jsonb_array_elements(lines) l),'unknown_lines',(SELECT count(*) FROM jsonb_array_elements(lines) l WHERE l->>'amount' IS NULL)),
+  'totals',jsonb_build_object('known',(SELECT coalesce(sum((l->>'amount')::numeric),0) FROM jsonb_array_elements(lines) l),'unknown_lines',(SELECT count(*) FROM jsonb_array_elements(lines) l WHERE l->>'amount' IS NULL OR l->>'issue' IS NOT NULL)),
   'notice','Previsão/custo gerencial por competência. Não é título, exigibilidade nem autorização de pagamento.');
  RETURN c||jsonb_build_object('hash',hiring_ops_hash(c::text));
 END $$;
@@ -360,7 +360,7 @@ BEGIN
  v:=hiring_econ_compute(w,i,lo);
  IF p_hash IS DISTINCT FROM v->>'hash' THEN RAISE EXCEPTION 'STALE: as fontes mudaram desde a prévia; recalcule.';END IF;
  IF jsonb_array_length(v->'lines')=0 THEN RAISE EXCEPTION 'Sem linhas desta competência para fechar.';END IF;
- IF (v->'totals'->>'unknown_lines')::int>0 THEN RAISE EXCEPTION 'Há linhas sem valor conferido (entrega não aceita ou versão alterada); resolva antes de fechar.';END IF;
+ IF (v->'totals'->>'unknown_lines')::int>0 THEN RAISE EXCEPTION 'Há linhas sem valor conferido ou fontes de horas pendentes; revise entrega, versão e fechamento antes de fechar.';END IF;
  SELECT * INTO prev FROM hiring_monthly_provisions WHERE kind='cost' AND contract_id=s.contract_id AND period_from=lo ORDER BY revision DESC LIMIT 1;
  IF prev.id IS NOT NULL AND prev.source_hash=v->>'hash' AND prev.closed_by=auth.uid() AND prev.reason=btrim(p_reason) THEN RETURN prev.id;END IF;
  IF prev.id IS DISTINCT FROM p_previous THEN RAISE EXCEPTION 'REVISION_CONFLICT: informe a última revisão desta competência.';END IF;
