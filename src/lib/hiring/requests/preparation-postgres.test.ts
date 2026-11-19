@@ -1,17 +1,7 @@
 import { beforeAll, afterAll, it, expect } from "vitest";
 import postgres from "postgres";
 import { execFileSync } from "node:child_process";
-import {
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  chownSync,
-  mkdirSync,
-  realpathSync,
-  cpSync,
-  writeFileSync,
-  existsSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -25,14 +15,21 @@ const W = "aaaaaaaa-0000-4000-8000-000000000001",
   A = "cccccccc-0000-4000-8000-000000000001",
   L = "dddddddd-0000-4000-8000-000000000001",
   C = "eeeeeeee-0000-4000-8000-000000000001";
-const native = (command: string, args: string[]) => {
-  const executable = existsSync("/usr/bin/" + command)
-    ? realpathSync("/usr/bin/" + command)
-    : command;
-  return process.getuid?.() === 0
-    ? execFileSync("runuser", ["-u", "nobody", "--", executable, ...args], { stdio: "pipe" })
-    : execFileSync(executable, args, { stdio: "pipe" });
-};
+const useNative = process.platform === "darwin" && process.env.TECHERP_NATIVE_PG === "1";
+const pgBin = "/Applications/Postgres.app/Contents/Versions/16/bin/";
+const docker =
+  process.platform === "darwin"
+    ? "/Applications/Docker.app/Contents/Resources/bin/docker"
+    : "docker";
+const image = "postgres@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b";
+const container = "techerp-preparation-ci-" + randomUUID();
+let endpoint = "";
+const dockerRun = (...args: string[]) =>
+  execFileSync(docker, ["--host", endpoint, ...args], {
+    encoding: "utf8",
+    timeout: 90000,
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
 function body(path: string, name: string) {
   const sql = readFileSync(path, "utf8");
   const start = sql.indexOf("CREATE OR REPLACE FUNCTION " + name);
@@ -46,53 +43,97 @@ function body(path: string, name: string) {
 }
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), "hiring-preparation-pg-"));
-  if (process.getuid?.() === 0) chownSync(root, 65534, 65534);
-  mkdirSync(join(root, "socket"));
-  if (process.getuid?.() === 0) chownSync(join(root, "socket"), 65534, 65534);
-  // Nix relocatable binaries need the actual library path in initdb's snowball script.
-  const pgRoot = join(realpathSync("/usr/bin/postgres"), "..", "..");
-  const share = join(root, "share");
-  if (existsSync(join(pgRoot, "share", "postgresql"))) {
-    cpSync(join(pgRoot, "share", "postgresql"), share, { recursive: true });
-    const snow = join(share, "snowball_create.sql");
-    writeFileSync(snow, readFileSync(snow, "utf8").replaceAll("$libdir", join(pgRoot, "lib")));
-    const control = join(share, "extension", "plpgsql.control");
-    writeFileSync(
-      control,
-      readFileSync(control, "utf8").replaceAll("$libdir", join(pgRoot, "lib")),
+  if (useNative) {
+    execFileSync(
+      pgBin + "initdb",
+      [
+        "-D",
+        join(root, "data"),
+        "-U",
+        "postgres",
+        "--auth-local=trust",
+        "--auth-host=reject",
+        "--no-locale",
+        "--encoding=UTF8",
+      ],
+      { stdio: "pipe", timeout: 30000 },
     );
+    execFileSync(
+      pgBin + "pg_ctl",
+      [
+        "-D",
+        join(root, "data"),
+        "-l",
+        join(root, "server.log"),
+        "-o",
+        `-k ${root} -h '' -F`,
+        "-w",
+        "start",
+      ],
+      { stdio: "pipe", timeout: 30000 },
+    );
+    started = true;
+    db = postgres({
+      host: root,
+      port: 5432,
+      username: "postgres",
+      database: "postgres",
+      max: 4,
+      onnotice: () => {},
+    });
+  } else {
+    endpoint = execFileSync(
+      docker,
+      ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"],
+      { encoding: "utf8", timeout: 10000 },
+    ).trim();
+    if (!endpoint.startsWith("unix://")) throw Error("Only a local Unix Docker socket is allowed.");
+    const password = randomUUID() + randomUUID(),
+      envFile = join(root, "postgres.env");
+    writeFileSync(
+      envFile,
+      "POSTGRES_DB=techerp_permission_ci\nPOSTGRES_PASSWORD=" + password + "\n",
+      { mode: 0o600 },
+    );
+    dockerRun(
+      "run",
+      "-d",
+      "--rm",
+      "--name",
+      container,
+      "--env-file",
+      envFile,
+      "-p",
+      "127.0.0.1::5432",
+      image,
+      "-c",
+      "fsync=off",
+    );
+    started = true;
+    const mapped = dockerRun("port", container, "5432/tcp");
+    if (!/^127\.0\.0\.1:\d+$/.test(mapped)) throw Error("Unexpected disposable DB binding");
+    db = postgres({
+      host: "127.0.0.1",
+      port: Number(mapped.split(":")[1]),
+      username: "postgres",
+      password,
+      database: "techerp_permission_ci",
+      max: 4,
+      connect_timeout: 1,
+      onnotice: () => {},
+    });
+    let ready = false;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      try {
+        await db`select 1`;
+        ready = true;
+        break;
+      } catch {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+    }
+    if (!ready) throw Error("Disposable PostgreSQL did not become ready");
   }
-  native("initdb", [
-    "-D",
-    join(root, "data"),
-    "-A",
-    "trust",
-    "-U",
-    "postgres",
-    "--no-locale",
-    ...(existsSync(share)
-      ? ["-L", share, "-c", `dynamic_library_path=${join(pgRoot, "lib")}`]
-      : []),
-  ]);
-  native("pg_ctl", [
-    "-D",
-    join(root, "data"),
-    "-l",
-    join(root, "server.log"),
-    "-o",
-    `-k ${join(root, "socket")} -p 55439 -h ''`,
-    "-w",
-    "start",
-  ]);
-  started = true;
-  db = postgres({
-    host: join(root, "socket"),
-    port: 55439,
-    username: "postgres",
-    database: "postgres",
-    max: 4,
-    onnotice: () => {},
-  });
   // Create introspection function after resolver dependencies to satisfy SQL-language validation.
   const fixture = readFileSync("tests/fixtures/hiring-preparation.sql", "utf8");
   const permission = fixture.match(/CREATE FUNCTION user_has_permission[^\n]+/)?.[0];
@@ -143,10 +184,15 @@ beforeAll(async () => {
       `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY; CREATE POLICY fixture_entity_read ON ${table} FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()));`,
     );
   }
-}, 60000);
+}, 120000);
 afterAll(async () => {
   if (db) await db.end();
-  if (started) native("pg_ctl", ["-D", join(root, "data"), "-m", "immediate", "-w", "stop"]);
+  if (started && useNative)
+    execFileSync(pgBin + "pg_ctl", ["-D", join(root, "data"), "-m", "fast", "-w", "stop"], {
+      stdio: "pipe",
+      timeout: 15000,
+    });
+  if (started && !useNative) dockerRun("rm", "-f", container);
   if (root) rmSync(root, { recursive: true, force: true });
 });
 async function reset() {

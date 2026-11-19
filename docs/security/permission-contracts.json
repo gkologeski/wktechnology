@@ -13922,7 +13922,7 @@
       "files": {
         "src/lib/hiring/requests/boundary.server.ts": "781108c4f9591ca6e3c769588b4cffeb911ef8f4d118815d7717ea734fba9f36",
         "src/lib/hiring/requests/requests.functions.ts": "99299ddc1423a8ab1bdf65df344b59fee13788d73c4e07b95c88ecda49206aad",
-        "src/lib/hiring/requests/preparation-screen.tsx": "8a00575900b936133f9105707813afc4ffb1560a44986125533db1647bf7f789",
+        "src/lib/hiring/requests/preparation-screen.tsx": "d84c934c725389c0fc7edf70492b6b5700294a579b4e2910b1af57b53e4c300b",
         "src/routes/_authenticated/people.hiring-requests.tsx": "bc1aa3c009420f3a81e5f78d95a7ec1c3f4cf81bf738a53f701fe36616f58846",
         "src/routes/_authenticated/contracts.supplier-requests.tsx": "cba4a323b4798ad0fc75f141f3938bc3bcc999ed96430c7a440848bdbdf4fcd7"
       },
@@ -13950,7 +13950,7 @@
         "techpeople.hiring_requests.cancel.update.workspace",
         "techcontracts.supplier_requests.cancel.update.workspace"
       ],
-      "rationale": "Preparation only; dedicated non-BYPASSRLS writer, active workspace membership and explicit deny; canonical entity reads use caller RLS. Pending schema is intentionally not applied before review.",
+      "rationale": "Preparation only; dedicated non-BYPASSRLS writer, active workspace membership and explicit deny; canonical entity reads use caller RLS. Pending schema is intentionally not applied before review. Local review: picker cache is keyed by active workspace and the content remounts on workspace/kind change, discarding open forms and stale local entity state.",
       "controls": [
         {
           "file": "src/lib/hiring/requests/boundary.server.ts",

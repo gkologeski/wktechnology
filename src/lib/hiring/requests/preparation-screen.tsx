@@ -89,18 +89,19 @@ function EntityPicker({
   disabled: boolean;
   company: string | null;
 }) {
+  const permissions = usePermissions();
   const [open, setOpen] = useState(false),
     [search, setSearch] = useState("");
   const term = useDebounced(search);
   const fn = useServerFn(searchPreparationPicker);
   const selected = useQuery({
-    queryKey: ["preparation-picker-label", kind, picker, value, company],
+    queryKey: ["preparation-picker-label", permissions.workspaceId, kind, picker, value, company],
     enabled: !!value,
     queryFn: () => fn({ data: { kind, picker, search: "", selected: value, company } }),
     retry: false,
   });
   const options = useQuery({
-    queryKey: ["preparation-picker", kind, picker, term, company],
+    queryKey: ["preparation-picker", permissions.workspaceId, kind, picker, term, company],
     enabled: open,
     queryFn: () => fn({ data: { kind, picker, search: term, selected: null, company } }),
     retry: false,
@@ -167,6 +168,18 @@ function EntityPicker({
   );
 }
 export function PreparationScreen({ kind }: { kind: RequestKind }) {
+  const p = usePermissions();
+  if (p.isLoading) return <ListPageSkeleton />;
+  if (p.isError || !p.workspaceId)
+    return (
+      <div role="alert" className="p-6">
+        Não foi possível verificar o workspace.{" "}
+        <Button onClick={p.refetch}>Tentar novamente</Button>
+      </div>
+    );
+  return <PreparationContent key={`${p.workspaceId}:${kind}`} kind={kind} />;
+}
+function PreparationContent({ kind }: { kind: RequestKind }) {
   const resource = resourceFor(kind),
     p = usePermissions();
   const canView = useSharedAction(resource, "view"),
