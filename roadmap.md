@@ -439,5 +439,5 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [x] MINUTA-BLOQUEIO: bloquear "Criar contrato" até minuta aceita; dispensa do aceite do cliente
 
 - [x] INICIO-EXECUCAO (pacote 4, lote A): início governado + origem profissional direta — preparado/testado; 0381 não aplicada
-- [ ] Pacote 4 lote B: entregas/aceite/NF/parcelas do fornecedor
+- [x] ENTREGA-FISCAL (pacote 4, lote B): entregas/aceite versionado + documentos fiscais privados — preparado/testado; 0382 não aplicada; bucket não criado
 - [ ] Pacote 4 lote C: contas a pagar, provisão separada, sem pagamento automático

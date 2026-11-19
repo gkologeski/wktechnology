@@ -2825,7 +2825,17 @@
     "techcontracts.supplier_requests.formalization.manage.workspace",
     "techcontracts.supplier_requests.formalization.approve.workspace",
     "techpeople.hiring_requests.execution.approve.workspace",
-    "techcontracts.supplier_requests.execution.approve.workspace"
+    "techcontracts.supplier_requests.execution.approve.workspace",
+    "techpeople.hiring_requests.deliveries.manage.workspace",
+    "techcontracts.supplier_requests.deliveries.manage.workspace",
+    "techpeople.hiring_requests.deliveries.approve.workspace",
+    "techcontracts.supplier_requests.deliveries.approve.workspace",
+    "techpeople.hiring_requests.fiscal_documents.create.workspace",
+    "techcontracts.supplier_requests.fiscal_documents.create.workspace",
+    "techpeople.hiring_requests.fiscal_documents.view.workspace",
+    "techcontracts.supplier_requests.fiscal_documents.view.workspace",
+    "techpeople.hiring_requests.fiscal_documents.approve.workspace",
+    "techcontracts.supplier_requests.fiscal_documents.approve.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -3082,6 +3092,36 @@
     },
     "techcontracts.supplier_requests.execution.approve.workspace": {
       "migration": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql"
+    },
+    "techpeople.hiring_requests.deliveries.manage.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+    },
+    "techcontracts.supplier_requests.deliveries.manage.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+    },
+    "techpeople.hiring_requests.deliveries.approve.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+    },
+    "techcontracts.supplier_requests.deliveries.approve.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+    },
+    "techpeople.hiring_requests.fiscal_documents.create.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+    },
+    "techcontracts.supplier_requests.fiscal_documents.create.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+    },
+    "techpeople.hiring_requests.fiscal_documents.view.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+    },
+    "techcontracts.supplier_requests.fiscal_documents.view.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+    },
+    "techpeople.hiring_requests.fiscal_documents.approve.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+    },
+    "techcontracts.supplier_requests.fiscal_documents.approve.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
     }
   }
 }

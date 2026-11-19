@@ -3,6 +3,8 @@ import { ApprovalPanel } from "./approval-panel";
 import { FormalizationPanel } from "./formalization-panel";
 import { ExecutionPanel } from "./execution-panel";
 import { ExecutionHistory } from "./execution-history";
+import { OperationsPanel } from "./operations-panel";
+import { OperationsHistory } from "./operations-history";
 import { getPreparationApproval } from "./approvals.functions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -583,6 +585,7 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
                 </FormSection>
               )}
               {row && <ExecutionHistory kind={kind} row={row} />}
+              {row && <OperationsHistory kind={kind} row={row} />}
               {row && (
                 <ApprovalPanel
                   key={`history:${row.id}`}
@@ -650,6 +653,17 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
               {row && (
                 <ExecutionPanel
                   key={`exec:${row.id}`}
+                  kind={kind}
+                  row={row}
+                  dirty={
+                    referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
+                  }
+                  busy={save.isPending}
+                />
+              )}
+              {row && (
+                <OperationsPanel
+                  key={`ops:${row.id}`}
                   kind={kind}
                   row={row}
                   dirty={

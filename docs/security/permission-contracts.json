@@ -12616,7 +12616,7 @@
       "files": {
         "src/lib/hiring/requests/boundary.server.ts": "781108c4f9591ca6e3c769588b4cffeb911ef8f4d118815d7717ea734fba9f36",
         "src/lib/hiring/requests/requests.functions.ts": "87dadcaed69095a517d68180cb853f8f12e9dc207599483cb22b863494627be1",
-        "src/lib/hiring/requests/preparation-screen.tsx": "9b5b632fd82edf97c70bf023cc2321b9d864b65f09df5b8cd354d9654f817d5b",
+        "src/lib/hiring/requests/preparation-screen.tsx": "bab98cb3e5c56ae04eccc72710185dcad28a9f7b6ed485f81a01465e74925a54",
         "src/routes/_authenticated/people.hiring-requests.tsx": "734770982cab7d70d7fbb96aa5532d021b71afafc2c97c97714ea8a1c478cb37",
         "src/routes/_authenticated/contracts.supplier-requests.tsx": "1614255f00f5ba1582e25cb43e42bb4ffad69b5e73fdbb4a7c688e5dcb6e16d5",
         "drizzle/migrations/0373_hiring_requests.sql": "3f053b577dd7b4047fc5f596a0248026def9d60d112b040d93c5a8587014b267",
@@ -13161,6 +13161,150 @@
         "src/lib/hiring/requests/execution-panel.tsx": "3bb9559720939385c4febf30eaa61f1a45e4369d1a62b4511adb09a833baef0c",
         "src/lib/hiring/requests/execution-history.tsx": "5f1d25aaa4f27a53922df2fe79a88dc2cedddbd6b6b0a7a8e342c29fc93a8984"
       }
+    },
+    {
+      "id": "hiring-execution-ops-batch-b",
+      "kind": "business",
+      "resources": [
+        "techcontracts.supplier_requests.deliveries",
+        "techcontracts.supplier_requests.fiscal_documents",
+        "techpeople.hiring_requests.deliveries",
+        "techpeople.hiring_requests.fiscal_documents"
+      ],
+      "actions": ["manage", "approve", "create", "view"],
+      "scopes": ["workspace"],
+      "permission_keys": [
+        "techpeople.hiring_requests.deliveries.manage.workspace",
+        "techcontracts.supplier_requests.deliveries.manage.workspace",
+        "techpeople.hiring_requests.deliveries.approve.workspace",
+        "techcontracts.supplier_requests.deliveries.approve.workspace",
+        "techpeople.hiring_requests.fiscal_documents.create.workspace",
+        "techcontracts.supplier_requests.fiscal_documents.create.workspace",
+        "techpeople.hiring_requests.fiscal_documents.view.workspace",
+        "techcontracts.supplier_requests.fiscal_documents.view.workspace",
+        "techpeople.hiring_requests.fiscal_documents.approve.workspace",
+        "techcontracts.supplier_requests.fiscal_documents.approve.workspace"
+      ],
+      "rationale": "Package 4 batch B (ENTREGA-FISCAL): versioned deliveries with explicit acceptance by the named responsible (never author/submitter) bound to version/content hash and the current start/signature proof; private fiscal documents in a dedicated private bucket and immutable trail (never signed attachments), server-side byte sniffing and SHA-256, canonical WK/issuer CNPJ, duplicate identity/bytes, and explicit Finance check by someone other than the uploader. No payable, title, payment, invite or IAM; no external fiscal authentication. Writes require active member, active workspace, specific key with deny precedence and refuse read-only view-as; reads go only through definer RPCs (no table grants). Migration prepared only, not applied. Five-scenario SQL evidence exists per action in deliveries-postgres.test.ts (save, submit, decide, fiscal upload, download, review); the contract binds the save group.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/use-shared-action.ts",
+          "symbol": "useSharedAction"
+        },
+        {
+          "file": "src/lib/hiring/requests/operations-panel.tsx",
+          "symbol": "OperationsPanel"
+        },
+        {
+          "file": "src/lib/hiring/requests/operations-panel.tsx",
+          "symbol": "useOperations"
+        }
+      ],
+      "database": [
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_delivery_save"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_ops_subject"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_delivery_submit"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_ops_actor"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_ops_proof_problem"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_delivery_reference_visible"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_delivery_decide"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_execution_ops_context"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_fiscal_reserve"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_fiscal_register"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_fiscal_storage_write"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_fiscal_open"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_fiscal_storage_read"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_fiscal_review"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_fiscal_document_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops save delivery allowed"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops save delivery rejects missing key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops save delivery rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops save delivery rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops save delivery rejects inactive member"
+        }
+      },
+      "files": {
+        "src/lib/hiring/requests/operations.functions.ts": "ed5323ddca378a19b9593fb0a31b40e919f2223c10afc8dc774180cd906e4271",
+        "src/lib/hiring/requests/operations-panel.tsx": "15bbf1374f3abdbc925fe855cf67377a1ac58c002cbdafb8f5011f11df1c7c48",
+        "src/lib/hiring/requests/operations-history.tsx": "8262f79efe0b5cfb74294a08818ba367a6bac9c6d1c3b0672d86087abb36dcfe"
+      }
+    },
+    {
+      "id": "hiring-execution-ops-static",
+      "kind": "presentation",
+      "files": {
+        "src/lib/hiring/requests/operations-types.ts": "269365ee4837103f606daa50c3ac370181c4b415091ff689591c7e8db3620a59"
+      },
+      "rationale": "Static DTOs, labels, regime-to-document-type mirror and byte sniffing only; no data access or actions."
     }
   ],
   "retired": {
