@@ -291,8 +291,7 @@ const M = "bbbbbbbb-0000-4000-8000-000000000002",
 const prefix = (kind: string) =>
   kind === "professional" ? "techpeople.hiring_requests" : "techcontracts.supplier_requests";
 async function reset() {
-  // Commit fixture setup atomically: Docker fsync per seed statement makes the
-  // cold first end-to-end case exceed its budget although the RPCs are fast.
+  // Keep fixture setup atomic so a failed seed never exposes partial test data.
   await db.begin(async (db) => {
     await db.unsafe(
       "TRUNCATE hiring_engagements,contract_draft_approvers,hiring_formalization_events,hiring_draft_capabilities,hiring_formalizations,contract_drafts,contract_attachments,hiring_contract_evidence,esign_signers,esign_documents,contract_forsign_operations,contract_esign_deliveries,contract_handoff_settings CASCADE",
@@ -404,8 +403,7 @@ const transition = (r: { id: string; revision: number }, action: string, u = U) 
   );
 it("formalization allowed chain creates one real purchase instrument", async () => {
   const r = await approved();
-  const [a, b] = await Promise.all([prepare(r), prepare(r)]);
-  expect(a).toBe(b);
+  const a = await prepare(r);
   expect(
     (await db`select role,deal_id,proposal_id,hiring_person_id from contracts where id=${a}`)[0],
   ).toMatchObject({ role: "client", deal_id: null, proposal_id: null, hiring_person_id: D });
@@ -428,6 +426,18 @@ it("formalization allowed chain creates one real purchase instrument", async () 
   expect(
     (await user(D, (tx) => tx`select hiring_formalization_signature_gate(${W},${a},null) v`))[0].v,
   ).toBe(true);
+});
+it("formalization concurrent preparation serializes into one canonical instrument", async () => {
+  const r = await approved();
+  const [a, b] = await Promise.all([prepare(r), prepare(r)]);
+  expect(a).toBe(b);
+  expect(
+    (await db`select count(*)::int n from contracts where hiring_request_origin=${r.id}`)[0].n,
+  ).toBe(1);
+  expect(
+    (await db`select count(*)::int n from contract_drafts where hiring_request_origin=${r.id}`)[0]
+      .n,
+  ).toBe(1);
 });
 it("formalization rejects missing permission", async () => {
   const r = await approved();
