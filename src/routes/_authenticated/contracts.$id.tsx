@@ -495,7 +495,12 @@ function ContractDetail() {
                   <div className="space-y-2">
                     <Label>Status</Label>
                     <Select
-                      disabled={!canUpdateContract || !canTransition}
+                      disabled={
+                        !canUpdateContract ||
+                        !canTransition ||
+                        legacy.gate === "pending" ||
+                        legacy.gate === "unknown"
+                      }
                       value={status}
                       onValueChange={(v) => setStatus(v as Status)}
                     >
