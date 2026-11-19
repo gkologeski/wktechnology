@@ -291,26 +291,30 @@ const M = "bbbbbbbb-0000-4000-8000-000000000002",
 const prefix = (kind: string) =>
   kind === "professional" ? "techpeople.hiring_requests" : "techcontracts.supplier_requests";
 async function reset() {
-  await db.unsafe(
-    "TRUNCATE hiring_engagements,contract_draft_approvers,hiring_formalization_events,hiring_draft_capabilities,hiring_formalizations,contract_drafts,contract_attachments,hiring_contract_evidence,esign_signers,esign_documents,contract_forsign_operations,contract_esign_deliveries,contract_handoff_settings CASCADE",
-  );
-  await db.unsafe(
-    "TRUNCATE hiring_preparation_approval_events,hiring_preparation_approvals,hiring_preparation_reference_events,hiring_preparation_reference_values,hiring_preparation_events,hiring_preparation_requests,notifications,hiring_area_policies,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_permission_sets,permission_sets,permission_set_items,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts CASCADE",
-  );
-  await db`insert into workspaces(id) values(${W}),(${B})`;
-  for (const u of [U, M, CEO, D]) {
-    await db`insert into profiles values(${u},${W})`;
-    await db`insert into workspace_members(workspace_id,user_id) values(${W},${u})`;
-    await db`insert into job_roles values(${u},${W})`;
-    await db`insert into user_job_roles values(${u},${u},${W},null)`;
-    await db`insert into job_role_permission_overrides select ${W},${u},key,'grant' from permissions`;
-  }
-  await db`insert into user_groups values(${A},${W},'Área de fixture')`;
-  await db`insert into legal_entities(id,workspace_id,name) values(${L},${W},'WK fixture')`;
-  await db`insert into people(id,workspace_id,full_name,email) values(${D},${W},'Pessoa real fixture','pessoa@example.test')`;
-  await db`insert into companies(id,workspace_id,name) values(${C},${W},'Fornecedor fixture')`;
-  await db`insert into contacts(id,workspace_id,company_id,first_name,last_name,email) values(${L},${W},${C},'Contato','Fornecedor','fornecedor@example.test')`;
-  await db`insert into hiring_area_policies(workspace_id,area_id,manager_id,ceo_id,manager_delegate_id,updated_by) values(${W},${A},${M},${CEO},${D},${U})`;
+  // Commit fixture setup atomically: Docker fsync per seed statement makes the
+  // cold first end-to-end case exceed its budget although the RPCs are fast.
+  await db.begin(async (db) => {
+    await db.unsafe(
+      "TRUNCATE hiring_engagements,contract_draft_approvers,hiring_formalization_events,hiring_draft_capabilities,hiring_formalizations,contract_drafts,contract_attachments,hiring_contract_evidence,esign_signers,esign_documents,contract_forsign_operations,contract_esign_deliveries,contract_handoff_settings CASCADE",
+    );
+    await db.unsafe(
+      "TRUNCATE hiring_preparation_approval_events,hiring_preparation_approvals,hiring_preparation_reference_events,hiring_preparation_reference_values,hiring_preparation_events,hiring_preparation_requests,notifications,hiring_area_policies,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_permission_sets,permission_sets,permission_set_items,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts CASCADE",
+    );
+    await db`insert into workspaces(id) values(${W}),(${B})`;
+    for (const u of [U, M, CEO, D]) {
+      await db`insert into profiles values(${u},${W})`;
+      await db`insert into workspace_members(workspace_id,user_id) values(${W},${u})`;
+      await db`insert into job_roles values(${u},${W})`;
+      await db`insert into user_job_roles values(${u},${u},${W},null)`;
+      await db`insert into job_role_permission_overrides select ${W},${u},key,'grant' from permissions`;
+    }
+    await db`insert into user_groups values(${A},${W},'Área de fixture')`;
+    await db`insert into legal_entities(id,workspace_id,name) values(${L},${W},'WK fixture')`;
+    await db`insert into people(id,workspace_id,full_name,email) values(${D},${W},'Pessoa real fixture','pessoa@example.test')`;
+    await db`insert into companies(id,workspace_id,name) values(${C},${W},'Fornecedor fixture')`;
+    await db`insert into contacts(id,workspace_id,company_id,first_name,last_name,email) values(${L},${W},${C},'Contato','Fornecedor','fornecedor@example.test')`;
+    await db`insert into hiring_area_policies(workspace_id,area_id,manager_id,ceo_id,manager_delegate_id,updated_by) values(${W},${A},${M},${CEO},${D},${U})`;
+  });
 }
 async function user<T>(u: string, fn: (tx: postgres.TransactionSql) => Promise<T>) {
   return db.begin(async (tx) => {
