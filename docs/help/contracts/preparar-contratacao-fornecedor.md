@@ -8,7 +8,7 @@ route_pattern: /contracts/supplier-requests
 min_permission: techcontracts.supplier_requests.view.workspace
 audience: internal
 sort_order: 36
-version: 2
+version: 3
 is_published: true
 ---
 # Preparar contratação de fornecedor
@@ -31,7 +31,8 @@ Preparação de compra WK versionada, sem contrato ou processo operacional criad
 
 ## Regras e limites
 - Não é contratação de profissional: não há regime CLT/PJ/freelance nem vínculo de pessoa nesta entrada.
-- Pronta exige escopo, área, entidade legal e empresa fornecedora. Não significa aprovada.
+- Pronta exige escopo, área, entidade legal e empresa fornecedora; Cliente exige também negócio ou contrato comercial de origem. Não significa aprovada.
+- A condição que também depende do aceite do cliente final permanece como rascunho para revisão.
 - WK compradora continua sendo `client`; WK fornecedora no fluxo comercial continua sendo `provider`. Esta preparação não modifica contratos comerciais existentes.
 - Contrato comercial opcional representa a origem cliente com WK fornecedora, não o futuro contrato de compra.
 - Entidade legal divergente da origem cliente é bloqueada.

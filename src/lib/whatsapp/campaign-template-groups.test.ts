@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { addSenderPick, groupTemplatesBySender, parsePick, pickValue } from "./campaign-template-groups";
+import {
+  addSenderPick,
+  groupTemplatesBySender,
+  parsePick,
+  pickValue,
+} from "./campaign-template-groups";
 
 const t = (name: string) => ({ name, language: "pt_BR", approved: true });
 

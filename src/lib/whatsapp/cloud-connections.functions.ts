@@ -219,9 +219,8 @@ export const listCloudSenders = createServerFn({ method: "GET" })
       via_gateway?: boolean;
     };
     // UNIFICA-CONECTOR: número do conector Lovable entra na lista (principal e rodízio).
-    const { gatewayConfigured, getConnectedPhone } = await import(
-      "@/lib/whatsapp/gateway-channel.server"
-    );
+    const { gatewayConfigured, getConnectedPhone } =
+      await import("@/lib/whatsapp/gateway-channel.server");
     let gateway: Sender | null = null;
     if (gatewayConfigured()) {
       const info = await getConnectedPhone().catch(() => null);

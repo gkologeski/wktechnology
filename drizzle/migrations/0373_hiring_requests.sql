@@ -1,4 +1,4 @@
--- SOLICITA-PREPARA / package 2. PREPARED ONLY; promote via the migration tool after review.
+-- SOLICITA-PREPARA / package 2. Reviewed release migration; request preparation only.
 -- No presets, approvers, operational records, workflows or messages are created.
 CREATE ROLE techerp_request_writer NOLOGIN NOSUPERUSER NOBYPASSRLS INHERIT;
 GRANT authenticated TO techerp_request_writer;

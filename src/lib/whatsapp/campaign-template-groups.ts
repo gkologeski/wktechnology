@@ -14,7 +14,10 @@ export function groupTemplatesBySender<T extends GroupTemplate>(catalogs: Sender
   const seen = new Set<string>();
   return catalogs
     .filter((c) => c.senderId && !seen.has(c.senderId) && seen.add(c.senderId))
-    .map((c) => ({ senderId: c.senderId, items: [...c.items].sort((a, b) => a.name.localeCompare(b.name)) }));
+    .map((c) => ({
+      senderId: c.senderId,
+      items: [...c.items].sort((a, b) => a.name.localeCompare(b.name)),
+    }));
 }
 
 /** Acrescenta o número escolhido ao modelo, sem duplicar. */

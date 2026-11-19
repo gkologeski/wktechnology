@@ -10,7 +10,9 @@ describe("AGENTE-DO-NUMERO", () => {
   });
   it("número sem canal configurado fica livre", () => {
     expect(resolveCampaignChannelAgent(null, null).kind).toBe("free");
-    expect(resolveCampaignChannelAgent({ ...acc, routing_configured: false }, bind).kind).toBe("free");
+    expect(resolveCampaignChannelAgent({ ...acc, routing_configured: false }, bind).kind).toBe(
+      "free",
+    );
   });
   it("canal desativado ou sem campanhas não tem agente", () => {
     expect(resolveCampaignChannelAgent({ ...acc, enabled: false }, bind).kind).toBe("none");

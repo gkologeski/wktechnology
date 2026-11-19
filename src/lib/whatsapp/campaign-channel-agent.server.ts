@@ -1,7 +1,4 @@
-import {
-  resolveCampaignChannelAgent,
-  type CampaignChannelAgent,
-} from "./campaign-channel-agent";
+import { resolveCampaignChannelAgent, type CampaignChannelAgent } from "./campaign-channel-agent";
 
 /**
  * Lê conta+vínculo do número no workspace ativo. Usa o cliente privilegiado

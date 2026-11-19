@@ -2085,7 +2085,7 @@
       },
       "files": {
         "src/lib/whatsapp/cloud-connections.server.ts": "b5f5c15e109a7c269666c29b81a4aecf16f95ecdd72028edded8c6e841374289",
-        "src/lib/whatsapp/cloud-connections.functions.ts": "07f3d639d7dc645d952a72468f2d350d3903a813bd9382aedb493b0ed1f1da64",
+        "src/lib/whatsapp/cloud-connections.functions.ts": "f71e14a81b19bf18fd3c10271df207a82303c7f4e5bce599c6cf1f7c62368cb7",
         "src/components/whatsapp/cloud-connections-panel.tsx": "173bfda2c6969f1aaa40deb0b07149fac984d4c4be7b0ddb861a091cea01bfd6",
         "src/routes/_authenticated/settings.whatsapp.tsx": "5a283508e6de49ef640c38f7f8d756c20564a31f5e22b0707d233ba5a3ce8046",
         "drizzle/migrations/0254_whatsapp_cloud_connections.sql": "60e6d9ebb0c44cc12e2b4ad4e3594cb1f5674ce77f5a1e247610c9eb174ed3f2",
@@ -2330,7 +2330,7 @@
         "src/lib/whatsapp-campaigns.functions.ts": "e99a08754540abc66707901c85282247367246df1503a96f21153acf53f82bfa",
         "src/routes/_authenticated/inbox.index.tsx": "8e4a063b6cf862102f4a3547c98798386d325ca5e64bd0626fac34c3648d2d7a",
         "src/routes/_authenticated/inbox.whatsapp.tsx": "faf6c7c0c1169bdd0ad7dfbe74a744a18e533a643f58cbbc0a76b54643ac2533",
-        "src/routes/_authenticated/campaigns.whatsapp.tsx": "9cbe66f138c1103be165a32aceb5a2ad2a80d990a4daa1294412823a98059530",
+        "src/routes/_authenticated/campaigns.whatsapp.tsx": "d85da26c83b175321c4e665a61fb5828aff26f34ff1c1ed89ce2387195efd2d0",
         "drizzle/migrations/0255_whatsapp_cloud_routing.sql": "c4a681a3aca2d07938625d3356d0512dc24e3a92651c49221a508c8d8be252b9",
         "drizzle/migrations/0263_wa_outbound_activity_trigger.sql": "6c6a9521a5cfa09cd1724061fd78939fa94d56344ccb8c3052418ea9426a96e0",
         "drizzle/migrations/0264_wa_outbound_activity_fast_lookup.sql": "120f2512f182b4b1f4a0f89489dbe4cff8c00f7be3be5f31ff9b5b5ccea6a53a",
@@ -2348,13 +2348,13 @@
         "drizzle/migrations/0289_sales_row_guard_child_skip_context.sql": "7dc5c38b2dac757557e99dec6373570dc37b96cedb5ffb8e57ec55b63a59ae0e",
         "src/lib/whatsapp/campaign-audience.ts": "e204fc3bea329059ab6ba9e2beee8dc1719a0c9db77292100fb81c77d5233c13",
         "src/components/whatsapp/campaign-audience-panel.tsx": "e77a981f32e8c84a3a84e8f7e0d27ac5d2fe711cad3688675fc9ae813822a797",
-        "src/lib/whatsapp/campaign-rotation-guard.server.ts": "7e763c2727e4581fb7c2be4dfaeb43af7edef9c07b385e5e8a24348bb81447e4",
+        "src/lib/whatsapp/campaign-rotation-guard.server.ts": "f873d45f43b285c981e780fc7eae9a5faf68d100f159be95d14a12344cc9a8f2",
         "src/components/inbox/unified-inbox-page.tsx": "6aab1a6b7c1de0cab60cbcea6fcef2dd50c619743c2d4f8f1126a5b712109d79",
         "src/routes/_authenticated/inbox.ligacoes.tsx": "c1423290125886a27d736c7fc39d2749c26e3e33ce479ef11f3a34592501e290",
         "drizzle/migrations/0370_inbox_whatsapp_only_messages.sql": "915ebe14ae0a2dd5e88472e7094cc84aeda6f23aea3594096715d096b0832417",
         "drizzle/migrations/0371_inbox_unified_whatsapp_only.sql": "d2551220b67fa510242623990eb6bba2e874f008458b6a603c79a40985073c4e",
         "drizzle/migrations/0372_whatsapp_campaign_sender_rotation.sql": "ae8fe4b69eae270f649a999ade2971f0d13f887d8e1a706b49b8c0c629bbe51c",
-        "src/lib/whatsapp/campaign-channel-agent.server.ts": "bd4ff751865766b1932c2f35818ce4bc234cdc059cc0f484ef78705889d95428",
+        "src/lib/whatsapp/campaign-channel-agent.server.ts": "853c0c6625e454b99552009a55482739a60e41d53383872f1c4f2038dff2df85",
         "src/lib/whatsapp/campaign-channel-agent-guard.server.ts": "0f479ab4e6e57ae2c2fac4585b0e3d85312633f899d665912e6b1a55df0d78bb"
       }
     },
@@ -9216,7 +9216,7 @@
       "rationale": "Pure template rotation helper (sequential/weighted pick, max 5). No I/O, routes, actions, grants or data access; callers stay under whatsapp-cloud-authenticated-routing and whatsapp-cloud-workers. Review 06/11/2026 (b): each rotation template has its own variable map keys (<template>#N) resolved by the same server allow-list; saving re-checks every rotation template is APPROVED for the sender and refreshes pending recipient variables through the user client (RLS, same update key); no new endpoint, grant or permission. Revisão 18/11/2026: helpers puros de agrupamento por número/modelo, seleção e teto técnico de 100 modelos. Sem IO, ações, rotas, concessões ou consulta de dados; chamadores permanecem protegidos pelos contratos de campanhas e worker.",
       "files": {
         "src/lib/whatsapp/campaign-template-rotation.ts": "ec773009f4b614292f4487b7fefd5d5024038b921b073c9c3b34af61ce91311e",
-        "src/lib/whatsapp/campaign-template-groups.ts": "9ddafac28bd9af540b973b30437942c2e96759acc0fbd9ca924923e4869759a7"
+        "src/lib/whatsapp/campaign-template-groups.ts": "c74405b5b3097d3d906d591037e450cf24c5a53e11627e45119bf1c16bdf25e0"
       }
     },
     {
@@ -13924,7 +13924,9 @@
         "src/lib/hiring/requests/requests.functions.ts": "87dadcaed69095a517d68180cb853f8f12e9dc207599483cb22b863494627be1",
         "src/lib/hiring/requests/preparation-screen.tsx": "64fc1121f8019b9cf0984d2def13857aefb228a2e90c3b19fdad0b420fe22a73",
         "src/routes/_authenticated/people.hiring-requests.tsx": "bc1aa3c009420f3a81e5f78d95a7ec1c3f4cf81bf738a53f701fe36616f58846",
-        "src/routes/_authenticated/contracts.supplier-requests.tsx": "cba4a323b4798ad0fc75f141f3938bc3bcc999ed96430c7a440848bdbdf4fcd7"
+        "src/routes/_authenticated/contracts.supplier-requests.tsx": "cba4a323b4798ad0fc75f141f3938bc3bcc999ed96430c7a440848bdbdf4fcd7",
+        "drizzle/migrations/0373_hiring_requests.sql": "36b6b572d6bb4473fbcfd4b83e5cc34628a4ae80944086123d73527e1026dfaa",
+        "drizzle/migrations/0374_hiring_preparation_conditions.sql": "0a3bc70376cd48e5bcf71ccba92e6c1d09717c08eaaa37286ea3193d104a4b7b"
       },
       "resources": [
         "techpeople.hiring_requests",
@@ -13993,23 +13995,23 @@
       ],
       "database": [
         {
-          "file": "docs/architecture/prepared-migrations/0373_hiring_requests.sql",
+          "file": "drizzle/migrations/0373_hiring_requests.sql",
           "symbol": "hiring_preparation_access"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0373_hiring_requests.sql",
+          "file": "drizzle/migrations/0373_hiring_requests.sql",
           "symbol": "hiring_preparation_save"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+          "file": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
           "symbol": "hiring_preparation_access"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+          "file": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
           "symbol": "hiring_preparation_save"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+          "file": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
           "symbol": "hiring_preparation_reference"
         }
       ],
@@ -14082,23 +14084,23 @@
       ],
       "database": [
         {
-          "file": "docs/architecture/prepared-migrations/0373_hiring_requests.sql",
+          "file": "drizzle/migrations/0373_hiring_requests.sql",
           "symbol": "hiring_preparation_access"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0373_hiring_requests.sql",
+          "file": "drizzle/migrations/0373_hiring_requests.sql",
           "symbol": "hiring_preparation_save"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+          "file": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
           "symbol": "hiring_preparation_access"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+          "file": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
           "symbol": "hiring_preparation_save"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+          "file": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
           "symbol": "hiring_preparation_reference"
         }
       ],

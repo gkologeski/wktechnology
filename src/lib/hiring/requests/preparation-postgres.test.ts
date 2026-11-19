@@ -175,14 +175,9 @@ beforeAll(async () => {
     GRANT SELECT,INSERT ON permissions TO preparation_migrator;
     GRANT REFERENCES ON workspaces,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts TO preparation_migrator;
     SET ROLE preparation_migrator;`);
+  await db.unsafe(readFileSync("drizzle/migrations/0373_hiring_requests.sql", "utf8"));
   await db.unsafe(
-    readFileSync("docs/architecture/prepared-migrations/0373_hiring_requests.sql", "utf8"),
-  );
-  await db.unsafe(
-    readFileSync(
-      "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
-      "utf8",
-    ),
+    readFileSync("drizzle/migrations/0374_hiring_preparation_conditions.sql", "utf8"),
   );
   await db.unsafe("RESET ROLE");
   for (const table of [

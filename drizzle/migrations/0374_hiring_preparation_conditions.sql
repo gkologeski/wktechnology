@@ -1,4 +1,4 @@
--- SOLICITA-PREPARA / approved prototype complement. PREPARED ONLY after 0373; no production application.
+-- SOLICITA-PREPARA / approved prototype complement. Applied after 0373; request preparation only.
 GRANT CREATE ON SCHEMA public TO techerp_request_writer;
 INSERT INTO public.permissions(key,module,resource,action,scope,label_pt,description,is_system) VALUES
 ('techpeople.hiring_requests.reference.view.workspace','techpeople','hiring_requests.reference','view','workspace','Ver valor de referência de contratação','Leitura específica de condição sensível.',true),
