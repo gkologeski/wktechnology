@@ -1,5 +1,5 @@
 -- Package 4 batch A (INICIO-EXECUCAO): governed start/execution for approved, signed hiring requests.
--- PREPARED FOR REVIEW ONLY: outside the drizzle journal; never applied by this batch.
+-- Reviewed release migration; apply through the journal after green CI. No business records are seeded.
 -- Direct professional origin reuses hiring_engagements/people_allocations without fake ATS job/application.
 -- No IAM grant, invite, finance entry or payment is created here.
 INSERT INTO public.permissions(key,module,resource,action,scope,label_pt,description,is_system) VALUES

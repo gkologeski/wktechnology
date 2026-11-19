@@ -2668,6 +2668,34 @@
       "when": 1795047507000,
       "tag": "0380_hiring_direct_person_origin",
       "breakpoints": true
+    },
+    {
+      "idx": 381,
+      "version": "7",
+      "when": 1795047508000,
+      "tag": "0381_hiring_execution_start",
+      "breakpoints": true
+    },
+    {
+      "idx": 382,
+      "version": "7",
+      "when": 1795047509000,
+      "tag": "0382_hiring_execution_deliveries_fiscal",
+      "breakpoints": true
+    },
+    {
+      "idx": 383,
+      "version": "7",
+      "when": 1795047510000,
+      "tag": "0383_hiring_economic_plans_provisions",
+      "breakpoints": true
+    },
+    {
+      "idx": 384,
+      "version": "7",
+      "when": 1795047511000,
+      "tag": "0384_hiring_payables_reconciliation",
+      "breakpoints": true
     }
   ]
 }

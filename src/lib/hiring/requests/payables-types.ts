@@ -111,6 +111,8 @@ export type PayContext = {
 };
 
 export const payBlockingLabel: Record<string, string> = {
+  ambiguous_employment:
+    "Há outro contrato simultâneo para esta pessoa; revise o custo mensal antes de gerar obrigação",
   not_accepted: "Entrega ainda sem aceite",
   delivery_version_changed: "Versão da entrega mudou",
   period_open: "Período ainda não encerrado",

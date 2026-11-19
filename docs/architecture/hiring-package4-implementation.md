@@ -33,4 +33,4 @@ Hiring_engagements exige job_id e model_version_id; hiring_set_live, hiring_allo
 
 ## Estado
 
-Lote A iniciado. Demais lotes pendentes. Nada do pacote 4 aplicado ou publicado ainda. Evidências operacionais no relatório local outputs/contracting-package4-2026-11-19.
+Lotes A, B, C1 e C2 preparados, revisados e com testes direcionados. Migrações 0381–0384 promovidas para o journal depois do ensaio de DDL real com ROLLBACK. Aguardam CI global, integração e aplicação/publicação verificadas. Nada do pacote 4 aplicado ou publicado ainda. Evidências operacionais no relatório local outputs/contracting-package4-2026-11-19.

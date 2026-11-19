@@ -381,7 +381,7 @@ function LegacyBox({
                   type="button"
                   size="sm"
                   variant="ghost"
-                  disabled={m.isPending || reason.trim().length < 10}
+                  disabled={m.isPending || reason.trim().length < 10 || !ctx.eligible?.preview_hash}
                   onClick={() => m.mutate({ target: l.id, decision: "unrelated" })}
                 >
                   Não se relaciona

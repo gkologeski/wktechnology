@@ -13,9 +13,9 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-const PREPARED = "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql";
-const BATCH_B = "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql";
-const BATCH_C1 = "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql";
+const PREPARED = "drizzle/migrations/0381_hiring_execution_start.sql";
+const BATCH_B = "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql";
+const BATCH_C1 = "drizzle/migrations/0383_hiring_economic_plans_provisions.sql";
 // Package 4 batch C1 (PLANO-PROVISAO): same disposable bootstrap as batch B plus prepared 0383.
 // Never reads a configured URL. Native official PostgreSQL gets its own temporary Unix socket.
 let root = "",

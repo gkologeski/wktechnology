@@ -5,7 +5,7 @@ DO $bucket$ BEGIN
 END $bucket$;
 
 -- Package 4 batch B (ENTREGA-FISCAL): versioned deliveries with explicit human acceptance and a private fiscal-document trail.
--- PREPARED FOR REVIEW ONLY: outside the drizzle journal; never applied by this batch.
+-- Reviewed release migration; apply through the journal after green CI. No business records are seeded.
 -- Reuses hiring_execution_starts (0381) and the current signature proof. Creates no title, payable, payment, invite or IAM.
 -- Never updates project/milestone billing fields, sold services or signed contract attachments.
 INSERT INTO public.permissions(key,module,resource,action,scope,label_pt,description,is_system) VALUES

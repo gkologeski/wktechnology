@@ -7453,11 +7453,11 @@
           "symbol": "hiring_restricted_roles"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_execution_allocation_assert"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_execution_context"
         }
       ],
@@ -13122,23 +13122,23 @@
       ],
       "database": [
         {
-          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_execution_start"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_execution_context"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_execution_subject"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_execution_allocation_assert"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_formalization_origin_guard"
         }
       ],
@@ -13165,6 +13165,7 @@
         }
       },
       "files": {
+        "drizzle/migrations/0381_hiring_execution_start.sql": "fb2cab77301deaa2ef98ae3f3f6debea7983294b55bf66fa1b801b45dfb8f0c7",
         "src/lib/hiring/requests/execution.functions.ts": "b475d61ef00fed1513c1364abf4f448d982f501afe5892da20fd927c343fb8c7",
         "src/lib/hiring/requests/execution-panel.tsx": "03c6b5b222d5d4de486e0fa6d6ed1aec53ecaf9eb180d560f76b80cbc4af8420",
         "src/lib/hiring/requests/execution-history.tsx": "5f1d25aaa4f27a53922df2fe79a88dc2cedddbd6b6b0a7a8e342c29fc93a8984"
@@ -13218,67 +13219,67 @@
       ],
       "database": [
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_delivery_save"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_ops_subject"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_delivery_submit"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_ops_actor"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_ops_proof_problem"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_delivery_reference_visible"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_delivery_decide"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_execution_ops_context"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_reserve"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_register"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_storage_write"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_open"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_storage_read"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_review"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_document_guard"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_attest"
         }
       ],
@@ -13305,6 +13306,7 @@
         }
       },
       "files": {
+        "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql": "678576b22278ecb346feadc3273d67f4b98a0207c66f78a0c1ea5ed252b52597",
         "src/lib/hiring/requests/operations.functions.ts": "f4f2279827f2d7073c7b956a411e6d951fa82c112cef5d3a691c5ceef3583015",
         "src/lib/hiring/requests/operations-panel.tsx": "6d56f15489450936d5ccb28f0d42a920d54143298ab34d02eef460e6f850f770",
         "src/lib/hiring/requests/operations-history.tsx": "8262f79efe0b5cfb74294a08818ba367a6bac9c6d1c3b0672d86087abb36dcfe"
@@ -13337,7 +13339,7 @@
       ],
       "database": [
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_attest"
         }
       ],
@@ -13421,51 +13423,51 @@
       ],
       "database": [
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_save"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_subject"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_actor"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_proof_problem"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_transition"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_provision_preview"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_provision_close"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_context"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_provision_row_access"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_legacy_provision_block"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_visible_times"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_time_eligible"
         }
       ],
@@ -13492,6 +13494,7 @@
         }
       },
       "files": {
+        "drizzle/migrations/0383_hiring_economic_plans_provisions.sql": "5549667ccb9f5e312778f6f6fc818724f32fd65b9e114a03a849ffd532f6f5ee",
         "src/lib/hiring/requests/economics.functions.ts": "a2325af0325baa28f3bf374c12a8d18a6c659de45574863386ad317849f770ca",
         "src/lib/hiring/requests/economics-panel.tsx": "9f1de2da593da17d9c1ec2fbb0dbb6e4539cd9671f7dc8b60d681140a3a0dcef",
         "src/lib/hiring/requests/economics-history.tsx": "db0b5b267e8246881d5033fe4e5344f910147db8871c134fec82ca657df8aca6"
@@ -13501,7 +13504,7 @@
       "id": "hiring-economics-static",
       "kind": "presentation",
       "files": {
-        "src/lib/hiring/requests/economics-types.ts": "a33ae4affec084a4867239816e43724597d4a340693e7dc4a01946e66bdf1bbc"
+        "src/lib/hiring/requests/economics-types.ts": "7ca8bb35c559a2a3e4fed44184369650baa321bd7d72f18438e6e8951bfef210"
       },
       "rationale": "Static DTOs, labels, client-side mirror of component rules and month list only; no data access or actions."
     },
@@ -13511,17 +13514,19 @@
       "resources": [
         "techpeople.hiring_requests.payables",
         "techcontracts.supplier_requests.payables",
-        "techcontracts.supplier_requests.client_acceptance"
+        "techcontracts.supplier_requests.client_acceptance",
+        "techpeople.hiring_requests.payables_reconciliation",
+        "techcontracts.supplier_requests.payables_reconciliation"
       ],
-      "actions": ["view", "manage", "reconcile", "approve"],
+      "actions": ["view", "manage", "approve"],
       "scopes": ["workspace"],
       "permission_keys": [
         "techpeople.hiring_requests.payables.view.workspace",
         "techpeople.hiring_requests.payables.manage.workspace",
-        "techpeople.hiring_requests.payables.reconcile.workspace",
+        "techpeople.hiring_requests.payables_reconciliation.approve.workspace",
         "techcontracts.supplier_requests.payables.view.workspace",
         "techcontracts.supplier_requests.payables.manage.workspace",
-        "techcontracts.supplier_requests.payables.reconcile.workspace",
+        "techcontracts.supplier_requests.payables_reconciliation.approve.workspace",
         "techcontracts.supplier_requests.client_acceptance.manage.workspace",
         "techcontracts.supplier_requests.client_acceptance.approve.workspace"
       ],
@@ -13554,39 +13559,39 @@
       ],
       "database": [
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_pay_subject"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_pay_actor"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_pay_finance_only"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_payable_generate"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_payable_reconcile"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_client_acceptance_register"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_client_acceptance_decide"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_payable_context"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_pay_entry_guard"
         }
       ],
@@ -13613,15 +13618,16 @@
         }
       },
       "files": {
+        "drizzle/migrations/0384_hiring_payables_reconciliation.sql": "40bba8dea6ec507ede178e9ff1b9b2dfa4cfedc9e85c290b85302202bc7bc169",
         "src/lib/hiring/requests/payables.functions.ts": "a7dfe7d8cdc32f34e6499f3d46d90d7ec76b5b0adab7b9b1de0cb61b1faa2743",
-        "src/lib/hiring/requests/payables-panel.tsx": "bc29e59673f5e4153077872d4550097294a04c7321fd7e3f76731cfc40f75f0b"
+        "src/lib/hiring/requests/payables-panel.tsx": "70db78456473f9632d633199af12276baefef2e133abca1a5fa425b0bea23914"
       }
     },
     {
       "id": "hiring-payables-static",
       "kind": "presentation",
       "files": {
-        "src/lib/hiring/requests/payables-types.ts": "c865b1f878c3c5fd1f5fc90cc13c6aa3dd64d6b8e30f0913710dcfdf174da783"
+        "src/lib/hiring/requests/payables-types.ts": "3b08e8fa3497dba8cb04439f88dfc174e5e8b3a933594df42854f30406fd3c1b"
       },
       "rationale": "Static DTOs, labels and client-side mirror of selection/installment sum rules only; no data access or actions."
     }

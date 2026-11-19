@@ -13,7 +13,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-const PREPARED = "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql";
+const PREPARED = "drizzle/migrations/0381_hiring_execution_start.sql";
 // Never reads a configured URL. Native official PostgreSQL gets its own temporary Unix socket.
 let root = "",
   started = false;

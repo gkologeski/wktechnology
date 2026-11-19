@@ -13,10 +13,10 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-const PREPARED = "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql";
-const BATCH_B = "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql";
-const BATCH_C1 = "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql";
-const BATCH_C2 = "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql";
+const PREPARED = "drizzle/migrations/0381_hiring_execution_start.sql";
+const BATCH_B = "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql";
+const BATCH_C1 = "drizzle/migrations/0383_hiring_economic_plans_provisions.sql";
+const BATCH_C2 = "drizzle/migrations/0384_hiring_payables_reconciliation.sql";
 // Package 4 batch C2 (PARCELA-CONCILIA): same disposable bootstrap as batch C1 plus canonical finance tables and prepared 0384.
 // Never reads a configured URL. Native official PostgreSQL gets its own temporary Unix socket.
 let root = "",
@@ -278,9 +278,18 @@ beforeAll(async () => {
   );
   for (const name of ["public.hiring_allocate"])
     await db.unsafe(body("drizzle/migrations/0312_hiring_allocation_access_and_invites.sql", name));
+  await db.unsafe(
+    body(
+      "drizzle/migrations/0314_hiring_invite_reissue_boundary.sql",
+      "public.hiring_employment_context",
+    ),
+  );
   await db.begin(async (tx) => {
     await tx.unsafe(readFileSync(PREPARED, "utf8"));
   });
+  await db.unsafe(
+    "CREATE TABLE storage.buckets(id text PRIMARY KEY,name text,public boolean,file_size_limit bigint,allowed_mime_types text[])",
+  );
   // Batch B fixture: canonical tax ids and milestones (production columns), then the real prepared SQL.
   await db.unsafe(`ALTER TABLE legal_entities ADD COLUMN IF NOT EXISTS cnpj text;ALTER TABLE companies ADD COLUMN IF NOT EXISTS cnpj text;ALTER TABLE people ADD COLUMN IF NOT EXISTS cnpj text;
     ALTER TABLE storage.objects ADD COLUMN IF NOT EXISTS metadata jsonb;ALTER TABLE storage.objects ADD COLUMN IF NOT EXISTS owner uuid;
@@ -303,11 +312,48 @@ beforeAll(async () => {
     CREATE TABLE project_time_entries(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,project_id uuid,person_id uuid,user_id uuid,allocation_id uuid,entry_date date,status text DEFAULT 'draft',source text DEFAULT 'manual',
       duration_seconds bigint,revision integer DEFAULT 1,period_closing_id uuid REFERENCES project_period_closings(id),invoice_id uuid,financial_entry_id uuid);
     REVOKE ALL ON project_time_entries,project_period_closings FROM anon,authenticated,techerp_request_writer;`);
+  await db.unsafe(`
+    ALTER TABLE project_period_closings ADD COLUMN entries_snapshot jsonb NOT NULL DEFAULT '[]';
+    ALTER TABLE project_time_entries ADD COLUMN approved_at timestamptz,ADD COLUMN approved_by uuid,ADD COLUMN invoiced_at timestamptz,ADD COLUMN updated_at timestamptz;
+    CREATE TABLE fixture_field_rules(user_id uuid PRIMARY KEY,rules jsonb);
+    CREATE TABLE shared_field_catalog(resource text,table_name text,field text,guard_fields text[]);
+    INSERT INTO shared_field_catalog(resource,table_name,field) VALUES
+      ('techfinance.entries','financial_entries','amount'),('techcontracts.contracts','contracts','total_value'),('techcontracts.contracts','contracts','monthly_value'),('techprojects.rates','project_rates','amount'),('techpeople.people','people','monthly_cost'),('techpeople.people','people','cost_hour');
+    CREATE FUNCTION shared_field_context() RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER AS $$ SELECT jsonb_build_object('rules',coalesce((SELECT rules FROM fixture_field_rules WHERE user_id=auth.uid()),'{}'::jsonb)) $$;
+    GRANT SELECT ON project_time_entries TO authenticated;
+    ALTER TABLE project_time_entries ENABLE ROW LEVEL SECURITY;
+    CREATE POLICY fixture_time_read ON project_time_entries FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()) AND work_record_access('techprojects.projects',project_id,'view'));
+    ALTER TABLE hiring_monthly_provisions ENABLE ROW LEVEL SECURITY;
+  `);
+  await db.unsafe(
+    body("drizzle/migrations/0228_order5_fields_prepare.sql", "public.shared_field_mode_for"),
+  );
+  await db.unsafe(
+    "CREATE TABLE project_billing_configs(id uuid PRIMARY KEY,workspace_id uuid,contract_id uuid)",
+  );
+  await db.unsafe(
+    "INSERT INTO permissions(key,module,resource,action,scope,label_pt,description,is_system) VALUES('techprojects.rates.view.workspace','techprojects','rates','view','workspace','Ver tarifas','Fixture of canonical legacy key',true) ON CONFLICT DO NOTHING",
+  );
+  await db.unsafe(
+    body("drizzle/migrations/0316_hiring_monthly_provisions.sql", "public.hiring_provision_access"),
+  );
+  await db.unsafe(
+    body(
+      "drizzle/migrations/0318_hiring_internal_cost_provisions.sql",
+      "public.hiring_cost_provision_access",
+    ),
+  );
+  for (const name of [
+    "public.hiring_provision_preview",
+    "public.hiring_provision_close",
+    "public.hiring_provision_context",
+  ])
+    await db.unsafe(body("drizzle/migrations/0318_hiring_internal_cost_provisions.sql", name));
   await db.begin(async (tx) => {
     await tx.unsafe(readFileSync(BATCH_C1, "utf8"));
   });
   // C2 fixture: production-shaped canonical finance tables (columns from the live schema; enums as text).
-  await db.unsafe(`CREATE TABLE financial_entries(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid NOT NULL,owner_id uuid NOT NULL,direction text NOT NULL CHECK(direction IN('receivable','payable')),
+  await db.unsafe(`ALTER TABLE people ADD COLUMN personal_doc jsonb DEFAULT '{"cpf":"12345678901"}'; CREATE TABLE financial_entries(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid NOT NULL,owner_id uuid NOT NULL,direction text NOT NULL CHECK(direction IN('receivable','payable')),
       origin_type text NOT NULL DEFAULT 'manual',origin_id uuid,contract_id uuid,service_id uuid,project_id uuid,counterparty_company_id uuid,category_id uuid,description text NOT NULL,amount numeric NOT NULL,
       currency text NOT NULL DEFAULT 'BRL',competence_date date NOT NULL,due_date date NOT NULL,paid_amount numeric NOT NULL DEFAULT 0,status text NOT NULL DEFAULT 'open',payment_method text,notes text,
       attachments jsonb NOT NULL DEFAULT '[]',external_ref text,metadata jsonb NOT NULL DEFAULT '{}',created_at timestamptz NOT NULL DEFAULT now(),updated_at timestamptz NOT NULL DEFAULT now(),parent_entry_id uuid,
@@ -324,6 +370,16 @@ beforeAll(async () => {
         status=CASE WHEN (SELECT coalesce(sum(amount),0) FROM financial_payments WHERE entry_id=e.id)>=e.amount THEN 'paid' ELSE 'partial' END WHERE e.id=NEW.entry_id; RETURN NEW; END $$;
     CREATE TRIGGER fixture_payment_derive AFTER INSERT ON financial_payments FOR EACH ROW EXECUTE FUNCTION fixture_payment_derive();
     GRANT SELECT,INSERT,UPDATE,DELETE ON financial_entries,financial_recurrences,financial_payments TO authenticated;
+    CREATE TABLE fixture_hidden_reads(user_id uuid,record_id uuid);
+    GRANT SELECT ON fixture_hidden_reads TO authenticated;
+    ALTER TABLE financial_entries ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE financial_recurrences ENABLE ROW LEVEL SECURITY;
+    CREATE POLICY fixture_finance_read ON financial_entries FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()) AND NOT EXISTS(SELECT 1 FROM fixture_hidden_reads WHERE user_id=auth.uid() AND record_id=id));
+    CREATE POLICY fixture_finance_delete ON financial_entries FOR DELETE TO authenticated USING(is_workspace_member(workspace_id,auth.uid()));
+    CREATE POLICY fixture_finance_insert ON financial_entries FOR INSERT TO authenticated WITH CHECK(is_workspace_member(workspace_id,auth.uid()));
+    CREATE POLICY fixture_finance_update ON financial_entries FOR UPDATE TO authenticated USING(is_workspace_member(workspace_id,auth.uid())) WITH CHECK(is_workspace_member(workspace_id,auth.uid()));
+    CREATE POLICY fixture_recurrence_insert ON financial_recurrences FOR INSERT TO authenticated WITH CHECK(is_workspace_member(workspace_id,auth.uid()));
+    CREATE POLICY fixture_recurrence_read ON financial_recurrences FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()) AND NOT EXISTS(SELECT 1 FROM fixture_hidden_reads WHERE user_id=auth.uid() AND record_id=id));
     INSERT INTO permissions(key,module,resource,action,scope,label_pt,description,is_system) VALUES
      ('techfinance.entries.view.workspace','techfinance','entries','view','workspace','x','x',true),('techfinance.entries.create.workspace','techfinance','entries','create','workspace','x','x',true),
      ('techfinance.entries.update.workspace','techfinance','entries','update','workspace','x','x',true) ON CONFLICT(key) DO NOTHING;`);
@@ -371,7 +427,7 @@ async function reset() {
       "TRUNCATE hiring_fiscal_document_allocations,hiring_payable_source_claims,hiring_payable_installments,hiring_payable_reconciliations,hiring_payable_schedules,hiring_client_acceptances,financial_payments,financial_entries,financial_recurrences,hiring_monthly_provisions,project_time_entries,project_period_closings,hiring_economic_plan_events,hiring_economic_plan_versions,hiring_economic_plans,hiring_fiscal_document_events,hiring_fiscal_document_reviews,hiring_fiscal_documents,hiring_execution_delivery_decisions,hiring_execution_delivery_submissions,hiring_execution_delivery_versions,hiring_execution_deliveries,project_milestones,storage.objects,hiring_execution_starts,people_allocations,hiring_employment_events,hiring_engagements,ats_jobs,hiring_workspace_settings,contract_draft_approvers,hiring_formalization_events,hiring_draft_capabilities,hiring_formalizations,contract_drafts,contract_attachments,hiring_contract_evidence,esign_signers,esign_documents,contract_forsign_operations,contract_esign_deliveries,contract_handoff_settings CASCADE",
     );
     await db.unsafe(
-      "TRUNCATE hiring_preparation_approval_events,hiring_preparation_approvals,hiring_preparation_reference_events,hiring_preparation_reference_values,hiring_preparation_events,hiring_preparation_requests,notifications,hiring_area_policies,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_permission_sets,permission_sets,permission_set_items,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts CASCADE",
+      "TRUNCATE fixture_hidden_reads,fixture_field_rules,hiring_preparation_approval_events,hiring_preparation_approvals,hiring_preparation_reference_events,hiring_preparation_reference_values,hiring_preparation_events,hiring_preparation_requests,notifications,hiring_area_policies,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_permission_sets,permission_sets,permission_set_items,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts CASCADE",
     );
     await db`insert into workspaces(id) values(${W}),(${B})`;
     for (const u of [U, M, CEO, D]) {
@@ -388,7 +444,11 @@ async function reset() {
     await db`insert into contacts(id,workspace_id,company_id,first_name,last_name,email) values(${L},${W},${C},'Contato','Fornecedor','fornecedor@example.test')`;
     await db`insert into hiring_area_policies(workspace_id,area_id,manager_id,ceo_id,manager_delegate_id,updated_by) values(${W},${A},${M},${CEO},${D},${U})`;
     await db`insert into deals(id,workspace_id,name,legal_entity_id) values(${CLIENT_PROJECT},${W},'Negócio cliente',${L})`;
-    await db`insert into projects(id,workspace_id,name,legal_entity_id,deal_id) values(${CLIENT_PROJECT},${W},'Projeto cliente',${L},${CLIENT_PROJECT})`;
+    await db`update deals set company_id=${C} where id=${CLIENT_PROJECT}`;
+    await db`insert into contracts(id,workspace_id,title,role,status,contracting_legal_entity_id,deal_id,counterparty_company_id,starts_at,body_html) values(${CLIENT_PROJECT},${W},'Contrato comercial assinado fixture','provider','active',${L},${CLIENT_PROJECT},${C},${PREV}::date,'Origem comercial assinada')`;
+    await db`insert into storage.objects(bucket_id,name,user_metadata) values('contract-signature-evidence','fixture-commercial-signed',${db.json({ sha256: "b".repeat(64) })})`;
+    await db`insert into hiring_contract_evidence(workspace_id,contract_id,contract_hash,kind,file_path,file_hash) values(${W},${CLIENT_PROJECT},hiring_contract_fingerprint(${CLIENT_PROJECT}),'external','fixture-commercial-signed',${"b".repeat(64)})`;
+    await db`insert into projects(id,workspace_id,name,legal_entity_id,deal_id,contract_id) values(${CLIENT_PROJECT},${W},'Projeto cliente',${L},${CLIENT_PROJECT},${CLIENT_PROJECT})`;
   });
 }
 async function user<T>(u: string, fn: (tx: postgres.TransactionSql) => Promise<T>) {
@@ -716,8 +776,10 @@ async function entry(
   }> = {},
 ) {
   const id = randomUUID();
-  await db`insert into project_time_entries(id,workspace_id,project_id,person_id,allocation_id,entry_date,status,source,duration_seconds,period_closing_id)
-    values(${id},${W},${o.project ?? P},${D},${a},${PREV}::date + ${o.day ?? 2}::int,${o.status ?? "approved"},${o.source ?? "manual"},${o.seconds ?? 3600},${o.closing === undefined ? null : o.closing})`;
+  await db`insert into project_time_entries(id,workspace_id,project_id,person_id,user_id,allocation_id,entry_date,status,source,duration_seconds,period_closing_id,approved_at,approved_by)
+    values(${id},${W},${o.project ?? P},${D},${D},${a},${PREV}::date + ${o.day ?? 2}::int,${o.status ?? "approved"},${o.source ?? "manual"},${o.seconds ?? 3600},${o.closing === undefined ? null : o.closing},now(),${M})`;
+  if (o.closing)
+    await db`update project_period_closings set entries_snapshot=entries_snapshot || (select jsonb_build_array(jsonb_build_object('id',id,'revision',revision,'user_id',user_id,'project_id',project_id,'entry_date',entry_date,'seconds',duration_seconds,'approved_at',approved_at)) from project_time_entries where id=${id}) where id=${o.closing}`;
   return id;
 }
 const closing = async (status = "closed") =>
@@ -803,9 +865,18 @@ async function doc(r: R, o: DocOpts = {}) {
   const id = randomUUID();
   const sid = (await db`select id from hiring_execution_starts where request_id=${r.id}`)[0].id;
   const type = o.type ?? "nfse";
-  await db`insert into hiring_fiscal_documents(id,workspace_id,request_id,start_id,kind,regime,doc_type,modality,delivery_id,storage_path,file_name,mime_type,size_bytes,sha256,issuer_tax_id,taker_tax_id,amount,currency,document_number,issued_on,status,operation_id,uploaded_by,registered_at)
+  const requestRow = (await db`select * from hiring_preparation_requests where id=${r.id}`)[0];
+  const defaultIssuer =
+    requestRow.regime === "clt"
+      ? WK_CNPJ
+      : requestRow.regime === "freelance"
+        ? "12345678901"
+        : PERSON_CNPJ;
+  await db`insert into hiring_fiscal_documents(id,workspace_id,request_id,start_id,kind,regime,doc_type,modality,delivery_id,storage_path,file_name,mime_type,size_bytes,sha256,issuer_tax_id,taker_tax_id,amount,currency,document_number,issued_on,status,operation_id,uploaded_by,registered_at,server_sha256,server_attested_at)
     values(${id},${W},${r.id},${sid},${o.kind ?? "professional"},${o.regime === undefined ? "pj" : o.regime},${type},${type === "freelance_document" ? "rpa" : null},${o.delivery ?? null},${"fixture/" + id},'nota.pdf','application/pdf',100,
-      ${(id.replace(/-/g, "") + id.replace(/-/g, "")).slice(0, 64)},${o.issuer ?? PERSON_CNPJ},${type === "payroll_evidence" ? null : (o.taker ?? WK_CNPJ)},${o.amount ?? 9300},${o.currency ?? "BRL"},${"NF-" + id.slice(0, 8)},current_date,${o.status ?? "verified"},${randomUUID()},${U},now())`;
+      ${(id.replace(/-/g, "") + id.replace(/-/g, "")).slice(0, 64)},${o.issuer ?? defaultIssuer},${type === "payroll_evidence" ? null : (o.taker ?? WK_CNPJ)},${o.amount ?? 9300},${o.currency ?? "BRL"},${"NF-" + id.slice(0, 8)},current_date,${o.status ?? "verified"},${randomUUID()},${U},now(),${(id.replace(/-/g, "") + id.replace(/-/g, "")).slice(0, 64)},now())`;
+  if ((o.status ?? "verified") === "verified")
+    await db`insert into hiring_fiscal_document_reviews(workspace_id,document_id,sha256,decision,reason,operation_id,reviewed_by) select workspace_id,id,sha256,'verified','Conferência humana fixture',${randomUUID()},${CEO} from hiring_fiscal_documents where id=${id}`;
   return id;
 }
 const pctx = (id: string, month: string | null = PREV, u = CEO, w = W) =>
@@ -1169,7 +1240,6 @@ it("payables freeze claimed hours and their closing, but keep sales billing fiel
   const x = await hourlyPlan();
   const pc = await closing();
   const t = await entry(x.a, { closing: pc, seconds: 7200 });
-  await entry(x.a, { closing: null, seconds: 3600 });
   const line = (await pctx(x.r.id)).eligible.lines[0];
   expect([line.key, line.seconds, Number(line.amount)]).toEqual(["hourly:*", 7200, 240]);
   await gen(x.r, {
@@ -1184,7 +1254,16 @@ it("payables freeze claimed hours and their closing, but keep sales billing fiel
   await expect(
     db`update project_period_closings set status='reopened' where id=${pc}`,
   ).rejects.toThrow("reaberto");
-  await db`update project_time_entries set invoice_id=${randomUUID()} where id=${t}`;
+  await db`update project_time_entries set invoice_id=${randomUUID()},invoiced_at=now(),updated_at=now() where id=${t}`;
+  await expect(
+    db`update project_period_closings set entries_snapshot='[]' where id=${pc}`,
+  ).rejects.toThrow("lastro");
+  await expect(db`update people_allocations set allocation_pct=5 where id=${x.a}`).rejects.toThrow(
+    "lastro",
+  );
+  await expect(
+    db`update people_allocations set ends_at=${PREV}::date where id=${x.a}`,
+  ).rejects.toThrow("lastro");
   const claims =
     await db`select time_entry_id,seconds::int s,period_closing_id from hiring_payable_source_claims`;
   expect(claims.map((c) => [c.time_entry_id, c.s, c.period_closing_id])).toEqual([[t, 7200, pc]]);
@@ -1192,23 +1271,25 @@ it("payables freeze claimed hours and their closing, but keep sales billing fiel
 it("payables: pending hours (no closing) never become a zero obligation", async () => {
   const x = await hourlyPlan();
   await entry(x.a, { closing: null });
-  expect((await pctx(x.r.id)).eligible.lines[0].blocking).toBe("no_closed_hours");
+  expect((await pctx(x.r.id)).eligible.lines[0].blocking).toBe("pending_time_sources");
   await expect(gen(x.r, { keys: ["hourly:*"], doc: await doc(x.r) })).rejects.toThrow(
-    "no_closed_hours",
+    "pending_time_sources",
   );
 });
 
 // Supplier special condition: client purpose + canonical project + named, Finance-confirmed final acceptance.
 async function supplierClient() {
-  // Fixture shortcut: the signed commercial-origin gate of a client start is covered by batch A tests; here the started
-  // supplier request is re-pointed (same revision; the 'ready' validation of this pairing has its own test) to a canonical client deal/project.
-  formExtra = { modality: "delivery" };
+  // Real client-purpose request from its first revision: all approval/formalization proofs remain intact.
+  formExtra = {
+    modality: "delivery",
+    purpose: "client",
+    deal_id: CLIENT_PROJECT,
+    project_id: CLIENT_PROJECT,
+    commercial_contract_id: CLIENT_PROJECT,
+    release_condition: "also_client_acceptance",
+  };
   try {
     const x = await startedRequest("supplier");
-    await db.begin(async (tx) => {
-      await tx`set local session_replication_role=replica`;
-      await tx`update hiring_preparation_requests set purpose='client',deal_id=${CLIENT_PROJECT},project_id=${CLIENT_PROJECT},release_condition='also_client_acceptance' where id=${x.r.id}`;
-    });
     const dlv = await save(x.r);
     await submit(x.r, dlv);
     await decide2(x.r, dlv);
@@ -1314,7 +1395,7 @@ it("client acceptance: the registrant cannot confirm it", async () => {
 type PAction = "generate" | "reconcile" | "view" | "client_register" | "client_confirm";
 const PKEYS: Record<PAction, { key: string; actor: string; kind: string }> = {
   generate: { key: "payables.manage", actor: U, kind: "professional" },
-  reconcile: { key: "payables.reconcile", actor: CEO, kind: "professional" },
+  reconcile: { key: "payables_reconciliation.approve", actor: CEO, kind: "professional" },
   view: { key: "payables.view", actor: CEO, kind: "professional" },
   client_register: { key: "client_acceptance.manage", actor: U, kind: "supplier" },
   client_confirm: { key: "client_acceptance.approve", actor: CEO, kind: "supplier" },
@@ -1397,4 +1478,97 @@ it("payables private amounts need contract and person access", async () => {
   await db`update people set workspace_id=${B} where id=${D}`;
   const c = await pctx(x.r.id);
   expect([c.can_view, c.eligible ?? null, c.schedules]).toEqual([false, null, []]);
+});
+
+it("payables hide private prospective economics and fiscal documents without their read keys", async () => {
+  const x = await approvedPlan();
+  await doc(x.r);
+  for (const suffix of ["economics.view", "fiscal_documents.view"]) {
+    await db`update job_role_permission_overrides set effect='deny' where role_id=${CEO} and permission_key=${prefix("professional") + "." + suffix + ".workspace"}`;
+    const c = await pctx(x.r.id);
+    expect(c.can_generate).toBe(false);
+    expect(c.can_reconcile).toBe(false);
+    if (suffix === "economics.view") expect(c.eligible).toBeNull();
+    else expect(c.documents).toEqual([]);
+    await expect(recon(x.r, randomUUID(), { hash: "stale" })).rejects.toThrow(DENIED);
+    await db`update job_role_permission_overrides set effect='grant' where role_id=${CEO} and permission_key=${prefix("professional") + "." + suffix + ".workspace"}`;
+  }
+});
+it("payables block hidden canonical legacy sources rather than exposing amounts or treating them as empty", async () => {
+  const x = await approvedPlan();
+  const f = await payroll();
+  const hash = (await pctx(x.r.id)).eligible.preview_hash;
+  await db`insert into fixture_hidden_reads values(${CEO},${f}),(${U},${f})`;
+  await expect(pctx(x.r.id)).rejects.toThrow("indisponíveis");
+  await expect(gen(x.r, { hash, doc: await doc(x.r) })).rejects.toThrow("indisponíveis");
+  expect(await count("hiring_payable_schedules")).toBe(0);
+});
+it("payables refuse a financial source hidden after its schedule was created", async () => {
+  const x = await approvedPlan();
+  await gen(x.r, { doc: await doc(x.r) });
+  const f = (await db`select id from financial_entries`)[0].id;
+  await db`insert into fixture_hidden_reads values(${CEO},${f})`;
+  await expect(pctx(x.r.id)).rejects.toThrow("indisponíveis");
+});
+it("payables unrelated decisions are invalidated by source edits and require the current plan hash", async () => {
+  const x = await approvedPlan();
+  const f = await payroll(500);
+  await expect(recon(x.r, f, { decision: "unrelated", hash: "stale" })).rejects.toThrow("STALE");
+  await recon(x.r, f, { decision: "unrelated" });
+  expect((await pctx(x.r.id)).legacy).toEqual([]);
+  await db`update financial_entries set amount=600 where id=${f}`;
+  expect((await pctx(x.r.id)).legacy).toHaveLength(1);
+  await recon(x.r, f, { decision: "unrelated" });
+  expect((await pctx(x.r.id)).legacy).toEqual([]);
+  expect(await count("hiring_payable_reconciliations")).toBe(2);
+});
+it("payables recurrence unrelated decision is limited to the reviewed competence", async () => {
+  const x = await approvedPlan();
+  const f = randomUUID();
+  await db`insert into financial_recurrences(id,workspace_id,owner_id,direction,template,cadence,start_date) values(${f},${W},${U},'payable',${db.json({ description: "Folha legado", amount: 500, notes: "[people_payroll:" + D + "]" })},'monthly',${PREV}::date)`;
+  await recon(x.r, f, { decision: "unrelated" });
+  expect((await pctx(x.r.id)).legacy).toEqual([]);
+  expect((await pctx(x.r.id, MONTH())).legacy).toHaveLength(1);
+  await db`update financial_recurrences set template=template||' {"amount":600}'::jsonb where id=${f}`;
+  expect((await pctx(x.r.id)).legacy).toHaveLength(1);
+});
+it("payables reconciliation claim prevents later legacy payroll duplication", async () => {
+  const x = await approvedPlan();
+  const f = await payroll();
+  await recon(x.r, f, { doc: await doc(x.r) });
+  await expect(payroll()).rejects.toThrow("Competência já possui obrigação");
+});
+it("payables protect new-origin instruments before execution start", async () => {
+  const x = await signed();
+  await expect(
+    db`insert into financial_entries(workspace_id,owner_id,direction,origin_type,origin_id,description,amount,competence_date,due_date,legal_entity_id) values(${W},${U},'payable','contract',${x.k},'Obrigação precoce',100,current_date,current_date,${L})`,
+  ).rejects.toThrow("fluxo governado");
+});
+it("payables refuse missing installment amounts atomically", async () => {
+  const x = await approvedPlan();
+  await expect(gen(x.r, { doc: await doc(x.r), inst: [{ due_on: DUE() } as any] })).rejects.toThrow(
+    "valor explícito",
+  );
+  expect(await count("financial_entries")).toBe(0);
+});
+it("payables require server byte attestation even for a human-verified fiscal record", async () => {
+  const x = await approvedPlan();
+  const d = await doc(x.r);
+  // Privileged fixture corruption simulates historic or inconsistent import, not an authenticated write.
+  await db.begin(async (tx) => {
+    await tx`set local session_replication_role=replica`;
+    await tx`update hiring_fiscal_documents set server_sha256=null,server_attested_at=null where id=${d}`;
+  });
+  await expect(gen(x.r, { doc: d })).rejects.toThrow("confirmação dos bytes");
+});
+it("monthly cost stays unknown when another contract overlaps the same person", async () => {
+  const x = await approvedPlan();
+  const k = randomUUID();
+  await db`insert into contracts(id,workspace_id,title,role) values(${k},${W},'Outro instrumento','client')`;
+  await db`insert into ats_jobs(id,workspace_id) values(${k},${W})`;
+  await db`insert into hiring_engagements(workspace_id,person_id,job_id,model_version_id,purpose,employment_type,legal_entity_id,purchase_contract_id,starts_at,status,created_by) values(${W},${D},${k},${k},'internal','pj',${L},${k},${PREV}::date,'active',${M})`;
+  const c = await pctx(x.r.id);
+  expect(c.eligible.lines[0].blocking).toBe("ambiguous_employment");
+  expect(c.eligible.lines[0].amount).toBeNull();
+  await expect(gen(x.r, { doc: await doc(x.r) })).rejects.toThrow("ambiguous_employment");
 });

@@ -31,6 +31,8 @@ export const econEventLabel = {
   rejected: "Rejeitado",
 } as const;
 export const econIssueLabel: Record<string, string> = {
+  ambiguous_employment:
+    "Há outro contrato simultâneo para esta pessoa; revise o custo mensal antes de gerar obrigação",
   not_accepted: "Entrega ainda sem aceite da versão precificada",
   pending_time_sources: "Horas com aprovação, fechamento ou origem pendentes de conferência",
   delivery_version_changed: "Entrega mudou de versão; revise o plano",

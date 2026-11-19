@@ -29,3 +29,10 @@ Base: `7c6d5e085` (C1). Revisões locais A/B (fora deste sandbox) não foram sob
 - Tabela `financial_entries` do teste replica as colunas reais, mas enums como texto e um gatilho substituto para derivar pago de `financial_payments`; guardas financeiros reais de produção precisam ser confirmados no preflight (ordem de gatilhos e RLS).
 - Freelance e CLT não verificam emissor (sem CPF canônico); evidência de folha não tem tomador.
 - Revisão de preço após obrigação não reabre fontes: exige aditivo/fluxo futuro. Desativar recorrência legada continua no Financeiro.
+
+
+## Revisão independente para publicação — 19/11/2026
+
+Correções após o lote remoto: conciliação não relacionada vinculada a competência/plano/hash do título ou recorrência; nova conferência após alteração; sondas NOBYPASSRLS para títulos e recorrências; leituras privadas de plano/documento exigidas para operações; bloqueio de títulos precoces por toda origem de solicitação (não somente após início); guarda de folha inclui conciliação vinculada; integridade de alocação/fechamento/entrega preservada com faturamento de venda livre em campos derivados. Comprovação fiscal exige atestado de bytes e revisão da mesma SHA, identidade canônica CLT/PJ/freelance/fornecedor. Aceite do cliente tem replay exato e revalida entrega e formalização atuais. Custo mensal simultâneo ambíguo é desconhecido, não zero. Teste da finalidade cliente agora cria a solicitação correta desde a primeira revisão, sem reescrever demanda já assinada.
+
+O ensaio no schema real encontrou `reconcile` fora do enum `perm_action`. A permissão executável de conciliação usa o recurso `payables_reconciliation` e a ação existente `approve`, sem alterar enum global. Os nomes antigos `payables.reconcile` permanecem apenas no inventário histórico/reservado; não são inseridos no catálogo do banco, concedidos nem aceitos nas RPCs. Nenhum dado de produção foi alterado no ensaio com ROLLBACK.

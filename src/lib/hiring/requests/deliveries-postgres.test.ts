@@ -13,8 +13,8 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID, createHash } from "node:crypto";
-const PREPARED = "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql";
-const BATCH_B = "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql";
+const PREPARED = "drizzle/migrations/0381_hiring_execution_start.sql";
+const BATCH_B = "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql";
 // Package 4 batch B (ENTREGA-FISCAL): same disposable bootstrap as batch A plus prepared 0382.
 // Never reads a configured URL. Native official PostgreSQL gets its own temporary Unix socket.
 let root = "",
@@ -1005,7 +1005,7 @@ it("ops fiscal CNPJ issuer and taker must match canonical records", async () => 
   await expect(register(x.r, res.id, { taker: SUP })).rejects.toThrow("tomador");
   await expect(register(x.r, res.id, { type: "payroll_evidence" })).rejects.toThrow("PJ exige");
   await db`update people set cnpj=null where id=${D}`;
-  await expect(register(x.r, res.id)).rejects.toThrow("assinatura íntegra");
+  await expect(register(x.r, res.id)).rejects.toThrow("formalização mudaram");
 });
 it("ops CLT requires payroll evidence issued by the WK entity", async () => {
   const x = await startedRequest("professional", "clt");

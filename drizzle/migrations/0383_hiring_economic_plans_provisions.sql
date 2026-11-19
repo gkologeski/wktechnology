@@ -1,5 +1,5 @@
 -- Package 4 batch C1 (PLANO-PROVISAO): versioned economic plan, eligible calculation and management cost provision.
--- PREPARED FOR REVIEW ONLY: outside the drizzle journal; never applied by this batch.
+-- Reviewed release migration; apply through the journal after green CI. No business records are seeded.
 -- Creates NO financial_entries, recurrence, payable, payment, invoice or sales-billing change (batch C2 owns titles).
 -- The demand reference value is never a debt or an automatic price; nothing is extracted from contract HTML.
 -- Provisions reuse public.hiring_monthly_provisions (kind='cost', config_id NULL); legacy ATS/revenue rows and functions are untouched.
@@ -299,6 +299,10 @@ BEGIN
    END IF;
   ELSIF c->>'type'='monthly' THEN
    IF a<=b THEN
+    IF r.kind='professional' AND EXISTS(SELECT 1 FROM hiring_engagements other WHERE other.workspace_id=w AND other.person_id=r.person_id AND other.id IS DISTINCT FROM s.engagement_id AND other.purchase_contract_id IS DISTINCT FROM s.contract_id AND other.starts_at<=b AND (other.ends_at IS NULL OR other.ends_at>=a) AND other.status<>'cancelled') THEN
+     lines:=lines||jsonb_build_object('type','monthly','competence',lo,'amount',NULL,'issue','ambiguous_employment','source_clause',c->>'source_clause');
+     CONTINUE;
+    END IF;
     days:=b-a+1;
     lines:=lines||jsonb_build_object('type','monthly','from',a,'to',b,'days',days,'month_days',hi-lo+1,'proration',c->>'proration',
      'amount',round(CASE WHEN c->>'proration'='full_month' THEN (c->>'amount')::numeric ELSE (c->>'amount')::numeric*days/(hi-lo+1) END,2),
