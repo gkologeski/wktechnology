@@ -58,3 +58,6 @@ ALTER TABLE contract_forsign_operations ADD COLUMN requested_members jsonb,ADD C
 INSERT INTO permissions(key,module) VALUES('techcontracts.esign.cancel.workspace','techcontracts');
 ALTER TABLE deals ADD COLUMN company_id uuid;
 ALTER TABLE hiring_contract_evidence ADD COLUMN revocation_reason text;
+
+-- Preserve the real admission guard alongside the direct origin.
+CREATE TABLE hiring_engagements(purchase_contract_id uuid,legal_entity_id uuid,person_id uuid,status text);

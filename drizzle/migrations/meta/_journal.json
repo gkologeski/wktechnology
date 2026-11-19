@@ -2626,6 +2626,48 @@
       "when": 1795047501000,
       "tag": "0374_hiring_preparation_conditions",
       "breakpoints": true
+    },
+    {
+      "idx": 375,
+      "version": "7",
+      "when": 1795047502000,
+      "tag": "0375_hiring_preparation_approvals",
+      "breakpoints": true
+    },
+    {
+      "idx": 376,
+      "version": "7",
+      "when": 1795047503000,
+      "tag": "0376_hiring_formalization",
+      "breakpoints": true
+    },
+    {
+      "idx": 377,
+      "version": "7",
+      "when": 1795047504000,
+      "tag": "0377_hiring_formalization_boundaries",
+      "breakpoints": true
+    },
+    {
+      "idx": 378,
+      "version": "7",
+      "when": 1795047505000,
+      "tag": "0378_hiring_signature_adapter",
+      "breakpoints": true
+    },
+    {
+      "idx": 379,
+      "version": "7",
+      "when": 1795047506000,
+      "tag": "0379_hiring_formalization_integrity",
+      "breakpoints": true
+    },
+    {
+      "idx": 380,
+      "version": "7",
+      "when": 1795047507000,
+      "tag": "0380_hiring_direct_person_origin",
+      "breakpoints": true
     }
   ]
 }

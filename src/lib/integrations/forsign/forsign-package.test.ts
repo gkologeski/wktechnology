@@ -71,7 +71,20 @@ it("forsign sends the exact frozen contract-and-annex PDF instead of rebuilding 
   expect(ForsignClient.prototype.createOperation).toHaveBeenCalledWith(
     expect.objectContaining({ files: [{ id: "11", description: "42.pdf" }] }),
   );
-  expect(caller.rpc).toHaveBeenCalledTimes(2);
+  const expectedCheck = [
+    ["hiring_contract_signature_context", { p_ws: "W", p_contract: "C" }],
+    ["hiring_formalization_signature_gate", { w: "W", k: "C", h: input.hash }],
+  ];
+  expect(caller.rpc.mock.calls).toEqual([...expectedCheck, ...expectedCheck, ...expectedCheck]);
+  const checks = caller.rpc.mock.invocationCallOrder;
+  const preparedAt = m.prepare.mock.invocationCallOrder[0];
+  const uploadedAt = vi.mocked(ForsignClient.prototype.uploadPdf).mock.invocationCallOrder[0];
+  const invitedAt = vi.mocked(ForsignClient.prototype.createOperation).mock.invocationCallOrder[0];
+  expect(checks[1]).toBeLessThan(preparedAt);
+  expect(checks[2]).toBeGreaterThan(preparedAt);
+  expect(checks[3]).toBeLessThan(uploadedAt);
+  expect(checks[4]).toBeGreaterThan(uploadedAt);
+  expect(checks[5]).toBeLessThan(invitedAt);
 });
 it("forsign does not upload or send invitations when any annex cannot be prepared", async () => {
   m.prepare.mockRejectedValue(new Error("Anexo inválido"));

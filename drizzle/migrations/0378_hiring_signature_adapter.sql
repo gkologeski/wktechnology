@@ -1,5 +1,4 @@
--- FORMALIZA-SOLICITA: narrow dispatch preserving original sales functions. REVIEW ONLY.
-BEGIN;
+-- Package 3: reviewed additive migration.
 CREATE OR REPLACE FUNCTION public.hiring_contract_fingerprint_without_attachments(p_contract uuid)
 RETURNS text LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
  SELECT encode(extensions.digest(convert_to(jsonb_build_object(
@@ -167,4 +166,3 @@ CREATE OR REPLACE FUNCTION public.hiring_contract_signers_prepare(p_ws uuid,p_co
 BEGIN PERFORM hiring_formalization_signature_gate(p_ws,p_contract,p_hash);RETURN hiring_contract_signers_prepare_sales_v1(p_ws,p_contract,p_hash,p_signers);END $$;
 REVOKE ALL ON FUNCTION public.hiring_contract_signers_prepare(uuid,uuid,text,jsonb) FROM PUBLIC,anon,authenticated,service_role,techerp_request_writer;
 GRANT EXECUTE ON FUNCTION public.hiring_contract_signers_prepare(uuid,uuid,text,jsonb) TO authenticated;
-COMMIT;

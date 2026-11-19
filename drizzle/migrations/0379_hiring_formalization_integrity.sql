@@ -1,5 +1,4 @@
--- INTEGRIDADE-FORMALIZA: REVIEW ONLY; depends on prepared 0376-0378. Not in journal.
-BEGIN;
+-- Package 3: reviewed additive migration.
 CREATE FUNCTION public.hiring_formalization_private_access(w uuid,i uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
  SELECT EXISTS(SELECT 1 FROM hiring_preparation_requests r JOIN hiring_formalizations f ON f.request_id=r.id AND f.workspace_id=r.workspace_id WHERE r.id=i AND r.workspace_id=w AND hiring_formalization_access(w,i,'view') AND (hiring_formalization_subject(w,auth.uid(),r.kind,'manage') OR hiring_formalization_subject(w,auth.uid(),r.kind,'approve')) AND hiring_preparation_access(w,r.kind,'reference_view') AND work_record_access('techcontracts.contracts',f.contract_id,'view'))
 $$;
@@ -420,4 +419,3 @@ BEGIN
  RETURN r;
 END $$;
 REVOKE ALL ON FUNCTION public.hiring_formalization_forsign_roster(jsonb,jsonb) FROM PUBLIC,anon,authenticated,service_role,techerp_request_writer;
-COMMIT;

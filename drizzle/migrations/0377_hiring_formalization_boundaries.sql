@@ -1,5 +1,4 @@
--- FORMALIZA-SOLICITA: capability OTP and protected native/ForSign dispatch. REVIEW ONLY.
-BEGIN;
+-- Package 3: reviewed additive migration.
 CREATE FUNCTION public.hiring_draft_capability(token text) RETURNS public.hiring_draft_capabilities LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
 DECLARE cap hiring_draft_capabilities;
 BEGIN
@@ -128,4 +127,3 @@ REVOKE ALL ON FUNCTION public.hiring_draft_capability(text),public.hiring_draft_
 GRANT EXECUTE ON FUNCTION public.hiring_draft_public(text),public.hiring_draft_code_reserve(text,uuid,text),public.hiring_draft_code_delivery(text,uuid,boolean),public.hiring_draft_code_context(text),public.hiring_draft_decide(text,uuid,text,text,text),public.hiring_draft_attachment(text,uuid) TO service_role;
 CREATE POLICY hiring_contract_sensitive_origin ON public.contracts AS RESTRICTIVE FOR SELECT TO authenticated USING(hiring_request_origin IS NULL OR EXISTS(SELECT 1 FROM hiring_preparation_requests r WHERE r.id=hiring_request_origin AND r.workspace_id=contracts.workspace_id AND hiring_preparation_access(r.workspace_id,r.kind,'reference_view')));
 CREATE POLICY hiring_draft_sensitive_origin ON public.contract_drafts AS RESTRICTIVE FOR SELECT TO authenticated USING(hiring_request_origin IS NULL OR EXISTS(SELECT 1 FROM hiring_preparation_requests r WHERE r.id=hiring_request_origin AND r.workspace_id=contract_drafts.workspace_id AND hiring_preparation_access(r.workspace_id,r.kind,'reference_view')));
-COMMIT;

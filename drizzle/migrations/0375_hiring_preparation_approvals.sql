@@ -1,6 +1,5 @@
--- APROVA-SOLICITA / package 3 batch 1. REVIEW ONLY: outside the automatic journal.
+-- Package 3: reviewed additive migration.
 -- Depends on 0373/0374 and canonical hiring_area_policies; never seeds policies or grants roles.
-BEGIN;
 INSERT INTO public.permissions(key,module,resource,action,scope,label_pt,description,is_system) VALUES
 ('techpeople.hiring_requests.approval_request.create.workspace','techpeople','hiring_requests.approval_request','create','workspace','Solicitar aprovação de profissional','Encaminhar a revisão salva ao gestor e CEO canônicos.',true),
 ('techpeople.hiring_requests.approval.approve.workspace','techpeople','hiring_requests.approval','approve','workspace','Decidir solicitação de profissional','Aprovador nomeado decide a revisão atual; sem autoaprovação.',true),
@@ -58,6 +57,22 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_t
  CASE a WHEN 'view' THEN 'view' WHEN 'request' THEN 'approval_request.create' WHEN 'approve' THEN 'approval.approve' WHEN 'reference_view' THEN 'reference.view' END ||'.workspace');
 $$;
 REVOKE ALL ON FUNCTION public.hiring_preparation_approval_subject(uuid,uuid,text,text) FROM PUBLIC,anon,authenticated,service_role,techerp_request_writer;
+
+-- Live eligibility is rechecked after a decision, not just when the cycle is created.
+CREATE FUNCTION public.hiring_preparation_approval_current(p_ws uuid,p_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
+ SELECT EXISTS(SELECT 1 FROM public.hiring_preparation_approvals a
+ JOIN public.hiring_preparation_requests r ON r.id=a.request_id AND r.workspace_id=a.workspace_id
+ JOIN public.hiring_area_policies p ON p.area_id=r.area_id AND p.workspace_id=r.workspace_id
+ LEFT JOIN public.hiring_preparation_reference_values v ON v.request_id=r.id AND v.workspace_id=r.workspace_id
+ WHERE r.id=p_id AND r.workspace_id=p_ws AND r.status='ready' AND a.status='approved'
+ AND a.revision=r.revision AND a.reference_revision=coalesce(v.revision,0) AND a.policy_snapshot=to_jsonb(p)
+ AND NOT EXISTS(SELECT 1 FROM unnest(ARRAY[a.manager_id,a.ceo_id]) u
+ WHERE u IN(r.created_by,a.requested_by) OR NOT public.hiring_preparation_approval_subject(p_ws,u,r.kind,'view')
+ OR NOT public.hiring_preparation_approval_subject(p_ws,u,r.kind,'approve')
+ OR NOT public.hiring_preparation_approval_subject(p_ws,u,r.kind,'reference_view')));
+$$;
+REVOKE ALL ON FUNCTION public.hiring_preparation_approval_current(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role,techerp_request_writer;
 
 CREATE FUNCTION public.hiring_preparation_approval_access(w uuid,k text,a text)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
@@ -156,7 +171,11 @@ BEGIN
  IF r.status<>'ready' THEN RAISE EXCEPTION 'Salve a solicitação como pronta para aprovação.';END IF;
  SELECT * INTO a FROM public.hiring_preparation_approvals WHERE request_id=r.id AND revision=r.revision AND policy_revision=p.revision;
  IF FOUND THEN
-  IF a.status IN('pending','approved') THEN RETURN a.id;END IF;
+  IF a.status='approved' THEN
+   IF NOT public.hiring_preparation_approval_current(p_ws,p_id) THEN RAISE EXCEPTION 'Aprovação sem validade atual; confira revisão, alçada e acessos dos aprovadores.';END IF;
+   RETURN a.id;
+  END IF;
+  IF a.status='pending' THEN RETURN a.id;END IF;
   RAISE EXCEPTION 'Edite a solicitação e salve nova revisão após rejeição ou invalidação.';
  END IF;
  route:=public.hiring_preparation_approval_route(p_ws,p_id);
@@ -192,6 +211,13 @@ BEGIN
   RETURN a.id;
  END IF;
  IF a.status<>'pending' THEN RAISE EXCEPTION 'Aprovação já encerrada.';END IF;
+ FOREACH u IN ARRAY ARRAY[a.manager_id,a.ceo_id] LOOP
+  IF NOT public.hiring_preparation_approval_subject(p_ws,u,p_kind,'view')
+  OR NOT public.hiring_preparation_approval_subject(p_ws,u,p_kind,'approve')
+  OR NOT public.hiring_preparation_approval_subject(p_ws,u,p_kind,'reference_view') THEN
+   RAISE EXCEPTION 'Aprovador nomeado sem acesso ou inativo. Regularize os responsáveis antes de avançar.' USING ERRCODE='42501';
+  END IF;
+ END LOOP;
  stage:=CASE WHEN EXISTS(SELECT 1 FROM public.hiring_preparation_approval_events WHERE approval_id=a.id AND stage='manager' AND kind='approved') THEN 'ceo' ELSE 'manager' END;
  u:=CASE stage WHEN 'manager' THEN a.manager_id ELSE a.ceo_id END;
  IF stage<>p_stage OR u IS DISTINCT FROM auth.uid() THEN RAISE EXCEPTION 'Aguarde a etapa anterior ou o aprovador nomeado.' USING ERRCODE='42501';END IF;
@@ -215,6 +241,16 @@ BEGIN
  SELECT revision INTO ref FROM public.hiring_preparation_reference_values WHERE request_id=p_id AND workspace_id=p_ws;
  valid:=a.id IS NOT NULL AND a.revision=r.revision AND a.reference_revision=coalesce(ref,0) AND a.policy_snapshot=to_jsonb(p) AND r.status='ready' AND a.status<>'superseded';
  route:=public.hiring_preparation_approval_route(p_ws,p_id);problem:=route->>'problem';
+ IF coalesce(valid,false) THEN
+  problem:=NULL;
+  FOREACH u IN ARRAY ARRAY[a.manager_id,a.ceo_id] LOOP
+   IF NOT public.hiring_preparation_approval_subject(p_ws,u,p_kind,'view')
+   OR NOT public.hiring_preparation_approval_subject(p_ws,u,p_kind,'approve')
+   OR NOT public.hiring_preparation_approval_subject(p_ws,u,p_kind,'reference_view') THEN
+    valid:=false;problem:='Aprovador nomeado sem acesso ou inativo. Regularize os responsáveis antes de avançar.';EXIT;
+   END IF;
+  END LOOP;
+ END IF;
  IF valid AND a.status='pending' THEN
   stage:=CASE WHEN EXISTS(SELECT 1 FROM public.hiring_preparation_approval_events WHERE approval_id=a.id AND stage='manager' AND kind='approved') THEN 'ceo' ELSE 'manager' END;
   u:=CASE stage WHEN 'manager' THEN a.manager_id ELSE a.ceo_id END;
@@ -224,11 +260,12 @@ BEGIN
  IF r.status<>'ready' THEN problem:='Salve a solicitação como pronta para aprovação.';
  ELSIF a.id IS NOT NULL AND (NOT coalesce(valid,false) OR a.status='rejected') THEN problem:=coalesce(problem,'Decisões anteriores não valem para a revisão atual. Salve uma nova revisão ou solicite novamente após alteração da alçada.');END IF;
  RETURN jsonb_build_object('request',to_jsonb(r),'status',CASE WHEN a.id IS NULL THEN 'not_requested' WHEN NOT coalesce(valid,false) THEN 'superseded' ELSE a.status END,
- 'approval_id',a.id,'stage',stage,'approver_id',u,'manager_id',CASE WHEN valid THEN a.manager_id ELSE (route->>'manager_id')::uuid END,'ceo_id',CASE WHEN valid THEN a.ceo_id ELSE (route->>'ceo_id')::uuid END,
+ 'approval_id',a.id,'stage',stage,'approver_id',u,'manager_id',CASE WHEN a.revision=r.revision AND a.policy_snapshot=to_jsonb(p) THEN a.manager_id ELSE (route->>'manager_id')::uuid END,'ceo_id',CASE WHEN a.revision=r.revision AND a.policy_snapshot=to_jsonb(p) THEN a.ceo_id ELSE (route->>'ceo_id')::uuid END,
+ 'manager_name',(SELECT full_name FROM public.profiles WHERE id=CASE WHEN a.revision=r.revision AND a.policy_snapshot=to_jsonb(p) THEN a.manager_id ELSE (route->>'manager_id')::uuid END),
+ 'ceo_name',(SELECT full_name FROM public.profiles WHERE id=CASE WHEN a.revision=r.revision AND a.policy_snapshot=to_jsonb(p) THEN a.ceo_id ELSE (route->>'ceo_id')::uuid END),
  'problem',problem,'can_request',public.hiring_preparation_approval_access(p_ws,p_kind,'request') AND r.status='ready' AND route->>'problem' IS NULL AND (a.id IS NULL OR NOT coalesce(valid,false)),
  'can_decide',coalesce(valid,false) AND a.status='pending' AND u=auth.uid() AND auth.uid() NOT IN(r.created_by,a.requested_by) AND problem IS NULL AND public.hiring_preparation_approval_access(p_ws,p_kind,'approve') AND public.hiring_preparation_access(p_ws,p_kind,'reference_view'),
- 'events',coalesce((SELECT jsonb_agg(to_jsonb(x) ORDER BY x.created_at DESC,x.id DESC) FROM (SELECT id,revision,actor_id,stage,kind,note,created_at FROM public.hiring_preparation_approval_events WHERE request_id=p_id AND workspace_id=p_ws ORDER BY created_at DESC,id DESC LIMIT 51 OFFSET p_offset)x),'[]'::jsonb));
+ 'events',coalesce((SELECT jsonb_agg(to_jsonb(x) ORDER BY x.created_at DESC,x.id DESC) FROM (SELECT e.id,e.revision,e.actor_id,(SELECT full_name FROM public.profiles WHERE id=e.actor_id) AS actor_name,e.stage,e.kind,e.note,e.created_at FROM public.hiring_preparation_approval_events e WHERE e.request_id=p_id AND e.workspace_id=p_ws ORDER BY e.created_at DESC,e.id DESC LIMIT 51 OFFSET p_offset)x),'[]'::jsonb));
 END $$;
 REVOKE ALL ON FUNCTION public.hiring_preparation_approval_context(uuid,text,uuid,integer) FROM PUBLIC,anon,authenticated,service_role,techerp_request_writer;
 GRANT EXECUTE ON FUNCTION public.hiring_preparation_approval_context(uuid,text,uuid,integer) TO authenticated;
-COMMIT;
