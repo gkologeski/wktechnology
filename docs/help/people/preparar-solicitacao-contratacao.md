@@ -8,7 +8,7 @@ route_pattern: /people/hiring-requests
 min_permission: techpeople.hiring_requests.view.workspace
 audience: internal
 sort_order: 35
-version: 3
+version: 4
 is_published: true
 ---
 # Preparar solicitação de contratação
@@ -36,6 +36,8 @@ Solicitação em rascunho, pronta para aprovação ou cancelada, com histórico 
 - Valor de referência é separado e protegido; não libera salário, orçamento ou dados sensíveis das entidades vinculadas.
 - A lista mostra 50 solicitações por página. Seletores consultam até 25 opções por busca e respeitam as permissões do cadastro.
 - Cancelada não pode ser editada. Cancelamento não apaga histórico nem altera outros registros.
+
+- Durante a consulta do nome de um vínculo, aguarde o indicador de carregamento. Vínculo indisponível exige conferir a permissão do cadastro.
 
 ## Erros comuns
 - **Acesso não autorizado:** solicite a permissão específica ao administrador.

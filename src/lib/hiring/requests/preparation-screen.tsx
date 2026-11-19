@@ -121,7 +121,11 @@ function EntityPicker({
           onClick={() => setOpen(true)}
         >
           {value
-            ? (selected.data?.[0]?.label ?? "Vínculo salvo — indisponível para consulta")
+            ? selected.isLoading
+              ? "Carregando vínculo…"
+              : selected.isError
+                ? "Não foi possível consultar o vínculo"
+                : (selected.data?.[0]?.label ?? "Vínculo indisponível para consulta")
             : "Selecionar…"}
         </Button>
         {value && (
@@ -568,9 +572,7 @@ function PreparationContent({ kind }: { kind: RequestKind }) {
                 Solicitante: {row?.created_by ?? "Você ao salvar"}
               </p>
               <AreaSummary kind={kind} id={form.area_id} />
-              <p className="text-sm text-muted-foreground">
-                Aprovação não iniciada. Nenhum aprovador é atribuído neste pacote.
-              </p>
+              <p className="text-sm text-muted-foreground">Aprovação não iniciada.</p>
             </aside>
           </div>
           {error && (
