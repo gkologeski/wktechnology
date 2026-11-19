@@ -274,6 +274,12 @@ beforeAll(async () => {
   );
   for (const name of ["public.hiring_allocate"])
     await db.unsafe(body("drizzle/migrations/0312_hiring_allocation_access_and_invites.sql", name));
+  await db.unsafe(
+    body(
+      "drizzle/migrations/0314_hiring_invite_reissue_boundary.sql",
+      "public.hiring_employment_context",
+    ),
+  );
   await db.begin(async (tx) => {
     await tx.unsafe(readFileSync(PREPARED, "utf8"));
   });
@@ -524,6 +530,24 @@ it("execution allowed: area manager authorizes direct professional start without
   expect((await db`select status from contracts where id=${k}`)[0].status).toBe("active");
   expect((await db`select count(*)::int n from ats_jobs`)[0].n).toBe(0);
   expect((await execContext(r.id, U)).status).toBe("started");
+});
+it("execution direct employment is visible in the canonical person context without IAM or ATS", async () => {
+  const { r } = await signed();
+  await start(r);
+  const c = await user(M, (tx) =>
+    tx`select hiring_employment_context(${W},${D},null,'') v`.then((x) => x[0].v),
+  );
+  expect(c.engagements).toHaveLength(1);
+  expect(c.engagements[0]).toMatchObject({
+    hiring_request_id: r.id,
+    model_name: null,
+    access_active: false,
+    invite_pending: false,
+    job_id: null,
+  });
+  await expect(
+    user(M, (tx) => tx`select hiring_employment_context(${W},null,${randomUUID()},'')`),
+  ).rejects.toThrow("Sem permissão para vínculos");
 });
 it("execution rejects missing key", async () => {
   const { r } = await signed();

@@ -140,7 +140,7 @@ export function EmploymentPanel({
                   </span>
                 </div>
                 <p className="text-sm">
-                  {e.model_name} ·{" "}
+                  {e.model_name ?? "Contratação direta · sem acesso automático"} ·{" "}
                   {e.purpose === "client"
                     ? "Atendimento a cliente"
                     : e.purpose === "internal"
@@ -167,7 +167,7 @@ export function EmploymentPanel({
                     <>
                       <Button
                         variant="outline"
-                        disabled={busy || !!e.purchase_contract_id}
+                        disabled={busy || !!e.purchase_contract_id || !!e.hiring_request_id}
                         onClick={() => open(e, "contract")}
                       >
                         Contrato de contratação
@@ -179,12 +179,12 @@ export function EmploymentPanel({
                       >
                         Alocar em projeto
                       </Button>
-                      {can("system.roles.manage.workspace") && (
+                      {!e.hiring_request_id && can("system.roles.manage.workspace") && (
                         <Button variant="outline" disabled={busy} onClick={() => open(e, "model")}>
                           Revisar modelo de acesso
                         </Button>
                       )}
-                      {can("system.roles.manage.workspace") && (
+                      {!e.hiring_request_id && can("system.roles.manage.workspace") && (
                         <Button
                           variant="outline"
                           disabled={busy || e.access_active}
@@ -202,14 +202,16 @@ export function EmploymentPanel({
                               : "Preparar convite de acesso"}
                         </Button>
                       )}
-                      {!data?.lifecycle_enabled && (
+                      {!e.hiring_request_id && !data?.lifecycle_enabled && (
                         <Button variant="outline" disabled={busy} onClick={() => open(e, "end")}>
                           Encerrar este vínculo
                         </Button>
                       )}
                     </>
                   )}
-                  {data?.lifecycle_enabled && <LifecyclePanel engagementId={e.id} />}
+                  {!e.hiring_request_id && data?.lifecycle_enabled && (
+                    <LifecyclePanel engagementId={e.id} />
+                  )}
                 </div>
               </section>
             ))}

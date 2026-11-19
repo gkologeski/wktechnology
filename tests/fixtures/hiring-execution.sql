@@ -22,3 +22,12 @@ INSERT INTO permissions(key,module,resource,action,scope,label_pt,description,is
 ('techprojects.projects.view.workspace','techprojects','projects','view','workspace','Ver projetos','fixture',true) ON CONFLICT DO NOTHING;
 -- ATS recruitment gate stub (hr/work record access come from the formalization fixture).
 CREATE FUNCTION hiring_recruitment_reason(w uuid,j uuid) RETURNS text LANGUAGE sql STABLE AS $$ SELECT CASE WHEN EXISTS(SELECT 1 FROM ats_jobs WHERE id=j AND workspace_id=w AND recruitment_authorized) THEN NULL ELSE 'Autorização ATS da vaga necessária.' END $$;
+
+-- Dependencies for the real canonical employment context (read-only).
+ALTER TABLE user_permission_sets ADD COLUMN id uuid DEFAULT gen_random_uuid();
+ALTER TABLE ats_jobs ADD COLUMN title text,ADD COLUMN hiring_purpose text,ADD COLUMN employment_type text,ADD COLUMN hiring_revision integer;
+CREATE TABLE ats_applications(id uuid,workspace_id uuid,job_id uuid,candidate_id uuid,status text,hiring_details jsonb);
+CREATE TABLE hiring_access_model_versions(id uuid,name text,allocation_only boolean);
+CREATE TABLE hiring_access_models(id uuid,workspace_id uuid,name text,active boolean);
+CREATE TABLE hiring_access_grants(engagement_id uuid,assignment_id uuid,set_id uuid,user_id uuid,revoked_at timestamptz);
+CREATE TABLE workspace_invites(hiring_engagement_id uuid,accepted_at timestamptz,expires_at timestamptz);

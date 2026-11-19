@@ -251,3 +251,13 @@ REVOKE ALL ON FUNCTION public.hiring_allocation_guard() FROM PUBLIC,anon,authent
 REVOKE ALL ON FUNCTION public.hiring_formalization_origin_guard() FROM PUBLIC,anon,authenticated,service_role,techerp_request_writer;
 GRANT EXECUTE ON FUNCTION public.hiring_execution_start(uuid,uuid,integer,date,date,text,uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.hiring_execution_context(uuid,uuid) TO authenticated;
+
+-- Preserve the canonical person panel and its record gates; direct engagements have no IAM model.
+DO $direct_context$ DECLARE definition text;BEGIN
+ SELECT pg_get_functiondef('public.hiring_employment_context(uuid,uuid,uuid,text)'::regprocedure) INTO definition;
+ IF strpos(definition,'JOIN hiring_access_model_versions v ON v.id=e.model_version_id WHERE e.workspace_id=w')=0 THEN
+  RAISE EXCEPTION 'Unexpected employment context; review direct-origin projection before migrating';
+ END IF;
+ definition:=replace(definition,'JOIN hiring_access_model_versions v ON v.id=e.model_version_id WHERE e.workspace_id=w','LEFT JOIN hiring_access_model_versions v ON v.id=e.model_version_id WHERE (e.hiring_request_id IS NOT NULL OR v.id IS NOT NULL) AND e.workspace_id=w');
+ EXECUTE definition;
+END $direct_context$;
