@@ -52,6 +52,10 @@ jobs:
         run: bun run permissions:check
       - name: Official help coverage
         run: bun run help:coverage
+      # Download the locked database dependency before timed verification.
+      # Every suite still creates its own disposable database and executes all SQL.
+      - name: Prepare pinned PostgreSQL test image
+        run: docker pull postgres@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b
       - run: bun run verify
         id: verify
       # Verified lint data remains useful when a later build/performance check fails.
