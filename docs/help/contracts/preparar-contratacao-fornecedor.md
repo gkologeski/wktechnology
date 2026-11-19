@@ -8,7 +8,7 @@ route_pattern: /contracts/supplier-requests
 min_permission: techcontracts.supplier_requests.view.workspace
 audience: internal
 sort_order: 36
-version: 7
+version: 8
 is_published: true
 ---
 
@@ -63,6 +63,18 @@ Alterações materiais de solicitação, referência, alçada, documento, anexos
 - Prévia integral e anexos ficam disponíveis aos responsáveis com acesso privado e leitura da evidência, mesmo antes do Financeiro e sem liberação de envio. A prévia não envia convites. O servidor confere o mesmo hash antes/depois da geração; o aceite público baixa os bytes aprovados por hash.
 - **Assinatura pendente** exige conclusão de todos os signatários e testemunhas incluídos. Assinatura nativa exige documento selado e participantes completos; ForSign exige reconsulta pela integração, manifesto completo e evidência PDF privada da versão atual. Após comprovação aparece **Assinado — aguarda autorização de início**, sem ativar contrato, serviço ou pagamento.
 - Repreparar ou apagar o corpo é bloqueado se há assinatura em curso/concluída. Cancele o envio pendente e revogue a evidência correspondente antes de nova preparação; documento concluído é histórico protegido e exige aditivo/instrumento apropriado, não sobrescrita. Cancelamento/revogação continuam sujeitos aos controles existentes.
+
+## Autorizar início da atividade
+
+1. Depois de **Assinado — aguarda autorização de início**, a lateral da ficha mostra **Início e execução** com o gestor da área responsável, a vigência do instrumento e eventuais pendências.
+2. Somente o gestor da área configurado na alçada atual (ou o substituto explícito quando o gestor é o autor da demanda) com `techcontracts.supplier_requests.execution.approve.workspace` vê **Autorizar início**. O CEO não substitui gestor ausente; quem preparou a demanda não autoriza.
+3. Informe início, término opcional dentro da vigência assinada e justificativa (mínimo 10 caracteres) e confirme. O registro é imutável e aparece em **Execução** no histórico central.
+4. O fornecedor fica liberado para iniciar sem criar pessoa, vínculo de equipe ou alocação. Entregas, aceite, nota fiscal e parcelas são etapas seguintes.
+
+- A autorização exige aprovação gestor/CEO vigente para a revisão atual, formalização íntegra e assinatura completa verificável. Mudança de alçada, revisão, valor de referência ou documento bloqueia o início até nova aprovação/formalização.
+- O instrumento só passa a ativo por esta autorização; tentativas de ativação direta são recusadas.
+- Autorizar o início **não** concede acessos, não envia convites, não cria modelo de acesso e não gera lançamentos, provisões ou pagamentos.
+- Se a assinatura deixar de ser íntegra depois do início, novas alocações ficam bloqueadas e a ficha avisa.
 
 ## Resultado esperado
 
