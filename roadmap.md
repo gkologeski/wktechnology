@@ -1,3 +1,10 @@
+# INTEGRIDADE-FORMALIZA — correções de 7d65e33ab (G, previsão 4–6 h)
+
+- [x] Trilha privada persistida/restrita, motivo externo SQL após OTP; Jurídico preparador pode revisar, sem autoaprovar demanda.
+- [x] Instrumento pendente/concluído protegido; evidência nativa/ForSign e próxima etapa sem execução; cartão/anexos/prévia corrigidos.
+- [x] 77 testes, incluindo 30 SQL com funções reais dos assinadores; Ajuda v7/catálogo/contratos preparados; sem aplicar/publicar/0375/types.
+- [ ] Preflight schema integral/CI/aceite visual na união local: aplicação proibida e Playwright timeout. Relatório docs/architecture/hiring-formalization-integrity.md.
+
 # FORMALIZA-SOLICITA — pacote 3, lote 2 (porte G, previsão 6–10 h)
 
 - [x] Auditar lote 1: 23/23 testes repetidos; gate global segue com dois findings preexistentes de tipos WhatsApp. Minutas aceitam origem sem deal/proposal; preparação e assinadores exigem adaptador explícito para compra.

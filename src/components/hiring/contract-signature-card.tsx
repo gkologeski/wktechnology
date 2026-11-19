@@ -57,7 +57,7 @@ export function ContractSignatureCard({
         <CardTitle>Assinaturas do contrato</CardTitle>
       </CardHeader>
       <CardContent>
-        <ContractHandoffs contractId={contractId} />
+        {!result.data?.hiring_origin && <ContractHandoffs contractId={contractId} />}
         {result.isLoading ? (
           <p>Carregando evidências…</p>
         ) : result.error ? (
@@ -139,18 +139,26 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
     <div className="space-y-4">
       <div className="rounded-md border p-3">
         <p className="font-medium">
-          {c.reason ? "Autorização comercial pendente" : "Assinatura válida para a versão atual"}
+          {c.hiring_origin
+            ? c.reason
+              ? "Formalização / assinatura pendente"
+              : "Assinado — aguarda autorização de início"
+            : c.reason
+              ? "Autorização comercial pendente"
+              : "Assinatura válida para a versão atual"}
         </p>
         <p className="mt-1 text-sm text-muted-foreground">
           {c.reason ??
-            "A demanda ainda depende da aprovação da área e do CEO e das demais regras do recrutamento."}
+            (c.hiring_origin
+              ? "Assinatura comprovada não autoriza início, ativação ou pagamento."
+              : "A demanda ainda depende da aprovação da área e do CEO e das demais regras do recrutamento.")}
         </p>
       </div>
       <p className="text-sm text-muted-foreground">
         As ações usam a versão salva deste contrato. Alterar conteúdo, partes ou condições exige
         nova evidência. Marcar o contrato como ativo ou preencher uma data não comprova assinatura.
       </p>
-      {manage && (
+      {manage && !c.hiring_origin && (
         <div className="space-y-3 rounded-md border p-3">
           <h3 className="font-medium">Origem comercial</h3>
           <Label>Negócio</Label>
@@ -178,7 +186,9 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
             disabled={busy || !deal || !entity || (deal === c.deal_id && entity === c.entity_id)}
             onClick={() =>
               act(() =>
-                origin({ data: { contractId, hash: c.hash, dealId: deal!, entityId: entity } }),
+                deal
+                  ? origin({ data: { contractId, hash: c.hash, dealId: deal, entityId: entity } })
+                  : Promise.reject(new Error("Selecione o negócio.")),
               )
             }
           >
@@ -186,20 +196,27 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
           </Button>
         </div>
       )}
-      <p className="text-sm">
-        {c.commercial_source
-          ? "Este é o contrato comercial selecionado para recrutamento do negócio."
-          : "Este contrato ainda não foi escolhido como origem de recrutamento do negócio."}
-      </p>
+      {!c.hiring_origin && (
+        <p className="text-sm">
+          {c.commercial_source
+            ? "Este é o contrato comercial selecionado para recrutamento do negócio."
+            : "Este contrato ainda não foi escolhido como origem de recrutamento do negócio."}
+        </p>
+      )}
+      {c.hiring_origin && (
+        <SignatureAttachmentsSummary contractId={contractId} canPreviewOverride={c.can_preview} />
+      )}
       {manage && (
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            disabled={busy || !c.deal_id || c.commercial_source}
-            onClick={() => act(() => source({ data: { contractId } }))}
-          >
-            Definir como origem do recrutamento
-          </Button>
+          {!c.hiring_origin && (
+            <Button
+              variant="outline"
+              disabled={busy || !c.deal_id || c.commercial_source}
+              onClick={() => act(() => source({ data: { contractId } }))}
+            >
+              Definir como origem do recrutamento
+            </Button>
+          )}
           <Button
             disabled={
               busy ||
@@ -213,9 +230,11 @@ function SignatureForm({ contractId, value: c }: { contractId: string; value: Si
           >
             Preparar assinatura no TechERP
           </Button>
-          <Button variant="outline" disabled={busy} onClick={() => setMode("external")}>
-            Registrar assinatura externa
-          </Button>
+          {!c.hiring_origin && (
+            <Button variant="outline" disabled={busy} onClick={() => setMode("external")}>
+              Registrar assinatura externa
+            </Button>
+          )}
         </div>
       )}
       <ContractForsignPanel

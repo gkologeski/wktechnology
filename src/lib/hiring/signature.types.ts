@@ -1,4 +1,6 @@
 export type SignatureContext = {
+  hiring_origin?: boolean;
+  can_preview?: boolean;
   hash: string;
   witnesses_detected?: boolean;
   reason: string | null;

@@ -163,7 +163,7 @@ export const previewContractSignaturePackage = createServerFn({ method: "POST" }
   .handler(async ({ data, context }) => {
     const { getActiveWorkspaceId } = await import("@/lib/access-control/enforce.server");
     const ws = await getActiveWorkspaceId(context.supabase, context.userId);
-    const signature = await workRpc<{ hash: string }>(
+    const signature = await workRpc<{ hash: string; hiring_origin?: boolean }>(
       context.supabase,
       "hiring_contract_signature_context",
       { p_ws: ws, p_contract: data.contractId },
@@ -175,7 +175,39 @@ export const previewContractSignaturePackage = createServerFn({ method: "POST" }
       data.contractId,
       signature.hash,
     );
-    if (!pack) throw new Error("Inclua ao menos um anexo para gerar a prévia do pacote.");
+    if (!pack) {
+      if (!signature.hiring_origin)
+        throw new Error("Inclua ao menos um anexo para gerar a prévia do pacote.");
+      const current = await workRpc<{ workspace_id: string; body: string }>(
+        context.supabase,
+        "contract_attachment_signing_context",
+        { p_contract: data.contractId, p_hash: signature.hash },
+      );
+      const { contractHtmlToPdf } = await import("@/lib/integrations/forsign/forsign-pdf");
+      const bytes = await contractHtmlToPdf(current.body, "Prévia do instrumento");
+      await workRpc(context.supabase, "contract_attachment_signing_context", {
+        p_contract: data.contractId,
+        p_hash: signature.hash,
+      });
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { randomUUID } = await import("node:crypto");
+      const path = `${current.workspace_id}/${data.contractId}/${signature.hash}/preview-${randomUUID()}.pdf`;
+      const bucket = supabaseAdmin.storage.from("contract-signature-packages");
+      const uploaded = await bucket.upload(path, bytes, {
+        contentType: "application/pdf",
+        upsert: false,
+      });
+      if (uploaded.error) throw new Error("Não foi possível guardar a prévia privada.");
+      await workRpc(context.supabase, "contract_attachment_signing_context", {
+        p_contract: data.contractId,
+        p_hash: signature.hash,
+      });
+      const preview = await bucket.createSignedUrl(path, 60, {
+        download: "Previa-instrumento.pdf",
+      });
+      if (preview.error || !preview.data) throw new Error("Prévia indisponível.");
+      return { url: preview.data.signedUrl };
+    }
     await workRpc(context.supabase, "contract_attachment_signing_context", {
       p_contract: data.contractId,
       p_hash: signature.hash,
@@ -187,3 +219,14 @@ export const previewContractSignaturePackage = createServerFn({ method: "POST" }
     if (result.error || !result.data) throw new Error("Não foi possível abrir a prévia do pacote.");
     return { url: result.data.signedUrl };
   });
+
+export const getContractAttachmentPolicy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(contractInput)
+  .handler(async ({ data, context }) =>
+    workRpc<{ hiring_origin: boolean; can_preview: boolean }>(
+      context.supabase,
+      "hiring_attachment_policy",
+      { k: data.contractId },
+    ),
+  );

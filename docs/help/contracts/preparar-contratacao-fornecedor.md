@@ -8,7 +8,7 @@ route_pattern: /contracts/supplier-requests
 min_permission: techcontracts.supplier_requests.view.workspace
 audience: internal
 sort_order: 36
-version: 6
+version: 7
 is_published: true
 ---
 
@@ -44,7 +44,7 @@ is_published: true
 1. Somente após aprovação válida da revisão pelo gestor e CEO, use **Preparar instrumento**. RH prepara profissional; Jurídico autorizado prepara compra de fornecedor. Exige a chave específica de formalização do módulo e acesso real de criação/leitura do contrato e minuta; não concede acesso a outros cargos.
 2. Profissional exige pessoa real definida, inclusive CLT/PJ/freelance; necessidade de seleção bloqueia este passo. Fornecedor exige empresa e contato canônico autorizado com e-mail cadastrado. Não se criam proposta, negócio ou vaga fictícios.
 3. Em **Abrir instrumento e anexos**, confira cláusulas, partes, vigência e condições e envie arquivos privados. WK é contratante e pessoa/empresa é contratada. O documento nasce em rascunho, sem validade de aprovação jurídica presumida. Para este fluxo, anexos devem ser arquivos completos; não use documentos comerciais vinculados como substituto da conferência.
-4. Registre a conferência e use **Encaminhar ao Jurídico**. O responsável jurídico configurado revisa o documento e anexos e confirma ou rejeita, com motivo; não pode aprovar próprio pedido/preparação.
+4. Registre a conferência e use **Encaminhar ao Jurídico**. O responsável jurídico configurado revisa o documento e anexos e confirma ou rejeita, com motivo; pode revisar explicitamente o documento que preparou, mas não pode aprovar sua própria demanda (autor ou solicitante da aprovação).
 5. Após aprovação jurídica, gere o **link de aceite** para compartilhar de forma humana. O link expira em 7 dias, é revogável e cada nova emissão revoga a anterior. O destinatário usa **Enviar código ao meu e-mail cadastrado**; o código vai exclusivamente à pessoa/contato canônico, nunca a um endereço digitado no link. Não existe aceite interno nem dispensa do código nesta origem.
 6. O código de oito dígitos vale 10 minutos e uma única resposta, com até cinco tentativas por desafio, quinze por link, cinco envios por link e intervalo mínimo de 60 segundos. Falha ou supressão do envio não verifica o e-mail. Um colaborador pode responder ao próprio instrumento; operador não recebe o código da outra contraparte. Isso comprova controle do e-mail, não identidade civil nem assinatura.
 7. A contraparte confere o documento e baixa cada anexo, então aceita ou pede ajustes com o código. Ajustes invalidam a versão; obtenha nova revisão e novo aceite. O Financeiro configurado só pode conferir depois do aceite real da mesma versão.
@@ -53,6 +53,16 @@ is_published: true
 Permissões próprias: `techcontracts.supplier_requests.formalization.manage.workspace` para preparação/encaminhamento e `.formalization.approve.workspace` para revisão nomeada, além das permissões reais de contrato, minuta, assinatura e leitura de referência. Nenhuma concessão automática. A ficha mostra responsáveis e prazos já configurados e notificações internas com link direto, sem valor/código/token no histórico comum.
 
 Alterações materiais de solicitação, referência, alçada, documento, anexos, destinatário ou responsáveis bloqueiam aceite e novos envios da versão anterior. Assinaturas históricas são preservadas. A preparação é idempotente: um único contrato e minuta por solicitação. Assinatura não ativa contratação, admissão, acesso, alocação, serviço ou pagamento; execução pertence ao pacote 4.
+
+## Conferência privada, prévia e preservação de assinaturas
+
+- Encaminhamento, revisão jurídica, conferência Financeiro e rejeição guardam o motivo em **Trilha privada de conferência**, com ator, data, ciclo e etapa. A leitura exige simultaneamente acesso à solicitação, chave de formalização de preparo ou revisão, `reference.view` do módulo e acesso real ao contrato. Lista, notificações e eventos comuns não carregam notas/valores.
+- Pedido externo de ajustes exige motivo no servidor após código válido. Código inválido/expirado não registra nota nem decisão. Motivo de ajustes fica privado e identifica a contraparte com controle do e-mail canônico; não comprova identidade civil.
+- Jurídico pode revisar explicitamente uma compra que preparou; autor da demanda e solicitante da aprovação continuam impedidos. Não existe decisão automática.
+- Na nova compra WK, anexe proposta do fornecedor ou condições WK como **arquivo PDF**. O seletor de cotação/proposta **de venda** não aparece. Anexos antigos continuam consultáveis pela prévia e pelo acesso original, mas vínculo comercial de venda precisa ser substituído por arquivo antes de encaminhar esta compra ao Jurídico; o sistema informa o impedimento específico.
+- Prévia integral e anexos ficam disponíveis aos responsáveis com acesso privado e leitura da evidência, mesmo antes do Financeiro e sem liberação de envio. A prévia não envia convites. O servidor confere o mesmo hash antes/depois da geração; o aceite público baixa os bytes aprovados por hash.
+- **Assinatura pendente** exige conclusão de todos os signatários e testemunhas incluídos. Assinatura nativa exige documento selado e participantes completos; ForSign exige reconsulta pela integração, manifesto completo e evidência PDF privada da versão atual. Após comprovação aparece **Assinado — aguarda autorização de início**, sem ativar contrato, serviço ou pagamento.
+- Repreparar ou apagar o corpo é bloqueado se há assinatura em curso/concluída. Cancele o envio pendente e revogue a evidência correspondente antes de nova preparação; documento concluído é histórico protegido e exige aditivo/instrumento apropriado, não sobrescrita. Cancelamento/revogação continuam sujeitos aos controles existentes.
 
 ## Resultado esperado
 

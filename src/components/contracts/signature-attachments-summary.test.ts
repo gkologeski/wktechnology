@@ -69,13 +69,16 @@ async function flush() {
     await new Promise((r) => setTimeout(r, 30));
   });
 }
-async function render() {
+async function render(override?: boolean) {
   await act(async () =>
     root.render(
       createElement(
         QueryClientProvider,
         { client: qc },
-        createElement(SignatureAttachmentsSummary, { contractId: "c" }),
+        createElement(SignatureAttachmentsSummary, {
+          contractId: "c",
+          canPreviewOverride: override,
+        }),
       ),
     ),
   );
@@ -146,4 +149,20 @@ it("reports a failed preview without navigating or sending anything", async () =
   expect(m.error).toHaveBeenCalledWith("Documento comercial indisponível");
   expect(window.location.hash).toBe("");
   expect(host.querySelector("button")?.disabled).toBe(false);
+});
+
+it("hiring preview is authorized independently from finance or signature management", async () => {
+  m.update = false;
+  m.manage = false;
+  await render(true);
+  await click("Baixar prévia do contrato e anexos");
+  expect(m.preview).toHaveBeenCalledWith({ data: { contractId: "c" } });
+});
+it("hiring preview explicit denial and read only cannot be overridden", async () => {
+  await render(false);
+  expect(host.querySelector("button")?.disabled).toBe(true);
+  m.readonly = true;
+  await render(true);
+  expect(host.querySelector("button")?.disabled).toBe(true);
+  expect(m.preview).not.toHaveBeenCalled();
 });

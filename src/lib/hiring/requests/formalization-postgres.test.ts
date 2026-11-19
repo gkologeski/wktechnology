@@ -224,10 +224,39 @@ beforeAll(async () => {
   await db.unsafe(
     "CREATE TRIGGER legacy_hiring_purchase BEFORE INSERT OR UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION hiring_purchase_guard()",
   );
+  await db.unsafe(
+    "DROP FUNCTION contract_esign_manage(text,uuid,jsonb);DROP FUNCTION hiring_signature_access(uuid,uuid,text);",
+  );
+  // Exercise the actual domain functions; fixture retains only tenant/authorization dependencies.
+  await db.unsafe(
+    body("drizzle/migrations/0218_order3_completion_prepare.sql", "public.contract_esign_manage"),
+  );
+  await db.unsafe(
+    body("drizzle/migrations/0309_hiring_signature_evidence.sql", "public.hiring_signature_access"),
+  );
+  await db.unsafe(
+    body(
+      "supabase/migrations/20260519191027_0ff4d7ed-582a-4195-a34b-e34969225c38.sql",
+      "public.esign_check_completion",
+    ),
+  );
+  await db.unsafe(
+    "CREATE TRIGGER esign_signers_completion AFTER UPDATE OF status ON esign_signers FOR EACH ROW EXECUTE FUNCTION esign_check_completion();",
+  );
+  await db.unsafe(
+    body(
+      "drizzle/migrations/0367_contract_signature_packages.sql",
+      "public.hiring_contract_fingerprint",
+    ),
+  );
+  await db.unsafe(
+    body("drizzle/migrations/0359_forsign_integration.sql", "public.forsign_record_evidence"),
+  );
   for (const migration of [
     "0376_hiring_formalization.sql",
     "0377_hiring_formalization_boundaries.sql",
     "0378_hiring_signature_adapter.sql",
+    "0379_hiring_formalization_integrity.sql",
     "0380_hiring_direct_person_origin.sql",
   ])
     await db.begin(async (tx) => {
@@ -283,6 +312,7 @@ async function reset() {
   await db`insert into legal_entities(id,workspace_id,name) values(${L},${W},'WK fixture')`;
   await db`insert into people(id,workspace_id,full_name,email) values(${D},${W},'Pessoa real fixture','pessoa@example.test')`;
   await db`insert into companies(id,workspace_id,name) values(${C},${W},'Fornecedor fixture')`;
+  await db`insert into contacts(id,workspace_id,company_id,first_name,last_name,email) values(${L},${W},${C},'Contato','Fornecedor','fornecedor@example.test')`;
   await db`insert into hiring_area_policies(workspace_id,area_id,manager_id,ceo_id,manager_delegate_id,updated_by) values(${W},${A},${M},${CEO},${D},${U})`;
 }
 async function user<T>(u: string, fn: (tx: postgres.TransactionSql) => Promise<T>) {
@@ -301,7 +331,7 @@ const form = (kind: string) => ({
   regime: kind === "professional" ? "pj" : null,
   person_id: kind === "professional" ? D : null,
   company_id: kind === "supplier" ? C : null,
-  contact_id: null,
+  contact_id: kind === "supplier" ? L : null,
   deal_id: null,
   project_id: null,
   commercial_contract_id: null,
@@ -310,8 +340,8 @@ const form = (kind: string) => ({
   modality: "monthly",
   release_condition: kind === "supplier" ? "wk_acceptance_invoice" : null,
 });
-async function ready(kind = "professional") {
-  const data = form(kind);
+async function ready(kind = "professional", regime = "pj") {
+  const data = { ...form(kind), regime: kind === "professional" ? regime : null };
   const draft = await user(U, (tx) =>
     tx`select hiring_preparation_save(${W},${kind},null,0,${randomUUID()},${tx.json({ ...data, reference_value: 22000 })}) v`.then(
       (x) => x[0].v,
@@ -349,14 +379,14 @@ const decide = (
     ),
   );
 
-async function approved() {
+async function approved(kind = "professional", regime = "pj") {
   await reset();
   await db`insert into contract_handoff_settings(workspace_id,enabled,legal_user_id,finance_user_id,signature_user_id) values(${W},true,${M},${CEO},${D})`;
   await db`insert into contract_draft_approvers values(${W},${M})`;
-  const r = await ready(),
-    a = await request(r);
-  await decide(r, a);
-  await decide(r, a, CEO, "ceo");
+  const r = await ready(kind, regime),
+    a = await request(r, kind);
+  await decide(r, a, M, "manager", "approved", randomUUID(), kind);
+  await decide(r, a, CEO, "ceo", "approved", randomUUID(), kind);
   return r;
 }
 const prepare = (r: { id: string; revision: number }, u = U, w = W) =>
@@ -593,6 +623,285 @@ it("formalization historical provider body and native flow remain unchanged", as
   expect(
     (await user(U, (tx) => tx`select hiring_formalization_signature_gate(${W},${k},null) v`))[0].v,
   ).toBe(true);
+});
+
+async function signingDraft() {
+  const x = await sentDraft();
+  const challenge = randomUUID(),
+    digest = "a".repeat(64);
+  await db`select hiring_draft_code_reserve(${x.token},${challenge},${digest})`;
+  await db`select hiring_draft_code_delivery(${x.token},${challenge},true)`;
+  await db`select hiring_draft_decide(${x.token},${challenge},${digest},'accept','')`;
+  await transition(x.r, "finance", CEO);
+  return x;
+}
+it("integrity private trail persists all decisions and excludes basic events", async () => {
+  const { r } = await signingDraft();
+  const notes = await user(
+    M,
+    (tx) => tx`select * from hiring_formalization_notes order by created_at`,
+  );
+  expect(notes.map((n) => n.stage)).toEqual(["submit", "legal", "finance"]);
+  expect(
+    notes.every(
+      (n) =>
+        n.note === "Conferência humana completa" && n.actor_id && n.created_at && n.cycle === 1,
+    ),
+  ).toBe(true);
+  expect(JSON.stringify(await db`select * from hiring_formalization_events`)).not.toContain(
+    "Conferência humana completa",
+  );
+  const c = await user(M, (tx) => tx`select hiring_formalization_context(${W},${r.id}) v`);
+  expect(c[0].v.notes).toHaveLength(3);
+  await expect(
+    user(M, (tx) => tx`update hiring_formalization_notes set note='forged'`),
+  ).rejects.toThrow();
+});
+it("integrity private trail denies missing reference permission deny foreign and inactive", async () => {
+  const { r } = await signingDraft();
+  for (const scenario of ["missing", "deny", "foreign", "inactive", "contract", "formalization"]) {
+    await db`update workspace_members set status='active' where user_id=${M}`;
+    await db`update profiles set active_workspace_id=${W} where id=${M}`;
+    await db`delete from job_role_permission_overrides where role_id=${M}`;
+    await db`insert into job_role_permission_overrides select ${W},${M},key,'grant' from permissions`;
+    const key =
+      scenario === "contract"
+        ? "techcontracts.contracts.view.workspace"
+        : "techpeople.hiring_requests.reference.view.workspace";
+    if (scenario === "missing" || scenario === "contract")
+      await db`delete from job_role_permission_overrides where role_id=${M} and permission_key=${key}`;
+    if (scenario === "deny")
+      await db`update job_role_permission_overrides set effect='deny' where role_id=${M} and permission_key=${key}`;
+    if (scenario === "foreign")
+      await db`update profiles set active_workspace_id=${B} where id=${M}`;
+    if (scenario === "inactive")
+      await db`update workspace_members set status='inactive' where user_id=${M}`;
+    if (scenario === "formalization")
+      await db`delete from job_role_permission_overrides where role_id=${M} and permission_key like 'techpeople.hiring_requests.formalization.%'`;
+    expect(await user(M, (tx) => tx`select * from hiring_formalization_notes`)).toHaveLength(0);
+    if (scenario !== "foreign" && scenario !== "inactive")
+      expect(
+        (await user(M, (tx) => tx`select hiring_formalization_context(${W},${r.id}) v`))[0].v.notes,
+      ).toEqual([]);
+  }
+});
+it("integrity external changes require reason after valid OTP and never persist invalid code notes", async () => {
+  const { r, token } = await sentDraft();
+  const challenge = randomUUID(),
+    digest = "a".repeat(64);
+  await db`select hiring_draft_code_reserve(${token},${challenge},${digest})`;
+  await db`select hiring_draft_code_delivery(${token},${challenge},true)`;
+  expect(
+    (
+      await db`select hiring_draft_decide(${token},${challenge},${"b".repeat(64)},'changes','Nota não autenticada') v`
+    )[0].v.ok,
+  ).toBe(false);
+  expect(
+    (
+      await db`select count(*)::int n from hiring_formalization_notes where stage='counterparty_changes'`
+    )[0].n,
+  ).toBe(0);
+  expect(
+    (await db`select hiring_draft_decide(${token},${challenge},${digest},'changes',' ') v`)[0].v.ok,
+  ).toBe(false);
+  expect((await db`select consumed_at from hiring_draft_capabilities`)[0].consumed_at).toBeNull();
+  expect(
+    (
+      await db`select hiring_draft_decide(${token},${challenge},${digest},'changes','Revisar prazo e condições') v`
+    )[0].v.ok,
+  ).toBe(true);
+  expect(
+    (await db`select * from hiring_formalization_notes where stage='counterparty_changes'`)[0],
+  ).toMatchObject({
+    note: "Revisar prazo e condições",
+    actor_kind: "counterparty",
+    actor_id: null,
+    cycle: 1,
+    request_id: r.id,
+  });
+  expect(JSON.stringify(await db`select * from hiring_formalization_events`)).not.toContain(
+    "Revisar prazo e condições",
+  );
+});
+it("integrity supplier legal preparer explicitly reviews but cannot approve own demand", async () => {
+  const r = await approved("supplier");
+  const k = await prepare(r, M);
+  expect(
+    (
+      await db`select role,counterparty_company_id,hiring_person_id from contracts where id=${k}`
+    )[0],
+  ).toMatchObject({ role: "client", counterparty_company_id: C, hiring_person_id: null });
+  await user(
+    M,
+    (tx) =>
+      tx`update contracts set body_html='Condições e cláusulas de compra revisadas',starts_at=current_date where id=${k}`,
+  );
+  await transition(r, "submit", M);
+  await transition(r, "legal", M);
+  expect((await db`select legal_by,prepared_by from hiring_formalizations`)[0]).toMatchObject({
+    legal_by: M,
+    prepared_by: M,
+  });
+  expect((await db`select hiring_formalization_recipient(${r.id}) v`)[0].v).toBe(
+    "fornecedor@example.test",
+  );
+  await expect(
+    user(M, (tx) => tx`update hiring_preparation_requests set created_by=${M} where id=${r.id}`),
+  ).rejects.toThrow();
+  await expect(transition(r, "legal", U)).rejects.toThrow();
+});
+it.each(["clt", "pj", "freelance"])(
+  "integrity real professional %s factory preserves canonical person",
+  async (regime) => {
+    const r = await approved("professional", regime),
+      k = await prepare(r);
+    expect(
+      (await db`select role,hiring_person_id,deal_id,proposal_id from contracts where id=${k}`)[0],
+    ).toMatchObject({ role: "client", hiring_person_id: D, deal_id: null, proposal_id: null });
+    expect(
+      (await db`select regime from hiring_preparation_requests where id=${r.id}`)[0].regime,
+    ).toBe(regime);
+  },
+);
+async function nativeParticipants(k: string) {
+  const ids = [randomUUID(), randomUUID(), randomUUID()];
+  for (let j = 0; j < 3; j++)
+    await db`insert into contacts(id,workspace_id,company_id,first_name,last_name,email) values(${ids[j]},${W},${C},'Signatário',${String(j)},${`signer${j}@example.test`})`;
+  return user(D, (tx) =>
+    tx`select hiring_contract_signers_prepare(${W},${k},hiring_contract_fingerprint(${k}),${tx.json(ids.map((id, j) => ({ contactId: id, role: ["CONTRATANTE", "CONTRATADO", "TESTEMUNHA"][j] })))}) v`.then(
+      (x) => x[0].v as string,
+    ),
+  );
+}
+it("integrity actual native preparation public signature and completion require every included witness", async () => {
+  const { r, k } = await signingDraft();
+  const doc = await nativeParticipants(k);
+  const signers =
+    await db`select * from esign_signers where document_id=${doc} order by sign_order`;
+  expect(signers).toHaveLength(3);
+  await user(D, (tx) => tx`select contract_esign_manage('send',${doc},'{}')`);
+  expect(
+    (await user(M, (tx) => tx`select hiring_formalization_context(${W},${r.id}) v`))[0].v.status,
+  ).toBe("signature_pending");
+  for (let j = 0; j < 2; j++)
+    await db`select contract_esign_public(${signers[j].public_token},'sign','Nome real','desenho',null,null,null)`;
+  expect((await db`select hiring_formalization_signed(${W},${k}) v`)[0].v).toBe(false);
+  await db`select contract_esign_public(${signers[2].public_token},'sign','Testemunha real','desenho',null,null,null)`;
+  expect((await db`select hiring_formalization_signed(${W},${k}) v`)[0].v).toBe(true);
+  expect((await db`select hiring_contract_signature_reason(${k},${W},null) v`)[0].v).toBeNull();
+  expect(
+    (await user(M, (tx) => tx`select hiring_formalization_context(${W},${r.id}) v`))[0].v.status,
+  ).toBe("signed");
+  expect((await db`select status from contracts where id=${k}`)[0].status).toBe("draft");
+  await db`delete from contract_signature_participants where document_id=${doc} and role='TESTEMUNHA'`;
+  expect((await db`select hiring_formalization_signed(${W},${k}) v`)[0].v).toBe(false);
+});
+it("integrity actual ForSign evidence requires current private operation and stored PDF hash", async () => {
+  const { k } = await signingDraft();
+  const op = randomUUID(),
+    path = `${W}/${k}/signed.pdf`,
+    hash = "a".repeat(64);
+  await db`insert into contract_forsign_operations(id,workspace_id,contract_id,contract_hash,status,operation_id,created_by) values(${op},${W},${k},hiring_contract_fingerprint(${k}),'completed',802,${D})`;
+  expect((await db`select hiring_formalization_signed(${W},${k}) v`)[0].v).toBe(false);
+  await db`update contract_forsign_operations set requested_members='[{"email":"a@example.test"},{"email":"b@example.test"},{"email":"w@example.test"}]',members='[{"email":"a@example.test","status":"Completed"},{"email":"b@example.test","status":"Completed"}]' where id=${op}`;
+  await expect(
+    db`select forsign_record_evidence(${op},${path},${hash},current_date)`,
+  ).rejects.toThrow("todos os participantes");
+  await db`update contract_forsign_operations set members=members||'[{"email":"w@example.test","status":"Completed"}]'::jsonb where id=${op}`;
+  await db`insert into storage.objects values('contract-signature-evidence',${path},jsonb_build_object('sha256',${hash}::text,'contract_hash',hiring_contract_fingerprint(${k})))`;
+  await db`select forsign_record_evidence(${op},${path},${hash},current_date)`;
+  expect((await db`select hiring_formalization_signed(${W},${k}) v`)[0].v).toBe(true);
+  await db`update storage.objects set user_metadata='{}' where name=${path}`;
+  expect((await db`select hiring_formalization_signed(${W},${k}) v`)[0].v).toBe(false);
+});
+it("integrity reprepare and direct body overwrite blocked for pending or completed signature", async () => {
+  for (const complete of [false, true]) {
+    const { r, k } = await signingDraft();
+    const doc = await nativeParticipants(k);
+    await user(D, (tx) => tx`select contract_esign_manage('send',${doc},'{}')`);
+    if (complete)
+      for (const z of await db`select public_token from esign_signers where document_id=${doc}`)
+        await db`select contract_esign_public(${z.public_token},'sign','Nome completo','desenho',null,null,null)`;
+    const old = (await db`select body_html from contracts where id=${k}`)[0].body_html;
+    await db`select hiring_formalization_invalidate(${r.id})`;
+    await expect(prepare(r)).rejects.toThrow("Documento em assinatura");
+    await expect(
+      user(U, (tx) => tx`update contracts set body_html='' where id=${k}`),
+    ).rejects.toThrow("corpo histórico");
+    expect((await db`select body_html from contracts where id=${k}`)[0].body_html).toBe(old);
+    expect(
+      (await db`select count(*)::int n from esign_signers where document_id=${doc}`)[0].n,
+    ).toBe(3);
+  }
+});
+it("integrity preview before finance uses same hash and restricts sales attachments on purchase", async () => {
+  const { r, k } = await sentDraft();
+  const annex = randomUUID(),
+    hash = "c".repeat(64);
+  await db`select hiring_formalization_invalidate(${r.id})`;
+  await db`insert into contract_attachments(id,workspace_id,contract_id,file_name,storage_path,sha256) values(${annex},${W},${k},'Proposta fornecedor.pdf','private/path',${hash})`;
+  const current = (await db`select hiring_contract_fingerprint(${k}) v`)[0].v;
+  const preview = await user(
+    M,
+    (tx) => tx`select contract_attachment_signing_context(${k},${current}) v`,
+  );
+  expect(preview[0].v.attachments[0]).toMatchObject({ id: annex, kind: "file", stamp: hash });
+  const c = await user(M, (tx) => tx`select hiring_contract_signature_context(${W},${k}) v`);
+  expect(c[0].v).toMatchObject({ hiring_origin: true, can_manage: false, can_preview: true });
+  expect(
+    (await user(M, (tx) => tx`select contract_attachment_manage(${k},'sources','{}') v`))[0].v,
+  ).toEqual([]);
+  await expect(
+    user(M, (tx) => tx`select contract_attachment_manage(${k},'link','{"kind":"proposal"}')`),
+  ).rejects.toThrow("Compra WK");
+  await expect(
+    user(D, (tx) => tx`select hiring_formalization_signature_gate(${W},${k},${current})`),
+  ).rejects.toThrow("Conclua");
+});
+
+it("integrity rejection retains private stage reason and actor", async () => {
+  const { r } = await sentDraft();
+  await db`update hiring_formalizations set status='legal' where request_id=${r.id}`;
+  await transition(r, "reject", M);
+  expect(
+    (await db`select * from hiring_formalization_notes where stage='legal_reject'`)[0],
+  ).toMatchObject({ actor_id: M, note: "Conferência humana completa", cycle: 1 });
+  expect(
+    (await db`select status from hiring_formalizations where request_id=${r.id}`)[0].status,
+  ).toBe("invalid");
+});
+it("integrity private capability has no direct anon authenticated writer note insertion", async () => {
+  await signingDraft();
+  for (const role of ["anon", "authenticated", "techerp_request_writer"])
+    expect(
+      (await db`select has_table_privilege(${role},'hiring_formalization_notes','INSERT') v`)[0].v,
+    ).toBe(false);
+  expect(
+    (await db`select has_table_privilege('anon','hiring_formalization_notes','SELECT') v`)[0].v,
+  ).toBe(false);
+});
+it("integrity historical sales reasons and context are identical to unchanged definitions", async () => {
+  await reset();
+  const k = randomUUID();
+  await db`insert into contracts(id,workspace_id,title,role,document_kind,deal_id,counterparty_company_id,contracting_legal_entity_id,body_html) values(${k},${W},'Venda histórica','provider','main',${A},${C},${L},'Corpo histórico')`;
+  expect((await db`select hiring_contract_signature_reason(${k},${W},null) v`)[0].v).toBe(
+    (await db`select hiring_contract_signature_reason_sales_v1(${k},${W},null) v`)[0].v,
+  );
+  const c = await db.begin(async (tx) => {
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: U, role: "authenticated" })},true)`;
+    return tx`select hiring_contract_signature_context(${W},${k}) v,hiring_contract_signature_context_sales_v1(${W},${k}) previous`;
+  });
+  expect(c[0].v).toEqual(c[0].previous);
+});
+it("integrity cancellation and revocation release only pending document not completed history", async () => {
+  const { r, k } = await signingDraft();
+  const doc = await nativeParticipants(k);
+  await user(D, (tx) => tx`select contract_esign_manage('send',${doc},'{}')`);
+  await user(D, (tx) => tx`select contract_esign_manage('cancel',${doc},'{}')`);
+  await db`update hiring_contract_evidence set revoked_at=now() where document_id=${doc}`;
+  await db`select hiring_formalization_invalidate(${r.id})`;
+  expect(await prepare(r)).toBe(k);
+  expect((await db`select status from esign_documents where id=${doc}`)[0].status).toBe("canceled");
 });
 
 it("direct professional origin preserves the legacy admission person guard", async () => {

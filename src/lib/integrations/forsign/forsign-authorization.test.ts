@@ -32,7 +32,7 @@ vi.mock("@/lib/access-control/enforce.server", async () => {
 
 import { getSettings, sendContract, FS_SETTINGS, FS_SEND } from "./forsign-service.server";
 
-type Grants = { ws: string | null; keys: Set<string>; contextError?: string };
+type Grants = { ws: string | null; keys: Set<string>; contextError?: string; gateError?: string };
 function caller(g: Grants): any {
   return {
     from: () => {
@@ -55,6 +55,8 @@ function caller(g: Grants): any {
           return { data: null, error: { message: g.contextError, code: "42501" } };
         return { data: { can_manage: true, hash: "a".repeat(64) }, error: null };
       }
+      if (fn === "hiring_formalization_signature_gate" && g.gateError)
+        return { data: null, error: { code: "42501", message: g.gateError } };
       if (fn === "log_access_denial" || fn.startsWith("log")) return { data: null, error: null };
       return { data: null, error: null };
     },
@@ -123,4 +125,19 @@ describe("ForSign — autorização", () => {
       [],
     );
   });
+});
+
+it("hiring ForSign current chain rejects before storage or external provider effect", async () => {
+  await expect(
+    sendContract(
+      caller({
+        ws: WS,
+        keys: new Set([FS_SEND, "techcontracts.signature_evidence.manage.workspace"]),
+        gateError: "Financeiro da revisão atual pendente",
+      }),
+      "u1",
+      { contractId: "hiring", hash: "a".repeat(64), signers },
+    ),
+  ).rejects.toThrow("Financeiro");
+  expect(adminCalls).toEqual([]);
 });

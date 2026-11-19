@@ -10,10 +10,30 @@ export const formalizationAction = formalizationInput.extend({
   note: z.string().trim().max(2000).default(""),
 });
 export type FormalizationContext = {
+  notes: Array<{
+    id: string;
+    cycle: number;
+    stage: string;
+    actor_id: string | null;
+    actor_label: string;
+    actor_kind: "internal" | "counterparty";
+    note: string;
+    created_at: string;
+  }>;
   contract_id: string | null;
   draft_id: string | null;
   cycle: number;
-  status: "none" | "editing" | "legal" | "accepted" | "sent" | "finance" | "signing" | "invalid";
+  status:
+    | "none"
+    | "editing"
+    | "legal"
+    | "accepted"
+    | "sent"
+    | "finance"
+    | "signing"
+    | "invalid"
+    | "signature_pending"
+    | "signed";
   problem: string | null;
   can_prepare: boolean;
   can_submit: boolean;
@@ -33,5 +53,7 @@ export const formalizationLabels: Record<FormalizationContext["status"], string>
   sent: "Aguardando aceite da contraparte",
   finance: "Conferência Financeiro",
   signing: "Pronto para envio humano à assinatura",
+  signature_pending: "Assinatura pendente",
+  signed: "Assinado — aguarda autorização de início",
   invalid: "Versão invalidada — preparar nova revisão",
 };
