@@ -1,3 +1,8 @@
+import {
+  captureDisposableHiringSnapshot,
+  restoreDisposableHiringSnapshot,
+  type DisposableHiringSnapshot,
+} from "../../../../tests/fixtures/disposable-hiring-snapshot";
 import { beforeAll, afterAll, it, expect } from "vitest";
 import postgres from "postgres";
 import { execFileSync } from "node:child_process";
@@ -621,11 +626,32 @@ const start = (
   );
 
 // ---------------- Batch C1: economic plan, eligible calculation and management provision ----------------
-async function startedRequest(kind = "professional", regime = "pj") {
+const startedFixtures = new Map<
+  string,
+  { data: Awaited<ReturnType<typeof buildStartedRequest>>; snapshot: DisposableHiringSnapshot }
+>();
+async function buildStartedRequest(kind: string, regime: string) {
   const x = await signed(kind, regime);
   const sid = await start(x.r, M, randomUUID(), W, PREV);
   return { ...x, sid };
 }
+async function startedRequest(kind = "professional", regime = "pj") {
+  const key = JSON.stringify([kind, regime, formExtra]);
+  const cached = startedFixtures.get(key);
+  if (cached) {
+    await restoreDisposableHiringSnapshot(db, cached.snapshot);
+    // The cached setup must preserve the current real signature verifier, not a fabricated success flag.
+    expect((await db`select hiring_formalization_signed(${W},${cached.data.k}) v`)[0].v).toBe(true);
+    return structuredClone(cached.data);
+  }
+  const data = await buildStartedRequest(kind, regime);
+  startedFixtures.set(key, {
+    data: structuredClone(data),
+    snapshot: await captureDisposableHiringSnapshot(db),
+  });
+  return data;
+}
+
 type R = { id: string; revision: number };
 const save = (
   r: R,
