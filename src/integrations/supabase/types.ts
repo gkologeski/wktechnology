@@ -37905,6 +37905,10 @@ export type Database = {
         Args: { p_id: string; p_kind: string; p_offset?: number; p_ws: string }
         Returns: Json
       }
+      hiring_preparation_origin_context: {
+        Args: { i: string; k: string; s: string; w: string }
+        Returns: Json
+      }
       hiring_preparation_page: {
         Args: {
           p_kind: string
