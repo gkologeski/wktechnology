@@ -40,9 +40,9 @@ describe("CI acceleration keeps the release gate", () => {
     const build = steps.find((s: { run?: string }) => s.run === "bun run build");
     expect(restore.uses).toBe("actions/cache/restore@v4");
     expect(verify.run).toBe("bun run verify");
-    expect(save.if).toBe(
-      "${{ steps.verify.outcome == 'success' && steps.lint-cache.outputs.cache-hit != 'true' }}",
-    );
+    // Default success() runs this only after the unconditional verify has passed.
+    expect(save.if).toBeUndefined();
+    expect(verify["continue-on-error"]).toBeUndefined();
     expect(save.with).toEqual({
       path: ".eslintcache",
       key: "${{ steps.lint-cache.outputs.cache-primary-key }}",

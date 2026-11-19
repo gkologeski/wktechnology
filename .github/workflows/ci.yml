@@ -51,7 +51,6 @@ jobs:
       # Verified lint data remains useful when a later build/performance check fails.
       # Never cache release evidence, test outcomes or build outputs.
       - name: Save verified content-based lint results
-        if: ${{ steps.verify.outcome == 'success' && steps.lint-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@v4
         with:
           path: .eslintcache
