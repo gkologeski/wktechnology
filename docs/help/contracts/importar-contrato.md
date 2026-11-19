@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 23
-version: 8
+version: 9
 is_published: true
 ---
 # Importar e revisar um contrato PDF ou DOCX
@@ -39,6 +39,7 @@ Um contrato legado pendente de conferência humana, ou um rascunho da jornada no
 - Rascunho com corpo vazio e original guardado pode usar **Carregar corpo do arquivo original** na aba Documento, com permissão de edição. Isso não exige importar novamente.
 
 ## Erros comuns
+Contrato antigo já assinado pelo ForSign ou outro provedor: escolha **Contrato legado / já formalizado**, preserve o original e confira as referências na ficha. A importação não cria uma nova operação de assinatura; a regularização exige o PDF assinado e conferência humana. Se o contrato já possui uma operação de assinatura real no TechERP, ele permanece na jornada existente.
 "Formato não suportado. Use .pdf ou .docx.": converta o arquivo.
 "Rascunho salvo em Contratos. Você pode retomar quando quiser.": confira o rascunho antes de repetir a importação.
 

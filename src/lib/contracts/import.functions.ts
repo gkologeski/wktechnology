@@ -16,6 +16,7 @@ import {
 } from "@/lib/contracts/import-schemas";
 import { formatCnpj } from "@/lib/cnpj";
 import { buildContractTitle } from "@/lib/contracts/title";
+import { importSignatureFields } from "@/lib/contracts/import-signature";
 
 const SYSTEM_PROMPT = `Você é um analista jurídico especialista em contratos brasileiros de prestação de serviços de TI (outsourcing, desenvolvimento, manutenção, consultoria). Sua tarefa é extrair variáveis-chave do contrato fornecido.
 
@@ -401,11 +402,7 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       governing_law: f.governing_law ?? null,
       jurisdiction: f.jurisdiction ?? null,
       confidentiality_term_months: f.confidentiality_term_months ?? null,
-      signature_provider: data.import_mode === "legacy" ? null : (f.signature_provider ?? null),
-      signature_document_id:
-        data.import_mode === "legacy" ? null : (f.signature_document_id ?? null),
-      signature_operation_id:
-        data.import_mode === "legacy" ? null : (f.signature_operation_id ?? null),
+      ...importSignatureFields(data.import_mode, f),
       source_file_path: data.source_file_path ?? null,
       imported_from: data.imported_from,
       import_confidence: f.confidence ?? null,

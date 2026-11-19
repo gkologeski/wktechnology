@@ -13,6 +13,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
+import { importSignatureFields } from "./import-signature";
 
 // LEGADO-REGULARIZA lote A. Real PostgreSQL with production resolver bodies and the prepared 0385.
 // Never reads a configured URL: nix PG17 when present, macOS TECHERP_NATIVE_PG=1 (Postgres.app 16, private socket), otherwise Docker PG17 pinned by digest on a local Unix socket (CI).
@@ -913,7 +914,16 @@ const importLegacy = (
     ),
   );
 async function importCase(mode: Mode) {
-  const payload = await legacyImportSetup();
+  const extracted = {
+    signature_provider: "forsign" as const,
+    signature_document_id: "external-document",
+    signature_operation_id: "external-operation",
+  };
+  const payload = {
+    ...(await legacyImportSetup()),
+    ...importSignatureFields("legacy", extracted),
+    metadata: { external_signature_extracted: extracted },
+  };
   await prepare(mode, "techcontracts.legacy_contracts.create.workspace");
   const op = randomUUID();
   const outcome = await err(
@@ -928,6 +938,12 @@ async function importCase(mode: Mode) {
     expect(
       (await db`select status from contract_legacy_records where contract_id=${op}`)[0].status,
     ).toBe("pending");
+    const [stored] =
+      await db`select signature_provider,signature_document_id,signature_operation_id,metadata from contracts where id=${op}`;
+    expect(stored.signature_provider).toBeNull();
+    expect(stored.signature_document_id).toBeNull();
+    expect(stored.signature_operation_id).toBeNull();
+    expect(stored.metadata.external_signature_extracted).toEqual(extracted);
   } else {
     expect(outcome).toMatch(/permissão/);
     expect((await db`select count(*)::int n from contracts where id=${op}`)[0].n).toBe(0);
@@ -937,6 +953,17 @@ async function importCase(mode: Mode) {
 }
 it("legacy import atomic allowed", async () => {
   expect(await importCase("allowed")).toBe("ok");
+});
+it("legacy import keeps protected signature keys forbidden even when null", async () => {
+  const payload = await legacyImportSetup();
+  await expect(
+    importLegacy({
+      ...payload,
+      signature_provider: null,
+      signature_document_id: null,
+      signature_operation_id: null,
+    }),
+  ).rejects.toThrow(/protegidos/);
 });
 it("legacy import atomic missing", async () => {
   expect(await importCase("missing")).toMatch(/permissão/);
