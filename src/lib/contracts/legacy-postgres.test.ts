@@ -1,7 +1,15 @@
 import { afterAll, beforeAll, expect, it } from "vitest";
 import postgres from "postgres";
 import { execFileSync } from "node:child_process";
-import { chownSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
+import {
+  chownSync,
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -22,16 +30,35 @@ const nixPg =
   process.platform === "linux" && existsSync("/nix/store")
     ? readdirSync("/nix/store").find((n) => /-postgresql-17\.\d+$/.test(n))
     : undefined;
-const pgBin = nixPg ? `/nix/store/${nixPg}/bin/` : "";
+const useNative =
+  !!nixPg || (process.platform === "darwin" && process.env.TECHERP_NATIVE_PG === "1");
+const pgBin = nixPg
+  ? `/nix/store/${nixPg}/bin/`
+  : "/Applications/Postgres.app/Contents/Versions/16/bin/";
+function native(binary: string, args: string[]) {
+  return nixPg
+    ? execFileSync("runuser", ["-u", "nobody", "--", pgBin + binary, ...args], {
+        stdio: "pipe",
+        timeout: 30000,
+      })
+    : execFileSync(pgBin + binary, args, { stdio: "pipe", timeout: 30000 });
+}
+const docker =
+  process.platform === "darwin"
+    ? "/Applications/Docker.app/Contents/Resources/bin/docker"
+    : "docker";
+const image = "postgres@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b";
+const container = "techerp-legacy-ci-" + randomUUID();
+let endpoint = "";
+const dockerRun = (...args: string[]) =>
+  execFileSync(docker, ["--host", endpoint, ...args], {
+    encoding: "utf8",
+    timeout: 90000,
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
 let root = "",
   started = false;
 let db: ReturnType<typeof postgres>;
-function native(binary: string, args: string[]) {
-  return execFileSync("runuser", ["-u", "nobody", "--", pgBin + binary, ...args], {
-    stdio: "pipe",
-    timeout: 30000,
-  });
-}
 function body(path: string, name: string) {
   const sql = readFileSync(path, "utf8");
   const start = sql.indexOf("CREATE OR REPLACE FUNCTION " + name);
@@ -43,6 +70,8 @@ function body(path: string, name: string) {
   return tail.slice(0, tail.indexOf(";", end) + 1);
 }
 const allKeys = [
+  "techcontracts.imports.manage.workspace",
+  "techcontracts.contracts.create.workspace",
   "techcontracts.legacy_contracts.view.workspace",
   "techcontracts.legacy_contracts.create.workspace",
   "techcontracts.legacy_contracts.approve.workspace",
@@ -50,42 +79,100 @@ const allKeys = [
   "techcontracts.contracts.update.workspace",
 ];
 beforeAll(async () => {
-  if (!nixPg) throw Error("Native PostgreSQL 17 is required for this SQL permission test.");
   root = mkdtempSync(join(tmpdir(), "contract-legacy-pg-"));
-  chownSync(root, 65534, 65534);
-  native("initdb", [
-    "-D",
-    join(root, "data"),
-    "-U",
-    "postgres",
-    "--auth-local=trust",
-    "--auth-host=reject",
-    "--no-locale",
-    "--encoding=UTF8",
-  ]);
-  native("pg_ctl", [
-    "-D",
-    join(root, "data"),
-    "-l",
-    join(root, "server.log"),
-    "-o",
-    `-k ${root} -h '' -p 55461 -F -c jit=off`,
-    "-w",
-    "start",
-  ]);
-  started = true;
-  db = postgres({
-    host: root,
-    port: 55461,
-    username: "postgres",
-    database: "postgres",
-    max: 4,
-    onnotice: () => {},
-  });
+  if (nixPg) chownSync(root, 65534, 65534);
+  if (useNative) {
+    native("initdb", [
+      "-D",
+      join(root, "data"),
+      "-U",
+      "postgres",
+      "--auth-local=trust",
+      "--auth-host=reject",
+      "--no-locale",
+      "--encoding=UTF8",
+    ]);
+    native("pg_ctl", [
+      "-D",
+      join(root, "data"),
+      "-l",
+      join(root, "server.log"),
+      "-o",
+      `-k ${root} -h '' -p 55461 -F -c jit=off`,
+      "-w",
+      "start",
+    ]);
+    started = true;
+    db = postgres({
+      host: root,
+      port: 55461,
+      username: "postgres",
+      database: "postgres",
+      max: 4,
+      onnotice: () => {},
+    });
+  } else {
+    endpoint = execFileSync(
+      docker,
+      ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"],
+      { encoding: "utf8", timeout: 10000 },
+    ).trim();
+    if (!endpoint.startsWith("unix://")) throw Error("Only a local Unix Docker socket is allowed.");
+    const password = randomUUID() + randomUUID(),
+      envFile = join(root, "postgres.env");
+    writeFileSync(
+      envFile,
+      "POSTGRES_DB=techerp_permission_ci\nPOSTGRES_PASSWORD=" + password + "\n",
+      { mode: 0o600 },
+    );
+    dockerRun(
+      "run",
+      "-d",
+      "--rm",
+      "--name",
+      container,
+      "--env-file",
+      envFile,
+      "-p",
+      "127.0.0.1::5432",
+      image,
+      "-c",
+      "fsync=off",
+      // Match the deployed PostgreSQL setting; no permission, query or timeout is relaxed.
+      "-c",
+      "jit=off",
+    );
+    started = true;
+    const mapped = dockerRun("port", container, "5432/tcp");
+    if (!/^127\.0\.0\.1:\d+$/.test(mapped)) throw Error("Unexpected disposable DB binding");
+    db = postgres({
+      host: "127.0.0.1",
+      port: Number(mapped.split(":")[1]),
+      username: "postgres",
+      password,
+      database: "techerp_permission_ci",
+      max: 4,
+      connect_timeout: 1,
+      onnotice: () => {},
+    });
+    let ready = false;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      try {
+        await db`select 1`;
+        ready = true;
+        break;
+      } catch {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+    }
+    if (!ready) throw Error("Disposable PostgreSQL did not become ready");
+  }
+  // Create introspection function after resolver dependencies to satisfy SQL-language validation.
   const fixture = readFileSync("tests/fixtures/hiring-preparation.sql", "utf8");
   const permission = fixture.match(/CREATE FUNCTION user_has_permission[^\n]+/)?.[0];
   if (!permission) throw Error("resolver missing");
   await db.unsafe(fixture.replace(permission, ""));
+  await db.unsafe("CREATE SCHEMA extensions; CREATE EXTENSION pgcrypto WITH SCHEMA extensions; GRANT USAGE ON SCHEMA extensions TO authenticated;");
   await db.unsafe(`CREATE TYPE contract_status AS ENUM('draft','in_review','in_negotiation','awaiting_signature','active','renewing','ended','terminated');
     ALTER TABLE contracts ADD owner_id uuid, ADD assigned_to uuid, ADD counterparty_company_id uuid, ADD parent_contract_id uuid, ADD number text,
       ADD status contract_status NOT NULL DEFAULT 'draft', ADD starts_at date, ADD ends_at date, ADD auto_renew boolean DEFAULT false, ADD body_html text,
@@ -143,6 +230,30 @@ beforeAll(async () => {
     `INSERT INTO permissions(key) VALUES('techcontracts.contracts.view.workspace'),('techcontracts.contracts.update.workspace');`,
   );
   await db.unsafe(readFileSync(PREPARED, "utf8"));
+  await db.unsafe(`ALTER TABLE storage.objects ADD owner uuid, ADD owner_id text;
+    CREATE TABLE contract_approvals(id uuid,contract_id uuid);
+    GRANT INSERT ON contracts TO authenticated;
+    GRANT SELECT(id,status) ON workspaces TO authenticated;
+    INSERT INTO permissions(key) VALUES('techcontracts.imports.manage.workspace'),('techcontracts.contracts.create.workspace');`);
+  await db.unsafe(
+    body(
+      "drizzle/migrations/0218_order3_completion_prepare.sql",
+      "public.work_contract_source_owned",
+    ),
+  );
+  await db.unsafe(
+    body("drizzle/migrations/0218_order3_completion_prepare.sql", "public.work_area_authorize"),
+  );
+  await db.unsafe(
+    readFileSync("docs/prepared-migrations/0387_contract_legacy_import_atomic.sql", "utf8"),
+  );
+  const connections = await Promise.all([db.reserve(), db.reserve()]);
+  try {
+    await Promise.all(connections.map((c) => c`select 1`));
+  } finally {
+    for (const c of connections) c.release();
+  }
+
   await db.unsafe(`CREATE TRIGGER contract_accepted_draft_guard BEFORE INSERT OR UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contract_accepted_draft_guard();
     CREATE TRIGGER zzzz_contract_process_guard BEFORE INSERT OR UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contract_process_guard();
     CREATE TRIGGER zz_contracts_release_service_billing AFTER UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contracts_release_service_billing_trg();
@@ -150,7 +261,9 @@ beforeAll(async () => {
 }, 120000);
 afterAll(async () => {
   if (db) await db.end();
-  if (started) native("pg_ctl", ["-D", join(root, "data"), "-m", "fast", "-w", "stop"]);
+  if (started && useNative)
+    native("pg_ctl", ["-D", join(root, "data"), "-m", "fast", "-w", "stop"]);
+  if (started && !useNative) dockerRun("rm", "-f", container);
   if (root) rmSync(root, { recursive: true, force: true });
 });
 
@@ -220,7 +333,7 @@ async function attachEvidence(sha = SHA, rev = 1) {
       (x) => x[0].r,
     ),
   );
-  await db`insert into storage.objects values('contract-signature-evidence',${res.path},${db.json({ sha256: sha, actor_id: U })})`;
+  await db`insert into storage.objects(bucket_id,name,user_metadata) values('contract-signature-evidence',${res.path},${db.json({ sha256: sha, actor_id: U })})`;
   await as(
     null,
     (tx) => tx`select contract_legacy_evidence_attest(${W},${res.evidence_id},${U},${sha},${1234})`,
@@ -293,7 +406,7 @@ for (const mode of scenarios) {
         (x) => x[0].r,
       ),
     );
-    await db`insert into storage.objects values('contract-signature-evidence',${res.path},${db.json({ sha256: SHA, actor_id: U })})`;
+    await db`insert into storage.objects(bucket_id,name,user_metadata) values('contract-signature-evidence',${res.path},${db.json({ sha256: SHA, actor_id: U })})`;
     await prepare(mode, "techcontracts.legacy_contracts.approve.workspace");
     const r = await err(
       as(
@@ -515,7 +628,7 @@ it("private file: forged attestation, missing bytes and mismatched bytes are rej
       ),
     ),
   ).toMatch(/não encontrado/);
-  await db`insert into storage.objects values('contract-signature-evidence',${res.path},${db.json({ sha256: "d".repeat(64), actor_id: U })})`;
+  await db`insert into storage.objects(bucket_id,name,user_metadata) values('contract-signature-evidence',${res.path},${db.json({ sha256: "d".repeat(64), actor_id: U })})`;
   expect(
     await err(
       as(
@@ -680,4 +793,116 @@ it("rebase and reserve racing never leave old-revision evidence usable", async (
   const [n] =
     await db`select count(*)::int n from contract_legacy_evidence where legacy_revision=1 and status<>'superseded'`;
   expect(n.n).toBe(0);
+});
+
+async function legacyImportSetup() {
+  await reset();
+  const path = `${U}/new-original.pdf`;
+  await db`insert into storage.objects(bucket_id,name,user_metadata,owner) values('contract-imports',${path},'{}',${U})`;
+  return {
+    workspace_id: W,
+    owner_id: U,
+    title: "Acervo importado",
+    role: "provider",
+    status: "draft",
+    body_html: "<p>Texto preservado</p>",
+    source_file_path: path,
+    imported_from: "pdf",
+    metadata: {},
+  };
+}
+const importLegacy = (
+  payload: Record<string, unknown>,
+  op = randomUUID(),
+  w = W,
+  reason = "Original do acervo para conferência humana",
+) =>
+  as(U, (tx) =>
+    tx`select contract_legacy_import_create(${w},${tx.json(payload)},${reason},${op}) r`.then(
+      (x) => x[0].r,
+    ),
+  );
+for (const mode of scenarios) {
+  it(`legacy import atomic ${mode}`, async () => {
+    const payload = await legacyImportSetup();
+    await prepare(mode, "techcontracts.legacy_contracts.create.workspace");
+    const op = randomUUID();
+    const outcome = await err(
+      importLegacy(
+        { ...payload, workspace_id: mode === "foreign" ? B : W },
+        op,
+        mode === "foreign" ? B : W,
+      ),
+    );
+    if (mode === "allowed") {
+      expect(outcome).toBe("ok");
+      expect(
+        (await db`select status from contract_legacy_records where contract_id=${op}`)[0].status,
+      ).toBe("pending");
+    } else {
+      expect(outcome).toMatch(/permissão/);
+      expect((await db`select count(*)::int n from contracts where id=${op}`)[0].n).toBe(0);
+    }
+  });
+  it(`legacy indicator ${mode}`, async () => {
+    await reset();
+    await recognize();
+    await prepare(mode, "techcontracts.contracts.view.workspace");
+    if (mode === "allowed") {
+      await db`delete from job_role_permission_overrides where role_id=${U} and permission_key='techcontracts.legacy_contracts.view.workspace'`;
+      expect(
+        await as(U, (tx) => tx`select contract_legacy_indicator(${W},${K}) r`.then((x) => x[0].r)),
+      ).toEqual({ status: "pending" });
+    } else
+      expect(
+        await err(
+          as(U, (tx) => tx`select contract_legacy_indicator(${mode === "foreign" ? B : W},${K})`),
+        ),
+      ).toMatch(/indisponível/);
+  });
+}
+it("legacy import retries and concurrent requests preserve one contract and original", async () => {
+  const payload = await legacyImportSetup(),
+    op = randomUUID();
+  const [a, b] = await Promise.all([importLegacy(payload, op), importLegacy(payload, op)]);
+  expect(a.id).toBe(op);
+  expect(b.id).toBe(op);
+  expect([a.replayed, b.replayed].sort()).toEqual([false, true]);
+  expect(
+    (
+      await db`select count(*)::int n from contracts where source_file_path=${payload.source_file_path}`
+    )[0].n,
+  ).toBe(1);
+  await expect(importLegacy({ ...payload, title: "Outro conteúdo" }, op)).rejects.toThrow(
+    /CONFLICT/,
+  );
+  await expect(importLegacy(payload, randomUUID())).rejects.toThrow(/já possui contrato/);
+  expect((await db`select body_html from contracts where id=${op}`)[0].body_html).toBe(
+    payload.body_html,
+  );
+});
+it("legacy import recognition failure rolls back row and rejects unowned source or protected fields", async () => {
+  const payload = await legacyImportSetup(),
+    op = randomUUID();
+  await db`delete from job_role_permission_overrides where role_id=${U} and permission_key='techcontracts.contracts.update.workspace'`;
+  await expect(importLegacy(payload, op)).rejects.toThrow(/permissão/);
+  expect((await db`select count(*)::int n from contracts where id=${op}`)[0].n).toBe(0);
+  await db`insert into job_role_permission_overrides values(${W},${U},'techcontracts.contracts.update.workspace','grant')`;
+  await expect(importLegacy({ ...payload, source_file_path: `${V}/foreign.pdf` })).rejects.toThrow(
+    /privado/,
+  );
+  await expect(importLegacy({ ...payload, signature_provider: "native" })).rejects.toThrow(
+    /protegidos/,
+  );
+  await expect(importLegacy({ ...payload, metadata: { accepted_proposal: {} } })).rejects.toThrow(
+    /protegidos/,
+  );
+});
+it("legacy approval and signature insertion are serialized with recognition", async () => {
+  await reset();
+  await recognize();
+  await expect(
+    db`insert into contract_approvals(id,contract_id) values(${randomUUID()},${K})`,
+  ).rejects.toThrow(/novas aprovações/);
+  expect((await db`select count(*)::int n from contract_approvals`)[0].n).toBe(0);
 });

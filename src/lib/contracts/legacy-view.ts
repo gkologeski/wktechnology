@@ -33,12 +33,16 @@ export type LegacyState = {
   evidence: LegacyEvidence[];
 };
 /** Resultado do servidor: `denied` só quando a RPC negou a chave/acesso; falhas viram erro, nunca "não legado". */
-export type LegacyLoad = { access: "denied" } | { access: "granted"; state: LegacyState };
+export type LegacyLoad =
+  | { access: "denied"; classification: "pending" | "regularized" | null }
+  | { access: "granted"; state: LegacyState };
 
 export type LegacyMode =
   | "loading"
   | "error"
   | "denied"
+  | "restricted_pending"
+  | "restricted_regularized"
   | "ineligible"
   | "eligible"
   | "pending"
@@ -52,7 +56,12 @@ export function legacyMode(q: {
 }): LegacyMode {
   if (q.isLoading) return "loading";
   if (q.isError || !q.data) return "error";
-  if (q.data.access === "denied") return "denied";
+  if (q.data.access === "denied")
+    return q.data.classification === "pending"
+      ? "restricted_pending"
+      : q.data.classification === "regularized"
+        ? "restricted_regularized"
+        : "denied";
   const { record, eligible_problem } = q.data.state;
   if (!record) return eligible_problem ? "ineligible" : "eligible";
   if (record.status === "regularized") return "regularized";
@@ -62,8 +71,8 @@ export function legacyMode(q: {
 /** Fluxos comerciais/assinatura novos ficam ocultos enquanto a situação não é conhecidamente "não legado". */
 export type LegacyGate = "none" | "pending" | "regularized" | "unknown";
 export function legacyGate(mode: LegacyMode): LegacyGate {
-  if (mode === "pending" || mode === "stale") return "pending";
-  if (mode === "regularized") return "regularized";
+  if (mode === "pending" || mode === "stale" || mode === "restricted_pending") return "pending";
+  if (mode === "regularized" || mode === "restricted_regularized") return "regularized";
   if (mode === "loading" || mode === "error") return "unknown";
   return "none";
 }

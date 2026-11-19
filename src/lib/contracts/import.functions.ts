@@ -1,4 +1,4 @@
-import { assertWorkRecord } from "@/lib/access-control/work-core.server";
+import { workRpc, assertWorkRecord } from "@/lib/access-control/work-core.server";
 import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // Server functions para importar contratos a partir de arquivos .pdf ou .docx.
 // A extração é feita via Lovable AI Gateway (Gemini 2.5 Flash) e devolve JSON estruturado.
@@ -280,6 +280,16 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     );
 
     const metadata: Record<string, unknown> = {};
+    if (data.import_mode === "legacy") {
+      if (!data.source_file_path || !data.operation_id || !data.legacy_reason)
+        throw new Error("Legado exige arquivo original, identificação da operação e motivo.");
+      // Extracted external identifiers are documentary hints, never an active signature.
+      metadata.external_signature_extracted = {
+        provider: f.signature_provider ?? null,
+        document_id: f.signature_document_id ?? null,
+        operation_id: f.signature_operation_id ?? null,
+      };
+    }
     if (Array.isArray(f.witnesses) && f.witnesses.length) metadata.witnesses = f.witnesses;
     if (f.counterparty_name) metadata.counterparty_name_extracted = f.counterparty_name;
     if (f.counterparty_cnpj) metadata.counterparty_cnpj_extracted = f.counterparty_cnpj;
@@ -380,9 +390,11 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       governing_law: f.governing_law ?? null,
       jurisdiction: f.jurisdiction ?? null,
       confidentiality_term_months: f.confidentiality_term_months ?? null,
-      signature_provider: f.signature_provider ?? null,
-      signature_document_id: f.signature_document_id ?? null,
-      signature_operation_id: f.signature_operation_id ?? null,
+      signature_provider: data.import_mode === "legacy" ? null : (f.signature_provider ?? null),
+      signature_document_id:
+        data.import_mode === "legacy" ? null : (f.signature_document_id ?? null),
+      signature_operation_id:
+        data.import_mode === "legacy" ? null : (f.signature_operation_id ?? null),
       source_file_path: data.source_file_path ?? null,
       imported_from: data.imported_from,
       import_confidence: f.confidence ?? null,
@@ -393,6 +405,15 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       const { hasBodyText, stripControlChars } = await import("@/lib/contracts/import-body");
       const clean = sanitizeTemplateHtml(stripControlChars(data.body_html));
       if (hasBodyText(clean)) insertPayload.body_html = clean;
+    }
+
+    if (data.import_mode === "legacy") {
+      return workRpc<{ id: string; replayed: boolean }>(supabase, "contract_legacy_import_create", {
+        w: workspaceId,
+        p_contract: insertPayload,
+        p_reason: data.legacy_reason!,
+        p_operation: data.operation_id!,
+      });
     }
 
     const { data: row, error } = await supabase

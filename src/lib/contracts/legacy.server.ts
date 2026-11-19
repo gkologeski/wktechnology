@@ -100,13 +100,39 @@ function decodePdf(base64: string): Uint8Array {
 
 /** Leitura: só "denied" quando a própria RPC negou; demais falhas propagam para a tela mostrar erro. */
 export async function loadLegacyState(db: SupabaseClient, workspaceId: string, contractId: string) {
+  const classification = await workRpc<{ status: "pending" | "regularized" | null }>(
+    db,
+    "contract_legacy_indicator",
+    { w: workspaceId, p_contract: contractId },
+  );
   try {
-    return {
-      access: "granted" as const,
-      state: (await legacyContractState(db, workspaceId, contractId)) as unknown as LegacyState,
+    const raw = (await legacyContractState(
+      db,
+      workspaceId,
+      contractId,
+    )) as unknown as LegacyState & {
+      events: Array<{
+        kind: LegacyState["events"][number]["kind"];
+        revision: number;
+        actor_id: string;
+        created_at: string;
+        details?: { reason?: unknown };
+      }>;
     };
+    const state: LegacyState = {
+      ...raw,
+      events: raw.events.map((e) => ({
+        kind: e.kind,
+        revision: e.revision,
+        actor_id: e.actor_id,
+        created_at: e.created_at,
+        reason: typeof e.details?.reason === "string" ? e.details.reason : null,
+      })),
+    };
+    return { access: "granted" as const, state };
   } catch (e) {
-    if (DENIED.test((e as Error).message)) return { access: "denied" as const };
+    if (DENIED.test((e as Error).message))
+      return { access: "denied" as const, classification: classification.status };
     throw e;
   }
 }

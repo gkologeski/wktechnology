@@ -70,3 +70,23 @@ describe("regularize form blockers", () => {
     );
   });
 });
+
+it("legacy classification keeps common readers out of new commercial signing without evidence access", () => {
+  for (const classification of ["pending", "regularized"] as const) {
+    const mode = legacyMode({
+      isLoading: false,
+      isError: false,
+      data: { access: "denied", classification },
+    });
+    expect(legacyGate(mode)).toBe(classification);
+  }
+  expect(
+    legacyGate(
+      legacyMode({
+        isLoading: false,
+        isError: false,
+        data: { access: "denied", classification: null },
+      }),
+    ),
+  ).toBe("none");
+});

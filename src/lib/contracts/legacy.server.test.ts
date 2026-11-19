@@ -42,8 +42,13 @@ beforeEach(() => {
 
 describe("legacy server boundary", () => {
   it("permission denial is reported as denied, other failures throw", async () => {
-    rpc.mockRejectedValueOnce(new Error("Sem permissão para esta ação no contrato."));
-    expect(await loadLegacyState(db, "w", "c")).toEqual({ access: "denied" });
+    rpc
+      .mockResolvedValueOnce({ status: "pending" })
+      .mockRejectedValueOnce(new Error("Sem permissão para esta ação no contrato."));
+    expect(await loadLegacyState(db, "w", "c")).toEqual({
+      access: "denied",
+      classification: "pending",
+    });
     rpc.mockRejectedValueOnce(new Error("statement timeout"));
     await expect(loadLegacyState(db, "w", "c")).rejects.toThrow(/timeout/);
   });
@@ -118,4 +123,40 @@ describe("legacy server boundary", () => {
     await openLegacyEvidence(db, "w", "c", "e");
     expect(signed).toHaveBeenCalledWith("legacy-contracts/w/c/e.pdf", 60);
   });
+});
+
+it("ordinary classification cannot leak private evidence or reasons on denied legacy view", async () => {
+  rpc
+    .mockResolvedValueOnce({ status: "regularized" })
+    .mockRejectedValueOnce(new Error("Sem permissão"));
+  expect(await loadLegacyState(db, "w", "c")).toEqual({
+    access: "denied",
+    classification: "regularized",
+  });
+  expect(calls).toEqual(["contract_legacy_indicator", "contract_legacy_state"]);
+});
+it("legacy history projects the real reason without private raw event details", async () => {
+  rpc
+    .mockResolvedValueOnce({ status: "pending" })
+    .mockResolvedValueOnce({
+      contract_id: "c",
+      record: null,
+      eligible_problem: null,
+      evidence: [],
+      events: [
+        {
+          kind: "recognized",
+          revision: 1,
+          actor_id: "u",
+          created_at: "now",
+          details: { reason: "Conferido", path: "private", internal: "hidden" },
+        },
+      ],
+    });
+  const result = await loadLegacyState(db, "w", "c");
+  expect(result.access).toBe("granted");
+  if (result.access === "granted")
+    expect(result.state.events).toEqual([
+      { kind: "recognized", revision: 1, actor_id: "u", created_at: "now", reason: "Conferido" },
+    ]);
 });
