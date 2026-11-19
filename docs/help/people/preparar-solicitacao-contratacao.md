@@ -8,7 +8,7 @@ route_pattern: /people/hiring-requests
 min_permission: techpeople.hiring_requests.view.workspace
 audience: internal
 sort_order: 35
-version: 8
+version: 9
 is_published: true
 ---
 
@@ -90,6 +90,18 @@ Solicitação em rascunho, pronta para aprovação ou cancelada, com histórico 
 - Cancelada não pode ser editada. Cancelamento não apaga histórico nem altera outros registros.
 
 - Durante a consulta do nome de um vínculo, aguarde o indicador de carregamento. Vínculo indisponível exige conferir a permissão do cadastro.
+
+## Entregas, aceite e documentos fiscais (após o início autorizado)
+
+1. Somente depois do **início autorizado** pelo gestor da área, a ficha mostra **Entregas e documentos fiscais**: o histórico fica ao centro e as ações à direita.
+2. **Registrar entrega** exige `techpeople.hiring_requests.deliveries.manage.workspace`. Informe título, critérios de aceite, período dentro do início autorizado e o responsável pelo aceite. Projeto e marco são opcionais, escolhidos entre os cadastros que você enxerga; nenhum campo de faturamento do projeto, marco, serviço vendido ou anexo assinado é alterado.
+3. Submeta a evidência da entrega. O responsável nomeado decide com `techpeople.hiring_requests.deliveries.approve.workspace`, sempre sobre a versão exata exibida e com motivo. Quem registrou ou submeteu a entrega não pode aceitá-la; o CEO não decide no lugar do responsável.
+4. Alterar uma entrega exige motivo e cria nova versão, que precisa de novo aceite. Aceites anteriores continuam no histórico.
+5. **Enviar documento fiscal** exige `techpeople.hiring_requests.fiscal_documents.create.workspace`. O arquivo (PDF, XML, PNG ou JPEG, até 10 MB) vai para armazenamento privado próprio, separado dos anexos assinados; o tipo real e o SHA-256 são conferidos no servidor.
+6. Regras por regime: **CLT** usa evidência de folha emitida pela entidade WK; **PJ** usa NFS-e ou NF-e com o CNPJ cadastrado do profissional como emitente e a entidade WK como tomadora; **freelance** exige escolher explicitamente a modalidade (NFS-e, RPA ou recibo) — o sistema não presume política fiscal.
+7. Documento com o mesmo arquivo ou a mesma identidade (emitente, tipo e número) é recusado como duplicado.
+8. Valores, CNPJs e arquivos só aparecem com `techpeople.hiring_requests.fiscal_documents.view.workspace`. A **conferência do Financeiro** exige `techpeople.hiring_requests.fiscal_documents.approve.workspace`, é feita por outra pessoa que não enviou o documento e fica registrada sem possibilidade de edição.
+9. A conferência é humana: não autentica o documento na prefeitura ou SEFAZ. Nada aqui gera títulos, contas a pagar ou pagamentos. Se a assinatura deixar de estar íntegra ou a solicitação mudar, novos aceites e documentos ficam bloqueados sem apagar o histórico. No modo "Ver como" tudo fica somente leitura.
 
 ## Erros comuns
 
