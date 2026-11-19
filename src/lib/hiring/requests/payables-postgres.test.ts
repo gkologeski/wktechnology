@@ -416,6 +416,14 @@ beforeAll(async () => {
       `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY; CREATE POLICY fixture_entity_read ON ${table} FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()));`,
     );
   }
+  // Connection startup belongs to fixture preparation, not the race under test.
+  // postgres.js can open a third TCP session lazily several seconds after the first two on CI.
+  const connections = await Promise.all([db.reserve(), db.reserve(), db.reserve()]);
+  try {
+    await Promise.all(connections.map((connection) => connection`select 1`));
+  } finally {
+    for (const connection of connections) connection.release();
+  }
 }, 120000);
 afterAll(async () => {
   if (db) await db.end();
@@ -947,7 +955,7 @@ type Gen = Partial<{
   doc: string | null;
   op: string;
   just: string;
-  traceId: number;
+  beforeGenerate: () => Promise<void>;
 }>;
 const DUE = () => {
   const d = new Date(PREV + "T00:00:00Z");
@@ -956,22 +964,11 @@ const DUE = () => {
 async function gen(r: R, o: Gen = {}) {
   const month = o.month ?? PREV;
   const hash = o.hash ?? ((await pctx(r.id, month)).eligible?.preview_hash as string);
-  const started = Date.now();
   return user(o.u ?? U, async (tx) => {
-    if (o.traceId)
-      console.info(
-        "[hiring concurrency] transaction",
-        o.traceId,
-        Date.now() - started,
-        (await tx`select pg_backend_pid() pid`)[0].pid,
-      );
-    try {
-      return await tx`select hiring_payable_generate(${o.w ?? W},${r.id},${month}::date,${hash},${tx.json(o.keys ?? ["monthly:" + month])},${tx.json(o.inst ?? [{ amount: 9300, due_on: DUE() }])},${o.doc === undefined ? null : o.doc},${o.just ?? "Competência encerrada conferida com o contrato assinado."},${o.op ?? randomUUID()}) v`.then(
-        (x) => x[0].v as string,
-      );
-    } finally {
-      if (o.traceId) console.info("[hiring concurrency] rpc_end", o.traceId, Date.now() - started);
-    }
+    if (o.beforeGenerate) await o.beforeGenerate();
+    return await tx`select hiring_payable_generate(${o.w ?? W},${r.id},${month}::date,${hash},${tx.json(o.keys ?? ["monthly:" + month])},${tx.json(o.inst ?? [{ amount: 9300, due_on: DUE() }])},${o.doc === undefined ? null : o.doc},${o.just ?? "Competência encerrada conferida com o contrato assinado."},${o.op ?? randomUUID()}) v`.then(
+      (x) => x[0].v as string,
+    );
   });
 }
 type Rec = Partial<{
@@ -1087,36 +1084,34 @@ it("payables claims survive a new approved plan version (stable key independent 
   expect((await pctx(x.r.id)).eligible.lines[0].blocking).toBe("already_claimed");
 });
 it("payables concurrent generation of the same source creates a single obligation", async () => {
-  const clock = Date.now();
   const x = await approvedPlan();
   const d = await doc(x.r, { amount: 30000 });
   const hash = (await pctx(x.r.id)).eligible.preview_hash as string;
-  console.info(
-    "[hiring concurrency] server",
-    (await db`select version(),current_setting('jit') jit`)[0],
+  let ready = 0;
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const beforeGenerate = async () => {
+    if (++ready === 3) release();
+    await gate;
+  };
+  const out = await Promise.allSettled(
+    [1, 2, 3].map(() =>
+      gen(x.r, { doc: d, hash, beforeGenerate }).catch((error) => {
+        release();
+        throw error;
+      }),
+    ),
   );
-  console.info("[hiring concurrency] setup_ms", Date.now() - clock);
-  let observation: Promise<unknown> | undefined;
-  const timer = setTimeout(() => {
-    observation =
-      db`select pid,state,wait_event_type,wait_event,pg_blocking_pids(pid) blockers,case when query like '%hiring_payable_generate%' then 'generate' else 'other' end phase from pg_stat_activity where datname=current_database() and pid<>pg_backend_pid() and state<>'idle'`.then(
-        (rows) => console.info("[hiring concurrency] waits", JSON.stringify(rows)),
-      );
-  }, 750);
-  const out = await Promise.allSettled([
-    gen(x.r, { doc: d, hash, traceId: 1 }),
-    gen(x.r, { doc: d, hash, traceId: 2 }),
-    gen(x.r, { doc: d, hash, traceId: 3 }),
-  ]);
-  clearTimeout(timer);
-  await observation;
-  console.info("[hiring concurrency] total_ms", Date.now() - clock);
+  expect(ready).toBe(3);
   expect(out.filter((o) => o.status === "fulfilled").length).toBe(1);
   for (const result of out)
     if (result.status === "rejected")
       expect(String(result.reason)).toMatch(/already_claimed|DUPLICATE_SOURCE/);
   expect(await count("financial_entries")).toBe(1);
 });
+
 it("payables refuse a stale preview hash", async () => {
   const x = await approvedPlan();
   await expect(gen(x.r, { doc: await doc(x.r), hash: "0".repeat(64) })).rejects.toThrow("STALE");
