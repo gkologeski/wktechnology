@@ -1,0 +1,4 @@
+interface:
+  display_name: "text_Busca_Cria_Projeto"
+  short_description: "Busca e cadastro de projeto no TechERP"
+  default_prompt: "Use $text-busca-cria-projeto para implementar o campo padrão de busca e cadastro no TechERP, preservando permissões e rascunhos."

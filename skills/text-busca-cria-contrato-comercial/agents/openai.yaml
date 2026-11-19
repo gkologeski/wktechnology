@@ -1,0 +1,4 @@
+interface:
+  display_name: "text_Busca_Cria_Contrato_Comercial"
+  short_description: "Busca e cadastro de contrato comercial no TechERP"
+  default_prompt: "Use $text-busca-cria-contrato-comercial para implementar o campo padrão de busca e cadastro no TechERP, preservando permissões e rascunhos."

@@ -196,6 +196,26 @@ beforeAll(async () => {
       `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY; CREATE POLICY fixture_entity_read ON ${table} FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()));`,
     );
   }
+  // Match the deployed column boundary instead of hiding missing grants behind SELECT *.
+  await db.unsafe(`REVOKE SELECT ON projects FROM authenticated;
+    GRANT SELECT(id,workspace_id,name,deal_id,contract_id) ON projects TO authenticated;
+    REVOKE SELECT ON contracts FROM authenticated;
+    GRANT SELECT(id,workspace_id,role,contracting_legal_entity_id,deal_id,title) ON contracts TO authenticated;`);
+  expect(
+    (
+      await db`select has_column_privilege('techerp_request_writer','projects','legal_entity_id','SELECT') v`
+    )[0].v,
+  ).toBe(false);
+  expect(
+    (
+      await db`select has_column_privilege('techerp_request_writer','contracts','legal_entity_id','SELECT') v`
+    )[0].v,
+  ).toBe(false);
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0389_hiring_origin_reference_columns.sql", "utf8"),
+  );
+  await db.unsafe("ALTER TABLE legal_entities ADD COLUMN cnpj text");
+  await db.unsafe(readFileSync("drizzle/migrations/0390_hiring_origin_context.sql", "utf8"));
   // Open both sessions before deadlines; concurrency cases still run real overlapping RPCs.
   const connections = await Promise.all([db.reserve(), db.reserve()]);
   try {
@@ -600,5 +620,144 @@ it("preparation revokes inherited default table grants from anonymous and authen
     (
       await db`select has_table_privilege('authenticated','hiring_preparation_reference_values','SELECT') as v`
     )[0].v,
+  ).toBe(false);
+});
+
+async function projectReferenceCase(mode: string) {
+  await reset();
+  const project = randomUUID();
+  await db`insert into projects(id,workspace_id,name,legal_entity_id) values(${project},${W},'Projeto de teste',${L})`;
+  if (mode === "missing")
+    await db`delete from job_role_permission_overrides where permission_key='techcontracts.supplier_requests.create.workspace'`;
+  if (mode === "deny")
+    await db`update job_role_permission_overrides set effect='deny' where permission_key='techcontracts.supplier_requests.create.workspace'`;
+  if (mode === "foreign") await db`update profiles set active_workspace_id=${B} where id=${U}`;
+  if (mode === "inactive")
+    await db`update workspace_members set status='inactive' where user_id=${U}`;
+  const result = user((tx) => save(tx, "supplier", { ...form("supplier"), project_id: project }));
+  if (mode === "allowed") expect((await result).project_id).toBe(project);
+  else {
+    await expect(result).rejects.toThrow();
+    expect((await db`select count(*)::int n from hiring_preparation_requests`)[0].n).toBe(0);
+  }
+  return (await db`select count(*)::int n from hiring_preparation_requests`)[0].n;
+}
+it("supplier project reference allowed", async () => {
+  expect(await projectReferenceCase("allowed")).toBe(1);
+});
+it("supplier project reference missing", async () => {
+  expect(await projectReferenceCase("missing")).toBe(0);
+});
+it("supplier project reference deny", async () => {
+  expect(await projectReferenceCase("deny")).toBe(0);
+});
+it("supplier project reference foreign", async () => {
+  expect(await projectReferenceCase("foreign")).toBe(0);
+});
+it("supplier project reference inactive", async () => {
+  expect(await projectReferenceCase("inactive")).toBe(0);
+});
+it("project provenance column stays private to the existing preparation writer", async () => {
+  expect(
+    (
+      await db`select has_column_privilege('techerp_request_writer','projects','legal_entity_id','SELECT') v`
+    )[0].v,
+  ).toBe(true);
+  expect(
+    (
+      await db`select has_column_privilege('authenticated','projects','legal_entity_id','SELECT') v`
+    )[0].v,
+  ).toBe(false);
+  expect(
+    (await db`select has_column_privilege('anon','projects','legal_entity_id','SELECT') v`)[0].v,
+  ).toBe(false);
+  expect(
+    (
+      await db`select rolcanlogin,rolbypassrls from pg_roles where rolname='techerp_request_writer'`
+    )[0],
+  ).toEqual({ rolcanlogin: false, rolbypassrls: false });
+});
+
+it("supplier commercial contract origin reads the historical fallback without broader grants", async () => {
+  await reset();
+  const contract = randomUUID();
+  await db`insert into contracts(id,workspace_id,title,role,contracting_legal_entity_id,legal_entity_id) values(${contract},${W},'Venda fixture','provider',${L},null)`;
+  const r = await user((tx) =>
+    save(tx, "supplier", {
+      ...form("supplier"),
+      purpose: "client",
+      commercial_contract_id: contract,
+    }),
+  );
+  expect(r.commercial_contract_id).toBe(contract);
+  expect(
+    (
+      await db`select has_column_privilege('authenticated','contracts','legal_entity_id','SELECT') v`
+    )[0].v,
+  ).toBe(false);
+});
+
+async function originPreviewCase(mode: string) {
+  await reset();
+  const project = randomUUID();
+  await db`insert into projects(id,workspace_id,name,legal_entity_id) values(${project},${W},'Projeto visível',${L})`;
+  if (mode === "missing")
+    await db`delete from job_role_permission_overrides where permission_key='techcontracts.supplier_requests.view.workspace'`;
+  if (mode === "deny")
+    await db`update job_role_permission_overrides set effect='deny' where permission_key='techcontracts.supplier_requests.view.workspace'`;
+  if (mode === "foreign") await db`update profiles set active_workspace_id=${B} where id=${U}`;
+  if (mode === "inactive")
+    await db`update workspace_members set status='inactive' where user_id=${U}`;
+  const read = () =>
+    user((tx) =>
+      tx`select hiring_preparation_origin_context(${W},'supplier','project',${project}) v`.then(
+        (x) => x[0].v,
+      ),
+    );
+  if (mode !== "allowed") {
+    await expect(read()).rejects.toThrow(/permissão/);
+    return null;
+  }
+  return await read();
+}
+it("origin preview allowed", async () => {
+  expect(await originPreviewCase("allowed")).toMatchObject({
+    title: "Projeto visível",
+    legal_entity_name: "WK fixture",
+    active: true,
+  });
+});
+it("origin preview missing", async () => {
+  expect(await originPreviewCase("missing")).toBeNull();
+});
+it("origin preview deny", async () => {
+  expect(await originPreviewCase("deny")).toBeNull();
+});
+it("origin preview foreign", async () => {
+  expect(await originPreviewCase("foreign")).toBeNull();
+});
+it("origin preview inactive", async () => {
+  expect(await originPreviewCase("inactive")).toBeNull();
+});
+it("origin preview does not expose foreign rows or a purchase contract as commercial source", async () => {
+  await reset();
+  const other = randomUUID(),
+    purchase = randomUUID();
+  await db`insert into projects(id,workspace_id,name,legal_entity_id) values(${other},${B},'Oculto',${L})`;
+  await db`insert into contracts(id,workspace_id,title,role) values(${purchase},${W},'Compra','client')`;
+  for (const [source, id] of [
+    ["project", other],
+    ["commercial_contract", purchase],
+  ])
+    await expect(
+      user((tx) => tx`select hiring_preparation_origin_context(${W},'supplier',${source},${id})`),
+    ).rejects.toThrow(/indisponível/);
+  expect(
+    (
+      await db`select has_function_privilege('anon','hiring_preparation_origin_context(uuid,text,text,uuid)','EXECUTE') v`
+    )[0].v,
+  ).toBe(false);
+  expect(
+    (await db`select has_schema_privilege('techerp_request_writer','public','CREATE') v`)[0].v,
   ).toBe(false);
 });

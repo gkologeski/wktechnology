@@ -67,6 +67,7 @@ export type ContractWizardSource = {
   proposalId?: string;
   /** Pré-seleciona "aditivo deste contrato". */
   mainContractId?: string;
+  initialKind?: ContractKind;
 };
 
 type Origin =
@@ -80,9 +81,11 @@ const key = (o: Origin) => (o.type === "blank" ? "blank" : `${o.type}:${o.id}`);
 export function ContractWizard({
   source,
   onOpenChange,
+  onCreated,
 }: {
   source: ContractWizardSource | null;
   onOpenChange: (open: boolean) => void;
+  onCreated?: (id: string) => void;
 }) {
   const open = !!source;
   const navigate = useNavigate();
@@ -94,7 +97,9 @@ export function ContractWizard({
   const listTemplates = useServerFn(listContractTemplates);
 
   const dealId = source?.dealId ?? null;
-  const initialKind: ContractKind = source?.mainContractId ? "amendment" : "provider";
+  const initialKind: ContractKind = source?.mainContractId
+    ? "amendment"
+    : (source?.initialKind ?? "provider");
   const form = useContractForm({
     open,
     initialKind,
@@ -451,7 +456,8 @@ export function ContractWizard({
       void qc.invalidateQueries({ queryKey: ["deal-contracts"] });
       void qc.invalidateQueries({ queryKey: ["contracts"] });
       onOpenChange(false);
-      void navigate({ to: "/contracts/$id", params: { id } });
+      if (onCreated) onCreated(id);
+      else void navigate({ to: "/contracts/$id", params: { id } });
     } catch (e) {
       toast.error((e as Error).message);
     } finally {

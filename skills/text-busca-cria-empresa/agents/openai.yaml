@@ -1,0 +1,4 @@
+interface:
+  display_name: "text_Busca_Cria_Empresa"
+  short_description: "Busca e cadastro de empresa no TechERP"
+  default_prompt: "Use $text-busca-cria-empresa para implementar o campo padrão de busca e cadastro no TechERP, preservando as permissões e o rascunho."

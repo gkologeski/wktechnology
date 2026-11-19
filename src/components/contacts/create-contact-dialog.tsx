@@ -28,24 +28,31 @@ export function CreateContactDialog({
   onOpenChange,
   onCreated,
   onSaved,
+  initialName = "",
+  fixedCompanyId,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated?: (id: string) => void;
   onSaved?: (r: { id: string; action: "created" }) => void;
+  initialName?: string;
+  fixedCompanyId?: string | null;
 }) {
   const { user } = useAuth();
   const toastCreated = useToastCreated();
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    first_name: "",
+    first_name: initialName,
     last_name: "",
     email: "",
     phone: "",
     whatsapp: "",
     job_title: "",
   });
-  const [company, setCompany] = useState<CompanyPickerValue>({ id: null, name: "" });
+  const [company, setCompany] = useState<CompanyPickerValue>({
+    id: fixedCompanyId ?? null,
+    name: "",
+  });
   const [createCompanyOpen, setCreateCompanyOpen] = useState(false);
   const [pendingCompanyName, setPendingCompanyName] = useState("");
 
@@ -87,7 +94,7 @@ export function CreateContactDialog({
           phone: phoneE164,
           ...(wa?.ok ? { whatsapp_e164: wa.e164 } : {}),
           job_title: form.job_title.trim() || null,
-          company_id: company.id,
+          company_id: fixedCompanyId ?? company.id,
           company_name: company.name.trim() || null,
         })
         .select("id")
@@ -199,6 +206,7 @@ export function CreateContactDialog({
               <Label htmlFor="company_name">Empresa</Label>
               <CompanyPicker
                 id="company_name"
+                disabled={!!fixedCompanyId || saving}
                 value={company}
                 onChange={setCompany}
                 toastOnMatches
