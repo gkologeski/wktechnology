@@ -27,7 +27,7 @@ jobs:
         id: node-runtime
         uses: actions/setup-node@v7
         with:
-          node-version: "24"
+          node-version: "24.22.2"
           package-manager-cache: false
       - uses: oven-sh/setup-bun@v2
         with:
@@ -87,7 +87,7 @@ jobs:
         id: node-runtime
         uses: actions/setup-node@v7
         with:
-          node-version: "24"
+          node-version: "24.22.2"
           package-manager-cache: false
       - uses: oven-sh/setup-bun@v2
         with:
