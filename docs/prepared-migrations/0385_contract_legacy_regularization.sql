@@ -100,8 +100,10 @@ CREATE FUNCTION public.contract_legacy_protected_problem(c public.contracts) RET
   WHEN c.hiring_request_origin IS NOT NULL THEN 'Contrato originado de solicitação de contratação segue o fluxo governado.'
   WHEN c.proposal_id IS NOT NULL OR c.quote_id IS NOT NULL OR coalesce(c.metadata ? 'accepted_contract_draft',false) OR coalesce(c.metadata ? 'accepted_proposal',false)
    THEN 'Contrato com proposta ou minuta aceita segue a jornada comercial.'
-  -- signed_at isolado (ativação manual do importado) não prova assinatura nativa nem a bloqueia; é preservado em prior_signed_at.
-  WHEN c.status::text='awaiting_signature' OR c.signed_pdf_path IS NOT NULL OR c.signature_provider IS NOT NULL OR c.signature_document_id IS NOT NULL OR c.signature_operation_id IS NOT NULL
+  -- signed_at isolado (ativação manual) e signature_provider/document_id/operation_id extraídos pelo importador são só referência
+  -- documental: não provam nem bloqueiam; ficam preservados (guarda) e exigem PDF atestado + confirmação humana.
+  -- Assinatura real = pacotes, entregas, operações ForSign, evidência de contratação, PDF assinado nativo ou status awaiting_signature.
+  WHEN c.status::text='awaiting_signature' OR c.signed_pdf_path IS NOT NULL
    OR EXISTS(SELECT 1 FROM contract_signature_packages x WHERE x.contract_id=c.id)
    OR EXISTS(SELECT 1 FROM contract_esign_deliveries x WHERE x.contract_id=c.id)
    OR EXISTS(SELECT 1 FROM contract_forsign_operations x WHERE x.contract_id=c.id)

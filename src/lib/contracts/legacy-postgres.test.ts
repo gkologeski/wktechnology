@@ -553,11 +553,33 @@ it("imported active and ended contracts are recognizable; status is kept until h
     expect(Number((await db`select count(*) n from financial_entries`)[0].n)).toBe(0);
   }
 });
+it("extracted signature references are eligible, preserved and never proof; real ForSign is rejected", async () => {
+  const ref = {
+    signature_provider: "forsign",
+    signature_document_id: "DOC-EXT-1",
+    signature_operation_id: "OP-EXT-1",
+  };
+  await reset(ref);
+  expect((await recognize()).status).toBe("pending");
+  // Without attested PDF + human confirmation there is no regularization.
+  expect(await err(regularize(randomUUID()))).toMatch(/Envie o PDF/);
+  const ev = await attachEvidence();
+  expect(await err(regularize(ev, { confirmed: false }))).toMatch(/Confirme/);
+  expect(await err(regularize(ev))).toBe("ok");
+  const [c] =
+    await db`select signature_provider p, signature_document_id d, signature_operation_id o from contracts where id=${K}`;
+  expect(c).toEqual({ p: "forsign", d: "DOC-EXT-1", o: "OP-EXT-1" });
+  expect(
+    await err(as(U, (tx) => tx`update contracts set signature_document_id=null where id=${K}`)),
+  ).toMatch(/Contrato legado/);
+  await reset(ref);
+  await db`insert into contract_forsign_operations(contract_id) values(${K})`;
+  expect(await err(recognize())).toMatch(/assinatura em curso/);
+});
 it("protected origins cannot be converted to legacy", async () => {
   for (const extra of [
     { hiring_request_origin: randomUUID() },
     { proposal_id: randomUUID() },
-    { signature_provider: "forsign" },
     { signed_pdf_path: "evidence/assinado.pdf" },
     { status: "awaiting_signature" },
     { metadata: { commercial_journey_version: 1, accepted_proposal: {} } },
