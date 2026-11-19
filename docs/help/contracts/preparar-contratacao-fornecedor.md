@@ -8,7 +8,7 @@ route_pattern: /contracts/supplier-requests
 min_permission: techcontracts.supplier_requests.view.workspace
 audience: internal
 sort_order: 36
-version: 9
+version: 10
 is_published: true
 ---
 
@@ -116,3 +116,17 @@ Preparação de compra WK versionada, sem contrato ou processo operacional criad
 ## Relacionados
 
 - [Solicitação de profissionais](/ajuda/people/preparar-solicitacao-contratacao)
+
+## Plano econômico e provisão gerencial
+
+**Quem pode fazer:** `techcontracts.supplier_requests.economics.view.workspace` para ver valores (além de acesso ao contrato), `.economics.manage.workspace` para montar/enviar, `.economics.approve.workspace` para o **responsável Financeiro configurado** decidir, `.provisions.manage.workspace` para prévia e `.provisions.approve.workspace` para fechar; provisões exigem também `techfinance.provisions.manage.workspace`/`techfinance.provisions.approve.workspace`. Não há concessão automática.
+
+1. Após o início autorizado, abra **Plano econômico e provisão** na lateral e escolha a **modalidade** explicitamente: por entrega (preço fechado), mensal ou misto. O valor de referência da demanda não é preço nem dívida e nada é lido do texto do contrato.
+2. Cada componente exige valor/taxa, moeda, vencimento (dias após competência ou aceite) e a **cláusula conferida** no instrumento assinado. Mensal exige regra explícita: mês integral ou pró-rata por dias corridos do calendário.
+3. **Por entrega** aponta a versão exata da entrega; só entra no cálculo depois do aceite daquela versão. Nova versão da entrega deixa a linha pendente até revisar o plano. Horas de referência não mudam preço fechado.
+4. **Misto** exige componentes de tipos e fontes distintos; com mensal, horas precisam de projeto explícito, evitando dupla contagem.
+- A condição de liberação do fornecedor fica registrada no plano. **Aceite WK + NF válida + aceite cliente final** continua indisponível para pronto/aprovação: aceite técnico nunca é tratado como recebimento pelo cliente.
+5. Use **Enviar ao Financeiro**. Somente o responsável Financeiro configurado decide, com motivo, e nunca quem montou ou enviou. Nova versão volta a rascunho e exige nova aprovação; histórico e instrumento assinado nunca são alterados.
+6. Em **Competência**, use **Calcular prévia**. Fechar só é possível para mês encerrado, sem linhas pendentes e com fontes iguais às da prévia; mudanças exigem revisão encadeada justificada. O histórico central mostra versões, decisões e provisões.
+
+Assinatura alterada/revogada, revisão diferente, mudança de alçada ou entidade WK sem CNPJ bloqueiam novas ações. **Provisão é previsão de custo gerencial: não gera título, conta a pagar, recorrência nem pagamento.** Títulos e conferência fiscal pertencem ao lote seguinte.
