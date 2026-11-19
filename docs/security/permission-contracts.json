@@ -13630,6 +13630,14 @@
         "src/lib/hiring/requests/payables-types.ts": "3b08e8fa3497dba8cb04439f88dfc174e5e8b3a933594df42854f30406fd3c1b"
       },
       "rationale": "Static DTOs, labels and client-side mirror of selection/installment sum rules only; no data access or actions."
+    },
+    {
+      "id": "legacy-import-party-projection",
+      "kind": "presentation",
+      "rationale": "Pure projection/filter over already-authorized supplied extracted fields and canonical entity options; no queries, persistence, API, UI handlers or authorization decision. Explicit CNPJ mismatch or ambiguous names stays unresolved for human review; caller must authorize canonical reads/writes. Side selection maps WK contracted side for sales/provider and contracting side for purchases/client. Does not rewrite existing records.",
+      "files": {
+        "src/lib/contracts/import-parties.server.ts": "d244c82dca631a014e165d85d8d13306bc2a271d097fc61fe6e9f02bf0964315"
+      }
     }
   ],
   "retired": {
