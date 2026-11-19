@@ -29,6 +29,8 @@ As suítes estão em `src/lib/hiring/requests/`. Os cinco cenários são testes 
 - Auditoria encontrou que `hiring_execution_activation_ok` não revalidava a autoridade atual do gestor, embora o contexto de início já o fizesse. A migração aditiva preparada 0386 inclui `hiring_execution_problem` no predicado de novas operações; preserva ACL, histórico do início, vínculo e alocações anteriores. Quatro novos cenários pós-início (sem chave, deny, inativo e workspace trocado) negam a nova alocação.
 - As quatro suítes de execução, entregas, economia e títulos carregam também a 0386: 214 testes aprovados em PostgreSQL 16 descartável local, em 19/11/2026. A CI PostgreSQL 17 ainda é obrigatória.
 
+- Integração cruzada carrega a 0385 ao lado das migrações e funções reais de contratação no fixture de títulos. Profissional e fornecedor iniciados, com assinatura completa real de fixture, não podem ser reconhecidos como legado mesmo com caminho de importação. As 73 verificações passaram localmente; contratos, início e pagamentos são preservados.
+
 ## Fechamento obrigatório
 
 1. Revisar alterações e executar `permissions:check` antes de tipos, lint e testes direcionados. Não regenerar baseline nem alterar migrações históricas.
