@@ -83,3 +83,17 @@ END $$;
 CREATE TRIGGER contract_legacy_no_approval BEFORE INSERT ON public.contract_approvals
  FOR EACH ROW EXECUTE FUNCTION public.contract_legacy_signature_block();
 NOTIFY pgrst,'reload schema';
+
+-- Archive regularization is not a financial activation. The private marker is set only
+-- inside the reviewed human-regularization RPC and is never writable by callers.
+CREATE OR REPLACE FUNCTION public.contracts_release_service_billing_trg() RETURNS trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+BEGIN
+ IF EXISTS(SELECT 1 FROM contract_legacy_apply WHERE txid=txid_current() AND contract_id=NEW.id) THEN RETURN NEW;END IF;
+ IF contract_is_signed_for_billing(NEW) AND NOT contract_is_signed_for_billing(OLD) THEN
+  PERFORM service_release_signature_billing(NEW.id);
+ END IF;
+ RETURN NEW;
+END $$;
+-- Existing owner/ACL and ordinary signing behavior are preserved by CREATE OR REPLACE.
+NOTIFY pgrst,'reload schema';

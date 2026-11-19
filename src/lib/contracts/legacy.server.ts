@@ -106,11 +106,10 @@ export async function loadLegacyState(db: SupabaseClient, workspaceId: string, c
     { w: workspaceId, p_contract: contractId },
   );
   try {
-    const raw = (await legacyContractState(
-      db,
-      workspaceId,
-      contractId,
-    )) as unknown as LegacyState & {
+    const raw = (await legacyContractState(db, workspaceId, contractId)) as unknown as Omit<
+      LegacyState,
+      "events"
+    > & {
       events: Array<{
         kind: LegacyState["events"][number]["kind"];
         revision: number;

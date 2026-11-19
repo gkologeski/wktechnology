@@ -182,7 +182,7 @@ beforeAll(async () => {
       ADD signature_document_id text, ADD signature_operation_id text, ADD source_file_path text, ADD imported_from text, ADD document_kind text,
       ADD proposal_id uuid, ADD quote_id uuid, ADD hiring_request_origin uuid, ADD currency text, ADD payment_method text, ADD payment_terms jsonb,
       ADD notice_days int, ADD monthly_value numeric, ADD payment_day smallint, ADD hours_per_month int, ADD readjustment_index text, ADD readjustment_period text,
-      ADD late_fee_percent numeric, ADD late_interest_monthly_percent numeric, ADD penalty_percent numeric, ADD amendment_of_id uuid;
+      ADD late_fee_percent numeric, ADD late_interest_monthly_percent numeric, ADD penalty_percent numeric, ADD amendment_of_id uuid, ADD service_scope text;
     CREATE TABLE contract_signature_packages(contract_id uuid); CREATE TABLE contract_esign_deliveries(contract_id uuid);
     CREATE TABLE contract_forsign_operations(contract_id uuid); CREATE TABLE hiring_contract_evidence(contract_id uuid);
     CREATE TABLE contract_drafts(id uuid,proposal_id uuid,workspace_id uuid,status text,updated_at timestamptz,client_decided_at timestamptz,decided_at timestamptz,deal_id uuid,body_html text,prepared_terms jsonb,revision int);
@@ -249,6 +249,22 @@ beforeAll(async () => {
   await db.unsafe(
     readFileSync("docs/prepared-migrations/0387_contract_legacy_import_atomic.sql", "utf8"),
   );
+  // Actual audit and contract handoff trigger bodies, with inert canonical tables.
+  await db.unsafe(`CREATE TABLE contract_events(workspace_id uuid,contract_id uuid,actor_id uuid,event_type text,payload jsonb);
+    CREATE TABLE proposals(id uuid);
+    CREATE TABLE contract_handoff_settings(workspace_id uuid);
+    CREATE TABLE contract_handoffs(workspace_id uuid,proposal_id uuid,step text,status text,contract_id uuid);
+    ALTER TABLE contract_approvals ADD workspace_id uuid, ADD superseded_at timestamptz, ADD status text, ADD stage text, ADD sort_order int;
+  `);
+  for (const [f, n] of [
+    ["drizzle/migrations/0219_order3_completion_activate.sql", "public.contract_change_audit"],
+    ["drizzle/migrations/0362_contract_handoffs.sql", "public.contract_handoff_enqueue"],
+    ["drizzle/migrations/0362_contract_handoffs.sql", "public.contract_handoff_source_event"],
+  ] as const)
+    await db.unsafe(body(f, n));
+  await db.unsafe(`CREATE TRIGGER work_contract_change_audit AFTER UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contract_change_audit();
+    CREATE TRIGGER contract_handoff_contract AFTER INSERT OR UPDATE OF status ON contracts FOR EACH ROW EXECUTE FUNCTION contract_handoff_source_event();`);
+
   await db.unsafe(`CREATE TRIGGER contract_accepted_draft_guard BEFORE INSERT OR UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contract_accepted_draft_guard();
     CREATE TRIGGER zzzz_contract_process_guard BEFORE INSERT OR UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contract_process_guard();
     CREATE TRIGGER zz_contracts_release_service_billing AFTER UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contracts_release_service_billing_trg();
@@ -736,17 +752,26 @@ it("dates, signature confirmation and auto renewal require human-confirmed plaus
   const [c] = await db`select status::text s from contracts where id=${K}`;
   expect(c.s).toBe("terminated");
 });
-it("regularization has no financial effects and refuses pending billing holds", async () => {
+it("regularization preserves pending billing holds and creates no financial effects", async () => {
   await reset();
   await recognize();
   const ev = await attachEvidence();
-  await db`insert into services values(${randomUUID()},${W},${K},'awaiting_signature')`;
-  expect(await err(regularize(ev))).toMatch(/não libera cobranças/);
-  await db`delete from services`;
-  await db`insert into services values(${randomUUID()},${W},${K},null)`;
+  const service = randomUUID();
+  await db`insert into services values(${service},${W},${K},'awaiting_signature')`;
   expect(await err(regularize(ev))).toBe("ok");
-  const [f] = await db`select count(*)::int n from financial_entries`;
-  expect(f.n).toBe(0);
+  expect((await db`select billing_hold from services where id=${service}`)[0].billing_hold).toBe(
+    "awaiting_signature",
+  );
+  expect((await db`select count(*)::int n from financial_entries`)[0].n).toBe(0);
+  expect((await db`select count(*)::int n from contract_legacy_apply`)[0].n).toBe(0);
+});
+it("ordinary signature billing trigger remains active outside legacy regularization", async () => {
+  await reset();
+  await db`insert into services values(${randomUUID()},${W},${K},'awaiting_signature')`;
+  await db`update contracts set status='active' where id=${K}`;
+  expect(
+    (await db`select count(*)::int n from financial_entries where contract_id=${K}`)[0].n,
+  ).toBe(1);
 });
 it("regularized contract keeps document immutable and only then accepts a real deal link", async () => {
   await reset();
@@ -788,6 +813,7 @@ it("regularized legacy keeps every conferred financial/identity term immutable",
     "payment_day=5",
     "number='X-1'",
     "notice_days=60",
+    "service_scope='Escopo alterado'",
     "signature_provider='forsign'",
     "signed_pdf_path='x.pdf'",
     "counterparty_company_id=null",
@@ -873,7 +899,7 @@ const importLegacy = (
   reason = "Original do acervo para conferência humana",
 ) =>
   as(U, (tx) =>
-    tx`select contract_legacy_import_create(${w},${tx.json(payload)},${reason},${op}) r`.then(
+    tx`select contract_legacy_import_create(${w},${tx.json(payload as postgres.JSONValue)},${reason},${op}) r`.then(
       (x) => x[0].r,
     ),
   );
@@ -960,4 +986,86 @@ it("legacy approval and signature insertion are serialized with recognition", as
     db`insert into contract_approvals(id,contract_id) values(${randomUUID()},${K})`,
   ).rejects.toThrow(/novas aprovações/);
   expect((await db`select count(*)::int n from contract_approvals`)[0].n).toBe(0);
+});
+
+it("legacy import rejects foreign canonical parties and keeps the original object", async () => {
+  const payload = await legacyImportSetup();
+  await expect(importLegacy({ ...payload, counterparty_company_id: randomUUID() })).rejects.toThrow(
+    /Contraparte/,
+  );
+  await db`update legal_entities set active=false where id=${L}`;
+  await expect(importLegacy({ ...payload, contracting_legal_entity_id: L })).rejects.toThrow(
+    /Entidade legal/,
+  );
+  expect(
+    (
+      await db`select count(*)::int n from storage.objects where name=${payload.source_file_path}`
+    )[0].n,
+  ).toBe(1);
+});
+
+it.each(["ended", "terminated"] as const)(
+  "legacy %s preserves services and creates audit without new signature handoffs",
+  async (situation) => {
+    await reset({ status: "active" });
+    await recognize();
+    const ev = await attachEvidence();
+    const original = (
+      await db`select source_file_path,body_html,parent_contract_id,deal_id from contracts where id=${K}`
+    )[0];
+    await regularize(ev, {
+      situation,
+      ends: "2024-12-31",
+      term: situation === "terminated" ? "2024-06-30" : null,
+    });
+    expect(
+      (
+        await db`select source_file_path,body_html,parent_contract_id,deal_id from contracts where id=${K}`
+      )[0],
+    ).toEqual(original);
+    expect((await db`select count(*)::int n from contract_handoffs`)[0].n).toBe(0);
+    expect(
+      (await db`select count(*)::int n from contract_events where event_type='status_changed'`)[0]
+        .n,
+    ).toBe(1);
+    expect((await db`select count(*)::int n from financial_entries`)[0].n).toBe(0);
+  },
+);
+
+it("legacy financial or service changes invalidate reserved document evidence until explicit rebase", async () => {
+  await reset({ total_value: "1000", currency: "BRL" });
+  await recognize();
+  const ev = await attachEvidence();
+  await as(
+    U,
+    (tx) => tx`update contracts set total_value=2000,service_scope='Escopo revisto' where id=${K}`,
+  );
+  await expect(regularize(ev)).rejects.toThrow(/STALE/);
+  expect((await recognize(U, randomUUID(), 1)).revision).toBe(2);
+  expect((await db`select status from contract_legacy_evidence where id=${ev}`)[0].status).toBe(
+    "superseded",
+  );
+  expect((await db`select total_value::text v from contracts where id=${K}`)[0].v).toBe("2000");
+});
+
+it("legacy preserves the imported original even while pending", async () => {
+  await reset();
+  await recognize();
+  await expect(
+    as(U, (tx) => tx`update contracts set source_file_path=null where id=${K}`),
+  ).rejects.toThrow(/Original importado/);
+  expect((await db`select source_file_path from contracts where id=${K}`)[0].source_file_path).toBe(
+    "imports/legado.docx",
+  );
+});
+it("legacy requires an explicit non-null situation even through direct RPC", async () => {
+  await reset();
+  await recognize();
+  const ev = await attachEvidence();
+  await expect(regularize(ev, { situation: null, term: "2024-02-01" })).rejects.toThrow(
+    /Situação inválida/,
+  );
+  expect(
+    (await db`select status from contract_legacy_records where contract_id=${K}`)[0].status,
+  ).toBe("pending");
 });

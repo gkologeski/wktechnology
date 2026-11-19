@@ -87,7 +87,6 @@ export function missingBeforeRegularize(c: {
   if (!c.counterparty_company_id) out.push("Contraparte (empresa)");
   if (!c.contracting_legal_entity_id) out.push("Entidade legal WK");
   if (!c.source_file_path) out.push("Arquivo importado de origem");
-  if (!c.body_html?.replace(/<[^>]*>/g, "").trim()) out.push("Texto do documento revisado");
   return out;
 }
 
@@ -155,4 +154,14 @@ export function legacyNotice(gate: Exclude<LegacyGate, "none">): string {
   if (gate === "pending")
     return "Contrato legado em regularização: a assinatura é comprovada pelo PDF original assinado, não por um novo envio.";
   return "Verificando se o contrato é legado. Envio para assinatura fica oculto até a verificação.";
+}
+
+/** SQL returns evidence in reservation order. Never silently confirm an older upload. */
+export function latestLegacyEvidence(
+  evidence: LegacyEvidence[],
+  revision: number,
+): LegacyEvidence | null {
+  return (
+    [...evidence].reverse().find((e) => e.status === "attested" && e.revision === revision) ?? null
+  );
 }

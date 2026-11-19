@@ -14,6 +14,7 @@ import {
   CreateFromImportSchema,
   type ExtractedContract,
 } from "@/lib/contracts/import-schemas";
+import { formatCnpj } from "@/lib/cnpj";
 import { buildContractTitle } from "@/lib/contracts/title";
 
 const SYSTEM_PROMPT = `Você é um analista jurídico especialista em contratos brasileiros de prestação de serviços de TI (outsourcing, desenvolvimento, manutenção, consultoria). Sua tarefa é extrair variáveis-chave do contrato fornecido.
@@ -231,7 +232,7 @@ async function findCompanyIdByCnpjOrName(
       .from("companies")
       .select("id")
       .eq("workspace_id", workspaceId)
-      .eq("cnpj", digits)
+      .in("cnpj", [digits, formatCnpj(digits)])
       .limit(2);
     if (error) throw error;
     if (data?.length === 1) return data[0].id as string;

@@ -88,10 +88,9 @@ CREATE TRIGGER contract_legacy_evidence_no_delete BEFORE DELETE ON public.contra
 
 -- Impressão digital dos campos documentais preservados; qualquer mudança invalida ações futuras.
 CREATE FUNCTION public.contract_legacy_fingerprint(c public.contracts) RETURNS text LANGUAGE sql STABLE SET search_path=public,pg_temp AS $$
- SELECT encode(sha256(convert_to(jsonb_build_object('id',c.id,'source',c.source_file_path,'body',md5(coalesce(c.body_html,'')),'role',c.role::text,
-  'counterparty',c.counterparty_company_id,'wk',c.contracting_legal_entity_id,'entity',c.legal_entity_id,'deal',c.deal_id,'parent',c.parent_contract_id,
-  'kind',c.document_kind,'number',c.number,'title',c.title,'starts',c.starts_at,'ends',c.ends_at,'auto_renew',c.auto_renew,'signed_at',c.signed_at,
-  'signed_pdf',c.signed_pdf_path)::text,'UTF8')),'hex')
+ -- Bind every material canonical term, including future financial/service columns.
+ -- Assignment, display title, timestamps, public token and deal association are not document terms.
+ SELECT encode(sha256(convert_to((to_jsonb(c)-ARRAY['owner_id','assigned_to','updated_at','created_at','public_token','title','deal_id'])::text,'UTF8')),'hex')
 $$;
 
 -- Origens governadas que nunca podem ser reclassificadas como legado.
@@ -212,7 +211,7 @@ BEGIN
  SELECT * INTO r FROM contract_legacy_records WHERE id=ev.legacy_id;
  IF ev.id IS NULL OR ev.uploaded_by IS DISTINCT FROM p_actor OR NOT contract_legacy_subject(w,p_actor,c,'approve') THEN RAISE EXCEPTION 'Envio indisponível para confirmação.' USING ERRCODE='42501';END IF;
  IF ev.status<>'pending_upload' OR ev.reserved_at<now()-interval '1 hour' OR r.status<>'pending' OR r.revision<>ev.legacy_revision THEN RAISE EXCEPTION 'STALE: reserva não está pendente.';END IF;
- IF lower(p_sha256)<>ev.sha256 OR p_size<>ev.size_bytes THEN RAISE EXCEPTION 'Arquivo armazenado difere do reservado.';END IF;
+ IF p_sha256 IS NULL OR p_size IS NULL OR lower(p_sha256)<>ev.sha256 OR p_size<>ev.size_bytes THEN RAISE EXCEPTION 'Arquivo armazenado difere do reservado.';END IF;
  IF NOT EXISTS(SELECT 1 FROM storage.objects o WHERE o.bucket_id='contract-signature-evidence' AND o.name=ev.storage_path AND o.user_metadata->>'sha256'=ev.sha256 AND o.user_metadata->>'actor_id'=p_actor::text) THEN
   RAISE EXCEPTION 'Arquivo privado não encontrado no armazenamento.';END IF;
  UPDATE contract_legacy_evidence SET status='attested',server_attested_at=now() WHERE id=ev.id;
@@ -239,7 +238,7 @@ BEGIN
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem USING ERRCODE='23514';END IF;
  IF r.contract_fingerprint<>contract_legacy_fingerprint(c) THEN RAISE EXCEPTION 'STALE: documento alterado após o reconhecimento; reconheça novamente.';END IF;
  IF c.counterparty_company_id IS NULL OR c.contracting_legal_entity_id IS NULL THEN RAISE EXCEPTION 'Defina contraparte e entidade legal WK no contrato antes de regularizar.' USING ERRCODE='23514';END IF;
- IF p_situation NOT IN('in_force','ended','terminated') THEN RAISE EXCEPTION 'Situação inválida.';END IF;
+ IF p_situation IS NULL OR p_situation NOT IN('in_force','ended','terminated') THEN RAISE EXCEPTION 'Situação inválida.';END IF;
  IF p_signature_confirmed IS NOT TRUE OR p_signed_on IS NULL THEN RAISE EXCEPTION 'Confirme a data da assinatura humana conferida no original.';END IF;
  IF p_signed_on<date '1990-01-01' OR p_signed_on>current_date THEN RAISE EXCEPTION 'Data de assinatura implausível.';END IF;
  IF p_starts IS NULL OR p_starts<date '1990-01-01' OR p_starts>current_date+3650 THEN RAISE EXCEPTION 'Início de vigência implausível.';END IF;
@@ -264,9 +263,8 @@ BEGIN
  IF ev.id IS NULL OR ev.status<>'attested' OR ev.server_attested_at IS NULL OR ev.legacy_revision<>r.revision THEN RAISE EXCEPTION 'Envie o PDF assinado e aguarde a confirmação do servidor.' USING ERRCODE='23514';END IF;
  IF lower(coalesce(p_evidence_sha256,''))<>ev.sha256 THEN RAISE EXCEPTION 'STALE: hash conferido difere do PDF confirmado.';END IF;
  IF NOT EXISTS(SELECT 1 FROM storage.objects o WHERE o.bucket_id='contract-signature-evidence' AND o.name=ev.storage_path AND o.user_metadata->>'sha256'=ev.sha256) THEN RAISE EXCEPTION 'PDF privado indisponível.';END IF;
- -- Liberação de cobrança histórica exige fluxo financeiro próprio (fora deste lote).
- IF EXISTS(SELECT 1 FROM services s WHERE s.contract_id=c.id AND s.workspace_id=w AND s.billing_hold IS NOT NULL) THEN
-  RAISE EXCEPTION 'Contrato possui serviço aguardando liberação de cobrança; a regularização de legado não libera cobranças.' USING ERRCODE='23514';END IF;
+ -- A marca privada da transação impede liberação automática de cobrança na 0387.
+ -- Serviços, holds e títulos existentes são preservados para revisão explícita do Financeiro.
  old_terms:=jsonb_build_object('status',c.status,'starts',c.starts_at,'ends',c.ends_at,'auto_renew',c.auto_renew);
  INSERT INTO contract_legacy_apply VALUES(txid_current(),c.id);
  UPDATE contracts SET status=st,signed_at=(p_signed_on::timestamp AT TIME ZONE 'America/Sao_Paulo'),starts_at=p_starts,ends_at=p_ends,auto_renew=coalesce(p_auto_renew,false) WHERE id=c.id RETURNING * INTO c;
@@ -314,6 +312,8 @@ DECLARE st text;applying boolean;
 BEGIN
  SELECT r.status INTO st FROM public.contract_legacy_records r WHERE r.contract_id=OLD.id;
  IF st IS NULL THEN RETURN NEW;END IF;
+ IF (NEW.id,NEW.workspace_id,NEW.source_file_path,NEW.imported_from) IS DISTINCT FROM (OLD.id,OLD.workspace_id,OLD.source_file_path,OLD.imported_from) THEN
+  RAISE EXCEPTION 'Original importado e identidade do contrato legado são imutáveis e preservados; envie a evidência assinada separadamente.' USING ERRCODE='23514';END IF;
  applying:=EXISTS(SELECT 1 FROM public.contract_legacy_apply a WHERE a.txid=txid_current() AND a.contract_id=OLD.id);
  -- Pendente ou regularizado: nenhuma origem governada/assinatura nova pode ser enxertada no legado.
  IF (NEW.signature_provider,NEW.signature_document_id,NEW.signature_operation_id,NEW.signed_pdf_path,NEW.proposal_id,NEW.quote_id,NEW.hiring_request_origin)
@@ -323,14 +323,9 @@ BEGIN
   RAISE EXCEPTION 'Contrato legado: status, assinatura, proposta ou origem nova não podem ser alterados; regularize com o original assinado.' USING ERRCODE='23514';
  END IF;
  -- Regularizado: todos os termos conferidos ficam imutáveis (documento, partes, vigência, valores, moeda, pagamento, identificadores e assinatura).
- IF st='regularized' AND (NEW.source_file_path,NEW.body_html,NEW.role,NEW.counterparty_company_id,NEW.contracting_legal_entity_id,NEW.legal_entity_id,NEW.signed_at,
-   NEW.starts_at,NEW.ends_at,NEW.auto_renew,NEW.notice_days,NEW.document_kind,NEW.parent_contract_id,NEW.number,NEW.total_value,NEW.monthly_value,NEW.currency,
-   NEW.payment_terms,NEW.payment_method,NEW.payment_day,NEW.hours_per_month,NEW.readjustment_index,NEW.readjustment_period,NEW.late_fee_percent,
-   NEW.late_interest_monthly_percent,NEW.penalty_percent,NEW.amendment_of_id,NEW.imported_from,NEW.workspace_id)
-  IS DISTINCT FROM (OLD.source_file_path,OLD.body_html,OLD.role,OLD.counterparty_company_id,OLD.contracting_legal_entity_id,OLD.legal_entity_id,OLD.signed_at,
-   OLD.starts_at,OLD.ends_at,OLD.auto_renew,OLD.notice_days,OLD.document_kind,OLD.parent_contract_id,OLD.number,OLD.total_value,OLD.monthly_value,OLD.currency,
-   OLD.payment_terms,OLD.payment_method,OLD.payment_day,OLD.hours_per_month,OLD.readjustment_index,OLD.readjustment_period,OLD.late_fee_percent,
-   OLD.late_interest_monthly_percent,OLD.penalty_percent,OLD.amendment_of_id,OLD.imported_from,OLD.workspace_id) THEN
+ IF st='regularized' AND
+  (to_jsonb(NEW)-ARRAY['title','owner_id','assigned_to','updated_at','metadata','deal_id','status']) IS DISTINCT FROM
+  (to_jsonb(OLD)-ARRAY['title','owner_id','assigned_to','updated_at','metadata','deal_id','status']) THEN
   RAISE EXCEPTION 'Contrato legado regularizado: termos conferidos são imutáveis. Formalize mudanças por aditivo.' USING ERRCODE='23514';
  END IF;
  RETURN NEW;
