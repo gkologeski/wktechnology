@@ -635,9 +635,16 @@ it("execution allocation requires authorized start, intact signature, period and
   ]);
   expect([a1, a2].filter((x) => x.status === "fulfilled")).toHaveLength(1);
   expect(String([a1, a2].find((x) => x.status === "rejected")?.reason)).toContain("Capacidade");
-  expect(await alloc(60)).toBe(
-    (await db`select id from people_allocations where starts_at=current_date`)[0].id,
-  );
+  const winner = (
+    await db`select id,starts_at::text as starts_at from people_allocations where hiring_engagement_id=${e}`
+  )[0];
+  expect(
+    await user(M, (tx) =>
+      tx`select hiring_allocate(${W},${e},${P},${winner.starts_at}::date,null,60,'Período diferente justificado') v`.then(
+        (x) => x[0].v,
+      ),
+    ),
+  ).toBe(winner.id);
   await expect(
     user(
       M,
@@ -654,6 +661,23 @@ it("execution allocation requires authorized start, intact signature, period and
     ),
   ).rejects.toThrow("assinatura íntegra");
   expect((await execContext(r.id)).start.signature_intact).toBe(false);
+  expect((await db`select status from contracts where id=${k}`)[0].status).toBe("active");
+});
+it("execution allocations reject changed approval policy after start and preserve history", async () => {
+  const { r, k } = await signed();
+  const P = randomUUID();
+  await db`insert into projects(id,workspace_id,name) values(${P},${W},'Projeto de origem')`;
+  const sid = await start(r);
+  const e = (await db`select engagement_id from hiring_execution_starts where id=${sid}`)[0]
+    .engagement_id;
+  await db`update hiring_area_policies set revision=revision+1 where area_id=${A}`;
+  await expect(
+    user(M, (tx) => tx`select hiring_allocate(${W},${e},${P},current_date,null,20,null)`),
+  ).rejects.toThrow("assinatura íntegra");
+  expect((await execContext(r.id)).start.signature_intact).toBe(false);
+  expect((await db`select count(*)::int n from hiring_execution_starts where id=${sid}`)[0].n).toBe(
+    1,
+  );
   expect((await db`select status from contracts where id=${k}`)[0].status).toBe("active");
 });
 it("execution context is read-only and denies foreign or unauthorized readers", async () => {

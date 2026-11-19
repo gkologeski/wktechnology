@@ -90,7 +90,7 @@ BEGIN
 END $$;
 
 CREATE FUNCTION public.hiring_execution_activation_ok(w uuid,k uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
- SELECT EXISTS(SELECT 1 FROM hiring_execution_starts s WHERE s.workspace_id=w AND s.contract_id=k AND s.contract_hash=hiring_contract_fingerprint(k)) AND hiring_formalization_signed(w,k)
+ SELECT EXISTS(SELECT 1 FROM hiring_execution_starts s WHERE s.workspace_id=w AND s.contract_id=k AND s.contract_hash=hiring_contract_fingerprint(k)) AND hiring_formalization_signed(w,k) AND EXISTS(SELECT 1 FROM hiring_formalizations f JOIN hiring_execution_starts s ON s.request_id=f.request_id AND s.workspace_id=f.workspace_id JOIN hiring_preparation_requests r ON r.id=f.request_id AND r.workspace_id=f.workspace_id WHERE f.workspace_id=w AND f.contract_id=k AND s.request_revision=r.revision AND s.approval_id=f.approval_id AND hiring_formalization_valid(f.request_id))
 $$;
 
 CREATE FUNCTION public.hiring_execution_start(w uuid,i uuid,rev integer,p_start date,p_end date,p_reason text,p_operation uuid) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
@@ -141,7 +141,7 @@ BEGIN
  SELECT * INTO s FROM hiring_execution_starts WHERE engagement_id=e.id AND workspace_id=w;
  IF s.id IS NULL THEN RAISE EXCEPTION 'Alocação depende do início autorizado pelo gestor da área.';END IF;
  SELECT * INTO pc FROM contracts WHERE id=s.contract_id AND workspace_id=w FOR SHARE;
- IF pc.status::text NOT IN('active','renewing') OR NOT hiring_formalization_signed(w,pc.id) OR s.contract_hash<>hiring_contract_fingerprint(pc.id) THEN RAISE EXCEPTION 'Instrumento sem assinatura íntegra atual ou não ativo; alocação bloqueada.';END IF;
+ IF pc.status::text NOT IN('active','renewing') OR NOT hiring_execution_activation_ok(w,pc.id) OR s.contract_hash<>hiring_contract_fingerprint(pc.id) THEN RAISE EXCEPTION 'Instrumento sem assinatura íntegra atual ou não ativo; alocação bloqueada.';END IF;
  IF pc.hiring_person_id IS DISTINCT FROM e.person_id OR pc.contracting_legal_entity_id IS DISTINCT FROM e.legal_entity_id OR e.purchase_contract_id IS DISTINCT FROM pc.id THEN RAISE EXCEPTION 'Instrumento, pessoa e CNPJ WK do vínculo divergem.';END IF;
  IF EXISTS(SELECT 1 FROM people p WHERE p.id=e.person_id AND (to_jsonb(p)->>'hire_date')::date>p_start) THEN RAISE EXCEPTION 'Alocação não pode iniciar antes da admissão efetiva da pessoa.';END IF;
  IF p_start<e.starts_at OR (e.ends_at IS NOT NULL AND (p_end IS NULL OR p_end>e.ends_at)) OR (p_end IS NOT NULL AND p_end<p_start) THEN RAISE EXCEPTION 'Alocação fora do período do vínculo.';END IF;
