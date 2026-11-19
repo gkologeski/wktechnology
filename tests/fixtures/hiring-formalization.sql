@@ -39,3 +39,6 @@ CREATE TABLE contract_draft_approvers(workspace_id uuid,user_id uuid);
 ALTER TABLE contracts ADD COLUMN currency text DEFAULT 'BRL';
 CREATE TABLE contract_signature_participants(id uuid DEFAULT gen_random_uuid(),workspace_id uuid,evidence_id uuid,document_id uuid,signer_id uuid,contact_id uuid,role text);
 ALTER TABLE hiring_contract_evidence ADD COLUMN recorded_at timestamptz DEFAULT now();
+
+-- Legacy admission guard is loaded verbatim by the integration test.
+CREATE TABLE hiring_engagements(purchase_contract_id uuid,legal_entity_id uuid,person_id uuid,status text);

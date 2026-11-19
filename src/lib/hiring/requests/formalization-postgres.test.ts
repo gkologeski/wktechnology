@@ -215,10 +215,20 @@ beforeAll(async () => {
   });
 
   await db.unsafe(readFileSync("tests/fixtures/hiring-formalization.sql", "utf8"));
+  await db.unsafe(
+    body(
+      "drizzle/migrations/0312_hiring_allocation_access_and_invites.sql",
+      "public.hiring_purchase_guard",
+    ),
+  );
+  await db.unsafe(
+    "CREATE TRIGGER legacy_hiring_purchase BEFORE INSERT OR UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION hiring_purchase_guard()",
+  );
   for (const migration of [
     "0376_hiring_formalization.sql",
     "0377_hiring_formalization_boundaries.sql",
     "0378_hiring_signature_adapter.sql",
+    "0380_hiring_direct_person_origin.sql",
   ])
     await db.begin(async (tx) => {
       await tx.unsafe(
@@ -256,7 +266,7 @@ const prefix = (kind: string) =>
   kind === "professional" ? "techpeople.hiring_requests" : "techcontracts.supplier_requests";
 async function reset() {
   await db.unsafe(
-    "TRUNCATE contract_draft_approvers,hiring_formalization_events,hiring_draft_capabilities,hiring_formalizations,contract_drafts,contract_attachments,hiring_contract_evidence,esign_signers,esign_documents,contract_forsign_operations,contract_esign_deliveries,contract_handoff_settings CASCADE",
+    "TRUNCATE hiring_engagements,contract_draft_approvers,hiring_formalization_events,hiring_draft_capabilities,hiring_formalizations,contract_drafts,contract_attachments,hiring_contract_evidence,esign_signers,esign_documents,contract_forsign_operations,contract_esign_deliveries,contract_handoff_settings CASCADE",
   );
   await db.unsafe(
     "TRUNCATE hiring_preparation_approval_events,hiring_preparation_approvals,hiring_preparation_reference_events,hiring_preparation_reference_values,hiring_preparation_events,hiring_preparation_requests,notifications,hiring_area_policies,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_permission_sets,permission_sets,permission_set_items,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts CASCADE",
@@ -583,4 +593,20 @@ it("formalization historical provider body and native flow remain unchanged", as
   expect(
     (await user(U, (tx) => tx`select hiring_formalization_signature_gate(${W},${k},null) v`))[0].v,
   ).toBe(true);
+});
+
+it("direct professional origin preserves the legacy admission person guard", async () => {
+  await reset();
+  const k = randomUUID();
+  await expect(
+    db`insert into contracts(id,workspace_id,title,role,document_kind,hiring_person_id,contracting_legal_entity_id) values(${k},${W},'Legacy fixture','client','main',${D},${L})`,
+  ).rejects.toThrow("admissão");
+  await db.begin(async (tx) => {
+    await tx`select set_config('app.hiring_purchase','on',true)`;
+    await tx`insert into contracts(id,workspace_id,title,role,document_kind,hiring_person_id,contracting_legal_entity_id) values(${k},${W},'Legacy fixture','client','main',${D},${L})`;
+  });
+  await db`insert into hiring_engagements values(${k},${L},${D},'active')`;
+  await expect(
+    db`update contracts set contracting_legal_entity_id=null where id=${k}`,
+  ).rejects.toThrow("preservar pessoa");
 });

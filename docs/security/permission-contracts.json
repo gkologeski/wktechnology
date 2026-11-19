@@ -14410,6 +14410,10 @@
         {
           "file": "docs/architecture/prepared-migrations/0378_hiring_signature_adapter.sql",
           "symbol": "hiring_contract_signers_prepare"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0380_hiring_direct_person_origin.sql",
+          "symbol": "hiring_purchase_guard"
         }
       ],
       "tests": {
@@ -14434,7 +14438,7 @@
           "name": "formalization rejects inactive member"
         }
       },
-      "rationale": "Current approved source, canonical purchase instrument, ordered legal/external OTP/finance, no execution. Public OTP endpoints use service-only token scope; secrets never returned; prepared SQL only. Prepared SQL outside production-path inventory is explicitly bound under database, not files; all three migrations tested locally."
+      "rationale": "Current approved source, canonical purchase instrument, ordered legal/external OTP/finance, no execution. Public OTP endpoints use service-only token scope; secrets never returned; prepared SQL only. Prepared SQL outside production-path inventory is explicitly bound under database, not files; all three migrations tested locally. Independent production-schema rollback probe found the legacy admission guard blocked direct professional creation. The additive adapter accepts only canonical, currently approved direct origin; legacy admission and active engagement consistency remain unchanged."
     },
     {
       "id": "hiring-formalization-static",
