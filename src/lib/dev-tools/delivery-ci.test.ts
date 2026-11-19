@@ -13,6 +13,22 @@ const { load } = createRequire(import.meta.url)("js-yaml");
 const workflow = () => load(readFileSync(".github/workflows/ci.yml", "utf8"));
 
 describe("CI acceleration keeps the release gate", () => {
+  it("prepares only the locked PostgreSQL dependency before full verification", () => {
+    const steps = workflow().jobs.unit.steps;
+    const image = readFileSync("src/lib/contracts/legacy-postgres.test.ts", "utf8").match(
+      /const image = "([^"]+)"/,
+    )?.[1];
+    expect(image).toMatch(/^postgres@sha256:[a-f0-9]{64}$/);
+    const prepare = steps.find(
+      (s: { name?: string }) => s.name === "Prepare pinned PostgreSQL test image",
+    );
+    expect(prepare.run).toBe(`docker pull ${image}`);
+    expect(prepare.if).toBeUndefined();
+    expect(prepare["continue-on-error"]).toBeUndefined();
+    expect(steps.indexOf(prepare)).toBeLessThan(
+      steps.findIndex((s: { run?: string }) => s.run === "bun run verify"),
+    );
+  });
   it("cancels only superseded runs of the same workflow/event/PR or branch", () => {
     expect(workflow().concurrency).toEqual({
       group:

@@ -843,8 +843,9 @@ it("integrity actual ForSign evidence requires current private operation and sto
   await db`update storage.objects set user_metadata='{}' where name=${path}`;
   expect((await db`select hiring_formalization_signed(${W},${k}) v`)[0].v).toBe(false);
 });
-it("integrity reprepare and direct body overwrite blocked for pending or completed signature", async () => {
-  for (const complete of [false, true]) {
+it.each([false, true])(
+  "integrity reprepare and direct body overwrite blocked; completed=%s",
+  async (complete) => {
     const { r, k } = await signingDraft();
     const doc = await nativeParticipants(k);
     await user(D, (tx) => tx`select contract_esign_manage('send',${doc},'{}')`);
@@ -861,8 +862,9 @@ it("integrity reprepare and direct body overwrite blocked for pending or complet
     expect(
       (await db`select count(*)::int n from esign_signers where document_id=${doc}`)[0].n,
     ).toBe(3);
-  }
-});
+  },
+);
+
 it("integrity preview before finance uses same hash and restricts sales attachments on purchase", async () => {
   const { r, k } = await sentDraft();
   const annex = randomUUID(),
