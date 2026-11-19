@@ -268,6 +268,15 @@ beforeAll(async () => {
   await db.unsafe(readFileSync("tests/fixtures/hiring-execution.sql", "utf8"));
   await db.unsafe(
     body(
+      "drizzle/migrations/0356_deal_contracting_journey.sql",
+      "public.contract_accepted_draft_guard",
+    ),
+  );
+  await db.unsafe(
+    "CREATE TRIGGER contract_accepted_draft_guard BEFORE INSERT OR UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contract_accepted_draft_guard()",
+  );
+  await db.unsafe(
+    body(
       "drizzle/migrations/0311_hiring_employment_and_access_models.sql",
       "public.hiring_employment_access",
     ),

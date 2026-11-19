@@ -31,3 +31,6 @@ CREATE TABLE hiring_access_model_versions(id uuid,name text,allocation_only bool
 CREATE TABLE hiring_access_models(id uuid,workspace_id uuid,name text,active boolean);
 CREATE TABLE hiring_access_grants(engagement_id uuid,assignment_id uuid,set_id uuid,user_id uuid,revoked_at timestamptz);
 CREATE TABLE workspace_invites(hiring_engagement_id uuid,accepted_at timestamptz,expires_at timestamptz);
+
+-- The commercial journey guard also runs on purchase contracts in production.
+ALTER TABLE contracts ADD COLUMN metadata jsonb DEFAULT '{}',ADD COLUMN payment_method text,ADD COLUMN payment_terms text;
