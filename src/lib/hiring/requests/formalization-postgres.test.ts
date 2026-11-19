@@ -280,6 +280,13 @@ beforeAll(async () => {
       `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY; CREATE POLICY fixture_entity_read ON ${table} FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()));`,
     );
   }
+  // Prepare TCP sessions outside test deadlines; assertions still exercise real concurrent RPCs.
+  const connections = await Promise.all([db.reserve(), db.reserve()]);
+  try {
+    await Promise.all(connections.map((connection) => connection`select 1`));
+  } finally {
+    for (const connection of connections) connection.release();
+  }
 }, 120000);
 afterAll(async () => {
   if (db) await db.end();
@@ -432,7 +439,21 @@ it("formalization allowed chain creates one real purchase instrument", async () 
 });
 it("formalization concurrent preparation serializes into one canonical instrument", async () => {
   const r = await approved();
-  const [a, b] = await Promise.all([prepare(r), prepare(r)]);
+  let ready = 0;
+  let release!: () => void;
+  const barrier = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const concurrentPrepare = () =>
+    user(U, async (tx) => {
+      if (++ready === 2) release();
+      await barrier;
+      return tx`select hiring_formalization_prepare(${W},${r.id},${r.revision}) v`.then(
+        (rows) => rows[0].v as string,
+      );
+    });
+  const [a, b] = await Promise.all([concurrentPrepare(), concurrentPrepare()]);
+  expect(ready).toBe(2);
   expect(a).toBe(b);
   expect(
     (await db`select count(*)::int n from contracts where hiring_request_origin=${r.id}`)[0].n,
