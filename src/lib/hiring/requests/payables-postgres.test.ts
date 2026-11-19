@@ -1697,3 +1697,61 @@ it("payables reconciliation cannot substitute the named PJ company with a person
     formExtra = {};
   }
 });
+
+// Package 5: exercise the cross-module and impersonation boundaries with real RPCs.
+it.each(["professional", "supplier"])(
+  "package5 %s payables never inherit the other module's action key",
+  async (kind) => {
+    const x = await approvedPlan({}, kind);
+    const own = prefix(kind) + ".payables.manage.workspace";
+    const other =
+      prefix(kind === "professional" ? "supplier" : "professional") + ".payables.manage.workspace";
+    const hash = (await pctx(x.r.id)).eligible.preview_hash as string;
+    expect((await pctx(x.r.id, PREV, U)).can_generate).toBe(true);
+    expect(
+      (
+        await db`select count(*)::int n from job_role_permission_overrides where role_id=${U} and permission_key=${other} and effect='grant'`
+      )[0].n,
+    ).toBe(1);
+    await db`delete from job_role_permission_overrides where role_id=${U} and permission_key=${own}`;
+    expect((await pctx(x.r.id, PREV, U)).can_generate).toBe(false);
+    await expect(gen(x.r, { hash })).rejects.toThrow(DENIED);
+    await db`insert into job_role_permission_overrides values(${W},${U},${own},'deny')`;
+    await expect(gen(x.r, { hash })).rejects.toThrow(DENIED);
+    expect(await count("financial_entries")).toBe(0);
+    expect(await count("hiring_payable_source_claims")).toBe(0);
+    expect(await count("financial_payments")).toBe(0);
+  },
+);
+
+it.each(["professional", "supplier"])(
+  "package5 %s role view-as remains read-only even with finance grants",
+  async (kind) => {
+    const x = await approvedPlan({}, kind);
+    const hash = (await pctx(x.r.id)).eligible.preview_hash as string;
+    expect((await pctx(x.r.id, PREV, U)).can_generate).toBe(true);
+    const session = randomUUID();
+    await db`insert into view_as_sessions values(${session},'role',null)`;
+    const ro = <T>(fn: (tx: postgres.TransactionSql) => Promise<T>) =>
+      user(U, async (tx) => {
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: U, role: "authenticated", session_id: session })},true)`;
+        return fn(tx);
+      });
+    const c = (
+      await ro((tx) => tx`select hiring_payable_context(${W},${x.r.id},${PREV}::date) v`)
+    )[0].v;
+    expect(c.can_generate).toBe(false);
+    expect(c.can_reconcile).toBe(false);
+    expect(c.can_register_client).toBe(false);
+    expect(c.can_confirm_client).toBe(false);
+    await expect(
+      ro(
+        (tx) =>
+          tx`select hiring_payable_generate(${W},${x.r.id},${PREV}::date,${hash},${tx.json(["monthly:" + PREV])},${tx.json([{ amount: 9300, due_on: DUE() }])},null,'Tentativa bloqueada em perfil de teste.',${randomUUID()})`,
+      ),
+    ).rejects.toThrow(DENIED);
+    expect(await count("financial_entries")).toBe(0);
+    expect(await count("hiring_payable_source_claims")).toBe(0);
+    expect(await count("financial_payments")).toBe(0);
+  },
+);
