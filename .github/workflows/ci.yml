@@ -58,6 +58,9 @@ jobs:
         run: docker pull postgres@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b
       - run: bun run verify
         id: verify
+        # Bound Go's CPU fan-out while the full Node/PostgreSQL suites also run.
+        env:
+          GOMAXPROCS: "1"
       # Verified lint data remains useful when a later build/performance check fails.
       # Never cache release evidence, test outcomes or build outputs.
       - name: Save verified content-based lint results
