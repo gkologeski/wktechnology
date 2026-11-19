@@ -1080,6 +1080,9 @@ it("payables concurrent generation of the same source creates a single obligatio
     gen(x.r, { doc: d, hash }),
   ]);
   expect(out.filter((o) => o.status === "fulfilled").length).toBe(1);
+  for (const result of out)
+    if (result.status === "rejected")
+      expect(String(result.reason)).toMatch(/already_claimed|DUPLICATE_SOURCE/);
   expect(await count("financial_entries")).toBe(1);
 });
 it("payables refuse a stale preview hash", async () => {

@@ -506,6 +506,11 @@ BEGIN
  END IF;
  IF EXISTS(SELECT 1 FROM hiring_payable_reconciliations WHERE operation_id=p_operation) THEN RAISE EXCEPTION 'Operação já utilizada com dados diferentes.';END IF;
  IF length(btrim(coalesce(p_justification,''))) NOT BETWEEN 10 AND 2000 THEN RAISE EXCEPTION 'Justifique a geração (10 a 2000 caracteres).';END IF;
+ -- After serialization, an immutable known claim can reject duplicate work before repeating the full signature/price calculation.
+ -- Actor, current permissions, parent RLS and exact-operation replay have already been checked above.
+ IF jsonb_typeof(p_keys)='array' AND EXISTS(SELECT 1 FROM jsonb_array_elements_text(p_keys) selected(key) JOIN hiring_payable_source_claims claim ON claim.contract_id=s.contract_id AND claim.claim_key=s.contract_id||':'||selected.key WHERE selected.key='monthly:'||lo OR selected.key LIKE 'delivery:%') THEN
+  RAISE EXCEPTION 'already_claimed: fonte já possui obrigação; nada foi duplicado.';
+ END IF;
  problem:=hiring_econ_proof_problem(w,i);
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem;END IF;
  el:=hiring_pay_eligible(w,i,lo);
