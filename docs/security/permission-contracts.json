@@ -9889,9 +9889,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant.",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. Reviewed 2026-11-19: generated additive hiring_preparation types match the already-applied package 2 schema; no runtime grants or access changes.",
       "files": {
-        "src/integrations/supabase/types.ts": "d066aba4a9384cc32a208fd6a6bfee5cb8afe32ddf02614507c6d2efc2eb0077",
+        "src/integrations/supabase/types.ts": "b011aa0c7627c02139353f43a5677db4c12bf6c5a8b91bb26130101bc59b1b90",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -14161,7 +14161,7 @@
       "id": "hiring-preparation-approvals-batch1",
       "kind": "business",
       "files": {
-        "src/lib/hiring/requests/approval-panel.tsx": "36cbc4be9041c0a7715c637c5c7a9e64296d66f7b0e99233f7b6d2d4e2d20c5f",
+        "src/lib/hiring/requests/approval-panel.tsx": "ce888771d0bc36f80e0c30c3cbc41189c6c8fe4cdbc71d62c8bd04c0d94b54f0",
         "src/lib/hiring/requests/approvals.functions.ts": "5297ee2ec828848c4f8ce4f156df70ef9b323a767583722b3699fb7be478f3c0"
       },
       "resources": [
@@ -14260,7 +14260,7 @@
       "id": "approval-static-types",
       "kind": "presentation",
       "files": {
-        "src/lib/hiring/requests/approval-types.ts": "2cee38627f7fd12e227fdb0bb6c0b95d883225d5a6c24e5147d4e06da2760a5b"
+        "src/lib/hiring/requests/approval-types.ts": "7535a5f2bf8250e4836946ea7741063c6d2224665701de246a658d4a6c882030"
       },
       "resources": [],
       "permission_keys": [],

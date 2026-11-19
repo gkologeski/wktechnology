@@ -85,7 +85,7 @@ export function ApprovalPanel({
   if (query.isError)
     return (
       <div role="alert" className="space-y-2 text-sm">
-        Aprovações indisponíveis. Verifique o acesso ou a disponibilidade deste lote.{" "}
+        Aprovações indisponíveis. Verifique o acesso ou a disponibilidade do serviço.{" "}
         <Button variant="outline" onClick={() => void query.refetch()}>
           Tentar novamente
         </Button>
@@ -106,7 +106,8 @@ export function ApprovalPanel({
                 </strong>
                 {e.note && <p className="whitespace-pre-wrap break-words">{e.note}</p>}
                 <p className="text-muted-foreground break-words">
-                  {new Date(e.created_at).toLocaleString("pt-BR")} · Autor {e.actor_id}
+                  {new Date(e.created_at).toLocaleString("pt-BR")} · Autor{" "}
+                  {e.actor_name ?? "Membro"}
                 </p>
               </li>
             ))}
@@ -141,8 +142,8 @@ export function ApprovalPanel({
   return (
     <section aria-label="Aprovação da solicitação" className="space-y-3 text-sm">
       <h3 className="font-semibold">{approvalLabels[data.status]}</h3>
-      <p className="break-words">Gestor: {data.manager_id ?? "Não configurado"}</p>
-      <p className="break-words">CEO: {data.ceo_id ?? "Não configurado"}</p>
+      <p className="break-words">Gestor: {data.manager_name ?? "Não configurado"}</p>
+      <p className="break-words">CEO: {data.ceo_name ?? "Não configurado"}</p>
       {data.stage && <p>Etapa atual: {data.stage === "manager" ? "Gestor" : "CEO"}</p>}
       {data.problem && (
         <p role="status" className="text-muted-foreground">

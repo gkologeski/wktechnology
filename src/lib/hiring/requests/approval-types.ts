@@ -14,6 +14,7 @@ export type ApprovalEvent = {
   id: string;
   revision: number;
   actor_id: string;
+  actor_name: string | null;
   stage: "manager" | "ceo" | null;
   kind: "requested" | "approved" | "rejected" | "superseded";
   note: string;
@@ -27,6 +28,8 @@ export type ApprovalContext = {
   approver_id: string | null;
   manager_id: string | null;
   ceo_id: string | null;
+  manager_name: string | null;
+  ceo_name: string | null;
   problem: string | null;
   can_request: boolean;
   can_decide: boolean;

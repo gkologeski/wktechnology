@@ -1,7 +1,15 @@
 import { beforeAll, afterAll, it, expect } from "vitest";
 import postgres from "postgres";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync, readdirSync, chownSync } from "node:fs";
+import {
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+  readdirSync,
+  chownSync,
+  existsSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -16,7 +24,7 @@ const W = "aaaaaaaa-0000-4000-8000-000000000001",
   L = "dddddddd-0000-4000-8000-000000000001",
   C = "eeeeeeee-0000-4000-8000-000000000001";
 const nixPg =
-  process.platform === "linux"
+  process.platform === "linux" && existsSync("/nix/store")
     ? readdirSync("/nix/store").find((n) => /-postgresql-17\.\d+$/.test(n))
     : undefined;
 const useNative =
@@ -190,7 +198,7 @@ beforeAll(async () => {
     readFileSync("drizzle/migrations/0374_hiring_preparation_conditions.sql", "utf8"),
   );
   await db.unsafe("RESET ROLE");
-  await db.unsafe(`CREATE TABLE hiring_area_policies(workspace_id uuid,area_id uuid PRIMARY KEY,manager_id uuid,ceo_id uuid,manager_delegate_id uuid,ceo_delegate_id uuid,revision integer DEFAULT 1,updated_by uuid,updated_at timestamptz DEFAULT now());
+  await db.unsafe(`ALTER TABLE profiles ADD COLUMN full_name text NOT NULL DEFAULT 'Aprovador sintético'; CREATE TABLE hiring_area_policies(workspace_id uuid,area_id uuid PRIMARY KEY,manager_id uuid,ceo_id uuid,manager_delegate_id uuid,ceo_delegate_id uuid,revision integer DEFAULT 1,updated_by uuid,updated_at timestamptz DEFAULT now());
     CREATE TABLE notifications(id uuid DEFAULT gen_random_uuid(),workspace_id uuid,owner_id uuid,user_id uuid,type text,title text,body text,link text,entity text,entity_id uuid,dedupe_key text);
     CREATE UNIQUE INDEX notification_dedupe ON notifications(dedupe_key) WHERE dedupe_key IS NOT NULL;
     ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO authenticated,anon,techerp_request_writer;
@@ -577,4 +585,42 @@ it("approval concurrent material edit and decision never retains stale approval"
   ]);
   expect((await context(r.id)).status).toBe("superseded");
   await expect(decide(r, a, CEO, "ceo")).rejects.toThrow("REVISION_CONFLICT");
+});
+
+it("approval later stages recheck a previously approved manager's live access", async () => {
+  await reset();
+  const r = await ready(),
+    a = await request(r);
+  await decide(r, a);
+  await db`update workspace_members set status='inactive' where workspace_id=${W} and user_id=${M}`;
+  await expect(decide(r, a, CEO, "ceo")).rejects.toThrow("sem acesso");
+  expect((await context(r.id)).status).toBe("superseded");
+});
+it("approval final validity is revoked by explicit deny after both decisions", async () => {
+  await reset();
+  const r = await ready(),
+    a = await request(r);
+  await decide(r, a);
+  await decide(r, a, CEO, "ceo");
+  expect((await db`select hiring_preparation_approval_current(${W},${r.id}) v`)[0].v).toBe(true);
+  await db`update job_role_permission_overrides set effect='deny' where workspace_id=${W} and role_id=${M} and permission_key='techpeople.hiring_requests.approval.approve.workspace'`;
+  expect((await db`select hiring_preparation_approval_current(${W},${r.id}) v`)[0].v).toBe(false);
+  expect((await context(r.id)).status).toBe("superseded");
+  await expect(request(r)).rejects.toThrow("validade atual");
+});
+it("approval completed context does not reinterpret its reader as its requester", async () => {
+  await reset();
+  const r = await ready(),
+    a = await request(r);
+  await decide(r, a);
+  await decide(r, a, CEO, "ceo");
+  const c = await user(CEO, (tx) =>
+    tx`select hiring_preparation_approval_context(${W},'professional',${r.id},0) v`.then(
+      (x) => x[0].v,
+    ),
+  );
+  expect(c.status).toBe("approved");
+  expect(c.problem).toBe(null);
+  expect(c.manager_id).toBe(M);
+  expect(c.manager_name).toBe("Aprovador sintético");
 });
