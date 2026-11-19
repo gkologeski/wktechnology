@@ -73,3 +73,12 @@ Base: `50f3300ae`. Revisão local em `codex/legacy-contracts-hardening`. Pacote 
 - `contract_legacy_protected_problem` deixa de tratar essas três colunas como assinatura: são referência documental extraída, nunca prova. Continuam protegidos: pacotes, entregas, operações ForSign, evidência de contratação, PDF assinado nativo e status `awaiting_signature`.
 - Os identificadores não são apagados: a guarda impede alterá-los em pendente/regularizado. A regularização continua exigindo PDF atestado pelo servidor e confirmação humana.
 - Lote C: o importador novo deve guardar `signature_*` extraídos em metadados documentais, não nas colunas ativas de assinatura; a tela deve mostrar a referência como "a conferir".
+
+## Lote C — UI de importação e Ajuda (preparado)
+
+- Escolha obrigatória antes de extrair ("Documento em elaboração" × "Contrato legado / já formalizado"), em `import-mode-chooser.tsx` + regras puras `import-mode.ts`. Legado exige motivo (≥5), importar + criar/ver/editar contratos + `legacy_contracts.create`; sem elas a opção fica desabilitada e nomeia o que falta.
+- Individual: legado extrai primeiro e só grava após a revisão ("Criar contrato legado pendente"); original obrigatório (não desmarcável), falha de envio aborta sem contrato. Tentativa estável por arquivo (`operation_id` UUID + caminho `uid/<operation_id>-arquivo`), reaproveitada no "Tentar novamente"; sem repetição automática e sem "gravar sem corpo" no legado (no rascunho só por botão explícito). Pending é confirmado lendo o estado de legado; se não confirmado, orienta abrir a ficha e não reimportar.
+- Lote: mesmo modo para o lote, travado após iniciar; legado sem pareamento automático compra ↔ prestação; aditivos só com o principal escolhido (existente ou do lote); papel escolhido vai em `manual_role`, o extraído continua extraído.
+- Payload enviado: campos atuais + `import_mode`, `legacy_reason`, `operation_id`, `manual_role` (cast documentado até o schema/servidor do lote C/0387 entrarem). A revisão (`buildImportPatch`) nunca grava `signature_*`.
+- Dependência: sem a mudança local de `import.functions.ts`/`import-schemas.ts`/0387, o servidor ignora os campos novos e o legado não é reconhecido; a tela detecta e avisa.
+- Ajuda: `importar-contrato` v8, `importar-em-lote` v3, `editar-contrato` v9, `consultar-contratos` v3 e novo `regularizar-contrato-legado` v1 (`/contracts/$id`, `legacy_contracts.view`). Catálogo oficial não regenerado.

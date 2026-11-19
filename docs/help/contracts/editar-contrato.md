@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 30
-version: 8
+version: 9
 is_published: true
 ---
 # Editar a ficha de um contrato
@@ -65,3 +65,6 @@ Alterações persistidas na ficha.
 
 ## Conferir anexos antes de preparar ou enviar
 Nos formulários **Preparar assinatura no TechERP** e **Enviar pelo ForSign**, o quadro **Documentos incluídos na assinatura** lista os anexos e identifica as cópias congeladas. Use **Baixar prévia do contrato e anexos** para conferir o PDF completo antes de continuar. Abrir o formulário não gera o pacote nem envia convites. A prévia exige as mesmas permissões da ficha do contrato e não consome créditos do ForSign. Se a consulta falhar, use **Tentar novamente**; uma falha não é apresentada como ausência de anexos.
+
+## Contrato legado
+Contratos importados como legado mostram o painel "Contrato legado" na Visão geral. Enquanto pendente, status e assinatura não podem ser alterados e não há envio para aprovação ou assinatura; complete contraparte, entidade WK e texto pela edição normal e depois regularize. Após regularizado, os termos conferidos só mudam por aditivo. Veja [Regularizar contrato legado](/ajuda/contracts/regularizar-contrato-legado).

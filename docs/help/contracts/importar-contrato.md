@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 23
-version: 7
+version: 8
 is_published: true
 ---
 # Importar e revisar um contrato PDF ou DOCX
@@ -18,7 +18,8 @@ is_published: true
 **Antes de começar:** PDF até 15 MB ou DOCX até 10 MB com texto legível.
 
 ## Passo a passo
-1. Clique em "Importar contrato" e selecione o arquivo.
+1. Clique em "Importar contrato" e escolha o tipo: "Documento em elaboração" ou "Contrato legado / já formalizado". A escolha é obrigatória antes de extrair.
+1. Para legado, informe o motivo (mínimo 5 caracteres) e selecione o arquivo.
 2. Revise a opção de guardar o original; use "Visualizar contrato" se desejar.
 3. Clique em "Extrair com IA".
 4. Revise os campos extraídos no rascunho.
@@ -49,6 +50,18 @@ Rascunho criado na extração e atualizado após a finalização.
 - [Consultar contratos](/ajuda/contracts/consultar-contratos)
 - [Permissões](/ajuda/contracts/permissoes)
 
-> Dados de assinatura eletrônica (provedor e identificadores) lidos do arquivo não são gravados na importação: eles só são preenchidos pelo próprio fluxo de assinatura do sistema.
+> Provedor e identificadores de assinatura lidos do arquivo são apenas referência extraída, a conferir. Nunca comprovam assinatura; a revisão da importação não os grava como assinatura ativa.
 
 > Se o texto do arquivo for muito longo, o corpo é truncado com um aviso; se não puder ser lido ou gravado, o rascunho é criado mesmo assim e o arquivo original continua disponível. Mensagens de erro indicam a etapa que falhou (IA, envio do arquivo, leitura ou gravação).
+
+## Contrato legado / já formalizado
+- Use para contratos assinados fora do sistema. Não pede cotação, proposta, minuta nem nova assinatura e não libera cobranças.
+- Exige permissão para importar contratos, criar, ver e editar contratos e reconhecer contrato legado. Sem alguma delas, a opção aparece desabilitada com o que falta.
+- O original é guardado obrigatoriamente. Se o envio do arquivo falhar, nada é criado.
+- Nada é gravado antes da revisão: depois de extrair, revise os campos e clique em "Criar contrato legado pendente". O contrato fica pendente de regularização.
+- Se a criação falhar, use "Tentar novamente": a mesma tentativa e o mesmo arquivo são reaproveitados, sem duplicar. Não há nova tentativa automática nem gravação sem corpo.
+- Se a tela avisar que o reconhecimento não foi confirmado, abra a ficha e confira; não reimporte.
+- A regularização (PDF original assinado, situação, datas e confirmação humana) é feita na ficha. Veja [Regularizar contrato legado](/ajuda/contracts/regularizar-contrato-legado).
+
+## Documento em elaboração
+- O rascunho é gravado logo após a extração. Se a gravação falhar, "Tentar novamente" reaproveita a mesma tentativa; "Gravar sem o corpo" só ocorre quando você escolhe.

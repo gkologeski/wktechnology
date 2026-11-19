@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 20
-version: 2
+version: 3
 is_published: true
 ---
 # Consultar, filtrar e agrupar contratos
@@ -41,3 +41,6 @@ Sem registros: confira filtros e acesso. Não considere uma lista vazia como ine
 ## Relacionados
 - [Criar contrato](/ajuda/contracts/criar-contrato)
 - [Editar contrato](/ajuda/contracts/editar-contrato)
+
+## Contratos legados
+Contratos importados como legado aparecem na lista com o status que tinham. A situação de legado (pendente ou regularizado) é vista na ficha, no painel "Contrato legado".
