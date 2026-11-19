@@ -92,7 +92,7 @@ beforeAll(async () => {
       "-l",
       join(root, "server.log"),
       "-o",
-      `-k ${root} -h '' -p 55448 -F`,
+      `-k ${root} -h '' -p 55448 -F -c jit=off`,
       "-w",
       "start",
     ]);
@@ -132,6 +132,9 @@ beforeAll(async () => {
       image,
       "-c",
       "fsync=off",
+      // Match the deployed PostgreSQL setting; no permission, query or timeout is relaxed.
+      "-c",
+      "jit=off",
     );
     started = true;
     const mapped = dockerRun("port", container, "5432/tcp");

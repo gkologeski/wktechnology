@@ -94,7 +94,7 @@ beforeAll(async () => {
       "-l",
       join(root, "server.log"),
       "-o",
-      `-k ${root} -h '' -p 55451 -F`,
+      `-k ${root} -h '' -p 55451 -F -c jit=off`,
       "-w",
       "start",
     ]);
@@ -134,6 +134,9 @@ beforeAll(async () => {
       image,
       "-c",
       "fsync=off",
+      // Match the deployed PostgreSQL setting; no permission, query or timeout is relaxed.
+      "-c",
+      "jit=off",
     );
     started = true;
     const mapped = dockerRun("port", container, "5432/tcp");
@@ -1071,14 +1074,17 @@ it("payables claims survive a new approved plan version (stable key independent 
   expect((await pctx(x.r.id)).eligible.lines[0].blocking).toBe("already_claimed");
 });
 it("payables concurrent generation of the same source creates a single obligation", async () => {
+  const clock = Date.now();
   const x = await approvedPlan();
   const d = await doc(x.r, { amount: 30000 });
   const hash = (await pctx(x.r.id)).eligible.preview_hash as string;
+  console.info("[hiring concurrency] setup_ms", Date.now() - clock);
   const out = await Promise.allSettled([
     gen(x.r, { doc: d, hash }),
     gen(x.r, { doc: d, hash }),
     gen(x.r, { doc: d, hash }),
   ]);
+  console.info("[hiring concurrency] total_ms", Date.now() - clock);
   expect(out.filter((o) => o.status === "fulfilled").length).toBe(1);
   for (const result of out)
     if (result.status === "rejected")
@@ -1627,6 +1633,7 @@ it("monthly cost stays unknown when another contract overlaps the same person", 
 
 it("disposable fixture restores all triggers before each financial scenario", async () => {
   await reset();
+  expect((await db`show jit`)[0].jit).toBe("off");
   expect((await db`show session_replication_role`)[0].session_replication_role).toBe("origin");
 });
 
