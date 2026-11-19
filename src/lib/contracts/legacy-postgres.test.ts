@@ -252,6 +252,9 @@ beforeAll(async () => {
   await db.unsafe(
     readFileSync("drizzle/migrations/0387_contract_legacy_import_atomic.sql", "utf8"),
   );
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0388_contract_legacy_validation_read_boundary.sql", "utf8"),
+  );
   // Actual audit and contract handoff trigger bodies, with inert canonical tables.
   await db.unsafe(`CREATE TABLE contract_events(workspace_id uuid,contract_id uuid,actor_id uuid,event_type text,payload jsonb);
     CREATE TABLE proposals(id uuid);
@@ -1114,4 +1117,52 @@ it("legacy server attestation revalidates the uploader's current contract update
     (await db`select status from contract_legacy_evidence where id=${reserve.evidence_id}`)[0]
       .status,
   ).toBe("pending_upload");
+});
+
+// The helper is callable directly through RPC, not only from the commercial trigger.
+async function validatedBy(mode: Mode) {
+  await reset();
+  await recognize();
+  await regularize(await attachEvidence());
+  await prepare(mode, "techcontracts.contracts.view.workspace");
+  const rows = await as(
+    U,
+    (tx) => tx`select contract_legacy_validated(${K},${mode === "foreign" ? B : W}) ok`,
+  );
+  return rows[0].ok;
+}
+it("legacy validation helper allowed", async () => {
+  expect(await validatedBy("allowed")).toBe(true);
+});
+it("legacy validation helper missing", async () => {
+  expect(await validatedBy("missing")).toBe(false);
+});
+it("legacy validation helper deny", async () => {
+  expect(await validatedBy("deny")).toBe(false);
+});
+it("legacy validation helper foreign", async () => {
+  expect(await validatedBy("foreign")).toBe(false);
+});
+it("legacy validation helper inactive", async () => {
+  expect(await validatedBy("inactive")).toBe(false);
+});
+it("legacy validation helper preserves the trusted service boolean", async () => {
+  await reset();
+  await recognize();
+  await regularize(await attachEvidence());
+  await prepare("inactive", "techcontracts.contracts.view.workspace");
+  const rows = await as(null, (tx) => tx`select contract_legacy_validated(${K},${W}) ok`, {
+    role: "service_role",
+  });
+  expect(rows[0].ok).toBe(true);
+});
+it("legacy validation helper rejects a service claim on an authenticated role", async () => {
+  await reset();
+  await recognize();
+  await regularize(await attachEvidence());
+  await prepare("missing", "techcontracts.contracts.view.workspace");
+  const rows = await as(U, (tx) => tx`select contract_legacy_validated(${K},${W}) ok`, {
+    role: "service_role",
+  });
+  expect(rows[0].ok).toBe(false);
 });

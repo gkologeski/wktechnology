@@ -49,3 +49,8 @@ O experimento com threads fez a verificação caber em 220,8 s, mas falhou em do
 A CI também fixa Node 24.22.2 (runtime da CI aprovada) explicitamente e separa o cache de lint pela versão real devolvida por setup-node. O código instalado do ESLint inclui `process.version` no hash de configuração; misturar caches de runtimes diferentes desperdiça lint sem validar menos. A seleção por major resolveu 24.22.3 na rodada seguinte, invalidou o cache e coincidiu com verify de 339,9 s; o patch exato evita essa deriva durante a revisão. Não são cacheados resultados de testes, build, autorização ou evidências de release.
 
 Aplicação, CI final, fingerprint e navegação efetiva são registrados no relatório de release em `outputs/contracts-legacy-package5-2026-11-19/` da tarefa Codex. Não chamar preparado de publicado nem E2E opt-in skipped de aprovado.
+
+
+## Complemento de leitura 0388
+
+A revisão final identificou que o helper booleano `contract_legacy_validated`, usado pela guarda comercial e executável pelo usuário autenticado, não repetia a autorização de leitura na chamada direta. A 0388 fecha a consulta para quem não pode ler o contrato, incluindo deny, membership/workspace inativos e outro workspace, mantendo o mesmo escopo canônico próprio/equipe/workspace. Serviço só conserva sua exceção de booleano quando tanto a claim assinada quanto o papel SQL selecionado são service_role; uma claim isolada não basta. Sete cenários reais adicionais cobrem os cinco casos e o caminho de serviço/claim forjada. Não há mudança de assinatura SQL, tabelas ou tipos gerados, nem edição de migrações aplicadas.

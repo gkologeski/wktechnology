@@ -17,7 +17,8 @@ Status e referências extraídos não comprovam assinatura. Pacotes nativos, ent
 - 0385: permissões específicas, registros/evidências/eventos privados, reconhecimento e regularização humana, impressão digital dos termos e guarda do documento conferido.
 - 0386: novas operações de execução revalidam a identidade e autoridade atual do gestor sem repetir o preflight de início. Mantém assinatura, revisão, aprovação, início e histórico.
 - 0387: importação atômica por operação estável, classificação mínima para leitores comuns, concorrência com assinatura/aprovação e supressão restrita da liberação automática de cobrança durante regularização.
-- As três migrações são aditivas e registradas no journal; aplicação conjunta somente após revisão e CI completa. Migrações históricas não são editadas.
+- 0388: o booleano de regularização usado pela guarda comercial também revalida a leitura canônica do contrato em RPC direta. Membro/workspace ativos, escopo e deny; exceção de serviço exige claim e papel real de serviço. Não retorna evidência privada.
+- As migrações são aditivas e registradas no journal; aplicação conjunta somente após revisão e CI completa. Migrações históricas não são editadas.
 - Importador individual exige escolha do modo, motivo e original. Legado é revisado antes de criar. O lote mantém o modo, a escolha explícita de papel e Principal/Aditivo; não faz pareamento automático de legado.
 - Inserção e reconhecimento são uma transação com cliente do usuário/RLS. O UUID da operação e caminho do arquivo persistem na tentativa; replay exato não duplica, conteúdo divergente é recusado.
 - Papel manual prevalece sobre extração: WK contratada indica cliente contraparte; WK contratante indica fornecedor. CNPJ explícito não cai em nome semelhante; ambiguidade exige escolha humana.

@@ -2717,6 +2717,13 @@
       "when": 1795047514000,
       "tag": "0387_contract_legacy_import_atomic",
       "breakpoints": true
+    },
+    {
+      "idx": 388,
+      "version": "7",
+      "when": 1795047515000,
+      "tag": "0388_contract_legacy_validation_read_boundary",
+      "breakpoints": true
     }
   ]
 }
