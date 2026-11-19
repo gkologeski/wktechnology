@@ -84,7 +84,7 @@ Preparação de compra WK versionada, sem contrato ou processo operacional criad
 
 - Não é contratação de profissional: não há regime CLT/PJ/freelance nem vínculo de pessoa nesta entrada.
 - Pronta exige escopo, área, entidade legal e empresa fornecedora; Cliente exige também negócio ou contrato comercial de origem. Não significa aprovada.
-- A condição que também depende do aceite do cliente final permanece como rascunho para revisão.
+- A condição que também depende do aceite do cliente final exige finalidade Cliente e vínculo canônico; a geração de contas a pagar depende das conferências descritas abaixo.
 - WK compradora continua sendo `client`; WK fornecedora no fluxo comercial continua sendo `provider`. Esta preparação não modifica contratos comerciais existentes.
 - Contrato comercial opcional representa a origem cliente com WK fornecedora, não o futuro contrato de compra.
 - Entidade legal divergente da origem cliente é bloqueada.
@@ -125,7 +125,7 @@ Preparação de compra WK versionada, sem contrato ou processo operacional criad
 2. Cada componente exige valor/taxa, moeda, vencimento (dias após competência ou aceite) e a **cláusula conferida** no instrumento assinado. Mensal exige regra explícita: mês integral ou pró-rata por dias corridos do calendário.
 3. **Por entrega** aponta a versão exata da entrega; só entra no cálculo depois do aceite daquela versão. Nova versão da entrega deixa a linha pendente até revisar o plano. Horas de referência não mudam preço fechado.
 4. **Misto** exige componentes de tipos e fontes distintos; com mensal, horas precisam de projeto explícito, evitando dupla contagem.
-- A condição de liberação do fornecedor fica registrada no plano. **Aceite WK + NF válida + aceite cliente final** continua indisponível para pronto/aprovação: aceite técnico nunca é tratado como recebimento pelo cliente.
+- A condição de liberação do fornecedor fica registrada no plano. **Aceite WK + NF válida + aceite cliente final** exige aceite nomeado do cliente e conferência do Financeiro para a versão da entrega antes de gerar a obrigação; aceite técnico não substitui recebimento pelo cliente.
 5. Use **Enviar ao Financeiro**. Somente o responsável Financeiro configurado decide, com motivo, e nunca quem montou ou enviou. Nova versão volta a rascunho e exige nova aprovação; histórico e instrumento assinado nunca são alterados.
 6. Em **Competência**, use **Calcular prévia**. Fechar só é possível para mês encerrado, sem linhas pendentes e com fontes iguais às da prévia; mudanças exigem revisão encadeada justificada. O histórico central mostra versões, decisões e provisões.
 
