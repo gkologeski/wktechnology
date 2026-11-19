@@ -1,5 +1,11 @@
+-- Provision the private bucket in the reviewed schema transaction, never while preparing code.
+INSERT INTO storage.buckets(id,name,public,file_size_limit,allowed_mime_types) VALUES('hiring-fiscal-documents','hiring-fiscal-documents',false,10485760,ARRAY['application/pdf','application/xml','text/xml','image/png','image/jpeg']) ON CONFLICT(id) DO NOTHING;
+DO $bucket$ BEGIN
+ IF EXISTS(SELECT 1 FROM storage.buckets WHERE id='hiring-fiscal-documents' AND (public OR file_size_limit IS NULL OR file_size_limit>10485760)) THEN RAISE EXCEPTION 'Revise a configuração privada do bucket fiscal antes da migração.';END IF;
+END $bucket$;
+
 -- Package 4 batch B (ENTREGA-FISCAL): versioned deliveries with explicit human acceptance and a private fiscal-document trail.
--- PREPARED FOR REVIEW ONLY: outside the drizzle journal; never applied by this batch.
+-- Reviewed release migration; apply through the journal after green CI. No business records are seeded.
 -- Reuses hiring_execution_starts (0381) and the current signature proof. Creates no title, payable, payment, invite or IAM.
 -- Never updates project/milestone billing fields, sold services or signed contract attachments.
 INSERT INTO public.permissions(key,module,resource,action,scope,label_pt,description,is_system) VALUES
@@ -97,6 +103,8 @@ CREATE TABLE public.hiring_fiscal_documents(
  mime_type text NOT NULL CHECK(mime_type IN('application/pdf','application/xml','text/xml','image/png','image/jpeg')),
  size_bytes bigint NOT NULL CHECK(size_bytes BETWEEN 1 AND 10485760),
  sha256 text CHECK(sha256 IS NULL OR sha256 ~ '^[0-9a-f]{64}$'),
+ server_sha256 text CHECK(server_sha256 IS NULL OR server_sha256 ~ '^[0-9a-f]{64}$'),
+ server_attested_at timestamptz,
  issuer_tax_id text CHECK(issuer_tax_id IS NULL OR issuer_tax_id ~ '^([0-9]{11}|[0-9]{14})$'),
  taker_tax_id text CHECK(taker_tax_id IS NULL OR taker_tax_id ~ '^[0-9]{14}$'),
  amount numeric(14,2) CHECK(amount IS NULL OR amount>0),
@@ -188,14 +196,23 @@ BEGIN
  SELECT * INTO s FROM hiring_execution_starts WHERE workspace_id=w AND request_id=i;
  IF s.id IS NULL THEN RETURN 'Entregas e documentos fiscais dependem do início autorizado pelo gestor da área.';END IF;
  IF r.revision IS DISTINCT FROM s.request_revision OR r.status<>'ready' THEN RETURN 'A solicitação mudou depois do início autorizado; novos aceites e documentos ficam bloqueados até nova formalização.';END IF;
- IF NOT hiring_execution_activation_ok(w,s.contract_id) THEN RETURN 'Instrumento sem assinatura íntegra atual; novos aceites e documentos ficam bloqueados.';END IF;
+ IF NOT hiring_execution_activation_ok(w,s.contract_id) THEN
+  IF NOT hiring_formalization_current(w,i) THEN RETURN 'A aprovação ou alçada da área mudou; revalide a formalização antes de novas operações.';END IF;
+  IF NOT EXISTS(SELECT 1 FROM contract_handoff_settings WHERE workspace_id=w AND enabled AND finance_user_id IS NOT NULL) THEN RETURN 'Configure o responsável Financeiro e revalide a formalização.';END IF;
+  IF NOT hiring_formalization_valid(i) THEN RETURN 'Os responsáveis ou a autorização da formalização mudaram; revalide o instrumento.';END IF;
+  RETURN 'Instrumento sem assinatura íntegra atual; novos aceites e documentos ficam bloqueados.';
+ END IF;
  RETURN NULL;
 END $$;
 -- Canonical project/milestone visibility evaluated under the caller's RLS (owner is the non-BYPASSRLS writer role).
 CREATE FUNCTION public.hiring_delivery_reference_visible(p uuid,m uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
  SELECT (p IS NULL OR EXISTS(SELECT 1 FROM projects x WHERE x.id=p)) AND (m IS NULL OR EXISTS(SELECT 1 FROM project_milestones x WHERE x.id=m AND x.project_id=p))
 $$;
-ALTER FUNCTION public.hiring_delivery_reference_visible(uuid,uuid) OWNER TO techerp_request_writer;
+DO $reference_owner$ DECLARE had_create boolean:=has_schema_privilege('techerp_request_writer','public','CREATE');BEGIN
+ IF NOT had_create THEN GRANT CREATE ON SCHEMA public TO techerp_request_writer;END IF;
+ ALTER FUNCTION public.hiring_delivery_reference_visible(uuid,uuid) OWNER TO techerp_request_writer;
+ IF NOT had_create THEN REVOKE CREATE ON SCHEMA public FROM techerp_request_writer;END IF;
+END $reference_owner$;
 CREATE FUNCTION public.hiring_ops_digits(t text) RETURNS text LANGUAGE sql IMMUTABLE SET search_path=pg_catalog AS $$ SELECT nullif(regexp_replace(coalesce(t,''),'[^0-9]','','g'),'') $$;
 CREATE FUNCTION public.hiring_ops_hash(t text) RETURNS text LANGUAGE sql IMMUTABLE SET search_path=pg_catalog AS $$ SELECT encode(sha256(convert_to(t,'UTF8')),'hex') $$;
 
@@ -207,7 +224,7 @@ BEGIN
  PERFORM hiring_formalization_lock(i);
  SELECT * INTO v FROM hiring_execution_delivery_versions WHERE operation_id=p_operation;
  IF v.id IS NOT NULL THEN
-  IF v.workspace_id<>w OR v.created_by<>auth.uid() THEN RAISE EXCEPTION 'Operação já utilizada.';END IF;
+  IF v.workspace_id<>w OR v.created_by<>auth.uid() OR NOT EXISTS(SELECT 1 FROM hiring_execution_deliveries prior_delivery WHERE prior_delivery.id=v.delivery_id AND prior_delivery.request_id=i) OR (p_delivery IS NOT NULL AND p_delivery<>v.delivery_id) OR ROW(v.title,v.criteria,v.period_start,v.period_end,v.responsible_id,v.project_id,v.milestone_id) IS DISTINCT FROM ROW(btrim(p_title),btrim(p_criteria),p_start,p_end,p_responsible,p_project,p_milestone) THEN RAISE EXCEPTION 'Operação já utilizada com outros dados.';END IF;
   RETURN v.delivery_id;
  END IF;
  problem:=hiring_ops_proof_problem(w,i);
@@ -221,7 +238,8 @@ BEGIN
   SELECT to_jsonb(x) INTO pr FROM projects x WHERE x.id=p_project AND x.workspace_id=w;
   IF pr IS NULL OR NOT hiring_delivery_reference_visible(p_project,p_milestone) THEN RAISE EXCEPTION 'Projeto ou marco indisponível para o seu usuário.';END IF;
   IF pr->>'legal_entity_id' IS NOT NULL AND (pr->>'legal_entity_id')::uuid IS DISTINCT FROM r.legal_entity_id THEN RAISE EXCEPTION 'Entidade WK do projeto diverge da solicitação.';END IF;
-  IF r.purpose='client' AND pr->>'contract_id' IS NOT NULL AND (pr->>'contract_id')::uuid IS DISTINCT FROM r.commercial_contract_id THEN RAISE EXCEPTION 'Projeto não corresponde ao contrato comercial de origem.';END IF;
+  IF EXISTS(SELECT 1 FROM contracts project_contract WHERE project_contract.workspace_id=w AND project_contract.id=(pr->>'contract_id')::uuid AND project_contract.contracting_legal_entity_id IS DISTINCT FROM r.legal_entity_id) THEN RAISE EXCEPTION 'Entidade WK do projeto diverge da solicitação.';END IF;
+  IF r.purpose='client' AND (pr->>'contract_id')::uuid IS DISTINCT FROM r.commercial_contract_id THEN RAISE EXCEPTION 'Projeto não corresponde ao contrato comercial de origem.';END IF;
  END IF;
  IF p_delivery IS NULL THEN
   INSERT INTO hiring_execution_deliveries(workspace_id,request_id,start_id,kind,created_by) VALUES(w,i,s.id,r.kind,auth.uid()) RETURNING * INTO d;
@@ -246,7 +264,7 @@ BEGIN
  r:=hiring_ops_actor(w,i,'deliveries.manage',true);
  PERFORM hiring_formalization_lock(i);
  SELECT * INTO x FROM hiring_execution_delivery_submissions WHERE operation_id=p_operation;
- IF x.id IS NOT NULL THEN IF x.submitted_by<>auth.uid() OR x.workspace_id<>w THEN RAISE EXCEPTION 'Operação já utilizada.';END IF;RETURN x.id;END IF;
+ IF x.id IS NOT NULL THEN IF x.submitted_by<>auth.uid() OR x.workspace_id<>w OR x.delivery_id IS DISTINCT FROM p_delivery OR x.version IS DISTINCT FROM p_version OR x.evidence IS DISTINCT FROM btrim(p_evidence) OR NOT EXISTS(SELECT 1 FROM hiring_execution_deliveries prior_delivery WHERE prior_delivery.id=x.delivery_id AND prior_delivery.request_id=i) THEN RAISE EXCEPTION 'Operação já utilizada com outros dados.';END IF;RETURN x.id;END IF;
  problem:=hiring_ops_proof_problem(w,i);
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem;END IF;
  SELECT * INTO d FROM hiring_execution_deliveries WHERE workspace_id=w AND id=p_delivery AND request_id=i FOR UPDATE;
@@ -267,7 +285,7 @@ BEGIN
  r:=hiring_ops_actor(w,i,'deliveries.approve',true);
  PERFORM hiring_formalization_lock(i);
  SELECT * INTO k FROM hiring_execution_delivery_decisions WHERE operation_id=p_operation;
- IF k.id IS NOT NULL THEN IF k.decided_by<>auth.uid() OR k.workspace_id<>w THEN RAISE EXCEPTION 'Operação já utilizada.';END IF;RETURN k.id;END IF;
+ IF k.id IS NOT NULL THEN IF k.decided_by<>auth.uid() OR k.workspace_id<>w OR ROW(k.delivery_id,k.version,k.content_hash,k.decision,k.reason) IS DISTINCT FROM ROW(p_delivery,p_version,p_hash,p_decision,btrim(p_reason)) OR NOT EXISTS(SELECT 1 FROM hiring_execution_deliveries prior_delivery WHERE prior_delivery.id=k.delivery_id AND prior_delivery.request_id=i) THEN RAISE EXCEPTION 'Operação já utilizada com outros dados.';END IF;RETURN k.id;END IF;
  problem:=hiring_ops_proof_problem(w,i);
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem;END IF;
  SELECT * INTO d FROM hiring_execution_deliveries WHERE workspace_id=w AND id=p_delivery AND request_id=i FOR UPDATE;
@@ -294,7 +312,7 @@ DECLARE r hiring_preparation_requests;s hiring_execution_starts;f hiring_fiscal_
 BEGIN
  r:=hiring_ops_actor(w,i,'fiscal_documents.create',true);
  SELECT * INTO f FROM hiring_fiscal_documents WHERE operation_id=p_operation;
- IF f.id IS NOT NULL THEN IF f.uploaded_by<>auth.uid() OR f.workspace_id<>w THEN RAISE EXCEPTION 'Operação já utilizada.';END IF;RETURN jsonb_build_object('id',f.id,'path',f.storage_path);END IF;
+ IF f.id IS NOT NULL THEN IF f.uploaded_by<>auth.uid() OR f.workspace_id<>w OR f.request_id<>i OR f.mime_type IS DISTINCT FROM p_mime OR f.size_bytes IS DISTINCT FROM p_size OR f.file_name IS DISTINCT FROM left(regexp_replace(coalesce(p_file_name,'documento'),'[^A-Za-z0-9._ -]','_','g'),200) THEN RAISE EXCEPTION 'Operação já utilizada com outros dados.';END IF;RETURN jsonb_build_object('id',f.id,'path',f.storage_path);END IF;
  problem:=hiring_ops_proof_problem(w,i);
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem;END IF;
  IF p_mime NOT IN('application/pdf','application/xml','text/xml','image/png','image/jpeg') THEN RAISE EXCEPTION 'Tipo de arquivo não aceito (PDF, XML, PNG ou JPEG).';END IF;
@@ -305,6 +323,22 @@ BEGIN
  INSERT INTO hiring_fiscal_document_events(workspace_id,document_id,actor_id,kind) VALUES(w,id,auth.uid(),'reserved');
  RETURN jsonb_build_object('id',id,'path',w::text||'/'||i::text||'/'||id::text);
 END $$;
+-- Service-only proof after reading/hash/type validation of actual stored bytes. Never callable with a user's JWT.
+CREATE FUNCTION public.hiring_fiscal_attest(w uuid,i uuid,p_doc uuid,p_actor uuid,p_sha256 text,p_size bigint,p_mime text) RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+DECLARE f hiring_fiscal_documents;problem text;
+BEGIN
+ IF coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb->>'role','')<>'service_role' THEN RAISE EXCEPTION 'Confirmação de arquivo restrita ao servidor.' USING ERRCODE='42501';END IF;
+ SELECT * INTO f FROM hiring_fiscal_documents WHERE id=p_doc AND workspace_id=w AND request_id=i FOR UPDATE;
+ IF f.id IS NULL OR f.uploaded_by IS DISTINCT FROM p_actor OR NOT EXISTS(SELECT 1 FROM profiles WHERE id=p_actor AND active_workspace_id=w) OR NOT hiring_ops_subject(w,p_actor,f.kind,'fiscal_documents.create') THEN RAISE EXCEPTION 'Envio indisponível para confirmação.' USING ERRCODE='42501';END IF;
+ problem:=hiring_ops_proof_problem(w,i);IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem;END IF;
+ IF p_sha256 IS NULL OR p_sha256 !~ '^[0-9a-f]{64}$' OR p_size IS DISTINCT FROM f.size_bytes OR p_mime IS DISTINCT FROM f.mime_type OR NOT EXISTS(SELECT 1 FROM storage.objects WHERE bucket_id='hiring-fiscal-documents' AND name=f.storage_path) THEN RAISE EXCEPTION 'Arquivo armazenado não confere com a reserva.';END IF;
+ IF f.server_sha256 IS NOT NULL THEN IF f.server_sha256=p_sha256 THEN RETURN;END IF;RAISE EXCEPTION 'Confirmação de arquivo imutável.';END IF;
+ IF f.status<>'pending_upload' THEN RAISE EXCEPTION 'Documento não está pendente de confirmação.';END IF;
+ UPDATE hiring_fiscal_documents SET server_sha256=p_sha256,server_attested_at=now() WHERE id=f.id;
+END $$;
+REVOKE ALL ON FUNCTION public.hiring_fiscal_attest(uuid,uuid,uuid,uuid,text,bigint,text) FROM PUBLIC,anon,authenticated,techerp_request_writer;
+GRANT EXECUTE ON FUNCTION public.hiring_fiscal_attest(uuid,uuid,uuid,uuid,text,bigint,text) TO service_role;
+
 -- Step 2: register metadata after the server hashed the real bytes and the object exists in the private bucket.
 CREATE FUNCTION public.hiring_fiscal_register(w uuid,i uuid,p_doc uuid,p_sha256 text,p_doc_type text,p_modality text,p_issuer text,p_taker text,p_amount numeric,p_currency text,p_number text,p_issued date,p_delivery uuid) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
 DECLARE r hiring_preparation_requests;s hiring_execution_starts;f hiring_fiscal_documents;problem text;wk text;exp text;iss text:=hiring_ops_digits(p_issuer);tak text:=hiring_ops_digits(p_taker);t text;
@@ -313,11 +347,12 @@ BEGIN
  PERFORM hiring_formalization_lock(i);
  SELECT * INTO f FROM hiring_fiscal_documents WHERE workspace_id=w AND id=p_doc AND request_id=i FOR UPDATE;
  IF f.id IS NULL OR f.uploaded_by<>auth.uid() THEN RAISE EXCEPTION 'Envio indisponível.' USING ERRCODE='42501';END IF;
- IF f.status<>'pending_upload' THEN IF f.sha256=p_sha256 THEN RETURN f.id;END IF;RAISE EXCEPTION 'Documento já registrado.';END IF;
+ IF f.status<>'pending_upload' THEN IF ROW(f.sha256,f.doc_type,f.modality,f.issuer_tax_id,f.taker_tax_id,f.amount,f.currency,f.document_number,f.issued_on,f.delivery_id) IS NOT DISTINCT FROM ROW(p_sha256,p_doc_type,p_modality,iss,tak,round(p_amount,2),p_currency,btrim(p_number),p_issued,p_delivery) THEN RETURN f.id;END IF;RAISE EXCEPTION 'Documento já registrado.';END IF;
  problem:=hiring_ops_proof_problem(w,i);
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem;END IF;
  IF p_sha256 IS NULL OR p_sha256 !~ '^[0-9a-f]{64}$' THEN RAISE EXCEPTION 'Hash SHA-256 inválido.';END IF;
  IF NOT EXISTS(SELECT 1 FROM storage.objects o WHERE o.bucket_id='hiring-fiscal-documents' AND o.name=f.storage_path AND coalesce((to_jsonb(o)->'metadata'->>'size')::bigint,f.size_bytes)=f.size_bytes) THEN RAISE EXCEPTION 'Upload não concluído ou tamanho divergente.';END IF;
+ IF f.server_sha256 IS DISTINCT FROM p_sha256 OR f.server_attested_at IS NULL THEN RAISE EXCEPTION 'Arquivo ainda não confirmado pelo servidor.';END IF;
  SELECT * INTO s FROM hiring_execution_starts WHERE id=f.start_id;
  SELECT hiring_ops_digits(to_jsonb(l)->>'cnpj') INTO wk FROM legal_entities l WHERE l.id=r.legal_entity_id AND l.workspace_id=w;
  IF wk IS NULL OR length(wk)<>14 THEN RAISE EXCEPTION 'CNPJ da entidade WK não cadastrado; regularize o cadastro canônico.';END IF;
@@ -335,14 +370,15 @@ BEGIN
  ELSE
   -- Freelance: the modality is an explicit user choice; no fiscal policy is inferred.
   IF t<>'freelance_document' OR p_modality NOT IN('nfse','rpa','recibo') THEN RAISE EXCEPTION 'Freelance exige modalidade explícita (NFS-e, RPA ou recibo).';END IF;
-  exp:=NULL;
+  SELECT CASE WHEN p_modality='nfse' THEN coalesce(hiring_ops_digits(to_jsonb(p)->>'cnpj'),hiring_ops_digits(to_jsonb(p)->'personal_doc'->>'cpf')) ELSE hiring_ops_digits(to_jsonb(p)->'personal_doc'->>'cpf') END INTO exp FROM people p WHERE p.id=r.person_id AND p.workspace_id=w;
+  IF exp IS NULL OR length(exp) NOT IN(11,14) THEN RAISE EXCEPTION 'Identificador fiscal canônico do profissional não cadastrado.';END IF;
  END IF;
  IF r.kind='supplier' OR r.regime='pj' THEN IF exp IS NULL OR length(exp)<>14 THEN RAISE EXCEPTION 'CNPJ canônico do emitente não cadastrado; regularize o cadastro.';END IF;END IF;
  IF iss IS NULL OR length(iss) NOT IN(11,14) THEN RAISE EXCEPTION 'CPF/CNPJ do emitente inválido.';END IF;
  IF exp IS NOT NULL AND iss<>exp THEN RAISE EXCEPTION 'CNPJ do emitente diverge do cadastro canônico.';END IF;
  IF t='payroll_evidence' THEN IF tak IS NOT NULL THEN RAISE EXCEPTION 'Evidência de folha não tem tomador.';END IF;
  ELSIF tak IS DISTINCT FROM wk THEN RAISE EXCEPTION 'CNPJ do tomador deve ser o da entidade WK contratante.';END IF;
- IF p_amount IS NULL OR p_amount<=0 OR p_currency IS NULL OR p_currency !~ '^[A-Z]{3}$' THEN RAISE EXCEPTION 'Informe valor positivo e moeda (ISO, ex.: BRL).';END IF;
+ IF p_amount IS NULL OR p_amount::text IN('NaN','Infinity','-Infinity') OR round(p_amount,2)<=0 OR p_amount>999999999999.99 OR p_currency IS NULL OR p_currency !~ '^[A-Z]{3}$' THEN RAISE EXCEPTION 'Informe valor positivo e moeda (ISO, ex.: BRL).';END IF;
  IF length(btrim(coalesce(p_number,''))) NOT BETWEEN 1 AND 60 THEN RAISE EXCEPTION 'Informe o número/competência do documento.';END IF;
  IF p_issued IS NULL OR p_issued>current_date OR p_issued<s.starts_at THEN RAISE EXCEPTION 'Data de emissão fora do período executado.';END IF;
  IF p_delivery IS NOT NULL AND NOT EXISTS(SELECT 1 FROM hiring_execution_deliveries d WHERE d.workspace_id=w AND d.id=p_delivery AND d.request_id=i) THEN RAISE EXCEPTION 'Entrega indisponível.';END IF;
@@ -359,13 +395,14 @@ BEGIN
  IF NOT hiring_ops_subject(w,auth.uid(),r.kind,'fiscal_documents.view') THEN RAISE EXCEPTION 'Sem permissão para esta ação.' USING ERRCODE='42501';END IF;
  PERFORM hiring_formalization_lock(i);
  SELECT * INTO x FROM hiring_fiscal_document_reviews WHERE operation_id=p_operation;
- IF x.id IS NOT NULL THEN IF x.reviewed_by<>auth.uid() OR x.workspace_id<>w THEN RAISE EXCEPTION 'Operação já utilizada.';END IF;RETURN x.id;END IF;
+ IF x.id IS NOT NULL THEN IF x.reviewed_by<>auth.uid() OR x.workspace_id<>w OR ROW(x.document_id,x.sha256,x.decision,x.reason) IS DISTINCT FROM ROW(p_doc,p_sha256,p_decision,btrim(p_reason)) OR NOT EXISTS(SELECT 1 FROM hiring_fiscal_documents prior_document WHERE prior_document.id=x.document_id AND prior_document.request_id=i) THEN RAISE EXCEPTION 'Operação já utilizada com outros dados.';END IF;RETURN x.id;END IF;
  problem:=hiring_ops_proof_problem(w,i);
  IF problem IS NOT NULL THEN RAISE EXCEPTION '%',problem;END IF;
  SELECT * INTO f FROM hiring_fiscal_documents WHERE workspace_id=w AND id=p_doc AND request_id=i FOR UPDATE;
  IF f.id IS NULL OR f.status<>'registered' THEN RAISE EXCEPTION 'STALE: documento não está aguardando conferência.';END IF;
  IF p_sha256 IS DISTINCT FROM f.sha256 THEN RAISE EXCEPTION 'STALE: hash conferido difere do arquivo registrado.';END IF;
  IF f.uploaded_by=auth.uid() THEN RAISE EXCEPTION 'Quem enviou o documento não pode conferi-lo.' USING ERRCODE='42501';END IF;
+ IF NOT EXISTS(SELECT 1 FROM hiring_formalizations configured_finance WHERE configured_finance.request_id=i AND configured_finance.workspace_id=w AND configured_finance.finance_user=auth.uid()) THEN RAISE EXCEPTION 'Somente o responsável Financeiro vigente pode conferir o documento.' USING ERRCODE='42501';END IF;
  IF p_decision NOT IN('verified','rejected') OR length(btrim(coalesce(p_reason,''))) NOT BETWEEN 5 AND 2000 THEN RAISE EXCEPTION 'Decisão e motivo (5 a 2000 caracteres) obrigatórios.';END IF;
  INSERT INTO hiring_fiscal_document_reviews(workspace_id,document_id,sha256,decision,reason,operation_id,reviewed_by) VALUES(w,f.id,f.sha256,p_decision,btrim(p_reason),p_operation,auth.uid()) RETURNING id INTO rid;
  UPDATE hiring_fiscal_documents SET status=p_decision,reviewed_at=now() WHERE id=f.id;
@@ -385,7 +422,7 @@ END $$;
 -- Storage policy helpers (boolean only).
 CREATE FUNCTION public.hiring_fiscal_storage_write(p text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
  SELECT EXISTS(SELECT 1 FROM hiring_fiscal_documents f JOIN profiles pr ON pr.id=auth.uid() AND pr.active_workspace_id=f.workspace_id
-  WHERE f.storage_path=p AND f.status='pending_upload' AND f.uploaded_by=auth.uid() AND f.reserved_at>now()-interval '1 hour'
+  WHERE f.storage_path=p AND f.status='pending_upload' AND f.server_attested_at IS NULL AND f.uploaded_by=auth.uid() AND f.reserved_at>now()-interval '1 hour'
   AND NOT is_read_only_view() AND hiring_ops_subject(f.workspace_id,auth.uid(),f.kind,'fiscal_documents.create'))
 $$;
 CREATE FUNCTION public.hiring_fiscal_storage_read(p text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
@@ -395,6 +432,11 @@ CREATE FUNCTION public.hiring_fiscal_storage_read(p text) RETURNS boolean LANGUA
 $$;
 CREATE POLICY hiring_fiscal_objects_insert ON storage.objects FOR INSERT TO authenticated WITH CHECK(bucket_id='hiring-fiscal-documents' AND public.hiring_fiscal_storage_write(name));
 CREATE POLICY hiring_fiscal_objects_read ON storage.objects FOR SELECT TO authenticated USING(bucket_id='hiring-fiscal-documents' AND public.hiring_fiscal_storage_read(name));
+-- Restrictive policies also contain any broader existing/future permissive policy.
+CREATE POLICY hiring_fiscal_objects_insert_bound ON storage.objects AS RESTRICTIVE FOR INSERT TO authenticated WITH CHECK(bucket_id<>'hiring-fiscal-documents' OR public.hiring_fiscal_storage_write(name));
+CREATE POLICY hiring_fiscal_objects_read_bound ON storage.objects AS RESTRICTIVE FOR SELECT TO authenticated USING(bucket_id<>'hiring-fiscal-documents' OR public.hiring_fiscal_storage_read(name));
+CREATE POLICY hiring_fiscal_objects_no_update ON storage.objects AS RESTRICTIVE FOR UPDATE TO authenticated USING(bucket_id<>'hiring-fiscal-documents') WITH CHECK(bucket_id<>'hiring-fiscal-documents');
+CREATE POLICY hiring_fiscal_objects_no_delete ON storage.objects AS RESTRICTIVE FOR DELETE TO authenticated USING(bucket_id<>'hiring-fiscal-documents');
 -- No UPDATE/DELETE policy: stored fiscal bytes are never replaced or removed by users.
 
 -- Read-only context; fiscal values/tax ids only with the fiscal view key.
@@ -424,7 +466,7 @@ BEGIN
    'issuer_tax_id',f.issuer_tax_id,'taker_tax_id',f.taker_tax_id,'amount',f.amount,'currency',f.currency,'document_number',f.document_number,'issued_on',f.issued_on,'delivery_id',f.delivery_id,
    'uploaded_by_name',(SELECT full_name FROM profiles WHERE id=f.uploaded_by),'registered_at',f.registered_at,
    'review',(SELECT jsonb_build_object('decision',v.decision,'reason',v.reason,'at',v.reviewed_at,'by',(SELECT full_name FROM profiles WHERE id=v.reviewed_by)) FROM hiring_fiscal_document_reviews v WHERE v.document_id=f.id),
-   'can_review',NOT ro AND f.status='registered' AND f.uploaded_by<>u AND hiring_ops_subject(w,u,r.kind,'fiscal_documents.approve')) ORDER BY f.reserved_at),'[]')
+   'can_review',NOT ro AND f.status='registered' AND f.uploaded_by<>u AND hiring_ops_subject(w,u,r.kind,'fiscal_documents.approve') AND EXISTS(SELECT 1 FROM hiring_formalizations z WHERE z.request_id=i AND z.workspace_id=w AND z.finance_user=u)) ORDER BY f.reserved_at),'[]')
   INTO fiscal FROM hiring_fiscal_documents f WHERE f.workspace_id=w AND f.request_id=i AND f.status<>'pending_upload';
  END IF;
  IF manage THEN

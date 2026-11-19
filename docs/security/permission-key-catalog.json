@@ -732,8 +732,29 @@
     "techcontracts.links.view.workspace",
     "techcontracts.signature_evidence.manage.workspace",
     "techcontracts.signature_evidence.view.workspace",
+    "techcontracts.supplier_requests.approval.approve.workspace",
+    "techcontracts.supplier_requests.approval_request.create.workspace",
     "techcontracts.supplier_requests.cancel.update.workspace",
+    "techcontracts.supplier_requests.client_acceptance.approve.workspace",
+    "techcontracts.supplier_requests.client_acceptance.manage.workspace",
     "techcontracts.supplier_requests.create.workspace",
+    "techcontracts.supplier_requests.deliveries.approve.workspace",
+    "techcontracts.supplier_requests.deliveries.manage.workspace",
+    "techcontracts.supplier_requests.economics.approve.workspace",
+    "techcontracts.supplier_requests.economics.manage.workspace",
+    "techcontracts.supplier_requests.economics.view.workspace",
+    "techcontracts.supplier_requests.execution.approve.workspace",
+    "techcontracts.supplier_requests.fiscal_documents.approve.workspace",
+    "techcontracts.supplier_requests.fiscal_documents.create.workspace",
+    "techcontracts.supplier_requests.fiscal_documents.view.workspace",
+    "techcontracts.supplier_requests.formalization.approve.workspace",
+    "techcontracts.supplier_requests.formalization.manage.workspace",
+    "techcontracts.supplier_requests.payables.manage.workspace",
+    "techcontracts.supplier_requests.payables.reconcile.workspace",
+    "techcontracts.supplier_requests.payables.view.workspace",
+    "techcontracts.supplier_requests.payables_reconciliation.approve.workspace",
+    "techcontracts.supplier_requests.provisions.approve.workspace",
+    "techcontracts.supplier_requests.provisions.manage.workspace",
     "techcontracts.supplier_requests.reference.update.workspace",
     "techcontracts.supplier_requests.reference.view.workspace",
     "techcontracts.supplier_requests.update.workspace",
@@ -1372,8 +1393,27 @@
     "techpeople.goals.view.own",
     "techpeople.goals.view.team",
     "techpeople.goals.view.workspace",
+    "techpeople.hiring_requests.approval.approve.workspace",
+    "techpeople.hiring_requests.approval_request.create.workspace",
     "techpeople.hiring_requests.cancel.update.workspace",
     "techpeople.hiring_requests.create.workspace",
+    "techpeople.hiring_requests.deliveries.approve.workspace",
+    "techpeople.hiring_requests.deliveries.manage.workspace",
+    "techpeople.hiring_requests.economics.approve.workspace",
+    "techpeople.hiring_requests.economics.manage.workspace",
+    "techpeople.hiring_requests.economics.view.workspace",
+    "techpeople.hiring_requests.execution.approve.workspace",
+    "techpeople.hiring_requests.fiscal_documents.approve.workspace",
+    "techpeople.hiring_requests.fiscal_documents.create.workspace",
+    "techpeople.hiring_requests.fiscal_documents.view.workspace",
+    "techpeople.hiring_requests.formalization.approve.workspace",
+    "techpeople.hiring_requests.formalization.manage.workspace",
+    "techpeople.hiring_requests.payables.manage.workspace",
+    "techpeople.hiring_requests.payables.reconcile.workspace",
+    "techpeople.hiring_requests.payables.view.workspace",
+    "techpeople.hiring_requests.payables_reconciliation.approve.workspace",
+    "techpeople.hiring_requests.provisions.approve.workspace",
+    "techpeople.hiring_requests.provisions.manage.workspace",
     "techpeople.hiring_requests.reference.update.workspace",
     "techpeople.hiring_requests.reference.view.workspace",
     "techpeople.hiring_requests.update.workspace",
@@ -2815,45 +2855,7 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace",
-    "techpeople.hiring_requests.approval_request.create.workspace",
-    "techpeople.hiring_requests.approval.approve.workspace",
-    "techcontracts.supplier_requests.approval_request.create.workspace",
-    "techcontracts.supplier_requests.approval.approve.workspace",
-    "techpeople.hiring_requests.formalization.manage.workspace",
-    "techpeople.hiring_requests.formalization.approve.workspace",
-    "techcontracts.supplier_requests.formalization.manage.workspace",
-    "techcontracts.supplier_requests.formalization.approve.workspace",
-    "techpeople.hiring_requests.execution.approve.workspace",
-    "techcontracts.supplier_requests.execution.approve.workspace",
-    "techpeople.hiring_requests.deliveries.manage.workspace",
-    "techcontracts.supplier_requests.deliveries.manage.workspace",
-    "techpeople.hiring_requests.deliveries.approve.workspace",
-    "techcontracts.supplier_requests.deliveries.approve.workspace",
-    "techpeople.hiring_requests.fiscal_documents.create.workspace",
-    "techcontracts.supplier_requests.fiscal_documents.create.workspace",
-    "techpeople.hiring_requests.fiscal_documents.view.workspace",
-    "techcontracts.supplier_requests.fiscal_documents.view.workspace",
-    "techpeople.hiring_requests.fiscal_documents.approve.workspace",
-    "techcontracts.supplier_requests.fiscal_documents.approve.workspace",
-    "techpeople.hiring_requests.economics.view.workspace",
-    "techpeople.hiring_requests.economics.manage.workspace",
-    "techpeople.hiring_requests.economics.approve.workspace",
-    "techpeople.hiring_requests.provisions.manage.workspace",
-    "techpeople.hiring_requests.provisions.approve.workspace",
-    "techcontracts.supplier_requests.economics.view.workspace",
-    "techcontracts.supplier_requests.economics.manage.workspace",
-    "techcontracts.supplier_requests.economics.approve.workspace",
-    "techcontracts.supplier_requests.provisions.manage.workspace",
-    "techcontracts.supplier_requests.provisions.approve.workspace",
-    "techpeople.hiring_requests.payables.view.workspace",
-    "techpeople.hiring_requests.payables.manage.workspace",
-    "techpeople.hiring_requests.payables.reconcile.workspace",
-    "techcontracts.supplier_requests.payables.view.workspace",
-    "techcontracts.supplier_requests.payables.manage.workspace",
-    "techcontracts.supplier_requests.payables.reconcile.workspace",
-    "techcontracts.supplier_requests.client_acceptance.manage.workspace",
-    "techcontracts.supplier_requests.client_acceptance.approve.workspace"
+    "techservice.tickets.view.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -3106,94 +3108,100 @@
       "migration": "docs/architecture/prepared-migrations/0376_hiring_formalization.sql"
     },
     "techpeople.hiring_requests.execution.approve.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql"
+      "migration": "drizzle/migrations/0381_hiring_execution_start.sql"
     },
     "techcontracts.supplier_requests.execution.approve.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql"
+      "migration": "drizzle/migrations/0381_hiring_execution_start.sql"
     },
     "techpeople.hiring_requests.deliveries.manage.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+      "migration": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql"
     },
     "techcontracts.supplier_requests.deliveries.manage.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+      "migration": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql"
     },
     "techpeople.hiring_requests.deliveries.approve.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+      "migration": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql"
     },
     "techcontracts.supplier_requests.deliveries.approve.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+      "migration": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql"
     },
     "techpeople.hiring_requests.fiscal_documents.create.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+      "migration": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql"
     },
     "techcontracts.supplier_requests.fiscal_documents.create.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+      "migration": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql"
     },
     "techpeople.hiring_requests.fiscal_documents.view.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+      "migration": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql"
     },
     "techcontracts.supplier_requests.fiscal_documents.view.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+      "migration": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql"
     },
     "techpeople.hiring_requests.fiscal_documents.approve.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+      "migration": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql"
     },
     "techcontracts.supplier_requests.fiscal_documents.approve.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql"
+      "migration": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql"
     },
     "techpeople.hiring_requests.economics.view.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql"
+      "migration": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql"
     },
     "techpeople.hiring_requests.economics.manage.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql"
+      "migration": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql"
     },
     "techpeople.hiring_requests.economics.approve.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql"
+      "migration": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql"
     },
     "techpeople.hiring_requests.provisions.manage.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql"
+      "migration": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql"
     },
     "techpeople.hiring_requests.provisions.approve.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql"
+      "migration": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql"
     },
     "techcontracts.supplier_requests.economics.view.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql"
+      "migration": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql"
     },
     "techcontracts.supplier_requests.economics.manage.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql"
+      "migration": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql"
     },
     "techcontracts.supplier_requests.economics.approve.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql"
+      "migration": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql"
     },
     "techcontracts.supplier_requests.provisions.manage.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql"
+      "migration": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql"
     },
     "techcontracts.supplier_requests.provisions.approve.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql"
+      "migration": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql"
     },
     "techpeople.hiring_requests.payables.view.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql"
+      "migration": "drizzle/migrations/0384_hiring_payables_reconciliation.sql"
     },
     "techpeople.hiring_requests.payables.manage.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql"
+      "migration": "drizzle/migrations/0384_hiring_payables_reconciliation.sql"
     },
-    "techpeople.hiring_requests.payables.reconcile.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql"
+    "techpeople.hiring_requests.payables_reconciliation.approve.workspace": {
+      "migration": "drizzle/migrations/0384_hiring_payables_reconciliation.sql"
     },
     "techcontracts.supplier_requests.payables.view.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql"
+      "migration": "drizzle/migrations/0384_hiring_payables_reconciliation.sql"
     },
     "techcontracts.supplier_requests.payables.manage.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql"
+      "migration": "drizzle/migrations/0384_hiring_payables_reconciliation.sql"
     },
-    "techcontracts.supplier_requests.payables.reconcile.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql"
+    "techcontracts.supplier_requests.payables_reconciliation.approve.workspace": {
+      "migration": "drizzle/migrations/0384_hiring_payables_reconciliation.sql"
     },
     "techcontracts.supplier_requests.client_acceptance.manage.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql"
+      "migration": "drizzle/migrations/0384_hiring_payables_reconciliation.sql"
     },
     "techcontracts.supplier_requests.client_acceptance.approve.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql"
+      "migration": "drizzle/migrations/0384_hiring_payables_reconciliation.sql"
+    },
+    "techpeople.hiring_requests.payables.reconcile.workspace": {
+      "migration": "drizzle/migrations/0384_hiring_payables_reconciliation.sql"
+    },
+    "techcontracts.supplier_requests.payables.reconcile.workspace": {
+      "migration": "drizzle/migrations/0384_hiring_payables_reconciliation.sql"
     }
   }
 }

@@ -1,5 +1,5 @@
 -- Package 4 batch A (INICIO-EXECUCAO): governed start/execution for approved, signed hiring requests.
--- PREPARED FOR REVIEW ONLY: outside the drizzle journal; never applied by this batch.
+-- Reviewed release migration; apply through the journal after green CI. No business records are seeded.
 -- Direct professional origin reuses hiring_engagements/people_allocations without fake ATS job/application.
 -- No IAM grant, invite, finance entry or payment is created here.
 INSERT INTO public.permissions(key,module,resource,action,scope,label_pt,description,is_system) VALUES
@@ -90,7 +90,7 @@ BEGIN
 END $$;
 
 CREATE FUNCTION public.hiring_execution_activation_ok(w uuid,k uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
- SELECT EXISTS(SELECT 1 FROM hiring_execution_starts s WHERE s.workspace_id=w AND s.contract_id=k AND s.contract_hash=hiring_contract_fingerprint(k)) AND hiring_formalization_signed(w,k)
+ SELECT EXISTS(SELECT 1 FROM hiring_execution_starts s WHERE s.workspace_id=w AND s.contract_id=k AND s.contract_hash=hiring_contract_fingerprint(k)) AND hiring_formalization_signed(w,k) AND EXISTS(SELECT 1 FROM hiring_formalizations f JOIN hiring_execution_starts s ON s.request_id=f.request_id AND s.workspace_id=f.workspace_id JOIN hiring_preparation_requests r ON r.id=f.request_id AND r.workspace_id=f.workspace_id WHERE f.workspace_id=w AND f.contract_id=k AND s.request_revision=r.revision AND s.approval_id=f.approval_id AND hiring_formalization_valid(f.request_id))
 $$;
 
 CREATE FUNCTION public.hiring_execution_start(w uuid,i uuid,rev integer,p_start date,p_end date,p_reason text,p_operation uuid) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
@@ -103,7 +103,7 @@ BEGIN
  SELECT * INTO r FROM hiring_preparation_requests WHERE workspace_id=w AND id=i;
  SELECT * INTO s FROM hiring_execution_starts WHERE request_id=i;
  IF s.id IS NOT NULL THEN
-  IF s.operation_id=p_operation OR (s.starts_at=p_start AND s.ends_at IS NOT DISTINCT FROM p_end AND s.authorized_by=auth.uid()) THEN RETURN s.id;END IF;
+  IF s.starts_at IS NOT DISTINCT FROM p_start AND s.ends_at IS NOT DISTINCT FROM p_end AND s.authorized_by=auth.uid() AND s.request_revision IS NOT DISTINCT FROM rev AND s.reason IS NOT DISTINCT FROM btrim(p_reason) THEN RETURN s.id;END IF;
   RAISE EXCEPTION 'Início já autorizado para esta solicitação; alterações exigem aditivo e fluxo próprio.';
  END IF;
  IF rev IS DISTINCT FROM r.revision THEN RAISE EXCEPTION 'REVISION_CONFLICT: recarregue a solicitação.';END IF;
@@ -141,7 +141,7 @@ BEGIN
  SELECT * INTO s FROM hiring_execution_starts WHERE engagement_id=e.id AND workspace_id=w;
  IF s.id IS NULL THEN RAISE EXCEPTION 'Alocação depende do início autorizado pelo gestor da área.';END IF;
  SELECT * INTO pc FROM contracts WHERE id=s.contract_id AND workspace_id=w FOR SHARE;
- IF pc.status::text NOT IN('active','renewing') OR NOT hiring_formalization_signed(w,pc.id) OR s.contract_hash<>hiring_contract_fingerprint(pc.id) THEN RAISE EXCEPTION 'Instrumento sem assinatura íntegra atual ou não ativo; alocação bloqueada.';END IF;
+ IF pc.status::text NOT IN('active','renewing') OR NOT hiring_execution_activation_ok(w,pc.id) OR s.contract_hash<>hiring_contract_fingerprint(pc.id) THEN RAISE EXCEPTION 'Instrumento sem assinatura íntegra atual ou não ativo; alocação bloqueada.';END IF;
  IF pc.hiring_person_id IS DISTINCT FROM e.person_id OR pc.contracting_legal_entity_id IS DISTINCT FROM e.legal_entity_id OR e.purchase_contract_id IS DISTINCT FROM pc.id THEN RAISE EXCEPTION 'Instrumento, pessoa e CNPJ WK do vínculo divergem.';END IF;
  IF EXISTS(SELECT 1 FROM people p WHERE p.id=e.person_id AND (to_jsonb(p)->>'hire_date')::date>p_start) THEN RAISE EXCEPTION 'Alocação não pode iniciar antes da admissão efetiva da pessoa.';END IF;
  IF p_start<e.starts_at OR (e.ends_at IS NOT NULL AND (p_end IS NULL OR p_end>e.ends_at)) OR (p_end IS NOT NULL AND p_end<p_start) THEN RAISE EXCEPTION 'Alocação fora do período do vínculo.';END IF;
@@ -157,8 +157,13 @@ BEGIN
   IF EXISTS(SELECT 1 FROM contracts x WHERE x.id=pr.contract_id AND x.workspace_id=w AND x.contracting_legal_entity_id IS DISTINCT FROM e.legal_entity_id) THEN RAISE EXCEPTION 'Entidade WK do projeto diverge do vínculo; exige análise explícita, sem trocar o empregador automaticamente.';END IF;
   IF e.purpose='client' AND pr.contract_id IS DISTINCT FROM e.commercial_contract_id THEN RAISE EXCEPTION 'Projeto não corresponde ao contrato de origem.';END IF;
  END IF;
- SELECT coalesce(sum(a.allocation_pct),0) INTO used FROM people_allocations a WHERE a.workspace_id=w AND a.person_id=e.person_id AND a.status='active' AND a.id IS DISTINCT FROM p_allocation
-  AND daterange(a.starts_at,coalesce(a.ends_at,'infinity'::date),'[]') && daterange(p_start,coalesce(p_end,'infinity'::date),'[]');
+ -- Capacity is the peak simultaneous load, not a sum of sequential allocations.
+ WITH overlapping AS (
+  SELECT a.starts_at,a.ends_at,a.allocation_pct FROM people_allocations a
+  WHERE a.workspace_id=w AND a.person_id=e.person_id AND a.status='active' AND a.id IS DISTINCT FROM p_allocation
+   AND daterange(a.starts_at,coalesce(a.ends_at,'infinity'::date),'[]') && daterange(p_start,coalesce(p_end,'infinity'::date),'[]')
+ ), points AS (SELECT p_start AS point_date UNION SELECT greatest(starts_at,p_start) FROM overlapping)
+ SELECT coalesce(max((SELECT coalesce(sum(a.allocation_pct),0) FROM overlapping a WHERE a.starts_at<=points.point_date AND (a.ends_at IS NULL OR a.ends_at>=points.point_date))),0) INTO used FROM points;
  IF used+coalesce(p_pct,0)>100 THEN RAISE EXCEPTION 'Capacidade da pessoa excedida no período (máximo 100%%).';END IF;
  IF p_relevant AND (p_start IS DISTINCT FROM e.starts_at OR p_end IS DISTINCT FROM e.ends_at) AND length(btrim(coalesce(p_override,'')))<10 THEN RAISE EXCEPTION 'Justifique o período diferente do vínculo (mínimo 10 caracteres).';END IF;
 END $$;
@@ -251,3 +256,13 @@ REVOKE ALL ON FUNCTION public.hiring_allocation_guard() FROM PUBLIC,anon,authent
 REVOKE ALL ON FUNCTION public.hiring_formalization_origin_guard() FROM PUBLIC,anon,authenticated,service_role,techerp_request_writer;
 GRANT EXECUTE ON FUNCTION public.hiring_execution_start(uuid,uuid,integer,date,date,text,uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.hiring_execution_context(uuid,uuid) TO authenticated;
+
+-- Preserve the canonical person panel and its record gates; direct engagements have no IAM model.
+DO $direct_context$ DECLARE definition text;BEGIN
+ SELECT pg_get_functiondef('public.hiring_employment_context(uuid,uuid,uuid,text)'::regprocedure) INTO definition;
+ IF strpos(definition,'JOIN hiring_access_model_versions v ON v.id=e.model_version_id WHERE e.workspace_id=w')=0 THEN
+  RAISE EXCEPTION 'Unexpected employment context; review direct-origin projection before migrating';
+ END IF;
+ definition:=replace(definition,'JOIN hiring_access_model_versions v ON v.id=e.model_version_id WHERE e.workspace_id=w','LEFT JOIN hiring_access_model_versions v ON v.id=e.model_version_id WHERE (e.hiring_request_id IS NOT NULL OR v.id IS NOT NULL) AND e.workspace_id=w');
+ EXECUTE definition;
+END $direct_context$;

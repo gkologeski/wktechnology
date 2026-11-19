@@ -34,8 +34,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-bun-1.3.14-
       - run: bun install --frozen-lockfile
-      - name: Cache content-based lint results
-        uses: actions/cache@v4
+      - name: Restore content-based lint results
+        id: lint-cache
+        uses: actions/cache/restore@v4
         with:
           path: .eslintcache
           key: ${{ runner.os }}-${{ runner.arch }}-eslint-${{ hashFiles('bun.lock', 'eslint*.config.*', 'eslint-rules/**', '.prettierrc*', '.prettierignore') }}-${{ github.sha }}
@@ -46,6 +47,14 @@ jobs:
       - name: Official help coverage
         run: bun run help:coverage
       - run: bun run verify
+        id: verify
+      # Verified lint data remains useful when a later build/performance check fails.
+      # Never cache release evidence, test outcomes or build outputs.
+      - name: Save verified content-based lint results
+        uses: actions/cache/save@v4
+        with:
+          path: .eslintcache
+          key: ${{ steps.lint-cache.outputs.cache-primary-key }}
       - run: bun run build
       - run: bun run perf:check
       - if: always()

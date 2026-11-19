@@ -1,3 +1,8 @@
+import {
+  captureDisposableHiringSnapshot,
+  restoreDisposableHiringSnapshot,
+  type DisposableHiringSnapshot,
+} from "../../../../tests/fixtures/disposable-hiring-snapshot";
 import { beforeAll, afterAll, it, expect } from "vitest";
 import postgres from "postgres";
 import { execFileSync } from "node:child_process";
@@ -13,8 +18,8 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID, createHash } from "node:crypto";
-const PREPARED = "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql";
-const BATCH_B = "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql";
+const PREPARED = "drizzle/migrations/0381_hiring_execution_start.sql";
+const BATCH_B = "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql";
 // Package 4 batch B (ENTREGA-FISCAL): same disposable bootstrap as batch A plus prepared 0382.
 // Never reads a configured URL. Native official PostgreSQL gets its own temporary Unix socket.
 let root = "",
@@ -87,7 +92,7 @@ beforeAll(async () => {
       "-l",
       join(root, "server.log"),
       "-o",
-      `-k ${root} -h '' -p 55448 -F`,
+      `-k ${root} -h '' -p 55448 -F -c jit=off`,
       "-w",
       "start",
     ]);
@@ -127,6 +132,9 @@ beforeAll(async () => {
       image,
       "-c",
       "fsync=off",
+      // Match the deployed PostgreSQL setting; no permission, query or timeout is relaxed.
+      "-c",
+      "jit=off",
     );
     started = true;
     const mapped = dockerRun("port", container, "5432/tcp");
@@ -276,11 +284,20 @@ beforeAll(async () => {
   );
   for (const name of ["public.hiring_allocate"])
     await db.unsafe(body("drizzle/migrations/0312_hiring_allocation_access_and_invites.sql", name));
+  await db.unsafe(
+    body(
+      "drizzle/migrations/0314_hiring_invite_reissue_boundary.sql",
+      "public.hiring_employment_context",
+    ),
+  );
   await db.begin(async (tx) => {
     await tx.unsafe(readFileSync(PREPARED, "utf8"));
   });
+  await db.unsafe(
+    "CREATE TABLE storage.buckets(id text PRIMARY KEY,name text,public boolean,file_size_limit bigint,allowed_mime_types text[])",
+  );
   // Batch B fixture: canonical tax ids and milestones (production columns), then the real prepared SQL.
-  await db.unsafe(`ALTER TABLE legal_entities ADD COLUMN IF NOT EXISTS cnpj text;ALTER TABLE companies ADD COLUMN IF NOT EXISTS cnpj text;ALTER TABLE people ADD COLUMN IF NOT EXISTS cnpj text;
+  await db.unsafe(`ALTER TABLE legal_entities ADD COLUMN IF NOT EXISTS cnpj text;ALTER TABLE companies ADD COLUMN IF NOT EXISTS cnpj text;ALTER TABLE people ADD COLUMN IF NOT EXISTS cnpj text;ALTER TABLE people ADD COLUMN IF NOT EXISTS personal_doc jsonb;
     ALTER TABLE storage.objects ADD COLUMN IF NOT EXISTS metadata jsonb;ALTER TABLE storage.objects ADD COLUMN IF NOT EXISTS owner uuid;
     CREATE TABLE project_milestones(id uuid PRIMARY KEY,workspace_id uuid,project_id uuid,name text,billable boolean DEFAULT false,bill_amount numeric,financial_entry_id uuid);
     ALTER TABLE project_milestones ENABLE ROW LEVEL SECURITY;
@@ -308,6 +325,13 @@ beforeAll(async () => {
       `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY; CREATE POLICY fixture_entity_read ON ${table} FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()));`,
     );
   }
+  // Open both sessions before deadlines; concurrency cases still run real overlapping RPCs.
+  const connections = await Promise.all([db.reserve(), db.reserve()]);
+  try {
+    await Promise.all(connections.map((connection) => connection`select 1`));
+  } finally {
+    for (const connection of connections) connection.release();
+  }
 }, 120000);
 afterAll(async () => {
   if (db) await db.end();
@@ -324,12 +348,10 @@ const prefix = (kind: string) =>
 async function reset() {
   // Keep fixture setup atomic so a failed seed never exposes partial test data.
   await db.begin(async (db) => {
-    await db.unsafe(
-      "TRUNCATE hiring_fiscal_document_events,hiring_fiscal_document_reviews,hiring_fiscal_documents,hiring_execution_delivery_decisions,hiring_execution_delivery_submissions,hiring_execution_delivery_versions,hiring_execution_deliveries,project_milestones,storage.objects,hiring_execution_starts,people_allocations,hiring_employment_events,hiring_engagements,ats_jobs,hiring_workspace_settings,contract_draft_approvers,hiring_formalization_events,hiring_draft_capabilities,hiring_formalizations,contract_drafts,contract_attachments,hiring_contract_evidence,esign_signers,esign_documents,contract_forsign_operations,contract_esign_deliveries,contract_handoff_settings CASCADE",
-    );
-    await db.unsafe(
-      "TRUNCATE hiring_preparation_approval_events,hiring_preparation_approvals,hiring_preparation_reference_events,hiring_preparation_reference_values,hiring_preparation_events,hiring_preparation_requests,notifications,hiring_area_policies,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_permission_sets,permission_sets,permission_set_items,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts CASCADE",
-    );
+    // Cleanup only in the disposable fixture: preserve query plans and restore every guard before scenario writes.
+    await db.unsafe(`SET LOCAL session_replication_role=replica;
+      DO $cleanup$ DECLARE t record; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename NOT IN('permissions','shared_field_catalog') LOOP EXECUTE format('DELETE FROM public.%I',t.tablename);END LOOP;END $cleanup$;
+      DELETE FROM storage.objects; SET LOCAL session_replication_role=origin;`);
     await db`insert into workspaces(id) values(${W}),(${B})`;
     for (const u of [U, M, CEO, D]) {
       await db`insert into profiles values(${u},${W})`;
@@ -340,7 +362,7 @@ async function reset() {
     }
     await db`insert into user_groups values(${A},${W},'Área de fixture')`;
     await db`insert into legal_entities(id,workspace_id,name,cnpj) values(${L},${W},'WK fixture','11.222.333/0001-81')`;
-    await db`insert into people(id,workspace_id,full_name,email,cnpj) values(${D},${W},'Pessoa real fixture','pessoa@example.test','22333444000190')`;
+    await db`insert into people(id,workspace_id,full_name,email,cnpj,personal_doc) values(${D},${W},'Pessoa real fixture','pessoa@example.test','22333444000190','{"cpf":"12345678901"}'::jsonb)`;
     await db`insert into companies(id,workspace_id,name,cnpj) values(${C},${W},'Fornecedor fixture','33444555000100')`;
     await db`insert into contacts(id,workspace_id,company_id,first_name,last_name,email) values(${L},${W},${C},'Contato','Fornecedor','fornecedor@example.test')`;
     await db`insert into hiring_area_policies(workspace_id,area_id,manager_id,ceo_id,manager_delegate_id,updated_by) values(${W},${A},${M},${CEO},${D},${U})`;
@@ -518,11 +540,31 @@ const WK = "11222333000181",
   PJ = "22333444000190",
   SUP = "33444555000100";
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
-async function startedRequest(kind = "professional", regime = "pj") {
+const startedFixtures = new Map<
+  string,
+  { data: Awaited<ReturnType<typeof buildStartedRequest>>; snapshot: DisposableHiringSnapshot }
+>();
+async function buildStartedRequest(kind: string, regime: string) {
   const x = await signed(kind, regime);
   const sid = await start(x.r);
   return { ...x, sid };
 }
+async function startedRequest(kind = "professional", regime = "pj") {
+  const key = JSON.stringify([kind, regime]);
+  const cached = startedFixtures.get(key);
+  if (cached) {
+    await restoreDisposableHiringSnapshot(db, cached.snapshot);
+    expect((await db`select hiring_formalization_signed(${W},${cached.data.k}) v`)[0].v).toBe(true);
+    return structuredClone(cached.data);
+  }
+  const data = await buildStartedRequest(kind, regime);
+  startedFixtures.set(key, {
+    data: structuredClone(data),
+    snapshot: await captureDisposableHiringSnapshot(db),
+  });
+  return data;
+}
+
 type R = { id: string; revision: number };
 const save = (
   r: R,
@@ -595,12 +637,27 @@ type Fiscal = Partial<{
   hash: string;
   amount: number;
 }>;
-const register = (r: R, doc: string, o: Fiscal = {}) =>
-  user(o.u ?? U, (tx) =>
+const register = async (r: R, doc: string, o: Fiscal = {}) => {
+  const f = (
+    await db`select f.*,o.metadata from hiring_fiscal_documents f join storage.objects o on o.name=f.storage_path and o.bucket_id='hiring-fiscal-documents' where f.id=${doc}`
+  )[0];
+  if (
+    f &&
+    Number(f.metadata?.size) === Number(f.size_bytes) &&
+    /^[a-f0-9]{64}$/.test(o.hash ?? sha(doc))
+  ) {
+    await db.begin(async (tx) => {
+      await tx`select set_config('request.jwt.claims','{"role":"service_role"}',true)`;
+      await tx.unsafe("SET LOCAL ROLE service_role");
+      await tx`select hiring_fiscal_attest(${W},${r.id},${doc},${f.uploaded_by},${o.hash ?? sha(doc)},${f.size_bytes},${f.mime_type})`;
+    });
+  }
+  return user(o.u ?? U, (tx) =>
     tx`select hiring_fiscal_register(${W},${r.id},${doc},${o.hash ?? sha(doc)},${o.type ?? "nfse"},${o.modality ?? null},${o.issuer ?? PJ},${o.taker === undefined ? WK : o.taker},${o.amount ?? 1500},'BRL',${o.number ?? "NF-1"},current_date,null) v`.then(
       (x) => x[0].v as string,
     ),
   );
+};
 async function uploaded(r: R, o: Fiscal = {}) {
   const res = await reserve(r);
   await putObject(res.path);
@@ -819,6 +876,11 @@ it("ops project and milestone use canonical references without touching billing 
   await db`insert into projects(id,workspace_id,name,legal_entity_id) values(${P2},${W},'Projeto outra WK',${L2})`;
   await db`insert into project_milestones(id,workspace_id,project_id,name,billable,bill_amount) values(${MS},${W},${P},'Marco 1',true,5000)`;
   await expect(save(x.r, { project: P2 })).rejects.toThrow("Entidade WK do projeto");
+  const foreignEntityContract = randomUUID(),
+    projectByContract = randomUUID();
+  await db`insert into contracts(id,workspace_id,title,role,contracting_legal_entity_id) values(${foreignEntityContract},${W},'Outra entidade contratual','provider',${L2})`;
+  await db`insert into projects(id,workspace_id,name,contract_id) values(${projectByContract},${W},'Projeto por contrato',${foreignEntityContract})`;
+  await expect(save(x.r, { project: projectByContract })).rejects.toThrow("Entidade WK do projeto");
   await expect(save(x.r, { project: P2, milestone: MS })).rejects.toThrow();
   await expect(save(x.r, { milestone: MS })).rejects.toThrow("Marco exige projeto");
   const foreignProject = randomUUID();
@@ -831,6 +893,43 @@ it("ops project and milestone use canonical references without touching billing 
       await db`select billable,bill_amount::text a,financial_entry_id from project_milestones where id=${MS}`
     )[0],
   ).toMatchObject({ billable: true, a: "5000", financial_entry_id: null });
+});
+it("ops retries reject changed delivery, submission, decision and fiscal payloads", async () => {
+  const x = await startedRequest();
+  const op = randomUUID();
+  const d = await save(x.r, { op });
+  await expect(save(x.r, { op, title: "Alteração indevida na repetição" })).rejects.toThrow(
+    "outros dados",
+  );
+  const submissionOp = randomUUID();
+  await submit(x.r, d, 1, U, W, submissionOp);
+  await expect(submit(x.r, d, 2, U, W, submissionOp)).rejects.toThrow("outros dados");
+  const decisionOp = randomUUID();
+  await decide2(x.r, d, { op: decisionOp });
+  await expect(decide2(x.r, d, { op: decisionOp, decision: "rejected" })).rejects.toThrow(
+    "outros dados",
+  );
+  const fiscalOp = randomUUID();
+  const doc = await reserve(x.r, U, W, "application/pdf", 100, fiscalOp);
+  await expect(reserve(x.r, U, W, "image/png", 100, fiscalOp)).rejects.toThrow("outros dados");
+  await putObject(doc.path);
+  await register(x.r, doc.id);
+  await expect(register(x.r, doc.id, { amount: 1600 })).rejects.toThrow("já registrado");
+  const reviewOp = randomUUID();
+  await review(x.r, doc.id, CEO, W, undefined, "verified", reviewOp);
+  await expect(review(x.r, doc.id, CEO, W, undefined, "rejected", reviewOp)).rejects.toThrow(
+    "outros dados",
+  );
+  expect(
+    (
+      await db`select count(*)::int n from hiring_execution_delivery_versions where delivery_id=${d}`
+    )[0].n,
+  ).toBe(1);
+  expect(
+    (
+      await db`select count(*)::int n from hiring_fiscal_document_reviews where document_id=${doc.id}`
+    )[0].n,
+  ).toBe(1);
 });
 it("ops concurrent decisions with the same operation are idempotent and different operations decide once", async () => {
   const x = await startedRequest();
@@ -939,7 +1038,7 @@ it("ops fiscal CNPJ issuer and taker must match canonical records", async () => 
   await expect(register(x.r, res.id, { taker: SUP })).rejects.toThrow("tomador");
   await expect(register(x.r, res.id, { type: "payroll_evidence" })).rejects.toThrow("PJ exige");
   await db`update people set cnpj=null where id=${D}`;
-  await expect(register(x.r, res.id)).rejects.toThrow("CNPJ canônico do emitente");
+  await expect(register(x.r, res.id)).rejects.toThrow("formalização mudaram");
 });
 it("ops CLT requires payroll evidence issued by the WK entity", async () => {
   const x = await startedRequest("professional", "clt");
@@ -959,6 +1058,9 @@ it("ops freelance requires an explicit modality without inferred fiscal policy",
   await putObject(res.path);
   await expect(register(x.r, res.id, { type: "nfse" })).rejects.toThrow("modalidade explícita");
   await expect(
+    register(x.r, res.id, { type: "freelance_document", modality: "rpa", issuer: SUP }),
+  ).rejects.toThrow("emitente diverge");
+  await expect(
     register(x.r, res.id, { type: "freelance_document", modality: "rpa", issuer: "12345678901" }),
   ).resolves.toBeTruthy();
 });
@@ -975,15 +1077,120 @@ it("ops duplicate fiscal identity or bytes are rejected", async () => {
   const res = await reserve(x.r);
   await putObject(res.path);
   await expect(register(x.r, res.id, { number: "nf-1 " })).rejects.toThrow("duplicado");
-  await expect(register(x.r, res.id, { number: "NF-2", hash: sha(a.id) })).rejects.toThrow(
-    "duplicado",
+  const bytesDuplicate = await reserve(x.r);
+  await putObject(bytesDuplicate.path);
+  await expect(
+    register(x.r, bytesDuplicate.id, { number: "NF-2", hash: sha(a.id) }),
+  ).rejects.toThrow("duplicado");
+  const valid = await reserve(x.r);
+  await putObject(valid.path);
+  await expect(register(x.r, valid.id, { number: "NF-2" })).resolves.toBeTruthy();
+});
+
+it("ops fiscal register rejects a hash declared directly without trusted byte attestation", async () => {
+  const x = await startedRequest();
+  const res = await reserve(x.r);
+  await putObject(res.path);
+  await expect(
+    user(
+      U,
+      (tx) =>
+        tx`select hiring_fiscal_register(${W},${x.r.id},${res.id},${sha(res.id)},'nfse',null,${PJ},${WK},1500,'BRL','NF-DIRECT',current_date,null)`,
+    ),
+  ).rejects.toThrow("confirmado pelo servidor");
+  await expect(
+    user(U, async (tx) => {
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: U, role: "service_role" })},true)`;
+      return tx`select hiring_fiscal_attest(${W},${x.r.id},${res.id},${U},${sha(res.id)},100,'application/pdf')`;
+    }),
+  ).rejects.toThrow("permission denied");
+  expect((await db`select status from hiring_fiscal_documents where id=${res.id}`)[0].status).toBe(
+    "pending_upload",
   );
-  await expect(register(x.r, res.id, { number: "NF-2" })).resolves.toBeTruthy();
+});
+
+async function attestScenario(mode: "allowed" | "missing" | "deny" | "foreign" | "inactive") {
+  const x = await startedRequest();
+  const doc = await reserve(x.r);
+  await putObject(doc.path);
+  const key = prefix("professional") + ".fiscal_documents.create.workspace";
+  if (mode === "missing")
+    await db`delete from job_role_permission_overrides where role_id=${U} and permission_key=${key}`;
+  if (mode === "deny")
+    await db`update job_role_permission_overrides set effect='deny' where role_id=${U} and permission_key=${key}`;
+  if (mode === "inactive")
+    await db`update workspace_members set status='inactive' where user_id=${U}`;
+  return db
+    .begin(async (tx) => {
+      await tx`select set_config('request.jwt.claims','{"role":"service_role"}',true)`;
+      await tx.unsafe("SET LOCAL ROLE service_role");
+      await tx`select hiring_fiscal_attest(${mode === "foreign" ? B : W},${x.r.id},${doc.id},${U},${sha(doc.id)},100,'application/pdf')`;
+    })
+    .then(
+      () => "ok",
+      (e: Error) => e.message,
+    );
+}
+it("ops server attestation allowed for the authorized reservation owner", async () =>
+  expect(await attestScenario("allowed")).toBe("ok"));
+it("ops server attestation rejects missing owner permission", async () =>
+  expect(await attestScenario("missing")).toContain("indisponível"));
+it("ops server attestation rejects explicit owner deny", async () =>
+  expect(await attestScenario("deny")).toContain("indisponível"));
+it("ops server attestation rejects foreign workspace", async () =>
+  expect(await attestScenario("foreign")).toContain("indisponível"));
+it("ops server attestation rejects inactive owner", async () =>
+  expect(await attestScenario("inactive")).toContain("indisponível"));
+
+it("ops restrictive fiscal storage policies contain a broader permissive policy", async () => {
+  const x = await startedRequest();
+  const doc = await uploaded(x.r);
+  await db`delete from job_role_permission_overrides where role_id=${M} and permission_key=${prefix("professional") + ".fiscal_documents.view.workspace"}`;
+  await db.unsafe(
+    "CREATE POLICY qa_broad_storage ON storage.objects FOR ALL TO authenticated USING(true) WITH CHECK(true)",
+  );
+  try {
+    expect(
+      (
+        await user(
+          M,
+          (tx) => tx`select count(*)::int n from storage.objects where name=${doc.path}`,
+        )
+      )[0].n,
+    ).toBe(0);
+    expect(
+      await user(
+        U,
+        (tx) => tx`update storage.objects set metadata='{}' where name=${doc.path} returning name`,
+      ),
+    ).toHaveLength(0);
+    expect(
+      await user(U, (tx) => tx`delete from storage.objects where name=${doc.path} returning name`),
+    ).toHaveLength(0);
+    await expect(putObject(`${W}/${x.r.id}/${randomUUID()}`)).rejects.toThrow();
+    expect(
+      (await db`select count(*)::int n from storage.objects where name=${doc.path}`)[0].n,
+    ).toBe(1);
+  } finally {
+    await db.unsafe("DROP POLICY qa_broad_storage ON storage.objects");
+  }
+});
+it("ops fiscal amount must be finite and positive after rounding", async () => {
+  const x = await startedRequest();
+  const doc = await reserve(x.r);
+  await putObject(doc.path);
+  await expect(register(x.r, doc.id, { amount: Number.NaN })).rejects.toThrow("valor positivo");
+  await expect(register(x.r, doc.id, { amount: Number.POSITIVE_INFINITY })).rejects.toThrow(
+    "valor positivo",
+  );
+  await expect(register(x.r, doc.id, { amount: 0.001 })).rejects.toThrow("valor positivo");
+  await expect(register(x.r, doc.id, { amount: 1 })).resolves.toBeTruthy();
 });
 it("ops finance review is explicit, hash-bound, separated from the uploader and immutable", async () => {
   const x = await startedRequest();
   const doc = await uploaded(x.r);
   await expect(review(x.r, doc.id, U)).rejects.toThrow("Quem enviou");
+  await expect(review(x.r, doc.id, M)).rejects.toThrow("responsável Financeiro");
   await expect(review(x.r, doc.id, CEO, W, "0".repeat(64))).rejects.toThrow("STALE");
   await review(x.r, doc.id);
   await expect(review(x.r, doc.id)).rejects.toThrow("STALE");

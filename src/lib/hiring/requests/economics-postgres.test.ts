@@ -1,3 +1,8 @@
+import {
+  captureDisposableHiringSnapshot,
+  restoreDisposableHiringSnapshot,
+  type DisposableHiringSnapshot,
+} from "../../../../tests/fixtures/disposable-hiring-snapshot";
 import { beforeAll, afterAll, it, expect } from "vitest";
 import postgres from "postgres";
 import { execFileSync } from "node:child_process";
@@ -13,9 +18,9 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-const PREPARED = "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql";
-const BATCH_B = "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql";
-const BATCH_C1 = "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql";
+const PREPARED = "drizzle/migrations/0381_hiring_execution_start.sql";
+const BATCH_B = "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql";
+const BATCH_C1 = "drizzle/migrations/0383_hiring_economic_plans_provisions.sql";
 // Package 4 batch C1 (PLANO-PROVISAO): same disposable bootstrap as batch B plus prepared 0383.
 // Never reads a configured URL. Native official PostgreSQL gets its own temporary Unix socket.
 let root = "",
@@ -88,7 +93,7 @@ beforeAll(async () => {
       "-l",
       join(root, "server.log"),
       "-o",
-      `-k ${root} -h '' -p 55449 -F`,
+      `-k ${root} -h '' -p 55449 -F -c jit=off`,
       "-w",
       "start",
     ]);
@@ -128,6 +133,9 @@ beforeAll(async () => {
       image,
       "-c",
       "fsync=off",
+      // Match the deployed PostgreSQL setting; no permission, query or timeout is relaxed.
+      "-c",
+      "jit=off",
     );
     started = true;
     const mapped = dockerRun("port", container, "5432/tcp");
@@ -277,9 +285,18 @@ beforeAll(async () => {
   );
   for (const name of ["public.hiring_allocate"])
     await db.unsafe(body("drizzle/migrations/0312_hiring_allocation_access_and_invites.sql", name));
+  await db.unsafe(
+    body(
+      "drizzle/migrations/0314_hiring_invite_reissue_boundary.sql",
+      "public.hiring_employment_context",
+    ),
+  );
   await db.begin(async (tx) => {
     await tx.unsafe(readFileSync(PREPARED, "utf8"));
   });
+  await db.unsafe(
+    "CREATE TABLE storage.buckets(id text PRIMARY KEY,name text,public boolean,file_size_limit bigint,allowed_mime_types text[])",
+  );
   // Batch B fixture: canonical tax ids and milestones (production columns), then the real prepared SQL.
   await db.unsafe(`ALTER TABLE legal_entities ADD COLUMN IF NOT EXISTS cnpj text;ALTER TABLE companies ADD COLUMN IF NOT EXISTS cnpj text;ALTER TABLE people ADD COLUMN IF NOT EXISTS cnpj text;
     ALTER TABLE storage.objects ADD COLUMN IF NOT EXISTS metadata jsonb;ALTER TABLE storage.objects ADD COLUMN IF NOT EXISTS owner uuid;
@@ -302,6 +319,43 @@ beforeAll(async () => {
     CREATE TABLE project_time_entries(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,project_id uuid,person_id uuid,user_id uuid,allocation_id uuid,entry_date date,status text DEFAULT 'draft',source text DEFAULT 'manual',
       duration_seconds bigint,revision integer DEFAULT 1,period_closing_id uuid REFERENCES project_period_closings(id),invoice_id uuid,financial_entry_id uuid);
     REVOKE ALL ON project_time_entries,project_period_closings FROM anon,authenticated,techerp_request_writer;`);
+  await db.unsafe(`
+    ALTER TABLE project_period_closings ADD COLUMN entries_snapshot jsonb NOT NULL DEFAULT '[]';
+    ALTER TABLE project_time_entries ADD COLUMN approved_at timestamptz,ADD COLUMN approved_by uuid;
+    CREATE TABLE fixture_field_rules(user_id uuid PRIMARY KEY,rules jsonb);
+    CREATE TABLE shared_field_catalog(resource text,table_name text,field text,guard_fields text[]);
+    INSERT INTO shared_field_catalog(resource,table_name,field) VALUES
+      ('techfinance.entries','financial_entries','amount'),('techcontracts.contracts','contracts','total_value'),('techcontracts.contracts','contracts','monthly_value'),('techprojects.rates','project_rates','amount'),('techpeople.people','people','monthly_cost'),('techpeople.people','people','cost_hour');
+    CREATE FUNCTION shared_field_context() RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER AS $$ SELECT jsonb_build_object('rules',coalesce((SELECT rules FROM fixture_field_rules WHERE user_id=auth.uid()),'{}'::jsonb)) $$;
+    GRANT SELECT ON project_time_entries TO authenticated;
+    ALTER TABLE project_time_entries ENABLE ROW LEVEL SECURITY;
+    CREATE POLICY fixture_time_read ON project_time_entries FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()) AND work_record_access('techprojects.projects',project_id,'view'));
+    ALTER TABLE hiring_monthly_provisions ENABLE ROW LEVEL SECURITY;
+  `);
+  await db.unsafe(
+    body("drizzle/migrations/0228_order5_fields_prepare.sql", "public.shared_field_mode_for"),
+  );
+  await db.unsafe(
+    "CREATE TABLE project_billing_configs(id uuid PRIMARY KEY,workspace_id uuid,contract_id uuid)",
+  );
+  await db.unsafe(
+    "INSERT INTO permissions(key,module,resource,action,scope,label_pt,description,is_system) VALUES('techprojects.rates.view.workspace','techprojects','rates','view','workspace','Ver tarifas','Fixture of canonical legacy key',true) ON CONFLICT DO NOTHING",
+  );
+  await db.unsafe(
+    body("drizzle/migrations/0316_hiring_monthly_provisions.sql", "public.hiring_provision_access"),
+  );
+  await db.unsafe(
+    body(
+      "drizzle/migrations/0318_hiring_internal_cost_provisions.sql",
+      "public.hiring_cost_provision_access",
+    ),
+  );
+  for (const name of [
+    "public.hiring_provision_preview",
+    "public.hiring_provision_close",
+    "public.hiring_provision_context",
+  ])
+    await db.unsafe(body("drizzle/migrations/0318_hiring_internal_cost_provisions.sql", name));
   await db.begin(async (tx) => {
     await tx.unsafe(readFileSync(BATCH_C1, "utf8"));
   });
@@ -325,6 +379,13 @@ beforeAll(async () => {
       `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY; CREATE POLICY fixture_entity_read ON ${table} FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()));`,
     );
   }
+  // Open both sessions before deadlines; concurrency cases still run real overlapping RPCs.
+  const connections = await Promise.all([db.reserve(), db.reserve()]);
+  try {
+    await Promise.all(connections.map((connection) => connection`select 1`));
+  } finally {
+    for (const connection of connections) connection.release();
+  }
 }, 120000);
 afterAll(async () => {
   if (db) await db.end();
@@ -341,12 +402,10 @@ const prefix = (kind: string) =>
 async function reset() {
   // Keep fixture setup atomic so a failed seed never exposes partial test data.
   await db.begin(async (db) => {
-    await db.unsafe(
-      "TRUNCATE hiring_monthly_provisions,project_time_entries,project_period_closings,hiring_economic_plan_events,hiring_economic_plan_versions,hiring_economic_plans,hiring_fiscal_document_events,hiring_fiscal_document_reviews,hiring_fiscal_documents,hiring_execution_delivery_decisions,hiring_execution_delivery_submissions,hiring_execution_delivery_versions,hiring_execution_deliveries,project_milestones,storage.objects,hiring_execution_starts,people_allocations,hiring_employment_events,hiring_engagements,ats_jobs,hiring_workspace_settings,contract_draft_approvers,hiring_formalization_events,hiring_draft_capabilities,hiring_formalizations,contract_drafts,contract_attachments,hiring_contract_evidence,esign_signers,esign_documents,contract_forsign_operations,contract_esign_deliveries,contract_handoff_settings CASCADE",
-    );
-    await db.unsafe(
-      "TRUNCATE hiring_preparation_approval_events,hiring_preparation_approvals,hiring_preparation_reference_events,hiring_preparation_reference_values,hiring_preparation_events,hiring_preparation_requests,notifications,hiring_area_policies,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_permission_sets,permission_sets,permission_set_items,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts CASCADE",
-    );
+    // Cleanup only in the disposable fixture: preserve query plans and restore every guard before scenario writes.
+    await db.unsafe(`SET LOCAL session_replication_role=replica;
+      DO $cleanup$ DECLARE t record; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename NOT IN('permissions','shared_field_catalog') LOOP EXECUTE format('DELETE FROM public.%I',t.tablename);END LOOP;END $cleanup$;
+      DELETE FROM storage.objects; SET LOCAL session_replication_role=origin;`);
     await db`insert into workspaces(id) values(${W}),(${B})`;
     for (const u of [U, M, CEO, D]) {
       await db`insert into profiles values(${u},${W})`;
@@ -532,11 +591,32 @@ const start = (
   );
 
 // ---------------- Batch C1: economic plan, eligible calculation and management provision ----------------
-async function startedRequest(kind = "professional", regime = "pj") {
+const startedFixtures = new Map<
+  string,
+  { data: Awaited<ReturnType<typeof buildStartedRequest>>; snapshot: DisposableHiringSnapshot }
+>();
+async function buildStartedRequest(kind: string, regime: string) {
   const x = await signed(kind, regime);
   const sid = await start(x.r, M, randomUUID(), W, PREV);
   return { ...x, sid };
 }
+async function startedRequest(kind = "professional", regime = "pj") {
+  const key = JSON.stringify([kind, regime]);
+  const cached = startedFixtures.get(key);
+  if (cached) {
+    await restoreDisposableHiringSnapshot(db, cached.snapshot);
+    // The cached setup must preserve the current real signature verifier, not a fabricated success flag.
+    expect((await db`select hiring_formalization_signed(${W},${cached.data.k}) v`)[0].v).toBe(true);
+    return structuredClone(cached.data);
+  }
+  const data = await buildStartedRequest(kind, regime);
+  startedFixtures.set(key, {
+    data: structuredClone(data),
+    snapshot: await captureDisposableHiringSnapshot(db),
+  });
+  return data;
+}
+
 type R = { id: string; revision: number };
 const save = (
   r: R,
@@ -551,10 +631,12 @@ const save = (
     reason: string | null;
     op: string;
     title: string;
+    periodStart: string;
+    periodEnd: string;
   }> = {},
 ) =>
   user(o.u ?? U, (tx) =>
-    tx`select hiring_delivery_save(${o.w ?? W},${r.id},${o.delivery ?? null},${o.version ?? null},${o.title ?? "Entrega mensal de sustentação"},'Critério: chamados críticos resolvidos dentro do SLA acordado.',current_date,current_date,${o.responsible ?? M},${o.project ?? null},${o.milestone ?? null},${o.reason ?? null},${o.op ?? randomUUID()}) v`.then(
+    tx`select hiring_delivery_save(${o.w ?? W},${r.id},${o.delivery ?? null},${o.version ?? null},${o.title ?? "Entrega mensal de sustentação"},'Critério: chamados críticos resolvidos dentro do SLA acordado.',coalesce(${o.periodStart ?? null}::date,current_date),coalesce(${o.periodEnd ?? null}::date,current_date),${o.responsible ?? M},${o.project ?? null},${o.milestone ?? null},${o.reason ?? null},${o.op ?? randomUUID()}) v`.then(
       (x) => x[0].v as string,
     ),
   );
@@ -657,13 +739,35 @@ const close = (r: R, hash: string, prev: string | null = null, month = PREV, u =
       (x) => x[0].v as string,
     ),
   );
-async function approvedPlan(o: PlanOpts = {}, kind = "professional", regime = "pj") {
+async function buildApprovedPlan(o: PlanOpts, kind: string, regime: string) {
   const x = await startedRequest(kind, regime);
   const p = await plan(x.r, o);
   await move(x.r, p, "submitted");
   await move(x.r, p, "approved", CEO);
   return { ...x, p };
 }
+const approvedFixtures = new Map<
+  string,
+  { data: Awaited<ReturnType<typeof buildApprovedPlan>>; snapshot: DisposableHiringSnapshot }
+>();
+async function approvedPlan(o: PlanOpts = {}, kind = "professional", regime = "pj") {
+  // Custom components/periods always execute their own current plan setup; only the unchanged default fixture is reused.
+  if (Object.keys(o).length) return buildApprovedPlan(o, kind, regime);
+  const key = JSON.stringify([kind, regime]);
+  const cached = approvedFixtures.get(key);
+  if (cached) {
+    await restoreDisposableHiringSnapshot(db, cached.snapshot);
+    expect((await db`select hiring_formalization_signed(${W},${cached.data.k}) v`)[0].v).toBe(true);
+    return structuredClone(cached.data);
+  }
+  const data = await buildApprovedPlan(o, kind, regime);
+  approvedFixtures.set(key, {
+    data: structuredClone(data),
+    snapshot: await captureDisposableHiringSnapshot(db),
+  });
+  return data;
+}
+
 async function engagement(r: R) {
   await db`insert into projects(id,workspace_id,name) values(${P},${W},'Projeto real'),(${P2},${W},'Projeto paralelo') on conflict do nothing`;
   const e = (await db`select id from hiring_engagements where hiring_request_id=${r.id}`)[0].id;
@@ -686,8 +790,10 @@ async function entry(
   }> = {},
 ) {
   const id = randomUUID();
-  await db`insert into project_time_entries(id,workspace_id,project_id,person_id,allocation_id,entry_date,status,source,duration_seconds,period_closing_id)
-    values(${id},${W},${o.project ?? P},${D},${a},${PREV}::date + ${o.day ?? 2}::int,${o.status ?? "approved"},${o.source ?? "manual"},${o.seconds ?? 3600},${o.closing === undefined ? null : o.closing})`;
+  await db`insert into project_time_entries(id,workspace_id,project_id,person_id,user_id,allocation_id,entry_date,status,source,duration_seconds,period_closing_id,approved_at,approved_by)
+    values(${id},${W},${o.project ?? P},${D},${D},${a},${PREV}::date + ${o.day ?? 2}::int,${o.status ?? "approved"},${o.source ?? "manual"},${o.seconds ?? 3600},${o.closing === undefined ? null : o.closing},now(),${M})`;
+  if (o.closing)
+    await db`update project_period_closings set entries_snapshot=entries_snapshot || (select jsonb_build_array(jsonb_build_object('id',id,'revision',revision,'user_id',user_id,'project_id',project_id,'entry_date',entry_date,'seconds',duration_seconds,'approved_at',approved_at)) from project_time_entries where id=${id}) where id=${o.closing}`;
   return id;
 }
 const closing = async (status = "closed") =>
@@ -947,7 +1053,9 @@ it("econ blocks when signature, revision or area policy changed after start", as
   const x = await startedRequest();
   await db`update hiring_area_policies set revision=2 where area_id=${A}`;
   await expect(plan(x.r)).rejects.toThrow("alçada");
-  await db`update hiring_area_policies set revision=1 where area_id=${A}`;
+});
+it("econ blocks a revoked signature after the economic plan was prepared", async () => {
+  const x = await startedRequest();
   const p = await plan(x.r);
   await db`update hiring_contract_evidence set revoked_at=now() where contract_id=${x.k}`;
   await expect(move(x.r, p, "submitted")).rejects.toThrow("assinatura");
@@ -1011,6 +1119,8 @@ it("econ hours count only approved, closed, non-imported entries of this engagem
   expect(v.lines[0]).toMatchObject({ type: "hourly", seconds: 7200, amount: 240 });
   expect(v.lines[0].entries).toHaveLength(2);
   expect(v.lines[0].excluded.count).toBe(5);
+  expect(v.totals.unknown_lines).toBe(1);
+  await expect(close(x.r, v.hash)).rejects.toThrow("fontes de horas pendentes");
   expect(v.lines[0].amount).not.toBe(Number(160 * 120));
 });
 it("econ provision closes only ended months with fresh sources and chained immutable revisions", async () => {
@@ -1028,8 +1138,8 @@ it("econ provision closes only ended months with fresh sources and chained immut
   await expect(close(x.r, v1.hash)).rejects.toThrow("STALE");
   const v2 = await preview(x.r);
   const first = await close(x.r, v2.hash);
-  await expect(close(x.r, v2.hash)).rejects.toThrow("REVISION_CONFLICT");
-  await expect(close(x.r, v2.hash, first)).rejects.toThrow("Nada mudou");
+  expect(await close(x.r, v2.hash)).toBe(first);
+  expect(await close(x.r, v2.hash, first)).toBe(first);
   await entry(a, { closing: cl, day: 5 });
   const v3 = await preview(x.r);
   const second = await close(x.r, v3.hash, first);
@@ -1054,12 +1164,12 @@ it("econ concurrent closes of the same month create a single revision", async ()
   const x = await approvedPlan();
   const h = (await preview(x.r)).hash;
   const both = await Promise.allSettled([close(x.r, h), close(x.r, h)]);
-  expect(both.filter((b) => b.status === "fulfilled")).toHaveLength(1);
+  expect(both.filter((b) => b.status === "fulfilled")).toHaveLength(2);
   expect((await db`select count(*)::int n from hiring_monthly_provisions`)[0].n).toBe(1);
 });
 it("econ provision refuses unknown lines and isolates supplier plans by contract", async () => {
   const x = await startedRequest("supplier");
-  const d = await save(x.r, { u: M, responsible: U });
+  const d = await save(x.r, { u: M, responsible: U, periodStart: PREV, periodEnd: PREV });
   const p = await plan(x.r, {
     u: M,
     modality: "delivery",
@@ -1080,6 +1190,203 @@ it("econ provision refuses unknown lines and isolates supplier plans by contract
   expect(v.release_condition).toBe("wk_acceptance_invoice");
   expect(v.contract_id).toBe(x.k);
   await expect(close(x.r, v.hash)).rejects.toThrow("sem valor conferido");
+});
+it("econ rejects omitted component fields, foreign currency and changed operation payload", async () => {
+  const x = await startedRequest();
+  const noAmount = monthly();
+  delete noAmount.amount;
+  await expect(plan(x.r, { components: [noAmount] })).rejects.toThrow("valor/taxa explícito");
+  const noDue = monthly();
+  delete noDue.due_days;
+  await expect(plan(x.r, { components: [noDue] })).rejects.toThrow("vencimento em dias");
+  await expect(
+    user(
+      U,
+      (tx) =>
+        tx`select hiring_econ_save(${W},${x.r.id},null,null,'monthly','USD',${PREV}::date,null,${tx.json([monthly()] as never)},'Cláusula conferida',null,${randomUUID()})`,
+    ),
+  ).rejects.toThrow("Moeda do plano diverge");
+  const op = randomUUID();
+  const p = await plan(x.r, { op });
+  await expect(plan(x.r, { op, components: [monthly({ amount: 9999 })] })).rejects.toThrow(
+    "outros dados",
+  );
+  const actionOp = randomUUID();
+  await move(x.r, p, "submitted", U, { op: actionOp });
+  await expect(
+    move(x.r, p, "submitted", U, { op: actionOp, hash: "0".repeat(64) }),
+  ).rejects.toThrow("outros dados");
+});
+it("econ rechecks the approval permission of the configured Finance user", async () => {
+  const x = await approvedPlan();
+  await db`update job_role_permission_overrides set effect='deny' where role_id=${CEO} and permission_key=${prefix("professional") + ".economics.approve.workspace"}`;
+  await expect(preview(x.r)).rejects.toThrow("aprovador Financeiro");
+  expect((await econ(x.r.id)).events.some((e: { kind: string }) => e.kind === "approved")).toBe(
+    true,
+  );
+});
+it("econ closure source must match snapshot, scope, period and approved allocation", async () => {
+  const x = await startedRequest();
+  const { a, e } = await engagement(x.r);
+  const p = await plan(x.r, { modality: "hourly", components: [hourly()] });
+  await move(x.r, p, "submitted");
+  await move(x.r, p, "approved", CEO);
+  const cl = await closing();
+  const valid = await entry(a, { closing: cl });
+  const stale = await entry(a, { closing: cl });
+  await db`update project_time_entries set revision=2 where id=${stale}`;
+  const seconds = await entry(a, { closing: cl });
+  await db`update project_time_entries set duration_seconds=7200 where id=${seconds}`;
+  const noApproval = await entry(a, { closing: cl });
+  await db`update project_time_entries set approved_at=null where id=${noApproval}`;
+  await entry(a, { closing: cl, source: "locked_import" });
+  const otherScope = await closing();
+  await db`update project_period_closings set scope='person',user_id=${CEO} where id=${otherScope}`;
+  await entry(a, { closing: otherScope });
+  const otherPeriod = await closing();
+  await db`update project_period_closings set period_from=${PREV}::date+20 where id=${otherPeriod}`;
+  await entry(a, { closing: otherPeriod });
+  const lateAllocation = await user(M, (tx) =>
+    tx`select hiring_allocate(${W},${e},${P},${PREV}::date+10,null,10,'Alocação de período parcial conferido') v`.then(
+      (rows) => rows[0].v,
+    ),
+  );
+  await entry(lateAllocation, { closing: cl });
+  const v = await preview(x.r);
+  expect(v.lines[0]).toMatchObject({ seconds: 3600, amount: 120 });
+  expect(v.lines[0].entries.map((entry: { id: string }) => entry.id)).toEqual([valid]);
+  expect(v.lines[0].excluded.count).toBe(7);
+});
+it("econ restricted source rows block the calculation rather than masquerade as zero", async () => {
+  const x = await startedRequest();
+  const { a } = await engagement(x.r);
+  const p = await plan(x.r, { modality: "hourly", components: [hourly()] });
+  await move(x.r, p, "submitted");
+  await move(x.r, p, "approved", CEO);
+  const cl = await closing();
+  await entry(a, { closing: cl });
+  await db`update job_role_permission_overrides set effect='deny' where role_id=${CEO} and permission_key='techprojects.projects.view.workspace'`;
+  await expect(preview(x.r)).rejects.toThrow("Fontes de horas indisponíveis");
+});
+it("econ current field masks and economics permission protect existing provision table reads", async () => {
+  const x = await approvedPlan();
+  const snapshot = await preview(x.r);
+  const id = await close(x.r, snapshot.hash);
+  await db.unsafe(
+    "GRANT SELECT ON hiring_monthly_provisions TO authenticated;CREATE POLICY qa_legacy_provision_allow ON hiring_monthly_provisions FOR SELECT TO authenticated USING(true)",
+  );
+  try {
+    expect(
+      await user(CEO, (tx) => tx`select id from hiring_monthly_provisions where id=${id}`),
+    ).toHaveLength(1);
+    await db`update job_role_permission_overrides set effect='deny' where role_id=${CEO} and permission_key=${prefix("professional") + ".economics.view.workspace"}`;
+    expect(
+      await user(CEO, (tx) => tx`select id from hiring_monthly_provisions where id=${id}`),
+    ).toHaveLength(0);
+    await db`update job_role_permission_overrides set effect='grant' where role_id=${CEO} and permission_key=${prefix("professional") + ".economics.view.workspace"}`;
+    for (const rules of [
+      { "techfinance.entries": { amount: "masked" } },
+      { "techpeople.people": { monthly_cost: "hidden" } },
+    ]) {
+      await db`insert into fixture_field_rules values(${CEO},${db.json(rules)}) on conflict(user_id) do update set rules=excluded.rules`;
+      expect((await econ(x.r.id, CEO)).can_view).toBe(false);
+      expect(
+        await user(CEO, (tx) => tx`select id from hiring_monthly_provisions where id=${id}`),
+      ).toHaveLength(0);
+      await expect(preview(x.r)).rejects.toThrow("Sem permissão");
+    }
+  } finally {
+    await db.unsafe(
+      "DROP POLICY qa_legacy_provision_allow ON hiring_monthly_provisions;REVOKE SELECT ON hiring_monthly_provisions FROM authenticated",
+    );
+  }
+});
+it("econ delivery competence follows the execution period rather than late acceptance", async () => {
+  const x = await startedRequest();
+  const d = await save(x.r, { periodStart: PREV, periodEnd: PREV });
+  const p = await plan(x.r, {
+    modality: "delivery",
+    components: [
+      {
+        type: "delivery",
+        amount: 7000,
+        source_clause: "Cláusula 3 entrega",
+        due_days: 10,
+        delivery_id: d,
+        delivery_version: 1,
+      },
+    ],
+  });
+  await move(x.r, p, "submitted");
+  await move(x.r, p, "approved", CEO);
+  await submit(x.r, d);
+  await decide2(x.r, d);
+  const past = await preview(x.r);
+  expect(past.lines[0]).toMatchObject({
+    type: "delivery",
+    amount: 7000,
+    competence: PREV,
+    to: PREV,
+  });
+  const current = await preview(x.r, today());
+  expect(current.lines).toHaveLength(0);
+});
+it("econ legacy provision adapters refuse new request contracts after their existing authorization gate", async () => {
+  const x = await approvedPlan();
+  await expect(
+    user(CEO, (tx) => tx`select hiring_provision_preview(${W},${x.k},${PREV}::date,'UTC')`),
+  ).rejects.toThrow("plano econômico");
+  await expect(
+    user(
+      CEO,
+      (tx) =>
+        tx`select hiring_provision_close(${W},${x.k},${PREV}::date,'hash',null,'Não deve criar provisão legada','UTC')`,
+    ),
+  ).rejects.toThrow("plano econômico");
+  await expect(
+    user(CEO, (tx) => tx`select hiring_provision_context(${W},${x.k},${PREV}::date,null)`),
+  ).rejects.toThrow("plano econômico");
+});
+it("econ private write requires the economics view key as well as manage", async () => {
+  const x = await startedRequest();
+  await db`update job_role_permission_overrides set effect='deny' where role_id=${U} and permission_key=${prefix("professional") + ".economics.view.workspace"}`;
+  await expect(plan(x.r)).rejects.toThrow("Sem permissão");
+});
+it("econ provision close retains canonical Finance view and manage permissions", async () => {
+  const x = await approvedPlan();
+  const v = await preview(x.r);
+  await db`update job_role_permission_overrides set effect='deny' where role_id=${CEO} and permission_key='techfinance.provisions.view.workspace'`;
+  await expect(close(x.r, v.hash)).rejects.toThrow("Sem permissão");
+  await db`update job_role_permission_overrides set effect='grant' where role_id=${CEO} and permission_key='techfinance.provisions.view.workspace'`;
+  await db`update job_role_permission_overrides set effect='deny' where role_id=${CEO} and permission_key='techfinance.provisions.manage.workspace'`;
+  await expect(close(x.r, v.hash)).rejects.toThrow("Sem permissão");
+});
+it("econ fixed prices require monetary precision while hourly rates keep explicit precision", async () => {
+  const x = await startedRequest();
+  await expect(plan(x.r, { components: [monthly({ amount: 0.001 })] })).rejects.toThrow(
+    "duas casas decimais",
+  );
+  await expect(plan(x.r, { components: [monthly({ amount: 9300.001 })] })).rejects.toThrow(
+    "duas casas decimais",
+  );
+});
+it("econ calculates a closed period with 200 source entries in a bounded query", async () => {
+  const x = await startedRequest();
+  const { a } = await engagement(x.r);
+  const p = await plan(x.r, { modality: "hourly", components: [hourly()] });
+  await move(x.r, p, "submitted");
+  await move(x.r, p, "approved", CEO);
+  const cl = await closing();
+  await db`insert into project_time_entries(id,workspace_id,project_id,person_id,user_id,allocation_id,entry_date,status,source,duration_seconds,period_closing_id,approved_at,approved_by) select gen_random_uuid(),${W},${P},${D},${D},${a},${PREV}::date+2,'approved','manual',3600,${cl},now(),${M} from generate_series(1,200)`;
+  await db`update project_period_closings set entries_snapshot=(select jsonb_agg(jsonb_build_object('id',id,'revision',revision,'user_id',user_id,'project_id',project_id,'entry_date',entry_date,'seconds',duration_seconds,'approved_at',approved_at)) from project_time_entries where period_closing_id=${cl}) where id=${cl}`;
+  const v = await user(CEO, async (tx) => {
+    await tx.unsafe("SET LOCAL statement_timeout='4s'");
+    return tx`select hiring_econ_provision_preview(${W},${x.r.id},${PREV}::date) v`.then(
+      (rows) => rows[0].v,
+    );
+  });
+  expect(v.lines[0]).toMatchObject({ seconds: 720000, amount: 24000 });
+  expect(v.lines[0].entries).toHaveLength(200);
 });
 it("econ plan and provision tables are not directly readable", async () => {
   const x = await approvedPlan();

@@ -1,3 +1,4 @@
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -132,10 +133,31 @@ function DeliveryForm({
     [project, setProject] = useState(c?.project_id ?? ""),
     [milestone, setMilestone] = useState(c?.milestone_id ?? ""),
     [reason, setReason] = useState(""),
+    [projectSearch, setProjectSearch] = useState(""),
+    [milestoneSearch, setMilestoneSearch] = useState(""),
     [operation, setOperation] = useState(() => crypto.randomUUID());
+  const debouncedProject = useDebouncedValue(projectSearch, 250),
+    debouncedMilestone = useDebouncedValue(milestoneSearch, 250);
   const refs = useQuery({
-    queryKey: ["hiring-delivery-projects", row.id, project || null],
-    queryFn: () => list({ data: { kind, id: row.id, projectId: project || null } }),
+    queryKey: [
+      "hiring-delivery-projects",
+      row.id,
+      project || null,
+      milestone || null,
+      debouncedProject,
+      debouncedMilestone,
+    ],
+    queryFn: () =>
+      list({
+        data: {
+          kind,
+          id: row.id,
+          projectId: project || null,
+          milestoneId: milestone || null,
+          projectSearch: debouncedProject,
+          milestoneSearch: debouncedMilestone,
+        },
+      }),
     retry: false,
   });
   const m = useMutation({
@@ -232,6 +254,15 @@ function DeliveryForm({
           ))}
         </SelectContent>
       </Select>
+      <Label htmlFor={`${p}-project-search`}>Buscar projeto</Label>
+      <Input
+        id={`${p}-project-search`}
+        value={projectSearch}
+        maxLength={100}
+        disabled={dis}
+        onChange={(e) => setProjectSearch(e.target.value)}
+        placeholder="Nome do projeto — até 50 resultados"
+      />
       <Label htmlFor={`${p}-project`}>Projeto (opcional)</Label>
       <Select
         value={project || NONE}
@@ -255,6 +286,15 @@ function DeliveryForm({
       </Select>
       {project && (
         <>
+          <Label htmlFor={`${p}-ms-search`}>Buscar marco</Label>
+          <Input
+            id={`${p}-ms-search`}
+            value={milestoneSearch}
+            maxLength={100}
+            disabled={dis}
+            onChange={(e) => setMilestoneSearch(e.target.value)}
+            placeholder="Nome do marco — até 50 resultados"
+          />
           <Label htmlFor={`${p}-ms`}>Marco (opcional)</Label>
           <Select
             value={milestone || NONE}
@@ -522,7 +562,10 @@ function FiscalUpload({
         type="file"
         accept=".pdf,.xml,.png,.jpg,.jpeg"
         disabled={dis}
-        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        onChange={(e) => {
+          setFile(e.target.files?.[0] ?? null);
+          setOp(crypto.randomUUID());
+        }}
       />
       {tooBig && (
         <p role="alert" className="text-destructive">

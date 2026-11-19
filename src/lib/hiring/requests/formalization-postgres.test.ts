@@ -84,7 +84,7 @@ beforeAll(async () => {
       "-l",
       join(root, "server.log"),
       "-o",
-      `-k ${root} -h '' -p 55438 -F`,
+      `-k ${root} -h '' -p 55438 -F -c jit=off`,
       "-w",
       "start",
     ]);
@@ -124,6 +124,9 @@ beforeAll(async () => {
       image,
       "-c",
       "fsync=off",
+      // Match the deployed PostgreSQL setting; no permission, query or timeout is relaxed.
+      "-c",
+      "jit=off",
     );
     started = true;
     const mapped = dockerRun("port", container, "5432/tcp");
@@ -277,6 +280,13 @@ beforeAll(async () => {
       `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY; CREATE POLICY fixture_entity_read ON ${table} FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()));`,
     );
   }
+  // Prepare TCP sessions outside test deadlines; assertions still exercise real concurrent RPCs.
+  const connections = await Promise.all([db.reserve(), db.reserve()]);
+  try {
+    await Promise.all(connections.map((connection) => connection`select 1`));
+  } finally {
+    for (const connection of connections) connection.release();
+  }
 }, 120000);
 afterAll(async () => {
   if (db) await db.end();
@@ -429,7 +439,21 @@ it("formalization allowed chain creates one real purchase instrument", async () 
 });
 it("formalization concurrent preparation serializes into one canonical instrument", async () => {
   const r = await approved();
-  const [a, b] = await Promise.all([prepare(r), prepare(r)]);
+  let ready = 0;
+  let release!: () => void;
+  const barrier = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const concurrentPrepare = () =>
+    user(U, async (tx) => {
+      if (++ready === 2) release();
+      await barrier;
+      return tx`select hiring_formalization_prepare(${W},${r.id},${r.revision}) v`.then(
+        (rows) => rows[0].v as string,
+      );
+    });
+  const [a, b] = await Promise.all([concurrentPrepare(), concurrentPrepare()]);
+  expect(ready).toBe(2);
   expect(a).toBe(b);
   expect(
     (await db`select count(*)::int n from contracts where hiring_request_origin=${r.id}`)[0].n,
@@ -569,15 +593,9 @@ it("formalization origin forgery is blocked and no internal acceptance bypass", 
     db`update contract_drafts set status='accepted' where hiring_request_origin=${r.id}`,
   ).rejects.toThrow("bypass");
 });
-it("formalization material changes revoke old links and decisions", async () => {
-  for (const change of [
-    "document",
-    "attachment",
-    "request",
-    "manager",
-    "recipient",
-    "configuration",
-  ]) {
+it.each(["document", "attachment", "request", "manager", "recipient", "configuration"])(
+  "formalization %s changes revoke old links and decisions",
+  async (change) => {
     const { r, k, token } = await sentDraft();
     if (change === "document")
       await user(
@@ -601,8 +619,8 @@ it("formalization material changes revoke old links and decisions", async () => 
     await expect(
       user(D, (tx) => tx`select hiring_formalization_signature_gate(${W},${k},null)`),
     ).rejects.toThrow("Conclua");
-  }
-});
+  },
+);
 it("formalization legal and finance order and self-approval are mandatory", async () => {
   const r = await approved(),
     k = await prepare(r);

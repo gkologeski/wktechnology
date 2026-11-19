@@ -13,7 +13,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
-const PREPARED = "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql";
+const PREPARED = "drizzle/migrations/0381_hiring_execution_start.sql";
 // Never reads a configured URL. Native official PostgreSQL gets its own temporary Unix socket.
 let root = "",
   started = false;
@@ -85,7 +85,7 @@ beforeAll(async () => {
       "-l",
       join(root, "server.log"),
       "-o",
-      `-k ${root} -h '' -p 55447 -F`,
+      `-k ${root} -h '' -p 55447 -F -c jit=off`,
       "-w",
       "start",
     ]);
@@ -125,6 +125,9 @@ beforeAll(async () => {
       image,
       "-c",
       "fsync=off",
+      // Match the deployed PostgreSQL setting; no permission, query or timeout is relaxed.
+      "-c",
+      "jit=off",
     );
     started = true;
     const mapped = dockerRun("port", container, "5432/tcp");
@@ -268,12 +271,27 @@ beforeAll(async () => {
   await db.unsafe(readFileSync("tests/fixtures/hiring-execution.sql", "utf8"));
   await db.unsafe(
     body(
+      "drizzle/migrations/0356_deal_contracting_journey.sql",
+      "public.contract_accepted_draft_guard",
+    ),
+  );
+  await db.unsafe(
+    "CREATE TRIGGER contract_accepted_draft_guard BEFORE INSERT OR UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contract_accepted_draft_guard()",
+  );
+  await db.unsafe(
+    body(
       "drizzle/migrations/0311_hiring_employment_and_access_models.sql",
       "public.hiring_employment_access",
     ),
   );
   for (const name of ["public.hiring_allocate"])
     await db.unsafe(body("drizzle/migrations/0312_hiring_allocation_access_and_invites.sql", name));
+  await db.unsafe(
+    body(
+      "drizzle/migrations/0314_hiring_invite_reissue_boundary.sql",
+      "public.hiring_employment_context",
+    ),
+  );
   await db.begin(async (tx) => {
     await tx.unsafe(readFileSync(PREPARED, "utf8"));
   });
@@ -294,6 +312,13 @@ beforeAll(async () => {
       `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY; CREATE POLICY fixture_entity_read ON ${table} FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()));`,
     );
   }
+  // Open both sessions before deadlines; concurrency cases still run real overlapping RPCs.
+  const connections = await Promise.all([db.reserve(), db.reserve()]);
+  try {
+    await Promise.all(connections.map((connection) => connection`select 1`));
+  } finally {
+    for (const connection of connections) connection.release();
+  }
 }, 120000);
 afterAll(async () => {
   if (db) await db.end();
@@ -310,12 +335,10 @@ const prefix = (kind: string) =>
 async function reset() {
   // Keep fixture setup atomic so a failed seed never exposes partial test data.
   await db.begin(async (db) => {
-    await db.unsafe(
-      "TRUNCATE hiring_execution_starts,people_allocations,hiring_employment_events,hiring_engagements,ats_jobs,hiring_workspace_settings,contract_draft_approvers,hiring_formalization_events,hiring_draft_capabilities,hiring_formalizations,contract_drafts,contract_attachments,hiring_contract_evidence,esign_signers,esign_documents,contract_forsign_operations,contract_esign_deliveries,contract_handoff_settings CASCADE",
-    );
-    await db.unsafe(
-      "TRUNCATE hiring_preparation_approval_events,hiring_preparation_approvals,hiring_preparation_reference_events,hiring_preparation_reference_values,hiring_preparation_events,hiring_preparation_requests,notifications,hiring_area_policies,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_permission_sets,permission_sets,permission_set_items,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts CASCADE",
-    );
+    // Cleanup only in the disposable fixture: preserve query plans and restore every guard before scenario writes.
+    await db.unsafe(`SET LOCAL session_replication_role=replica;
+      DO $cleanup$ DECLARE t record; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename NOT IN('permissions','shared_field_catalog') LOOP EXECUTE format('DELETE FROM public.%I',t.tablename);END LOOP;END $cleanup$;
+      DELETE FROM storage.objects; SET LOCAL session_replication_role=origin;`);
     await db`insert into workspaces(id) values(${W}),(${B})`;
     for (const u of [U, M, CEO, D]) {
       await db`insert into profiles values(${u},${W})`;
@@ -525,6 +548,24 @@ it("execution allowed: area manager authorizes direct professional start without
   expect((await db`select count(*)::int n from ats_jobs`)[0].n).toBe(0);
   expect((await execContext(r.id, U)).status).toBe("started");
 });
+it("execution direct employment is visible in the canonical person context without IAM or ATS", async () => {
+  const { r } = await signed();
+  await start(r);
+  const c = await user(M, (tx) =>
+    tx`select hiring_employment_context(${W},${D},null,'') v`.then((x) => x[0].v),
+  );
+  expect(c.engagements).toHaveLength(1);
+  expect(c.engagements[0]).toMatchObject({
+    hiring_request_id: r.id,
+    model_name: null,
+    access_active: false,
+    invite_pending: false,
+    job_id: null,
+  });
+  await expect(
+    user(M, (tx) => tx`select hiring_employment_context(${W},null,${randomUUID()},'')`),
+  ).rejects.toThrow("Sem permissão para vínculos");
+});
 it("execution rejects missing key", async () => {
   const { r } = await signed();
   await db`delete from job_role_permission_overrides where role_id=${M} and permission_key=${KEY}`;
@@ -574,6 +615,10 @@ it("execution revision conflict and idempotent concurrent starts produce one eng
   const op = randomUUID();
   const [a, b] = await Promise.all([start(r, M, op), start(r, M, op)]);
   expect(a).toBe(b);
+  await expect(
+    start(r, M, op, W, today(), null, "Outra justificativa não substitui o início anterior"),
+  ).rejects.toThrow("já autorizado");
+  await expect(start({ ...r, revision: r.revision + 1 }, M, op)).rejects.toThrow("já autorizado");
   expect(
     (await db`select count(*)::int n from hiring_engagements where hiring_request_id=${r.id}`)[0].n,
   ).toBe(1);
@@ -635,9 +680,16 @@ it("execution allocation requires authorized start, intact signature, period and
   ]);
   expect([a1, a2].filter((x) => x.status === "fulfilled")).toHaveLength(1);
   expect(String([a1, a2].find((x) => x.status === "rejected")?.reason)).toContain("Capacidade");
-  expect(await alloc(60)).toBe(
-    (await db`select id from people_allocations where starts_at=current_date`)[0].id,
-  );
+  const winner = (
+    await db`select id,starts_at::text as starts_at from people_allocations where hiring_engagement_id=${e}`
+  )[0];
+  expect(
+    await user(M, (tx) =>
+      tx`select hiring_allocate(${W},${e},${P},${winner.starts_at}::date,null,60,'Período diferente justificado') v`.then(
+        (x) => x[0].v,
+      ),
+    ),
+  ).toBe(winner.id);
   await expect(
     user(
       M,
@@ -654,6 +706,55 @@ it("execution allocation requires authorized start, intact signature, period and
     ),
   ).rejects.toThrow("assinatura íntegra");
   expect((await execContext(r.id)).start.signature_intact).toBe(false);
+  expect((await db`select status from contracts where id=${k}`)[0].status).toBe("active");
+});
+it("execution capacity counts simultaneous load rather than sequential allocations", async () => {
+  const { r } = await signed();
+  const P = randomUUID();
+  await db`insert into projects(id,workspace_id,name) values(${P},${W},'Projeto com períodos')`;
+  const sid = await start(r);
+  const e = (await db`select engagement_id from hiring_execution_starts where id=${sid}`)[0]
+    .engagement_id;
+  await user(
+    M,
+    (tx) =>
+      tx`select hiring_allocate(${W},${e},${P},current_date,current_date+9,60,'Primeiro período revisado')`,
+  );
+  await user(
+    M,
+    (tx) =>
+      tx`select hiring_allocate(${W},${e},${P},current_date+10,current_date+19,60,'Segundo período revisado')`,
+  );
+  await expect(
+    user(
+      M,
+      (tx) =>
+        tx`select hiring_allocate(${W},${e},${P},current_date,current_date+19,40,'Dedicação paralela revisada')`,
+    ),
+  ).resolves.toBeDefined();
+  await expect(
+    user(
+      M,
+      (tx) =>
+        tx`select hiring_allocate(${W},${e},${P},current_date+9,current_date+10,1,'Limite entre períodos revisado')`,
+    ),
+  ).rejects.toThrow("Capacidade");
+});
+it("execution allocations reject changed approval policy after start and preserve history", async () => {
+  const { r, k } = await signed();
+  const P = randomUUID();
+  await db`insert into projects(id,workspace_id,name) values(${P},${W},'Projeto de origem')`;
+  const sid = await start(r);
+  const e = (await db`select engagement_id from hiring_execution_starts where id=${sid}`)[0]
+    .engagement_id;
+  await db`update hiring_area_policies set revision=revision+1 where area_id=${A}`;
+  await expect(
+    user(M, (tx) => tx`select hiring_allocate(${W},${e},${P},current_date,null,20,null)`),
+  ).rejects.toThrow("assinatura íntegra");
+  expect((await execContext(r.id)).start.signature_intact).toBe(false);
+  expect((await db`select count(*)::int n from hiring_execution_starts where id=${sid}`)[0].n).toBe(
+    1,
+  );
   expect((await db`select status from contracts where id=${k}`)[0].status).toBe("active");
 });
 it("execution context is read-only and denies foreign or unauthorized readers", async () => {

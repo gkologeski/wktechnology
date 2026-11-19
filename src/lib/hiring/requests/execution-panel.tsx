@@ -47,7 +47,7 @@ export const executionLabels: Record<ExecutionContext["status"], string> = {
 export function executionSummary(c: Pick<ExecutionContext, "status" | "start">): string {
   if (c.status !== "started" || !c.start) return executionLabels[c.status];
   if (!c.start.signature_intact)
-    return "Início autorizado — assinatura não está mais íntegra; alocações bloqueadas";
+    return "Início autorizado — assinatura ou autorização atual requer revisão; alocações bloqueadas";
   return "Início autorizado — sem acessos, convites ou financeiro automáticos";
 }
 

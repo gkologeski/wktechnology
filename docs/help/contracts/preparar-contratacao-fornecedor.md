@@ -8,7 +8,7 @@ route_pattern: /contracts/supplier-requests
 min_permission: techcontracts.supplier_requests.view.workspace
 audience: internal
 sort_order: 36
-version: 11
+version: 12
 is_published: true
 ---
 
@@ -84,7 +84,7 @@ Preparação de compra WK versionada, sem contrato ou processo operacional criad
 
 - Não é contratação de profissional: não há regime CLT/PJ/freelance nem vínculo de pessoa nesta entrada.
 - Pronta exige escopo, área, entidade legal e empresa fornecedora; Cliente exige também negócio ou contrato comercial de origem. Não significa aprovada.
-- A condição que também depende do aceite do cliente final permanece como rascunho para revisão.
+- A condição que também depende do aceite do cliente final exige finalidade Cliente e vínculo canônico; a geração de contas a pagar depende das conferências descritas abaixo.
 - WK compradora continua sendo `client`; WK fornecedora no fluxo comercial continua sendo `provider`. Esta preparação não modifica contratos comerciais existentes.
 - Contrato comercial opcional representa a origem cliente com WK fornecedora, não o futuro contrato de compra.
 - Entidade legal divergente da origem cliente é bloqueada.
@@ -105,7 +105,7 @@ Preparação de compra WK versionada, sem contrato ou processo operacional criad
 6. Fornecedor usa NFS-e ou NF-e com o CNPJ cadastrado da empresa fornecedora como emitente e a entidade WK como tomadora.
 7. Documento com o mesmo arquivo ou a mesma identidade (emitente, tipo e número) é recusado como duplicado.
 8. Valores, CNPJs e arquivos só aparecem com `techcontracts.supplier_requests.fiscal_documents.view.workspace`. A **conferência do Financeiro** exige `techcontracts.supplier_requests.fiscal_documents.approve.workspace`, é feita por outra pessoa que não enviou o documento e fica registrada sem possibilidade de edição.
-9. A conferência é humana: não autentica o documento na prefeitura ou SEFAZ. Nada aqui gera títulos, contas a pagar ou pagamentos. Se a assinatura deixar de estar íntegra ou a solicitação mudar, novos aceites e documentos ficam bloqueados sem apagar o histórico. No modo "Ver como" tudo fica somente leitura.
+9. A conferência é humana: não autentica o documento na prefeitura ou SEFAZ. O envio e a conferência documental não geram títulos nem pagamentos por si só; a geração de contas a pagar é uma ação separada abaixo. Se a assinatura deixar de estar íntegra ou a solicitação mudar, novos aceites e documentos ficam bloqueados sem apagar o histórico. No modo "Ver como" tudo fica somente leitura.
 
 ## Erros comuns
 
@@ -125,7 +125,7 @@ Preparação de compra WK versionada, sem contrato ou processo operacional criad
 2. Cada componente exige valor/taxa, moeda, vencimento (dias após competência ou aceite) e a **cláusula conferida** no instrumento assinado. Mensal exige regra explícita: mês integral ou pró-rata por dias corridos do calendário.
 3. **Por entrega** aponta a versão exata da entrega; só entra no cálculo depois do aceite daquela versão. Nova versão da entrega deixa a linha pendente até revisar o plano. Horas de referência não mudam preço fechado.
 4. **Misto** exige componentes de tipos e fontes distintos; com mensal, horas precisam de projeto explícito, evitando dupla contagem.
-- A condição de liberação do fornecedor fica registrada no plano. **Aceite WK + NF válida + aceite cliente final** continua indisponível para pronto/aprovação: aceite técnico nunca é tratado como recebimento pelo cliente.
+- A condição de liberação do fornecedor fica registrada no plano. **Aceite WK + NF válida + aceite cliente final** exige aceite nomeado do cliente e conferência do Financeiro para a versão da entrega antes de gerar a obrigação; aceite técnico não substitui recebimento pelo cliente.
 5. Use **Enviar ao Financeiro**. Somente o responsável Financeiro configurado decide, com motivo, e nunca quem montou ou enviou. Nova versão volta a rascunho e exige nova aprovação; histórico e instrumento assinado nunca são alterados.
 6. Em **Competência**, use **Calcular prévia**. Fechar só é possível para mês encerrado, sem linhas pendentes e com fontes iguais às da prévia; mudanças exigem revisão encadeada justificada. O histórico central mostra versões, decisões e provisões.
 
@@ -133,16 +133,25 @@ Assinatura alterada/revogada, revisão diferente, mudança de alçada ou entidad
 
 ## Contas a pagar e conciliação
 
-**Quem pode fazer:** `techcontracts.supplier_requests.payables.view.workspace` para ver parcelas (com `techfinance.entries.view.workspace` e acesso ao contrato), `.payables.manage.workspace` com `techfinance.entries.create.workspace` para gerar e `.payables.reconcile.workspace` com `techfinance.entries.update.workspace` para conciliar — esta última somente pelo **responsável Financeiro configurado**. Não há concessão automática.
+**Quem pode fazer:** `techcontracts.supplier_requests.payables.view.workspace` para ver parcelas (com `techfinance.entries.view.workspace` e acesso ao contrato), `.payables.manage.workspace` com `techfinance.entries.create.workspace` para gerar e `.payables_reconciliation.approve.workspace` com `techfinance.entries.update.workspace` para conciliar — esta última somente pelo **responsável Financeiro configurado**. Não há concessão automática.
 
 1. Na lateral **Contas a pagar**, escolha a **Competência**. O cálculo usa o plano econômico aprovado atual, a assinatura e a revisão vigentes.
 2. Marque explicitamente as fontes elegíveis. Linhas pendentes (período mensal ainda aberto, horas sem fechamento vigente, entrega sem aceite ou com versão alterada) aparecem com o motivo e não podem ser selecionadas — nunca viram zero.
 3. Informe as parcelas com valor e vencimento explícitos; a soma precisa fechar exatamente a obrigação. Selecione o documento conferido: NFS-e/NF-e para PJ e fornecedor, documento freelance para freelance e **evidência de folha** para CLT (sem nota fiscal fictícia). O documento precisa ter tomador = CNPJ WK, emissor = contratado, mesma moeda e saldo suficiente; o saldo nunca é usado duas vezes. A conferência é humana e não equivale a validação na SEFAZ.
 4. Justifique e use **Gerar contas a pagar**. Os títulos nascem **em aberto** no Financeiro (Contas a pagar), ligados ao contrato e à entidade WK. Nada é pago aqui: o pagamento é registrado no Financeiro e só ele define o status pago.
 5. Se existirem títulos ou recorrências antigos que possam cobrir a mesma competência (folha de pessoas, parcelas do contrato, serviço ou projeto do mesmo contratado), a geração fica bloqueada. O Financeiro configurado vincula o título compatível (mesmo valor, competência, moeda, entidade e contratado) às fontes selecionadas ou declara que **não se relaciona**. Título incompatível não é vinculado e nada é cancelado ou alterado, inclusive títulos pagos.
-6. Cada fonte (entrega, mês, apontamento de horas) só pode lastrear uma obrigação. Depois disso, o apontamento, o fechamento e a entrega ficam congelados; correções exigem revisão ou aditivo explícito. Os títulos não podem ter valor, vencimento ou contrato alterados, nem ser cancelados ou excluídos diretamente; lançamentos e recorrências manuais para este contrato são recusados.
+6. Cada fonte (entrega, mês, apontamento de horas) só pode lastrear uma obrigação. Depois disso, as fontes financeiras do apontamento, do fechamento e da entrega ficam congeladas (o faturamento de venda pode continuar registrando seus próprios vínculos); correções exigem revisão ou aditivo explícito. Os títulos não podem ter valor, vencimento ou contrato alterados, nem ser cancelados ou excluídos diretamente; lançamentos e recorrências manuais para este contrato são recusados.
 7. O histórico central mostra parcelas, status, valor pago e **abrir título** no Financeiro, além das conciliações. Fechar provisão não gera título.
 
 ### Condição especial: aceite do cliente final
 
 Exige finalidade **Cliente** com projeto, negócio ou contrato comercial vinculado. Cada entrega só gera conta a pagar depois de: aceite técnico da WK da versão exata, **aceite nomeado do cliente final** registrado com `techcontracts.supplier_requests.client_acceptance.manage.workspace` (nome, cargo, data e referência da evidência, apontando o vínculo da solicitação) e **conferido** pelo responsável Financeiro configurado com `.client_acceptance.approve.workspace`, que não pode ser quem registrou. Aceite técnico não substitui o do cliente e silêncio nunca conta como aceite. Nesta condição, somente componentes por entrega geram obrigação.
+
+## Conferências adicionais antes de gerar obrigações
+
+- Para gerar ou conciliar, são necessários também os acessos de leitura do **plano econômico** e dos **documentos fiscais**, além da leitura dos títulos e da permissão de criar ou editar títulos indicada acima. Campo financeiro oculto/mascarado ou registro fora da carteira bloqueia a operação; ausência de acesso nunca aparece como saldo zero.
+- Horas pendentes de aprovação, origem ou fechamento aparecem como pendência e bloqueiam a obrigação correspondente. O custo mensal de uma pessoa com contratos simultâneos ambíguos exige revisão; não se presume um segundo salário/custo.
+- A competência de uma entrega é o mês do fim do período executado. O aceite libera o valor, mas não desloca automaticamente a competência. Os dias de vencimento a partir do aceite usam a data UTC registrada; confira as datas explícitas das parcelas antes de gerar.
+- **Não se relaciona** exige a prévia atual, motivo e Financeiro configurado. A decisão vale somente para a competência, a versão do plano e os dados do título/recorrência efetivamente conferidos. Mudança de valor, vínculo ou plano exige nova conferência; ela não dispensa os próximos meses e não desativa recorrências.
+- O arquivo fiscal precisa ter os bytes atestados no servidor, conferência humana da mesma versão e saldo disponível. CLT usa o CNPJ WK como emitente da evidência de folha e não possui tomador. Freelance usa a identidade fiscal canônica e a modalidade declarada. Não há autenticação externa de NF nem pagamento automático.
+- Depois de gerar ou vincular uma obrigação, ajustes de preço, parcela ou fonte exigem revisão/aditivo explícito; este fluxo não contém cancelamento automático nem reversão de títulos pagos. Consulte o Financeiro antes de alterar a operação.

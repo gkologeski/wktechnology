@@ -7360,7 +7360,7 @@
         "techhire.hiring_demands.view.workspace",
         "techhire.hiring_demands.update.workspace"
       ],
-      "rationale": "Stage 4: immutable per-engagement access snapshots; administrator plus IAM manage for model publication and invites; HR/ATS row scope and current hiring approval/signature for transactional admission. Explicit existing-person choice, stable employment/legal entity and term inheritance, purchase role client and same WK entity; allocation guarded on every SQL writer. Recipient acceptance is intentionally authenticated capability: exact auth.users email plus random 256-bit invite, current unexpired engagement and active person; it cannot reset an existing password, broaden workspace role, add Sales role or consume generic permission sets. New-account public registration remains in existing token boundary, and access only follows authenticated recipient acceptance. Own grant sets are immutable and filtered by live engagement in existing canonical permission resolver; deny and active membership preserved. Restrictive project/task/time policies constrain allocation-only snapshots, and end removes only its assignment. Historical rows, manual permissions, unrelated memberships and other engagements remain intact. No invite is sent automatically. Role selection is part of the approved demand revision and admission checks the exact model role; changing model revokes only that origin and records its previous immutable snapshot. Commercial signature hash excludes schema-only professional-origin metadata, preserving pre-existing evidence. Directory pickers return only names to ordinary active members; contact details/pending invites need IAM view; mutations require active owner/admin plus effective IAM manage. Existing field-rule triggers remain authoritative for draft contract amounts. The approved model role contributes current deny overrides and field restrictions via private hiring_restricted_roles, never its implicit grants or permission sets. Restriction provenance survives until the engagement/grant is ended or explicitly revised. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key.",
+      "rationale": "Stage 4: immutable per-engagement access snapshots; administrator plus IAM manage for model publication and invites; HR/ATS row scope and current hiring approval/signature for transactional admission. Explicit existing-person choice, stable employment/legal entity and term inheritance, purchase role client and same WK entity; allocation guarded on every SQL writer. Recipient acceptance is intentionally authenticated capability: exact auth.users email plus random 256-bit invite, current unexpired engagement and active person; it cannot reset an existing password, broaden workspace role, add Sales role or consume generic permission sets. New-account public registration remains in existing token boundary, and access only follows authenticated recipient acceptance. Own grant sets are immutable and filtered by live engagement in existing canonical permission resolver; deny and active membership preserved. Restrictive project/task/time policies constrain allocation-only snapshots, and end removes only its assignment. Historical rows, manual permissions, unrelated memberships and other engagements remain intact. No invite is sent automatically. Role selection is part of the approved demand revision and admission checks the exact model role; changing model revokes only that origin and records its previous immutable snapshot. Commercial signature hash excludes schema-only professional-origin metadata, preserving pre-existing evidence. Directory pickers return only names to ordinary active members; contact details/pending invites need IAM view; mutations require active owner/admin plus effective IAM manage. Existing field-rule triggers remain authoritative for draft contract amounts. The approved model role contributes current deny overrides and field restrictions via private hiring_restricted_roles, never its implicit grants or permission sets. Restriction provenance survives until the engagement/grant is ended or explicitly revised. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key. Package 4 direct engagements stay visible in canonical person context under unchanged employment/hr gates; only allocation remains operational, ATS model/invite/lifecycle actions stay hidden and denied. No automatic IAM grant.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -7451,6 +7451,14 @@
         {
           "file": "drizzle/migrations/0315_hiring_role_restrictions.sql",
           "symbol": "hiring_restricted_roles"
+        },
+        {
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
+          "symbol": "hiring_execution_allocation_assert"
+        },
+        {
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
+          "symbol": "hiring_execution_context"
         }
       ],
       "tests": {
@@ -7488,7 +7496,7 @@
         "drizzle/migrations/0311_hiring_employment_and_access_models.sql": "d32fedece1e49576737df425c0d42a3af7a827bc0599d914a8620a9686b33783",
         "drizzle/migrations/0312_hiring_allocation_access_and_invites.sql": "ddae8cf9a7d6c0c18ad6fc97882d5bf353f2e595b095766f1e7a94f483adc767",
         "src/components/hiring/access-models-panel.tsx": "4a02c2413f41fce297d940482138464a5f9b5ef41bf0f7e04df5a7eedb9c7d94",
-        "src/components/hiring/employment-panel.tsx": "26409b6ca1ca1eef00fd19bf9961e419de9964f9bb281acffb2c3c84cf2a7462",
+        "src/components/hiring/employment-panel.tsx": "e06858aeee0c777b9cbffa58ec5214ec2227c6fd0762d5b89f73498ba074c15b",
         "src/components/hiring/workflow-model-fields.tsx": "17da488a6cbcec880d14459d62038a166d60e5be173a614da8d892a6d62a5e29",
         "src/lib/hiring/employment.functions.ts": "a2cbfd29bdcf92a92987c0e5a4831e5329b61b1e169f4f4d6b3c23c8a336f3b7",
         "src/routes/accept-employment.$token.tsx": "54c14fe6764b1e318f636250eacbf25ed0a14ad23827441f1cdcd2fa8df3a2fe",
@@ -7501,9 +7509,9 @@
     {
       "id": "hiring-stage4-types",
       "kind": "presentation",
-      "rationale": "Type-only contracts; no values, IO, routes or actions.",
+      "rationale": "Type-only contracts; no values, IO, routes or actions. Package 4 direct engagements stay visible in canonical person context under unchanged employment/hr gates; only allocation remains operational, ATS model/invite/lifecycle actions stay hidden and denied. No automatic IAM grant.",
       "files": {
-        "src/lib/hiring/employment.types.ts": "eeb6e4ed022f434075be7cee3fe15f727b7b822e8a90c4222d40198fc033b1be"
+        "src/lib/hiring/employment.types.ts": "a9a0ecef2e1069c747e1a67258c557f215e9722870e90a380c6f4bbb5dbabd09"
       }
     },
     {
@@ -8859,9 +8867,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant.",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants.",
       "files": {
-        "src/integrations/supabase/types.ts": "b011aa0c7627c02139353f43a5677db4c12bf6c5a8b91bb26130101bc59b1b90",
+        "src/integrations/supabase/types.ts": "b971d7b93ee66562cdd090bbb8a77c10fcc1eec1b0ac1dcaf7cfd38608f8ced4",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -13114,23 +13122,23 @@
       ],
       "database": [
         {
-          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_execution_start"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_execution_context"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_execution_subject"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_execution_allocation_assert"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_formalization_origin_guard"
         }
       ],
@@ -13157,8 +13165,9 @@
         }
       },
       "files": {
+        "drizzle/migrations/0381_hiring_execution_start.sql": "fb2cab77301deaa2ef98ae3f3f6debea7983294b55bf66fa1b801b45dfb8f0c7",
         "src/lib/hiring/requests/execution.functions.ts": "b475d61ef00fed1513c1364abf4f448d982f501afe5892da20fd927c343fb8c7",
-        "src/lib/hiring/requests/execution-panel.tsx": "3bb9559720939385c4febf30eaa61f1a45e4369d1a62b4511adb09a833baef0c",
+        "src/lib/hiring/requests/execution-panel.tsx": "03c6b5b222d5d4de486e0fa6d6ed1aec53ecaf9eb180d560f76b80cbc4af8420",
         "src/lib/hiring/requests/execution-history.tsx": "5f1d25aaa4f27a53922df2fe79a88dc2cedddbd6b6b0a7a8e342c29fc93a8984"
       }
     },
@@ -13185,7 +13194,7 @@
         "techpeople.hiring_requests.fiscal_documents.approve.workspace",
         "techcontracts.supplier_requests.fiscal_documents.approve.workspace"
       ],
-      "rationale": "Package 4 batch B (ENTREGA-FISCAL): versioned deliveries with explicit acceptance by the named responsible (never author/submitter) bound to version/content hash and the current start/signature proof; private fiscal documents in a dedicated private bucket and immutable trail (never signed attachments), server-side byte sniffing and SHA-256, canonical WK/issuer CNPJ, duplicate identity/bytes, and explicit Finance check by someone other than the uploader. No payable, title, payment, invite or IAM; no external fiscal authentication. Writes require active member, active workspace, specific key with deny precedence and refuse read-only view-as; reads go only through definer RPCs (no table grants). Migration prepared only, not applied. Five-scenario SQL evidence exists per action in deliveries-postgres.test.ts (save, submit, decide, fiscal upload, download, review); the contract binds the save group.",
+      "rationale": "Package 4 batch B (ENTREGA-FISCAL): versioned deliveries with explicit acceptance by the named responsible (never author/submitter) bound to version/content hash and the current start/signature proof; private fiscal documents in a dedicated private bucket and immutable trail (never signed attachments), server-side byte sniffing and SHA-256, canonical WK/issuer CNPJ, duplicate identity/bytes, and explicit Finance check by someone other than the uploader. No payable, title, payment, invite or IAM; no external fiscal authentication. Writes require active member, active workspace, specific key with deny precedence and refuse read-only view-as; reads go only through definer RPCs (no table grants). Migration prepared only, not applied. Five-scenario SQL evidence exists per action in deliveries-postgres.test.ts (save, submit, decide, fiscal upload, download, review); the contract binds the save group. Independent review: registration requires an immutable service-role attestation of actual stored bytes; the authenticated server uses only the reservation-returned path, hashes/re-reads it, and records actor/size/MIME/hash through the service-only RPC. User JWTs cannot attest or replace/delete fiscal bytes, including under broader permissive storage policies.",
       "controls": [
         {
           "file": "src/lib/access-control/work-core.server.ts",
@@ -13210,64 +13219,68 @@
       ],
       "database": [
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_delivery_save"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_ops_subject"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_delivery_submit"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_ops_actor"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_ops_proof_problem"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_delivery_reference_visible"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_delivery_decide"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_execution_ops_context"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_reserve"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_register"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_storage_write"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_open"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_storage_read"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_review"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_document_guard"
+        },
+        {
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_fiscal_attest"
         }
       ],
       "tests": {
@@ -13293,8 +13306,9 @@
         }
       },
       "files": {
-        "src/lib/hiring/requests/operations.functions.ts": "ed5323ddca378a19b9593fb0a31b40e919f2223c10afc8dc774180cd906e4271",
-        "src/lib/hiring/requests/operations-panel.tsx": "15bbf1374f3abdbc925fe855cf67377a1ac58c002cbdafb8f5011f11df1c7c48",
+        "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql": "678576b22278ecb346feadc3273d67f4b98a0207c66f78a0c1ea5ed252b52597",
+        "src/lib/hiring/requests/operations.functions.ts": "f4f2279827f2d7073c7b956a411e6d951fa82c112cef5d3a691c5ceef3583015",
+        "src/lib/hiring/requests/operations-panel.tsx": "6d56f15489450936d5ccb28f0d42a920d54143298ab34d02eef460e6f850f770",
         "src/lib/hiring/requests/operations-history.tsx": "8262f79efe0b5cfb74294a08818ba367a6bac9c6d1c3b0672d86087abb36dcfe"
       }
     },
@@ -13305,6 +13319,61 @@
         "src/lib/hiring/requests/operations-types.ts": "269365ee4837103f606daa50c3ac370181c4b415091ff689591c7e8db3620a59"
       },
       "rationale": "Static DTOs, labels, regime-to-document-type mirror and byte sniffing only; no data access or actions."
+    },
+    {
+      "id": "hiring-fiscal-server-byte-attestation",
+      "kind": "service",
+      "resources": [
+        "techpeople.hiring_requests.fiscal_documents",
+        "techcontracts.supplier_requests.fiscal_documents"
+      ],
+      "actions": ["attest_stored_bytes"],
+      "scopes": ["service"],
+      "permission_keys": [],
+      "rationale": "Service-only immutable confirmation of bytes re-read from the exact path returned by a user-authorized fiscal reservation. It rechecks the original uploader, active workspace/membership, current fiscal create permission/deny and execution proof. Registration still runs as the user and requires the attested hash; service cannot create a purchase obligation through this boundary.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_fiscal_attest"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops server attestation allowed for the authorized reservation owner"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops server attestation rejects missing owner permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops server attestation rejects explicit owner deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops server attestation rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops server attestation rejects inactive owner"
+        }
+      },
+      "exception": {
+        "mechanism": "Existing server-only Supabase service client re-reads reserved bytes and calls service_role-only attestation RPC; no credential is exposed or created.",
+        "boundary": "Only an existing reservation belonging to the authenticated uploader; exact workspace/request/path/hash/size/MIME and current business authority; no user JWT or caller-set GUC can acquire EXECUTE.",
+        "revocation": "REVOKE EXECUTE ON FUNCTION hiring_fiscal_attest(uuid,uuid,uuid,uuid,text,bigint,text) FROM service_role stops new registrations; historical records and private downloads remain.",
+        "review_by": "2026-12-19"
+      },
+      "files": {
+        "src/lib/hiring/requests/fiscal-attestation.server.ts": "c77ac510c4522a486f9cdbae07719a6c7b1ca4fef1ca0ae7b86ebc1ecf62115b"
+      }
     },
     {
       "id": "hiring-economics-batch-c1",
@@ -13329,7 +13398,7 @@
         "techcontracts.supplier_requests.provisions.manage.workspace",
         "techcontracts.supplier_requests.provisions.approve.workspace"
       ],
-      "rationale": "Package 4 batch C1 (PLANO-PROVISAO): versioned economic plan bound to request revision, start, WK legal entity and signed instrument hash; explicit modality/components/source clauses (never the demand reference value nor contract HTML); decision only by the configured Finance user, never author/submitter; eligible calculation from exact accepted delivery versions, approved closed non-imported canonical seconds of the engagement allocations and explicit monthly proration; management cost provision reusing hiring_monthly_provisions kind=cost/config_id NULL with ended-month close, hash freshness and chained immutable revisions. Provisions additionally require canonical techfinance.provisions keys; amounts require contract (and person) record access. No financial_entries, recurrence, payable or payment; sales billing fields only read. Writes require active member, active workspace, specific key with deny precedence and refuse read-only view-as; tables have no authenticated grants. Migration prepared only, not applied. Five-scenario SQL evidence exists per action (save literal below; submit/decide/view/preview/close generated per action in the same file).",
+      "rationale": "Package 4 batch C1 (PLANO-PROVISAO): versioned economic plan bound to request revision, start, WK legal entity and signed instrument hash; explicit modality/components/source clauses (never the demand reference value nor contract HTML); decision only by the configured Finance user, never author/submitter; eligible calculation from exact accepted delivery versions, approved closed non-imported canonical seconds of the engagement allocations and explicit monthly proration; management cost provision reusing hiring_monthly_provisions kind=cost/config_id NULL with ended-month close, hash freshness and chained immutable revisions. Provisions additionally require canonical techfinance.provisions keys; amounts require contract (and person) record access. No financial_entries, recurrence, payable or payment; sales billing fields only read. Writes require active member, active workspace, specific key with deny precedence and refuse read-only view-as; tables have no authenticated grants. Migration prepared only, not applied. Five-scenario SQL evidence exists per action (save literal below; submit/decide/view/preview/close generated per action in the same file). Independent review: canonical financial field masks apply to all private economic reads/writes; approval authority remains current; exact payload retries only. New cost snapshots in the existing provision table have an additional restrictive request/economics field boundary. Legacy provision RPCs retain their prior authorization checks and then redirect only request-owned contracts to this workflow. Time eligibility verifies the canonical closed-period scope/dates/snapshot and allocation/approval; caller RLS is evaluated in a single bounded source set. Delivery competence follows the recorded execution period, separately from acceptance date. Identical repeated closes return the same immutable row.",
       "controls": [
         {
           "file": "src/lib/access-control/work-core.server.ts",
@@ -13354,36 +13423,52 @@
       ],
       "database": [
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_save"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_subject"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_actor"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_proof_problem"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_transition"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_provision_preview"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_provision_close"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_context"
+        },
+        {
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_provision_row_access"
+        },
+        {
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_legacy_provision_block"
+        },
+        {
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_visible_times"
+        },
+        {
+          "file": "drizzle/migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_time_eligible"
         }
       ],
       "tests": {
@@ -13409,6 +13494,7 @@
         }
       },
       "files": {
+        "drizzle/migrations/0383_hiring_economic_plans_provisions.sql": "5549667ccb9f5e312778f6f6fc818724f32fd65b9e114a03a849ffd532f6f5ee",
         "src/lib/hiring/requests/economics.functions.ts": "a2325af0325baa28f3bf374c12a8d18a6c659de45574863386ad317849f770ca",
         "src/lib/hiring/requests/economics-panel.tsx": "9f1de2da593da17d9c1ec2fbb0dbb6e4539cd9671f7dc8b60d681140a3a0dcef",
         "src/lib/hiring/requests/economics-history.tsx": "db0b5b267e8246881d5033fe4e5344f910147db8871c134fec82ca657df8aca6"
@@ -13418,7 +13504,7 @@
       "id": "hiring-economics-static",
       "kind": "presentation",
       "files": {
-        "src/lib/hiring/requests/economics-types.ts": "d72a4dc931a5221edf4b722c416c0b2ab993e70506e58f93f799d7309ceaa847"
+        "src/lib/hiring/requests/economics-types.ts": "7ca8bb35c559a2a3e4fed44184369650baa321bd7d72f18438e6e8951bfef210"
       },
       "rationale": "Static DTOs, labels, client-side mirror of component rules and month list only; no data access or actions."
     },
@@ -13428,17 +13514,19 @@
       "resources": [
         "techpeople.hiring_requests.payables",
         "techcontracts.supplier_requests.payables",
-        "techcontracts.supplier_requests.client_acceptance"
+        "techcontracts.supplier_requests.client_acceptance",
+        "techpeople.hiring_requests.payables_reconciliation",
+        "techcontracts.supplier_requests.payables_reconciliation"
       ],
-      "actions": ["view", "manage", "reconcile", "approve"],
+      "actions": ["view", "manage", "approve"],
       "scopes": ["workspace"],
       "permission_keys": [
         "techpeople.hiring_requests.payables.view.workspace",
         "techpeople.hiring_requests.payables.manage.workspace",
-        "techpeople.hiring_requests.payables.reconcile.workspace",
+        "techpeople.hiring_requests.payables_reconciliation.approve.workspace",
         "techcontracts.supplier_requests.payables.view.workspace",
         "techcontracts.supplier_requests.payables.manage.workspace",
-        "techcontracts.supplier_requests.payables.reconcile.workspace",
+        "techcontracts.supplier_requests.payables_reconciliation.approve.workspace",
         "techcontracts.supplier_requests.client_acceptance.manage.workspace",
         "techcontracts.supplier_requests.client_acceptance.approve.workspace"
       ],
@@ -13471,39 +13559,39 @@
       ],
       "database": [
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_pay_subject"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_pay_actor"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_pay_finance_only"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_payable_generate"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_payable_reconcile"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_client_acceptance_register"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_client_acceptance_decide"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_payable_context"
         },
         {
-          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "file": "drizzle/migrations/0384_hiring_payables_reconciliation.sql",
           "symbol": "hiring_pay_entry_guard"
         }
       ],
@@ -13530,15 +13618,16 @@
         }
       },
       "files": {
+        "drizzle/migrations/0384_hiring_payables_reconciliation.sql": "20a8bd761b090338b24c35bb7670697057687b8a06b4424db6ac28956b8958f0",
         "src/lib/hiring/requests/payables.functions.ts": "a7dfe7d8cdc32f34e6499f3d46d90d7ec76b5b0adab7b9b1de0cb61b1faa2743",
-        "src/lib/hiring/requests/payables-panel.tsx": "bc29e59673f5e4153077872d4550097294a04c7321fd7e3f76731cfc40f75f0b"
+        "src/lib/hiring/requests/payables-panel.tsx": "70db78456473f9632d633199af12276baefef2e133abca1a5fa425b0bea23914"
       }
     },
     {
       "id": "hiring-payables-static",
       "kind": "presentation",
       "files": {
-        "src/lib/hiring/requests/payables-types.ts": "c865b1f878c3c5fd1f5fc90cc13c6aa3dd64d6b8e30f0913710dcfdf174da783"
+        "src/lib/hiring/requests/payables-types.ts": "3b08e8fa3497dba8cb04439f88dfc174e5e8b3a933594df42854f30406fd3c1b"
       },
       "rationale": "Static DTOs, labels and client-side mirror of selection/installment sum rules only; no data access or actions."
     }

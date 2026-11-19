@@ -46,3 +46,12 @@ Base: main 8678580ee (pacote 3 publicado, 0375–0380 aplicadas). Migração **p
 - `contract_accepted_draft_guard`/`contract_handoff_source_event` de produção não estão no banco de teste; validar no preflight.
 - Regime divergente da pessoa bloqueia com orientação; não há campo novo de cargo/modelo na demanda (o vínculo direto não exige modelo, pois não concede IAM).
 - Entregas, aceite, NF, parcelas, provisão e contas a pagar: lotes seguintes.
+
+## Revisão independente local (19/11)
+
+- Corrigida a asserção da corrida de alocação: o teste reutiliza a transação vencedora e sua data SQL canônica, sem presumir ordem nem converter a data pelo fuso do driver.
+- A assinatura jurídica permanece histórica. Novas alocações passam a exigir também aprovação, revisão e formalização atuais; uma mudança de alçada bloqueia a nova operação sem apagar o início já autorizado.
+- A capacidade usa o pico simultâneo por dia; períodos sequenciais não somam entre si. A corrida continua serializada por pessoa e o limite de 100% inclui os dias de fronteira.
+- O contexto canônico da pessoa preserva os gates de vínculo/RH e passa a exibir a origem direta sem modelo IAM. A UI permite alocar, mas oculta convite, revisão de modelo e ciclo de vida ATS nessa origem.
+- **22/22 testes específicos** e **58/58 regressões** de aprovação/formalização/fronteira passaram em PostgreSQL local descartável. Permissões e lint direcionado aprovados; checagem incremental sem erros.
+- Preflight DDL no banco atual executado em transação revertida: tabela/funções criadas, 19 gatilhos do contrato preservados, contexto direto e indicador de ciclo de vida mantidos. Ainda falta o ensaio integrado dos lotes finais, CI, aplicação e publicação.

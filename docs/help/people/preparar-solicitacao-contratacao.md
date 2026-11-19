@@ -8,7 +8,7 @@ route_pattern: /people/hiring-requests
 min_permission: techpeople.hiring_requests.view.workspace
 audience: internal
 sort_order: 35
-version: 11
+version: 12
 is_published: true
 ---
 
@@ -98,10 +98,10 @@ Solicitação em rascunho, pronta para aprovação ou cancelada, com histórico 
 3. Submeta a evidência da entrega. O responsável nomeado decide com `techpeople.hiring_requests.deliveries.approve.workspace`, sempre sobre a versão exata exibida e com motivo. Quem registrou ou submeteu a entrega não pode aceitá-la; o CEO não decide no lugar do responsável.
 4. Alterar uma entrega exige motivo e cria nova versão, que precisa de novo aceite. Aceites anteriores continuam no histórico.
 5. **Enviar documento fiscal** exige `techpeople.hiring_requests.fiscal_documents.create.workspace`. O arquivo (PDF, XML, PNG ou JPEG, até 10 MB) vai para armazenamento privado próprio, separado dos anexos assinados; o tipo real e o SHA-256 são conferidos no servidor.
-6. Regras por regime: **CLT** usa evidência de folha emitida pela entidade WK; **PJ** usa NFS-e ou NF-e com o CNPJ cadastrado do profissional como emitente e a entidade WK como tomadora; **freelance** exige escolher explicitamente a modalidade (NFS-e, RPA ou recibo) — o sistema não presume política fiscal.
+6. Regras por regime: **CLT** usa evidência de folha emitida pela entidade WK; **PJ** usa NFS-e ou NF-e com o CNPJ da empresa PJ associada (ou do próprio profissional, quando não há empresa associada) como emitente e a entidade WK como tomadora; **freelance** exige escolher explicitamente a modalidade (NFS-e, RPA ou recibo) — o sistema não presume política fiscal.
 7. Documento com o mesmo arquivo ou a mesma identidade (emitente, tipo e número) é recusado como duplicado.
 8. Valores, CNPJs e arquivos só aparecem com `techpeople.hiring_requests.fiscal_documents.view.workspace`. A **conferência do Financeiro** exige `techpeople.hiring_requests.fiscal_documents.approve.workspace`, é feita por outra pessoa que não enviou o documento e fica registrada sem possibilidade de edição.
-9. A conferência é humana: não autentica o documento na prefeitura ou SEFAZ. Nada aqui gera títulos, contas a pagar ou pagamentos. Se a assinatura deixar de estar íntegra ou a solicitação mudar, novos aceites e documentos ficam bloqueados sem apagar o histórico. No modo "Ver como" tudo fica somente leitura.
+9. A conferência é humana: não autentica o documento na prefeitura ou SEFAZ. O envio e a conferência documental não geram títulos nem pagamentos por si só; a geração de contas a pagar é uma ação separada abaixo. Se a assinatura deixar de estar íntegra ou a solicitação mudar, novos aceites e documentos ficam bloqueados sem apagar o histórico. No modo "Ver como" tudo fica somente leitura.
 
 ## Erros comuns
 
@@ -131,12 +131,23 @@ Assinatura alterada/revogada, revisão diferente, mudança de alçada ou entidad
 
 ## Contas a pagar e conciliação
 
-**Quem pode fazer:** `techpeople.hiring_requests.payables.view.workspace` para ver parcelas (com `techfinance.entries.view.workspace` e acesso ao contrato e à pessoa), `.payables.manage.workspace` com `techfinance.entries.create.workspace` para gerar e `.payables.reconcile.workspace` com `techfinance.entries.update.workspace` para conciliar — esta última somente pelo **responsável Financeiro configurado**. Não há concessão automática.
+**Quem pode fazer:** `techpeople.hiring_requests.payables.view.workspace` para ver parcelas (com `techfinance.entries.view.workspace` e acesso ao contrato e à pessoa), `.payables.manage.workspace` com `techfinance.entries.create.workspace` para gerar e `.payables_reconciliation.approve.workspace` com `techfinance.entries.update.workspace` para conciliar — esta última somente pelo **responsável Financeiro configurado**. Não há concessão automática.
 
 1. Na lateral **Contas a pagar**, escolha a **Competência**. O cálculo usa o plano econômico aprovado atual, a assinatura e a revisão vigentes.
 2. Marque explicitamente as fontes elegíveis. Linhas pendentes (período mensal ainda aberto, horas sem fechamento vigente, entrega sem aceite ou com versão alterada) aparecem com o motivo e não podem ser selecionadas — nunca viram zero.
 3. Informe as parcelas com valor e vencimento explícitos; a soma precisa fechar exatamente a obrigação. Selecione o documento conferido: NFS-e/NF-e para PJ e fornecedor, documento freelance para freelance e **evidência de folha** para CLT (sem nota fiscal fictícia). O documento precisa ter tomador = CNPJ WK, emissor = contratado, mesma moeda e saldo suficiente; o saldo nunca é usado duas vezes. A conferência é humana e não equivale a validação na SEFAZ.
 4. Justifique e use **Gerar contas a pagar**. Os títulos nascem **em aberto** no Financeiro (Contas a pagar), ligados ao contrato e à entidade WK. Nada é pago aqui: o pagamento é registrado no Financeiro e só ele define o status pago.
 5. Se existirem títulos ou recorrências antigos que possam cobrir a mesma competência (folha de pessoas, parcelas do contrato, serviço ou projeto do mesmo contratado), a geração fica bloqueada. O Financeiro configurado vincula o título compatível (mesmo valor, competência, moeda, entidade e contratado) às fontes selecionadas ou declara que **não se relaciona**. Título incompatível não é vinculado e nada é cancelado ou alterado, inclusive títulos pagos.
-6. Cada fonte (entrega, mês, apontamento de horas) só pode lastrear uma obrigação. Depois disso, o apontamento, o fechamento e a entrega ficam congelados; correções exigem revisão ou aditivo explícito. Os títulos não podem ter valor, vencimento ou contrato alterados, nem ser cancelados ou excluídos diretamente; lançamentos e recorrências manuais para este contrato são recusados.
+6. Cada fonte (entrega, mês, apontamento de horas) só pode lastrear uma obrigação. Depois disso, as fontes financeiras do apontamento, do fechamento e da entrega ficam congeladas (o faturamento de venda pode continuar registrando seus próprios vínculos); correções exigem revisão ou aditivo explícito. Os títulos não podem ter valor, vencimento ou contrato alterados, nem ser cancelados ou excluídos diretamente; lançamentos e recorrências manuais para este contrato são recusados.
 7. O histórico central mostra parcelas, status, valor pago e **abrir título** no Financeiro, além das conciliações. Fechar provisão não gera título.
+
+## Conferências adicionais antes de gerar obrigações
+
+- Para gerar ou conciliar, são necessários também os acessos de leitura do **plano econômico** e dos **documentos fiscais**, além da leitura dos títulos e da permissão de criar ou editar títulos indicada acima. Campo financeiro oculto/mascarado ou registro fora da carteira bloqueia a operação; ausência de acesso nunca aparece como saldo zero.
+- Horas pendentes de aprovação, origem ou fechamento aparecem como pendência e bloqueiam a obrigação correspondente. O custo mensal de uma pessoa com contratos simultâneos ambíguos exige revisão; não se presume um segundo salário/custo.
+- A competência de uma entrega é o mês do fim do período executado. O aceite libera o valor, mas não desloca automaticamente a competência. Os dias de vencimento a partir do aceite usam a data UTC registrada; confira as datas explícitas das parcelas antes de gerar.
+- **Não se relaciona** exige a prévia atual, motivo e Financeiro configurado. A decisão vale somente para a competência, a versão do plano e os dados do título/recorrência efetivamente conferidos. Mudança de valor, vínculo ou plano exige nova conferência; ela não dispensa os próximos meses e não desativa recorrências.
+- O arquivo fiscal precisa ter os bytes atestados no servidor, conferência humana da mesma versão e saldo disponível. CLT usa o CNPJ WK como emitente da evidência de folha e não possui tomador. Freelance usa a identidade fiscal canônica e a modalidade declarada. Não há autenticação externa de NF nem pagamento automático.
+- Depois de gerar ou vincular uma obrigação, ajustes de preço, parcela ou fonte exigem revisão/aditivo explícito; este fluxo não contém cancelamento automático nem reversão de títulos pagos. Consulte o Financeiro antes de alterar a operação.
+
+Se o profissional PJ tiver uma empresa associada na solicitação, essa mesma empresa será preservada como contraparte do título e exigida na conciliação. Não se substitui a empresa contratada por uma folha pessoal.
