@@ -2724,6 +2724,13 @@
       "when": 1795047515000,
       "tag": "0388_contract_legacy_validation_read_boundary",
       "breakpoints": true
+    },
+    {
+      "idx": 389,
+      "version": "7",
+      "when": 1795047516000,
+      "tag": "0389_hiring_origin_reference_columns",
+      "breakpoints": true
     }
   ]
 }

@@ -12862,7 +12862,7 @@
         "review_by": "2027-02-18"
       },
       "files": {
-        "src/components/hiring-requests/preparation-form.tsx": "d21771fcca312f9338245dc5b84f9cae41fa57de6d86efa5b557f5eae9f59a34"
+        "src/components/hiring-requests/preparation-form.tsx": "bfc324f06a97daa1c428c4dd25dd407e562b68d7214ff3bca2d7d9aaf0d687e4"
       }
     },
     {
@@ -14051,6 +14051,71 @@
       "rationale": "Pure payload projection over supplied extracted fields; no reads, writes, network, privilege or authorization decisions. Legacy mode returns no active signature keys; documentary metadata is constructed in the authenticated caller. Draft mode preserves existing null defaults and references. Caller remains under requireWorkPermission/assertAnyPermission and the unchanged atomic SQL allowlist/authorization.",
       "files": {
         "src/lib/contracts/import-signature.ts": "abf1b6cd305833db1199318e428ae83fb84db9ce78d00851a75912f40efe845d"
+      }
+    },
+    {
+      "id": "hiring-origin-reference-column-grants",
+      "kind": "business",
+      "resources": ["techpeople.hiring_requests", "techcontracts.supplier_requests"],
+      "actions": ["create", "update"],
+      "scopes": ["workspace"],
+      "permission_keys": [
+        "techpeople.hiring_requests.create.workspace",
+        "techcontracts.supplier_requests.create.workspace"
+      ],
+      "rationale": "Narrow SELECT(legal_entity_id) grants only to existing NOLOGIN non-BYPASSRLS preparation writer for projects and contracts. Fixes a production column privilege failure masked by broad fixture SELECT. No authenticated/anon grants, table-wide SELECT, RLS, membership, deny, legal-entity comparisons or business records are changed. Existing SECURITY DEFINER preparation save rechecks current caller permissions and runs reference reads through caller RLS. Fixtures now match the deployed column boundary and prove missing privilege before the migration.",
+      "controls": [
+        {
+          "file": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
+          "symbol": "hiring_preparation_validate"
+        },
+        {
+          "file": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
+          "symbol": "hiring_preparation_access"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0389_hiring_origin_reference_columns.sql",
+          "symbol": "projects"
+        },
+        {
+          "file": "drizzle/migrations/0389_hiring_origin_reference_columns.sql",
+          "symbol": "contracts"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "supplier project reference allowed"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "supplier project reference missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "supplier project reference deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "supplier project reference foreign"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "supplier project reference inactive"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0389_hiring_origin_reference_columns.sql": "aeec0205c5161c42b85e5e3c46a56ab8dce7d641b4cf9a8cc5d1140c5d049ece"
+      }
+    },
+    {
+      "id": "preparation-purpose-local-projection",
+      "kind": "presentation",
+      "rationale": "Pure labels and immutable local form projection; no queries, mutations, permissions or origin validation decisions. Switching purpose clears commercial IDs and incompatible final-client acceptance only in the unsaved form. Existing save RPC remains authoritative for grants and CNPJ/origin validation.",
+      "files": {
+        "src/lib/hiring/requests/purpose-presentation.ts": "a541fa0e7a4e77eba25540c05f17207e29ed5fd0555b2ea8ad02831911bc32bb"
       }
     }
   ],

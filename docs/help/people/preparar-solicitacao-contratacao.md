@@ -8,7 +8,7 @@ route_pattern: /people/hiring-requests
 min_permission: techpeople.hiring_requests.view.workspace
 audience: internal
 sort_order: 35
-version: 13
+version: 14
 is_published: true
 ---
 
@@ -151,3 +151,10 @@ Assinatura alterada/revogada, revisão diferente, mudança de alçada ou entidad
 - Depois de gerar ou vincular uma obrigação, ajustes de preço, parcela ou fonte exigem revisão/aditivo explícito; este fluxo não contém cancelamento automático nem reversão de títulos pagos. Consulte o Financeiro antes de alterar a operação.
 
 Se o profissional PJ tiver uma empresa associada na solicitação, essa mesma empresa será preservada como contraparte do título e exigida na conciliação. Não se substitui a empresa contratada por uma folha pessoal.
+
+## Finalidade e CNPJ da origem
+- **Atendimento a cliente** significa que sua empresa contrata para atender um cliente. Não significa que a empresa fornecedora seja o cliente.
+- **Uso interno da empresa** é uma necessidade interna; **Gestão compartilhada entre projetos** é estrutura de gestão compartilhada.
+- O CNPJ escolhido deve coincidir com a entidade do negócio e do contrato comercial vinculados. Uma entidade antiga/inativa ou sem CNPJ na origem deve ser conferida no cadastro de origem; não troque a finalidade para contornar a divergência.
+- Alterar a finalidade remove os vínculos comerciais do rascunho e, fora de atendimento a cliente, a condição de aceite do cliente final. Não altera registros já salvos.
+- Projetos e contratos continuam sujeitos às permissões de consulta. A correção do gravador técnico não concede acesso a outros usuários ou workspaces.

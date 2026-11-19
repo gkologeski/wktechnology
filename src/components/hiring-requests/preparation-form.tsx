@@ -12,6 +12,11 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import {
+  changePreparationPurpose,
+  purposeLabels,
+  purposeDescriptions,
+} from "@/lib/hiring/requests/purpose-presentation";
+import {
   modalityLabels,
   releaseLabels,
   type PreparationData,
@@ -85,14 +90,19 @@ export function PreparationForm({
           />
           {selection(
             "request-purpose",
-            "Finalidade",
+            "Finalidade da contratação",
             value.purpose,
-            { client: "Cliente", internal: "Interno", shared_management: "Gestão compartilhada" },
+            purposeLabels,
             (v) => {
               if (v === "client" || v === "internal" || v === "shared_management")
-                onChange({ ...value, purpose: v, deal_id: null, commercial_contract_id: null });
+                onChange(changePreparationPurpose(value, v));
             },
           )}
+          <p className="text-sm text-muted-foreground">{purposeDescriptions[value.purpose]}</p>
+          <p className="text-xs text-muted-foreground">
+            Alterar a finalidade remove os vínculos comerciais deste rascunho e, fora de atendimento
+            a cliente, a condição de aceite do cliente final.
+          </p>
           {picker("area", "Área responsável", value.area_id, (id) => set("area_id", id))}
           {picker("legal_entity", "Entidade legal WK", value.legal_entity_id, (id) =>
             set("legal_entity_id", id),
@@ -201,7 +211,9 @@ export function PreparationForm({
               "release-condition",
               "Condição de liberação do fornecedor",
               value.release_condition ?? "wk_acceptance_invoice",
-              releaseLabels,
+              value.purpose === "client"
+                ? releaseLabels
+                : { wk_acceptance_invoice: releaseLabels.wk_acceptance_invoice },
               (v) => {
                 if (v === "wk_acceptance_invoice" || v === "also_client_acceptance")
                   set("release_condition", v);
@@ -229,16 +241,8 @@ export function PreparationForm({
               <dd className="font-medium break-words">{value.title || "Não informado"}</dd>
             </div>
             <div>
-              <dt>Finalidade</dt>
-              <dd>
-                {
-                  {
-                    client: "Cliente",
-                    internal: "Interno",
-                    shared_management: "Gestão compartilhada",
-                  }[value.purpose]
-                }
-              </dd>
+              <dt>Finalidade da contratação</dt>
+              <dd>{purposeLabels[value.purpose]}</dd>
             </div>
             <div>
               <dt>Escopo</dt>
