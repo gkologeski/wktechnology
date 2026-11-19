@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 24
-version: 3
+version: 4
 is_published: true
 ---
 # Importar contratos em lote e revisar resultados

@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission: techcontracts.legacy_contracts.view.workspace
 audience: internal
 sort_order: 220
-version: 1
+version: 2
 is_published: true
 ---
 # Reconhecer e regularizar um contrato legado
@@ -19,7 +19,7 @@ is_published: true
 
 ## Passo a passo
 1. Na ficha, clique em "Reconhecer contrato legado" e informe o motivo. Só aparece para contratos importados elegíveis.
-2. Complete contraparte e entidade WK pela edição normal do contrato; confira o documento. Um PDF escaneado não exige fabricar texto de minuta.
+2. No próprio painel, em "Partes do contrato", selecione a contraparte e a entidade legal WK e clique em "Salvar partes". Os campos usam os cadastros e permissões existentes, sem exigir negócio, cotação, proposta ou minuta. Se o documento já tiver sido reconhecido, confira e reconheça a nova revisão antes de anexar a evidência. Confira o documento. Um PDF escaneado não exige fabricar texto de minuta.
 3. Em "Regularizar", envie o PDF original assinado. O servidor confere o arquivo e calcula o hash.
 4. Informe a situação (em vigor, encerrado ou rescindido), a data da assinatura humana conferida no original, a vigência, a renovação (se houver, conferida na cláusula), a referência do documento e a justificativa.
 5. Confirme a regularização.

@@ -24,6 +24,7 @@ import {
 } from "@/lib/contracts/legacy-view";
 import { formatDateTime } from "@/lib/crm";
 import { LegacyRegularizeForm } from "./legacy-regularize-form";
+import { LegacyPartiesEditor } from "./legacy-parties-editor";
 
 const KEY = "techcontracts.legacy_contracts";
 type ContractLike = {
@@ -90,6 +91,14 @@ export function ContractLegacyPanel({
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <LegacyTimeline state={state} contractId={contract.id} />
             <aside className="space-y-4" aria-label="Ações do contrato legado">
+              {(mode === "eligible" || mode === "pending" || mode === "stale") && (
+                <LegacyPartiesEditor
+                  contractId={contract.id}
+                  companyId={contract.counterparty_company_id ?? null}
+                  legalEntityId={contract.contracting_legal_entity_id ?? null}
+                  allowed={canUpdateContract}
+                />
+              )}
               <LegacyActions
                 mode={mode}
                 state={state}
@@ -212,7 +221,7 @@ function LegacyActions({
     <div className="space-y-4">
       {missing.length > 0 ? (
         <div role="status" className="text-sm space-y-1">
-          <p className="font-medium">Complete antes de regularizar (edição normal do contrato):</p>
+          <p className="font-medium">Complete as partes acima antes de regularizar:</p>
           <ul className="list-disc pl-5 text-muted-foreground">
             {missing.map((m) => (
               <li key={m}>{m}</li>

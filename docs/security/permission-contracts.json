@@ -9220,7 +9220,7 @@
         "src/routes/_authenticated/contracts.templates.index.tsx": "804337a7c0fceceabd916f6a30232432d1c15efcf8edb84b2d006274002ce835",
         "src/components/contracts/contract-template-actions-menu.tsx": "a4d89311fce43da22b7d356cdb3258210fe63da0f4071ec6b002103186d56fe9",
         "drizzle/migrations/0322_contract_templates_allow_archived.sql": "dbde6b67be72afbcfffeae038d38c5ca438bb430cab08d9010e1758856bf5e3c",
-        "src/components/contracts/batch-import-contracts-dialog.tsx": "8c801b2becbdfd87e8650e95896a7226c7e58cb01d79e307aba8fbde9eed4013",
+        "src/components/contracts/batch-import-contracts-dialog.tsx": "97d76c14cf44b34a184ae5ad38cea077294f0c5d820a011ad3ad503ab5254cc5",
         "src/components/contracts/contract-body-from-source-button.tsx": "a55350285dc6125b298bc3f75f00efbb65988eb8b120f782b1176432d5110290",
         "src/components/contracts/import/import-mode-chooser.tsx": "5d93832db95909e70eff018099c6d721a47796755304128f11b13400daa2493c"
       }
@@ -13770,7 +13770,7 @@
       "files": {
         "src/lib/contracts/legacy.server.ts": "fadae21680e6830c4bdd40476112264e30baf01aaf318a4efcb9b2adafbb2f38",
         "src/lib/contracts/legacy.functions.ts": "dde409c1a48d5104ca232ac8e7098276d1047aab47559bcb042e0b73f530370d",
-        "src/components/contracts/legacy/contract-legacy-panel.tsx": "d44427549bff1b6cb9ea0a5e203a4fa4a2df95a0f373fbf80efeea772c7d2e88",
+        "src/components/contracts/legacy/contract-legacy-panel.tsx": "53845c45f4b52e2610fa0091527d1eaf0e0fee1e8fdae5d005cee3e6c17c53e4",
         "src/components/contracts/legacy/legacy-regularize-form.tsx": "8912a34671bc27b75b4256fc41b37939160fada69f47169ddae3008a6226cda9",
         "src/components/contracts/legacy/use-contract-legacy.ts": "c411457ba322bf6fa2c5a888b880bdf8af701c194d6369d290acbaba1117603f",
         "drizzle/migrations/0385_contract_legacy_regularization.sql": "8e3bffb5a075b30eef95342090dc0d2226c7cc46327a66f6e00667e5553d3fb8"
@@ -13974,6 +13974,75 @@
       },
       "files": {
         "drizzle/migrations/0388_contract_legacy_validation_read_boundary.sql": "2c438b3b11fd9b6b68b0ae341f58227bd950da0de4978c649f49ca473807c011"
+      }
+    },
+    {
+      "id": "legacy-canonical-party-editor",
+      "kind": "business",
+      "resources": ["techcontracts.contracts"],
+      "actions": ["view", "update"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techcontracts.contracts.view.own",
+        "techcontracts.contracts.view.team",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.update.own",
+        "techcontracts.contracts.update.team",
+        "techcontracts.contracts.update.workspace"
+      ],
+      "rationale": "Expose the existing canonical updateContract/contract_mutate action for counterpart/WK entity within the private eligible/pending/stale legacy panel. Both pickers use the shared EntityCombobox, explicit active workspace filters, user RLS and existing reference read permissions; no new data grants. Only the two canonical party IDs are submitted, no status/body/document/origin change. Requires real can_update; regularized/denied/unknown panels never expose the editor. Pending term edits invalidate evidence and require explicit rebase. No new endpoint, RPC, migration or action permission.",
+      "controls": [
+        {
+          "file": "src/lib/contracts.functions.ts",
+          "symbol": "updateContract"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        },
+        {
+          "file": "src/components/ui/entity-combobox.tsx",
+          "symbol": "EntityCombobox"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "contract_mutate"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_area_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
+          "symbol": "contract_legacy_contract_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy canonical parties allowed"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy canonical parties missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy canonical parties deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy canonical parties foreign"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy canonical parties inactive"
+        }
+      },
+      "files": {
+        "src/components/contracts/legacy/legacy-parties-editor.tsx": "67611ca7ce983353033504f025407499d10ffd79534e4af12490944cde041b71"
       }
     }
   ],
