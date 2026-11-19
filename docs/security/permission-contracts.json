@@ -7451,6 +7451,14 @@
         {
           "file": "drizzle/migrations/0315_hiring_role_restrictions.sql",
           "symbol": "hiring_restricted_roles"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "symbol": "hiring_execution_allocation_assert"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0381_hiring_execution_start.sql",
+          "symbol": "hiring_execution_context"
         }
       ],
       "tests": {
