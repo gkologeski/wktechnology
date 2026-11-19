@@ -325,6 +325,13 @@ beforeAll(async () => {
       `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY; CREATE POLICY fixture_entity_read ON ${table} FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()));`,
     );
   }
+  // Open both sessions before deadlines; concurrency cases still run real overlapping RPCs.
+  const connections = await Promise.all([db.reserve(), db.reserve()]);
+  try {
+    await Promise.all(connections.map((connection) => connection`select 1`));
+  } finally {
+    for (const connection of connections) connection.release();
+  }
 }, 120000);
 afterAll(async () => {
   if (db) await db.end();
