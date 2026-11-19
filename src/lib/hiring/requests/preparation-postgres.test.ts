@@ -167,9 +167,18 @@ beforeAll(async () => {
     ),
   );
   await db.unsafe(permission);
+  // Supabase migrations use a non-superuser with CREATEROLE, not PostgreSQL superuser.
+  await db.unsafe(`CREATE ROLE preparation_migrator NOLOGIN CREATEROLE INHERIT;
+    GRANT authenticated TO preparation_migrator WITH ADMIN OPTION;
+    GRANT USAGE,CREATE ON SCHEMA public TO preparation_migrator WITH GRANT OPTION;
+    GRANT USAGE ON SCHEMA auth TO preparation_migrator WITH GRANT OPTION;
+    GRANT SELECT,INSERT ON permissions TO preparation_migrator;
+    GRANT REFERENCES ON workspaces,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts TO preparation_migrator;
+    SET ROLE preparation_migrator;`);
   await db.unsafe(
     readFileSync("docs/architecture/prepared-migrations/0373_hiring_requests.sql", "utf8"),
   );
+  await db.unsafe("RESET ROLE");
   for (const table of [
     "user_groups",
     "legal_entities",
@@ -403,4 +412,35 @@ it("preparation cancellation cannot change title with cancel-only permission", a
     save(tx, "professional", { ...form(), status: "cancelled" }, r.id, 1),
   );
   expect(cancelled.status).toBe("cancelled");
+});
+it("preparation requires a commercial origin before ready for a client", async () => {
+  await reset();
+  for (const kind of ["professional", "supplier"]) {
+    const data = { ...form(kind), purpose: "client" };
+    const r = await user((tx) => save(tx, kind, data));
+    await expect(
+      user((tx) => save(tx, kind, { ...data, status: "ready" }, r.id, r.revision)),
+    ).rejects.toThrow("Associe");
+    const deal = randomUUID();
+    await db`insert into deals(id,workspace_id,name,legal_entity_id) values(${deal},${W},'Origem teste',${L})`;
+    const ready = await user((tx) =>
+      save(tx, kind, { ...data, status: "ready", deal_id: deal }, r.id, r.revision),
+    );
+    expect(ready.status).toBe("ready");
+  }
+});
+it("preparation registers canonical permission modules and revokes writer schema creation", async () => {
+  expect(
+    (
+      await db`select count(*)::int n from permissions where key like 'techpeople.hiring_requests.%' and module='techpeople' and resource in ('hiring_requests','hiring_requests.cancel')`
+    )[0].n,
+  ).toBe(4);
+  expect(
+    (
+      await db`select count(*)::int n from permissions where key like 'techcontracts.supplier_requests.%' and module='techcontracts' and resource in ('supplier_requests','supplier_requests.cancel')`
+    )[0].n,
+  ).toBe(4);
+  expect(
+    (await db`select has_schema_privilege('techerp_request_writer','public','CREATE') as v`)[0].v,
+  ).toBe(false);
 });

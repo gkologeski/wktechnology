@@ -13950,7 +13950,7 @@
         "techpeople.hiring_requests.cancel.update.workspace",
         "techcontracts.supplier_requests.cancel.update.workspace"
       ],
-      "rationale": "Preparation only; dedicated non-BYPASSRLS writer, active workspace membership and explicit deny; canonical entity reads use caller RLS. Pending schema is intentionally not applied before review. Local review: picker cache is keyed by active workspace and the content remounts on workspace/kind change, discarding open forms and stale local entity state.",
+      "rationale": "Preparation only; dedicated non-BYPASSRLS writer, active workspace membership and explicit deny; canonical entity reads use caller RLS. Pending schema is intentionally not applied before review. Local review: picker cache is keyed by active workspace and the content remounts on workspace/kind change, discarding open forms and stale local entity state. Local SQL review: catalog uses canonical module/resource metadata; client requests require a commercial origin before ready; writer CREATE on public is temporary for ownership transfer and revoked by the migration.",
       "controls": [
         {
           "file": "src/lib/hiring/requests/boundary.server.ts",
