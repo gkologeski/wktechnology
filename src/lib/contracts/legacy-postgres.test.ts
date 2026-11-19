@@ -255,6 +255,17 @@ beforeAll(async () => {
   await db.unsafe(
     readFileSync("drizzle/migrations/0388_contract_legacy_validation_read_boundary.sql", "utf8"),
   );
+  // Real existing canonical editor boundary used by the new party fields.
+  await db.unsafe(`CREATE TABLE work_resource_catalog(resource text PRIMARY KEY,table_name name NOT NULL,responsible_columns text[] NOT NULL DEFAULT '{}',parent_column name,parent_resource text,shared boolean NOT NULL DEFAULT false);
+    INSERT INTO work_resource_catalog VALUES('techcontracts.contracts','contracts',ARRAY['assigned_to','owner_id']::text[],NULL,NULL,false);`);
+  for (const name of [
+    "public.work_record_context_access",
+    "public.work_record_json",
+    "public.contract_mutate",
+  ])
+    await db.unsafe(body("drizzle/migrations/0218_order3_completion_prepare.sql", name));
+  await db.unsafe(`REVOKE ALL ON FUNCTION work_record_context_access(jsonb,text,uuid,text,integer),work_record_json(text,uuid),contract_mutate(uuid,jsonb) FROM PUBLIC,anon;
+    GRANT EXECUTE ON FUNCTION work_record_json(text,uuid),contract_mutate(uuid,jsonb) TO authenticated;`);
   // Actual audit and contract handoff trigger bodies, with inert canonical tables.
   await db.unsafe(`CREATE TABLE contract_events(workspace_id uuid,contract_id uuid,actor_id uuid,event_type text,payload jsonb);
     CREATE TABLE proposals(id uuid);
@@ -294,7 +305,7 @@ afterAll(async () => {
 async function reset(contract: Record<string, unknown> = {}) {
   await db.begin(async (tx) => {
     await tx.unsafe(`SET LOCAL session_replication_role=replica;
-      DO $c$ DECLARE t record; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename<>'permissions' LOOP EXECUTE format('DELETE FROM public.%I',t.tablename);END LOOP;END $c$;
+      DO $c$ DECLARE t record; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename NOT IN('permissions','work_resource_catalog') LOOP EXECUTE format('DELETE FROM public.%I',t.tablename);END LOOP;END $c$;
       DELETE FROM storage.objects; SET LOCAL session_replication_role=origin;`);
     await tx`insert into workspaces(id) values(${W}),(${B})`;
     for (const u of [U, V]) {
@@ -1165,4 +1176,70 @@ it("legacy validation helper rejects a service claim on an authenticated role", 
     role: "service_role",
   });
   expect(rows[0].ok).toBe(false);
+});
+
+async function editCanonicalParties(mode: Mode) {
+  await reset({ counterparty_company_id: null, contracting_legal_entity_id: null });
+  await prepare(mode, "techcontracts.contracts.update.workspace");
+  if (mode === "foreign") await db`update profiles set active_workspace_id=${B} where id=${U}`;
+  const result = await err(
+    as(
+      U,
+      (tx) =>
+        tx`select contract_mutate(${K},${tx.json({ counterparty_company_id: C, contracting_legal_entity_id: L })})`,
+    ),
+  );
+  const [saved] =
+    await db`select counterparty_company_id,contracting_legal_entity_id,status,source_file_path from contracts where id=${K}`;
+  expect(saved.counterparty_company_id).toBe(mode === "allowed" ? C : null);
+  expect(saved.contracting_legal_entity_id).toBe(mode === "allowed" ? L : null);
+  expect(saved.status).toBe("draft");
+  expect(saved.source_file_path).toBe("imports/legado.docx");
+  return result;
+}
+it("legacy canonical parties allowed", async () => {
+  expect(await editCanonicalParties("allowed")).toBe("ok");
+});
+it("legacy canonical parties missing", async () => {
+  expect(await editCanonicalParties("missing")).toMatch(/permissão|autorizad/);
+});
+it("legacy canonical parties deny", async () => {
+  expect(await editCanonicalParties("deny")).toMatch(/permissão|autorizad/);
+});
+it("legacy canonical parties foreign", async () => {
+  expect(await editCanonicalParties("foreign")).toMatch(/permissão|autorizad/);
+});
+it("legacy canonical parties inactive", async () => {
+  expect(await editCanonicalParties("inactive")).toMatch(/permissão|autorizad/);
+});
+it("legacy canonical party edit requires rebase before signed evidence", async () => {
+  await reset({ counterparty_company_id: null, contracting_legal_entity_id: null });
+  await recognize();
+  await as(
+    U,
+    (tx) =>
+      tx`select contract_mutate(${K},${tx.json({ counterparty_company_id: C, contracting_legal_entity_id: L })})`,
+  );
+  const [state] = await as(U, (tx) => tx`select contract_legacy_state(${W},${K}) r`);
+  expect(state.r.record.stale).toBe(true);
+  const rebased = await recognize(U, randomUUID(), 1);
+  expect(rebased.revision).toBe(2);
+});
+it("legacy canonical parties cannot change after regularization", async () => {
+  await reset();
+  await recognize();
+  await regularize(await attachEvidence());
+  const other = randomUUID();
+  await db`insert into companies(id,workspace_id,name) values(${other},${W},'Outra contraparte fixture')`;
+  await expect(
+    as(
+      U,
+      (tx) =>
+        tx`select contract_mutate(${K},${tx.json({ counterparty_company_id: other, contracting_legal_entity_id: L })})`,
+    ),
+  ).rejects.toThrow(/imutáve|aditivo/i);
+  const [c] =
+    await db`select counterparty_company_id,source_file_path from contracts where id=${K}`;
+  expect(c.counterparty_company_id).toBe(C);
+  expect(c.source_file_path).toBe("imports/legado.docx");
 });

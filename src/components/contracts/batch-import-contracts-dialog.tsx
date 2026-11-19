@@ -452,9 +452,8 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
             Importar contratos em lote
           </DialogTitle>
           <DialogDescription>
-            Selecione vários arquivos, confirme o tipo de cada contrato e processe. A IA extrai os
-            campos, cria rascunhos e tenta vincular contratos de compra ao contrato de prestação
-            correspondente.
+            Selecione os arquivos e escolha o tipo de importação. A IA extrai os campos; a revisão e
+            os vínculos seguem o modo escolhido abaixo.
           </DialogDescription>
         </DialogHeader>
 

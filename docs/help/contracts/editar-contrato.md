@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission:
 audience: internal
 sort_order: 30
-version: 9
+version: 10
 is_published: true
 ---
 # Editar a ficha de um contrato
@@ -68,3 +68,6 @@ Nos formulários **Preparar assinatura no TechERP** e **Enviar pelo ForSign**, o
 
 ## Contrato legado
 Contratos importados como legado mostram o painel "Contrato legado" na Visão geral. Enquanto pendente, status e assinatura não podem ser alterados e não há envio para aprovação ou assinatura; complete contraparte e entidade WK, confira o documento e depois regularize (PDF escaneado não exige fabricar minuta editável). Após regularizado, os termos conferidos só mudam por aditivo. Veja [Regularizar contrato legado](/ajuda/contracts/regularizar-contrato-legado).
+
+## Partes de um contrato legado
+Na Visão geral, no painel Contrato legado, use Contraparte (empresa), Entidade legal WK e Salvar partes. A edição exige acesso de atualização ao contrato e usa os cadastros visíveis do workspace. Não depende de um negócio. Se o legado já foi reconhecido, a nova revisão deve ser conferida antes de regularizar; depois de regularizado, use aditivo. O original permanece preservado.
