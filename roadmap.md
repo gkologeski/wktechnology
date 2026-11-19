@@ -1,3 +1,11 @@
+# FORMALIZA-SOLICITA — pacote 3, lote 2 (porte G, previsão 6–10 h)
+
+- [x] Auditar lote 1: 23/23 testes repetidos; gate global segue com dois findings preexistentes de tipos WhatsApp. Minutas aceitam origem sem deal/proposal; preparação e assinadores exigem adaptador explícito para compra.
+- [ ] Definir identidade do aceite externo: bloqueado por decisão do usuário. /minuta atual usa somente token bearer; isso não impede usuário interno com o link de aceitar em nome da contraparte. Proposta para confirmar: código de uso único enviado só ao e-mail canônico da contraparte, barrando contas internas do workspace; nenhum e-mail real durante implementação.
+- [ ] Adaptar origem canônica aprovada, contrato client/minuta/assinadores sem afetar vendas após decisão sobre identidade externa.
+- [ ] Preparar migração revisável, permissões, fluxo jurídico → aceite real → Financeiro → assinatura humana, invalidação e notificações.
+- [ ] Integrar acompanhamento na ficha; Ajuda, contratos e testes SQL reais/regressão; revisar e registrar limites. Sem aplicação, publicação ou pacote 4.
+
 # APROVA-SOLICITA — pacote 3, lote 1 (porte G, previsão 3–5 h)
 
 - [x] Preparar aprovações por revisão/valor e alçada canônica, sem modificar configuração, permissões concedidas ou registros reais.
