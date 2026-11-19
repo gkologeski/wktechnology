@@ -13944,6 +13944,281 @@ export type Database = {
         }
         Relationships: []
       }
+      hiring_preparation_events: {
+        Row: {
+          actor_id: string
+          created_at: string
+          id: string
+          operation_id: string
+          payload: Json
+          request_id: string
+          revision: number
+          snapshot: Json
+          workspace_id: string
+        }
+        Insert: {
+          actor_id: string
+          created_at?: string
+          id?: string
+          operation_id: string
+          payload: Json
+          request_id: string
+          revision: number
+          snapshot: Json
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string
+          created_at?: string
+          id?: string
+          operation_id?: string
+          payload?: Json
+          request_id?: string
+          revision?: number
+          snapshot?: Json
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_preparation_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_preparation_events_workspace_id_request_id_fkey"
+            columns: ["workspace_id", "request_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_preparation_requests"
+            referencedColumns: ["workspace_id", "id"]
+          },
+        ]
+      }
+      hiring_preparation_reference_events: {
+        Row: {
+          actor_id: string
+          input: Json
+          operation_id: string
+          request_id: string
+          workspace_id: string
+        }
+        Insert: {
+          actor_id: string
+          input: Json
+          operation_id: string
+          request_id: string
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string
+          input?: Json
+          operation_id?: string
+          request_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_preparation_reference_event_workspace_id_request_id_fkey"
+            columns: ["workspace_id", "request_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_preparation_requests"
+            referencedColumns: ["workspace_id", "id"]
+          },
+        ]
+      }
+      hiring_preparation_reference_values: {
+        Row: {
+          reference_value: number | null
+          request_id: string
+          revision: number
+          workspace_id: string
+        }
+        Insert: {
+          reference_value?: number | null
+          request_id: string
+          revision: number
+          workspace_id: string
+        }
+        Update: {
+          reference_value?: number | null
+          request_id?: string
+          revision?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_preparation_reference_value_workspace_id_request_id_fkey"
+            columns: ["workspace_id", "request_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_preparation_requests"
+            referencedColumns: ["workspace_id", "id"]
+          },
+        ]
+      }
+      hiring_preparation_requests: {
+        Row: {
+          area_id: string | null
+          commercial_contract_id: string | null
+          company_id: string | null
+          contact_id: string | null
+          created_at: string
+          created_by: string
+          deal_id: string | null
+          id: string
+          kind: string
+          legal_entity_id: string | null
+          modality: string
+          person_id: string | null
+          project_id: string | null
+          purpose: string
+          regime: string | null
+          release_condition: string | null
+          revision: number
+          scope_text: string
+          selection_mode: string
+          status: string
+          title: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          area_id?: string | null
+          commercial_contract_id?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by: string
+          deal_id?: string | null
+          id?: string
+          kind: string
+          legal_entity_id?: string | null
+          modality?: string
+          person_id?: string | null
+          project_id?: string | null
+          purpose: string
+          regime?: string | null
+          release_condition?: string | null
+          revision?: number
+          scope_text?: string
+          selection_mode?: string
+          status?: string
+          title: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          area_id?: string | null
+          commercial_contract_id?: string | null
+          company_id?: string | null
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string
+          deal_id?: string | null
+          id?: string
+          kind?: string
+          legal_entity_id?: string | null
+          modality?: string
+          person_id?: string | null
+          project_id?: string | null
+          purpose?: string
+          regime?: string | null
+          release_condition?: string | null
+          revision?: number
+          scope_text?: string
+          selection_mode?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_preparation_requests_area_id_fkey"
+            columns: ["area_id"]
+            isOneToOne: false
+            referencedRelation: "user_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_preparation_requests_commercial_contract_id_fkey"
+            columns: ["commercial_contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_preparation_requests_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_preparation_requests_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_preparation_requests_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "shared_fields_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_preparation_requests_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_preparation_requests_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "shared_fields_deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_preparation_requests_legal_entity_id_fkey"
+            columns: ["legal_entity_id"]
+            isOneToOne: false
+            referencedRelation: "legal_entities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_preparation_requests_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_preparation_requests_person_id_fkey"
+            columns: ["person_id"]
+            isOneToOne: false
+            referencedRelation: "people_total_cost"
+            referencedColumns: ["person_id"]
+          },
+          {
+            foreignKeyName: "hiring_preparation_requests_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_preparation_requests_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hiring_signature_events: {
         Row: {
           actor_id: string
@@ -34859,6 +35134,38 @@ export type Database = {
         Returns: string
       }
       hiring_notification_conflict_repair: { Args: never; Returns: undefined }
+      hiring_preparation_access: {
+        Args: { a: string; k: string; w: string }
+        Returns: boolean
+      }
+      hiring_preparation_history: {
+        Args: { p_id: string; p_kind: string; p_offset?: number; p_ws: string }
+        Returns: Json
+      }
+      hiring_preparation_page: {
+        Args: {
+          p_kind: string
+          p_offset?: number
+          p_search?: string
+          p_ws: string
+        }
+        Returns: Json
+      }
+      hiring_preparation_reference: {
+        Args: { p_id: string; p_kind: string; p_ws: string }
+        Returns: Json
+      }
+      hiring_preparation_save: {
+        Args: {
+          p_data: Json
+          p_id: string
+          p_kind: string
+          p_operation: string
+          p_revision: number
+          p_ws: string
+        }
+        Returns: Json
+      }
       hiring_profile_recruitment_status: {
         Args: { p_deal: string; p_ws: string }
         Returns: Json
