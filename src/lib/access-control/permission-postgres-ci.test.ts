@@ -1933,33 +1933,35 @@ it("search gateway SQL retains restrictive RLS policies", async () => {
   accepted.push("search-restrictive-policy");
 });
 
-it("search cursor skips invisible pages without losing an older authorized hit", async () => {
+// Each cursor variant keeps the full 600-row visibility gap; independent
+// transactions avoid charging three complete RLS scans to one test deadline.
+async function checkInvisiblePageHit(kind: "body" | "subject", limit: number) {
   await subject(
     async (tx) => {
       await tx`reset role`;
       await tx`update activities set subject='Lacunacursor',body='Lacunacursor visivel',created_at=now()-interval '2 days' where id='97000000-0000-4000-8000-000000000001'`;
       await tx`insert into activities(id,workspace_id,owner_id,type,subject,body,created_at) select ('98000000-0000-4000-8000-'||lpad(i::text,12,'0'))::uuid,${W},${P},'email','Lacunacursor','Lacunacursor invisivel',now()-i*interval '1 second' from generate_series(1,600)i`;
       await tx`set local role authenticated`;
-      expect(
-        (await tx`select id from global_search_activity_body_ids('Lacunacursor',5)`).map(
-          (r) => r.id,
-        ),
-      ).toEqual(["97000000-0000-4000-8000-000000000001"]);
-      expect(
-        (await tx`select global_search_candidate_ids('activity','Lacunacursor',5) id`).map(
-          (r) => r.id,
-        ),
-      ).toEqual(["97000000-0000-4000-8000-000000000001"]);
-      expect(
-        (await tx`select global_search_candidate_ids('activity','Lacunacursor',200) id`).map(
-          (r) => r.id,
-        ),
-      ).toEqual(["97000000-0000-4000-8000-000000000001"]);
+      const result =
+        kind === "body"
+          ? await tx`select id from global_search_activity_body_ids('Lacunacursor',${limit})`
+          : await tx`select global_search_candidate_ids('activity','Lacunacursor',${limit}) id`;
+      expect(result.map((r) => r.id)).toEqual(["97000000-0000-4000-8000-000000000001"]);
     },
     { keys: searchKeys.map((k) => k.replace(".workspace", ".own")) },
   );
+}
+it("search cursor skips invisible pages without losing an older authorized hit", async () => {
+  await checkInvisiblePageHit("body", 5);
   accepted.push("search-cursor-invisible-pages");
 });
+it("search subject cursor skips invisible pages with a short result limit", async () => {
+  await checkInvisiblePageHit("subject", 5);
+});
+it("search subject cursor skips invisible pages with the maximum result limit", async () => {
+  await checkInvisiblePageHit("subject", 200);
+});
+
 it("search cursor respects note and task resources without an activity grant", async () => {
   for (const [type, key, index] of [
     ["note", "techsales.notes.view.workspace", "1"],
