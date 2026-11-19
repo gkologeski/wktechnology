@@ -379,6 +379,8 @@ beforeAll(async () => {
     GRANT SELECT ON fixture_hidden_reads TO authenticated;
     ALTER TABLE financial_entries ENABLE ROW LEVEL SECURITY;
     ALTER TABLE financial_recurrences ENABLE ROW LEVEL SECURITY;
+    CREATE POLICY fixture_company_scope ON companies AS RESTRICTIVE FOR SELECT TO authenticated USING(NOT EXISTS(SELECT 1 FROM fixture_hidden_reads WHERE user_id=auth.uid() AND record_id=id));
+    CREATE POLICY fixture_entity_scope ON legal_entities AS RESTRICTIVE FOR SELECT TO authenticated USING(NOT EXISTS(SELECT 1 FROM fixture_hidden_reads WHERE user_id=auth.uid() AND record_id=id));
     CREATE POLICY fixture_finance_read ON financial_entries FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()) AND NOT EXISTS(SELECT 1 FROM fixture_hidden_reads WHERE user_id=auth.uid() AND record_id=id));
     CREATE POLICY fixture_finance_delete ON financial_entries FOR DELETE TO authenticated USING(is_workspace_member(workspace_id,auth.uid()));
     CREATE POLICY fixture_finance_insert ON financial_entries FOR INSERT TO authenticated WITH CHECK(is_workspace_member(workspace_id,auth.uid()));
@@ -1601,4 +1603,17 @@ it("monthly cost stays unknown when another contract overlaps the same person", 
 it("disposable fixture restores all triggers before each financial scenario", async () => {
   await reset();
   expect((await db`show session_replication_role`)[0].session_replication_role).toBe("origin");
+});
+
+it("payables creation retains caller RLS on the supplier and WK entity parents", async () => {
+  const x = await approvedPlan({}, "supplier");
+  const hash = (await pctx(x.r.id)).eligible.preview_hash;
+  const d = await doc(x.r, { kind: "supplier", regime: null, issuer: SUPPLIER_CNPJ });
+  for (const parent of [C, L]) {
+    await db`insert into fixture_hidden_reads values(${U},${parent})`;
+    expect((await pctx(x.r.id, PREV, U)).can_generate).toBe(false);
+    await expect(gen(x.r, { hash, doc: d })).rejects.toThrow(DENIED);
+    await db`delete from fixture_hidden_reads where user_id=${U} and record_id=${parent}`;
+  }
+  expect(await count("financial_entries")).toBe(0);
 });

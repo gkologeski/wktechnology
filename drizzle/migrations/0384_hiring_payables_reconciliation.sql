@@ -314,13 +314,17 @@ REVOKE ALL ON FUNCTION public.hiring_pay_allocation_guard() FROM PUBLIC,anon,aut
 -- Caller-RLS probes run as the existing non-BYPASSRLS writer, with the caller JWT unchanged.
 CREATE FUNCTION public.hiring_pay_visible_entries(ids uuid[]) RETURNS SETOF uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$ SELECT id FROM financial_entries WHERE id=ANY(ids) $$;
 CREATE FUNCTION public.hiring_pay_visible_recurrences(ids uuid[]) RETURNS SETOF uuid LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$ SELECT id FROM financial_recurrences WHERE id=ANY(ids) $$;
+CREATE FUNCTION public.hiring_pay_parent_visible(w uuid,k uuid,company uuid,entity uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
+ SELECT EXISTS(SELECT 1 FROM contracts WHERE id=k AND workspace_id=w) AND EXISTS(SELECT 1 FROM legal_entities WHERE id=entity AND workspace_id=w AND active) AND (company IS NULL OR EXISTS(SELECT 1 FROM companies WHERE id=company AND workspace_id=w AND deleted_at IS NULL))
+$$;
 DO $pay_owner$ DECLARE had_create boolean:=has_schema_privilege('techerp_request_writer','public','CREATE');BEGIN
  IF NOT had_create THEN GRANT CREATE ON SCHEMA public TO techerp_request_writer;END IF;
  ALTER FUNCTION public.hiring_pay_visible_entries(uuid[]) OWNER TO techerp_request_writer;
  ALTER FUNCTION public.hiring_pay_visible_recurrences(uuid[]) OWNER TO techerp_request_writer;
+ ALTER FUNCTION public.hiring_pay_parent_visible(uuid,uuid,uuid,uuid) OWNER TO techerp_request_writer;
  IF NOT had_create THEN REVOKE CREATE ON SCHEMA public FROM techerp_request_writer;END IF;
 END $pay_owner$;
-REVOKE ALL ON FUNCTION public.hiring_pay_visible_entries(uuid[]),public.hiring_pay_visible_recurrences(uuid[]) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE ALL ON FUNCTION public.hiring_pay_visible_entries(uuid[]),public.hiring_pay_visible_recurrences(uuid[]),public.hiring_pay_parent_visible(uuid,uuid,uuid,uuid) FROM PUBLIC,anon,authenticated,service_role;
 -- Ignore only derived payment/run bookkeeping when binding a human 'unrelated' decision.
 CREATE FUNCTION public.hiring_pay_target_hash(target jsonb,kind text) RETURNS text LANGUAGE sql IMMUTABLE SET search_path=public,pg_temp AS $$
  SELECT hiring_ops_hash((CASE kind WHEN 'entry' THEN target-ARRAY['status','paid_amount','updated_at'] ELSE target-ARRAY['occurrences_generated','next_run_date','last_generated_entry_id','updated_at'] END)::text)
@@ -341,6 +345,7 @@ BEGIN
  SELECT * INTO s FROM hiring_execution_starts WHERE workspace_id=w AND request_id=i;
  IF auth.uid() IS NULL OR r.id IS NULL OR s.id IS NULL OR (write AND is_read_only_view()) OR NOT EXISTS(SELECT 1 FROM profiles WHERE id=auth.uid() AND active_workspace_id=w)
   OR NOT hiring_preparation_access(w,r.kind,'view') OR NOT hiring_pay_subject(w,auth.uid(),r.kind,act) OR NOT hiring_econ_private_ok(w,r,s.contract_id)
+  OR (act='payables.manage' AND NOT hiring_pay_parent_visible(w,s.contract_id,CASE WHEN r.kind='supplier' THEN r.company_id END,s.legal_entity_id))
   OR (act IN('payables.manage','payables_reconciliation.approve') AND (NOT hiring_pay_subject(w,auth.uid(),r.kind,'payables.view') OR NOT hiring_econ_subject(w,auth.uid(),r.kind,'economics.view') OR NOT hiring_ops_subject(w,auth.uid(),r.kind,'fiscal_documents.view'))) THEN
   RAISE EXCEPTION 'Sem permissão para esta ação.' USING ERRCODE='42501';
  END IF;
@@ -649,7 +654,7 @@ BEGIN
  vw:=s.id IS NOT NULL AND hiring_pay_subject(w,u,r.kind,'payables.view') AND hiring_econ_private_ok(w,r,s.contract_id);
  econ_read:=vw AND hiring_econ_subject(w,u,r.kind,'economics.view');
  fiscal_read:=vw AND hiring_ops_subject(w,u,r.kind,'fiscal_documents.view');
- mg:=vw AND econ_read AND fiscal_read AND NOT ro AND hiring_pay_subject(w,u,r.kind,'payables.manage');
+ mg:=vw AND econ_read AND fiscal_read AND hiring_pay_parent_visible(w,s.contract_id,CASE WHEN r.kind='supplier' THEN r.company_id END,s.legal_entity_id) AND NOT ro AND hiring_pay_subject(w,u,r.kind,'payables.manage');
  SELECT finance_user_id INTO fin FROM contract_handoff_settings WHERE workspace_id=w AND enabled;
  rc:=vw AND econ_read AND fiscal_read AND NOT ro AND fin=u AND hiring_pay_subject(w,u,r.kind,'payables_reconciliation.approve');
  cam:=vw AND NOT ro AND r.release_condition='also_client_acceptance' AND hiring_pay_subject(w,u,r.kind,'client_acceptance.manage');
