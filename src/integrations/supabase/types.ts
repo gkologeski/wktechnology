@@ -6897,6 +6897,7 @@ export type Database = {
           decided_at: string | null
           decided_by: string | null
           decision_note: string | null
+          hiring_request_origin: string | null
           id: string
           legal_entity_id: string | null
           missing_template: boolean
@@ -6927,6 +6928,7 @@ export type Database = {
           decided_at?: string | null
           decided_by?: string | null
           decision_note?: string | null
+          hiring_request_origin?: string | null
           id?: string
           legal_entity_id?: string | null
           missing_template?: boolean
@@ -6957,6 +6959,7 @@ export type Database = {
           decided_at?: string | null
           decided_by?: string | null
           decision_note?: string | null
+          hiring_request_origin?: string | null
           id?: string
           legal_entity_id?: string | null
           missing_template?: boolean
@@ -6986,6 +6989,13 @@ export type Database = {
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "shared_fields_deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_drafts_hiring_request_origin_fkey"
+            columns: ["hiring_request_origin"]
+            isOneToOne: false
+            referencedRelation: "hiring_preparation_requests"
             referencedColumns: ["id"]
           },
           {
@@ -7800,6 +7810,7 @@ export type Database = {
           expense_reimbursement_days: number | null
           governing_law: string | null
           hiring_person_id: string | null
+          hiring_request_origin: string | null
           hours_per_month: number | null
           id: string
           import_confidence: number | null
@@ -7861,6 +7872,7 @@ export type Database = {
           expense_reimbursement_days?: number | null
           governing_law?: string | null
           hiring_person_id?: string | null
+          hiring_request_origin?: string | null
           hours_per_month?: number | null
           id?: string
           import_confidence?: number | null
@@ -7922,6 +7934,7 @@ export type Database = {
           expense_reimbursement_days?: number | null
           governing_law?: string | null
           hiring_person_id?: string | null
+          hiring_request_origin?: string | null
           hours_per_month?: number | null
           id?: string
           import_confidence?: number | null
@@ -8013,6 +8026,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "people_total_cost"
             referencedColumns: ["person_id"]
+          },
+          {
+            foreignKeyName: "contracts_hiring_request_origin_fkey"
+            columns: ["hiring_request_origin"]
+            isOneToOne: false
+            referencedRelation: "hiring_preparation_requests"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "contracts_legal_entity_id_fkey"
@@ -13477,6 +13497,68 @@ export type Database = {
           },
         ]
       }
+      hiring_draft_capabilities: {
+        Row: {
+          attempts: number
+          challenge_attempts: number
+          challenge_id: string | null
+          code_expires_at: string | null
+          code_hash: string | null
+          consumed_at: string | null
+          cycle: number
+          delivery_ok: boolean
+          expires_at: string
+          id: string
+          last_send_at: string | null
+          request_id: string
+          revoked_at: string | null
+          sends: number
+          token_hash: string
+        }
+        Insert: {
+          attempts?: number
+          challenge_attempts?: number
+          challenge_id?: string | null
+          code_expires_at?: string | null
+          code_hash?: string | null
+          consumed_at?: string | null
+          cycle: number
+          delivery_ok?: boolean
+          expires_at: string
+          id?: string
+          last_send_at?: string | null
+          request_id: string
+          revoked_at?: string | null
+          sends?: number
+          token_hash: string
+        }
+        Update: {
+          attempts?: number
+          challenge_attempts?: number
+          challenge_id?: string | null
+          code_expires_at?: string | null
+          code_hash?: string | null
+          consumed_at?: string | null
+          cycle?: number
+          delivery_ok?: boolean
+          expires_at?: string
+          id?: string
+          last_send_at?: string | null
+          request_id?: string
+          revoked_at?: string | null
+          sends?: number
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_draft_capabilities_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_formalizations"
+            referencedColumns: ["request_id"]
+          },
+        ]
+      }
       hiring_email_outbox: {
         Row: {
           attempts: number
@@ -13696,6 +13778,189 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "workspaces"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      hiring_formalization_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          cycle: number
+          id: string
+          kind: string
+          request_id: string
+          workspace_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          cycle: number
+          id?: string
+          kind: string
+          request_id: string
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          cycle?: number
+          id?: string
+          kind?: string
+          request_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_formalization_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_formalizations"
+            referencedColumns: ["request_id"]
+          },
+        ]
+      }
+      hiring_formalization_notes: {
+        Row: {
+          actor_id: string | null
+          actor_kind: string
+          actor_label: string
+          created_at: string
+          cycle: number
+          id: string
+          note: string
+          request_id: string
+          stage: string
+          workspace_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_kind: string
+          actor_label: string
+          created_at?: string
+          cycle: number
+          id?: string
+          note: string
+          request_id: string
+          stage: string
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_kind?: string
+          actor_label?: string
+          created_at?: string
+          cycle?: number
+          id?: string
+          note?: string
+          request_id?: string
+          stage?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_formalization_notes_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_formalizations"
+            referencedColumns: ["request_id"]
+          },
+        ]
+      }
+      hiring_formalizations: {
+        Row: {
+          accepted_at: string | null
+          approval_id: string
+          contract_id: string
+          cycle: number
+          document_hash: string | null
+          draft_id: string
+          due_at: string | null
+          finance_at: string | null
+          finance_by: string | null
+          finance_user: string
+          legal_at: string | null
+          legal_by: string | null
+          legal_user: string
+          prepared_by: string
+          request_id: string
+          request_revision: number
+          settings_snapshot: Json
+          signature_user: string
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          approval_id: string
+          contract_id: string
+          cycle?: number
+          document_hash?: string | null
+          draft_id: string
+          due_at?: string | null
+          finance_at?: string | null
+          finance_by?: string | null
+          finance_user: string
+          legal_at?: string | null
+          legal_by?: string | null
+          legal_user: string
+          prepared_by: string
+          request_id: string
+          request_revision: number
+          settings_snapshot: Json
+          signature_user: string
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          approval_id?: string
+          contract_id?: string
+          cycle?: number
+          document_hash?: string | null
+          draft_id?: string
+          due_at?: string | null
+          finance_at?: string | null
+          finance_by?: string | null
+          finance_user?: string
+          legal_at?: string | null
+          legal_by?: string | null
+          legal_user?: string
+          prepared_by?: string
+          request_id?: string
+          request_revision?: number
+          settings_snapshot?: Json
+          signature_user?: string
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_formalizations_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: true
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_formalizations_draft_id_fkey"
+            columns: ["draft_id"]
+            isOneToOne: true
+            referencedRelation: "contract_drafts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hiring_formalizations_workspace_id_approval_id_fkey"
+            columns: ["workspace_id", "approval_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_preparation_approvals"
+            referencedColumns: ["workspace_id", "id"]
+          },
+          {
+            foreignKeyName: "hiring_formalizations_workspace_id_request_id_fkey"
+            columns: ["workspace_id", "request_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_preparation_requests"
+            referencedColumns: ["workspace_id", "id"]
           },
         ]
       }
@@ -13943,6 +14208,116 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: []
+      }
+      hiring_preparation_approval_events: {
+        Row: {
+          actor_id: string
+          approval_id: string
+          created_at: string
+          id: string
+          kind: string
+          note: string
+          operation_id: string | null
+          request_id: string
+          revision: number
+          stage: string | null
+          workspace_id: string
+        }
+        Insert: {
+          actor_id: string
+          approval_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          note?: string
+          operation_id?: string | null
+          request_id: string
+          revision: number
+          stage?: string | null
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string
+          approval_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          note?: string
+          operation_id?: string | null
+          request_id?: string
+          revision?: number
+          stage?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_preparation_approval_event_workspace_id_approval_id_fkey"
+            columns: ["workspace_id", "approval_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_preparation_approvals"
+            referencedColumns: ["workspace_id", "id"]
+          },
+          {
+            foreignKeyName: "hiring_preparation_approval_events_workspace_id_request_id_fkey"
+            columns: ["workspace_id", "request_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_preparation_requests"
+            referencedColumns: ["workspace_id", "id"]
+          },
+        ]
+      }
+      hiring_preparation_approvals: {
+        Row: {
+          ceo_id: string
+          created_at: string
+          id: string
+          manager_id: string
+          policy_revision: number
+          policy_snapshot: Json
+          reference_revision: number
+          request_id: string
+          requested_by: string
+          revision: number
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          ceo_id: string
+          created_at?: string
+          id?: string
+          manager_id: string
+          policy_revision: number
+          policy_snapshot: Json
+          reference_revision: number
+          request_id: string
+          requested_by: string
+          revision: number
+          status: string
+          workspace_id: string
+        }
+        Update: {
+          ceo_id?: string
+          created_at?: string
+          id?: string
+          manager_id?: string
+          policy_revision?: number
+          policy_snapshot?: Json
+          reference_revision?: number
+          request_id?: string
+          requested_by?: string
+          revision?: number
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hiring_preparation_approvals_workspace_id_request_id_fkey"
+            columns: ["workspace_id", "request_id"]
+            isOneToOne: false
+            referencedRelation: "hiring_preparation_requests"
+            referencedColumns: ["workspace_id", "id"]
+          },
+        ]
       }
       hiring_preparation_events: {
         Row: {
@@ -33998,7 +34373,15 @@ export type Database = {
         Args: { p_action: string; p_contract: string; p_data?: Json }
         Returns: Json
       }
+      contract_attachment_manage_sales_v1: {
+        Args: { p_action: string; p_contract: string; p_data?: Json }
+        Returns: Json
+      }
       contract_attachment_signing_context: {
+        Args: { p_contract: string; p_hash: string }
+        Returns: Json
+      }
+      contract_attachment_signing_context_sales_v1: {
         Args: { p_contract: string; p_hash: string }
         Returns: Json
       }
@@ -34115,6 +34498,18 @@ export type Database = {
         Returns: Json
       }
       contract_esign_public: {
+        Args: {
+          p_action: string
+          p_ip?: string
+          p_name?: string
+          p_reason?: string
+          p_signature?: string
+          p_token: string
+          p_ua?: string
+        }
+        Returns: Json
+      }
+      contract_esign_public_sales_v1: {
         Args: {
           p_action: string
           p_ip?: string
@@ -34863,11 +35258,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      hiring_attachment_policy: { Args: { k: string }; Returns: Json }
       hiring_contract_esign_body: {
         Args: { p_contract: string; p_ws: string }
         Returns: string
       }
       hiring_contract_esign_body_without_attachments: {
+        Args: { p_contract: string; p_ws: string }
+        Returns: string
+      }
+      hiring_contract_esign_body_without_attachments_sales_v1: {
         Args: { p_contract: string; p_ws: string }
         Returns: string
       }
@@ -34908,6 +35308,18 @@ export type Database = {
         }
         Returns: string
       }
+      hiring_contract_native_prepare_sales_v1: {
+        Args: {
+          p_contract: string
+          p_customer_email: string
+          p_customer_name: string
+          p_hash: string
+          p_issuer_email: string
+          p_issuer_name: string
+          p_ws: string
+        }
+        Returns: string
+      }
       hiring_contract_origin_save: {
         Args: {
           p_contract: string
@@ -34926,11 +35338,28 @@ export type Database = {
         Args: { p_contract: string; p_ws: string }
         Returns: Json
       }
+      hiring_contract_signature_context_sales_v1: {
+        Args: { p_contract: string; p_ws: string }
+        Returns: Json
+      }
       hiring_contract_signature_reason: {
         Args: { p_contract: string; p_deal?: string; p_ws: string }
         Returns: string
       }
+      hiring_contract_signature_reason_sales_v1: {
+        Args: { p_contract: string; p_deal?: string; p_ws: string }
+        Returns: string
+      }
       hiring_contract_signers_prepare: {
+        Args: {
+          p_contract: string
+          p_hash: string
+          p_signers: Json
+          p_ws: string
+        }
+        Returns: string
+      }
+      hiring_contract_signers_prepare_sales_v1: {
         Args: {
           p_contract: string
           p_hash: string
@@ -34973,6 +35402,56 @@ export type Database = {
         }
         Returns: undefined
       }
+      hiring_draft_attachment: {
+        Args: { annex: string; token: string }
+        Returns: Json
+      }
+      hiring_draft_capability: {
+        Args: { token: string }
+        Returns: {
+          attempts: number
+          challenge_attempts: number
+          challenge_id: string | null
+          code_expires_at: string | null
+          code_hash: string | null
+          consumed_at: string | null
+          cycle: number
+          delivery_ok: boolean
+          expires_at: string
+          id: string
+          last_send_at: string | null
+          request_id: string
+          revoked_at: string | null
+          sends: number
+          token_hash: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "hiring_draft_capabilities"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      hiring_draft_code_context: { Args: { token: string }; Returns: string }
+      hiring_draft_code_delivery: {
+        Args: { challenge: string; ok: boolean; token: string }
+        Returns: undefined
+      }
+      hiring_draft_code_reserve: {
+        Args: { challenge: string; digest: string; token: string }
+        Returns: Json
+      }
+      hiring_draft_decide: {
+        Args: {
+          challenge: string
+          decision: string
+          digest: string
+          note: string
+          token: string
+        }
+        Returns: Json
+      }
+      hiring_draft_public: { Args: { token: string }; Returns: Json }
       hiring_email_claim: {
         Args: never
         Returns: {
@@ -35045,6 +35524,73 @@ export type Database = {
         Args: { p_contract: string; p_deal?: string; p_ws: string }
         Returns: string
       }
+      hiring_formalization_access: {
+        Args: { action: string; i: string; w: string }
+        Returns: boolean
+      }
+      hiring_formalization_context: {
+        Args: { i: string; w: string }
+        Returns: Json
+      }
+      hiring_formalization_current: {
+        Args: { i: string; w: string }
+        Returns: boolean
+      }
+      hiring_formalization_document_locked: {
+        Args: { k: string; w: string }
+        Returns: boolean
+      }
+      hiring_formalization_fingerprint: { Args: { i: string }; Returns: string }
+      hiring_formalization_forsign_roster: {
+        Args: { expected: Json; remote: Json }
+        Returns: boolean
+      }
+      hiring_formalization_invalidate: {
+        Args: { i: string }
+        Returns: undefined
+      }
+      hiring_formalization_lock: { Args: { i: string }; Returns: undefined }
+      hiring_formalization_notify: { Args: { i: string }; Returns: undefined }
+      hiring_formalization_prepare: {
+        Args: { i: string; rev: number; w: string }
+        Returns: string
+      }
+      hiring_formalization_preview_access: {
+        Args: { k: string; w: string }
+        Returns: boolean
+      }
+      hiring_formalization_private_access: {
+        Args: { i: string; w: string }
+        Returns: boolean
+      }
+      hiring_formalization_ready_subject: {
+        Args: { a: string; k: string; u: string; w: string }
+        Returns: boolean
+      }
+      hiring_formalization_recipient: { Args: { i: string }; Returns: string }
+      hiring_formalization_signature_gate: {
+        Args: { h?: string; k: string; w: string }
+        Returns: boolean
+      }
+      hiring_formalization_signed: {
+        Args: { k: string; w: string }
+        Returns: boolean
+      }
+      hiring_formalization_subject: {
+        Args: { action: string; k: string; u: string; w: string }
+        Returns: boolean
+      }
+      hiring_formalization_transition: {
+        Args: {
+          action: string
+          i: string
+          note?: string
+          rev: number
+          w: string
+        }
+        Returns: string
+      }
+      hiring_formalization_valid: { Args: { i: string }; Returns: boolean }
       hiring_job_contract_link: {
         Args: {
           p_contract: string
@@ -35136,6 +35682,48 @@ export type Database = {
       hiring_notification_conflict_repair: { Args: never; Returns: undefined }
       hiring_preparation_access: {
         Args: { a: string; k: string; w: string }
+        Returns: boolean
+      }
+      hiring_preparation_approval_access: {
+        Args: { a: string; k: string; w: string }
+        Returns: boolean
+      }
+      hiring_preparation_approval_context: {
+        Args: { p_id: string; p_kind: string; p_offset?: number; p_ws: string }
+        Returns: Json
+      }
+      hiring_preparation_approval_current: {
+        Args: { p_id: string; p_ws: string }
+        Returns: boolean
+      }
+      hiring_preparation_approval_decide: {
+        Args: {
+          p_approval: string
+          p_decision: string
+          p_id: string
+          p_kind: string
+          p_note: string
+          p_operation: string
+          p_revision: number
+          p_stage: string
+          p_ws: string
+        }
+        Returns: string
+      }
+      hiring_preparation_approval_notify: {
+        Args: { p_id: string }
+        Returns: undefined
+      }
+      hiring_preparation_approval_request: {
+        Args: { p_id: string; p_kind: string; p_revision: number; p_ws: string }
+        Returns: string
+      }
+      hiring_preparation_approval_route: {
+        Args: { p_id: string; p_ws: string }
+        Returns: Json
+      }
+      hiring_preparation_approval_subject: {
+        Args: { a: string; k: string; u: string; w: string }
         Returns: boolean
       }
       hiring_preparation_history: {
