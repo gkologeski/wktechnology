@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ApprovalPanel } from "./approval-panel";
+import { FormalizationPanel } from "./formalization-panel";
 import { getPreparationApproval } from "./approvals.functions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -631,6 +632,17 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
                 <p className="text-sm text-muted-foreground">
                   Salve a solicitação antes de solicitar aprovação.
                 </p>
+              )}
+              {row && (
+                <FormalizationPanel
+                  key={`formal:${row.id}`}
+                  kind={kind}
+                  row={row}
+                  dirty={
+                    referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
+                  }
+                  busy={save.isPending}
+                />
               )}
             </aside>
           </div>

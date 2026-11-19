@@ -2819,7 +2819,11 @@
     "techpeople.hiring_requests.approval_request.create.workspace",
     "techpeople.hiring_requests.approval.approve.workspace",
     "techcontracts.supplier_requests.approval_request.create.workspace",
-    "techcontracts.supplier_requests.approval.approve.workspace"
+    "techcontracts.supplier_requests.approval.approve.workspace",
+    "techpeople.hiring_requests.formalization.manage.workspace",
+    "techpeople.hiring_requests.formalization.approve.workspace",
+    "techcontracts.supplier_requests.formalization.manage.workspace",
+    "techcontracts.supplier_requests.formalization.approve.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -3058,6 +3062,18 @@
     },
     "techcontracts.supplier_requests.approval.approve.workspace": {
       "migration": "docs/architecture/prepared-migrations/0375_hiring_preparation_approvals.sql"
+    },
+    "techpeople.hiring_requests.formalization.manage.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0376_hiring_formalization.sql"
+    },
+    "techpeople.hiring_requests.formalization.approve.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0376_hiring_formalization.sql"
+    },
+    "techcontracts.supplier_requests.formalization.manage.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0376_hiring_formalization.sql"
+    },
+    "techcontracts.supplier_requests.formalization.approve.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0376_hiring_formalization.sql"
     }
   }
 }

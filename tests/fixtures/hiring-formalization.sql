@@ -1,0 +1,41 @@
+CREATE SCHEMA extensions;CREATE EXTENSION pgcrypto WITH SCHEMA extensions;
+ALTER TABLE profiles ADD COLUMN full_name text;
+ALTER TABLE people ADD COLUMN email text;
+ALTER TABLE contacts ADD COLUMN email text,ADD COLUMN last_name text;
+ALTER TABLE legal_entities ADD COLUMN cnpj text;
+ALTER TABLE contracts ADD COLUMN owner_id uuid,ADD COLUMN assigned_to uuid,ADD COLUMN status text DEFAULT 'draft',ADD COLUMN document_kind text DEFAULT 'main',ADD COLUMN proposal_id uuid,ADD COLUMN number text,ADD COLUMN starts_at date,ADD COLUMN ends_at date,ADD COLUMN hiring_person_id uuid,ADD COLUMN counterparty_company_id uuid,ADD COLUMN body_html text;
+CREATE TABLE contract_drafts(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,deal_id uuid,proposal_id uuid,title text,body_html text,created_by uuid,status text,revision integer DEFAULT 1,template_id uuid,prepared_terms jsonb,public_token uuid,decided_by uuid,decided_at timestamptz,client_decided_at timestamptz);
+CREATE TABLE contract_handoff_settings(workspace_id uuid PRIMARY KEY,enabled boolean,legal_user_id uuid,finance_user_id uuid,signature_user_id uuid,legal_days integer DEFAULT 1,finance_days integer DEFAULT 1,signature_days integer DEFAULT 1,timezone text DEFAULT 'America/Sao_Paulo');
+CREATE TABLE contract_attachments(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,contract_id uuid,ready boolean DEFAULT true,kind text DEFAULT 'file',file_name text,storage_path text,sha256 text,source_stamp text,source_name text,source_snapshot_path text,source_snapshot_sha256 text);
+CREATE TABLE hiring_contract_evidence(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,contract_id uuid,contract_hash text,document_id uuid,document_hash text,customer_signer_id uuid,issuer_signer_id uuid,kind text,revoked_at timestamptz,note text,recorded_by uuid);
+CREATE TABLE hiring_signature_events(workspace_id uuid,contract_id uuid,actor_id uuid,kind text,details jsonb);
+CREATE TABLE services(id uuid,workspace_id uuid,contract_id uuid,name text,quantity numeric,unit_price numeric,currency text);
+CREATE TABLE contract_forsign_operations(id uuid DEFAULT gen_random_uuid(),workspace_id uuid,contract_id uuid);
+CREATE TABLE contract_esign_deliveries(id uuid DEFAULT gen_random_uuid(),workspace_id uuid,contract_id uuid);
+CREATE TABLE esign_documents(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,owner_id uuid,title text,description text,body text,status text DEFAULT 'draft',expires_at timestamptz,ordered boolean DEFAULT false,content_hash text,sealed_at timestamptz);
+CREATE TYPE esign_signer_status AS ENUM('pending','viewed','signed','declined');
+CREATE TABLE esign_signers(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),workspace_id uuid,document_id uuid,owner_id uuid,name text,email text,sign_order integer,status esign_signer_status DEFAULT 'pending',public_token text DEFAULT gen_random_uuid()::text,signed_name text,signature_data text,signed_at timestamptz,ip_address text,user_agent text,decline_reason text,declined_at timestamptz,viewed_at timestamptz);
+CREATE TABLE esign_audit(workspace_id uuid,document_id uuid,signer_id uuid,owner_id uuid,event text,metadata jsonb,ip_address text,user_agent text);
+CREATE TABLE ats_offers(esign_document_id uuid);
+CREATE TABLE contract_signature_packages(id uuid,workspace_id uuid,contract_id uuid,contract_hash text,storage_path text,sha256 text);
+CREATE SCHEMA storage;CREATE TABLE storage.objects(bucket_id text,name text,user_metadata jsonb);
+-- These fixture boundaries use actual effective-permission resolver loaded above; limited canonical reads remain tenant-scoped.
+CREATE FUNCTION work_record_access(r text,i uuid,a text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$ SELECT is_workspace_member((SELECT active_workspace_id FROM profiles WHERE id=auth.uid()),auth.uid()) AND user_has_permission(auth.uid(),(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()),r||'.'||a||'.workspace') $$;
+CREATE FUNCTION sales_record_access(r text,i uuid,a text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$ SELECT EXISTS(SELECT 1 FROM companies WHERE id=i AND workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid())) OR EXISTS(SELECT 1 FROM contacts WHERE id=i AND workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid())) $$;
+CREATE FUNCTION hr_record_access(r text,a text,i uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$ SELECT EXISTS(SELECT 1 FROM people WHERE id=i AND workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND NOT archived) $$;
+CREATE FUNCTION contract_draft_is_approver(w uuid,u uuid) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER AS $$ SELECT EXISTS(SELECT 1 FROM contract_handoff_settings WHERE workspace_id=w AND legal_user_id=u) AND EXISTS(SELECT 1 FROM techerp_api.effective_permissions_unchecked(u,w) x WHERE x='techcontracts.contract_drafts.approve.workspace') $$;
+CREATE FUNCTION contract_handoff_due(t timestamptz,d int,z text) RETURNS timestamptz LANGUAGE sql AS $$ SELECT t+make_interval(days=>d) $$;
+CREATE FUNCTION hiring_signature_access(w uuid,k uuid,a text) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT is_workspace_member(w,auth.uid()) AND work_record_access('techcontracts.contracts',k,CASE a WHEN 'manage' THEN 'update' ELSE 'view' END) $$;
+CREATE FUNCTION hiring_contract_fingerprint(k uuid) RETURNS text LANGUAGE sql STABLE SECURITY DEFINER AS $$ SELECT encode(extensions.digest((to_jsonb(c)-ARRAY['status'])::text||coalesce((SELECT jsonb_agg(to_jsonb(a) ORDER BY a.id)::text FROM contract_attachments a WHERE a.contract_id=k),''),'sha256'),'hex') FROM contracts c WHERE c.id=k $$;
+CREATE FUNCTION hiring_contract_esign_body(w uuid,k uuid) RETURNS text LANGUAGE plpgsql STABLE AS $$ BEGIN RETURN hiring_contract_esign_body_without_attachments(w,k);END $$;
+CREATE FUNCTION contract_esign_manage(a text,i uuid,p jsonb) RETURNS jsonb LANGUAGE plpgsql AS $$ DECLARE d uuid;x jsonb; BEGIN
+ IF a='create' THEN INSERT INTO esign_documents(workspace_id,owner_id,title,body) VALUES((SELECT active_workspace_id FROM profiles WHERE id=auth.uid()),auth.uid(),p->>'title',p->>'body') RETURNING id INTO d;
+ FOR x IN SELECT value FROM jsonb_array_elements(p->'signers') LOOP INSERT INTO esign_signers(workspace_id,document_id,name,email,sign_order) VALUES((SELECT active_workspace_id FROM profiles WHERE id=auth.uid()),d,x->>'name',x->>'email',(x->>'sign_order')::int);END LOOP;RETURN jsonb_build_object('id',d);END IF;RETURN '{}';END $$;
+INSERT INTO permissions(key,module) SELECT k,'techcontracts' FROM unnest(ARRAY['techcontracts.contracts.create.workspace','techcontracts.contracts.view.workspace','techcontracts.contracts.update.workspace','techcontracts.contract_drafts.view.workspace','techcontracts.contract_drafts.approve.workspace','techcontracts.approvals.approve.workspace','techcontracts.signature_evidence.manage.workspace']) k;
+GRANT UPDATE ON contracts TO authenticated;
+CREATE POLICY fixture_contract_update ON contracts FOR UPDATE TO authenticated USING(work_record_access('techcontracts.contracts',id,'update')) WITH CHECK(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()));
+
+CREATE TABLE contract_draft_approvers(workspace_id uuid,user_id uuid);
+ALTER TABLE contracts ADD COLUMN currency text DEFAULT 'BRL';
+CREATE TABLE contract_signature_participants(id uuid DEFAULT gen_random_uuid(),workspace_id uuid,evidence_id uuid,document_id uuid,signer_id uuid,contact_id uuid,role text);
+ALTER TABLE hiring_contract_evidence ADD COLUMN recorded_at timestamptz DEFAULT now();

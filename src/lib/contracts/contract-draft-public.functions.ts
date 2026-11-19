@@ -13,6 +13,19 @@ export const getPublicContractDraft = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     if (!isValidDraftToken(data.token)) return null;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const hiring = await (supabaseAdmin as any).rpc("hiring_draft_public", { token: data.token });
+    if (hiring.data)
+      return hiring.data as {
+        title: string;
+        body_html: string;
+        status: string;
+        workspace_name: string | null;
+        client_decided_at: string | null;
+        client_name: string | null;
+        requires_code?: boolean;
+        expires_at?: string;
+        attachments?: Array<{ id: string; name: string; sha256: string }>;
+      };
     const { data: doc, error } = await (supabaseAdmin as any).rpc("contract_draft_public_get", {
       p_token: data.token,
     });
@@ -24,6 +37,9 @@ export const getPublicContractDraft = createServerFn({ method: "POST" })
       workspace_name: string | null;
       client_decided_at: string | null;
       client_name: string | null;
+      requires_code?: boolean;
+      expires_at?: string;
+      attachments?: Array<{ id: string; name: string; sha256: string }>;
     } | null;
   });
 
