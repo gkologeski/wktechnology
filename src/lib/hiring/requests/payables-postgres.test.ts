@@ -423,12 +423,11 @@ const prefix = (kind: string) =>
 async function reset() {
   // Keep fixture setup atomic so a failed seed never exposes partial test data.
   await db.begin(async (db) => {
-    await db.unsafe(
-      "TRUNCATE hiring_fiscal_document_allocations,hiring_payable_source_claims,hiring_payable_installments,hiring_payable_reconciliations,hiring_payable_schedules,hiring_client_acceptances,financial_payments,financial_entries,financial_recurrences,hiring_monthly_provisions,project_time_entries,project_period_closings,hiring_economic_plan_events,hiring_economic_plan_versions,hiring_economic_plans,hiring_fiscal_document_events,hiring_fiscal_document_reviews,hiring_fiscal_documents,hiring_execution_delivery_decisions,hiring_execution_delivery_submissions,hiring_execution_delivery_versions,hiring_execution_deliveries,project_milestones,storage.objects,hiring_execution_starts,people_allocations,hiring_employment_events,hiring_engagements,ats_jobs,hiring_workspace_settings,contract_draft_approvers,hiring_formalization_events,hiring_draft_capabilities,hiring_formalizations,contract_drafts,contract_attachments,hiring_contract_evidence,esign_signers,esign_documents,contract_forsign_operations,contract_esign_deliveries,contract_handoff_settings CASCADE",
-    );
-    await db.unsafe(
-      "TRUNCATE fixture_hidden_reads,fixture_field_rules,hiring_preparation_approval_events,hiring_preparation_approvals,hiring_preparation_reference_events,hiring_preparation_reference_values,hiring_preparation_events,hiring_preparation_requests,notifications,hiring_area_policies,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_permission_sets,permission_sets,permission_set_items,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts CASCADE",
-    );
+    // Privileged cleanup is confined to this disposable database; production RPCs and scenario writes still run with all guards.
+    // DELETE avoids TRUNCATE's repeated relcache/plan invalidation across the full signed-flow fixture.
+    await db.unsafe(`SET LOCAL session_replication_role=replica;
+      DO $cleanup$ DECLARE t record; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename NOT IN('permissions','shared_field_catalog') LOOP EXECUTE format('DELETE FROM public.%I',t.tablename);END LOOP;END $cleanup$;
+      DELETE FROM storage.objects; SET LOCAL session_replication_role=origin;`);
     await db`insert into workspaces(id) values(${W}),(${B})`;
     for (const u of [U, M, CEO, D]) {
       await db`insert into profiles values(${u},${W})`;
@@ -1571,4 +1570,9 @@ it("monthly cost stays unknown when another contract overlaps the same person", 
   expect(c.eligible.lines[0].blocking).toBe("ambiguous_employment");
   expect(c.eligible.lines[0].amount).toBeNull();
   await expect(gen(x.r, { doc: await doc(x.r) })).rejects.toThrow("ambiguous_employment");
+});
+
+it("disposable fixture restores all triggers before each financial scenario", async () => {
+  await reset();
+  expect((await db`show session_replication_role`)[0].session_replication_role).toBe("origin");
 });
