@@ -26,8 +26,8 @@ As suítes estão em `src/lib/hiring/requests/`. Os cinco cenários são testes 
 - Para ambas as origens, a sessão `Ver como papel` mantém os indicadores de escrita desabilitados e a RPC de geração nega a tentativa, mesmo com grants financeiros. Leitura de contexto e tentativa de mutação são transações distintas para verificar também o rollback real.
 - Conferir, após a nova migração de legados, que nenhuma marcação de importação/metadata permite converter um contrato de contratação governada para fugir dos gates acima.
 
-- Auditoria encontrou que `hiring_execution_activation_ok` não revalidava a autoridade atual do gestor, embora o contexto de início já o fizesse. A migração aditiva preparada 0386 inclui `hiring_execution_problem` no predicado de novas operações; preserva ACL, histórico do início, vínculo e alocações anteriores. Quatro novos cenários pós-início (sem chave, deny, inativo e workspace trocado) negam a nova alocação.
-- As quatro suítes de execução, entregas, economia e títulos carregam também a 0386: 214 testes aprovados em PostgreSQL 16 descartável local, em 19/11/2026. A CI PostgreSQL 17 ainda é obrigatória.
+- Auditoria encontrou que `hiring_execution_activation_ok` não revalidava a autoridade atual do gestor, embora o contexto de início já o fizesse. A migração aditiva preparada 0386 inclui a identidade do gestor atual (sem autoaprovação) e `hiring_execution_subject` no predicado de novas operações, preservando a verificação existente de assinatura, revisão e aprovação vigente; preserva ACL, histórico do início, vínculo e alocações anteriores. Quatro novos cenários pós-início (sem chave, deny, inativo e workspace trocado) negam a nova alocação.
+- As quatro suítes de execução, entregas, economia e títulos carregam também a 0386: 216 testes aprovados em PostgreSQL 16 descartável local, em 19/11/2026. A CI PostgreSQL 17 ainda é obrigatória.
 
 - Integração cruzada carrega a 0385 ao lado das migrações e funções reais de contratação no fixture de títulos. Profissional e fornecedor iniciados, com assinatura completa real de fixture, não podem ser reconhecidos como legado mesmo com caminho de importação. As 73 verificações passaram localmente; contratos, início e pagamentos são preservados.
 
@@ -42,4 +42,4 @@ As suítes estão em `src/lib/hiring/requests/`. Os cinco cenários são testes 
 
 ## Estado
 
-Auditoria e complementos em execução. A nova entrega ainda não foi aplicada nem publicada. Evidências locais em `outputs/contracts-legacy-package5-2026-11-19/` da tarefa Codex; o relatório final substituirá este estado após a validação efetiva.
+Auditoria e complementos em execução. A primeira CI aprovou 3.983 testes e build, mas recusou 362,5 s de verify (limite 240 s); a 0386 foi ajustada para não repetir o preflight completo de início depois de já validar assinatura/revisão/aprovação. A autoridade atual continua sendo revalidada, com os mesmos testes de revogação. A nova entrega ainda não foi aplicada nem publicada. Evidências locais em `outputs/contracts-legacy-package5-2026-11-19/` da tarefa Codex; o relatório final substituirá este estado após a validação efetiva.

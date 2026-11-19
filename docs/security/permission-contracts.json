@@ -13176,7 +13176,7 @@
         "src/lib/hiring/requests/execution.functions.ts": "b475d61ef00fed1513c1364abf4f448d982f501afe5892da20fd927c343fb8c7",
         "src/lib/hiring/requests/execution-panel.tsx": "03c6b5b222d5d4de486e0fa6d6ed1aec53ecaf9eb180d560f76b80cbc4af8420",
         "src/lib/hiring/requests/execution-history.tsx": "5f1d25aaa4f27a53922df2fe79a88dc2cedddbd6b6b0a7a8e342c29fc93a8984",
-        "drizzle/migrations/0386_hiring_execution_current_authority.sql": "8912ea0405c72067479b0a0145699b50490d6100ae6a6af59aafa51fed411955"
+        "drizzle/migrations/0386_hiring_execution_current_authority.sql": "72e7747ed4b2c1e0e4e1c696632a84cef068fb4cc8d22f80db7efe7c6b3553d1"
       }
     },
     {
