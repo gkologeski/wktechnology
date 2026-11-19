@@ -43,3 +43,5 @@
 - Payment terms (entrada + saldo) live as JSON on quotes/proposals/contracts, scheduled by the pure `src/lib/sales/payment-terms.ts`; activating a service whose contract has terms calls `service_activate_with_terms` (once per contract, service auto-billing off). Why: one schedule for every screen and no double billing.
 - `sales_capabilities` resolves the main TechSales tables in one set-based statement (caller context once) and keeps the per-record loop only for other tables, via the non-exposed `sales_private.record_access_ctx`; why: 7 checks per record each re-ran RLS/context and made the quotes list time out.
 - ForSign: see `src/lib/integrations/forsign/AGENTS.md`.
+
+- Campos de busca e cadastro de Empresa, Contato, Projeto, Contrato e Contrato Comercial usam as skills em `skills/search-create-catalogue.json` e o controle compartilhado `SearchCreateField`; criação chama o formulário/gravador canônico, retorna ID real ao rascunho e preserva permissões e contexto.

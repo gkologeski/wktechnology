@@ -89,7 +89,8 @@ export const pickerKind = z.enum([
   "contact",
   "deal",
   "project",
+  "contract",
   "commercial_contract",
 ]);
 export type PickerKind = z.infer<typeof pickerKind>;
-export type PickerOption = { id: string; label: string };
+export type PickerOption = { id: string; label: string; hint?: string | null };

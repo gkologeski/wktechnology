@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { createProject } from "@/lib/projects.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { readViewAs } from "@/lib/view-as-client";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
 type Props = {
@@ -23,6 +25,7 @@ type Props = {
   contractId?: string;
   serviceId?: string;
   onCreated?: (id: string) => void;
+  initialName?: string;
 };
 
 export function QuickCreateProjectDialog({
@@ -31,14 +34,22 @@ export function QuickCreateProjectDialog({
   contractId,
   serviceId,
   onCreated,
+  initialName = "",
 }: Props) {
   const create = useServerFn(createProject);
   const navigate = useNavigate();
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName);
   const [description, setDescription] = useState("");
   const [dueAt, setDueAt] = useState("");
   const [plannedHours, setPlannedHours] = useState("");
   const [saving, setSaving] = useState(false);
+  const p = usePermissions();
+  const allowed =
+    !p.isLoading &&
+    !p.isError &&
+    !!p.workspaceId &&
+    !readViewAs()?.readOnly &&
+    p.canAny(["techprojects.projects.create.own", "techprojects.projects.create.workspace"]);
 
   const reset = () => {
     setName("");
@@ -48,6 +59,7 @@ export function QuickCreateProjectDialog({
   };
 
   const submit = async () => {
+    if (!allowed) return toast.error("Sem permissão para criar projetos.");
     if (!name.trim()) {
       toast.error("Informe o nome do projeto");
       return;
@@ -76,6 +88,7 @@ export function QuickCreateProjectDialog({
     }
   };
 
+  if (!allowed) return null;
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">

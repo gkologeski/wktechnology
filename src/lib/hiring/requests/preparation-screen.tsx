@@ -1,3 +1,5 @@
+import { SupplierDocumentIntake } from "@/components/hiring-requests/supplier-document-intake";
+import { PreparationOriginNotice } from "@/components/hiring-requests/preparation-origin-notice";
 import { useEffect, useRef, useState } from "react";
 import { ApprovalPanel } from "./approval-panel";
 import { FormalizationPanel } from "./formalization-panel";
@@ -57,7 +59,8 @@ import {
 import { useSharedAction } from "@/lib/access-control/use-shared-action";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { readViewAs } from "@/lib/view-as-client";
-import { PreparationForm, PickerResults } from "@/components/hiring-requests/preparation-form";
+import { PreparationReferenceField } from "@/components/hiring-requests/preparation-reference-field";
+import { PreparationForm } from "@/components/hiring-requests/preparation-form";
 import {
   listPreparation,
   savePreparation,
@@ -73,7 +76,6 @@ import {
   type RequestKind,
   type PreparationRow,
   type PreparationData,
-  type PickerKind,
   wizardSteps,
   modalityLabels,
 } from "./types";
@@ -84,105 +86,6 @@ function useDebounced(value: string) {
     return () => clearTimeout(timer);
   }, [value]);
   return v;
-}
-function EntityPicker({
-  kind,
-  picker,
-  label,
-  value,
-  onChange,
-  disabled,
-  company,
-}: {
-  kind: RequestKind;
-  picker: PickerKind;
-  label: string;
-  value: string | null;
-  onChange: (id: string | null) => void;
-  disabled: boolean;
-  company: string | null;
-}) {
-  const permissions = usePermissions();
-  const [open, setOpen] = useState(false),
-    [search, setSearch] = useState("");
-  const term = useDebounced(search);
-  const fn = useServerFn(searchPreparationPicker);
-  const selected = useQuery({
-    queryKey: ["preparation-picker-label", permissions.workspaceId, kind, picker, value, company],
-    enabled: !!value,
-    queryFn: () => fn({ data: { kind, picker, search: "", selected: value, company } }),
-    retry: false,
-  });
-  const options = useQuery({
-    queryKey: ["preparation-picker", permissions.workspaceId, kind, picker, term, company],
-    enabled: open,
-    queryFn: () => fn({ data: { kind, picker, search: term, selected: null, company } }),
-    retry: false,
-  });
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={`choose-${picker}`}>{label}</Label>
-      <div className="flex gap-2">
-        <Button
-          id={`choose-${picker}`}
-          disabled={disabled || (picker === "contact" && !company)}
-          variant="outline"
-          className="flex-1 min-w-0 justify-start whitespace-normal text-left h-auto min-h-11"
-          onClick={() => setOpen(true)}
-        >
-          {value
-            ? selected.isLoading
-              ? "Carregando vínculo…"
-              : selected.isError
-                ? "Não foi possível consultar o vínculo"
-                : (selected.data?.[0]?.label ?? "Vínculo indisponível para consulta")
-            : "Selecionar…"}
-        </Button>
-        {value && (
-          <Button disabled={disabled} variant="ghost" onClick={() => onChange(null)}>
-            Remover vínculo
-          </Button>
-        )}
-      </div>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{label}</DialogTitle>
-          </DialogHeader>
-          <Label htmlFor={`picker-${picker}`}>Buscar</Label>
-          <Input
-            id={`picker-${picker}`}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            autoFocus
-          />
-          {options.isLoading ? (
-            <ListPageSkeleton />
-          ) : options.isError ? (
-            <div role="alert">
-              Não foi possível carregar opções.{" "}
-              <Button variant="outline" onClick={() => void options.refetch()}>
-                Tentar novamente
-              </Button>
-            </div>
-          ) : options.data?.length ? (
-            <PickerResults
-              options={options.data}
-              onPick={(id) => {
-                onChange(id);
-                setOpen(false);
-              }}
-            />
-          ) : (
-            <EmptyState
-              title="Nenhuma opção disponível"
-              description="Revise a busca ou as permissões do cadastro."
-            />
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
-  );
 }
 export function PreparationScreen({ kind, requestId }: { kind: RequestKind; requestId?: string }) {
   const p = usePermissions();
@@ -220,6 +123,7 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
     [open, setOpen] = useState(false),
     [row, setRow] = useState<PreparationRow | null>(null),
     [form, setForm] = useState<PreparationData>(emptyPreparation(kind)),
+    [originBlocked, setOriginBlocked] = useState(false),
     [error, setError] = useState(""),
     [cancel, setCancel] = useState(false),
     [historyOffset, setHistoryOffset] = useState(0);
@@ -297,6 +201,10 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
     onError: (e) => setError(e.message),
   });
   function submit(data: PreparationData) {
+    if (data.status !== "cancelled" && originBlocked) {
+      setError("Confira os vínculos e a entidade legal na Conferência da origem antes de salvar.");
+      return;
+    }
     try {
       const parsed = {
         ...preparationData.parse(data),
@@ -459,7 +367,18 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
           if (!save.isPending) setOpen(v);
         }}
       >
-        <DialogContent className="sm:max-w-6xl max-h-[90dvh] overflow-y-auto">
+        <DialogContent
+          className="sm:max-w-6xl max-h-[90dvh] overflow-y-auto"
+          onEscapeKeyDown={(event) => {
+            const target = event.target;
+            if (
+              target instanceof HTMLElement &&
+              target.getAttribute("role") === "combobox" &&
+              target.getAttribute("aria-expanded") === "true"
+            )
+              event.preventDefault();
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{row ? row.title : "Nova solicitação"}</DialogTitle>
           </DialogHeader>
@@ -477,6 +396,21 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
           </nav>
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
             <div className="min-w-0">
+              {kind === "supplier" && step === 0 && (
+                <SupplierDocumentIntake
+                  key={`${row?.id ?? "new"}:${open}`}
+                  form={form}
+                  disabled={locked}
+                  canWriteReference={
+                    canReadReference && canWriteReference && (!row || reference.isSuccess)
+                  }
+                  onApply={setForm}
+                  onReference={(n) => {
+                    setReferenceValue(n);
+                    setReferenceDirty(true);
+                  }}
+                />
+              )}
               <PreparationForm
                 step={step}
                 referenceValue={referenceValue}
@@ -491,7 +425,7 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
                 onChange={setForm}
                 disabled={locked}
                 picker={(picker, label, value, onChange) => (
-                  <EntityPicker
+                  <PreparationReferenceField
                     key={picker}
                     kind={kind}
                     picker={picker}
@@ -500,6 +434,7 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
                     onChange={onChange}
                     disabled={locked || step === 3}
                     company={form.company_id}
+                    commercialContractId={form.commercial_contract_id}
                   />
                 )}
               />
@@ -624,6 +559,14 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
                   </li>
                 ))}
               </ol>
+              <PreparationOriginNotice
+                kind={kind}
+                form={form}
+                enabled={open}
+                editable={!locked}
+                onBlocked={setOriginBlocked}
+                onUseEntity={(id) => setForm((v) => ({ ...v, legal_entity_id: id }))}
+              />
               <h3 className="font-semibold">Responsáveis</h3>
               <p className="text-sm break-words">
                 Solicitante: {row?.created_by ?? "Você ao salvar"}
@@ -724,7 +667,10 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
             {step < 3 && <Button onClick={() => setStep(step + 1)}>Continuar</Button>}
             <Button
               disabled={
-                locked || !form.title.trim() || (canReadReference && !!row && !reference.isSuccess)
+                locked ||
+                originBlocked ||
+                !form.title.trim() ||
+                (canReadReference && !!row && !reference.isSuccess)
               }
               onClick={() => submit(form)}
             >

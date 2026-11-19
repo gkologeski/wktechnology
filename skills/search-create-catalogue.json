@@ -1,0 +1,27 @@
+[
+  {
+    "name": "text_Busca_Cria_Contato",
+    "id": "text-busca-cria-contato",
+    "path": "skills/text-busca-cria-contato/SKILL.md"
+  },
+  {
+    "name": "text_Busca_Cria_Contrato",
+    "id": "text-busca-cria-contrato",
+    "path": "skills/text-busca-cria-contrato/SKILL.md"
+  },
+  {
+    "name": "text_Busca_Cria_Contrato_Comercial",
+    "id": "text-busca-cria-contrato-comercial",
+    "path": "skills/text-busca-cria-contrato-comercial/SKILL.md"
+  },
+  {
+    "name": "text_Busca_Cria_Empresa",
+    "id": "text-busca-cria-empresa",
+    "path": "skills/text-busca-cria-empresa/SKILL.md"
+  },
+  {
+    "name": "text_Busca_Cria_Projeto",
+    "id": "text-busca-cria-projeto",
+    "path": "skills/text-busca-cria-projeto/SKILL.md"
+  }
+]

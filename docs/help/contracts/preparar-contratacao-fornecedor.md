@@ -8,7 +8,7 @@ route_pattern: /contracts/supplier-requests
 min_permission: techcontracts.supplier_requests.view.workspace
 audience: internal
 sort_order: 36
-version: 14
+version: 15
 is_published: true
 ---
 
@@ -22,12 +22,35 @@ is_published: true
 ## Passo a passo
 
 1. Abra **Nova solicitação** e percorra **Demanda → Vínculos → Condições → Revisão**. Voltar preserva os dados ainda não salvos.
-2. Em **Demanda**, informe título, finalidade Cliente/Interno/Gestão compartilhada, área responsável, entidade WK e escopo.
+2. Em **Demanda**, informe título, finalidade Atendimento a cliente/Uso interno da empresa/Gestão compartilhada entre projetos, área responsável, entidade WK e escopo.
 3. Em **Vínculos**, escolha empresa fornecedora canônica e contato opcional da mesma empresa. Projeto é opcional; negócio e contrato de origem estão disponíveis quando a finalidade é Cliente.
 4. Em **Condições**, selecione Por entrega/Por hora/Mensal/Mista. O valor de referência exige permissões específicas `techcontracts.supplier_requests.reference.view.workspace` para consultar e `.reference.update.workspace` para alterar. Não é retornado na lista ou no histórico comum.
 5. Para fornecedor, registre **Aceite WK + NF válida** ou **Aceite WK + NF válida + aceite cliente final**, como condição de liberação. A condição com cliente final exige finalidade Cliente com vínculo canônico; nenhuma das duas libera pagamento sozinha (veja Contas a pagar).
 6. Em **Revisão**, confira demanda, vínculos e condições e salve o rascunho. Na ficha, o histórico fica ao centro e resumo/jornada/responsáveis à direita; as decisões são registradas separadamente por revisão.
 7. Reabra para editar ou marcar Pronta para aprovação; cancelar exige confirmação e preserva histórico. Não inclui alterações ainda não salvas.
+
+## Ler o documento e revisar os campos
+
+Na etapa **Demanda**, use **Preencher pelo documento do fornecedor**:
+
+1. Selecione um contrato de compra já importado, com WK contratante, e clique em **Revisar dados do contrato**; ou selecione PDF (até 15 MB) / DOCX (até 10 MB) para leitura pela IA já configurada no workspace.
+2. Confira título, justificativa/escopo, modalidade e valor sugeridos. A IA não inventa propósito, origem, aprovações ou cadastros. Horas no documento não bastam para presumir cobrança por hora.
+3. Marque explicitamente cada campo que deseja preencher/substituir e clique em **Aplicar campos selecionados ao rascunho**. Nada é salvo até criar/salvar a solicitação. Valor de referência só aparece para quem pode consultá-lo e alterá-lo.
+4. Confirme as partes nos campos de vínculos; nomes no documento não criam IDs. A leitura avulsa não cadastra contrato nem anexa o arquivo automaticamente. O contrato já importado e seu original permanecem preservados.
+
+A leitura por IA conserva os controles do importador: `techcontracts.imports.manage.workspace` e permissão de criar contratos. Consultar um documento existente conserva o acesso ao próprio contrato por RLS e aos seus campos protegidos. Sem essas permissões, continue o preenchimento manual ou solicite acesso ao administrador.
+
+## Buscar ou cadastrar vínculos sem perder o rascunho
+
+Digite no campo de **Empresa fornecedora**, **Contato**, **Projeto**, **Contrato** ou **Contrato comercial**, escolha um resultado existente e confira o vínculo. Empresas exibem CNPJ; contatos pesquisam nome e sobrenome e pertencem à empresa escolhida.
+
+Se não existir e você tiver permissão, use **Criar** no próprio campo. O formulário padrão abre sobre a solicitação e retorna o cadastro real ao rascunho. Cancelar a criação preserva a solicitação. O cadastro precisa permanecer visível no mesmo workspace e corresponder ao tipo de vínculo. Um contrato comercial tem WK como fornecedora e seu cliente final é escolhido no formulário; não é preenchido com a empresa fornecedora da solicitação.
+
+## Conferir a origem antes de salvar
+
+**Atendimento a cliente** descreve o destino do serviço contratado, não quem fornece. Escolha um negócio **ou** contrato comercial de origem; não é necessário selecionar ambos. Projeto é complementar e precisa ter vínculos canônicos compatíveis.
+
+O resumo mostra **Conferência da origem** com nome, entidade WK e CNPJ dos registros acessíveis. Divergências bloqueiam o salvamento e indicam o cadastro a conferir. **Usar entidade desta origem** só preenche a solicitação local; não altera negócio, projeto ou contrato. Entidade inativa não pode ser reaproveitada. Não mude para Uso interno apenas para contornar uma divergência real.
 
 ## Aprovações da revisão salva
 

@@ -228,7 +228,7 @@
         "system.linkedin.view.own",
         "system.linkedin.view.workspace"
       ],
-      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 05/11/2026: header gains the Help '?' button (HelpButton), which only reads help articles through help.functions (help-center contract); no access change to existing routes. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. Personal LinkedIn has a specific route mapping; integration-administrator grants cannot replace its own view permission.",
+      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS. Review 01/11/2026: meeting WhatsApp reminders \u2014 settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 05/11/2026: header gains the Help '?' button (HelpButton), which only reads help articles through help.functions (help-center contract); no access change to existing routes. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. Personal LinkedIn has a specific route mapping; integration-administrator grants cannot replace its own view permission.",
       "database": [
         {
           "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
@@ -1484,7 +1484,7 @@
         "techsales.notes.view.workspace",
         "techsales.tasks.view.workspace"
       ],
-      "rationale": "User explicitly requested related contact/company history, identified as such, without moving source activity links. Invoker RPC requires a visible parent deal and keeps the existing per-activity RLS including note/task classification; same-workspace filter precedes pagination. No record mutation or permission grant. UI labels related history and other-deal provenance. Fixtures exercise production resolver with the activity resource CASE, plus separate full-schema real-JWT acceptance. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 15/11/2026: coalesce focus/visibility/reconnect reads, cancel superseded feed RPCs, and reconcile actual mutations once after an in-flight read; unchanged invoker RLS and complete pagination.",
+      "rationale": "User explicitly requested related contact/company history, identified as such, without moving source activity links. Invoker RPC requires a visible parent deal and keeps the existing per-activity RLS including note/task classification; same-workspace filter precedes pagination. No record mutation or permission grant. UI labels related history and other-deal provenance. Fixtures exercise production resolver with the activity resource CASE, plus separate full-schema real-JWT acceptance. Review 01/11/2026: meeting WhatsApp reminders \u2014 settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 15/11/2026: coalesce focus/visibility/reconnect reads, cancel superseded feed RPCs, and reconcile actual mutations once after an in-flight read; unchanged invoker RLS and complete pagination.",
       "controls": [
         {
           "file": "drizzle/migrations/0251_deal_related_activity_history.sql",
@@ -1749,7 +1749,7 @@
       "actions": ["view", "manage"],
       "scopes": ["workspace"],
       "permission_keys": ["system.whatsapp.view.workspace", "system.whatsapp.manage.workspace"],
-      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants. The legacy WhatsApp route now renders the same extracted WhatsAppConfiguration used by the channel center; original transport operations and server checks are preserved. Additional WABAs may reuse encrypted credentials of an existing connection only inside the server after current manage authorization and same-workspace source resolution; Meta must return numbers for the new WABA before an explicitly disabled connection is persisted. Fresh private verification secrets are encrypted, never returned. Authorization is repeated after remote lookup. WABA subscriptions use connection-specific callback overrides on the fixed server public HTTPS origin, preserving app-level defaults and other accounts; verification/received-event gates for activation remain unchanged. Revisão 18/11/2026: catálogo de remetentes inclui o conector já existente somente após middleware de campanhas/inbox e membership ativo; nenhuma credencial é retornada. Remetentes diretos continuam limitados ao workspace e conexões habilitadas.",
+      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants. The legacy WhatsApp route now renders the same extracted WhatsAppConfiguration used by the channel center; original transport operations and server checks are preserved. Additional WABAs may reuse encrypted credentials of an existing connection only inside the server after current manage authorization and same-workspace source resolution; Meta must return numbers for the new WABA before an explicitly disabled connection is persisted. Fresh private verification secrets are encrypted, never returned. Authorization is repeated after remote lookup. WABA subscriptions use connection-specific callback overrides on the fixed server public HTTPS origin, preserving app-level defaults and other accounts; verification/received-event gates for activation remain unchanged. Revis\u00e3o 18/11/2026: cat\u00e1logo de remetentes inclui o conector j\u00e1 existente somente ap\u00f3s middleware de campanhas/inbox e membership ativo; nenhuma credencial \u00e9 retornada. Remetentes diretos continuam limitados ao workspace e conex\u00f5es habilitadas.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -1892,7 +1892,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message. Undelivered outbound messages show a translated failure label (pure describeDeliveryError + InboxMessageBubble), built only from error fields of messages the user already reads. Recent-contact pruning RPC wa_campaign_prune_recent is SECURITY INVOKER (caller RLS on recipients applies), requires active workspace membership, EXECUTE only for authenticated/service_role, and only marks pending rows of that campaign as skipped. Audience filter suggestions use RPC whatsapp_campaign_filter_values: SECURITY INVOKER (caller RLS), entity limited to leads/contacts/companies/deals, column validated against the table catalog and custom key by regex, EXECUTE only for authenticated; server still checks isSuggestField and active workspace. The New Campaign dialog only regroups existing fields into sections. Campaign conversation distribution (assignment_mode auto/member/round_robin/unassigned) is saved only through create/update campaign server functions under the existing campaigns create/update keys; members are validated as active in the caller's workspace; at send time RPC wa_campaign_next_assignee (SECURITY DEFINER, EXECUTE only service_role, row lock, re-checks active membership) picks the assignee and only fills conversations with no assignee; unassigned campaigns skip automatic distribution on reply. Campaign audience filters are resolved by RPC wa_campaign_audience_ids: SECURITY INVOKER (caller RLS and column grants apply; protected shared-field columns are read through the masked shared_fields_* views), base/entity limited to leads/contacts/companies/deals, operators allow-listed, columns validated against the table catalog and custom keys by regex, values only as literals, max 10 groups/20 filters/20 terms, EXECUTE only for authenticated; the server still validates filters with isAllowedFilter under the existing campaigns view/create keys and the active workspace. Related reads, recent sends and opt-outs only paginate/parallelize the same user-client queries; compileAudienceGroups re-validates custom keys with filterColumnPath before the RPC. Campaign recipients are inserted in batches of 1,000 with the campaign workspace set explicitly, still through the user's client (RLS sales_create + sales_row_guard per row); sales_row_guard now computes the access context only after child tables return, which keeps every check and outcome identical. Audience ID reads use URI-bounded batches of 150 UUIDs; no permission or filter behavior change. The audience-only value lookup is shared with authorized sequence readers; it does not grant campaign listing, editing or sending. Its extracted helper checks either feature view, current actor/workspace, field allowlist and protected source lookup. All other campaign handlers retain their original gates. Review 03/11/2026: audience build skips numbers blocked by Meta refusals (131026/131049) and tries the next mobile of the record through the pure pickUnsuppressedWhatsApp; suppressions are read with the caller client (RLS: active member of the workspace) by loadSuppressedPhones; the panel only shows the excluded counts and a warning text. No new action, key or grant; existing campaigns view/create/update keys unchanged. The panel builds filters only from the fixed field allow-list (fieldsForBase). Review 06/11/2026: campaigns may rotate up to 5 approved templates (template_rotation/rotation_mode columns, same campaign RLS and create/update keys); the worker pins the chosen template on the recipient row; no new endpoint, grant or permission. Review 06/11/2026 (b): each rotation template has its own variable map keys (<template>#N) resolved by the same server allow-list; saving re-checks every rotation template is APPROVED for the sender and refreshes pending recipient variables through the user client (RLS, same update key); no new endpoint, grant or permission. Review 13/11/2026: unified inbox body moved to a shared component; /inbox/ligacoes reuses the same authorized unified reads locked to the call channel, no new data path. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function);  no access change. VOZ-SO-CELULAR 16/11/2026: voice campaign audience and dialer pick mobile numbers only (same rule as WhatsApp), landlines counted as excluded; no access change. Sender rotation (ROTACAO-NUMEROS): up to 4 extra official numbers saved only through create/update campaign server functions under the existing campaigns create/update keys; assertSendersApproved checks each number is an active cloud number of the caller's workspace and that every campaign template is APPROVED on it; the dispatcher (service_role) pins each recipient to one number and never moves a pinned recipient to another number. AGENTE-DO-NUMERO 17/11/2026: campaign create/update (existing create/update keys) reject an SDR agent that differs from the sender number's service channel binding; getCampaignSenderAgent under the existing campaigns view key reads only the bound agent id for the active workspace via the privileged client after the permission middleware; no new key, grant or table. Revisão 18/11/2026: wizard agrupa escolha por número/modelo, valida todos os pares aprovados e preserva middleware create/update/view e workspace ativo. Novo endpoint getCampaignSenderAgent usa requireSalesPermission de campanhas antes do lookup de vínculo restrito por workspace. Nenhuma nova concessão.",
+      "rationale": "Authenticated existing Inbox/campaign boundaries retain RLS and scope. UI explicitly checks send/save effective keys. Sender checked against workspace, immutable after start by SQL; evidence and approved template required for direct campaigns. Outbound WhatsApp timeline activity is written by a SECURITY DEFINER trigger on whatsapp_messages (no EXECUTE grant), scoped to the conversation workspace and contact; author is the sender, then the conversation assignee, then the contact responsible, each only when an active member of the same workspace, otherwise null; duplicate lookup uses a partial index on wa_message_id; failures never block the message. Undelivered outbound messages show a translated failure label (pure describeDeliveryError + InboxMessageBubble), built only from error fields of messages the user already reads. Recent-contact pruning RPC wa_campaign_prune_recent is SECURITY INVOKER (caller RLS on recipients applies), requires active workspace membership, EXECUTE only for authenticated/service_role, and only marks pending rows of that campaign as skipped. Audience filter suggestions use RPC whatsapp_campaign_filter_values: SECURITY INVOKER (caller RLS), entity limited to leads/contacts/companies/deals, column validated against the table catalog and custom key by regex, EXECUTE only for authenticated; server still checks isSuggestField and active workspace. The New Campaign dialog only regroups existing fields into sections. Campaign conversation distribution (assignment_mode auto/member/round_robin/unassigned) is saved only through create/update campaign server functions under the existing campaigns create/update keys; members are validated as active in the caller's workspace; at send time RPC wa_campaign_next_assignee (SECURITY DEFINER, EXECUTE only service_role, row lock, re-checks active membership) picks the assignee and only fills conversations with no assignee; unassigned campaigns skip automatic distribution on reply. Campaign audience filters are resolved by RPC wa_campaign_audience_ids: SECURITY INVOKER (caller RLS and column grants apply; protected shared-field columns are read through the masked shared_fields_* views), base/entity limited to leads/contacts/companies/deals, operators allow-listed, columns validated against the table catalog and custom keys by regex, values only as literals, max 10 groups/20 filters/20 terms, EXECUTE only for authenticated; the server still validates filters with isAllowedFilter under the existing campaigns view/create keys and the active workspace. Related reads, recent sends and opt-outs only paginate/parallelize the same user-client queries; compileAudienceGroups re-validates custom keys with filterColumnPath before the RPC. Campaign recipients are inserted in batches of 1,000 with the campaign workspace set explicitly, still through the user's client (RLS sales_create + sales_row_guard per row); sales_row_guard now computes the access context only after child tables return, which keeps every check and outcome identical. Audience ID reads use URI-bounded batches of 150 UUIDs; no permission or filter behavior change. The audience-only value lookup is shared with authorized sequence readers; it does not grant campaign listing, editing or sending. Its extracted helper checks either feature view, current actor/workspace, field allowlist and protected source lookup. All other campaign handlers retain their original gates. Review 03/11/2026: audience build skips numbers blocked by Meta refusals (131026/131049) and tries the next mobile of the record through the pure pickUnsuppressedWhatsApp; suppressions are read with the caller client (RLS: active member of the workspace) by loadSuppressedPhones; the panel only shows the excluded counts and a warning text. No new action, key or grant; existing campaigns view/create/update keys unchanged. The panel builds filters only from the fixed field allow-list (fieldsForBase). Review 06/11/2026: campaigns may rotate up to 5 approved templates (template_rotation/rotation_mode columns, same campaign RLS and create/update keys); the worker pins the chosen template on the recipient row; no new endpoint, grant or permission. Review 06/11/2026 (b): each rotation template has its own variable map keys (<template>#N) resolved by the same server allow-list; saving re-checks every rotation template is APPROVED for the sender and refreshes pending recipient variables through the user client (RLS, same update key); no new endpoint, grant or permission. Review 13/11/2026: unified inbox body moved to a shared component; /inbox/ligacoes reuses the same authorized unified reads locked to the call channel, no new data path. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function);  no access change. VOZ-SO-CELULAR 16/11/2026: voice campaign audience and dialer pick mobile numbers only (same rule as WhatsApp), landlines counted as excluded; no access change. Sender rotation (ROTACAO-NUMEROS): up to 4 extra official numbers saved only through create/update campaign server functions under the existing campaigns create/update keys; assertSendersApproved checks each number is an active cloud number of the caller's workspace and that every campaign template is APPROVED on it; the dispatcher (service_role) pins each recipient to one number and never moves a pinned recipient to another number. AGENTE-DO-NUMERO 17/11/2026: campaign create/update (existing create/update keys) reject an SDR agent that differs from the sender number's service channel binding; getCampaignSenderAgent under the existing campaigns view key reads only the bound agent id for the active workspace via the privileged client after the permission middleware; no new key, grant or table. Revis\u00e3o 18/11/2026: wizard agrupa escolha por n\u00famero/modelo, valida todos os pares aprovados e preserva middleware create/update/view e workspace ativo. Novo endpoint getCampaignSenderAgent usa requireSalesPermission de campanhas antes do lookup de v\u00ednculo restrito por workspace. Nenhuma nova concess\u00e3o.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -2237,7 +2237,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Existing lease, cron capability and sales_worker_authorize remain mandatory; Lia uses conversation number and campaigns fixed selected sender; rejection pauses direct campaigns instead of failover. Review 29/10/2026: automatic follow-ups nearly identical to one of the last three sent messages are cancelled (followup_repetition); text-similarity check only, no new data access or permission change. Review 30/10/2026: paced campaigns self-chain. The scheduled tick only opens a chain per running paced campaign (falls back to the old in-process run when the chain cannot be opened); chained runs carry {campaignId, hop} validated by zod and require the same CRON_SECRET bearer. Next run is requested through SECURITY DEFINER wa_campaign_chain_tick (EXECUTE only service_role) that reuses the URL and headers of the cron job whatsapp-campaign-tick (no secret passes through the app), only for status running, hop 1..1000. Lease wa_campaign_claim_dispatch still prevents concurrent runs; locked runs never chain, so at most one chain per campaign. Every send keeps assertSalesWorker and the existing guards. Review 03/11/2026: the cron worker (requireCronAuth unchanged) skips recipients whose number has an active Meta suppression in the campaign workspace before sending; no new endpoint or grant. Review 06/11/2026: campaigns may rotate up to 5 approved templates (template_rotation/rotation_mode columns, same campaign RLS and create/update keys); the worker pins the chosen template on the recipient row; no new endpoint, grant or permission. Review 06/11/2026 (b): each rotation template has its own variable map keys (<template>#N) resolved by the same server allow-list; saving re-checks every rotation template is APPROVED for the sender and refreshes pending recipient variables through the user client (RLS, same update key); no new endpoint, grant or permission. Revisão 18/11/2026: rodízio aceita o conector existente; resolução continua por workspace/número e assertSalesWorker/requireCronAuth. Preferências de modelos limitam remetentes antes de pickSender; lease, supressão, janela e aprovação permanecem obrigatórios.",
+      "rationale": "Existing lease, cron capability and sales_worker_authorize remain mandatory; Lia uses conversation number and campaigns fixed selected sender; rejection pauses direct campaigns instead of failover. Review 29/10/2026: automatic follow-ups nearly identical to one of the last three sent messages are cancelled (followup_repetition); text-similarity check only, no new data access or permission change. Review 30/10/2026: paced campaigns self-chain. The scheduled tick only opens a chain per running paced campaign (falls back to the old in-process run when the chain cannot be opened); chained runs carry {campaignId, hop} validated by zod and require the same CRON_SECRET bearer. Next run is requested through SECURITY DEFINER wa_campaign_chain_tick (EXECUTE only service_role) that reuses the URL and headers of the cron job whatsapp-campaign-tick (no secret passes through the app), only for status running, hop 1..1000. Lease wa_campaign_claim_dispatch still prevents concurrent runs; locked runs never chain, so at most one chain per campaign. Every send keeps assertSalesWorker and the existing guards. Review 03/11/2026: the cron worker (requireCronAuth unchanged) skips recipients whose number has an active Meta suppression in the campaign workspace before sending; no new endpoint or grant. Review 06/11/2026: campaigns may rotate up to 5 approved templates (template_rotation/rotation_mode columns, same campaign RLS and create/update keys); the worker pins the chosen template on the recipient row; no new endpoint, grant or permission. Review 06/11/2026 (b): each rotation template has its own variable map keys (<template>#N) resolved by the same server allow-list; saving re-checks every rotation template is APPROVED for the sender and refreshes pending recipient variables through the user client (RLS, same update key); no new endpoint, grant or permission. Revis\u00e3o 18/11/2026: rod\u00edzio aceita o conector existente; resolu\u00e7\u00e3o continua por workspace/n\u00famero e assertSalesWorker/requireCronAuth. Prefer\u00eancias de modelos limitam remetentes antes de pickSender; lease, supress\u00e3o, janela e aprova\u00e7\u00e3o permanecem obrigat\u00f3rios.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-worker.server.ts",
@@ -2449,7 +2449,7 @@
       "actions": ["view", "manage", "update"],
       "scopes": ["workspace"],
       "permission_keys": ["system.channels.view.workspace", "system.channels.manage.workspace"],
-      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back. The agent config panel may now receive the agent chosen in the Estúdio bar instead of its own selector; channel controls and server checks are unchanged. Email accounts now expose the existing campaigns flag (same RPC, same checks) and the editor pre-validates the agent activation rule mirrored from service_channel_save; the server check is unchanged. Disconnected WhatsApp numbers are archived (archived_at) during the same manage-gated discovery; archived accounts are listed read-only and blocked in the channel runtime and sequence releases. No new keys or grants.",
+      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back. The agent config panel may now receive the agent chosen in the Est\u00fadio bar instead of its own selector; channel controls and server checks are unchanged. Email accounts now expose the existing campaigns flag (same RPC, same checks) and the editor pre-validates the agent activation rule mirrored from service_channel_save; the server check is unchanged. Disconnected WhatsApp numbers are archived (archived_at) during the same manage-gated discovery; archived accounts are listed read-only and blocked in the channel runtime and sequence releases. No new keys or grants.",
       "controls": [
         {
           "file": "src/lib/prospecting/sdr/channel-access.server.ts",
@@ -2731,7 +2731,7 @@
         "techsales.inbox.whatsapp.view.team",
         "techsales.inbox.whatsapp.view.workspace"
       ],
-      "rationale": "Existing SDR version/config/test endpoints retain sales middleware, record checks and assertSdr workspace enforcement. Optional sandbox channel preview additionally requires current channel view and account/binding user RLS; only account UUID is accepted, never client identity text. Disabled accounts may be simulated without activating them. Sandbox continues memory tools and fake calendar with no external delivery or CRM writes. The /agents/sdr page groups the same sections into Operação, Estúdio and Resultados through a validated section search param and disables Novo agente unless usePermissions grants an SDR create key; playbook server functions keep requireSalesPermission plus requireSdr, so the UI gate is advisory and adds no new action or data access. The Estúdio shares one agent selection (validated UUID search param, resolved only among agents returned by listPlaybooks under RLS) across Persona, Playbook, configuration and skills, and shows the existing sandbox test chat beside each Estúdio section; this adds no data access. Principal/rename/delete actions moved unchanged into SdrAgentActions. New duplicateSdrAgent requires requireSalesPermission create, assertSalesRecord view on the source, requireSdr create in the caller's workspace and blocks read-only View-as; it reads the source playbook and draft/published version with the user client and inserts the copy and a single draft version through user RLS (sales_create + view_as_ro_ins + sales_agent_version_guard), never service role. The copy is disabled, has no published version, is not made principal and copies no service_channel_bindings, so it cannot answer customers until reviewed, published and enabled through existing gated flows. The Estúdio shares one agent selection (validated UUID search param, resolved only among agents returned by listPlaybooks under RLS) across Persona, Playbook, configuration and skills, and shows the existing sandbox test chat beside each Estúdio section; this adds no data access. Principal/rename/delete actions moved unchanged into SdrAgentActions. New duplicateSdrAgent requires requireSalesPermission create, assertSalesRecord view on the source, requireSdr create in the caller's workspace and blocks read-only View-as; it reads the source playbook and draft/published version with the user client and inserts the copy and a single draft version through user RLS (sales_create + view_as_ro_ins + sales_agent_version_guard), never service role. The copy is disabled, has no published version, is not made principal and copies no service_channel_bindings, so it cannot answer customers until reviewed, published and enabled through existing gated flows. SdrAgentActions and SdrAgentPicker render the usePermissions-gated agent actions; the skills form now disables saving without an SDR update key (saveSdrToolConfig still revalidates on the server); the pure copy rules live in sdr-agent-duplicate-rules. Operação: SdrOperationSummary and SdrEnrollmentsPanel only read through the existing getSdrOverview and listEnrollments server functions. listEnrollments keeps requireSalesPermission(techsales.marketing.sdr_agent, view) plus requireSdr view and the explicit workspace filter; it now also returns head-only status counts and the contact/lead names, company and agent name read with the user client (RLS, workspace filter), so a person the user cannot see shows only the phone already present in the enrollment row. No new action, write or permission key; the status filter is a validated search param. The Abrir conversa shortcut renders only when usePermissions grants a techsales.inbox.whatsapp view key; the Inbox itself still enforces access server-side and in RLS. Resultados: new getSdrResults requires requireSalesPermission(techsales.marketing.sdr_agent, view) plus requireSdr view and filters every query by the caller's workspace with the user client (RLS on sdr_enrollments, sdr_actions, sdr_meetings sales_view, prospecting_qualifications, contacts, leads, profiles); totals are head-only counts in the database, never derived from a truncated page. SdrResultsPanel is read-only except the pre-existing Reenviar ao Google action (retrySdrMeetingSync keeps requireSalesPermission manage plus assertAnyPermission update/manage), shown only when usePermissions grants an SDR update/manage workspace key. The previous ResultsPanel inside sdr-console was replaced by this panel. Playbook merged into Configuração do agente: the separate Playbook tab is gone (legacy ?section=playbook resolves to sdr-agent-config) and Novo agente opens SdrNewAgentButton, gated by usePermissions create keys and calling the unchanged upsertPlaybook (requireSalesPermission create/update plus requireSdr create, user RLS). saveSdrAgentConfig additionally accepts enabled and opt_out_phrases for the same agent row under its existing requireSalesPermission update, assertSalesRecord update, assertSdr manage, read-only View-as block and explicit workspace filter; getSdrAgentConfig also returns opt_out_phrases from the row it already reads. No new permission key, action, table or grant. Review 02/11/2026 (autonomous audit, no manual supervision): getSdrOverview keeps requireSalesPermission view + requireSdr and adds a read of the caller's workspace sdr_turn_jobs audit rows through the user client (RLS); resumeSdrJob keeps manage + assertSdr supervise and now marks reconciled-not-sent jobs discarded instead of drafted; getProspectingOverview keeps its can.sdr gate and counts audit handoffs in the caller workspace with the user client. The Supervision UI no longer approves drafts; remaining actions (reconcile, requeue, takeover, discard) keep their existing server checks. No new permission keys or grants.",
+      "rationale": "Existing SDR version/config/test endpoints retain sales middleware, record checks and assertSdr workspace enforcement. Optional sandbox channel preview additionally requires current channel view and account/binding user RLS; only account UUID is accepted, never client identity text. Disabled accounts may be simulated without activating them. Sandbox continues memory tools and fake calendar with no external delivery or CRM writes. The /agents/sdr page groups the same sections into Opera\u00e7\u00e3o, Est\u00fadio and Resultados through a validated section search param and disables Novo agente unless usePermissions grants an SDR create key; playbook server functions keep requireSalesPermission plus requireSdr, so the UI gate is advisory and adds no new action or data access. The Est\u00fadio shares one agent selection (validated UUID search param, resolved only among agents returned by listPlaybooks under RLS) across Persona, Playbook, configuration and skills, and shows the existing sandbox test chat beside each Est\u00fadio section; this adds no data access. Principal/rename/delete actions moved unchanged into SdrAgentActions. New duplicateSdrAgent requires requireSalesPermission create, assertSalesRecord view on the source, requireSdr create in the caller's workspace and blocks read-only View-as; it reads the source playbook and draft/published version with the user client and inserts the copy and a single draft version through user RLS (sales_create + view_as_ro_ins + sales_agent_version_guard), never service role. The copy is disabled, has no published version, is not made principal and copies no service_channel_bindings, so it cannot answer customers until reviewed, published and enabled through existing gated flows. The Est\u00fadio shares one agent selection (validated UUID search param, resolved only among agents returned by listPlaybooks under RLS) across Persona, Playbook, configuration and skills, and shows the existing sandbox test chat beside each Est\u00fadio section; this adds no data access. Principal/rename/delete actions moved unchanged into SdrAgentActions. New duplicateSdrAgent requires requireSalesPermission create, assertSalesRecord view on the source, requireSdr create in the caller's workspace and blocks read-only View-as; it reads the source playbook and draft/published version with the user client and inserts the copy and a single draft version through user RLS (sales_create + view_as_ro_ins + sales_agent_version_guard), never service role. The copy is disabled, has no published version, is not made principal and copies no service_channel_bindings, so it cannot answer customers until reviewed, published and enabled through existing gated flows. SdrAgentActions and SdrAgentPicker render the usePermissions-gated agent actions; the skills form now disables saving without an SDR update key (saveSdrToolConfig still revalidates on the server); the pure copy rules live in sdr-agent-duplicate-rules. Opera\u00e7\u00e3o: SdrOperationSummary and SdrEnrollmentsPanel only read through the existing getSdrOverview and listEnrollments server functions. listEnrollments keeps requireSalesPermission(techsales.marketing.sdr_agent, view) plus requireSdr view and the explicit workspace filter; it now also returns head-only status counts and the contact/lead names, company and agent name read with the user client (RLS, workspace filter), so a person the user cannot see shows only the phone already present in the enrollment row. No new action, write or permission key; the status filter is a validated search param. The Abrir conversa shortcut renders only when usePermissions grants a techsales.inbox.whatsapp view key; the Inbox itself still enforces access server-side and in RLS. Resultados: new getSdrResults requires requireSalesPermission(techsales.marketing.sdr_agent, view) plus requireSdr view and filters every query by the caller's workspace with the user client (RLS on sdr_enrollments, sdr_actions, sdr_meetings sales_view, prospecting_qualifications, contacts, leads, profiles); totals are head-only counts in the database, never derived from a truncated page. SdrResultsPanel is read-only except the pre-existing Reenviar ao Google action (retrySdrMeetingSync keeps requireSalesPermission manage plus assertAnyPermission update/manage), shown only when usePermissions grants an SDR update/manage workspace key. The previous ResultsPanel inside sdr-console was replaced by this panel. Playbook merged into Configura\u00e7\u00e3o do agente: the separate Playbook tab is gone (legacy ?section=playbook resolves to sdr-agent-config) and Novo agente opens SdrNewAgentButton, gated by usePermissions create keys and calling the unchanged upsertPlaybook (requireSalesPermission create/update plus requireSdr create, user RLS). saveSdrAgentConfig additionally accepts enabled and opt_out_phrases for the same agent row under its existing requireSalesPermission update, assertSalesRecord update, assertSdr manage, read-only View-as block and explicit workspace filter; getSdrAgentConfig also returns opt_out_phrases from the row it already reads. No new permission key, action, table or grant. Review 02/11/2026 (autonomous audit, no manual supervision): getSdrOverview keeps requireSalesPermission view + requireSdr and adds a read of the caller's workspace sdr_turn_jobs audit rows through the user client (RLS); resumeSdrJob keeps manage + assertSdr supervise and now marks reconciled-not-sent jobs discarded instead of drafted; getProspectingOverview keeps its can.sdr gate and counts audit handoffs in the caller workspace with the user client. The Supervision UI no longer approves drafts; remaining actions (reconcile, requeue, takeover, discard) keep their existing server checks. No new permission keys or grants.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -3504,7 +3504,7 @@
     {
       "id": "sdr-workspace-navigation",
       "kind": "presentation",
-      "rationale": "Static labels and grouping of existing Agente SDR sections into three areas, rendered as same-page links and tab triggers. No event handlers, I/O, server functions, permissions or data access; each section keeps its own existing controls. Also pure helpers to parse the agent UUID from the address, decide which sections show the test chat column and pick the open agent among the already authorized list; no I/O or permissions. Pure Portuguese labels, filter parsing and counters for the Operação area; no I/O or permissions. Also pure funnel, meeting status, decision and meeting time labels for Resultados. Also a pure parser that turns the typed opt-out phrases into a list; detection and saving stay on the server. Review 02/11/2026: Supervision section relabelled Auditoria (same id), overview link labels changed; presentation only.",
+      "rationale": "Static labels and grouping of existing Agente SDR sections into three areas, rendered as same-page links and tab triggers. No event handlers, I/O, server functions, permissions or data access; each section keeps its own existing controls. Also pure helpers to parse the agent UUID from the address, decide which sections show the test chat column and pick the open agent among the already authorized list; no I/O or permissions. Pure Portuguese labels, filter parsing and counters for the Opera\u00e7\u00e3o area; no I/O or permissions. Also pure funnel, meeting status, decision and meeting time labels for Resultados. Also a pure parser that turns the typed opt-out phrases into a list; detection and saving stay on the server. Review 02/11/2026: Supervision section relabelled Auditoria (same id), overview link labels changed; presentation only.",
       "files": {
         "src/components/prospecting/sdr-workspace-nav.tsx": "dfdcd6de66ff2417c93fd3f5102c0770795cb4d9fd7fafaa445d8deed9f46a74",
         "src/components/prospecting/sdr-workspace-sections.ts": "f9ee74371eec56bc001784d1ef5e8766641aef7b0dfe23996833f9a0c5a353a2",
@@ -3562,15 +3562,15 @@
       "tests": {
         "allowed": {
           "file": "src/lib/integrations/contaazul-people.test.ts",
-          "name": "permite membro ativo com a permissão no workspace"
+          "name": "permite membro ativo com a permiss\u00e3o no workspace"
         },
         "missing_permission": {
           "file": "src/lib/integrations/contaazul-people.test.ts",
-          "name": "nega quem não tem a permissão"
+          "name": "nega quem n\u00e3o tem a permiss\u00e3o"
         },
         "explicit_deny": {
           "file": "src/lib/integrations/contaazul-people.test.ts",
-          "name": "nega quando há bloqueio explícito (deny)"
+          "name": "nega quando h\u00e1 bloqueio expl\u00edcito (deny)"
         },
         "foreign_workspace": {
           "file": "src/lib/integrations/contaazul-people.test.ts",
@@ -3634,15 +3634,15 @@
       "tests": {
         "allowed": {
           "file": "src/lib/integrations/contaazul-full-import.test.ts",
-          "name": "permite membro ativo com conciliação e importação financeira"
+          "name": "permite membro ativo com concilia\u00e7\u00e3o e importa\u00e7\u00e3o financeira"
         },
         "missing_permission": {
           "file": "src/lib/integrations/contaazul-full-import.test.ts",
-          "name": "nega sem a permissão de importação financeira"
+          "name": "nega sem a permiss\u00e3o de importa\u00e7\u00e3o financeira"
         },
         "explicit_deny": {
           "file": "src/lib/integrations/contaazul-full-import.test.ts",
-          "name": "nega quando há bloqueio explícito (deny)"
+          "name": "nega quando h\u00e1 bloqueio expl\u00edcito (deny)"
         },
         "foreign_workspace": {
           "file": "src/lib/integrations/contaazul-full-import.test.ts",
@@ -3705,15 +3705,15 @@
       "tests": {
         "allowed": {
           "file": "src/lib/finance-sales.test.ts",
-          "name": "permite membro ativo com a permissão de ver vendas"
+          "name": "permite membro ativo com a permiss\u00e3o de ver vendas"
         },
         "missing_permission": {
           "file": "src/lib/finance-sales.test.ts",
-          "name": "nega quem não tem a permissão de ver vendas"
+          "name": "nega quem n\u00e3o tem a permiss\u00e3o de ver vendas"
         },
         "explicit_deny": {
           "file": "src/lib/finance-sales.test.ts",
-          "name": "nega quando há bloqueio explícito (deny) nas vendas"
+          "name": "nega quando h\u00e1 bloqueio expl\u00edcito (deny) nas vendas"
         },
         "foreign_workspace": {
           "file": "src/lib/finance-sales.test.ts",
@@ -3797,15 +3797,15 @@
       "tests": {
         "allowed": {
           "file": "src/lib/integrations/clickup/clickup-import.test.ts",
-          "name": "permite membro ativo com a permissão de gerenciar o importador do ClickUp"
+          "name": "permite membro ativo com a permiss\u00e3o de gerenciar o importador do ClickUp"
         },
         "missing_permission": {
           "file": "src/lib/integrations/clickup/clickup-import.test.ts",
-          "name": "nega quem não tem a permissão do importador do ClickUp"
+          "name": "nega quem n\u00e3o tem a permiss\u00e3o do importador do ClickUp"
         },
         "explicit_deny": {
           "file": "src/lib/integrations/clickup/clickup-import.test.ts",
-          "name": "nega quando há bloqueio explícito (deny) no importador do ClickUp"
+          "name": "nega quando h\u00e1 bloqueio expl\u00edcito (deny) no importador do ClickUp"
         },
         "foreign_workspace": {
           "file": "src/lib/integrations/clickup/clickup-import.test.ts",
@@ -4389,7 +4389,7 @@
         "techsales.companies.view.team",
         "techsales.companies.view.workspace"
       ],
-      "rationale": "Filter choices for derived CRM fields (cargo resumido, área, nível, porte) list distinct values the caller can already read. Server functions require the entity view permission (requireSalesPermission), the loader re-asserts it with assertSalesAnyArea, validates the column against the derived-field allow-list and calls the SECURITY INVOKER RPC whatsapp_campaign_filter_values so caller RLS limits rows to the active workspace. The UI only requests options when the effective view key exists. No grants, roles or policies change.",
+      "rationale": "Filter choices for derived CRM fields (cargo resumido, \u00e1rea, n\u00edvel, porte) list distinct values the caller can already read. Server functions require the entity view permission (requireSalesPermission), the loader re-asserts it with assertSalesAnyArea, validates the column against the derived-field allow-list and calls the SECURITY INVOKER RPC whatsapp_campaign_filter_values so caller RLS limits rows to the active workspace. The UI only requests options when the effective view key exists. No grants, roles or policies change.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -4699,7 +4699,7 @@
         "techsales.prospecting_voice.create.team",
         "techsales.prospecting_voice.create.workspace"
       ],
-      "rationale": "Review 01/11/2026: startVapiCall moved unchanged from prospecting-campaigns.functions.ts to server-only prospecting-vapi-call.server.ts so the client bundle no longer pulls server permission checks; no behavior or access change. Campaign server functions keep requireSalesPermission per action plus assertSalesRecord; manual dial requires techsales.prospecting_voice.create and assertSalesArea/assertSalesRecord as the caller; the dial cron requires CRON_SECRET (requireCronAuth) and every worker call passes assertSalesWorker against the running campaign before and right before dialing. The informational GET of the dial cron now also requires requireCronAuth. Review 01/11/2026 (2): WhatsApp after voice call. saveCampaignCallFollowup requires techsales.marketing.campaigns.update + assertSalesRecord(update) and, when enabling, assertSalesArea(techsales.marketing.campaigns, create) like WhatsApp campaigns; listCallFollowupSenders requires campaigns.view and reads only the active workspace; dialLeadNow accepts followup_campaign_id only after assertSalesRecord(view) on that campaign. The follow-up sender runs only from the Vapi webhook (VAPI_WEBHOOK_SECRET), reads campaign/lead scoped to the attempt workspace, claims once per attempt, respects opt-out and the 24h window (template outside it); the follow-up also passes assertSalesWorker (campaign actor must still view the lead and hold techsales.marketing.campaigns.create) and sends through resolveWaNumber (connection/number checks). The UI disables save/test buttons via usePermissions; servers enforce. Review 01/11/2026 (3): Vapi assistant gains endCall function/phrases and 20 s silence timeout; script save validator tolerates legacy empty-array variables. No access change. Review 02/11/2026: call scripts can be archived (archived_at) via setScriptArchived requiring techsales.prospecting_scripts update + assertSalesRecord; deleteScript refuses scripts already used by campaign variants (FK restrict preserved); listScripts hides archived unless includeArchived; listScriptUsage requires prospecting_scripts view and reads variants through RLS. Settings shortcut removed; old URL only redirects. No RLS/policy change. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. Review 12/11/2026 (CAMPANHA-LIGACOES fase 2): ficha em 5 passos e situação em PT-BR, sem ação nova; regra de exclusão por contato recente (recent_contact_days/scope) salva por upsertCampaign (create/update + assertSalesRecord) e aplicada em setCampaignStatus/auditCampaignQueueability com o cliente do usuário (RLS), só no workspace ativo; colunas novas herdam as políticas existentes de prospecting_campaigns. Review 13/11/2026: Público igual ao WhatsApp. previewCallAudience exige campaigns.view; resolveCallAudience chama assertSalesArea(view) e lê fila/filtro/lista manual só de Leads do workspace ativo com o cliente do usuário (RLS), reaproveitando a lista branca de filtros do WhatsApp; upsertCampaign grava audience_config e lead_ids; setCampaignStatus e a auditoria resolvem de novo ao iniciar. Review 13/11/2026 (LIGACOES-BASE-CONTATOS): call campaigns may target Contacts. Attempts gain nullable contact_id (one target per row); starting/auditing resolves the audience with the caller client (RLS) and checks every target is visible in the active workspace on the contacts table; startVapiCall checks assertSalesRecord/assertSalesWorker on the actual target table (leads or contacts); the Vapi webhook (VAPI_WEBHOOK_SECRET) logs the activity on the contact and requeues by the same target; the WhatsApp follow-up re-checks assertSalesWorker on the target. No new permission keys; same resources and actions. Review 13/11/2026 (CONTROLES-LIGACAO): duplicateCampaign requires campaigns.create + assertSalesRecord view and copies as draft with the user client (RLS); deleteCampaign refuses running campaigns server-side; setCampaignStatus done cancels queued attempts under the existing manage check; listCampaigns adds attempt counts via the user client (RLS). List UI gates Editar/Duplicar/Iniciar/Pausar/Encerrar/Excluir by the same keys; no new keys. Review 13/11/2026 (AJUSTES-LIGACAO): additive enum value 'canceled' for prospecting_campaign_status (no grant/RLS change; the dial cron still only dials status running). setCampaignStatus accepts canceled under the same campaigns.manage + assertSalesRecord(manage/update) checks and cancels queued attempts. listCallFollowupTemplates requires techsales.marketing.campaigns.view, reads approved templates for the active workspace via the user client (RLS) or the workspace's configured provider for the chosen sender, returns names/languages only and logs no secrets; sending still re-validates APPROVED templates server-side. Pace estimate is pure UI math over attempts already readable by the caller. Review 13/11/2026 (AGENDA-VOZ fase 1): upsertCampaign accepts meeting distribution (auto/member/round_robin/unassigned) under the same campaigns create/update permission, validates chosen members are active in the active workspace via the user's client; listMeetingHosts requires campaigns.view and calls SECURITY DEFINER call_meeting_hosts_with_calendar, which returns only user ids of active members with a Google calendar and only when the caller is an active member of that workspace (no emails/tokens). UI section reuses CampaignAssignmentSection (usePermissions read-only without create/update). Review 13/11/2026 (AGENDA-VOZ fase 2): booking during the call runs only from the Vapi webhook (VAPI_WEBHOOK_SECRET) for tool-calls of an ACTIVE attempt found by vapi_call_id; workspace, campaign, target and host come from the stored attempt, never from the request. Requires script.allow_booking and campaign meeting distribution; host is an active workspace member with a connected Google calendar chosen by the campaign distribution; assertSalesWorker (campaign actor still active, can see the target, has marketing.campaigns.create, host member) before availability/booking; only offered options can be booked, one booking per attempt (atomic claim), free/busy re-checked before insert, deterministic event id. The meeting WhatsApp uses only an APPROVED template, once per attempt, after assertSalesWorker. Script allow_booking is saved by upsertScript under the existing prospecting_scripts create/update permission. No new permission key. Review 13/11/2026 (AGENDA-VOZ fase 3): recordCallInInbox runs only from the authenticated Vapi webhook after end-of-call-report, re-checks assertSalesWorker on the target, and writes one outbound whatsapp_messages row per attempt (unique call_attempt_id) into the target's conversation; Inbox reading keeps the existing techsales.inbox.whatsapp view permission and whatsapp RLS (no new read path). VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. VOZ-PRIMEIRO-NOME 16/11/2026: prompt gains fixed conversation rules (first name only, idle check after 10 s) and Vapi idle messagePlan; no access change. VOZ-HUMANO-URA 16/11/2026: prompt rules for time requests and IVR/voicemail hang-up, Vapi voicemailDetection, idle check once; no access change.",
+      "rationale": "Review 01/11/2026: startVapiCall moved unchanged from prospecting-campaigns.functions.ts to server-only prospecting-vapi-call.server.ts so the client bundle no longer pulls server permission checks; no behavior or access change. Campaign server functions keep requireSalesPermission per action plus assertSalesRecord; manual dial requires techsales.prospecting_voice.create and assertSalesArea/assertSalesRecord as the caller; the dial cron requires CRON_SECRET (requireCronAuth) and every worker call passes assertSalesWorker against the running campaign before and right before dialing. The informational GET of the dial cron now also requires requireCronAuth. Review 01/11/2026 (2): WhatsApp after voice call. saveCampaignCallFollowup requires techsales.marketing.campaigns.update + assertSalesRecord(update) and, when enabling, assertSalesArea(techsales.marketing.campaigns, create) like WhatsApp campaigns; listCallFollowupSenders requires campaigns.view and reads only the active workspace; dialLeadNow accepts followup_campaign_id only after assertSalesRecord(view) on that campaign. The follow-up sender runs only from the Vapi webhook (VAPI_WEBHOOK_SECRET), reads campaign/lead scoped to the attempt workspace, claims once per attempt, respects opt-out and the 24h window (template outside it); the follow-up also passes assertSalesWorker (campaign actor must still view the lead and hold techsales.marketing.campaigns.create) and sends through resolveWaNumber (connection/number checks). The UI disables save/test buttons via usePermissions; servers enforce. Review 01/11/2026 (3): Vapi assistant gains endCall function/phrases and 20 s silence timeout; script save validator tolerates legacy empty-array variables. No access change. Review 02/11/2026: call scripts can be archived (archived_at) via setScriptArchived requiring techsales.prospecting_scripts update + assertSalesRecord; deleteScript refuses scripts already used by campaign variants (FK restrict preserved); listScripts hides archived unless includeArchived; listScriptUsage requires prospecting_scripts view and reads variants through RLS. Settings shortcut removed; old URL only redirects. No RLS/policy change. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. Review 12/11/2026 (CAMPANHA-LIGACOES fase 2): ficha em 5 passos e situa\u00e7\u00e3o em PT-BR, sem a\u00e7\u00e3o nova; regra de exclus\u00e3o por contato recente (recent_contact_days/scope) salva por upsertCampaign (create/update + assertSalesRecord) e aplicada em setCampaignStatus/auditCampaignQueueability com o cliente do usu\u00e1rio (RLS), s\u00f3 no workspace ativo; colunas novas herdam as pol\u00edticas existentes de prospecting_campaigns. Review 13/11/2026: P\u00fablico igual ao WhatsApp. previewCallAudience exige campaigns.view; resolveCallAudience chama assertSalesArea(view) e l\u00ea fila/filtro/lista manual s\u00f3 de Leads do workspace ativo com o cliente do usu\u00e1rio (RLS), reaproveitando a lista branca de filtros do WhatsApp; upsertCampaign grava audience_config e lead_ids; setCampaignStatus e a auditoria resolvem de novo ao iniciar. Review 13/11/2026 (LIGACOES-BASE-CONTATOS): call campaigns may target Contacts. Attempts gain nullable contact_id (one target per row); starting/auditing resolves the audience with the caller client (RLS) and checks every target is visible in the active workspace on the contacts table; startVapiCall checks assertSalesRecord/assertSalesWorker on the actual target table (leads or contacts); the Vapi webhook (VAPI_WEBHOOK_SECRET) logs the activity on the contact and requeues by the same target; the WhatsApp follow-up re-checks assertSalesWorker on the target. No new permission keys; same resources and actions. Review 13/11/2026 (CONTROLES-LIGACAO): duplicateCampaign requires campaigns.create + assertSalesRecord view and copies as draft with the user client (RLS); deleteCampaign refuses running campaigns server-side; setCampaignStatus done cancels queued attempts under the existing manage check; listCampaigns adds attempt counts via the user client (RLS). List UI gates Editar/Duplicar/Iniciar/Pausar/Encerrar/Excluir by the same keys; no new keys. Review 13/11/2026 (AJUSTES-LIGACAO): additive enum value 'canceled' for prospecting_campaign_status (no grant/RLS change; the dial cron still only dials status running). setCampaignStatus accepts canceled under the same campaigns.manage + assertSalesRecord(manage/update) checks and cancels queued attempts. listCallFollowupTemplates requires techsales.marketing.campaigns.view, reads approved templates for the active workspace via the user client (RLS) or the workspace's configured provider for the chosen sender, returns names/languages only and logs no secrets; sending still re-validates APPROVED templates server-side. Pace estimate is pure UI math over attempts already readable by the caller. Review 13/11/2026 (AGENDA-VOZ fase 1): upsertCampaign accepts meeting distribution (auto/member/round_robin/unassigned) under the same campaigns create/update permission, validates chosen members are active in the active workspace via the user's client; listMeetingHosts requires campaigns.view and calls SECURITY DEFINER call_meeting_hosts_with_calendar, which returns only user ids of active members with a Google calendar and only when the caller is an active member of that workspace (no emails/tokens). UI section reuses CampaignAssignmentSection (usePermissions read-only without create/update). Review 13/11/2026 (AGENDA-VOZ fase 2): booking during the call runs only from the Vapi webhook (VAPI_WEBHOOK_SECRET) for tool-calls of an ACTIVE attempt found by vapi_call_id; workspace, campaign, target and host come from the stored attempt, never from the request. Requires script.allow_booking and campaign meeting distribution; host is an active workspace member with a connected Google calendar chosen by the campaign distribution; assertSalesWorker (campaign actor still active, can see the target, has marketing.campaigns.create, host member) before availability/booking; only offered options can be booked, one booking per attempt (atomic claim), free/busy re-checked before insert, deterministic event id. The meeting WhatsApp uses only an APPROVED template, once per attempt, after assertSalesWorker. Script allow_booking is saved by upsertScript under the existing prospecting_scripts create/update permission. No new permission key. Review 13/11/2026 (AGENDA-VOZ fase 3): recordCallInInbox runs only from the authenticated Vapi webhook after end-of-call-report, re-checks assertSalesWorker on the target, and writes one outbound whatsapp_messages row per attempt (unique call_attempt_id) into the target's conversation; Inbox reading keeps the existing techsales.inbox.whatsapp view permission and whatsapp RLS (no new read path). VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. VOZ-PRIMEIRO-NOME 16/11/2026: prompt gains fixed conversation rules (first name only, idle check after 10 s) and Vapi idle messagePlan; no access change. VOZ-HUMANO-URA 16/11/2026: prompt rules for time requests and IVR/voicemail hang-up, Vapi voicemailDetection, idle check once; no access change.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -4912,7 +4912,7 @@
         "techsales.meetings.update.team",
         "techsales.meetings.update.workspace"
       ],
-      "rationale": "Meeting WhatsApp reminders reuse the existing meeting configuration permission (techsales.meeting_settings) — same resource: workspace meeting settings. getMeetingReminderConfig requires view, saveMeetingReminderConfig requires update, both via requireSalesPermission on the active workspace; tables meeting_reminder_settings/rules/dispatches have RLS through sales_context_access with the same resource (dispatches read-only for authenticated, written only by service_role). Save revalidates sender number ownership, approved template and complete variables (whitelisted keys). Per-meeting status/toggle require techsales.meetings view/update plus assertSalesRecord on the activity. The cron route requires CRON_SECRET (requireCronAuth) on POST and GET; the worker sends only approved templates, at most once per meeting+offset+time (unique claim), respects opt-out and never landlines. No permission granted to any role.",
+      "rationale": "Meeting WhatsApp reminders reuse the existing meeting configuration permission (techsales.meeting_settings) \u2014 same resource: workspace meeting settings. getMeetingReminderConfig requires view, saveMeetingReminderConfig requires update, both via requireSalesPermission on the active workspace; tables meeting_reminder_settings/rules/dispatches have RLS through sales_context_access with the same resource (dispatches read-only for authenticated, written only by service_role). Save revalidates sender number ownership, approved template and complete variables (whitelisted keys). Per-meeting status/toggle require techsales.meetings view/update plus assertSalesRecord on the activity. The cron route requires CRON_SECRET (requireCronAuth) on POST and GET; the worker sends only approved templates, at most once per meeting+offset+time (unique claim), respects opt-out and never landlines. No permission granted to any role.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -7216,7 +7216,7 @@
         "techsales.role_profiles.view.workspace",
         "techsales.role_profiles.manage.workspace"
       ],
-      "rationale": "Stage 3: explicit commercial contract/evidence binding; no timestamp/status inference. Signature actions require active selected workspace, effective view/manage keys plus current contract record read/update and read-only denial. Immutable private PDF objects are uploaded by the server only after authorization, hashed and bound to actor/contract revision; SQL matches immutable metadata before recording human external attestation. Native preparation reuses authenticated esign create/send/signing with two explicit parties and a sealed document; signing offer documents never qualifies. Recruitment reads require hiring demand view and HR row scope; linking requires update, CAS and same-tenant/client/deal. Before provider publishing, HR access/publish permission and a fresh SQL business preflight run; every relevant ATS write rechecks approval/signature/date/current source. Historical records are preserved and activation is per workspace. Background hiring runs after sales_worker_authorize then current application-derived business gate, and Hunting does not provision internal hiring. Existing record/field permissions and contract legal approvals remain active. | Signature operations moved to TechContracts; legacy settings URL only redirects to the same HrScreenAccess-protected destination. Contract/deal evidence stays source-bound; read-only sessions cannot prepare evidence. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant.",
+      "rationale": "Stage 3: explicit commercial contract/evidence binding; no timestamp/status inference. Signature actions require active selected workspace, effective view/manage keys plus current contract record read/update and read-only denial. Immutable private PDF objects are uploaded by the server only after authorization, hashed and bound to actor/contract revision; SQL matches immutable metadata before recording human external attestation. Native preparation reuses authenticated esign create/send/signing with two explicit parties and a sealed document; signing offer documents never qualifies. Recruitment reads require hiring demand view and HR row scope; linking requires update, CAS and same-tenant/client/deal. Before provider publishing, HR access/publish permission and a fresh SQL business preflight run; every relevant ATS write rechecks approval/signature/date/current source. Historical records are preserved and activation is per workspace. Background hiring runs after sales_worker_authorize then current application-derived business gate, and Hunting does not provision internal hiring. Existing record/field permissions and contract legal approvals remain active. | Signature operations moved to TechContracts; legacy settings URL only redirects to the same HrScreenAccess-protected destination. Contract/deal evidence stays source-bound; read-only sessions cannot prepare evidence. | ETAPA-ASSINA 14/11/2026: etapa selecionada com c\u00edrculo vazado (apresenta\u00e7\u00e3o); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body s\u00f3 service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova a\u00e7\u00e3o, chave ou grant.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -7887,7 +7887,7 @@
       "actions": ["update", "manage"],
       "scopes": ["workspace"],
       "permission_keys": ["techservice.kb.manage.workspace", "techservice.kb.update.workspace"],
-      "rationale": "Help and Training area (/ajuda, header '?' button, sidebar link). Global platform content without workspace_id. Read: active member of the active workspace, published internal article, module allowed by the same rule as the menu (license ∩ effective keys, workspace admin unrestricted, core = any active member, platform = platform admin) and optional min_permission effective key (deny wins); enforced in every server function by loadHelpAccessInput + canReadHelpModule/filterReadableArticles and in the database by help_can_read RLS. Edit: platform admin or active member with existing knowledge base keys (help_can_edit RLS); no edit UI in this phase. Feedback and route misses are own-row only. No new key, no grant to roles. Official fixed-catalogue release is editor-authorized before dynamic import; user client/RLS only, no arbitrary input or admin client. Strictly higher versions replace existing content; repeat preserves applied versions. No schema/grant change. Layout Essencial: workspace light/dark logo and brand name are read from the existing member/RLS BrandingContext; menu permission filters and route destinations unchanged.",
+      "rationale": "Help and Training area (/ajuda, header '?' button, sidebar link). Global platform content without workspace_id. Read: active member of the active workspace, published internal article, module allowed by the same rule as the menu (license \u2229 effective keys, workspace admin unrestricted, core = any active member, platform = platform admin) and optional min_permission effective key (deny wins); enforced in every server function by loadHelpAccessInput + canReadHelpModule/filterReadableArticles and in the database by help_can_read RLS. Edit: platform admin or active member with existing knowledge base keys (help_can_edit RLS); no edit UI in this phase. Feedback and route misses are own-row only. No new key, no grant to roles. Official fixed-catalogue release is editor-authorized before dynamic import; user client/RLS only, no arbitrary input or admin client. Strictly higher versions replace existing content; repeat preserves applied versions. No schema/grant change. Layout Essencial: workspace light/dark logo and brand name are read from the existing member/RLS BrandingContext; menu permission filters and route destinations unchanged.",
       "controls": [
         {
           "file": "src/lib/help/help-access.server.ts",
@@ -7983,7 +7983,7 @@
         },
         "explicit_deny": {
           "file": "src/lib/help/help-release.test.ts",
-          "name": "nega deny explícito"
+          "name": "nega deny expl\u00edcito"
         },
         "foreign_workspace": {
           "file": "src/lib/help/help-release.test.ts",
@@ -8088,7 +8088,7 @@
         },
         "explicit_deny": {
           "file": "src/lib/help/training-access.test.ts",
-          "name": "nega trilha com deny explícito"
+          "name": "nega trilha com deny expl\u00edcito"
         },
         "foreign_workspace": {
           "file": "src/lib/help/training-access.test.ts",
@@ -8270,7 +8270,7 @@
     {
       "id": "whatsapp-campaign-template-rotation",
       "kind": "presentation",
-      "rationale": "Pure template rotation helper (sequential/weighted pick, max 5). No I/O, routes, actions, grants or data access; callers stay under whatsapp-cloud-authenticated-routing and whatsapp-cloud-workers. Review 06/11/2026 (b): each rotation template has its own variable map keys (<template>#N) resolved by the same server allow-list; saving re-checks every rotation template is APPROVED for the sender and refreshes pending recipient variables through the user client (RLS, same update key); no new endpoint, grant or permission. Revisão 18/11/2026: helpers puros de agrupamento por número/modelo, seleção e teto técnico de 100 modelos. Sem IO, ações, rotas, concessões ou consulta de dados; chamadores permanecem protegidos pelos contratos de campanhas e worker.",
+      "rationale": "Pure template rotation helper (sequential/weighted pick, max 5). No I/O, routes, actions, grants or data access; callers stay under whatsapp-cloud-authenticated-routing and whatsapp-cloud-workers. Review 06/11/2026 (b): each rotation template has its own variable map keys (<template>#N) resolved by the same server allow-list; saving re-checks every rotation template is APPROVED for the sender and refreshes pending recipient variables through the user client (RLS, same update key); no new endpoint, grant or permission. Revis\u00e3o 18/11/2026: helpers puros de agrupamento por n\u00famero/modelo, sele\u00e7\u00e3o e teto t\u00e9cnico de 100 modelos. Sem IO, a\u00e7\u00f5es, rotas, concess\u00f5es ou consulta de dados; chamadores permanecem protegidos pelos contratos de campanhas e worker.",
       "files": {
         "src/lib/whatsapp/campaign-template-rotation.ts": "ec773009f4b614292f4487b7fefd5d5024038b921b073c9c3b34af61ce91311e",
         "src/lib/whatsapp/campaign-template-groups.ts": "c74405b5b3097d3d906d591037e450cf24c5a53e11627e45119bf1c16bdf25e0"
@@ -8291,7 +8291,7 @@
       "actions": ["update"],
       "scopes": ["own", "workspace"],
       "permission_keys": ["techsales.leads.update.own", "techsales.contacts.update.workspace"],
-      "rationale": "Review 07/11/2026: (1) setting a lead substatus also writes the default lead pipeline and the stage already shown when the lead row has none (buildLeadSubstatusPatch), through the same user client UPDATE on leads; the sync_stage_substatus trigger still validates pipeline/stage. (2) The qualification screen adds a fixed 'Dados básicos' lead block (first/last name, e-mail, phone, WhatsApp) saved by the existing saveAll user-client UPDATE on leads, and the same values seed the contact created by ensureLeadRelations; title fix 'Dados da Empresa'. No new endpoint, grant, policy or permission key; RLS on leads/contacts and deleteRow/rls-denied checks (assertAffected/deniedIfUnaffected) remain the boundary.",
+      "rationale": "Review 07/11/2026: (1) setting a lead substatus also writes the default lead pipeline and the stage already shown when the lead row has none (buildLeadSubstatusPatch), through the same user client UPDATE on leads; the sync_stage_substatus trigger still validates pipeline/stage. (2) The qualification screen adds a fixed 'Dados b\u00e1sicos' lead block (first/last name, e-mail, phone, WhatsApp) saved by the existing saveAll user-client UPDATE on leads, and the same values seed the contact created by ensureLeadRelations; title fix 'Dados da Empresa'. No new endpoint, grant, policy or permission key; RLS on leads/contacts and deleteRow/rls-denied checks (assertAffected/deniedIfUnaffected) remain the boundary.",
       "controls": [
         {
           "file": "src/lib/access-control/rls-denied.ts",
@@ -8344,7 +8344,7 @@
     {
       "id": "lead-stage-and-qualification-layout-helpers",
       "kind": "presentation",
-      "rationale": "Pure helpers: buildLeadSubstatusPatch (builds the UPDATE payload, no I/O) and withBasicLeadBlock/defaultBlockTitle (adds the fixed 'Dados básicos' block and fixes block titles for display). The existing useLeadStages hook is unchanged. Writes stay in callers under lead-substatus-and-qualification-basic-fields.",
+      "rationale": "Pure helpers: buildLeadSubstatusPatch (builds the UPDATE payload, no I/O) and withBasicLeadBlock/defaultBlockTitle (adds the fixed 'Dados b\u00e1sicos' block and fixes block titles for display). The existing useLeadStages hook is unchanged. Writes stay in callers under lead-substatus-and-qualification-basic-fields.",
       "files": {
         "src/lib/leads/stages.ts": "687f278feee8e97ddc4dfe4e89c2c71853a7b8f2faa63d19347b92cc6161e7ac",
         "src/lib/prospecting/field-layout.ts": "da29de69981ffa8d6a80791b378ce00a57a476e3da778a7d4c65a7b4ed10a04b"
@@ -8742,7 +8742,7 @@
         "techcontracts.contract_drafts.approve.workspace",
         "techcontracts.contract_draft_approvers.manage.workspace"
       ],
-      "rationale": "ACEITE-MINUTA Entrega 2. New catalogue keys granted to no role. Tables contract_drafts/contract_draft_approvers/contract_draft_events: SELECT-only grants for authenticated under RLS (active member + effective key; approvers must be listed), writes only via SECURITY DEFINER RPCs. contract_draft_open is service_role only (workflow engine, after authorizeWorkflowStep). contract_draft_review/template_body/templates require contract_draft_is_approver (listed + active member + effective approve key, deny removed by user_effective_permissions); review is CAS by revision. contract_draft_set_approvers requires the manage key in work_access_context and active members. UI gates (menu + screen) mirror the keys only. 0311_0334 file is an accidental no-op (DO block) migration with no effect. Entrega 3: issue_link/mark_sent require contract_draft_is_approver and an approved draft; deal substatus move is best-effort under the caller's own row guard. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. | 15/11/2026: same guarded approver/handoff screen moved into /contracts/contracting-flow; no grants, tables, RPCs or saved settings change. Legacy /settings/contract-draft-approvers only redirects with history replacement. Menu requires the same manage key; handoff panel still independently requires handoffs.manage.",
+      "rationale": "ACEITE-MINUTA Entrega 2. New catalogue keys granted to no role. Tables contract_drafts/contract_draft_approvers/contract_draft_events: SELECT-only grants for authenticated under RLS (active member + effective key; approvers must be listed), writes only via SECURITY DEFINER RPCs. contract_draft_open is service_role only (workflow engine, after authorizeWorkflowStep). contract_draft_review/template_body/templates require contract_draft_is_approver (listed + active member + effective approve key, deny removed by user_effective_permissions); review is CAS by revision. contract_draft_set_approvers requires the manage key in work_access_context and active members. UI gates (menu + screen) mirror the keys only. 0311_0334 file is an accidental no-op (DO block) migration with no effect. Entrega 3: issue_link/mark_sent require contract_draft_is_approver and an approved draft; deal substatus move is best-effort under the caller's own row guard. | Jornada aprovada 14/11/2026: preserva\u00e7\u00e3o da minuta aceita; nova revis\u00e3o revoga aceite/link, requer aprovador jur\u00eddico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, hist\u00f3rico limitado e corpo carregado por revis\u00e3o. UI de servi\u00e7os aplica capacidade real de update e sess\u00e3o grav\u00e1vel. | Jornada aprovada 14/11/2026: preserva\u00e7\u00e3o da minuta aceita; nova revis\u00e3o revoga aceite/link, requer aprovador jur\u00eddico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, hist\u00f3rico limitado e corpo carregado por revis\u00e3o. UI de servi\u00e7os aplica capacidade real de update e sess\u00e3o grav\u00e1vel. | 15/11/2026: same guarded approver/handoff screen moved into /contracts/contracting-flow; no grants, tables, RPCs or saved settings change. Legacy /settings/contract-draft-approvers only redirects with history replacement. Menu requires the same manage key; handoff panel still independently requires handoffs.manage.",
       "controls": [
         {
           "file": "src/integrations/supabase/auth-middleware.ts",
@@ -8858,7 +8858,7 @@
     {
       "id": "contract-draft-status-labels",
       "kind": "presentation",
-      "rationale": "Pure labels and the TS mirror of the SQL approver rule; no I/O. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável.",
+      "rationale": "Pure labels and the TS mirror of the SQL approver rule; no I/O. | Jornada aprovada 14/11/2026: preserva\u00e7\u00e3o da minuta aceita; nova revis\u00e3o revoga aceite/link, requer aprovador jur\u00eddico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, hist\u00f3rico limitado e corpo carregado por revis\u00e3o. UI de servi\u00e7os aplica capacidade real de update e sess\u00e3o grav\u00e1vel.",
       "files": {
         "src/lib/contracts/contract-draft-status.ts": "9380dc38f4d977d49d7c12fa51f30fba71f3c4442352856e331c04ade26a10da",
         "src/lib/contracts/contract-draft-public-rules.ts": "b0ba0ea6350890b9262061980ec7b66a72bd69ba0f97d254fab02a53c58a50b8"
@@ -8867,7 +8867,7 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants.",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com c\u00edrculo vazado (apresenta\u00e7\u00e3o); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body s\u00f3 service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova a\u00e7\u00e3o, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375\u20130380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381\u20130384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385\u20130387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants.",
       "files": {
         "src/integrations/supabase/types.ts": "376c8a172bcd94a04ad376b0c901a9846da238742934a96b8238b5b9ecbf6709",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
@@ -9242,7 +9242,7 @@
         "techcontracts.contract_templates.view.workspace",
         "techsales.proposals.view.workspace"
       ],
-      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access. Reviewed concurrent ENDERECO-ATUAL change: cep added to the same workspace-filtered user/RLS company projection, pure party merge retains commercial snapshot values. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. TERMOS-MODELO 16/11/2026: template contracts copy payment_terms from the accepted proposal already read with the user client (RLS) under the existing create check; no access change.",
+      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florian\u00f3polis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access. Reviewed concurrent ENDERECO-ATUAL change: cep added to the same workspace-filtered user/RLS company projection, pure party merge retains commercial snapshot values. | Jornada aprovada 14/11/2026: preserva\u00e7\u00e3o da minuta aceita; nova revis\u00e3o revoga aceite/link, requer aprovador jur\u00eddico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, hist\u00f3rico limitado e corpo carregado por revis\u00e3o. UI de servi\u00e7os aplica capacidade real de update e sess\u00e3o grav\u00e1vel. TERMOS-MODELO 16/11/2026: template contracts copy payment_terms from the accepted proposal already read with the user client (RLS) under the existing create check; no access change.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -9346,7 +9346,7 @@
         "src/lib/sales-flow.server.ts": "c9eaa4d789a9a9501d5401e97e44ad8b63068e21f0a2ba96642f3be77d0ac6ac",
         "src/lib/contracts/accepted-proposal.server.ts": "5e95de2c76e023277567f7da2a2722d2754124d7d982f6903896975c6d646a92",
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
-        "src/components/contracts/contract-wizard.tsx": "afdeb3ef55c8fdd2ef9bd8d37b26a172eb2a2be27c97b9cc6e35d70ad3a2010b",
+        "src/components/contracts/contract-wizard.tsx": "acb9e2e990a5f17064c2756374f46aa20af8dfcac0473af85261ec2182625ca7",
         "src/lib/sales-flow.functions.ts": "3a15a8618f54e8003b75db6384fc3630f233ff6c696ec9de85a4a5406a3b1e6e",
         "src/components/proposals/proposal-wizard.tsx": "075ed2e1d4a4ede62cd5c7df62ab087279cd88626db76f2c57881ff3545c8506",
         "src/lib/proposals/proposal-draft.server.ts": "73ed9f29defffbcb7e1646542a49fe6220a2d851264515b3b9c93254a7688a68",
@@ -9726,7 +9726,7 @@
         "techsales.quotes.update.team",
         "techsales.quotes.update.workspace"
       ],
-      "rationale": "CONDICOES-PAGAMENTO: a cotação passa a guardar entrada e saldo (mensal, parcelas ou marcos). A gravação é uma server function autenticada que exige techsales.quotes update, confere a linha com assertSalesRecord e só escreve na própria cotação; o total lido é o da própria linha (RLS), e números que não fecham são recusados antes de gravar. Coluna nova com padrão {} e preenchimento das propostas antigas a partir das parcelas existentes: nenhuma coluna, política ou grant existente foi alterado. 0326: as colunas novas de cotações e propostas recebem GRANT por coluna a authenticated (a tabela usa grants por coluna); as políticas RLS de update continuam decidindo quem grava.",
+      "rationale": "CONDICOES-PAGAMENTO: a cota\u00e7\u00e3o passa a guardar entrada e saldo (mensal, parcelas ou marcos). A grava\u00e7\u00e3o \u00e9 uma server function autenticada que exige techsales.quotes update, confere a linha com assertSalesRecord e s\u00f3 escreve na pr\u00f3pria cota\u00e7\u00e3o; o total lido \u00e9 o da pr\u00f3pria linha (RLS), e n\u00fameros que n\u00e3o fecham s\u00e3o recusados antes de gravar. Coluna nova com padr\u00e3o {} e preenchimento das propostas antigas a partir das parcelas existentes: nenhuma coluna, pol\u00edtica ou grant existente foi alterado. 0326: as colunas novas de cota\u00e7\u00f5es e propostas recebem GRANT por coluna a authenticated (a tabela usa grants por coluna); as pol\u00edticas RLS de update continuam decidindo quem grava.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -9821,7 +9821,7 @@
         "techfinance.entries.create.own",
         "techfinance.entries.create.workspace"
       ],
-      "rationale": "CONDICOES-PAGAMENTO: activateService (requireWorkPermission techservice.services update) lê serviço e contrato pelo cliente do usuário (RLS) e, quando o contrato tem condições de pagamento válidas, chama service_activate_with_terms (0327, SECURITY DEFINER) com o cronograma calculado. A função exige sessão, repete as mesmas autorizações de service_bill_checked (work_area_authorize de serviço e billing, finance_scope_access e criação de lançamentos), confere contrato do mesmo workspace e soma igual ao valor do contrato, cria as contas uma única vez por contrato (external_ref) e desliga a cobrança automática do serviço para não cobrar em dobro. Recusa de autorização não cai na cobrança antiga. EXECUTE só para authenticated. O cartão da ficha do contrato é somente leitura sobre dados já autorizados. ATIVA-COBRA 14/11/2026: activation stays authorized by the same RPC checks; when the linked contract is unsigned, the RPCs activate without creating entries and hold billing. Release runs only from the contracts trigger through service-only service_release_signature_billing (revoked from anon/authenticated). Services page only shows the hold badge.",
+      "rationale": "CONDICOES-PAGAMENTO: activateService (requireWorkPermission techservice.services update) l\u00ea servi\u00e7o e contrato pelo cliente do usu\u00e1rio (RLS) e, quando o contrato tem condi\u00e7\u00f5es de pagamento v\u00e1lidas, chama service_activate_with_terms (0327, SECURITY DEFINER) com o cronograma calculado. A fun\u00e7\u00e3o exige sess\u00e3o, repete as mesmas autoriza\u00e7\u00f5es de service_bill_checked (work_area_authorize de servi\u00e7o e billing, finance_scope_access e cria\u00e7\u00e3o de lan\u00e7amentos), confere contrato do mesmo workspace e soma igual ao valor do contrato, cria as contas uma \u00fanica vez por contrato (external_ref) e desliga a cobran\u00e7a autom\u00e1tica do servi\u00e7o para n\u00e3o cobrar em dobro. Recusa de autoriza\u00e7\u00e3o n\u00e3o cai na cobran\u00e7a antiga. EXECUTE s\u00f3 para authenticated. O cart\u00e3o da ficha do contrato \u00e9 somente leitura sobre dados j\u00e1 autorizados. ATIVA-COBRA 14/11/2026: activation stays authorized by the same RPC checks; when the linked contract is unsigned, the RPCs activate without creating entries and hold billing. Release runs only from the contracts trigger through service-only service_release_signature_billing (revoked from anon/authenticated). Services page only shows the hold badge.",
       "files": {
         "drizzle/migrations/0327_service_activate_payment_terms.sql": "13b08044f99e75576b63e6a01fdf667bbeb694f8904d19f3ef7966f5c70a00d6",
         "src/lib/services/activation-terms.ts": "cbcc49d31367a2a3e00306de4d1eb77b4a3f639eebb4864388c6d451490c3068",
@@ -9923,7 +9923,7 @@
         "techsales.contacts.view.workspace",
         "techsales.companies.view.workspace"
       ],
-      "rationale": "TEMPO-COTACAO: só desempenho. sales_capabilities (SECURITY INVOKER, RLS do usuário) calcula sales_access_context() uma vez e, nas seis tabelas principais, avalia em uma única consulta o mesmo sales_context_access(c, workspace_id, recurso, ação, ARRAY[coalesce(assigned_to, owner_id)]) que sales_record_access usava por registro; linhas invisíveis pela RLS continuam fora. Demais tabelas seguem o laço por registro via sales_private.record_access_ctx (cópia literal de sales_record_access com contexto por parâmetro, em schema não exposto pela API). Nenhuma chave nova, nenhuma permissão concedida; resultado conferido idêntico ao anterior por registro.",
+      "rationale": "TEMPO-COTACAO: s\u00f3 desempenho. sales_capabilities (SECURITY INVOKER, RLS do usu\u00e1rio) calcula sales_access_context() uma vez e, nas seis tabelas principais, avalia em uma \u00fanica consulta o mesmo sales_context_access(c, workspace_id, recurso, a\u00e7\u00e3o, ARRAY[coalesce(assigned_to, owner_id)]) que sales_record_access usava por registro; linhas invis\u00edveis pela RLS continuam fora. Demais tabelas seguem o la\u00e7o por registro via sales_private.record_access_ctx (c\u00f3pia literal de sales_record_access com contexto por par\u00e2metro, em schema n\u00e3o exposto pela API). Nenhuma chave nova, nenhuma permiss\u00e3o concedida; resultado conferido id\u00eantico ao anterior por registro.",
       "files": {
         "drizzle/migrations/0328_sales_capabilities_single_context.sql": "65cad7e920f084cb76f99d59ec7eabdfbbdc082c392e1d9847a69bd5902fdd3e",
         "drizzle/migrations/0329_sales_capabilities_set_based.sql": "bd296364c0ab807591c25715fa47cd4012473b75c301f9907a761a03e8519224"
@@ -9987,7 +9987,7 @@
       "actions": ["update"],
       "scopes": ["own", "team", "workspace"],
       "permission_keys": ["techsales.proposals.update.workspace"],
-      "rationale": "CANCELA-PROPOSTA: cancelProposal reuses techsales.proposals update (requireSalesPermission + assertSalesRecord per record, RLS client, compare-and-set on status). UI buttons gated by SalesAction update. Public token read already only exposes sent/accepted/rejected, so canceled proposals cannot be accepted. No schema, grant or policy change. Ficha also hosts the existing proposal email/send actions (same gates as before). | Jornada: remover atalho de contrato e criação direta de proposta da ficha; ações da lista seguem capacidades por registro em useSalesCapabilities, cancelamento mantém a fronteira existente.",
+      "rationale": "CANCELA-PROPOSTA: cancelProposal reuses techsales.proposals update (requireSalesPermission + assertSalesRecord per record, RLS client, compare-and-set on status). UI buttons gated by SalesAction update. Public token read already only exposes sent/accepted/rejected, so canceled proposals cannot be accepted. No schema, grant or policy change. Ficha also hosts the existing proposal email/send actions (same gates as before). | Jornada: remover atalho de contrato e cria\u00e7\u00e3o direta de proposta da ficha; a\u00e7\u00f5es da lista seguem capacidades por registro em useSalesCapabilities, cancelamento mant\u00e9m a fronteira existente.",
       "controls": [
         {
           "file": "src/lib/access-control/sales-permission.middleware.ts",
@@ -11016,7 +11016,7 @@
         "techservice.services.view.own",
         "techservice.services.view.team"
       ],
-      "rationale": "Associar serviço ao contrato: o formulário só esconde cargo/senioridade/stack para serviços de projeto e sugere a cobrança pelo catálogo (regra pura em catalog-service-form.ts). Leitura e gravação continuam pelas server functions existentes listCatalogServiceOptions (assertAnyPermission view) e linkCatalogServiceToContract (requireWorkPermission techservice.services create + RLS de services/service_catalog); nenhuma ação, rota ou acesso novo.",
+      "rationale": "Associar servi\u00e7o ao contrato: o formul\u00e1rio s\u00f3 esconde cargo/senioridade/stack para servi\u00e7os de projeto e sugere a cobran\u00e7a pelo cat\u00e1logo (regra pura em catalog-service-form.ts). Leitura e grava\u00e7\u00e3o continuam pelas server functions existentes listCatalogServiceOptions (assertAnyPermission view) e linkCatalogServiceToContract (requireWorkPermission techservice.services create + RLS de services/service_catalog); nenhuma a\u00e7\u00e3o, rota ou acesso novo.",
       "files": {
         "src/components/services/link-catalog-service-dialog.tsx": "9856abd13d4558ebcdbe439018629afbccc15440ec4ecbac0d7ecaa54f8fb63a"
       },
@@ -11090,7 +11090,7 @@
         "techcontracts.contract_drafts.approve.workspace",
         "techcontracts.signature_evidence.view.workspace"
       ],
-      "rationale": "Ficha aprovada: resumo somente de negócio autorizado, consultas opcionais precedidas por gate de cada área e filtradas por workspace/negócio sob RLS. Não retorna corpos, tokens ou arquivos. Uma origem explícita por jornada. Abertura de minuta manual exige create próprio, membro ativo e proposta/negócio visíveis e aceitos; advisory row lock e workflow interno idempotente. Nenhuma concessão automática. Novos contratos principais de proposta exigem minuta juridicamente aprovada e aceita; gatilho preserva corpo e proveniência e proíbe alterações posteriores. Contratos históricos preservados. Assinatura real via hiring_contract_signature_context; status ativo não basta. Ações existentes mantêm seus gates (sales/work capabilities, send/share/approve/esign/serviços); readonly nega novas ações. Textos anteriores capturados por trigger e SELECT RLS do pai, sem reconstruir histórico; carregamento de um corpo por vez. Revisão jurídica continua exigindo aprovador listado, CAS e nova aprovação do cliente; chamadas diretas sujeitas às mesmas invariantes. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant.",
+      "rationale": "Ficha aprovada: resumo somente de neg\u00f3cio autorizado, consultas opcionais precedidas por gate de cada \u00e1rea e filtradas por workspace/neg\u00f3cio sob RLS. N\u00e3o retorna corpos, tokens ou arquivos. Uma origem expl\u00edcita por jornada. Abertura de minuta manual exige create pr\u00f3prio, membro ativo e proposta/neg\u00f3cio vis\u00edveis e aceitos; advisory row lock e workflow interno idempotente. Nenhuma concess\u00e3o autom\u00e1tica. Novos contratos principais de proposta exigem minuta juridicamente aprovada e aceita; gatilho preserva corpo e proveni\u00eancia e pro\u00edbe altera\u00e7\u00f5es posteriores. Contratos hist\u00f3ricos preservados. Assinatura real via hiring_contract_signature_context; status ativo n\u00e3o basta. A\u00e7\u00f5es existentes mant\u00eam seus gates (sales/work capabilities, send/share/approve/esign/servi\u00e7os); readonly nega novas a\u00e7\u00f5es. Textos anteriores capturados por trigger e SELECT RLS do pai, sem reconstruir hist\u00f3rico; carregamento de um corpo por vez. Revis\u00e3o jur\u00eddica continua exigindo aprovador listado, CAS e nova aprova\u00e7\u00e3o do cliente; chamadas diretas sujeitas \u00e0s mesmas invariantes. | ETAPA-ASSINA 14/11/2026: etapa selecionada com c\u00edrculo vazado (apresenta\u00e7\u00e3o); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body s\u00f3 service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova a\u00e7\u00e3o, chave ou grant. | JORNADA-ASSINA 15/11/2026: resumo da contrata\u00e7\u00e3o marca cl\u00e1usulas pela aprova\u00e7\u00e3o jur\u00eddica vigente do contrato quando n\u00e3o h\u00e1 minuta (leitura de contract_approvals pelo usu\u00e1rio/RLS no mesmo workspace) e mostra o progresso ForSign j\u00e1 lido por getContractOps; sem nova a\u00e7\u00e3o, chave ou grant.",
       "controls": [
         {
           "file": "src/lib/deals/contracting-journey.server.ts",
@@ -11184,7 +11184,7 @@
     {
       "id": "deal-contracting-journey-display-model",
       "kind": "presentation",
-      "rationale": "Pure types, lineage selection and display stage derivation; no I/O, permission grants or mutation. Backend/RLS remains authoritative. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant.",
+      "rationale": "Pure types, lineage selection and display stage derivation; no I/O, permission grants or mutation. Backend/RLS remains authoritative. | JORNADA-ASSINA 15/11/2026: resumo da contrata\u00e7\u00e3o marca cl\u00e1usulas pela aprova\u00e7\u00e3o jur\u00eddica vigente do contrato quando n\u00e3o h\u00e1 minuta (leitura de contract_approvals pelo usu\u00e1rio/RLS no mesmo workspace) e mostra o progresso ForSign j\u00e1 lido por getContractOps; sem nova a\u00e7\u00e3o, chave ou grant.",
       "files": {
         "src/lib/deals/contracting-journey.ts": "0e5c7486a16169907bb4eb5e63a1dc31654148b927795891cfb2ac027dc3234e"
       }
@@ -11546,7 +11546,7 @@
     {
       "id": "forsign-presentation",
       "kind": "presentation",
-      "rationale": "Pure ForSign helpers (status labels, HMAC/timestamp checks, HTML to PDF blocks, PDF layout) and the integration catalogue card. No data access, routes or actions. | JORNADA-ASSINA 15/11/2026: resumo da contratação marca cláusulas pela aprovação jurídica vigente do contrato quando não há minuta (leitura de contract_approvals pelo usuário/RLS no mesmo workspace) e mostra o progresso ForSign já lido por getContractOps; sem nova ação, chave ou grant.",
+      "rationale": "Pure ForSign helpers (status labels, HMAC/timestamp checks, HTML to PDF blocks, PDF layout) and the integration catalogue card. No data access, routes or actions. | JORNADA-ASSINA 15/11/2026: resumo da contrata\u00e7\u00e3o marca cl\u00e1usulas pela aprova\u00e7\u00e3o jur\u00eddica vigente do contrato quando n\u00e3o h\u00e1 minuta (leitura de contract_approvals pelo usu\u00e1rio/RLS no mesmo workspace) e mostra o progresso ForSign j\u00e1 lido por getContractOps; sem nova a\u00e7\u00e3o, chave ou grant.",
       "files": {
         "src/lib/integrations/forsign/forsign-core.ts": "8f8f6a838c4aabcc6f1b297329b2b818352d337407c3d0e5dcdac8d1565d93aa",
         "src/lib/integrations/forsign/forsign-pdf.ts": "fea50d84e7eef29b2eaf2dc50d0f96b18318d0acb18c7a392e6b6e6be910cec9",
@@ -11794,7 +11794,7 @@
     {
       "id": "contract-signature-status-visuals",
       "kind": "presentation",
-      "rationale": "Ícones, tons e selos da situação de assinatura (remessa ForSign e documento nativo): só apresentam status já carregado na tela, sem acesso a dados, rotas, ações ou permissões.",
+      "rationale": "\u00cdcones, tons e selos da situa\u00e7\u00e3o de assinatura (remessa ForSign e documento nativo): s\u00f3 apresentam status j\u00e1 carregado na tela, sem acesso a dados, rotas, a\u00e7\u00f5es ou permiss\u00f5es.",
       "files": {
         "src/components/contracts/signature-status-indicator.tsx": "6a6e35582314f4ca31a4633eeb17b02500e17790d920356c1366c61da92202b8",
         "src/components/contracts/signature-status-tone.ts": "bd38efb40ef90f906d4d4a50ce105b4e3a7918cbe721f8f7892f528b97505ef1"
@@ -12150,7 +12150,7 @@
       "tests": {
         "allowed": {
           "file": "src/lib/contracts/contract-draft-gate.test.ts",
-          "name": "dispensa permitida a aprovador com a chave, após o Jurídico"
+          "name": "dispensa permitida a aprovador com a chave, ap\u00f3s o Jur\u00eddico"
         },
         "missing_permission": {
           "file": "src/lib/contracts/contract-draft-gate.test.ts",
@@ -12158,7 +12158,7 @@
         },
         "explicit_deny": {
           "file": "src/lib/contracts/contract-draft-gate.test.ts",
-          "name": "dispensa negada com deny (chave removida das efetivas) e sem Jurídico"
+          "name": "dispensa negada com deny (chave removida das efetivas) e sem Jur\u00eddico"
         },
         "foreign_workspace": {
           "file": "src/lib/contracts/contract-draft-gate.test.ts",
@@ -12615,7 +12615,7 @@
       "id": "preparation-static-types",
       "kind": "presentation",
       "files": {
-        "src/lib/hiring/requests/types.ts": "5cebf3e2574a1911c047d423fcb95d3df04090a6eb63756c0b6bc6996be856c3"
+        "src/lib/hiring/requests/types.ts": "7adaae5dc3bea27b86e839f3da547ffd25c3dd6b8f479fad5fe86d32bd420820"
       },
       "resources": [],
       "permission_keys": [],
@@ -12625,9 +12625,9 @@
       "id": "hiring-preparation-package2",
       "kind": "business",
       "files": {
-        "src/lib/hiring/requests/boundary.server.ts": "781108c4f9591ca6e3c769588b4cffeb911ef8f4d118815d7717ea734fba9f36",
+        "src/lib/hiring/requests/boundary.server.ts": "01651465f3a5a8f1247503a339be71165711bbf524c8a1b27367add434efed9a",
         "src/lib/hiring/requests/requests.functions.ts": "87dadcaed69095a517d68180cb853f8f12e9dc207599483cb22b863494627be1",
-        "src/lib/hiring/requests/preparation-screen.tsx": "e6c13cca1c40ae485f5a994671ea865d66449fe88476901cfd368c9cc18650ba",
+        "src/lib/hiring/requests/preparation-screen.tsx": "5a0b39d587768cd50b69ff1ebd426e33478124e2c48ddfe1d1061343db23bf12",
         "src/routes/_authenticated/people.hiring-requests.tsx": "734770982cab7d70d7fbb96aa5532d021b71afafc2c97c97714ea8a1c478cb37",
         "src/routes/_authenticated/contracts.supplier-requests.tsx": "1614255f00f5ba1582e25cb43e42bb4ffad69b5e73fdbb4a7c688e5dcb6e16d5",
         "drizzle/migrations/0373_hiring_requests.sql": "3f053b577dd7b4047fc5f596a0248026def9d60d112b040d93c5a8587014b267",
@@ -12862,7 +12862,8 @@
         "review_by": "2027-02-18"
       },
       "files": {
-        "src/components/hiring-requests/preparation-form.tsx": "bfc324f06a97daa1c428c4dd25dd407e562b68d7214ff3bca2d7d9aaf0d687e4"
+        "src/components/hiring-requests/preparation-form.tsx": "bfc324f06a97daa1c428c4dd25dd407e562b68d7214ff3bca2d7d9aaf0d687e4",
+        "src/components/ui/search-create-field.tsx": "005c7d9d180cab8d3a90115e0d4a37ac8e1174bc5c9f1ac0cd037cacad6d83bf"
       }
     },
     {
@@ -14116,6 +14117,367 @@
       "rationale": "Pure labels and immutable local form projection; no queries, mutations, permissions or origin validation decisions. Switching purpose clears commercial IDs and incompatible final-client acceptance only in the unsaved form. Existing save RPC remains authoritative for grants and CNPJ/origin validation.",
       "files": {
         "src/lib/hiring/requests/purpose-presentation.ts": "a541fa0e7a4e77eba25540c05f17207e29ed5fd0555b2ea8ad02831911bc32bb"
+      }
+    },
+    {
+      "id": "search-create-entities-static",
+      "kind": "presentation",
+      "rationale": "Static mapping from five search field kinds to existing canonical resource prefixes; no reads, writes or permission decision. Consuming callers and backends authorize actual operations.",
+      "files": {
+        "src/lib/search-create-entities.ts": "f39d98dead530d8955bf28d5b9f681dd353b92c18649a506ca1636511f7a19d6"
+      }
+    },
+    {
+      "id": "use-debounced-value-static",
+      "kind": "presentation",
+      "rationale": "Local React value timer with cleanup; no API, persistence, data access or permission decision. Callers own query authorization and cache context.",
+      "files": {
+        "src/lib/use-debounced-value.ts": "5c534ecf4e2868a46741341d17e2bf0034b4d0455990d1381ed1d76c026c5ae8"
+      }
+    },
+    {
+      "id": "canonical-search-create-affordances",
+      "kind": "internal",
+      "resources": [
+        "techsales.companies",
+        "techsales.contacts",
+        "techprojects.projects",
+        "techcontracts.contracts",
+        "techcontracts.supplier_requests",
+        "techpeople.hiring_requests"
+      ],
+      "actions": ["view", "create"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techsales.companies.create.own",
+        "techsales.contacts.create.own",
+        "techprojects.projects.create.own",
+        "techcontracts.contracts.create.own"
+      ],
+      "rationale": "Shared unsaved search/selection UI delegates creation to the complete existing canonical company/contact/project forms and official contract wizard. Effective UI permissions, readonly state and captured actor/workspace gate the new dialog. Searches remain behind authenticated preparation view and user/RLS reads; created IDs are re-read through the same filtered endpoint before selection. Contact defaults lock the selected supplier; a commercial contract never treats that supplier as its customer. Canonical POST/insert methods and RLS are unchanged. Optional name prefill and callback preserve existing callers and prevent navigating away from the unsaved request. No new generic insert, service client, policy, key or grant.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/auth.tsx",
+          "symbol": "useAuth"
+        },
+        {
+          "file": "src/lib/hiring/requests/requests.functions.ts",
+          "symbol": "searchPreparationPicker"
+        },
+        {
+          "file": "src/lib/projects.functions.ts",
+          "symbol": "createProject"
+        },
+        {
+          "file": "src/lib/view-as-client.ts",
+          "symbol": "readViewAs"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
+          "symbol": "hiring_preparation_access"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_area_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_area_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/components/record/search-create-record-dialog.test.ts",
+          "name": "search creation allows active authorized context"
+        },
+        "missing_permission": {
+          "file": "src/components/record/search-create-record-dialog.test.ts",
+          "name": "search creation rejects missing create permission"
+        },
+        "explicit_deny": {
+          "file": "src/components/record/search-create-record-dialog.test.ts",
+          "name": "search creation rejects effective explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/components/record/search-create-record-dialog.test.ts",
+          "name": "search creation rejects foreign workspace context"
+        },
+        "inactive_member": {
+          "file": "src/components/record/search-create-record-dialog.test.ts",
+          "name": "search creation rejects inactive effective access"
+        }
+      },
+      "exception": {
+        "mechanism": "UI affordances and optional form defaults delegate persistence to unchanged canonical authenticated/RLS writers; the wrapper captures actor/workspace and re-reads a newly created ID before linking.",
+        "boundary": "No new data operation or privilege; picker reads still use the preparation endpoint plus current-user RLS. UI tests prove affordances; backend security remains inherited and separately exercised by SQL suites.",
+        "revocation": "Effective permission refresh, actor/workspace mismatch and readonly suppress creation; canonical database gates reject revoked callers.",
+        "review_by": "2027-02-18"
+      },
+      "files": {
+        "src/components/record/search-create-record-dialog.tsx": "8bb6a8359093c6aa2357b0c7c549d23468fe28ffe1fe17350ad9dbc6317ade30",
+        "src/components/hiring-requests/preparation-reference-field.tsx": "08cb1e4586dcb5fcb704f6144b08df6168721cbc4c950a99a56d12e508f20532",
+        "src/components/contacts/create-contact-dialog.tsx": "7d7c3635ff6c97c445b5f138419b0666a2220c515b93f5fab824e6fee7342d2d",
+        "src/components/projects/quick-create-project-dialog.tsx": "21dcad9c94da7c5657696abc6134756b5a18e3302e8cda92f581a7e29e4cc3bb"
+      }
+    },
+    {
+      "id": "hiring-origin-context",
+      "kind": "business",
+      "files": {
+        "drizzle/migrations/0390_hiring_origin_context.sql": "cdcb1ba0cabf2c4727768bc5a171e890767c2fe4564b3d9bb11c445cca8db515",
+        "src/lib/hiring/requests/origin.functions.ts": "2bb0e5203e79947582c1477543ed198d3dd25ed86fe608a1d3294198ab1ff1c0",
+        "src/components/hiring-requests/preparation-origin-notice.tsx": "9deee19f9cc09a303e687468dbf975b81a8b703c0b16fc626c8f73cb0a3b8eb6"
+      },
+      "resources": [
+        "techpeople.hiring_requests",
+        "techcontracts.supplier_requests",
+        "techpeople.hiring_requests.cancel",
+        "techcontracts.supplier_requests.cancel",
+        "techpeople.hiring_requests.reference",
+        "techcontracts.supplier_requests.reference",
+        "techpeople.hiring_requests.approval_request",
+        "techpeople.hiring_requests.approval",
+        "techcontracts.supplier_requests.approval_request",
+        "techcontracts.supplier_requests.approval"
+      ],
+      "actions": ["view", "create", "update", "approve"],
+      "scopes": ["workspace"],
+      "permission_keys": [
+        "techpeople.hiring_requests.view.workspace",
+        "techpeople.hiring_requests.create.workspace",
+        "techpeople.hiring_requests.update.workspace",
+        "techcontracts.supplier_requests.view.workspace",
+        "techcontracts.supplier_requests.create.workspace",
+        "techcontracts.supplier_requests.update.workspace",
+        "techpeople.hiring_requests.cancel.update.workspace",
+        "techcontracts.supplier_requests.cancel.update.workspace",
+        "techpeople.hiring_requests.reference.view.workspace",
+        "techpeople.hiring_requests.reference.update.workspace",
+        "techcontracts.supplier_requests.reference.view.workspace",
+        "techcontracts.supplier_requests.reference.update.workspace",
+        "techpeople.hiring_requests.approval_request.create.workspace",
+        "techpeople.hiring_requests.approval.approve.workspace",
+        "techcontracts.supplier_requests.approval_request.create.workspace",
+        "techcontracts.supplier_requests.approval.approve.workspace"
+      ],
+      "rationale": "Bounded authenticated origin preview; dedicated non-BYPASSRLS owner checks active workspace and preparation view before canonical user RLS. No private financial data, mutation or automatic legal entity repair. UI blocks inconsistent draft and offers explicit local selection; authoritative save validation remains unchanged.",
+      "controls": [
+        {
+          "file": "src/lib/hiring/requests/boundary.server.ts",
+          "symbol": "assertPreparation"
+        },
+        {
+          "file": "src/lib/hiring/requests/boundary.server.ts",
+          "symbol": "preparationPicker"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/hiring/requests/preparation-screen.tsx",
+          "symbol": "PreparationScreen"
+        },
+        {
+          "file": "src/components/hiring-requests/preparation-form.tsx",
+          "symbol": "PickerResults"
+        },
+        {
+          "file": "src/lib/access-control/use-shared-action.ts",
+          "symbol": "useSharedAction"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "getActiveWorkspaceId"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/hiring/requests/approval-panel.tsx",
+          "symbol": "ApprovalPanel"
+        },
+        {
+          "file": "src/lib/hiring/requests/approvals.functions.ts",
+          "symbol": "getPreparationApproval"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/hiring/requests/formalization-panel.tsx",
+          "symbol": "FormalizationPanel"
+        },
+        {
+          "file": "src/lib/hiring/requests/draft-code.server.ts",
+          "symbol": "requestDraftCode"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0390_hiring_origin_context.sql",
+          "symbol": "hiring_preparation_origin_context"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "origin preview allowed"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "origin preview missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "origin preview deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "origin preview foreign"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "origin preview inactive"
+        }
+      }
+    },
+    {
+      "id": "origin-context-presentation",
+      "kind": "presentation",
+      "resources": [],
+      "permission_keys": [],
+      "rationale": "Pure DTO and local validation messages; no data access.",
+      "files": {
+        "src/lib/hiring/requests/origin-presentation.ts": "28d1cf24b3a582ce30d671c38e2be7d20c47af98a7e3475a7bd7e9d0e1782fc7"
+      }
+    },
+    {
+      "id": "supplier-document-intake-delegation",
+      "kind": "internal",
+      "resources": [
+        "techsales.companies",
+        "techsales.contacts",
+        "techprojects.projects",
+        "techcontracts.contracts",
+        "techcontracts.supplier_requests",
+        "techpeople.hiring_requests",
+        "techcontracts.imports"
+      ],
+      "actions": ["view", "create", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techsales.companies.create.own",
+        "techsales.contacts.create.own",
+        "techprojects.projects.create.own",
+        "techcontracts.contracts.create.own",
+        "techcontracts.imports.manage.workspace"
+      ],
+      "rationale": "Review-only intake delegates to the existing authenticated contract import endpoints (imports manage plus contract create) and protected cost/RLS contract read. No new server or persistence API, no contract creation, role bypass or grants. Existing purchase contract must belong to active workspace and WK must be the buyer. Suggestions are not applied until explicit per-field selection; amount remains a separate gated callback. UI never inserts or invents IDs. Actor/workspace snapshot invalidates pending extraction results.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/auth.tsx",
+          "symbol": "useAuth"
+        },
+        {
+          "file": "src/lib/hiring/requests/requests.functions.ts",
+          "symbol": "searchPreparationPicker"
+        },
+        {
+          "file": "src/lib/projects.functions.ts",
+          "symbol": "createProject"
+        },
+        {
+          "file": "src/lib/view-as-client.ts",
+          "symbol": "readViewAs"
+        },
+        {
+          "file": "src/lib/contracts/import.functions.ts",
+          "symbol": "parseContractPdf"
+        },
+        {
+          "file": "src/lib/contracts/import.functions.ts",
+          "symbol": "parseContractText"
+        },
+        {
+          "file": "src/lib/contracts.functions.ts",
+          "symbol": "getContract"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
+          "symbol": "hiring_preparation_access"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_area_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_area_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/components/record/search-create-record-dialog.test.ts",
+          "name": "search creation allows active authorized context"
+        },
+        "missing_permission": {
+          "file": "src/components/record/search-create-record-dialog.test.ts",
+          "name": "search creation rejects missing create permission"
+        },
+        "explicit_deny": {
+          "file": "src/components/record/search-create-record-dialog.test.ts",
+          "name": "search creation rejects effective explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/components/record/search-create-record-dialog.test.ts",
+          "name": "search creation rejects foreign workspace context"
+        },
+        "inactive_member": {
+          "file": "src/components/record/search-create-record-dialog.test.ts",
+          "name": "search creation rejects inactive effective access"
+        }
+      },
+      "exception": {
+        "mechanism": "UI affordances and optional form defaults delegate persistence to unchanged canonical authenticated/RLS writers; the wrapper captures actor/workspace and re-reads a newly created ID before linking.",
+        "boundary": "No new data operation or privilege; picker reads still use the preparation endpoint plus current-user RLS. UI tests prove affordances; backend security remains inherited and separately exercised by SQL suites.",
+        "revocation": "Effective permission refresh, actor/workspace mismatch and readonly suppress creation; canonical database gates reject revoked callers.",
+        "review_by": "2027-02-18"
+      },
+      "files": {
+        "src/components/hiring-requests/supplier-document-intake.tsx": "2c53799e70385df03caf6cf1578297736867738058950d9a4907d5a56a289b9d"
+      }
+    },
+    {
+      "id": "supplier-document-review-projection",
+      "kind": "presentation",
+      "resources": [],
+      "permission_keys": [],
+      "rationale": "Pure extraction-to-local-form projection. Does not resolve identities, persist, authorize or apply amounts to the ordinary request.",
+      "files": {
+        "src/lib/hiring/requests/document-review.ts": "d8f6fa7f73342e77fb18d94dc2a10d8447800b96a91ee88688cc0c6c41d2d1d6"
       }
     }
   ],
