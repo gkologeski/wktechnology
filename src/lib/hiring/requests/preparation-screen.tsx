@@ -5,6 +5,8 @@ import { ExecutionPanel } from "./execution-panel";
 import { ExecutionHistory } from "./execution-history";
 import { OperationsPanel } from "./operations-panel";
 import { OperationsHistory } from "./operations-history";
+import { EconomicsPanel } from "./economics-panel";
+import { EconomicsHistory } from "./economics-history";
 import { getPreparationApproval } from "./approvals.functions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -586,6 +588,7 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
               )}
               {row && <ExecutionHistory kind={kind} row={row} />}
               {row && <OperationsHistory kind={kind} row={row} />}
+              {row && <EconomicsHistory kind={kind} row={row} />}
               {row && (
                 <ApprovalPanel
                   key={`history:${row.id}`}
@@ -672,6 +675,7 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
                   busy={save.isPending}
                 />
               )}
+              {row && <EconomicsPanel key={`econ:${row.id}`} kind={kind} row={row} />}
             </aside>
           </div>
           {error && (

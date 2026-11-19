@@ -12624,7 +12624,7 @@
       "files": {
         "src/lib/hiring/requests/boundary.server.ts": "781108c4f9591ca6e3c769588b4cffeb911ef8f4d118815d7717ea734fba9f36",
         "src/lib/hiring/requests/requests.functions.ts": "87dadcaed69095a517d68180cb853f8f12e9dc207599483cb22b863494627be1",
-        "src/lib/hiring/requests/preparation-screen.tsx": "bab98cb3e5c56ae04eccc72710185dcad28a9f7b6ed485f81a01465e74925a54",
+        "src/lib/hiring/requests/preparation-screen.tsx": "619b43bdffbb4f705e850154499a0f02b4836e5aa707316bb1d8f071c0136614",
         "src/routes/_authenticated/people.hiring-requests.tsx": "734770982cab7d70d7fbb96aa5532d021b71afafc2c97c97714ea8a1c478cb37",
         "src/routes/_authenticated/contracts.supplier-requests.tsx": "1614255f00f5ba1582e25cb43e42bb4ffad69b5e73fdbb4a7c688e5dcb6e16d5",
         "drizzle/migrations/0373_hiring_requests.sql": "3f053b577dd7b4047fc5f596a0248026def9d60d112b040d93c5a8587014b267",
@@ -13372,6 +13372,122 @@
       "files": {
         "src/lib/hiring/requests/fiscal-attestation.server.ts": "c77ac510c4522a486f9cdbae07719a6c7b1ca4fef1ca0ae7b86ebc1ecf62115b"
       }
+    },
+    {
+      "id": "hiring-economics-batch-c1",
+      "kind": "business",
+      "resources": [
+        "techpeople.hiring_requests.economics",
+        "techpeople.hiring_requests.provisions",
+        "techcontracts.supplier_requests.economics",
+        "techcontracts.supplier_requests.provisions"
+      ],
+      "actions": ["view", "manage", "approve"],
+      "scopes": ["workspace"],
+      "permission_keys": [
+        "techpeople.hiring_requests.economics.view.workspace",
+        "techpeople.hiring_requests.economics.manage.workspace",
+        "techpeople.hiring_requests.economics.approve.workspace",
+        "techpeople.hiring_requests.provisions.manage.workspace",
+        "techpeople.hiring_requests.provisions.approve.workspace",
+        "techcontracts.supplier_requests.economics.view.workspace",
+        "techcontracts.supplier_requests.economics.manage.workspace",
+        "techcontracts.supplier_requests.economics.approve.workspace",
+        "techcontracts.supplier_requests.provisions.manage.workspace",
+        "techcontracts.supplier_requests.provisions.approve.workspace"
+      ],
+      "rationale": "Package 4 batch C1 (PLANO-PROVISAO): versioned economic plan bound to request revision, start, WK legal entity and signed instrument hash; explicit modality/components/source clauses (never the demand reference value nor contract HTML); decision only by the configured Finance user, never author/submitter; eligible calculation from exact accepted delivery versions, approved closed non-imported canonical seconds of the engagement allocations and explicit monthly proration; management cost provision reusing hiring_monthly_provisions kind=cost/config_id NULL with ended-month close, hash freshness and chained immutable revisions. Provisions additionally require canonical techfinance.provisions keys; amounts require contract (and person) record access. No financial_entries, recurrence, payable or payment; sales billing fields only read. Writes require active member, active workspace, specific key with deny precedence and refuse read-only view-as; tables have no authenticated grants. Migration prepared only, not applied. Five-scenario SQL evidence exists per action (save literal below; submit/decide/view/preview/close generated per action in the same file).",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/use-shared-action.ts",
+          "symbol": "useSharedAction"
+        },
+        {
+          "file": "src/lib/hiring/requests/economics-panel.tsx",
+          "symbol": "EconomicsPanel"
+        },
+        {
+          "file": "src/lib/hiring/requests/economics-panel.tsx",
+          "symbol": "useEconomics"
+        }
+      ],
+      "database": [
+        {
+          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_save"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_subject"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_actor"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_proof_problem"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_transition"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_provision_preview"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_provision_close"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_context"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/requests/economics-postgres.test.ts",
+          "name": "econ save plan allowed"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/requests/economics-postgres.test.ts",
+          "name": "econ save plan rejects missing key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/requests/economics-postgres.test.ts",
+          "name": "econ save plan rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/requests/economics-postgres.test.ts",
+          "name": "econ save plan rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/requests/economics-postgres.test.ts",
+          "name": "econ save plan rejects inactive member"
+        }
+      },
+      "files": {
+        "src/lib/hiring/requests/economics.functions.ts": "a2325af0325baa28f3bf374c12a8d18a6c659de45574863386ad317849f770ca",
+        "src/lib/hiring/requests/economics-panel.tsx": "9f1de2da593da17d9c1ec2fbb0dbb6e4539cd9671f7dc8b60d681140a3a0dcef",
+        "src/lib/hiring/requests/economics-history.tsx": "db0b5b267e8246881d5033fe4e5344f910147db8871c134fec82ca657df8aca6"
+      }
+    },
+    {
+      "id": "hiring-economics-static",
+      "kind": "presentation",
+      "files": {
+        "src/lib/hiring/requests/economics-types.ts": "d72a4dc931a5221edf4b722c416c0b2ab993e70506e58f93f799d7309ceaa847"
+      },
+      "rationale": "Static DTOs, labels, client-side mirror of component rules and month list only; no data access or actions."
     }
   ],
   "retired": {

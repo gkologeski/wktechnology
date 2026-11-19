@@ -8,7 +8,7 @@ route_pattern: /people/hiring-requests
 min_permission: techpeople.hiring_requests.view.workspace
 audience: internal
 sort_order: 35
-version: 9
+version: 10
 is_published: true
 ---
 
@@ -113,3 +113,18 @@ Solicitação em rascunho, pronta para aprovação ou cancelada, com histórico 
 ## Relacionados
 
 - [Contratação de fornecedores](/ajuda/contracts/preparar-contratacao-fornecedor)
+
+## Plano econômico e provisão gerencial
+
+**Quem pode fazer:** `techpeople.hiring_requests.economics.view.workspace` para ver valores (além de acesso ao contrato e à pessoa), `.economics.manage.workspace` para montar/enviar, `.economics.approve.workspace` para o **responsável Financeiro configurado** decidir, `.provisions.manage.workspace` para prévia e `.provisions.approve.workspace` para fechar; provisões exigem também `techfinance.provisions.manage.workspace`/`techfinance.provisions.approve.workspace`. Não há concessão automática.
+
+1. Após o início autorizado, abra **Plano econômico e provisão** na lateral e escolha a **modalidade** explicitamente: por entrega (preço fechado), por hora aprovada, mensal ou misto. O valor de referência da demanda não é preço nem dívida e nada é lido do texto do contrato.
+2. Cada componente exige valor/taxa, moeda, vencimento (dias após competência ou aceite) e a **cláusula conferida** no instrumento assinado. Mensal exige regra explícita: mês integral ou pró-rata por dias corridos do calendário.
+3. **Por entrega** aponta a versão exata da entrega; só entra no cálculo depois do aceite daquela versão. Nova versão da entrega deixa a linha pendente até revisar o plano. Horas de referência não mudam preço fechado.
+- **Por hora**: usa somente segundos reais de apontamentos **aprovados**, dentro de **fechamento de competência vigente**, nas alocações deste vínculo e da própria pessoa; importações não revisadas ficam fora e aparecem como excluídas. Não há conversão de 160 h ou 30 dias e o faturamento de venda das horas não é alterado.
+4. **Misto** exige componentes de tipos e fontes distintos; com mensal, horas precisam de projeto explícito, evitando dupla contagem.
+- CLT, PJ e freelance escolhem a modalidade explicitamente; o regime não define modalidade por padrão.
+5. Use **Enviar ao Financeiro**. Somente o responsável Financeiro configurado decide, com motivo, e nunca quem montou ou enviou. Nova versão volta a rascunho e exige nova aprovação; histórico e instrumento assinado nunca são alterados.
+6. Em **Competência**, use **Calcular prévia**. Fechar só é possível para mês encerrado, sem linhas pendentes e com fontes iguais às da prévia; mudanças exigem revisão encadeada justificada. O histórico central mostra versões, decisões e provisões.
+
+Assinatura alterada/revogada, revisão diferente, mudança de alçada ou entidade WK sem CNPJ bloqueiam novas ações. **Provisão é previsão de custo gerencial: não gera título, conta a pagar, recorrência nem pagamento.** Títulos e conferência fiscal pertencem ao lote seguinte.
