@@ -947,6 +947,7 @@ type Gen = Partial<{
   doc: string | null;
   op: string;
   just: string;
+  traceId: number;
 }>;
 const DUE = () => {
   const d = new Date(PREV + "T00:00:00Z");
@@ -955,11 +956,23 @@ const DUE = () => {
 async function gen(r: R, o: Gen = {}) {
   const month = o.month ?? PREV;
   const hash = o.hash ?? ((await pctx(r.id, month)).eligible?.preview_hash as string);
-  return user(o.u ?? U, (tx) =>
-    tx`select hiring_payable_generate(${o.w ?? W},${r.id},${month}::date,${hash},${tx.json(o.keys ?? ["monthly:" + month])},${tx.json(o.inst ?? [{ amount: 9300, due_on: DUE() }])},${o.doc === undefined ? null : o.doc},${o.just ?? "Competência encerrada conferida com o contrato assinado."},${o.op ?? randomUUID()}) v`.then(
-      (x) => x[0].v as string,
-    ),
-  );
+  const started = Date.now();
+  return user(o.u ?? U, async (tx) => {
+    if (o.traceId)
+      console.info(
+        "[hiring concurrency] transaction",
+        o.traceId,
+        Date.now() - started,
+        (await tx`select pg_backend_pid() pid`)[0].pid,
+      );
+    try {
+      return await tx`select hiring_payable_generate(${o.w ?? W},${r.id},${month}::date,${hash},${tx.json(o.keys ?? ["monthly:" + month])},${tx.json(o.inst ?? [{ amount: 9300, due_on: DUE() }])},${o.doc === undefined ? null : o.doc},${o.just ?? "Competência encerrada conferida com o contrato assinado."},${o.op ?? randomUUID()}) v`.then(
+        (x) => x[0].v as string,
+      );
+    } finally {
+      if (o.traceId) console.info("[hiring concurrency] rpc_end", o.traceId, Date.now() - started);
+    }
+  });
 }
 type Rec = Partial<{
   u: string;
@@ -1078,12 +1091,25 @@ it("payables concurrent generation of the same source creates a single obligatio
   const x = await approvedPlan();
   const d = await doc(x.r, { amount: 30000 });
   const hash = (await pctx(x.r.id)).eligible.preview_hash as string;
+  console.info(
+    "[hiring concurrency] server",
+    (await db`select version(),current_setting('jit') jit`)[0],
+  );
   console.info("[hiring concurrency] setup_ms", Date.now() - clock);
+  let observation: Promise<unknown> | undefined;
+  const timer = setTimeout(() => {
+    observation =
+      db`select pid,state,wait_event_type,wait_event,pg_blocking_pids(pid) blockers,case when query like '%hiring_payable_generate%' then 'generate' else 'other' end phase from pg_stat_activity where datname=current_database() and pid<>pg_backend_pid() and state<>'idle'`.then(
+        (rows) => console.info("[hiring concurrency] waits", JSON.stringify(rows)),
+      );
+  }, 750);
   const out = await Promise.allSettled([
-    gen(x.r, { doc: d, hash }),
-    gen(x.r, { doc: d, hash }),
-    gen(x.r, { doc: d, hash }),
+    gen(x.r, { doc: d, hash, traceId: 1 }),
+    gen(x.r, { doc: d, hash, traceId: 2 }),
+    gen(x.r, { doc: d, hash, traceId: 3 }),
   ]);
+  clearTimeout(timer);
+  await observation;
   console.info("[hiring concurrency] total_ms", Date.now() - clock);
   expect(out.filter((o) => o.status === "fulfilled").length).toBe(1);
   for (const result of out)
