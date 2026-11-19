@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Gate completo e SEQUENCIAL: typecheck → lint → testes. Não pula falhas:
+// Permissões primeiro; tipos, lint e testes independentes em paralelo. Não pula falhas:
 // todas as etapas rodam e o código de saída é o da primeira que falhou.
 // Grava .verification/verify.json; complete=true só se todas passarem.
 import { spawn } from "node:child_process";
@@ -20,19 +20,21 @@ const STEPS = [
 ];
 const MAX_OUTPUT = 200_000; // caracteres guardados por etapa (fim da saída)
 
-let child = null;
+const children = new Set();
 let interrupted = null;
 for (const sig of ["SIGINT", "SIGTERM"]) {
   process.on(sig, () => {
     interrupted = sig;
-    if (!child || child.exitCode !== null) return;
-    child.kill(sig);
-    // O tsgo ignora SIGTERM (medido: termina a checagem e sai 0). Após 3 s, força.
-    const c = child;
-    setTimeout(
-      () => c.exitCode === null && c.signalCode === null && c.kill("SIGKILL"),
-      3000,
-    ).unref();
+    for (const child of children) {
+      if (child.exitCode !== null) continue;
+      child.kill(sig);
+      // O tsgo ignora SIGTERM (medido: termina a checagem e sai 0). Após 3 s, força.
+      const c = child;
+      setTimeout(
+        () => c.exitCode === null && c.signalCode === null && c.kill("SIGKILL"),
+        3000,
+      ).unref();
+    }
   });
 }
 
@@ -44,13 +46,15 @@ function run(step) {
       stream.write(buf);
       output = (output + buf.toString()).slice(-MAX_OUTPUT);
     };
-    child = spawn(step.cmd, step.args, {
+    const child = spawn(step.cmd, step.args, {
       env: { ...process.env, PATH: `node_modules/.bin:${process.env.PATH}` },
       stdio: ["ignore", "pipe", "pipe"],
     });
+    children.add(child);
     child.stdout.on("data", (b) => keep(b, process.stdout));
     child.stderr.on("data", (b) => keep(b, process.stderr));
     const done = (code, signal) => {
+      children.delete(child);
       const finished = new Date();
       resolve({
         name: step.name,
@@ -84,16 +88,18 @@ writeFileSync(
     steps: [],
   }),
 );
-const results = [];
-for (const step of STEPS) {
-  if (interrupted) break;
+async function runLogged(step) {
   console.log(`\n[verify] ▶ ${step.name}`);
   const r = await run(step);
-  results.push(r);
   console.log(
     `[verify] ${r.ok ? "OK" : "FALHOU"} ${step.name} em ${(r.duration_ms / 1000).toFixed(1)}s`,
   );
+  return r;
 }
+const results = [await runLogged(STEPS[0])];
+// Authorization evidence must succeed before starting any dependent validation.
+if (results[0].ok && !interrupted)
+  results.push(...(await Promise.all(STEPS.slice(1).map(runLogged))));
 const finishedAt = new Date();
 const sourceChanged = sourceHash !== sourceFingerprint();
 const complete =
