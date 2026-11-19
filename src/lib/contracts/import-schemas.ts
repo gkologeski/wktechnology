@@ -135,6 +135,8 @@ export type ExtractedContract = z.infer<typeof ExtractedContractSchema>;
 
 // Payload de criação a partir da importação. Aceita todos os campos + arquivo de origem.
 export const CreateFromImportSchema = z.object({
+  /** Explicit user choice; extracted role alone is not a manual override. */
+  manual_role: z.enum(["provider", "client"]).nullable().optional(),
   fields: ExtractedContractSchema,
   source_file_path: z.string().nullable().optional(),
   imported_from: z.enum(["pdf", "docx"]),

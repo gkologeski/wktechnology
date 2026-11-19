@@ -217,7 +217,7 @@ function token() {
   return randomBytes(24).toString("hex");
 }
 
-// Tenta casar contraparte pelo CNPJ. Fallback para o nome exato (case-insensitive).
+// Canonical user/RLS reads: explicit CNPJ never falls back to a name; ambiguity stays unresolved.
 async function findCompanyIdByCnpjOrName(
   supabase: import("@supabase/supabase-js").SupabaseClient,
   workspaceId: string,
@@ -225,25 +225,27 @@ async function findCompanyIdByCnpjOrName(
   name: string | null | undefined,
 ): Promise<string | null> {
   const digits = (cnpj ?? "").replace(/\D/g, "");
-  if (digits.length === 14) {
-    const { data } = await supabase
+  if (digits.length) {
+    if (digits.length !== 14) return null;
+    const { data, error } = await supabase
       .from("companies")
       .select("id")
       .eq("workspace_id", workspaceId)
       .eq("cnpj", digits)
-      .limit(1)
-      .maybeSingle();
-    if (data?.id) return data.id as string;
+      .limit(2);
+    if (error) throw error;
+    if (data?.length === 1) return data[0].id as string;
+    return null;
   }
   if (name && name.trim().length > 2) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("companies")
       .select("id")
       .eq("workspace_id", workspaceId)
-      .ilike("name", name.trim())
-      .limit(1)
-      .maybeSingle();
-    if (data?.id) return data.id as string;
+      .ilike("name", name.trim().replace(/[\\%_]/g, "\\$&"))
+      .limit(2);
+    if (error) throw error;
+    if (data?.length === 1) return data[0].id as string;
   }
   return null;
 }
@@ -261,13 +263,20 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     ]);
 
     const f = data.fields;
-    const extractedRole = f.role ?? null;
-
+    const { loadOwnLegalEntities } = await import("@/lib/contracts/import-link.server");
+    const { resolveImportParties } = await import("@/lib/contracts/import-parties.server");
+    const ownEntities = await loadOwnLegalEntities(supabase, workspaceId);
+    const parties = resolveImportParties(f, ownEntities, data.manual_role ?? null);
+    if (parties.conflict)
+      throw new Error(
+        "O papel escolhido contradiz o CNPJ WK identificado no documento. Confira as partes antes de importar.",
+      );
+    const role = parties.role;
     const counterpartyCompanyId = await findCompanyIdByCnpjOrName(
       supabase,
       workspaceId,
-      f.counterparty_cnpj,
-      f.counterparty_name,
+      parties.counterpartyCnpj,
+      parties.counterpartyName,
     );
 
     const metadata: Record<string, unknown> = {};
@@ -283,36 +292,15 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     );
     if (referenced.length) metadata.referenced_contract_numbers = referenced;
 
-    // Contratante = entidade legal do workspace? (contratos elegíveis ao TechPeople)
-    const { loadOwnLegalEntities, matchOwnEntity } =
-      await import("@/lib/contracts/import-link.server");
-    const ownEntities = await loadOwnLegalEntities(supabase, workspaceId);
-    const ownEntity = matchOwnEntity(ownEntities, f.contracting_cnpj, f.contracting_name);
-    if (ownEntity) metadata.contracting_is_own_entity = true;
-    const ownCounterparty = matchOwnEntity(ownEntities, f.counterparty_cnpj, f.counterparty_name);
-
-    // O papel é derivado das nossas empresas: CONTRATADA ⇒ prestação, CONTRATANTE ⇒ compra.
-    // O `role` extraído pela IA só é usado quando não há evidência das partes.
-    const inferredRole: "provider" | "client" | null =
-      Boolean(ownEntity) === Boolean(ownCounterparty)
-        ? null
-        : ownCounterparty
-          ? "provider"
-          : "client";
-    const role: "provider" | "client" = inferredRole ?? extractedRole ?? "provider";
-    metadata.role_source = inferredRole ? "inferred" : "extracted";
-    if (extractedRole) metadata.role_extracted = extractedRole;
-    if (inferredRole && extractedRole && inferredRole !== extractedRole) {
-      const warn =
-        inferredRole === "provider"
-          ? "Papel extraído indicava Compra, mas nossa empresa consta como CONTRATADA: gravado como Prestação."
-          : "Papel extraído indicava Prestação, mas nossa empresa consta como CONTRATANTE: gravado como Compra.";
+    if (parties.contractingIsOwn) metadata.contracting_is_own_entity = true;
+    metadata.role_source = parties.roleSource;
+    if (f.role) metadata.role_extracted = f.role;
+    if (parties.inferredRole && f.role && parties.inferredRole !== f.role)
       metadata.import_warnings = [
         ...((metadata.import_warnings as string[] | undefined) ?? []),
-        warn,
+        "Papel extraído pela IA difere do CNPJ WK identificado: confira as partes do documento.",
       ];
-    }
-    const ownSideName = (role === "provider" ? ownCounterparty?.name : ownEntity?.name) ?? null;
+    const ownSideName = parties.ownName;
 
     // Tipo de documento detectado pela IA (mais os sinais textuais do título/arquivo).
     // O vínculo do aditivo ao contrato principal continua sendo passo próprio da
@@ -360,7 +348,7 @@ export const createContractFromImport = createServerFn({ method: "POST" })
         "Contrato importado",
 
       counterparty_company_id: counterpartyCompanyId,
-      contracting_legal_entity_id: ownEntity?.id ?? null,
+      contracting_legal_entity_id: parties.ownEntityId,
 
       total_value: f.total_value ?? f.monthly_value ?? 0,
       currency: f.currency ?? "BRL",
