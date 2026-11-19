@@ -12616,7 +12616,7 @@
       "files": {
         "src/lib/hiring/requests/boundary.server.ts": "781108c4f9591ca6e3c769588b4cffeb911ef8f4d118815d7717ea734fba9f36",
         "src/lib/hiring/requests/requests.functions.ts": "87dadcaed69095a517d68180cb853f8f12e9dc207599483cb22b863494627be1",
-        "src/lib/hiring/requests/preparation-screen.tsx": "619b43bdffbb4f705e850154499a0f02b4836e5aa707316bb1d8f071c0136614",
+        "src/lib/hiring/requests/preparation-screen.tsx": "e6c13cca1c40ae485f5a994671ea865d66449fe88476901cfd368c9cc18650ba",
         "src/routes/_authenticated/people.hiring-requests.tsx": "734770982cab7d70d7fbb96aa5532d021b71afafc2c97c97714ea8a1c478cb37",
         "src/routes/_authenticated/contracts.supplier-requests.tsx": "1614255f00f5ba1582e25cb43e42bb4ffad69b5e73fdbb4a7c688e5dcb6e16d5",
         "drizzle/migrations/0373_hiring_requests.sql": "3f053b577dd7b4047fc5f596a0248026def9d60d112b040d93c5a8587014b267",
@@ -12851,7 +12851,7 @@
         "review_by": "2027-02-18"
       },
       "files": {
-        "src/components/hiring-requests/preparation-form.tsx": "8471d1a6bdf85c00c57cab2ff29e33cb6f91416e7e43cb8264c804166fb32aa0"
+        "src/components/hiring-requests/preparation-form.tsx": "d21771fcca312f9338245dc5b84f9cae41fa57de6d86efa5b557f5eae9f59a34"
       }
     },
     {
@@ -13421,6 +13421,126 @@
         "src/lib/hiring/requests/economics-types.ts": "d72a4dc931a5221edf4b722c416c0b2ab993e70506e58f93f799d7309ceaa847"
       },
       "rationale": "Static DTOs, labels, client-side mirror of component rules and month list only; no data access or actions."
+    },
+    {
+      "id": "hiring-payables-batch-c2",
+      "kind": "business",
+      "resources": [
+        "techpeople.hiring_requests.payables",
+        "techcontracts.supplier_requests.payables",
+        "techcontracts.supplier_requests.client_acceptance"
+      ],
+      "actions": ["view", "manage", "reconcile", "approve"],
+      "scopes": ["workspace"],
+      "permission_keys": [
+        "techpeople.hiring_requests.payables.view.workspace",
+        "techpeople.hiring_requests.payables.manage.workspace",
+        "techpeople.hiring_requests.payables.reconcile.workspace",
+        "techcontracts.supplier_requests.payables.view.workspace",
+        "techcontracts.supplier_requests.payables.manage.workspace",
+        "techcontracts.supplier_requests.payables.reconcile.workspace",
+        "techcontracts.supplier_requests.client_acceptance.manage.workspace",
+        "techcontracts.supplier_requests.client_acceptance.approve.workspace"
+      ],
+      "rationale": "Package 4 batch C2 (PARCELA-CONCILIA): canonical payables in financial_entries (payable/open/origin contract) from explicitly selected eligible lines of the current Finance-approved plan, current start/revision/signature proof, verified fiscal/payroll document with balance reservation, stable source claims (contract+source[+competence]) and exact installments; payments only via financial_payments. Legacy titles/recurrences (contract, payroll marker, counterparty) block generation until the configured Finance user links a compatible title or declares it unrelated. Guards on financial_entries/recurrences/time entries/closings/deliveries enforce trusted provenance (definer-only installment rows, never a GUC). Generate/reconcile/view additionally require techfinance.entries create/update/view keys and contract (and person) record access. Writes require active member, active workspace, specific key with deny precedence and refuse read-only view-as; tables have no authenticated grants. Migration prepared only, not applied. Five-scenario SQL evidence per action (generate literal; reconcile/view generated in the same file). Supplier special condition also_client_acceptance: named final-client acceptance on the exact WK-accepted delivery version and the request's canonical project/deal/commercial contract; confirmed only by the configured Finance user who did not register it; required by payable generation for that condition. Same active member/workspace/deny/view-as gates; migration prepared only. Five-scenario SQL evidence for register (literal) and confirm (generated). Client-acceptance five-scenario evidence is generated per action in the same file.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/use-shared-action.ts",
+          "symbol": "useSharedAction"
+        },
+        {
+          "file": "src/lib/hiring/requests/payables-panel.tsx",
+          "symbol": "PayablesPanel"
+        },
+        {
+          "file": "src/lib/hiring/requests/payables-panel.tsx",
+          "symbol": "usePayables"
+        },
+        {
+          "file": "src/lib/hiring/requests/payables-panel.tsx",
+          "symbol": "ClientAcceptanceBox"
+        }
+      ],
+      "database": [
+        {
+          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "symbol": "hiring_pay_subject"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "symbol": "hiring_pay_actor"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "symbol": "hiring_pay_finance_only"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "symbol": "hiring_payable_generate"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "symbol": "hiring_payable_reconcile"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "symbol": "hiring_client_acceptance_register"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "symbol": "hiring_client_acceptance_decide"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "symbol": "hiring_payable_context"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0384_hiring_payables_reconciliation.sql",
+          "symbol": "hiring_pay_entry_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/requests/payables-postgres.test.ts",
+          "name": "payables generate allowed"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/requests/payables-postgres.test.ts",
+          "name": "payables generate rejects missing key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/requests/payables-postgres.test.ts",
+          "name": "payables generate rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/requests/payables-postgres.test.ts",
+          "name": "payables generate rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/requests/payables-postgres.test.ts",
+          "name": "payables generate rejects inactive member"
+        }
+      },
+      "files": {
+        "src/lib/hiring/requests/payables.functions.ts": "a7dfe7d8cdc32f34e6499f3d46d90d7ec76b5b0adab7b9b1de0cb61b1faa2743",
+        "src/lib/hiring/requests/payables-panel.tsx": "bc29e59673f5e4153077872d4550097294a04c7321fd7e3f76731cfc40f75f0b"
+      }
+    },
+    {
+      "id": "hiring-payables-static",
+      "kind": "presentation",
+      "files": {
+        "src/lib/hiring/requests/payables-types.ts": "c865b1f878c3c5fd1f5fc90cc13c6aa3dd64d6b8e30f0913710dcfdf174da783"
+      },
+      "rationale": "Static DTOs, labels and client-side mirror of selection/installment sum rules only; no data access or actions."
     }
   ],
   "retired": {

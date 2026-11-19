@@ -209,8 +209,10 @@ export function PreparationForm({
             )}
           {kind === "supplier" && value.release_condition === "also_client_acceptance" && (
             <p role="status" className="text-sm text-muted-foreground">
-              Condição especial: mantenha a solicitação como rascunho para revisão das entregas,
-              responsáveis, prazos e tratamento do silêncio.
+              Condição especial: exige finalidade Cliente com projeto, negócio ou contrato comercial
+              vinculado. Cada entrega só gera conta a pagar após aceite técnico da WK, aceite
+              nomeado do cliente final conferido pelo Financeiro e documento fiscal conferido;
+              silêncio do cliente nunca conta como aceite.
             </p>
           )}
           <p className="text-sm text-muted-foreground">
