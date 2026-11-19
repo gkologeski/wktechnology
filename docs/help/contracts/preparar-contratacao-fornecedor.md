@@ -8,7 +8,7 @@ route_pattern: /contracts/supplier-requests
 min_permission: techcontracts.supplier_requests.view.workspace
 audience: internal
 sort_order: 36
-version: 10
+version: 11
 is_published: true
 ---
 
@@ -25,7 +25,7 @@ is_published: true
 2. Em **Demanda**, informe título, finalidade Cliente/Interno/Gestão compartilhada, área responsável, entidade WK e escopo.
 3. Em **Vínculos**, escolha empresa fornecedora canônica e contato opcional da mesma empresa. Projeto é opcional; negócio e contrato de origem estão disponíveis quando a finalidade é Cliente.
 4. Em **Condições**, selecione Por entrega/Por hora/Mensal/Mista. O valor de referência exige permissões específicas `techcontracts.supplier_requests.reference.view.workspace` para consultar e `.reference.update.workspace` para alterar. Não é retornado na lista ou no histórico comum.
-5. Para fornecedor, registre **Aceite WK + NF válida** ou **Aceite WK + NF válida + aceite cliente final**, somente como condição em rascunho para revisão. Não libera pagamentos.
+5. Para fornecedor, registre **Aceite WK + NF válida** ou **Aceite WK + NF válida + aceite cliente final**, como condição de liberação. A condição com cliente final exige finalidade Cliente com vínculo canônico; nenhuma das duas libera pagamento sozinha (veja Contas a pagar).
 6. Em **Revisão**, confira demanda, vínculos e condições e salve o rascunho. Na ficha, o histórico fica ao centro e resumo/jornada/responsáveis à direita; as decisões são registradas separadamente por revisão.
 7. Reabra para editar ou marcar Pronta para aprovação; cancelar exige confirmação e preserva histórico. Não inclui alterações ainda não salvas.
 
@@ -129,4 +129,20 @@ Preparação de compra WK versionada, sem contrato ou processo operacional criad
 5. Use **Enviar ao Financeiro**. Somente o responsável Financeiro configurado decide, com motivo, e nunca quem montou ou enviou. Nova versão volta a rascunho e exige nova aprovação; histórico e instrumento assinado nunca são alterados.
 6. Em **Competência**, use **Calcular prévia**. Fechar só é possível para mês encerrado, sem linhas pendentes e com fontes iguais às da prévia; mudanças exigem revisão encadeada justificada. O histórico central mostra versões, decisões e provisões.
 
-Assinatura alterada/revogada, revisão diferente, mudança de alçada ou entidade WK sem CNPJ bloqueiam novas ações. **Provisão é previsão de custo gerencial: não gera título, conta a pagar, recorrência nem pagamento.** Títulos e conferência fiscal pertencem ao lote seguinte.
+Assinatura alterada/revogada, revisão diferente, mudança de alçada ou entidade WK sem CNPJ bloqueiam novas ações. **Provisão é previsão de custo gerencial: não gera título, conta a pagar, recorrência nem pagamento.**
+
+## Contas a pagar e conciliação
+
+**Quem pode fazer:** `techcontracts.supplier_requests.payables.view.workspace` para ver parcelas (com `techfinance.entries.view.workspace` e acesso ao contrato), `.payables.manage.workspace` com `techfinance.entries.create.workspace` para gerar e `.payables.reconcile.workspace` com `techfinance.entries.update.workspace` para conciliar — esta última somente pelo **responsável Financeiro configurado**. Não há concessão automática.
+
+1. Na lateral **Contas a pagar**, escolha a **Competência**. O cálculo usa o plano econômico aprovado atual, a assinatura e a revisão vigentes.
+2. Marque explicitamente as fontes elegíveis. Linhas pendentes (período mensal ainda aberto, horas sem fechamento vigente, entrega sem aceite ou com versão alterada) aparecem com o motivo e não podem ser selecionadas — nunca viram zero.
+3. Informe as parcelas com valor e vencimento explícitos; a soma precisa fechar exatamente a obrigação. Selecione o documento conferido: NFS-e/NF-e para PJ e fornecedor, documento freelance para freelance e **evidência de folha** para CLT (sem nota fiscal fictícia). O documento precisa ter tomador = CNPJ WK, emissor = contratado, mesma moeda e saldo suficiente; o saldo nunca é usado duas vezes. A conferência é humana e não equivale a validação na SEFAZ.
+4. Justifique e use **Gerar contas a pagar**. Os títulos nascem **em aberto** no Financeiro (Contas a pagar), ligados ao contrato e à entidade WK. Nada é pago aqui: o pagamento é registrado no Financeiro e só ele define o status pago.
+5. Se existirem títulos ou recorrências antigos que possam cobrir a mesma competência (folha de pessoas, parcelas do contrato, serviço ou projeto do mesmo contratado), a geração fica bloqueada. O Financeiro configurado vincula o título compatível (mesmo valor, competência, moeda, entidade e contratado) às fontes selecionadas ou declara que **não se relaciona**. Título incompatível não é vinculado e nada é cancelado ou alterado, inclusive títulos pagos.
+6. Cada fonte (entrega, mês, apontamento de horas) só pode lastrear uma obrigação. Depois disso, o apontamento, o fechamento e a entrega ficam congelados; correções exigem revisão ou aditivo explícito. Os títulos não podem ter valor, vencimento ou contrato alterados, nem ser cancelados ou excluídos diretamente; lançamentos e recorrências manuais para este contrato são recusados.
+7. O histórico central mostra parcelas, status, valor pago e **abrir título** no Financeiro, além das conciliações. Fechar provisão não gera título.
+
+### Condição especial: aceite do cliente final
+
+Exige finalidade **Cliente** com projeto, negócio ou contrato comercial vinculado. Cada entrega só gera conta a pagar depois de: aceite técnico da WK da versão exata, **aceite nomeado do cliente final** registrado com `techcontracts.supplier_requests.client_acceptance.manage.workspace` (nome, cargo, data e referência da evidência, apontando o vínculo da solicitação) e **conferido** pelo responsável Financeiro configurado com `.client_acceptance.approve.workspace`, que não pode ser quem registrou. Aceite técnico não substitui o do cliente e silêncio nunca conta como aceite. Nesta condição, somente componentes por entrega geram obrigação.

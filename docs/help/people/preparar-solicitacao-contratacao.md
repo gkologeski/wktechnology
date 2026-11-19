@@ -8,7 +8,7 @@ route_pattern: /people/hiring-requests
 min_permission: techpeople.hiring_requests.view.workspace
 audience: internal
 sort_order: 35
-version: 10
+version: 11
 is_published: true
 ---
 
@@ -127,4 +127,16 @@ Solicitação em rascunho, pronta para aprovação ou cancelada, com histórico 
 5. Use **Enviar ao Financeiro**. Somente o responsável Financeiro configurado decide, com motivo, e nunca quem montou ou enviou. Nova versão volta a rascunho e exige nova aprovação; histórico e instrumento assinado nunca são alterados.
 6. Em **Competência**, use **Calcular prévia**. Fechar só é possível para mês encerrado, sem linhas pendentes e com fontes iguais às da prévia; mudanças exigem revisão encadeada justificada. O histórico central mostra versões, decisões e provisões.
 
-Assinatura alterada/revogada, revisão diferente, mudança de alçada ou entidade WK sem CNPJ bloqueiam novas ações. **Provisão é previsão de custo gerencial: não gera título, conta a pagar, recorrência nem pagamento.** Títulos e conferência fiscal pertencem ao lote seguinte.
+Assinatura alterada/revogada, revisão diferente, mudança de alçada ou entidade WK sem CNPJ bloqueiam novas ações. **Provisão é previsão de custo gerencial: não gera título, conta a pagar, recorrência nem pagamento.**
+
+## Contas a pagar e conciliação
+
+**Quem pode fazer:** `techpeople.hiring_requests.payables.view.workspace` para ver parcelas (com `techfinance.entries.view.workspace` e acesso ao contrato e à pessoa), `.payables.manage.workspace` com `techfinance.entries.create.workspace` para gerar e `.payables.reconcile.workspace` com `techfinance.entries.update.workspace` para conciliar — esta última somente pelo **responsável Financeiro configurado**. Não há concessão automática.
+
+1. Na lateral **Contas a pagar**, escolha a **Competência**. O cálculo usa o plano econômico aprovado atual, a assinatura e a revisão vigentes.
+2. Marque explicitamente as fontes elegíveis. Linhas pendentes (período mensal ainda aberto, horas sem fechamento vigente, entrega sem aceite ou com versão alterada) aparecem com o motivo e não podem ser selecionadas — nunca viram zero.
+3. Informe as parcelas com valor e vencimento explícitos; a soma precisa fechar exatamente a obrigação. Selecione o documento conferido: NFS-e/NF-e para PJ e fornecedor, documento freelance para freelance e **evidência de folha** para CLT (sem nota fiscal fictícia). O documento precisa ter tomador = CNPJ WK, emissor = contratado, mesma moeda e saldo suficiente; o saldo nunca é usado duas vezes. A conferência é humana e não equivale a validação na SEFAZ.
+4. Justifique e use **Gerar contas a pagar**. Os títulos nascem **em aberto** no Financeiro (Contas a pagar), ligados ao contrato e à entidade WK. Nada é pago aqui: o pagamento é registrado no Financeiro e só ele define o status pago.
+5. Se existirem títulos ou recorrências antigos que possam cobrir a mesma competência (folha de pessoas, parcelas do contrato, serviço ou projeto do mesmo contratado), a geração fica bloqueada. O Financeiro configurado vincula o título compatível (mesmo valor, competência, moeda, entidade e contratado) às fontes selecionadas ou declara que **não se relaciona**. Título incompatível não é vinculado e nada é cancelado ou alterado, inclusive títulos pagos.
+6. Cada fonte (entrega, mês, apontamento de horas) só pode lastrear uma obrigação. Depois disso, o apontamento, o fechamento e a entrega ficam congelados; correções exigem revisão ou aditivo explícito. Os títulos não podem ter valor, vencimento ou contrato alterados, nem ser cancelados ou excluídos diretamente; lançamentos e recorrências manuais para este contrato são recusados.
+7. O histórico central mostra parcelas, status, valor pago e **abrir título** no Financeiro, além das conciliações. Fechar provisão não gera título.

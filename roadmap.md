@@ -442,4 +442,5 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [x] ENTREGA-FISCAL (pacote 4, lote B): entregas/aceite versionado + documentos fiscais privados — preparado/testado; 0382 não aplicada; bucket não criado
 - [ ] Pacote 4 lote C: contas a pagar, provisão separada, sem pagamento automático
 - [x] Pacote 4 lote C1 (PLANO-PROVISAO): plano econômico, cálculo elegível e provisão gerencial — preparado/testado; 0383 não aplicada.
-- [ ] Pacote 4 lote C2: títulos canônicos, conferência fiscal e reconciliação de folha (aguarda revisão de A/B/C1).
+- [x] Pacote 4 lote C2 (PARCELA-CONCILIA): parcelas canônicas, conciliação de legado, aceite do cliente final e integridade de fontes — preparado/testado; 0384 não aplicada.
+- [ ] Revisão independente A/B/C1/C2, conciliação com revisões locais e plano completo, CI integral e preflight (Codex).
