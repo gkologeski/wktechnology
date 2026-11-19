@@ -44,6 +44,22 @@ import {
 } from "@/lib/contracts/import.functions";
 import type { ExtractedContract } from "@/lib/contracts/import-schemas";
 import { linkContractAmendment } from "@/lib/contracts.functions";
+import { getContractLegacyState } from "@/lib/contracts/legacy.functions";
+import {
+  attemptFor,
+  autoPairAllowed,
+  buildCreateFromImportRequest,
+  legacyPendingConfirmed,
+  legacyReasonError,
+  manualRoleFrom,
+  originalRequired,
+  type ImportAttempt,
+  type ImportMode,
+} from "@/lib/contracts/import-mode";
+import {
+  ImportModeChooser,
+  useImportModeAccess,
+} from "@/components/contracts/import/import-mode-chooser";
 import {
   MainContractPicker,
   type MainContractOption,
@@ -79,6 +95,8 @@ type QueueItem = {
   mainFromKey?: string;
   amendmentNumber?: string;
   amendmentEffectiveAt?: string;
+  /** Tentativa estável (UUID + caminho do original) reaproveitada no retry. */
+  attempt?: ImportAttempt;
   linkMessage?: string;
   linkError?: boolean;
 };
@@ -117,10 +135,12 @@ async function docxToText(file: File): Promise<string> {
 export function BatchImportContractsDialog({ open, onOpenChange, onImported }: Props) {
   // Mesma chave da importação individual; nega enquanto as permissões carregam.
   const permissions = usePermissions();
-  const canImport =
-    !permissions.isLoading &&
-    !permissions.isError &&
-    permissions.can("techcontracts.imports.manage.workspace");
+  const permsReady = !permissions.isLoading && !permissions.isError;
+  const canImport = permsReady && permissions.can("techcontracts.imports.manage.workspace");
+  const { access, canViewLegacy } = useImportModeAccess();
+  const loadLegacy = useServerFn(getContractLegacyState);
+  const [mode, setMode] = useState<ImportMode | null>(null);
+  const [reason, setReason] = useState("");
   const parsePdf = useServerFn(parseContractPdf);
   const parseText = useServerFn(parseContractText);
   const createFromImport = useServerFn(createContractFromImport);
@@ -144,6 +164,8 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
     setProcessing(false);
     setLinkSummary(null);
     setKeepFiles(true);
+    setMode(null);
+    setReason("");
   }, []);
 
   const handleClose = useCallback(
@@ -216,28 +238,38 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
     );
   }, []);
 
-  const uploadOriginal = useCallback(
-    async (f: File) => {
-      if (!keepFiles) return null;
+  /** Envia o original uma vez por tentativa; no legado a falha aborta o item sem criar contrato. */
+  const ensureUploaded = useCallback(
+    async (f: File, current: ImportAttempt): Promise<ImportAttempt> => {
+      if (current.uploaded) return current;
+      const required = originalRequired(mode);
+      if (!keepFiles && !required) return current;
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
-      if (!uid) return null;
+      if (!uid) throw new Error("Falha ao enviar o original: sessão expirada.");
       const safeName = f.name.replace(/[^\w.-]+/g, "_");
-      const path = `${uid}/${Date.now()}-${safeName}`;
+      const path = `${uid}/${current.operationId}-${safeName}`;
       const { error } = await supabase.storage
         .from("contract-imports")
         .upload(path, f, { contentType: f.type || undefined, upsert: false });
-      if (error) return null;
-      return path;
+      if (error && !/exists|duplicate/i.test(error.message)) {
+        if (required)
+          throw new Error(`Falha ao enviar o original (${error.message}); nada foi criado.`);
+        return { ...current, uploaded: true };
+      }
+      return { ...current, sourceFilePath: path, uploaded: true };
     },
-    [keepFiles],
+    [keepFiles, mode],
   );
 
   const process = useCallback(async () => {
-    if (!canImport) {
-      toast.error("Você não tem permissão para importar contratos.");
+    if (!mode) return toast.error("Escolha o tipo de importação antes de processar.");
+    if (!(mode === "draft" ? access.draft : access.legacy)) {
+      toast.error("Você não tem permissão para este tipo de importação.");
       return;
     }
+    const reasonErr = mode === "legacy" ? legacyReasonError(reason) : null;
+    if (reasonErr) return toast.error(reasonErr);
     const pending = items.filter((i) => i.status === "queued" || i.status === "error");
     if (!pending.length) return;
     // Principais primeiro: um aditivo pode apontar para um principal do mesmo lote.
@@ -272,21 +304,44 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
           extracted = await parseText({ data: { filename: item.file.name, text } });
         }
 
-        // A escolha manual do usuário no grid prevalece sobre o palpite da IA.
-        const role: "provider" | "client" =
-          item.roleHint === "auto" ? (extracted.role ?? "provider") : item.roleHint;
-        const fields = { ...extracted, role } as ExtractedContract;
+        // Papel manual vai como manual_role; o extraído segue como extraído (nunca disfarçado).
+        const manualRole = manualRoleFrom(item.roleHint);
+        const role: "provider" | "client" = manualRole ?? extracted.role ?? "provider";
+        const fields = extracted;
 
-        patchItem(item.key, { message: "Criando rascunho…" });
-        const path = await uploadOriginal(item.file);
-        const result = await createFromImport({
-          data: { fields, source_file_path: path, imported_from: item.kind, body_html: bodyHtml },
+        patchItem(item.key, {
+          message: mode === "legacy" ? "Criando legado pendente…" : "Criando rascunho…",
         });
+        let attempt = attemptFor(item.attempt ?? null, () => crypto.randomUUID());
+        patchItem(item.key, { attempt });
+        attempt = await ensureUploaded(item.file, attempt);
+        patchItem(item.key, { attempt });
+        const request = buildCreateFromImportRequest({
+          mode,
+          fields,
+          attempt,
+          kind: item.kind,
+          bodyHtml,
+          reason,
+          manualRole,
+        });
+        const result = await createFromImport({ data: request } as unknown as Parameters<
+          typeof createFromImport
+        >[0]);
+        let legacyNote: string | undefined;
+        if (mode === "legacy") {
+          const state = canViewLegacy
+            ? await loadLegacy({ data: { contractId: result.id } }).catch(() => null)
+            : null;
+          legacyNote = legacyPendingConfirmed(state)
+            ? "Legado pendente — revise e regularize na ficha"
+            : "Criado; reconhecimento como legado não confirmado — confira na ficha (não reimporte)";
+        }
         createdByKey.set(item.key, result.id);
         if (item.docKind === "main") mainIds.push(result.id);
         patchItem(item.key, {
           status: "done",
-          message: "Rascunho criado",
+          message: legacyNote ?? "Rascunho criado",
           contractId: result.id,
           detectedRole: role,
           title:
@@ -343,8 +398,8 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
       }
     }
 
-    // O pareamento automático compra ↔ prestação só vale entre documentos principais.
-    if (mainIds.length) {
+    // O pareamento automático compra ↔ prestação só vale entre principais e nunca no legado.
+    if (mainIds.length && autoPairAllowed(mode)) {
       try {
         const res = await linkFn({ data: { ids: mainIds } });
         setLinkSummary({ linked: res.linked.length, pending: res.pending.length });
@@ -362,8 +417,13 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
     patchItem,
     parsePdf,
     parseText,
-    uploadOriginal,
+    ensureUploaded,
     createFromImport,
+    mode,
+    access,
+    reason,
+    canViewLegacy,
+    loadLegacy,
     linkFn,
     linkAmendment,
     onImported,
@@ -379,7 +439,13 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
         .length,
     [pendingItems],
   );
-  const canProcess = pendingItems.length > 0 && missingMain === 0;
+  const modeLocked = processing || items.some((i) => i.attempt);
+  const canProcess =
+    pendingItems.length > 0 &&
+    missingMain === 0 &&
+    !!mode &&
+    (mode === "draft" ? access.draft : access.legacy) &&
+    (mode !== "legacy" || legacyReasonError(reason) === null);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -397,6 +463,24 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
         </DialogHeader>
 
         <div className="space-y-4 py-1">
+          <ImportModeChooser
+            mode={mode}
+            onModeChange={(m) => {
+              setMode(m);
+              if (originalRequired(m)) setKeepFiles(true);
+            }}
+            reason={reason}
+            onReasonChange={setReason}
+            access={access}
+            disabled={modeLocked}
+          />
+          {mode === "legacy" ? (
+            <p className="rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
+              No lote legado nada é regularizado nem tem vigência decidida automaticamente: cada
+              contrato fica pendente para conferência na ficha. Não há pareamento automático compra
+              ↔ prestação; aditivos só se vinculam ao principal escolhido por você.
+            </p>
+          ) : null}
           <label
             onDragOver={(e) => {
               e.preventDefault();
@@ -686,15 +770,22 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
             <input
               type="checkbox"
               className="h-4 w-4 rounded border-border"
-              checked={keepFiles}
-              disabled={processing}
+              checked={originalRequired(mode) || keepFiles}
+              disabled={processing || originalRequired(mode)}
               onChange={(e) => setKeepFiles(e.target.checked)}
             />
-            Guardar os arquivos originais nos contratos para consulta futura.
+            {originalRequired(mode)
+              ? "Contrato legado: os originais são guardados obrigatoriamente; falha no envio não cria o contrato."
+              : "Guardar os arquivos originais nos contratos para consulta futura."}
           </label>
         </div>
 
         <DialogFooter className="gap-2 sm:items-center">
+          {!mode ? (
+            <p id="batch-mode-required" className="mr-auto text-xs text-muted-foreground">
+              Escolha o tipo de importação para processar.
+            </p>
+          ) : null}
           {missingMain > 0 && !processing ? (
             <p className="mr-auto text-xs text-destructive" aria-live="polite">
               {missingMain} aditivo(s) sem contrato principal selecionado.
@@ -717,6 +808,7 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
           <Button
             onClick={process}
             disabled={!canProcess || processing || !canImport}
+            aria-describedby={mode ? undefined : "batch-mode-required"}
             title={canImport ? undefined : "Você não tem permissão para importar contratos."}
           >
             {processing ? (

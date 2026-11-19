@@ -457,6 +457,7 @@ for (const mode of scenarios) {
     else expect(r).toMatch(DENIED);
     const [c] = await db`select status::text s from contracts where id=${K}`;
     expect(c.s).toBe(mode === "allowed" ? "active" : "draft");
+    return r;
   };
   it(`legacy state view ${mode}`, async () => {
     await reset();

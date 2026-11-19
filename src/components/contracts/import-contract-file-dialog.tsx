@@ -44,6 +44,22 @@ import {
 } from "@/components/contracts/import-progress";
 import type { ExtractedContract } from "@/lib/contracts/import-schemas";
 import { buildImportPatch } from "@/lib/contracts/import-patch";
+import { getContractLegacyState } from "@/lib/contracts/legacy.functions";
+import {
+  attemptFor,
+  bodylessRetryAllowed,
+  buildCreateFromImportRequest,
+  legacyPendingConfirmed,
+  legacyReasonError,
+  manualRoleFrom,
+  originalRequired,
+  type ImportAttempt,
+  type ImportMode,
+} from "@/lib/contracts/import-mode";
+import {
+  ImportModeChooser,
+  useImportModeAccess,
+} from "@/components/contracts/import/import-mode-chooser";
 import {
   fitBodyHtml,
   hasBodyText,
@@ -161,9 +177,11 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
     !permissions.isLoading &&
     !permissions.isError &&
     permissions.can("techcontracts.imports.manage.workspace");
+  const { access, canViewLegacy } = useImportModeAccess();
   const parsePdf = useServerFn(parseContractPdf);
   const parseText = useServerFn(parseContractText);
   const createFromImport = useServerFn(createContractFromImport);
+  const loadLegacy = useServerFn(getContractLegacyState);
   const updateFn = useServerFn(updateContract);
   const navigate = useNavigate();
 
@@ -172,24 +190,36 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
   const [progress, setProgress] = useState<ExtractionProgress>(IDLE_PROGRESS);
   const parsing = isExtracting(progress);
 
+  const [mode, setMode] = useState<ImportMode | null>(null);
+  const [reason, setReason] = useState("");
   const [saving, setSaving] = useState(false);
   const [fields, setFields] = useState<ExtractedContract | null>(null);
+  const [bodyHtml, setBodyHtml] = useState<string | null>(null);
+  const [roleTouched, setRoleTouched] = useState(false);
+  const [attempt, setAttempt] = useState<ImportAttempt | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
   const [contractId, setContractId] = useState<string | null>(null);
-  const [sourceFilePath, setSourceFilePath] = useState<string | null>(null);
   const [keepFile, setKeepFile] = useState(true);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [extractedText, setExtractedText] = useState<string | null>(null);
   const kind = file ? fileExt(file.name) : null;
+  const legacy = mode === "legacy";
+  const modeAllowed = mode === "draft" ? access.draft : mode === "legacy" ? access.legacy : false;
+  const reasonOk = !legacy || legacyReasonError(reason) === null;
 
   const reset = useCallback(() => {
     setStep("upload");
     setFile(null);
     setProgress(IDLE_PROGRESS);
-
+    setMode(null);
+    setReason("");
     setSaving(false);
     setFields(null);
+    setBodyHtml(null);
+    setRoleTouched(false);
+    setAttempt(null);
+    setCreateError(null);
     setContractId(null);
-    setSourceFilePath(null);
     setKeepFile(true);
     setViewerOpen(false);
     setExtractedText(null);
@@ -198,49 +228,120 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
   const handleClose = useCallback(
     (next: boolean) => {
       if (!next) {
-        if (contractId) {
-          toast.info("Rascunho salvo em Contratos. Você pode retomar quando quiser.");
-        }
+        if (saving) return;
+        if (contractId) toast.info("Contrato salvo em Contratos. Você pode retomar quando quiser.");
+        else if (attempt?.uploaded && legacy)
+          toast.info("Nenhum contrato foi criado; o arquivo enviado não foi vinculado.");
         reset();
       }
       onOpenChange(next);
     },
-    [onOpenChange, reset, contractId],
+    [onOpenChange, reset, contractId, saving, attempt, legacy],
   );
 
   const handleFile = useCallback((f: File | null) => {
     setFile(f);
     setFields(null);
+    setBodyHtml(null);
+    setRoleTouched(false);
+    // Arquivo novo = tentativa nova; o mesmo arquivo reaproveita UUID e caminho.
+    setAttempt(null);
+    setCreateError(null);
     setContractId(null);
-    setSourceFilePath(null);
     setExtractedText(null);
     setProgress(IDLE_PROGRESS);
   }, []);
 
-  const uploadOriginal = useCallback(
-    async (f: File) => {
-      if (!keepFile) return null;
+  const changeMode = useCallback((m: ImportMode) => {
+    setMode(m);
+    if (originalRequired(m)) setKeepFile(true);
+  }, []);
+
+  /** Envia o original uma única vez por tentativa; no legado a falha aborta (sem contrato). */
+  const ensureUploaded = useCallback(
+    async (f: File, current: ImportAttempt): Promise<ImportAttempt> => {
+      if (current.uploaded) return current;
+      if (!keepFile && !originalRequired(mode)) return current;
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
-      if (!uid) return null;
+      if (!uid) throw new Error("Falha ao enviar o arquivo original: sessão expirada.");
       const safeName = f.name.replace(/[^\w.-]+/g, "_");
-      const path = `${uid}/${Date.now()}-${safeName}`;
+      const path = `${uid}/${current.operationId}-${safeName}`;
       const { error } = await supabase.storage
         .from("contract-imports")
         .upload(path, f, { contentType: f.type || undefined, upsert: false });
-      if (error) {
-        toast.warning(
-          `Rascunho criado, mas o arquivo original não foi guardado (${error.message}).`,
-        );
-        return null;
+      if (error && !/exists|duplicate/i.test(error.message)) {
+        if (originalRequired(mode))
+          throw new Error(
+            `Falha ao enviar o arquivo original (${error.message}). Nenhum contrato foi criado.`,
+          );
+        toast.warning(`O arquivo original não foi guardado (${error.message}).`);
+        return { ...current, uploaded: true };
       }
-      return path;
+      const next = { ...current, sourceFilePath: path, uploaded: true };
+      setAttempt(next);
+      return next;
     },
-    [keepFile],
+    [keepFile, mode],
+  );
+
+  /** Cria pelo servidor com o mesmo UUID/caminho; nunca repete sozinho nem sem corpo. */
+  const create = useCallback(
+    async (f: ExtractedContract, withBody: boolean) => {
+      if (!file || !kind || !mode) return null;
+      const base = attemptFor(attempt, () => crypto.randomUUID());
+      setAttempt(base);
+      const ready = await ensureUploaded(file, base);
+      const request = buildCreateFromImportRequest({
+        mode,
+        fields: f,
+        attempt: ready,
+        kind,
+        bodyHtml: withBody ? bodyHtml : null,
+        reason,
+        manualRole: manualRoleFrom(roleTouched ? f.role : null),
+      });
+      // import_mode/legacy_reason/operation_id/manual_role: contrato do servidor (lote C/0387).
+      const result = await createFromImport({ data: request } as unknown as Parameters<
+        typeof createFromImport
+      >[0]);
+      if (mode === "legacy") {
+        if (!canViewLegacy) {
+          toast.warning(
+            "Contrato criado; sem permissão para confirmar o legado pendente. Confira na ficha.",
+          );
+        } else {
+          const state = await loadLegacy({ data: { contractId: result.id } }).catch(() => null);
+          if (!legacyPendingConfirmed(state))
+            throw Object.assign(
+              new Error(
+                "O contrato foi criado, mas o servidor não confirmou o reconhecimento como legado. Abra a ficha e confira; não repita a importação.",
+              ),
+              { createdId: result.id },
+            );
+        }
+      }
+      return result;
+    },
+    [
+      file,
+      kind,
+      mode,
+      attempt,
+      ensureUploaded,
+      bodyHtml,
+      reason,
+      roleTouched,
+      createFromImport,
+      canViewLegacy,
+      loadLegacy,
+    ],
   );
 
   const runExtraction = useCallback(async () => {
-    if (!canImport) return toast.error("Você não tem permissão para importar contratos.");
+    if (!mode) return toast.error("Escolha o tipo de importação antes de extrair.");
+    if (!modeAllowed) return toast.error("Você não tem permissão para este tipo de importação.");
+    if (!reasonOk) return toast.error(legacyReasonError(reason) ?? "Motivo inválido.");
     if (!file || !kind) return;
     if (kind === "pdf" && file.size > MAX_PDF_BYTES) {
       toast.error("PDF maior que 15 MB. Envie um arquivo menor ou a versão .docx.");
@@ -251,6 +352,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
       return;
     }
     setProgress(progressFor("preparing"));
+    setCreateError(null);
     let stage = "Falha na leitura do arquivo pela IA";
     try {
       let extracted: ExtractedContract;
@@ -276,13 +378,6 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
         stage = "Falha na leitura do arquivo pela IA";
         extracted = await parseText({ data: { filename: file.name, text } });
       }
-
-      // Persistir rascunho imediatamente para não perder o trabalho se a aba fechar.
-      setProgress(progressFor("storing"));
-      stage = "Falha ao enviar o arquivo original";
-      const path = await uploadOriginal(file);
-      // Corpo é opcional: qualquer falha aqui não impede o rascunho.
-      // PDF: corpo lido no servidor; o leitor do navegador fica só como reserva.
       let rawBody: string | null = serverBody;
       if (!rawBody) {
         try {
@@ -299,25 +394,30 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
             : "Não foi possível ler o texto do arquivo para o corpo do contrato.",
         );
       } else if (body.truncated) toast.warning("Corpo do contrato muito longo: foi truncado.");
+      setFields(extracted);
+      setBodyHtml(body.html);
+      setStep("review");
+      if (mode === "legacy") {
+        // Legado: nada é gravado antes da revisão humana.
+        setProgress(progressFor("done"));
+        toast.success("Campos extraídos. Revise e confirme para criar o contrato legado pendente.");
+        return;
+      }
       setProgress(progressFor("draft"));
       stage = "Falha ao gravar o rascunho do contrato";
-      const payload = { fields: extracted, source_file_path: path, imported_from: kind };
-      let result: { id: string };
+      setSaving(true);
       try {
-        result = await createFromImport({ data: { ...payload, body_html: body.html } });
+        const result = await create(extracted, true);
+        if (result) setContractId(result.id);
+        setProgress(progressFor("done"));
+        toast.success("Rascunho criado. Revise e finalize.");
       } catch (e) {
-        if (!body.html) throw e;
-        // Tenta de novo sem o corpo para não perder a importação.
-        result = await createFromImport({ data: { ...payload, body_html: null } });
-        toast.warning("O corpo do contrato não pôde ser gravado; os demais dados foram salvos.");
+        const detail = e instanceof Error ? e.message : "";
+        setCreateError(detail ? `${stage}: ${detail}` : stage);
+        setProgress(IDLE_PROGRESS);
+      } finally {
+        setSaving(false);
       }
-
-      setFields(extracted);
-      setSourceFilePath(path);
-      setContractId(result.id);
-      setStep("review");
-      setProgress(progressFor("done"));
-      toast.success("Rascunho criado. Revise e finalize.");
     } catch (err) {
       const detail = err instanceof Error ? err.message : "";
       const msg =
@@ -325,35 +425,71 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
       setProgress(progressFor("error", msg));
       toast.error(msg);
     }
-  }, [canImport, file, kind, parsePdf, parseText, uploadOriginal, createFromImport]);
+  }, [mode, modeAllowed, reasonOk, reason, file, kind, parsePdf, parseText, create]);
 
-  const buildPatch = useCallback((f: ExtractedContract) => buildImportPatch(f), []);
-
-  const submit = useCallback(async () => {
-    if (!fields || !contractId) return;
-    setSaving(true);
-    try {
-      await updateFn({ data: { id: contractId, patch: buildPatch(fields) } });
-      toast.success("Contrato salvo.");
-      const id = contractId;
+  const goToContract = useCallback(
+    (id: string) => {
       reset();
       onOpenChange(false);
       navigate({ to: "/contracts/$id", params: { id } });
+    },
+    [reset, onOpenChange, navigate],
+  );
+
+  /** Tentativa explícita do usuário: mesmo UUID e caminho; sem corpo só quando escolhido no rascunho. */
+  const retryCreate = useCallback(
+    async (withBody: boolean) => {
+      if (!fields) return;
+      setSaving(true);
+      setCreateError(null);
+      try {
+        const result = await create(fields, withBody);
+        if (!result) return;
+        if (legacy) {
+          toast.success("Contrato legado pendente criado. Conclua a conferência na ficha.");
+          goToContract(result.id);
+        } else {
+          setContractId(result.id);
+          toast.success("Rascunho criado. Revise e finalize.");
+        }
+      } catch (e) {
+        const created = (e as { createdId?: string }).createdId;
+        if (created) setContractId(created);
+        setCreateError(e instanceof Error ? e.message : "Falha ao criar o contrato.");
+      } finally {
+        setSaving(false);
+      }
+    },
+    [fields, create, legacy, goToContract],
+  );
+
+  const submit = useCallback(async () => {
+    if (!fields) return;
+    if (legacy) {
+      if (contractId) return goToContract(contractId);
+      return retryCreate(true);
+    }
+    if (!contractId) return;
+    setSaving(true);
+    try {
+      // buildImportPatch nunca inclui signature_* (campos protegidos).
+      await updateFn({ data: { id: contractId, patch: buildImportPatch(fields) } });
+      toast.success("Contrato salvo.");
+      goToContract(contractId);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Falha ao salvar contrato";
       toast.error(msg);
     } finally {
       setSaving(false);
     }
-  }, [fields, contractId, updateFn, buildPatch, reset, onOpenChange, navigate]);
+  }, [fields, legacy, contractId, goToContract, retryCreate, updateFn]);
 
-  // Silence unused warnings — sourceFilePath is stored for future retry surfaces.
-  void sourceFilePath;
+  const patch = useCallback((p: Partial<ExtractedContract>) => {
+    if ("role" in p) setRoleTouched(true);
+    setFields((prev) => (prev ? { ...prev, ...p } : prev));
+  }, []);
 
-  const patch = useCallback(
-    (p: Partial<ExtractedContract>) => setFields((prev) => (prev ? { ...prev, ...p } : prev)),
-    [],
-  );
+  const canExtract = canImport && !!file && !!mode && modeAllowed && reasonOk && !parsing;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -364,8 +500,8 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
             Importar contrato
           </DialogTitle>
           <DialogDescription>
-            Faça upload de um .pdf ou .docx. A IA extrai os campos e cria um rascunho que você
-            revisa em seguida.
+            Escolha o tipo de importação e envie um .pdf ou .docx. A IA extrai os campos e você
+            revisa tudo antes de concluir.
           </DialogDescription>
           {file ? (
             <div className="pt-1">
@@ -384,21 +520,65 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
           </div>
         ) : null}
 
+        {createError ? (
+          <div
+            role="alert"
+            className="space-y-2 rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm"
+          >
+            <p className="text-destructive">{createError}</p>
+            {contractId ? (
+              <Button size="sm" variant="outline" onClick={() => goToContract(contractId)}>
+                Abrir ficha do contrato
+              </Button>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => retryCreate(true)} disabled={saving}>
+                  {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                  Tentar novamente
+                </Button>
+                {bodylessRetryAllowed(mode) && bodyHtml ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => retryCreate(false)}
+                    disabled={saving}
+                  >
+                    Gravar sem o corpo
+                  </Button>
+                ) : null}
+              </div>
+            )}
+          </div>
+        ) : null}
+
         {step === "upload" && (
-          <UploadStep
-            file={file}
-            onFile={handleFile}
-            onExtract={runExtraction}
-            parsing={parsing}
-            keepFile={keepFile}
-            onKeepFileChange={setKeepFile}
-          />
+          <>
+            <ImportModeChooser
+              mode={mode}
+              onModeChange={changeMode}
+              reason={reason}
+              onReasonChange={setReason}
+              access={access}
+              disabled={parsing || saving}
+            />
+            <UploadStep
+              file={file}
+              onFile={handleFile}
+              onExtract={runExtraction}
+              parsing={parsing}
+              keepFile={keepFile}
+              keepFileLocked={originalRequired(mode)}
+              onKeepFileChange={setKeepFile}
+            />
+          </>
         )}
 
-        {step === "review" && fields && <ReviewStep fields={fields} onPatch={patch} />}
+        {step === "review" && fields && (
+          <ReviewStep fields={fields} onPatch={patch} legacy={legacy} created={!!contractId} />
+        )}
 
         <DialogFooter className="gap-2">
-          {step === "review" && (
+          {step === "review" && !contractId && (
             <Button variant="outline" onClick={() => setStep("upload")} disabled={saving}>
               Voltar
             </Button>
@@ -407,7 +587,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
             Cancelar
           </Button>
           {step === "upload" && (
-            <Button onClick={runExtraction} disabled={!canImport || !file || parsing}>
+            <Button onClick={runExtraction} disabled={!canExtract}>
               {parsing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Extraindo…
@@ -420,11 +600,13 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
             </Button>
           )}
           {step === "review" && (
-            <Button onClick={submit} disabled={saving}>
+            <Button onClick={submit} disabled={saving || (!legacy && !contractId) || !reasonOk}>
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Salvando…
                 </>
+              ) : legacy ? (
+                "Criar contrato legado pendente"
               ) : (
                 "Finalizar"
               )}
@@ -458,6 +640,7 @@ function UploadStep({
   onExtract,
   parsing,
   keepFile,
+  keepFileLocked,
   onKeepFileChange,
 }: {
   file: File | null;
@@ -465,6 +648,7 @@ function UploadStep({
   onExtract: () => void;
   parsing: boolean;
   keepFile: boolean;
+  keepFileLocked: boolean;
   onKeepFileChange: (v: boolean) => void;
 }) {
   const [dragOver, setDragOver] = useState(false);
@@ -535,15 +719,18 @@ function UploadStep({
         <input
           type="checkbox"
           className="h-4 w-4 rounded border-border"
-          checked={keepFile}
+          checked={keepFileLocked || keepFile}
+          disabled={keepFileLocked}
           onChange={(e) => onKeepFileChange(e.target.checked)}
         />
-        Guardar o arquivo original no contrato para consulta futura.
+        {keepFileLocked
+          ? "Contrato legado: o arquivo original é guardado obrigatoriamente; se o envio falhar, nada é criado."
+          : "Guardar o arquivo original no contrato para consulta futura."}
       </label>
 
       <div className="rounded-md bg-muted/40 p-3 text-xs text-muted-foreground">
-        A extração é feita por IA e nunca cria o contrato sozinha. Você revisa e edita todos os
-        campos antes de salvar.
+        A extração é feita por IA. No rascunho, o contrato é gravado logo após a leitura e você
+        revisa em seguida; no legado, nada é gravado antes da sua revisão.
       </div>
 
       {/* Botão de extrair está no footer; este bloco existe para acessibilidade caso a UI
@@ -564,9 +751,13 @@ function UploadStep({
 function ReviewStep({
   fields,
   onPatch,
+  legacy,
+  created,
 }: {
   fields: ExtractedContract;
   onPatch: (p: Partial<ExtractedContract>) => void;
+  legacy: boolean;
+  created: boolean;
 }) {
   const confidence = typeof fields.confidence === "number" ? fields.confidence : null;
   const warnings = Array.isArray(fields.warnings) ? fields.warnings : [];
@@ -575,9 +766,14 @@ function ReviewStep({
     <div className="space-y-5 py-2">
       <div className="flex items-center gap-3 rounded-md border bg-muted/30 p-3 text-sm">
         <Sparkles className="h-4 w-4 text-primary" />
-        <div className="flex-1">
-          Rascunho salvo. Edite o que precisar e clique em Finalizar — ou feche: o rascunho continua
-          em Contratos.
+        <div className="flex-1" aria-live="polite">
+          {legacy
+            ? created
+              ? "Contrato legado pendente criado. Abra a ficha para a conferência humana com o PDF original assinado."
+              : "Ainda não gravado. Ao confirmar, cria o contrato como legado pendente de regularização: sem cotação, proposta, minuta ou nova assinatura, e sem liberar cobranças. Assinatura e provedor extraídos ficam só como referência."
+            : created
+              ? "Rascunho salvo. Edite o que precisar e clique em Finalizar — ou feche: o rascunho continua em Contratos."
+              : "Rascunho ainda não gravado."}
         </div>
         {confidence !== null && (
           <Badge variant="outline">Confiança: {(confidence * 100).toFixed(0)}%</Badge>
