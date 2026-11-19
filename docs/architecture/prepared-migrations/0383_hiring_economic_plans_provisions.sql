@@ -295,7 +295,7 @@ BEGIN
     IF lo<=date_trunc('month',current_date)::date THEN lines:=lines||jsonb_build_object('type','delivery','delivery_id',c->>'delivery_id','amount',NULL,'issue','not_accepted','source_clause',c->>'source_clause');END IF;
    ELSE
     lines:=lines||jsonb_build_object('type','delivery','delivery_id',c->>'delivery_id','delivery_version',(c->>'delivery_version')::int,'decision_id',x.decision_id,'amount',(c->>'amount')::numeric,
-     'competence',lo,'from',x.period_start,'to',x.period_end,'accepted_at',x.decided_at,'due_on',((x.decided_at AT TIME ZONE 'America/Sao_Paulo')::date+(c->>'due_days')::int),'source_clause',c->>'source_clause');
+     'competence',lo,'from',x.period_start,'to',x.period_end,'accepted_at',x.decided_at,'due_on',((x.decided_at AT TIME ZONE 'UTC')::date+(c->>'due_days')::int),'source_clause',c->>'source_clause');
    END IF;
   ELSIF c->>'type'='monthly' THEN
    IF a<=b THEN
