@@ -34,7 +34,9 @@ export async function storeAndAttestLegacyEvidence(input: {
     upsert: false,
     metadata: { sha256: sent, actor_id: input.actorId, evidence_id: input.evidenceId },
   });
-  if (put.error) throw new Error("Não foi possível guardar o PDF privado.");
+  // Replay after an interrupted call: the existing object is re-read and must match exactly.
+  if (put.error && !/exists|duplicate/i.test(put.error.message))
+    throw new Error("Não foi possível guardar o PDF privado.");
   const back = await bucket.download(input.path);
   if (back.error) throw new Error("PDF privado indisponível para confirmação.");
   const reread = new Uint8Array(await back.data.arrayBuffer());

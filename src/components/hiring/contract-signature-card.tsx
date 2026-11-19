@@ -36,13 +36,17 @@ import {
   getSignedContractEvidenceUrl,
 } from "@/lib/hiring/signature.functions";
 import type { SignatureContext } from "@/lib/hiring/signature.types";
+import { legacyNotice, type LegacyGate } from "@/lib/contracts/legacy-view";
 
 export function ContractSignatureCard({
   contractId,
   revisionKey,
+  legacy = "none",
 }: {
   contractId: string;
   revisionKey: string;
+  /** LEGADO-REGULARIZA: legado (ou situação ainda desconhecida) nunca abre nova assinatura. */
+  legacy?: LegacyGate;
 }) {
   const load = useServerFn(getContractSignature);
   const result = useQuery({
@@ -50,7 +54,21 @@ export function ContractSignatureCard({
     queryFn: () => load({ data: { contractId } }),
     staleTime: 0,
     retry: false,
+    enabled: legacy === "none",
   });
+  if (legacy !== "none")
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Assinaturas do contrato</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p role="status" className="text-sm text-muted-foreground">
+            {legacyNotice(legacy)}
+          </p>
+        </CardContent>
+      </Card>
+    );
   return (
     <Card>
       <CardHeader>

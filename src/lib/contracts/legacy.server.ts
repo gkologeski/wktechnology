@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { workRpc } from "@/lib/access-control/work-core.server";
-import type { LegacyRegularizeInput } from "./legacy-types";
+import { LEGACY_EVIDENCE_MAX_BYTES, isPdfBytes, type LegacyRegularizeInput } from "./legacy-types";
+import type { LegacyState } from "./legacy-view";
 
 /**
  * LEGADO-REGULARIZA: user-path wrappers. Always called with the authenticated user's client
@@ -89,4 +90,90 @@ export function legacyContractState(db: SupabaseClient, workspaceId: string, con
     w: workspaceId,
     p_contract: contractId,
   });
+}
+
+const DENIED = /Sem permissão|somente leitura|Sessão obrigatória/;
+function decodePdf(base64: string): Uint8Array {
+  const bin = atob(base64);
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
+
+/** Leitura: só "denied" quando a própria RPC negou; demais falhas propagam para a tela mostrar erro. */
+export async function loadLegacyState(db: SupabaseClient, workspaceId: string, contractId: string) {
+  try {
+    return {
+      access: "granted" as const,
+      state: (await legacyContractState(db, workspaceId, contractId)) as unknown as LegacyState,
+    };
+  } catch (e) {
+    if (DENIED.test((e as Error).message)) return { access: "denied" as const };
+    throw e;
+  }
+}
+
+/** Reserva pelo usuário (RPC autoriza); só o caminho devolvido segue para gravação/atestado privilegiados. */
+export async function uploadLegacyEvidence(
+  db: SupabaseClient,
+  actorId: string,
+  workspaceId: string,
+  input: {
+    contractId: string;
+    expectedRevision: number;
+    fileName: string;
+    base64: string;
+    operationId: string;
+  },
+) {
+  const bytes = decodePdf(input.base64);
+  if (bytes.length < 5 || bytes.length > LEGACY_EVIDENCE_MAX_BYTES || !isPdfBytes(bytes))
+    throw new Error("Envie o PDF do original assinado (até 5 MB). DOCX de minuta não é evidência.");
+  const { sha256Hex, storeAndAttestLegacyEvidence } = await import("./legacy-evidence.server");
+  const sha256 = await sha256Hex(bytes);
+  const reserved = await reserveLegacyEvidence(db, {
+    workspaceId,
+    contractId: input.contractId,
+    expectedRevision: input.expectedRevision,
+    fileName: input.fileName,
+    size: bytes.length,
+    sha256,
+    operationId: input.operationId,
+  });
+  const state = await legacyContractState(db, workspaceId, input.contractId);
+  const evidence = (state as unknown as LegacyState).evidence.find(
+    (x) => x.id === reserved.evidence_id,
+  );
+  if (evidence?.status === "pending_upload")
+    await storeAndAttestLegacyEvidence({
+      workspaceId,
+      evidenceId: reserved.evidence_id,
+      actorId,
+      path: reserved.path,
+      bytes,
+      expectedSha256: sha256,
+    });
+  return { evidenceId: reserved.evidence_id, sha256, replayed: reserved.replayed };
+}
+
+/** Download curto: a RPC do usuário autoriza e devolve o caminho; o servidor só assina a URL por 60 s. */
+export async function openLegacyEvidence(
+  db: SupabaseClient,
+  workspaceId: string,
+  contractId: string,
+  evidenceId: string,
+) {
+  const opened = await workRpc<{ path: string; sha256: string; file_name: string }>(
+    db,
+    "contract_legacy_evidence_open",
+    {
+      w: workspaceId,
+      p_contract: contractId,
+      p_evidence: evidenceId,
+    },
+  );
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const signed = await supabaseAdmin.storage
+    .from("contract-signature-evidence")
+    .createSignedUrl(opened.path, 60);
+  if (signed.error || !signed.data) throw new Error("Não foi possível abrir o PDF privado.");
+  return { url: signed.data.signedUrl, sha256: opened.sha256, fileName: opened.file_name };
 }

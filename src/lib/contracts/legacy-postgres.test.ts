@@ -91,7 +91,9 @@ beforeAll(async () => {
       ADD status contract_status NOT NULL DEFAULT 'draft', ADD starts_at date, ADD ends_at date, ADD auto_renew boolean DEFAULT false, ADD body_html text,
       ADD public_token text, ADD signed_at timestamptz, ADD signed_pdf_path text, ADD metadata jsonb DEFAULT '{}', ADD signature_provider text,
       ADD signature_document_id text, ADD signature_operation_id text, ADD source_file_path text, ADD imported_from text, ADD document_kind text,
-      ADD proposal_id uuid, ADD quote_id uuid, ADD hiring_request_origin uuid, ADD currency text, ADD payment_method text, ADD payment_terms jsonb;
+      ADD proposal_id uuid, ADD quote_id uuid, ADD hiring_request_origin uuid, ADD currency text, ADD payment_method text, ADD payment_terms jsonb,
+      ADD notice_days int, ADD monthly_value numeric, ADD payment_day smallint, ADD hours_per_month int, ADD readjustment_index text, ADD readjustment_period text,
+      ADD late_fee_percent numeric, ADD late_interest_monthly_percent numeric, ADD penalty_percent numeric, ADD amendment_of_id uuid;
     CREATE TABLE contract_signature_packages(contract_id uuid); CREATE TABLE contract_esign_deliveries(contract_id uuid);
     CREATE TABLE contract_forsign_operations(contract_id uuid); CREATE TABLE hiring_contract_evidence(contract_id uuid);
     CREATE TABLE contract_drafts(id uuid,proposal_id uuid,workspace_id uuid,status text,updated_at timestamptz,client_decided_at timestamptz,decided_at timestamptz,deal_id uuid,body_html text,prepared_terms jsonb,revision int);
@@ -595,12 +597,87 @@ it("regularized contract keeps document immutable and only then accepts a real d
   );
   expect(
     await err(as(U, (tx) => tx`update contracts set body_html='<p>x</p>' where id=${K}`)),
-  ).toMatch(/imutável/);
+  ).toMatch(/imutáve/);
   expect(
     await err(as(U, (tx) => tx`update contracts set source_file_path='outro.pdf' where id=${K}`)),
-  ).toMatch(/imutável/);
-  expect(await err(db`delete from contract_legacy_events`)).toMatch(/imutável/);
+  ).toMatch(/imutáve/);
+  expect(await err(db`delete from contract_legacy_events`)).toMatch(/imutáve/);
   const s = await as(U, (tx) => tx`select contract_legacy_state(${W},${K}) r`.then((x) => x[0].r));
   expect(s.record.status).toBe("regularized");
   expect(JSON.stringify(s)).not.toContain("legacy-contracts/");
+});
+
+it("regularized legacy keeps every conferred financial/identity term immutable", async () => {
+  await reset({ total_value: "1000", currency: "BRL", payment_method: "pix" });
+  await recognize();
+  await regularize(await attachEvidence());
+  for (const set of [
+    "total_value=2000",
+    "currency='USD'",
+    "payment_terms='{\"x\":1}'",
+    "payment_method='boleto'",
+    "monthly_value=10",
+    "payment_day=5",
+    "number='X-1'",
+    "notice_days=60",
+    "signature_provider='forsign'",
+    "signed_pdf_path='x.pdf'",
+    "counterparty_company_id=null",
+  ])
+    expect(
+      await err(as(U, (tx) => tx.unsafe(`update contracts set ${set} where id='${K}'`))),
+    ).toMatch(/imutáveis|não podem ser vinculadas/);
+  expect(
+    await err(as(U, (tx) => tx`update contracts set title='Título revisado' where id=${K}`)),
+  ).toBe("ok");
+});
+it("pending legacy cannot be signed natively or have signature/proposal grafted", async () => {
+  await reset();
+  await recognize();
+  for (const t of [
+    "contract_signature_packages",
+    "contract_esign_deliveries",
+    "contract_forsign_operations",
+  ])
+    expect(await err(db.unsafe(`insert into ${t}(contract_id) values('${K}')`))).toMatch(
+      /nova assinatura/,
+    );
+  expect(
+    await err(as(U, (tx) => tx`update contracts set signature_provider='native' where id=${K}`)),
+  ).toMatch(/não podem ser vinculadas/);
+  expect(
+    await err(as(U, (tx) => tx`update contracts set proposal_id=${randomUUID()} where id=${K}`)),
+  ).toMatch(/não podem ser vinculadas/);
+  // Missing data can still be completed through the canonical edit before regularizing (then rebase).
+  expect(
+    await err(as(U, (tx) => tx`update contracts set ends_at='2026-01-01' where id=${K}`)),
+  ).toBe("ok");
+});
+it("regularized legacy cannot be signed again", async () => {
+  await reset();
+  await recognize();
+  await regularize(await attachEvidence());
+  expect(await err(db`insert into contract_signature_packages(contract_id) values(${K})`)).toMatch(
+    /nova assinatura/,
+  );
+});
+it("rebase and reserve racing never leave old-revision evidence usable", async () => {
+  await reset();
+  await recognize();
+  await as(U, (tx) => tx`update contracts set body_html='<p>revisado</p>' where id=${K}`);
+  const [rb, rs] = await Promise.all([
+    err(recognize(U, randomUUID(), 1)),
+    err(
+      as(
+        U,
+        (tx) =>
+          tx`select contract_legacy_evidence_reserve(${W},${K},1,'a.pdf',1234,${SHA},${randomUUID()})`,
+      ),
+    ),
+  ]);
+  expect(rb).toBe("ok");
+  expect(rs).toMatch(/STALE|ok/);
+  const [n] =
+    await db`select count(*)::int n from contract_legacy_evidence where legacy_revision=1 and status<>'superseded'`;
+  expect(n.n).toBe(0);
 });

@@ -7307,11 +7307,11 @@
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
         "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
-        "src/routes/_authenticated/contracts.$id.tsx": "902471581c3eefdc07b37cbab97a02715563cd72c7616a47de20f3abfc560ae0",
+        "src/routes/_authenticated/contracts.$id.tsx": "b9667bda0fa19fe7887d820ddfe3b2a46941f5c96ca8fdc2b9d10b272aa7265d",
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
-        "src/components/hiring/contract-signature-card.tsx": "279fb77291a2a7a211fd5795a2ffe61a3cce523efb0454900dd65e3ffdc32417",
+        "src/components/hiring/contract-signature-card.tsx": "be1c36907acddb782fa8c7e76bfb318c589e8fbb1bd6baa313fdba5a3b36e210",
         "src/components/hiring/recruitment-authorization-panel.tsx": "63999fab8527aaba7d5bce74450e4c9730b86a54a45104f9952d28de00ad4f8d",
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
@@ -9583,7 +9583,7 @@
       "kind": "presentation",
       "rationale": "PROXIMO-PASSO-CONTRATO: pure next-step rule and presentational stepper/card. No I/O; actions only switch tabs or navigate to existing gated screens whose permissions stay in their own contracts.",
       "files": {
-        "src/lib/contracts/contract-next-step.ts": "c90ae55d6e3946529e4a3faea0c8b9d57a4de64ee26166234bcdb1a9f444292f"
+        "src/lib/contracts/contract-next-step.ts": "80443bbd34dcf93d79c9580e441ba09c2c5d3c781ef217ef5c7867bf34c89a7d"
       }
     },
     {
@@ -13644,11 +13644,47 @@
         "techcontracts.contracts.view.workspace",
         "techcontracts.contracts.update.workspace"
       ],
-      "rationale": "LEGADO-REGULARIZA lote A: explicit audited recognition and human regularization of the SAME imported contract (id, source file, body, parties, links preserved). Classification lives only in definer-owned tables, never in metadata/imported_from/GUC/manual status. Every action requires active workspace, active membership in the active workspace, real contract view (and update for writes) via work_context_access, the specific legacy key with deny precedence, and refuses read-only view-as. Governed origins (hiring request, proposal/accepted draft, any signature in progress or done) are refused. Regularization requires a server-attested private PDF hash, human-confirmed signature date, plausible dates, confirmed auto-renewal and blocks future validity and pending billing holds; it creates no proposal, draft, signature, service, title, payment or grant. Commercial guard bypass applies only to regularized and validated legacy records. Migration prepared only, outside the journal, not applied. SQL source of record: docs/prepared-migrations/0385_contract_legacy_regularization.sql (outside the journal until review; move into drizzle/migrations on approval and bind its hash then).",
+      "rationale": "LEGADO-REGULARIZA lote A: explicit audited recognition and human regularization of the SAME imported contract (id, source file, body, parties, links preserved). Classification lives only in definer-owned tables, never in metadata/imported_from/GUC/manual status. Every action requires active workspace, active membership in the active workspace, real contract view (and update for writes) via work_context_access, the specific legacy key with deny precedence, and refuses read-only view-as. Governed origins (hiring request, proposal/accepted draft, any signature in progress or done) are refused. Regularization requires a server-attested private PDF hash, human-confirmed signature date, plausible dates, confirmed auto-renewal and blocks future validity and pending billing holds; it creates no proposal, draft, signature, service, title, payment or grant. Commercial guard bypass applies only to regularized and validated legacy records. Migration prepared only, outside the journal, not applied. SQL source of record: docs/prepared-migrations/0385_contract_legacy_regularization.sql (outside the journal until review; move into drizzle/migrations on approval and bind its hash then). Batch B: thin authenticated server functions (user client only; privileged store/attest only after the user reservation returns the path; 60 s signed download only after the user open RPC), detail panel (trail center, actions right) gated by view/create/approve keys plus contract update, and next-step/signature card hide new approval/signature calls while legacy is pending, regularized or not yet verified.",
       "controls": [
         {
           "file": "src/lib/access-control/work-core.server.ts",
           "symbol": "workRpc"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/contracts/legacy.functions.ts",
+          "symbol": "getContractLegacyState"
+        },
+        {
+          "file": "src/lib/contracts/legacy.functions.ts",
+          "symbol": "uploadContractLegacyEvidence"
+        },
+        {
+          "file": "src/lib/contracts/legacy.server.ts",
+          "symbol": "loadLegacyState"
+        },
+        {
+          "file": "src/lib/contracts/legacy.server.ts",
+          "symbol": "recognizeLegacyContract"
+        },
+        {
+          "file": "src/lib/contracts/legacy.server.ts",
+          "symbol": "uploadLegacyEvidence"
+        },
+        {
+          "file": "src/lib/contracts/legacy.server.ts",
+          "symbol": "regularizeLegacyContract"
+        },
+        {
+          "file": "src/lib/contracts/legacy.server.ts",
+          "symbol": "openLegacyEvidence"
         }
       ],
       "database": [
@@ -13712,7 +13748,11 @@
         }
       },
       "files": {
-        "src/lib/contracts/legacy.server.ts": "c4aeae7e2ff5324a3726aa5695d749f624d4e526dc14827e59a36f3fe16517d9"
+        "src/lib/contracts/legacy.server.ts": "a02ff776756e925bb57b86228646c212c555b5099ebdf77ea9c7bed62fd0f37a",
+        "src/lib/contracts/legacy.functions.ts": "dde409c1a48d5104ca232ac8e7098276d1047aab47559bcb042e0b73f530370d",
+        "src/components/contracts/legacy/contract-legacy-panel.tsx": "ee77289dd318aa6e5eaf96fba2fa23e136f28aa556f3aa03b7dc504350bbfaf7",
+        "src/components/contracts/legacy/legacy-regularize-form.tsx": "6d70e851aeffc8b3022427a596549dc8b005f1a26a8a25aed63c4ef65e610a12",
+        "src/components/contracts/legacy/use-contract-legacy.ts": "78342b95a61f557bfe66a306f88c84a8f792d3895a84b55d983036168be2e059"
       }
     },
     {
@@ -13764,14 +13804,15 @@
         "review_by": "2026-12-19"
       },
       "files": {
-        "src/lib/contracts/legacy-evidence.server.ts": "9bb0db9a81344c388dd8dbdb92067144b1ff86e2f225f69a95ae73864f58941d"
+        "src/lib/contracts/legacy-evidence.server.ts": "1917d3da67f6c2f2120b4d2cd4c3cee94e3923990ff431b4a849370ea410feca"
       }
     },
     {
       "id": "contract-legacy-static",
       "kind": "presentation",
       "files": {
-        "src/lib/contracts/legacy-types.ts": "3a3721ee84bc3aafabb7b6832971501d92bf44993deafff69e42eebec585b5bb"
+        "src/lib/contracts/legacy-types.ts": "3a3721ee84bc3aafabb7b6832971501d92bf44993deafff69e42eebec585b5bb",
+        "src/lib/contracts/legacy-view.ts": "dc6556140e7ca4c7b4b6061fe92b6639a5bae61290a8f2e2f1c03709ce690c86"
       },
       "rationale": "Static DTOs, labels, PDF magic-byte check and SHA-256 helper only; no data access or actions."
     }
