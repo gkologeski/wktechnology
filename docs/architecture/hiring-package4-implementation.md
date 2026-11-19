@@ -23,6 +23,7 @@ Reaproveitar hiring_engagements / people_allocations, projetos e marcos, horas e
 - Preservar alçadas atuais: a configuração vigente da Área Técnica já possui uma política, não limpá-la nem criar fallback por nome/CEO. Gestor ausente ou sem acesso bloqueia e informa pendência.
 - Preservar fluxo de folha/recorrências e contratos históricos. Geradores por pessoa, alocação, contrato e parcela precisam de dono de origem; evidência de legado gera reconciliação explícita, nunca segunda despesa. Não alterar paid_amount/status para simular pagamento, nem cancelar títulos pagos.
 - CLT/folha não exige NF fictícia; PJ/fornecedor exige documentação aplicável; freelance exige modalidade documental explícita, sem decidir tratamento fiscal por heurística.
+- NF/comprovantes posteriores à assinatura ficam fora dos anexos do pacote assinado: armazenamento privado e trilha próprios da obrigação de compra, sem invalidar a evidência jurídica.
 - Uma entrega canônica no projeto, se associada; custos de alocação/rateio são vistas da mesma origem, sem multiplicar despesa. Horas de referência não alteram preço fechado.
 - Migrations históricas imutáveis; novos scripts somente preparados até revisão e testes. Nenhum convite, mensagem, assinatura, título ou pagamento real para QA. Ensaios de schema real usam rollback e checagem de resíduos.
 
