@@ -294,7 +294,7 @@ beforeAll(async () => {
   await db.begin(async (tx) => {
     await tx.unsafe(readFileSync(PREPARED, "utf8"));
     await tx.unsafe(
-      readFileSync("docs/prepared-migrations/0386_hiring_execution_current_authority.sql", "utf8"),
+      readFileSync("drizzle/migrations/0386_hiring_execution_current_authority.sql", "utf8"),
     );
   });
   await db.unsafe(

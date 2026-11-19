@@ -1,4 +1,4 @@
--- Prepared only. Atomic user/RLS import + explicit pending-legacy recognition.
+-- Reviewed release migration. Atomic user/RLS import + explicit pending-legacy recognition.
 -- The operation UUID is also the new contract UUID: a lost response can be retried
 -- without a second row. No historical contract is rewritten or duplicated.
 CREATE FUNCTION public.contract_legacy_import_create(w uuid,p_contract jsonb,p_reason text,p_operation uuid)

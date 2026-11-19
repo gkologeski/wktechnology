@@ -16,7 +16,7 @@ import { randomUUID } from "node:crypto";
 
 // LEGADO-REGULARIZA lote A. Real PostgreSQL with production resolver bodies and the prepared 0385.
 // Never reads a configured URL: nix PG17 when present, macOS TECHERP_NATIVE_PG=1 (Postgres.app 16, private socket), otherwise Docker PG17 pinned by digest on a local Unix socket (CI).
-const PREPARED = "docs/prepared-migrations/0385_contract_legacy_regularization.sql";
+const PREPARED = "drizzle/migrations/0385_contract_legacy_regularization.sql";
 const W = "aaaaaaaa-0000-4000-8000-0000000000c1",
   B = "aaaaaaaa-0000-4000-8000-0000000000c2",
   U = "bbbbbbbb-0000-4000-8000-0000000000c1",
@@ -247,7 +247,7 @@ beforeAll(async () => {
     body("drizzle/migrations/0218_order3_completion_prepare.sql", "public.work_area_authorize"),
   );
   await db.unsafe(
-    readFileSync("docs/prepared-migrations/0387_contract_legacy_import_atomic.sql", "utf8"),
+    readFileSync("drizzle/migrations/0387_contract_legacy_import_atomic.sql", "utf8"),
   );
   // Actual audit and contract handoff trigger bodies, with inert canonical tables.
   await db.unsafe(`CREATE TABLE contract_events(workspace_id uuid,contract_id uuid,actor_id uuid,event_type text,payload jsonb);
@@ -392,8 +392,8 @@ async function prepare(mode: Mode, key: string) {
     await db`update workspace_members set status='inactive' where user_id=${U}`;
 }
 const scenarios: Mode[] = ["allowed", "missing", "deny", "foreign", "inactive"];
-const attestCases = {} as Record<Mode, () => Promise<void>>;
-const regularizeCases = {} as Record<Mode, () => Promise<void>>;
+const attestCases = {} as Record<Mode, () => Promise<string>>;
+const regularizeCases = {} as Record<Mode, () => Promise<string>>;
 for (const mode of scenarios) {
   it(`legacy recognize ${mode}`, async () => {
     await reset();
@@ -436,6 +436,7 @@ for (const mode of scenarios) {
     );
     if (mode === "allowed") expect(r).toBe("ok");
     else expect(r).toMatch(/indisponível/);
+    return r;
   };
   regularizeCases[mode] = async () => {
     await reset();
@@ -469,44 +470,34 @@ for (const mode of scenarios) {
 }
 
 it("legacy regularize allowed", async () => {
-  await regularizeCases.allowed();
-  expect(true).toBe(true);
+  expect(await regularizeCases.allowed()).toBe("ok");
 });
 it("legacy server attestation allowed", async () => {
-  await attestCases.allowed();
-  expect(true).toBe(true);
+  expect(await attestCases.allowed()).toBe("ok");
 });
 it("legacy regularize missing", async () => {
-  await regularizeCases.missing();
-  expect(true).toBe(true);
+  expect(await regularizeCases.missing()).toMatch(DENIED);
 });
 it("legacy server attestation missing", async () => {
-  await attestCases.missing();
-  expect(true).toBe(true);
+  expect(await attestCases.missing()).toMatch(/indisponível/);
 });
 it("legacy regularize deny", async () => {
-  await regularizeCases.deny();
-  expect(true).toBe(true);
+  expect(await regularizeCases.deny()).toMatch(DENIED);
 });
 it("legacy server attestation deny", async () => {
-  await attestCases.deny();
-  expect(true).toBe(true);
+  expect(await attestCases.deny()).toMatch(/indisponível/);
 });
 it("legacy regularize foreign", async () => {
-  await regularizeCases.foreign();
-  expect(true).toBe(true);
+  expect(await regularizeCases.foreign()).toMatch(DENIED);
 });
 it("legacy server attestation foreign", async () => {
-  await attestCases.foreign();
-  expect(true).toBe(true);
+  expect(await attestCases.foreign()).toMatch(/indisponível/);
 });
 it("legacy regularize inactive", async () => {
-  await regularizeCases.inactive();
-  expect(true).toBe(true);
+  expect(await regularizeCases.inactive()).toMatch(DENIED);
 });
 it("legacy server attestation inactive", async () => {
-  await attestCases.inactive();
-  expect(true).toBe(true);
+  expect(await attestCases.inactive()).toMatch(/indisponível/);
 });
 it("legacy actions require real contract access, not only the legacy key", async () => {
   await reset({ owner_id: V });
@@ -903,28 +894,45 @@ const importLegacy = (
       (x) => x[0].r,
     ),
   );
+async function importCase(mode: Mode) {
+  const payload = await legacyImportSetup();
+  await prepare(mode, "techcontracts.legacy_contracts.create.workspace");
+  const op = randomUUID();
+  const outcome = await err(
+    importLegacy(
+      { ...payload, workspace_id: mode === "foreign" ? B : W },
+      op,
+      mode === "foreign" ? B : W,
+    ),
+  );
+  if (mode === "allowed") {
+    expect(outcome).toBe("ok");
+    expect(
+      (await db`select status from contract_legacy_records where contract_id=${op}`)[0].status,
+    ).toBe("pending");
+  } else {
+    expect(outcome).toMatch(/permissão/);
+    expect((await db`select count(*)::int n from contracts where id=${op}`)[0].n).toBe(0);
+  }
+
+  return outcome;
+}
+it("legacy import atomic allowed", async () => {
+  expect(await importCase("allowed")).toBe("ok");
+});
+it("legacy import atomic missing", async () => {
+  expect(await importCase("missing")).toMatch(/permissão/);
+});
+it("legacy import atomic deny", async () => {
+  expect(await importCase("deny")).toMatch(/permissão/);
+});
+it("legacy import atomic foreign", async () => {
+  expect(await importCase("foreign")).toMatch(/permissão/);
+});
+it("legacy import atomic inactive", async () => {
+  expect(await importCase("inactive")).toMatch(/permissão/);
+});
 for (const mode of scenarios) {
-  it(`legacy import atomic ${mode}`, async () => {
-    const payload = await legacyImportSetup();
-    await prepare(mode, "techcontracts.legacy_contracts.create.workspace");
-    const op = randomUUID();
-    const outcome = await err(
-      importLegacy(
-        { ...payload, workspace_id: mode === "foreign" ? B : W },
-        op,
-        mode === "foreign" ? B : W,
-      ),
-    );
-    if (mode === "allowed") {
-      expect(outcome).toBe("ok");
-      expect(
-        (await db`select status from contract_legacy_records where contract_id=${op}`)[0].status,
-      ).toBe("pending");
-    } else {
-      expect(outcome).toMatch(/permissão/);
-      expect((await db`select count(*)::int n from contracts where id=${op}`)[0].n).toBe(0);
-    }
-  });
   it(`legacy indicator ${mode}`, async () => {
     await reset();
     await recognize();

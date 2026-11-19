@@ -22,7 +22,7 @@ Base: `50f3300ae`. Revisão local em `codex/legacy-contracts-hardening`. Pacote 
 
 ## Lote A — decisões
 
-- Migração `docs/prepared-migrations/0385_contract_legacy_regularization.sql`, fora do journal, não aplicada.
+- Migração `drizzle/migrations/0385_contract_legacy_regularization.sql`, fora do journal, não aplicada.
 - Classificação vive só em `contract_legacy_records` / `_evidence` / `_events` (sem grants ao Data API; leitura e escrita por RPC definer).
 - Chaves novas, sem grants automáticos: `techcontracts.legacy_contracts.view|create|approve.workspace`. Toda ação exige workspace ativo, membro ativo no workspace ativo, acesso real ao contrato (`work_context_access` view; update para escrita), chave própria com deny prevalecendo, e recusa "ver como" somente leitura.
 - Origens protegidas recusadas: `hiring_request_origin`, proposta/cotação/minuta aceita, qualquer assinatura em curso ou concluída (campos de assinatura, pacotes, entregas e-sign, ForSign, evidência de contratação), status diferente de rascunho, ou sem arquivo importado.

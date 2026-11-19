@@ -1,5 +1,5 @@
 -- LEGADO-REGULARIZA lote A: reconhecimento explícito e regularização humana de contratos legados importados.
--- Migração PREPARADA para revisão; fora do journal. Não aplicar antes de revisão independente e CI.
+-- Migração de release revisada; aplicar junto com 0386/0387 somente após CI verde.
 -- Não cria proposta, minuta, assinatura, serviço, título, pagamento nem grant. Não altera dados existentes.
 -- O mesmo contrato é preservado (id, source_file_path, body_html, partes, vínculos e anexos); a classificação
 -- de legado vive somente nestas tabelas e nunca é inferida de metadata, imported_from, GUC ou status manual.

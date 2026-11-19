@@ -13144,7 +13144,7 @@
           "symbol": "hiring_formalization_origin_guard"
         },
         {
-          "file": "docs/prepared-migrations/0386_hiring_execution_current_authority.sql",
+          "file": "drizzle/migrations/0386_hiring_execution_current_authority.sql",
           "symbol": "hiring_execution_activation_ok"
         }
       ],
@@ -13174,7 +13174,8 @@
         "drizzle/migrations/0381_hiring_execution_start.sql": "fb2cab77301deaa2ef98ae3f3f6debea7983294b55bf66fa1b801b45dfb8f0c7",
         "src/lib/hiring/requests/execution.functions.ts": "b475d61ef00fed1513c1364abf4f448d982f501afe5892da20fd927c343fb8c7",
         "src/lib/hiring/requests/execution-panel.tsx": "03c6b5b222d5d4de486e0fa6d6ed1aec53ecaf9eb180d560f76b80cbc4af8420",
-        "src/lib/hiring/requests/execution-history.tsx": "5f1d25aaa4f27a53922df2fe79a88dc2cedddbd6b6b0a7a8e342c29fc93a8984"
+        "src/lib/hiring/requests/execution-history.tsx": "5f1d25aaa4f27a53922df2fe79a88dc2cedddbd6b6b0a7a8e342c29fc93a8984",
+        "drizzle/migrations/0386_hiring_execution_current_authority.sql": "8912ea0405c72067479b0a0145699b50490d6100ae6a6af59aafa51fed411955"
       }
     },
     {
@@ -13695,51 +13696,51 @@
       ],
       "database": [
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_actor"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_subject"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_recognize"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_evidence_reserve"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_regularize"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_state"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_evidence_open"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_validated"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_accepted_draft_guard"
         },
         {
-          "file": "docs/prepared-migrations/0387_contract_legacy_import_atomic.sql",
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
           "symbol": "contract_legacy_import_create"
         },
         {
-          "file": "docs/prepared-migrations/0387_contract_legacy_import_atomic.sql",
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
           "symbol": "contract_legacy_indicator"
         },
         {
-          "file": "docs/prepared-migrations/0387_contract_legacy_import_atomic.sql",
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
           "symbol": "contract_legacy_signature_block"
         }
       ],
@@ -13770,7 +13771,8 @@
         "src/lib/contracts/legacy.functions.ts": "dde409c1a48d5104ca232ac8e7098276d1047aab47559bcb042e0b73f530370d",
         "src/components/contracts/legacy/contract-legacy-panel.tsx": "d44427549bff1b6cb9ea0a5e203a4fa4a2df95a0f373fbf80efeea772c7d2e88",
         "src/components/contracts/legacy/legacy-regularize-form.tsx": "8912a34671bc27b75b4256fc41b37939160fada69f47169ddae3008a6226cda9",
-        "src/components/contracts/legacy/use-contract-legacy.ts": "c411457ba322bf6fa2c5a888b880bdf8af701c194d6369d290acbaba1117603f"
+        "src/components/contracts/legacy/use-contract-legacy.ts": "c411457ba322bf6fa2c5a888b880bdf8af701c194d6369d290acbaba1117603f",
+        "drizzle/migrations/0385_contract_legacy_regularization.sql": "8e3bffb5a075b30eef95342090dc0d2226c7cc46327a66f6e00667e5553d3fb8"
       }
     },
     {
@@ -13789,7 +13791,7 @@
       ],
       "database": [
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_evidence_attest"
         }
       ],
@@ -13840,6 +13842,82 @@
       "rationale": "Pure projection/filter over already-authorized supplied extracted fields and canonical entity options; no queries, persistence, API, UI handlers or authorization decision. Explicit CNPJ mismatch or ambiguous names stays unresolved for human review; caller must authorize canonical reads/writes. Side selection maps WK contracted side for sales/provider and contracting side for purchases/client. Does not rewrite existing records.",
       "files": {
         "src/lib/contracts/import-parties.server.ts": "d244c82dca631a014e165d85d8d13306bc2a271d097fc61fe6e9f02bf0964315"
+      }
+    },
+    {
+      "id": "contract-legacy-import-and-lifecycle",
+      "kind": "business",
+      "resources": [
+        "techcontracts.contracts",
+        "techcontracts.imports",
+        "techcontracts.legacy_contracts"
+      ],
+      "actions": ["view", "create", "update", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techcontracts.imports.manage.workspace",
+        "techcontracts.legacy_contracts.create.workspace",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.create.workspace",
+        "techcontracts.contracts.update.workspace"
+      ],
+      "rationale": "Atomic legacy import remains under the authenticated user/RLS and existing create/view/update plus imports/manage and legacy/create, with active workspace/member and read-only/deny checks, canonical parties, privately owned original and stable UUID/replay/rollback. Ordinary contract readers obtain only classification without private evidence/history. Approval/signature inserts serialize with recognition; billing release ignores only the private regularization transaction marker and normal signing stays unchanged. No business records or user grants are seeded.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
+          "symbol": "contract_legacy_import_create"
+        },
+        {
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
+          "symbol": "contract_legacy_indicator"
+        },
+        {
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
+          "symbol": "contract_legacy_signature_block"
+        },
+        {
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
+          "symbol": "contracts_release_service_billing_trg"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy import atomic allowed"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy import atomic missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy import atomic deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy import atomic foreign"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy import atomic inactive"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0387_contract_legacy_import_atomic.sql": "31c70c09ad9c239f45c9c1ad534c6b6a811409ce4fead948dce9da5635684af8"
       }
     }
   ],

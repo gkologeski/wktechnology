@@ -295,7 +295,7 @@ beforeAll(async () => {
   await db.begin(async (tx) => {
     await tx.unsafe(readFileSync(PREPARED, "utf8"));
     await tx.unsafe(
-      readFileSync("docs/prepared-migrations/0386_hiring_execution_current_authority.sql", "utf8"),
+      readFileSync("drizzle/migrations/0386_hiring_execution_current_authority.sql", "utf8"),
     );
   });
   await db.unsafe(
@@ -432,7 +432,7 @@ beforeAll(async () => {
     ALTER TABLE services ADD COLUMN IF NOT EXISTS billing_hold text;
     ALTER TABLE contract_drafts ADD COLUMN IF NOT EXISTS updated_at timestamptz;`);
   await db.unsafe(
-    readFileSync("docs/prepared-migrations/0385_contract_legacy_regularization.sql", "utf8"),
+    readFileSync("drizzle/migrations/0385_contract_legacy_regularization.sql", "utf8"),
   );
   // Connection startup belongs to fixture preparation, not the race under test.
   // postgres.js can open a third TCP session lazily several seconds after the first two on CI.

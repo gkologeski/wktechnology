@@ -2696,6 +2696,27 @@
       "when": 1795047511000,
       "tag": "0384_hiring_payables_reconciliation",
       "breakpoints": true
+    },
+    {
+      "idx": 385,
+      "version": "7",
+      "when": 1795047512000,
+      "tag": "0385_contract_legacy_regularization",
+      "breakpoints": true
+    },
+    {
+      "idx": 386,
+      "version": "7",
+      "when": 1795047513000,
+      "tag": "0386_hiring_execution_current_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 387,
+      "version": "7",
+      "when": 1795047514000,
+      "tag": "0387_contract_legacy_import_atomic",
+      "breakpoints": true
     }
   ]
 }
