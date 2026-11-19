@@ -1,4 +1,4 @@
-import { assertWorkRecord } from "@/lib/access-control/work-core.server";
+import { workRpc, assertWorkRecord } from "@/lib/access-control/work-core.server";
 import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 // Server functions para importar contratos a partir de arquivos .pdf ou .docx.
 // A extração é feita via Lovable AI Gateway (Gemini 2.5 Flash) e devolve JSON estruturado.
@@ -14,6 +14,7 @@ import {
   CreateFromImportSchema,
   type ExtractedContract,
 } from "@/lib/contracts/import-schemas";
+import { formatCnpj } from "@/lib/cnpj";
 import { buildContractTitle } from "@/lib/contracts/title";
 
 const SYSTEM_PROMPT = `Você é um analista jurídico especialista em contratos brasileiros de prestação de serviços de TI (outsourcing, desenvolvimento, manutenção, consultoria). Sua tarefa é extrair variáveis-chave do contrato fornecido.
@@ -217,7 +218,7 @@ function token() {
   return randomBytes(24).toString("hex");
 }
 
-// Tenta casar contraparte pelo CNPJ. Fallback para o nome exato (case-insensitive).
+// Canonical user/RLS reads: explicit CNPJ never falls back to a name; ambiguity stays unresolved.
 async function findCompanyIdByCnpjOrName(
   supabase: import("@supabase/supabase-js").SupabaseClient,
   workspaceId: string,
@@ -225,25 +226,27 @@ async function findCompanyIdByCnpjOrName(
   name: string | null | undefined,
 ): Promise<string | null> {
   const digits = (cnpj ?? "").replace(/\D/g, "");
-  if (digits.length === 14) {
-    const { data } = await supabase
+  if (digits.length) {
+    if (digits.length !== 14) return null;
+    const { data, error } = await supabase
       .from("companies")
       .select("id")
       .eq("workspace_id", workspaceId)
-      .eq("cnpj", digits)
-      .limit(1)
-      .maybeSingle();
-    if (data?.id) return data.id as string;
+      .in("cnpj", [digits, formatCnpj(digits)])
+      .limit(2);
+    if (error) throw error;
+    if (data?.length === 1) return data[0].id as string;
+    return null;
   }
   if (name && name.trim().length > 2) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("companies")
       .select("id")
       .eq("workspace_id", workspaceId)
-      .ilike("name", name.trim())
-      .limit(1)
-      .maybeSingle();
-    if (data?.id) return data.id as string;
+      .ilike("name", name.trim().replace(/[\\%_]/g, "\\$&"))
+      .limit(2);
+    if (error) throw error;
+    if (data?.length === 1) return data[0].id as string;
   }
   return null;
 }
@@ -261,16 +264,33 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     ]);
 
     const f = data.fields;
-    const extractedRole = f.role ?? null;
-
+    const { loadOwnLegalEntities } = await import("@/lib/contracts/import-link.server");
+    const { resolveImportParties } = await import("@/lib/contracts/import-parties.server");
+    const ownEntities = await loadOwnLegalEntities(supabase, workspaceId);
+    const parties = resolveImportParties(f, ownEntities, data.manual_role ?? null);
+    if (parties.conflict)
+      throw new Error(
+        "O papel escolhido contradiz o CNPJ WK identificado no documento. Confira as partes antes de importar.",
+      );
+    const role = parties.role;
     const counterpartyCompanyId = await findCompanyIdByCnpjOrName(
       supabase,
       workspaceId,
-      f.counterparty_cnpj,
-      f.counterparty_name,
+      parties.counterpartyCnpj,
+      parties.counterpartyName,
     );
 
     const metadata: Record<string, unknown> = {};
+    if (data.import_mode === "legacy") {
+      if (!data.source_file_path || !data.operation_id || !data.legacy_reason)
+        throw new Error("Legado exige arquivo original, identificação da operação e motivo.");
+      // Extracted external identifiers are documentary hints, never an active signature.
+      metadata.external_signature_extracted = {
+        provider: f.signature_provider ?? null,
+        document_id: f.signature_document_id ?? null,
+        operation_id: f.signature_operation_id ?? null,
+      };
+    }
     if (Array.isArray(f.witnesses) && f.witnesses.length) metadata.witnesses = f.witnesses;
     if (f.counterparty_name) metadata.counterparty_name_extracted = f.counterparty_name;
     if (f.counterparty_cnpj) metadata.counterparty_cnpj_extracted = f.counterparty_cnpj;
@@ -283,36 +303,15 @@ export const createContractFromImport = createServerFn({ method: "POST" })
     );
     if (referenced.length) metadata.referenced_contract_numbers = referenced;
 
-    // Contratante = entidade legal do workspace? (contratos elegíveis ao TechPeople)
-    const { loadOwnLegalEntities, matchOwnEntity } =
-      await import("@/lib/contracts/import-link.server");
-    const ownEntities = await loadOwnLegalEntities(supabase, workspaceId);
-    const ownEntity = matchOwnEntity(ownEntities, f.contracting_cnpj, f.contracting_name);
-    if (ownEntity) metadata.contracting_is_own_entity = true;
-    const ownCounterparty = matchOwnEntity(ownEntities, f.counterparty_cnpj, f.counterparty_name);
-
-    // O papel é derivado das nossas empresas: CONTRATADA ⇒ prestação, CONTRATANTE ⇒ compra.
-    // O `role` extraído pela IA só é usado quando não há evidência das partes.
-    const inferredRole: "provider" | "client" | null =
-      Boolean(ownEntity) === Boolean(ownCounterparty)
-        ? null
-        : ownCounterparty
-          ? "provider"
-          : "client";
-    const role: "provider" | "client" = inferredRole ?? extractedRole ?? "provider";
-    metadata.role_source = inferredRole ? "inferred" : "extracted";
-    if (extractedRole) metadata.role_extracted = extractedRole;
-    if (inferredRole && extractedRole && inferredRole !== extractedRole) {
-      const warn =
-        inferredRole === "provider"
-          ? "Papel extraído indicava Compra, mas nossa empresa consta como CONTRATADA: gravado como Prestação."
-          : "Papel extraído indicava Prestação, mas nossa empresa consta como CONTRATANTE: gravado como Compra.";
+    if (parties.contractingIsOwn) metadata.contracting_is_own_entity = true;
+    metadata.role_source = parties.roleSource;
+    if (f.role) metadata.role_extracted = f.role;
+    if (parties.inferredRole && f.role && parties.inferredRole !== f.role)
       metadata.import_warnings = [
         ...((metadata.import_warnings as string[] | undefined) ?? []),
-        warn,
+        "Papel extraído pela IA difere do CNPJ WK identificado: confira as partes do documento.",
       ];
-    }
-    const ownSideName = (role === "provider" ? ownCounterparty?.name : ownEntity?.name) ?? null;
+    const ownSideName = parties.ownName;
 
     // Tipo de documento detectado pela IA (mais os sinais textuais do título/arquivo).
     // O vínculo do aditivo ao contrato principal continua sendo passo próprio da
@@ -324,7 +323,16 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       selfNumber: f.self_contract_number,
       fileName: (data.source_file_path ?? "").split("/").pop() ?? null,
     });
-    const isAmendment = f.document_kind === "amendment" || signals.isAmendment;
+    const isAmendment = data.manual_document_kind
+      ? data.manual_document_kind === "amendment"
+      : f.document_kind === "amendment" || signals.isAmendment;
+    metadata.document_kind_source = data.manual_document_kind ? "manual" : "detected";
+    if (data.manual_document_kind === "main" && signals.isAmendment)
+      metadata.import_warnings = [
+        ...((metadata.import_warnings as string[] | undefined) ?? []),
+        "Tipo Principal escolhido manualmente; o arquivo contém sinais de aditivo. Confira o documento.",
+      ];
+
     const amendmentNumber = (f.amendment_number ?? "").trim() || signals.number;
     if (f.document_kind) metadata.document_kind_extracted = f.document_kind;
     if (amendmentNumber) metadata.amendment_number_extracted = amendmentNumber;
@@ -344,6 +352,7 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       workspace_id: workspaceId,
       owner_id: userId,
       role,
+      document_kind: isAmendment ? "amendment" : "main",
       title:
         buildContractTitle({
           role,
@@ -360,7 +369,7 @@ export const createContractFromImport = createServerFn({ method: "POST" })
         "Contrato importado",
 
       counterparty_company_id: counterpartyCompanyId,
-      contracting_legal_entity_id: ownEntity?.id ?? null,
+      contracting_legal_entity_id: parties.ownEntityId,
 
       total_value: f.total_value ?? f.monthly_value ?? 0,
       currency: f.currency ?? "BRL",
@@ -392,9 +401,11 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       governing_law: f.governing_law ?? null,
       jurisdiction: f.jurisdiction ?? null,
       confidentiality_term_months: f.confidentiality_term_months ?? null,
-      signature_provider: f.signature_provider ?? null,
-      signature_document_id: f.signature_document_id ?? null,
-      signature_operation_id: f.signature_operation_id ?? null,
+      signature_provider: data.import_mode === "legacy" ? null : (f.signature_provider ?? null),
+      signature_document_id:
+        data.import_mode === "legacy" ? null : (f.signature_document_id ?? null),
+      signature_operation_id:
+        data.import_mode === "legacy" ? null : (f.signature_operation_id ?? null),
       source_file_path: data.source_file_path ?? null,
       imported_from: data.imported_from,
       import_confidence: f.confidence ?? null,
@@ -405,6 +416,15 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       const { hasBodyText, stripControlChars } = await import("@/lib/contracts/import-body");
       const clean = sanitizeTemplateHtml(stripControlChars(data.body_html));
       if (hasBodyText(clean)) insertPayload.body_html = clean;
+    }
+
+    if (data.import_mode === "legacy") {
+      return workRpc<{ id: string; replayed: boolean }>(supabase, "contract_legacy_import_create", {
+        w: workspaceId,
+        p_contract: insertPayload,
+        p_reason: data.legacy_reason!,
+        p_operation: data.operation_id!,
+      });
     }
 
     const { data: row, error } = await supabase

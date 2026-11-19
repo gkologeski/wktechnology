@@ -7307,7 +7307,7 @@
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
         "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
-        "src/routes/_authenticated/contracts.$id.tsx": "493afa7cd02c043e9b8339bd6c07a39eaeee21e2381e6bffb62570c89ab8cebf",
+        "src/routes/_authenticated/contracts.$id.tsx": "06c1ab0f4d445f677b8c78402410b9bb103fe50512bfcc172abb44cfa938b989",
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
@@ -8867,9 +8867,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants.",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants.",
       "files": {
-        "src/integrations/supabase/types.ts": "b971d7b93ee66562cdd090bbb8a77c10fcc1eec1b0ac1dcaf7cfd38608f8ced4",
+        "src/integrations/supabase/types.ts": "376c8a172bcd94a04ad376b0c901a9846da238742934a96b8238b5b9ecbf6709",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -9088,7 +9088,7 @@
       "kind": "presentation",
       "rationale": "Pure static value definitions and filtering only; no route, query, credentials or business action.",
       "files": {
-        "src/lib/contracts/import-schemas.ts": "c4ef0a61dd9e47cf878dffaeb80ceaea06788a35bd228d4490ca96bebbab82cc",
+        "src/lib/contracts/import-schemas.ts": "0d6581d94347f9a4f0397fc79fd5b203aa63bdc0d5557a16218e63e255504fec",
         "src/lib/contracts/workflow-field-meta.ts": "417fd4f63e8139ec0702adbbd71ce04d0956d88aceedcb8d4bd79b6e6ff760c6"
       }
     },
@@ -9099,7 +9099,8 @@
         "techcontracts.contracts",
         "techcontracts.contract_templates",
         "techcontracts.imports",
-        "techcontracts.links"
+        "techcontracts.links",
+        "techcontracts.legacy_contracts"
       ],
       "actions": ["view", "create", "update", "manage"],
       "scopes": ["own", "team", "workspace"],
@@ -9109,7 +9110,8 @@
         "techcontracts.contracts.view.workspace",
         "techcontracts.contract_templates.update.workspace",
         "techcontracts.contracts.create.workspace",
-        "techcontracts.links.manage.workspace"
+        "techcontracts.links.manage.workspace",
+        "techcontracts.legacy_contracts.create.workspace"
       ],
       "rationale": "Existing import endpoints enforce requireWorkPermission and assertAnyPermission; original file signing reads contract under user RLS first. Type options only changed in presentation and AI schema; legal-entity picker filters new assignments, label hydration retains saved value. Template editing retains WorkAction and HrScreenAccess; no grants changed. Merge review: the import UI checks its catalogue workspace key and fails closed while permissions load/fail; server middleware, creation scope checks, signed-file record access and active CNPJ assignment rules from main are preserved. Five import-boundary scenarios invoke the real work middleware. FORMATO-ORIGINAL: .docx formatting is parsed client-side (pure) and sent to the same authenticated template-import route, which keeps bearer auth, active workspace and assertAnyPermission(TEMPLATE_IMPORT_PERMISSIONS); the AI only returns variable suggestions applied to sanitized HTML. No new action, data or grant. The shared template body editor keeps its DOMPurify sanitizeRichHtml on load/update and only gains paragraph spacing attributes for imported formatting; editing and saving remain behind the template page WorkAction/HrScreenAccess and server update checks. ROLAGEM-CONTRATO: editor gains optional maxHeight with internal scroll; presentation only. ACOES-MODELO: list/detail share ContractTemplateActionsMenu (edit, duplicate, publish/draft/archive/reactivate, delete with confirmation); items are enabled only from usePermissions keys plus per-record work capabilities, disabled with a hint otherwise, and every action calls the existing server functions (contract_template_save_checked / assertAnyPermission + deleteByIdGuarded). No new action, key or grant. The status CHECK now also accepts 'archived' (value already offered by the UI/server schema); no grant or RLS change. CORPO-PDF: parseContractPdf keeps its middleware and permission checks and now also returns the PDF body read server-side (unpdf); control characters are stripped before insert. New reloadContractBodyFromSource requires requireWorkPermission(techcontracts.contracts, update), assertWorkRecord(update) and assertAnyPermission(update own/team/workspace), reads the row under user RLS, acts only on drafts without body and with source_file_path, uses the admin client only to download the stored object and writes through the user's contract_mutate RPC. The UI button is disabled without per-record can_update. No new key, grant or policy. Batch import now fails closed in the UI with usePermissions(techcontracts.imports.manage.workspace), same key as the single import; the body reload button also requires a techcontracts.contracts.update key plus per-record can_update.",
       "controls": [
@@ -9208,9 +9210,9 @@
       },
       "files": {
         "src/components/contracts/contract-form/contract-field-input.tsx": "5dfdf300f65db113dbae568d5e052d571495c348a48c9d7711960056f94d8aa4",
-        "src/components/contracts/import-contract-file-dialog.tsx": "e8439b16ba7560ca8fb1091f0dfb103a7dda3fe6763c202f36f59584dd59d061",
+        "src/components/contracts/import-contract-file-dialog.tsx": "dfbb96b66a1393e62f39c29856365251e3ed02211f3fb9eeb62a78cdfa6a0168",
         "src/components/contracts/import-contract-template-dialog.tsx": "7df6975f4edea9277cdc7630c2e2e6ff9dbb8548443f51d56269d27f98f66aae",
-        "src/lib/contracts/import.functions.ts": "5c8d8983520c6a1efbd50c2301f0e9e3207872e4b39d07907179f5d3f816cba1",
+        "src/lib/contracts/import.functions.ts": "d628d1f96005c2cb81738617bad1041a12f714f6c7cf8e6dd9cdcca03aaa704c",
         "src/lib/contracts/template-import.server.ts": "5c5d3a9ad8fc2ef9d2ffcfa801ed137918c8b8e87a24849a370683adafead285",
         "src/routes/_authenticated/contracts.templates.$id.tsx": "269e0f1483c1cd18f259b401bd00d8383fd1d22835b10141c4b1a2ef86e79176",
         "src/routes/api/contracts.template-import.ts": "e7df83c1225f941ccf71100af6fd0fb532206b0d1b3c4bd8e6efaafc783fd5d9",
@@ -9218,7 +9220,7 @@
         "src/routes/_authenticated/contracts.templates.index.tsx": "804337a7c0fceceabd916f6a30232432d1c15efcf8edb84b2d006274002ce835",
         "src/components/contracts/contract-template-actions-menu.tsx": "a4d89311fce43da22b7d356cdb3258210fe63da0f4071ec6b002103186d56fe9",
         "drizzle/migrations/0322_contract_templates_allow_archived.sql": "dbde6b67be72afbcfffeae038d38c5ca438bb430cab08d9010e1758856bf5e3c",
-        "src/components/contracts/batch-import-contracts-dialog.tsx": "3c75c5da6e1f287245b62029dcab5f9ef1cdf1f1e94f38cc06ba063a8235699c",
+        "src/components/contracts/batch-import-contracts-dialog.tsx": "8c801b2becbdfd87e8650e95896a7226c7e58cb01d79e307aba8fbde9eed4013",
         "src/components/contracts/contract-body-from-source-button.tsx": "a55350285dc6125b298bc3f75f00efbb65988eb8b120f782b1176432d5110290",
         "src/components/contracts/import/import-mode-chooser.tsx": "5d93832db95909e70eff018099c6d721a47796755304128f11b13400daa2493c"
       }
@@ -13141,6 +13143,10 @@
         {
           "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_formalization_origin_guard"
+        },
+        {
+          "file": "drizzle/migrations/0386_hiring_execution_current_authority.sql",
+          "symbol": "hiring_execution_activation_ok"
         }
       ],
       "tests": {
@@ -13169,7 +13175,8 @@
         "drizzle/migrations/0381_hiring_execution_start.sql": "fb2cab77301deaa2ef98ae3f3f6debea7983294b55bf66fa1b801b45dfb8f0c7",
         "src/lib/hiring/requests/execution.functions.ts": "b475d61ef00fed1513c1364abf4f448d982f501afe5892da20fd927c343fb8c7",
         "src/lib/hiring/requests/execution-panel.tsx": "03c6b5b222d5d4de486e0fa6d6ed1aec53ecaf9eb180d560f76b80cbc4af8420",
-        "src/lib/hiring/requests/execution-history.tsx": "5f1d25aaa4f27a53922df2fe79a88dc2cedddbd6b6b0a7a8e342c29fc93a8984"
+        "src/lib/hiring/requests/execution-history.tsx": "5f1d25aaa4f27a53922df2fe79a88dc2cedddbd6b6b0a7a8e342c29fc93a8984",
+        "drizzle/migrations/0386_hiring_execution_current_authority.sql": "72e7747ed4b2c1e0e4e1c696632a84cef068fb4cc8d22f80db7efe7c6b3553d1"
       }
     },
     {
@@ -13645,7 +13652,7 @@
         "techcontracts.contracts.view.workspace",
         "techcontracts.contracts.update.workspace"
       ],
-      "rationale": "LEGADO-REGULARIZA lote A: explicit audited recognition and human regularization of the SAME imported contract (id, source file, body, parties, links preserved). Classification lives only in definer-owned tables, never in metadata/imported_from/GUC/manual status. Every action requires active workspace, active membership in the active workspace, real contract view (and update for writes) via work_context_access, the specific legacy key with deny precedence, and refuses read-only view-as. Governed origins (hiring request, proposal/accepted draft, any signature in progress or done) are refused. Regularization requires a server-attested private PDF hash, human-confirmed signature date, plausible dates, confirmed auto-renewal and blocks future validity and pending billing holds; it creates no proposal, draft, signature, service, title, payment or grant. Commercial guard bypass applies only to regularized and validated legacy records. Migration prepared only, outside the journal, not applied. SQL source of record: docs/prepared-migrations/0385_contract_legacy_regularization.sql (outside the journal until review; move into drizzle/migrations on approval and bind its hash then). Batch B: thin authenticated server functions (user client only; privileged store/attest only after the user reservation returns the path; 60 s signed download only after the user open RPC), detail panel (trail center, actions right) gated by view/create/approve keys plus contract update, and next-step/signature card hide new approval/signature calls while legacy is pending, regularized or not yet verified.",
+      "rationale": "Explicit recognition and human regularization of the same imported contract, preserving its immutable original, id, links and attachments. Protected records/events never derive from metadata, IA references or status alone. User actions require active membership/workspace, the specific legacy key, canonical own/team/workspace contract view and update for writes, deny precedence and refuse read-only view-as. Existing imported active/ended/terminated records can be recognized without regressing status; governed hiring, accepted proposal/draft and actual signature operations are excluded. Regularization binds all current material terms and requires a server-attested private signed PDF, explicit human signature/date/situation/reference/reason and plausible dates; rebase supersedes old evidence. Regularization preserves existing services/billing holds and creates no title/payment/service/IAM grant; 0387 suppresses billing release only during the private regularization transaction. Ordinary readers get classification only; private evidence/history still need legacy.view. The release uses reviewed additive migrations; already applied migrations remain immutable.",
       "controls": [
         {
           "file": "src/lib/access-control/work-core.server.ts",
@@ -13690,40 +13697,52 @@
       ],
       "database": [
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_actor"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_subject"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_recognize"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_evidence_reserve"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_regularize"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_state"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_evidence_open"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_validated"
         },
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_accepted_draft_guard"
+        },
+        {
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
+          "symbol": "contract_legacy_import_create"
+        },
+        {
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
+          "symbol": "contract_legacy_indicator"
+        },
+        {
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
+          "symbol": "contract_legacy_signature_block"
         }
       ],
       "tests": {
@@ -13749,11 +13768,12 @@
         }
       },
       "files": {
-        "src/lib/contracts/legacy.server.ts": "a02ff776756e925bb57b86228646c212c555b5099ebdf77ea9c7bed62fd0f37a",
+        "src/lib/contracts/legacy.server.ts": "fadae21680e6830c4bdd40476112264e30baf01aaf318a4efcb9b2adafbb2f38",
         "src/lib/contracts/legacy.functions.ts": "dde409c1a48d5104ca232ac8e7098276d1047aab47559bcb042e0b73f530370d",
-        "src/components/contracts/legacy/contract-legacy-panel.tsx": "ee77289dd318aa6e5eaf96fba2fa23e136f28aa556f3aa03b7dc504350bbfaf7",
-        "src/components/contracts/legacy/legacy-regularize-form.tsx": "6d70e851aeffc8b3022427a596549dc8b005f1a26a8a25aed63c4ef65e610a12",
-        "src/components/contracts/legacy/use-contract-legacy.ts": "78342b95a61f557bfe66a306f88c84a8f792d3895a84b55d983036168be2e059"
+        "src/components/contracts/legacy/contract-legacy-panel.tsx": "d44427549bff1b6cb9ea0a5e203a4fa4a2df95a0f373fbf80efeea772c7d2e88",
+        "src/components/contracts/legacy/legacy-regularize-form.tsx": "8912a34671bc27b75b4256fc41b37939160fada69f47169ddae3008a6226cda9",
+        "src/components/contracts/legacy/use-contract-legacy.ts": "c411457ba322bf6fa2c5a888b880bdf8af701c194d6369d290acbaba1117603f",
+        "drizzle/migrations/0385_contract_legacy_regularization.sql": "8e3bffb5a075b30eef95342090dc0d2226c7cc46327a66f6e00667e5553d3fb8"
       }
     },
     {
@@ -13772,7 +13792,7 @@
       ],
       "database": [
         {
-          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "file": "drizzle/migrations/0385_contract_legacy_regularization.sql",
           "symbol": "contract_legacy_evidence_attest"
         }
       ],
@@ -13813,10 +13833,148 @@
       "kind": "presentation",
       "files": {
         "src/lib/contracts/legacy-types.ts": "3a3721ee84bc3aafabb7b6832971501d92bf44993deafff69e42eebec585b5bb",
-        "src/lib/contracts/legacy-view.ts": "dc6556140e7ca4c7b4b6061fe92b6639a5bae61290a8f2e2f1c03709ce690c86",
-        "src/lib/contracts/import-mode.ts": "823094ef25a81e6751d1382dbebde5864846ea4d31029e954a271e2feacded2b"
+        "src/lib/contracts/legacy-view.ts": "46d8cdd96a88a4289c32cdb42632e7f2ec3a146bcd480ce12783b48190d5b046",
+        "src/lib/contracts/import-mode.ts": "fcc7295ec673e5242aaeaa811eaba71835fbd4fe9ee191047a1388c52853c28f"
       },
       "rationale": "Static DTOs, labels, PDF magic-byte check, SHA-256 helper, import-mode rules and the presentational import-mode chooser only; no data access or actions (server/RLS revalidate)."
+    },
+    {
+      "id": "legacy-import-party-projection",
+      "kind": "presentation",
+      "rationale": "Pure projection/filter over already-authorized supplied extracted fields and canonical entity options; no queries, persistence, API, UI handlers or authorization decision. Explicit CNPJ mismatch or ambiguous names stays unresolved for human review; caller must authorize canonical reads/writes. Side selection maps WK contracted side for sales/provider and contracting side for purchases/client. Does not rewrite existing records.",
+      "files": {
+        "src/lib/contracts/import-parties.server.ts": "d244c82dca631a014e165d85d8d13306bc2a271d097fc61fe6e9f02bf0964315"
+      }
+    },
+    {
+      "id": "contract-legacy-import-and-lifecycle",
+      "kind": "business",
+      "resources": [
+        "techcontracts.contracts",
+        "techcontracts.imports",
+        "techcontracts.legacy_contracts"
+      ],
+      "actions": ["view", "create", "update", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techcontracts.imports.manage.workspace",
+        "techcontracts.legacy_contracts.create.workspace",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.create.workspace",
+        "techcontracts.contracts.update.workspace"
+      ],
+      "rationale": "Atomic legacy import remains under the authenticated user/RLS and existing create/view/update plus imports/manage and legacy/create, with active workspace/member and read-only/deny checks, canonical parties, privately owned original and stable UUID/replay/rollback. Ordinary contract readers obtain only classification without private evidence/history. Approval/signature inserts serialize with recognition; billing release ignores only the private regularization transaction marker and normal signing stays unchanged. No business records or user grants are seeded.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
+          "symbol": "contract_legacy_import_create"
+        },
+        {
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
+          "symbol": "contract_legacy_indicator"
+        },
+        {
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
+          "symbol": "contract_legacy_signature_block"
+        },
+        {
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
+          "symbol": "contracts_release_service_billing_trg"
+        },
+        {
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
+          "symbol": "contract_legacy_subject"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy import atomic allowed"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy import atomic missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy import atomic deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy import atomic foreign"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy import atomic inactive"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0387_contract_legacy_import_atomic.sql": "aa3b6adb1e36d1e0a3fde53ffde7ef6425f93b2bdf1de57c1b97375dfa480d64"
+      }
+    },
+    {
+      "id": "contract-legacy-validation-read-boundary",
+      "kind": "business",
+      "resources": ["techcontracts.contracts"],
+      "actions": ["view"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.view.own",
+        "techcontracts.contracts.view.team"
+      ],
+      "rationale": "The commercial guard boolean also requires canonical contract read, active membership/workspace and deny precedence for direct authenticated RPC callers. No private evidence is returned. Bounded service exception requires both the actual selected service_role and signed service claim; a claim alone is not a bypass. No new grants or mutation. Applied migrations remain immutable.",
+      "controls": [
+        {
+          "file": "drizzle/migrations/0388_contract_legacy_validation_read_boundary.sql",
+          "symbol": "contract_legacy_validated"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0388_contract_legacy_validation_read_boundary.sql",
+          "symbol": "contract_legacy_validated"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy validation helper allowed"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy validation helper missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy validation helper deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy validation helper foreign"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy validation helper inactive"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0388_contract_legacy_validation_read_boundary.sql": "2c438b3b11fd9b6b68b0ae341f58227bd950da0de4978c649f49ca473807c011"
+      }
     }
   ],
   "retired": {

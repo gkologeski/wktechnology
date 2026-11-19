@@ -220,7 +220,7 @@ function ContractDetail() {
     queryFn: () => get({ data: { id } }),
   });
 
-  const legacy = useContractLegacy(id, !!contract?.source_file_path);
+  const legacy = useContractLegacy(id);
   const access = useWorkCapabilities("techcontracts.contracts", [id]);
   const canUpdateContract = access.for(id).can_update;
   const { can } = usePermissions();

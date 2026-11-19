@@ -16,7 +16,7 @@ import { randomUUID } from "node:crypto";
 
 // LEGADO-REGULARIZA lote A. Real PostgreSQL with production resolver bodies and the prepared 0385.
 // Never reads a configured URL: nix PG17 when present, macOS TECHERP_NATIVE_PG=1 (Postgres.app 16, private socket), otherwise Docker PG17 pinned by digest on a local Unix socket (CI).
-const PREPARED = "docs/prepared-migrations/0385_contract_legacy_regularization.sql";
+const PREPARED = "drizzle/migrations/0385_contract_legacy_regularization.sql";
 const W = "aaaaaaaa-0000-4000-8000-0000000000c1",
   B = "aaaaaaaa-0000-4000-8000-0000000000c2",
   U = "bbbbbbbb-0000-4000-8000-0000000000c1",
@@ -70,6 +70,8 @@ function body(path: string, name: string) {
   return tail.slice(0, tail.indexOf(";", end) + 1);
 }
 const allKeys = [
+  "techcontracts.imports.manage.workspace",
+  "techcontracts.contracts.create.workspace",
   "techcontracts.legacy_contracts.view.workspace",
   "techcontracts.legacy_contracts.create.workspace",
   "techcontracts.legacy_contracts.approve.workspace",
@@ -165,10 +167,14 @@ beforeAll(async () => {
     }
     if (!ready) throw Error("Disposable PostgreSQL did not become ready");
   }
+  // Create introspection function after resolver dependencies to satisfy SQL-language validation.
   const fixture = readFileSync("tests/fixtures/hiring-preparation.sql", "utf8");
   const permission = fixture.match(/CREATE FUNCTION user_has_permission[^\n]+/)?.[0];
   if (!permission) throw Error("resolver missing");
   await db.unsafe(fixture.replace(permission, ""));
+  await db.unsafe(
+    "CREATE SCHEMA extensions; CREATE EXTENSION pgcrypto WITH SCHEMA extensions; GRANT USAGE ON SCHEMA extensions TO authenticated;",
+  );
   await db.unsafe(`CREATE TYPE contract_status AS ENUM('draft','in_review','in_negotiation','awaiting_signature','active','renewing','ended','terminated');
     ALTER TABLE contracts ADD owner_id uuid, ADD assigned_to uuid, ADD counterparty_company_id uuid, ADD parent_contract_id uuid, ADD number text,
       ADD status contract_status NOT NULL DEFAULT 'draft', ADD starts_at date, ADD ends_at date, ADD auto_renew boolean DEFAULT false, ADD body_html text,
@@ -176,7 +182,7 @@ beforeAll(async () => {
       ADD signature_document_id text, ADD signature_operation_id text, ADD source_file_path text, ADD imported_from text, ADD document_kind text,
       ADD proposal_id uuid, ADD quote_id uuid, ADD hiring_request_origin uuid, ADD currency text, ADD payment_method text, ADD payment_terms jsonb,
       ADD notice_days int, ADD monthly_value numeric, ADD payment_day smallint, ADD hours_per_month int, ADD readjustment_index text, ADD readjustment_period text,
-      ADD late_fee_percent numeric, ADD late_interest_monthly_percent numeric, ADD penalty_percent numeric, ADD amendment_of_id uuid;
+      ADD late_fee_percent numeric, ADD late_interest_monthly_percent numeric, ADD penalty_percent numeric, ADD amendment_of_id uuid, ADD service_scope text;
     CREATE TABLE contract_signature_packages(contract_id uuid); CREATE TABLE contract_esign_deliveries(contract_id uuid);
     CREATE TABLE contract_forsign_operations(contract_id uuid); CREATE TABLE hiring_contract_evidence(contract_id uuid);
     CREATE TABLE contract_drafts(id uuid,proposal_id uuid,workspace_id uuid,status text,updated_at timestamptz,client_decided_at timestamptz,decided_at timestamptz,deal_id uuid,body_html text,prepared_terms jsonb,revision int);
@@ -226,6 +232,45 @@ beforeAll(async () => {
     `INSERT INTO permissions(key) VALUES('techcontracts.contracts.view.workspace'),('techcontracts.contracts.update.workspace');`,
   );
   await db.unsafe(readFileSync(PREPARED, "utf8"));
+  await db.unsafe(`ALTER TABLE storage.objects ADD owner uuid, ADD owner_id text;
+    CREATE TABLE contract_approvals(id uuid,contract_id uuid);
+    GRANT INSERT ON contracts TO authenticated;
+    GRANT SELECT(id,status) ON workspaces TO authenticated;
+    INSERT INTO permissions(key) VALUES('techcontracts.imports.manage.workspace'),('techcontracts.contracts.create.workspace');`);
+  await db.unsafe(
+    body(
+      "drizzle/migrations/0218_order3_completion_prepare.sql",
+      "public.work_contract_source_owned",
+    ),
+  );
+  await db.unsafe(
+    body("drizzle/migrations/0218_order3_completion_prepare.sql", "public.work_area_authorize"),
+  );
+  await db.unsafe(
+    body("drizzle/migrations/0218_order3_completion_prepare.sql", "public.work_subject_context"),
+  );
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0387_contract_legacy_import_atomic.sql", "utf8"),
+  );
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0388_contract_legacy_validation_read_boundary.sql", "utf8"),
+  );
+  // Actual audit and contract handoff trigger bodies, with inert canonical tables.
+  await db.unsafe(`CREATE TABLE contract_events(workspace_id uuid,contract_id uuid,actor_id uuid,event_type text,payload jsonb);
+    CREATE TABLE proposals(id uuid);
+    CREATE TABLE contract_handoff_settings(workspace_id uuid);
+    CREATE TABLE contract_handoffs(workspace_id uuid,proposal_id uuid,step text,status text,contract_id uuid);
+    ALTER TABLE contract_approvals ADD workspace_id uuid, ADD superseded_at timestamptz, ADD status text, ADD stage text, ADD sort_order int;
+  `);
+  for (const [f, n] of [
+    ["drizzle/migrations/0219_order3_completion_activate.sql", "public.contract_change_audit"],
+    ["drizzle/migrations/0362_contract_handoffs.sql", "public.contract_handoff_enqueue"],
+    ["drizzle/migrations/0362_contract_handoffs.sql", "public.contract_handoff_source_event"],
+  ] as const)
+    await db.unsafe(body(f, n));
+  await db.unsafe(`CREATE TRIGGER work_contract_change_audit AFTER UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contract_change_audit();
+    CREATE TRIGGER contract_handoff_contract AFTER INSERT OR UPDATE OF status ON contracts FOR EACH ROW EXECUTE FUNCTION contract_handoff_source_event();`);
+
   await db.unsafe(`CREATE TRIGGER contract_accepted_draft_guard BEFORE INSERT OR UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contract_accepted_draft_guard();
     CREATE TRIGGER zzzz_contract_process_guard BEFORE INSERT OR UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contract_process_guard();
     CREATE TRIGGER zz_contracts_release_service_billing AFTER UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contracts_release_service_billing_trg();
@@ -312,7 +357,7 @@ async function attachEvidence(sha = SHA, rev = 1) {
       (x) => x[0].r,
     ),
   );
-  await db`insert into storage.objects values('contract-signature-evidence',${res.path},${db.json({ sha256: sha, actor_id: U })})`;
+  await db`insert into storage.objects(bucket_id,name,user_metadata) values('contract-signature-evidence',${res.path},${db.json({ sha256: sha, actor_id: U })})`;
   await as(
     null,
     (tx) => tx`select contract_legacy_evidence_attest(${W},${res.evidence_id},${U},${sha},${1234})`,
@@ -353,8 +398,8 @@ async function prepare(mode: Mode, key: string) {
     await db`update workspace_members set status='inactive' where user_id=${U}`;
 }
 const scenarios: Mode[] = ["allowed", "missing", "deny", "foreign", "inactive"];
-const attestCases = {} as Record<Mode, () => Promise<void>>;
-const regularizeCases = {} as Record<Mode, () => Promise<void>>;
+const attestCases = {} as Record<Mode, () => Promise<string>>;
+const regularizeCases = {} as Record<Mode, () => Promise<string>>;
 for (const mode of scenarios) {
   it(`legacy recognize ${mode}`, async () => {
     await reset();
@@ -385,7 +430,7 @@ for (const mode of scenarios) {
         (x) => x[0].r,
       ),
     );
-    await db`insert into storage.objects values('contract-signature-evidence',${res.path},${db.json({ sha256: SHA, actor_id: U })})`;
+    await db`insert into storage.objects(bucket_id,name,user_metadata) values('contract-signature-evidence',${res.path},${db.json({ sha256: SHA, actor_id: U })})`;
     await prepare(mode, "techcontracts.legacy_contracts.approve.workspace");
     const r = await err(
       as(
@@ -397,6 +442,7 @@ for (const mode of scenarios) {
     );
     if (mode === "allowed") expect(r).toBe("ok");
     else expect(r).toMatch(/indisponível/);
+    return r;
   };
   regularizeCases[mode] = async () => {
     await reset();
@@ -417,6 +463,7 @@ for (const mode of scenarios) {
     else expect(r).toMatch(DENIED);
     const [c] = await db`select status::text s from contracts where id=${K}`;
     expect(c.s).toBe(mode === "allowed" ? "active" : "draft");
+    return r;
   };
   it(`legacy state view ${mode}`, async () => {
     await reset();
@@ -430,44 +477,34 @@ for (const mode of scenarios) {
 }
 
 it("legacy regularize allowed", async () => {
-  await regularizeCases.allowed();
-  expect(true).toBe(true);
+  expect(await regularizeCases.allowed()).toBe("ok");
 });
 it("legacy server attestation allowed", async () => {
-  await attestCases.allowed();
-  expect(true).toBe(true);
+  expect(await attestCases.allowed()).toBe("ok");
 });
 it("legacy regularize missing", async () => {
-  await regularizeCases.missing();
-  expect(true).toBe(true);
+  expect(await regularizeCases.missing()).toMatch(DENIED);
 });
 it("legacy server attestation missing", async () => {
-  await attestCases.missing();
-  expect(true).toBe(true);
+  expect(await attestCases.missing()).toMatch(/indisponível/);
 });
 it("legacy regularize deny", async () => {
-  await regularizeCases.deny();
-  expect(true).toBe(true);
+  expect(await regularizeCases.deny()).toMatch(DENIED);
 });
 it("legacy server attestation deny", async () => {
-  await attestCases.deny();
-  expect(true).toBe(true);
+  expect(await attestCases.deny()).toMatch(/indisponível/);
 });
 it("legacy regularize foreign", async () => {
-  await regularizeCases.foreign();
-  expect(true).toBe(true);
+  expect(await regularizeCases.foreign()).toMatch(DENIED);
 });
 it("legacy server attestation foreign", async () => {
-  await attestCases.foreign();
-  expect(true).toBe(true);
+  expect(await attestCases.foreign()).toMatch(/indisponível/);
 });
 it("legacy regularize inactive", async () => {
-  await regularizeCases.inactive();
-  expect(true).toBe(true);
+  expect(await regularizeCases.inactive()).toMatch(DENIED);
 });
 it("legacy server attestation inactive", async () => {
-  await attestCases.inactive();
-  expect(true).toBe(true);
+  expect(await attestCases.inactive()).toMatch(/indisponível/);
 });
 it("legacy actions require real contract access, not only the legacy key", async () => {
   await reset({ owner_id: V });
@@ -660,7 +697,7 @@ it("private file: forged attestation, missing bytes and mismatched bytes are rej
       ),
     ),
   ).toMatch(/não encontrado/);
-  await db`insert into storage.objects values('contract-signature-evidence',${res.path},${db.json({ sha256: "d".repeat(64), actor_id: U })})`;
+  await db`insert into storage.objects(bucket_id,name,user_metadata) values('contract-signature-evidence',${res.path},${db.json({ sha256: "d".repeat(64), actor_id: U })})`;
   expect(
     await err(
       as(
@@ -713,17 +750,26 @@ it("dates, signature confirmation and auto renewal require human-confirmed plaus
   const [c] = await db`select status::text s from contracts where id=${K}`;
   expect(c.s).toBe("terminated");
 });
-it("regularization has no financial effects and refuses pending billing holds", async () => {
+it("regularization preserves pending billing holds and creates no financial effects", async () => {
   await reset();
   await recognize();
   const ev = await attachEvidence();
-  await db`insert into services values(${randomUUID()},${W},${K},'awaiting_signature')`;
-  expect(await err(regularize(ev))).toMatch(/não libera cobranças/);
-  await db`delete from services`;
-  await db`insert into services values(${randomUUID()},${W},${K},null)`;
+  const service = randomUUID();
+  await db`insert into services values(${service},${W},${K},'awaiting_signature')`;
   expect(await err(regularize(ev))).toBe("ok");
-  const [f] = await db`select count(*)::int n from financial_entries`;
-  expect(f.n).toBe(0);
+  expect((await db`select billing_hold from services where id=${service}`)[0].billing_hold).toBe(
+    "awaiting_signature",
+  );
+  expect((await db`select count(*)::int n from financial_entries`)[0].n).toBe(0);
+  expect((await db`select count(*)::int n from contract_legacy_apply`)[0].n).toBe(0);
+});
+it("ordinary signature billing trigger remains active outside legacy regularization", async () => {
+  await reset();
+  await db`insert into services values(${randomUUID()},${W},${K},'awaiting_signature')`;
+  await db`update contracts set status='active' where id=${K}`;
+  expect(
+    (await db`select count(*)::int n from financial_entries where contract_id=${K}`)[0].n,
+  ).toBe(1);
 });
 it("regularized contract keeps document immutable and only then accepts a real deal link", async () => {
   await reset();
@@ -765,6 +811,7 @@ it("regularized legacy keeps every conferred financial/identity term immutable",
     "payment_day=5",
     "number='X-1'",
     "notice_days=60",
+    "service_scope='Escopo alterado'",
     "signature_provider='forsign'",
     "signed_pdf_path='x.pdf'",
     "counterparty_company_id=null",
@@ -825,4 +872,297 @@ it("rebase and reserve racing never leave old-revision evidence usable", async (
   const [n] =
     await db`select count(*)::int n from contract_legacy_evidence where legacy_revision=1 and status<>'superseded'`;
   expect(n.n).toBe(0);
+});
+
+async function legacyImportSetup() {
+  await reset();
+  const path = `${U}/new-original.pdf`;
+  await db`insert into storage.objects(bucket_id,name,user_metadata,owner) values('contract-imports',${path},'{}',${U})`;
+  return {
+    workspace_id: W,
+    owner_id: U,
+    title: "Acervo importado",
+    role: "provider",
+    status: "draft",
+    body_html: "<p>Texto preservado</p>",
+    source_file_path: path,
+    imported_from: "pdf",
+    metadata: {},
+  };
+}
+const importLegacy = (
+  payload: Record<string, unknown>,
+  op = randomUUID(),
+  w = W,
+  reason = "Original do acervo para conferência humana",
+) =>
+  as(U, (tx) =>
+    tx`select contract_legacy_import_create(${w},${tx.json(payload as postgres.JSONValue)},${reason},${op}) r`.then(
+      (x) => x[0].r,
+    ),
+  );
+async function importCase(mode: Mode) {
+  const payload = await legacyImportSetup();
+  await prepare(mode, "techcontracts.legacy_contracts.create.workspace");
+  const op = randomUUID();
+  const outcome = await err(
+    importLegacy(
+      { ...payload, workspace_id: mode === "foreign" ? B : W },
+      op,
+      mode === "foreign" ? B : W,
+    ),
+  );
+  if (mode === "allowed") {
+    expect(outcome).toBe("ok");
+    expect(
+      (await db`select status from contract_legacy_records where contract_id=${op}`)[0].status,
+    ).toBe("pending");
+  } else {
+    expect(outcome).toMatch(/permissão/);
+    expect((await db`select count(*)::int n from contracts where id=${op}`)[0].n).toBe(0);
+  }
+
+  return outcome;
+}
+it("legacy import atomic allowed", async () => {
+  expect(await importCase("allowed")).toBe("ok");
+});
+it("legacy import atomic missing", async () => {
+  expect(await importCase("missing")).toMatch(/permissão/);
+});
+it("legacy import atomic deny", async () => {
+  expect(await importCase("deny")).toMatch(/permissão/);
+});
+it("legacy import atomic foreign", async () => {
+  expect(await importCase("foreign")).toMatch(/permissão/);
+});
+it("legacy import atomic inactive", async () => {
+  expect(await importCase("inactive")).toMatch(/permissão/);
+});
+for (const mode of scenarios) {
+  it(`legacy indicator ${mode}`, async () => {
+    await reset();
+    await recognize();
+    await prepare(mode, "techcontracts.contracts.view.workspace");
+    if (mode === "allowed") {
+      await db`delete from job_role_permission_overrides where role_id=${U} and permission_key='techcontracts.legacy_contracts.view.workspace'`;
+      expect(
+        await as(U, (tx) => tx`select contract_legacy_indicator(${W},${K}) r`.then((x) => x[0].r)),
+      ).toEqual({ status: "pending" });
+    } else
+      expect(
+        await err(
+          as(U, (tx) => tx`select contract_legacy_indicator(${mode === "foreign" ? B : W},${K})`),
+        ),
+      ).toMatch(/indisponível/);
+  });
+}
+it("legacy import retries and concurrent requests preserve one contract and original", async () => {
+  const payload = await legacyImportSetup(),
+    op = randomUUID();
+  const [a, b] = await Promise.all([importLegacy(payload, op), importLegacy(payload, op)]);
+  expect(a.id).toBe(op);
+  expect(b.id).toBe(op);
+  expect([a.replayed, b.replayed].sort()).toEqual([false, true]);
+  expect(
+    (
+      await db`select count(*)::int n from contracts where source_file_path=${payload.source_file_path}`
+    )[0].n,
+  ).toBe(1);
+  await expect(importLegacy({ ...payload, title: "Outro conteúdo" }, op)).rejects.toThrow(
+    /CONFLICT/,
+  );
+  await expect(importLegacy(payload, randomUUID())).rejects.toThrow(/já possui contrato/);
+  expect((await db`select body_html from contracts where id=${op}`)[0].body_html).toBe(
+    payload.body_html,
+  );
+});
+it("legacy import recognition failure rolls back row and rejects unowned source or protected fields", async () => {
+  const payload = await legacyImportSetup(),
+    op = randomUUID();
+  await db`delete from job_role_permission_overrides where role_id=${U} and permission_key='techcontracts.contracts.update.workspace'`;
+  await expect(importLegacy(payload, op)).rejects.toThrow(/permissão/);
+  expect((await db`select count(*)::int n from contracts where id=${op}`)[0].n).toBe(0);
+  await db`insert into job_role_permission_overrides values(${W},${U},'techcontracts.contracts.update.workspace','grant')`;
+  await expect(importLegacy({ ...payload, source_file_path: `${V}/foreign.pdf` })).rejects.toThrow(
+    /privado/,
+  );
+  await expect(importLegacy({ ...payload, signature_provider: "native" })).rejects.toThrow(
+    /protegidos/,
+  );
+  await expect(importLegacy({ ...payload, metadata: { accepted_proposal: {} } })).rejects.toThrow(
+    /protegidos/,
+  );
+});
+it("legacy approval and signature insertion are serialized with recognition", async () => {
+  await reset();
+  await recognize();
+  await expect(
+    db`insert into contract_approvals(id,contract_id) values(${randomUUID()},${K})`,
+  ).rejects.toThrow(/novas aprovações/);
+  expect((await db`select count(*)::int n from contract_approvals`)[0].n).toBe(0);
+});
+
+it("legacy import rejects foreign canonical parties and keeps the original object", async () => {
+  const payload = await legacyImportSetup();
+  await expect(importLegacy({ ...payload, counterparty_company_id: randomUUID() })).rejects.toThrow(
+    /Contraparte/,
+  );
+  await db`update legal_entities set active=false where id=${L}`;
+  await expect(importLegacy({ ...payload, contracting_legal_entity_id: L })).rejects.toThrow(
+    /Entidade legal/,
+  );
+  expect(
+    (
+      await db`select count(*)::int n from storage.objects where name=${payload.source_file_path}`
+    )[0].n,
+  ).toBe(1);
+});
+
+it.each(["ended", "terminated"] as const)(
+  "legacy %s preserves services and creates audit without new signature handoffs",
+  async (situation) => {
+    await reset({ status: "active" });
+    await recognize();
+    const ev = await attachEvidence();
+    const original = (
+      await db`select source_file_path,body_html,parent_contract_id,deal_id from contracts where id=${K}`
+    )[0];
+    await regularize(ev, {
+      situation,
+      ends: "2024-12-31",
+      term: situation === "terminated" ? "2024-06-30" : null,
+    });
+    expect(
+      (
+        await db`select source_file_path,body_html,parent_contract_id,deal_id from contracts where id=${K}`
+      )[0],
+    ).toEqual(original);
+    expect((await db`select count(*)::int n from contract_handoffs`)[0].n).toBe(0);
+    expect(
+      (await db`select count(*)::int n from contract_events where event_type='status_changed'`)[0]
+        .n,
+    ).toBe(1);
+    expect((await db`select count(*)::int n from financial_entries`)[0].n).toBe(0);
+  },
+);
+
+it("legacy financial or service changes invalidate reserved document evidence until explicit rebase", async () => {
+  await reset({ total_value: "1000", currency: "BRL" });
+  await recognize();
+  const ev = await attachEvidence();
+  await as(
+    U,
+    (tx) => tx`update contracts set total_value=2000,service_scope='Escopo revisto' where id=${K}`,
+  );
+  await expect(regularize(ev)).rejects.toThrow(/STALE/);
+  expect((await recognize(U, randomUUID(), 1)).revision).toBe(2);
+  expect((await db`select status from contract_legacy_evidence where id=${ev}`)[0].status).toBe(
+    "superseded",
+  );
+  expect((await db`select total_value::text v from contracts where id=${K}`)[0].v).toBe("2000");
+});
+
+it("legacy preserves the imported original even while pending", async () => {
+  await reset();
+  await recognize();
+  await expect(
+    as(U, (tx) => tx`update contracts set source_file_path=null where id=${K}`),
+  ).rejects.toThrow(/Original importado/);
+  expect((await db`select source_file_path from contracts where id=${K}`)[0].source_file_path).toBe(
+    "imports/legado.docx",
+  );
+});
+it("legacy requires an explicit non-null situation even through direct RPC", async () => {
+  await reset();
+  await recognize();
+  const ev = await attachEvidence();
+  await expect(regularize(ev, { situation: null, term: "2024-02-01" })).rejects.toThrow(
+    /Situação inválida/,
+  );
+  expect(
+    (await db`select status from contract_legacy_records where contract_id=${K}`)[0].status,
+  ).toBe("pending");
+});
+it("legacy supports canonical team access without workspace contract grants", async () => {
+  await reset({ assigned_to: V });
+  const group = randomUUID();
+  await db`insert into user_groups(id,workspace_id,name) values(${group},${W},'Equipe do contrato')`;
+  await db`insert into user_group_members(group_id,user_id) values(${group},${U}),(${group},${V})`;
+  await db`insert into permissions(key) values('techcontracts.contracts.view.team'),('techcontracts.contracts.update.team') on conflict do nothing`;
+  await db`delete from job_role_permission_overrides where role_id=${U} and permission_key in ('techcontracts.contracts.view.workspace','techcontracts.contracts.update.workspace')`;
+  await db`insert into job_role_permission_overrides values(${W},${U},'techcontracts.contracts.view.team','grant'),(${W},${U},'techcontracts.contracts.update.team','grant')`;
+  expect((await recognize()).status).toBe("pending");
+  expect((await regularize(await attachEvidence())).status).toBe("regularized");
+});
+it("legacy server attestation revalidates the uploader's current contract update access", async () => {
+  await reset();
+  await recognize();
+  const reserve = await as(U, (tx) =>
+    tx`select contract_legacy_evidence_reserve(${W},${K},1,'a.pdf',1234,${SHA},${randomUUID()}) r`.then(
+      (x) => x[0].r,
+    ),
+  );
+  await db`insert into storage.objects(bucket_id,name,user_metadata) values('contract-signature-evidence',${reserve.path},${db.json({ sha256: SHA, actor_id: U })})`;
+  await db`delete from job_role_permission_overrides where role_id=${U} and permission_key='techcontracts.contracts.update.workspace'`;
+  await expect(
+    as(
+      null,
+      (tx) =>
+        tx`select contract_legacy_evidence_attest(${W},${reserve.evidence_id},${U},${SHA},1234)`,
+      { role: "service_role" },
+    ),
+  ).rejects.toThrow(/indisponível/);
+  expect(
+    (await db`select status from contract_legacy_evidence where id=${reserve.evidence_id}`)[0]
+      .status,
+  ).toBe("pending_upload");
+});
+
+// The helper is callable directly through RPC, not only from the commercial trigger.
+async function validatedBy(mode: Mode) {
+  await reset();
+  await recognize();
+  await regularize(await attachEvidence());
+  await prepare(mode, "techcontracts.contracts.view.workspace");
+  const rows = await as(
+    U,
+    (tx) => tx`select contract_legacy_validated(${K},${mode === "foreign" ? B : W}) ok`,
+  );
+  return rows[0].ok;
+}
+it("legacy validation helper allowed", async () => {
+  expect(await validatedBy("allowed")).toBe(true);
+});
+it("legacy validation helper missing", async () => {
+  expect(await validatedBy("missing")).toBe(false);
+});
+it("legacy validation helper deny", async () => {
+  expect(await validatedBy("deny")).toBe(false);
+});
+it("legacy validation helper foreign", async () => {
+  expect(await validatedBy("foreign")).toBe(false);
+});
+it("legacy validation helper inactive", async () => {
+  expect(await validatedBy("inactive")).toBe(false);
+});
+it("legacy validation helper preserves the trusted service boolean", async () => {
+  await reset();
+  await recognize();
+  await regularize(await attachEvidence());
+  await prepare("inactive", "techcontracts.contracts.view.workspace");
+  const rows = await as(null, (tx) => tx`select contract_legacy_validated(${K},${W}) ok`, {
+    role: "service_role",
+  });
+  expect(rows[0].ok).toBe(true);
+});
+it("legacy validation helper rejects a service claim on an authenticated role", async () => {
+  await reset();
+  await recognize();
+  await regularize(await attachEvidence());
+  await prepare("missing", "techcontracts.contracts.view.workspace");
+  const rows = await as(U, (tx) => tx`select contract_legacy_validated(${K},${W}) ok`, {
+    role: "service_role",
+  });
+  expect(rows[0].ok).toBe(false);
 });

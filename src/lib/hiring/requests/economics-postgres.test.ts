@@ -293,6 +293,9 @@ beforeAll(async () => {
   );
   await db.begin(async (tx) => {
     await tx.unsafe(readFileSync(PREPARED, "utf8"));
+    await tx.unsafe(
+      readFileSync("drizzle/migrations/0386_hiring_execution_current_authority.sql", "utf8"),
+    );
   });
   await db.unsafe(
     "CREATE TABLE storage.buckets(id text PRIMARY KEY,name text,public boolean,file_size_limit bigint,allowed_mime_types text[])",

@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { legacyGate, legacyMode, regularizeBlockers, type LegacyState } from "./legacy-view";
+import {
+  legacyGate,
+  legacyMode,
+  regularizeBlockers,
+  latestLegacyEvidence,
+  missingBeforeRegularize,
+  type LegacyState,
+} from "./legacy-view";
 
 const state = (record: LegacyState["record"], problem: string | null = null): LegacyState => ({
   contract_id: "c",
@@ -69,4 +76,53 @@ describe("regularize form blockers", () => {
       /PDF/,
     );
   });
+});
+
+it("legacy classification keeps common readers out of new commercial signing without evidence access", () => {
+  for (const classification of ["pending", "regularized"] as const) {
+    const mode = legacyMode({
+      isLoading: false,
+      isError: false,
+      data: { access: "denied", classification },
+    });
+    expect(legacyGate(mode)).toBe(classification);
+  }
+  expect(
+    legacyGate(
+      legacyMode({
+        isLoading: false,
+        isError: false,
+        data: { access: "denied", classification: null },
+      }),
+    ),
+  ).toBe("none");
+});
+
+it("regularization uses the latest attested file of the current revision", () => {
+  const file = (id: string, revision: number, status: "attested" | "superseded") => ({
+    id,
+    revision,
+    status,
+    file_name: id + ".pdf",
+    sha256: id,
+    size: 10,
+  });
+  const docs = [
+    file("old", 1, "attested"),
+    file("new", 1, "attested"),
+    file("other-revision", 2, "attested"),
+    file("cancelled", 1, "superseded"),
+  ];
+  expect(latestLegacyEvidence(docs, 1)?.id).toBe("new");
+  expect(latestLegacyEvidence(docs, 3)).toBeNull();
+});
+it("a scanned legacy does not require a fabricated editable draft body", () => {
+  expect(
+    missingBeforeRegularize({
+      counterparty_company_id: "c",
+      contracting_legal_entity_id: "wk",
+      source_file_path: "original.pdf",
+      body_html: null,
+    }),
+  ).toEqual([]);
 });

@@ -79,6 +79,13 @@ export function ContractLegacyPanel({
               </Button>
             </div>
           </div>
+        ) : mode === "restricted_pending" || mode === "restricted_regularized" ? (
+          <p className="text-sm text-muted-foreground">
+            Este é um contrato legado{" "}
+            {mode === "restricted_regularized" ? "regularizado" : "pendente de regularização"}. Não
+            exige cotação, proposta, minuta ou nova assinatura. Para consultar evidências e
+            regularizar, solicite ao administrador a permissão específica de contratos legados.
+          </p>
         ) : state ? (
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
             <LegacyTimeline state={state} contractId={contract.id} />

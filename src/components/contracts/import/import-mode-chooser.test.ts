@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import { ImportModeChooser } from "./import-mode-chooser";
@@ -5,14 +6,14 @@ import { ImportModeChooser } from "./import-mode-chooser";
 const full = { draft: true, legacy: true, legacyMissing: [] };
 const render = (p: Partial<Parameters<typeof ImportModeChooser>[0]> = {}) =>
   renderToStaticMarkup(
-    <ImportModeChooser
-      mode={null}
-      onModeChange={() => {}}
-      reason=""
-      onReasonChange={() => {}}
-      access={full}
-      {...p}
-    />,
+    createElement(ImportModeChooser, {
+      mode: null,
+      onModeChange: () => {},
+      reason: "",
+      onReasonChange: () => {},
+      access: full,
+      ...p,
+    }),
   );
 
 describe("ImportModeChooser", () => {

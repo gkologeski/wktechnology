@@ -294,6 +294,9 @@ beforeAll(async () => {
   );
   await db.begin(async (tx) => {
     await tx.unsafe(readFileSync(PREPARED, "utf8"));
+    await tx.unsafe(
+      readFileSync("drizzle/migrations/0386_hiring_execution_current_authority.sql", "utf8"),
+    );
   });
   await db.unsafe(
     "CREATE TABLE storage.buckets(id text PRIMARY KEY,name text,public boolean,file_size_limit bigint,allowed_mime_types text[])",
@@ -416,6 +419,21 @@ beforeAll(async () => {
       `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY; CREATE POLICY fixture_entity_read ON ${table} FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()));`,
     );
   }
+  // Package 5 cross-flow boundary: load the legacy migration beside the real hiring chain.
+  // The fixture already exercises actual signatures, starts, deliveries and canonical payables.
+  await db.unsafe(`CREATE DOMAIN contract_status AS text;
+    ALTER TABLE contracts ADD COLUMN IF NOT EXISTS source_file_path text, ADD COLUMN IF NOT EXISTS imported_from text,
+      ADD COLUMN IF NOT EXISTS parent_contract_id uuid, ADD COLUMN IF NOT EXISTS auto_renew boolean DEFAULT false,
+      ADD COLUMN IF NOT EXISTS signed_at timestamptz, ADD COLUMN IF NOT EXISTS signed_pdf_path text,
+      ADD COLUMN IF NOT EXISTS signature_provider text, ADD COLUMN IF NOT EXISTS signature_document_id text,
+      ADD COLUMN IF NOT EXISTS signature_operation_id text, ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}',
+      ADD COLUMN IF NOT EXISTS quote_id uuid, ADD COLUMN IF NOT EXISTS currency text, ADD COLUMN IF NOT EXISTS payment_method text,
+      ADD COLUMN IF NOT EXISTS payment_terms jsonb;
+    ALTER TABLE services ADD COLUMN IF NOT EXISTS billing_hold text;
+    ALTER TABLE contract_drafts ADD COLUMN IF NOT EXISTS updated_at timestamptz;`);
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0385_contract_legacy_regularization.sql", "utf8"),
+  );
   // Connection startup belongs to fixture preparation, not the race under test.
   // postgres.js can open a third TCP session lazily several seconds after the first two on CI.
   const connections = await Promise.all([db.reserve(), db.reserve(), db.reserve()]);
@@ -1697,3 +1715,90 @@ it("payables reconciliation cannot substitute the named PJ company with a person
     formExtra = {};
   }
 });
+
+// Package 5: exercise the cross-module and impersonation boundaries with real RPCs.
+it.each(["professional", "supplier"])(
+  "package5 %s payables never inherit the other module's action key",
+  async (kind) => {
+    const x = await approvedPlan({}, kind);
+    const own = prefix(kind) + ".payables.manage.workspace";
+    const other =
+      prefix(kind === "professional" ? "supplier" : "professional") + ".payables.manage.workspace";
+    const hash = (await pctx(x.r.id)).eligible.preview_hash as string;
+    expect((await pctx(x.r.id, PREV, U)).can_generate).toBe(true);
+    expect(
+      (
+        await db`select count(*)::int n from job_role_permission_overrides where role_id=${U} and permission_key=${other} and effect='grant'`
+      )[0].n,
+    ).toBe(1);
+    await db`delete from job_role_permission_overrides where role_id=${U} and permission_key=${own}`;
+    expect((await pctx(x.r.id, PREV, U)).can_generate).toBe(false);
+    await expect(gen(x.r, { hash })).rejects.toThrow(DENIED);
+    await db`insert into job_role_permission_overrides values(${W},${U},${own},'deny')`;
+    await expect(gen(x.r, { hash })).rejects.toThrow(DENIED);
+    expect(await count("financial_entries")).toBe(0);
+    expect(await count("hiring_payable_source_claims")).toBe(0);
+    expect(await count("financial_payments")).toBe(0);
+  },
+);
+
+it.each(["professional", "supplier"])(
+  "package5 %s role view-as remains read-only even with finance grants",
+  async (kind) => {
+    const x = await approvedPlan({}, kind);
+    const hash = (await pctx(x.r.id)).eligible.preview_hash as string;
+    expect((await pctx(x.r.id, PREV, U)).can_generate).toBe(true);
+    const session = randomUUID();
+    await db`insert into view_as_sessions values(${session},'role',null)`;
+    const ro = <T>(fn: (tx: postgres.TransactionSql) => Promise<T>) =>
+      user(U, async (tx) => {
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: U, role: "authenticated", session_id: session })},true)`;
+        return fn(tx);
+      });
+    const c = (
+      await ro((tx) => tx`select hiring_payable_context(${W},${x.r.id},${PREV}::date) v`)
+    )[0].v;
+    expect(c.can_generate).toBe(false);
+    expect(c.can_reconcile).toBe(false);
+    expect(c.can_register_client).toBe(false);
+    expect(c.can_confirm_client).toBe(false);
+    await expect(
+      ro(
+        (tx) =>
+          tx`select hiring_payable_generate(${W},${x.r.id},${PREV}::date,${hash},${tx.json(["monthly:" + PREV])},${tx.json([{ amount: 9300, due_on: DUE() }])},null,'Tentativa bloqueada em perfil de teste.',${randomUUID()})`,
+      ),
+    ).rejects.toThrow(DENIED);
+    expect(await count("financial_entries")).toBe(0);
+    expect(await count("hiring_payable_source_claims")).toBe(0);
+    expect(await count("financial_payments")).toBe(0);
+  },
+);
+
+it.each(["professional", "supplier"])(
+  "package5 %s governed contract cannot be laundered through legacy regularization",
+  async (kind) => {
+    const { k, sid } = await startedRequest(kind);
+    // Import-looking data cannot replace the protected hiring origin or its real signature chain.
+    await user(
+      M,
+      (tx) =>
+        tx`update contracts set source_file_path='fixture/imported.pdf',imported_from='pdf' where id=${k}`,
+    );
+    const before = (await db`select to_jsonb(c) v from contracts c where id=${k}`)[0].v;
+    await expect(
+      user(
+        M,
+        (tx) =>
+          tx`select contract_legacy_recognize(${W},${k},null,'Documento importado não substitui contratação governada.',${randomUUID()})`,
+      ),
+    ).rejects.toThrow(/contratação|governado/);
+    expect(
+      (await db`select count(*)::int n from contract_legacy_records where contract_id=${k}`)[0].n,
+    ).toBe(0);
+    expect((await db`select to_jsonb(c) v from contracts c where id=${k}`)[0].v).toEqual(before);
+    expect(
+      (await db`select count(*)::int n from hiring_execution_starts where id=${sid}`)[0].n,
+    ).toBe(1);
+    expect((await db`select count(*)::int n from financial_payments`)[0].n).toBe(0);
+  },
+);

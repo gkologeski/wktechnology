@@ -2,25 +2,32 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getContractLegacyState } from "@/lib/contracts/legacy.functions";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useAuth } from "@/lib/auth";
 import { legacyGate, legacyMode } from "@/lib/contracts/legacy-view";
 
-/** Situação de legado do contrato importado. Sem arquivo importado, o contrato é comum (sem consulta). */
-export function useContractLegacy(contractId: string, imported: boolean) {
-  const { can } = usePermissions();
-  // Sem a chave de leitura não há consulta: o banco também negaria; a tela não presume "não legado".
-  const canView = can("techcontracts.legacy_contracts.view.workspace");
+/** Ordinary contract readers get only classification; private details keep their own key. */
+export function useContractLegacy(contractId: string) {
+  const permissions = usePermissions();
+  const { user } = useAuth();
   const load = useServerFn(getContractLegacyState);
   const query = useQuery({
-    queryKey: ["contract-legacy", contractId],
+    queryKey: [
+      "contract-legacy",
+      contractId,
+      user?.id,
+      permissions.workspaceId,
+      [...permissions.permissions].sort(),
+    ],
     queryFn: () => load({ data: { contractId } }),
-    enabled: imported && canView,
+    enabled:
+      !!user?.id && !!permissions.workspaceId && !permissions.isLoading && !permissions.isError,
     retry: 1,
     staleTime: 0,
   });
-  const mode = !imported
-    ? "ineligible"
-    : !canView
-      ? "denied"
-      : legacyMode({ isLoading: query.isLoading, isError: query.isError, data: query.data });
+  const mode = permissions.isLoading
+    ? "loading"
+    : permissions.isError
+      ? "error"
+      : legacyMode({ isLoading: query.isPending, isError: query.isError, data: query.data });
   return { query, mode, gate: legacyGate(mode) };
 }

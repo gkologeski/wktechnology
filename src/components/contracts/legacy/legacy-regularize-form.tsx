@@ -27,6 +27,7 @@ import {
 } from "@/lib/contracts/legacy-types";
 import {
   regularizeBlockers,
+  latestLegacyEvidence,
   todayIso,
   type LegacyEvidence,
   type RegularizeDraft,
@@ -59,7 +60,7 @@ export function LegacyRegularizeForm({
   const qc = useQueryClient();
   const upload = useServerFn(uploadContractLegacyEvidence);
   const regularize = useServerFn(regularizeContractLegacy);
-  const ready = evidence.find((e) => e.status === "attested" && e.revision === revision) ?? null;
+  const ready = latestLegacyEvidence(evidence, revision);
   const [d, setD] = useState<RegularizeDraft>({
     situation: "",
     signedOn: null,

@@ -1,4 +1,5 @@
 import type postgres from "postgres";
+import { randomUUID } from "node:crypto";
 
 /** Data-only fixtures captured from successful real RPC setup in a disposable database.
  * Never accepts an environment URL, changes schema, replaces a resolver or skips a scenario.
@@ -36,6 +37,7 @@ export async function restoreDisposableHiringSnapshot(
   if (!guard[0].ok) throw Error("Disposable hiring bootstrap required");
   await db.begin(async (tx) => {
     await tx`set local session_replication_role=replica`;
+    const statements: string[] = [];
     for (const { schema, table } of snapshot) {
       if (
         !(
@@ -44,16 +46,23 @@ export async function restoreDisposableHiringSnapshot(
         )
       )
         throw Error("Unexpected fixture table");
-      await tx.unsafe(`delete from ${identifier(schema)}.${identifier(table)}`);
+      statements.push(`delete from ${identifier(schema)}.${identifier(table)}`);
     }
     for (const { schema, table, rows } of snapshot) {
       if (!rows.length) continue;
       const target = `${identifier(schema)}.${identifier(table)}`;
-      await tx.unsafe(
-        `insert into ${target} select * from jsonb_populate_recordset(null::${target},$1::jsonb)`,
-        [tx.json(rows as postgres.JSONValue)],
+      const json = JSON.stringify(rows);
+      // A collision-checked dollar literal keeps arbitrary fixture text as data.
+      // Send the same DELETE/INSERT operations in one round trip, with the same
+      // transaction and trigger restoration before any scenario RPC is called.
+      let delimiter: string;
+      do delimiter = "$snapshot_" + randomUUID().replaceAll("-", "") + "$";
+      while (json.includes(delimiter));
+      statements.push(
+        `insert into ${target} select * from jsonb_populate_recordset(null::${target},${delimiter}${json}${delimiter}::jsonb)`,
       );
     }
+    if (statements.length) await tx.unsafe(statements.join(";\n"), [], { prepare: false });
     await tx`set local session_replication_role=origin`;
   });
 }

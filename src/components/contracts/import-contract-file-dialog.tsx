@@ -177,7 +177,7 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
     !permissions.isLoading &&
     !permissions.isError &&
     permissions.can("techcontracts.imports.manage.workspace");
-  const { access, canViewLegacy } = useImportModeAccess();
+  const { access } = useImportModeAccess();
   const parsePdf = useServerFn(parseContractPdf);
   const parseText = useServerFn(parseContractText);
   const createFromImport = useServerFn(createContractFromImport);
@@ -302,24 +302,16 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
         manualRole: manualRoleFrom(roleTouched ? f.role : null),
       });
       // import_mode/legacy_reason/operation_id/manual_role: contrato do servidor (lote C/0387).
-      const result = await createFromImport({ data: request } as unknown as Parameters<
-        typeof createFromImport
-      >[0]);
+      const result = await createFromImport({ data: request });
       if (mode === "legacy") {
-        if (!canViewLegacy) {
-          toast.warning(
-            "Contrato criado; sem permissão para confirmar o legado pendente. Confira na ficha.",
+        const state = await loadLegacy({ data: { contractId: result.id } }).catch(() => null);
+        if (!legacyPendingConfirmed(state))
+          throw Object.assign(
+            new Error(
+              "O contrato foi criado, mas o servidor não confirmou o reconhecimento como legado. Abra a ficha e confira; não repita a importação.",
+            ),
+            { createdId: result.id },
           );
-        } else {
-          const state = await loadLegacy({ data: { contractId: result.id } }).catch(() => null);
-          if (!legacyPendingConfirmed(state))
-            throw Object.assign(
-              new Error(
-                "O contrato foi criado, mas o servidor não confirmou o reconhecimento como legado. Abra a ficha e confira; não repita a importação.",
-              ),
-              { createdId: result.id },
-            );
-        }
       }
       return result;
     },
@@ -333,7 +325,6 @@ export function ImportContractFileDialog({ open, onOpenChange }: Props) {
       reason,
       roleTouched,
       createFromImport,
-      canViewLegacy,
       loadLegacy,
     ],
   );
