@@ -729,13 +729,35 @@ const close = (r: R, hash: string, prev: string | null = null, month = PREV, u =
       (x) => x[0].v as string,
     ),
   );
-async function approvedPlan(o: PlanOpts = {}, kind = "professional", regime = "pj") {
+async function buildApprovedPlan(o: PlanOpts, kind: string, regime: string) {
   const x = await startedRequest(kind, regime);
   const p = await plan(x.r, o);
   await move(x.r, p, "submitted");
   await move(x.r, p, "approved", CEO);
   return { ...x, p };
 }
+const approvedFixtures = new Map<
+  string,
+  { data: Awaited<ReturnType<typeof buildApprovedPlan>>; snapshot: DisposableHiringSnapshot }
+>();
+async function approvedPlan(o: PlanOpts = {}, kind = "professional", regime = "pj") {
+  // Custom components/periods always execute their own current plan setup; only the unchanged default fixture is reused.
+  if (Object.keys(o).length) return buildApprovedPlan(o, kind, regime);
+  const key = JSON.stringify([kind, regime]);
+  const cached = approvedFixtures.get(key);
+  if (cached) {
+    await restoreDisposableHiringSnapshot(db, cached.snapshot);
+    expect((await db`select hiring_formalization_signed(${W},${cached.data.k}) v`)[0].v).toBe(true);
+    return structuredClone(cached.data);
+  }
+  const data = await buildApprovedPlan(o, kind, regime);
+  approvedFixtures.set(key, {
+    data: structuredClone(data),
+    snapshot: await captureDisposableHiringSnapshot(db),
+  });
+  return data;
+}
+
 async function engagement(r: R) {
   await db`insert into projects(id,workspace_id,name) values(${P},${W},'Projeto real'),(${P2},${W},'Projeto paralelo') on conflict do nothing`;
   const e = (await db`select id from hiring_engagements where hiring_request_id=${r.id}`)[0].id;

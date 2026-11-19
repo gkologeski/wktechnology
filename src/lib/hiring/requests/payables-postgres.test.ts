@@ -774,13 +774,35 @@ const close = (r: R, hash: string, prev: string | null = null, month = PREV, u =
       (x) => x[0].v as string,
     ),
   );
-async function approvedPlan(o: PlanOpts = {}, kind = "professional", regime = "pj") {
+async function buildApprovedPlan(o: PlanOpts, kind: string, regime: string) {
   const x = await startedRequest(kind, regime);
   const p = await plan(x.r, o);
   await move(x.r, p, "submitted");
   await move(x.r, p, "approved", CEO);
   return { ...x, p };
 }
+const approvedFixtures = new Map<
+  string,
+  { data: Awaited<ReturnType<typeof buildApprovedPlan>>; snapshot: DisposableHiringSnapshot }
+>();
+async function approvedPlan(o: PlanOpts = {}, kind = "professional", regime = "pj") {
+  // Custom components/periods always execute their own current plan setup; only the unchanged default fixture is reused.
+  if (Object.keys(o).length) return buildApprovedPlan(o, kind, regime);
+  const key = JSON.stringify([kind, regime, formExtra]);
+  const cached = approvedFixtures.get(key);
+  if (cached) {
+    await restoreDisposableHiringSnapshot(db, cached.snapshot);
+    expect((await db`select hiring_formalization_signed(${W},${cached.data.k}) v`)[0].v).toBe(true);
+    return structuredClone(cached.data);
+  }
+  const data = await buildApprovedPlan(o, kind, regime);
+  approvedFixtures.set(key, {
+    data: structuredClone(data),
+    snapshot: await captureDisposableHiringSnapshot(db),
+  });
+  return data;
+}
+
 async function engagement(r: R) {
   await db`insert into projects(id,workspace_id,name) values(${P},${W},'Projeto real'),(${P2},${W},'Projeto paralelo') on conflict do nothing`;
   const e = (await db`select id from hiring_engagements where hiring_request_id=${r.id}`)[0].id;
@@ -1616,4 +1638,31 @@ it("payables creation retains caller RLS on the supplier and WK entity parents",
     await db`delete from fixture_hidden_reads where user_id=${U} and record_id=${parent}`;
   }
   expect(await count("financial_entries")).toBe(0);
+});
+
+it("payables retain the canonical PJ company as counterparty when the professional request includes it", async () => {
+  formExtra = { company_id: C };
+  try {
+    const x = await approvedPlan();
+    const d = await doc(x.r, { issuer: SUPPLIER_CNPJ });
+    await gen(x.r, { doc: d });
+    expect(
+      (await db`select counterparty_company_id from financial_entries`)[0].counterparty_company_id,
+    ).toBe(C);
+  } finally {
+    formExtra = {};
+  }
+});
+it("payables reconciliation cannot substitute the named PJ company with a personal payroll title", async () => {
+  formExtra = { company_id: C };
+  try {
+    const x = await approvedPlan();
+    const f = await payroll();
+    const d = await doc(x.r, { issuer: SUPPLIER_CNPJ });
+    await expect(recon(x.r, f, { doc: d })).rejects.toThrow(/INCOMPATIBLE.*counterparty/);
+    await db`update financial_entries set counterparty_company_id=${C} where id=${f}`;
+    expect(await recon(x.r, f, { doc: d })).toBeTruthy();
+  } finally {
+    formExtra = {};
+  }
 });

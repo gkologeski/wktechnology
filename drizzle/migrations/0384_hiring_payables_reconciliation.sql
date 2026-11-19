@@ -345,7 +345,7 @@ BEGIN
  SELECT * INTO s FROM hiring_execution_starts WHERE workspace_id=w AND request_id=i;
  IF auth.uid() IS NULL OR r.id IS NULL OR s.id IS NULL OR (write AND is_read_only_view()) OR NOT EXISTS(SELECT 1 FROM profiles WHERE id=auth.uid() AND active_workspace_id=w)
   OR NOT hiring_preparation_access(w,r.kind,'view') OR NOT hiring_pay_subject(w,auth.uid(),r.kind,act) OR NOT hiring_econ_private_ok(w,r,s.contract_id)
-  OR (act='payables.manage' AND NOT hiring_pay_parent_visible(w,s.contract_id,CASE WHEN r.kind='supplier' THEN r.company_id END,s.legal_entity_id))
+  OR (act='payables.manage' AND NOT hiring_pay_parent_visible(w,s.contract_id,r.company_id,s.legal_entity_id))
   OR (act IN('payables.manage','payables_reconciliation.approve') AND (NOT hiring_pay_subject(w,auth.uid(),r.kind,'payables.view') OR NOT hiring_econ_subject(w,auth.uid(),r.kind,'economics.view') OR NOT hiring_ops_subject(w,auth.uid(),r.kind,'fiscal_documents.view'))) THEN
   RAISE EXCEPTION 'Sem permissão para esta ação.' USING ERRCODE='42501';
  END IF;
@@ -532,7 +532,7 @@ BEGIN
   n:=n+1;eid:=gen_random_uuid();
   INSERT INTO hiring_payable_installments(workspace_id,schedule_id,seq,amount,due_on,financial_entry_id,external_ref) VALUES(w,sid,n,(x->>'amount')::numeric,(x->>'due_on')::date,eid,'hiring:'||sid||':'||n);
   INSERT INTO financial_entries(id,workspace_id,owner_id,direction,origin_type,origin_id,contract_id,counterparty_company_id,description,amount,currency,competence_date,due_date,paid_amount,status,external_ref,metadata,installment_number,installment_total,legal_entity_id)
-  VALUES(eid,w,auth.uid(),'payable','contract',s.contract_id,s.contract_id,CASE WHEN r.kind='supplier' THEN r.company_id END,'Contratação '||left(r.title,120)||' — '||to_char(lo,'MM/YYYY')||' — parcela '||n||'/'||cnt,
+  VALUES(eid,w,auth.uid(),'payable','contract',s.contract_id,s.contract_id,r.company_id,'Contratação '||left(r.title,120)||' — '||to_char(lo,'MM/YYYY')||' — parcela '||n||'/'||cnt,
    (x->>'amount')::numeric,el->>'currency',lo,(x->>'due_on')::date,0,'open','hiring:'||sid||':'||n,jsonb_build_object('hiring_schedule_id',sid,'hiring_request_id',i),n,cnt,s.legal_entity_id);
  END LOOP;
  RETURN sid;
@@ -580,7 +580,7 @@ BEGIN
  sel:=hiring_pay_select(el,p_keys);
  comp:=jsonb_build_object('direction',f.direction::text='payable','legal_entity',f.legal_entity_id IS NOT DISTINCT FROM s.legal_entity_id,'currency',f.currency=el->>'currency',
   'competence',date_trunc('month',f.competence_date)::date=lo,'amount',f.amount=(sel->>'total')::numeric,
-  'counterparty',CASE WHEN r.kind='supplier' THEN f.counterparty_company_id IS NOT DISTINCT FROM r.company_id ELSE (hiring_pay_payroll_person(f.notes)=r.person_id OR f.contract_id=s.contract_id OR f.origin_id=s.contract_id) END,
+  'counterparty',CASE WHEN r.company_id IS NOT NULL THEN f.counterparty_company_id IS NOT DISTINCT FROM r.company_id ELSE (hiring_pay_payroll_person(f.notes)=r.person_id OR f.contract_id=s.contract_id OR f.origin_id=s.contract_id) END,
   'status',f.status::text,'paid',f.paid_amount);
  IF NOT ((comp->>'direction')::boolean AND (comp->>'legal_entity')::boolean AND (comp->>'currency')::boolean AND (comp->>'competence')::boolean AND (comp->>'amount')::boolean AND (comp->>'counterparty')::boolean) THEN
   RAISE EXCEPTION 'INCOMPATIBLE: título não comprova a mesma obrigação (%); nada foi vinculado.',(SELECT string_agg(key,', ') FROM jsonb_each(comp) WHERE value='false'::jsonb);
@@ -654,7 +654,7 @@ BEGIN
  vw:=s.id IS NOT NULL AND hiring_pay_subject(w,u,r.kind,'payables.view') AND hiring_econ_private_ok(w,r,s.contract_id);
  econ_read:=vw AND hiring_econ_subject(w,u,r.kind,'economics.view');
  fiscal_read:=vw AND hiring_ops_subject(w,u,r.kind,'fiscal_documents.view');
- mg:=vw AND econ_read AND fiscal_read AND hiring_pay_parent_visible(w,s.contract_id,CASE WHEN r.kind='supplier' THEN r.company_id END,s.legal_entity_id) AND NOT ro AND hiring_pay_subject(w,u,r.kind,'payables.manage');
+ mg:=vw AND econ_read AND fiscal_read AND hiring_pay_parent_visible(w,s.contract_id,r.company_id,s.legal_entity_id) AND NOT ro AND hiring_pay_subject(w,u,r.kind,'payables.manage');
  SELECT finance_user_id INTO fin FROM contract_handoff_settings WHERE workspace_id=w AND enabled;
  rc:=vw AND econ_read AND fiscal_read AND NOT ro AND fin=u AND hiring_pay_subject(w,u,r.kind,'payables_reconciliation.approve');
  cam:=vw AND NOT ro AND r.release_condition='also_client_acceptance' AND hiring_pay_subject(w,u,r.kind,'client_acceptance.manage');
