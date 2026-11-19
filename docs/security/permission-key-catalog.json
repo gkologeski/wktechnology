@@ -2855,7 +2855,10 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace"
+    "techservice.tickets.view.workspace",
+    "techcontracts.legacy_contracts.view.workspace",
+    "techcontracts.legacy_contracts.create.workspace",
+    "techcontracts.legacy_contracts.approve.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -3202,6 +3205,15 @@
     },
     "techcontracts.supplier_requests.payables.reconcile.workspace": {
       "migration": "drizzle/migrations/0384_hiring_payables_reconciliation.sql"
+    },
+    "techcontracts.legacy_contracts.view.workspace": {
+      "migration": "docs/prepared-migrations/0385_contract_legacy_regularization.sql"
+    },
+    "techcontracts.legacy_contracts.create.workspace": {
+      "migration": "docs/prepared-migrations/0385_contract_legacy_regularization.sql"
+    },
+    "techcontracts.legacy_contracts.approve.workspace": {
+      "migration": "docs/prepared-migrations/0385_contract_legacy_regularization.sql"
     }
   }
 }

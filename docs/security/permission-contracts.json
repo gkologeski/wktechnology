@@ -13630,6 +13630,150 @@
         "src/lib/hiring/requests/payables-types.ts": "3b08e8fa3497dba8cb04439f88dfc174e5e8b3a933594df42854f30406fd3c1b"
       },
       "rationale": "Static DTOs, labels and client-side mirror of selection/installment sum rules only; no data access or actions."
+    },
+    {
+      "id": "contract-legacy-regularization-batch-a",
+      "kind": "business",
+      "resources": ["techcontracts.legacy_contracts", "techcontracts.contracts"],
+      "actions": ["view", "create", "approve", "update"],
+      "scopes": ["workspace", "own"],
+      "permission_keys": [
+        "techcontracts.legacy_contracts.view.workspace",
+        "techcontracts.legacy_contracts.create.workspace",
+        "techcontracts.legacy_contracts.approve.workspace",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.update.workspace"
+      ],
+      "rationale": "LEGADO-REGULARIZA lote A: explicit audited recognition and human regularization of the SAME imported contract (id, source file, body, parties, links preserved). Classification lives only in definer-owned tables, never in metadata/imported_from/GUC/manual status. Every action requires active workspace, active membership in the active workspace, real contract view (and update for writes) via work_context_access, the specific legacy key with deny precedence, and refuses read-only view-as. Governed origins (hiring request, proposal/accepted draft, any signature in progress or done) are refused. Regularization requires a server-attested private PDF hash, human-confirmed signature date, plausible dates, confirmed auto-renewal and blocks future validity and pending billing holds; it creates no proposal, draft, signature, service, title, payment or grant. Commercial guard bypass applies only to regularized and validated legacy records. Migration prepared only, outside the journal, not applied. SQL source of record: docs/prepared-migrations/0385_contract_legacy_regularization.sql (outside the journal until review; move into drizzle/migrations on approval and bind its hash then).",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "symbol": "contract_legacy_actor"
+        },
+        {
+          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "symbol": "contract_legacy_subject"
+        },
+        {
+          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "symbol": "contract_legacy_recognize"
+        },
+        {
+          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "symbol": "contract_legacy_evidence_reserve"
+        },
+        {
+          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "symbol": "contract_legacy_regularize"
+        },
+        {
+          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "symbol": "contract_legacy_state"
+        },
+        {
+          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "symbol": "contract_legacy_evidence_open"
+        },
+        {
+          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "symbol": "contract_legacy_validated"
+        },
+        {
+          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "symbol": "contract_accepted_draft_guard"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy regularize allowed"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy regularize missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy regularize deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy regularize foreign"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy regularize inactive"
+        }
+      },
+      "files": {
+        "src/lib/contracts/legacy.server.ts": "c4aeae7e2ff5324a3726aa5695d749f624d4e526dc14827e59a36f3fe16517d9"
+      }
+    },
+    {
+      "id": "contract-legacy-evidence-server-attestation",
+      "kind": "service",
+      "resources": ["techcontracts.legacy_contracts"],
+      "actions": ["attest_stored_bytes"],
+      "scopes": ["service"],
+      "permission_keys": [],
+      "rationale": "Service-only confirmation of PDF bytes re-read from the exact path returned by a user-authorized legacy evidence reservation; rechecks uploader, active workspace/membership, legacy approve key/deny and contract view. Regularization still runs as the user.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "docs/prepared-migrations/0385_contract_legacy_regularization.sql",
+          "symbol": "contract_legacy_evidence_attest"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy server attestation allowed"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy server attestation missing"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy server attestation deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy server attestation foreign"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy server attestation inactive"
+        }
+      },
+      "exception": {
+        "mechanism": "Existing server-only service client stores and re-reads reserved bytes, then calls the service_role-only attestation RPC; no new credential.",
+        "boundary": "Only a pending reservation of the authenticated uploader, exact workspace/path/hash/size, within one hour; user JWTs and caller-set GUCs cannot execute it.",
+        "revocation": "REVOKE EXECUTE ON FUNCTION contract_legacy_evidence_attest(uuid,uuid,uuid,text,bigint) FROM service_role stops new attestations; history remains.",
+        "review_by": "2026-12-19"
+      },
+      "files": {
+        "src/lib/contracts/legacy-evidence.server.ts": "9bb0db9a81344c388dd8dbdb92067144b1ff86e2f225f69a95ae73864f58941d"
+      }
+    },
+    {
+      "id": "contract-legacy-static",
+      "kind": "presentation",
+      "files": {
+        "src/lib/contracts/legacy-types.ts": "3a3721ee84bc3aafabb7b6832971501d92bf44993deafff69e42eebec585b5bb"
+      },
+      "rationale": "Static DTOs, labels, PDF magic-byte check and SHA-256 helper only; no data access or actions."
     }
   ],
   "retired": {
