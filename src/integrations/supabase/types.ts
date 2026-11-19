@@ -7412,6 +7412,206 @@ export type Database = {
           },
         ]
       }
+      contract_legacy_apply: {
+        Row: {
+          contract_id: string
+          txid: number
+        }
+        Insert: {
+          contract_id: string
+          txid: number
+        }
+        Update: {
+          contract_id?: string
+          txid?: number
+        }
+        Relationships: []
+      }
+      contract_legacy_events: {
+        Row: {
+          actor_id: string
+          contract_id: string
+          created_at: string
+          details: Json
+          id: string
+          kind: string
+          legacy_id: string
+          operation_id: string
+          request_hash: string
+          revision: number
+          workspace_id: string
+        }
+        Insert: {
+          actor_id: string
+          contract_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          kind: string
+          legacy_id: string
+          operation_id: string
+          request_hash: string
+          revision: number
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string
+          contract_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          kind?: string
+          legacy_id?: string
+          operation_id?: string
+          request_hash?: string
+          revision?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_legacy_events_workspace_id_legacy_id_fkey"
+            columns: ["workspace_id", "legacy_id"]
+            isOneToOne: false
+            referencedRelation: "contract_legacy_records"
+            referencedColumns: ["workspace_id", "id"]
+          },
+        ]
+      }
+      contract_legacy_evidence: {
+        Row: {
+          contract_id: string
+          file_name: string
+          id: string
+          legacy_id: string
+          legacy_revision: number
+          mime_type: string
+          reserved_at: string
+          server_attested_at: string | null
+          sha256: string
+          size_bytes: number
+          status: string
+          storage_path: string
+          uploaded_by: string
+          workspace_id: string
+        }
+        Insert: {
+          contract_id: string
+          file_name: string
+          id?: string
+          legacy_id: string
+          legacy_revision: number
+          mime_type: string
+          reserved_at?: string
+          server_attested_at?: string | null
+          sha256: string
+          size_bytes: number
+          status?: string
+          storage_path: string
+          uploaded_by: string
+          workspace_id: string
+        }
+        Update: {
+          contract_id?: string
+          file_name?: string
+          id?: string
+          legacy_id?: string
+          legacy_revision?: number
+          mime_type?: string
+          reserved_at?: string
+          server_attested_at?: string | null
+          sha256?: string
+          size_bytes?: number
+          status?: string
+          storage_path?: string
+          uploaded_by?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_legacy_evidence_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_legacy_evidence_workspace_id_legacy_id_fkey"
+            columns: ["workspace_id", "legacy_id"]
+            isOneToOne: false
+            referencedRelation: "contract_legacy_records"
+            referencedColumns: ["workspace_id", "id"]
+          },
+        ]
+      }
+      contract_legacy_records: {
+        Row: {
+          contract_fingerprint: string
+          contract_id: string
+          evidence_id: string | null
+          id: string
+          prior_signed_at: string | null
+          prior_status: string
+          recognition_reason: string
+          recognized_at: string
+          recognized_by: string
+          regularized_at: string | null
+          regularized_by: string | null
+          revision: number
+          situation: string | null
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          contract_fingerprint: string
+          contract_id: string
+          evidence_id?: string | null
+          id?: string
+          prior_signed_at?: string | null
+          prior_status: string
+          recognition_reason: string
+          recognized_at?: string
+          recognized_by: string
+          regularized_at?: string | null
+          regularized_by?: string | null
+          revision?: number
+          situation?: string | null
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          contract_fingerprint?: string
+          contract_id?: string
+          evidence_id?: string | null
+          id?: string
+          prior_signed_at?: string | null
+          prior_status?: string
+          recognition_reason?: string
+          recognized_at?: string
+          recognized_by?: string
+          regularized_at?: string | null
+          regularized_by?: string | null
+          revision?: number
+          situation?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_legacy_records_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: true
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_legacy_records_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_link_ai_suggestions: {
         Row: {
           confidence: string
@@ -35890,6 +36090,181 @@ export type Database = {
       }
       contract_is_signed_for_billing: {
         Args: { c: Database["public"]["Tables"]["contracts"]["Row"] }
+        Returns: boolean
+      }
+      contract_legacy_actor: {
+        Args: {
+          p_action: string
+          p_contract: string
+          p_write: boolean
+          w: string
+        }
+        Returns: {
+          amendment_effective_at: string | null
+          amendment_number: string | null
+          amendment_of_id: string | null
+          assigned_to: string | null
+          auto_renew: boolean
+          body_html: string | null
+          confidentiality_term_months: number | null
+          contracting_legal_entity_id: string | null
+          counterparty_company_id: string | null
+          created_at: string
+          cure_period_days: number | null
+          currency: string
+          deal_id: string | null
+          document_kind: string
+          ends_at: string | null
+          expense_reimbursement_days: number | null
+          governing_law: string | null
+          hiring_person_id: string | null
+          hiring_request_origin: string | null
+          hours_per_month: number | null
+          id: string
+          import_confidence: number | null
+          imported_from: string | null
+          jurisdiction: string | null
+          late_fee_percent: number | null
+          late_interest_monthly_percent: number | null
+          legal_entity_id: string | null
+          metadata: Json
+          monthly_value: number | null
+          notice_days: number
+          number: string | null
+          owner_id: string
+          parent_contract_id: string | null
+          payment_day: number | null
+          payment_method: string | null
+          payment_terms: Json
+          penalty_percent: number | null
+          proposal_id: string | null
+          public_token: string | null
+          quote_id: string | null
+          readjustment_index: string | null
+          readjustment_period: string | null
+          role: Database["public"]["Enums"]["contract_role"]
+          service_location: string | null
+          service_scope: string | null
+          service_type: string | null
+          signature_document_id: string | null
+          signature_operation_id: string | null
+          signature_provider: string | null
+          signed_at: string | null
+          signed_pdf_path: string | null
+          source_file_path: string | null
+          starts_at: string | null
+          status: Database["public"]["Enums"]["contract_status"]
+          title: string
+          total_value: number
+          trial_period_days: number | null
+          unilateral_termination_notice_days: number | null
+          updated_at: string
+          workspace_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "contracts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      contract_legacy_evidence_attest: {
+        Args: {
+          p_actor: string
+          p_evidence: string
+          p_sha256: string
+          p_size: number
+          w: string
+        }
+        Returns: undefined
+      }
+      contract_legacy_evidence_open: {
+        Args: { p_contract: string; p_evidence: string; w: string }
+        Returns: Json
+      }
+      contract_legacy_evidence_reserve: {
+        Args: {
+          p_contract: string
+          p_expected_revision: number
+          p_file_name: string
+          p_operation: string
+          p_sha256: string
+          p_size: number
+          w: string
+        }
+        Returns: Json
+      }
+      contract_legacy_fingerprint: {
+        Args: { c: Database["public"]["Tables"]["contracts"]["Row"] }
+        Returns: string
+      }
+      contract_legacy_import_create: {
+        Args: {
+          p_contract: Json
+          p_operation: string
+          p_reason: string
+          w: string
+        }
+        Returns: Json
+      }
+      contract_legacy_indicator: {
+        Args: { p_contract: string; w: string }
+        Returns: Json
+      }
+      contract_legacy_protected_problem: {
+        Args: { c: Database["public"]["Tables"]["contracts"]["Row"] }
+        Returns: string
+      }
+      contract_legacy_recognize: {
+        Args: {
+          p_contract: string
+          p_expected_revision: number
+          p_operation: string
+          p_reason: string
+          w: string
+        }
+        Returns: Json
+      }
+      contract_legacy_regularize: {
+        Args: {
+          p_auto_renew: boolean
+          p_auto_renew_confirmed: boolean
+          p_contract: string
+          p_ends: string
+          p_evidence: string
+          p_evidence_sha256: string
+          p_expected_revision: number
+          p_external_reference: string
+          p_operation: string
+          p_reason: string
+          p_signature_confirmed: boolean
+          p_signed_on: string
+          p_situation: string
+          p_starts: string
+          p_terminated_on: string
+          w: string
+        }
+        Returns: Json
+      }
+      contract_legacy_replay: {
+        Args: { p_hash: string; p_operation: string; w: string }
+        Returns: string
+      }
+      contract_legacy_state: {
+        Args: { p_contract: string; w: string }
+        Returns: Json
+      }
+      contract_legacy_subject: {
+        Args: {
+          c: Database["public"]["Tables"]["contracts"]["Row"]
+          p_action: string
+          u: string
+          w: string
+        }
+        Returns: boolean
+      }
+      contract_legacy_validated: {
+        Args: { p_contract: string; w: string }
         Returns: boolean
       }
       contract_mutate: {
