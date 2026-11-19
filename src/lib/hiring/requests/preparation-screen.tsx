@@ -1,0 +1,546 @@
+import { useEffect, useRef, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { Plus, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import {
+  PageHeader,
+  FormSection,
+  EmptyState,
+  ListPageSkeleton,
+  MetaPill,
+} from "@/components/techhire/ui";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogHeader,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
+  Table,
+  TableHeader,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+} from "@/components/ui/table";
+import { useSharedAction } from "@/lib/access-control/use-shared-action";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { readViewAs } from "@/lib/view-as-client";
+import { PreparationForm, PickerResults } from "@/components/hiring-requests/preparation-form";
+import {
+  listPreparation,
+  savePreparation,
+  preparationHistory,
+  searchPreparationPicker,
+} from "./requests.functions";
+import {
+  resourceFor,
+  statusLabels,
+  emptyPreparation,
+  preparationData,
+  type RequestKind,
+  type PreparationRow,
+  type PreparationData,
+  type PickerKind,
+} from "./types";
+function useDebounced(value: string) {
+  const [v, set] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => set(value), 300);
+    return () => clearTimeout(timer);
+  }, [value]);
+  return v;
+}
+function EntityPicker({
+  kind,
+  picker,
+  label,
+  value,
+  onChange,
+  disabled,
+  company,
+}: {
+  kind: RequestKind;
+  picker: PickerKind;
+  label: string;
+  value: string | null;
+  onChange: (id: string | null) => void;
+  disabled: boolean;
+  company: string | null;
+}) {
+  const [open, setOpen] = useState(false),
+    [search, setSearch] = useState("");
+  const term = useDebounced(search);
+  const fn = useServerFn(searchPreparationPicker);
+  const selected = useQuery({
+    queryKey: ["preparation-picker-label", kind, picker, value, company],
+    enabled: !!value,
+    queryFn: () => fn({ data: { kind, picker, search: "", selected: value, company } }),
+    retry: false,
+  });
+  const options = useQuery({
+    queryKey: ["preparation-picker", kind, picker, term, company],
+    enabled: open,
+    queryFn: () => fn({ data: { kind, picker, search: term, selected: null, company } }),
+    retry: false,
+  });
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={`choose-${picker}`}>{label}</Label>
+      <div className="flex gap-2">
+        <Button
+          id={`choose-${picker}`}
+          disabled={disabled || (picker === "contact" && !company)}
+          variant="outline"
+          className="flex-1 min-w-0 justify-start whitespace-normal text-left h-auto min-h-11"
+          onClick={() => setOpen(true)}
+        >
+          {value
+            ? (selected.data?.[0]?.label ?? "Vínculo salvo — indisponível para consulta")
+            : "Selecionar…"}
+        </Button>
+        {value && (
+          <Button disabled={disabled} variant="ghost" onClick={() => onChange(null)}>
+            Remover vínculo
+          </Button>
+        )}
+      </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{label}</DialogTitle>
+          </DialogHeader>
+          <Label htmlFor={`picker-${picker}`}>Buscar</Label>
+          <Input
+            id={`picker-${picker}`}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            autoFocus
+          />
+          {options.isLoading ? (
+            <ListPageSkeleton />
+          ) : options.isError ? (
+            <div role="alert">
+              Não foi possível carregar opções.{" "}
+              <Button variant="outline" onClick={() => void options.refetch()}>
+                Tentar novamente
+              </Button>
+            </div>
+          ) : options.data?.length ? (
+            <PickerResults
+              options={options.data}
+              onPick={(id) => {
+                onChange(id);
+                setOpen(false);
+              }}
+            />
+          ) : (
+            <EmptyState
+              title="Nenhuma opção disponível"
+              description="Revise a busca ou as permissões do cadastro."
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+export function PreparationScreen({ kind }: { kind: RequestKind }) {
+  const resource = resourceFor(kind),
+    p = usePermissions();
+  const canView = useSharedAction(resource, "view"),
+    canCreate = useSharedAction(resource, "create"),
+    canUpdate = useSharedAction(resource, "update");
+  const cancelAllowed =
+    !p.isLoading &&
+    !p.isError &&
+    !!p.workspaceId &&
+    canView &&
+    !readViewAs()?.readOnly &&
+    p.can(resource + ".cancel.update.workspace");
+  const [search, setSearch] = useState(""),
+    term = useDebounced(search),
+    [offset, setOffset] = useState(0),
+    [open, setOpen] = useState(false),
+    [row, setRow] = useState<PreparationRow | null>(null),
+    [form, setForm] = useState<PreparationData>(emptyPreparation(kind)),
+    [error, setError] = useState(""),
+    [cancel, setCancel] = useState(false),
+    [historyOffset, setHistoryOffset] = useState(0);
+  const qc = useQueryClient(),
+    listFn = useServerFn(listPreparation),
+    saveFn = useServerFn(savePreparation),
+    historyFn = useServerFn(preparationHistory);
+  const pending = useRef<{ operation: string; fingerprint: string } | null>(null);
+  const query = useQuery({
+    queryKey: ["preparation-page", p.workspaceId, kind, term, offset],
+    enabled: canView,
+    queryFn: () => listFn({ data: { kind, search: term, offset } }),
+    retry: false,
+  });
+  const history = useQuery({
+    queryKey: ["preparation-history", p.workspaceId, kind, row?.id, row?.revision, historyOffset],
+    enabled: open && !!row && canView,
+    queryFn: () => historyFn({ data: { kind, id: row?.id ?? "", offset: historyOffset } }),
+    retry: false,
+  });
+  const save = useMutation({
+    mutationFn: (input: {
+      kind: RequestKind;
+      id: string | null;
+      revision: number;
+      operation: string;
+      form: PreparationData;
+    }) => saveFn({ data: input }),
+    onSuccess: (saved) => {
+      pending.current = null;
+      setRow(saved);
+      setForm(preparationData.parse(savedToForm(saved)));
+      setError("");
+      setCancel(false);
+      void qc.invalidateQueries({ queryKey: ["preparation-page"] });
+      void qc.invalidateQueries({ queryKey: ["preparation-history"] });
+    },
+    onError: (e) => setError(e.message),
+  });
+  function submit(data: PreparationData) {
+    try {
+      const parsed = preparationData.parse(data);
+      const fingerprint = JSON.stringify({ id: row?.id, revision: row?.revision, data: parsed });
+      if (pending.current?.fingerprint !== fingerprint)
+        pending.current = { operation: crypto.randomUUID(), fingerprint };
+      const operation = pending.current?.operation;
+      if (!operation) return;
+      save.mutate({
+        kind,
+        id: row?.id ?? null,
+        revision: row?.revision ?? 0,
+        operation,
+        form: parsed,
+      });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Dados inválidos.");
+    }
+  }
+  function edit(r: PreparationRow | null) {
+    setRow(r);
+    setForm(r ? savedToForm(r) : emptyPreparation(kind));
+    setHistoryOffset(0);
+    setError("");
+    pending.current = null;
+    setOpen(true);
+  }
+  const locked = save.isPending || row?.status === "cancelled" || (row ? !canUpdate : !canCreate);
+  if (p.isLoading) return <ListPageSkeleton />;
+  if (p.isError)
+    return (
+      <div role="alert" className="p-6">
+        Não foi possível verificar suas permissões.{" "}
+        <Button onClick={p.refetch}>Tentar novamente</Button>
+      </div>
+    );
+  if (!canView)
+    return (
+      <EmptyState
+        title="Acesso não autorizado"
+        description="Esta página exige permissão específica para consultar solicitações."
+      />
+    );
+  const rows = query.data?.slice(0, 50) ?? [];
+  return (
+    <div className="mx-auto max-w-6xl p-4 sm:p-6 space-y-5 min-w-0">
+      <PageHeader
+        title={
+          kind === "professional" ? "Solicitações de contratação" : "Contratação de fornecedores"
+        }
+        eyebrow={kind === "professional" ? "TechPeople" : "TechContracts"}
+        primaryAction={
+          canCreate ? (
+            <Button onClick={() => edit(null)}>
+              <Plus className="size-4" />
+              Nova solicitação
+            </Button>
+          ) : null
+        }
+      />
+      <div className="flex flex-wrap gap-3 items-center">
+        <Label htmlFor="requests-search">
+          <Search className="size-4" aria-hidden />
+          <span className="sr-only">Buscar solicitações por título</span>
+        </Label>
+        <Input
+          id="requests-search"
+          type="search"
+          className="max-w-md"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setOffset(0);
+          }}
+          placeholder="Buscar por título"
+        />
+      </div>
+      {query.isLoading ? (
+        <ListPageSkeleton />
+      ) : query.isError ? (
+        <div role="alert">
+          Não foi possível carregar as solicitações.{" "}
+          <Button variant="outline" onClick={() => void query.refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      ) : rows.length ? (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Título</TableHead>
+              <TableHead>Situação</TableHead>
+              <TableHead>Revisão</TableHead>
+              <TableHead>
+                <span className="sr-only">Ações</span>
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r) => (
+              <TableRow key={r.id}>
+                <TableCell className="whitespace-normal break-words">{r.title}</TableCell>
+                <TableCell>
+                  <MetaPill>{statusLabels[r.status]}</MetaPill>
+                </TableCell>
+                <TableCell>{r.revision}</TableCell>
+                <TableCell>
+                  <Button variant="ghost" onClick={() => edit(r)}>
+                    Abrir
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      ) : (
+        <EmptyState
+          title={term ? "Nenhuma solicitação encontrada" : "Nenhuma solicitação"}
+          action={canCreate ? <Button onClick={() => edit(null)}>Nova solicitação</Button> : null}
+        />
+      )}
+      <div className="flex items-center justify-end gap-3">
+        <Button
+          aria-label="Página anterior"
+          variant="outline"
+          disabled={offset === 0 || query.isFetching}
+          onClick={() => setOffset(Math.max(0, offset - 50))}
+        >
+          <ChevronLeft />
+        </Button>
+        <span className="text-sm">Página {Math.floor(offset / 50) + 1}</span>
+        <Button
+          aria-label="Próxima página"
+          variant="outline"
+          disabled={(query.data?.length ?? 0) <= 50 || query.isFetching}
+          onClick={() => setOffset(offset + 50)}
+        >
+          <ChevronRight />
+        </Button>
+      </div>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!save.isPending) setOpen(v);
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[90dvh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{row ? row.title : "Nova solicitação"}</DialogTitle>
+          </DialogHeader>
+          <PreparationForm
+            kind={kind}
+            value={form}
+            onChange={setForm}
+            disabled={locked}
+            picker={(picker, label, value, onChange) => (
+              <EntityPicker
+                key={picker}
+                kind={kind}
+                picker={picker}
+                label={label}
+                value={value}
+                onChange={onChange}
+                disabled={locked}
+                company={form.company_id}
+              />
+            )}
+          />
+          <FormSection title="Preparação">
+            <Label htmlFor="request-status">Situação</Label>
+            <Select
+              disabled={locked || !row}
+              value={form.status}
+              onValueChange={(v) => {
+                if (v === "draft" || v === "ready") setForm({ ...form, status: v });
+              }}
+            >
+              <SelectTrigger id="request-status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Rascunho</SelectItem>
+                <SelectItem value="ready">Pronta para aprovação</SelectItem>
+                {form.status === "cancelled" && (
+                  <SelectItem value="cancelled">Cancelada</SelectItem>
+                )}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              Pronta para aprovação não significa aprovada. Não autoriza recrutamento, admissão,
+              contratos ou envio de mensagens.
+            </p>
+          </FormSection>
+          {row && (
+            <FormSection title={`Histórico · revisão ${row.revision}`}>
+              {history.isLoading ? (
+                <ListPageSkeleton />
+              ) : history.isError ? (
+                <div role="alert">
+                  Não foi possível carregar o histórico.{" "}
+                  <Button variant="outline" onClick={() => void history.refetch()}>
+                    Tentar novamente
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <ol className="space-y-3">
+                    {history.data?.slice(0, 50).map((e) => (
+                      <li key={e.id} className="border-b py-2 text-sm">
+                        <strong>
+                          Revisão {e.revision} · {statusLabels[e.snapshot.status]}
+                        </strong>
+                        <p>{e.snapshot.title}</p>
+                        <p className="whitespace-pre-wrap break-words">{e.snapshot.scope_text}</p>
+                        <p className="text-muted-foreground">
+                          {new Date(e.created_at).toLocaleString("pt-BR")} · Autor {e.actor_id}
+                        </p>
+                      </li>
+                    ))}
+                  </ol>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      disabled={!historyOffset}
+                      onClick={() => setHistoryOffset(Math.max(0, historyOffset - 50))}
+                    >
+                      Mais recente
+                    </Button>
+                    <Button
+                      variant="outline"
+                      disabled={(history.data?.length ?? 0) <= 50}
+                      onClick={() => setHistoryOffset(historyOffset + 50)}
+                    >
+                      Mais antigo
+                    </Button>
+                  </div>
+                </>
+              )}
+            </FormSection>
+          )}
+          {error && (
+            <div role="alert" className="text-destructive space-y-2">
+              {error}
+              {error.includes("REVISION_CONFLICT") && (
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    const fresh = await listFn({
+                      data: { kind, search: row?.title ?? "", offset: 0 },
+                    });
+                    const found = fresh.find((r) => r.id === row?.id);
+                    if (found) edit(found);
+                    else setError("Solicitação não encontrada. Feche e atualize a lista.");
+                  }}
+                >
+                  Recarregar solicitação
+                </Button>
+              )}
+            </div>
+          )}
+          <DialogFooter className="flex-wrap gap-2">
+            {row && row.status !== "cancelled" && cancelAllowed && (
+              <Button
+                variant="destructive"
+                disabled={save.isPending}
+                onClick={() => setCancel(true)}
+              >
+                Cancelar solicitação
+              </Button>
+            )}
+            <Button variant="outline" disabled={save.isPending} onClick={() => setOpen(false)}>
+              Fechar
+            </Button>
+            <Button disabled={locked || !form.title.trim()} onClick={() => submit(form)}>
+              {save.isPending ? "Salvando…" : row ? "Salvar alterações" : "Criar rascunho"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <AlertDialog open={cancel} onOpenChange={setCancel}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar solicitação?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A solicitação ficará cancelada, sem apagar o histórico e sem efeitos em outros
+              registros. Alterações ainda não salvas não serão incluídas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (row) submit({ ...savedToForm(row), status: "cancelled" });
+              }}
+            >
+              Confirmar cancelamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
+function savedToForm(r: PreparationRow): PreparationData {
+  return {
+    title: r.title,
+    scope_text: r.scope_text,
+    purpose: r.purpose,
+    area_id: r.area_id,
+    legal_entity_id: r.legal_entity_id,
+    regime: r.regime,
+    person_id: r.person_id,
+    company_id: r.company_id,
+    contact_id: r.contact_id,
+    deal_id: r.deal_id,
+    project_id: r.project_id,
+    commercial_contract_id: r.commercial_contract_id,
+    status: r.status,
+  };
+}

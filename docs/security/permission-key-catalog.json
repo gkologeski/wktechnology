@@ -673,6 +673,7 @@
     "techcontracts.clauses.view.workspace",
     "techcontracts.contract_activation.manage.workspace",
     "techcontracts.contract_draft_approvers.manage.workspace",
+    "techcontracts.contract_draft_client_bypass.approve.workspace",
     "techcontracts.contract_drafts.approve.workspace",
     "techcontracts.contract_drafts.create.workspace",
     "techcontracts.contract_drafts.view.workspace",
@@ -731,6 +732,10 @@
     "techcontracts.links.view.workspace",
     "techcontracts.signature_evidence.manage.workspace",
     "techcontracts.signature_evidence.view.workspace",
+    "techcontracts.supplier_requests.cancel.update.workspace",
+    "techcontracts.supplier_requests.create.workspace",
+    "techcontracts.supplier_requests.update.workspace",
+    "techcontracts.supplier_requests.view.workspace",
     "techfinance.audit.create.own",
     "techfinance.audit.create.workspace",
     "techfinance.audit.delete.own",
@@ -1365,6 +1370,10 @@
     "techpeople.goals.view.own",
     "techpeople.goals.view.team",
     "techpeople.goals.view.workspace",
+    "techpeople.hiring_requests.cancel.update.workspace",
+    "techpeople.hiring_requests.create.workspace",
+    "techpeople.hiring_requests.update.workspace",
+    "techpeople.hiring_requests.view.workspace",
     "techpeople.import.create.own",
     "techpeople.import.create.workspace",
     "techpeople.import.delete.own",
@@ -2802,8 +2811,7 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace",
-    "techcontracts.contract_draft_client_bypass.approve.workspace"
+    "techservice.tickets.view.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -2990,6 +2998,30 @@
     },
     "techcontracts.contract_draft_client_bypass.approve.workspace": {
       "migration": "drizzle/migrations/0369_contract_draft_client_acceptance_bypass.sql"
+    },
+    "techpeople.hiring_requests.view.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+    },
+    "techpeople.hiring_requests.create.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+    },
+    "techpeople.hiring_requests.update.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+    },
+    "techcontracts.supplier_requests.view.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+    },
+    "techcontracts.supplier_requests.create.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+    },
+    "techcontracts.supplier_requests.update.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+    },
+    "techpeople.hiring_requests.cancel.update.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+    },
+    "techcontracts.supplier_requests.cancel.update.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
     }
   }
 }

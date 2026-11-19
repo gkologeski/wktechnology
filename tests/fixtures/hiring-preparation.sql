@@ -1,0 +1,35 @@
+-- Synthetic schema only. Resolver bodies are loaded verbatim from versioned production migrations.
+CREATE ROLE authenticated NOLOGIN NOBYPASSRLS; CREATE ROLE anon NOLOGIN; CREATE ROLE service_role NOLOGIN BYPASSRLS;
+CREATE SCHEMA auth; CREATE SCHEMA techerp_api;
+GRANT USAGE ON SCHEMA public,auth TO authenticated,anon;
+CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT coalesce(nullif(current_setting('request.jwt.claims',true),'')::jsonb,'{}')$$;
+CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$SELECT (auth.jwt()->>'sub')::uuid$$;
+CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $$SELECT auth.jwt()->>'role'$$;
+CREATE TABLE workspaces(id uuid PRIMARY KEY,created_by uuid,status text DEFAULT 'active');
+CREATE TABLE profiles(id uuid PRIMARY KEY,active_workspace_id uuid);
+CREATE TABLE workspace_members(workspace_id uuid,user_id uuid,status text DEFAULT 'active',role text DEFAULT 'member');
+CREATE TABLE permissions(key text PRIMARY KEY,module text,resource text,action text,scope text,label_pt text,description text,is_system boolean);
+CREATE TABLE job_roles(id uuid PRIMARY KEY,workspace_id uuid);
+CREATE TABLE user_job_roles(role_id uuid,user_id uuid,workspace_id uuid,owner_id uuid);
+CREATE TABLE permission_sets(id uuid PRIMARY KEY,workspace_id uuid,module text);
+CREATE TABLE user_permission_sets(user_id uuid,set_id uuid,workspace_id uuid,owner_id uuid);
+CREATE TABLE permission_set_items(set_id uuid,permission_key text);
+CREATE TABLE job_role_sets(role_id uuid,set_id uuid);
+CREATE TABLE job_role_set_replacements(workspace_id uuid,role_id uuid,set_id uuid,replacement_set_id uuid);
+CREATE TABLE job_role_permission_overrides(workspace_id uuid,role_id uuid,permission_key text,effect text);
+CREATE TABLE view_as_sessions(session_id uuid,mode text,ended_at timestamptz);
+-- No lifecycle grants exist in this fixture; explicit manual sets are always live.
+CREATE FUNCTION hiring_set_live(uuid,uuid,uuid) RETURNS boolean LANGUAGE sql AS $$SELECT true$$;
+CREATE FUNCTION hiring_restricted_roles(uuid,uuid) RETURNS TABLE(role_id uuid) LANGUAGE sql AS $$SELECT null::uuid WHERE false$$;
+CREATE FUNCTION is_workspace_admin_v2(w uuid,u uuid) RETURNS boolean LANGUAGE sql AS $$SELECT EXISTS(SELECT 1 FROM workspace_members WHERE workspace_id=w AND user_id=u AND role IN('owner','admin') AND status='active')$$;
+CREATE FUNCTION user_has_permission(_user_id uuid,_workspace_id uuid,_permission_key text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$SELECT EXISTS(SELECT 1 FROM public.user_effective_permissions(_user_id,_workspace_id) k WHERE k=_permission_key)$$;
+CREATE TABLE user_groups(id uuid PRIMARY KEY,workspace_id uuid,name text);
+CREATE TABLE legal_entities(id uuid PRIMARY KEY,workspace_id uuid,name text,active boolean DEFAULT true);
+CREATE TABLE people(id uuid PRIMARY KEY,workspace_id uuid,full_name text,archived boolean DEFAULT false,monthly_cost numeric);
+CREATE TABLE companies(id uuid PRIMARY KEY,workspace_id uuid,name text,deleted_at timestamptz);
+CREATE TABLE contacts(id uuid PRIMARY KEY,workspace_id uuid,first_name text,company_id uuid,deleted_at timestamptz);
+CREATE TABLE deals(id uuid PRIMARY KEY,workspace_id uuid,name text,legal_entity_id uuid,deleted_at timestamptz,value numeric);
+CREATE TABLE projects(id uuid PRIMARY KEY,workspace_id uuid,name text,legal_entity_id uuid,deal_id uuid,contract_id uuid);
+CREATE TABLE contracts(id uuid PRIMARY KEY,workspace_id uuid,title text,contracting_legal_entity_id uuid,legal_entity_id uuid,deal_id uuid,role text,total_value numeric);
+GRANT SELECT ON profiles,workspace_members TO authenticated;
+GRANT SELECT ON user_groups,legal_entities,people,companies,contacts,deals,projects,contracts TO authenticated;

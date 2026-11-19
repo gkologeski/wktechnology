@@ -33,6 +33,8 @@ export const SEGMENT_LABELS: Record<string, string> = {
   dashboards: "Dashboards",
   settings: "Configurações",
   contracts: "Contratos",
+  "hiring-requests": "Solicitações de contratação",
+  "supplier-requests": "Contratação de fornecedores",
   admin: "Admin",
   integrations: "Integrações",
   marketplace: "Marketplace",

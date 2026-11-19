@@ -1,3 +1,11 @@
+# SOLICITA-PREPARA — pacote 2 (porte G, previsão 3–5 h)
+
+- [x] Auditar contratos de autorização e entidades canônicas; plano anterior não localizado, escopo literal deste pedido aplicado.
+- [x] Migração local preparada, 14 provas SQL reais aprovadas; não aplicada em produção.
+- [x] Código de listagem/criação/edição e histórico preparado nas duas entradas, seletores limitados; 19 testes direcionados passaram.
+- [x] Menus, breadcrumbs, Ajuda v1/catálogo e contratos preparados; Ajuda 254/254, verify:changed aprovado. Evidências em docs/architecture/hiring-preparation-package2.md; sem publicação.
+- [ ] Aceite transacional/visual com JWT real: bloqueado por prévia sem resposta e migração não aplicada por decisão do usuário. Gate global tem 13 achados antigos WhatsApp; perf:check sem build.json. Aplicação de migração/Ajuda e CI aguardam revisão independente.
+
 # CNPJ-ATIVO — conclusão e publicação (porte G, previsão 3–5 h)
 
 - [x] Correção pontual dos totais: migration 0317 aplicada sem alterar dados/RLS, contexto e visibilidade preservados; 11 testes unitários e cenários SQL isolados aprovados. Navegador autenticado mostrou sete empresas, totais completos e edição de Fluxo. permissions:check sem achados, Ajuda 248/248, build automático OK. perf:check indisponível por ausência de .verification/build.json.

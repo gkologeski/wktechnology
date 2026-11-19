@@ -115,6 +115,7 @@ import { Route as AuthenticatedContractsContractingFlowRouteImport } from './rou
 import { Route as AuthenticatedContractsDashboardRouteImport } from './routes/_authenticated/contracts.dashboard'
 import { Route as AuthenticatedContractsLinksRouteImport } from './routes/_authenticated/contracts.links'
 import { Route as AuthenticatedContractsSignaturesRouteImport } from './routes/_authenticated/contracts.signatures'
+import { Route as AuthenticatedContractsSupplierRequestsRouteImport } from './routes/_authenticated/contracts.supplier-requests'
 import { Route as AuthenticatedDealsIdRouteImport } from './routes/_authenticated/deals.$id'
 import { Route as AuthenticatedFinanceIndexRouteImport } from './routes/_authenticated/finance.index'
 import { Route as AuthenticatedFinanceAuditRouteImport } from './routes/_authenticated/finance.audit'
@@ -158,6 +159,7 @@ import { Route as AuthenticatedPeopleBillingRouteImport } from './routes/_authen
 import { Route as AuthenticatedPeopleContractMarginRouteImport } from './routes/_authenticated/people.contract-margin'
 import { Route as AuthenticatedPeopleDashboardRouteImport } from './routes/_authenticated/people.dashboard'
 import { Route as AuthenticatedPeopleDocumentsRouteImport } from './routes/_authenticated/people.documents'
+import { Route as AuthenticatedPeopleHiringRequestsRouteImport } from './routes/_authenticated/people.hiring-requests'
 import { Route as AuthenticatedPeopleImportFormsRouteImport } from './routes/_authenticated/people.import-forms'
 import { Route as AuthenticatedPeopleIncidentsRouteImport } from './routes/_authenticated/people.incidents'
 import { Route as AuthenticatedPeopleMyTeamRouteImport } from './routes/_authenticated/people.my-team'
@@ -1015,6 +1017,12 @@ const AuthenticatedContractsSignaturesRoute =
     path: '/contracts/signatures',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedContractsSupplierRequestsRoute =
+  AuthenticatedContractsSupplierRequestsRouteImport.update({
+    id: '/contracts/supplier-requests',
+    path: '/contracts/supplier-requests',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDealsIdRoute = AuthenticatedDealsIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -1262,6 +1270,12 @@ const AuthenticatedPeopleDocumentsRoute =
   AuthenticatedPeopleDocumentsRouteImport.update({
     id: '/people/documents',
     path: '/people/documents',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPeopleHiringRequestsRoute =
+  AuthenticatedPeopleHiringRequestsRouteImport.update({
+    id: '/people/hiring-requests',
+    path: '/people/hiring-requests',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPeopleImportFormsRoute =
@@ -3046,6 +3060,7 @@ export interface FileRoutesByFullPath {
   '/contracts/dashboard': typeof AuthenticatedContractsDashboardRoute
   '/contracts/links': typeof AuthenticatedContractsLinksRoute
   '/contracts/signatures': typeof AuthenticatedContractsSignaturesRoute
+  '/contracts/supplier-requests': typeof AuthenticatedContractsSupplierRequestsRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/finance/audit': typeof AuthenticatedFinanceAuditRoute
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -3081,6 +3096,7 @@ export interface FileRoutesByFullPath {
   '/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/people/dashboard': typeof AuthenticatedPeopleDashboardRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/people/hiring-requests': typeof AuthenticatedPeopleHiringRequestsRoute
   '/people/import-forms': typeof AuthenticatedPeopleImportFormsRoute
   '/people/incidents': typeof AuthenticatedPeopleIncidentsRoute
   '/people/my-team': typeof AuthenticatedPeopleMyTeamRoute
@@ -3478,6 +3494,7 @@ export interface FileRoutesByTo {
   '/contracts/dashboard': typeof AuthenticatedContractsDashboardRoute
   '/contracts/links': typeof AuthenticatedContractsLinksRoute
   '/contracts/signatures': typeof AuthenticatedContractsSignaturesRoute
+  '/contracts/supplier-requests': typeof AuthenticatedContractsSupplierRequestsRoute
   '/deals/$id': typeof AuthenticatedDealsIdRoute
   '/finance/audit': typeof AuthenticatedFinanceAuditRoute
   '/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -3513,6 +3530,7 @@ export interface FileRoutesByTo {
   '/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/people/dashboard': typeof AuthenticatedPeopleDashboardRoute
   '/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/people/hiring-requests': typeof AuthenticatedPeopleHiringRequestsRoute
   '/people/import-forms': typeof AuthenticatedPeopleImportFormsRoute
   '/people/incidents': typeof AuthenticatedPeopleIncidentsRoute
   '/people/my-team': typeof AuthenticatedPeopleMyTeamRoute
@@ -3916,6 +3934,7 @@ export interface FileRoutesById {
   '/_authenticated/contracts/dashboard': typeof AuthenticatedContractsDashboardRoute
   '/_authenticated/contracts/links': typeof AuthenticatedContractsLinksRoute
   '/_authenticated/contracts/signatures': typeof AuthenticatedContractsSignaturesRoute
+  '/_authenticated/contracts/supplier-requests': typeof AuthenticatedContractsSupplierRequestsRoute
   '/_authenticated/deals/$id': typeof AuthenticatedDealsIdRoute
   '/_authenticated/finance/audit': typeof AuthenticatedFinanceAuditRoute
   '/_authenticated/finance/bank-accounts': typeof AuthenticatedFinanceBankAccountsRoute
@@ -3951,6 +3970,7 @@ export interface FileRoutesById {
   '/_authenticated/people/contract-margin': typeof AuthenticatedPeopleContractMarginRoute
   '/_authenticated/people/dashboard': typeof AuthenticatedPeopleDashboardRoute
   '/_authenticated/people/documents': typeof AuthenticatedPeopleDocumentsRoute
+  '/_authenticated/people/hiring-requests': typeof AuthenticatedPeopleHiringRequestsRoute
   '/_authenticated/people/import-forms': typeof AuthenticatedPeopleImportFormsRoute
   '/_authenticated/people/incidents': typeof AuthenticatedPeopleIncidentsRoute
   '/_authenticated/people/my-team': typeof AuthenticatedPeopleMyTeamRoute
@@ -4355,6 +4375,7 @@ export interface FileRouteTypes {
     | '/contracts/dashboard'
     | '/contracts/links'
     | '/contracts/signatures'
+    | '/contracts/supplier-requests'
     | '/deals/$id'
     | '/finance/audit'
     | '/finance/bank-accounts'
@@ -4390,6 +4411,7 @@ export interface FileRouteTypes {
     | '/people/contract-margin'
     | '/people/dashboard'
     | '/people/documents'
+    | '/people/hiring-requests'
     | '/people/import-forms'
     | '/people/incidents'
     | '/people/my-team'
@@ -4787,6 +4809,7 @@ export interface FileRouteTypes {
     | '/contracts/dashboard'
     | '/contracts/links'
     | '/contracts/signatures'
+    | '/contracts/supplier-requests'
     | '/deals/$id'
     | '/finance/audit'
     | '/finance/bank-accounts'
@@ -4822,6 +4845,7 @@ export interface FileRouteTypes {
     | '/people/contract-margin'
     | '/people/dashboard'
     | '/people/documents'
+    | '/people/hiring-requests'
     | '/people/import-forms'
     | '/people/incidents'
     | '/people/my-team'
@@ -5224,6 +5248,7 @@ export interface FileRouteTypes {
     | '/_authenticated/contracts/dashboard'
     | '/_authenticated/contracts/links'
     | '/_authenticated/contracts/signatures'
+    | '/_authenticated/contracts/supplier-requests'
     | '/_authenticated/deals/$id'
     | '/_authenticated/finance/audit'
     | '/_authenticated/finance/bank-accounts'
@@ -5259,6 +5284,7 @@ export interface FileRouteTypes {
     | '/_authenticated/people/contract-margin'
     | '/_authenticated/people/dashboard'
     | '/_authenticated/people/documents'
+    | '/_authenticated/people/hiring-requests'
     | '/_authenticated/people/import-forms'
     | '/_authenticated/people/incidents'
     | '/_authenticated/people/my-team'
@@ -6446,6 +6472,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedContractsSignaturesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/contracts/supplier-requests': {
+      id: '/_authenticated/contracts/supplier-requests'
+      path: '/contracts/supplier-requests'
+      fullPath: '/contracts/supplier-requests'
+      preLoaderRoute: typeof AuthenticatedContractsSupplierRequestsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/deals/$id': {
       id: '/_authenticated/deals/$id'
       path: '/$id'
@@ -6745,6 +6778,13 @@ declare module '@tanstack/react-router' {
       path: '/people/documents'
       fullPath: '/people/documents'
       preLoaderRoute: typeof AuthenticatedPeopleDocumentsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/hiring-requests': {
+      id: '/_authenticated/people/hiring-requests'
+      path: '/people/hiring-requests'
+      fullPath: '/people/hiring-requests'
+      preLoaderRoute: typeof AuthenticatedPeopleHiringRequestsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/people/import-forms': {
@@ -9303,6 +9343,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedContractsDashboardRoute: typeof AuthenticatedContractsDashboardRoute
   AuthenticatedContractsLinksRoute: typeof AuthenticatedContractsLinksRoute
   AuthenticatedContractsSignaturesRoute: typeof AuthenticatedContractsSignaturesRoute
+  AuthenticatedContractsSupplierRequestsRoute: typeof AuthenticatedContractsSupplierRequestsRoute
   AuthenticatedFinanceAuditRoute: typeof AuthenticatedFinanceAuditRoute
   AuthenticatedFinanceBankAccountsRoute: typeof AuthenticatedFinanceBankAccountsRoute
   AuthenticatedFinanceBankingRoute: typeof AuthenticatedFinanceBankingRouteWithChildren
@@ -9332,6 +9373,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPeopleContractMarginRoute: typeof AuthenticatedPeopleContractMarginRoute
   AuthenticatedPeopleDashboardRoute: typeof AuthenticatedPeopleDashboardRoute
   AuthenticatedPeopleDocumentsRoute: typeof AuthenticatedPeopleDocumentsRoute
+  AuthenticatedPeopleHiringRequestsRoute: typeof AuthenticatedPeopleHiringRequestsRoute
   AuthenticatedPeopleImportFormsRoute: typeof AuthenticatedPeopleImportFormsRoute
   AuthenticatedPeopleIncidentsRoute: typeof AuthenticatedPeopleIncidentsRoute
   AuthenticatedPeopleMyTeamRoute: typeof AuthenticatedPeopleMyTeamRoute
@@ -9473,6 +9515,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedContractsDashboardRoute: AuthenticatedContractsDashboardRoute,
   AuthenticatedContractsLinksRoute: AuthenticatedContractsLinksRoute,
   AuthenticatedContractsSignaturesRoute: AuthenticatedContractsSignaturesRoute,
+  AuthenticatedContractsSupplierRequestsRoute:
+    AuthenticatedContractsSupplierRequestsRoute,
   AuthenticatedFinanceAuditRoute: AuthenticatedFinanceAuditRoute,
   AuthenticatedFinanceBankAccountsRoute: AuthenticatedFinanceBankAccountsRoute,
   AuthenticatedFinanceBankingRoute:
@@ -9506,6 +9550,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedPeopleContractMarginRoute,
   AuthenticatedPeopleDashboardRoute: AuthenticatedPeopleDashboardRoute,
   AuthenticatedPeopleDocumentsRoute: AuthenticatedPeopleDocumentsRoute,
+  AuthenticatedPeopleHiringRequestsRoute:
+    AuthenticatedPeopleHiringRequestsRoute,
   AuthenticatedPeopleImportFormsRoute: AuthenticatedPeopleImportFormsRoute,
   AuthenticatedPeopleIncidentsRoute: AuthenticatedPeopleIncidentsRoute,
   AuthenticatedPeopleMyTeamRoute: AuthenticatedPeopleMyTeamRoute,
