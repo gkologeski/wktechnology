@@ -17,6 +17,12 @@ export const preparationData = z
     project_id: optionalId,
     commercial_contract_id: optionalId,
     status: z.enum(["draft", "ready", "cancelled"]),
+    selection_mode: z.enum(["defined", "needs_selection"]).default("needs_selection"),
+    modality: z.enum(["delivery", "hourly", "monthly", "mixed"]).default("delivery"),
+    release_condition: z
+      .enum(["wk_acceptance_invoice", "also_client_acceptance"])
+      .nullable()
+      .default(null),
   })
   .strict();
 export type PreparationData = z.infer<typeof preparationData>;
@@ -57,7 +63,24 @@ export const emptyPreparation = (kind: RequestKind): PreparationData => ({
   project_id: null,
   commercial_contract_id: null,
   status: "draft",
+  selection_mode: "needs_selection",
+  modality: "delivery",
+  release_condition: kind === "supplier" ? "wk_acceptance_invoice" : null,
 });
+export const preparationWriteData = preparationData.extend({
+  reference_value: z.number().finite().min(0).max(999999999999.99).nullable().optional(),
+});
+export const modalityLabels = {
+  delivery: "Por entrega",
+  hourly: "Por hora",
+  monthly: "Mensal",
+  mixed: "Mista",
+};
+export const releaseLabels = {
+  wk_acceptance_invoice: "Aceite WK + NF válida",
+  also_client_acceptance: "Aceite WK + NF válida + aceite cliente final",
+};
+export const wizardSteps = ["Demanda", "Vínculos", "Condições", "Revisão"] as const;
 export const pickerKind = z.enum([
   "area",
   "legal_entity",

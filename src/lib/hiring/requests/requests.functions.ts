@@ -5,7 +5,7 @@ import { assertPreparation, preparationPicker } from "./boundary.server";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import {
   requestKind,
-  preparationData,
+  preparationWriteData,
   pickerKind,
   type PreparationRow,
   type PreparationEvent,
@@ -37,7 +37,7 @@ export const savePreparation = createServerFn({ method: "POST" })
         id: z.string().uuid().nullable(),
         revision: z.number().int().min(0),
         operation: z.string().uuid(),
-        form: preparationData,
+        form: preparationWriteData,
       })
       .strict(),
   )
@@ -92,5 +92,21 @@ export const searchPreparationPicker = createServerFn({ method: "POST" })
       data.search,
       data.selected,
       data.company,
+    );
+  });
+export const preparationReference = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(z.object({ kind: requestKind, id: z.string().uuid() }))
+  .handler(async ({ context, data }) => {
+    const ws = await assertPreparation(
+      context.supabase,
+      context.userId,
+      data.kind,
+      "reference_view",
+    );
+    return workRpc<{ reference_value: number | null; revision: number }>(
+      context.supabase,
+      "hiring_preparation_reference",
+      { p_ws: ws, p_kind: data.kind, p_id: data.id },
     );
   });

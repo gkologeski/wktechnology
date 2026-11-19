@@ -13910,7 +13910,7 @@
       "id": "preparation-static-types",
       "kind": "presentation",
       "files": {
-        "src/lib/hiring/requests/types.ts": "304e657747c0b751102cd86a8d3daaf0aaa7d9718425f7046c45c3342a8a4ee9"
+        "src/lib/hiring/requests/types.ts": "5cebf3e2574a1911c047d423fcb95d3df04090a6eb63756c0b6bc6996be856c3"
       },
       "resources": [],
       "permission_keys": [],
@@ -13921,8 +13921,8 @@
       "kind": "business",
       "files": {
         "src/lib/hiring/requests/boundary.server.ts": "781108c4f9591ca6e3c769588b4cffeb911ef8f4d118815d7717ea734fba9f36",
-        "src/lib/hiring/requests/requests.functions.ts": "99299ddc1423a8ab1bdf65df344b59fee13788d73c4e07b95c88ecda49206aad",
-        "src/lib/hiring/requests/preparation-screen.tsx": "d84c934c725389c0fc7edf70492b6b5700294a579b4e2910b1af57b53e4c300b",
+        "src/lib/hiring/requests/requests.functions.ts": "87dadcaed69095a517d68180cb853f8f12e9dc207599483cb22b863494627be1",
+        "src/lib/hiring/requests/preparation-screen.tsx": "64fc1121f8019b9cf0984d2def13857aefb228a2e90c3b19fdad0b420fe22a73",
         "src/routes/_authenticated/people.hiring-requests.tsx": "bc1aa3c009420f3a81e5f78d95a7ec1c3f4cf81bf738a53f701fe36616f58846",
         "src/routes/_authenticated/contracts.supplier-requests.tsx": "cba4a323b4798ad0fc75f141f3938bc3bcc999ed96430c7a440848bdbdf4fcd7"
       },
@@ -13930,7 +13930,9 @@
         "techpeople.hiring_requests",
         "techcontracts.supplier_requests",
         "techpeople.hiring_requests.cancel",
-        "techcontracts.supplier_requests.cancel"
+        "techcontracts.supplier_requests.cancel",
+        "techpeople.hiring_requests.reference",
+        "techcontracts.supplier_requests.reference"
       ],
       "actions": [
         "view",
@@ -13948,9 +13950,13 @@
         "techcontracts.supplier_requests.create.workspace",
         "techcontracts.supplier_requests.update.workspace",
         "techpeople.hiring_requests.cancel.update.workspace",
-        "techcontracts.supplier_requests.cancel.update.workspace"
+        "techcontracts.supplier_requests.cancel.update.workspace",
+        "techpeople.hiring_requests.reference.view.workspace",
+        "techpeople.hiring_requests.reference.update.workspace",
+        "techcontracts.supplier_requests.reference.view.workspace",
+        "techcontracts.supplier_requests.reference.update.workspace"
       ],
-      "rationale": "Preparation only; dedicated non-BYPASSRLS writer, active workspace membership and explicit deny; canonical entity reads use caller RLS. Pending schema is intentionally not applied before review. Local review: picker cache is keyed by active workspace and the content remounts on workspace/kind change, discarding open forms and stale local entity state. Local SQL review: catalog uses canonical module/resource metadata; client requests require a commercial origin before ready; writer CREATE on public is temporary for ownership transfer and revoked by the migration.",
+      "rationale": "Preparation only; dedicated non-BYPASSRLS writer, active workspace membership and explicit deny; canonical entity reads use caller RLS. Pending schema is intentionally not applied before review. Approved four-step wizard; reference value uses separately protected RLS storage and is never returned in ordinary rows/events. Local review: picker cache is keyed by active workspace and the content remounts on workspace/kind change, discarding open forms and stale local entity state. Local SQL review: catalog uses canonical module/resource metadata; client requests require a commercial origin before ready; writer CREATE on public is temporary for ownership transfer and revoked by the migration.",
       "controls": [
         {
           "file": "src/lib/hiring/requests/boundary.server.ts",
@@ -13993,6 +13999,18 @@
         {
           "file": "docs/architecture/prepared-migrations/0373_hiring_requests.sql",
           "symbol": "hiring_preparation_save"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+          "symbol": "hiring_preparation_access"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+          "symbol": "hiring_preparation_save"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+          "symbol": "hiring_preparation_reference"
         }
       ],
       "tests": {
@@ -14025,7 +14043,9 @@
         "techpeople.hiring_requests",
         "techcontracts.supplier_requests",
         "techpeople.hiring_requests.cancel",
-        "techcontracts.supplier_requests.cancel"
+        "techcontracts.supplier_requests.cancel",
+        "techpeople.hiring_requests.reference",
+        "techcontracts.supplier_requests.reference"
       ],
       "actions": [
         "view",
@@ -14043,9 +14063,13 @@
         "techcontracts.supplier_requests.create.workspace",
         "techcontracts.supplier_requests.update.workspace",
         "techpeople.hiring_requests.cancel.update.workspace",
-        "techcontracts.supplier_requests.cancel.update.workspace"
+        "techcontracts.supplier_requests.cancel.update.workspace",
+        "techpeople.hiring_requests.reference.view.workspace",
+        "techpeople.hiring_requests.reference.update.workspace",
+        "techcontracts.supplier_requests.reference.view.workspace",
+        "techcontracts.supplier_requests.reference.update.workspace"
       ],
-      "rationale": "Pure callback-based form. Authorization is enforced by the parent PreparationScreen and authenticated RPC; no data reads or mutation functions in presentation.",
+      "rationale": "Pure callback-based form. Authorization is enforced by the parent PreparationScreen and authenticated RPC; no data reads or mutation functions in presentation. Approved four-step wizard; reference value uses separately protected RLS storage and is never returned in ordinary rows/events.",
       "controls": [
         {
           "file": "src/components/ui/button.tsx",
@@ -14064,6 +14088,18 @@
         {
           "file": "docs/architecture/prepared-migrations/0373_hiring_requests.sql",
           "symbol": "hiring_preparation_save"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+          "symbol": "hiring_preparation_access"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+          "symbol": "hiring_preparation_save"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+          "symbol": "hiring_preparation_reference"
         }
       ],
       "tests": {
@@ -14095,7 +14131,7 @@
         "review_by": "2027-02-18"
       },
       "files": {
-        "src/components/hiring-requests/preparation-form.tsx": "4a41a85b5776f727ef0fa3974c8bc8d3a3af202f205bf1c24dfc62b12c4bc3c0"
+        "src/components/hiring-requests/preparation-form.tsx": "8471d1a6bdf85c00c57cab2ff29e33cb6f91416e7e43cb8264c804166fb32aa0"
       }
     }
   ],
