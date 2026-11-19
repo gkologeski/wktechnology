@@ -401,11 +401,15 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       governing_law: f.governing_law ?? null,
       jurisdiction: f.jurisdiction ?? null,
       confidentiality_term_months: f.confidentiality_term_months ?? null,
-      signature_provider: data.import_mode === "legacy" ? null : (f.signature_provider ?? null),
-      signature_document_id:
-        data.import_mode === "legacy" ? null : (f.signature_document_id ?? null),
-      signature_operation_id:
-        data.import_mode === "legacy" ? null : (f.signature_operation_id ?? null),
+      // Legado: referências de assinatura extraídas ficam só em metadata;
+      // as chaves ativas nem podem constar no payload da RPC atômica.
+      ...(data.import_mode === "legacy"
+        ? {}
+        : {
+            signature_provider: f.signature_provider ?? null,
+            signature_document_id: f.signature_document_id ?? null,
+            signature_operation_id: f.signature_operation_id ?? null,
+          }),
       source_file_path: data.source_file_path ?? null,
       imported_from: data.imported_from,
       import_confidence: f.confidence ?? null,
