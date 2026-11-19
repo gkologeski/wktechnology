@@ -1,5 +1,5 @@
 -- Direct professional instruments reuse the canonical person without a fake ATS admission.
--- Prepared only. Preserve the legacy admission path and its existing guards.
+-- Package 3: reviewed additive migration.
 CREATE OR REPLACE FUNCTION public.hiring_purchase_guard() RETURNS trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
 DECLARE direct_origin boolean:=false;

@@ -1,3 +1,5 @@
+> Registro histórico de revisão. As migrações 0375–0380 foram consolidadas no journal; estado final e evidências em `hiring-package3-release.md`.
+
 # INTEGRIDADE-FORMALIZA — correções de 7d65e33ab
 
 Porte G, estimativa inicial 4–6 h. **Preparado e testado localmente; não aplicado/publicado.**
@@ -13,7 +15,7 @@ Porte G, estimativa inicial 4–6 h. **Preparado e testado localmente; não apli
 
 ## Arquivos
 
-Criados: `docs/architecture/prepared-migrations/0379_hiring_formalization_integrity.sql`, `src/lib/hiring/requests/formalization-presentation.test.ts` e este relatório.
+Criados: `drizzle/migrations/0379_hiring_formalization_integrity.sql`, `src/lib/hiring/requests/formalization-presentation.test.ts` e este relatório.
 
 Alterados: `src/lib/hiring/requests/{formalization-types.ts,formalization-panel.tsx,formalization-postgres.test.ts,AGENTS.md}`; `src/lib/hiring/{signature.functions.ts,signature.types.ts}`; `src/components/hiring/contract-signature-card.tsx`; `src/components/contracts/{contract-attachments-card.tsx,signature-attachments-summary.tsx,signature-attachments-summary.test.ts}`; `src/lib/contracts/attachments.functions.ts`; `src/lib/integrations/forsign/forsign-authorization.test.ts`; `tests/fixtures/hiring-formalization.sql`; os dois guias people/contracts v6→7 e catálogo oficial; permission-contracts.json; roadmap.md. Nenhum removido.
 

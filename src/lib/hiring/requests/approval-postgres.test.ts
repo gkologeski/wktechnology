@@ -205,10 +205,7 @@ beforeAll(async () => {
     ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO authenticated,anon,service_role,techerp_request_writer;`);
   await db.begin(async (tx) => {
     await tx.unsafe(
-      readFileSync(
-        "docs/architecture/prepared-migrations/0375_hiring_preparation_approvals.sql",
-        "utf8",
-      )
+      readFileSync("drizzle/migrations/0375_hiring_preparation_approvals.sql", "utf8")
         .replace(/^BEGIN;$/m, "")
         .replace(/^COMMIT;$/m, ""),
     );

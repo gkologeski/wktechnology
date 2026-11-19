@@ -1,3 +1,5 @@
+> Registro histórico de revisão. As migrações 0375–0380 foram consolidadas no journal; estado final e evidências em `hiring-package3-release.md`.
+
 # APROVA-SOLICITA — pacote 3, lote 1
 
 Porte G; previsão inicial 3–5 horas. Base solicitada `999fba45c` presente como ancestral direto; o checkout iniciou em `dd930138f`, contendo apenas tipos gerados adicionais. Essa alteração preexistente não foi absorvida nem alterada.
@@ -9,7 +11,7 @@ Porte G; previsão inicial 3–5 horas. Base solicitada `999fba45c` presente com
 - Ciclo ligado à revisão salva, revisão do valor privado e snapshot da alçada. Edição salva (conservadoramente qualquer edição), valor e alçada invalidam pendentes/aprovadas. Eventos imutáveis; nenhuma projeção de valor em lista, eventos, contexto de aprovação ou notificação.
 - Ficha mantém wizard e White Label; histórico central, resumo/ações lateral, motivo obrigatório, erro/loading, bloqueio com alterações não salvas. Links `?request=<uuid>` abrem a solicitação por leitura autorizada, sem depender da primeira página da lista.
 - Notificação interna idempotente apenas da etapa atual, tipo distinto do ATS para não acionar fila de e-mail; corpo genérico sem título/escopo/valor. Nenhum envio real executado.
-- SQL revisável `docs/architecture/prepared-migrations/0375_hiring_preparation_approvals.sql`, fora do journal. Revoga ACLs herdadas de tabelas e todas funções novas; RPCs públicas de aplicação somente authenticated, helpers privados sem EXECUTE externo. FK composta request/workspace, RLS de leitura e escrita só pelas RPCs autorizadas. Depende de execução privilegiada de migration para helpers fechados sobre políticas e resolvedor privado; não usa service_role para consultas de entidades da interface.
+- SQL revisável `drizzle/migrations/0375_hiring_preparation_approvals.sql`, fora do journal. Revoga ACLs herdadas de tabelas e todas funções novas; RPCs públicas de aplicação somente authenticated, helpers privados sem EXECUTE externo. FK composta request/workspace, RLS de leitura e escrita só pelas RPCs autorizadas. Depende de execução privilegiada de migration para helpers fechados sobre políticas e resolvedor privado; não usa service_role para consultas de entidades da interface.
 
 ## Arquivos
 

@@ -1,3 +1,5 @@
+> Registro histórico de revisão. As migrações 0375–0380 foram consolidadas no journal; estado final e evidências em `hiring-package3-release.md`.
+
 # FORMALIZA-SOLICITA — implementação revisável
 
 Porte G; estimativa inicial 6–10 h. Código preparado, **não aplicado nem publicado; aceite completo ainda pendente**.
@@ -15,7 +17,7 @@ Porte G; estimativa inicial 6–10 h. Código preparado, **não aplicado nem pub
 
 ## Arquivos
 
-Criados: `docs/architecture/prepared-migrations/0376_hiring_formalization.sql`, `0377_hiring_formalization_boundaries.sql`, `0378_hiring_signature_adapter.sql`; `src/lib/hiring/requests/formalization-types.ts`, `formalization.functions.ts`, `formalization-panel.tsx`, `formalization-postgres.test.ts`, `draft-code.server.ts`, `draft-code.test.ts`; `src/lib/email-templates/hiring-draft-code.tsx`; `tests/fixtures/hiring-formalization.sql`; este relatório.
+Criados: `drizzle/migrations/0376_hiring_formalization.sql`, `0377_hiring_formalization_boundaries.sql`, `0378_hiring_signature_adapter.sql`; `src/lib/hiring/requests/formalization-types.ts`, `formalization.functions.ts`, `formalization-panel.tsx`, `formalization-postgres.test.ts`, `draft-code.server.ts`, `draft-code.test.ts`; `src/lib/email-templates/hiring-draft-code.tsx`; `tests/fixtures/hiring-formalization.sql`; este relatório.
 
 Alterados: preparation-screen.tsx e AGENTS.md das solicitações; contract-draft-public.functions.ts, signature-delivery.server.ts, forsign-service.server.ts; minuta.$token.tsx; registry.ts de e-mail; dois artigos Ajuda e official-catalogue.json; permission-contracts.json, permission-key-catalog.json; roadmap.md. Nenhum removido. Nenhuma mudança no lote 1, types.ts gerado, baseline, migration antiga ou journal.
 

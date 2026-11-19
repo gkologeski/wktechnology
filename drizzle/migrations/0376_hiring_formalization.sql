@@ -1,5 +1,4 @@
--- FORMALIZA-SOLICITA. REVIEW ONLY, outside the automatic journal. Depends on 0373-0375 and 0367.
-BEGIN;
+-- Package 3: reviewed additive migration.
 INSERT INTO public.permissions(key,module,resource,action,scope,label_pt,description,is_system) VALUES
 ('techpeople.hiring_requests.formalization.manage.workspace','techpeople','hiring_requests.formalization','manage','workspace','Preparar instrumento de profissional','RH prepara origem aprovada; não inicia atividade.',true),
 ('techcontracts.supplier_requests.formalization.manage.workspace','techcontracts','supplier_requests.formalization','manage','workspace','Preparar instrumento de fornecedor','Jurídico prepara compra WK com origem aprovada.',true),
@@ -212,4 +211,3 @@ END $$;
 REVOKE ALL ON FUNCTION public.hiring_formalization_lock(uuid),public.hiring_formalization_ready_subject(uuid,uuid,text,text),public.hiring_formalization_current(uuid,uuid),public.hiring_formalization_subject(uuid,uuid,text,text),public.hiring_formalization_access(uuid,uuid,text),public.hiring_formalization_recipient(uuid),public.hiring_formalization_fingerprint(uuid),public.hiring_formalization_valid(uuid),public.hiring_formalization_invalidate(uuid),public.hiring_formalization_notify(uuid),public.hiring_formalization_prepare(uuid,uuid,integer),public.hiring_formalization_transition(uuid,uuid,integer,text,text),public.hiring_formalization_signature_gate(uuid,uuid,text),public.hiring_formalization_context(uuid,uuid) FROM PUBLIC,anon,authenticated,service_role,techerp_request_writer;
 GRANT EXECUTE ON FUNCTION public.hiring_formalization_access(uuid,uuid,text),public.hiring_formalization_prepare(uuid,uuid,integer),public.hiring_formalization_transition(uuid,uuid,integer,text,text),public.hiring_formalization_signature_gate(uuid,uuid,text),public.hiring_formalization_context(uuid,uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.hiring_formalization_signature_gate(uuid,uuid,text) TO service_role;
-COMMIT;

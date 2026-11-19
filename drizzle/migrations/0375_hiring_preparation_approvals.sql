@@ -1,6 +1,5 @@
--- APROVA-SOLICITA / package 3 batch 1. REVIEW ONLY: outside the automatic journal.
+-- Package 3: reviewed additive migration.
 -- Depends on 0373/0374 and canonical hiring_area_policies; never seeds policies or grants roles.
-BEGIN;
 INSERT INTO public.permissions(key,module,resource,action,scope,label_pt,description,is_system) VALUES
 ('techpeople.hiring_requests.approval_request.create.workspace','techpeople','hiring_requests.approval_request','create','workspace','Solicitar aprovação de profissional','Encaminhar a revisão salva ao gestor e CEO canônicos.',true),
 ('techpeople.hiring_requests.approval.approve.workspace','techpeople','hiring_requests.approval','approve','workspace','Decidir solicitação de profissional','Aprovador nomeado decide a revisão atual; sem autoaprovação.',true),
@@ -270,4 +269,3 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.hiring_preparation_approval_context(uuid,text,uuid,integer) FROM PUBLIC,anon,authenticated,service_role,techerp_request_writer;
 GRANT EXECUTE ON FUNCTION public.hiring_preparation_approval_context(uuid,text,uuid,integer) TO authenticated;
-COMMIT;
