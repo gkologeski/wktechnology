@@ -8,7 +8,7 @@ route_pattern: /contracts/supplier-requests
 min_permission: techcontracts.supplier_requests.view.workspace
 audience: internal
 sort_order: 36
-version: 3
+version: 4
 is_published: true
 ---
 # Preparar contratação de fornecedor
@@ -40,6 +40,8 @@ Preparação de compra WK versionada, sem contrato ou processo operacional criad
 - Não cria aprovação, vaga, admissão, contrato, assinatura, acesso, financeiro ou mensagens.
 - Valor de referência protegido; vínculos não concedem leitura de salário ou outros campos sensíveis.
 - Lista de 50 por página, buscas de até 25 opções com acesso do usuário. Cancelada é terminal e preserva histórico.
+
+- Durante a consulta do nome de um vínculo, aguarde o indicador de carregamento. Vínculo indisponível exige conferir a permissão do cadastro.
 
 ## Erros comuns
 - **Contato não pertence ao fornecedor:** escolha um contato da empresa selecionada.
