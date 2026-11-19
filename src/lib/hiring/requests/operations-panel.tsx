@@ -562,7 +562,10 @@ function FiscalUpload({
         type="file"
         accept=".pdf,.xml,.png,.jpg,.jpeg"
         disabled={dis}
-        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+        onChange={(e) => {
+          setFile(e.target.files?.[0] ?? null);
+          setOp(crypto.randomUUID());
+        }}
       />
       {tooBig && (
         <p role="alert" className="text-destructive">
