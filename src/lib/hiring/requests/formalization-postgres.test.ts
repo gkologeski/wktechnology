@@ -572,15 +572,9 @@ it("formalization origin forgery is blocked and no internal acceptance bypass", 
     db`update contract_drafts set status='accepted' where hiring_request_origin=${r.id}`,
   ).rejects.toThrow("bypass");
 });
-it("formalization material changes revoke old links and decisions", async () => {
-  for (const change of [
-    "document",
-    "attachment",
-    "request",
-    "manager",
-    "recipient",
-    "configuration",
-  ]) {
+it.each(["document", "attachment", "request", "manager", "recipient", "configuration"])(
+  "formalization %s changes revoke old links and decisions",
+  async (change) => {
     const { r, k, token } = await sentDraft();
     if (change === "document")
       await user(
@@ -604,8 +598,8 @@ it("formalization material changes revoke old links and decisions", async () => 
     await expect(
       user(D, (tx) => tx`select hiring_formalization_signature_gate(${W},${k},null)`),
     ).rejects.toThrow("Conclua");
-  }
-});
+  },
+);
 it("formalization legal and finance order and self-approval are mandatory", async () => {
   const r = await approved(),
     k = await prepare(r);
