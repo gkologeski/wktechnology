@@ -21,6 +21,12 @@ export const CONTRACTS_SIDEBAR_GROUPS: SidebarGroup[] = [
     label: "Contratos",
     items: [
       { title: "Contratos", url: "/contracts", icon: FileText },
+      {
+        title: "Contratação de fornecedores",
+        url: "/contracts/supplier-requests",
+        icon: Package,
+        permissionAny: ["techcontracts.supplier_requests.view.workspace"],
+      },
       { title: "Assinaturas eletrônicas", url: "/contracts/signatures", icon: FileSignature },
       { title: "Modelos de contrato", url: "/contracts/templates", icon: FileStack },
       { title: "Serviços em execução", url: "/services", icon: Package },

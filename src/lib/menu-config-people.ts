@@ -37,6 +37,12 @@ export const PEOPLE_SIDEBAR_GROUPS: SidebarGroup[] = [
       },
       { title: "Meu time", url: "/people/my-team", icon: UserCog },
       {
+        title: "Solicitações de contratação",
+        url: "/people/hiring-requests",
+        icon: ClipboardList,
+        permissionAny: ["techpeople.hiring_requests.view.workspace"],
+      },
+      {
         title: "Onboarding",
         url: "/people/onboarding",
         icon: ClipboardList,

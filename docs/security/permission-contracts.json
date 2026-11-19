@@ -4275,11 +4275,11 @@
     {
       "id": "finance-sales-labels",
       "kind": "presentation",
-      "rationale": "PT-BR labels for the new techfinance.sales and contaazul_people resources and a sidebar entry for /finance/sales gated by techfinance.sales.view.workspace; menu visibility is cosmetic, the page and server function enforce the permission (contract finance-sales). | CAMPANHA-LIGACOES 12/11/2026: static PT-BR breadcrumb labels for /campaigns/calls; no access change.",
+      "rationale": "PT-BR labels for the new techfinance.sales and contaazul_people resources and a sidebar entry for /finance/sales gated by techfinance.sales.view.workspace; menu visibility is cosmetic, the page and server function enforce the permission (contract finance-sales). | CAMPANHA-LIGACOES 12/11/2026: static PT-BR breadcrumb labels for /campaigns/calls; no access change. | SOLICITA-PREPARA: static preparation menu/breadcrumb, page and RPC enforce new per-module permissions.",
       "files": {
         "src/lib/access-control/resource-labels.ts": "b9486bd90fbd4e5aa1cf7af67fbb77163e7c88ac9d2a95dffcd041df79abfcef",
         "src/lib/menu-config-finance.ts": "634465260359b9d97cfd6a635ae5bd7ade12cb9ab9a83ec9e96e507d83194e1d",
-        "src/lib/breadcrumb-labels.ts": "d856caba463b0896a8163509622683ed10a440d393391ac01403cf4aa6cc43f1"
+        "src/lib/breadcrumb-labels.ts": "056b00a4c2f2c58d7ff05b8a447d62cb8a1bb2cf9cd1c4e2adfb34a6aa89248b"
       }
     },
     {
@@ -9898,9 +9898,9 @@
     {
       "id": "contract-draft-menu-entry",
       "kind": "presentation",
-      "rationale": "Static TechContracts menu entry; visibility filtered by canSeeHrMenu with the manage key and the screen re-checks it; server functions use requireWorkPermission.",
+      "rationale": "Static TechContracts menu entry; visibility filtered by canSeeHrMenu with the manage key and the screen re-checks it; server functions use requireWorkPermission. | SOLICITA-PREPARA: static preparation menu/breadcrumb, page and RPC enforce new per-module permissions.",
       "files": {
-        "src/lib/menu-config-contracts.ts": "634ee1bb9128e91b65afc618ae2acffad9bbe14a44d38fba2d501ebfb73f65f5"
+        "src/lib/menu-config-contracts.ts": "88dbd5f329fa5a720b0182973777ceb7097678fae47be274943ab82f334ecbac"
       }
     },
     {
@@ -13894,6 +13894,208 @@
       "rationale": "Pure rule mapping a sender channel account/binding to the campaign SDR agent (locked/none/free) and the mismatch message. No I/O, routes, actions or grants; the reads and enforcement live under whatsapp-cloud-authenticated-routing.",
       "files": {
         "src/lib/whatsapp/campaign-channel-agent.ts": "44e0ef77ba07100fbaecdfcad40590a18c5002dc38f7a4f45f0fb8d32750ff2d"
+      }
+    },
+    {
+      "id": "preparation-navigation-people",
+      "kind": "presentation",
+      "resources": [],
+      "permission_keys": [],
+      "rationale": "Static menu entry filtered through existing sidebar rules; new page and RPC enforce separate preparation permissions.",
+      "files": {
+        "src/lib/menu-config-people.ts": "73902ec392a60652563bbb364302622d83a979f60e7852302c0f7a94faf31639"
+      }
+    },
+    {
+      "id": "preparation-static-types",
+      "kind": "presentation",
+      "files": {
+        "src/lib/hiring/requests/types.ts": "304e657747c0b751102cd86a8d3daaf0aaa7d9718425f7046c45c3342a8a4ee9"
+      },
+      "resources": [],
+      "permission_keys": [],
+      "rationale": "Preparation-only data contract without salary, budget or operational effects."
+    },
+    {
+      "id": "hiring-preparation-package2",
+      "kind": "business",
+      "files": {
+        "src/lib/hiring/requests/boundary.server.ts": "781108c4f9591ca6e3c769588b4cffeb911ef8f4d118815d7717ea734fba9f36",
+        "src/lib/hiring/requests/requests.functions.ts": "99299ddc1423a8ab1bdf65df344b59fee13788d73c4e07b95c88ecda49206aad",
+        "src/lib/hiring/requests/preparation-screen.tsx": "8a00575900b936133f9105707813afc4ffb1560a44986125533db1647bf7f789",
+        "src/routes/_authenticated/people.hiring-requests.tsx": "bc1aa3c009420f3a81e5f78d95a7ec1c3f4cf81bf738a53f701fe36616f58846",
+        "src/routes/_authenticated/contracts.supplier-requests.tsx": "cba4a323b4798ad0fc75f141f3938bc3bcc999ed96430c7a440848bdbdf4fcd7"
+      },
+      "resources": [
+        "techpeople.hiring_requests",
+        "techcontracts.supplier_requests",
+        "techpeople.hiring_requests.cancel",
+        "techcontracts.supplier_requests.cancel"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techpeople.hiring_requests.view.workspace",
+        "techpeople.hiring_requests.create.workspace",
+        "techpeople.hiring_requests.update.workspace",
+        "techcontracts.supplier_requests.view.workspace",
+        "techcontracts.supplier_requests.create.workspace",
+        "techcontracts.supplier_requests.update.workspace",
+        "techpeople.hiring_requests.cancel.update.workspace",
+        "techcontracts.supplier_requests.cancel.update.workspace"
+      ],
+      "rationale": "Preparation only; dedicated non-BYPASSRLS writer, active workspace membership and explicit deny; canonical entity reads use caller RLS. Pending schema is intentionally not applied before review.",
+      "controls": [
+        {
+          "file": "src/lib/hiring/requests/boundary.server.ts",
+          "symbol": "assertPreparation"
+        },
+        {
+          "file": "src/lib/hiring/requests/boundary.server.ts",
+          "symbol": "preparationPicker"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/hiring/requests/preparation-screen.tsx",
+          "symbol": "PreparationScreen"
+        },
+        {
+          "file": "src/components/hiring-requests/preparation-form.tsx",
+          "symbol": "PickerResults"
+        },
+        {
+          "file": "src/lib/access-control/use-shared-action.ts",
+          "symbol": "useSharedAction"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "getActiveWorkspaceId"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        }
+      ],
+      "database": [
+        {
+          "file": "docs/architecture/prepared-migrations/0373_hiring_requests.sql",
+          "symbol": "hiring_preparation_access"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0373_hiring_requests.sql",
+          "symbol": "hiring_preparation_save"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "preparation allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "preparation rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "preparation rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "preparation rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "preparation rejects inactive member"
+        }
+      }
+    },
+    {
+      "id": "preparation-presentational-form",
+      "kind": "internal",
+      "resources": [
+        "techpeople.hiring_requests",
+        "techcontracts.supplier_requests",
+        "techpeople.hiring_requests.cancel",
+        "techcontracts.supplier_requests.cancel"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techpeople.hiring_requests.view.workspace",
+        "techpeople.hiring_requests.create.workspace",
+        "techpeople.hiring_requests.update.workspace",
+        "techcontracts.supplier_requests.view.workspace",
+        "techcontracts.supplier_requests.create.workspace",
+        "techcontracts.supplier_requests.update.workspace",
+        "techpeople.hiring_requests.cancel.update.workspace",
+        "techcontracts.supplier_requests.cancel.update.workspace"
+      ],
+      "rationale": "Pure callback-based form. Authorization is enforced by the parent PreparationScreen and authenticated RPC; no data reads or mutation functions in presentation.",
+      "controls": [
+        {
+          "file": "src/components/ui/button.tsx",
+          "symbol": "Button"
+        },
+        {
+          "file": "src/components/ui/select.tsx",
+          "symbol": "Select"
+        }
+      ],
+      "database": [
+        {
+          "file": "docs/architecture/prepared-migrations/0373_hiring_requests.sql",
+          "symbol": "hiring_preparation_access"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0373_hiring_requests.sql",
+          "symbol": "hiring_preparation_save"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "preparation allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "preparation rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "preparation rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "preparation rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/requests/preparation-postgres.test.ts",
+          "name": "preparation rejects inactive member"
+        }
+      },
+      "exception": {
+        "mechanism": "Parent passes permission-gated disabled state; RPC always revalidates actor.",
+        "boundary": "Only unsaved form data; no network or database access.",
+        "revocation": "Effective permission refresh and RPC denial block writes.",
+        "review_by": "2027-02-18"
+      },
+      "files": {
+        "src/components/hiring-requests/preparation-form.tsx": "4a41a85b5776f727ef0fa3974c8bc8d3a3af202f205bf1c24dfc62b12c4bc3c0"
       }
     }
   ],
