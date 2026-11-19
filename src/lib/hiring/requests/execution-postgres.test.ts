@@ -687,6 +687,38 @@ it("execution allocation requires authorized start, intact signature, period and
   expect((await execContext(r.id)).start.signature_intact).toBe(false);
   expect((await db`select status from contracts where id=${k}`)[0].status).toBe("active");
 });
+it("execution capacity counts simultaneous load rather than sequential allocations", async () => {
+  const { r } = await signed();
+  const P = randomUUID();
+  await db`insert into projects(id,workspace_id,name) values(${P},${W},'Projeto com períodos')`;
+  const sid = await start(r);
+  const e = (await db`select engagement_id from hiring_execution_starts where id=${sid}`)[0]
+    .engagement_id;
+  await user(
+    M,
+    (tx) =>
+      tx`select hiring_allocate(${W},${e},${P},current_date,current_date+9,60,'Primeiro período revisado')`,
+  );
+  await user(
+    M,
+    (tx) =>
+      tx`select hiring_allocate(${W},${e},${P},current_date+10,current_date+19,60,'Segundo período revisado')`,
+  );
+  await expect(
+    user(
+      M,
+      (tx) =>
+        tx`select hiring_allocate(${W},${e},${P},current_date,current_date+19,40,'Dedicação paralela revisada')`,
+    ),
+  ).resolves.toBeDefined();
+  await expect(
+    user(
+      M,
+      (tx) =>
+        tx`select hiring_allocate(${W},${e},${P},current_date+9,current_date+10,1,'Limite entre períodos revisado')`,
+    ),
+  ).rejects.toThrow("Capacidade");
+});
 it("execution allocations reject changed approval policy after start and preserve history", async () => {
   const { r, k } = await signed();
   const P = randomUUID();

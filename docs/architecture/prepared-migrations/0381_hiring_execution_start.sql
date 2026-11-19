@@ -157,8 +157,13 @@ BEGIN
   IF EXISTS(SELECT 1 FROM contracts x WHERE x.id=pr.contract_id AND x.workspace_id=w AND x.contracting_legal_entity_id IS DISTINCT FROM e.legal_entity_id) THEN RAISE EXCEPTION 'Entidade WK do projeto diverge do vínculo; exige análise explícita, sem trocar o empregador automaticamente.';END IF;
   IF e.purpose='client' AND pr.contract_id IS DISTINCT FROM e.commercial_contract_id THEN RAISE EXCEPTION 'Projeto não corresponde ao contrato de origem.';END IF;
  END IF;
- SELECT coalesce(sum(a.allocation_pct),0) INTO used FROM people_allocations a WHERE a.workspace_id=w AND a.person_id=e.person_id AND a.status='active' AND a.id IS DISTINCT FROM p_allocation
-  AND daterange(a.starts_at,coalesce(a.ends_at,'infinity'::date),'[]') && daterange(p_start,coalesce(p_end,'infinity'::date),'[]');
+ -- Capacity is the peak simultaneous load, not a sum of sequential allocations.
+ WITH overlapping AS (
+  SELECT a.starts_at,a.ends_at,a.allocation_pct FROM people_allocations a
+  WHERE a.workspace_id=w AND a.person_id=e.person_id AND a.status='active' AND a.id IS DISTINCT FROM p_allocation
+   AND daterange(a.starts_at,coalesce(a.ends_at,'infinity'::date),'[]') && daterange(p_start,coalesce(p_end,'infinity'::date),'[]')
+ ), points AS (SELECT p_start AS point_date UNION SELECT greatest(starts_at,p_start) FROM overlapping)
+ SELECT coalesce(max((SELECT coalesce(sum(a.allocation_pct),0) FROM overlapping a WHERE a.starts_at<=points.point_date AND (a.ends_at IS NULL OR a.ends_at>=points.point_date))),0) INTO used FROM points;
  IF used+coalesce(p_pct,0)>100 THEN RAISE EXCEPTION 'Capacidade da pessoa excedida no período (máximo 100%%).';END IF;
  IF p_relevant AND (p_start IS DISTINCT FROM e.starts_at OR p_end IS DISTINCT FROM e.ends_at) AND length(btrim(coalesce(p_override,'')))<10 THEN RAISE EXCEPTION 'Justifique o período diferente do vínculo (mínimo 10 caracteres).';END IF;
 END $$;
