@@ -196,7 +196,12 @@ BEGIN
  SELECT * INTO s FROM hiring_execution_starts WHERE workspace_id=w AND request_id=i;
  IF s.id IS NULL THEN RETURN 'Entregas e documentos fiscais dependem do início autorizado pelo gestor da área.';END IF;
  IF r.revision IS DISTINCT FROM s.request_revision OR r.status<>'ready' THEN RETURN 'A solicitação mudou depois do início autorizado; novos aceites e documentos ficam bloqueados até nova formalização.';END IF;
- IF NOT hiring_execution_activation_ok(w,s.contract_id) THEN RETURN 'Instrumento sem assinatura íntegra atual; novos aceites e documentos ficam bloqueados.';END IF;
+ IF NOT hiring_execution_activation_ok(w,s.contract_id) THEN
+  IF NOT hiring_formalization_current(w,i) THEN RETURN 'A aprovação ou alçada da área mudou; revalide a formalização antes de novas operações.';END IF;
+  IF NOT EXISTS(SELECT 1 FROM contract_handoff_settings WHERE workspace_id=w AND enabled AND finance_user_id IS NOT NULL) THEN RETURN 'Configure o responsável Financeiro e revalide a formalização.';END IF;
+  IF NOT hiring_formalization_valid(i) THEN RETURN 'Os responsáveis ou a autorização da formalização mudaram; revalide o instrumento.';END IF;
+  RETURN 'Instrumento sem assinatura íntegra atual; novos aceites e documentos ficam bloqueados.';
+ END IF;
  RETURN NULL;
 END $$;
 -- Canonical project/milestone visibility evaluated under the caller's RLS (owner is the non-BYPASSRLS writer role).

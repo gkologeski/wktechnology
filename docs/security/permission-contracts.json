@@ -13396,7 +13396,7 @@
         "techcontracts.supplier_requests.provisions.manage.workspace",
         "techcontracts.supplier_requests.provisions.approve.workspace"
       ],
-      "rationale": "Package 4 batch C1 (PLANO-PROVISAO): versioned economic plan bound to request revision, start, WK legal entity and signed instrument hash; explicit modality/components/source clauses (never the demand reference value nor contract HTML); decision only by the configured Finance user, never author/submitter; eligible calculation from exact accepted delivery versions, approved closed non-imported canonical seconds of the engagement allocations and explicit monthly proration; management cost provision reusing hiring_monthly_provisions kind=cost/config_id NULL with ended-month close, hash freshness and chained immutable revisions. Provisions additionally require canonical techfinance.provisions keys; amounts require contract (and person) record access. No financial_entries, recurrence, payable or payment; sales billing fields only read. Writes require active member, active workspace, specific key with deny precedence and refuse read-only view-as; tables have no authenticated grants. Migration prepared only, not applied. Five-scenario SQL evidence exists per action (save literal below; submit/decide/view/preview/close generated per action in the same file).",
+      "rationale": "Package 4 batch C1 (PLANO-PROVISAO): versioned economic plan bound to request revision, start, WK legal entity and signed instrument hash; explicit modality/components/source clauses (never the demand reference value nor contract HTML); decision only by the configured Finance user, never author/submitter; eligible calculation from exact accepted delivery versions, approved closed non-imported canonical seconds of the engagement allocations and explicit monthly proration; management cost provision reusing hiring_monthly_provisions kind=cost/config_id NULL with ended-month close, hash freshness and chained immutable revisions. Provisions additionally require canonical techfinance.provisions keys; amounts require contract (and person) record access. No financial_entries, recurrence, payable or payment; sales billing fields only read. Writes require active member, active workspace, specific key with deny precedence and refuse read-only view-as; tables have no authenticated grants. Migration prepared only, not applied. Five-scenario SQL evidence exists per action (save literal below; submit/decide/view/preview/close generated per action in the same file). Independent review: canonical financial field masks apply to all private economic reads/writes; approval authority remains current; exact payload retries only. New cost snapshots in the existing provision table have an additional restrictive request/economics field boundary. Legacy provision RPCs retain their prior authorization checks and then redirect only request-owned contracts to this workflow. Time eligibility verifies the canonical closed-period scope/dates/snapshot and allocation/approval; caller RLS is evaluated in a single bounded source set. Delivery competence follows the recorded execution period, separately from acceptance date. Identical repeated closes return the same immutable row.",
       "controls": [
         {
           "file": "src/lib/access-control/work-core.server.ts",
@@ -13451,6 +13451,22 @@
         {
           "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
           "symbol": "hiring_econ_context"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_provision_row_access"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_legacy_provision_block"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_visible_times"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0383_hiring_economic_plans_provisions.sql",
+          "symbol": "hiring_econ_time_eligible"
         }
       ],
       "tests": {

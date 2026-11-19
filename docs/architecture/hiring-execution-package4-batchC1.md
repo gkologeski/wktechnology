@@ -33,3 +33,13 @@ Status: **preparado e testado localmente**. Migração `0383` **não aplicada**,
 - Competência da entrega é o mês do aceite; vencimento é informativo (C2 gera títulos).
 - `also_client_acceptance` continua bloqueado pela 0374; não foi destravado.
 - Fixture de horas/fechamento reproduz colunas de produção (0174) sem as funções de TechProjects.
+
+## Revisão independente local (19/11)
+
+- Regras atuais de campo oculto/mascarado de contrato, valores financeiros, tarifas e remuneração da pessoa são preservadas. Escrever exige também leitura econômica; fechamento preserva as chaves canônicas de consultar, preparar e aprovar provisão.
+- A aprovação econômica precisa continuar autorizada pelo Financeiro vigente; retentativas exigem payload/origem exatos e fechamento repetido idêntico retorna a mesma linha imutável.
+- Horas conferem pessoa, alocação/contrato/projeto, período, aprovação e o snapshot real do fechamento (id, revisão, segundos, usuário, projeto e data). Importações travadas/reabertas ou fontes incoerentes ficam fora. Fontes elegíveis sem acesso RLS bloqueiam o cálculo, sem falso zero. O acesso do chamador é resolvido em lote, preservando RLS, em vez de consultar permissões por apontamento.
+- A competência da entrega usa seu período de execução; o aceite libera o valor, sem deslocar o trabalho ao mês do aceite tardio. Competência sem linhas não fecha provisão. Moeda precisa ser a do instrumento e preço fechado tem precisão monetária explícita.
+- As novas linhas privadas de custo têm política restritiva adicional na tabela canônica. RPCs legadas mantêm seus gates anteriores e então encaminham somente contratos desta nova origem para o plano econômico; não geram uma segunda provisão por tarifas antigas.
+- **66/66 testes** locais: 62 SQL + 4 de apresentação. Incluem campos privados, papel financeiro atual, repetição exata, fontes de fechamento corrompidas/inacessíveis, competência de aceite tardio e os adaptadores legados. Cálculo de 200 fontes passou sob `statement_timeout=4s` em PostgreSQL descartável.
+- Preflight A+B+C1 no banco real, revertido: política restritiva nova, guardas dos adaptadores antigos, função de leitura de fontes sob o writer sem BYPASSRLS e privilégio CREATE restabelecido ao estado anterior. Sem persistência operacional.
