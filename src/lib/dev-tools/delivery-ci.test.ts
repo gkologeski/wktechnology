@@ -21,15 +21,34 @@ describe("CI acceleration keeps the release gate", () => {
     });
   });
   it("only caches downloads and content-based lint, never release evidence or build outputs", () => {
-    const caches = workflow().jobs.unit.steps.filter(
-      (s: { uses?: string }) => s.uses === "actions/cache@v4",
+    const caches = workflow().jobs.unit.steps.filter((s: { uses?: string }) =>
+      s.uses?.startsWith("actions/cache"),
     );
     expect(caches.map((s: { with: { path: string } }) => s.with.path).sort()).toEqual([
+      ".eslintcache",
       ".eslintcache",
       "~/.bun/install/cache",
     ]);
     expect(caches[0].with.key).toContain("hashFiles('bun.lock')");
     expect(caches[1].with["restore-keys"]).toContain("eslint-rules/**");
+  });
+  it("saves only verified lint cache before later gates without caching their evidence", () => {
+    const steps = workflow().jobs.unit.steps;
+    const restore = steps.find((s: { id?: string }) => s.id === "lint-cache");
+    const verify = steps.find((s: { id?: string }) => s.id === "verify");
+    const save = steps.find((s: { uses?: string }) => s.uses === "actions/cache/save@v4");
+    const build = steps.find((s: { run?: string }) => s.run === "bun run build");
+    expect(restore.uses).toBe("actions/cache/restore@v4");
+    expect(verify.run).toBe("bun run verify");
+    expect(save.if).toBe(
+      "${{ steps.verify.outcome == 'success' && steps.lint-cache.outputs.cache-hit != 'true' }}",
+    );
+    expect(save.with).toEqual({
+      path: ".eslintcache",
+      key: "${{ steps.lint-cache.outputs.cache-primary-key }}",
+    });
+    expect(steps.indexOf(verify)).toBeLessThan(steps.indexOf(save));
+    expect(steps.indexOf(save)).toBeLessThan(steps.indexOf(build));
   });
   it("keeps full verification, build and budgets unconditional even on cache hits", () => {
     const steps = workflow().jobs.unit.steps;
