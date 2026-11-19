@@ -873,9 +873,13 @@ function ImportedFieldsCard({ contract }: { contract: ImportedFields }) {
         ? String(contract.confidentiality_term_months)
         : null,
     ],
-    ["Provedor de assinatura", contract.signature_provider ?? null],
-    ["ID do documento", contract.signature_document_id ?? null],
-    ["ID da operação", contract.signature_operation_id ?? null],
+    // Extraídos do arquivo: referência a conferir, nunca prova de assinatura.
+    [
+      "Provedor de assinatura (referência extraída, a conferir)",
+      contract.signature_provider ?? null,
+    ],
+    ["ID do documento (referência extraída)", contract.signature_document_id ?? null],
+    ["ID da operação (referência extraída)", contract.signature_operation_id ?? null],
     ["Arquivo original", contract.source_file_path ?? null],
   ];
   const filled = rows.filter(([, v]) => v != null && v !== "");
