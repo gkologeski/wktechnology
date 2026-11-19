@@ -323,7 +323,16 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       selfNumber: f.self_contract_number,
       fileName: (data.source_file_path ?? "").split("/").pop() ?? null,
     });
-    const isAmendment = f.document_kind === "amendment" || signals.isAmendment;
+    const isAmendment = data.manual_document_kind
+      ? data.manual_document_kind === "amendment"
+      : f.document_kind === "amendment" || signals.isAmendment;
+    metadata.document_kind_source = data.manual_document_kind ? "manual" : "detected";
+    if (data.manual_document_kind === "main" && signals.isAmendment)
+      metadata.import_warnings = [
+        ...((metadata.import_warnings as string[] | undefined) ?? []),
+        "Tipo Principal escolhido manualmente; o arquivo contém sinais de aditivo. Confira o documento.",
+      ];
+
     const amendmentNumber = (f.amendment_number ?? "").trim() || signals.number;
     if (f.document_kind) metadata.document_kind_extracted = f.document_kind;
     if (amendmentNumber) metadata.amendment_number_extracted = amendmentNumber;
@@ -343,6 +352,7 @@ export const createContractFromImport = createServerFn({ method: "POST" })
       workspace_id: workspaceId,
       owner_id: userId,
       role,
+      document_kind: isAmendment ? "amendment" : "main",
       title:
         buildContractTitle({
           role,

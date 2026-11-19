@@ -31,6 +31,7 @@ export const LEGACY_IMPORT_KEY = "techcontracts.legacy_contracts.create.workspac
 const IMPORTS_KEY = "techcontracts.imports.manage.workspace";
 const CREATE_KEYS = [
   "techcontracts.contracts.create.own",
+  "techcontracts.contracts.create.team",
   "techcontracts.contracts.create.workspace",
 ];
 const VIEW_KEYS = [
@@ -103,6 +104,7 @@ export type CreateFromImportRequest = {
   legacy_reason?: string;
   operation_id: string;
   manual_role: ManualRole;
+  manual_document_kind?: "main" | "amendment";
 };
 
 export function buildCreateFromImportRequest(a: {
@@ -113,6 +115,7 @@ export function buildCreateFromImportRequest(a: {
   bodyHtml: string | null;
   reason?: string;
   manualRole: ManualRole;
+  manualDocumentKind?: "main" | "amendment";
 }): CreateFromImportRequest {
   if (a.mode === "legacy") {
     const err = legacyReasonError(a.reason ?? "");
@@ -129,11 +132,18 @@ export function buildCreateFromImportRequest(a: {
     ...(a.mode === "legacy" ? { legacy_reason: (a.reason ?? "").trim() } : {}),
     operation_id: a.attempt.operationId,
     manual_role: a.manualRole,
+    ...(a.manualDocumentKind ? { manual_document_kind: a.manualDocumentKind } : {}),
   };
 }
 
 /** Confirma que o servidor criou o legado pendente; nunca presume pelo simples retorno de id. */
-export function legacyPendingConfirmed(state: unknown): boolean {
-  const r = (state as { record?: { status?: string } | null } | null)?.record;
-  return r?.status === "pending";
+export function legacyPendingConfirmed(value: unknown): boolean {
+  const load = value as {
+    access?: string;
+    classification?: string;
+    state?: { record?: { status?: string } | null };
+  } | null;
+  return load?.access === "granted"
+    ? load.state?.record?.status === "pending"
+    : load?.access === "denied" && load.classification === "pending";
 }

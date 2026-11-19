@@ -140,6 +140,7 @@ export const CreateFromImportSchema = z.object({
   operation_id: z.string().uuid().optional(),
   /** Explicit user choice; extracted role alone is not a manual override. */
   manual_role: z.enum(["provider", "client"]).nullable().optional(),
+  manual_document_kind: z.enum(["main", "amendment"]).optional(),
   fields: ExtractedContractSchema,
   source_file_path: z.string().nullable().optional(),
   imported_from: z.enum(["pdf", "docx"]),

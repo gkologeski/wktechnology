@@ -97,3 +97,18 @@ BEGIN
 END $$;
 -- Existing owner/ACL and ordinary signing behavior are preserved by CREATE OR REPLACE.
 NOTIFY pgrst,'reload schema';
+
+-- Reuse canonical own/team/workspace checks for both user RPCs and server attestation.
+-- The specific legacy key never substitutes for actual current view/update of the contract.
+CREATE OR REPLACE FUNCTION public.contract_legacy_subject(w uuid,u uuid,c public.contracts,p_action text)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
+ SELECT u IS NOT NULL AND c.id IS NOT NULL AND c.workspace_id=w
+  AND EXISTS(SELECT 1 FROM workspaces WHERE id=w AND coalesce(status,'active')='active')
+  AND EXISTS(SELECT 1 FROM profiles WHERE id=u AND active_workspace_id=w)
+  AND is_workspace_member(w,u)
+  AND EXISTS(SELECT 1 FROM user_effective_permissions(u,w) k WHERE k='techcontracts.legacy_contracts.'||p_action||'.workspace')
+  AND work_context_access(work_subject_context(w,u),w,'techcontracts.contracts','view',ARRAY[coalesce(c.assigned_to,c.owner_id)])
+  AND (p_action='view' OR work_context_access(work_subject_context(w,u),w,'techcontracts.contracts','update',ARRAY[coalesce(c.assigned_to,c.owner_id)]))
+$$;
+-- Existing private ACL is preserved.
+NOTIFY pgrst,'reload schema';

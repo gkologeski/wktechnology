@@ -9088,7 +9088,7 @@
       "kind": "presentation",
       "rationale": "Pure static value definitions and filtering only; no route, query, credentials or business action.",
       "files": {
-        "src/lib/contracts/import-schemas.ts": "5fe76e514537325803ff8edbf44d6ee9a5d4fa8c16be3eb951a7e23130419f2c",
+        "src/lib/contracts/import-schemas.ts": "0d6581d94347f9a4f0397fc79fd5b203aa63bdc0d5557a16218e63e255504fec",
         "src/lib/contracts/workflow-field-meta.ts": "417fd4f63e8139ec0702adbbd71ce04d0956d88aceedcb8d4bd79b6e6ff760c6"
       }
     },
@@ -9210,9 +9210,9 @@
       },
       "files": {
         "src/components/contracts/contract-form/contract-field-input.tsx": "5dfdf300f65db113dbae568d5e052d571495c348a48c9d7711960056f94d8aa4",
-        "src/components/contracts/import-contract-file-dialog.tsx": "e8439b16ba7560ca8fb1091f0dfb103a7dda3fe6763c202f36f59584dd59d061",
+        "src/components/contracts/import-contract-file-dialog.tsx": "dfbb96b66a1393e62f39c29856365251e3ed02211f3fb9eeb62a78cdfa6a0168",
         "src/components/contracts/import-contract-template-dialog.tsx": "7df6975f4edea9277cdc7630c2e2e6ff9dbb8548443f51d56269d27f98f66aae",
-        "src/lib/contracts/import.functions.ts": "49e728fee401af687e1b4770906c69e9cb8ad5254c363f7a668c88b0b5237205",
+        "src/lib/contracts/import.functions.ts": "d628d1f96005c2cb81738617bad1041a12f714f6c7cf8e6dd9cdcca03aaa704c",
         "src/lib/contracts/template-import.server.ts": "5c5d3a9ad8fc2ef9d2ffcfa801ed137918c8b8e87a24849a370683adafead285",
         "src/routes/_authenticated/contracts.templates.$id.tsx": "269e0f1483c1cd18f259b401bd00d8383fd1d22835b10141c4b1a2ef86e79176",
         "src/routes/api/contracts.template-import.ts": "e7df83c1225f941ccf71100af6fd0fb532206b0d1b3c4bd8e6efaafc783fd5d9",
@@ -9220,7 +9220,7 @@
         "src/routes/_authenticated/contracts.templates.index.tsx": "804337a7c0fceceabd916f6a30232432d1c15efcf8edb84b2d006274002ce835",
         "src/components/contracts/contract-template-actions-menu.tsx": "a4d89311fce43da22b7d356cdb3258210fe63da0f4071ec6b002103186d56fe9",
         "drizzle/migrations/0322_contract_templates_allow_archived.sql": "dbde6b67be72afbcfffeae038d38c5ca438bb430cab08d9010e1758856bf5e3c",
-        "src/components/contracts/batch-import-contracts-dialog.tsx": "3c75c5da6e1f287245b62029dcab5f9ef1cdf1f1e94f38cc06ba063a8235699c",
+        "src/components/contracts/batch-import-contracts-dialog.tsx": "8c801b2becbdfd87e8650e95896a7226c7e58cb01d79e307aba8fbde9eed4013",
         "src/components/contracts/contract-body-from-source-button.tsx": "a55350285dc6125b298bc3f75f00efbb65988eb8b120f782b1176432d5110290",
         "src/components/contracts/import/import-mode-chooser.tsx": "5d93832db95909e70eff018099c6d721a47796755304128f11b13400daa2493c"
       }
@@ -13652,7 +13652,7 @@
         "techcontracts.contracts.view.workspace",
         "techcontracts.contracts.update.workspace"
       ],
-      "rationale": "LEGADO-REGULARIZA lote A: explicit audited recognition and human regularization of the SAME imported contract (id, source file, body, parties, links preserved). Classification lives only in definer-owned tables, never in metadata/imported_from/GUC/manual status. Every action requires active workspace, active membership in the active workspace, real contract view (and update for writes) via work_context_access, the specific legacy key with deny precedence, and refuses read-only view-as. Governed origins (hiring request, proposal/accepted draft, any signature in progress or done) are refused. Regularization requires a server-attested private PDF hash, human-confirmed signature date, plausible dates, confirmed auto-renewal and blocks future validity and pending billing holds; it creates no proposal, draft, signature, service, title, payment or grant. Commercial guard bypass applies only to regularized and validated legacy records. Migration prepared only, outside the journal, not applied. SQL source of record: docs/prepared-migrations/0385_contract_legacy_regularization.sql (outside the journal until review; move into drizzle/migrations on approval and bind its hash then). Batch B: thin authenticated server functions (user client only; privileged store/attest only after the user reservation returns the path; 60 s signed download only after the user open RPC), detail panel (trail center, actions right) gated by view/create/approve keys plus contract update, and next-step/signature card hide new approval/signature calls while legacy is pending, regularized or not yet verified. Ordinary contract readers receive classification only (no private history/evidence), so lack of legacy.view cannot expose a new signing flow. New approval/signature inserts serialize on the contract lock; import is one user/RLS transaction with stable operation UUID, rollback and retry deduplication (0387 prepared).",
+      "rationale": "Explicit recognition and human regularization of the same imported contract, preserving its immutable original, id, links and attachments. Protected records/events never derive from metadata, IA references or status alone. User actions require active membership/workspace, the specific legacy key, canonical own/team/workspace contract view and update for writes, deny precedence and refuse read-only view-as. Existing imported active/ended/terminated records can be recognized without regressing status; governed hiring, accepted proposal/draft and actual signature operations are excluded. Regularization binds all current material terms and requires a server-attested private signed PDF, explicit human signature/date/situation/reference/reason and plausible dates; rebase supersedes old evidence. Regularization preserves existing services/billing holds and creates no title/payment/service/IAM grant; 0387 suppresses billing release only during the private regularization transaction. Ordinary readers get classification only; private evidence/history still need legacy.view. The release migrations0385/0387 are registered and reviewed but await CI/application/publication.",
       "controls": [
         {
           "file": "src/lib/access-control/work-core.server.ts",
@@ -13834,7 +13834,7 @@
       "files": {
         "src/lib/contracts/legacy-types.ts": "3a3721ee84bc3aafabb7b6832971501d92bf44993deafff69e42eebec585b5bb",
         "src/lib/contracts/legacy-view.ts": "46d8cdd96a88a4289c32cdb42632e7f2ec3a146bcd480ce12783b48190d5b046",
-        "src/lib/contracts/import-mode.ts": "823094ef25a81e6751d1382dbebde5864846ea4d31029e954a271e2feacded2b"
+        "src/lib/contracts/import-mode.ts": "fcc7295ec673e5242aaeaa811eaba71835fbd4fe9ee191047a1388c52853c28f"
       },
       "rationale": "Static DTOs, labels, PDF magic-byte check, SHA-256 helper, import-mode rules and the presentational import-mode chooser only; no data access or actions (server/RLS revalidate)."
     },
@@ -13894,6 +13894,10 @@
         {
           "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
           "symbol": "contracts_release_service_billing_trg"
+        },
+        {
+          "file": "drizzle/migrations/0387_contract_legacy_import_atomic.sql",
+          "symbol": "contract_legacy_subject"
         }
       ],
       "tests": {
@@ -13919,7 +13923,7 @@
         }
       },
       "files": {
-        "drizzle/migrations/0387_contract_legacy_import_atomic.sql": "31c70c09ad9c239f45c9c1ad534c6b6a811409ce4fead948dce9da5635684af8"
+        "drizzle/migrations/0387_contract_legacy_import_atomic.sql": "aa3b6adb1e36d1e0a3fde53ffde7ef6425f93b2bdf1de57c1b97375dfa480d64"
       }
     }
   ],

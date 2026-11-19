@@ -247,6 +247,9 @@ beforeAll(async () => {
     body("drizzle/migrations/0218_order3_completion_prepare.sql", "public.work_area_authorize"),
   );
   await db.unsafe(
+    body("drizzle/migrations/0218_order3_completion_prepare.sql", "public.work_subject_context"),
+  );
+  await db.unsafe(
     readFileSync("drizzle/migrations/0387_contract_legacy_import_atomic.sql", "utf8"),
   );
   // Actual audit and contract handoff trigger bodies, with inert canonical tables.
@@ -1077,4 +1080,38 @@ it("legacy requires an explicit non-null situation even through direct RPC", asy
   expect(
     (await db`select status from contract_legacy_records where contract_id=${K}`)[0].status,
   ).toBe("pending");
+});
+it("legacy supports canonical team access without workspace contract grants", async () => {
+  await reset({ assigned_to: V });
+  const group = randomUUID();
+  await db`insert into user_groups(id,workspace_id,name) values(${group},${W},'Equipe do contrato')`;
+  await db`insert into user_group_members(group_id,user_id) values(${group},${U}),(${group},${V})`;
+  await db`insert into permissions(key) values('techcontracts.contracts.view.team'),('techcontracts.contracts.update.team') on conflict do nothing`;
+  await db`delete from job_role_permission_overrides where role_id=${U} and permission_key in ('techcontracts.contracts.view.workspace','techcontracts.contracts.update.workspace')`;
+  await db`insert into job_role_permission_overrides values(${W},${U},'techcontracts.contracts.view.team','grant'),(${W},${U},'techcontracts.contracts.update.team','grant')`;
+  expect((await recognize()).status).toBe("pending");
+  expect((await regularize(await attachEvidence())).status).toBe("regularized");
+});
+it("legacy server attestation revalidates the uploader's current contract update access", async () => {
+  await reset();
+  await recognize();
+  const reserve = await as(U, (tx) =>
+    tx`select contract_legacy_evidence_reserve(${W},${K},1,'a.pdf',1234,${SHA},${randomUUID()}) r`.then(
+      (x) => x[0].r,
+    ),
+  );
+  await db`insert into storage.objects(bucket_id,name,user_metadata) values('contract-signature-evidence',${reserve.path},${db.json({ sha256: SHA, actor_id: U })})`;
+  await db`delete from job_role_permission_overrides where role_id=${U} and permission_key='techcontracts.contracts.update.workspace'`;
+  await expect(
+    as(
+      null,
+      (tx) =>
+        tx`select contract_legacy_evidence_attest(${W},${reserve.evidence_id},${U},${SHA},1234)`,
+      { role: "service_role" },
+    ),
+  ).rejects.toThrow(/indisponível/);
+  expect(
+    (await db`select status from contract_legacy_evidence where id=${reserve.evidence_id}`)[0]
+      .status,
+  ).toBe("pending_upload");
 });

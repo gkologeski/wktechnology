@@ -137,7 +137,7 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
   const permissions = usePermissions();
   const permsReady = !permissions.isLoading && !permissions.isError;
   const canImport = permsReady && permissions.can("techcontracts.imports.manage.workspace");
-  const { access, canViewLegacy } = useImportModeAccess();
+  const { access } = useImportModeAccess();
   const loadLegacy = useServerFn(getContractLegacyState);
   const [mode, setMode] = useState<ImportMode | null>(null);
   const [reason, setReason] = useState("");
@@ -324,15 +324,12 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
           bodyHtml,
           reason,
           manualRole,
+          manualDocumentKind: item.docKind,
         });
-        const result = await createFromImport({ data: request } as unknown as Parameters<
-          typeof createFromImport
-        >[0]);
+        const result = await createFromImport({ data: request });
         let legacyNote: string | undefined;
         if (mode === "legacy") {
-          const state = canViewLegacy
-            ? await loadLegacy({ data: { contractId: result.id } }).catch(() => null)
-            : null;
+          const state = await loadLegacy({ data: { contractId: result.id } }).catch(() => null);
           legacyNote = legacyPendingConfirmed(state)
             ? "Legado pendente — revise e regularize na ficha"
             : "Criado; reconhecimento como legado não confirmado — confira na ficha (não reimporte)";
@@ -422,7 +419,6 @@ export function BatchImportContractsDialog({ open, onOpenChange, onImported }: P
     mode,
     access,
     reason,
-    canViewLegacy,
     loadLegacy,
     linkFn,
     linkAmendment,

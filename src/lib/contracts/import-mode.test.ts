@@ -131,8 +131,28 @@ describe("legacy request", () => {
     expect(bodylessRetryAllowed("legacy")).toBe(false);
   });
   it("pending is confirmed only from the legacy state", () => {
-    expect(legacyPendingConfirmed({ record: { status: "pending" } })).toBe(true);
-    expect(legacyPendingConfirmed({ record: null })).toBe(false);
+    expect(
+      legacyPendingConfirmed({ access: "granted", state: { record: { status: "pending" } } }),
+    ).toBe(true);
+    expect(legacyPendingConfirmed({ access: "granted", state: { record: null } })).toBe(false);
     expect(legacyPendingConfirmed({ id: "x" })).toBe(false);
+    expect(legacyPendingConfirmed({ access: "denied", classification: "pending" })).toBe(true);
+    expect(legacyPendingConfirmed({ record: { status: "pending" } })).toBe(false);
   });
+});
+
+it("import batch preserves the explicit principal or amendment choice", () => {
+  for (const kind of ["main", "amendment"] as const) {
+    const request = buildCreateFromImportRequest({
+      mode: "legacy",
+      fields,
+      attempt: { operationId: "op", sourceFilePath: "original.pdf", uploaded: true },
+      kind: "pdf",
+      bodyHtml: null,
+      reason: "Acervo conferido",
+      manualRole: null,
+      manualDocumentKind: kind,
+    });
+    expect(request.manual_document_kind).toBe(kind);
+  }
 });

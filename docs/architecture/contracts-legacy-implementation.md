@@ -94,3 +94,9 @@ A revisão complementar local usa a 0387 preparada para importar e reconhecer co
 - Payload enviado: campos atuais + `import_mode`, `legacy_reason`, `operation_id`, `manual_role` (cast documentado até o schema/servidor do lote C/0387 entrarem). A revisão (`buildImportPatch`) nunca grava `signature_*`.
 - Dependência: sem a mudança local de `import.functions.ts`/`import-schemas.ts`/0387, o servidor ignora os campos novos e o legado não é reconhecido; a tela detecta e avisa.
 - Ajuda: `importar-contrato` v8, `importar-em-lote` v3, `editar-contrato` v9, `consultar-contratos` v3 e novo `regularizar-contrato-legado` v1 (`/contracts/$id`, `legacy_contracts.view`). Catálogo oficial não regenerado.
+
+## Preparação final de release
+
+As migrações0385,0386 e0387 foram movidas para `drizzle/migrations` e registradas no journal; não foram aplicadas em produção. As referências de testes e catálogo acompanham os novos caminhos. A 0387 também revalida a autorização canônica atual por escopo próprio/equipe/workspace no atestado do servidor. A integração corrigiu a confirmação de pendência para consumir o retorno real do servidor (`access/state` ou classificação sem detalhes privados), removeu casts transitórios e incluiu o teste do seletor visual no padrão `.test.ts` obrigatório. A escolha explícita Principal/Aditivo do lote é preservada no payload, além da escolha de papel.
+
+Não publicar até `verify`, build, performance e CI completos. A conferência final deve comparar os66originais/vínculos e alçadas/pacotes/overrides com o baseline read-only, publicar Ajuda versionada e validar navegador administrativo/restrito. Não há regularização em massa de contratos reais nem nova concessão de acesso implícita.
