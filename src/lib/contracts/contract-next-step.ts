@@ -71,7 +71,7 @@ export function contractNextStep(input: NextStepInput): NextStep {
       ...step,
       explanation: `Contrato legado regularizado com o original assinado; alterações somente por aditivo. ${step.explanation}`,
     };
-  if (input.legacyEligible && (input.status === "draft" || input.status === "in_negotiation"))
+  if (input.legacyEligible && input.status !== "awaiting_signature")
     return {
       ...step,
       secondary: [
@@ -93,7 +93,7 @@ function legacyNextStep(input: NextStepInput): NextStep | null {
       secondary: [{ label: "Revisar documento", target: tab("document") }],
       checklist: [],
     };
-  if (input.legacy === "unknown" && input.status === "draft")
+  if (input.legacy === "unknown")
     return {
       stageIndex: 0,
       headline: "Verificando se é contrato legado",

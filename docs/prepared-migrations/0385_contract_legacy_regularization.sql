@@ -24,9 +24,15 @@ CREATE TABLE public.contract_legacy_records(
  regularized_at timestamptz,
  situation text CHECK(situation IN('in_force','ended','terminated')),
  evidence_id uuid,
+ -- Situação canônica no reconhecimento: preservada durante pending; só a regularização humana a altera.
+ prior_status text NOT NULL,
+ prior_signed_at timestamptz,
  UNIQUE(contract_id),
  UNIQUE(workspace_id,id)
 );
+-- Marca transacional privada (sem GRANT): só a RPC de regularização a escreve; prova para a guarda, ao contrário de GUC/current_user.
+CREATE TABLE public.contract_legacy_apply(txid bigint NOT NULL,contract_id uuid NOT NULL,PRIMARY KEY(txid,contract_id));
+REVOKE ALL ON public.contract_legacy_apply FROM PUBLIC,anon,authenticated,service_role;
 CREATE TABLE public.contract_legacy_evidence(
  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
  workspace_id uuid NOT NULL,
@@ -94,13 +100,15 @@ CREATE FUNCTION public.contract_legacy_protected_problem(c public.contracts) RET
   WHEN c.hiring_request_origin IS NOT NULL THEN 'Contrato originado de solicitação de contratação segue o fluxo governado.'
   WHEN c.proposal_id IS NOT NULL OR c.quote_id IS NOT NULL OR coalesce(c.metadata ? 'accepted_contract_draft',false) OR coalesce(c.metadata ? 'accepted_proposal',false)
    THEN 'Contrato com proposta ou minuta aceita segue a jornada comercial.'
-  WHEN c.signed_at IS NOT NULL OR c.signed_pdf_path IS NOT NULL OR c.signature_provider IS NOT NULL OR c.signature_document_id IS NOT NULL OR c.signature_operation_id IS NOT NULL
+  -- signed_at isolado (ativação manual) e signature_provider/document_id/operation_id extraídos pelo importador são só referência
+  -- documental: não provam nem bloqueiam; ficam preservados (guarda) e exigem PDF atestado + confirmação humana.
+  -- Assinatura real = pacotes, entregas, operações ForSign, evidência de contratação, PDF assinado nativo ou status awaiting_signature.
+  WHEN c.status::text='awaiting_signature' OR c.signed_pdf_path IS NOT NULL
    OR EXISTS(SELECT 1 FROM contract_signature_packages x WHERE x.contract_id=c.id)
    OR EXISTS(SELECT 1 FROM contract_esign_deliveries x WHERE x.contract_id=c.id)
    OR EXISTS(SELECT 1 FROM contract_forsign_operations x WHERE x.contract_id=c.id)
    OR EXISTS(SELECT 1 FROM hiring_contract_evidence x WHERE x.contract_id=c.id)
    THEN 'Contrato com assinatura em curso ou concluída não pode ser regularizado como legado.'
-  WHEN c.status::text<>'draft' THEN 'Somente contratos em rascunho podem ser reconhecidos como legado.'
   WHEN c.source_file_path IS NULL OR c.imported_from IS NULL THEN 'Somente contratos importados de arquivo podem ser reconhecidos como legado.'
  END
 $$;
@@ -156,8 +164,8 @@ BEGIN
  SELECT * INTO r FROM contract_legacy_records WHERE contract_id=c.id FOR UPDATE;
  IF r.id IS NULL THEN
   IF p_expected_revision IS NOT NULL THEN RAISE EXCEPTION 'STALE: contrato ainda não reconhecido como legado.';END IF;
-  INSERT INTO contract_legacy_records(workspace_id,contract_id,contract_fingerprint,recognized_by,recognition_reason) VALUES(w,c.id,fp,auth.uid(),btrim(p_reason)) RETURNING * INTO r;
-  INSERT INTO contract_legacy_events(workspace_id,legacy_id,contract_id,kind,revision,operation_id,request_hash,actor_id,details) VALUES(w,r.id,c.id,'recognized',1,p_operation,h,auth.uid(),jsonb_build_object('fingerprint',fp,'reason',btrim(p_reason)));
+  INSERT INTO contract_legacy_records(workspace_id,contract_id,contract_fingerprint,recognized_by,recognition_reason,prior_status,prior_signed_at) VALUES(w,c.id,fp,auth.uid(),btrim(p_reason),c.status::text,c.signed_at) RETURNING * INTO r;
+  INSERT INTO contract_legacy_events(workspace_id,legacy_id,contract_id,kind,revision,operation_id,request_hash,actor_id,details) VALUES(w,r.id,c.id,'recognized',1,p_operation,h,auth.uid(),jsonb_build_object('fingerprint',fp,'reason',btrim(p_reason),'prior_status',c.status::text,'prior_signed_at',c.signed_at));
  ELSE
   IF r.status<>'pending' THEN RAISE EXCEPTION 'Contrato legado já regularizado.' USING ERRCODE='23514';END IF;
   IF p_expected_revision IS DISTINCT FROM r.revision THEN RAISE EXCEPTION 'STALE: revisão esperada difere da atual.';END IF;
@@ -260,8 +268,10 @@ BEGIN
  IF EXISTS(SELECT 1 FROM services s WHERE s.contract_id=c.id AND s.workspace_id=w AND s.billing_hold IS NOT NULL) THEN
   RAISE EXCEPTION 'Contrato possui serviço aguardando liberação de cobrança; a regularização de legado não libera cobranças.' USING ERRCODE='23514';END IF;
  old_terms:=jsonb_build_object('status',c.status,'starts',c.starts_at,'ends',c.ends_at,'auto_renew',c.auto_renew);
+ INSERT INTO contract_legacy_apply VALUES(txid_current(),c.id);
  UPDATE contracts SET status=st,signed_at=(p_signed_on::timestamp AT TIME ZONE 'America/Sao_Paulo'),starts_at=p_starts,ends_at=p_ends,auto_renew=coalesce(p_auto_renew,false) WHERE id=c.id RETURNING * INTO c;
  fp:=contract_legacy_fingerprint(c);
+ DELETE FROM contract_legacy_apply WHERE txid=txid_current() AND contract_id=c.id;
  UPDATE contract_legacy_evidence SET status='used' WHERE id=ev.id;
  UPDATE contract_legacy_records SET status='regularized',revision=revision+1,contract_fingerprint=fp,regularized_by=auth.uid(),regularized_at=now(),situation=p_situation,evidence_id=ev.id WHERE id=r.id RETURNING * INTO r;
  INSERT INTO contract_legacy_events(workspace_id,legacy_id,contract_id,kind,revision,operation_id,request_hash,actor_id,details) VALUES(w,r.id,c.id,'regularized',r.revision,p_operation,h,auth.uid(),
@@ -300,15 +310,17 @@ $$;
 
 -- Após a regularização o documento conferido é imutável (mudanças por aditivo); status manual já é bloqueado por contract_process_guard.
 CREATE FUNCTION public.contract_legacy_contract_guard() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
-DECLARE st text;
+DECLARE st text;applying boolean;
 BEGIN
  SELECT r.status INTO st FROM public.contract_legacy_records r WHERE r.contract_id=OLD.id;
  IF st IS NULL THEN RETURN NEW;END IF;
+ applying:=EXISTS(SELECT 1 FROM public.contract_legacy_apply a WHERE a.txid=txid_current() AND a.contract_id=OLD.id);
  -- Pendente ou regularizado: nenhuma origem governada/assinatura nova pode ser enxertada no legado.
  IF (NEW.signature_provider,NEW.signature_document_id,NEW.signature_operation_id,NEW.signed_pdf_path,NEW.proposal_id,NEW.quote_id,NEW.hiring_request_origin)
    IS DISTINCT FROM (OLD.signature_provider,OLD.signature_document_id,OLD.signature_operation_id,OLD.signed_pdf_path,OLD.proposal_id,OLD.quote_id,OLD.hiring_request_origin)
-  OR (st='pending' AND NEW.signed_at IS DISTINCT FROM OLD.signed_at AND current_user NOT IN('postgres','supabase_admin')) THEN
-  RAISE EXCEPTION 'Contrato legado: assinatura, proposta ou origem nova não podem ser vinculadas; regularize com o original assinado.' USING ERRCODE='23514';
+  -- Pendente preserva status e assinatura canônicos; só a regularização humana (marca privada) os altera.
+  OR (st='pending' AND NOT applying AND (NEW.signed_at,NEW.status) IS DISTINCT FROM (OLD.signed_at,OLD.status)) THEN
+  RAISE EXCEPTION 'Contrato legado: status, assinatura, proposta ou origem nova não podem ser alterados; regularize com o original assinado.' USING ERRCODE='23514';
  END IF;
  -- Regularizado: todos os termos conferidos ficam imutáveis (documento, partes, vigência, valores, moeda, pagamento, identificadores e assinatura).
  IF st='regularized' AND (NEW.source_file_path,NEW.body_html,NEW.role,NEW.counterparty_company_id,NEW.contracting_legal_entity_id,NEW.legal_entity_id,NEW.signed_at,

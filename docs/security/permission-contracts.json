@@ -7307,7 +7307,7 @@
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
         "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
-        "src/routes/_authenticated/contracts.$id.tsx": "18315e4e6894d81fef3d639536baa3bf4c7c8efdfca4bcbaf3a138e592e1431d",
+        "src/routes/_authenticated/contracts.$id.tsx": "06c1ab0f4d445f677b8c78402410b9bb103fe50512bfcc172abb44cfa938b989",
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
@@ -9585,7 +9585,7 @@
       "kind": "presentation",
       "rationale": "PROXIMO-PASSO-CONTRATO: pure next-step rule and presentational stepper/card. No I/O; actions only switch tabs or navigate to existing gated screens whose permissions stay in their own contracts.",
       "files": {
-        "src/lib/contracts/contract-next-step.ts": "80443bbd34dcf93d79c9580e441ba09c2c5d3c781ef217ef5c7867bf34c89a7d"
+        "src/lib/contracts/contract-next-step.ts": "f1774f3a00efb5808330aad6ad7e5a7b360f58d162edb81e54c901b06fda10a7"
       }
     },
     {
