@@ -23,7 +23,16 @@ export const getOperations = createServerFn({ method: "POST" })
 /** Projects/milestones visible to the caller (user RLS, limited); the RPC rechecks visibility. */
 export const listDeliveryProjects = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator(z.object({ kind: requestKind, id, projectId: id.nullable() }))
+  .inputValidator(
+    z.object({
+      kind: requestKind,
+      id,
+      projectId: id.nullable(),
+      milestoneId: id.nullable().optional(),
+      projectSearch: z.string().max(100).default(""),
+      milestoneSearch: z.string().max(100).default(""),
+    }),
+  )
   .handler(async ({ context, data }) => {
     const w = await getActiveWorkspaceId(context.supabase, context.userId);
     // Only callers allowed to manage deliveries of this request may list references.
@@ -36,6 +45,7 @@ export const listDeliveryProjects = createServerFn({ method: "POST" })
       .from("projects")
       .select("id,name")
       .eq("workspace_id", w)
+      .ilike("name", `%${data.projectSearch.trim()}%`)
       .order("name")
       .limit(50);
     if (projects.error) throw new Error("Projetos indisponíveis.");
@@ -46,12 +56,35 @@ export const listDeliveryProjects = createServerFn({ method: "POST" })
         .select("id,name")
         .eq("workspace_id", w)
         .eq("project_id", data.projectId)
+        .ilike("name", `%${data.milestoneSearch.trim()}%`)
         .order("sort_order")
         .limit(50);
       if (m.error) throw new Error("Marcos indisponíveis.");
       milestones = m.data ?? [];
     }
-    return { projects: projects.data ?? [], milestones };
+    const visibleProjects = projects.data ?? [];
+    if (data.projectId && !visibleProjects.some((p) => p.id === data.projectId)) {
+      const selected = await context.supabase
+        .from("projects")
+        .select("id,name")
+        .eq("workspace_id", w)
+        .eq("id", data.projectId)
+        .maybeSingle();
+      if (selected.error) throw new Error("Projeto selecionado indisponível.");
+      if (selected.data) visibleProjects.push(selected.data);
+    }
+    if (data.projectId && data.milestoneId && !milestones.some((m) => m.id === data.milestoneId)) {
+      const selected = await context.supabase
+        .from("project_milestones")
+        .select("id,name")
+        .eq("workspace_id", w)
+        .eq("project_id", data.projectId)
+        .eq("id", data.milestoneId)
+        .maybeSingle();
+      if (selected.error) throw new Error("Marco selecionado indisponível.");
+      if (selected.data) milestones.push(selected.data);
+    }
+    return { projects: visibleProjects, milestones };
   });
 
 export const saveDelivery = createServerFn({ method: "POST" })
@@ -201,12 +234,17 @@ export const uploadFiscalDocument = createServerFn({ method: "POST" })
     const up = await bucket.upload(reserved.path, bytes, { contentType: mime, upsert: false });
     if (up.error && !/exists|duplicate/i.test(up.error.message))
       throw new Error("Falha ao armazenar o arquivo privado.");
-    const back = await bucket.download(reserved.path);
-    if (
-      back.error ||
-      hex(await crypto.subtle.digest("SHA-256", await back.data.arrayBuffer())) !== digest
-    )
-      throw new Error("Arquivo armazenado difere do enviado; envio interrompido.");
+    const { attestReservedFiscalFile } = await import("./fiscal-attestation.server");
+    await attestReservedFiscalFile({
+      workspaceId: w,
+      requestId: data.id,
+      documentId: reserved.id,
+      actorId: context.userId,
+      path: reserved.path,
+      sha256: digest,
+      size: bytes.length,
+      mime,
+    });
     return {
       id: await workRpc<string>(context.supabase, "hiring_fiscal_register", {
         w,

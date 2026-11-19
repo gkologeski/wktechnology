@@ -13193,7 +13193,7 @@
         "techpeople.hiring_requests.fiscal_documents.approve.workspace",
         "techcontracts.supplier_requests.fiscal_documents.approve.workspace"
       ],
-      "rationale": "Package 4 batch B (ENTREGA-FISCAL): versioned deliveries with explicit acceptance by the named responsible (never author/submitter) bound to version/content hash and the current start/signature proof; private fiscal documents in a dedicated private bucket and immutable trail (never signed attachments), server-side byte sniffing and SHA-256, canonical WK/issuer CNPJ, duplicate identity/bytes, and explicit Finance check by someone other than the uploader. No payable, title, payment, invite or IAM; no external fiscal authentication. Writes require active member, active workspace, specific key with deny precedence and refuse read-only view-as; reads go only through definer RPCs (no table grants). Migration prepared only, not applied. Five-scenario SQL evidence exists per action in deliveries-postgres.test.ts (save, submit, decide, fiscal upload, download, review); the contract binds the save group.",
+      "rationale": "Package 4 batch B (ENTREGA-FISCAL): versioned deliveries with explicit acceptance by the named responsible (never author/submitter) bound to version/content hash and the current start/signature proof; private fiscal documents in a dedicated private bucket and immutable trail (never signed attachments), server-side byte sniffing and SHA-256, canonical WK/issuer CNPJ, duplicate identity/bytes, and explicit Finance check by someone other than the uploader. No payable, title, payment, invite or IAM; no external fiscal authentication. Writes require active member, active workspace, specific key with deny precedence and refuse read-only view-as; reads go only through definer RPCs (no table grants). Migration prepared only, not applied. Five-scenario SQL evidence exists per action in deliveries-postgres.test.ts (save, submit, decide, fiscal upload, download, review); the contract binds the save group. Independent review: registration requires an immutable service-role attestation of actual stored bytes; the authenticated server uses only the reservation-returned path, hashes/re-reads it, and records actor/size/MIME/hash through the service-only RPC. User JWTs cannot attest or replace/delete fiscal bytes, including under broader permissive storage policies.",
       "controls": [
         {
           "file": "src/lib/access-control/work-core.server.ts",
@@ -13276,6 +13276,10 @@
         {
           "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
           "symbol": "hiring_fiscal_document_guard"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_fiscal_attest"
         }
       ],
       "tests": {
@@ -13301,8 +13305,8 @@
         }
       },
       "files": {
-        "src/lib/hiring/requests/operations.functions.ts": "ed5323ddca378a19b9593fb0a31b40e919f2223c10afc8dc774180cd906e4271",
-        "src/lib/hiring/requests/operations-panel.tsx": "15bbf1374f3abdbc925fe855cf67377a1ac58c002cbdafb8f5011f11df1c7c48",
+        "src/lib/hiring/requests/operations.functions.ts": "f4f2279827f2d7073c7b956a411e6d951fa82c112cef5d3a691c5ceef3583015",
+        "src/lib/hiring/requests/operations-panel.tsx": "c77d512ad63f296777c27e2b1fb69a2a758537e90b35bd6656c75b9703272f64",
         "src/lib/hiring/requests/operations-history.tsx": "8262f79efe0b5cfb74294a08818ba367a6bac9c6d1c3b0672d86087abb36dcfe"
       }
     },
@@ -13313,6 +13317,61 @@
         "src/lib/hiring/requests/operations-types.ts": "269365ee4837103f606daa50c3ac370181c4b415091ff689591c7e8db3620a59"
       },
       "rationale": "Static DTOs, labels, regime-to-document-type mirror and byte sniffing only; no data access or actions."
+    },
+    {
+      "id": "hiring-fiscal-server-byte-attestation",
+      "kind": "service",
+      "resources": [
+        "techpeople.hiring_requests.fiscal_documents",
+        "techcontracts.supplier_requests.fiscal_documents"
+      ],
+      "actions": ["attest_stored_bytes"],
+      "scopes": ["service"],
+      "permission_keys": [],
+      "rationale": "Service-only immutable confirmation of bytes re-read from the exact path returned by a user-authorized fiscal reservation. It rechecks the original uploader, active workspace/membership, current fiscal create permission/deny and execution proof. Registration still runs as the user and requires the attested hash; service cannot create a purchase obligation through this boundary.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "docs/architecture/prepared-migrations/0382_hiring_execution_deliveries_fiscal.sql",
+          "symbol": "hiring_fiscal_attest"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops server attestation allowed for the authorized reservation owner"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops server attestation rejects missing owner permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops server attestation rejects explicit owner deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops server attestation rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/requests/deliveries-postgres.test.ts",
+          "name": "ops server attestation rejects inactive owner"
+        }
+      },
+      "exception": {
+        "mechanism": "Existing server-only Supabase service client re-reads reserved bytes and calls service_role-only attestation RPC; no credential is exposed or created.",
+        "boundary": "Only an existing reservation belonging to the authenticated uploader; exact workspace/request/path/hash/size/MIME and current business authority; no user JWT or caller-set GUC can acquire EXECUTE.",
+        "revocation": "REVOKE EXECUTE ON FUNCTION hiring_fiscal_attest(uuid,uuid,uuid,uuid,text,bigint,text) FROM service_role stops new registrations; historical records and private downloads remain.",
+        "review_by": "2026-12-19"
+      },
+      "files": {
+        "src/lib/hiring/requests/fiscal-attestation.server.ts": "c77ac510c4522a486f9cdbae07719a6c7b1ca4fef1ca0ae7b86ebc1ecf62115b"
+      }
     }
   ],
   "retired": {

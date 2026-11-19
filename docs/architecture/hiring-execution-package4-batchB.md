@@ -44,3 +44,13 @@ Não aplicada, não publicada. Tipos gerados não regenerados (SHA256 `55285afb�
 - Política de storage usa `metadata->>'size'` quando disponível; validar no preflight o formato real do Supabase Storage.
 - Sem cancelamento de entrega neste lote; sem vínculo obrigatório entre NF e entrega aceita (regra do lote C).
 - Títulos, provisão, contas a pagar e pagamentos: lote C.
+
+## Revisão independente local (19/11)
+
+- Registro fiscal exige confirmação imutável do servidor sobre bytes relidos do caminho retornado pela reserva autorizada. Novo RPC `hiring_fiscal_attest`, executável somente por `service_role`, revalida dono, workspace, membro, chave efetiva, origem e prova atual. JWT de usuário não confirma arquivos, mesmo declarando uma GUC de role. Módulo interno separado: `fiscal-attestation.server.ts`.
+- Políticas restritivas confinam o novo bucket mesmo diante de políticas permissivas mais amplas: usuário não substitui nem exclui bytes, não lê sem a chave fiscal e só insere na sua reserva atual. A migração provisiona o bucket privado na aplicação revisada.
+- A mudança de dono da função de referência preserva a configuração anterior de CREATE no schema: concessão apenas durante a mudança e restauração na mesma transação. O preflight revelou essa diferença do ambiente administrado e confirmou a correção.
+- Conferência exige o Financeiro vigente da formalização, além da chave e segregação do uploader; freelance precisa do identificador canônico, valor deve ser finito e positivo após arredondamento. Alterar cadastro canônico depois da assinatura bloqueia o novo registro pela prova atual.
+- Retentativas exigem conteúdo/origem idênticos para entrega, submissão, decisão, reserva, registro e conferência. Projeto também valida a entidade do seu contrato canônico. Buscas de projetos/marcos são limitadas e pesquisáveis, preservando a opção selecionada sob RLS.
+- **63/63 testes** locais (57 SQL, 2 apresentação e 4 do servidor). Incluem cinco cenários da confirmação interna, tentativa de bypass por hash declarado, política permissiva ampla, valores não finitos, repetição com dados diferentes e emissor freelance divergente.
+- Preflight A+B no banco atual em transação revertida: bucket privado, 4 políticas restritivas, usuário sem EXECUTE na confirmação, service com EXECUTE e CREATE retirado do writer. Nenhum bucket, dado fiscal ou início foi persistido.
