@@ -1,10 +1,10 @@
 # FORMALIZA-SOLICITA — pacote 3, lote 2 (porte G, previsão 6–10 h)
 
 - [x] Auditar lote 1: 23/23 testes repetidos; gate global segue com dois findings preexistentes de tipos WhatsApp. Minutas aceitam origem sem deal/proposal; preparação e assinadores exigem adaptador explícito para compra.
-- [ ] Definir identidade do aceite externo: bloqueado por decisão do usuário. /minuta atual usa somente token bearer; isso não impede usuário interno com o link de aceitar em nome da contraparte. Proposta para confirmar: código de uso único enviado só ao e-mail canônico da contraparte, barrando contas internas do workspace; nenhum e-mail real durante implementação.
-- [ ] Adaptar origem canônica aprovada, contrato client/minuta/assinadores sem afetar vendas após decisão sobre identidade externa.
-- [ ] Preparar migração revisável, permissões, fluxo jurídico → aceite real → Financeiro → assinatura humana, invalidação e notificações.
-- [ ] Integrar acompanhamento na ficha; Ajuda, contratos e testes SQL reais/regressão; revisar e registrar limites. Sem aplicação, publicação ou pacote 4.
+- [x] Identidade definida pelo usuário: token expirável/revogável + código de uso único por e-mail canônico; colaborador pode aceitar seu próprio instrumento; nenhum envio real em testes. Correção local do lote 1 não será sobrescrita.
+- [x] Código funcional preparado: origem atual, contrato client/minuta, OTP canônico, jurídico/Financeiro e gates de assinadores; ambos aprovadores revalidados, lote 1 preservado.
+- [x] Migrações 0376–0378 somente revisáveis; quatro permissões, invalidação/notificações; ficha/Ajuda v6/catálogo preparados; 42 testes direcionados passam, Ajuda 254/254, lint 0 erros. Sem aplicar/publicar/pacote 4.
+- [ ] Revisão e validação integral na união local: bloqueada por aplicação proibida e prévia sem resposta; CI/schema integral/assinadores completos/variantes fornecedor e colaboradores permanecem pendentes. Relatório: docs/architecture/hiring-formalization-package3-batch2.md; não tratar como pedido integralmente validado.
 
 # APROVA-SOLICITA — pacote 3, lote 1 (porte G, previsão 3–5 h)
 

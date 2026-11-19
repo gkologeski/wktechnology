@@ -8056,8 +8056,9 @@
       "rationale": "Email presentation and template registry only; no data reads, writes, credentials or recipients resolved here.",
       "files": {
         "src/lib/email-templates/hiring-demand-approval.tsx": "1ec191604ab92237bfee6311fe6c5f852409bf1d6310850dabc1f8368945f3b7",
-        "src/lib/email-templates/registry.ts": "cc7cd7e2184225f199f5ad8ea1c926f0a26808fd3b31e535a0d6979867f3c5f7"
-      }
+        "src/lib/email-templates/registry.ts": "a175c7401234e39434f014e1fff71ac32535287e3032d70486d7ebe6468f63e7"
+      },
+      "controls": []
     },
     {
       "id": "hiring-stage3-commercial-authorization",
@@ -9929,6 +9930,38 @@
         {
           "file": "src/lib/contracts/contract-draft-public-rules.ts",
           "symbol": "isValidDraftToken"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/hiring/requests/formalization-panel.tsx",
+          "symbol": "FormalizationPanel"
+        },
+        {
+          "file": "src/lib/hiring/requests/draft-code.server.ts",
+          "symbol": "requestDraftCode"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/hiring/requests/formalization-panel.tsx",
+          "symbol": "FormalizationPanel"
+        },
+        {
+          "file": "src/lib/hiring/requests/draft-code.server.ts",
+          "symbol": "requestDraftCode"
         }
       ],
       "database": [
@@ -9964,8 +9997,8 @@
         }
       },
       "files": {
-        "src/lib/contracts/contract-draft-public.functions.ts": "db1ca322097258d951dc3928838333ac82aeca99b9ae816a4d2b99bdb2e62e91",
-        "src/routes/minuta.$token.tsx": "5095aab02c1cf580bfdaa970a7037ef1089156e6448dce4b87b708b75b7ffbed"
+        "src/lib/contracts/contract-draft-public.functions.ts": "dba1601a77c4d025f27f9b1809c7047e4f3d9a36367f66528baa4be2210b926b",
+        "src/routes/minuta.$token.tsx": "b4a61523cd6be289f778c675c8965071a0019e5600da38a0414f444582654251"
       },
       "exception": {
         "mechanism": "Random uuid token issued only by a listed legal approver after approval; server-only RPCs (service_role) return/decide only drafts in status sent; one decision per send, no internal ids or other records exposed.",
@@ -12469,6 +12502,22 @@
         {
           "file": "src/lib/contracts/signature-package.server.ts",
           "symbol": "signerSignaturePackage"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/hiring/requests/formalization-panel.tsx",
+          "symbol": "FormalizationPanel"
+        },
+        {
+          "file": "src/lib/hiring/requests/draft-code.server.ts",
+          "symbol": "requestDraftCode"
         }
       ],
       "database": [
@@ -12515,7 +12564,7 @@
         "drizzle/migrations/0357_contract_signature_delivery.sql": "f2220b025cd82b9f9841c5572871ca9d995c227cefc4f1d5c298310afe17722d",
         "src/components/contracts/contract-signature-delivery.tsx": "de3c0bb080332a72f550eff06a496e5f978636c361dd8bb9566811214448a62f",
         "src/lib/contracts/signature-delivery.functions.ts": "7e54acfd8edc6821c6eddf8221b08de3d2f01e59ac4a3e24b993e7bc2d4c7100",
-        "src/lib/contracts/signature-delivery.server.ts": "ee8265251df0c590c6937621005c7c16f81658512a890f4d7e3c2ada9a87a1a4",
+        "src/lib/contracts/signature-delivery.server.ts": "c6a7ee79e9cc4ffcdaa10a50d81d03b09865fd7705052b984540234b9c4b89ca",
         "src/lib/esign.functions.ts": "c06070010bda0b9e850a40ea0f3fec2250eb7c36c13557e55db1a9e2728c29e8",
         "src/routes/sign.$token.tsx": "6d359f38fe74dc9f8b5e11eeb4a01bd881cf37fb36487ffe0f4689495a547baa"
       },
@@ -12629,6 +12678,22 @@
         {
           "file": "src/lib/contracts/signature-package.server.ts",
           "symbol": "signerSignaturePackage"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/hiring/requests/formalization-panel.tsx",
+          "symbol": "FormalizationPanel"
+        },
+        {
+          "file": "src/lib/hiring/requests/draft-code.server.ts",
+          "symbol": "requestDraftCode"
         }
       ],
       "database": [
@@ -12671,7 +12736,7 @@
         "drizzle/migrations/0359_forsign_integration.sql": "f299acdcbeeac81ca34b101e936070eb15e7b8adb28eaa5262d670fd780d688b",
         "src/components/contracts/contract-forsign-panel.tsx": "3af5aa9d2c67ae0ae05cb1314010f2c10d7961071684d59ea6adf6f42fe5aaad",
         "src/components/integrations/forsign-settings-page.tsx": "91258abbf7bb58f8b9bfa3d98238f13af33b8a100fab4ed0c412185231e0e8dd",
-        "src/lib/integrations/forsign/forsign-service.server.ts": "60673ead81f7896e3ddfb55191c9d97bc55a303b0a338990fbe66bb0fad73295",
+        "src/lib/integrations/forsign/forsign-service.server.ts": "1fc1e01e41c2c6b0a62f2cd461a3e34a9f7da8d8f3d78a4226412bbe099ce8bd",
         "src/lib/integrations/forsign/forsign.functions.ts": "d09d853289a03754e5180a570f9bfcf5399ee9c1fb5991b109d9388850e320ca",
         "src/routes/_authenticated/settings.integrations.forsign.tsx": "7dfc62e76ddcc1ec28fd44877c337ebbc3c0adcb091ba2da42caee9885813a81"
       }
@@ -13922,7 +13987,7 @@
       "files": {
         "src/lib/hiring/requests/boundary.server.ts": "781108c4f9591ca6e3c769588b4cffeb911ef8f4d118815d7717ea734fba9f36",
         "src/lib/hiring/requests/requests.functions.ts": "87dadcaed69095a517d68180cb853f8f12e9dc207599483cb22b863494627be1",
-        "src/lib/hiring/requests/preparation-screen.tsx": "160f8a17b7ec51d5fd929d956978b21203baf27ae3e31120cc30ae662ea66381",
+        "src/lib/hiring/requests/preparation-screen.tsx": "c2a2ef4202a7a1bc7f9ff6cc275452510ff4a759145c358cfa27b08a52f76f1f",
         "src/routes/_authenticated/people.hiring-requests.tsx": "734770982cab7d70d7fbb96aa5532d021b71afafc2c97c97714ea8a1c478cb37",
         "src/routes/_authenticated/contracts.supplier-requests.tsx": "1614255f00f5ba1582e25cb43e42bb4ffad69b5e73fdbb4a7c688e5dcb6e16d5",
         "drizzle/migrations/0373_hiring_requests.sql": "3f053b577dd7b4047fc5f596a0248026def9d60d112b040d93c5a8587014b267",
@@ -14008,6 +14073,22 @@
         {
           "file": "src/lib/hiring/requests/approvals.functions.ts",
           "symbol": "getPreparationApproval"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/hiring/requests/formalization-panel.tsx",
+          "symbol": "FormalizationPanel"
+        },
+        {
+          "file": "src/lib/hiring/requests/draft-code.server.ts",
+          "symbol": "requestDraftCode"
         }
       ],
       "database": [
@@ -14265,6 +14346,104 @@
       "resources": [],
       "permission_keys": [],
       "rationale": "Static approval validation schemas and DTOs only; sensitive amounts are excluded and authorization lives in RPCs."
+    },
+    {
+      "id": "hiring-formalization-batch2",
+      "kind": "business",
+      "files": {
+        "src/lib/hiring/requests/formalization.functions.ts": "2277bd05544b65c2441306abec55108bbac7c362b16afe469494788ed82f6a37",
+        "src/lib/hiring/requests/formalization-panel.tsx": "4910aa34e3a9c6bba9c5b25a4c1715f49fc0399021949d5443f30818965ab4ba",
+        "src/lib/hiring/requests/draft-code.server.ts": "e592753d2935a9d0e1531e197c01506f35cca2683b3102a08cfe64d9bcd3c436"
+      },
+      "resources": [
+        "techpeople.hiring_requests.formalization",
+        "techcontracts.supplier_requests.formalization"
+      ],
+      "actions": [
+        "manage",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techpeople.hiring_requests.formalization.manage.workspace",
+        "techpeople.hiring_requests.formalization.approve.workspace",
+        "techcontracts.supplier_requests.formalization.manage.workspace",
+        "techcontracts.supplier_requests.formalization.approve.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/hiring/requests/formalization-panel.tsx",
+          "symbol": "FormalizationPanel"
+        },
+        {
+          "file": "src/lib/hiring/requests/draft-code.server.ts",
+          "symbol": "requestDraftCode"
+        },
+        {
+          "file": "src/lib/access-control/use-shared-action.ts",
+          "symbol": "useSharedAction"
+        },
+        {
+          "file": "src/lib/hiring/requests/draft-code.server.ts",
+          "symbol": "requestDraftCode"
+        }
+      ],
+      "database": [
+        {
+          "file": "docs/architecture/prepared-migrations/0376_hiring_formalization.sql",
+          "symbol": "hiring_formalization_access"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0377_hiring_formalization_boundaries.sql",
+          "symbol": "hiring_draft_capability"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0378_hiring_signature_adapter.sql",
+          "symbol": "hiring_contract_signers_prepare"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/requests/formalization-postgres.test.ts",
+          "name": "formalization allowed chain creates one real purchase instrument"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/requests/formalization-postgres.test.ts",
+          "name": "formalization rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/requests/formalization-postgres.test.ts",
+          "name": "formalization rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/requests/formalization-postgres.test.ts",
+          "name": "formalization rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/requests/formalization-postgres.test.ts",
+          "name": "formalization rejects inactive member"
+        }
+      },
+      "rationale": "Current approved source, canonical purchase instrument, ordered legal/external OTP/finance, no execution. Public OTP endpoints use service-only token scope; secrets never returned; prepared SQL only. Prepared SQL outside production-path inventory is explicitly bound under database, not files; all three migrations tested locally."
+    },
+    {
+      "id": "hiring-formalization-static",
+      "kind": "presentation",
+      "files": {
+        "src/lib/hiring/requests/formalization-types.ts": "7be0a39b58d6d7f2a16b308e4ccfdbc489e06d18ac5afdb4c126243969c02c41",
+        "src/lib/email-templates/hiring-draft-code.tsx": "e6e0016a90d1fee673e743337cf2b5cbeaaf21f20249a38031a09688726713ed"
+      },
+      "rationale": "Static schemas/DTOs and registered email template only."
     }
   ],
   "retired": {

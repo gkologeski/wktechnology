@@ -190,6 +190,7 @@ async function authorizeSend(sb: SupabaseClient, userId: string, contractId: str
   });
   if (!proof.can_manage || proof.hash !== hash)
     throw new Error("Sem permissão ou contrato alterado. Recarregue a página.");
+  await workRpc(sb, "hiring_formalization_signature_gate", { w: ws, k: contractId, h: hash });
   return ws;
 }
 
@@ -266,6 +267,7 @@ export async function sendContract(
       ? await loadPackageBytes(signaturePackage)
       : await contractHtmlToPdf(String(html), title);
     const fileName = `${(contract.number ?? contract.id).replace(/[^\w.-]+/g, "_")}.pdf`;
+    await authorizeSend(sb, userId, input.contractId, input.hash);
     const docId = await client.uploadPdf(pdf, fileName);
     await authorizeSend(sb, userId, input.contractId, input.hash);
     const op = await client.createOperation({

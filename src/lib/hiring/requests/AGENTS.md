@@ -6,3 +6,4 @@
 - Reference amounts live in a separate RLS table and never in ordinary rows/events; why: request-view access must not expose sensitive conditions through lists, history, idempotency payloads or RPC results.
 - Approval cycles bind the saved revision, private reference revision and canonical policy snapshot, with ordered manager/CEO decisions and explicit substitutes; why: ready is not approval and edits invalidate decisions without operational effects.
 - Approval notifications use a distinct internal-only type and scoped request link; why: existing ATS email enqueue triggers must never send mail for preparation approvals.
+- Formalization uses a separate current-approval boundary and a single request-owned client contract/draft; expiring capabilities require a delivered one-use HMAC code to the canonical counterparty email, and all signing paths recheck the bound cycle; why: local approval work stays mergeable while sales and historical signatures remain unchanged.

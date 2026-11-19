@@ -78,6 +78,11 @@ export async function dispatchContractSignature(
     try {
       const email = emailSchema(255).parse(s.email);
       if (!s.public_token) throw new Error("Signatário sem link.");
+      await workRpc(caller, "hiring_formalization_signature_gate", {
+        w: proof.workspace_id,
+        k: input.contractId,
+        h: input.hash,
+      });
       const sent = await deps.send(
         email,
         {

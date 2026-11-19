@@ -15,6 +15,11 @@ import {
   getPublicContractDraft,
 } from "@/lib/contracts/contract-draft-public.functions";
 import { isValidDraftToken } from "@/lib/contracts/contract-draft-public-rules";
+import {
+  requestHiringDraftCode,
+  decideHiringDraft,
+  downloadHiringDraftAttachment,
+} from "@/lib/hiring/requests/formalization.functions";
 
 export const Route = createFileRoute("/minuta/$token")({
   head: () => ({
@@ -47,6 +52,23 @@ function PublicContractDraftPage() {
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
   const [askChanges, setAskChanges] = useState(false);
+  const [code, setCode] = useState("");
+  const sendCode = useServerFn(requestHiringDraftCode),
+    hiringDecide = useServerFn(decideHiringDraft),
+    download = useServerFn(downloadHiringDraftAttachment);
+  const otp = useMutation({ mutationFn: () => sendCode({ data: { token } }) });
+  const annex = useMutation({
+    mutationFn: (id: string) => download({ data: { token, annex: id } }),
+    onSuccess: (d) => {
+      const bytes = Uint8Array.from(atob(d.base64), (c) => c.charCodeAt(0));
+      const url = URL.createObjectURL(new Blob([bytes], { type: d.mime }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = d.name;
+      a.click();
+      URL.revokeObjectURL(url);
+    },
+  });
   const valid = isValidDraftToken(token);
   const q = useQuery({
     queryKey: ["public-contract-draft", token],
@@ -55,8 +77,10 @@ function PublicContractDraftPage() {
     retry: false,
   });
   const m = useMutation({
-    mutationFn: (decision: "accept" | "changes") =>
-      decide({ data: { token, decision, name, note: note.trim() || null } }),
+    mutationFn: async (decision: "accept" | "changes") => {
+      if (q.data?.requires_code) return hiringDecide({ data: { token, decision, code, note } });
+      return decide({ data: { token, decision, name, note: note.trim() || null } });
+    },
     onSuccess: (_r, d) => {
       toast.success(d === "accept" ? "Minuta aceita. Obrigado!" : "Pedido de ajustes enviado.");
       q.refetch();
@@ -93,15 +117,51 @@ function PublicContractDraftPage() {
         className="prose max-w-none rounded-md border border-border bg-card p-6 text-card-foreground dark:prose-invert"
         dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(d.body_html) }}
       />
+      {d.attachments?.map((a) => (
+        <Button
+          key={a.id}
+          variant="outline"
+          disabled={annex.isPending}
+          onClick={() => annex.mutate(a.id)}
+        >
+          Baixar anexo: {a.name}
+        </Button>
+      ))}
+      {annex.isError && <p role="alert">{annex.error.message}</p>}
       {open ? (
         <section
           className="space-y-4 rounded-md border border-border bg-card p-6"
           aria-label="Sua resposta"
         >
-          <div className="space-y-1">
-            <Label htmlFor="mn-name">Seu nome completo</Label>
-            <Input id="mn-name" value={name} onChange={(e) => setName(e.target.value)} />
-          </div>
+          {d.requires_code ? (
+            <div className="space-y-2">
+              <Button variant="outline" disabled={otp.isPending} onClick={() => otp.mutate()}>
+                Enviar código ao meu e-mail cadastrado
+              </Button>
+              {otp.isSuccess && (
+                <p role="status">
+                  {otp.data.sent
+                    ? "Código enviado ao e-mail cadastrado."
+                    : "Código não enviado; tente depois ou contate o responsável."}
+                </p>
+              )}
+              {otp.isError && <p role="alert">{otp.error.message}</p>}
+              <Label htmlFor="mn-code">Código temporário</Label>
+              <Input
+                id="mn-code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={8}
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+              />
+            </div>
+          ) : (
+            <div className="space-y-1">
+              <Label htmlFor="mn-name">Seu nome completo</Label>
+              <Input id="mn-name" value={name} onChange={(e) => setName(e.target.value)} />
+            </div>
+          )}
           {askChanges && (
             <div className="space-y-1">
               <Label htmlFor="mn-note">Quais ajustes você precisa?</Label>
@@ -118,7 +178,10 @@ function PublicContractDraftPage() {
               <>
                 <Button
                   onClick={() => m.mutate("accept")}
-                  disabled={m.isPending || name.trim().length < 3}
+                  disabled={
+                    m.isPending ||
+                    (d.requires_code ? !/^\d{8}$/.test(code) : name.trim().length < 3)
+                  }
                 >
                   {m.isPending ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -139,7 +202,11 @@ function PublicContractDraftPage() {
               <>
                 <Button
                   onClick={() => m.mutate("changes")}
-                  disabled={m.isPending || name.trim().length < 3 || note.trim().length < 5}
+                  disabled={
+                    m.isPending ||
+                    (d.requires_code ? !/^\d{8}$/.test(code) : name.trim().length < 3) ||
+                    note.trim().length < 5
+                  }
                 >
                   Enviar pedido de ajustes
                 </Button>
