@@ -46,4 +46,6 @@ A entrega aguarda CI completa e publicação. As duas primeiras CIs passaram tod
 
 O experimento com threads fez a verificação caber em 220,8 s, mas falhou em dois testes que alteram TZ em runtime. Voltar todos os testes a processos preservou os 3.983 resultados, mas voltou a ultrapassar o orçamento. A configuração final mantém todos os 490 arquivos: somente `iso-date.test.ts` fica em processo, com os outros arquivos em threads isoladas. Nenhum teste ou assertion foi removido; nenhuma permissão, timeout ou limite de performance foi relaxado. A restauração de snapshots descartáveis envia as mesmas operações em lote, restaura os gatilhos e só então executa a RPC do cenário.
 
+A CI também seleciona Node 24 explicitamente e separa o cache de lint pela versão real devolvida por setup-node. O código instalado do ESLint inclui `process.version` no hash de configuração; misturar caches de runtimes diferentes desperdiça lint sem validar menos. Não são cacheados resultados de testes, build, autorização ou evidências de release.
+
 Aplicação, CI final, fingerprint e navegação efetiva são registrados no relatório de release em `outputs/contracts-legacy-package5-2026-11-19/` da tarefa Codex. Não chamar preparado de publicado nem E2E opt-in skipped de aprovado.

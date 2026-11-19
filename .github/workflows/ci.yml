@@ -23,6 +23,12 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Use a consistent Node runtime
+        id: node-runtime
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
@@ -39,9 +45,9 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: .eslintcache
-          key: ${{ runner.os }}-${{ runner.arch }}-eslint-${{ hashFiles('bun.lock', 'eslint*.config.*', 'eslint-rules/**', '.prettierrc*', '.prettierignore') }}-${{ github.sha }}
+          key: ${{ runner.os }}-${{ runner.arch }}-node-${{ steps.node-runtime.outputs.node-version }}-eslint-${{ hashFiles('bun.lock', 'eslint*.config.*', 'eslint-rules/**', '.prettierrc*', '.prettierignore') }}-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-eslint-${{ hashFiles('bun.lock', 'eslint*.config.*', 'eslint-rules/**', '.prettierrc*', '.prettierignore') }}-
+            ${{ runner.os }}-${{ runner.arch }}-node-${{ steps.node-runtime.outputs.node-version }}-eslint-${{ hashFiles('bun.lock', 'eslint*.config.*', 'eslint-rules/**', '.prettierrc*', '.prettierignore') }}-
       - name: Permission contracts and denial evidence
         run: bun run permissions:check
       - name: Official help coverage
@@ -77,6 +83,12 @@ jobs:
       E2E_BASE_URL: ${{ secrets.E2E_BASE_URL }}
     steps:
       - uses: actions/checkout@v4
+      - name: Use a consistent Node runtime
+        id: node-runtime
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.3.14
