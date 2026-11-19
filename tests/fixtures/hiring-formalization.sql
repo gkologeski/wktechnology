@@ -39,3 +39,22 @@ CREATE TABLE contract_draft_approvers(workspace_id uuid,user_id uuid);
 ALTER TABLE contracts ADD COLUMN currency text DEFAULT 'BRL';
 CREATE TABLE contract_signature_participants(id uuid DEFAULT gen_random_uuid(),workspace_id uuid,evidence_id uuid,document_id uuid,signer_id uuid,contact_id uuid,role text);
 ALTER TABLE hiring_contract_evidence ADD COLUMN recorded_at timestamptz DEFAULT now();
+
+ALTER TABLE esign_documents ADD COLUMN deal_id uuid,ADD COLUMN contact_id uuid,ADD COLUMN sent_at timestamptz,ADD COLUMN completed_at timestamptz;
+ALTER TABLE hiring_contract_evidence ADD COLUMN file_path text,ADD COLUMN file_hash text,ADD COLUMN signed_on date,ADD COLUMN reference text;
+ALTER TABLE contract_forsign_operations ADD COLUMN contract_hash text,ADD COLUMN evidence_id uuid,ADD COLUMN status text DEFAULT 'creating',ADD COLUMN operation_id bigint,ADD COLUMN created_by uuid,ADD COLUMN updated_at timestamptz,ADD COLUMN last_error text;
+ALTER TABLE contract_attachments ADD COLUMN source_id uuid,ADD COLUMN created_at timestamptz DEFAULT now(),ADD COLUMN created_by uuid;
+ALTER TABLE contracts ADD COLUMN quote_id uuid;
+CREATE TABLE quotes(id uuid,workspace_id uuid,deal_id uuid,title text);CREATE TABLE proposals(id uuid,workspace_id uuid,deal_id uuid,title text,version integer);
+CREATE TABLE hiring_commercial_contracts(workspace_id uuid,contract_id uuid);
+CREATE FUNCTION work_access_context() RETURNS jsonb LANGUAGE sql STABLE AS $$SELECT jsonb_build_object('workspace',(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()))$$;
+CREATE FUNCTION work_area_authorize(r text,a text,i uuid DEFAULT NULL) RETURNS uuid LANGUAGE plpgsql STABLE AS $$DECLARE w uuid;BEGIN SELECT active_workspace_id INTO w FROM profiles WHERE id=auth.uid();IF NOT is_workspace_member(w,auth.uid()) OR NOT user_has_permission(auth.uid(),w,r||'.'||a||'.workspace') THEN RAISE EXCEPTION 'Sem permissão' USING ERRCODE='42501';END IF;RETURN w;END$$;
+CREATE FUNCTION work_context_access(c jsonb,w uuid,r text,a text,u uuid[]) RETURNS boolean LANGUAGE sql STABLE AS $$SELECT is_workspace_member(w,auth.uid()) AND user_has_permission(auth.uid(),w,r||'.'||a||'.workspace')$$;
+CREATE FUNCTION work_commercial_reference_allowed(r text,i uuid) RETURNS boolean LANGUAGE sql STABLE AS $$SELECT sales_record_access(r,i,'view')$$;
+CREATE FUNCTION contract_attachment_source_stamp(i uuid) RETURNS text LANGUAGE sql STABLE AS $$SELECT sha256 FROM contract_attachments WHERE id=i$$;
+INSERT INTO permissions(key,module) SELECT k,'techcontracts' FROM unnest(ARRAY['techcontracts.signature_evidence.view.workspace','techcontracts.esign.create.workspace','techcontracts.esign.send.workspace','techcontracts.esign.manage.workspace']) k;
+
+ALTER TABLE contract_forsign_operations ADD COLUMN requested_members jsonb,ADD COLUMN members jsonb;
+INSERT INTO permissions(key,module) VALUES('techcontracts.esign.cancel.workspace','techcontracts');
+ALTER TABLE deals ADD COLUMN company_id uuid;
+ALTER TABLE hiring_contract_evidence ADD COLUMN revocation_reason text;

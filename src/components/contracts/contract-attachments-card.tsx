@@ -20,6 +20,7 @@ import {
 import { QuoteInternalPreview } from "@/components/deals/quote-internal-preview";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 import {
+  getContractAttachmentPolicy,
   listContractAttachments,
   listContractAttachmentSources,
   linkContractAttachment,
@@ -43,6 +44,19 @@ export function ContractAttachmentsCard({
   const permissions = usePermissions();
   const access = useWorkCapabilities("techcontracts.contracts", [contractId]);
   const canEdit = allowEdit && access.for(contractId).can_update;
+  const policyFn = useServerFn(getContractAttachmentPolicy);
+  const policy = useQuery({
+    queryKey: [
+      "contract-attachment-policy",
+      permissions.workspaceId,
+      contractId,
+      [...permissions.permissions].sort(),
+    ],
+    queryFn: () => policyFn({ data: { contractId } }),
+    enabled: access.for(contractId).can_view,
+    retry: false,
+  });
+  const hiringOrigin = policy.data?.hiring_origin === true;
   const list = useServerFn(listContractAttachments),
     sources = useServerFn(listContractAttachmentSources),
     link = useServerFn(linkContractAttachment),
@@ -71,7 +85,7 @@ export function ContractAttachmentsCard({
   const available = useQuery({
     queryKey: [...key, "sources"],
     queryFn: () => sources({ data: { contractId } }),
-    enabled: canEdit,
+    enabled: canEdit && policy.isSuccess && !hiringOrigin,
   });
   const refresh = async () => {
     await Promise.all([
@@ -125,52 +139,56 @@ export function ContractAttachmentsCard({
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Vincule a cotação ou a proposta do negócio, ou envie outro documento. Vínculos exibem a
-          versão atual da origem. Todos os anexos serão incluídos no pacote de assinatura, com a
-          versão congelada na preparação do envio.
+          {hiringOrigin
+            ? "Compra WK: envie proposta do fornecedor e condições WK como arquivo PDF. Cotações e propostas de venda não representam esta compra. Confira o documento e cada anexo antes da revisão jurídica."
+            : "Vincule a cotação ou a proposta do negócio, ou envie outro documento. Vínculos exibem a versão atual da origem. Todos os anexos serão incluídos no pacote de assinatura, com a versão congelada na preparação do envio."}
         </p>
         {canEdit && (
           <div className="flex flex-wrap items-center gap-2">
-            <Select
-              value={selected}
-              onValueChange={setSelected}
-              disabled={busy || available.isPending || !!available.error}
-            >
-              <SelectTrigger
-                className="w-full md:w-80"
-                aria-label="Documento comercial para anexar"
-              >
-                <SelectValue placeholder="Escolher cotação ou proposta" />
-              </SelectTrigger>
-              <SelectContent>
-                {(available.data ?? []).map((s) => (
-                  <SelectItem
-                    key={s.kind + s.id}
-                    value={`${s.kind}:${s.id}`}
-                    disabled={attachments.data?.some(
-                      (a) => a.kind === s.kind && a.source_id === s.id,
-                    )}
+            {policy.isSuccess && !hiringOrigin && (
+              <>
+                <Select
+                  value={selected}
+                  onValueChange={setSelected}
+                  disabled={busy || available.isPending || !!available.error}
+                >
+                  <SelectTrigger
+                    className="w-full md:w-80"
+                    aria-label="Documento comercial para anexar"
                   >
-                    {s.kind === "quote" ? "Cotação" : "Proposta"} — {s.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              variant="outline"
-              disabled={!selected || busy}
-              onClick={() =>
-                void run(async () => {
-                  const source = available.data?.find((s) => `${s.kind}:${s.id}` === selected);
-                  if (!source) throw new Error("Selecione um documento disponível.");
-                  await link({ data: { contractId, kind: source.kind, sourceId: source.id } });
-                  setSelected("");
-                  toast.success("Documento vinculado.");
-                })
-              }
-            >
-              Vincular documento
-            </Button>
+                    <SelectValue placeholder="Escolher cotação ou proposta" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(available.data ?? []).map((s) => (
+                      <SelectItem
+                        key={s.kind + s.id}
+                        value={`${s.kind}:${s.id}`}
+                        disabled={attachments.data?.some(
+                          (a) => a.kind === s.kind && a.source_id === s.id,
+                        )}
+                      >
+                        {s.kind === "quote" ? "Cotação" : "Proposta"} — {s.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  variant="outline"
+                  disabled={!selected || busy}
+                  onClick={() =>
+                    void run(async () => {
+                      const source = available.data?.find((s) => `${s.kind}:${s.id}` === selected);
+                      if (!source) throw new Error("Selecione um documento disponível.");
+                      await link({ data: { contractId, kind: source.kind, sourceId: source.id } });
+                      setSelected("");
+                      toast.success("Documento vinculado.");
+                    })
+                  }
+                >
+                  Vincular documento
+                </Button>
+              </>
+            )}
             <Button variant="outline" disabled={busy} onClick={() => input.current?.click()}>
               <Upload className="mr-2 h-4 w-4" />
               {busy ? "Aguarde…" : "Enviar arquivo"}
@@ -189,7 +207,7 @@ export function ContractAttachmentsCard({
             />
           </div>
         )}
-        {available.error && canEdit && (
+        {available.error && canEdit && !hiringOrigin && (
           <p role="alert" className="text-sm text-destructive">
             Não foi possível carregar os documentos comerciais.{" "}
             <Button variant="link" onClick={() => void available.refetch()}>
@@ -197,7 +215,7 @@ export function ContractAttachmentsCard({
             </Button>
           </p>
         )}
-        {canEdit && available.isSuccess && available.data.length === 0 && (
+        {canEdit && !hiringOrigin && available.isSuccess && available.data.length === 0 && (
           <p className="text-sm text-muted-foreground">
             Nenhuma cotação ou proposta vinculada a este contrato/negócio está disponível no seu
             acesso. Você pode enviar um arquivo.
@@ -283,10 +301,17 @@ export function ContractAttachmentsCard({
             ))}
           </ul>
         )}
-        {canEdit && permissions.can("techcontracts.signature_evidence.manage.workspace") && (
+        {(hiringOrigin
+          ? policy.data?.can_preview
+          : canEdit && permissions.can("techcontracts.signature_evidence.manage.workspace")) && (
           <Button
             variant="outline"
-            disabled={busy || !attachments.data?.length}
+            disabled={
+              busy ||
+              attachments.isPending ||
+              !!attachments.error ||
+              (!hiringOrigin && !attachments.data?.length)
+            }
             onClick={() =>
               void run(async () => {
                 const result = await preview({ data: { contractId } });

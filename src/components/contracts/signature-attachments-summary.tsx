@@ -13,7 +13,13 @@ import {
 } from "@/lib/contracts/attachments.functions";
 import { Button } from "@/components/ui/button";
 
-export function SignatureAttachmentsSummary({ contractId }: { contractId: string }) {
+export function SignatureAttachmentsSummary({
+  contractId,
+  canPreviewOverride,
+}: {
+  contractId: string;
+  canPreviewOverride?: boolean;
+}) {
   const { user } = useAuth();
   const permissions = usePermissions();
   const access = useWorkCapabilities("techcontracts.contracts", [contractId]);
@@ -23,11 +29,12 @@ export function SignatureAttachmentsSummary({ contractId }: { contractId: string
   const canView = access.for(contractId).can_view;
   const viewAs = readViewAs();
   const canPreview =
-    access.for(contractId).can_update &&
-    permissions.can("techcontracts.signature_evidence.manage.workspace") &&
-    permissions.can("techcontracts.signature_evidence.view.workspace") &&
     !viewAs?.readOnly &&
-    viewAs?.mode !== "role";
+    viewAs?.mode !== "role" &&
+    (canPreviewOverride ??
+      (access.for(contractId).can_update &&
+        permissions.can("techcontracts.signature_evidence.manage.workspace") &&
+        permissions.can("techcontracts.signature_evidence.view.workspace")));
   const attachments = useQuery({
     queryKey: [
       "contract-attachments",

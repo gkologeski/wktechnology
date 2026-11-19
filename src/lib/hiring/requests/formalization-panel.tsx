@@ -62,6 +62,30 @@ export function FormalizationPanel({
   return (
     <section className="space-y-3 text-sm" aria-label="Formalização">
       <h3 className="font-semibold">{formalizationLabels[d.status]}</h3>
+      {d.notes?.length > 0 && (
+        <section aria-label="Trilha privada de conferência" className="space-y-2">
+          <h4 className="font-medium">Trilha privada de conferência</h4>
+          {d.notes.map((n) => (
+            <div key={n.id} className="border-l pl-3">
+              <p className="text-xs text-muted-foreground">
+                {n.actor_label} · {new Date(n.created_at).toLocaleString("pt-BR")} · Ciclo {n.cycle}{" "}
+                ·{" "}
+                {(
+                  {
+                    submit: "Encaminhamento",
+                    legal: "Jurídico",
+                    finance: "Financeiro",
+                    counterparty_changes: "Ajustes da contraparte",
+                    legal_reject: "Rejeição jurídica",
+                    finance_reject: "Rejeição Financeiro",
+                  } as Record<string, string>
+                )[n.stage] ?? n.stage}
+              </p>
+              <p className="whitespace-pre-wrap break-words">{n.note}</p>
+            </div>
+          ))}
+        </section>
+      )}
       {d.problem && <p role="status">{d.problem}</p>}
       <p>Jurídico: {d.legal_name ?? "Não configurado"}</p>
       <p>Financeiro: {d.finance_name ?? "Não configurado"}</p>

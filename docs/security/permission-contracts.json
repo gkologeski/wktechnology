@@ -8195,11 +8195,11 @@
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
-        "src/components/hiring/contract-signature-card.tsx": "a884911a875e118c87181d0e12ca6a9fbb16f049a6f25dc0b24762d5f08564fb",
+        "src/components/hiring/contract-signature-card.tsx": "279fb77291a2a7a211fd5795a2ffe61a3cce523efb0454900dd65e3ffdc32417",
         "src/components/hiring/recruitment-authorization-panel.tsx": "63999fab8527aaba7d5bce74450e4c9730b86a54a45104f9952d28de00ad4f8d",
         "src/lib/hiring/recruitment.functions.ts": "0d4a95d986c293d338ae804a8a4cf344a9d0611cc1185fa1741208a513702199",
         "src/lib/hiring/recruitment.server.ts": "da927ffd9dc2d635d25ec9d7989ac562032d24ec48eba1d2fafc775fb4bb5f24",
-        "src/lib/hiring/signature.functions.ts": "190fb220cfa631b679c0642ceeff80006798550f253e4a306f3c6e0d95c23df7",
+        "src/lib/hiring/signature.functions.ts": "f366e9db56b76b620bc993357467b9f6f9959ddbdb18f778c71cfe7f52b7b60a",
         "src/routes/_authenticated/contracts.signatures.tsx": "6fa1182c3e26409de32729fb31c9f2cfcb251f0e8d298be4c8254488f588191d",
         "drizzle/migrations/0358_esign_formatted_contract_body.sql": "c28f5c805a9be9020842a5e8714f180ffcfa71ae3833b9ffa6f3262dafdf6aa1"
       }
@@ -8209,7 +8209,7 @@
       "kind": "presentation",
       "rationale": "Type-only DTO declarations; no IO, actions or values.",
       "files": {
-        "src/lib/hiring/signature.types.ts": "e17c484c8fbcf26da2797cd19c1dd320d6388957d0592b64d1f78ecca10aab48"
+        "src/lib/hiring/signature.types.ts": "76918f399649f840c1eac44281c12c61a56d6c397f5d64c27ed1b9b6b764088e"
       }
     },
     {
@@ -13358,15 +13358,15 @@
         }
       },
       "files": {
-        "src/lib/contracts/attachments.functions.ts": "2e9890124119ecc27ba3579136f95e05fbb55b515c6c1188ffc5b7bd4227fe64",
-        "src/components/contracts/contract-attachments-card.tsx": "56c77829a31f6560ca6730ad4731ce585e5d1d1434fb5beac65a3766d1a1df77",
+        "src/lib/contracts/attachments.functions.ts": "3ecaa0e4b4692f5da5cee3a1b03c9487e666068a21082dcf45726b2b30f3cbd1",
+        "src/components/contracts/contract-attachments-card.tsx": "b7123f9c19eca738cd53afca98b27b0e240c83f18573073dcc2b40439848b605",
         "drizzle/migrations/0366_contract_attachments.sql": "572bbe652ee2afe4a50a84d785ba6c633b44d522cfa34f4947a2844944d9ddd7",
         "src/lib/contracts/signature-package.server.ts": "0ce2a44e6d6a9fdc358cd00901608235a93e399df9914bd471833dcc880f9938",
         "src/lib/contracts/signature-package-pdf.server.ts": "3fdc7bc18c0a461c9c4ed10c7780f9b9152c4af11324b3d9b1bedf6c120f17e7",
         "src/lib/contracts/quote-pdf.server.ts": "989695b7a69f55577314fc0535ce4dafb540f729f9c263b555ceaa1bbdb5ab19",
         "src/lib/contracts/proposal-pdf.server.ts": "f60f92f473f0af768e76302ae842a2e50fbfecb2b94514c2c1d0b754bf30124b",
         "drizzle/migrations/0367_contract_signature_packages.sql": "2479a6a3f1af4f49c966969646e32b901b75922cd15649e2b798794d8fd91acf",
-        "src/components/contracts/signature-attachments-summary.tsx": "54d10a50d820e76eedc5cc947f7c4df41d7c77e30c027b2fd2f15582e263e3e1"
+        "src/components/contracts/signature-attachments-summary.tsx": "2a0e06fa6cba5466c4d92f2e1830e01593effa3377a6c4790f5dc2f62c5efd03"
       }
     },
     {
@@ -14352,7 +14352,7 @@
       "kind": "business",
       "files": {
         "src/lib/hiring/requests/formalization.functions.ts": "2277bd05544b65c2441306abec55108bbac7c362b16afe469494788ed82f6a37",
-        "src/lib/hiring/requests/formalization-panel.tsx": "4910aa34e3a9c6bba9c5b25a4c1715f49fc0399021949d5443f30818965ab4ba",
+        "src/lib/hiring/requests/formalization-panel.tsx": "05c651b5119779b2d939b6158cb9e52bb37045b48afb6646824116677e69076b",
         "src/lib/hiring/requests/draft-code.server.ts": "e592753d2935a9d0e1531e197c01506f35cca2683b3102a08cfe64d9bcd3c436"
       },
       "resources": [
@@ -14410,6 +14410,22 @@
         {
           "file": "docs/architecture/prepared-migrations/0378_hiring_signature_adapter.sql",
           "symbol": "hiring_contract_signers_prepare"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0379_hiring_formalization_integrity.sql",
+          "symbol": "hiring_formalization_private_access"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0379_hiring_formalization_integrity.sql",
+          "symbol": "hiring_formalization_signed"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0379_hiring_formalization_integrity.sql",
+          "symbol": "hiring_formalization_signed_body_guard"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0379_hiring_formalization_integrity.sql",
+          "symbol": "hiring_attachment_policy"
         }
       ],
       "tests": {
@@ -14434,13 +14450,13 @@
           "name": "formalization rejects inactive member"
         }
       },
-      "rationale": "Current approved source, canonical purchase instrument, ordered legal/external OTP/finance, no execution. Public OTP endpoints use service-only token scope; secrets never returned; prepared SQL only. Prepared SQL outside production-path inventory is explicitly bound under database, not files; all three migrations tested locally."
+      "rationale": "Current approved source, canonical purchase instrument, ordered legal/external OTP/finance, no execution. Public OTP endpoints use service-only token scope; secrets never returned; prepared SQL only. Prepared SQL outside production-path inventory is explicitly bound under database, not files; all three migrations tested locally. INTEGRIDADE-FORMALIZA: private immutable notes require request-view, pertinent formalization, reference-view and contract access; real signer management/completion and ForSign evidence SQL executed locally, no live messages. Signed body protected; preview is not send authorization."
     },
     {
       "id": "hiring-formalization-static",
       "kind": "presentation",
       "files": {
-        "src/lib/hiring/requests/formalization-types.ts": "7be0a39b58d6d7f2a16b308e4ccfdbc489e06d18ac5afdb4c126243969c02c41",
+        "src/lib/hiring/requests/formalization-types.ts": "4f2d226ce14caeae705168d99ea510ab591d5348f85d3e5bcfbb3f44f485c756",
         "src/lib/email-templates/hiring-draft-code.tsx": "e6e0016a90d1fee673e743337cf2b5cbeaaf21f20249a38031a09688726713ed"
       },
       "rationale": "Static schemas/DTOs and registered email template only."
