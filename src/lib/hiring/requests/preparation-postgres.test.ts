@@ -174,6 +174,8 @@ beforeAll(async () => {
     GRANT USAGE ON SCHEMA auth TO preparation_migrator WITH GRANT OPTION;
     GRANT SELECT,INSERT ON permissions TO preparation_migrator;
     GRANT REFERENCES ON workspaces,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts TO preparation_migrator;
+    ALTER DEFAULT PRIVILEGES FOR ROLE preparation_migrator IN SCHEMA public GRANT ALL ON TABLES TO authenticated,anon;
+    ALTER DEFAULT PRIVILEGES FOR ROLE preparation_migrator IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO authenticated,anon;
     SET ROLE preparation_migrator;`);
   await db.unsafe(readFileSync("drizzle/migrations/0373_hiring_requests.sql", "utf8"));
   await db.unsafe(
@@ -570,4 +572,26 @@ it("preparation keeps exceptional supplier release conditions as draft", async (
   await expect(
     user((tx) => save(tx, "supplier", { ...data, status: "ready" }, r.id, r.revision)),
   ).rejects.toThrow("Condição especial");
+});
+
+it("preparation revokes inherited default table grants from anonymous and authenticated roles", async () => {
+  for (const table of [
+    "hiring_preparation_requests",
+    "hiring_preparation_events",
+    "hiring_preparation_reference_values",
+    "hiring_preparation_reference_events",
+  ]) {
+    expect((await db`select has_table_privilege('anon',${table},'SELECT') as v`)[0].v).toBe(false);
+    expect(
+      (await db`select has_table_privilege('authenticated',${table},'INSERT') as v`)[0].v,
+    ).toBe(false);
+    expect(
+      (await db`select has_table_privilege('authenticated',${table},'UPDATE') as v`)[0].v,
+    ).toBe(false);
+  }
+  expect(
+    (
+      await db`select has_table_privilege('authenticated','hiring_preparation_reference_values','SELECT') as v`
+    )[0].v,
+  ).toBe(false);
 });

@@ -13925,8 +13925,8 @@
         "src/lib/hiring/requests/preparation-screen.tsx": "64fc1121f8019b9cf0984d2def13857aefb228a2e90c3b19fdad0b420fe22a73",
         "src/routes/_authenticated/people.hiring-requests.tsx": "bc1aa3c009420f3a81e5f78d95a7ec1c3f4cf81bf738a53f701fe36616f58846",
         "src/routes/_authenticated/contracts.supplier-requests.tsx": "cba4a323b4798ad0fc75f141f3938bc3bcc999ed96430c7a440848bdbdf4fcd7",
-        "drizzle/migrations/0373_hiring_requests.sql": "36b6b572d6bb4473fbcfd4b83e5cc34628a4ae80944086123d73527e1026dfaa",
-        "drizzle/migrations/0374_hiring_preparation_conditions.sql": "0a3bc70376cd48e5bcf71ccba92e6c1d09717c08eaaa37286ea3193d104a4b7b"
+        "drizzle/migrations/0373_hiring_requests.sql": "3f053b577dd7b4047fc5f596a0248026def9d60d112b040d93c5a8587014b267",
+        "drizzle/migrations/0374_hiring_preparation_conditions.sql": "1767190902e526da546ab0ccf780d46ddf8baafe8d96535f48aa0ba2f79241eb"
       },
       "resources": [
         "techpeople.hiring_requests",
@@ -13958,7 +13958,7 @@
         "techcontracts.supplier_requests.reference.view.workspace",
         "techcontracts.supplier_requests.reference.update.workspace"
       ],
-      "rationale": "Preparation only; dedicated non-BYPASSRLS writer, active workspace membership and explicit deny; canonical entity reads use caller RLS. Pending schema is intentionally not applied before review. Approved four-step wizard; reference value uses separately protected RLS storage and is never returned in ordinary rows/events. Local review: picker cache is keyed by active workspace and the content remounts on workspace/kind change, discarding open forms and stale local entity state. Local SQL review: catalog uses canonical module/resource metadata; client requests require a commercial origin before ready; writer CREATE on public is temporary for ownership transfer and revoked by the migration.",
+      "rationale": "Preparation only; dedicated non-BYPASSRLS writer, active workspace membership and explicit deny; canonical entity reads use caller RLS. Pending schema is intentionally not applied before review. Approved four-step wizard; reference value uses separately protected RLS storage and is never returned in ordinary rows/events. Local review: picker cache is keyed by active workspace and the content remounts on workspace/kind change, discarding open forms and stale local entity state. Local SQL review: catalog uses canonical module/resource metadata; client requests require a commercial origin before ready; writer CREATE on public is temporary for ownership transfer and revoked by the migration. Production default ACL review: new tables explicitly revoke PUBLIC/anon/authenticated privileges before narrow grants; isolated migration test enables the same broad defaults and verifies revocation, including direct sensitive-table access.",
       "controls": [
         {
           "file": "src/lib/hiring/requests/boundary.server.ts",

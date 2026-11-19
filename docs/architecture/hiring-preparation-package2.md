@@ -95,3 +95,11 @@ Correções da revisão: identificadores canônicos de módulo/recurso no catál
 Aceite local após união dos lotes: 30 testes de solicitação/boundary passaram (25 provas SQL reais e 5 de boundary), incluindo valores separados, deny, isolamento, inativo, concorrência e idempotência. Gate global de permissões aprovado após revisão dos contratos WhatsApp que já estavam pendentes na base; baseline preservado. As falhas intermediárias na simulação do executor foram corrigidas, não tratadas como resultados verdes.
 
 Nenhuma aprovação, admissão, vaga, contrato, assinatura, alocação, lançamento financeiro ou acesso de usuário é gerado pela preparação. Os pacotes futuros permanecem separados. As novas permissões exigem concessão explícita para cargos comuns; permanece somente o comportamento administrativo já existente do resolvedor, respeitando deny.
+
+### Conferência dos privilégios padrão e execução local completa
+
+O catálogo real de `pg_default_acl` confirmou privilégios amplos para anon/authenticated em tabelas novas. As quatro tabelas agora revogam explicitamente esses defaults antes dos grants mínimos. A prova de migração reproduz esses defaults e o executor sem superusuário; 31 testes específicos passaram (26 SQL + 5 boundary).
+
+A bateria local completa da revisão anterior ao complemento ACL executou 470 arquivos: 462 passaram e 8 falharam por indisponibilidade/timeout do Docker local (incluindo o script PostgreSQL da Unipile); 3.404 testes passaram, um falhou e 172 não chegaram a executar porque a inicialização do banco falhou. `verify.complete=false`: não há aceite global local. A CI integral, sem essas limitações do Mac, permanece obrigatória. O build anterior passou e a Ajuda/tipos/lint passaram; o complemento ACL exige fingerprint/build atualizados antes do aceite final. Nenhum teste foi desativado e o gate de performance não pode ser declarado aprovado enquanto a verificação completa estiver incompleta.
+
+O envio da revisão pública foi recusado pela revisão automática, que exigiu autorização específica para divulgar o novo payload interno no repositório público. A solicitação ao usuário inclui o commit de publicação e seus complementos de validação. Nenhum envio alternativo foi usado para contornar a decisão. Migrações, publicação e aceite visual de produção permanecem pendentes dessa autorização e da CI verde.

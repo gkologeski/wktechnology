@@ -13,6 +13,7 @@ CREATE TABLE public.hiring_preparation_reference_values (
  request_id uuid PRIMARY KEY, workspace_id uuid NOT NULL, reference_value numeric(14,2), revision integer NOT NULL,
  FOREIGN KEY(workspace_id,request_id) REFERENCES public.hiring_preparation_requests(workspace_id,id)
 );
+REVOKE ALL ON public.hiring_preparation_reference_values FROM PUBLIC,anon,authenticated;
 GRANT SELECT,INSERT,UPDATE ON public.hiring_preparation_reference_values TO techerp_request_writer;
 GRANT ALL ON public.hiring_preparation_reference_values TO service_role;
 ALTER TABLE public.hiring_preparation_reference_values ENABLE ROW LEVEL SECURITY;
@@ -21,6 +22,7 @@ CREATE TABLE public.hiring_preparation_reference_events (
  workspace_id uuid NOT NULL, request_id uuid NOT NULL, actor_id uuid NOT NULL, operation_id uuid NOT NULL, input jsonb NOT NULL,
  PRIMARY KEY(workspace_id,actor_id,operation_id), FOREIGN KEY(workspace_id,request_id) REFERENCES public.hiring_preparation_requests(workspace_id,id)
 );
+REVOKE ALL ON public.hiring_preparation_reference_events FROM PUBLIC,anon,authenticated;
 GRANT SELECT,INSERT ON public.hiring_preparation_reference_events TO techerp_request_writer;
 GRANT ALL ON public.hiring_preparation_reference_events TO service_role;
 ALTER TABLE public.hiring_preparation_reference_events ENABLE ROW LEVEL SECURITY;

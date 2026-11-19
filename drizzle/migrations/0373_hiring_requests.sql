@@ -43,6 +43,7 @@ CREATE TABLE public.hiring_preparation_requests (
  UNIQUE(workspace_id,id),
  CHECK((kind='professional' AND regime IS NOT NULL AND contact_id IS NULL) OR (kind='supplier' AND regime IS NULL AND person_id IS NULL))
 );
+REVOKE ALL ON public.hiring_preparation_requests FROM PUBLIC,anon,authenticated;
 GRANT SELECT ON public.hiring_preparation_requests TO authenticated;
 GRANT SELECT,INSERT,UPDATE ON public.hiring_preparation_requests TO techerp_request_writer;
 GRANT ALL ON public.hiring_preparation_requests TO service_role;
@@ -61,6 +62,7 @@ CREATE TABLE public.hiring_preparation_events (
  FOREIGN KEY(workspace_id,request_id) REFERENCES public.hiring_preparation_requests(workspace_id,id),
  UNIQUE(workspace_id,actor_id,operation_id), UNIQUE(request_id,revision)
 );
+REVOKE ALL ON public.hiring_preparation_events FROM PUBLIC,anon,authenticated;
 GRANT SELECT ON public.hiring_preparation_events TO authenticated;
 GRANT SELECT,INSERT ON public.hiring_preparation_events TO techerp_request_writer;
 GRANT ALL ON public.hiring_preparation_events TO service_role;
