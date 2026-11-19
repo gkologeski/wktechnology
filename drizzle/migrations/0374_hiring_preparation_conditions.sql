@@ -1,9 +1,10 @@
--- SOLICITA-PREPARA / approved prototype complement. PREPARED ONLY after 0373; no production application.
+-- SOLICITA-PREPARA / approved prototype complement. Applied after 0373; request preparation only.
+GRANT CREATE ON SCHEMA public TO techerp_request_writer;
 INSERT INTO public.permissions(key,module,resource,action,scope,label_pt,description,is_system) VALUES
-('techpeople.hiring_requests.reference.view.workspace','people','techpeople.hiring_requests.reference','view','workspace','Ver valor de referência de contratação','Leitura específica de condição sensível.',true),
-('techpeople.hiring_requests.reference.update.workspace','people','techpeople.hiring_requests.reference','update','workspace','Editar valor de referência de contratação','Preparação de condição sensível sem efeito financeiro.',true),
-('techcontracts.supplier_requests.reference.view.workspace','contracts','techcontracts.supplier_requests.reference','view','workspace','Ver valor de referência de fornecedor','Leitura específica de condição sensível.',true),
-('techcontracts.supplier_requests.reference.update.workspace','contracts','techcontracts.supplier_requests.reference','update','workspace','Editar valor de referência de fornecedor','Preparação de condição sensível sem efeito financeiro.',true)
+('techpeople.hiring_requests.reference.view.workspace','techpeople','hiring_requests.reference','view','workspace','Ver valor de referência de contratação','Leitura específica de condição sensível.',true),
+('techpeople.hiring_requests.reference.update.workspace','techpeople','hiring_requests.reference','update','workspace','Editar valor de referência de contratação','Preparação de condição sensível sem efeito financeiro.',true),
+('techcontracts.supplier_requests.reference.view.workspace','techcontracts','supplier_requests.reference','view','workspace','Ver valor de referência de fornecedor','Leitura específica de condição sensível.',true),
+('techcontracts.supplier_requests.reference.update.workspace','techcontracts','supplier_requests.reference','update','workspace','Editar valor de referência de fornecedor','Preparação de condição sensível sem efeito financeiro.',true)
 ON CONFLICT(key) DO NOTHING;
 ALTER TABLE public.hiring_preparation_requests ADD COLUMN selection_mode text NOT NULL DEFAULT 'needs_selection' CHECK(selection_mode IN('defined','needs_selection')),
  ADD COLUMN modality text NOT NULL DEFAULT 'delivery' CHECK(modality IN('delivery','hourly','monthly','mixed')),
@@ -12,6 +13,7 @@ CREATE TABLE public.hiring_preparation_reference_values (
  request_id uuid PRIMARY KEY, workspace_id uuid NOT NULL, reference_value numeric(14,2), revision integer NOT NULL,
  FOREIGN KEY(workspace_id,request_id) REFERENCES public.hiring_preparation_requests(workspace_id,id)
 );
+REVOKE ALL ON public.hiring_preparation_reference_values FROM PUBLIC,anon,authenticated;
 GRANT SELECT,INSERT,UPDATE ON public.hiring_preparation_reference_values TO techerp_request_writer;
 GRANT ALL ON public.hiring_preparation_reference_values TO service_role;
 ALTER TABLE public.hiring_preparation_reference_values ENABLE ROW LEVEL SECURITY;
@@ -20,6 +22,7 @@ CREATE TABLE public.hiring_preparation_reference_events (
  workspace_id uuid NOT NULL, request_id uuid NOT NULL, actor_id uuid NOT NULL, operation_id uuid NOT NULL, input jsonb NOT NULL,
  PRIMARY KEY(workspace_id,actor_id,operation_id), FOREIGN KEY(workspace_id,request_id) REFERENCES public.hiring_preparation_requests(workspace_id,id)
 );
+REVOKE ALL ON public.hiring_preparation_reference_events FROM PUBLIC,anon,authenticated;
 GRANT SELECT,INSERT ON public.hiring_preparation_reference_events TO techerp_request_writer;
 GRANT ALL ON public.hiring_preparation_reference_events TO service_role;
 ALTER TABLE public.hiring_preparation_reference_events ENABLE ROW LEVEL SECURITY;
@@ -67,8 +70,10 @@ BEGIN
   IF NEW.deal_id IS NOT NULL AND origin_deal IS DISTINCT FROM NEW.deal_id THEN RAISE EXCEPTION 'Projeto não pertence ao negócio.'; END IF;
   IF NEW.commercial_contract_id IS NOT NULL AND origin_contract IS DISTINCT FROM NEW.commercial_contract_id THEN RAISE EXCEPTION 'Projeto não pertence ao contrato comercial.'; END IF;
  END IF;
+ IF NEW.status='ready' AND NEW.purpose='client' AND NEW.deal_id IS NULL AND NEW.commercial_contract_id IS NULL THEN RAISE EXCEPTION 'Associe o negócio ou contrato comercial para preparar uma contratação de cliente.'; END IF;
  IF NEW.status='ready' AND (NEW.area_id IS NULL OR NEW.legal_entity_id IS NULL OR length(btrim(NEW.scope_text))=0 OR (NEW.kind='supplier' AND NEW.company_id IS NULL)) THEN RAISE EXCEPTION 'Preencha escopo, área, entidade legal e fornecedor quando aplicável.'; END IF;
  IF NEW.kind='professional' AND (NEW.release_condition IS NOT NULL OR (NEW.selection_mode='needs_selection' AND NEW.person_id IS NOT NULL) OR (NEW.status='ready' AND NEW.selection_mode='defined' AND NEW.person_id IS NULL)) THEN RAISE EXCEPTION 'Profissional definido exige pessoa real; necessidade de seleção não vincula pessoa nem abre vaga.'; END IF;
+ IF NEW.kind='supplier' AND NEW.status='ready' AND NEW.release_condition='also_client_acceptance' THEN RAISE EXCEPTION 'Condição especial exige revisão; mantenha como rascunho.'; END IF;
  IF NEW.kind='supplier' AND NEW.status='ready' AND NEW.release_condition IS NULL THEN RAISE EXCEPTION 'Informe condição de liberação do fornecedor para revisão.'; END IF;
  RETURN NEW;
 END $$;
@@ -126,3 +131,5 @@ END $$;
 ALTER FUNCTION public.hiring_preparation_reference(uuid,text,uuid) OWNER TO techerp_request_writer;
 REVOKE ALL ON FUNCTION public.hiring_preparation_reference(uuid,text,uuid) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.hiring_preparation_reference(uuid,text,uuid) TO authenticated;
+
+REVOKE CREATE ON SCHEMA public FROM techerp_request_writer;

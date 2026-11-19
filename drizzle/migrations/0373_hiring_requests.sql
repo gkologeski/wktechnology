@@ -1,18 +1,22 @@
--- SOLICITA-PREPARA / package 2. PREPARED ONLY; promote via the migration tool after review.
+-- SOLICITA-PREPARA / package 2. Reviewed release migration; request preparation only.
 -- No presets, approvers, operational records, workflows or messages are created.
 CREATE ROLE techerp_request_writer NOLOGIN NOSUPERUSER NOBYPASSRLS INHERIT;
 GRANT authenticated TO techerp_request_writer;
+-- Migration executor needs SET ROLE capability to assign the security-definer owner.
+GRANT techerp_request_writer TO CURRENT_USER;
 GRANT USAGE ON SCHEMA public, auth TO techerp_request_writer;
+-- Required by non-superuser migrations when transferring function ownership; revoked below.
+GRANT CREATE ON SCHEMA public TO techerp_request_writer;
 
 INSERT INTO public.permissions(key,module,resource,action,scope,label_pt,description,is_system) VALUES
-('techpeople.hiring_requests.view.workspace','people','techpeople.hiring_requests','view','workspace','Ver solicitações de contratação','Consultar preparação de contratação de profissionais.',true),
-('techpeople.hiring_requests.create.workspace','people','techpeople.hiring_requests','create','workspace','Criar solicitação de contratação','Criar preparação, sem autorizar recrutamento.',true),
-('techpeople.hiring_requests.update.workspace','people','techpeople.hiring_requests','update','workspace','Editar solicitação de contratação','Editar preparação com controle de revisão.',true),
-('techpeople.hiring_requests.cancel.update.workspace','people','techpeople.hiring_requests.cancel','update','workspace','Cancelar solicitação de contratação','Cancelar preparação sem efeitos operacionais.',true),
-('techcontracts.supplier_requests.view.workspace','contracts','techcontracts.supplier_requests','view','workspace','Ver contratação de fornecedores','Consultar preparação de compra WK.',true),
-('techcontracts.supplier_requests.create.workspace','contracts','techcontracts.supplier_requests','create','workspace','Criar contratação de fornecedor','Criar preparação de compra WK.',true),
-('techcontracts.supplier_requests.update.workspace','contracts','techcontracts.supplier_requests','update','workspace','Editar contratação de fornecedor','Editar preparação com controle de revisão.',true),
-('techcontracts.supplier_requests.cancel.update.workspace','contracts','techcontracts.supplier_requests.cancel','update','workspace','Cancelar contratação de fornecedor','Cancelar preparação sem efeitos operacionais.',true)
+('techpeople.hiring_requests.view.workspace','techpeople','hiring_requests','view','workspace','Ver solicitações de contratação','Consultar preparação de contratação de profissionais.',true),
+('techpeople.hiring_requests.create.workspace','techpeople','hiring_requests','create','workspace','Criar solicitação de contratação','Criar preparação, sem autorizar recrutamento.',true),
+('techpeople.hiring_requests.update.workspace','techpeople','hiring_requests','update','workspace','Editar solicitação de contratação','Editar preparação com controle de revisão.',true),
+('techpeople.hiring_requests.cancel.update.workspace','techpeople','hiring_requests.cancel','update','workspace','Cancelar solicitação de contratação','Cancelar preparação sem efeitos operacionais.',true),
+('techcontracts.supplier_requests.view.workspace','techcontracts','supplier_requests','view','workspace','Ver contratação de fornecedores','Consultar preparação de compra WK.',true),
+('techcontracts.supplier_requests.create.workspace','techcontracts','supplier_requests','create','workspace','Criar contratação de fornecedor','Criar preparação de compra WK.',true),
+('techcontracts.supplier_requests.update.workspace','techcontracts','supplier_requests','update','workspace','Editar contratação de fornecedor','Editar preparação com controle de revisão.',true),
+('techcontracts.supplier_requests.cancel.update.workspace','techcontracts','supplier_requests.cancel','update','workspace','Cancelar contratação de fornecedor','Cancelar preparação sem efeitos operacionais.',true)
 ON CONFLICT(key) DO NOTHING;
 
 CREATE TABLE public.hiring_preparation_requests (
@@ -39,6 +43,7 @@ CREATE TABLE public.hiring_preparation_requests (
  UNIQUE(workspace_id,id),
  CHECK((kind='professional' AND regime IS NOT NULL AND contact_id IS NULL) OR (kind='supplier' AND regime IS NULL AND person_id IS NULL))
 );
+REVOKE ALL ON public.hiring_preparation_requests FROM PUBLIC,anon,authenticated;
 GRANT SELECT ON public.hiring_preparation_requests TO authenticated;
 GRANT SELECT,INSERT,UPDATE ON public.hiring_preparation_requests TO techerp_request_writer;
 GRANT ALL ON public.hiring_preparation_requests TO service_role;
@@ -57,6 +62,7 @@ CREATE TABLE public.hiring_preparation_events (
  FOREIGN KEY(workspace_id,request_id) REFERENCES public.hiring_preparation_requests(workspace_id,id),
  UNIQUE(workspace_id,actor_id,operation_id), UNIQUE(request_id,revision)
 );
+REVOKE ALL ON public.hiring_preparation_events FROM PUBLIC,anon,authenticated;
 GRANT SELECT ON public.hiring_preparation_events TO authenticated;
 GRANT SELECT,INSERT ON public.hiring_preparation_events TO techerp_request_writer;
 GRANT ALL ON public.hiring_preparation_events TO service_role;
@@ -114,6 +120,7 @@ BEGIN
   IF NEW.deal_id IS NOT NULL AND origin_deal IS DISTINCT FROM NEW.deal_id THEN RAISE EXCEPTION 'Projeto não pertence ao negócio.'; END IF;
   IF NEW.commercial_contract_id IS NOT NULL AND origin_contract IS DISTINCT FROM NEW.commercial_contract_id THEN RAISE EXCEPTION 'Projeto não pertence ao contrato comercial.'; END IF;
  END IF;
+ IF NEW.status='ready' AND NEW.purpose='client' AND NEW.deal_id IS NULL AND NEW.commercial_contract_id IS NULL THEN RAISE EXCEPTION 'Associe o negócio ou contrato comercial para preparar uma contratação de cliente.'; END IF;
  IF NEW.status='ready' AND (NEW.area_id IS NULL OR NEW.legal_entity_id IS NULL OR length(btrim(NEW.scope_text))=0 OR (NEW.kind='supplier' AND NEW.company_id IS NULL)) THEN RAISE EXCEPTION 'Preencha escopo, área, entidade legal e fornecedor quando aplicável.'; END IF;
  RETURN NEW;
 END $$;
@@ -183,3 +190,5 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.hiring_preparation_history(uuid,text,uuid,integer) FROM PUBLIC,anon;
 GRANT EXECUTE ON FUNCTION public.hiring_preparation_history(uuid,text,uuid,integer) TO authenticated;
+
+REVOKE CREATE ON SCHEMA public FROM techerp_request_writer;

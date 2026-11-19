@@ -868,8 +868,8 @@ function CampaignsPage() {
                           <div>
                             <p className="text-sm font-medium">Rodízio de modelos</p>
                             <p className="text-xs text-muted-foreground">
-                              Adicione os modelos aprovados que quiser. Cada contato recebe sempre o mesmo
-                              modelo, enviado por um dos números em que ele está aprovado.
+                              Adicione os modelos aprovados que quiser. Cada contato recebe sempre o
+                              mesmo modelo, enviado por um dos números em que ele está aprovado.
                             </p>
                           </div>
                           <Select
@@ -964,7 +964,7 @@ function CampaignsPage() {
                               pick.name === templateName ||
                               extraSelected.some((e) => e.name === pick.name);
                             if (!inRotation) {
-                                                            setExtraTpls((xs) => [...xs, { name: pick.name, weight: 1 }]);
+                              setExtraTpls((xs) => [...xs, { name: pick.name, weight: 1 }]);
                               setTplSenders((m) => ({ ...m, [pick.name]: [pick.senderId] }));
                             } else {
                               setTplSenders((m) => {

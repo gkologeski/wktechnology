@@ -38,7 +38,9 @@ export async function assertRotationApproved(
       );
       if (!hit) throw new Error(`O modelo "${t.name}" não está aprovado na Meta para este número.`);
       if (countTemplateVariables(hit.components) !== t.variableCount)
-        throw new Error(`O modelo "${t.name}" mudou na Meta. Atualize os modelos e salve novamente.`);
+        throw new Error(
+          `O modelo "${t.name}" mudou na Meta. Atualize os modelos e salve novamente.`,
+        );
     }
   }
 }

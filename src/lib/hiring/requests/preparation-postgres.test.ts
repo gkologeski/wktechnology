@@ -1,17 +1,7 @@
 import { beforeAll, afterAll, it, expect } from "vitest";
 import postgres from "postgres";
 import { execFileSync } from "node:child_process";
-import {
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-  chownSync,
-  mkdirSync,
-  realpathSync,
-  cpSync,
-  writeFileSync,
-  existsSync,
-} from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
@@ -25,14 +15,21 @@ const W = "aaaaaaaa-0000-4000-8000-000000000001",
   A = "cccccccc-0000-4000-8000-000000000001",
   L = "dddddddd-0000-4000-8000-000000000001",
   C = "eeeeeeee-0000-4000-8000-000000000001";
-const native = (command: string, args: string[]) => {
-  const executable = existsSync("/usr/bin/" + command)
-    ? realpathSync("/usr/bin/" + command)
-    : command;
-  return process.getuid?.() === 0
-    ? execFileSync("runuser", ["-u", "nobody", "--", executable, ...args], { stdio: "pipe" })
-    : execFileSync(executable, args, { stdio: "pipe" });
-};
+const useNative = process.platform === "darwin" && process.env.TECHERP_NATIVE_PG === "1";
+const pgBin = "/Applications/Postgres.app/Contents/Versions/16/bin/";
+const docker =
+  process.platform === "darwin"
+    ? "/Applications/Docker.app/Contents/Resources/bin/docker"
+    : "docker";
+const image = "postgres@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b";
+const container = "techerp-preparation-ci-" + randomUUID();
+let endpoint = "";
+const dockerRun = (...args: string[]) =>
+  execFileSync(docker, ["--host", endpoint, ...args], {
+    encoding: "utf8",
+    timeout: 90000,
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
 function body(path: string, name: string) {
   const sql = readFileSync(path, "utf8");
   const start = sql.indexOf("CREATE OR REPLACE FUNCTION " + name);
@@ -46,53 +43,97 @@ function body(path: string, name: string) {
 }
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), "hiring-preparation-pg-"));
-  if (process.getuid?.() === 0) chownSync(root, 65534, 65534);
-  mkdirSync(join(root, "socket"));
-  if (process.getuid?.() === 0) chownSync(join(root, "socket"), 65534, 65534);
-  // Nix relocatable binaries need the actual library path in initdb's snowball script.
-  const pgRoot = join(realpathSync("/usr/bin/postgres"), "..", "..");
-  const share = join(root, "share");
-  if (existsSync(join(pgRoot, "share", "postgresql"))) {
-    cpSync(join(pgRoot, "share", "postgresql"), share, { recursive: true });
-    const snow = join(share, "snowball_create.sql");
-    writeFileSync(snow, readFileSync(snow, "utf8").replaceAll("$libdir", join(pgRoot, "lib")));
-    const control = join(share, "extension", "plpgsql.control");
-    writeFileSync(
-      control,
-      readFileSync(control, "utf8").replaceAll("$libdir", join(pgRoot, "lib")),
+  if (useNative) {
+    execFileSync(
+      pgBin + "initdb",
+      [
+        "-D",
+        join(root, "data"),
+        "-U",
+        "postgres",
+        "--auth-local=trust",
+        "--auth-host=reject",
+        "--no-locale",
+        "--encoding=UTF8",
+      ],
+      { stdio: "pipe", timeout: 30000 },
     );
+    execFileSync(
+      pgBin + "pg_ctl",
+      [
+        "-D",
+        join(root, "data"),
+        "-l",
+        join(root, "server.log"),
+        "-o",
+        `-k ${root} -h '' -F`,
+        "-w",
+        "start",
+      ],
+      { stdio: "pipe", timeout: 30000 },
+    );
+    started = true;
+    db = postgres({
+      host: root,
+      port: 5432,
+      username: "postgres",
+      database: "postgres",
+      max: 4,
+      onnotice: () => {},
+    });
+  } else {
+    endpoint = execFileSync(
+      docker,
+      ["context", "inspect", "--format", "{{.Endpoints.docker.Host}}"],
+      { encoding: "utf8", timeout: 10000 },
+    ).trim();
+    if (!endpoint.startsWith("unix://")) throw Error("Only a local Unix Docker socket is allowed.");
+    const password = randomUUID() + randomUUID(),
+      envFile = join(root, "postgres.env");
+    writeFileSync(
+      envFile,
+      "POSTGRES_DB=techerp_permission_ci\nPOSTGRES_PASSWORD=" + password + "\n",
+      { mode: 0o600 },
+    );
+    dockerRun(
+      "run",
+      "-d",
+      "--rm",
+      "--name",
+      container,
+      "--env-file",
+      envFile,
+      "-p",
+      "127.0.0.1::5432",
+      image,
+      "-c",
+      "fsync=off",
+    );
+    started = true;
+    const mapped = dockerRun("port", container, "5432/tcp");
+    if (!/^127\.0\.0\.1:\d+$/.test(mapped)) throw Error("Unexpected disposable DB binding");
+    db = postgres({
+      host: "127.0.0.1",
+      port: Number(mapped.split(":")[1]),
+      username: "postgres",
+      password,
+      database: "techerp_permission_ci",
+      max: 4,
+      connect_timeout: 1,
+      onnotice: () => {},
+    });
+    let ready = false;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      try {
+        await db`select 1`;
+        ready = true;
+        break;
+      } catch {
+        await new Promise((r) => setTimeout(r, 100));
+      }
+    }
+    if (!ready) throw Error("Disposable PostgreSQL did not become ready");
   }
-  native("initdb", [
-    "-D",
-    join(root, "data"),
-    "-A",
-    "trust",
-    "-U",
-    "postgres",
-    "--no-locale",
-    ...(existsSync(share)
-      ? ["-L", share, "-c", `dynamic_library_path=${join(pgRoot, "lib")}`]
-      : []),
-  ]);
-  native("pg_ctl", [
-    "-D",
-    join(root, "data"),
-    "-l",
-    join(root, "server.log"),
-    "-o",
-    `-k ${join(root, "socket")} -p 55439 -h ''`,
-    "-w",
-    "start",
-  ]);
-  started = true;
-  db = postgres({
-    host: join(root, "socket"),
-    port: 55439,
-    username: "postgres",
-    database: "postgres",
-    max: 4,
-    onnotice: () => {},
-  });
   // Create introspection function after resolver dependencies to satisfy SQL-language validation.
   const fixture = readFileSync("tests/fixtures/hiring-preparation.sql", "utf8");
   const permission = fixture.match(/CREATE FUNCTION user_has_permission[^\n]+/)?.[0];
@@ -126,15 +167,21 @@ beforeAll(async () => {
     ),
   );
   await db.unsafe(permission);
+  // Supabase migrations use a non-superuser with CREATEROLE, not PostgreSQL superuser.
+  await db.unsafe(`CREATE ROLE preparation_migrator NOLOGIN CREATEROLE INHERIT;
+    GRANT authenticated TO preparation_migrator WITH ADMIN OPTION;
+    GRANT USAGE,CREATE ON SCHEMA public TO preparation_migrator WITH GRANT OPTION;
+    GRANT USAGE ON SCHEMA auth TO preparation_migrator WITH GRANT OPTION;
+    GRANT SELECT,INSERT ON permissions TO preparation_migrator;
+    GRANT REFERENCES ON workspaces,user_groups,legal_entities,people,companies,contacts,deals,projects,contracts TO preparation_migrator;
+    ALTER DEFAULT PRIVILEGES FOR ROLE preparation_migrator IN SCHEMA public GRANT ALL ON TABLES TO authenticated,anon;
+    ALTER DEFAULT PRIVILEGES FOR ROLE preparation_migrator IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO authenticated,anon;
+    SET ROLE preparation_migrator;`);
+  await db.unsafe(readFileSync("drizzle/migrations/0373_hiring_requests.sql", "utf8"));
   await db.unsafe(
-    readFileSync("docs/architecture/prepared-migrations/0373_hiring_requests.sql", "utf8"),
+    readFileSync("drizzle/migrations/0374_hiring_preparation_conditions.sql", "utf8"),
   );
-  await db.unsafe(
-    readFileSync(
-      "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
-      "utf8",
-    ),
-  );
+  await db.unsafe("RESET ROLE");
   for (const table of [
     "user_groups",
     "legal_entities",
@@ -149,10 +196,15 @@ beforeAll(async () => {
       `ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY; CREATE POLICY fixture_entity_read ON ${table} FOR SELECT TO authenticated USING(workspace_id=(SELECT active_workspace_id FROM profiles WHERE id=auth.uid()) AND is_workspace_member(workspace_id,auth.uid()));`,
     );
   }
-}, 60000);
+}, 120000);
 afterAll(async () => {
   if (db) await db.end();
-  if (started) native("pg_ctl", ["-D", join(root, "data"), "-m", "immediate", "-w", "stop"]);
+  if (started && useNative)
+    execFileSync(pgBin + "pg_ctl", ["-D", join(root, "data"), "-m", "fast", "-w", "stop"], {
+      stdio: "pipe",
+      timeout: 15000,
+    });
+  if (started && !useNative) dockerRun("rm", "-f", container);
   if (root) rmSync(root, { recursive: true, force: true });
 });
 async function reset() {
@@ -367,6 +419,37 @@ it("preparation cancellation cannot change title with cancel-only permission", a
   );
   expect(cancelled.status).toBe("cancelled");
 });
+it("preparation requires a commercial origin before ready for a client", async () => {
+  await reset();
+  for (const kind of ["professional", "supplier"]) {
+    const data = { ...form(kind), purpose: "client" };
+    const r = await user((tx) => save(tx, kind, data));
+    await expect(
+      user((tx) => save(tx, kind, { ...data, status: "ready" }, r.id, r.revision)),
+    ).rejects.toThrow("Associe");
+    const deal = randomUUID();
+    await db`insert into deals(id,workspace_id,name,legal_entity_id) values(${deal},${W},'Origem teste',${L})`;
+    const ready = await user((tx) =>
+      save(tx, kind, { ...data, status: "ready", deal_id: deal }, r.id, r.revision),
+    );
+    expect(ready.status).toBe("ready");
+  }
+});
+it("preparation registers canonical permission modules and revokes writer schema creation", async () => {
+  expect(
+    (
+      await db`select count(*)::int n from permissions where key like 'techpeople.hiring_requests.%' and module='techpeople' and resource in ('hiring_requests','hiring_requests.cancel')`
+    )[0].n,
+  ).toBe(4);
+  expect(
+    (
+      await db`select count(*)::int n from permissions where key like 'techcontracts.supplier_requests.%' and module='techcontracts' and resource in ('supplier_requests','supplier_requests.cancel')`
+    )[0].n,
+  ).toBe(4);
+  expect(
+    (await db`select has_schema_privilege('techerp_request_writer','public','CREATE') as v`)[0].v,
+  ).toBe(false);
+});
 
 it("preparation reference is absent from list history save and direct tables", async () => {
   await reset();
@@ -479,4 +562,36 @@ it("preparation sensitive idempotency rejects changed amount and immutable input
   await expect(db`update hiring_preparation_reference_events set input='{}'`).rejects.toThrow(
     "imutável",
   );
+});
+
+it("preparation keeps exceptional supplier release conditions as draft", async () => {
+  await reset();
+  const data = { ...form("supplier"), release_condition: "also_client_acceptance" };
+  const r = await user((tx) => save(tx, "supplier", data));
+  expect(r.status).toBe("draft");
+  await expect(
+    user((tx) => save(tx, "supplier", { ...data, status: "ready" }, r.id, r.revision)),
+  ).rejects.toThrow("Condição especial");
+});
+
+it("preparation revokes inherited default table grants from anonymous and authenticated roles", async () => {
+  for (const table of [
+    "hiring_preparation_requests",
+    "hiring_preparation_events",
+    "hiring_preparation_reference_values",
+    "hiring_preparation_reference_events",
+  ]) {
+    expect((await db`select has_table_privilege('anon',${table},'SELECT') as v`)[0].v).toBe(false);
+    expect(
+      (await db`select has_table_privilege('authenticated',${table},'INSERT') as v`)[0].v,
+    ).toBe(false);
+    expect(
+      (await db`select has_table_privilege('authenticated',${table},'UPDATE') as v`)[0].v,
+    ).toBe(false);
+  }
+  expect(
+    (
+      await db`select has_table_privilege('authenticated','hiring_preparation_reference_values','SELECT') as v`
+    )[0].v,
+  ).toBe(false);
 });

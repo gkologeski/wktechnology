@@ -207,6 +207,12 @@ export function PreparationForm({
                   set("release_condition", v);
               },
             )}
+          {kind === "supplier" && value.release_condition === "also_client_acceptance" && (
+            <p role="status" className="text-sm text-muted-foreground">
+              Condição especial: mantenha a solicitação como rascunho para revisão das entregas,
+              responsáveis, prazos e tratamento do silêncio.
+            </p>
+          )}
           <p className="text-sm text-muted-foreground">
             Condições em preparação para revisão. Nenhuma parcela, medição ou liberação financeira é
             criada.

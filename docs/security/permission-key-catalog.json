@@ -3004,43 +3004,43 @@
       "migration": "drizzle/migrations/0369_contract_draft_client_acceptance_bypass.sql"
     },
     "techpeople.hiring_requests.view.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+      "migration": "drizzle/migrations/0373_hiring_requests.sql"
     },
     "techpeople.hiring_requests.create.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+      "migration": "drizzle/migrations/0373_hiring_requests.sql"
     },
     "techpeople.hiring_requests.update.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+      "migration": "drizzle/migrations/0373_hiring_requests.sql"
     },
     "techcontracts.supplier_requests.view.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+      "migration": "drizzle/migrations/0373_hiring_requests.sql"
     },
     "techcontracts.supplier_requests.create.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+      "migration": "drizzle/migrations/0373_hiring_requests.sql"
     },
     "techcontracts.supplier_requests.update.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+      "migration": "drizzle/migrations/0373_hiring_requests.sql"
     },
     "techpeople.hiring_requests.cancel.update.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+      "migration": "drizzle/migrations/0373_hiring_requests.sql"
     },
     "techcontracts.supplier_requests.cancel.update.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0373_hiring_requests.sql"
+      "migration": "drizzle/migrations/0373_hiring_requests.sql"
     },
     "techpeople.hiring_requests.reference.view.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+      "migration": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
       "rationale": "Prepared only; explicit sensitive-field permission, no grants to roles."
     },
     "techpeople.hiring_requests.reference.update.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+      "migration": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
       "rationale": "Prepared only; explicit sensitive-field permission, no grants to roles."
     },
     "techcontracts.supplier_requests.reference.view.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+      "migration": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
       "rationale": "Prepared only; explicit sensitive-field permission, no grants to roles."
     },
     "techcontracts.supplier_requests.reference.update.workspace": {
-      "migration": "docs/architecture/prepared-migrations/0374_hiring_preparation_conditions.sql",
+      "migration": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
       "rationale": "Prepared only; explicit sensitive-field permission, no grants to roles."
     }
   }
