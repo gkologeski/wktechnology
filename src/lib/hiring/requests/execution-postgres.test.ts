@@ -294,6 +294,9 @@ beforeAll(async () => {
   );
   await db.begin(async (tx) => {
     await tx.unsafe(readFileSync(PREPARED, "utf8"));
+    await tx.unsafe(
+      readFileSync("docs/prepared-migrations/0386_hiring_execution_current_authority.sql", "utf8"),
+    );
   });
   await db.unsafe(
     "CREATE TRIGGER zzzzzz_hiring_allocation BEFORE INSERT OR UPDATE ON people_allocations FOR EACH ROW EXECUTE FUNCTION hiring_allocation_guard()",
@@ -770,6 +773,41 @@ it("execution context is read-only and denies foreign or unauthorized readers", 
   await db`update profiles set active_workspace_id=${B} where id=${U}`;
   await expect(execContext(r.id, U)).rejects.toThrow("indisponível");
 });
+it.each(["missing", "deny", "inactive", "foreign"] as const)(
+  "package5 current manager %s blocks new allocations without rewriting the start",
+  async (scenario) => {
+    const { r } = await signed();
+    const project = randomUUID();
+    await db`insert into projects(id,workspace_id,name) values(${project},${W},'Projeto de teste isolado')`;
+    const sid = await start(r);
+    const before = (await db`select * from hiring_execution_starts where id=${sid}`)[0];
+    const engagement = before.engagement_id;
+    if (scenario === "missing")
+      await db`delete from job_role_permission_overrides where role_id=${M} and permission_key=${KEY}`;
+    if (scenario === "deny")
+      await db`update job_role_permission_overrides set effect='deny' where role_id=${M} and permission_key=${KEY}`;
+    if (scenario === "inactive")
+      await db`update workspace_members set status='inactive' where user_id=${M} and workspace_id=${W}`;
+    if (scenario === "foreign")
+      await db`update profiles set active_workspace_id=${B} where id=${M}`;
+    await expect(
+      user(
+        M,
+        (tx) =>
+          tx`select hiring_allocate(${W},${engagement},${project},current_date,null,20,'Alocação após revogação deve ser bloqueada.')`,
+      ),
+    ).rejects.toThrow(/assinatura íntegra|autoriza|permissão|acesso/);
+    expect((await db`select * from hiring_execution_starts where id=${sid}`)[0]).toEqual(before);
+    expect((await db`select status from hiring_engagements where id=${engagement}`)[0].status).toBe(
+      "active",
+    );
+    expect(
+      (
+        await db`select count(*)::int n from people_allocations where hiring_engagement_id=${engagement}`
+      )[0].n,
+    ).toBe(0);
+  },
+);
 it("execution ATS regression: legacy job engagements keep the unchanged recruitment gate", async () => {
   await reset();
   const job = randomUUID(),

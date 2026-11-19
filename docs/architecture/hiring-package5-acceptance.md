@@ -26,6 +26,9 @@ As suítes estão em `src/lib/hiring/requests/`. Os cinco cenários são testes 
 - Para ambas as origens, a sessão `Ver como papel` mantém os indicadores de escrita desabilitados e a RPC de geração nega a tentativa, mesmo com grants financeiros. Leitura de contexto e tentativa de mutação são transações distintas para verificar também o rollback real.
 - Conferir, após a nova migração de legados, que nenhuma marcação de importação/metadata permite converter um contrato de contratação governada para fugir dos gates acima.
 
+- Auditoria encontrou que `hiring_execution_activation_ok` não revalidava a autoridade atual do gestor, embora o contexto de início já o fizesse. A migração aditiva preparada 0386 inclui `hiring_execution_problem` no predicado de novas operações; preserva ACL, histórico do início, vínculo e alocações anteriores. Quatro novos cenários pós-início (sem chave, deny, inativo e workspace trocado) negam a nova alocação.
+- As quatro suítes de execução, entregas, economia e títulos carregam também a 0386: 214 testes aprovados em PostgreSQL 16 descartável local, em 19/11/2026. A CI PostgreSQL 17 ainda é obrigatória.
+
 ## Fechamento obrigatório
 
 1. Revisar alterações e executar `permissions:check` antes de tipos, lint e testes direcionados. Não regenerar baseline nem alterar migrações históricas.
