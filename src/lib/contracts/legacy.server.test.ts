@@ -136,23 +136,21 @@ it("ordinary classification cannot leak private evidence or reasons on denied le
   expect(calls).toEqual(["contract_legacy_indicator", "contract_legacy_state"]);
 });
 it("legacy history projects the real reason without private raw event details", async () => {
-  rpc
-    .mockResolvedValueOnce({ status: "pending" })
-    .mockResolvedValueOnce({
-      contract_id: "c",
-      record: null,
-      eligible_problem: null,
-      evidence: [],
-      events: [
-        {
-          kind: "recognized",
-          revision: 1,
-          actor_id: "u",
-          created_at: "now",
-          details: { reason: "Conferido", path: "private", internal: "hidden" },
-        },
-      ],
-    });
+  rpc.mockResolvedValueOnce({ status: "pending" }).mockResolvedValueOnce({
+    contract_id: "c",
+    record: null,
+    eligible_problem: null,
+    evidence: [],
+    events: [
+      {
+        kind: "recognized",
+        revision: 1,
+        actor_id: "u",
+        created_at: "now",
+        details: { reason: "Conferido", path: "private", internal: "hidden" },
+      },
+    ],
+  });
   const result = await loadLegacyState(db, "w", "c");
   expect(result.access).toBe("granted");
   if (result.access === "granted")
