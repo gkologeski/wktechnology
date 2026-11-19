@@ -1,3 +1,10 @@
+# APROVA-SOLICITA — pacote 3, lote 1 (porte G, previsão 3–5 h)
+
+- [x] Preparar aprovações por revisão/valor e alçada canônica, sem modificar configuração, permissões concedidas ou registros reais.
+- [x] Integrar ações, pendências e notificação interna idempotente na ficha existente; preservar wizard e White Label. Navegador não validado: prévia sem resposta.
+- [x] 23 testes locais (18 SQL reais + 5 boundary); Ajuda 254/254; ESLint 0 erros/2 avisos; contratos do lote sem findings. Relatório em docs/architecture/hiring-preparation-package3-batch1.md. Gate global bloqueado pelos dois findings preexistentes de tipos WhatsApp; perf sem build.json; verify:changed apenas dry-run.
+- [ ] Validação autenticada após revisão/aplicação: bloqueada intencionalmente pela proibição de aplicar migração. Não publicar.
+
 # SOLICITA-PREPARA — pacote 2 (porte G, previsão 3–5 h)
 
 - [x] Código do complemento aprovado preparado e 27 testes locais passaram (M/G, 1–2 h): wizard Demanda → Vínculos → Condições → Revisão; modalidade, necessidade de seleção, liberação e valor isolado por permissão específica; ficha com histórico central e resumo à direita. Sem absorver commit local 1cf5c5a49, alterar WhatsApp, aplicar migração ou publicar.

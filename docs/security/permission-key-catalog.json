@@ -2815,7 +2815,11 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace"
+    "techservice.tickets.view.workspace",
+    "techpeople.hiring_requests.approval_request.create.workspace",
+    "techpeople.hiring_requests.approval.approve.workspace",
+    "techcontracts.supplier_requests.approval_request.create.workspace",
+    "techcontracts.supplier_requests.approval.approve.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -3042,6 +3046,18 @@
     "techcontracts.supplier_requests.reference.update.workspace": {
       "migration": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
       "rationale": "Prepared only; explicit sensitive-field permission, no grants to roles."
+    },
+    "techpeople.hiring_requests.approval_request.create.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0375_hiring_preparation_approvals.sql"
+    },
+    "techpeople.hiring_requests.approval.approve.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0375_hiring_preparation_approvals.sql"
+    },
+    "techcontracts.supplier_requests.approval_request.create.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0375_hiring_preparation_approvals.sql"
+    },
+    "techcontracts.supplier_requests.approval.approve.workspace": {
+      "migration": "docs/architecture/prepared-migrations/0375_hiring_preparation_approvals.sql"
     }
   }
 }

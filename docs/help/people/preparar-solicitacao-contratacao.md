@@ -8,27 +8,42 @@ route_pattern: /people/hiring-requests
 min_permission: techpeople.hiring_requests.view.workspace
 audience: internal
 sort_order: 35
-version: 4
+version: 5
 is_published: true
 ---
+
 # Preparar solicitação de contratação
+
 **Para que serve:** Registrar a preparação de contratação de profissional CLT, PJ ou freelance.
 **Quem pode fazer:** Membro ativo com `techpeople.hiring_requests.view.workspace`; criar exige `create.workspace`, editar exige `update.workspace` e cancelar exige `techpeople.hiring_requests.cancel.update.workspace`. As permissões não são concedidas automaticamente aos cargos.
 **Onde fica:** TechPeople > Pessoas > Solicitações de contratação (`/people/hiring-requests`).
 **Antes de começar:** Tenha acesso aos cadastros reais de área e entidade legal WK. Vínculos opcionais exigem acesso ao cadastro de origem.
 
 ## Passo a passo
+
 1. Abra **Nova solicitação** e percorra **Demanda → Vínculos → Condições → Revisão**. Voltar preserva os dados ainda não salvos.
 2. Em **Demanda**, informe título, finalidade Cliente/Interno/Gestão compartilhada, área responsável, entidade WK e escopo. Regime CLT/PJ/Freelance existe somente para profissionais.
 3. Em **Vínculos**, escolha Profissional definido (pessoa canônica) ou Necessidade de seleção; esta opção não abre vaga. Empresa PJ pode ser vinculada no regime PJ. Projeto é opcional; negócio e contrato de origem estão disponíveis quando a finalidade é Cliente.
 4. Em **Condições**, selecione Por entrega/Por hora/Mensal/Mista. O valor de referência exige permissões específicas `techpeople.hiring_requests.reference.view.workspace` para consultar e `.reference.update.workspace` para alterar. Não é retornado na lista ou no histórico comum.
-5. Em **Revisão**, confira demanda, vínculos e condições e salve o rascunho. Na ficha, o histórico fica ao centro e resumo/jornada/responsáveis à direita; não há aprovação simulada.
+5. Em **Revisão**, confira demanda, vínculos e condições e salve o rascunho. Na ficha, o histórico fica ao centro e resumo/jornada/responsáveis à direita; as decisões são registradas separadamente por revisão.
 6. Reabra para editar ou marcar Pronta para aprovação; cancelar exige confirmação e preserva histórico. Não inclui alterações ainda não salvas.
 
+## Aprovações da revisão salva
+
+- Salve como **Pronta para aprovação**, confira as condições e use **Solicitar aprovação**. Exige `techpeople.hiring_requests.approval_request.create.workspace`, além de acesso à solicitação.
+- O gestor decide primeiro; o CEO decide depois, mesmo quando a mesma pessoa ocupa os dois papéis. Cada decisão exige motivo de 5 a 2000 caracteres e `techpeople.hiring_requests.approval.approve.workspace`, além de leitura específica do valor de referência.
+- Solicitante e autor do pedido não podem decidir. Somente substitutos explicitamente cadastrados na alçada existente podem substituir um solicitante. Não há fallback automático para ausência de acesso, inatividade ou Área Técnica sem aprovador.
+- O responsável nomeado recebe notificação interna com link direto. Não contém valores, escopo ou dados pessoais e não envia e-mail ou WhatsApp.
+- A ficha mantém histórico central e resumo/ações à direita. Alterações não salvas impedem solicitar/decidir. Toda edição salva, alteração do valor ou da alçada invalida decisões anteriores; rejeição exige nova revisão.
+- Ausência de alçada ou acesso aparece como pendência. Peça regularização ao administrador autorizado; este fluxo não configura alçadas nem concede chaves.
+- Aprovação não autoriza execução, recrutamento antes de assinatura, contrato, admissão, assinatura, acesso ou financeiro.
+
 ## Resultado esperado
+
 Solicitação em rascunho, pronta para aprovação ou cancelada, com histórico imutável. Cada edição válida incrementa a revisão.
 
 ## Regras e limites
+
 - Pronta para aprovação **não é aprovação** e não autoriza recrutamento antes da assinatura.
 - Não gera vaga, admissão, contrato, assinatura, acesso, lançamento financeiro ou mensagem.
 - Não configura aprovadores. Área Técnica sem aprovador permanece sem aprovador.
@@ -40,10 +55,12 @@ Solicitação em rascunho, pronta para aprovação ou cancelada, com histórico 
 - Durante a consulta do nome de um vínculo, aguarde o indicador de carregamento. Vínculo indisponível exige conferir a permissão do cadastro.
 
 ## Erros comuns
+
 - **Acesso não autorizado:** solicite a permissão específica ao administrador.
 - **Entidade legal diverge da origem cliente:** confira a entidade WK no negócio/projeto/contrato antes de vincular.
 - **Outra pessoa alterou a solicitação:** recarregue e revise o conteúdo atual antes de salvar. Não há sobrescrita silenciosa.
 - **Nenhuma opção disponível:** revise a busca ou permissões do cadastro. Ausência não significa inexistência.
 
 ## Relacionados
+
 - [Contratação de fornecedores](/ajuda/contracts/preparar-contratacao-fornecedor)

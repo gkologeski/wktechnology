@@ -13922,9 +13922,9 @@
       "files": {
         "src/lib/hiring/requests/boundary.server.ts": "781108c4f9591ca6e3c769588b4cffeb911ef8f4d118815d7717ea734fba9f36",
         "src/lib/hiring/requests/requests.functions.ts": "87dadcaed69095a517d68180cb853f8f12e9dc207599483cb22b863494627be1",
-        "src/lib/hiring/requests/preparation-screen.tsx": "518f731d6ce7acbe38862e9f7970c8693d779aeae2f56a11ecaf126e2147dbe7",
-        "src/routes/_authenticated/people.hiring-requests.tsx": "bc1aa3c009420f3a81e5f78d95a7ec1c3f4cf81bf738a53f701fe36616f58846",
-        "src/routes/_authenticated/contracts.supplier-requests.tsx": "cba4a323b4798ad0fc75f141f3938bc3bcc999ed96430c7a440848bdbdf4fcd7",
+        "src/lib/hiring/requests/preparation-screen.tsx": "160f8a17b7ec51d5fd929d956978b21203baf27ae3e31120cc30ae662ea66381",
+        "src/routes/_authenticated/people.hiring-requests.tsx": "734770982cab7d70d7fbb96aa5532d021b71afafc2c97c97714ea8a1c478cb37",
+        "src/routes/_authenticated/contracts.supplier-requests.tsx": "1614255f00f5ba1582e25cb43e42bb4ffad69b5e73fdbb4a7c688e5dcb6e16d5",
         "drizzle/migrations/0373_hiring_requests.sql": "3f053b577dd7b4047fc5f596a0248026def9d60d112b040d93c5a8587014b267",
         "drizzle/migrations/0374_hiring_preparation_conditions.sql": "1767190902e526da546ab0ccf780d46ddf8baafe8d96535f48aa0ba2f79241eb"
       },
@@ -13934,12 +13934,17 @@
         "techpeople.hiring_requests.cancel",
         "techcontracts.supplier_requests.cancel",
         "techpeople.hiring_requests.reference",
-        "techcontracts.supplier_requests.reference"
+        "techcontracts.supplier_requests.reference",
+        "techpeople.hiring_requests.approval_request",
+        "techpeople.hiring_requests.approval",
+        "techcontracts.supplier_requests.approval_request",
+        "techcontracts.supplier_requests.approval"
       ],
       "actions": [
         "view",
         "create",
-        "update"
+        "update",
+        "approve"
       ],
       "scopes": [
         "workspace"
@@ -13956,9 +13961,13 @@
         "techpeople.hiring_requests.reference.view.workspace",
         "techpeople.hiring_requests.reference.update.workspace",
         "techcontracts.supplier_requests.reference.view.workspace",
-        "techcontracts.supplier_requests.reference.update.workspace"
+        "techcontracts.supplier_requests.reference.update.workspace",
+        "techpeople.hiring_requests.approval_request.create.workspace",
+        "techpeople.hiring_requests.approval.approve.workspace",
+        "techcontracts.supplier_requests.approval_request.create.workspace",
+        "techcontracts.supplier_requests.approval.approve.workspace"
       ],
-      "rationale": "Preparation only; dedicated non-BYPASSRLS writer, active workspace membership and explicit deny; canonical entity reads use caller RLS. Pending schema is intentionally not applied before review. Approved four-step wizard; reference value uses separately protected RLS storage and is never returned in ordinary rows/events. Local review: picker cache is keyed by active workspace and the content remounts on workspace/kind change, discarding open forms and stale local entity state. Local SQL review: catalog uses canonical module/resource metadata; client requests require a commercial origin before ready; writer CREATE on public is temporary for ownership transfer and revoked by the migration. Production default ACL review: new tables explicitly revoke PUBLIC/anon/authenticated privileges before narrow grants; isolated migration test enables the same broad defaults and verifies revocation, including direct sensitive-table access.",
+      "rationale": "Preparation only; dedicated non-BYPASSRLS writer, active workspace membership and explicit deny; canonical entity reads use caller RLS. Pending schema is intentionally not applied before review. Approved four-step wizard; reference value uses separately protected RLS storage and is never returned in ordinary rows/events. Local review: picker cache is keyed by active workspace and the content remounts on workspace/kind change, discarding open forms and stale local entity state. Local SQL review: catalog uses canonical module/resource metadata; client requests require a commercial origin before ready; writer CREATE on public is temporary for ownership transfer and revoked by the migration. Production default ACL review: new tables explicitly revoke PUBLIC/anon/authenticated privileges before narrow grants; isolated migration test enables the same broad defaults and verifies revocation, including direct sensitive-table access. Approval extension: independent keys, canonical named approvers, revision/reference/policy binding; internal-only notification and authorized direct request link. No job gate or operational effects. Approval extension: independent keys, canonical named approvers, revision/reference/policy binding; internal-only notification and authorized direct request link. No job gate or operational effects. Approval extension: independent keys, canonical named approvers, revision/reference/policy binding; internal-only notification and authorized direct request link. No job gate or operational effects.",
       "controls": [
         {
           "file": "src/lib/hiring/requests/boundary.server.ts",
@@ -13991,6 +14000,14 @@
         {
           "file": "src/integrations/supabase/auth-middleware.ts",
           "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/hiring/requests/approval-panel.tsx",
+          "symbol": "ApprovalPanel"
+        },
+        {
+          "file": "src/lib/hiring/requests/approvals.functions.ts",
+          "symbol": "getPreparationApproval"
         }
       ],
       "database": [
@@ -14013,6 +14030,10 @@
         {
           "file": "drizzle/migrations/0374_hiring_preparation_conditions.sql",
           "symbol": "hiring_preparation_reference"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0375_hiring_preparation_approvals.sql",
+          "symbol": "hiring_preparation_approval_decide"
         }
       ],
       "tests": {
@@ -14135,6 +14156,115 @@
       "files": {
         "src/components/hiring-requests/preparation-form.tsx": "8471d1a6bdf85c00c57cab2ff29e33cb6f91416e7e43cb8264c804166fb32aa0"
       }
+    },
+    {
+      "id": "hiring-preparation-approvals-batch1",
+      "kind": "business",
+      "files": {
+        "src/lib/hiring/requests/approval-panel.tsx": "36cbc4be9041c0a7715c637c5c7a9e64296d66f7b0e99233f7b6d2d4e2d20c5f",
+        "src/lib/hiring/requests/approvals.functions.ts": "5297ee2ec828848c4f8ce4f156df70ef9b323a767583722b3699fb7be478f3c0"
+      },
+      "resources": [
+        "techpeople.hiring_requests",
+        "techcontracts.supplier_requests",
+        "techpeople.hiring_requests.approval_request",
+        "techpeople.hiring_requests.approval",
+        "techpeople.hiring_requests.reference",
+        "techcontracts.supplier_requests.approval_request",
+        "techcontracts.supplier_requests.approval",
+        "techcontracts.supplier_requests.reference"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "techpeople.hiring_requests.approval_request.create.workspace",
+        "techpeople.hiring_requests.approval.approve.workspace",
+        "techcontracts.supplier_requests.approval_request.create.workspace",
+        "techcontracts.supplier_requests.approval.approve.workspace",
+        "techpeople.hiring_requests.view.workspace",
+        "techcontracts.supplier_requests.view.workspace",
+        "techpeople.hiring_requests.reference.view.workspace",
+        "techcontracts.supplier_requests.reference.view.workspace"
+      ],
+      "rationale": "Revisioned preparation approvals only; canonical policy principal/delegate, active membership and deny; immutable events exclude amounts, internal notifications use safe links. Reviewed SQL remains outside automatic journal, not applied. Private subject helper exposes no permission inventory. Reference-view required for decisions.",
+      "controls": [
+        {
+          "file": "src/lib/hiring/requests/approval-panel.tsx",
+          "symbol": "ApprovalPanel"
+        },
+        {
+          "file": "src/lib/access-control/use-shared-action.ts",
+          "symbol": "useSharedAction"
+        },
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "getActiveWorkspaceId"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "docs/architecture/prepared-migrations/0375_hiring_preparation_approvals.sql",
+          "symbol": "hiring_preparation_approval_access"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0375_hiring_preparation_approvals.sql",
+          "symbol": "hiring_preparation_approval_request"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0375_hiring_preparation_approvals.sql",
+          "symbol": "hiring_preparation_approval_decide"
+        },
+        {
+          "file": "docs/architecture/prepared-migrations/0375_hiring_preparation_approvals.sql",
+          "symbol": "hiring_preparation_approval_context"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/hiring/requests/approval-postgres.test.ts",
+          "name": "approval allows authorized active member"
+        },
+        "missing_permission": {
+          "file": "src/lib/hiring/requests/approval-postgres.test.ts",
+          "name": "approval rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/hiring/requests/approval-postgres.test.ts",
+          "name": "approval rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/hiring/requests/approval-postgres.test.ts",
+          "name": "approval rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/hiring/requests/approval-postgres.test.ts",
+          "name": "approval rejects inactive member"
+        }
+      }
+    },
+    {
+      "id": "approval-static-types",
+      "kind": "presentation",
+      "files": {
+        "src/lib/hiring/requests/approval-types.ts": "2cee38627f7fd12e227fdb0bb6c0b95d883225d5a6c24e5147d4e06da2760a5b"
+      },
+      "resources": [],
+      "permission_keys": [],
+      "rationale": "Static approval validation schemas and DTOs only; sensitive amounts are excluded and authorization lives in RPCs."
     }
   ],
   "retired": {

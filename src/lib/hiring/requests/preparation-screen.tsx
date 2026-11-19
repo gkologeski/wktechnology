@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { ApprovalPanel } from "./approval-panel";
+import { getPreparationApproval } from "./approvals.functions";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Plus, ChevronLeft, ChevronRight, Search } from "lucide-react";
@@ -174,7 +176,7 @@ function EntityPicker({
     </div>
   );
 }
-export function PreparationScreen({ kind }: { kind: RequestKind }) {
+export function PreparationScreen({ kind, requestId }: { kind: RequestKind; requestId?: string }) {
   const p = usePermissions();
   if (p.isLoading) return <ListPageSkeleton />;
   if (p.isError || !p.workspaceId)
@@ -184,9 +186,9 @@ export function PreparationScreen({ kind }: { kind: RequestKind }) {
         <Button onClick={p.refetch}>Tentar novamente</Button>
       </div>
     );
-  return <PreparationContent key={`${p.workspaceId}:${kind}`} kind={kind} />;
+  return <PreparationContent key={`${p.workspaceId}:${kind}`} kind={kind} requestId={requestId} />;
 }
-function PreparationContent({ kind }: { kind: RequestKind }) {
+function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?: string }) {
   const resource = resourceFor(kind),
     p = usePermissions();
   const canView = useSharedAction(resource, "view"),
@@ -218,6 +220,27 @@ function PreparationContent({ kind }: { kind: RequestKind }) {
     saveFn = useServerFn(savePreparation),
     historyFn = useServerFn(preparationHistory),
     referenceFn = useServerFn(preparationReference);
+  const directFn = useServerFn(getPreparationApproval);
+  const direct = useQuery({
+    queryKey: ["preparation-direct", p.workspaceId, kind, requestId],
+    enabled: canView && !!requestId,
+    queryFn: () => directFn({ data: { kind, id: requestId ?? "" } }),
+    retry: false,
+  });
+  const openedDirect = useRef<string | null>(null);
+  useEffect(() => {
+    if (!direct.data || !requestId || openedDirect.current === requestId) return;
+    openedDirect.current = requestId;
+    const saved = direct.data.request;
+    setStep(3);
+    setRow(saved);
+    setForm(savedToForm(saved));
+    setOpen(true);
+    setReferenceValue(null);
+    setReferenceDirty(false);
+    setHistoryOffset(0);
+    setError("");
+  }, [direct.data, requestId]);
   const reference = useQuery({
     queryKey: ["preparation-reference", p.workspaceId, kind, row?.id, row?.revision],
     enabled: open && !!row && canReadReference,
@@ -261,6 +284,7 @@ function PreparationContent({ kind }: { kind: RequestKind }) {
       void qc.invalidateQueries({ queryKey: ["preparation-reference"] });
       void qc.invalidateQueries({ queryKey: ["preparation-page"] });
       void qc.invalidateQueries({ queryKey: ["preparation-history"] });
+      void qc.invalidateQueries({ queryKey: ["preparation-approval"] });
     },
     onError: (e) => setError(e.message),
   });
@@ -332,6 +356,15 @@ function PreparationContent({ kind }: { kind: RequestKind }) {
           ) : null
         }
       />
+      {requestId && direct.isLoading && <ListPageSkeleton />}
+      {requestId && direct.isError && (
+        <div role="alert">
+          Não foi possível abrir a solicitação deste link. Confira seu acesso e workspace.{" "}
+          <Button variant="outline" onClick={() => void direct.refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      )}
       <div className="flex flex-wrap gap-3 items-center">
         <Label htmlFor="requests-search">
           <Search className="size-4" aria-hidden />
@@ -546,6 +579,18 @@ function PreparationContent({ kind }: { kind: RequestKind }) {
                   )}
                 </FormSection>
               )}
+              {row && (
+                <ApprovalPanel
+                  key={`history:${row.id}`}
+                  kind={kind}
+                  row={row}
+                  dirty={
+                    referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
+                  }
+                  busy={save.isPending}
+                  history
+                />
+              )}
             </div>
             <aside className="border-l pl-4 space-y-5 min-w-0">
               <h2 className="font-semibold">Resumo e jornada</h2>
@@ -572,7 +617,21 @@ function PreparationContent({ kind }: { kind: RequestKind }) {
                 Solicitante: {row?.created_by ?? "Você ao salvar"}
               </p>
               <AreaSummary kind={kind} id={form.area_id} />
-              <p className="text-sm text-muted-foreground">Aprovação não iniciada.</p>
+              {row ? (
+                <ApprovalPanel
+                  key={row.id}
+                  kind={kind}
+                  row={row}
+                  dirty={
+                    referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
+                  }
+                  busy={save.isPending}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Salve a solicitação antes de solicitar aprovação.
+                </p>
+              )}
             </aside>
           </div>
           {error && (

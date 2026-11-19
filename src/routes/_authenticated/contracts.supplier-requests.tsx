@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PreparationScreen } from "@/lib/hiring/requests/preparation-screen";
+import { z } from "zod";
 export const Route = createFileRoute("/_authenticated/contracts/supplier-requests")({
+  validateSearch: z.object({ request: z.string().uuid().optional().catch(undefined) }),
   head: () => ({
     meta: [
       { title: "Contratação de fornecedores · TechContracts" },
       {
         name: "description",
-        content: "Preparação de compras WK com fornecedor canônico e histórico.",
+        content: "Compras WK com fornecedor canônico, histórico e aprovações revisionadas.",
       },
       { property: "og:title", content: "Contratação de fornecedores · TechContracts" },
       {
@@ -17,5 +19,9 @@ export const Route = createFileRoute("/_authenticated/contracts/supplier-request
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: () => <PreparationScreen kind="supplier" />,
+  component: SupplierRequests,
 });
+function SupplierRequests() {
+  const { request } = Route.useSearch();
+  return <PreparationScreen kind="supplier" requestId={request} />;
+}
