@@ -598,6 +598,10 @@ it("execution revision conflict and idempotent concurrent starts produce one eng
   const op = randomUUID();
   const [a, b] = await Promise.all([start(r, M, op), start(r, M, op)]);
   expect(a).toBe(b);
+  await expect(
+    start(r, M, op, W, today(), null, "Outra justificativa não substitui o início anterior"),
+  ).rejects.toThrow("já autorizado");
+  await expect(start({ ...r, revision: r.revision + 1 }, M, op)).rejects.toThrow("já autorizado");
   expect(
     (await db`select count(*)::int n from hiring_engagements where hiring_request_id=${r.id}`)[0].n,
   ).toBe(1);

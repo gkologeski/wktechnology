@@ -103,7 +103,7 @@ BEGIN
  SELECT * INTO r FROM hiring_preparation_requests WHERE workspace_id=w AND id=i;
  SELECT * INTO s FROM hiring_execution_starts WHERE request_id=i;
  IF s.id IS NOT NULL THEN
-  IF s.operation_id=p_operation OR (s.starts_at=p_start AND s.ends_at IS NOT DISTINCT FROM p_end AND s.authorized_by=auth.uid()) THEN RETURN s.id;END IF;
+  IF s.starts_at IS NOT DISTINCT FROM p_start AND s.ends_at IS NOT DISTINCT FROM p_end AND s.authorized_by=auth.uid() AND s.request_revision IS NOT DISTINCT FROM rev AND s.reason IS NOT DISTINCT FROM btrim(p_reason) THEN RETURN s.id;END IF;
   RAISE EXCEPTION 'Início já autorizado para esta solicitação; alterações exigem aditivo e fluxo próprio.';
  END IF;
  IF rev IS DISTINCT FROM r.revision THEN RAISE EXCEPTION 'REVISION_CONFLICT: recarregue a solicitação.';END IF;
