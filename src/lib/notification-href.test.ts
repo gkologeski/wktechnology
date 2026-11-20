@@ -18,4 +18,36 @@ describe("notificationHref", () => {
   it("sem link não navega", () => {
     expect(notificationHref({ link: null })).toBeNull();
   });
+  it.each([
+    "https://example.com",
+    "//example.com",
+    "javascript:alert(1)",
+    "/\\example.com",
+    "/%2f%2fexample.com",
+    "/deals/../settings",
+    "/unknown",
+    "/deals\n",
+    "/inbox?redirect=https://example.com",
+  ])("rejeita destino não comprovado %s", (link) => {
+    expect(notificationHref({ link })).toBeNull();
+  });
+  it("preserva a tarefa e o pedido nas rotas canônicas", () => {
+    expect(notificationHref({ link: `/projects/tasks?taskId=${id}` })).toEqual({
+      to: "/projects/tasks",
+      search: { taskId: id },
+    });
+    expect(notificationHref({ link: `/contracts/supplier-requests?request=${id}` })).toEqual({
+      to: "/contracts/supplier-requests",
+      search: { request: id },
+    });
+  });
+  it("preserva minutas e decisões de perfil nas rotas comprovadas", () => {
+    expect(notificationHref({ link: `/contracts/drafts/${id}` })).toEqual({
+      to: `/contracts/drafts/${id}`,
+    });
+    expect(notificationHref({ link: `/deals/${id}?profile=${id}&approval=${id}` })).toEqual({
+      to: `/deals/${id}`,
+      search: { profile: id, approval: id },
+    });
+  });
 });

@@ -8,7 +8,7 @@ route_pattern: /settings/notifications
 min_permission:
 audience: internal
 sort_order: 148
-version: 4
+version: 5
 is_published: true
 ---
 
@@ -18,7 +18,7 @@ is_published: true
 
 **Quem pode fazer:** Usuário autenticado, para as próprias preferências. A tela não permite editar as preferências de outra pessoa nem concede acesso aos registros mencionados nas notificações.
 
-**Onde fica:** Configurações > Notificações (`/settings/notifications`). Também é possível abrir o sino no topo e clicar em **Preferências →**.
+**Onde fica:** Configurações > Notificações (`/settings/notifications`). Esta é a configuração global legada. Para preferências do workspace, silêncio e organização da central, abra **Central de notificações** (`/notifications`) e sua aba **Preferências**.
 
 **Antes de começar:** Confirme que entrou com seu usuário. As opções são pessoais e não constituem uma regra de envio do workspace.
 
@@ -44,7 +44,8 @@ As opções ficam salvas para seu usuário e são consultadas pelos novos avisos
 - O passo **Enviar notificação** dos Workflows consulta **No app** do grupo **Workflows** antes de criar um novo aviso. Se essa opção estiver desligada, o envio é suprimido; notificações anteriores não são apagadas.
 - Os grupos **Workflows**, **Aprovações**, **Contratação e perfis de vaga**, **Formulários**, **Carteira** e **Plataforma e segurança** começam com **No app** ligado e as demais opções desligadas, salvo se você já tiver uma escolha salva.
 - A tela salva somente as opções que você alterou. Valores de canal gravados com formato inválido são tratados como desligados; para uma opção ausente, vale o padrão do grupo.
-- Alterar um grupo não cria uma automação, ativa um evento futuro ou habilita um canal externo. Esta tela ainda não oferece controles de WhatsApp, resumos ou horário de silêncio.
+- Alterar um grupo não cria uma automação, ativa um evento futuro ou habilita um canal externo. Esta tela global não oferece controles de WhatsApp, resumos ou horário de silêncio. A central possui silêncio e agrupamento diário/semanal dos itens carregados, sem entrega externa de resumo.
+- A preferência global serve de base. Uma escolha explícita na central de um workspace prevalece naquele contexto; escolher **Herdar** na central volta a usar a configuração global. Alterar o global não apaga escolhas explícitas de um workspace.
 - Algumas notificações antigas compartilham um tipo genérico. Por exemplo, **Mensagens e comentários** abrange conversas e comentários de atividades; **Aprovações** reúne diferentes fluxos. O grupo não comprova a origem exata do evento.
 - Enquanto você estiver na Inbox, uma mensagem identificada como pertencente à Inbox não gera uma nova interrupção pelo sino. Um comentário de atividade não é tratado automaticamente como mensagem da Inbox.
 - Tipos ainda não reconhecidos continuam no histórico, mas não geram pop-up, som ou tremor. A mesma proteção vale enquanto as preferências do usuário atual não tiverem sido carregadas.
@@ -64,6 +65,7 @@ As opções ficam salvas para seu usuário e são consultadas pelos novos avisos
 
 ## Relacionados
 
+- [Usar a central de notificações](/ajuda/core/usar-central-de-notificacoes)
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
 - [Criar e publicar workflows](/ajuda/crm/criar-publicar-workflows)

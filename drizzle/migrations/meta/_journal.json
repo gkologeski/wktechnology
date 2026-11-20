@@ -2745,6 +2745,13 @@
       "when": 1795132800000,
       "tag": "0391_notification_recipients",
       "breakpoints": true
+    },
+    {
+      "idx": 392,
+      "version": "7",
+      "when": 1795140000000,
+      "tag": "0392_notification_center",
+      "breakpoints": true
     }
   ]
 }

@@ -61,6 +61,7 @@ export const WORKSPACE_ROUTE_PREFIXES: readonly string[] = [
   "/marketplace",
   "/invoices",
   "/files",
+  "/notifications",
 ];
 
 /** Rotas de automação sob /settings que preservam o menu do módulo ativo. */

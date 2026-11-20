@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import type { NotificationPrefs } from "./notification-preferences";
 
-const state = vi.hoisted(() => ({ admin: null as unknown }));
+const state = vi.hoisted(() => ({ admin: null as unknown, rpc: vi.fn() }));
 vi.mock("@tanstack/react-start", () => ({
   createServerFn: () => {
     const builder = {
@@ -19,12 +19,14 @@ vi.mock("@/integrations/supabase/client.server", () => ({
     return state.admin;
   },
 }));
-vi.mock("@/lib/access-control/work-core.server", () => ({ workRpc: vi.fn() }));
+vi.mock("@/lib/access-control/work-core.server", () => ({ workRpc: state.rpc }));
 vi.mock("@/lib/access-control/sales-core.server", () => ({ assertSalesRecord: vi.fn() }));
 
 import {
   getMyNotificationPrefs,
   listMyNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
   updateMyNotificationPrefs,
 } from "./notifications.functions";
 
@@ -53,6 +55,7 @@ const rows = [
     entity_id: ME,
     read_at: null,
     created_at: "2026-11-19T10:00:00Z",
+    snoozed_until: null,
   },
 ];
 
@@ -72,6 +75,18 @@ const get = () =>
 
 beforeEach(() => {
   stored = structuredClone(initial);
+  state.rpc.mockReset();
+  state.rpc.mockImplementation(async (_client, name) =>
+    name === "work_access_context"
+      ? { actor: ME, workspace: "aaaaaaaa-1111-4111-8111-111111111111" }
+      : {
+          items: rows,
+          unread: 1,
+          unreadCapped: false,
+          nextCursor: null,
+          cutoff: "2026-11-20T00:00:00Z",
+        },
+  );
   reads = writes = conflicts = 0;
   readError = writeError = missing = false;
   requests = [];
@@ -186,7 +201,7 @@ describe("notification compatibility server boundary", () => {
     await expect(save({}, "' or 1=1 --")).rejects.toThrow("Sessão inválida");
     expect(requests).toEqual([]);
   });
-  it("adds event metadata to the personal history without rewriting legacy records or widening query scope", async () => {
+  it("keeps the old list endpoint on the active workspace gateway without rewriting records", async () => {
     const result = await (
       listMyNotifications as unknown as Handler<{
         items: unknown[];
@@ -199,13 +214,90 @@ describe("notification compatibility server boundary", () => {
     expect(result.items).toEqual([
       {
         ...rows[0],
+        moduleKey: null,
         event: { eventKey: "legacy.hiring_approval", category: "approval", moduleKey: null },
       },
     ]);
     expect(result.unread).toBe(1);
     expect(result.nextCursor).toBeNull();
-    expect(requests.every((r) => r.url.searchParams.get("user_id") === `eq.${ME}`)).toBe(true);
-    expect(requests.every((r) => r.method === "GET" || r.method === "HEAD")).toBe(true);
+    expect(state.rpc).toHaveBeenNthCalledWith(2, state.admin, "notification_center_list", {
+      p_workspace: "aaaaaaaa-1111-4111-8111-111111111111",
+      p_cursor: null,
+      p_cutoff: null,
+    });
+    expect(requests).toEqual([]);
     expect(rows[0]).not.toHaveProperty("event");
+  });
+  it("legacy read propagates a database denial instead of reporting success", async () => {
+    state.rpc.mockImplementation(async (_client, name) => {
+      if (name === "work_access_context")
+        return { actor: ME, workspace: "aaaaaaaa-1111-4111-8111-111111111111" };
+      throw new Error("read unavailable");
+    });
+    await expect(
+      (markNotificationRead as unknown as Handler<unknown>)({
+        context: { userId: ME, supabase: state.admin },
+        data: { id: rows[0].id },
+      }),
+    ).rejects.toThrow("read unavailable");
+    expect(requests).toEqual([]);
+  });
+  it("legacy bulk cannot mark unseen history without explicit IDs and cutoff", async () => {
+    await expect(
+      (markAllNotificationsRead as unknown as Handler<unknown>)({
+        context: { userId: ME, supabase: state.admin },
+      }),
+    ).rejects.toThrow("notificações visíveis");
+    expect(state.rpc).toHaveBeenCalledTimes(1);
+  });
+  it("legacy history cannot use an unavailable active member context", async () => {
+    state.rpc.mockResolvedValue({ actor: ME });
+    await expect(
+      (listMyNotifications as unknown as Handler<unknown>)({
+        context: { userId: ME, supabase: state.admin },
+      }),
+    ).rejects.toThrow("Membro ativo");
+    expect(state.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it("legacy cursor pagination derives a safe cutoff for older callers", async () => {
+    const cursor = { createdAt: rows[0].created_at, id: rows[0].id };
+    await (listMyNotifications as unknown as Handler<unknown>)({
+      context: { userId: ME, supabase: state.admin },
+      data: { cursor },
+    });
+    expect(state.rpc).toHaveBeenLastCalledWith(state.admin, "notification_center_list", {
+      p_workspace: "aaaaaaaa-1111-4111-8111-111111111111",
+      p_cursor: cursor,
+      p_cutoff: cursor.createdAt,
+    });
+  });
+  it("global preferences cannot write through a read-only active context", async () => {
+    state.rpc.mockResolvedValue({
+      actor: ME,
+      workspace: "aaaaaaaa-1111-4111-8111-111111111111",
+      read_only: true,
+    });
+    await expect(save({ task: { sound: false } })).rejects.toThrow("somente leitura");
+    expect(requests).toEqual([]);
+  });
+  it("global preferences reject an inactive workspace context before privileged reads", async () => {
+    state.rpc.mockResolvedValue({ actor: ME });
+    await expect(get()).rejects.toThrow("Membro ativo");
+    expect(requests).toEqual([]);
+  });
+
+  it("legacy read remains successful for a validated notice already read", async () => {
+    state.rpc.mockImplementation(async (_client, name) =>
+      name === "work_access_context"
+        ? { actor: ME, workspace: "aaaaaaaa-1111-4111-8111-111111111111" }
+        : { updated: 0 },
+    );
+    await expect(
+      (markNotificationRead as unknown as Handler<unknown>)({
+        context: { userId: ME, supabase: state.admin },
+        data: { id: rows[0].id },
+      }),
+    ).resolves.toEqual({ ok: true, updated: 0 });
   });
 });

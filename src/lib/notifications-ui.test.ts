@@ -1,75 +1,72 @@
 // @vitest-environment jsdom
-import {
-  act,
-  createElement,
-  Fragment,
-  useLayoutEffect,
-  type ComponentType,
-  type ReactNode,
-} from "react";
+import { act, createElement, type ComponentType, type ReactNode } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-type NotificationPayload = { new: Record<string, unknown> };
 type Subscription = {
-  name: string;
-  callback?: (payload: NotificationPayload) => void;
+  callback?: (payload: { new: Record<string, unknown> }) => void;
   on: ReturnType<typeof vi.fn>;
   subscribe: ReturnType<typeof vi.fn>;
 };
 const state = vi.hoisted(() => ({
   userId: "user-a",
+  workspaceId: "workspace-a",
+  contextError: false,
   getPrefs: vi.fn(),
   updatePrefs: vi.fn(),
+  centerPrefs: vi.fn(),
   list: vi.fn(),
   mark: vi.fn(),
-  markAll: vi.fn(),
   toast: vi.fn(),
   success: vi.fn(),
   error: vi.fn(),
   removeChannel: vi.fn(),
   subscriptions: [] as Subscription[],
   audioStarts: 0,
-  lateDelivery: null as (() => void) | null,
+  rows: [] as Record<string, unknown>[],
 }));
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: unknown) => ({ options }),
-  Link: ({ children, to }: { children?: ReactNode; to: string }) =>
-    createElement("a", { href: to }, children),
+  Link: ({ children, to, onClick }: { children?: ReactNode; to: string; onClick?: () => void }) =>
+    createElement("a", { href: to, onClick }, children),
 }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/auth", () => ({ useAuth: () => ({ user: { id: state.userId } }) }));
+vi.mock("@/lib/access-control/use-permissions", () => ({
+  usePermissions: () => ({
+    workspaceId: state.workspaceId,
+    isLoading: false,
+    isError: state.contextError,
+  }),
+}));
 vi.mock("@/lib/crm", () => ({ formatDateTime: (date: string) => date }));
 vi.mock("@/lib/notifications.functions", () => ({
   getMyNotificationPrefs: state.getPrefs,
   updateMyNotificationPrefs: state.updatePrefs,
-  listMyNotifications: state.list,
-  markNotificationRead: state.mark,
-  markAllNotificationsRead: state.markAll,
+}));
+vi.mock("@/lib/notification-center.functions", () => ({
+  getNotificationCenter: state.list,
+  markCenterNotifications: state.mark,
+  getCenterPreferences: state.centerPrefs,
 }));
 vi.mock("sonner", () => ({
   toast: { message: state.toast, success: state.success, error: state.error },
 }));
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
-    channel: (name: string) => {
-      const subscription: Subscription = {
-        name,
-        on: vi.fn(),
-        subscribe: vi.fn(),
-      };
-      subscription.on.mockImplementation((_event, _filter, callback) => {
-        subscription.callback = callback;
-        return subscription;
+    channel: () => {
+      const sub: Subscription = { on: vi.fn(), subscribe: vi.fn() };
+      sub.on.mockImplementation((_event, _filter, cb) => {
+        sub.callback = cb;
+        return sub;
       });
-      subscription.subscribe.mockReturnValue(subscription);
-      state.subscriptions.push(subscription);
-      return subscription;
+      sub.subscribe.mockReturnValue(sub);
+      state.subscriptions.push(sub);
+      return sub;
     },
     removeChannel: state.removeChannel,
   },
 }));
-// Keep notification/query behavior real; avoid portal/positioning behavior unrelated to it.
 vi.mock("@/components/ui/popover", () => ({
   Popover: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
   PopoverTrigger: ({ children }: { children?: ReactNode }) => children,
@@ -83,6 +80,7 @@ vi.mock("@/components/page-header", () => ({
 }));
 import { NOTIFICATION_CATEGORIES } from "./notification-catalog";
 import { normalizeNotificationPrefs } from "./notification-preferences";
+import { normalizeCenterSettings } from "./notification-center-preferences";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { Route } from "@/routes/_authenticated/settings.notifications";
 const SettingsPage = (Route.options as { component: ComponentType }).component;
@@ -97,50 +95,71 @@ function deferred<T>() {
   return { promise, resolve };
 }
 async function settle() {
-  for (let cycle = 0; cycle < 2; cycle++) {
+  for (let i = 0; i < 2; i++)
     await act(async () => {
       await new Promise((done) => setTimeout(done, 15));
     });
-  }
 }
 async function render(component: ComponentType) {
-  await act(async () => {
-    root.render(createElement(QueryClientProvider, { client }, createElement(component)));
-  });
+  await act(async () =>
+    root.render(createElement(QueryClientProvider, { client }, createElement(component))),
+  );
   await settle();
 }
 async function click(element: Element | null) {
   expect(element).not.toBeNull();
-  await act(async () => {
-    element!.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-  });
+  await act(async () => element!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
   await settle();
 }
 function button(text: string) {
   return (
-    Array.from(host.querySelectorAll("button")).find(
-      (element) => element.textContent?.trim() === text,
-    ) ?? null
+    Array.from(host.querySelectorAll("button")).find((item) => item.textContent?.trim() === text) ??
+    null
   );
 }
 function preference(label: string) {
-  const element = Array.from(host.querySelectorAll('[role="switch"]')).find(
+  const item = Array.from(host.querySelectorAll('[role="switch"]')).find(
     (item) => item.getAttribute("aria-label") === label,
   );
-  expect(element, `Preferência ausente: ${label}`).toBeDefined();
-  return element!;
+  expect(item).toBeDefined();
+  return item!;
+}
+function notice(type = "mention", extra: Record<string, unknown> = {}) {
+  return {
+    id: `notice-${type}`,
+    type,
+    title: `Autorizado ${type}`,
+    body: "Contexto autorizado",
+    created_at: "2026-11-20T10:00:00Z",
+    read_at: null,
+    snoozed_until: null,
+    link: null,
+    entity: null,
+    entity_id: null,
+    ...extra,
+  };
+}
+function prefs(settings: unknown = {}, legacy: unknown = {}) {
+  return {
+    settings: normalizeCenterSettings(settings),
+    legacyPrefs: normalizeNotificationPrefs(legacy),
+    revision: 0,
+  };
 }
 async function deliver(
   type: string,
   extra: Record<string, unknown> = {},
-  subscription = state.subscriptions.at(-1),
+  authorized = true,
+  sub = state.subscriptions.at(-1),
 ) {
-  expect(subscription?.callback).toBeTypeOf("function");
-  await act(async () => {
-    subscription!.callback!({
-      new: { type, title: `Aviso ${type}`, body: "Dados sintéticos", ...extra },
-    });
-  });
+  const row = notice(type, extra);
+  if (authorized) state.rows = [row, ...state.rows];
+  expect(sub?.callback).toBeTypeOf("function");
+  await act(async () =>
+    sub!.callback!({
+      new: { id: row.id, type, title: "PAYLOAD NÃO CONFIÁVEL", body: "Nunca renderizar" },
+    }),
+  );
   await settle();
 }
 class AudioContextStub {
@@ -163,22 +182,27 @@ class AudioContextStub {
 beforeEach(() => {
   vi.clearAllMocks();
   state.userId = "user-a";
+  state.workspaceId = "workspace-a";
+  state.contextError = false;
   state.subscriptions = [];
+  state.rows = [];
   state.audioStarts = 0;
-  state.lateDelivery = null;
   state.getPrefs.mockResolvedValue({ prefs: normalizeNotificationPrefs({}) });
   state.updatePrefs.mockResolvedValue({ ok: true });
+  state.centerPrefs.mockResolvedValue(prefs());
   state.list.mockImplementation(async () => ({
     items: [
-      {
-        id: `${state.userId}-notice`,
-        title: `Histórico ${state.userId}`,
-        created_at: "2026-11-20T10:00:00Z",
-      },
+      ...state.rows,
+      notice("workflow", {
+        id: `${state.userId}:${state.workspaceId}`,
+        title: `Histórico ${state.userId}:${state.workspaceId}`,
+      }),
     ],
     unread: 1,
     nextCursor: null,
+    cutoff: "2026-11-20T12:00:00Z",
   }));
+  state.mark.mockResolvedValue({ updated: 1 });
   state.removeChannel.mockResolvedValue("ok");
   vi.stubGlobal("AudioContext", AudioContextStub);
   (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -237,112 +261,177 @@ describe("preferências pessoais de notificações", () => {
   });
 });
 
-describe("sino de notificações com realtime", () => {
-  it("aplica o grupo SLA aos aliases e mantém tipos desconhecidos silenciosos", async () => {
-    state.getPrefs.mockResolvedValue({
-      prefs: normalizeNotificationPrefs({ sla: { inapp: true, sound: false, shake: false } }),
-    });
+describe("sino com proveniência e revalidação", () => {
+  it("preserva os aliases de SLA sem produzir som quando o grupo está silencioso", async () => {
+    state.centerPrefs.mockResolvedValue(
+      prefs({}, { sla: { inapp: true, sound: false, shake: false } }),
+    );
     await render(NotificationsBell);
-    for (const type of ["sla.first_response_breach", "sla.resolution_breach", "sla.at_risk"]) {
+    for (const type of ["sla.first_response_breach", "sla.resolution_breach", "sla.at_risk"])
       await deliver(type);
-      expect(state.toast).toHaveBeenLastCalledWith(`Aviso ${type}`, {
-        description: "Dados sintéticos",
-      });
-    }
-    expect(state.toast).toHaveBeenCalledTimes(3);
-    await deliver("future.unknown");
     expect(state.toast).toHaveBeenCalledTimes(3);
     expect(state.audioStarts).toBe(0);
     expect(host.querySelector(".animate-bell-shake")).toBeNull();
-    expect(host.textContent).toContain("Histórico user-a");
   });
-
-  it("aguarda as preferências atuais antes de interromper por um aviso conhecido", async () => {
-    const pending = deferred<{ prefs: ReturnType<typeof normalizeNotificationPrefs> }>();
-    state.getPrefs.mockReturnValue(pending.promise);
+  it("consulta apenas o workspace ativo e oferece acesso à central", async () => {
+    await render(NotificationsBell);
+    expect(state.list).toHaveBeenCalledWith({
+      data: {
+        workspaceId: "workspace-a",
+        scope: "workspace",
+        status: "all",
+        cursor: undefined,
+        cutoff: undefined,
+      },
+    });
+    expect(host.querySelector('a[href="/notifications"]')).not.toBeNull();
+    expect(host.textContent).toContain("Histórico user-a:workspace-a");
+  });
+  it("usa somente o conteúdo revalidado pela API, nunca o payload realtime", async () => {
     await render(NotificationsBell);
     await deliver("mention");
-    expect(state.toast).not.toHaveBeenCalled();
-    expect(state.audioStarts).toBe(0);
-    expect(host.querySelector(".animate-bell-shake")).toBeNull();
-    await act(async () => {
-      pending.resolve({ prefs: normalizeNotificationPrefs({}) });
+    expect(state.toast).toHaveBeenCalledExactlyOnceWith("Autorizado mention", {
+      description: "Contexto autorizado",
     });
-    await settle();
-    await deliver("mention");
-    expect(state.toast).toHaveBeenCalledTimes(1);
+    expect(host.textContent).not.toContain("PAYLOAD NÃO CONFIÁVEL");
     expect(state.audioStarts).toBe(1);
-    expect(host.querySelector(".animate-bell-shake")).not.toBeNull();
+  });
+  it("não interrompe quando o aviso não pertence ao resultado autorizado", async () => {
+    await render(NotificationsBell);
+    await deliver("mention", {}, false);
+    expect(state.toast).not.toHaveBeenCalled();
+    expect(state.audioStarts).toBe(0);
+  });
+  it("respeita o opt-out de um evento no workspace sem ativar aliases desconhecidos", async () => {
+    state.centerPrefs.mockResolvedValue(
+      prefs({ eventOverrides: { "legacy.mention": { inapp: false } } }),
+    );
+    await render(NotificationsBell);
+    await deliver("mention");
+    await deliver("future.unknown");
+    expect(state.toast).not.toHaveBeenCalled();
+    expect(state.audioStarts).toBe(0);
   });
 
-  it("suprime avisos reais de Inbox dentro da Inbox sem silenciar comentários de atividade", async () => {
-    window.history.replaceState({}, "", "/inbox/whatsapp");
-    state.getPrefs.mockResolvedValue({
-      prefs: normalizeNotificationPrefs({ message: { sound: false, shake: false } }),
-    });
+  it("revalida opt-out alterado em outra sessão antes de interromper", async () => {
     await render(NotificationsBell);
-    await deliver("message", { entity: "inbox_conversation", link: "/inbox/whatsapp" });
-    await deliver("message", { link: "/inbox/email?thread=demo" });
+    state.centerPrefs.mockResolvedValue(
+      prefs({ eventOverrides: { "legacy.mention": { inapp: false } } }),
+    );
+    await deliver("mention");
+    expect(state.centerPrefs).toHaveBeenCalledTimes(2);
     expect(state.toast).not.toHaveBeenCalled();
+    expect(state.audioStarts).toBe(0);
+  });
+  it("respeita silêncio e mantém o aviso no histórico", async () => {
+    const formatter = new Intl.DateTimeFormat("en-GB", {
+      timeZone: "UTC",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    });
+    const start = formatter.format(new Date());
+    const end = formatter.format(new Date(Date.now() + 60 * 60_000));
+    state.centerPrefs.mockResolvedValue(
+      prefs({ quiet: { enabled: true, timezone: "UTC", start, end } }),
+    );
+    await render(NotificationsBell);
+    await deliver("mention");
+    expect(state.toast).not.toHaveBeenCalled();
+    expect(state.audioStarts).toBe(0);
+    expect(host.textContent).toContain("Autorizado mention");
+  });
+  it("aguarda as preferências antes de interromper", async () => {
+    const pending = deferred<ReturnType<typeof prefs>>();
+    state.centerPrefs.mockReturnValue(pending.promise);
+    await render(NotificationsBell);
+    await deliver("mention");
+    expect(state.toast).not.toHaveBeenCalled();
+    await act(async () => pending.resolve(prefs()));
+    await settle();
+    await deliver("assignment");
+    expect(state.toast).toHaveBeenCalledTimes(1);
+  });
+  it("suprime mensagens de Inbox na Inbox sem silenciar comentários", async () => {
+    window.history.replaceState({}, "", "/inbox/whatsapp");
+    await render(NotificationsBell);
     await deliver("message", {
+      id: "inbox-message",
+      entity: "inbox_conversation",
+      link: "/inbox/whatsapp",
+    });
+    await deliver("message", {
+      id: "activity-message",
       entity: "activity",
       link: "/deals/demo",
-      title: "Comentário na atividade",
+      title: "Comentário autorizado",
     });
-    expect(state.toast).toHaveBeenCalledExactlyOnceWith("Comentário na atividade", {
-      description: "Dados sintéticos",
+    expect(state.toast).toHaveBeenCalledExactlyOnceWith("Comentário autorizado", {
+      description: "Contexto autorizado",
     });
-    expect(state.audioStarts).toBe(0);
-    expect(host.querySelector(".animate-bell-shake")).toBeNull();
   });
-
-  it("troca de usuário sem herdar cache, preferências ou callbacks pendentes da sessão anterior", async () => {
-    const pendingB = deferred<{ prefs: ReturnType<typeof normalizeNotificationPrefs> }>();
-    state.getPrefs.mockImplementation(() =>
-      state.userId === "user-a"
-        ? Promise.resolve({ prefs: normalizeNotificationPrefs({}) })
-        : pendingB.promise,
-    );
-    function QueuedProviderDelivery() {
-      const identity = state.userId;
-      useLayoutEffect(() => {
-        state.lateDelivery?.();
-      }, [identity]);
-      return null;
-    }
-    function BellWithQueuedDelivery() {
-      return createElement(
-        Fragment,
-        null,
-        createElement(NotificationsBell),
-        createElement(QueuedProviderDelivery),
-      );
-    }
-    await render(BellWithQueuedDelivery);
-    expect(host.textContent).toContain("Histórico user-a");
-    const oldSubscription = state.subscriptions.at(-1)!;
-    state.lateDelivery = () =>
-      oldSubscription.callback!({ new: { type: "mention", title: "Aviso atrasado de A" } });
+  it("não usa callbacks nem caches de outro usuário ou workspace", async () => {
+    await render(NotificationsBell);
+    const oldSub = state.subscriptions.at(-1)!;
     state.userId = "user-b";
-    await render(BellWithQueuedDelivery);
-    expect(state.removeChannel).toHaveBeenCalledWith(oldSubscription);
-    expect(host.textContent).toContain("Histórico user-b");
-    expect(host.textContent).not.toContain("Histórico user-a");
+    state.workspaceId = "workspace-b";
+    await render(NotificationsBell);
+    expect(host.textContent).not.toContain("Histórico user-a:workspace-a");
+    expect(host.textContent).toContain("Histórico user-b:workspace-b");
+    await deliver("mention", {}, false, oldSub);
     expect(state.toast).not.toHaveBeenCalled();
-    await deliver("mention");
-    expect(state.toast).not.toHaveBeenCalled();
-    expect(state.audioStarts).toBe(0);
-    await act(async () => {
-      pendingB.resolve({
-        prefs: normalizeNotificationPrefs({ mention: { sound: false, shake: false } }),
-      });
-    });
+    expect(state.removeChannel).toHaveBeenCalledWith(oldSub);
+  });
+  it("descarta resposta pendente do contexto anterior", async () => {
+    await render(NotificationsBell);
+    const pending = deferred<{
+      items: ReturnType<typeof notice>[];
+      unread: number;
+      nextCursor: null;
+      cutoff: string;
+    }>();
+    state.list.mockReturnValueOnce(pending.promise);
+    await deliver("mention", {}, false);
+    state.workspaceId = "workspace-b";
+    await render(NotificationsBell);
+    await act(async () =>
+      pending.resolve({
+        items: [notice("mention")],
+        unread: 1,
+        nextCursor: null,
+        cutoff: "2026-11-20T12:00:00Z",
+      }),
+    );
     await settle();
-    await deliver("mention", { title: "Aviso atual de B" });
-    expect(state.toast).toHaveBeenCalledExactlyOnceWith("Aviso atual de B", {
-      description: "Dados sintéticos",
+    expect(state.toast).not.toHaveBeenCalled();
+  });
+  it("mostra falha de leitura com repetição, sem simular caixa vazia", async () => {
+    state.list.mockRejectedValue(new Error("Banco indisponível"));
+    await render(NotificationsBell);
+    expect(host.querySelector('[role="alert"]')).not.toBeNull();
+    expect(host.textContent).not.toContain("Nenhuma notificação neste workspace");
+    expect(button("Tentar novamente")).not.toBeNull();
+  });
+  it("marca somente IDs carregados com o cutoff e relata falha", async () => {
+    state.mark.mockRejectedValue(new Error("Leitura não foi salva"));
+    await render(NotificationsBell);
+    await click(button("Marcar carregadas"));
+    expect(state.mark).toHaveBeenCalledExactlyOnceWith({
+      data: {
+        workspaceId: "workspace-a",
+        ids: ["user-a:workspace-a"],
+        read: true,
+        cutoff: "2026-11-20T12:00:00Z",
+      },
     });
-    expect(state.audioStarts).toBe(0);
-    expect(host.querySelector(".animate-bell-shake")).toBeNull();
+    expect(state.error).toHaveBeenCalledWith("Leitura não foi salva");
+    expect(host.textContent).toContain("Histórico user-a:workspace-a");
+  });
+  it("não consulta avisos enquanto o contexto de permissão está inválido", async () => {
+    state.contextError = true;
+    await render(NotificationsBell);
+    expect(state.list).not.toHaveBeenCalled();
+    expect(state.subscriptions).toHaveLength(0);
+    expect(host.textContent).toContain("Aguardando acesso ao workspace");
   });
 });

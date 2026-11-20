@@ -468,6 +468,7 @@ export const SIDEBAR_PLATFORM_ITEMS: SidebarItem[] = [
 
 /** Itens gerais do rodapé, visíveis em todos os módulos. */
 export const SIDEBAR_GENERAL_ITEMS: SidebarItem[] = [
+  { title: "Notificações", url: "/notifications", icon: Bell },
   { title: "Trilhas de treinamento", url: "/ajuda/trilhas", icon: GraduationCap },
   { title: "Meus chamados", url: "/my-bug-reports", icon: Bug },
   { title: "Integrações", url: "/integrations", icon: Plug, need: "admin" },

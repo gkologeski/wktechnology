@@ -1,4 +1,3 @@
-import { formatDateTime } from "@/lib/crm";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -9,16 +8,20 @@ import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  listMyNotifications,
-  markNotificationRead,
-  markAllNotificationsRead,
-  getMyNotificationPrefs,
-} from "@/lib/notifications.functions";
-import { notificationInterruption, type NotificationPrefs } from "@/lib/notification-preferences";
+  getNotificationCenter,
+  markCenterNotifications,
+  getCenterPreferences,
+} from "@/lib/notification-center.functions";
+import { notificationInterruption } from "@/lib/notification-preferences";
+import { effectiveChannels, isQuietNow } from "@/lib/notification-center-preferences";
+import { resolveLegacyNotificationEvent } from "@/lib/notification-catalog";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { notificationHref } from "@/lib/notification-href";
+import { formatDateTime } from "@/lib/crm";
+import type { NotificationCursor } from "@/lib/notification-cursor";
 
 function playBeep() {
   try {
@@ -52,55 +55,57 @@ function playBeep() {
 export function NotificationsBell() {
   const qc = useQueryClient();
   const { user } = useAuth();
-  const listFn = useServerFn(listMyNotifications);
-  const readFn = useServerFn(markNotificationRead);
-  const readAllFn = useServerFn(markAllNotificationsRead);
-  const prefsFn = useServerFn(getMyNotificationPrefs);
+  const context = usePermissions();
+  const workspaceId = !context.isLoading && !context.isError ? context.workspaceId : null;
+  const identity = user?.id && workspaceId ? `${user.id}:${workspaceId}` : null;
+  const currentIdentity = useRef(identity);
+  currentIdentity.current = identity;
+  const listFn = useServerFn(getNotificationCenter);
+  const readFn = useServerFn(markCenterNotifications);
+  const prefsFn = useServerFn(getCenterPreferences);
   const [shaking, setShaking] = useState(false);
-  const currentUserRef = useRef(user?.id);
-  currentUserRef.current = user?.id;
-  const prefsRef = useRef<{ userId: string; prefs: NotificationPrefs } | null>(null);
-
+  const prefix = ["notification-center", user?.id, workspaceId];
   const q = useInfiniteQuery({
-    queryKey: ["notifications", user?.id],
-    enabled: Boolean(user?.id),
-    initialPageParam: null as { createdAt: string; id: string } | null,
-    queryFn: ({ pageParam }) => listFn({ data: { cursor: pageParam } }),
-    getNextPageParam: (last) => last.nextCursor ?? undefined,
+    queryKey: [...prefix, "bell"],
+    enabled: Boolean(identity),
+    initialPageParam: null as { cursor: NotificationCursor; cutoff: string } | null,
+    queryFn: ({ pageParam }) =>
+      listFn({
+        data: {
+          workspaceId: workspaceId!,
+          scope: "workspace",
+          status: "all",
+          cursor: pageParam?.cursor,
+          cutoff: pageParam?.cutoff,
+        },
+      }),
+    getNextPageParam: (last) =>
+      last.nextCursor ? { cursor: last.nextCursor, cutoff: last.cutoff } : undefined,
     refetchInterval: 60_000,
   });
-  const [sentinel, setSentinel] = useState<HTMLDivElement | null>(null);
-  const { hasNextPage, isFetchingNextPage, fetchNextPage } = q;
-  useEffect(() => {
-    const el = sentinel;
-    if (!el || !hasNextPage) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
-      },
-      { root: el.closest("[data-radix-scroll-area-viewport]"), rootMargin: "120px" },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [sentinel, hasNextPage, isFetchingNextPage, fetchNextPage]);
-
-  const prefsQ = useQuery({
-    queryKey: ["notification-prefs", user?.id],
-    enabled: Boolean(user?.id),
-    queryFn: () => prefsFn(),
+  const preferences = useQuery({
+    queryKey: ["notification-center-preferences", user?.id, workspaceId],
+    enabled: Boolean(identity),
+    queryFn: () => prefsFn({ data: { workspaceId: workspaceId! } }),
     staleTime: 5 * 60_000,
   });
+  const prefsRef = useRef<{ identity: string; value: NonNullable<typeof preferences.data> } | null>(
+    null,
+  );
+  useEffect(() => {
+    prefsRef.current = identity && preferences.data ? { identity, value: preferences.data } : null;
+  }, [identity, preferences.data]);
+  useEffect(() => {
+    setShaking(false);
+  }, [identity]);
 
   useEffect(() => {
-    prefsRef.current =
-      user?.id && prefsQ.data?.prefs ? { userId: user.id, prefs: prefsQ.data.prefs } : null;
-  }, [user?.id, prefsQ.data]);
-
-  // Realtime: refresh + toast + shake/sound on new notification
-  useEffect(() => {
-    if (!user?.id) return;
-    const ch = supabase
-      .channel("notif-" + user.id)
+    if (!identity || !user?.id || !workspaceId) return;
+    let cancelled = false;
+    let shakeTimer: ReturnType<typeof setTimeout> | undefined;
+    const seen = new Set<string>();
+    const channel = supabase
+      .channel(`notif-${identity}`)
       .on(
         "postgres_changes",
         {
@@ -110,141 +115,196 @@ export function NotificationsBell() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          if (currentUserRef.current !== user.id) return;
-          const n = payload.new as {
-            title?: string;
-            body?: string;
-            type?: string;
-            entity?: string;
-            link?: string;
-          };
-          const prefs = prefsRef.current?.userId === user.id ? prefsRef.current.prefs : null;
-          const interruption = notificationInterruption(n, prefs, window.location.pathname);
-          if (interruption.toast)
-            toast.message(n.title ?? "Nova notificação", { description: n.body ?? undefined });
-          if (interruption.sound) playBeep();
-          if (interruption.shake) {
-            setShaking(true);
-            setTimeout(() => setShaking(false), 850);
-          }
-          qc.invalidateQueries({ queryKey: ["notifications"] });
+          // Realtime content is not trusted: re-read the scoped API before any interruption.
+          const id = (payload.new as { id?: unknown }).id;
+          if (
+            cancelled ||
+            currentIdentity.current !== identity ||
+            typeof id !== "string" ||
+            seen.has(id)
+          )
+            return;
+          seen.add(id);
+          if (seen.size > 200) seen.delete(seen.values().next().value!);
+          void qc.invalidateQueries({ queryKey: ["notification-center", user.id, workspaceId] });
+          void listFn({ data: { workspaceId, scope: "workspace", status: "all" } })
+            .then(async (page) => {
+              if (cancelled || currentIdentity.current !== identity) return;
+              const notice = page.items.find((item) => item.id === id);
+              if (!notice || notice.read_at || prefsRef.current?.identity !== identity) return;
+              if (notice.snoozed_until && Date.parse(notice.snoozed_until) > Date.now()) return;
+              const event = resolveLegacyNotificationEvent(notice.type);
+              if (!event) return;
+              // Preferences may have changed in another session since the cached page loaded.
+              const current = await prefsFn({ data: { workspaceId } });
+              if (
+                cancelled ||
+                currentIdentity.current !== identity ||
+                isQuietNow(current.settings.quiet)
+              )
+                return;
+              const channels = effectiveChannels(
+                current.legacyPrefs,
+                current.settings,
+                notice.type ?? "",
+              );
+              const prefs = { ...current.legacyPrefs, [event.category]: channels };
+              const interruption = notificationInterruption(
+                notice,
+                prefs,
+                window.location.pathname,
+              );
+              if (interruption.toast)
+                toast.message(notice.title ?? "Nova notificação", {
+                  description: notice.body ?? undefined,
+                });
+              if (interruption.sound) playBeep();
+              if (interruption.shake) {
+                setShaking(true);
+                clearTimeout(shakeTimer);
+                shakeTimer = setTimeout(() => setShaking(false), 850);
+              }
+            })
+            .catch(() => {
+              /* A failed authorization/read never displays provider payload. */
+            });
         },
       )
       .subscribe();
     return () => {
-      supabase.removeChannel(ch);
+      cancelled = true;
+      clearTimeout(shakeTimer);
+      void supabase.removeChannel(channel);
     };
-  }, [user?.id, qc]);
+  }, [identity, user?.id, workspaceId, listFn, prefsFn, qc]);
 
   const mark = useMutation({
-    mutationFn: (id: string) => readFn({ data: { id } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+    mutationFn: (ids: string[]) => {
+      const cutoff = q.data?.pages[0]?.cutoff;
+      if (!workspaceId || !cutoff)
+        throw new Error("Atualize as notificações antes de alterar a leitura.");
+      return readFn({ data: { workspaceId, ids, read: true, cutoff } });
+    },
+    onSuccess: (result) => {
+      if (!result.updated)
+        toast.error("Nenhum aviso foi alterado. Confira o estado e o acesso atuais na central.");
+      return qc.invalidateQueries({ queryKey: prefix });
+    },
+    onError: (error: Error) => toast.error(error.message),
   });
-  const markAll = useMutation({
-    mutationFn: () => readAllFn(),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
-  });
-
-  const items = q.data?.pages.flatMap((p) => p.items) ?? [];
+  const items = q.data?.pages.flatMap((page) => page.items) ?? [];
   const unread = q.data?.pages[0]?.unread ?? 0;
-
+  const loadedUnread = items.filter((item) => !item.read_at).slice(0, 100);
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative" aria-label="Notificações">
           <Bell className={`h-5 w-5 ${shaking ? "animate-bell-shake" : ""}`} />
           {unread > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-4 min-w-4 px-1 text-[10px] flex items-center justify-center">
+            <Badge className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center px-1 text-[10px]">
               {unread > 99 ? "99+" : unread}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
-        <div className="p-3 border-b flex items-center justify-between">
-          <div className="text-sm font-medium">Notificações</div>
-          {unread > 0 && (
-            <Button size="sm" variant="ghost" onClick={() => markAll.mutate()}>
-              <CheckCheck className="h-3.5 w-3.5 mr-1" /> Marcar todas
+        <div className="flex items-center justify-between border-b border-border p-3">
+          <h2 className="text-sm font-medium">Workspace ativo</h2>
+          {!!loadedUnread.length && (
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={mark.isPending}
+              onClick={() => mark.mutate(loadedUnread.map((item) => item.id))}
+            >
+              <CheckCheck className="mr-1 h-3.5 w-3.5" />
+              Marcar carregadas
             </Button>
           )}
         </div>
         <ScrollArea className="h-96">
-          {items.length === 0 ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">
-              Nenhuma notificação.
+          {!identity ? (
+            <p className="p-6 text-sm text-muted-foreground">Aguardando acesso ao workspace.</p>
+          ) : q.isError ? (
+            <div role="alert" className="space-y-3 p-4">
+              <p className="text-sm">Não foi possível carregar as notificações.</p>
+              <Button size="sm" variant="outline" onClick={() => void q.refetch()}>
+                Tentar novamente
+              </Button>
             </div>
+          ) : q.isLoading ? (
+            <p className="flex items-center gap-2 p-6 text-sm" role="status">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Carregando notificações…
+            </p>
+          ) : !items.length ? (
+            <p className="p-6 text-center text-sm text-muted-foreground">
+              Nenhuma notificação neste workspace.
+            </p>
           ) : (
-            <ul className="divide-y">
-              {items.map((n) => {
-                const inner = (
+            <ul className="divide-y divide-border">
+              {items.map((notice) => {
+                const target = notificationHref(notice);
+                const content = (
                   <div
-                    className={`p-3 hover:bg-muted/50 cursor-pointer ${!n.read_at ? "bg-primary/5" : ""}`}
+                    className={`p-3 text-left hover:bg-muted/50 ${!notice.read_at ? "bg-primary/5" : ""}`}
                   >
-                    <div className="flex items-start gap-2">
-                      {!n.read_at && (
-                        <span className="mt-1.5 h-2 w-2 rounded-full bg-primary shrink-0" />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium truncate">{n.title}</div>
-                        {n.body && (
-                          <div className="text-xs text-muted-foreground line-clamp-2">{n.body}</div>
-                        )}
-                        <div className="text-[10px] text-muted-foreground mt-0.5">
-                          {formatDateTime(n.created_at)}
-                        </div>
-                      </div>
-                    </div>
+                    <p className="truncate text-sm font-medium">{notice.title}</p>
+                    {notice.body && (
+                      <p className="line-clamp-2 text-xs text-muted-foreground">{notice.body}</p>
+                    )}
+                    <time
+                      className="mt-1 block text-[10px] text-muted-foreground"
+                      dateTime={notice.created_at}
+                    >
+                      {formatDateTime(notice.created_at)}
+                    </time>
                   </div>
                 );
-                const handle = () => {
-                  if (!n.read_at) mark.mutate(n.id);
-                };
-                const target = notificationHref(n);
                 return (
-                  <li key={n.id} onClick={handle}>
+                  <li key={notice.id}>
                     {target ? (
-                      <Link to={target.to as never} search={target.search as never}>
-                        {inner}
+                      <Link
+                        to={target.to as never}
+                        search={target.search as never}
+                        onClick={() => !notice.read_at && mark.mutate([notice.id])}
+                      >
+                        {content}
                       </Link>
                     ) : (
-                      inner
+                      <button
+                        className="w-full"
+                        disabled={mark.isPending}
+                        onClick={() => !notice.read_at && mark.mutate([notice.id])}
+                      >
+                        {content}
+                      </button>
                     )}
                   </li>
                 );
               })}
             </ul>
           )}
-          {items.length > 0 && (
-            <div
-              ref={setSentinel}
-              className="p-3 text-center text-xs text-muted-foreground"
-              aria-live="polite"
-            >
-              {isFetchingNextPage ? (
-                <span className="inline-flex items-center gap-1">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Carregando anteriores…
-                </span>
-              ) : hasNextPage ? (
-                <button
-                  type="button"
-                  className="hover:text-foreground"
-                  onClick={() => void fetchNextPage()}
-                >
-                  Carregar anteriores
-                </button>
-              ) : (
-                "Fim do histórico"
-              )}
+          {q.hasNextPage && (
+            <div className="p-3">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="w-full"
+                disabled={q.isFetchingNextPage}
+                onClick={() => void q.fetchNextPage()}
+              >
+                {q.isFetchingNextPage ? "Carregando anteriores…" : "Carregar anteriores"}
+              </Button>
             </div>
           )}
         </ScrollArea>
-        <div className="p-2 border-t text-right">
-          <Link
-            to={"/settings/notifications" as never}
-            className="text-xs text-muted-foreground hover:text-foreground"
-          >
-            Preferências →
+        <div className="flex justify-between border-t border-border p-3 text-xs">
+          <Link to={"/notifications" as never} className="font-medium text-primary">
+            Ver central →
+          </Link>
+          <Link to={"/settings/notifications" as never} className="text-muted-foreground">
+            Preferências
           </Link>
         </div>
       </PopoverContent>

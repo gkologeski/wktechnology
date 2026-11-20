@@ -2580,7 +2580,7 @@
       "kind": "presentation",
       "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. LinkedIn navigation accepts personal view as well as workspace view; server and RLS remain independently enforced.",
       "files": {
-        "src/lib/menu-config.ts": "3d6c4a115571c63f83952ef34f4ca754cac5b8baa00374fa1f103be2bdb6f257",
+        "src/lib/menu-config.ts": "e03dddb47cc89cdd64c127eb4aabd9c7b90cced0ef117b0303846d7df2cebef1",
         "src/lib/menu-resources.ts": "dc05b3e08af7f0261f9f5899b84035364438f975e0671a427ee8259db692b7eb",
         "src/lib/access-control/sales-resources.ts": "b52f747ccc294edc4f31c933224958a42ce7193b480c0e3e6f8145d3fb0d2b31"
       }
@@ -4564,7 +4564,7 @@
       "scopes": [
         "own"
       ],
-      "rationale": "Bell notifications are personal: server functions require an authenticated session (requireSupabaseAuth) and scope every read to the caller id via scopeNotifications; reads are paged by (created_at,id) cursor and the unread count is a head count on the same scope. RLS notif_select_own/notif_update_own (user_id = auth.uid()) enforces it in the database. The bell subscribes only to the signed-in user's rows (useAuth). Preference reads/writes use the server admin client only after the same caller scoping on profiles.id. NOTIFICA-CENTRAL package 1 adds read-only event metadata and shares an exact legacy catalogue between list and realtime; types/links/recipients/dedupe/pagination remain unchanged. Preference updates accept strict known partial patches, retain unknown server JSON and compare-and-swap the current jsonb value with bounded retries; the UI sends only changed fields. Identity-qualified queries/ref guards prevent another session preference reuse. No new grants, workspace-wide reads, producer rewrites or database changes. Existing scope tests below cover caller filtering/identifier validation, not actual membership/deny/RLS; the audited N11 gap remains for the recipient/access package.",
+      "rationale": "Legacy global preference APIs preserve caller-scoped profile patches and CAS. Legacy list/read delegates to the new active-workspace RPCs; bulk reading requires explicit IDs/cutoff and never updates the whole personal history implicitly. Activity producers keep their canonical source/update/member checks. The new personal workspace contract owns the bell and SQL boundary; this compatibility contract does not certify source RLS via the old identifier tests.",
       "exception": {
         "mechanism": "Authenticated Supabase session; caller id from verified JWT; RLS user_id = auth.uid().",
         "boundary": "Only the caller's own notification rows; no workspace-wide or other-user reads.",
@@ -4599,12 +4599,20 @@
         {
           "file": "src/lib/notifications.functions.ts",
           "symbol": "updateMyNotificationPrefs"
+        },
+        {
+          "file": "src/lib/notifications.functions.ts",
+          "symbol": "notificationWorkspace"
         }
       ],
       "database": [
         {
           "file": "supabase/migrations/20260606022600_562a7bbe-e537-4b2c-b60e-6113dba77f36.sql",
           "symbol": "notifications"
+        },
+        {
+          "file": "drizzle/migrations/0392_notification_center.sql",
+          "symbol": "notification_center_list"
         }
       ],
       "tests": {
@@ -4630,8 +4638,7 @@
         }
       },
       "files": {
-        "src/lib/notifications.functions.ts": "ad3a83c549a82f2188450fa019d260fd4b350c03b7c19f75242dbc10d67b3270",
-        "src/components/notifications-bell.tsx": "62ce169a1d9e273931ba0d6564b3b02290d51037c940a17302aabe5b6ba1c252",
+        "src/lib/notifications.functions.ts": "e7899ce6156b3bff1c56ececc97d1414f975c08756ff4f3584a3303d1c5a7ef4",
         "src/routes/_authenticated/settings.notifications.tsx": "28d7249ffc92a5d0b4ba187c4216173cbe7d68c6ec20bc8f6ee1fecff25f0b41"
       }
     },
@@ -14611,6 +14618,228 @@
         "src/lib/workflows/engine-actions.server.ts": "56501d9c8a6479b3c6f196911e422a4b5d22a20766ff5a042c4bcabd28a578f5",
         "src/lib/workflows/engine/actions-messaging.server.ts": "b82798b139a520b8a04d84868e4fa80fff0da5fecc0ace45292aa40dfa8c9a07",
         "src/components/workflows/builder/step-forms/notification-form.tsx": "5f79f59939a943e2d21b470e7050ac69200abd5a5baf3ab17858163cdbfb841f"
+      }
+    },
+    {
+      "id": "notification-center-personal-workspace",
+      "kind": "personal",
+      "resources": [
+        "system.notifications"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own"
+      ],
+      "rationale": "Personal center and preferences bind verified session, active selected workspace, own recipient and membership. New source proof is captured only for new inserts with actual source workspace; no historical attribution/backfill. Workspace reads and raw Data API RLS revalidate source access using private non-BYPASSRLS subject bridges; old unproven history is neutral without links. IDs/cutoff bounded reads, snooze state and revision CAS never approve or conclude tasks. Direct notification update/delete and preference/context tables are private. Workspace/event preference overlay extends the service-only package 2 dispatcher without bypassing its workflow/run/source/recipient checks. Bell revalidates realtime payload through the authorized API before interruption; identity/workspace-qualified caches and silence are personal. No new grants, scheduled external delivery, channels, WhatsApp opt-in or activation of planned events.",
+      "exception": {
+        "mechanism": "Authenticated JWT plus work_access_context and explicit expected workspace; SQL actor derives auth.uid and enforces active membership. Service dispatcher retains service_role-only execution and run proof.",
+        "boundary": "Only own notification state/preferences in the selected active workspace; each proven source must remain readable. Unproven historical items return neutral personal metadata only. No other-user preference API.",
+        "revocation": "Inactive membership, changed selected workspace, source permission deny/revocation, read-only session on writes, or revoked JWT prevents the corresponding operation.",
+        "review_by": "2027-04-30"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/auth.tsx",
+          "symbol": "useAuth"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/notification-center.functions.ts",
+          "symbol": "getNotificationCenter"
+        },
+        {
+          "file": "src/lib/notification-center.functions.ts",
+          "symbol": "getCenterPreferences"
+        },
+        {
+          "file": "src/lib/notification-center.functions.ts",
+          "symbol": "markCenterNotifications"
+        },
+        {
+          "file": "src/lib/notification-center.functions.ts",
+          "symbol": "snoozeCenterNotification"
+        },
+        {
+          "file": "src/lib/notification-center.functions.ts",
+          "symbol": "saveCenterPreferences"
+        },
+        {
+          "file": "src/lib/notification-href.ts",
+          "symbol": "notificationHref"
+        },
+        {
+          "file": "src/lib/notification-center-preferences.ts",
+          "symbol": "diffCenterSettings"
+        },
+        {
+          "file": "src/components/notifications/notification-detail.tsx",
+          "symbol": "NotificationDetail"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0392_notification_center.sql",
+          "symbol": "notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0392_notification_center.sql",
+          "symbol": "notification_center_mark"
+        },
+        {
+          "file": "drizzle/migrations/0392_notification_center.sql",
+          "symbol": "notification_center_snooze"
+        },
+        {
+          "file": "drizzle/migrations/0392_notification_center.sql",
+          "symbol": "notification_center_preferences_save"
+        },
+        {
+          "file": "drizzle/migrations/0392_notification_center.sql",
+          "symbol": "notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0392_notification_center.sql",
+          "symbol": "notification_workflow_dispatch"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/notification-center-postgres.test.ts",
+          "name": "notification center allows authorized source reader"
+        },
+        "missing_permission": {
+          "file": "src/lib/notification-center-postgres.test.ts",
+          "name": "notification center rejects missing source permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/notification-center-postgres.test.ts",
+          "name": "notification center rejects explicit source deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/notification-center-postgres.test.ts",
+          "name": "notification center rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/notification-center-postgres.test.ts",
+          "name": "notification center rejects inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0392_notification_center.sql": "6bd5e9bdfaa07667894731af3d8d36eea48e15fdbb065fc0b1e46af59c506a53",
+        "src/lib/notification-center.functions.ts": "41b48a7902e21c4d108e01f172e015557ed84b5476ed271373e06f1e5ad84449",
+        "src/routes/_authenticated/notifications.tsx": "37dc38c222336656c16d8795a3553a7928ee1e943ee1bfa4a3cc14cbc798dd11",
+        "src/components/notifications/notification-center.tsx": "1dae7fb2afa379eb99017c3047d1b9394802f49f6df3dbe71eb823e6ef215509",
+        "src/components/notifications/notification-preferences-panel.tsx": "5e8c0a8a737423ad26fea9e55fba79ad3d14553c3b55c15b07c96475ca2dc9d2",
+        "src/components/notifications-bell.tsx": "d383db44bf4c619ec93ca0aa5d0a5394c04293a5cf573b6df9e28db7b528e0f2",
+        "src/components/notifications/notification-detail.tsx": "b38642600a8eeb40b96b2c6520fadc0b94337344a441c936b97e5c167adb0830"
+      }
+    },
+    {
+      "id": "notification-center-preference-policy",
+      "kind": "presentation",
+      "rationale": "Pure strict schemas, context-race consistency assertion, catalogue metadata, partial preference overlay merge/diff, local-clock silence and grouping of already-loaded items. No I/O, delivery, grant or recipient lookup; authoritative session/membership/source checks and persistence belong to the personal workspace RPC boundary.",
+      "files": {
+        "src/lib/notification-center-preferences.ts": "d2657f6f87466c602e156f919d62ddeed0e9e7744ec061f46e7905be13a0c191",
+        "src/lib/notification-center.ts": "8666a129d8234e1b684a74361f0a1ca45272364ab204f99f05167262317fc9bf"
+      }
+    },
+    {
+      "id": "notification-center-navigation",
+      "kind": "presentation",
+      "rationale": "Pure verified internal notification destination parsing and shell route classification metadata; no I/O, business reads, grants or action execution. Destination pages retain their own permission gates.",
+      "files": {
+        "src/lib/menu-config-erp.ts": "020ab63c23b207448391b0398a1412fed60149d73a5d43f5a2722c8655732888",
+        "src/lib/notification-href.ts": "74131c970d252c5aa4d28486b73521cf0335daaf40c86401da63428d312c5d60"
+      }
+    },
+    {
+      "id": "notification-source-binding-compatibility",
+      "kind": "service",
+      "resources": [
+        "system.notifications",
+        "system.automation.workflows"
+      ],
+      "actions": [
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "rationale": "Compatibility source-binding and content-minimization only. Existing reminder worker is imported exclusively by the CRON_SECRET-guarded route; existing approval step validates the named recipient through sales_workflow_approval_recipient in the authorized workflow engine. Neither endpoint, target choice nor email delivery is broadened. In-app notices now carry explicit source workspace and real activity/workflow-source ids with neutral content, never a private activity/comment/approval snapshot authorized only against a parent deal. The new center RLS revalidates active recipient and actual source on every read; no role grants or external channel is introduced. Reminder creation keeps the existing service worker selection and preferences, with access at consumption enforced by the new SQL boundary.",
+      "exception": {
+        "mechanism": "Server-only trusted service imports: existing CRON_SECRET route invokes bounded reminder scan; authorized Workflow engine and service-only recipient RPC guard approval creation. Pure notice constructors validate UUID source/workspace and remove private snapshots.",
+        "boundary": "Existing owner-targeted reminder and currently named approval recipients; neutral in-app source references only, no new caller-selected recipient endpoint. Read access remains self/workspace/source RLS.",
+        "revocation": "Cron secret/session revocation, disabled workflow or rejected approver gate stops the relevant execution; membership/source deny prevents reading delivered records.",
+        "review_by": "2027-04-30"
+      },
+      "controls": [
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "activityNotificationContent"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "workflowApprovalNotificationContent"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0392_notification_center.sql",
+          "symbol": "notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_workflow_approval_recipient"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/notification-center-postgres.test.ts",
+          "name": "notification center allows authorized source reader"
+        },
+        "missing_permission": {
+          "file": "src/lib/notification-center-postgres.test.ts",
+          "name": "notification center rejects missing source permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/notification-center-postgres.test.ts",
+          "name": "notification center rejects explicit source deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/notification-center-postgres.test.ts",
+          "name": "notification center rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/notification-center-postgres.test.ts",
+          "name": "notification center rejects inactive member"
+        }
+      },
+      "files": {
+        "src/lib/activity-reminders.server.ts": "f884246bfa827ed625300b2ab4f21157ca5a4f7a6ba24979499b0d247fff07ea",
+        "src/lib/workflows/engine/actions-control.server.ts": "f9541e2e6f6d126f88bf97417bdbb310fc2b65abb0dba0b8c08bb776b2b5d511"
       }
     }
   ],
