@@ -24,6 +24,8 @@ export interface RunCtx {
   state?: Record<string, unknown>;
   /** Chave de envio reservada pelo guarda (usada pelo handler do canal). */
   deliveryKey?: string;
+  /** Stable position for atomic, source-authorized in-app notification deduplication. */
+  notificationStepKey?: string;
   /** Política de envio do workspace (cache do run; null = sem política). */
   sendPolicy?: import("./delivery-policy").SendPolicy | null;
 }

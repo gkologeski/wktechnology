@@ -1,3 +1,5 @@
+import type { NotificationRecipientRule } from "@/lib/notification-recipients";
+
 export type WorkflowEntity =
   | "leads"
   | "contacts"
@@ -173,7 +175,15 @@ export type WorkflowAction =
   | { type: "assign_to"; user_id: string }
   | { type: "rotate_assign"; rule_id: string }
   | { type: "add_to_sequence"; sequence_id: string }
-  | { type: "send_notification"; title: string; body?: string; user_id?: string }
+  | {
+      type: "send_notification";
+      title: string;
+      body?: string;
+      /** Legacy explicit recipient; preserved for saved workflows. */
+      user_id?: string;
+      /** Explicit rules take precedence over the legacy recipient/default. */
+      recipients?: NotificationRecipientRule[];
+    }
   | { type: "webhook"; url: string; payload?: Record<string, unknown> }
   | { type: "delay"; amount: number; unit: "minutes" | "hours" | "days" }
   | {

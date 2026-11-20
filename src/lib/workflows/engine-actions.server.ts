@@ -123,7 +123,11 @@ export async function runActions(
       ? await guardedDelivery(supabase, action, ctx, stepPath, () =>
           runAction(supabase, action, ctx, true),
         )
-      : await runAction(supabase, action, ctx);
+      : await runAction(
+          supabase,
+          action,
+          action.type === "send_notification" ? { ...ctx, notificationStepKey: stepPath } : ctx,
+        );
     const step = annotate(raw);
     if (step.suspend_until) {
       // Repete este mesmo passo depois (horário, cota ou nova tentativa).

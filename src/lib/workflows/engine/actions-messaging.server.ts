@@ -4,9 +4,10 @@ import { withWorkflowWorkspace } from "./workspace-payload";
 // webhook e inclusão em cadência. Extraído sem mudança de comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toStr } from "../render-tokens";
-import { type LogStep, notificationLinkFor, renderTokens } from "../engine-shared.server";
+import { type LogStep, renderTokens } from "../engine-shared.server";
 import type { RunCtx, RunnableAction } from "./run-context";
 import { buildDeliveryMeta } from "../delivery-meta";
+import { dispatchWorkflowNotification } from "@/lib/notification-dispatch.server";
 
 export async function handleMessagingAction(
   supabase: SupabaseClient,
@@ -37,26 +38,12 @@ export async function handleMessagingAction(
       };
     }
     case "send_notification": {
-      const title = renderTokens(action.title, ctx.after) as string;
-      const body = action.body ? (renderTokens(action.body, ctx.after) as string) : null;
-      const targetUserId = action.user_id?.trim() ? action.user_id : ctx.ownerId;
-      const link = notificationLinkFor(ctx.entity, ctx.entityId);
-      const { error } = await supabase.from("notifications").insert({
-        owner_id: ctx.ownerId,
-        user_id: targetUserId,
-        type: "workflow",
-        title,
-        body,
-        link,
-        entity: ctx.entity,
-        entity_id: ctx.entityId,
-      } as never);
-      if (error) throw new Error(error.message);
+      const result = await dispatchWorkflowNotification(supabase, action, ctx);
       return {
         at,
         ok: true,
         action: "send_notification",
-        detail: { title, user_id: targetUserId },
+        detail: result,
       };
     }
     case "webhook": {

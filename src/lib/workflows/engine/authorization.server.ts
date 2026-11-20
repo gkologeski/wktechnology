@@ -194,7 +194,9 @@ export async function authorizeWorkflowStep(
       row(table, resolved(a.target_id), action.type === "update_record" ? "update" : "delete");
     if (action.type === "approval_step")
       refs.push({ member_id: String(a.approver_user_id ?? ctx.ownerId) });
-    if (action.type === "send_notification")
+    // Explicit legacy recipients keep their original step gate. Dynamic recipients are
+    // resolved and checked against current source RLS by the atomic SQL dispatcher.
+    if (action.type === "send_notification" && !a.recipients)
       refs.push({ member_id: String(a.user_id ?? "").trim() || ctx.ownerId });
     if (action.type === "handoff") {
       const target =

@@ -8,7 +8,7 @@ route_pattern: /settings/notifications
 min_permission:
 audience: internal
 sort_order: 148
-version: 3
+version: 4
 is_published: true
 ---
 
@@ -41,6 +41,7 @@ As opções ficam salvas para seu usuário e são consultadas pelos novos avisos
 ## Regras e limites
 
 - As preferências não apagam notificações, mudam responsáveis, concedem permissão de leitura nem liberam uma etapa de aprovação.
+- O passo **Enviar notificação** dos Workflows consulta **No app** do grupo **Workflows** antes de criar um novo aviso. Se essa opção estiver desligada, o envio é suprimido; notificações anteriores não são apagadas.
 - Os grupos **Workflows**, **Aprovações**, **Contratação e perfis de vaga**, **Formulários**, **Carteira** e **Plataforma e segurança** começam com **No app** ligado e as demais opções desligadas, salvo se você já tiver uma escolha salva.
 - A tela salva somente as opções que você alterou. Valores de canal gravados com formato inválido são tratados como desligados; para uma opção ausente, vale o padrão do grupo.
 - Alterar um grupo não cria uma automação, ativa um evento futuro ou habilita um canal externo. Esta tela ainda não oferece controles de WhatsApp, resumos ou horário de silêncio.
@@ -48,12 +49,15 @@ As opções ficam salvas para seu usuário e são consultadas pelos novos avisos
 - Enquanto você estiver na Inbox, uma mensagem identificada como pertencente à Inbox não gera uma nova interrupção pelo sino. Um comentário de atividade não é tratado automaticamente como mensagem da Inbox.
 - Tipos ainda não reconhecidos continuam no histórico, mas não geram pop-up, som ou tremor. A mesma proteção vale enquanto as preferências do usuário atual não tiverem sido carregadas.
 - A preferência de e-mail só é aplicada por produtores que já a consultam. O envio próprio de alguns fluxos legados permanece independente; salvar uma opção não comprova envio, bloqueio ou entrega no provedor.
+- O passo **Enviar notificação** dos Workflows exige destinatário ativo no mesmo workspace e leitura atual do registro de origem. Um responsável, gestor ou aprovador ausente não é substituído automaticamente pelo CEO. Essa escolha pertence ao workflow e à alçada, não às preferências pessoais. Outros produtores legados permanecem com suas regras próprias.
+- Avisos com variáveis usam texto neutro, para não copiar campos privados da execução. Consulte os detalhes no destino disponível para a origem no TechERP; pode ser uma ficha, lista ou registro associado. Ler o registro pode exigir permissões adicionais para determinados campos.
 
 ## Erros comuns
 
 - **O e-mail continuou chegando:** verifique qual fluxo realizou o envio. Algumas aprovações e automações existentes não consultam estas preferências; a tela informa esse limite.
 - **Não ouvi som ou não vi tremor:** confira **No app**, **Som** e **Tremor** do grupo, a permissão de áudio do navegador e se a mensagem pertence à Inbox já aberta. Um tipo desconhecido ou uma preferência ainda em carregamento permanece silencioso.
 - **As preferências foram alteradas em outra sessão:** recarregue a página, confira as opções atuais e salve novamente. Não considere a alteração concluída sem a confirmação.
+- **O aviso de Workflow não apareceu:** confira **No app** no grupo **Workflows** e peça a quem administra a automação que revise o resultado da execução e seus vínculos. As preferências não concedem acesso a um registro que não esteja disponível para você.
 - Se houver acesso negado, confira a sessão e a autorização da operação; não tente contornar por URL direta.
 - Se o link ou registro estiver indisponível, retorne à origem para verificar o contexto; não altere tokens para procurar outros registros.
 - Em falha de gravação ou integração, verifique a mensagem antes de repetir. Não compartilhe senha, token ou dados pessoais em chamados.
@@ -62,5 +66,6 @@ As opções ficam salvas para seu usuário e são consultadas pelos novos avisos
 
 - [Visão geral do Core](/ajuda/core/visao-geral)
 - [Permissões do Core](/ajuda/core/permissoes)
+- [Criar e publicar workflows](/ajuda/crm/criar-publicar-workflows)
 
 ![Tela: capturar /settings/notifications com dados fictícios, ocultando tokens, segredos e dados pessoais](/help-media/core/revisar-preferencias-de-notificacoes.webp)

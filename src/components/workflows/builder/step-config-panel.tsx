@@ -74,6 +74,7 @@ import {
 } from "./step-forms/data-forms";
 import { SendSlackForm, SendTeamsForm } from "./step-forms/messaging-forms";
 import { ApprovalStepForm } from "./step-forms/approval-form";
+import { NotificationForm } from "./step-forms/notification-form";
 export function StepConfigPanel({
   action,
   entity,
@@ -217,28 +218,7 @@ function StepConfigForm({
         />
       );
     case "send_notification":
-      return (
-        <div className="space-y-2">
-          <TokenInput
-            value={action.title}
-            onValueChange={(v) => onChange({ ...action, title: v })}
-            placeholder="Título"
-          />
-          <TokenTextarea
-            value={action.body ?? ""}
-            onValueChange={(v) => onChange({ ...action, body: v })}
-            placeholder="Corpo (opcional)"
-            rows={2}
-          />
-          <div>
-            <Label className="text-xs">Notificar (opcional — padrão: você)</Label>
-            <UserPicker
-              value={action.user_id ?? ""}
-              onChange={(v) => onChange({ ...action, user_id: v })}
-            />
-          </div>
-        </div>
-      );
+      return <NotificationForm action={action} entity={entity} onChange={onChange} />;
     case "webhook":
       return (
         <div className="space-y-2">

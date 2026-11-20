@@ -7322,7 +7322,7 @@
       "files": {
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
-        "src/lib/workflows/engine/authorization.server.ts": "f7fca671ab077eb005578b0e65e6c9b587555b45e82e24597b7536a0b349cbe8",
+        "src/lib/workflows/engine/authorization.server.ts": "3054eefba2c2641d377debc7c0068651cf86895437a42a8078e7d2a44c6f413a",
         "src/routes/_authenticated/contracts.$id.tsx": "06c1ab0f4d445f677b8c78402410b9bb103fe50512bfcc172abb44cfa938b989",
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
@@ -7536,8 +7536,8 @@
       "rationale": "Pure declarative workflow types, validation schemas and UI draft-template definitions; no IO, route or execution. Hiring templates remain unpublished drafts. Runtime actions and persisted permissions are independently guarded by stage4 business contract. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key.",
       "files": {
         "src/lib/workflows/hiring-templates.ts": "657b1ce58925d0169860c04affd0fc1033aa84ee51154ff3f01806d4419799ff",
-        "src/lib/workflows/types.ts": "882d84fdae3181e221b8b85ca77a021e3ad08668342fd197827cb2913fcd2c59",
-        "src/lib/workflows/schemas.ts": "fa39c3cd1dcddf417753124852c0cc5182e2f9eb273e5cd828948ef5639f42a5"
+        "src/lib/workflows/types.ts": "ef20e0e2dc79d5d5e601c56308e9c80fec60ce0e89bf64bd5d2292987aded703",
+        "src/lib/workflows/schemas.ts": "99857da9c24a8cb538e345261b57b0d380dc4828a773c12370a4d14994df4b4e"
       }
     },
     {
@@ -8570,7 +8570,7 @@
         }
       },
       "files": {
-        "src/components/workflows/builder/step-config-panel.tsx": "03416607056b9817ff0b2c6cf1fb82176ea7c04133a7613f357815e9e888c279"
+        "src/components/workflows/builder/step-config-panel.tsx": "46afe5f41dd17eda7295f7a31c672cdfb15801af21f1b0dced4d162547bd2356"
       }
     },
     {
@@ -14510,6 +14510,107 @@
       "rationale": "Pure known-category validation, normalization, diff/merge and presentation interruption policy; no I/O, recipient resolution, message delivery, authorization or grants. Existing personal authenticated server boundary performs all preference reads/writes.",
       "files": {
         "src/lib/notification-preferences.ts": "793fcf6edca8c588ec321a796f76ca99b926946599b621c702f3d848ec6f10ce"
+      }
+    },
+    {
+      "id": "notification-recipient-intent",
+      "kind": "presentation",
+      "rationale": "Pure strict recipient intent schemas and legacy selection adapter. No I/O, authorization grant, recipient lookup or dispatch.",
+      "files": {
+        "src/lib/notification-recipients.ts": "3ae6b1410aababb825d1fe755dc22a51860aa447d99e2dfa750727741c4649ec"
+      }
+    },
+    {
+      "id": "notification-workflow-context",
+      "kind": "presentation",
+      "rationale": "Type-only workflow context extension for deterministic notification step position. No I/O, action, data read or grant.",
+      "files": {
+        "src/lib/workflows/engine/run-context.ts": "02e40861d9aa1b3caab56a0e4d85b8a1467dfe2ca2c3e6eb7a69b794e309c56e"
+      }
+    },
+    {
+      "id": "notification-recipients-workflow-boundary",
+      "kind": "service",
+      "resources": [
+        "system.notifications",
+        "system.automation.workflows"
+      ],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "rationale": "Atomic service-only notification dispatcher binds current published workflow, version, run, executor and actual source workspace. Private non-BYPASSRLS subject bridges retain canonical source policies and explicit deny for all six modules. Each resolved candidate requires active membership and actual source read. Named managers/delegates and pending approvers never escalate implicitly; no followers invented. Raw variable templates become a neutral notice, not executor snapshot values. Existing workflow step authorization remains in force for all other operations; no role key or grant is added. UI edits the existing workflow draft, no direct notification writes. SQL-claims disposable tests execute the real dispatcher and canonical predicates; real JWT/PostgREST acceptance is separate.",
+      "exception": {
+        "mechanism": "service_role execute grant plus role claim and null auth.uid; workflow/run/version/source proof; private bridges revoked from browser and service callers.",
+        "boundary": "Only current workflow source and active readable recipients, at most 200 per action; no external channel or arbitrary user impersonation RPC.",
+        "revocation": "Disable/publish another workflow version, revoke executor/source access or recipient membership/permissions; gate rechecks every dispatch.",
+        "review_by": "2027-04-30"
+      },
+      "controls": [
+        {"file": "src/hooks/use-workspace-members.ts", "symbol": "useWorkspaceMembers"},
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/access-control/sales-worker.server.ts",
+          "symbol": "assertSalesWorker"
+        },
+        {
+          "file": "src/lib/notification-dispatch.server.ts",
+          "symbol": "dispatchWorkflowNotification"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/workflows/engine-actions.server.ts",
+          "symbol": "runActions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0391_notification_recipients.sql",
+          "symbol": "notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0391_notification_recipients.sql",
+          "symbol": "techerp_api.notification_source_visible"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/notification-recipients-postgres.test.ts",
+          "name": "notification recipients allow authorized member"
+        },
+        "missing_permission": {
+          "file": "src/lib/notification-recipients-postgres.test.ts",
+          "name": "notification recipients reject missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/notification-recipients-postgres.test.ts",
+          "name": "notification recipients reject explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/notification-recipients-postgres.test.ts",
+          "name": "notification recipients reject foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/notification-recipients-postgres.test.ts",
+          "name": "notification recipients reject inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0391_notification_recipients.sql": "12eec659a22ef6a3bf13a2fd376b3fd50e84752da281d6d19e533ff826dcd37a",
+        "src/lib/notification-dispatch.server.ts": "622dda9a72807079d42b9666e685f783f3bb042d3d4c9dd144ea97aef8f2c221",
+        "src/lib/workflows/engine-actions.server.ts": "56501d9c8a6479b3c6f196911e422a4b5d22a20766ff5a042c4bcabd28a578f5",
+        "src/lib/workflows/engine/actions-messaging.server.ts": "b82798b139a520b8a04d84868e4fa80fff0da5fecc0ace45292aa40dfa8c9a07",
+        "src/components/workflows/builder/step-forms/notification-form.tsx": "5f79f59939a943e2d21b470e7050ac69200abd5a5baf3ab17858163cdbfb841f"
       }
     }
   ],

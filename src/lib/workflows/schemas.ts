@@ -2,6 +2,7 @@
 // Extraído de workflows.functions.ts porque o split transform do TanStack
 // remove helpers de module-scope do bundle onde createServerFn é chamado.
 import { z } from "zod";
+import { notificationRecipientRulesSchema } from "@/lib/notification-recipients";
 
 export const EntityEnum = z.enum([
   "leads",
@@ -160,7 +161,8 @@ export const SimpleActionSchema = z.discriminatedUnion("type", [
     type: z.literal("send_notification"),
     title: z.string().min(1).max(200),
     body: z.string().max(2000).optional(),
-    user_id: z.string().uuid().optional(),
+    user_id: z.union([z.string().uuid(), z.literal("").transform(() => undefined)]).optional(),
+    recipients: notificationRecipientRulesSchema.optional(),
   }),
   z.object({
     type: z.literal("webhook"),
