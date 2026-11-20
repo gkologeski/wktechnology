@@ -16,6 +16,8 @@ const state = vi.hoisted(() => ({
   updatePrefs: vi.fn(),
   centerPrefs: vi.fn(),
   list: vi.fn(),
+  badge: vi.fn(),
+  lookup: vi.fn(),
   mark: vi.fn(),
   toast: vi.fn(),
   success: vi.fn(),
@@ -48,6 +50,8 @@ vi.mock("@/lib/notification-center.functions", () => ({
   getNotificationCenter: state.list,
   markCenterNotifications: state.mark,
   getCenterPreferences: state.centerPrefs,
+  getNotificationCenterBadge: state.badge,
+  lookupCenterNotifications: state.lookup,
 }));
 vi.mock("sonner", () => ({
   toast: { message: state.toast, success: state.success, error: state.error },
@@ -57,7 +61,7 @@ vi.mock("@/integrations/supabase/client", () => ({
     channel: () => {
       const sub: Subscription = { on: vi.fn(), subscribe: vi.fn() };
       sub.on.mockImplementation((_event, _filter, cb) => {
-        sub.callback = cb;
+        if (_filter.event === "INSERT") sub.callback = cb;
         return sub;
       });
       sub.subscribe.mockReturnValue(sub);
@@ -67,11 +71,33 @@ vi.mock("@/integrations/supabase/client", () => ({
     removeChannel: state.removeChannel,
   },
 }));
-vi.mock("@/components/ui/popover", () => ({
-  Popover: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
-  PopoverTrigger: ({ children }: { children?: ReactNode }) => children,
-  PopoverContent: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
-}));
+vi.mock("@/components/ui/popover", async () => {
+  const React = await import("react");
+  const Context = React.createContext<{ open: boolean; onOpenChange: (value: boolean) => void }>({
+    open: false,
+    onOpenChange: (_value: boolean) => undefined,
+  });
+  return {
+    Popover: ({
+      children,
+      open,
+      onOpenChange,
+    }: {
+      children?: ReactNode;
+      open: boolean;
+      onOpenChange: (value: boolean) => void;
+    }) => createElement(Context.Provider, { value: { open, onOpenChange } }, children),
+    PopoverTrigger: ({ children }: { children: React.ReactElement }) => {
+      const c = React.useContext(Context);
+      return React.cloneElement(children as React.ReactElement<{ onClick: () => void }>, {
+        onClick: () => c.onOpenChange(!c.open),
+      });
+    },
+    PopoverContent: ({ children }: { children?: ReactNode }) =>
+      React.useContext(Context).open ? createElement("div", null, children) : null,
+  };
+});
+vi.mock("@/lib/view-as-client", () => ({ readViewAs: () => null }));
 vi.mock("@/components/ui/scroll-area", () => ({
   ScrollArea: ({ children }: { children?: ReactNode }) => createElement("div", null, children),
 }));
@@ -106,6 +132,11 @@ async function render(component: ComponentType) {
   );
   await settle();
 }
+async function renderBell() {
+  await render(NotificationsBell);
+  const trigger = host.querySelector<HTMLButtonElement>('button[aria-label="Notificações"]');
+  if (trigger && !trigger.disabled) await click(trigger);
+}
 async function click(element: Element | null) {
   expect(element).not.toBeNull();
   await act(async () => element!.dispatchEvent(new MouseEvent("click", { bubbles: true })));
@@ -124,9 +155,18 @@ function preference(label: string) {
   expect(item).toBeDefined();
   return item!;
 }
+const noticeIds = new Map<string, string>();
+function noticeId(key: string) {
+  if (!noticeIds.has(key))
+    noticeIds.set(
+      key,
+      `00000000-0000-4000-8000-${(noticeIds.size + 1).toString(16).padStart(12, "0")}`,
+    );
+  return noticeIds.get(key)!;
+}
 function notice(type = "mention", extra: Record<string, unknown> = {}) {
   return {
-    id: `notice-${type}`,
+    id: noticeId(type),
     type,
     title: `Autorizado ${type}`,
     body: "Contexto autorizado",
@@ -160,6 +200,9 @@ async function deliver(
       new: { id: row.id, type, title: "PAYLOAD NÃO CONFIÁVEL", body: "Nunca renderizar" },
     }),
   );
+  await act(async () => {
+    await new Promise((done) => setTimeout(done, 130));
+  });
   await settle();
 }
 class AudioContextStub {
@@ -186,6 +229,7 @@ beforeEach(() => {
   state.contextError = false;
   state.subscriptions = [];
   state.rows = [];
+  noticeIds.clear();
   state.audioStarts = 0;
   state.getPrefs.mockResolvedValue({ prefs: normalizeNotificationPrefs({}) });
   state.updatePrefs.mockResolvedValue({ ok: true });
@@ -201,6 +245,15 @@ beforeEach(() => {
     unread: 1,
     nextCursor: null,
     cutoff: "2026-11-20T12:00:00Z",
+  }));
+  state.badge.mockImplementation(async () => ({
+    unread: 1,
+    unreadCapped: false,
+    checkedAt: new Date().toISOString(),
+  }));
+  state.lookup.mockImplementation(async ({ data }: { data: { ids: string[] } }) => ({
+    items: state.rows.filter((row) => data.ids.includes(String(row.id))),
+    checkedAt: new Date().toISOString(),
   }));
   state.mark.mockResolvedValue({ updated: 1 });
   state.removeChannel.mockResolvedValue("ok");
@@ -266,7 +319,7 @@ describe("sino com proveniência e revalidação", () => {
     state.centerPrefs.mockResolvedValue(
       prefs({}, { sla: { inapp: true, sound: false, shake: false } }),
     );
-    await render(NotificationsBell);
+    await renderBell();
     for (const type of ["sla.first_response_breach", "sla.resolution_breach", "sla.at_risk"])
       await deliver(type);
     expect(state.toast).toHaveBeenCalledTimes(3);
@@ -274,7 +327,7 @@ describe("sino com proveniência e revalidação", () => {
     expect(host.querySelector(".animate-bell-shake")).toBeNull();
   });
   it("consulta apenas o workspace ativo e oferece acesso à central", async () => {
-    await render(NotificationsBell);
+    await renderBell();
     expect(state.list).toHaveBeenCalledWith({
       data: {
         workspaceId: "workspace-a",
@@ -288,16 +341,16 @@ describe("sino com proveniência e revalidação", () => {
     expect(host.textContent).toContain("Histórico user-a:workspace-a");
   });
   it("usa somente o conteúdo revalidado pela API, nunca o payload realtime", async () => {
-    await render(NotificationsBell);
+    await renderBell();
     await deliver("mention");
-    expect(state.toast).toHaveBeenCalledExactlyOnceWith("Autorizado mention", {
-      description: "Contexto autorizado",
+    expect(state.toast).toHaveBeenCalledExactlyOnceWith("Novos avisos disponíveis", {
+      description: "Abra a central para consultar as atualizações deste workspace.",
     });
     expect(host.textContent).not.toContain("PAYLOAD NÃO CONFIÁVEL");
     expect(state.audioStarts).toBe(1);
   });
   it("não interrompe quando o aviso não pertence ao resultado autorizado", async () => {
-    await render(NotificationsBell);
+    await renderBell();
     await deliver("mention", {}, false);
     expect(state.toast).not.toHaveBeenCalled();
     expect(state.audioStarts).toBe(0);
@@ -306,7 +359,7 @@ describe("sino com proveniência e revalidação", () => {
     state.centerPrefs.mockResolvedValue(
       prefs({ eventOverrides: { "legacy.mention": { inapp: false } } }),
     );
-    await render(NotificationsBell);
+    await renderBell();
     await deliver("mention");
     await deliver("future.unknown");
     expect(state.toast).not.toHaveBeenCalled();
@@ -314,12 +367,12 @@ describe("sino com proveniência e revalidação", () => {
   });
 
   it("revalida opt-out alterado em outra sessão antes de interromper", async () => {
-    await render(NotificationsBell);
+    await renderBell();
     state.centerPrefs.mockResolvedValue(
       prefs({ eventOverrides: { "legacy.mention": { inapp: false } } }),
     );
     await deliver("mention");
-    expect(state.centerPrefs).toHaveBeenCalledTimes(2);
+    expect(state.centerPrefs).toHaveBeenCalledTimes(1);
     expect(state.toast).not.toHaveBeenCalled();
     expect(state.audioStarts).toBe(0);
   });
@@ -335,7 +388,7 @@ describe("sino com proveniência e revalidação", () => {
     state.centerPrefs.mockResolvedValue(
       prefs({ quiet: { enabled: true, timezone: "UTC", start, end } }),
     );
-    await render(NotificationsBell);
+    await renderBell();
     await deliver("mention");
     expect(state.toast).not.toHaveBeenCalled();
     expect(state.audioStarts).toBe(0);
@@ -344,38 +397,39 @@ describe("sino com proveniência e revalidação", () => {
   it("aguarda as preferências antes de interromper", async () => {
     const pending = deferred<ReturnType<typeof prefs>>();
     state.centerPrefs.mockReturnValue(pending.promise);
-    await render(NotificationsBell);
+    await renderBell();
     await deliver("mention");
     expect(state.toast).not.toHaveBeenCalled();
     await act(async () => pending.resolve(prefs()));
     await settle();
-    await deliver("assignment");
     expect(state.toast).toHaveBeenCalledTimes(1);
+    await deliver("assignment");
+    expect(state.toast).toHaveBeenCalledTimes(2);
   });
   it("suprime mensagens de Inbox na Inbox sem silenciar comentários", async () => {
     window.history.replaceState({}, "", "/inbox/whatsapp");
-    await render(NotificationsBell);
+    await renderBell();
     await deliver("message", {
-      id: "inbox-message",
+      id: "00000000-0000-4000-8000-000000000101",
       entity: "inbox_conversation",
       link: "/inbox/whatsapp",
     });
     await deliver("message", {
-      id: "activity-message",
+      id: "00000000-0000-4000-8000-000000000102",
       entity: "activity",
       link: "/deals/demo",
       title: "Comentário autorizado",
     });
-    expect(state.toast).toHaveBeenCalledExactlyOnceWith("Comentário autorizado", {
-      description: "Contexto autorizado",
+    expect(state.toast).toHaveBeenCalledExactlyOnceWith("Novos avisos disponíveis", {
+      description: "Abra a central para consultar as atualizações deste workspace.",
     });
   });
   it("não usa callbacks nem caches de outro usuário ou workspace", async () => {
-    await render(NotificationsBell);
+    await renderBell();
     const oldSub = state.subscriptions.at(-1)!;
     state.userId = "user-b";
     state.workspaceId = "workspace-b";
-    await render(NotificationsBell);
+    await renderBell();
     expect(host.textContent).not.toContain("Histórico user-a:workspace-a");
     expect(host.textContent).toContain("Histórico user-b:workspace-b");
     await deliver("mention", {}, false, oldSub);
@@ -383,23 +437,16 @@ describe("sino com proveniência e revalidação", () => {
     expect(state.removeChannel).toHaveBeenCalledWith(oldSub);
   });
   it("descarta resposta pendente do contexto anterior", async () => {
-    await render(NotificationsBell);
-    const pending = deferred<{
-      items: ReturnType<typeof notice>[];
-      unread: number;
-      nextCursor: null;
-      cutoff: string;
-    }>();
-    state.list.mockReturnValueOnce(pending.promise);
+    await renderBell();
+    const pending = deferred<{ items: ReturnType<typeof notice>[]; checkedAt: string }>();
+    state.lookup.mockReturnValueOnce(pending.promise);
     await deliver("mention", {}, false);
     state.workspaceId = "workspace-b";
-    await render(NotificationsBell);
+    await renderBell();
     await act(async () =>
       pending.resolve({
         items: [notice("mention")],
-        unread: 1,
-        nextCursor: null,
-        cutoff: "2026-11-20T12:00:00Z",
+        checkedAt: new Date().toISOString(),
       }),
     );
     await settle();
@@ -407,14 +454,14 @@ describe("sino com proveniência e revalidação", () => {
   });
   it("mostra falha de leitura com repetição, sem simular caixa vazia", async () => {
     state.list.mockRejectedValue(new Error("Banco indisponível"));
-    await render(NotificationsBell);
+    await renderBell();
     expect(host.querySelector('[role="alert"]')).not.toBeNull();
     expect(host.textContent).not.toContain("Nenhuma notificação neste workspace");
     expect(button("Tentar novamente")).not.toBeNull();
   });
   it("marca somente IDs carregados com o cutoff e relata falha", async () => {
     state.mark.mockRejectedValue(new Error("Leitura não foi salva"));
-    await render(NotificationsBell);
+    await renderBell();
     await click(button("Marcar carregadas"));
     expect(state.mark).toHaveBeenCalledExactlyOnceWith({
       data: {
@@ -429,9 +476,12 @@ describe("sino com proveniência e revalidação", () => {
   });
   it("não consulta avisos enquanto o contexto de permissão está inválido", async () => {
     state.contextError = true;
-    await render(NotificationsBell);
+    await renderBell();
     expect(state.list).not.toHaveBeenCalled();
     expect(state.subscriptions).toHaveLength(0);
-    expect(host.textContent).toContain("Aguardando acesso ao workspace");
+    expect(
+      host.querySelector<HTMLButtonElement>('button[aria-label="Notificações"]')?.disabled,
+    ).toBe(true);
+    expect(host.textContent).not.toContain("Histórico");
   });
 });

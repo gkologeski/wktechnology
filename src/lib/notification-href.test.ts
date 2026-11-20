@@ -51,3 +51,22 @@ describe("notificationHref", () => {
     });
   });
 });
+
+it.each(["/inbox/email", "/inbox/chat", "/inbox/linkedin"])(
+  "opens the exact authorized conversation for %s",
+  (path) => {
+    expect(notificationHref({ link: path, entity: "inbox_conversation", entity_id: id })).toEqual({
+      to: path,
+      search: { conversation: id },
+    });
+  },
+);
+it("does not derive a conversation from malformed identifiers", () => {
+  expect(
+    notificationHref({
+      link: "/inbox/email",
+      entity: "inbox_conversation",
+      entity_id: "other&redirect=external",
+    }),
+  ).toEqual({ to: "/inbox/email" });
+});

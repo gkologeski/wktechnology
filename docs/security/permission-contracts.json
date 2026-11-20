@@ -14663,7 +14663,7 @@
       "scopes": [
         "own"
       ],
-      "rationale": "Personal center and preferences bind verified session, active selected workspace, own recipient and membership. New source proof is captured only for new inserts with actual source workspace; no historical attribution/backfill. Workspace reads and raw Data API RLS revalidate source access using private non-BYPASSRLS subject bridges; old unproven history is neutral without links. IDs/cutoff bounded reads, snooze state and revision CAS never approve or conclude tasks. Direct notification update/delete and preference/context tables are private. Workspace/event preference overlay extends the service-only package 2 dispatcher without bypassing its workflow/run/source/recipient checks. Bell revalidates realtime payload through the authorized API before interruption; identity/workspace-qualified caches and silence are personal. No new grants, scheduled external delivery, channels, WhatsApp opt-in or activation of planned events.",
+      "rationale": "Personal center and preferences bind verified session, active selected workspace, own recipient and membership. New source proof is captured only for new inserts with actual source workspace; no historical attribution/backfill. Workspace reads and raw Data API RLS revalidate source access using private non-BYPASSRLS subject bridges; old unproven history is neutral without links. IDs/cutoff bounded reads, snooze state and revision CAS never approve or conclude tasks. Direct notification update/delete and preference/context tables are private. Workspace/event preference overlay extends the service-only package 2 dispatcher without bypassing its workflow/run/source/recipient checks. Bell revalidates realtime payload through the authorized API before interruption; identity/workspace-qualified caches and silence are personal. No new grants, scheduled external delivery, channels, WhatsApp opt-in or activation of planned events. Package 5 reviewed: independent bounded live badge and protected ID lookup, batched scoped realtime, cross-session read/snooze refresh, gated search actions, context navigation and mobile detail. No new producers, priorities, deliveries or forced channels.",
       "exception": {
         "mechanism": "Authenticated JWT plus work_access_context and explicit expected workspace; SQL actor derives auth.uid and enforces active membership. Service dispatcher retains service_role-only execution and run proof.",
         "boundary": "Only own notification state/preferences in the selected active workspace; each proven source must remain readable. Unproven historical items return neutral personal metadata only. No other-user preference API.",
@@ -14748,38 +14748,50 @@
         {
           "file": "drizzle/migrations/0392_notification_center.sql",
           "symbol": "notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0394_notification_center_live.sql",
+          "symbol": "notification_center_badge"
+        },
+        {
+          "file": "drizzle/migrations/0394_notification_center_live.sql",
+          "symbol": "notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0394_notification_center_live.sql",
+          "symbol": "notification_center_list"
         }
       ],
       "tests": {
         "allowed": {
-          "file": "src/lib/notification-center-postgres.test.ts",
-          "name": "notification center allows authorized source reader"
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live allows authorized reader"
         },
         "missing_permission": {
-          "file": "src/lib/notification-center-postgres.test.ts",
-          "name": "notification center rejects missing source permission"
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live rejects missing permission"
         },
         "explicit_deny": {
-          "file": "src/lib/notification-center-postgres.test.ts",
-          "name": "notification center rejects explicit source deny"
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live rejects explicit deny"
         },
         "foreign_workspace": {
-          "file": "src/lib/notification-center-postgres.test.ts",
-          "name": "notification center rejects foreign workspace"
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live rejects foreign workspace"
         },
         "inactive_member": {
-          "file": "src/lib/notification-center-postgres.test.ts",
-          "name": "notification center rejects inactive member"
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live rejects inactive member"
         }
       },
       "files": {
         "drizzle/migrations/0392_notification_center.sql": "6bd5e9bdfaa07667894731af3d8d36eea48e15fdbb065fc0b1e46af59c506a53",
-        "src/lib/notification-center.functions.ts": "41b48a7902e21c4d108e01f172e015557ed84b5476ed271373e06f1e5ad84449",
-        "src/routes/_authenticated/notifications.tsx": "cc224c960e9a391b98dc1db479c01353dca873c90eae58f642b5afd16591aef8",
-        "src/components/notifications/notification-center.tsx": "1dae7fb2afa379eb99017c3047d1b9394802f49f6df3dbe71eb823e6ef215509",
+        "src/lib/notification-center.functions.ts": "bf444974cf09fef45a9837bd18d51e86e211e9e3654bee23a1e768fe316adcc8",
+        "src/routes/_authenticated/notifications.tsx": "88faf21bc3b79f7eef09f6c8b22b5da7471e21843e6f6b8d44b1785983ce25fb",
+        "src/components/notifications/notification-center.tsx": "b9a68699ac6148f39626f8b41633d257763df048312bb26cda0b11a6bf385218",
         "src/components/notifications/notification-preferences-panel.tsx": "0e0cd5446ffe4104be1084f26e15f3dd37910a79f96612f5c38878c416f8da89",
-        "src/components/notifications-bell.tsx": "d383db44bf4c619ec93ca0aa5d0a5394c04293a5cf573b6df9e28db7b528e0f2",
-        "src/components/notifications/notification-detail.tsx": "b38642600a8eeb40b96b2c6520fadc0b94337344a441c936b97e5c167adb0830"
+        "src/components/notifications-bell.tsx": "6fd535358ba6365ec499d989ad68d52f93527f5436a7d9c04a596990aed8273a",
+        "src/components/notifications/notification-detail.tsx": "165206108f9acbb1a1ebf42936ce3a25cf9667f3d3a284c819117577e62ee446"
       }
     },
     {
@@ -14788,7 +14800,7 @@
       "rationale": "Pure strict schemas, context-race consistency assertion, catalogue metadata, partial preference overlay merge/diff, local-clock silence and grouping of already-loaded items. No I/O, delivery, grant or recipient lookup; authoritative session/membership/source checks and persistence belong to the personal workspace RPC boundary.",
       "files": {
         "src/lib/notification-center-preferences.ts": "d2657f6f87466c602e156f919d62ddeed0e9e7744ec061f46e7905be13a0c191",
-        "src/lib/notification-center.ts": "8666a129d8234e1b684a74361f0a1ca45272364ab204f99f05167262317fc9bf"
+        "src/lib/notification-center.ts": "7ded5f683d543113a62fea9e4a200bc126054df876a8a0d720e921c9506fb4cc"
       }
     },
     {
@@ -14797,7 +14809,7 @@
       "rationale": "Pure verified internal notification destination parsing and shell route classification metadata; no I/O, business reads, grants or action execution. Destination pages retain their own permission gates.",
       "files": {
         "src/lib/menu-config-erp.ts": "020ab63c23b207448391b0398a1412fed60149d73a5d43f5a2722c8655732888",
-        "src/lib/notification-href.ts": "74131c970d252c5aa4d28486b73521cf0335daaf40c86401da63428d312c5d60"
+        "src/lib/notification-href.ts": "08a5367c476eac5f520feac2b8a9b8c27acfdf408ca88930dfce74dc5f9adaef"
       }
     },
     {
@@ -15040,6 +15052,149 @@
         "src/lib/notifications/delivery-types.ts": "ad4d17d136ef9e5d301a8be341447f53e429b142c7c41ea65ad07dcfff97dfab",
         "src/lib/notification-delivery-interaction.ts": "db12a925a3b50ec7e185d4cd9845589ae35cadaea50b9775088d9b07be70e422",
         "src/lib/notification-delivery.functions.ts": "0e64b90c0ca9a09b13b90ce6c183e6517dbe685ce3c9ac3c6d516efaaf5f7d31"
+      }
+    },
+    {
+      "id": "notification-center-live-reads",
+      "kind": "personal",
+      "resources": [
+        "system.notifications"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own"
+      ],
+      "rationale": "Package 5 completes original Central/Bell scope already partly delivered in package 3. New badge returns bounded own/source-authorized count only; lookup accepts at most 30 explicit UUIDs and proves own recipient, active selected workspace and current source access. Read-only helper resolves professional/supplier module from authorized canonical request kind, without title/link inference. Existing list, cursor, cutoff, mark/snooze and legacy-neutral history contracts preserved. No new producer, channel, grants, priority inference or external messages.",
+      "exception": {
+        "mechanism": "Verified session, work_access_context, explicit expected selected workspace and auth.uid-derived actor; private source bridge runs actual current RLS.",
+        "boundary": "Own proven notifications in the selected active workspace only. Unproven history excluded from live lookup and badge, never backfilled. Canonical request discriminator read only after source authorization.",
+        "revocation": "Missing source permission, explicit deny, foreign workspace, inactive membership, deleted source or changed selected context removes the corresponding items/count; read-only sessions cannot mutate.",
+        "review_by": "2027-04-30"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0394_notification_center_live.sql",
+          "symbol": "notification_center_badge"
+        },
+        {
+          "file": "drizzle/migrations/0394_notification_center_live.sql",
+          "symbol": "notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0394_notification_center_live.sql",
+          "symbol": "techerp_api.notification_center_source_module"
+        },
+        {
+          "file": "drizzle/migrations/0394_notification_center_live.sql",
+          "symbol": "notification_center_list"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live allows authorized reader"
+        },
+        "missing_permission": {
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live rejects inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0394_notification_center_live.sql": "22786b693cb7fc0cec54b45f4c2b410e02b04fb2f686df3434936f5d832df758"
+      }
+    },
+    {
+      "id": "notification-center-realtime-buffer",
+      "kind": "internal",
+      "resources": [
+        "system.notifications"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own"
+      ],
+      "rationale": "Bounded ephemeral UUID queue and timer coalescing for scoped UI refresh and interruptions. No direct database/provider I/O, stored message content, recipient lookup or business mutation. Bell binds active lifetime to authenticated identity/workspace; current source, membership and preferences are revalidated by protected lookup before interruption. UPDATE/DELETE refresh only, never emit new business events.",
+      "exception": {
+        "mechanism": "Executable active lifetime guard and UUID validation; caller binds isActive to mounted authenticated identity plus selected workspace. All callback reads are delegated to requireWorkspaceContext and current source RLS.",
+        "boundary": "Only ephemeral IDs from current user subscriptions; at most 100 pending and 30 IDs per protected lookup. No raw realtime content, external message, entity mutation or alternate identity.",
+        "revocation": "Dispose, identity/workspace change, inactive context, failed current RPC, source denial, read/snooze and current preference/quiet checks stop corresponding interruptions.",
+        "review_by": "2027-04-30"
+      },
+      "controls": [
+        {
+          "file": "src/lib/notification-center-realtime.ts",
+          "symbol": "active"
+        },
+        {
+          "file": "src/lib/notification-center-realtime.ts",
+          "symbol": "isNotificationRealtimeId"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0394_notification_center_live.sql",
+          "symbol": "notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0394_notification_center_live.sql",
+          "symbol": "notification_center_badge"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live allows authorized reader"
+        },
+        "missing_permission": {
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live rejects foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/notification-center-live-postgres.test.ts",
+          "name": "notification center live rejects inactive member"
+        }
+      },
+      "files": {
+        "src/lib/notification-center-realtime.ts": "01f352fda437963157483d5e1affc0e9a94857b9eab1af5a00b91507ad52fb40"
       }
     }
   ],

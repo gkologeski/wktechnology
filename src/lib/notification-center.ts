@@ -37,6 +37,26 @@ const rawItemSchema = z.object({
   read_at: z.string().datetime({ offset: true }).nullable(),
   snoozed_until: z.string().datetime({ offset: true }).nullable(),
 });
+export const notificationCenterBadgeSchema = z.object({
+  unread: z.number().int().min(0).max(100),
+  unreadCapped: z.boolean(),
+  checkedAt: z.string().datetime({ offset: true }),
+});
+export const notificationCenterLookupInputSchema = z
+  .object({
+    workspaceId: z.string().uuid(),
+    ids: z.array(z.string().uuid()).min(1).max(30),
+  })
+  .strict();
+export function parseNotificationCenterLookup(raw: unknown) {
+  const result = z
+    .object({
+      items: z.array(rawItemSchema).max(30),
+      checkedAt: z.string().datetime({ offset: true }),
+    })
+    .parse(raw);
+  return { ...result, items: result.items.map(withNotificationEvent) };
+}
 export const notificationCenterPageSchema = z.object({
   items: z.array(rawItemSchema).max(30),
   unread: z.number().int().min(0).max(100),

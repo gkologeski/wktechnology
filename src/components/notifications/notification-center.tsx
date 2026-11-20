@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { Bell, CheckCheck, Loader2, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +8,13 @@ import type { NotificationCenterItem } from "@/lib/notification-center";
 import { NotificationDetail } from "./notification-detail";
 import { formatDateTime } from "@/lib/crm";
 import { groupSummary } from "@/lib/notification-center-preferences";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 
 export type CenterFilters = {
   scope: "workspace" | "legacy";
@@ -19,9 +27,14 @@ type Props = {
   items: NotificationCenterItem[];
   filters: CenterFilters;
   selectedId: string | null;
-  unread: number;
+  unread: number | null;
   unreadCapped?: boolean;
   loading: boolean;
+  searchPending?: boolean;
+  focusedItem?: NotificationCenterItem | null;
+  detailLoading?: boolean;
+  detailError?: string | null;
+  onDismiss?: () => void;
   error?: string | null;
   actionError?: string | null;
   pending: boolean;
@@ -57,14 +70,55 @@ function stateLabel(item: NotificationCenterItem) {
 
 export function NotificationCenter(props: Props) {
   const { items, filters, selectedId, onFilters } = props;
-  const selected = items.find((item) => item.id === selectedId) ?? null;
-  const visibleUnread = items.filter((item) => !item.read_at).slice(0, 100);
+  const ready = !props.loading && !props.error && !props.searchPending;
+  const visibleItems = ready ? items : [];
+  const selected =
+    visibleItems.find((item) => item.id === selectedId) ??
+    (ready && props.focusedItem?.id === selectedId ? props.focusedItem : null);
+  const visibleUnread = visibleItems.filter((item) => !item.read_at).slice(0, 100);
+  const [compact, setCompact] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const origin = useRef<HTMLButtonElement | null>(null);
+  const listHeading = useRef<HTMLHeadingElement | null>(null);
+  const detailTitle = useRef<HTMLHeadingElement | null>(null);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const query = window.matchMedia("(max-width: 1023px)");
+    const update = () => setCompact(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+  useEffect(() => {
+    if (!compact || !selectedId) setMobileOpen(false);
+    else setMobileOpen(true);
+  }, [compact, selectedId]);
+  const interactionBlocked = props.pending || !ready;
+  const detail = (
+    <NotificationDetail
+      selected={selected}
+      category={selected ? categoryLabel(selected) : ""}
+      status={selected ? stateLabel(selected) : ""}
+      pending={interactionBlocked || props.detailLoading === true}
+      loading={props.detailLoading || (!ready && !props.error)}
+      error={props.error || props.detailError}
+      onRead={props.onRead}
+      onSnooze={props.onSnooze}
+    />
+  );
   const groups = groupSummary(
-    items,
+    visibleItems,
     props.summary?.mode ?? "none",
     props.summary?.timezone ?? "UTC",
   );
-  const change = (patch: Partial<CenterFilters>) => onFilters({ ...filters, ...patch });
+  const change = (patch: Partial<CenterFilters>) => {
+    const next = { ...filters, ...patch };
+    if (next.scope === "legacy") {
+      next.q = "";
+      next.module = "";
+    }
+    onFilters(next);
+  };
   return (
     <section className="space-y-4" aria-label="Minha central de notificações">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -76,8 +130,21 @@ export function NotificationCenter(props: Props) {
           >
             Workspace ativo{" "}
             {filters.scope === "workspace" && (
-              <Badge variant="secondary" className="ml-2">
-                {props.unreadCapped || props.unread >= 100 ? "99+" : props.unread}
+              <Badge
+                variant="secondary"
+                className="ml-2"
+                title="Não lidas neste filtro"
+                aria-label={
+                  !ready || props.unread === null
+                    ? "Contagem indisponível"
+                    : "Não lidas neste filtro"
+                }
+              >
+                {!ready || props.unread === null
+                  ? "…"
+                  : props.unreadCapped || props.unread >= 100
+                    ? "99+"
+                    : props.unread}
               </Badge>
             )}
           </Button>
@@ -96,7 +163,8 @@ export function NotificationCenter(props: Props) {
       {filters.scope === "legacy" && (
         <p className="rounded-lg bg-muted/40 p-3 text-sm text-muted-foreground" role="note">
           Avisos pessoais antigos sem workspace comprovado. Este histórico fica separado; não
-          atribuímos uma empresa pela descrição ou pelo link.
+          atribuímos uma empresa pela descrição ou pelo link. A busca por conteúdo fica desativada
+          neste histórico.
         </p>
       )}
       <div className="flex flex-wrap gap-3">
@@ -124,7 +192,8 @@ export function NotificationCenter(props: Props) {
           />
           <Input
             className="pl-9"
-            value={filters.q}
+            value={filters.scope === "legacy" ? "" : filters.q}
+            disabled={filters.scope === "legacy"}
             onChange={(event) => change({ q: event.target.value })}
             placeholder="Buscar por assunto…"
             maxLength={120}
@@ -171,25 +240,27 @@ export function NotificationCenter(props: Props) {
             Tentar novamente
           </Button>
         </div>
-      ) : props.loading ? (
+      ) : props.loading || props.searchPending ? (
         <div className="flex items-center gap-2 p-8 text-muted-foreground" role="status">
-          <Loader2 className="h-4 w-4 animate-spin" /> Carregando notificações…
+          <Loader2 className="h-4 w-4 animate-spin" />{" "}
+          {props.searchPending ? "Atualizando a busca…" : "Carregando notificações…"}
         </div>
       ) : (
         <div className="grid min-h-96 gap-6 lg:grid-cols-[minmax(300px,1fr)_minmax(300px,0.9fr)]">
           <div className="min-w-0">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h2 className="font-semibold">
+              <h2 ref={listHeading} tabIndex={-1} className="font-semibold">
                 Sua caixa de entrada{" "}
                 <span className="text-sm font-normal text-muted-foreground">
-                  · {items.length} carregadas
+                  · {visibleItems.length} carregadas
                 </span>
               </h2>
               <Button
                 size="sm"
                 variant="ghost"
-                disabled={!visibleUnread.length || props.pending}
+                disabled={!visibleUnread.length || interactionBlocked}
                 onClick={() =>
+                  !interactionBlocked &&
                   props.onRead(
                     visibleUnread.map((item) => item.id),
                     true,
@@ -203,7 +274,7 @@ export function NotificationCenter(props: Props) {
               Até 100 avisos carregados por vez; os filtros e o instante da consulta são
               preservados.
             </p>
-            {!items.length ? (
+            {!visibleItems.length ? (
               <div className="space-y-2 py-12 text-center text-muted-foreground">
                 <Bell className="mx-auto h-7 w-7" />
                 <h3 className="font-medium text-foreground">Nenhuma notificação encontrada</h3>
@@ -225,10 +296,17 @@ export function NotificationCenter(props: Props) {
                             type="button"
                             className={`w-full rounded-lg px-4 py-4 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${selectedId === item.id ? "bg-primary/10 ring-1 ring-primary/30" : "bg-background"}`}
                             aria-pressed={selectedId === item.id}
-                            onClick={() => props.onSelect(item.id)}
+                            onClick={(event) => {
+                              if (!ready) return;
+                              origin.current = event.currentTarget;
+                              props.onSelect(item.id);
+                              if (compact) setMobileOpen(true);
+                            }}
                           >
                             <span className="flex items-start justify-between gap-3">
-                              <strong className="break-words text-sm">{item.title}</strong>
+                              <strong className="min-w-0 flex-1 break-words text-sm">
+                                {item.title}
+                              </strong>
                               <span className="shrink-0 text-xs text-muted-foreground">
                                 {stateLabel(item)}
                               </span>
@@ -261,22 +339,47 @@ export function NotificationCenter(props: Props) {
               <Button
                 variant="outline"
                 className="mt-4 w-full"
-                onClick={props.onMore}
-                disabled={props.loadingMore}
+                onClick={() => ready && !props.loadingMore && props.onMore()}
+                disabled={props.loadingMore || !ready}
               >
                 {props.loadingMore ? "Carregando anteriores…" : "Carregar anteriores"}
               </Button>
             )}
           </div>
-          <NotificationDetail
-            selected={selected}
-            category={selected ? categoryLabel(selected) : ""}
-            status={selected ? stateLabel(selected) : ""}
-            pending={props.pending}
-            onRead={props.onRead}
-            onSnooze={props.onSnooze}
-          />
+          {!compact && detail}
         </div>
+      )}
+      {compact && (
+        <Sheet
+          open={mobileOpen && Boolean(selectedId)}
+          onOpenChange={(open) => {
+            setMobileOpen(open);
+            if (!open) props.onDismiss?.();
+          }}
+        >
+          <SheetContent
+            className="w-full max-w-full overflow-y-auto px-4 sm:max-w-lg"
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              detailTitle.current?.focus();
+            }}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              const target = origin.current?.isConnected ? origin.current : listHeading.current;
+              target?.focus();
+            }}
+          >
+            <SheetHeader className="mb-4 pr-6 text-left">
+              <SheetTitle ref={detailTitle} tabIndex={-1}>
+                Detalhe da notificação
+              </SheetTitle>
+              <SheetDescription>
+                Confira o aviso e abra o registro autorizado. Ler não conclui a obrigação.
+              </SheetDescription>
+            </SheetHeader>
+            {detail}
+          </SheetContent>
+        </Sheet>
       )}
     </section>
   );

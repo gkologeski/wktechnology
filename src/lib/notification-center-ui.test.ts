@@ -13,6 +13,10 @@ vi.mock("@tanstack/react-router", () => ({
     createElement("a", { href: to }, children),
 }));
 vi.mock("@/lib/crm", () => ({ formatDateTime: (value: string) => value }));
+vi.mock("@/lib/audit-session", () => ({
+  beginAuditSession: () => "synthetic-session",
+  endAuditSession: () => {},
+}));
 let root: Root;
 let host: HTMLDivElement;
 const row = (patch: Partial<NotificationCenterItem> = {}): NotificationCenterItem => ({

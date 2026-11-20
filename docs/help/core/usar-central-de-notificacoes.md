@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 147
-version: 2
+version: 3
 is_published: true
 ---
 
@@ -103,3 +103,23 @@ Na central, as abas **Regras**, **Modelos e canais** e **Entregas** ampliam o ac
 5. **Suprimida** informa um bloqueio como preferência, consentimento, acesso, configuração ou limite. A central não expõe o destino completo nem a mensagem técnica bruta do provedor.
 
 Os canais externos recebem texto neutro com acesso à central, sem salário, valor, documento pessoal ou cópia do conteúdo da origem. A leitura no TechERP mantém suas permissões atuais. O horário de silêncio adia novas entregas externas; não altera o prazo da obrigação. A organização diária/semanal continua sendo um agrupamento visual, sem envio de digest externo. Estas regras não passam a produzir todos os eventos planejados do catálogo.
+
+
+## Sino e central em tempo real
+
+- O sino mostra o contador do **workspace ativo** sem carregar todo o histórico. A lista é consultada quando você abre o sino. O resumo do sino permite até três páginas; use **Ver central** para continuar no histórico completo.
+- Quando chegam vários avisos juntos, as atualizações são agrupadas. O sistema confere os IDs pela sua sessão antes de interromper; o texto bruto do realtime não é mostrado. Um grupo pode gerar uma única interrupção, respeitando suas preferências e o silêncio.
+- Uma leitura ou um adiamento feito em outra sessão atualiza a consulta, sem gerar um novo som ou pop-up. O polling continua como recuperação quando o realtime não estiver disponível.
+- **Preferências** no rodapé do sino abre as preferências do workspace na central. A configuração global continua acessível em Configurações > Notificações.
+- Ao abrir um aviso de e-mail, chat, WhatsApp ou LinkedIn com uma conversa identificada, o link procura a conversa exata. A Inbox mantém suas próprias permissões; o aviso não concede acesso.
+- Avisos sem um destino de registro podem abrir o próprio detalhe na central. Um link para um aviso fora da primeira página é consultado separadamente e só aparece quando a origem e o destinatário são autorizados.
+
+### Consultar e agir com segurança
+
+1. Digite sua busca e aguarde **Atualizando a busca** desaparecer. Durante a troca do termo, a central não oferece ações sobre os resultados anteriores.
+2. Confira o contador. Ele mostra as não lidas do recorte atual; pode diferir do total do sino quando há filtros. **…** indica contagem ainda não confirmada e não significa zero.
+3. No celular ou tablet, selecione um aviso para abrir o painel de contexto. Feche o painel para voltar à lista e ao item selecionado. No desktop, o contexto permanece ao lado da lista.
+4. Marque a leitura ou adie e aguarde a confirmação. Sessões de consulta somente leitura permitem navegar, mas não alterar leitura ou adiamento.
+5. Se o sistema não conseguir conferir um aviso ou perder acesso à origem, ele não mantém ações sobre o conteúdo antigo como se estivesse confirmado. Atualize a consulta; não tente repetir por outro workspace.
+
+No histórico antigo sem workspace comprovado, a pesquisa por conteúdo fica desativada. O sistema preserva essa separação para não procurar ou revelar textos cuja origem não pôde ser confirmada. Solicitações de profissionais aparecem em TechPeople e solicitações de fornecedores em TechContracts conforme o tipo real do registro autorizado, sem deduzir o módulo pelo título.

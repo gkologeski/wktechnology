@@ -6,6 +6,9 @@ import {
   assertNotificationWorkspace,
   notificationCenterQuerySchema,
   parseNotificationCenterPage,
+  notificationCenterBadgeSchema,
+  notificationCenterLookupInputSchema,
+  parseNotificationCenterLookup,
 } from "./notification-center";
 import {
   centerSettingsPatchSchema,
@@ -126,4 +129,29 @@ export const saveCenterPreferences = createServerFn({ method: "POST" })
       }),
     );
     return { ...raw, settings: normalizeCenterSettings(raw.settings) };
+  });
+
+export const getNotificationCenterBadge = createServerFn({ method: "POST" })
+  .middleware([requireWorkspaceContext()])
+  .inputValidator((input) => workspaceInput.parse(input))
+  .handler(async ({ context, data }) => {
+    assertNotificationWorkspace(context, data.workspaceId);
+    return notificationCenterBadgeSchema.parse(
+      await workRpc(context.supabase, "notification_center_badge", {
+        p_workspace: data.workspaceId,
+      }),
+    );
+  });
+
+export const lookupCenterNotifications = createServerFn({ method: "POST" })
+  .middleware([requireWorkspaceContext()])
+  .inputValidator((input) => notificationCenterLookupInputSchema.parse(input))
+  .handler(async ({ context, data }) => {
+    assertNotificationWorkspace(context, data.workspaceId);
+    return parseNotificationCenterLookup(
+      await workRpc(context.supabase, "notification_center_lookup", {
+        p_workspace: data.workspaceId,
+        p_ids: [...new Set(data.ids)],
+      }),
+    );
   });

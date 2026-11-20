@@ -10,6 +10,8 @@ type Props = {
   category: string;
   status: string;
   pending: boolean;
+  loading?: boolean;
+  error?: string | null;
   onRead: (ids: string[], read: boolean) => void;
   onSnooze: (id: string, minutes: 0 | 60 | 1440) => void;
 };
@@ -18,6 +20,8 @@ export function NotificationDetail({
   category,
   status,
   pending,
+  loading,
+  error,
   onRead,
   onSnooze,
 }: Props) {
@@ -27,7 +31,15 @@ export function NotificationDetail({
       aria-label="Detalhe da notificação"
       className="min-w-0 rounded-xl bg-muted/25 p-5 lg:sticky lg:top-4 lg:self-start"
     >
-      {!selected ? (
+      {error ? (
+        <p role="alert" className="py-5 text-sm text-muted-foreground">
+          {error}
+        </p>
+      ) : loading ? (
+        <p role="status" className="py-5 text-sm text-muted-foreground">
+          Conferindo acesso ao aviso…
+        </p>
+      ) : !selected ? (
         <div className="py-10 text-center text-muted-foreground">
           <h2 className="font-medium text-foreground">Seu contexto aparece aqui</h2>
           <p className="mt-2 text-sm">
@@ -40,7 +52,7 @@ export function NotificationDetail({
             <Badge variant="secondary">{category}</Badge>
             <Badge variant="outline">{status}</Badge>
           </div>
-          <h2 className="break-words text-xl font-semibold">{selected.title}</h2>
+          <h2 className="min-w-0 break-words text-xl font-semibold">{selected.title}</h2>
           {selected.body && (
             <p className="whitespace-pre-wrap break-words text-sm leading-6">{selected.body}</p>
           )}
@@ -62,7 +74,7 @@ export function NotificationDetail({
               size="sm"
               variant="outline"
               disabled={pending}
-              onClick={() => onRead([selected.id], !selected.read_at)}
+              onClick={() => !pending && onRead([selected.id], !selected.read_at)}
             >
               {selected.read_at ? "Marcar não lida" : "Marcar como lida"}
             </Button>
@@ -70,7 +82,7 @@ export function NotificationDetail({
               size="sm"
               variant="outline"
               disabled={pending}
-              onClick={() => onSnooze(selected.id, 60)}
+              onClick={() => !pending && onSnooze(selected.id, 60)}
             >
               Adiar 1 hora
             </Button>
@@ -78,16 +90,16 @@ export function NotificationDetail({
               size="sm"
               variant="outline"
               disabled={pending}
-              onClick={() => onSnooze(selected.id, 1440)}
+              onClick={() => !pending && onSnooze(selected.id, 1440)}
             >
               Adiar 24 horas
             </Button>
-            {selected.snoozed_until && (
+            {selected.snoozed_until && Date.parse(selected.snoozed_until) > Date.now() && (
               <Button
                 size="sm"
                 variant="ghost"
                 disabled={pending}
-                onClick={() => onSnooze(selected.id, 0)}
+                onClick={() => !pending && onSnooze(selected.id, 0)}
               >
                 Cancelar adiamento
               </Button>

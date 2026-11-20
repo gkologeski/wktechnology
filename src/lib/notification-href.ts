@@ -62,7 +62,12 @@ export function notificationHref(n: {
   if (n.link.length > 2048 || /[\\\s#]/.test(n.link)) return null;
   const [path, query] = n.link.split("?");
   if (!lists.has(path) && !detail.test(path)) return null;
-  if (path === "/inbox/whatsapp" && n.entity === "inbox_conversation" && n.entity_id) {
+  if (
+    ["/inbox/whatsapp", "/inbox/email", "/inbox/chat", "/inbox/linkedin"].includes(path) &&
+    n.entity === "inbox_conversation" &&
+    n.entity_id &&
+    new RegExp(`^${ID}$`, "i").test(n.entity_id)
+  ) {
     return { to: path, search: { conversation: n.entity_id } };
   }
   if (query) {
