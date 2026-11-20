@@ -1,0 +1,119 @@
+# NOTIFICA-CENTRAL — pacote 1: catálogo e compatibilidade
+
+## Escopo
+
+Este pacote fornece metadados de eventos e uma política comum para as preferências pessoais e as interrupções do sino. Preserva os produtores, os registros e os fluxos existentes. Não instala regras, migra dados, altera permissões, aplica SQL ou ativa envios externos.
+
+O catálogo fica em `src/lib/notification-catalog.ts`. As preferências e a decisão de interrupção ficam em `src/lib/notification-preferences.ts`. A listagem autenticada e o realtime usam o mesmo resolvedor de tipos legados.
+
+## Evento, grupo e tipo legado
+
+- `type` é o valor já armazenado em `notifications`. Não é renomeado neste pacote.
+- `eventKey` identifica uma entrada do catálogo. Para tipos legados sobrecarregados, a chave é `legacy.<type>`; ela não afirma que um evento de negócio mais específico ocorreu.
+- `category` é o grupo estável de preferências. Não é canal, módulo, permissionamento ou destinatário.
+- `moduleKey` identifica o módulo de um evento planejado. Para aliases legados permanece `null`, pois um mesmo tipo pode atender mais de um módulo.
+- `availability: legacy` significa que há um adaptador de leitura compatível. Não comprova que existe um produtor ativo de cada alias em produção.
+- `availability: planned` reserva um contrato para pacotes posteriores. Não cria produtor, regra, assinatura, agendamento ou canal habilitado.
+
+O resolvedor usa aliases exatos em `Map`. Não usa prefixos genéricos como `sla.*`, propriedades herdadas, títulos, corpo, links ou IDs para inventar a semântica de um registro. Tipo desconhecido resolve para `null` e permanece no histórico.
+
+## Compatibilidade dos 22 aliases
+
+O inventário estático encontrou 19 tipos emitidos e três categorias antigas sem produtor direto identificado (`deal_stage`, `ticket`, `sla`). Os 22 aliases são mantidos para compatibilidade:
+
+| Tipos existentes                                                                      | Grupo de preferências |
+| ------------------------------------------------------------------------------------- | --------------------- |
+| `mention`                                                                             | `mention`             |
+| `assignment`                                                                          | `assignment`          |
+| `deal_stage`                                                                          | `deal_stage`          |
+| `ticket`                                                                              | `ticket`              |
+| `task`, `sequence_handoff`                                                            | `task`                |
+| `sla`, `sla.first_response_breach`, `sla.resolution_breach`, `sla.at_risk`            | `sla`                 |
+| `message`                                                                             | `message`             |
+| `workflow`                                                                            | `workflow`            |
+| `approval`, `role_profile_approval`, `hiring_approval`, `hiring_preparation_approval` | `approval`            |
+| `role_profile`, `hiring_formalization`                                                | `hiring`              |
+| `form_submission`                                                                     | `form`                |
+| `portfolio_conflict`                                                                  | `portfolio`           |
+| `security_scan`, `platform_alert`                                                     | `platform`            |
+
+Sobreposições preservadas:
+
+- `mention` também pode representar revisão ou encaminhamento de agente.
+- `message` pode ser mensagem da Inbox ou comentário de atividade.
+- `task` reúne lembretes e encaminhamentos contratuais com situações diferentes.
+- `workflow` inclui avisos livres, etapas de aprovação, criação de vaga e handoff SDR.
+- `approval` não distingue revisão, aceite, ajuste solicitado ou falta de aprovador.
+- `hiring_approval` atende demanda ATS e vínculo People. Os tipos `hiring_preparation_approval` e `hiring_formalization` atendem tanto profissionais quanto fornecedores e não identificam um único módulo ou estágio.
+
+`withNotificationEvent` acrescenta somente o objeto `event` à resposta da listagem. Não muda `type`, IDs, usuário, workspace, `dedupe_key`, título, corpo, link, leitura ou cursor. O histórico continua sendo lido pelas fronteiras pessoais existentes.
+
+O tipo `hiring_approval` e sua chave de deduplicação não podem ser renomeados no adaptador: o gatilho legado que alimenta `hiring_email_outbox` depende de `type='hiring_approval'` e de `dedupe_key` iniciado por `hiring:`.
+
+## Eventos planejados
+
+Há 27 entradas canônicas planejadas: 23 dos seis módulos e quatro compartilhadas. São metadados para desenvolvimento posterior, sem emissão habilitada por este pacote.
+
+| Módulo                      | Chaves planejadas                                                                                                                    |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| TechSales (`crm`)           | `crm.deal.won`, `crm.deal.lost`, `crm.deal.stage_changed`, `crm.proposal.accepted`                                                   |
+| TechHire (`ats`)            | `ats.application.received`, `ats.interview.scheduled`, `ats.offer.accepted`                                                          |
+| TechPeople (`people`)       | `people.employment.started`, `people.document.expiring`, `people.approval.pending`                                                   |
+| TechContracts (`contracts`) | `contracts.draft.accepted`, `contracts.signature.completed`, `contracts.contract.expiring`, `contracts.contract.renewal_due`         |
+| TechFinance (`finance`)     | `finance.payable.due`, `finance.receivable.due`, `finance.payable.overdue`, `finance.receivable.overdue`, `finance.invoice.received` |
+| TechProjects (`projects`)   | `projects.project.started`, `projects.project.overdue`, `projects.task.overdue`, `projects.milestone.due`                            |
+| Compartilhados              | `shared.approval.pending`, `shared.sla.breached`, `shared.message.received`, `shared.mention.created`                                |
+
+Uma futura integração deve fornecer a chave canônica a partir do produtor autorizado, em vez de deduzi-la de um aviso antigo.
+
+## Preferências e gravação compatível
+
+Os sete grupos anteriores mantêm nomes internos e defaults: `mention`, `assignment`, `deal_stage`, `ticket`, `task`, `sla` e `message`. Valores booleanos explicitamente salvos, inclusive `false`, são preservados.
+
+Os seis novos grupos são `workflow`, `approval`, `hiring`, `form`, `portfolio` e `platform`. O default é `inapp=true`, `email=false`, `sound=false`, `shake=false`. Isso oferece compatibilidade no sino sem habilitar um canal externo ou uma interrupção sonora implicitamente.
+
+`normalizeNotificationPrefs` retorna somente os grupos e canais conhecidos. Quando um canal está ausente, usa o default do grupo. Um canal presente só fica ligado se seu valor for o booleano `true`; valores presentes inválidos ficam desligados, sem coerção por `Boolean(...)`. Campos futuros armazenados não são expostos ao navegador por essa normalização.
+
+`notificationPrefsDiff` faz a tela enviar somente as opções efetivamente alteradas em relação à leitura carregada, em vez de reenviar um snapshot inteiro. Assim, salvar uma mudança não repõe opções que permaneceram intocadas na tela.
+
+`updateMyNotificationPrefs` aceita esse patch estrito de categorias e canais conhecidos. Categorias ou canais desconhecidos enviados pelo cliente são rejeitados; eles não servem como mecanismo para escrever estruturas futuras. O servidor lê o JSON atual e aplica o patch sobre ele:
+
+1. Mantém categorias e campos desconhecidos já armazenados no servidor.
+2. Mantém categorias e canais omitidos por clientes antigos; ausência não equivale a restaurar defaults.
+3. Grava com comparação do valor JSON anterior (compare-and-swap), sempre no `profiles.id` do usuário autenticado. A comparação é de JSONB inclusive para o valor JSON `null`, diferente de SQL NULL; a coluna é `NOT NULL`.
+4. Se outra sessão alterou o valor, relê e reaplica o patch, até três tentativas. Se a disputa persistir, devolve erro de conflito; falha de banco não vira confirmação de sucesso.
+
+A resposta GET, o cache e o acesso a preferências continuam pessoais. As chaves do cache incluem a identidade do usuário. O sino conserva a identidade junto à referência das preferências e não aplica preferências de outro usuário a um novo callback.
+
+## Política de interrupção
+
+`notificationInterruption` resolve a categoria pelo mesmo catálogo usado na listagem:
+
+- Sem preferências carregadas para o usuário atual ou com tipo desconhecido: sem toast, som ou tremor; o histórico não é removido.
+- Com `inapp=false`: sem toast, som ou tremor, mesmo que opções antigas de som ou tremor estejam ligadas.
+- Nos demais casos reconhecidos: toast permitido; som e tremor exigem o booleano `true` do canal correspondente.
+- Para `type='message'`, a supressão dentro da Inbox exige a origem de conversa (`entity='inbox_conversation'`) ou um link relativo da Inbox. A categoria `message` sozinha não identifica Inbox. Um comentário de atividade continua elegível ao aviso mesmo quando a pessoa está nessa tela.
+
+As opções não modificam leitura, execução de tarefa, decisão ou responsabilidade. A alteração de preferência não apaga notificações anteriores. Produtores que já consultam `inapp` ou `email` continuam consultando os mesmos sete grupos com os mesmos defaults.
+
+## Limites operacionais e de autorização
+
+- Não há novo endpoint de publicação de catálogo nem criação de regras neste pacote.
+- Não são criadas permissões ou concessões, nem alteradas RLS, RPCs, membership ou alçadas.
+- A lista e o contador ainda seguem o escopo pessoal atual; o pacote não introduz a segmentação por workspace proposta no protótipo.
+- `notification-scope.test.ts` cobre o filtro pessoal e identificadores; não é nova comprovação de membership, deny ou isolamento RLS real. Esses aceites pertencem ao pacote de fronteira de acesso.
+- O catálogo não filtra o acesso ao registro de origem, resolve responsáveis, escolhe gestor, substituto ou CEO. As fronteiras existentes continuam responsáveis pelo acesso real.
+- A preferência de e-mail não unifica todos os produtores. Alguns fluxos legados gravam diretamente ou possuem envio próprio; a UI e a Ajuda expõem esse limite. Não prometer bloqueio global de e-mail.
+- Não são adicionados WhatsApp nas preferências, opt-in, templates, silêncio, resumos, escalonamento ou reprocessamento de entregas.
+- Não há SQL aplicado, migração de histórico, envio de teste externo ou publicação de produção implícita no catálogo.
+
+## Continuação
+
+Após este pacote, a implementação deve seguir as dependências da auditoria aprovada:
+
+1. Resolver destinatários e a fronteira de acesso, com identidade, membership ativo, workspace, leitura da origem, deny e substituição explícita; incluir os cinco cenários reais de autorização.
+2. Integrar central e preferências com contexto de workspace, links de resolução, leitura confirmada e tratamento dos avisos históricos sem proveniência comprovada.
+3. Unificar as entregas no motor Workflows existente, preservando o ledger e os gravadores canônicos, antes de habilitar WhatsApp, fallback, silêncio e resumos.
+4. Conectar produtores canônicos e regras em pacotes pequenos, testando duplicidade, falha e resultado incerto sem reenviar cegamente.
+
+Essas etapas não estão ativadas pelas entradas `planned`. A Ajuda da tela atual está em `docs/help/core/revisar-preferencias-de-notificacoes.md`; a versão editorial deve ser aplicada no app somente na entrega autorizada, pelo mecanismo existente de atualização da Ajuda oficial.

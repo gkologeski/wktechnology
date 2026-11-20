@@ -4554,10 +4554,17 @@
     {
       "id": "notifications-personal-history",
       "kind": "personal",
-      "resources": ["system.notifications"],
-      "actions": ["view", "update"],
-      "scopes": ["own"],
-      "rationale": "Bell notifications are personal: server functions require an authenticated session (requireSupabaseAuth) and scope every read to the caller id via scopeNotifications; reads are paged by (created_at,id) cursor and the unread count is a head count on the same scope. RLS notif_select_own/notif_update_own (user_id = auth.uid()) enforces it in the database. The bell subscribes only to the signed-in user's rows (useAuth). Preference reads/writes use the server admin client only after the same caller scoping on profiles.id.",
+      "resources": [
+        "system.notifications"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own"
+      ],
+      "rationale": "Bell notifications are personal: server functions require an authenticated session (requireSupabaseAuth) and scope every read to the caller id via scopeNotifications; reads are paged by (created_at,id) cursor and the unread count is a head count on the same scope. RLS notif_select_own/notif_update_own (user_id = auth.uid()) enforces it in the database. The bell subscribes only to the signed-in user's rows (useAuth). Preference reads/writes use the server admin client only after the same caller scoping on profiles.id. NOTIFICA-CENTRAL package 1 adds read-only event metadata and shares an exact legacy catalogue between list and realtime; types/links/recipients/dedupe/pagination remain unchanged. Preference updates accept strict known partial patches, retain unknown server JSON and compare-and-swap the current jsonb value with bounded retries; the UI sends only changed fields. Identity-qualified queries/ref guards prevent another session preference reuse. No new grants, workspace-wide reads, producer rewrites or database changes. Existing scope tests below cover caller filtering/identifier validation, not actual membership/deny/RLS; the audited N11 gap remains for the recipient/access package.",
       "exception": {
         "mechanism": "Authenticated Supabase session; caller id from verified JWT; RLS user_id = auth.uid().",
         "boundary": "Only the caller's own notification rows; no workspace-wide or other-user reads.",
@@ -4584,6 +4591,14 @@
         {
           "file": "src/lib/access-control/sales-core.server.ts",
           "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/notifications.functions.ts",
+          "symbol": "getMyNotificationPrefs"
+        },
+        {
+          "file": "src/lib/notifications.functions.ts",
+          "symbol": "updateMyNotificationPrefs"
         }
       ],
       "database": [
@@ -4615,8 +4630,9 @@
         }
       },
       "files": {
-        "src/lib/notifications.functions.ts": "f210cfb4fedfa93f02483d610f2e4ecac1a2fd4d7c4608b6bc82449b20492b55",
-        "src/components/notifications-bell.tsx": "5a96ff0356019543402561394c0d9f748f73ce807c122da200c3c43a8f07ecb4"
+        "src/lib/notifications.functions.ts": "ad3a83c549a82f2188450fa019d260fd4b350c03b7c19f75242dbc10d67b3270",
+        "src/components/notifications-bell.tsx": "62ce169a1d9e273931ba0d6564b3b02290d51037c940a17302aabe5b6ba1c252",
+        "src/routes/_authenticated/settings.notifications.tsx": "28d7249ffc92a5d0b4ba187c4216173cbe7d68c6ec20bc8f6ee1fecff25f0b41"
       }
     },
     {
@@ -14478,6 +14494,22 @@
       "rationale": "Pure extraction-to-local-form projection. Does not resolve identities, persist, authorize or apply amounts to the ordinary request.",
       "files": {
         "src/lib/hiring/requests/document-review.ts": "d8f6fa7f73342e77fb18d94dc2a10d8447800b96a91ee88688cc0c6c41d2d1d6"
+      }
+    },
+    {
+      "id": "notification-event-catalog",
+      "kind": "presentation",
+      "rationale": "Pure static metadata and exact legacy adapters; no I/O, authorization decision, UI action, producer activation, registry writes or grants. Planned entries are explicitly inactive contracts for later packages.",
+      "files": {
+        "src/lib/notification-catalog.ts": "035321033c7f695169b9b6f899e7049ab5deb31fd13c948cda72ab7e230b1db1"
+      }
+    },
+    {
+      "id": "notification-preferences-compatibility",
+      "kind": "presentation",
+      "rationale": "Pure known-category validation, normalization, diff/merge and presentation interruption policy; no I/O, recipient resolution, message delivery, authorization or grants. Existing personal authenticated server boundary performs all preference reads/writes.",
+      "files": {
+        "src/lib/notification-preferences.ts": "793fcf6edca8c588ec321a796f76ca99b926946599b621c702f3d848ec6f10ce"
       }
     }
   ],

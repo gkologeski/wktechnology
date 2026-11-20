@@ -5,6 +5,20 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { scopeNotifications } from "@/lib/notification-cursor";
+import { withNotificationEvent } from "@/lib/notification-catalog";
+import type { NotificationCategory } from "@/lib/notification-catalog";
+import {
+  DEFAULT_NOTIFICATION_PREFS as DEFAULT_PREFS,
+  normalizeNotificationPrefs as mergeWithDefaults,
+  notificationPrefsPatchSchema,
+  applyNotificationPrefsPatch,
+  type NotificationPrefs,
+} from "@/lib/notification-preferences";
+import type { Json } from "@/integrations/supabase/types";
+
+// Keep the existing import surface for callers compiled against the legacy module.
+export type { NotificationCategory } from "@/lib/notification-catalog";
+export type { NotificationPrefs } from "@/lib/notification-preferences";
 
 export const listMyNotifications = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -44,7 +58,11 @@ export const listMyNotifications = createServerFn({ method: "GET" })
     if (list.error) throw new Error(list.error.message);
     if (count.error) throw new Error(count.error.message);
     const items = list.data ?? [];
-    return { items, unread: count.count ?? 0, nextCursor: nextCursorOf(items) };
+    return {
+      items: items.map(withNotificationEvent),
+      unread: count.count ?? 0,
+      nextCursor: nextCursorOf(items),
+    };
   });
 
 export const markNotificationRead = createServerFn({ method: "POST" })
@@ -75,63 +93,6 @@ export const markAllNotificationsRead = createServerFn({ method: "POST" })
 
 // ============ Notification Preferences ============
 
-const CATEGORIES = [
-  "mention",
-  "assignment",
-  "deal_stage",
-  "ticket",
-  "task",
-  "sla",
-  "message",
-] as const;
-
-const channelSchema = z.object({
-  inapp: z.boolean(),
-  email: z.boolean(),
-  sound: z.boolean(),
-  shake: z.boolean(),
-});
-
-const prefsSchema = z.object(
-  Object.fromEntries(CATEGORIES.map((c) => [c, channelSchema])) as Record<
-    (typeof CATEGORIES)[number],
-    typeof channelSchema
-  >,
-);
-
-export type NotificationCategory = (typeof CATEGORIES)[number];
-export type NotificationPrefs = z.infer<typeof prefsSchema>;
-
-const DEFAULT_PREFS: NotificationPrefs = {
-  mention: { inapp: true, email: true, sound: true, shake: true },
-  assignment: { inapp: true, email: true, sound: true, shake: true },
-  deal_stage: { inapp: true, email: false, sound: false, shake: false },
-  ticket: { inapp: true, email: true, sound: true, shake: true },
-  task: { inapp: true, email: false, sound: true, shake: false },
-  sla: { inapp: true, email: true, sound: true, shake: true },
-  message: { inapp: true, email: false, sound: true, shake: true },
-};
-
-function mergeWithDefaults(raw: unknown): NotificationPrefs {
-  const obj = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  const out = {} as NotificationPrefs;
-  for (const c of CATEGORIES) {
-    const v = (obj[c] && typeof obj[c] === "object" ? obj[c] : {}) as Record<string, unknown>;
-    out[c] = {
-      inapp: v.inapp !== false,
-      email: v.email !== false ? Boolean(v.email ?? DEFAULT_PREFS[c].email) : false,
-      sound: v.sound !== false ? Boolean(v.sound ?? DEFAULT_PREFS[c].sound) : false,
-      shake: v.shake !== false ? Boolean(v.shake ?? DEFAULT_PREFS[c].shake) : false,
-    };
-    // Apply defaults strictly if undefined
-    if (v.inapp === undefined) out[c].inapp = DEFAULT_PREFS[c].inapp;
-    if (v.email === undefined) out[c].email = DEFAULT_PREFS[c].email;
-    if (v.sound === undefined) out[c].sound = DEFAULT_PREFS[c].sound;
-    if (v.shake === undefined) out[c].shake = DEFAULT_PREFS[c].shake;
-  }
-  return out;
-}
-
 export const getMyNotificationPrefs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -151,17 +112,37 @@ export const getMyNotificationPrefs = createServerFn({ method: "GET" })
 
 export const updateMyNotificationPrefs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ prefs: prefsSchema }).parse(i))
+  .inputValidator((i) => z.object({ prefs: notificationPrefsPatchSchema }).strict().parse(i))
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await scopeNotifications(
-      supabaseAdmin.from("profiles").update({ notification_preferences: data.prefs }),
-      userId,
-      "id",
+    // Older clients send only seven categories. Merge over the current server value,
+    // retaining future JSON fields. Compare-and-swap prevents concurrent saves losing them.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const current = await scopeNotifications(
+        supabaseAdmin.from("profiles").select("notification_preferences"),
+        userId,
+        "id",
+      ).maybeSingle();
+      if (current.error) throw new Error(current.error.message);
+      if (!current.data) throw new Error("Perfil não encontrado para salvar preferências.");
+      const stored = current.data.notification_preferences;
+      let update = scopeNotifications(
+        supabaseAdmin.from("profiles").update({
+          notification_preferences: applyNotificationPrefsPatch(stored, data.prefs) as Json,
+        }),
+        userId,
+        "id",
+      );
+      // Column is jsonb NOT NULL; JavaScript null represents JSON null, not SQL NULL.
+      update = update.eq("notification_preferences", JSON.stringify(stored));
+      const saved = await update.select("id").maybeSingle();
+      if (saved.error) throw new Error(saved.error.message);
+      if (saved.data) return { ok: true };
+    }
+    throw new Error(
+      "As preferências foram alteradas em outra sessão. Recarregue e tente novamente.",
     );
-    if (error) throw new Error(error.message);
-    return { ok: true };
   });
 
 // ============ Activity event → notifications + email ============

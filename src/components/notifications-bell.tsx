@@ -13,9 +13,8 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
   getMyNotificationPrefs,
-  type NotificationCategory,
-  type NotificationPrefs,
 } from "@/lib/notifications.functions";
+import { notificationInterruption, type NotificationPrefs } from "@/lib/notification-preferences";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
@@ -58,10 +57,13 @@ export function NotificationsBell() {
   const readAllFn = useServerFn(markAllNotificationsRead);
   const prefsFn = useServerFn(getMyNotificationPrefs);
   const [shaking, setShaking] = useState(false);
-  const prefsRef = useRef<NotificationPrefs | null>(null);
+  const currentUserRef = useRef(user?.id);
+  currentUserRef.current = user?.id;
+  const prefsRef = useRef<{ userId: string; prefs: NotificationPrefs } | null>(null);
 
   const q = useInfiniteQuery({
-    queryKey: ["notifications"],
+    queryKey: ["notifications", user?.id],
+    enabled: Boolean(user?.id),
     initialPageParam: null as { createdAt: string; id: string } | null,
     queryFn: ({ pageParam }) => listFn({ data: { cursor: pageParam } }),
     getNextPageParam: (last) => last.nextCursor ?? undefined,
@@ -83,14 +85,16 @@ export function NotificationsBell() {
   }, [sentinel, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const prefsQ = useQuery({
-    queryKey: ["notification-prefs"],
+    queryKey: ["notification-prefs", user?.id],
+    enabled: Boolean(user?.id),
     queryFn: () => prefsFn(),
     staleTime: 5 * 60_000,
   });
 
   useEffect(() => {
-    if (prefsQ.data?.prefs) prefsRef.current = prefsQ.data.prefs;
-  }, [prefsQ.data]);
+    prefsRef.current =
+      user?.id && prefsQ.data?.prefs ? { userId: user.id, prefs: prefsQ.data.prefs } : null;
+  }, [user?.id, prefsQ.data]);
 
   // Realtime: refresh + toast + shake/sound on new notification
   useEffect(() => {
@@ -106,16 +110,20 @@ export function NotificationsBell() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          const n = payload.new as { title?: string; body?: string; type?: string };
-          const cat = (n.type ?? "") as NotificationCategory;
-          const channel = prefsRef.current?.[cat];
-          const isInboxMessage = cat === "message";
-          const isInsideInbox = window.location.pathname.startsWith("/inbox");
-          const shouldInterrupt = !isInboxMessage || !isInsideInbox;
-          if (shouldInterrupt)
+          if (currentUserRef.current !== user.id) return;
+          const n = payload.new as {
+            title?: string;
+            body?: string;
+            type?: string;
+            entity?: string;
+            link?: string;
+          };
+          const prefs = prefsRef.current?.userId === user.id ? prefsRef.current.prefs : null;
+          const interruption = notificationInterruption(n, prefs, window.location.pathname);
+          if (interruption.toast)
             toast.message(n.title ?? "Nova notificação", { description: n.body ?? undefined });
-          if (shouldInterrupt && channel?.sound !== false) playBeep();
-          if (shouldInterrupt && channel?.shake !== false) {
+          if (interruption.sound) playBeep();
+          if (interruption.shake) {
             setShaking(true);
             setTimeout(() => setShaking(false), 850);
           }
