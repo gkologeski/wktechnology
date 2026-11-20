@@ -18,7 +18,7 @@ export const notificationDeliveryConfigSchema = z
   );
 export type NotificationDeliveryConfig = z.infer<typeof notificationDeliveryConfigSchema>;
 
-export const notificationDeliveryJobSchema = z.object({
+const personalDeliveryJobSchema = z.object({
   id: z.string().uuid(),
   token: z.string().uuid(),
   channel: z.enum(["email", "whatsapp"]),
@@ -33,10 +33,28 @@ export const notificationDeliveryJobSchema = z.object({
   templateName: z.string().nullable().optional(),
   templateLanguage: z.string().nullable().optional(),
 });
+export const notificationSlackJobSchema = z.object({
+  id: z.string().uuid(),
+  token: z.string().uuid(),
+  channel: z.literal("slack"),
+  idempotencyKey: z.string().min(1).max(500),
+  workspaceId: z.string().uuid(),
+  workflowId: z.string().uuid(),
+  runId: z.string().uuid(),
+  integrationId: z.string().uuid(),
+  endpointRevision: z.number().int().positive(),
+  endpointHash: z.string().regex(/^[a-f0-9]{64}$/),
+});
+export const notificationDeliveryJobSchema = z.union([
+  personalDeliveryJobSchema,
+  notificationSlackJobSchema,
+]);
+export type NotificationPersonalDeliveryJob = z.infer<typeof personalDeliveryJobSchema>;
+export type NotificationSlackJob = z.infer<typeof notificationSlackJobSchema>;
 export type NotificationDeliveryJob = z.infer<typeof notificationDeliveryJobSchema>;
 export type NotificationTransportResult = {
   status: "accepted" | "suppressed" | "retry_scheduled" | "failed" | "uncertain";
-  provider: "meta_cloud" | "lovable_whatsapp" | "managed_email";
+  provider: "meta_cloud" | "lovable_whatsapp" | "managed_email" | "slack_webhook";
   providerId?: string | null;
   reasonCode?:
     | "invalid_recipient"
@@ -109,6 +127,8 @@ export type NotificationDeliveryCapabilities = {
   deliveriesView: boolean;
   deliveriesWorkspaceView: boolean;
   whatsappConfigure?: boolean;
+  slackView?: boolean;
+  slackConfigure?: boolean;
 };
 export type NotificationDeliveryConsent = {
   phone: string | null;
@@ -122,7 +142,7 @@ export type NotificationDeliveryConsent = {
 };
 export type NotificationDeliveryHistoryItem = {
   id: string;
-  channel: "inapp" | "email" | "whatsapp";
+  channel: "inapp" | "email" | "whatsapp" | "slack";
   status: string;
   reason_code: string | null;
   attempts: number;
@@ -131,6 +151,36 @@ export type NotificationDeliveryHistoryItem = {
   recipient_user_id?: string | null;
   workflow_id?: string | null;
   provider_id?: string | null;
+};
+
+export const notificationSlackPolicySchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    daily_limit: z.number().int().min(0).max(10000).default(0),
+    integration_id: z.string().uuid().nullable().default(null),
+    template_version: z.literal("neutral-v1").default("neutral-v1"),
+  })
+  .strict()
+  .refine((policy) => !policy.enabled || (policy.daily_limit > 0 && !!policy.integration_id), {
+    message: "Selecione uma conexão e uma cota positiva antes de habilitar o canal compartilhado.",
+  });
+export type NotificationSlackPolicy = z.infer<typeof notificationSlackPolicySchema>;
+export const notificationSlackSettingsSchema = z.object({
+  policy: notificationSlackPolicySchema,
+  revision: z.number().int().min(0),
+  integrations: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        team_name: z.string().nullable(),
+        default_channel_name: z.string().nullable(),
+        endpoint_revision: z.number().int().positive(),
+      }),
+    )
+    .max(100),
+});
+export type NotificationSlackSettings = z.infer<typeof notificationSlackSettingsSchema> & {
+  canManage: boolean;
 };
 export type NotificationDeliveryHistory = {
   items: NotificationDeliveryHistoryItem[];

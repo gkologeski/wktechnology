@@ -185,3 +185,77 @@ it("rules preserve pending draft changes including goals using canonical workflo
   const clean = (await call(listNotificationWorkflowRules, { workspaceId: W })) as typeof result;
   expect(clean.items[0].has_draft_changes).toBe(false);
 });
+
+it("Slack settings allows authorized configuration without returning credentials", async () => {
+  const { getNotificationSlackSettings } = await import("./delivery-admin.functions");
+  state.rpc.mockImplementation(async (_client, name) =>
+    name === "notification_delivery_capabilities"
+      ? { ...caps, slackView: true, slackConfigure: true }
+      : {
+          revision: 1,
+          policy: {
+            enabled: false,
+            daily_limit: 0,
+            integration_id: null,
+            template_version: "neutral-v1",
+          },
+          integrations: [],
+          webhookUrl: "PRIVATE",
+        },
+  );
+  const result = await call(getNotificationSlackSettings, { workspaceId: W });
+  expect(result).toMatchObject({ canManage: true, revision: 1, integrations: [] });
+  expect(JSON.stringify(result)).not.toContain("PRIVATE");
+});
+it("Slack settings rejects missing Slack key before configuration read", async () => {
+  const { getNotificationSlackSettings } = await import("./delivery-admin.functions");
+  await expect(call(getNotificationSlackSettings, { workspaceId: W })).rejects.toThrow(
+    "Sem permissão",
+  );
+  expect(state.rpc).toHaveBeenCalledTimes(1);
+});
+it("Slack settings rejects explicit deny before configuration save", async () => {
+  const { saveNotificationSlackSettings } = await import("./delivery-admin.functions");
+  state.rpc.mockResolvedValue({ ...caps, slackView: true, slackConfigure: false });
+  await expect(
+    call(saveNotificationSlackSettings, { workspaceId: W, revision: 0, policy: {} }),
+  ).rejects.toThrow("Sem permissão");
+  expect(state.rpc).toHaveBeenCalledTimes(1);
+});
+it("Slack settings rejects foreign workspace before IO", async () => {
+  const { getNotificationSlackSettings } = await import("./delivery-admin.functions");
+  await expect(call(getNotificationSlackSettings, { workspaceId: U })).rejects.toThrow(
+    "workspace mudou",
+  );
+  expect(state.rpc).not.toHaveBeenCalled();
+});
+it("Slack settings propagates inactive membership denial without reading configuration", async () => {
+  const { getNotificationSlackSettings } = await import("./delivery-admin.functions");
+  state.rpc.mockRejectedValue(Error("inactive member"));
+  await expect(call(getNotificationSlackSettings, { workspaceId: W })).rejects.toThrow(
+    "inactive member",
+  );
+  expect(state.rpc).toHaveBeenCalledTimes(1);
+});
+it("Slack settings save preserves CAS revision and the protected template", async () => {
+  const { saveNotificationSlackSettings } = await import("./delivery-admin.functions");
+  const policy = {
+    enabled: false,
+    daily_limit: 1,
+    integration_id: null,
+    template_version: "neutral-v1",
+  };
+  state.rpc.mockImplementation(async (_client, name) =>
+    name === "notification_delivery_capabilities"
+      ? { ...caps, slackView: true, slackConfigure: true }
+      : { revision: 3, policy, integrations: [] },
+  );
+  await expect(
+    call(saveNotificationSlackSettings, { workspaceId: W, revision: 2, policy }),
+  ).resolves.toMatchObject({ revision: 3 });
+  expect(state.rpc).toHaveBeenLastCalledWith(ctx.supabase, "notification_slack_settings_save", {
+    p_workspace: W,
+    p_policy: policy,
+    p_revision: 2,
+  });
+});

@@ -10,6 +10,8 @@ const capabilitiesSchema = z.object({
   deliveriesView: z.boolean(),
   deliveriesWorkspaceView: z.boolean(),
   whatsappConfigure: z.boolean().default(false),
+  slackView: z.boolean().default(false),
+  slackConfigure: z.boolean().default(false),
 });
 export async function notificationDeliveryCapabilities(
   client: SupabaseClient,

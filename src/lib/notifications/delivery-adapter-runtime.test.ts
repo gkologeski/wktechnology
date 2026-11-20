@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { NotificationDeliveryJob } from "./delivery-types";
+import type { NotificationDeliveryJob, NotificationPersonalDeliveryJob } from "./delivery-types";
 
 const mocks = vi.hoisted(() => ({ from: vi.fn(), rpc: vi.fn(), cloud: vi.fn() }));
 vi.mock("@/integrations/supabase/client.server", () => ({
@@ -11,7 +11,7 @@ import {
   notificationAdapterDependencies as runtime,
 } from "./delivery-adapter-runtime.server";
 
-const job: NotificationDeliveryJob = {
+const job: NotificationPersonalDeliveryJob = {
   id: "22222222-2222-4222-8222-222222222222",
   token: "33333333-3333-4333-8333-333333333333",
   channel: "whatsapp",

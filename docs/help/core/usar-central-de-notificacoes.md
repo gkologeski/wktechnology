@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 147
-version: 3
+version: 4
 is_published: true
 ---
 
@@ -88,7 +88,7 @@ Na central, as abas **Regras**, **Modelos e canais** e **Entregas** ampliam o ac
 
 ### Criar uma regra sem duplicar o motor de automações
 
-1. Abra **Regras** e crie ou edite o Workflow autorizado. As regras exibidas são os Workflows que possuem a ação **Enviar notificação**; não há uma segunda automação paralela.
+1. Abra **Regras** e crie ou edite o Workflow autorizado. As regras exibidas são os Workflows que possuem a ação **Enviar notificação** ou **Enviar mensagem no Slack**; não há uma segunda automação paralela.
 2. Configure o gatilho, os destinatários e os canais. Uma ação antiga sem seleção explícita mantém somente **No app**.
 3. E-mail e WhatsApp são opcionais. **E-mail se o WhatsApp falhar** exige WhatsApp primário sem e-mail em paralelo. A alternativa só é permitida em falhas definitivas ou supressões elegíveis, com preferência e permissão próprias; um resultado incerto não gera outro envio.
 4. Salve o rascunho e use **Conferir configuração sem enviar**, quando disponível. A conferência é estrutural: não envia mensagens, não comprova elegibilidade dos destinatários e não ativa o rascunho.
@@ -123,3 +123,14 @@ Os canais externos recebem texto neutro com acesso à central, sem salário, val
 5. Se o sistema não conseguir conferir um aviso ou perder acesso à origem, ele não mantém ações sobre o conteúdo antigo como se estivesse confirmado. Atualize a consulta; não tente repetir por outro workspace.
 
 No histórico antigo sem workspace comprovado, a pesquisa por conteúdo fica desativada. O sistema preserva essa separação para não procurar ou revelar textos cuja origem não pôde ser confirmada. Solicitações de profissionais aparecem em TechPeople e solicitações de fornecedores em TechContracts conforme o tipo real do registro autorizado, sem deduzir o módulo pelo título.
+
+
+## E-mail e Slack: entrega pessoal e aviso coletivo
+
+- **E-mail** mantém destinatário pessoal confirmado e preferência efetiva. O modelo é neutro e abre a central autenticada. A autorização é conferida novamente depois da renderização, imediatamente antes do envio. Recusa definitiva, supressão, limite do provedor e resultado incerto possuem estados próprios no histórico; um identificador local não comprova entrega.
+- **Slack** usa uma política independente em **Modelos e canais**, inicialmente desligada. Um administrador autorizado escolhe a conexão, a cota e confirma o público compartilhado. O modelo é fixo e neutro. O aviso não representa entrega individual; por isso aparece apenas em **Entregas > Workspace**, com os acessos necessários à origem e à integração.
+- A ação Slack do Workflow gera uma ocorrência coletiva. Ela não é uma opção de canal pessoal da ação **Enviar notificação**. Para avisar uma pessoa no app ou por e-mail e também um canal compartilhado, configure as ações correspondentes no mesmo Workflow.
+- As configurações antigas do Slack são preservadas, mas o canal fixo do webhook não pode ser substituído por evento. Ações antigas com canal preenchido precisam ser revisadas no editor antes de enviar.
+- A conexão não inicia novos produtores de eventos nem resumos externos. A confirmação **Aceito pelo provedor** não equivale a entregue ou lido. Falhas ambíguas ficam sem repetição automática.
+
+Consulte [Configurar notificações no Slack](/ajuda/core/configurar-notificacoes-no-slack) para preparar a conexão, a política e o histórico.

@@ -7,7 +7,10 @@ import { assertNotificationWorkspace } from "@/lib/notification-center";
 import { SaveSchema } from "@/lib/workflows/schemas";
 import { deliveryWorkspaceInput } from "./delivery-api";
 import { inspectNotificationActions } from "./delivery-rule-preview";
-import { notificationDeliveryPolicySchema } from "./delivery-types";
+import {
+  notificationDeliveryPolicySchema,
+  notificationSlackSettingsSchema,
+} from "./delivery-types";
 import { notificationDeliveryCapabilities } from "./delivery-access.server";
 
 import type { Json } from "@/integrations/supabase/types";
@@ -97,5 +100,12 @@ export const previewNotificationWorkflow = createServerFn({ method: "POST" })
         })
       : null;
     const policy = raw ? notificationDeliveryPolicySchema.parse(raw.policy) : null;
-    return inspectNotificationActions(parsed.data.actions, policy);
+    const slackPolicy = caps.slackView
+      ? notificationSlackSettingsSchema.parse(
+          await workRpc(context.supabase, "notification_slack_settings", {
+            p_workspace: data.workspaceId,
+          }),
+        ).policy
+      : null;
+    return inspectNotificationActions(parsed.data.actions, policy, slackPolicy);
   });

@@ -12,7 +12,7 @@ export const deliveryHistoryInput = deliveryWorkspaceInput
   .extend({
     scope: z.enum(["own", "workspace"]).default("own"),
     status: z.enum(NOTIFICATION_DELIVERY_STATUSES).optional(),
-    channel: z.enum(["inapp", "email", "whatsapp"]).optional(),
+    channel: z.enum(["inapp", "email", "whatsapp", "slack"]).optional(),
     cursor: notificationCenterCursorSchema.nullish(),
   })
   .strict();
@@ -21,7 +21,7 @@ export const deliveryHistoryResult = z.object({
     .array(
       z.object({
         id: z.string().uuid(),
-        channel: z.enum(["inapp", "email", "whatsapp"]),
+        channel: z.enum(["inapp", "email", "whatsapp", "slack"]),
         status: z.string().max(40),
         reason_code: z.string().max(80).nullable(),
         attempts: z.number().int().min(0),

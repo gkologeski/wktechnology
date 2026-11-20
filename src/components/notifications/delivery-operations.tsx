@@ -12,16 +12,20 @@ import {
   getNotificationDeliveryConsent,
   saveNotificationDeliveryConsent,
   updateNotificationProfilePhone,
+  getNotificationSlackSettings,
+  saveNotificationSlackSettings,
 } from "@/lib/notification-delivery.functions";
 import type {
   NotificationDeliveryCapabilities,
   NotificationDeliveryPolicy,
+  NotificationSlackPolicy,
 } from "@/lib/notifications/delivery-types";
 import type { NotificationCursor } from "@/lib/notification-cursor";
 import { DeliverySettingsPanel } from "./delivery-settings-panel";
 import { DeliveryModelsPanel } from "./delivery-models-panel";
 import { DeliveryHistoryPanel, type DeliveryFilters } from "./delivery-history-panel";
 import { NotificationConsentPanel } from "./notification-consent-panel";
+import { NotificationSlackPolicyPanel } from "./slack-policy-panel";
 
 export function NotificationDeliveryConfiguration({
   workspaceId,
@@ -36,6 +40,8 @@ export function NotificationDeliveryConfiguration({
   const qc = useQueryClient();
   const getFn = useServerFn(getNotificationDeliverySettings),
     saveFn = useServerFn(saveNotificationDeliverySettings);
+  const getSlackFn = useServerFn(getNotificationSlackSettings),
+    saveSlackFn = useServerFn(saveNotificationSlackSettings);
   const sendersFn = useServerFn(listNotificationWhatsAppSenders),
     templatesFn = useServerFn(listNotificationWhatsAppTemplates);
   const [senderId, setSenderId] = useState<string | null>(null);
@@ -47,6 +53,41 @@ export function NotificationDeliveryConfiguration({
       ["own", "team", "workspace"].map((scope) => `system.whatsapp.view.${scope}`),
     );
   const policyKey = ["notification-delivery-settings", userId, workspaceId];
+  const slackKey = ["notification-slack-settings", userId, workspaceId];
+  const slack = useQuery({
+    queryKey: slackKey,
+    queryFn: () => getSlackFn({ data: { workspaceId } }),
+    enabled: contextReady && capabilities.settingsView && capabilities.slackView === true,
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+  });
+  const saveSlack = useMutation({
+    mutationFn: (input: {
+      policy: NotificationSlackPolicy;
+      revision: number;
+      workspaceId: string;
+      userId: string;
+    }) => {
+      if (
+        !contextReady ||
+        input.workspaceId !== workspaceId ||
+        input.userId !== userId ||
+        slack.isFetching ||
+        !capabilities.settingsManage ||
+        capabilities.slackConfigure !== true ||
+        !slack.data?.canManage
+      )
+        throw new Error("Sem permissão para configurar o Slack deste workspace.");
+      return saveSlackFn({
+        data: { workspaceId: input.workspaceId, policy: input.policy, revision: input.revision },
+      });
+    },
+    onSuccess: (data, input) => {
+      qc.setQueryData(["notification-slack-settings", input.userId, input.workspaceId], data);
+    },
+  });
   const policy = useQuery({
     queryKey: policyKey,
     queryFn: () => getFn({ data: { workspaceId } }),
@@ -133,6 +174,34 @@ export function NotificationDeliveryConfiguration({
       ) : (
         <p role="status">Carregando política de notificações…</p>
       )}
+      {capabilities.slackView !== true ? (
+        <p className="text-sm text-muted-foreground">
+          A política coletiva do Slack exige permissão sobre a integração.
+        </p>
+      ) : slack.isError ? (
+        <div role="alert" className="space-y-2 border-t border-border pt-6">
+          <p>Não foi possível carregar a política do Slack. {slack.error.message}</p>
+          <Button variant="outline" onClick={() => void slack.refetch()}>
+            Tentar carregar Slack novamente
+          </Button>
+        </div>
+      ) : slack.data && slack.isFetchedAfterMount ? (
+        <NotificationSlackPolicyPanel
+          key={`${userId}:${workspaceId}`}
+          settings={slack.data}
+          canEdit={
+            capabilities.settingsManage &&
+            capabilities.slackConfigure === true &&
+            !slack.isFetching &&
+            slack.data.canManage
+          }
+          onSave={(next, revision) =>
+            saveSlack.mutateAsync({ policy: next, revision, userId, workspaceId })
+          }
+        />
+      ) : (
+        <p role="status">Carregando política do Slack…</p>
+      )}
     </div>
   );
 }
@@ -157,7 +226,12 @@ export function NotificationDeliveryHistorySection({
   });
   const allowed = contextReady && (filters.scope === "own" || canWorkspace);
   useEffect(() => {
-    if (!canWorkspace) setFilters((current) => ({ ...current, scope: "own" }));
+    if (!canWorkspace)
+      setFilters((current) => ({
+        ...current,
+        scope: "own",
+        channel: current.channel === "slack" ? "" : current.channel,
+      }));
   }, [canWorkspace]);
   const q = useInfiniteQuery({
     queryKey: [
@@ -175,7 +249,16 @@ export function NotificationDeliveryHistorySection({
           workspaceId,
           scope: filters.scope,
           status: filters.status || undefined,
-          channel: (filters.channel || undefined) as "inapp" | "email" | "whatsapp" | undefined,
+          channel: (filters.scope === "workspace"
+            ? filters.channel || undefined
+            : filters.channel === "slack"
+              ? undefined
+              : filters.channel || undefined) as
+            | "inapp"
+            | "email"
+            | "whatsapp"
+            | "slack"
+            | undefined,
           cursor: pageParam,
         },
       }),

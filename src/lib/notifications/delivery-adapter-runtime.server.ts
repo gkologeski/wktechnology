@@ -6,9 +6,9 @@ import { normalizePhone } from "@/lib/phone/e164";
 /** Internal service boundary: source snapshots cannot become arbitrary history writes. */
 export function assertNotificationRuntimeJob(input: NotificationDeliveryJob) {
   const job = notificationDeliveryJobSchema.parse(input);
+  if (job.channel !== "whatsapp") throw new Error("Entrega WhatsApp inválida.");
   const normalized = normalizePhone(job.phone);
   if (
-    job.channel !== "whatsapp" ||
     normalized.status !== "valid" ||
     normalized.extension ||
     normalized.e164 !== job.phone ||
@@ -25,7 +25,11 @@ export const notificationAdapterDependencies: NotificationAdapterDependencies = 
   sendEmail: async (input) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendTransactionalEmailFromServer } = await import("@/lib/email-send.server");
-    return sendTransactionalEmailFromServer({ ...input, supabase: supabaseAdmin });
+    return sendTransactionalEmailFromServer({
+      ...input,
+      throwOnError: true,
+      supabase: supabaseAdmin,
+    });
   },
   readCloudSender: async (workspaceId, senderId) => {
     const { resolveCloudNumber } = await import("@/lib/whatsapp/cloud-runtime.server");

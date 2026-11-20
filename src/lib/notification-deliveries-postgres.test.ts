@@ -865,7 +865,7 @@ it("paginates history without duplicates and validates filters and cursor input"
   await expect(history(U, "own", null, { id: "bad", createdAt: "bad" })).rejects.toMatchObject({
     code: "22023",
   });
-  await expect(history(U, "own", "slack")).rejects.toMatchObject({ code: "22023" });
+  expect((await history(U, "own", "slack")).items).toEqual([]);
 });
 it("filters notification workflow rules before the display limit and never exposes another workspace", async () => {
   await db`insert into workflows(id,workspace_id,owner_id,execution_user_id,entity,name,updated_at) select gen_random_uuid(),${W},${A},${A},'deals','Unrelated workflow',now()+interval '1 day' from generate_series(1,110)`;

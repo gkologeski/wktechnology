@@ -1,47 +1,10 @@
-import type { FieldOpt } from "../step-tree";
-import {
-  countSteps,
-  describeAction,
-  defaultActionOfType,
-  ACTION_ICONS,
-  getBranchList,
-  setBranchList,
-  isBranchKey,
-} from "../step-tree";
-import { useEntityFieldOptions } from "../use-entity-field-options";
-import {
-  ConditionListEditor,
-  FieldValueEditor,
-  newLeafCondition,
-  normalizeTopGroup,
-  denormalizeTopGroup,
-} from "../conditions-editor";
-import { EntityPickerDialog } from "../entity-picker-dialog";
-import { useEffect, useState } from "react";
+import { NOTIFICATION_UPDATE_TEXT } from "@/lib/notifications/delivery-content";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Plus, Webhook, X, ArrowUp, ArrowDown } from "lucide-react";
-import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { ExtraFieldsEditor, FkPicker } from "../../extra-fields-editor";
-import { GenericRecordForm } from "../../generic-record-form";
 import { TokenInput, TokenTextarea } from "../../token-input";
-import { useWorkspaceSubstatuses } from "@/lib/pipelines/substatuses";
-import { ActionTemplatesBar } from "../../action-templates-bar";
-import { ACTION_LABELS, type WorkflowEntity, type WorkflowAction } from "@/lib/workflows/types";
-import { useServerFn } from "@tanstack/react-start";
-import { listAvailableSurveys } from "@/lib/surveys/survey-activity.functions";
+import type { WorkflowAction } from "@/lib/workflows/types";
 
 export function SendSlackForm({
   action,
@@ -50,28 +13,54 @@ export function SendSlackForm({
   action: Extract<WorkflowAction, { type: "send_slack" }>;
   onChange: (a: WorkflowAction) => void;
 }) {
+  const permissions = usePermissions();
+  const canEdit =
+    !permissions.isLoading &&
+    !permissions.isError &&
+    permissions.canAny([
+      "system.workflows.manage.workspace",
+      "system.workflows.update.workspace",
+      "system.workflows.create.workspace",
+    ]);
   return (
     <div className="space-y-3">
-      <div className="space-y-1">
-        <Label>Canal (opcional)</Label>
-        <Input
-          value={action.channel ?? ""}
-          onChange={(e) => onChange({ ...action, channel: e.target.value })}
-          placeholder="C0123ABCD ou #geral (usa canal padrão se vazio)"
-        />
-      </div>
-      <div className="space-y-1">
-        <Label>Mensagem</Label>
-        <TokenTextarea
-          value={action.text}
-          onValueChange={(v) => onChange({ ...action, text: v })}
-          rows={4}
-          placeholder="Aceita variáveis {{campo}} e {{variaveis.nome}}"
-        />
+      <p className="text-sm">
+        Aviso coletivo no canal fixo da conexão escolhida em Notificações → Modelos e canais.
+      </p>
+      <div className="rounded-md bg-muted p-3 text-sm">
+        {NOTIFICATION_UPDATE_TEXT}
+        <p className="mt-1 text-muted-foreground">
+          Abrir a central de notificações (acesso autenticado).
+        </p>
       </div>
       <p className="text-xs text-muted-foreground">
-        Requer o Slack conectado nas integrações do workspace.
+        Uma mensagem por ocorrência. O envio exige política Slack habilitada e cota disponível. O
+        histórico do workspace registra a aceitação pelo provedor, sem presumir leitura pessoal.
       </p>
+      {action.channel?.trim() && (
+        <div className="space-y-2" role="alert">
+          <p className="text-sm">
+            Esta ação possui um canal antigo que o Incoming Webhook não consegue sobrescrever. O
+            envio ficará bloqueado até removê-lo.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!canEdit}
+            onClick={() => {
+              if (canEdit) onChange({ ...action, channel: undefined });
+            }}
+          >
+            Remover canal antigo
+          </Button>
+        </div>
+      )}
+      {action.text && action.text !== NOTIFICATION_UPDATE_TEXT && (
+        <p className="text-xs text-muted-foreground">
+          O texto antigo foi preservado no rascunho. O envio usa somente o modelo protegido acima,
+          sem variáveis ou dados do registro.
+        </p>
+      )}
     </div>
   );
 }

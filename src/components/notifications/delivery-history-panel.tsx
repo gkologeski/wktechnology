@@ -61,12 +61,16 @@ export function DeliveryHistoryPanel({
   canRead?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = items.find((item) => item.id === selectedId);
+  const visibleItems =
+    filters.scope === "workspace" ? items : items.filter((item) => item.channel !== "slack");
+  const selected = visibleItems.find((item) => item.id === selectedId);
   const change = (patch: Partial<DeliveryFilters>) => {
     if (!notificationDeliveryInteractionAllowed(canRead, loading)) return;
     if (patch.scope === "workspace" && !canWorkspace) return;
     setSelectedId(null);
-    onFilters({ ...filters, ...patch });
+    const next = { ...filters, ...patch };
+    if (next.scope !== "workspace" && next.channel === "slack") next.channel = "";
+    onFilters(next);
   };
   const retry = () => {
     if (notificationDeliveryInteractionAllowed(canRead, loading)) onRetry();
@@ -123,6 +127,9 @@ export function DeliveryHistoryPanel({
             <option value="inapp">Central</option>
             <option value="email">E-mail</option>
             <option value="whatsapp">WhatsApp</option>
+            {filters.scope === "workspace" && canWorkspace && (
+              <option value="slack">Slack coletivo</option>
+            )}
           </select>
         </label>
         <Button variant="ghost" disabled={loading} onClick={retry}>
@@ -138,7 +145,7 @@ export function DeliveryHistoryPanel({
         </div>
       ) : loading ? (
         <p role="status">Carregando entregas…</p>
-      ) : !items.length ? (
+      ) : !visibleItems.length ? (
         <p className="py-6 text-sm text-muted-foreground">
           Nenhuma entrega encontrada para este filtro.
         </p>
@@ -158,11 +165,18 @@ export function DeliveryHistoryPanel({
               </tr>
             </thead>
             <tbody>
-              {items.map((item) => (
+              {visibleItems.map((item) => (
                 <tr key={item.id} className="border-b last:border-0">
                   <td className="p-3 font-mono text-xs">{item.id.slice(0, 8)}</td>
                   <td className="p-3">
-                    {{ inapp: "Central", email: "E-mail", whatsapp: "WhatsApp" }[item.channel]}
+                    {
+                      {
+                        inapp: "Central",
+                        email: "E-mail",
+                        whatsapp: "WhatsApp",
+                        slack: "Slack coletivo",
+                      }[item.channel]
+                    }
                   </td>
                   <td className="p-3">
                     <Badge variant="secondary">
@@ -213,6 +227,8 @@ export function DeliveryHistoryPanel({
       <p className="text-xs text-muted-foreground">
         O resultado incerto aguarda conciliação antes de nova tentativa ou fallback. Endereços,
         conteúdo privado e respostas brutas do provedor não são exibidos.
+        {canWorkspace &&
+          " Avisos coletivos do Slack aparecem somente no escopo do workspace, sem alegar entrega pessoal ou leitura."}
       </p>
     </section>
   );

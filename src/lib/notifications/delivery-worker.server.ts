@@ -31,13 +31,13 @@ const reasonCodes = new Set([
 ]);
 const outcomeSchema = z.object({
   status: z.enum(["accepted", "suppressed", "retry_scheduled", "failed", "uncertain"]),
-  provider: z.enum(["meta_cloud", "lovable_whatsapp", "managed_email"]),
+  provider: z.enum(["meta_cloud", "lovable_whatsapp", "managed_email", "slack_webhook"]),
   providerId: z.string().max(500).nullable().optional(),
   reasonCode: z
     .string()
     .refine((code) => reasonCodes.has(code))
     .optional(),
-  retryAfterSeconds: z.number().int().min(1).max(3600).optional(),
+  retryAfterSeconds: z.number().int().min(1).max(86400).optional(),
 });
 
 /** Runs only from the existing authenticated service cron, never from a UI request. */
@@ -93,23 +93,11 @@ export async function tickNotificationDeliveries(
           throw new Error("Envio cancelado antes do transporte.");
         }
         const current = notificationDeliveryJobSchema.parse(preflight);
-        for (const key of [
-          "id",
-          "token",
-          "channel",
-          "idempotencyKey",
-          "workspaceId",
-          "workflowId",
-          "runId",
-          "recipientId",
-          "email",
-          "phone",
-          "senderPhoneNumberId",
-          "templateName",
-          "templateLanguage",
-        ] as const)
-          if (current[key] !== job[key])
-            throw new Error("O destino ou a reserva mudou antes do envio.");
+        // Zod builds both jobs in the same field order. Compare the complete
+        // discriminated payload, including collective endpoint pins, never a
+        // fabricated recipient for Slack.
+        if (JSON.stringify(current) !== JSON.stringify(job))
+          throw new Error("O destino ou a reserva mudou antes do envio.");
       };
       try {
         await authorizeBeforePost();
@@ -129,6 +117,16 @@ export async function tickNotificationDeliveries(
               adapter.sendNotificationDelivery(item, undefined, authorize),
             ));
         outcome = outcomeSchema.parse(await send(job, authorizeBeforePost));
+        const expectedProvider =
+          job.channel === "slack"
+            ? "slack_webhook"
+            : job.channel === "email"
+              ? "managed_email"
+              : "meta_cloud";
+        if (outcome.provider !== expectedProvider)
+          throw Error("Provedor não corresponde ao canal reservado.");
+        if (job.channel === "slack" && outcome.providerId)
+          throw Error("Webhook não fornece recibo individual.");
         if (outcome.status === "accepted" && job.channel === "whatsapp" && !outcome.providerId)
           outcome = {
             status: "uncertain",
@@ -139,7 +137,12 @@ export async function tickNotificationDeliveries(
         // An unexpected exception may happen after the provider accepted the POST.
         outcome = {
           status: "uncertain",
-          provider: job.channel === "email" ? "managed_email" : "meta_cloud",
+          provider:
+            job.channel === "slack"
+              ? "slack_webhook"
+              : job.channel === "email"
+                ? "managed_email"
+                : "meta_cloud",
           reasonCode: "transport_unknown",
         };
       }

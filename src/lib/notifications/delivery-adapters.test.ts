@@ -307,15 +307,14 @@ describe("notification delivery provider boundaries", () => {
     },
   );
 
-  it("bounds rate-limit backoff and never treats throttling as accepted", async () => {
+  it("never shortens provider cooldowns above the supported retry horizon", async () => {
     const deps = fakeDependencies({
       sendCloud: vi.fn().mockRejectedValue({ status: 429, retryAfterSeconds: 99999 }),
     });
     expect(await deliver(job, deps)).toEqual({
-      status: "retry_scheduled",
+      status: "failed",
       provider: "meta_cloud",
       reasonCode: "provider_rate_limited",
-      retryAfterSeconds: 3600,
     });
     expect(deps.recordWhatsAppAcceptance).not.toHaveBeenCalled();
   });
@@ -351,6 +350,7 @@ describe("managed notification email", () => {
       templateName: "notification-update",
       templateData: { centralUrl: "https://erp.example.com/notifications" },
       idempotencyKey: job.idempotencyKey,
+      beforeSend: expect.any(Function),
     });
     expect(deps.sendCloud).not.toHaveBeenCalled();
   });
@@ -421,3 +421,30 @@ describe("live notification WhatsApp template catalogue", () => {
     expect(deps.readCloudTemplates).not.toHaveBeenCalled();
   });
 });
+
+it("managed email passes the final guard into the post-render transport", async () => {
+  const authorize = vi.fn().mockResolvedValue(undefined);
+  const deps = fakeDependencies({
+    sendEmail: vi.fn(async (input) => {
+      await input.beforeSend();
+      return { status: "sent" as const };
+    }),
+  });
+  expect((await deliver({ ...job, channel: "email" }, deps, authorize)).status).toBe("accepted");
+  expect(authorize).toHaveBeenCalledTimes(2);
+});
+it.each([
+  [{ status: 429, retryAfterSeconds: 7200 }, "retry_scheduled", "provider_rate_limited"],
+  [{ status: 403 }, "failed", "provider_rejected"],
+  [{ status: 503 }, "uncertain", "transport_unknown"],
+  [new TypeError("PRIVATE network"), "uncertain", "transport_unknown"],
+] as const)(
+  "managed email distinguishes definite and ambiguous structured errors %j",
+  async (error, status, reasonCode) => {
+    const deps = fakeDependencies({ sendEmail: vi.fn().mockRejectedValue(error) });
+    const result = await deliver({ ...job, channel: "email" }, deps);
+    expect(result).toMatchObject({ provider: "managed_email", status, reasonCode });
+    if (status === "retry_scheduled") expect(result.retryAfterSeconds).toBe(7200);
+    expect(JSON.stringify(result)).not.toContain("PRIVATE");
+  },
+);

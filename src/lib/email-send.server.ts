@@ -43,8 +43,20 @@ export async function sendTransactionalEmailFromServer(params: {
   recipientEmail: string;
   templateData?: Record<string, unknown>;
   idempotencyKey?: string;
+  /** Notification workers revalidate their reservation after rendering, immediately before POST. */
+  beforeSend?: () => Promise<void>;
+  /** Preserve structured provider errors for the worker; legacy callers keep result-based errors. */
+  throwOnError?: boolean;
 }): Promise<ServerEmailResult> {
-  const { supabase, templateName, recipientEmail, templateData = {}, idempotencyKey } = params;
+  const {
+    supabase,
+    templateName,
+    recipientEmail,
+    templateData = {},
+    idempotencyKey,
+    beforeSend,
+    throwOnError = false,
+  } = params;
 
   if (!recipientEmail) {
     return { status: "error", error: "Destinatário não informado" };
@@ -56,6 +68,8 @@ export async function sendTransactionalEmailFromServer(params: {
     const result = await sendTemplateEmail(templateName, recipientEmail, {
       templateData,
       idempotencyKey: idempotencyKey || `${templateName}:${messageId}`,
+      beforeSend,
+      requireProviderAcceptance: throwOnError,
     });
 
     if (!result.sent) {
@@ -77,8 +91,9 @@ export async function sendTransactionalEmailFromServer(params: {
       templateName,
       recipientEmail,
       status: "failed",
-      errorMessage: message,
+      errorMessage: throwOnError ? "Não foi possível concluir o envio transacional." : message,
     });
+    if (throwOnError) throw err;
     return { status: "error", error: message };
   }
 }

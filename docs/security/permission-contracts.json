@@ -7560,7 +7560,7 @@
       "rationale": "Pure declarative workflow types, validation schemas and UI draft-template definitions; no IO, route or execution. Hiring templates remain unpublished drafts. Runtime actions and persisted permissions are independently guarded by stage4 business contract. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key.",
       "files": {
         "src/lib/workflows/hiring-templates.ts": "657b1ce58925d0169860c04affd0fc1033aa84ee51154ff3f01806d4419799ff",
-        "src/lib/workflows/types.ts": "6b92c5390c28c159eab34724f580ea46bd8b60a3203197ee3b5a3f8c66705fc2",
+        "src/lib/workflows/types.ts": "d74661ec2917e5d88892c3454f3afe75536926115d27c3f317f35d499bfd35ed",
         "src/lib/workflows/schemas.ts": "44e684688ddf85b033aad51df20109d0339bb80293f82517951341688eaa79ab"
       }
     },
@@ -14577,7 +14577,7 @@
         "own",
         "workspace"
       ],
-      "rationale": "Atomic service-only notification dispatcher binds current published workflow, version, run, executor and actual source workspace. Private non-BYPASSRLS subject bridges retain canonical source policies and explicit deny for all six modules. Each resolved candidate requires active membership and actual source read. Named managers/delegates and pending approvers never escalate implicitly; no followers invented. Raw variable templates become a neutral notice, not executor snapshot values. Existing workflow step authorization remains in force for all other operations; no role key or grant is added. UI edits the existing workflow draft, no direct notification writes. SQL-claims disposable tests execute the real dispatcher and canonical predicates; real JWT/PostgREST acceptance is separate. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers.",
+      "rationale": "Atomic service-only notification dispatcher binds current published workflow, version, run, executor and actual source workspace. Private non-BYPASSRLS subject bridges retain canonical source policies and explicit deny for all six modules. Each resolved candidate requires active membership and actual source read. Named managers/delegates and pending approvers never escalate implicitly; no followers invented. Raw variable templates become a neutral notice, not executor snapshot values. Existing workflow step authorization remains in force for all other operations; no role key or grant is added. UI edits the existing workflow draft, no direct notification writes. SQL-claims disposable tests execute the real dispatcher and canonical predicates; real JWT/PostgREST acceptance is separate. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved.",
       "exception": {
         "mechanism": "service_role execute grant plus role claim and null auth.uid; workflow/run/version/source proof; private bridges revoked from browser and service callers.",
         "boundary": "Only current workflow source and active readable recipients, at most 200 per action; no external channel or arbitrary user impersonation RPC.",
@@ -14608,6 +14608,50 @@
         {
           "file": "src/lib/workflows/engine-actions.server.ts",
           "symbol": "runActions"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/notification-delivery-interaction.ts",
+          "symbol": "notificationDeliveryInteractionAllowed"
+        },
+        {
+          "file": "src/lib/notifications/slack-dispatch.server.ts",
+          "symbol": "dispatchWorkflowSlack"
+        },
+        {
+          "file": "src/lib/notifications/slack-transport.server.ts",
+          "symbol": "isSlackIncomingWebhookUrl"
+        },
+        {
+          "file": "src/lib/email-templates/send-email.ts",
+          "symbol": "sendTemplateEmail"
+        },
+        {
+          "file": "src/lib/email-templates/send-email.ts",
+          "symbol": "authorizeTemplateEmailPost"
+        },
+        {
+          "file": "src/lib/integration-notifier.server.ts",
+          "symbol": "dispatchZapier"
         }
       ],
       "database": [
@@ -14618,6 +14662,46 @@
         {
           "file": "drizzle/migrations/0391_notification_recipients.sql",
           "symbol": "techerp_api.notification_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_slack_settings"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_slack_settings_save"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_delivery_claim"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_delivery_preflight"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_delivery_finish"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_slack_endpoint"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_delivery_history"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "techerp_api.notification_slack_integration_access"
         }
       ],
       "tests": {
@@ -14645,8 +14729,8 @@
       "files": {
         "drizzle/migrations/0391_notification_recipients.sql": "12eec659a22ef6a3bf13a2fd376b3fd50e84752da281d6d19e533ff826dcd37a",
         "src/lib/notification-dispatch.server.ts": "9c31756e679af62e9c2485f7d1cf5dd522211df55fc6a6f912f7c4b9cb86ffeb",
-        "src/lib/workflows/engine-actions.server.ts": "56501d9c8a6479b3c6f196911e422a4b5d22a20766ff5a042c4bcabd28a578f5",
-        "src/lib/workflows/engine/actions-messaging.server.ts": "b82798b139a520b8a04d84868e4fa80fff0da5fecc0ace45292aa40dfa8c9a07",
+        "src/lib/workflows/engine-actions.server.ts": "c610681bf396cd4e7e10f2610f5430a523f1fa5b87845f8cf676f8572b5d2c4c",
+        "src/lib/workflows/engine/actions-messaging.server.ts": "41be7ec71111f99f38bb5e5e6db7600255f24606550314bd508093acc234a7a3",
         "src/components/workflows/builder/step-forms/notification-form.tsx": "0221fe4dddaaabe3960ec4d4c9f2df7c5f2234233351b0cfc8b67cbf31db11e9"
       }
     },
@@ -14904,7 +14988,7 @@
         "system.notification_settings.manage.workspace",
         "system.notification_deliveries.view.workspace"
       ],
-      "rationale": "Package 4 delegates rules to existing Workflows. Authenticated wrappers require selected active workspace; settings/new keys, personal consent/profile CAS, own/source-filtered history and record-authorized rules are distinct SQL boundaries. All UI mutations delegate to those wrappers and canonical Workflow APIs. Service-only enqueue/claim/preflight/finish prove workflow version/run, executor transport permissions, recipient source, consent, quotas and neutral content. Fenced leases prevent stale completion. Ambiguous outcomes never blind-retry/fallback. No role grants, production changes, real sends, rotation, auto-activation, or new scheduler. Existing notification producers/RPC remain compatible.",
+      "rationale": "Package 4 delegates rules to existing Workflows. Authenticated wrappers require selected active workspace; settings/new keys, personal consent/profile CAS, own/source-filtered history and record-authorized rules are distinct SQL boundaries. All UI mutations delegate to those wrappers and canonical Workflow APIs. Service-only enqueue/claim/preflight/finish prove workflow version/run, executor transport permissions, recipient source, consent, quotas and neutral content. Fenced leases prevent stale completion. Ambiguous outcomes never blind-retry/fallback. No role grants, production changes, real sends, rotation, auto-activation, or new scheduler. Existing notification producers/RPC remain compatible. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved.",
       "exception": {
         "mechanism": "Verified session and selected active workspace for interactive APIs; personal operations derive auth.uid only; CRON_SECRET and service-role-only RPCs for bounded worker. UI props are delegation only, never authorization.",
         "boundary": "Only current workspace policy with explicit keys; own consent/profile; source-readable history/rules; named active recipients proven by source resolver. Provider receives neutral content, confirmed email or consent-bound phone; pinned Cloud API sender only.",
@@ -14955,6 +15039,38 @@
         {
           "file": "src/lib/notifications/delivery-worker.server.ts",
           "symbol": "tickNotificationDeliveries"
+        },
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/notifications/slack-dispatch.server.ts",
+          "symbol": "dispatchWorkflowSlack"
+        },
+        {
+          "file": "src/lib/notifications/slack-transport.server.ts",
+          "symbol": "isSlackIncomingWebhookUrl"
+        },
+        {
+          "file": "src/lib/email-templates/send-email.ts",
+          "symbol": "sendTemplateEmail"
+        },
+        {
+          "file": "src/lib/email-templates/send-email.ts",
+          "symbol": "authorizeTemplateEmailPost"
+        },
+        {
+          "file": "src/lib/integration-notifier.server.ts",
+          "symbol": "dispatchZapier"
         }
       ],
       "database": [
@@ -14997,6 +15113,46 @@
         {
           "file": "drizzle/migrations/0393_notification_deliveries.sql",
           "symbol": "notification_delivery_rules"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_slack_settings"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_slack_settings_save"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_delivery_claim"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_delivery_preflight"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_delivery_finish"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_slack_endpoint"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_delivery_history"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "techerp_api.notification_slack_integration_access"
         }
       ],
       "tests": {
@@ -15023,21 +15179,21 @@
       },
       "files": {
         "drizzle/migrations/0393_notification_deliveries.sql": "b7406468ea37d24428b1595f16c35e3be807264ee263337ed7b421c6387422c3",
-        "src/components/notifications/delivery-history-panel.tsx": "a19930cc53f92b55755ab8001c8e20d991485366e0af1331f0985bb2dd039a96",
+        "src/components/notifications/delivery-history-panel.tsx": "4ebc0163bdddbf883a33fa6194c3ee44b7699983e0654d5d85354d3f3335f960",
         "src/components/notifications/delivery-models-panel.tsx": "081830f6ce156d625347beae8ba2ea098711f90951c21b12fb848e3539dd85fe",
-        "src/components/notifications/delivery-operations.tsx": "dcff3fc8448fc25921adf4376ab55e3c2a4fdab4d8f69ab09860cc4413da9e5e",
+        "src/components/notifications/delivery-operations.tsx": "6ef46f63227d6dea57d95976fe007cec73c6093ac6f7e0c78f272bb09c7eaa9e",
         "src/components/notifications/delivery-settings-panel.tsx": "e78adf4b6a058931afcfa74fc581786eb3f98d205abacd0f21d0c7b7eeeb631a",
         "src/components/notifications/notification-consent-panel.tsx": "deb87af952c155aafa9caafc00e031d74594d36b9ad519810825a0882e12fc59",
         "src/components/notifications/notification-rules-list.tsx": "811b55908af8cad9f51d503a254a46962da77bc131fa5bbf3fbc0bf0284c93bf",
         "src/components/notifications/notification-rules-panel.tsx": "4a219291501c5ee0e3fcdb618ef44b1fb8b37464703acfb840050b7477fa7a01",
         "src/components/workflows/builder/step-forms/notification-delivery-choice.tsx": "e6f196798b9070827ea336b0d9b37866403227863588dd3b70e4a8c29da2834b",
-        "src/lib/notifications/delivery-access.server.ts": "4d5ba25ece0dbf9ccc294baa342a6f5710b71eb7da53021e9f370768528773af",
-        "src/lib/notifications/delivery-adapter-runtime.server.ts": "128134ee1591b5d2d09ecd8fb4e2f0f91f619385ae973c223ff72011bb90a71f",
-        "src/lib/notifications/delivery-adapters.server.ts": "6758cfa800bab9e211bebb4ef55d391d494fa151182c5f44445caae6d1d7c354",
-        "src/lib/notifications/delivery-admin.functions.ts": "2908ac9a5652e151f86be5f1844e52c9f8c5b755b5943eef2ca1d25baf4da0e9",
+        "src/lib/notifications/delivery-access.server.ts": "6addee81f235b1a01f1dd0e276e217583e311ab7b990ea14fbbe2bdd83b5eae1",
+        "src/lib/notifications/delivery-adapter-runtime.server.ts": "0b7acba74f5338f26b0d297d992813f0f37c54dde4890b80188b9a8c47706b60",
+        "src/lib/notifications/delivery-adapters.server.ts": "901f9bea289277d9b23f56374182f58ea8f7a4f0a7e4549037d90c483b757089",
+        "src/lib/notifications/delivery-admin.functions.ts": "d69bc7819e8300d872e5f6e8bce0e75c457a8845b95b6bd144a01816d68d303e",
         "src/lib/notifications/delivery-personal.functions.ts": "1f2e30255d3bbafb772d86dc200b63c23bb612c4efd60d59e82212190aa0502c",
-        "src/lib/notifications/delivery-rules.functions.ts": "4279597ae85b51995b436dbf6413be7ddb1a21f85f6f0d6cda1444a9f956fcdf",
-        "src/lib/notifications/delivery-worker.server.ts": "033a3b0ba14c0ed03b146e7b72bbd9940b49f59464552b745b94a3566f92aae4"
+        "src/lib/notifications/delivery-rules.functions.ts": "fb1f04dbfec01bd7e28fa1dfde74547410d2b0ce597dd64d3c1b57b0714944b6",
+        "src/lib/notifications/delivery-worker.server.ts": "279f2ba3df4a8d47c18244852cfc3461d32ee313de9a6af61eea3704a66c98a2"
       }
     },
     {
@@ -15046,12 +15202,12 @@
       "rationale": "Pure strict delivery schemas, neutral payload/model validation, structural rule preview and React email rendering. No I/O, recipient resolution, grants, provider or action execution; interactive and service authorization is enforced at delivery orchestration boundaries.",
       "files": {
         "src/lib/email-templates/notification-update.tsx": "64660a91969ad0cda851ca9a6550a3fe49e86c82bc4f50564325d229fc67a0e2",
-        "src/lib/notifications/delivery-api.ts": "b2daeaf9464adaf2fb04fbe0a28178f9399a581c5003167eb8e4edfd12ee273c",
+        "src/lib/notifications/delivery-api.ts": "5ccf7dde0eb6671ebf7080eea1d3835a4706bb4c35a0720413463a5121c5762e",
         "src/lib/notifications/delivery-content.ts": "2f75205bad3533705718c27ebe3abc038431122ec0fc46d2167fe63d1c48796e",
-        "src/lib/notifications/delivery-rule-preview.ts": "01132817a65d610ed12d76422c2e54dcccbbbe6dc986253f26be15345fef9fc8",
-        "src/lib/notifications/delivery-types.ts": "ad4d17d136ef9e5d301a8be341447f53e429b142c7c41ea65ad07dcfff97dfab",
+        "src/lib/notifications/delivery-rule-preview.ts": "e040703dc259a9ad7867966f035f48ab554f237cd37bd18d84ce66fd56dec5fc",
+        "src/lib/notifications/delivery-types.ts": "9d0ca1b06201cd9de32c1f8451f2cae2092af984b85462324bc63e3f37c0461c",
         "src/lib/notification-delivery-interaction.ts": "db12a925a3b50ec7e185d4cd9845589ae35cadaea50b9775088d9b07be70e422",
-        "src/lib/notification-delivery.functions.ts": "0e64b90c0ca9a09b13b90ce6c183e6517dbe685ce3c9ac3c6d516efaaf5f7d31"
+        "src/lib/notification-delivery.functions.ts": "e165ad50922220f2cea29a1602f8ff2d0c67fa019b5c88e0b80f6a805f0d0125"
       }
     },
     {
@@ -15195,6 +15351,165 @@
       },
       "files": {
         "src/lib/notification-center-realtime.ts": "01f352fda437963157483d5e1affc0e9a94857b9eab1af5a00b91507ad52fb40"
+      }
+    },
+    {
+      "id": "notification-slack-collective-deliveries",
+      "kind": "internal",
+      "resources": [
+        "system.integrations",
+        "system.notification_settings",
+        "system.notification_deliveries",
+        "system.automation.workflows"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "rationale": "P6 completes email and Slack on the existing notification ledger/tick. Slack is a collective occurrence+endpoint, never a personal recipient or a fan-out channel. Existing webhook connection and legacy route rows are preserved but overrides blocked and raw dispatcher removed. Fixed neutral model plus canonical authenticated central URL only. Interactive APIs require selected active workspace, settings keys and current integration record policies; worker service proves actual published workflow, run, step, executor/source access and current endpoint/policy revision. Endpoint URL remains private, never jobs/history/browser. Shared hash rate state serializes an endpoint across tenants without exposing tenant data. No auto-grants, auto-activation, producers, external tests or publication. Email opt-in guard/error preservation changes keep legacy result-based callers compatible; their existing caller authorization and purposes remain unchanged.",
+      "exception": {
+        "mechanism": "Authenticated active-workspace wrapper and canonical SQL subject/RLS bridge. Service-role-only dispatch/claim/preflight/finish and endpoint resolution with lease token. Helpers/forms delegate to guarded canonical callers; no new public operation. Fixed URL syntax and no redirects plus pre-POST guard.",
+        "boundary": "Slack settings require notification settings and integration permissions; history is workspace-only and source/integration-authorized, never own. Incoming Webhook audience is collective and not an ERP recipient. Only neutral-v1 content. Existing email helpers remain server-only and callback is opt-in for guarded notification worker. Zapier helper retains prior behavior with Slack direct path removed.",
+        "revocation": "Inactive member, deny, source/record revocation, read-only context, changed workflow/version, endpoint/policy revision, expired lease, quota or provider cooldown stops relevant operation. Unknown results never blind retry; long/invalid rate limit pauses Slack until explicit admin policy review.",
+        "review_by": "2027-04-30"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/notification-delivery-interaction.ts",
+          "symbol": "notificationDeliveryInteractionAllowed"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/email-templates/send-email.ts",
+          "symbol": "sendTemplateEmail"
+        },
+        {
+          "file": "src/lib/email-templates/send-email.ts",
+          "symbol": "authorizeTemplateEmailPost"
+        },
+        {
+          "file": "src/lib/integration-notifier.server.ts",
+          "symbol": "dispatchZapier"
+        },
+        {
+          "file": "src/lib/notifications/slack-dispatch.server.ts",
+          "symbol": "dispatchWorkflowSlack"
+        },
+        {
+          "file": "src/lib/notifications/slack-transport.server.ts",
+          "symbol": "isSlackIncomingWebhookUrl"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_slack_settings"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_slack_settings_save"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_delivery_claim"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_delivery_preflight"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_delivery_finish"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_slack_endpoint"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "notification_delivery_history"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "techerp_api.notification_slack_integration_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/notification-slack-postgres.test.ts",
+          "name": "notification Slack allow authorized member"
+        },
+        "missing_permission": {
+          "file": "src/lib/notification-slack-postgres.test.ts",
+          "name": "notification Slack reject missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/notification-slack-postgres.test.ts",
+          "name": "notification Slack reject explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/notification-slack-postgres.test.ts",
+          "name": "notification Slack reject foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/notification-slack-postgres.test.ts",
+          "name": "notification Slack reject inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0395_notification_slack.sql": "68b3ef31d0ee9126ddece086e0358fbccd1f31a915e8158605b8fd462123ee95",
+        "src/components/notifications/slack-policy-panel.tsx": "8224058efa89ff5f3b4565e4708b395e70d40ceb75450e97de5d71daa9355210",
+        "src/components/workflows/builder/step-forms/messaging-forms.tsx": "c4a5460731cc9cdd68dd302ba08967c7566b331e1ac2699940543d05d058db2d",
+        "src/lib/email-send.server.ts": "3a9ff1029d617b961b29e86f84d5c1a7108a6aedb92e726443e730be133cd6bb",
+        "src/lib/email-templates/send-email.ts": "e927e7ab4b70b84ae100d424e3144b2ae113f0ec38db82cc841954f7e2100dae",
+        "src/lib/integration-notifier.server.ts": "55de8921db9d14816c7dbaa2a1742b09d5cb014445a5942e6a2ecc8130cccd13",
+        "src/lib/notifications/slack-dispatch.server.ts": "19a586adfdba89d88affe37c274189540b26e6bf3a782c4e55ead421d67666d0",
+        "src/lib/notifications/slack-transport.server.ts": "679110c0586e87e3199a1ac01be32f6529111075e8adbde7c826ff8dcefb296f",
+        "src/lib/slack.functions.ts": "0f9a5eb9f63f930fbe7e2c572a9ea5c9ab9d12fc862a22c34f599b7ab5dc1caa",
+        "src/routes/_authenticated/settings.notifications.slack.tsx": "fd081a699ec2f6d6f9b08133c10e1ee079c1143892bdac4df5f737d447a6cd24"
       }
     }
   ],

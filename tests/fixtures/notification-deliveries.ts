@@ -371,6 +371,17 @@ beforeAll(async () => {
       `Migration 0393 position ${detail.position} / internal ${detail.internal_position}: ${detail.message}; ${detail.internal_query ?? ""}`,
     );
   }
+  // Only Slack physical shape is stubbed. The production RLS predicate and P6
+  // authorization bridge / worker functions are loaded unchanged below.
+  await db.unsafe(`CREATE TABLE public.slack_integrations(
+    id uuid PRIMARY KEY,workspace_id uuid UNIQUE REFERENCES workspaces(id),owner_id uuid NOT NULL,
+    access_token text NOT NULL,team_id text,team_name text,default_channel_id text,
+    default_channel_name text,scope text);
+    ALTER TABLE public.slack_integrations ENABLE ROW LEVEL SECURITY;
+    GRANT SELECT(id,workspace_id,owner_id,team_id,team_name,default_channel_id,default_channel_name,scope) ON public.slack_integrations TO authenticated;
+    CREATE POLICY source_read ON public.slack_integrations FOR SELECT TO authenticated USING(public.sales_context_access((SELECT public.sales_access_context()),workspace_id,'system.integrations','view',ARRAY[owner_id]));
+    CREATE POLICY extra_restriction ON public.slack_integrations AS RESTRICTIVE FOR SELECT TO authenticated USING(public.notification_fixture_restriction(id));`);
+  await db.unsafe(readFileSync("drizzle/migrations/0395_notification_slack.sql", "utf8"));
   const historic = await db`select count(*)::integer n from notification_workspace_context`;
   if (historic[0].n !== 0) throw Error("Historical rows were attributed to a workspace");
   const authenticatorPassword = randomBytes(32).toString("hex");
@@ -452,7 +463,7 @@ afterAll(async () => {
 
 export async function reset() {
   await db.unsafe(
-    "TRUNCATE workflow_deliveries,notification_delivery_intents,notification_delivery_policies,notification_delivery_consents,workflow_send_policies,wa_cloud_numbers,wa_cloud_connections,whatsapp_number_suppressions,whatsapp_messages,auth.users CASCADE",
+    "TRUNCATE workflow_deliveries,notification_delivery_intents,notification_delivery_policies,notification_delivery_consents,notification_slack_intents,notification_slack_policies,notification_slack_endpoint_state,slack_integrations,workflow_send_policies,wa_cloud_numbers,wa_cloud_connections,whatsapp_number_suppressions,whatsapp_messages,auth.users CASCADE",
   );
   await db.unsafe(
     "TRUNCATE service_agent_sessions,sdr_enrollments,sdr_playbooks,contract_drafts,contract_draft_approvers,notification_workspace_context,notification_user_preferences,notifications,workflow_approvals,contract_approvals,project_members,hiring_demand_steps,hiring_demand_requests,hiring_area_policies,workflow_runs,workflow_events,workflows,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_groups,user_group_members,view_as_sessions CASCADE",
@@ -484,6 +495,8 @@ export async function reset() {
     "system.notification_settings.manage.workspace",
     "system.notification_deliveries.view.workspace",
     "system.channels.view.workspace",
+    "system.integrations.view.workspace",
+    "system.integrations.manage.workspace",
     "system.whatsapp.manage.workspace",
     "techsales.inbox.email.view.workspace",
     "techsales.inbox.email.create.workspace",
@@ -506,6 +519,7 @@ export async function reset() {
   await db`insert into workflows(id,workspace_id,owner_id,execution_user_id,entity) values(${WF},${W},${A},${A},'deals')`;
   await db`insert into workflow_events(id,workspace_id,owner_id,entity,entity_id,workflow_version) values(${EVENT},${W},${A},'deals',${X},1)`;
   await db`insert into workflow_runs(id,workspace_id,owner_id,workflow_id,event_id,entity,entity_id) values(${RUN},${W},${A},${WF},${EVENT},'deals',${X})`;
+  await db`insert into slack_integrations(id,workspace_id,owner_id,access_token,team_name,default_channel_name) values(${X},${W},${A},'https://hooks.slack.com/services/T_FIXTURE/B_FIXTURE/synthetic-not-a-secret','Synthetic team','Synthetic channel')`;
   await db`insert into wa_cloud_connections(id,workspace_id,enabled,webhook_verified_at) values(${X},${W},true,now())`;
   await db`insert into wa_cloud_numbers(phone_number_id,connection_id,workspace_id,display_phone_number,quality_rating,status,available) values('123456789',${X},${W},'+554861360001','GREEN','CONNECTED',true)`;
 }

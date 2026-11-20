@@ -1,6 +1,8 @@
 export {
   getNotificationDeliveryCapabilities,
   getNotificationDeliverySettings,
+  getNotificationSlackSettings,
+  saveNotificationSlackSettings,
   saveNotificationDeliverySettings,
   listNotificationDeliveryHistory,
   listNotificationWhatsAppSenders,

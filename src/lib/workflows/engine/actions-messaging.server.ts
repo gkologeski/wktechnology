@@ -185,26 +185,9 @@ export async function handleMessagingAction(
       };
     }
     case "send_slack": {
-      const { data: integ } = await supabase
-        .from("slack_integrations")
-        .select("access_token, default_channel_id")
-        .eq("owner_id", ctx.ownerId)
-        .maybeSingle();
-      if (!integ) throw new Error("Slack não conectado neste workspace");
-      const channel = action.channel?.trim() || (integ.default_channel_id as string | null);
-      if (!channel) throw new Error("Canal do Slack não informado e sem canal padrão");
-      const text = renderTokens(action.text, ctx.after, ctx.vars) as string;
-      const res = await fetch("https://slack.com/api/chat.postMessage", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-          Authorization: `Bearer ${integ.access_token}`,
-        },
-        body: JSON.stringify({ channel, text }),
-      });
-      const json = (await res.json().catch(() => ({}))) as { ok?: boolean; error?: string };
-      if (!res.ok || !json.ok) throw new Error(`Slack: ${json.error ?? res.status}`);
-      return { at, ok: true, action: "send_slack", detail: { channel } };
+      const { dispatchWorkflowSlack } = await import("@/lib/notifications/slack-dispatch.server");
+      const queued = await dispatchWorkflowSlack(supabase, action, ctx);
+      return { at, ok: true, action: "send_slack", detail: queued };
     }
     case "send_teams": {
       const text = renderTokens(action.text, ctx.after, ctx.vars) as string;

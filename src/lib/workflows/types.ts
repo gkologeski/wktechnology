@@ -388,9 +388,9 @@ export type WorkflowAction =
     }
   | {
       type: "send_slack";
-      /** ID do canal Slack (C0…). Se vazio, usa default_channel_id da integração. */
+      /** Canal legado preservado; overrides bloqueiam o envio por Incoming Webhook. */
       channel?: string;
-      /** Texto (aceita tokens {{field}} / {{vars.X}}). */
+      /** Texto legado preservado para revisão; transporte usa modelo neutro protegido. */
       text: string;
     }
   | {

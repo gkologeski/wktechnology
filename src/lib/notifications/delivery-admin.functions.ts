@@ -3,7 +3,11 @@ import { z } from "zod";
 import { requireWorkspaceContext } from "@/lib/access-control/active-workspace.middleware";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import { assertNotificationWorkspace } from "@/lib/notification-center";
-import { notificationDeliveryPolicySchema } from "./delivery-types";
+import {
+  notificationDeliveryPolicySchema,
+  notificationSlackPolicySchema,
+  notificationSlackSettingsSchema,
+} from "./delivery-types";
 import {
   deliveryWorkspaceInput,
   deliveryPolicyResult,
@@ -117,4 +121,42 @@ export const listNotificationWhatsAppTemplates = createServerFn({ method: "POST"
     return {
       items: await loadNotificationWhatsAppTemplates(data.workspaceId, data.senderPhoneNumberId),
     };
+  });
+
+export const getNotificationSlackSettings = createServerFn({ method: "POST" })
+  .middleware([requireWorkspaceContext()])
+  .inputValidator((input) => deliveryWorkspaceInput.parse(input))
+  .handler(async ({ context, data }) => {
+    assertNotificationWorkspace(context, data.workspaceId);
+    const caps = await notificationDeliveryCapabilities(context.supabase, data.workspaceId);
+    if (!caps.slackView) throw Error("Sem permissão para consultar o canal Slack.");
+    const settings = notificationSlackSettingsSchema.parse(
+      await workRpc(context.supabase, "notification_slack_settings", {
+        p_workspace: data.workspaceId,
+      }),
+    );
+    return { ...settings, canManage: caps.slackConfigure === true };
+  });
+
+export const saveNotificationSlackSettings = createServerFn({ method: "POST" })
+  .middleware([requireWorkspaceContext()])
+  .inputValidator((input) =>
+    deliveryWorkspaceInput
+      .extend({ policy: notificationSlackPolicySchema, revision: z.number().int().min(0) })
+      .strict()
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    assertNotificationWorkspace(context, data.workspaceId);
+    const caps = await notificationDeliveryCapabilities(context.supabase, data.workspaceId);
+    if (!caps.slackView || !caps.slackConfigure)
+      throw Error("Sem permissão para configurar o canal Slack.");
+    const settings = notificationSlackSettingsSchema.parse(
+      await workRpc(context.supabase, "notification_slack_settings_save", {
+        p_workspace: data.workspaceId,
+        p_policy: data.policy,
+        p_revision: data.revision,
+      }),
+    );
+    return { ...settings, canManage: true };
   });

@@ -241,3 +241,94 @@ it("accepts a complete SQL delivery page and refuses an unbounded response", () 
     deliveryHistoryResult.safeParse({ items: Array(51).fill(item), nextCursor: null }).success,
   ).toBe(false);
 });
+
+const slackJob = {
+  id: I,
+  token: U,
+  channel: "slack" as const,
+  idempotencyKey: "collective-once",
+  workspaceId: U,
+  workflowId: U,
+  runId: I,
+  integrationId: U,
+  endpointRevision: 1,
+  endpointHash: "a".repeat(64),
+};
+it("worker processes Slack as collective acceptance without personal recipient or invented receipt", async () => {
+  const f = fixture({ claim: slackJob, preflight: () => ({ allowed: true, ...slackJob }) });
+  const send = vi.fn(async (current, guard) => {
+    expect(current).not.toHaveProperty("recipientId");
+    await guard();
+    return { status: "accepted" as const, provider: "slack_webhook" as const, providerId: null };
+  });
+  expect((await tickNotificationDeliveries(f.client, 20, { send })).accepted).toBe(1);
+  expect(f.rpc).toHaveBeenLastCalledWith(
+    "notification_delivery_finish",
+    expect.objectContaining({
+      p_status: "accepted",
+      p_provider: "slack_webhook",
+      p_provider_id: null,
+    }),
+  );
+});
+it.each(["integrationId", "endpointRevision", "endpointHash"] as const)(
+  "worker rejects changed Slack pin %s before POST",
+  async (key) => {
+    const changed = {
+      ...slackJob,
+      [key]: key === "endpointRevision" ? 2 : key === "endpointHash" ? "b".repeat(64) : I,
+    };
+    const f = fixture({ claim: slackJob, preflight: () => ({ allowed: true, ...changed }) });
+    const send = vi.fn();
+    await expect(tickNotificationDeliveries(f.client, 20, { send })).rejects.toThrow("persistir");
+    expect(send).not.toHaveBeenCalled();
+  },
+);
+it("worker persists Slack cooldown without truncating provider Retry-After", async () => {
+  const f = fixture({ claim: slackJob, preflight: () => ({ allowed: true, ...slackJob }) });
+  expect(
+    (
+      await tickNotificationDeliveries(f.client, 20, {
+        send: async () => ({
+          status: "retry_scheduled",
+          provider: "slack_webhook",
+          reasonCode: "provider_rate_limited",
+          retryAfterSeconds: 7200,
+        }),
+      })
+    ).deferred,
+  ).toBe(1);
+  expect(f.rpc).toHaveBeenLastCalledWith(
+    "notification_delivery_finish",
+    expect.objectContaining({ p_retry_after_seconds: 7200 }),
+  );
+});
+it("worker refuses provider receipts fabricated for Slack incoming webhook", async () => {
+  const f = fixture({ claim: slackJob, preflight: () => ({ allowed: true, ...slackJob }) });
+  expect(
+    (
+      await tickNotificationDeliveries(f.client, 20, {
+        send: async () => ({
+          status: "accepted",
+          provider: "slack_webhook",
+          providerId: "invented",
+        }),
+      })
+    ).uncertain,
+  ).toBe(1);
+});
+
+it("preview recognizes Slack-only rules without claiming personal recipients or messages", () => {
+  const result = inspectNotificationActions(
+    [{ type: "send_slack", text: "PRIVATE", channel: "#secret" }],
+    null,
+    { enabled: false, daily_limit: 0, integration_id: null, template_version: "neutral-v1" },
+  );
+  expect(result.notificationSteps).toBe(1);
+  expect(result.channels).toEqual(["slack (coletivo)"]);
+  expect(result.realMessages).toBe(0);
+  expect(result.issues.join(" ")).toContain("canal antigo");
+  expect(result.issues.join(" ")).toContain("desabilitado");
+  expect(JSON.stringify(result)).not.toContain("PRIVATE");
+  expect(JSON.stringify(result)).not.toContain("#secret");
+});

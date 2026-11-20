@@ -126,7 +126,9 @@ export async function runActions(
       : await runAction(
           supabase,
           action,
-          action.type === "send_notification" ? { ...ctx, notificationStepKey: stepPath } : ctx,
+          ["send_notification", "send_slack"].includes(action.type)
+            ? { ...ctx, notificationStepKey: stepPath }
+            : ctx,
         );
     const step = annotate(raw);
     if (step.suspend_until) {

@@ -1,8 +1,9 @@
-import type { NotificationDeliveryPolicy } from "./delivery-types";
+import type { NotificationDeliveryPolicy, NotificationSlackPolicy } from "./delivery-types";
 /** Structural inspection only: no recipient lookup, persistence, provider or event execution. */
 export function inspectNotificationActions(
   actions: unknown[],
   policy: NotificationDeliveryPolicy | null,
+  slackPolicy: NotificationSlackPolicy | null = null,
 ) {
   const channels = new Set<string>(),
     issues = new Set<string>();
@@ -25,6 +26,21 @@ export function inspectNotificationActions(
           !policy.email_enabled
         )
           issues.add("O e-mail está desabilitado na política do workspace.");
+      }
+      if (s.type === "send_slack") {
+        notificationSteps++;
+        channels.add("slack (coletivo)");
+        if (!slackPolicy)
+          issues.add("A política coletiva do Slack não foi inspecionada com seu acesso atual.");
+        else if (!slackPolicy.enabled)
+          issues.add("O Slack está desabilitado na política coletiva do workspace.");
+        if (typeof s.channel === "string" && s.channel.trim())
+          issues.add(
+            "O canal antigo desta ação bloqueia o Incoming Webhook. Remova o override e revise o destino.",
+          );
+        issues.add(
+          "Slack usa modelo neutro fixo para um canal compartilhado, sem comprovar entrega pessoal ou leitura.",
+        );
       }
       for (const key of ["then", "else", "actions", "default"])
         if (Array.isArray(s[key])) walk(s[key] as unknown[], depth + 1);

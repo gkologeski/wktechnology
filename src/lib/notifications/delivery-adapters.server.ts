@@ -10,6 +10,7 @@ import {
 import {
   notificationDeliveryJobSchema,
   type NotificationDeliveryJob,
+  type NotificationPersonalDeliveryJob,
   type NotificationTransportResult,
 } from "./delivery-types";
 
@@ -32,6 +33,7 @@ export type NotificationAdapterDependencies = {
     templateName: "notification-update";
     templateData: { centralUrl: string };
     idempotencyKey: string;
+    beforeSend: () => Promise<void>;
   }) => Promise<ServerEmailResult>;
   readCloudSender: (
     workspaceId: string,
@@ -88,8 +90,10 @@ function transportFailure(provider: Provider, error: unknown): NotificationTrans
   if (status === 429) {
     const delay =
       typeof typed?.retryAfterSeconds === "number" && Number.isFinite(typed.retryAfterSeconds)
-        ? Math.min(3600, Math.max(1, Math.ceil(typed.retryAfterSeconds)))
+        ? Math.max(1, Math.ceil(typed.retryAfterSeconds))
         : 60;
+    // Never shorten a provider cooldown to fit a local retry bound.
+    if (delay > 86400) return result(provider, "failed", "provider_rate_limited");
     return {
       ...result(provider, "retry_scheduled", "provider_rate_limited"),
       retryAfterSeconds: delay,
@@ -101,7 +105,7 @@ function transportFailure(provider: Provider, error: unknown): NotificationTrans
 }
 
 async function sendEmail(
-  job: NotificationDeliveryJob,
+  job: NotificationPersonalDeliveryJob,
   deps: NotificationAdapterDependencies,
   centralUrl: string,
   authorizeBeforePost: () => Promise<void>,
@@ -117,6 +121,7 @@ async function sendEmail(
       templateName: "notification-update",
       templateData: { centralUrl },
       idempotencyKey: job.idempotencyKey,
+      beforeSend: authorizeBeforePost,
     });
     if (delivery.status === "suppressed")
       return result("managed_email", "suppressed", "recipient_suppressed");
@@ -130,7 +135,7 @@ async function sendEmail(
 }
 
 async function sendWhatsApp(
-  job: NotificationDeliveryJob,
+  job: NotificationPersonalDeliveryJob,
   deps: NotificationAdapterDependencies,
   centralUrl: string,
   authorizeBeforePost: () => Promise<void>,
@@ -218,9 +223,22 @@ export async function sendNotificationDelivery(
   authorizeBeforePost?: () => Promise<void>,
 ): Promise<NotificationTransportResult> {
   const parsed = notificationDeliveryJobSchema.safeParse(input);
-  const provider = input?.channel === "whatsapp" ? "meta_cloud" : "managed_email";
+  const provider =
+    input?.channel === "slack"
+      ? "slack_webhook"
+      : input?.channel === "whatsapp"
+        ? "meta_cloud"
+        : "managed_email";
   if (!parsed.success || !authorizeBeforePost)
     return result(provider, "failed", "invalid_configuration");
+  if (parsed.data.channel === "slack") {
+    if (injected) return result("slack_webhook", "failed", "invalid_configuration");
+    return (await import("./slack-transport.server")).sendSlackNotification(
+      parsed.data,
+      undefined,
+      authorizeBeforePost,
+    );
+  }
   const deps = await dependencies(injected);
   let centralUrl: string;
   try {
