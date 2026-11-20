@@ -9,9 +9,28 @@ import {
 import type { NotificationCenterItem } from "./notification-center";
 
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ children, to }: { children?: ReactNode; to: string }) =>
-    createElement("a", { href: to }, children),
+  Link: ({
+    children,
+    to,
+    search,
+  }: {
+    children?: ReactNode;
+    to: string;
+    search?: Record<string, string>;
+  }) =>
+    createElement(
+      "a",
+      {
+        href: to + (search ? `?${new URLSearchParams(search)}` : ""),
+        onClick: (event: { preventDefault: () => void }) => {
+          event.preventDefault();
+          navigation.open(to, search);
+        },
+      },
+      children,
+    ),
 }));
+const navigation = vi.hoisted(() => ({ open: vi.fn() }));
 vi.mock("@/lib/crm", () => ({ formatDateTime: (value: string) => value }));
 vi.mock("@/lib/audit-session", () => ({
   beginAuditSession: () => "synthetic-session",
@@ -88,6 +107,33 @@ afterEach(async () => {
 });
 
 describe("central de notificações — apresentação e ações pessoais", () => {
+  it.each([
+    "/projects/00000000-0000-4000-8000-000000000010?tab=milestones&milestoneId=00000000-0000-4000-8000-000000000011",
+    "/jobs/00000000-0000-4000-8000-000000000010?tab=pipeline&applicationId=00000000-0000-4000-8000-000000000011",
+    "/jobs/00000000-0000-4000-8000-000000000010?tab=interviews&interviewId=00000000-0000-4000-8000-000000000011",
+    "/offers?offerId=00000000-0000-4000-8000-000000000011",
+    "/people/00000000-0000-4000-8000-000000000010?tab=documents&documentId=00000000-0000-4000-8000-000000000011",
+    "/people/hiring-requests?request=00000000-0000-4000-8000-000000000011",
+  ])(
+    "clicks the real detail link with its complete target %s and no implicit decision",
+    async (link) => {
+      await render({ selectedId: row().id, items: [row({ link })] });
+      const anchor = [...host.querySelectorAll<HTMLAnchorElement>("a")].find(
+        (item) => item.getAttribute("href") === link,
+      )!;
+      expect([...host.querySelectorAll("a")].map((item) => item.getAttribute("href"))).toContain(
+        link,
+      );
+      await act(async () => anchor.click());
+      const url = new URL(link, "https://local.invalid");
+      expect(navigation.open).toHaveBeenCalledExactlyOnceWith(
+        url.pathname,
+        Object.fromEntries(url.searchParams),
+      );
+      expect(callbacks.onRead).not.toHaveBeenCalled();
+      expect(callbacks.onSnooze).not.toHaveBeenCalled();
+    },
+  );
   it("usa a identidade visual por tokens, sem copiar branding fixo do protótipo", async () => {
     await render();
     expect(host.querySelector(".bg-primary\\/10")).toBeNull();

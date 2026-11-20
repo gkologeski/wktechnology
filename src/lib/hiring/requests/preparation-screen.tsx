@@ -58,6 +58,7 @@ import {
 } from "@/components/ui/table";
 import { useSharedAction } from "@/lib/access-control/use-shared-action";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useAuth } from "@/lib/auth";
 import { readViewAs } from "@/lib/view-as-client";
 import { PreparationReferenceField } from "@/components/hiring-requests/preparation-reference-field";
 import { PreparationForm } from "@/components/hiring-requests/preparation-form";
@@ -89,6 +90,7 @@ function useDebounced(value: string) {
 }
 export function PreparationScreen({ kind, requestId }: { kind: RequestKind; requestId?: string }) {
   const p = usePermissions();
+  const { user } = useAuth();
   if (p.isLoading) return <ListPageSkeleton />;
   if (p.isError || !p.workspaceId)
     return (
@@ -97,9 +99,24 @@ export function PreparationScreen({ kind, requestId }: { kind: RequestKind; requ
         <Button onClick={p.refetch}>Tentar novamente</Button>
       </div>
     );
-  return <PreparationContent key={`${p.workspaceId}:${kind}`} kind={kind} requestId={requestId} />;
+  return user ? (
+    <PreparationContent
+      key={`${user.id}:${p.workspaceId}:${kind}:${requestId ?? "list"}`}
+      userId={user.id}
+      kind={kind}
+      requestId={requestId}
+    />
+  ) : null;
 }
-function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?: string }) {
+function PreparationContent({
+  kind,
+  requestId,
+  userId,
+}: {
+  kind: RequestKind;
+  requestId?: string;
+  userId: string;
+}) {
   const resource = resourceFor(kind),
     p = usePermissions();
   const canView = useSharedAction(resource, "view"),
@@ -134,14 +151,31 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
     referenceFn = useServerFn(preparationReference);
   const directFn = useServerFn(getPreparationApproval);
   const direct = useQuery({
-    queryKey: ["preparation-direct", p.workspaceId, kind, requestId],
+    queryKey: ["preparation-direct", userId, p.workspaceId, kind, requestId],
     enabled: canView && !!requestId,
     queryFn: () => directFn({ data: { kind, id: requestId ?? "" } }),
     retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
   });
   const openedDirect = useRef<string | null>(null);
   useEffect(() => {
-    if (!direct.data || !requestId || openedDirect.current === requestId) return;
+    if (requestId && direct.isError) {
+      openedDirect.current = null;
+      setOpen(false);
+      setRow(null);
+      setReferenceValue(null);
+      return;
+    }
+    if (
+      !direct.isFetchedAfterMount ||
+      direct.isFetching ||
+      !direct.data ||
+      !requestId ||
+      openedDirect.current === requestId
+    )
+      return;
     openedDirect.current = requestId;
     const saved = direct.data.request;
     setStep(3);
@@ -152,9 +186,10 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
     setReferenceDirty(false);
     setHistoryOffset(0);
     setError("");
-  }, [direct.data, requestId]);
+  }, [direct.data, direct.isFetchedAfterMount, direct.isFetching, direct.isError, requestId]);
+  const directPending = !!requestId && row?.id === requestId && direct.isFetching;
   const reference = useQuery({
-    queryKey: ["preparation-reference", p.workspaceId, kind, row?.id, row?.revision],
+    queryKey: ["preparation-reference", userId, p.workspaceId, kind, row?.id, row?.revision],
     enabled: open && !!row && canReadReference,
     queryFn: () => referenceFn({ data: { kind, id: row?.id ?? "" } }),
     retry: false,
@@ -167,13 +202,21 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
   }, [canReadReference, reference.data, referenceDirty]);
   const pending = useRef<{ operation: string; fingerprint: string } | null>(null);
   const query = useQuery({
-    queryKey: ["preparation-page", p.workspaceId, kind, term, offset],
+    queryKey: ["preparation-page", userId, p.workspaceId, kind, term, offset],
     enabled: canView,
     queryFn: () => listFn({ data: { kind, search: term, offset } }),
     retry: false,
   });
   const history = useQuery({
-    queryKey: ["preparation-history", p.workspaceId, kind, row?.id, row?.revision, historyOffset],
+    queryKey: [
+      "preparation-history",
+      userId,
+      p.workspaceId,
+      kind,
+      row?.id,
+      row?.revision,
+      historyOffset,
+    ],
     enabled: open && !!row && canView,
     queryFn: () => historyFn({ data: { kind, id: row?.id ?? "", offset: historyOffset } }),
     retry: false,
@@ -380,306 +423,324 @@ function PreparationContent({ kind, requestId }: { kind: RequestKind; requestId?
           }}
         >
           <DialogHeader>
-            <DialogTitle>{row ? row.title : "Nova solicitação"}</DialogTitle>
+            <DialogTitle>
+              {directPending
+                ? "Conferindo acesso à solicitação…"
+                : row
+                  ? row.title
+                  : "Nova solicitação"}
+            </DialogTitle>
           </DialogHeader>
-          <nav aria-label="Etapas da solicitação" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            {wizardSteps.map((label, index) => (
-              <Button
-                key={label}
-                variant={step === index ? "default" : "outline"}
-                aria-current={step === index ? "step" : undefined}
-                onClick={() => setStep(index)}
-              >
-                {index + 1}. {label}
-              </Button>
-            ))}
-          </nav>
-          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
-            <div className="min-w-0">
-              {kind === "supplier" && step === 0 && (
-                <SupplierDocumentIntake
-                  key={`${row?.id ?? "new"}:${open}`}
-                  form={form}
-                  disabled={locked}
-                  canWriteReference={
-                    canReadReference && canWriteReference && (!row || reference.isSuccess)
-                  }
-                  onApply={setForm}
-                  onReference={(n) => {
-                    setReferenceValue(n);
-                    setReferenceDirty(true);
-                  }}
-                />
-              )}
-              <PreparationForm
-                step={step}
-                referenceValue={referenceValue}
-                canReadReference={canReadReference && (!row || reference.isSuccess)}
-                canWriteReference={canWriteReference && (!row || reference.isSuccess)}
-                onReferenceChange={(v) => {
-                  setReferenceValue(v);
-                  setReferenceDirty(true);
-                }}
-                kind={kind}
-                value={form}
-                onChange={setForm}
-                disabled={locked}
-                picker={(picker, label, value, onChange) => (
-                  <PreparationReferenceField
-                    key={picker}
-                    kind={kind}
-                    picker={picker}
-                    label={label}
-                    value={value}
-                    onChange={onChange}
-                    disabled={locked || step === 3}
-                    company={form.company_id}
-                    commercialContractId={form.commercial_contract_id}
+          <fieldset
+            className="contents"
+            disabled={directPending}
+            hidden={directPending}
+            inert={directPending || undefined}
+            style={directPending ? { display: "none" } : undefined}
+          >
+            <nav
+              aria-label="Etapas da solicitação"
+              className="grid grid-cols-2 sm:grid-cols-4 gap-2"
+            >
+              {wizardSteps.map((label, index) => (
+                <Button
+                  key={label}
+                  variant={step === index ? "default" : "outline"}
+                  aria-current={step === index ? "step" : undefined}
+                  onClick={() => setStep(index)}
+                >
+                  {index + 1}. {label}
+                </Button>
+              ))}
+            </nav>
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+              <div className="min-w-0">
+                {kind === "supplier" && step === 0 && (
+                  <SupplierDocumentIntake
+                    key={`${row?.id ?? "new"}:${open}`}
+                    form={form}
+                    disabled={locked}
+                    canWriteReference={
+                      canReadReference && canWriteReference && (!row || reference.isSuccess)
+                    }
+                    onApply={setForm}
+                    onReference={(n) => {
+                      setReferenceValue(n);
+                      setReferenceDirty(true);
+                    }}
                   />
                 )}
-              />
-              {step === 2 && row && canReadReference && reference.isError && (
-                <div role="alert">
-                  Não foi possível carregar o valor.{" "}
-                  <Button variant="outline" onClick={() => void reference.refetch()}>
-                    Tentar novamente
-                  </Button>
-                </div>
-              )}
-              {step === 3 && (
-                <FormSection title="Preparação">
-                  <Label htmlFor="request-status">Situação</Label>
-                  <Select
-                    disabled={locked || !row}
-                    value={form.status}
-                    onValueChange={(v) => {
-                      if (v === "draft" || v === "ready") setForm({ ...form, status: v });
-                    }}
-                  >
-                    <SelectTrigger id="request-status">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">Rascunho</SelectItem>
-                      <SelectItem value="ready">Pronta para aprovação</SelectItem>
-                      {form.status === "cancelled" && (
-                        <SelectItem value="cancelled">Cancelada</SelectItem>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-muted-foreground">
-                    Pronta para aprovação não significa aprovada. Não autoriza recrutamento,
-                    admissão, contratos ou envio de mensagens.
-                  </p>
-                </FormSection>
-              )}
-              {row && (
-                <FormSection title={`Histórico · revisão ${row.revision}`}>
-                  {history.isLoading ? (
-                    <ListPageSkeleton />
-                  ) : history.isError ? (
-                    <div role="alert">
-                      Não foi possível carregar o histórico.{" "}
-                      <Button variant="outline" onClick={() => void history.refetch()}>
-                        Tentar novamente
-                      </Button>
-                    </div>
-                  ) : (
-                    <>
-                      <ol className="space-y-3">
-                        {history.data?.slice(0, 50).map((e) => (
-                          <li key={e.id} className="border-b py-2 text-sm">
-                            <strong>
-                              Revisão {e.revision} · {statusLabels[e.snapshot.status]}
-                            </strong>
-                            <p>{e.snapshot.title}</p>
-                            <p className="whitespace-pre-wrap break-words">
-                              {e.snapshot.scope_text}
-                            </p>
-                            <p className="text-muted-foreground">
-                              {new Date(e.created_at).toLocaleString("pt-BR")} · Autor {e.actor_id}
-                            </p>
-                          </li>
-                        ))}
-                      </ol>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          disabled={!historyOffset}
-                          onClick={() => setHistoryOffset(Math.max(0, historyOffset - 50))}
-                        >
-                          Mais recente
-                        </Button>
-                        <Button
-                          variant="outline"
-                          disabled={(history.data?.length ?? 0) <= 50}
-                          onClick={() => setHistoryOffset(historyOffset + 50)}
-                        >
-                          Mais antigo
+                <PreparationForm
+                  step={step}
+                  referenceValue={referenceValue}
+                  canReadReference={canReadReference && (!row || reference.isSuccess)}
+                  canWriteReference={canWriteReference && (!row || reference.isSuccess)}
+                  onReferenceChange={(v) => {
+                    setReferenceValue(v);
+                    setReferenceDirty(true);
+                  }}
+                  kind={kind}
+                  value={form}
+                  onChange={setForm}
+                  disabled={locked}
+                  picker={(picker, label, value, onChange) => (
+                    <PreparationReferenceField
+                      key={picker}
+                      kind={kind}
+                      picker={picker}
+                      label={label}
+                      value={value}
+                      onChange={onChange}
+                      disabled={locked || step === 3}
+                      company={form.company_id}
+                      commercialContractId={form.commercial_contract_id}
+                    />
+                  )}
+                />
+                {step === 2 && row && canReadReference && reference.isError && (
+                  <div role="alert">
+                    Não foi possível carregar o valor.{" "}
+                    <Button variant="outline" onClick={() => void reference.refetch()}>
+                      Tentar novamente
+                    </Button>
+                  </div>
+                )}
+                {step === 3 && (
+                  <FormSection title="Preparação">
+                    <Label htmlFor="request-status">Situação</Label>
+                    <Select
+                      disabled={locked || !row}
+                      value={form.status}
+                      onValueChange={(v) => {
+                        if (v === "draft" || v === "ready") setForm({ ...form, status: v });
+                      }}
+                    >
+                      <SelectTrigger id="request-status">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="draft">Rascunho</SelectItem>
+                        <SelectItem value="ready">Pronta para aprovação</SelectItem>
+                        {form.status === "cancelled" && (
+                          <SelectItem value="cancelled">Cancelada</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">
+                      Pronta para aprovação não significa aprovada. Não autoriza recrutamento,
+                      admissão, contratos ou envio de mensagens.
+                    </p>
+                  </FormSection>
+                )}
+                {row && (
+                  <FormSection title={`Histórico · revisão ${row.revision}`}>
+                    {history.isLoading ? (
+                      <ListPageSkeleton />
+                    ) : history.isError ? (
+                      <div role="alert">
+                        Não foi possível carregar o histórico.{" "}
+                        <Button variant="outline" onClick={() => void history.refetch()}>
+                          Tentar novamente
                         </Button>
                       </div>
-                    </>
-                  )}
-                </FormSection>
-              )}
-              {row && <ExecutionHistory kind={kind} row={row} />}
-              {row && <OperationsHistory kind={kind} row={row} />}
-              {row && <EconomicsHistory kind={kind} row={row} />}
-              {row && <PayablesHistory kind={kind} row={row} />}
-              {row && (
-                <ApprovalPanel
-                  key={`history:${row.id}`}
-                  kind={kind}
-                  row={row}
-                  dirty={
-                    referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
-                  }
-                  busy={save.isPending}
-                  history
-                />
-              )}
-            </div>
-            <aside className="border-l pl-4 space-y-5 min-w-0">
-              <h2 className="font-semibold">Resumo e jornada</h2>
-              <p className="break-words">{form.title || "Nova solicitação"}</p>
-              <p>{modalityLabels[form.modality]}</p>
-              <p>
-                {statusLabels[form.status]} · Revisão {row?.revision ?? "inicial"}
-              </p>
-              <ol className="space-y-2">
-                {wizardSteps.map((label, index) => (
-                  <li key={label}>
-                    <Button
-                      variant="ghost"
-                      aria-current={step === index ? "step" : undefined}
-                      onClick={() => setStep(index)}
-                    >
-                      {label}
-                    </Button>
-                  </li>
-                ))}
-              </ol>
-              <PreparationOriginNotice
-                kind={kind}
-                form={form}
-                enabled={open}
-                editable={!locked}
-                onBlocked={setOriginBlocked}
-                onUseEntity={(id) => setForm((v) => ({ ...v, legal_entity_id: id }))}
-              />
-              <h3 className="font-semibold">Responsáveis</h3>
-              <p className="text-sm break-words">
-                Solicitante: {row?.created_by ?? "Você ao salvar"}
-              </p>
-              <AreaSummary kind={kind} id={form.area_id} />
-              {row ? (
-                <ApprovalPanel
-                  key={row.id}
-                  kind={kind}
-                  row={row}
-                  dirty={
-                    referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
-                  }
-                  busy={save.isPending}
-                />
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Salve a solicitação antes de solicitar aprovação.
+                    ) : (
+                      <>
+                        <ol className="space-y-3">
+                          {history.data?.slice(0, 50).map((e) => (
+                            <li key={e.id} className="border-b py-2 text-sm">
+                              <strong>
+                                Revisão {e.revision} · {statusLabels[e.snapshot.status]}
+                              </strong>
+                              <p>{e.snapshot.title}</p>
+                              <p className="whitespace-pre-wrap break-words">
+                                {e.snapshot.scope_text}
+                              </p>
+                              <p className="text-muted-foreground">
+                                {new Date(e.created_at).toLocaleString("pt-BR")} · Autor{" "}
+                                {e.actor_id}
+                              </p>
+                            </li>
+                          ))}
+                        </ol>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            disabled={!historyOffset}
+                            onClick={() => setHistoryOffset(Math.max(0, historyOffset - 50))}
+                          >
+                            Mais recente
+                          </Button>
+                          <Button
+                            variant="outline"
+                            disabled={(history.data?.length ?? 0) <= 50}
+                            onClick={() => setHistoryOffset(historyOffset + 50)}
+                          >
+                            Mais antigo
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </FormSection>
+                )}
+                {row && <ExecutionHistory kind={kind} row={row} />}
+                {row && <OperationsHistory kind={kind} row={row} />}
+                {row && <EconomicsHistory kind={kind} row={row} />}
+                {row && <PayablesHistory kind={kind} row={row} />}
+                {row && (
+                  <ApprovalPanel
+                    key={`history:${row.id}`}
+                    kind={kind}
+                    row={row}
+                    dirty={
+                      referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
+                    }
+                    busy={save.isPending}
+                    history
+                  />
+                )}
+              </div>
+              <aside className="border-l pl-4 space-y-5 min-w-0">
+                <h2 className="font-semibold">Resumo e jornada</h2>
+                <p className="break-words">{form.title || "Nova solicitação"}</p>
+                <p>{modalityLabels[form.modality]}</p>
+                <p>
+                  {statusLabels[form.status]} · Revisão {row?.revision ?? "inicial"}
                 </p>
-              )}
-              {row && (
-                <FormalizationPanel
-                  key={`formal:${row.id}`}
+                <ol className="space-y-2">
+                  {wizardSteps.map((label, index) => (
+                    <li key={label}>
+                      <Button
+                        variant="ghost"
+                        aria-current={step === index ? "step" : undefined}
+                        onClick={() => setStep(index)}
+                      >
+                        {label}
+                      </Button>
+                    </li>
+                  ))}
+                </ol>
+                <PreparationOriginNotice
                   kind={kind}
-                  row={row}
-                  dirty={
-                    referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
-                  }
-                  busy={save.isPending}
+                  form={form}
+                  enabled={open}
+                  editable={!locked}
+                  onBlocked={setOriginBlocked}
+                  onUseEntity={(id) => setForm((v) => ({ ...v, legal_entity_id: id }))}
                 />
-              )}
-              {row && (
-                <ExecutionPanel
-                  key={`exec:${row.id}`}
-                  kind={kind}
-                  row={row}
-                  dirty={
-                    referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
-                  }
-                  busy={save.isPending}
-                />
-              )}
-              {row && (
-                <OperationsPanel
-                  key={`ops:${row.id}`}
-                  kind={kind}
-                  row={row}
-                  dirty={
-                    referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
-                  }
-                  busy={save.isPending}
-                />
-              )}
-              {row && <EconomicsPanel key={`econ:${row.id}`} kind={kind} row={row} />}
-              {row && <PayablesPanel key={`pay:${row.id}`} kind={kind} row={row} />}
-            </aside>
-          </div>
-          {error && (
-            <div role="alert" className="text-destructive space-y-2">
-              {error}
-              {error.includes("REVISION_CONFLICT") && (
+                <h3 className="font-semibold">Responsáveis</h3>
+                <p className="text-sm break-words">
+                  Solicitante: {row?.created_by ?? "Você ao salvar"}
+                </p>
+                <AreaSummary kind={kind} id={form.area_id} />
+                {row ? (
+                  <ApprovalPanel
+                    key={row.id}
+                    kind={kind}
+                    row={row}
+                    dirty={
+                      referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
+                    }
+                    busy={save.isPending}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Salve a solicitação antes de solicitar aprovação.
+                  </p>
+                )}
+                {row && (
+                  <FormalizationPanel
+                    key={`formal:${row.id}`}
+                    kind={kind}
+                    row={row}
+                    dirty={
+                      referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
+                    }
+                    busy={save.isPending}
+                  />
+                )}
+                {row && (
+                  <ExecutionPanel
+                    key={`exec:${row.id}`}
+                    kind={kind}
+                    row={row}
+                    dirty={
+                      referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
+                    }
+                    busy={save.isPending}
+                  />
+                )}
+                {row && (
+                  <OperationsPanel
+                    key={`ops:${row.id}`}
+                    kind={kind}
+                    row={row}
+                    dirty={
+                      referenceDirty || JSON.stringify(form) !== JSON.stringify(savedToForm(row))
+                    }
+                    busy={save.isPending}
+                  />
+                )}
+                {row && <EconomicsPanel key={`econ:${row.id}`} kind={kind} row={row} />}
+                {row && <PayablesPanel key={`pay:${row.id}`} kind={kind} row={row} />}
+              </aside>
+            </div>
+            {error && (
+              <div role="alert" className="text-destructive space-y-2">
+                {error}
+                {error.includes("REVISION_CONFLICT") && (
+                  <Button
+                    variant="outline"
+                    onClick={async () => {
+                      const fresh = await listFn({
+                        data: { kind, search: row?.title ?? "", offset: 0 },
+                      });
+                      const found = fresh.find((r) => r.id === row?.id);
+                      if (found) edit(found);
+                      else setError("Solicitação não encontrada. Feche e atualize a lista.");
+                    }}
+                  >
+                    Recarregar solicitação
+                  </Button>
+                )}
+              </div>
+            )}
+            <DialogFooter className="flex-wrap gap-2">
+              {row && row.status !== "cancelled" && cancelAllowed && (
                 <Button
-                  variant="outline"
-                  onClick={async () => {
-                    const fresh = await listFn({
-                      data: { kind, search: row?.title ?? "", offset: 0 },
-                    });
-                    const found = fresh.find((r) => r.id === row?.id);
-                    if (found) edit(found);
-                    else setError("Solicitação não encontrada. Feche e atualize a lista.");
-                  }}
+                  variant="destructive"
+                  disabled={save.isPending}
+                  onClick={() => setCancel(true)}
                 >
-                  Recarregar solicitação
+                  Cancelar solicitação
                 </Button>
               )}
-            </div>
-          )}
-          <DialogFooter className="flex-wrap gap-2">
-            {row && row.status !== "cancelled" && cancelAllowed && (
-              <Button
-                variant="destructive"
-                disabled={save.isPending}
-                onClick={() => setCancel(true)}
-              >
-                Cancelar solicitação
+              <Button variant="outline" disabled={save.isPending} onClick={() => setOpen(false)}>
+                Fechar
               </Button>
-            )}
-            <Button variant="outline" disabled={save.isPending} onClick={() => setOpen(false)}>
-              Fechar
-            </Button>
-            <Button
-              variant="outline"
-              disabled={step === 0}
-              onClick={() => setStep(Math.max(0, step - 1))}
-            >
-              Voltar
-            </Button>
-            {step < 3 && <Button onClick={() => setStep(step + 1)}>Continuar</Button>}
-            <Button
-              disabled={
-                locked ||
-                originBlocked ||
-                !form.title.trim() ||
-                (canReadReference && !!row && !reference.isSuccess)
-              }
-              onClick={() => submit(form)}
-            >
-              {save.isPending ? "Salvando…" : row ? "Salvar alterações" : "Criar rascunho"}
-            </Button>
-          </DialogFooter>
+              <Button
+                variant="outline"
+                disabled={step === 0}
+                onClick={() => setStep(Math.max(0, step - 1))}
+              >
+                Voltar
+              </Button>
+              {step < 3 && <Button onClick={() => setStep(step + 1)}>Continuar</Button>}
+              <Button
+                disabled={
+                  locked ||
+                  originBlocked ||
+                  !form.title.trim() ||
+                  (canReadReference && !!row && !reference.isSuccess)
+                }
+                onClick={() => submit(form)}
+              >
+                {save.isPending ? "Salvando…" : row ? "Salvar alterações" : "Criar rascunho"}
+              </Button>
+            </DialogFooter>
+          </fieldset>
         </DialogContent>
       </Dialog>
-      <AlertDialog open={cancel} onOpenChange={setCancel}>
+      <AlertDialog open={cancel && !directPending} onOpenChange={setCancel}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancelar solicitação?</AlertDialogTitle>

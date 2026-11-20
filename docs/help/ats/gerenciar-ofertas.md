@@ -8,7 +8,7 @@ route_pattern: /offers
 min_permission: techhire.offers.view.own
 audience: internal
 sort_order: 50
-version: 2
+version: 3
 is_published: true
 ---
 # Gerenciar ofertas
@@ -40,3 +40,9 @@ is_published: true
 
 ## Relacionados
 - [Editar a ficha do candidato](/ajuda/ats/editar-ficha-candidato)
+
+## Abrir uma oferta por aviso
+
+**Oferta aceita** significa assinatura canônica válida da versão enviada; aprovação interna, etapa Contratado e status isolado não substituem essa prova. O aviso não contrata a pessoa.
+
+O link abre **Ofertas** e localiza a oferta exata, independentemente da página ou filtro carregado. A leitura e as condições privadas continuam sujeitas às permissões atuais. Não abre revisão, assinatura ou envio automaticamente. Ao revalidar acesso, o formulário aberto preserva seu texto somente na mesma identidade, mas fica oculto e bloqueado; uma revisão ou capacidade alterada exige nova conferência. Falha, revogação ou troca de usuário/workspace remove o conteúdo anterior. Nenhum token público é incluído no destino.

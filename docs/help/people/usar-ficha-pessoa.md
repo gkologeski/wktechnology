@@ -8,7 +8,7 @@ route_pattern: /people/$id
 min_permission: techpeople.people.view.own
 audience: internal
 sort_order: 11
-version: 1
+version: 2
 is_published: true
 ---
 # Usar a ficha da pessoa
@@ -53,3 +53,9 @@ is_published: true
 ## Relacionados
 - [Cadastrar e gerenciar pessoas](/ajuda/people/gerenciar-pessoas)
 - [Acompanhar onboarding](/ajuda/people/acompanhar-onboarding)
+
+## Abrir a ficha por aviso
+
+**Início de vínculo autorizado** abre a ficha da pessoa após conferir acesso atual. Representa admissão confirmada ou início direto governado; pode conter data futura e não comprova dia trabalhado, pagamento ou liberação de acesso. Cadastro, status e data isolados não produzem essa comprovação.
+
+Um aviso de documento seleciona a aba **Documentos** e destaca a linha exata somente com a permissão dessa aba e do documento. Não abre ou baixa arquivo automaticamente. Durante a conferência, conteúdo antigo fica oculto e bloqueado; falha, perda de acesso ou troca de identidade retira sua exibição.

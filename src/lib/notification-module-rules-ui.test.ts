@@ -151,7 +151,14 @@ it.each(WORKFLOW_NOTIFICATION_EVENTS)(
       {
         type: "send_notification",
         title: "Atualização no TechERP",
-        recipients: [{ kind: "source_responsible" }],
+        recipients: [
+          {
+            kind:
+              definition.key === "people.approval.pending"
+                ? "pending_approvers"
+                : "source_responsible",
+          },
+        ],
       },
     ]);
     expect(state.calls.save).not.toHaveBeenCalled();
@@ -166,6 +173,8 @@ it("groups only supported events and preserves generic workflow creation", async
     "TechSales",
     "TechContracts",
     "TechProjects",
+    "TechHire",
+    "TechPeople",
   ]);
   expect([...select.options].map((option) => option.value)).not.toContain("finance.payable.due");
   await click("Criar regra");
@@ -356,4 +365,42 @@ it("replaces an elapsed-time trigger with a named event while preserving explici
     key: "contracts.contract.expiring",
     days_before: 30,
   });
+});
+
+it.each(
+  WORKFLOW_NOTIFICATION_EVENTS.filter(
+    (definition) => definition.moduleKey === "ats" || definition.moduleKey === "people",
+  ),
+)("shows the exact $key scope and only document antecedence", async (definition) => {
+  await render(
+    createElement(TriggerEditor, {
+      entity: definition.entity,
+      initial: workflowNotificationEventTrigger(definition.key),
+    }),
+  );
+  expect(host.textContent).toContain(definition.label);
+  expect(host.textContent).not.toContain("Gatilho baseado em tempo");
+  const antecedence = host.querySelector<HTMLInputElement>(
+    '[aria-label="Antecedência do aviso em dias"]',
+  );
+  expect(Boolean(antecedence)).toBe(definition.key === "people.document.expiring");
+  if (antecedence) {
+    expect(antecedence.value).toBe("30");
+    expect(antecedence.min).toBe("1");
+    expect(antecedence.max).toBe("365");
+    expect(host.textContent).toContain("validade do documento");
+  }
+  if (
+    ["ats_offers", "people_documents", "hiring_preparation_requests"].includes(definition.entity)
+  ) {
+    expect(host.textContent).toContain("somente leitura");
+    const generic = host.querySelector<HTMLSelectElement>(
+      '[aria-label="Evento de negócio do Workflow"]',
+    )!.options[0];
+    expect(generic.disabled).toBe(true);
+    await select("Evento de negócio do Workflow", "");
+    expect(current.notification_event?.key).toBe(definition.key);
+  }
+  if (definition.key === "people.approval.pending")
+    expect(host.textContent).toContain("aviso existente no aplicativo");
 });

@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 147
-version: 7
+version: 8
 is_published: true
 ---
 
@@ -88,7 +88,7 @@ Na central, as abas **Regras**, **Modelos e canais** e **Entregas** ampliam o ac
 
 ### Criar uma regra sem duplicar o motor de automações
 
-1. Abra **Regras**. Em **Evento da nova regra**, escolha uma opção de TechSales, TechContracts ou TechProjects, ou mantenha **Regra genérica de Workflow**, e clique em **Criar regra**. O rascunho abre no construtor existente. As regras exibidas são os Workflows que possuem a ação **Enviar notificação** ou **Enviar mensagem no Slack**; não há uma segunda automação paralela.
+1. Abra **Regras**. Em **Evento da nova regra**, escolha uma opção de TechSales, TechContracts, TechProjects, TechHire ou TechPeople, ou mantenha **Regra genérica de Workflow**, e clique em **Criar regra**. O rascunho abre no construtor existente. As regras exibidas são os Workflows que possuem a ação **Enviar notificação** ou **Enviar mensagem no Slack**; não há uma segunda automação paralela.
 2. Configure o gatilho, os destinatários e os canais. Uma ação antiga sem seleção explícita mantém somente **No app**.
 3. E-mail e WhatsApp são opcionais. **E-mail se o WhatsApp falhar** exige WhatsApp primário sem e-mail em paralelo. A alternativa só é permitida em falhas definitivas ou supressões elegíveis, com preferência e permissão próprias; um resultado incerto não gera outro envio.
 4. Salve o rascunho e use **Conferir configuração sem enviar**, quando disponível. A conferência é estrutural: não envia mensagens, não comprova elegibilidade dos destinatários e não ativa o rascunho.
@@ -186,3 +186,18 @@ Se não houver aviso, confira se a regra está publicada e ativa, se houve uma o
 Os quatro eventos usam as mesmas preferências por grupo/evento, com som e tremor inicialmente desligados. Bloquear WhatsApp nesse evento não revoga a autorização dos demais; permitir não supera consentimento, política, regra, acesso ou limites. As regras de TechProjects não substituem nem reavaliam automaticamente os alertas do Dashboard.
 
 O custo planejado continua restrito às telas financeiras autorizadas. Avisos de TechProjects e seus históricos não carregam esse campo.
+
+## Avisos de TechHire e TechPeople
+
+Em **Regras**, TechHire oferece **Inscrição em vaga recebida**, **Entrevista marcada** e **Oferta aceita**. TechPeople oferece **Início de vínculo autorizado**, **Documento próximo do vencimento** e **Aprovação de solicitação profissional pendente**. A seleção prepara um rascunho desativado no Workflow existente; não publica, contrata, agenda, aprova ou envia mensagens.
+
+- Inscrição exige uma candidatura realmente registrada. Editar ou reabrir a mesma candidatura não cria outra inscrição. Seu destino abre a vaga na aba de candidaturas e localiza o registro exato, mesmo fora da lista carregada.
+- Entrevista exige agendamento confirmado com data e hora futuras. Convite pendente e alteração de notas não comprovam esse evento. O destino seleciona **Entrevistas** e confere o registro exato, sem agendar ou reagendar.
+- Oferta aceita exige assinatura canônica válida da versão enviada. Aprovação interna ou a etapa Contratado não equivalem ao aceite. O destino localiza a oferta em **Ofertas**, respeitando inclusive a permissão separada das condições.
+- Início de vínculo autorizado representa admissão confirmada ou início direto autorizado pelo fluxo governado. Pode conter data futura; não comprova dia trabalhado, pagamento nem concessão de acesso. O destino abre a ficha autorizada da pessoa.
+- Documento próximo do vencimento usa validade no calendário de São Paulo e **Antecedência em dias** entre 1 e 365, inicialmente 30 no rascunho. A janela inclui o prazo e não inclui documento vencido, sem validade ou de pessoa arquivada. O destino abre **Documentos** e destaca o item autorizado; não abre nem baixa o arquivo automaticamente.
+- Aprovação pendente cobre somente solicitações **profissionais** da preparação, na etapa atual liberada ao aprovador nomeado. Não engloba vagas, fornecedores ou todas as alçadas de RH. O aviso de processo no aplicativo já existe independentemente desta regra e é reaproveitado sem duplicação. Desativar a regra ou a preferência deste evento não remove esse aviso obrigatório. Canais adicionais explícitos continuam restritos ao mesmo aprovador vigente, sem destinatários arbitrários.
+
+Os seis eventos mantêm as preferências por grupo/evento: som e tremor inicialmente desligados; e-mail depende da escolha e da política. **WhatsApp > Herdar** preserva o consentimento geral; **Bloquear** bloqueia esse evento nesse canal, e **Permitir** não concede consentimento, acesso ou elegibilidade. Conteúdo e históricos não reproduzem salário, condições privadas, número de documento, currículo, arquivo ou token público.
+
+Ao abrir qualquer destino, aguarde a conferência do usuário, workspace e acesso atuais. A indicação neutra de carregamento substitui o conteúdo antigo durante a conferência; falha ou acesso revogado retira o conteúdo. Trocar usuário ou workspace descarta a seleção e seus rascunhos. O link não executa decisões nem substitui as permissões de cada aba.

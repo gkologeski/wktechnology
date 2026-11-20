@@ -33,12 +33,12 @@ describe("workspace notification preference overlays", () => {
     expect(effectiveChannels(base(), loaded, "mention")).toEqual(base().mention);
     expect(diffCenterSettings(loaded, structuredClone(loaded))).toEqual({});
   });
-  it("preserves the legacy event list and adds only the twelve operational module choices", () => {
+  it("preserves the legacy event list and adds only the eighteen operational module choices", () => {
     expect(LEGACY_NOTIFICATION_EVENTS).toHaveLength(22);
     expect(LEGACY_NOTIFICATION_EVENTS.every((event) => event.eventKey.startsWith("legacy."))).toBe(
       true,
     );
-    expect(AVAILABLE_NOTIFICATION_EVENTS).toHaveLength(34);
+    expect(AVAILABLE_NOTIFICATION_EVENTS).toHaveLength(40);
     expect(AVAILABLE_NOTIFICATION_EVENTS.map((event) => event.eventKey)).not.toContain(
       "finance.payable.due",
     );
@@ -114,6 +114,12 @@ describe("workspace notification preference overlays", () => {
     "projects.project.overdue",
     "projects.task.overdue",
     "projects.milestone.due",
+    "ats.application.received",
+    "ats.interview.scheduled",
+    "ats.offer.accepted",
+    "people.employment.started",
+    "people.document.expiring",
+    "people.approval.pending",
   ] as const)(
     "exposes %s conservatively and preserves exact WhatsApp opt-out without changing other events",
     (key) => {

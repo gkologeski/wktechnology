@@ -194,12 +194,32 @@ describe("named business workflow routing on the existing queue", () => {
     { key: "projects.project.overdue", entity: "projects" },
     { key: "projects.task.overdue", entity: "project_tasks" },
     { key: "projects.milestone.due", entity: "project_milestones" },
+    { key: "ats.application.received", entity: "ats_applications" },
+    { key: "ats.interview.scheduled", entity: "ats_interviews" },
+    { key: "ats.offer.accepted", entity: "ats_offers" },
+    { key: "people.employment.started", entity: "people" },
+    { key: "people.document.expiring", entity: "people_documents" },
+    { key: "people.approval.pending", entity: "hiring_preparation_requests" },
   ] as const)(
     "routes $key only to its proved source subscription in the same workspace",
     async ({ key, entity }) => {
       const trigger = workflowNotificationEventTrigger(key);
       const db = database([
-        { ...workflow("project-named", trigger), entity },
+        {
+          ...workflow("project-named", trigger),
+          entity,
+          ...(key === "people.approval.pending"
+            ? {
+                actions: [
+                  {
+                    type: "send_notification",
+                    title: "Revisão disponível",
+                    recipients: [{ kind: "pending_approvers" }],
+                  },
+                ],
+              }
+            : {}),
+        },
         { ...workflow("generic", { event: "updated", reenroll: { enabled: true } }), entity },
         { ...workflow("foreign-workspace", trigger), entity, workspace_id: "foreign-workspace" },
       ]);
@@ -234,6 +254,108 @@ describe("named business workflow routing on the existing queue", () => {
       });
     },
   );
+
+  it("keeps named HR execution and delay domains minimal without rewriting the original source event", async () => {
+    state.actions.mockResolvedValue({
+      log: [],
+      hadError: false,
+      suspendedAt: { runAtIso: "2026-12-20T12:00:00Z", resumeCursor: 1, state: { sent: true } },
+    });
+    const db = database([
+      {
+        ...workflow("employment", workflowNotificationEventTrigger("people.employment.started")),
+        entity: "people",
+      },
+    ]);
+    const event: EventRow = {
+      ...namedEvent(),
+      entity: "people",
+      notification_event_key: "people.employment.started",
+      after: {
+        id: "person",
+        workspace_id: W,
+        status: "active",
+        full_name: "Private identity",
+        email: "private@example.test",
+        monthly_cost: 9000,
+        personal_doc: { number: "private" },
+      },
+      before: { id: "person", workspace_id: W, status: "bench", bank_account: "private" },
+    };
+    await processEvent(db.client, event);
+    const context = state.actions.mock.calls[0][2];
+    expect(context.after).toEqual({ id: "person", workspace_id: W, status: "active" });
+    expect(context.before).toEqual({ id: "person", workspace_id: W, status: "bench" });
+    expect(db.resumes[0].after).toEqual({
+      id: "person",
+      workspace_id: W,
+      status: "active",
+      __wf_state: { sent: true },
+    });
+    expect(db.resumes[0].before).toEqual({ id: "person", workspace_id: W, status: "bench" });
+    expect(event.after?.monthly_cost).toBe(9000);
+  });
+
+  it("refuses a saved approval workflow with an arbitrary nested recipient before any run or transport", async () => {
+    const wf = {
+      ...workflow("approval", workflowNotificationEventTrigger("people.approval.pending")),
+      entity: "hiring_preparation_requests",
+      actions: [
+        {
+          type: "parallel",
+          join: "all",
+          branches: [
+            {
+              actions: [
+                {
+                  type: "send_notification",
+                  title: "Revisão",
+                  recipients: [{ kind: "pending_approvers" }],
+                },
+              ],
+            },
+            {
+              actions: [
+                {
+                  type: "send_notification",
+                  title: "Revisão",
+                  recipients: [{ kind: "workflow_owner" }],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const db = database([wf]);
+    await processEvent(db.client, {
+      ...namedEvent(),
+      entity: "hiring_preparation_requests",
+      notification_event_key: "people.approval.pending",
+    });
+    expect(db.runs).toEqual([]);
+    expect(state.rpc).not.toHaveBeenCalled();
+    expect(state.actions).not.toHaveBeenCalled();
+    expect(db.eventUpdates).toEqual([{ processed_at: expect.any(String) }]);
+  });
+
+  it("does not promote an unproven generic document row into any workflow execution", async () => {
+    const db = database([
+      {
+        ...workflow("document", { event: "updated", reenroll: { enabled: true } }),
+        entity: "people_documents",
+      },
+    ]);
+    await processEvent(db.client, {
+      ...namedEvent(),
+      entity: "people_documents",
+      notification_event_key: undefined,
+    });
+    expect(state.rpc).not.toHaveBeenCalled();
+    expect(state.authorize).not.toHaveBeenCalled();
+    expect(state.actions).not.toHaveBeenCalled();
+    expect(db.runs).toEqual([]);
+  });
 
   it("runs an explicitly subscribed administrator workflow across record owners after proving the actual occurrence", async () => {
     const db = database([

@@ -1,5 +1,5 @@
 import type { NotificationDeliveryPolicy, NotificationSlackPolicy } from "./delivery-types";
-import type { WorkflowTrigger } from "@/lib/workflows/types";
+import { WORKFLOW_READONLY_SOURCE_TABLES, type WorkflowTrigger } from "@/lib/workflows/types";
 import { getWorkflowNotificationEvent } from "@/lib/workflows/notification-events";
 
 /** Describes a validated draft; it never looks up a record or schedules an occurrence. */
@@ -32,10 +32,40 @@ export function inspectNotificationTrigger(trigger: WorkflowTrigger): string[] {
     notes.push(
       `Antecedência: ${selection.days_before} dias antes do prazo do marco, no calendário America/Sao_Paulo. Marcos concluídos, cancelados ou já vencidos não entram na janela. O projeto deve estar em Planejamento, Ativo ou Em espera.`,
     );
+  if (selection.key === "ats.application.received")
+    notes.push(
+      "Inscrição: uma candidatura real é registrada na vaga. Reabertura ou edição do mesmo registro não representam outra inscrição.",
+    );
+  if (selection.key === "ats.interview.scheduled")
+    notes.push(
+      "Entrevista: exige agendamento confirmado, data e hora futuras válidas. Convite pendente, cancelamento ou alteração de notas não comprovam uma entrevista marcada.",
+    );
+  if (selection.key === "ats.offer.accepted")
+    notes.push(
+      "Oferta: exige aceite pela assinatura canônica válida da versão enviada. Aprovação interna, etapa Contratado ou um status isolado não substituem essa prova; o aviso não contrata a pessoa.",
+    );
+  if (selection.key === "people.employment.started")
+    notes.push(
+      "Início autorizado: admissão canônica confirmada ou início direto autorizado no fluxo governado. Pode conter data futura e não comprova dia trabalhado, pagamento ou acesso. Cadastro, status e datas isolados não bastam.",
+    );
+  if (selection.key === "people.document.expiring")
+    notes.push(
+      `Antecedência: ${selection.days_before} dias antes da validade do documento no calendário America/Sao_Paulo, incluindo o próprio prazo. Não usa um status materializado antigo; documentos sem validade, ausentes, vencidos ou de pessoa arquivada não entram. O aviso não renova nem disponibiliza arquivos.`,
+    );
+  if (selection.key === "people.approval.pending")
+    notes.push(
+      "Somente solicitações profissionais da preparação, na etapa atual liberada ao aprovador nomeado. Não inclui vagas, fornecedores nem todas as alçadas de RH. O aviso canônico no aplicativo já existe independentemente da regra e é reaproveitado sem duplicar; desligar a regra ou esta preferência não remove esse aviso de processo. Canais adicionais explícitos não permitem destinatários arbitrários nem aprovam a solicitação.",
+    );
+  if (WORKFLOW_READONLY_SOURCE_TABLES.some((source) => source === event.entity))
+    notes.push(
+      "A origem deste evento é somente leitura no Workflow. Ela não pode ser criada, alterada ou excluída por ações genéricas do editor.",
+    );
   notes.push(
-    event.moduleKey === "projects"
-      ? "O evento de aviso não cria tarefas, altera prazos, registra horas ou gera cobrança por si só. Revise as ações do Workflow. A publicação e a ativação são separadas desta conferência."
-      : "Esta regra não recria encaminhamentos, tarefas ou decisões contratuais. A publicação e a ativação da regra são ações separadas desta conferência.",
+    event.moduleKey === "ats" || event.moduleKey === "people"
+      ? "O aviso não cria contratação, altera salário, aprova uma decisão ou concede acesso por si só. A conferência é estrutural, sem execução ou mensagem real; revise as ações e canais antes de publicar e ativar."
+      : event.moduleKey === "projects"
+        ? "O evento de aviso não cria tarefas, altera prazos, registra horas ou gera cobrança por si só. Revise as ações do Workflow. A publicação e a ativação são separadas desta conferência."
+        : "Esta regra não recria encaminhamentos, tarefas ou decisões contratuais. A publicação e a ativação da regra são ações separadas desta conferência.",
   );
   return notes;
 }

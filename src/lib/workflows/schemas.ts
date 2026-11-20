@@ -4,9 +4,11 @@
 import { z } from "zod";
 import { notificationDeliveryConfigSchema } from "@/lib/notifications/delivery-types";
 import { notificationRecipientRulesSchema } from "@/lib/notification-recipients";
+import { isWorkflowReadonlySource } from "./types";
 import {
   getWorkflowNotificationEvent,
   notificationEventSelectionSchema,
+  notificationEventActionProblem,
 } from "./notification-events";
 
 export const EntityEnum = z.enum([
@@ -19,6 +21,7 @@ export const EntityEnum = z.enum([
   "ats_candidates",
   "ats_applications",
   "ats_interviews",
+  "ats_offers",
   "projects",
   "project_tasks",
   "project_milestones",
@@ -32,6 +35,8 @@ export const EntityEnum = z.enum([
   "subscription_invoices",
   "customer_invoices",
   "people",
+  "people_documents",
+  "hiring_preparation_requests",
 ]);
 
 const WritableTableEnum = z.enum([
@@ -595,6 +600,17 @@ export const SaveSchema = z
       .transform((arr) => parseActionsAtDepth(arr, 0)),
   })
   .superRefine((workflow, ctx) => {
+    const actionProblem = notificationEventActionProblem(
+      workflow.trigger.notification_event?.key,
+      workflow.actions,
+    );
+    if (actionProblem) ctx.addIssue({ code: "custom", path: ["actions"], message: actionProblem });
+    if (isWorkflowReadonlySource(workflow.entity) && !workflow.trigger.notification_event)
+      ctx.addIssue({
+        code: "custom",
+        path: ["trigger", "notification_event"],
+        message: "Esta origem somente aceita eventos de negócio comprovados.",
+      });
     if (
       workflow.trigger.notification_event &&
       getWorkflowNotificationEvent(workflow.trigger.notification_event.key)?.entity !==

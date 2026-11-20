@@ -3,6 +3,14 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { HrScreenAccess, HrRecordAccess, HrAccessError } from "@/components/hr-access";
 import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useAuth } from "@/lib/auth";
+import { useQuery } from "@tanstack/react-query";
+import { NotificationTargetNotice } from "@/components/notifications/notification-target-notice";
+import {
+  getNotificationApplicationTarget,
+  getNotificationInterviewTarget,
+} from "@/lib/notifications/hr-targets.functions";
+import { formatDateTime } from "@/lib/crm";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useState } from "react";
@@ -56,23 +64,56 @@ import {
 } from "@/components/ats/jobs/hiring-outcome-dialog";
 
 export const Route = createFileRoute("/_authenticated/(ats)/jobs/$id")({
-  validateSearch: (search: Record<string, unknown>): { tab?: string } => ({
-    tab: typeof search.tab === "string" ? search.tab : undefined,
-  }),
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): {
+    tab?: "hiring" | "overview" | "pipeline" | "interviews" | "postings" | "activity";
+    applicationId?: string;
+    interviewId?: string;
+  } => {
+    const id = (value: unknown) =>
+      typeof value === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+        ? value
+        : undefined;
+    return {
+      tab: ["hiring", "overview", "pipeline", "interviews", "postings", "activity"].includes(
+        String(search.tab),
+      )
+        ? (search.tab as
+            | "hiring"
+            | "overview"
+            | "pipeline"
+            | "interviews"
+            | "postings"
+            | "activity")
+        : "pipeline",
+      applicationId: id(search.applicationId),
+      interviewId: id(search.interviewId),
+    };
+  },
   component: JobDetailPage,
 });
 
 function JobDetailPage() {
   const { id } = Route.useParams();
+  const { user } = useAuth();
+  const p = usePermissions();
   return (
     <HrScreenAccess resources={["techhire.jobs"]}>
       <HrRecordAccess resource="jobs" id={id}>
-        <JobDetailContent />
+        {user && p.workspaceId && (
+          <JobDetailContent
+            key={`${user.id}:${p.workspaceId}:${id}:${[...p.permissions].sort().join("|")}`}
+            userId={user.id}
+            workspaceId={p.workspaceId}
+          />
+        )}
       </HrRecordAccess>
     </HrScreenAccess>
   );
 }
-function JobDetailContent() {
+function JobDetailContent({ userId, workspaceId }: { userId: string; workspaceId: string }) {
   const { can, canAny, permissions } = usePermissions();
   const permissionVersion = [...permissions].sort().join("|");
   const canAdd = canAny(["techhire.candidates.create.own", "techhire.candidates.create.workspace"]);
@@ -105,9 +146,43 @@ function JobDetailContent() {
     {},
   );
   const [evalApp, setEvalApp] = useState<App | null>(null);
-  const [tab, setTab] = useState<string>(
-    Route.useSearch().tab === "hiring" ? "hiring" : "pipeline",
-  );
+  const { tab = "pipeline", applicationId, interviewId } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const setTab = (value: string) =>
+    void navigate({ to: ".", search: (previous) => ({ ...previous, tab: value as typeof tab }) });
+  const readApplication = useServerFn(getNotificationApplicationTarget),
+    readInterview = useServerFn(getNotificationInterviewTarget);
+  const applicationTarget = useQuery({
+    queryKey: ["hr-notification-target", userId, workspaceId, "application", id, applicationId],
+    queryFn: () => readApplication({ data: { workspaceId, parentId: id, id: applicationId! } }),
+    enabled: !!applicationId && tab === "pipeline",
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+  });
+  const interviewTarget = useQuery({
+    queryKey: ["hr-notification-target", userId, workspaceId, "interview", id, interviewId],
+    queryFn: () => readInterview({ data: { workspaceId, parentId: id, id: interviewId! } }),
+    enabled: !!interviewId && tab === "interviews" && can("techhire.interviews.view.workspace"),
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+  });
+  const focusedApplication =
+    applicationTarget.isFetchedAfterMount &&
+    !applicationTarget.isFetching &&
+    !applicationTarget.isError
+      ? (applicationTarget.data ?? null)
+      : null;
+  const focusedInterview =
+    can("techhire.interviews.view.workspace") &&
+    interviewTarget.isFetchedAfterMount &&
+    !interviewTarget.isFetching &&
+    !interviewTarget.isError
+      ? (interviewTarget.data ?? null)
+      : null;
   const [scheduleApp, setScheduleApp] = useState<App | null>(null);
   // Fase 2: mover para etapa de desfecho "ganho" abre o diálogo de contratação.
   const [hiringMove, setHiringMove] = useState<{ app: App; toStage: string } | null>(null);
@@ -131,7 +206,11 @@ function JobDetailContent() {
     "application_hiring",
     apps.map((a) => a.id),
   );
-  const authorizedApps = apps.filter((a) => appAccess.for(a.id).can_view);
+  const authorizedApps = apps.filter(
+    (a) =>
+      appAccess.for(a.id).can_view &&
+      (a.id !== applicationId || focusedApplication?.id === applicationId),
+  );
   const candidateAccess = useHrCapabilities(
     "candidates",
     candidates.map((c) => c.id),
@@ -481,8 +560,8 @@ function JobDetailContent() {
           />
         }
         center={
-          <Tabs value={tab} onValueChange={setTab} className="space-y-4">
-            <TabsList>
+          <Tabs value={tab} onValueChange={setTab} className="min-w-0 w-full space-y-4">
+            <TabsList className="h-auto max-w-full flex-wrap">
               {can("techhire.hiring_demands.view.workspace") && (
                 <TabsTrigger value="hiring">Demanda e aprovações</TabsTrigger>
               )}
@@ -510,6 +589,50 @@ function JobDetailContent() {
               />
             </TabsContent>
             <TabsContent value="pipeline" className="mt-0">
+              {applicationId && (
+                <NotificationTargetNotice
+                  key={`${userId}:${workspaceId}:${id}:${applicationId}`}
+                  label="Candidatura do aviso"
+                  targetId={applicationId}
+                  loading={applicationTarget.isFetching}
+                  failed={applicationTarget.isError}
+                  available={!!focusedApplication}
+                  retry={
+                    <Button
+                      className="mt-2"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => void applicationTarget.refetch()}
+                    >
+                      Tentar novamente
+                    </Button>
+                  }
+                >
+                  {focusedApplication && (
+                    <>
+                      <p>
+                        Etapa:{" "}
+                        {stages.find((stage) => stage.value === focusedApplication.stage_value)
+                          ?.label ?? focusedApplication.stage_value}{" "}
+                        ·{" "}
+                        {focusedApplication.status === "active"
+                          ? "Ativa"
+                          : focusedApplication.status}
+                      </p>
+                      <p>Inscrição: {formatDateTime(focusedApplication.applied_at)}</p>
+                      <p className="text-muted-foreground">
+                        Candidatura exata localizada, independentemente do filtro da lista. Abrir o
+                        aviso não muda a etapa nem contrata.
+                      </p>
+                      <Button asChild variant="outline" size="sm">
+                        <Link to="/candidates/$id" params={{ id: focusedApplication.candidate_id }}>
+                          Abrir candidato
+                        </Link>
+                      </Button>
+                    </>
+                  )}
+                </NotificationTargetNotice>
+              )}
               <AtsSectionHeader
                 title="Candidaturas"
                 description={
@@ -559,9 +682,55 @@ function JobDetailContent() {
               </div>
             </TabsContent>
             <TabsContent value="interviews" className="mt-0">
+              {interviewId && (
+                <NotificationTargetNotice
+                  key={`${userId}:${workspaceId}:${id}:${interviewId}`}
+                  label="Entrevista do aviso"
+                  targetId={interviewId}
+                  loading={interviewTarget.isFetching}
+                  failed={interviewTarget.isError || !can("techhire.interviews.view.workspace")}
+                  available={!!focusedInterview}
+                  retry={
+                    <Button
+                      className="mt-2"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        if (can("techhire.interviews.view.workspace"))
+                          void interviewTarget.refetch();
+                      }}
+                    >
+                      Tentar novamente
+                    </Button>
+                  }
+                >
+                  {focusedInterview && (
+                    <>
+                      <p>
+                        {formatDateTime(focusedInterview.scheduled_at)} ·{" "}
+                        {focusedInterview.kind ?? "Entrevista"}
+                      </p>
+                      <p>
+                        Situação:{" "}
+                        {focusedInterview.status === "scheduled"
+                          ? "Agendada"
+                          : focusedInterview.status}
+                      </p>
+                      <p className="text-muted-foreground">
+                        Entrevista exata localizada, inclusive fora das entrevistas carregadas na
+                        lista. Abrir o aviso não agenda, reagenda ou confirma presença.
+                      </p>
+                    </>
+                  )}
+                </NotificationTargetNotice>
+              )}
               <JobInterviewsPanel
                 apps={authorizedApps}
-                interviews={interviews}
+                interviews={interviews.filter(
+                  (interview) =>
+                    interview.id !== interviewId || focusedInterview?.id === interviewId,
+                )}
+                focusedInterviewId={focusedInterview?.id}
                 onSchedule={setScheduleApp}
               />
             </TabsContent>

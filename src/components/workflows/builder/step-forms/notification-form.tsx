@@ -42,6 +42,7 @@ export function NotificationForm({
 }) {
   const { data: members = [], isLoading, isError } = useWorkspaceMembers();
   const permissions = usePermissions();
+  const preparationApproval = entity === "hiring_preparation_requests";
   const canEditDelivery =
     !permissions.isLoading &&
     !permissions.isError &&
@@ -55,19 +56,28 @@ export function NotificationForm({
   const rules: NotificationRecipientRule[] =
     action.recipients ??
     (action.user_id ? [{ kind: "user", id: action.user_id }] : [{ kind: "workflow_owner" }]);
-  const options: Kind[] = ["workflow_owner", "user", "source_responsible", "source_creator"];
+  const options: Kind[] = preparationApproval
+    ? ["pending_approvers"]
+    : ["workflow_owner", "user", "source_responsible", "source_creator"];
   if (["people", "deals", "ats_jobs"].includes(entity)) options.push("area_manager");
   if (entity === "contracts") options.push("pending_approvers");
   if (["projects", "project_tasks", "project_milestones"].includes(entity))
     options.push("project_members");
   const labelFor = (kind: Kind) => {
+    if (preparationApproval && kind === "pending_approvers")
+      return "Aprovador nomeado da etapa vigente";
     if (kind !== "area_manager") return LABELS[kind];
     if (entity === "people") return "Gestor da pessoa";
     if (entity === "deals") return "Líder da equipe do negócio";
     if (entity === "ats_jobs") return "Gestor da área de recrutamento";
     return LABELS[kind];
   };
-  const update = (next: NotificationRecipientRule[]) => onChange({ ...action, recipients: next });
+  const update = (next: NotificationRecipientRule[]) => {
+    if (preparationApproval) {
+      const { user_id: _legacyUser, ...current } = action;
+      onChange({ ...current, recipients: next });
+    } else onChange({ ...action, recipients: next });
+  };
   const replace = (index: number, rule: NotificationRecipientRule) =>
     update(rules.map((current, at) => (at === index ? rule : current)));
   const chooseKind = (index: number, kind: Kind) => {
@@ -77,25 +87,36 @@ export function NotificationForm({
 
   return (
     <div className="space-y-4">
-      <div className="space-y-1">
-        <Label htmlFor="notification-title">Título</Label>
-        <TokenInput
-          id="notification-title"
-          value={action.title}
-          onValueChange={(title) => onChange({ ...action, title })}
-          placeholder="Título"
-        />
-      </div>
-      <div className="space-y-1">
-        <Label htmlFor="notification-body">Corpo (opcional)</Label>
-        <TokenTextarea
-          id="notification-body"
-          value={action.body ?? ""}
-          onValueChange={(body) => onChange({ ...action, body })}
-          placeholder="Corpo (opcional)"
-          rows={2}
-        />
-      </div>
+      {preparationApproval ? (
+        <p className="text-sm text-muted-foreground">
+          O aviso canônico da solicitação profissional já existe no aplicativo, independentemente
+          desta regra, e será reaproveitado sem outra cópia. O texto do processo é preservado.
+          Desligar esta regra ou sua preferência de evento não remove esse aviso de processo. Canais
+          adicionais explícitos continuam sujeitos ao aprovador vigente, acesso e política.
+        </p>
+      ) : (
+        <>
+          <div className="space-y-1">
+            <Label htmlFor="notification-title">Título</Label>
+            <TokenInput
+              id="notification-title"
+              value={action.title}
+              onValueChange={(title) => onChange({ ...action, title })}
+              placeholder="Título"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label htmlFor="notification-body">Corpo (opcional)</Label>
+            <TokenTextarea
+              id="notification-body"
+              value={action.body ?? ""}
+              onValueChange={(body) => onChange({ ...action, body })}
+              placeholder="Corpo (opcional)"
+              rows={2}
+            />
+          </div>
+        </>
+      )}
       <fieldset className="space-y-3">
         <legend className="text-sm font-medium">Quem recebe o aviso</legend>
         {rules.map((rule, index) => {
@@ -138,7 +159,7 @@ export function NotificationForm({
                   destinatário alternativo automático.
                 </p>
               )}
-              {rule.kind === "user" && (
+              {rule.kind === "user" && !preparationApproval && (
                 <div className="space-y-1">
                   <Label className="text-xs">Membro do workspace</Label>
                   {members.length > 0 ? (
@@ -177,7 +198,7 @@ export function NotificationForm({
           type="button"
           variant="outline"
           size="sm"
-          disabled={rules.length >= 10}
+          disabled={preparationApproval || rules.length >= 10}
           onClick={() => update([...rules, { kind: "source_responsible" }])}
         >
           <Plus className="h-3.5 w-3.5 mr-1" /> Adicionar destinatário

@@ -16,6 +16,7 @@ import { Target } from "lucide-react";
 import {
   ENTITY_LABELS,
   EVENT_LABELS,
+  WORKFLOW_READONLY_SOURCE_TABLES,
   type WorkflowCondition,
   type WorkflowEntity,
   type WorkflowEventType,
@@ -49,6 +50,7 @@ export function TriggerConfigPanel({
     onChange((t) => ({ ...t, filters: fn(t.filters ?? []) }));
   const defaultField = fields[0]?.name ?? "";
   const notificationEvent = getWorkflowNotificationEvent(trigger.notification_event?.key);
+  const readOnlySource = WORKFLOW_READONLY_SOURCE_TABLES.some((source) => source === entity);
   const eventOptions = WORKFLOW_NOTIFICATION_EVENTS.filter((event) => event.entity === entity);
 
   return (
@@ -79,6 +81,7 @@ export function TriggerConfigPanel({
           className="mt-1 block h-10 w-full max-w-full rounded-md border border-input bg-background px-3 text-sm"
           value={trigger.notification_event?.key ?? ""}
           onChange={(event) => {
+            if (readOnlySource && !event.target.value) return;
             const definition = getWorkflowNotificationEvent(event.target.value);
             if (event.target.value && (!definition || definition.entity !== entity)) return;
             onChange((current) => {
@@ -93,7 +96,9 @@ export function TriggerConfigPanel({
             });
           }}
         >
-          <option value="">Evento genérico do objeto</option>
+          <option value="" disabled={readOnlySource}>
+            {readOnlySource ? "Selecione o evento compatível" : "Evento genérico do objeto"}
+          </option>
           {trigger.notification_event &&
             !eventOptions.some((event) => event.key === trigger.notification_event!.key) && (
               <option value={trigger.notification_event.key} disabled>
@@ -104,6 +109,8 @@ export function TriggerConfigPanel({
             { prefix: "crm.", label: "TechSales" },
             { prefix: "contracts.", label: "TechContracts" },
             { prefix: "projects.", label: "TechProjects" },
+            { prefix: "ats.", label: "TechHire" },
+            { prefix: "people.", label: "TechPeople" },
           ].map((group) => {
             const entries = eventOptions.filter((event) => event.key.startsWith(group.prefix));
             return entries.length ? (
@@ -117,6 +124,12 @@ export function TriggerConfigPanel({
             ) : null;
           })}
         </select>
+        {readOnlySource && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Esta origem é somente leitura no Workflow e exige o evento de negócio compatível. Ações
+            genéricas não podem criar, alterar ou excluir esse registro.
+          </p>
+        )}
         {notificationEvent && (
           <div className="mt-2 space-y-2 text-xs text-muted-foreground">
             <p>{notificationEvent.description} A seleção não publica nem ativa o Workflow.</p>
@@ -124,6 +137,28 @@ export function TriggerConfigPanel({
               <p>
                 Somente a mudança de Planejamento para Ativo. Criar ou importar um projeto já ativo,
                 alterar a data de início ou retomar um projeto Em espera não dispara este evento.
+              </p>
+            )}
+            {notificationEvent.moduleKey === "ats" && (
+              <p>
+                O aviso acompanha a ocorrência comprovada, sem contratar o candidato, aprovar uma
+                oferta ou enviar convite por esta seleção. Salário, pareceres, currículo, links
+                públicos e dados privados não são copiados automaticamente para a notificação.
+              </p>
+            )}
+            {notificationEvent.key === "people.employment.started" && (
+              <p>
+                Confirma uma admissão canônica ou um início direto autorizado no fluxo governado.
+                Pode conter data futura; não comprova dia trabalhado, pagamento nem acesso
+                concedido. Status e datas isolados não geram esta ocorrência.
+              </p>
+            )}
+            {notificationEvent.key === "people.approval.pending" && (
+              <p>
+                Somente solicitações profissionais da preparação, na etapa atual liberada ao
+                aprovador nomeado. Não inclui vagas, fornecedores ou todas as alçadas de RH. O aviso
+                existente no aplicativo é reaproveitado, sem outra cópia implícita. Ler o aviso não
+                aprova, contrata ou inicia a execução.
               </p>
             )}
             {notificationEvent.scheduling === "overdue" && (
@@ -158,11 +193,13 @@ export function TriggerConfigPanel({
                   }
                 />
                 <p>
-                  {notificationEvent.key === "projects.milestone.due"
-                    ? "O prazo é a data do marco pendente ou em andamento, ainda não concluído, de um projeto em Planejamento, Ativo ou Em espera. O aviso não conclui o marco nem gera cobrança."
-                    : notificationEvent.key === "contracts.contract.renewal_due"
-                      ? "O prazo de aviso é o fim da vigência menos o aviso prévio cadastrado. Exige renovação automática e aviso prévio válido; o aviso não renova o contrato."
-                      : "O prazo é a data de término da vigência cadastrada; o aviso não encerra o contrato."}{" "}
+                  {notificationEvent.key === "people.document.expiring"
+                    ? "O prazo é a validade do documento, pelo calendário de São Paulo. A janela usa a data atual, sem depender de um status antigo. Documentos sem validade, ausentes ou de pessoa arquivada não entram. O aviso não renova o documento."
+                    : notificationEvent.key === "projects.milestone.due"
+                      ? "O prazo é a data do marco pendente ou em andamento, ainda não concluído, de um projeto em Planejamento, Ativo ou Em espera. O aviso não conclui o marco nem gera cobrança."
+                      : notificationEvent.key === "contracts.contract.renewal_due"
+                        ? "O prazo de aviso é o fim da vigência menos o aviso prévio cadastrado. Exige renovação automática e aviso prévio válido; o aviso não renova o contrato."
+                        : "O prazo é a data de término da vigência cadastrada; o aviso não encerra o contrato."}{" "}
                   A janela começa com a antecedência escolhida e termina no prazo. Prazos já
                   vencidos não entram.
                 </p>
@@ -172,7 +209,7 @@ export function TriggerConfigPanel({
         )}
       </div>
 
-      {!trigger.notification_event && (
+      {!trigger.notification_event && !readOnlySource && (
         <div>
           <Label className="text-xs">Evento</Label>
           <Select
@@ -201,7 +238,7 @@ export function TriggerConfigPanel({
         </div>
       )}
 
-      {!trigger.notification_event && (
+      {!trigger.notification_event && !readOnlySource && (
         <div className="rounded-md border p-3 space-y-2">
           <div className="flex items-center justify-between">
             <div>

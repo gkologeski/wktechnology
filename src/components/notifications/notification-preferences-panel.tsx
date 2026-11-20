@@ -274,9 +274,11 @@ export function NotificationPreferencesPanel({ legacyPrefs, settings, revision, 
           </SelectContent>
         </Select>
         <p className="text-xs text-muted-foreground">
-          Eventos comerciais e contratuais dependem de uma regra publicada e ativa. Apenas escolher
-          uma preferência não cria avisos. Som e tremor desses eventos começam desligados; uma
-          escolha explícita no grupo ou evento deste workspace pode habilitá-los.
+          {eventKey === "people.approval.pending"
+            ? "O aviso obrigatório da preparação profissional já existe no aplicativo. Desativar esta preferência ou a regra não remove esse aviso de processo. O Workflow pode acrescentar canais explícitos para o aprovador vigente, sem duplicar o aviso nem permitir destinatários arbitrários."
+            : "Eventos de negócio dependem de uma regra publicada e ativa. Apenas escolher uma preferência não cria avisos."}{" "}
+          Som e tremor desses eventos começam desligados; uma escolha explícita no grupo ou evento
+          deste workspace pode habilitá-los.
         </p>
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {CHANNELS.map((channel) => (

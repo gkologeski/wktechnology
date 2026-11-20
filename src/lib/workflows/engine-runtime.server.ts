@@ -1,12 +1,24 @@
-import { authorizeWorkflowStep, sanitizeWorkflowSnapshot } from "./engine/authorization.server";
+import {
+  authorizeWorkflowStep,
+  sanitizeWorkflowSnapshot,
+  projectWorkflowSnapshot,
+} from "./engine/authorization.server";
 import { workflowEventWorkspace } from "./engine/workspace-payload";
-import { publicProjectSnapshot } from "@/lib/access-control/work-cost-projection";
 import { workRpc } from "@/lib/access-control/work-core.server";
-import { workflowNotificationTriggerMatches } from "./notification-events";
+import {
+  workflowNotificationTriggerMatches,
+  notificationEventActionProblem,
+} from "./notification-events";
 // Ciclo de execução do motor: enfileiramento, runs, ticks de fila e de tempo.
 // Extraído de engine.server.ts sem mudança de comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { WorkflowAction, WorkflowCondition, WorkflowEntity, WorkflowTrigger } from "./types";
+import {
+  WORKFLOW_READONLY_SOURCE_TABLES,
+  type WorkflowAction,
+  type WorkflowCondition,
+  type WorkflowEntity,
+  type WorkflowTrigger,
+} from "./types";
 import { hydrateTriggerAssociations } from "./hydrate-associations.server";
 import { hydrateDealLineItems } from "./line-items.server";
 import { type AnyRow, evalConditions } from "./engine-shared.server";
@@ -41,7 +53,11 @@ interface WorkflowRow {
 }
 
 /** Entidades cujos workflows valem para todo o workspace (ciclo de contratação). */
-const WORKSPACE_SCOPED_ENTITIES = new Set<WorkflowEntity>(["ats_applications", "people"]);
+const WORKSPACE_SCOPED_ENTITIES = new Set<WorkflowEntity>([
+  "ats_applications",
+  "people",
+  ...WORKFLOW_READONLY_SOURCE_TABLES,
+]);
 
 async function alreadyEnrolled(
   supabase: SupabaseClient,
@@ -75,8 +91,8 @@ async function workflowSourceAllowed(
         entityId: event.entity_id,
         ownerId: wf.execution_user_id ?? wf.owner_id,
         workspaceId: wf.workspace_id,
-        after: sanitizeWorkflowSnapshot(event.after, event.entity),
-        before: sanitizeWorkflowSnapshot(event.before, event.entity),
+        after: sanitizeWorkflowSnapshot(event.after, event.entity, event.notification_event_key),
+        before: sanitizeWorkflowSnapshot(event.before, event.entity, event.notification_event_key),
         workflowId: wf.id,
         workflowVersion: wf.published_version,
       },
@@ -110,6 +126,8 @@ async function notificationEventAllowed(
   event: EventRow,
 ) {
   if (!workflowNotificationTriggerMatches(wf.trigger ?? ({} as WorkflowTrigger), event))
+    return false;
+  if (notificationEventActionProblem(wf.trigger?.notification_event?.key, wf.actions ?? []))
     return false;
   if (event.notification_event_key == null) return true;
   if (!Number.isInteger(wf.published_version) || (wf.published_version ?? 0) < 1) return false;
@@ -197,13 +215,24 @@ export async function processEvent(
       }
       if (!(await workflowSourceAllowed(supabase, wfr, event))) return;
       const wfJson = JSON.stringify({ t: wfr.trigger, a: wfr.actions });
-      const safeBefore = sanitizeWorkflowSnapshot(event.before, event.entity);
+      const safeBefore = sanitizeWorkflowSnapshot(
+        event.before,
+        event.entity,
+        event.notification_event_key,
+      );
       const hydratedAfter = await hydrateDealLineItems(
         supabase,
         event.entity,
         sanitizeWorkflowSnapshot(
-          await hydrateTriggerAssociations(supabase, event.entity, event.after, wfJson),
+          await hydrateTriggerAssociations(
+            supabase,
+            event.entity,
+            event.after,
+            wfJson,
+            event.notification_event_key,
+          ),
           event.entity,
+          event.notification_event_key,
         ),
         wfJson,
       );
@@ -280,13 +309,24 @@ export async function processEvent(
     // Hidrata associações do gatilho (empresa, contato, negócio…) antes de
     // avaliar condições e executar ações, para resolver `{{company.name}}`.
     const wfJson = JSON.stringify({ t: trig, a: wf.actions, g: wf.goal_filters });
-    const safeBefore = sanitizeWorkflowSnapshot(event.before, event.entity);
+    const safeBefore = sanitizeWorkflowSnapshot(
+      event.before,
+      event.entity,
+      event.notification_event_key,
+    );
     const hydratedAfter = await hydrateDealLineItems(
       supabase,
       event.entity,
       sanitizeWorkflowSnapshot(
-        await hydrateTriggerAssociations(supabase, event.entity, event.after, wfJson),
+        await hydrateTriggerAssociations(
+          supabase,
+          event.entity,
+          event.after,
+          wfJson,
+          event.notification_event_key,
+        ),
         event.entity,
+        event.notification_event_key,
       ),
       wfJson,
     );
@@ -416,10 +456,14 @@ async function finishRun(
             notification_parent_event_id: event.id,
           }
         : {}),
-      before: publicProjectSnapshot(event.before, event.entity),
+      before: projectWorkflowSnapshot(event.before, event.entity, event.notification_event_key),
       after: {
         ...stripResumeKeys(
-          publicProjectSnapshot((event.after ?? {}) as Record<string, unknown>, event.entity),
+          projectWorkflowSnapshot(
+            (event.after ?? {}) as Record<string, unknown>,
+            event.entity,
+            event.notification_event_key,
+          ),
         ),
         ...(res.suspendedAt.waitState ? { __wf_wait: res.suspendedAt.waitState } : {}),
         ...(res.suspendedAt.state ? { __wf_state: res.suspendedAt.state } : {}),

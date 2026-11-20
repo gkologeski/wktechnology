@@ -8,7 +8,7 @@ route_pattern: /settings/workflows
 min_permission: system.workflows.manage.workspace
 audience: internal
 sort_order: 413
-version: 8
+version: 9
 is_published: true
 ---
 
@@ -104,3 +104,13 @@ Salvar não é publicar. Aprovar ou rejeitar muda o andamento da execução.
 - [Criar regras de distribuição](/ajuda/crm/criar-regras-de-distribuicao)
 - [Erros comuns](/ajuda/crm/erros-comuns)
 - [Revisar preferências de notificações](/ajuda/core/revisar-preferencias-de-notificacoes)
+
+### Usar eventos de recrutamento e pessoas
+
+O seletor também agrupa os três eventos de **TechHire** e os três de **TechPeople**. A seleção continua sendo somente um rascunho desativado. Inscrição exige registro real; entrevista exige agendamento confirmado futuro; oferta aceita exige assinatura válida da versão enviada. **Início de vínculo autorizado** representa admissão confirmada ou início direto governado, inclusive com data futura, sem afirmar dia trabalhado ou conceder acesso.
+
+**Documento próximo do vencimento** usa validade civil em São Paulo e antecedência editável de 1 a 365 dias, inicialmente 30; a janela inclui o prazo e exclui vencidos. **Ofertas**, **Documentos de pessoas** e **Solicitações profissionais da preparação** são origens somente para leitura no Workflow. Exigem um evento compatível e não oferecem criação, alteração, exclusão ou gatilho genérico de tempo sobre essas origens.
+
+Para **Aprovação de solicitação profissional pendente**, **Quem recebe o aviso** permite somente **Aprovador nomeado da etapa vigente**. O texto canônico do processo é preservado e não há destinatário arbitrário. Trata somente da preparação profissional, sem vagas ou fornecedores. O aviso obrigatório no aplicativo já existe independentemente da regra; a regra reaproveita esse aviso e pode acrescentar canais explícitos para o mesmo aprovador vigente, sem duplicar ou aprovar. Desligar a regra ou a preferência nova não remove o aviso obrigatório do processo.
+
+Os avisos usam texto neutro. Não escreva salário, condições privadas, número de documento, currículo ou link público nos textos. O destino abre o registro e a aba exatos após conferir acesso atual, sem ações pela URL.

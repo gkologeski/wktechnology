@@ -339,14 +339,22 @@ it("preview requires canonical workflow read and row authorization before reads"
   expect(state.record).not.toHaveBeenCalled();
 });
 
-function previewRuleRow(entity: string, trigger: unknown) {
+function previewRuleRow(entity: string, trigger: unknown, actions?: unknown[]) {
   const row = {
     id: U,
     name: "Regra de demonstração",
     entity,
     enabled: false,
     trigger,
-    actions: [{ type: "send_notification", title: "Atualização no TechERP" }],
+    actions: actions ?? [
+      {
+        type: "send_notification",
+        title: "Atualização no TechERP",
+        ...(entity === "hiring_preparation_requests"
+          ? { recipients: [{ kind: "pending_approvers" }] }
+          : {}),
+      },
+    ],
     draft_trigger: null,
     draft_actions: null,
   };
@@ -380,6 +388,16 @@ it.each(WORKFLOW_NOTIFICATION_EVENTS)(
     ]);
   },
 );
+it("does not describe an arbitrary recipient as an executable preparation approval draft", async () => {
+  previewRuleRow(
+    "hiring_preparation_requests",
+    workflowNotificationEventTrigger("people.approval.pending"),
+    [{ type: "send_notification", title: "Atualização", recipients: [{ kind: "user", id: U }] }],
+  );
+  const result = await call(previewNotificationWorkflow, { workspaceId: W, workflowId: U });
+  expect(result).toMatchObject({ realMessages: 0, notificationSteps: 0 });
+  expect(from.mock.calls.map(([table]) => table)).toEqual(["workflows"]);
+});
 
 it.each([
   { entity: "people", trigger: workflowNotificationEventTrigger("crm.deal.won") },

@@ -9,20 +9,27 @@ import {
   workflowNotificationEventTrigger,
   workflowNotificationTriggerLabel,
   workflowNotificationTriggerMatches,
+  notificationEventActionProblem,
 } from "./notification-events";
 
 const workflow = {
   name: "Aviso comercial",
   enabled: false,
-  actions: [{ type: "send_notification", title: "Atualização disponível" }],
+  actions: [
+    {
+      type: "send_notification",
+      title: "Atualização disponível",
+      recipients: [{ kind: "pending_approvers" }],
+    },
+  ],
 };
 
 describe("explicit business notification selectors", () => {
-  it("preserves the eight commercial events and adds only the four project events", () => {
+  it("preserves the twelve existing events and adds the six hiring and people events", () => {
     expect(WORKFLOW_NOTIFICATION_EVENTS.map(({ key }) => key)).toEqual([
       ...WORKFLOW_NOTIFICATION_EVENT_KEYS,
     ]);
-    expect(WORKFLOW_NOTIFICATION_EVENTS).toHaveLength(12);
+    expect(WORKFLOW_NOTIFICATION_EVENTS).toHaveLength(18);
     expect(WORKFLOW_NOTIFICATION_EVENT_KEYS.slice(0, 8)).toEqual([
       "crm.deal.won",
       "crm.deal.lost",
@@ -33,11 +40,19 @@ describe("explicit business notification selectors", () => {
       "contracts.contract.expiring",
       "contracts.contract.renewal_due",
     ]);
-    expect(WORKFLOW_NOTIFICATION_EVENT_KEYS.slice(8)).toEqual([
+    expect(WORKFLOW_NOTIFICATION_EVENT_KEYS.slice(8, 12)).toEqual([
       "projects.project.started",
       "projects.project.overdue",
       "projects.task.overdue",
       "projects.milestone.due",
+    ]);
+    expect(WORKFLOW_NOTIFICATION_EVENT_KEYS.slice(12)).toEqual([
+      "ats.application.received",
+      "ats.interview.scheduled",
+      "ats.offer.accepted",
+      "people.employment.started",
+      "people.document.expiring",
+      "people.approval.pending",
     ]);
     expect(getWorkflowNotificationEvent("crm.quote.accepted")).toBeNull();
     expect(getWorkflowNotificationEvent("constructor")).toBeNull();
@@ -48,7 +63,7 @@ describe("explicit business notification selectors", () => {
     const active = NOTIFICATION_EVENT_CATALOG.filter(
       (event) =>
         event.availability === "active" &&
-        ["crm", "contracts", "projects"].includes(event.moduleKey ?? ""),
+        ["crm", "contracts", "projects", "ats", "people"].includes(event.moduleKey ?? ""),
     );
     expect(active.map(({ eventKey }) => eventKey).sort()).toEqual(
       [...WORKFLOW_NOTIFICATION_EVENT_KEYS].sort(),
@@ -66,6 +81,12 @@ describe("explicit business notification selectors", () => {
       "projects.project.overdue": "projects",
       "projects.task.overdue": "project_tasks",
       "projects.milestone.due": "project_milestones",
+      "ats.application.received": "ats_applications",
+      "ats.interview.scheduled": "ats_interviews",
+      "ats.offer.accepted": "ats_offers",
+      "people.employment.started": "people",
+      "people.document.expiring": "people_documents",
+      "people.approval.pending": "hiring_preparation_requests",
     };
     for (const definition of WORKFLOW_NOTIFICATION_EVENTS) {
       expect(active.find(({ eventKey }) => eventKey === definition.key)).toMatchObject({
@@ -113,6 +134,7 @@ describe("explicit business notification selectors", () => {
     "contracts.contract.expiring",
     "contracts.contract.renewal_due",
     "projects.milestone.due",
+    "people.document.expiring",
   ] as const)("requires an explicit bounded notice window for %s", (key) => {
     for (const days_before of [undefined, 0, -1, 366, 1.5, "30", null])
       expect(notificationEventSelectionSchema.safeParse({ key, days_before }).success).toBe(false);
@@ -195,6 +217,102 @@ describe("explicit business notification selectors", () => {
       trigger: { event: "stage_changed", filters: [] },
     });
     expect(saved.trigger).not.toHaveProperty("notification_event");
+  });
+
+  it.each(["ats_offers", "people_documents", "hiring_preparation_requests"] as const)(
+    "rejects a forged generic or timed selector on the new read-only source %s",
+    (entity) => {
+      expect(
+        SaveSchema.safeParse({ ...workflow, entity, trigger: { event: "updated", filters: [] } })
+          .success,
+      ).toBe(false);
+      expect(workflowNotificationTriggerMatches({}, { entity })).toBe(false);
+      expect(
+        SaveSchema.safeParse({
+          ...workflow,
+          entity,
+          trigger: {
+            event: "updated",
+            time_based: { kind: "time_since_field", amount: 1, unit: "days" },
+          },
+        }).success,
+      ).toBe(false);
+      expect(() =>
+        SaveSchema.parse({
+          ...workflow,
+          entity: "leads",
+          trigger: { event: "updated" },
+          actions: [
+            {
+              type: "update_record",
+              table: entity,
+              target_id: "id",
+              values: { status: "changed" },
+            },
+          ],
+        }),
+      ).toThrow();
+    },
+  );
+
+  it("requires the released approver throughout nested actions and preserves same-person channel fallback", () => {
+    const trigger = workflowNotificationEventTrigger("people.approval.pending");
+    const save = (actions: unknown[]) =>
+      SaveSchema.safeParse({
+        ...workflow,
+        entity: "hiring_preparation_requests",
+        trigger,
+        actions,
+      });
+    const notice = {
+      type: "send_notification",
+      title: "Revisão disponível",
+      recipients: [{ kind: "pending_approvers" }],
+      delivery: { channels: ["whatsapp"], fallback: "email" },
+    };
+    expect(save([notice]).success).toBe(true);
+    expect(save([{ ...notice, recipients: [{ kind: "workflow_owner" }] }]).success).toBe(false);
+    expect(save([{ ...notice, user_id: "11111111-1111-4111-8111-111111111111" }]).success).toBe(
+      false,
+    );
+    expect(
+      save([
+        {
+          type: "branch_if",
+          filters: [],
+          then: [notice],
+          else: [{ ...notice, recipients: [{ kind: "source_responsible" }] }],
+        },
+      ]).success,
+    ).toBe(false);
+    expect(
+      save([
+        {
+          type: "parallel",
+          join: "all",
+          branches: [
+            { actions: [notice] },
+            { actions: [{ type: "send_slack", text: "Revisão", channel: "geral" }] },
+          ],
+        },
+      ]).success,
+    ).toBe(false);
+    expect(
+      notificationEventActionProblem("people.approval.pending", [
+        { type: "switch_by_value", cases: [{ actions: [{ type: "send_email" }] }], default: [] },
+      ]),
+    ).toMatch(/somente envia/);
+    expect(
+      notificationEventActionProblem("people.employment.started", [{ type: "send_slack" }]),
+    ).toBeNull();
+    expect(
+      notificationEventActionProblem("people.approval.pending", [
+        {
+          type: "legacy_container",
+          actions: [{ type: "parallel", branches: [{ actions: [{ type: "send_email" }] }] }],
+        },
+      ]),
+    ).toMatch(/somente envia/);
   });
 
   it.each([

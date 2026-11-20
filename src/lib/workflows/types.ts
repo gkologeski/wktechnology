@@ -12,6 +12,7 @@ export type WorkflowEntity =
   | "ats_candidates"
   | "ats_applications"
   | "ats_interviews"
+  | "ats_offers"
   // Cross-módulo (Fase workflows-erp)
   | "projects"
   | "project_tasks"
@@ -26,7 +27,20 @@ export type WorkflowEntity =
   | "subscription_invoices"
   | "customer_invoices"
   // Contratação e desligamento (Fase 4)
-  | "people";
+  | "people"
+  | "people_documents"
+  | "hiring_preparation_requests";
+
+/** Named occurrences can read these sources; generic actions cannot mutate them. */
+export const WORKFLOW_READONLY_SOURCE_TABLES = [
+  "ats_offers",
+  "people_documents",
+  "hiring_preparation_requests",
+] as const;
+
+export function isWorkflowReadonlySource(table: string): boolean {
+  return (WORKFLOW_READONLY_SOURCE_TABLES as readonly string[]).includes(table);
+}
 
 /**
  * Tabelas permitidas em ações genéricas create_record / update_record / delete_record.
@@ -543,6 +557,7 @@ export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
   ats_candidates: "Candidatos (ATS)",
   ats_applications: "Aplicações (ATS)",
   ats_interviews: "Entrevistas (ATS)",
+  ats_offers: "Ofertas (ATS)",
   projects: "Projetos",
   project_tasks: "Tarefas de projeto",
   project_milestones: "Marcos de projeto",
@@ -556,6 +571,8 @@ export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
   subscription_invoices: "Faturas de assinatura",
   customer_invoices: "Faturas de clientes",
   people: "Pessoas (TechPeople)",
+  people_documents: "Documentos de pessoas",
+  hiring_preparation_requests: "Solicitações profissionais de preparação",
 };
 
 // Grupos por módulo (para dropdown do builder).
@@ -564,9 +581,9 @@ export const ENTITY_GROUPS: Array<{ label: string; entities: WorkflowEntity[] }>
   { label: "Atendimento", entities: ["tickets"] },
   {
     label: "Recrutamento",
-    entities: ["ats_jobs", "ats_candidates", "ats_applications", "ats_interviews"],
+    entities: ["ats_jobs", "ats_candidates", "ats_applications", "ats_interviews", "ats_offers"],
   },
-  { label: "Pessoas", entities: ["people"] },
+  { label: "Pessoas", entities: ["people", "people_documents", "hiring_preparation_requests"] },
   { label: "Projetos", entities: ["projects", "project_tasks", "project_milestones"] },
   { label: "Contratos e catálogo", entities: ["contracts", "services"] },
   {
@@ -829,6 +846,19 @@ export const RECORD_ACTION_MODULES: RecordActionModule[] = [
 
 // Common fields by entity, used in filter dropdowns and set_field actions
 export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
+  ats_offers: [
+    "status",
+    "revision",
+    "approved_revision",
+    "sent_at",
+    "signed_at",
+    "start_date",
+    "application_id",
+    "candidate_id",
+    "job_id",
+  ],
+  people_documents: ["status", "expires_at", "person_id"],
+  hiring_preparation_requests: ["status", "revision", "kind"],
   leads: [
     "first_name",
     "last_name",

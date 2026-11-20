@@ -82,6 +82,135 @@ describe("workflow authorization boundary", () => {
     );
     expect(task.project.planned_cost).toBe(75000);
   });
+  it("preserves legacy public HR tokens while removing canonical private values in before and after", async () => {
+    const c = client(true),
+      source = ctx();
+    source.entity = "people";
+    source.after = {
+      full_name: "Synthetic person",
+      email: "person@example.test",
+      status: "active",
+      monthly_cost: 8000,
+      personal_doc: { cpf: "private" },
+      bank_account: "private",
+    };
+    source.before = { full_name: "Previous name", monthly_cost: 7000 };
+    const result = await runActions(
+      c.db,
+      [
+        {
+          type: "branch_if",
+          filters: [{ field: "monthly_cost", op: "eq", value: 8000 }],
+          then: [{ type: "set_field", field: "role_title", value: "Private branch" }],
+          else: [],
+        },
+      ],
+      source,
+    );
+    expect(result.hadError).toBe(false);
+    expect(c.writes).toEqual([]);
+    expect(source.after).toEqual({
+      full_name: "Synthetic person",
+      email: "person@example.test",
+      status: "active",
+    });
+    expect(source.before).toEqual({ full_name: "Previous name" });
+    expect(
+      sanitizeWorkflowSnapshot(
+        { monthly_cost: 20, notes: "Ordinary finance note" },
+        "financial_entries",
+      ),
+    ).toEqual({ monthly_cost: 20, notes: "Ordinary finance note" });
+  });
+
+  it.each(["people_documents", "ats_offers", "hiring_preparation_requests"] as const)(
+    "binds read-only source %s to an explicit worker view requirement",
+    async (entity) => {
+      const c = client(true),
+        source = { ...ctx(), entity };
+      await authorizeWorkflowStep(c.db, source);
+      expect(c.rpc).toHaveBeenCalledWith(
+        "sales_worker_authorize",
+        expect.objectContaining({
+          p_refs: expect.arrayContaining([
+            expect.objectContaining({ record_table: entity, id: source.entityId }),
+          ]),
+        }),
+      );
+    },
+  );
+
+  it.each([
+    { type: "set_field", field: "status", value: "signed" },
+    { type: "increment_field", field: "revision", amount: 1 },
+    { type: "assign_to", user_id: "another-user" },
+    {
+      type: "copy_field_from_association",
+      association: "candidate",
+      source_field: "id",
+      target_field: "candidate_id",
+    },
+  ])("denies read-only source mutations before any worker call or write: $type", async (action) => {
+    const c = client(true),
+      source = ctx();
+    source.entity = "ats_offers";
+    source.after = { status: "sent", revision: 1 };
+    const result = await runActions(c.db, [action as WorkflowAction], source);
+    expect(result.hadError).toBe(true);
+    expect(result.log[0].error).toMatch(/somente leitura/);
+    expect(c.rpc).not.toHaveBeenCalled();
+    expect(c.from).not.toHaveBeenCalled();
+    expect(c.writes).toEqual([]);
+  });
+
+  it.each([
+    { type: "increment_field", field: "monthly_cost", amount: 1 },
+    { type: "set_field", field: "bank_account", value: "changed" },
+    { type: "format_data", source_field: "personal_doc.number", op: "trim", target_var: "doc" },
+    { type: "update_record", table: "people", target_id: "person", values: { cost_hour: 1 } },
+  ])("denies projected-away HR fields before generic action effects: $type", async (action) => {
+    const c = client(true),
+      source = ctx();
+    source.entity = "people";
+    source.after = { monthly_cost: 9000 };
+    const result = await runActions(c.db, [action as WorkflowAction], source);
+    expect(result.hadError).toBe(true);
+    expect(result.log[0].error).toMatch(/operação canônica autorizada/);
+    expect(c.rpc).not.toHaveBeenCalled();
+    expect(c.from).not.toHaveBeenCalled();
+    expect(c.writes).toEqual([]);
+  });
+
+  it("blocks a nested direct approval transport before any earlier effect in that branch", async () => {
+    const c = client(true),
+      source = ctx();
+    source.entity = "hiring_preparation_requests";
+    const result = await runActions(
+      c.db,
+      [
+        {
+          type: "branch_if",
+          filters: [],
+          then: [
+            {
+              type: "format_data",
+              op: "template_string",
+              template: "value",
+              target_var: "prepared",
+            },
+            { type: "send_slack", text: "Private approval" },
+          ],
+          else: [],
+        },
+      ],
+      source,
+    );
+    expect(result.hadError).toBe(true);
+    expect(result.log[0].error).toMatch(/somente envia/);
+    expect(source.vars).toBeUndefined();
+    expect(c.rpc).not.toHaveBeenCalled();
+    expect(c.from).not.toHaveBeenCalled();
+  });
   it("sanitizes both source snapshots before a real control branch can expose project cost", async () => {
     const c = client(true),
       source = ctx();

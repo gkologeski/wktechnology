@@ -14,7 +14,7 @@ O catálogo fica em `src/lib/notification-catalog.ts`. As preferências e a deci
 - `moduleKey` identifica o módulo de um evento planejado. Para aliases legados permanece `null`, pois um mesmo tipo pode atender mais de um módulo.
 - `availability: legacy` significa que há um adaptador de leitura compatível. Não comprova que existe um produtor ativo de cada alias em produção.
 - `availability: planned` reserva um contrato para pacotes posteriores. Não cria produtor, regra, assinatura, agendamento ou canal habilitado.
-- Após o pacote 9, `availability: active` identifica doze eventos comerciais, contratuais e de projetos com integração disponível para regras explícitas. Não significa Workflow publicado, regra ativa, preferência ligada ou canal autorizado. Os 22 aliases `legacy` permanecem iguais.
+- Após o pacote 10, `availability: active` identifica dezoito eventos comerciais, contratuais, de projetos, recrutamento e pessoas com integração disponível para regras explícitas. Não significa Workflow publicado, regra ativa, preferência ligada ou canal autorizado. Os 22 aliases `legacy` permanecem iguais.
 
 O resolvedor usa aliases exatos em `Map`. Não usa prefixos genéricos como `sla.*`, propriedades herdadas, títulos, corpo, links ou IDs para inventar a semântica de um registro. Tipo desconhecido resolve para `null` e permanece no histórico.
 
@@ -53,7 +53,7 @@ O tipo `hiring_approval` e sua chave de deduplicação não podem ser renomeados
 
 ## Eventos canônicos e disponibilidade
 
-O pacote 1 reservou 27 entradas canônicas: 23 dos seis módulos e quatro compartilhadas. O pacote 9 mantém disponíveis as oito entradas TechSales/TechContracts e acrescenta as quatro de TechProjects; as outras 15 permanecem planejadas. Nenhuma entrada cria ou ativa uma regra automaticamente.
+O pacote 1 reservou 27 entradas canônicas: 23 dos seis módulos e quatro compartilhadas. O pacote 10 mantém as doze entradas TechSales/TechContracts/TechProjects e acrescenta seis de TechHire/TechPeople; as outras nove permanecem planejadas. Nenhuma entrada cria ou ativa uma regra automaticamente.
 
 | Módulo                      | Chaves canônicas                                                                                                                     |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -145,3 +145,15 @@ As quatro chaves `projects.*` passam a `active`, sob as mesmas preferências e p
 Overdue não admite days_before/days_after e não é lembrete diário. Somente vencimentos posteriores à publicação entram; uma verificação posterior recupera os elegíveis. Cursor por origem/prazo e regra não se reinicia ao republicar nem ao retornar A→B→A. Projetos encerrados, origens ausentes, outro workspace e acesso revogado suprimem conforme as fronteiras autorizadas; não são substituídos por nomes, datas ou destinatários presumidos. O produtor não altera prazos, status, cobrança nem os alertas operacionais opt-in do Dashboard.
 
 Destinos reais: `/projects/<id>`; `/projects/tasks?taskId=<id>` com leitura focada independente de paginação/filtros; `/projects/<pai>?tab=milestones&milestoneId=<id>` com aba controlada e destaque da linha autorizada. Não há nova ficha de marco nem ação de conclusão por URL. Leituras focadas usam identidade/workspace, autorização atual e atualização obrigatória antes de exibir conteúdo.
+
+## P10 — TechHire e TechPeople
+
+O catálogo disponibiliza seis eventos adicionais (18 ativos, 22 aliases legados e nove planejados): `ats.application.received`, `ats.interview.scheduled`, `ats.offer.accepted`, `people.employment.started`, `people.document.expiring` e `people.approval.pending`. Disponibilidade não ativa regra ou canal. Som/tremor continuam opt-in explícito; WhatsApp por evento herda o consentimento geral na ausência de override, false bloqueia e true não supera autorização, política ou consentimento.
+
+A oferta exige assinatura canônica da versão enviada. Início de vínculo autorizado exige admissão confirmada ou início direto governado; datas e status isolados não bastam e data futura não comprova trabalho. Documento usa validade DATE no calendário America/Sao_Paulo, com days_before explícito 1–365 e valor inicial editável 30; janela inclusiva até o prazo, sem vencidos. `ats_offers`, `people_documents` e `hiring_preparation_requests` são fontes somente leitura, vinculadas a evento nomeado.
+
+Aprovação pendente cobre somente preparação profissional e a etapa atual liberada ao aprovador nomeado. O Workflow reutiliza o aviso obrigatório canônico no app, sem duplicá-lo, e permite canais explícitos somente ao mesmo aprovador. Desligar regra ou preferência nova não elimina o aviso obrigatório do processo. O editor não oferece destinatários arbitrários ou texto privado nesse evento; nenhuma decisão ou contratação decorre da URL ou da leitura.
+
+Destinos exatos: `/jobs/PAI?tab=pipeline&applicationId=ID`, `/jobs/PAI?tab=interviews&interviewId=ID`, `/offers?offerId=ID`, `/people/PAI?tab=documents&documentId=ID` e `/people/hiring-requests?request=ID`. Início autorizado usa `/people/ID`. IDs são validados; pai e origem são conferidos no workspace e no cliente do usuário, sob controles HR canônicos. `milestoneId` de P9 permanece permitido no helper de navegação. Cache não autoriza o primeiro acesso: leituras focadas exigem resposta fresca e chaves de usuário/workspace. Durante revalidação, rascunhos da mesma identidade ficam montados, ocultos e bloqueados; erro, revogação ou troca de contexto retira o conteúdo.
+
+Projeções de avisos/histórico não carregam salário, condições financeiras privadas, número/arquivo de documento, currículo, notas, link de reunião ou tokens públicos. Ler a origem mantém seus controles próprios, inclusive condições da oferta e documentos. O navegador sintético pode validar interação e layout; membership, RLS e produtores reais pertencem aos testes PostgreSQL locais. Nada é aplicado ou enviado externamente por esta documentação.

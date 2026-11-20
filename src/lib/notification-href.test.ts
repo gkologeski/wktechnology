@@ -4,6 +4,35 @@ import { notificationHref } from "./notification-href";
 const id = "11111111-2222-3333-4444-555555555555";
 
 describe("notificationHref", () => {
+  it.each([
+    [
+      `/projects/${id}?tab=milestones&milestoneId=${id}`,
+      `/projects/${id}`,
+      { tab: "milestones", milestoneId: id },
+    ],
+    [
+      `/jobs/${id}?tab=pipeline&applicationId=${id}`,
+      `/jobs/${id}`,
+      { tab: "pipeline", applicationId: id },
+    ],
+    [
+      `/jobs/${id}?tab=interviews&interviewId=${id}`,
+      `/jobs/${id}`,
+      { tab: "interviews", interviewId: id },
+    ],
+    [`/offers?offerId=${id}`, "/offers", { offerId: id }],
+    [
+      `/people/${id}?tab=documents&documentId=${id}`,
+      `/people/${id}`,
+      { tab: "documents", documentId: id },
+    ],
+    [`/people/hiring-requests?request=${id}`, "/people/hiring-requests", { request: id }],
+  ])(
+    "preserves the exact canonical target %s without dropping its item selector",
+    (link, to, search) => {
+      expect(notificationHref({ link: link as string })).toEqual({ to, search });
+    },
+  );
   it("notificação antiga de WhatsApp abre a conversa pelo entity_id", () => {
     expect(
       notificationHref({ link: "/inbox/whatsapp", entity: "inbox_conversation", entity_id: id }),

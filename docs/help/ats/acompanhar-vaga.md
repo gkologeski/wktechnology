@@ -8,7 +8,7 @@ route_pattern: /jobs/$id
 min_permission: techhire.jobs.view.own
 audience: internal
 sort_order: 23
-version: 2
+version: 3
 is_published: true
 ---
 # Acompanhar uma vaga
@@ -38,3 +38,9 @@ is_published: true
 
 ## Relacionados
 - [Gerenciar vagas](/ajuda/ats/gerenciar-vagas)
+
+## Abrir uma candidatura ou entrevista por aviso
+
+O link de **Inscrição em vaga recebida** seleciona **Pipeline** e confere a candidatura exata, mesmo que ela não esteja na lista ou no filtro carregado. **Entrevista marcada** seleciona **Entrevistas** e confere o agendamento exato. A leitura exige acesso à vaga e ao registro; entrevistas mantêm sua permissão própria.
+
+Aguarde a conferência antes de agir. Falha, falta de permissão ou troca de workspace não mantém conteúdo antigo acionável. O link não move candidatura, contrata, agenda ou reagenda; não abre currículo, link de reunião ou convite público automaticamente. Inscrição exige um registro novo real; edição ou reabertura do mesmo registro não é outra inscrição. Entrevista marcada exige confirmação e data/hora futuras, não apenas convite pendente.

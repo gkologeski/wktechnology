@@ -204,6 +204,12 @@ describe("personal workspace notification settings form", () => {
     expect(options).toContain("projects.project.overdue");
     expect(options).toContain("projects.task.overdue");
     expect(options).toContain("projects.milestone.due");
+    expect(options).toContain("ats.application.received");
+    expect(options).toContain("ats.interview.scheduled");
+    expect(options).toContain("ats.offer.accepted");
+    expect(options).toContain("people.employment.started");
+    expect(options).toContain("people.document.expiring");
+    expect(options).toContain("people.approval.pending");
     expect(options).not.toContain("finance.payable.due");
   });
   it.each([
@@ -211,6 +217,12 @@ describe("personal workspace notification settings form", () => {
     ["projects.project.overdue", "Projeto atrasado"],
     ["projects.task.overdue", "Tarefa de projeto atrasada"],
     ["projects.milestone.due", "Marco próximo do prazo"],
+    ["ats.application.received", "Inscrição em vaga recebida"],
+    ["ats.interview.scheduled", "Entrevista marcada"],
+    ["ats.offer.accepted", "Oferta aceita"],
+    ["people.employment.started", "Início de vínculo autorizado"],
+    ["people.document.expiring", "Documento próximo do vencimento"],
+    ["people.approval.pending", "Aprovação de solicitação profissional pendente"],
   ])(
     "saves a targeted WhatsApp block for %s without opting into other channels",
     async (key, label) => {
@@ -351,4 +363,21 @@ describe("personal workspace notification settings form", () => {
     expect(saveButton().disabled).toBe(true);
     expect(save).not.toHaveBeenCalled();
   });
+});
+
+it("explains the mandatory professional approval notice independently of its workflow preference", async () => {
+  await render();
+  await choose("Evento da preferência", "people.approval.pending");
+  expect(host.textContent).toContain("Desativar esta preferência ou a regra não remove esse aviso");
+  expect(host.textContent).toContain("aprovador vigente, sem duplicar");
+  expect(host.textContent).not.toContain(
+    "Eventos de negócio dependem de uma regra publicada e ativa",
+  );
+  await choose("Aprovação de solicitação profissional pendente: No app", "false");
+  await submit();
+  expect(save).toHaveBeenCalledExactlyOnceWith(
+    { eventOverrides: { "people.approval.pending": { inapp: false } } },
+    7,
+  );
+  expect(host.textContent).toContain("aviso obrigatório");
 });

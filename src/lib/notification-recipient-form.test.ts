@@ -173,6 +173,36 @@ afterEach(async () => {
 });
 
 describe("destinatários de notificações no construtor", () => {
+  it("limits professional preparation to the current named approver without rewriting the action on open", async () => {
+    await render(
+      { type: "send_notification", title: "Aviso", recipients: [{ kind: "pending_approvers" }] },
+      "hiring_preparation_requests",
+    );
+    expect([...host.querySelector("select")!.options].map((option) => option.value)).toEqual([
+      "pending_approvers",
+    ]);
+    expect(
+      [...host.querySelectorAll<HTMLButtonElement>("button")].find((button) =>
+        button.textContent?.includes("Adicionar destinatário"),
+      )!.disabled,
+    ).toBe(true);
+    expect(host.querySelector('[aria-label="Membro do workspace"]')).toBeNull();
+    expect(host.textContent).toContain("independentemente desta regra");
+    expect(host.textContent).toContain("não remove esse aviso de processo");
+    expect(change).not.toHaveBeenCalled();
+  });
+  it("preserves an incompatible legacy recipient until an explicit correction removes its user override", async () => {
+    await render(
+      { type: "send_notification", title: "Aviso", user_id: USER },
+      "hiring_preparation_requests",
+    );
+    expect(change).not.toHaveBeenCalled();
+    expect(current.user_id).toBe(USER);
+    expect(host.querySelector('[aria-label="Membro do workspace"]')).toBeNull();
+    await choose("pending_approvers");
+    expect(current.recipients).toEqual([{ kind: "pending_approvers" }]);
+    expect(current).not.toHaveProperty("user_id");
+  });
   it("mostra o executor como padrão legado sem regravar a ação ao abrir", async () => {
     await render();
     expect(host.querySelector("select")?.value).toBe("workflow_owner");

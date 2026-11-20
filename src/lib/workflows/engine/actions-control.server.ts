@@ -449,7 +449,11 @@ export async function runControlAction(
       ctx.workspaceId,
       ctx.entity,
       ctx.entityId,
-      ctx.after?.project_id,
+      ctx.entity === "people_documents"
+        ? ctx.after?.person_id
+        : ctx.entity === "ats_applications" || ctx.entity === "ats_interviews"
+          ? ctx.after?.job_id
+          : ctx.after?.project_id,
     ),
   } as never);
   logs.push({

@@ -71,11 +71,7 @@ describe("catálogo compatível com notificações históricas", () => {
   });
 
   it("keeps other modules planned without turning their keys into operational aliases", () => {
-    const examples = [
-      ["ats.application.received", "ats"],
-      ["people.employment.started", "people"],
-      ["finance.payable.due", "finance"],
-    ] as const;
+    const examples = [["finance.payable.due", "finance"]] as const;
     for (const [eventKey, moduleKey] of examples) {
       expect(getNotificationEvent(eventKey)).toMatchObject({
         eventKey,
@@ -90,7 +86,7 @@ describe("catálogo compatível com notificações históricas", () => {
     const plannedModules = NOTIFICATION_EVENT_CATALOG.filter(
       (event) => event.availability === "planned" && event.moduleKey !== null,
     ).map((event) => event.moduleKey);
-    expect([...new Set(plannedModules)].sort()).toEqual(["ats", "finance", "people"]);
+    expect([...new Set(plannedModules)].sort()).toEqual(["finance"]);
     expect(getNotificationEvent("shared.approval.pending")).toMatchObject({
       availability: "planned",
       moduleKey: null,
@@ -110,6 +106,12 @@ describe("catálogo compatível com notificações históricas", () => {
     ["projects.project.overdue", "task", "projects"],
     ["projects.task.overdue", "task", "projects"],
     ["projects.milestone.due", "task", "projects"],
+    ["ats.application.received", "hiring", "ats"],
+    ["ats.interview.scheduled", "hiring", "ats"],
+    ["ats.offer.accepted", "hiring", "ats"],
+    ["people.employment.started", "hiring", "people"],
+    ["people.document.expiring", "task", "people"],
+    ["people.approval.pending", "approval", "people"],
   ] as const)(
     "recognizes operational %s without rewriting its identity into a legacy alias",
     (eventKey, category, moduleKey) => {
@@ -132,16 +134,16 @@ describe("catálogo compatível com notificações históricas", () => {
     },
   );
 
-  it("makes exactly twelve module events operational while preserving all 22 legacy aliases", () => {
+  it("makes exactly eighteen module events operational while preserving all 22 legacy aliases", () => {
     expect(
       NOTIFICATION_EVENT_CATALOG.filter((event) => event.availability === "active"),
-    ).toHaveLength(12);
+    ).toHaveLength(18);
     expect(
       NOTIFICATION_EVENT_CATALOG.filter((event) => event.availability === "legacy"),
     ).toHaveLength(22);
     expect(
       NOTIFICATION_EVENT_CATALOG.filter((event) => event.availability === "planned"),
-    ).toHaveLength(15);
+    ).toHaveLength(9);
   });
 
   it.each([null, "unknown", "mention", "finance.payable.due"])(

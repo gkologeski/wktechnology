@@ -8,6 +8,8 @@ import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { FileSignature, Send, X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,6 +27,7 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 import { PageHeader, EmptyState, Skeletons, MetaPill } from "@/components/techhire/ui";
 import {
   listOffers,
+  getOffer,
   sendOffer,
   cancelOffer,
   deleteOffer,
@@ -41,8 +44,15 @@ import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { ViewModeToggle } from "@/components/kanban/view-mode-toggle";
 
 export const Route = createFileRoute("/_authenticated/(ats)/offers")({
-  validateSearch: (search: Record<string, unknown>): { view?: "table" | "kanban" } => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { view?: "table" | "kanban"; offerId?: string } => ({
     view: search.view === "kanban" ? "kanban" : "table",
+    offerId:
+      typeof search.offerId === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(search.offerId)
+        ? search.offerId
+        : undefined,
   }),
   component: OffersPage,
 });
@@ -104,19 +114,28 @@ function formatSalary(amount: number | null, currency: string) {
 
 function OffersPage() {
   const p = usePermissions();
+  const { user } = useAuth();
   return (
     <HrScreenAccess resources={["techhire.offers"]}>
-      <OffersContent key={`${p.workspaceId}:${[...p.permissions].sort().join("|")}`} />
+      {user && p.workspaceId && (
+        <OffersContent
+          key={`${user.id}:${p.workspaceId}:${[...p.permissions].sort().join("|")}`}
+          userId={user.id}
+          workspaceId={p.workspaceId}
+        />
+      )}
     </HrScreenAccess>
   );
 }
-function OffersContent() {
+function OffersContent({ userId, workspaceId }: { userId: string; workspaceId: string }) {
   const fetchAll = useServerFn(listOffers);
   const send = useServerFn(sendOffer);
   const cancel = useServerFn(cancelOffer);
   const del = useServerFn(deleteOffer);
   const review = useServerFn(reviewOffer);
   const fetchLink = useServerFn(getOfferLink);
+  const readOffer = useServerFn(getOffer);
+  const { offerId } = Route.useSearch();
   const [reviewing, setReviewing] = useState<OfferRow | null>(null);
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -124,13 +143,55 @@ function OffersContent() {
   const [rows, setRows] = useState<OfferRow[]>([]);
   const [loading, setLoading] = useState(true);
   const { can } = usePermissions();
-  const selection = useGridSelection(rows, { buildIdQuery: idQueryFor("ats_offers") });
+  const focus = useQuery({
+    queryKey: ["notification-offer", userId, workspaceId, offerId],
+    queryFn: () => readOffer({ data: { id: offerId! } }),
+    enabled: !!offerId,
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+  });
+  const focusedOffer =
+    offerId && focus.isFetchedAfterMount && !focus.isError && !focus.isFetching
+      ? (focus.data ?? null)
+      : null;
+  const visibleRows = [
+    ...rows.filter((row) => row.id !== offerId),
+    ...(focusedOffer ? [focusedOffer] : []),
+  ];
+  const reviewingFocus = !!reviewing && reviewing.id === offerId;
+  const reviewBlocked =
+    reviewingFocus &&
+    (focus.isFetching ||
+      focus.isError ||
+      !focusedOffer ||
+      !focusedOffer.can_view_terms ||
+      focusedOffer.revision !== reviewing.revision ||
+      focusedOffer.status !== reviewing.status ||
+      focusedOffer.approval_status !== reviewing.approval_status ||
+      focusedOffer.can_approve !== reviewing.can_approve ||
+      focusedOffer.can_request !== reviewing.can_request ||
+      focusedOffer.can_edit_terms !== reviewing.can_edit_terms ||
+      focusedOffer.can_send !== reviewing.can_send ||
+      focusedOffer.can_cancel !== reviewing.can_cancel ||
+      focusedOffer.can_delete !== reviewing.can_delete);
+  useEffect(() => {
+    if (
+      reviewingFocus &&
+      focus.isFetchedAfterMount &&
+      !focus.isFetching &&
+      (focus.isError || !focus.data)
+    )
+      setReviewing(null);
+  }, [reviewingFocus, focus.isFetchedAfterMount, focus.isFetching, focus.isError, focus.data]);
+  const selection = useGridSelection(visibleRows, { buildIdQuery: idQueryFor("ats_offers") });
   const {
     sorted: sortedRows,
     sort,
     toggle,
     grid: sortGrid,
-  } = useClientSort(rows, {
+  } = useClientSort(visibleRows, {
     candidate: (r) => r.ats_candidates?.full_name,
     job: (r) => r.ats_jobs?.title,
     salary: (r) => (r.salary_amount == null ? null : Number(r.salary_amount)),
@@ -194,14 +255,14 @@ function OffersContent() {
     }
   };
 
-  const counts = rows.reduce<Record<string, number>>((acc, r) => {
+  const counts = visibleRows.reduce<Record<string, number>>((acc, r) => {
     acc[r.status] = (acc[r.status] ?? 0) + 1;
     return acc;
   }, {});
 
   const description = loading
     ? "Carregando…"
-    : `${rows.length} oferta${rows.length === 1 ? "" : "s"} · ${counts.sent ?? 0} para assinatura · ${counts.signed ?? 0} assinadas`;
+    : `${visibleRows.length} oferta${visibleRows.length === 1 ? "" : "s"} · ${counts.sent ?? 0} para assinatura · ${counts.signed ?? 0} assinadas`;
 
   return (
     <div className="flex flex-col gap-6">
@@ -212,6 +273,42 @@ function OffersContent() {
         descriptionLive
         secondaryActions={<ViewModeToggle value={view} onChange={setView} />}
       />
+      {offerId && (
+        <section
+          aria-label="Oferta do aviso"
+          className="rounded-md border bg-muted/30 p-4 text-sm"
+          role={focus.isError ? "alert" : "status"}
+        >
+          {focus.isFetching ? (
+            "Conferindo acesso à oferta do aviso…"
+          ) : focus.isError || !focusedOffer ? (
+            <>
+              <p>A oferta do aviso está indisponível ou não foi possível conferir seu acesso.</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => void focus.refetch()}
+              >
+                Tentar novamente
+              </Button>
+            </>
+          ) : (
+            <>
+              <p className="font-medium">Oferta do aviso · {focusedOffer.title}</p>
+              <p>
+                {focusedOffer.ats_candidates?.full_name ?? "Candidato"} ·{" "}
+                {OFFER_STATUS[focusedOffer.status]?.label ?? "Situação disponível na origem"} ·
+                versão {focusedOffer.revision}
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                A oferta foi localizada pela sua sessão. Abrir o aviso não aprova, assina ou
+                disponibiliza a oferta.
+              </p>
+            </>
+          )}
+        </section>
+      )}
 
       {view === "table" && selection.hasSelection && (
         <GridBulkBar
@@ -237,73 +334,92 @@ function OffersContent() {
         <Dialog open onOpenChange={(open) => !open && !busy && setReviewing(null)}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Revisar oferta — versão {reviewing.revision}</DialogTitle>
+              <DialogTitle>
+                {reviewBlocked
+                  ? "Conferindo acesso à oferta…"
+                  : `Revisar oferta — versão ${reviewing.revision}`}
+              </DialogTitle>
             </DialogHeader>
-            <p>
-              {reviewing.ats_candidates?.full_name} · {reviewing.ats_jobs?.title}
-            </p>
-            {reviewing.can_view_terms ? (
-              <>
-                <p>
-                  {formatSalary(reviewing.salary_amount, reviewing.salary_currency ?? "BRL")} ·
-                  Início: {reviewing.start_date ?? "Não definido"}
-                </p>
-                <article className="max-h-72 overflow-auto whitespace-pre-wrap rounded border p-4">
-                  {reviewing.body}
-                </article>
-                {reviewing.can_edit_terms && (
-                  <OfferTermsEditor
-                    offer={reviewing}
-                    onSaved={() => {
-                      setReviewing(null);
-                      void reload();
-                    }}
-                  />
-                )}
-                {reviewing.approval_note && <p>Parecer anterior: {reviewing.approval_note}</p>}
-                <Textarea
-                  aria-label="Parecer da aprovação"
-                  placeholder="Parecer (opcional)"
-                  maxLength={2000}
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                />
-              </>
-            ) : (
-              <p>Sem permissão para consultar condições.</p>
+            {reviewBlocked && (
+              <p role="status">
+                {focus.isFetching
+                  ? "Aguarde a confirmação do acesso atual."
+                  : "As condições ou permissões mudaram. Feche e abra a oferta novamente para revisar."}
+              </p>
             )}
-            <div className="flex justify-end gap-2">
-              {reviewing.can_approve &&
-                reviewing.approval_status === "pending" &&
-                (["reject", "approve"] as const).map((action) => (
-                  <Button
-                    key={action}
-                    disabled={busy}
-                    variant={action === "approve" ? "default" : "outline"}
-                    onClick={async () => {
-                      setBusy(true);
-                      try {
-                        await review({
-                          data: { id: reviewing.id, revision: reviewing.revision, action, note },
-                        });
+            <fieldset
+              disabled={reviewBlocked}
+              hidden={reviewBlocked}
+              inert={reviewBlocked || undefined}
+              style={reviewBlocked ? { display: "none" } : undefined}
+              className="contents"
+            >
+              <p>
+                {reviewing.ats_candidates?.full_name} · {reviewing.ats_jobs?.title}
+              </p>
+              {reviewing.can_view_terms ? (
+                <>
+                  <p>
+                    {formatSalary(reviewing.salary_amount, reviewing.salary_currency ?? "BRL")} ·
+                    Início: {reviewing.start_date ?? "Não definido"}
+                  </p>
+                  <article className="max-h-72 overflow-auto whitespace-pre-wrap rounded border p-4">
+                    {reviewing.body}
+                  </article>
+                  {reviewing.can_edit_terms && (
+                    <OfferTermsEditor
+                      offer={reviewing}
+                      onSaved={() => {
                         setReviewing(null);
-                        await reload();
-                        toast.success(
-                          action === "approve"
-                            ? "Versão aprovada"
-                            : "Oferta devolvida para revisão",
-                        );
-                      } catch (e) {
-                        toast.error(e instanceof Error ? e.message : "Falha na aprovação");
-                      } finally {
-                        setBusy(false);
-                      }
-                    }}
-                  >
-                    {action === "approve" ? "Aprovar versão" : "Reprovar"}
-                  </Button>
-                ))}
-            </div>
+                        void reload();
+                      }}
+                    />
+                  )}
+                  {reviewing.approval_note && <p>Parecer anterior: {reviewing.approval_note}</p>}
+                  <Textarea
+                    aria-label="Parecer da aprovação"
+                    placeholder="Parecer (opcional)"
+                    maxLength={2000}
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                </>
+              ) : (
+                <p>Sem permissão para consultar condições.</p>
+              )}
+              <div className="flex justify-end gap-2">
+                {reviewing.can_approve &&
+                  reviewing.approval_status === "pending" &&
+                  (["reject", "approve"] as const).map((action) => (
+                    <Button
+                      key={action}
+                      disabled={busy}
+                      variant={action === "approve" ? "default" : "outline"}
+                      onClick={async () => {
+                        setBusy(true);
+                        try {
+                          await review({
+                            data: { id: reviewing.id, revision: reviewing.revision, action, note },
+                          });
+                          setReviewing(null);
+                          await reload();
+                          toast.success(
+                            action === "approve"
+                              ? "Versão aprovada"
+                              : "Oferta devolvida para revisão",
+                          );
+                        } catch (e) {
+                          toast.error(e instanceof Error ? e.message : "Falha na aprovação");
+                        } finally {
+                          setBusy(false);
+                        }
+                      }}
+                    >
+                      {action === "approve" ? "Aprovar versão" : "Reprovar"}
+                    </Button>
+                  ))}
+              </div>
+            </fieldset>
           </DialogContent>
         </Dialog>
       )}
@@ -311,7 +427,7 @@ function OffersContent() {
 
       {view === "kanban" ? (
         <KanbanBoard
-          rows={rows}
+          rows={visibleRows}
           table="ats_offers"
           stageField="status"
           selectable
@@ -329,7 +445,14 @@ function OffersContent() {
             />
           }
           renderCard={(r) => (
-            <div className="space-y-1">
+            <div
+              className={cn(
+                "space-y-1",
+                r.id === focusedOffer?.id && "rounded-md bg-accent ring-1 ring-primary",
+              )}
+              aria-current={r.id === focusedOffer?.id ? "true" : undefined}
+            >
+              {r.id === focusedOffer?.id && <p className="text-xs font-medium">Oferta do aviso</p>}
               <p className="text-sm font-medium leading-snug text-text-primary">
                 {r.ats_candidates?.full_name ?? "—"}
               </p>
@@ -353,7 +476,7 @@ function OffersContent() {
             <Skeletons.Row key={i} />
           ))}
         </div>
-      ) : rows.length === 0 ? (
+      ) : visibleRows.length === 0 ? (
         <EmptyState
           icon={FileSignature}
           title="Nenhuma oferta ainda"
@@ -427,7 +550,8 @@ function OffersContent() {
               {sortedRows.map((r) => (
                 <TableRow
                   key={r.id}
-                  className="group"
+                  className={cn("group", r.id === focusedOffer?.id && "bg-accent")}
+                  aria-current={r.id === focusedOffer?.id ? "true" : undefined}
                   data-state={selection.isSelected(r.id) ? "selected" : undefined}
                 >
                   <TableCell>

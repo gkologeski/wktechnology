@@ -5,7 +5,11 @@ import { HrScreenAccess, HrRecordAccess, HrAccessError } from "@/components/hr-a
 import { useHrCapabilities } from "@/lib/access-control/use-hr-capabilities";
 // /people/$id — ficha da pessoa (TechPeople).
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/lib/auth";
+import { NotificationTargetNotice } from "@/components/notifications/notification-target-notice";
+import { getNotificationDocumentTarget } from "@/lib/notifications/hr-targets.functions";
+import { formatDateOnly } from "@/lib/crm";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -82,6 +86,29 @@ import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 import { PhoneInput } from "@/components/ui/phone-input";
 export const Route = createFileRoute("/_authenticated/people/$id")({
+  validateSearch: (search: Record<string, unknown>): { tab?: string; documentId?: string } => ({
+    tab: [
+      "profile",
+      "allocations",
+      "timesheet",
+      "goals",
+      "one_on_ones",
+      "reviews",
+      "onboarding",
+      "psychosocial",
+      "incidents",
+      "benefits",
+      "documents",
+      "timeline",
+    ].includes(String(search.tab))
+      ? String(search.tab)
+      : "profile",
+    documentId:
+      typeof search.documentId === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(search.documentId)
+        ? search.documentId
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Ficha da pessoa · TechPeople" },
@@ -105,17 +132,25 @@ function initials(name: string) {
 
 function PersonDetailPage() {
   const { id } = Route.useParams();
+  const { user } = useAuth();
+  const p = usePermissions();
   return (
     <HrScreenAccess resources={["techpeople.people"]}>
       <HrRecordAccess resource="people" id={id}>
-        <PersonDetailPageContent />
+        {user && p.workspaceId && (
+          <PersonDetailPageContent
+            key={`${user.id}:${p.workspaceId}:${id}:${[...p.permissions].sort().join("|")}`}
+            userId={user.id}
+            workspaceId={p.workspaceId}
+          />
+        )}
       </HrRecordAccess>
     </HrScreenAccess>
   );
 }
 
-function PersonDetailPageContent() {
-  const { workspaceId, canAny } = usePermissions();
+function PersonDetailPageContent({ userId, workspaceId }: { userId: string; workspaceId: string }) {
+  const { canAny } = usePermissions();
   const canView = (resource: string) =>
     canAny(["workspace", "team", "own"].map((scope) => `${resource}.view.${scope}`));
   const { id } = Route.useParams();
@@ -124,22 +159,51 @@ function PersonDetailPageContent() {
   const upsertFn = useServerFn(upsertPerson);
   const listDocs = useServerFn(listPersonDocuments);
   const listTimeline = useServerFn(listPersonTimeline);
+  const readDocument = useServerFn(getNotificationDocumentTarget);
+  const { documentId, tab } = Route.useSearch();
+  const focused = useQuery({
+    queryKey: ["hr-notification-target", userId, workspaceId, "document", id, documentId],
+    queryFn: () => readDocument({ data: { workspaceId, parentId: id, id: documentId! } }),
+    enabled: !!documentId && tab === "documents" && canView("techpeople.documents"),
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+  });
+  const focusedDocument =
+    canView("techpeople.documents") &&
+    focused.isFetchedAfterMount &&
+    !focused.isFetching &&
+    !focused.isError
+      ? (focused.data ?? null)
+      : null;
 
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["person", id, workspaceId],
+  const { data, isLoading, isError, refetch, isFetchedAfterMount, isFetching } = useQuery({
+    queryKey: ["person", id, userId, workspaceId],
     queryFn: () => getFn({ data: { id } }),
-    staleTime: 15_000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
   });
 
-  const { data: documents = [] } = useQuery({
-    queryKey: ["person-docs", id, workspaceId],
+  const docs = useQuery({
+    queryKey: ["person-docs", id, userId, workspaceId],
     queryFn: () => listDocs({ data: { person_id: id } }),
-    enabled: !!data && canView("techpeople.documents"),
-    staleTime: 30_000,
+    enabled: !!data && isFetchedAfterMount && !isError && canView("techpeople.documents"),
+    staleTime: 0,
+    retry: false,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
   });
+  const documents =
+    canView("techpeople.documents") && docs.isFetchedAfterMount && !docs.isFetching && !docs.isError
+      ? (docs.data ?? []).filter(
+          (document) => document.id !== documentId || focusedDocument?.id === documentId,
+        )
+      : [];
 
   const { data: timeline = [] } = useQuery({
-    queryKey: ["person-timeline", id, workspaceId],
+    queryKey: ["person-timeline", id, userId, workspaceId],
     queryFn: () => listTimeline({ data: { person_id: id, limit: 50 } }),
     enabled: !!data && canView("techpeople.events"),
     staleTime: 30_000,
@@ -155,21 +219,47 @@ function PersonDetailPageContent() {
 
       {isError ? (
         <HrAccessError retry={() => void refetch()} />
-      ) : isLoading ? (
+      ) : isLoading || !isFetchedAfterMount ? (
         <div className="text-sm text-muted-foreground">Carregando…</div>
       ) : data ? (
-        <PersonForm
-          person={data}
-          documents={documents}
-          timeline={timeline}
-          onSaved={() => {
-            qc.invalidateQueries({ queryKey: ["person", id] });
-            qc.invalidateQueries({ queryKey: ["people"] });
-            qc.invalidateQueries({ queryKey: ["person-timeline", id] });
-            toast.success("Ficha atualizada");
-          }}
-          upsert={upsertFn}
-        />
+        <>
+          <p role="status" hidden={!isFetching} className="text-sm text-muted-foreground">
+            Conferindo acesso à pessoa…
+          </p>
+          <div hidden={isFetching} inert={isFetching || undefined}>
+            <PersonForm
+              key={`${userId}:${workspaceId}:${id}`}
+              person={data}
+              documents={documents}
+              revalidating={isFetching || docs.isFetching}
+              documentTarget={
+                documentId
+                  ? {
+                      id: documentId,
+                      pending: focused.isFetching || docs.isFetching,
+                      failed: focused.isError || docs.isError || !canView("techpeople.documents"),
+                      available: !!focusedDocument,
+                      retry: () => {
+                        if (canView("techpeople.documents")) {
+                          void focused.refetch();
+                          void docs.refetch();
+                        }
+                      },
+                      metadata: focusedDocument,
+                    }
+                  : undefined
+              }
+              timeline={timeline}
+              onSaved={() => {
+                qc.invalidateQueries({ queryKey: ["person", id] });
+                qc.invalidateQueries({ queryKey: ["people"] });
+                qc.invalidateQueries({ queryKey: ["person-timeline", id] });
+                toast.success("Ficha atualizada");
+              }}
+              upsert={upsertFn}
+            />
+          </div>
+        </>
       ) : (
         <p role="alert">Pessoa indisponível ou sem acesso.</p>
       )}
@@ -178,16 +268,28 @@ function PersonDetailPageContent() {
 }
 
 type PersonPayload = Awaited<ReturnType<typeof getPerson>>;
+type DocumentTargetState = {
+  id: string;
+  pending: boolean;
+  failed: boolean;
+  available: boolean;
+  retry: () => void;
+  metadata: Awaited<ReturnType<typeof getNotificationDocumentTarget>> | null;
+};
 
 function PersonForm({
   person,
   documents,
+  documentTarget,
+  revalidating,
   timeline,
   onSaved,
   upsert,
 }: {
   person: PersonPayload;
   documents: Awaited<ReturnType<typeof listPersonDocuments>>;
+  documentTarget?: DocumentTargetState;
+  revalidating: boolean;
   timeline: Awaited<ReturnType<typeof listPersonTimeline>>;
   onSaved: () => void;
   upsert: ReturnType<typeof useServerFn<typeof upsertPerson>>;
@@ -200,6 +302,26 @@ function PersonForm({
   const canWrite = access.for(p.id).can_update;
   const canViewSensitive = !!person.can_view_sensitive;
   const canWriteSensitive = canWrite && person.can_update_sensitive === true;
+  const { tab: requestedTab = "profile" } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const tabResource: Record<string, string> = {
+    allocations: "techpeople.allocations",
+    timesheet: "techpeople.timesheet",
+    goals: "techpeople.goals",
+    one_on_ones: "techpeople.one_on_ones",
+    reviews: "techpeople.reviews",
+    psychosocial: "techpeople.wellbeing.assessments",
+    incidents: "techpeople.incidents",
+    benefits: "techpeople.benefits",
+    documents: "techpeople.documents",
+    timeline: "techpeople.events",
+  };
+  const tabAllowed =
+    requestedTab === "profile" ||
+    (requestedTab === "onboarding"
+      ? canViewResource("techpeople.onboarding") || canViewResource("techpeople.offboarding")
+      : !!tabResource[requestedTab] && canViewResource(tabResource[requestedTab]));
+  const selectedTab = tabAllowed ? requestedTab : "profile";
 
   const [fullName, setFullName] = useState(p.full_name);
   const [preferredName, setPreferredName] = useState(p.preferred_name ?? "");
@@ -320,8 +442,19 @@ function PersonForm({
         </div>
       </div>
 
-      <Tabs defaultValue="profile">
-        <TabsList>
+      {!tabAllowed && (
+        <p role="alert" className="text-sm text-muted-foreground">
+          Você não tem permissão para consultar a aba solicitada pelo aviso.
+        </p>
+      )}
+      <Tabs
+        value={selectedTab}
+        onValueChange={(value) =>
+          void navigate({ to: ".", search: (previous) => ({ ...previous, tab: value }) })
+        }
+        className="min-w-0 w-full"
+      >
+        <TabsList className="h-auto max-w-full flex-wrap">
           <TabsTrigger value="profile">Perfil</TabsTrigger>
           {canViewResource("techpeople.allocations") && (
             <TabsTrigger value="allocations">Alocações</TabsTrigger>
@@ -722,42 +855,83 @@ function PersonForm({
           </TabsContent>
         ) : null}
 
-        <TabsContent value="documents" className="space-y-4 pt-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard label="Válidos" value={docStats.valid} tone="emerald" />
-            <StatCard label="A vencer" value={docStats.expiring} tone="amber" />
-            <StatCard label="Vencidos" value={docStats.expired} tone="rose" />
-            <StatCard label="Ausentes" value={docStats.missing} tone="muted" />
-          </div>
-          <DocumentsPanel personId={p.id} documents={documents} />
-        </TabsContent>
-
-        <TabsContent value="timeline" className="space-y-3 pt-4">
-          {timeline.length === 0 ? (
-            <div className="text-sm text-muted-foreground text-center py-6">
-              <Clock className="h-6 w-6 mx-auto mb-2 opacity-60" />
-              Nenhum evento registrado ainda.
+        {canViewResource("techpeople.documents") && (
+          <TabsContent value="documents" className="space-y-4 pt-4">
+            {documentTarget && (
+              <NotificationTargetNotice
+                label="Documento do aviso"
+                targetId={documentTarget.id}
+                loading={documentTarget.pending}
+                failed={documentTarget.failed}
+                available={documentTarget.available}
+                retry={
+                  <Button
+                    className="mt-2"
+                    size="sm"
+                    variant="outline"
+                    onClick={documentTarget.retry}
+                  >
+                    Tentar novamente
+                  </Button>
+                }
+              >
+                {documentTarget.metadata && (
+                  <>
+                    <p>
+                      {documentTarget.metadata.doc_type} · Validade:{" "}
+                      {formatDateOnly(documentTarget.metadata.expires_at)}
+                    </p>
+                    <p className="text-muted-foreground">
+                      Documento exato localizado. Abrir o aviso não baixa, publica, edita ou renova
+                      o arquivo.
+                    </p>
+                  </>
+                )}
+              </NotificationTargetNotice>
+            )}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <StatCard label="Válidos" value={docStats.valid} tone="emerald" />
+              <StatCard label="A vencer" value={docStats.expiring} tone="amber" />
+              <StatCard label="Vencidos" value={docStats.expired} tone="rose" />
+              <StatCard label="Ausentes" value={docStats.missing} tone="muted" />
             </div>
-          ) : (
-            timeline.map((ev) => (
-              <Card key={ev.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-sm font-medium">{ev.title}</div>
-                      {ev.description ? (
-                        <div className="text-xs text-muted-foreground mt-1">{ev.description}</div>
-                      ) : null}
+            <DocumentsPanel
+              personId={p.id}
+              documents={documents}
+              documentTarget={documentTarget}
+              revalidating={revalidating}
+            />
+          </TabsContent>
+        )}
+
+        {canViewResource("techpeople.events") && (
+          <TabsContent value="timeline" className="space-y-3 pt-4">
+            {timeline.length === 0 ? (
+              <div className="text-sm text-muted-foreground text-center py-6">
+                <Clock className="h-6 w-6 mx-auto mb-2 opacity-60" />
+                Nenhum evento registrado ainda.
+              </div>
+            ) : (
+              timeline.map((ev) => (
+                <Card key={ev.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="text-sm font-medium">{ev.title}</div>
+                        {ev.description ? (
+                          <div className="text-xs text-muted-foreground mt-1">{ev.description}</div>
+                        ) : null}
+                      </div>
+                      <div className="text-xs text-muted-foreground whitespace-nowrap">
+                        {new Date(ev.created_at).toLocaleString("pt-BR")}
+                      </div>
                     </div>
-                    <div className="text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(ev.created_at).toLocaleString("pt-BR")}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </TabsContent>
+                  </CardContent>
+                </Card>
+              ))
+            )}
+          </TabsContent>
+        )}
       </Tabs>
     </>
   );
@@ -806,9 +980,13 @@ function docBadgeClass(status: PeopleDocumentRow["status"]) {
 function DocumentsPanel({
   personId,
   documents,
+  documentTarget,
+  revalidating,
 }: {
   personId: string;
   documents: PeopleDocumentRow[];
+  documentTarget?: DocumentTargetState;
+  revalidating: boolean;
 }) {
   const qc = useQueryClient();
   const deleteFn = useServerFn(deletePersonDocument);
@@ -817,6 +995,23 @@ function DocumentsPanel({
   const [editing, setEditing] = useState<PeopleDocumentRow | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewing, setViewing] = useState<PeopleDocumentRow | null>(null);
+  const rights = usePersonResourceAccess(
+    "documents",
+    personId,
+    documents.map((document) => document.id),
+  );
+  const pending = revalidating || Boolean(documentTarget?.pending);
+  useEffect(() => {
+    if (!documentTarget || pending || (!documentTarget.failed && documentTarget.available)) return;
+    if (editing?.id === documentTarget.id) {
+      setOpen(false);
+      setEditing(null);
+    }
+    if (viewing?.id === documentTarget.id) {
+      setViewerOpen(false);
+      setViewing(null);
+    }
+  }, [documentTarget, pending, editing?.id, viewing?.id]);
 
   const del = useMutation({
     mutationFn: (id: string) => deleteFn({ data: { id } }),
@@ -846,6 +1041,7 @@ function DocumentsPanel({
       <div className="flex justify-end">
         <Button
           size="sm"
+          disabled={!rights.canCreate || rights.isError || pending}
           onClick={() => {
             setEditing(null);
             setOpen(true);
@@ -863,12 +1059,19 @@ function DocumentsPanel({
             </div>
           ) : (
             documents.map((d) => (
-              <div key={d.id} className="p-4 flex items-center justify-between gap-3">
+              <div
+                key={d.id}
+                aria-current={d.id === documentTarget?.metadata?.id ? "true" : undefined}
+                className={`p-4 flex flex-wrap items-center justify-between gap-3 ${d.id === documentTarget?.metadata?.id ? "bg-accent" : ""}`}
+              >
                 <div className="min-w-0">
                   <div className="text-sm font-medium truncate">{d.doc_type}</div>
+                  {d.id === documentTarget?.metadata?.id && (
+                    <Badge variant="outline">Documento do aviso</Badge>
+                  )}
                   <div className="text-xs text-muted-foreground truncate">
                     {d.doc_number ?? "—"}
-                    {d.expires_at ? ` · vence em ${d.expires_at}` : ""}
+                    {d.expires_at ? ` · vence em ${formatDateOnly(d.expires_at)}` : ""}
                     {d.file_name ? ` · ${d.file_name}` : ""}
                   </div>
                 </div>
@@ -907,6 +1110,7 @@ function DocumentsPanel({
                     }}
                     title="Editar"
                     aria-label="Editar"
+                    disabled={!rights.canUpdate(d.id) || rights.isError || pending}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>
@@ -919,6 +1123,7 @@ function DocumentsPanel({
                     }}
                     title="Remover"
                     aria-label="Remover"
+                    disabled={!rights.canDelete(d.id) || rights.isError || pending}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -933,9 +1138,11 @@ function DocumentsPanel({
         onOpenChange={setOpen}
         personId={personId}
         document={editing}
+        revalidating={pending}
+        writable={!rights.isError && (editing ? rights.canUpdate(editing.id) : rights.canCreate)}
       />
       <PersonDocumentViewerDialog
-        open={viewerOpen}
+        open={viewerOpen && !pending}
         onOpenChange={setViewerOpen}
         document={viewing}
       />

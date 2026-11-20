@@ -5,6 +5,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { WORK_COST_PUBLIC_COLUMNS } from "@/lib/access-control/work-cost-projection";
 import { sanitizeWorkflowSnapshot } from "./engine/authorization.server";
+import { isMinimalNotificationEvent } from "./notification-events";
 
 import { ENTITY_ASSOCIATIONS } from "./associations";
 import type { WorkflowEntity } from "./types";
@@ -16,9 +17,11 @@ export async function hydrateTriggerAssociations(
   entity: WorkflowEntity,
   after: AnyRow | null,
   workflowJson: string,
+  eventKey?: string | null,
 ): Promise<AnyRow | null> {
-  const safeAfter = sanitizeWorkflowSnapshot(after, entity);
+  const safeAfter = sanitizeWorkflowSnapshot(after, entity, eventKey);
   if (!safeAfter) return safeAfter;
+  if (isMinimalNotificationEvent(eventKey)) return safeAfter;
   const assocs = (ENTITY_ASSOCIATIONS[entity] ?? []).filter((a) =>
     workflowJson.includes(`{{${a.key}.`),
   );

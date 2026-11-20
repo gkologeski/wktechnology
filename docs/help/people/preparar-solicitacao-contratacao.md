@@ -8,7 +8,7 @@ route_pattern: /people/hiring-requests
 min_permission: techpeople.hiring_requests.view.workspace
 audience: internal
 sort_order: 35
-version: 14
+version: 15
 is_published: true
 ---
 
@@ -158,3 +158,9 @@ Se o profissional PJ tiver uma empresa associada na solicitação, essa mesma em
 - O CNPJ escolhido deve coincidir com a entidade do negócio e do contrato comercial vinculados. Uma entidade antiga/inativa ou sem CNPJ na origem deve ser conferida no cadastro de origem; não troque a finalidade para contornar a divergência.
 - Alterar a finalidade remove os vínculos comerciais do rascunho e, fora de atendimento a cliente, a condição de aceite do cliente final. Não altera registros já salvos.
 - Projetos e contratos continuam sujeitos às permissões de consulta. A correção do gravador técnico não concede acesso a outros usuários ou workspaces.
+
+## Aviso da etapa profissional liberada
+
+**Aprovação de solicitação profissional pendente** cobre exclusivamente a preparação profissional e a etapa atual liberada ao aprovador nomeado. Não inclui solicitações de fornecedores, vagas ou todas as alçadas de RH. O aviso obrigatório no aplicativo já acompanha o processo; uma regra de Workflow reutiliza esse aviso e pode acrescentar canais explícitos para o mesmo aprovador vigente, sem duplicação e sem destinatários arbitrários. Desativar a regra ou a nova preferência não remove esse aviso obrigatório.
+
+O destino abre a solicitação exata em **Revisão**, após conferir usuário, workspace e acesso atuais. Não solicita nem registra aprovação pela URL. Aguarde a conferência; rascunhos da mesma identidade ficam preservados e bloqueados durante revalidação. Em falha, revogação ou troca de identidade, a solicitação anterior é retirada. Valores e condições de referência permanecem nas suas fronteiras privadas, sem cópia para o aviso ou histórico de entrega.

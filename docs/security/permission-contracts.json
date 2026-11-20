@@ -7613,8 +7613,16 @@
         "techhire.hiring_policies",
         "techsales.catalog.services"
       ],
-      "actions": ["view", "update", "create", "approve", "manage"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "update",
+        "create",
+        "approve",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techhire.hiring_demands.view.workspace",
         "techhire.hiring_demands.update.workspace",
@@ -7623,7 +7631,7 @@
         "techhire.hiring_policies.manage.workspace",
         "techsales.catalog.services.update.workspace"
       ],
-      "rationale": "Caller-authenticated RPCs enforce active workspace membership, effective keys with deny, HR record visibility, named approvers, requester exclusion and revision locks. No new grants to all roles. Historical jobs remain outside governance; configured workspaces govern new demands. Catalog classification preserves canonical none and inactive excludes new role profiles.",
+      "rationale": "Caller-authenticated RPCs enforce active workspace membership, effective keys with deny, HR record visibility, named approvers, requester exclusion and revision locks. No new grants to all roles. Historical jobs remain outside governance; configured workspaces govern new demands. Catalog classification preserves canonical none and inactive excludes new role profiles. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -7644,12 +7652,212 @@
         {
           "file": "src/lib/access-control/work-core.server.ts",
           "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/use-hr-capabilities.ts",
+          "symbol": "useHrCapabilities"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "workflowNotificationTriggerMatches"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "getWorkflowNotificationEvent"
         }
       ],
       "database": [
         {
           "file": "drizzle/migrations/0308_hiring_demands_and_approvals.sql",
           "symbol": "hiring_demand_guard"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_href"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_offer_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_module"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.sales_worker_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_recipient"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_existing_inapp"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_employment_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_approval_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.hiring_preparation_approval_notify"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_actions_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_pending_approvers"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_run_key"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_notice_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_history_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_delivery_history_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_item"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_fallback"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_badge"
         }
       ],
       "tests": {
@@ -7678,7 +7886,7 @@
         "drizzle/migrations/0308_hiring_demands_and_approvals.sql": "bda3034b719861a0ad28eeabc732934a730638c2d1e563ad46e81d9cf451437a",
         "src/lib/hiring/hiring.functions.ts": "2f25c0dee65152cf990f4a6500f26b0af5f34c285d6d619f46d87ec237b024df",
         "src/components/hiring/hiring-demand-panel.tsx": "e5f8613c5399cb67753dcf62e043664906c096df6955eb43dcceb8c575ed5a70",
-        "src/routes/_authenticated/(ats)/jobs.$id.tsx": "aa7ddaaa13f428ca1e44a7c02b989304628327b9b893ceb8507ea894896af805",
+        "src/routes/_authenticated/(ats)/jobs.$id.tsx": "989a855eb81bbf32f858027ba7364e3021b0126879f980009c70d80817517be8",
         "src/lib/role-profiles/service.server.ts": "d49a3f0eac2b632670f3c716622ef7f24fe9764cbf1be89fa0c05d6146a151a5",
         "src/routes/_authenticated/catalog.services.tsx": "1c74fdb8057b7e7cf742c694756605fd3214024bf141a16dfafac82bad4f5f11"
       }
@@ -7768,7 +7976,16 @@
         "techhire.hiring_demands",
         "techhire.jobs",
         "techsales.role_profiles",
-        "system.workflows"
+        "system.workflows",
+        "techhire.candidates",
+        "techhire.interviews",
+        "techhire.offers",
+        "techpeople.people",
+        "techpeople.documents",
+        "techpeople.hiring_requests",
+        "techhire.offer_terms",
+        "techpeople.people_sensitive",
+        "techpeople.hiring_requests.reference"
       ],
       "actions": [
         "view",
@@ -7798,7 +8015,7 @@
         "techsales.role_profiles.view.workspace",
         "techsales.role_profiles.manage.workspace"
       ],
-      "rationale": "Stage 3: explicit commercial contract/evidence binding; no timestamp/status inference. Signature actions require active selected workspace, effective view/manage keys plus current contract record read/update and read-only denial. Immutable private PDF objects are uploaded by the server only after authorization, hashed and bound to actor/contract revision; SQL matches immutable metadata before recording human external attestation. Native preparation reuses authenticated esign create/send/signing with two explicit parties and a sealed document; signing offer documents never qualifies. Recruitment reads require hiring demand view and HR row scope; linking requires update, CAS and same-tenant/client/deal. Before provider publishing, HR access/publish permission and a fresh SQL business preflight run; every relevant ATS write rechecks approval/signature/date/current source. Historical records are preserved and activation is per workspace. Background hiring runs after sales_worker_authorize then current application-derived business gate, and Hunting does not provision internal hiring. Existing record/field permissions and contract legal approvals remain active. | Signature operations moved to TechContracts; legacy settings URL only redirects to the same HrScreenAccess-protected destination. Contract/deal evidence stays source-bound; read-only sessions cannot prepare evidence. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
+      "rationale": "Stage 3: explicit commercial contract/evidence binding; no timestamp/status inference. Signature actions require active selected workspace, effective view/manage keys plus current contract record read/update and read-only denial. Immutable private PDF objects are uploaded by the server only after authorization, hashed and bound to actor/contract revision; SQL matches immutable metadata before recording human external attestation. Native preparation reuses authenticated esign create/send/signing with two explicit parties and a sealed document; signing offer documents never qualifies. Recruitment reads require hiring demand view and HR row scope; linking requires update, CAS and same-tenant/client/deal. Before provider publishing, HR access/publish permission and a fresh SQL business preflight run; every relevant ATS write rechecks approval/signature/date/current source. Historical records are preserved and activation is per workspace. Background hiring runs after sales_worker_authorize then current application-derived business gate, and Hunting does not provision internal hiring. Existing record/field permissions and contract legal approvals remain active. | Signature operations moved to TechContracts; legacy settings URL only redirects to the same HrScreenAccess-protected destination. Contract/deal evidence stays source-bound; read-only sessions cannot prepare evidence. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -7883,6 +8100,10 @@
         {
           "file": "src/lib/workflows/notification-events.ts",
           "symbol": "getWorkflowNotificationEvent"
+        },
+        {
+          "file": "src/lib/access-control/use-hr-capabilities.ts",
+          "symbol": "useHrCapabilities"
         }
       ],
       "database": [
@@ -7949,6 +8170,166 @@
         {
           "file": "drizzle/migrations/0398_notification_projects.sql",
           "symbol": "notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_href"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_offer_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_module"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.sales_worker_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_recipient"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_existing_inapp"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_employment_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_approval_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.hiring_preparation_approval_notify"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_actions_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_pending_approvers"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_run_key"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_notice_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_history_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_delivery_history_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_item"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_fallback"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_badge"
         }
       ],
       "tests": {
@@ -7976,7 +8357,7 @@
       "files": {
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
-        "src/lib/workflows/engine/authorization.server.ts": "e455fe34ada983b4e2852820ca5099135fc1457477b75cd46d40a88423a6f946",
+        "src/lib/workflows/engine/authorization.server.ts": "274ef75b9ce4795c1dea9e8de3ceaa6680db6415597811300c05ceb79730777e",
         "src/routes/_authenticated/contracts.$id.tsx": "06c1ab0f4d445f677b8c78402410b9bb103fe50512bfcc172abb44cfa938b989",
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
@@ -8015,8 +8396,20 @@
         "techhire.hiring_demands",
         "techcontracts.contract_templates"
       ],
-      "actions": ["view", "create", "update", "delete", "manage", "assign", "export"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "assign",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.employment.view.workspace",
         "techpeople.employment.manage.workspace",
@@ -8030,7 +8423,7 @@
         "techhire.hiring_demands.view.workspace",
         "techhire.hiring_demands.update.workspace"
       ],
-      "rationale": "Stage 4: immutable per-engagement access snapshots; administrator plus IAM manage for model publication and invites; HR/ATS row scope and current hiring approval/signature for transactional admission. Explicit existing-person choice, stable employment/legal entity and term inheritance, purchase role client and same WK entity; allocation guarded on every SQL writer. Recipient acceptance is intentionally authenticated capability: exact auth.users email plus random 256-bit invite, current unexpired engagement and active person; it cannot reset an existing password, broaden workspace role, add Sales role or consume generic permission sets. New-account public registration remains in existing token boundary, and access only follows authenticated recipient acceptance. Own grant sets are immutable and filtered by live engagement in existing canonical permission resolver; deny and active membership preserved. Restrictive project/task/time policies constrain allocation-only snapshots, and end removes only its assignment. Historical rows, manual permissions, unrelated memberships and other engagements remain intact. No invite is sent automatically. Role selection is part of the approved demand revision and admission checks the exact model role; changing model revokes only that origin and records its previous immutable snapshot. Commercial signature hash excludes schema-only professional-origin metadata, preserving pre-existing evidence. Directory pickers return only names to ordinary active members; contact details/pending invites need IAM view; mutations require active owner/admin plus effective IAM manage. Existing field-rule triggers remain authoritative for draft contract amounts. The approved model role contributes current deny overrides and field restrictions via private hiring_restricted_roles, never its implicit grants or permission sets. Restriction provenance survives until the engagement/grant is ended or explicitly revised. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key. Package 4 direct engagements stay visible in canonical person context under unchanged employment/hr gates; only allocation remains operational, ATS model/invite/lifecycle actions stay hidden and denied. No automatic IAM grant.",
+      "rationale": "Stage 4: immutable per-engagement access snapshots; administrator plus IAM manage for model publication and invites; HR/ATS row scope and current hiring approval/signature for transactional admission. Explicit existing-person choice, stable employment/legal entity and term inheritance, purchase role client and same WK entity; allocation guarded on every SQL writer. Recipient acceptance is intentionally authenticated capability: exact auth.users email plus random 256-bit invite, current unexpired engagement and active person; it cannot reset an existing password, broaden workspace role, add Sales role or consume generic permission sets. New-account public registration remains in existing token boundary, and access only follows authenticated recipient acceptance. Own grant sets are immutable and filtered by live engagement in existing canonical permission resolver; deny and active membership preserved. Restrictive project/task/time policies constrain allocation-only snapshots, and end removes only its assignment. Historical rows, manual permissions, unrelated memberships and other engagements remain intact. No invite is sent automatically. Role selection is part of the approved demand revision and admission checks the exact model role; changing model revokes only that origin and records its previous immutable snapshot. Commercial signature hash excludes schema-only professional-origin metadata, preserving pre-existing evidence. Directory pickers return only names to ordinary active members; contact details/pending invites need IAM view; mutations require active owner/admin plus effective IAM manage. Existing field-rule triggers remain authoritative for draft contract amounts. The approved model role contributes current deny overrides and field restrictions via private hiring_restricted_roles, never its implicit grants or permission sets. Restriction provenance survives until the engagement/grant is ended or explicitly revised. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key. Package 4 direct engagements stay visible in canonical person context under unchanged employment/hr gates; only allocation remains operational, ATS model/invite/lifecycle actions stay hidden and denied. No automatic IAM grant. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -8095,6 +8488,42 @@
         {
           "file": "src/lib/auth.tsx",
           "symbol": "useAuth"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/use-hr-capabilities.ts",
+          "symbol": "useHrCapabilities"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "workflowNotificationTriggerMatches"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "getWorkflowNotificationEvent"
         }
       ],
       "database": [
@@ -8129,6 +8558,166 @@
         {
           "file": "drizzle/migrations/0381_hiring_execution_start.sql",
           "symbol": "hiring_execution_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_href"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_offer_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_module"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.sales_worker_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_recipient"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_existing_inapp"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_employment_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_approval_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.hiring_preparation_approval_notify"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_actions_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_pending_approvers"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_run_key"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_notice_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_history_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_delivery_history_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_item"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_fallback"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_badge"
         }
       ],
       "tests": {
@@ -8160,7 +8749,7 @@
         "src/lib/people/allocations.functions.ts": "462fc4923d9722430e112cd51965545af07896ee2bed5f14632051cf221c5053",
         "src/lib/workflows/engine/actions-hiring.server.ts": "ea623a453c25411c96888d09eae78cbe9da9d0e8f07ad4ec40ab32649c44f0a8",
         "src/lib/workspace-invites.functions.ts": "52e030eabd06550afc8394401ecfa4df89e91ac8f3ffbe73ebc78fbc0e37f888",
-        "src/routes/_authenticated/people.$id.tsx": "61de356c10b08601da2c739bfcbf2457524ac5bb55aec745fc72272df625457c",
+        "src/routes/_authenticated/people.$id.tsx": "052a05cde016bb098e15b5b5b32eea0e0cab030ad12f71594eeb3bc8c5317759",
         "src/routes/_authenticated/settings.permissions.tsx": "a0950fe8296a5573020ae903b29b3db04c115de817a5635b71e154a024fd3b68",
         "src/routes/accept-invite.$token.tsx": "b9b9124eae7d92cd6463124ccfe75437e79df757c2e5de72be6fca6da10d31af",
         "drizzle/migrations/0311_hiring_employment_and_access_models.sql": "d32fedece1e49576737df425c0d42a3af7a827bc0599d914a8620a9686b33783",
@@ -8187,11 +8776,11 @@
     {
       "id": "hiring-stage4-declarative",
       "kind": "presentation",
-      "rationale": "Pure declarative workflow types, validation schemas and UI draft-template definitions; no IO, route or execution. Hiring templates remain unpublished drafts. Runtime actions and persisted permissions are independently guarded by stage4 business contract. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
+      "rationale": "Pure declarative workflow types, validation schemas and UI draft-template definitions; no IO, route or execution. Hiring templates remain unpublished drafts. Runtime actions and persisted permissions are independently guarded by stage4 business contract. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "files": {
         "src/lib/workflows/hiring-templates.ts": "657b1ce58925d0169860c04affd0fc1033aa84ee51154ff3f01806d4419799ff",
-        "src/lib/workflows/types.ts": "b7df7438db508a3d3b83e80b74394dcfcd3da70df0b46e3ae65597b40faf8023",
-        "src/lib/workflows/schemas.ts": "cc4c864041016e01d1e52e2d62d93f9aa1be20860e6bacd948b7eaaa1cf3dd99"
+        "src/lib/workflows/types.ts": "0adf3e5dc77ffb05cf11fa473e0ff413b481aaecdb31a5fcfbe57e96e6c7db2f",
+        "src/lib/workflows/schemas.ts": "de813ca28c14e693a2c28dd3d3be795857ed2d5fcfa90ffa0a81a052bacf9b50"
       }
     },
     {
@@ -13307,7 +13896,7 @@
       "files": {
         "src/lib/hiring/requests/boundary.server.ts": "01651465f3a5a8f1247503a339be71165711bbf524c8a1b27367add434efed9a",
         "src/lib/hiring/requests/requests.functions.ts": "87dadcaed69095a517d68180cb853f8f12e9dc207599483cb22b863494627be1",
-        "src/lib/hiring/requests/preparation-screen.tsx": "5a0b39d587768cd50b69ff1ebd426e33478124e2c48ddfe1d1061343db23bf12",
+        "src/lib/hiring/requests/preparation-screen.tsx": "ccd87dc9bb81fac82da037147371d34c51364e2e12cb2c82a8387c06fa11d34b",
         "src/routes/_authenticated/people.hiring-requests.tsx": "734770982cab7d70d7fbb96aa5532d021b71afafc2c97c97714ea8a1c478cb37",
         "src/routes/_authenticated/contracts.supplier-requests.tsx": "1614255f00f5ba1582e25cb43e42bb4ffad69b5e73fdbb4a7c688e5dcb6e16d5",
         "drizzle/migrations/0373_hiring_requests.sql": "3f053b577dd7b4047fc5f596a0248026def9d60d112b040d93c5a8587014b267",
@@ -13325,8 +13914,15 @@
         "techcontracts.supplier_requests.approval_request",
         "techcontracts.supplier_requests.approval"
       ],
-      "actions": ["view", "create", "update", "approve"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.hiring_requests.view.workspace",
         "techpeople.hiring_requests.create.workspace",
@@ -13345,7 +13941,7 @@
         "techcontracts.supplier_requests.approval_request.create.workspace",
         "techcontracts.supplier_requests.approval.approve.workspace"
       ],
-      "rationale": "Preparation only; dedicated non-BYPASSRLS writer, active workspace membership and explicit deny; canonical entity reads use caller RLS. Pending schema is intentionally not applied before review. Approved four-step wizard; reference value uses separately protected RLS storage and is never returned in ordinary rows/events. Local review: picker cache is keyed by active workspace and the content remounts on workspace/kind change, discarding open forms and stale local entity state. Local SQL review: catalog uses canonical module/resource metadata; client requests require a commercial origin before ready; writer CREATE on public is temporary for ownership transfer and revoked by the migration. Production default ACL review: new tables explicitly revoke PUBLIC/anon/authenticated privileges before narrow grants; isolated migration test enables the same broad defaults and verifies revocation, including direct sensitive-table access. Approval extension: independent keys, canonical named approvers, revision/reference/policy binding; internal-only notification and authorized direct request link. No job gate or operational effects. Approval extension: independent keys, canonical named approvers, revision/reference/policy binding; internal-only notification and authorized direct request link. No job gate or operational effects. Approval extension: independent keys, canonical named approvers, revision/reference/policy binding; internal-only notification and authorized direct request link. No job gate or operational effects.",
+      "rationale": "Preparation only; dedicated non-BYPASSRLS writer, active workspace membership and explicit deny; canonical entity reads use caller RLS. Pending schema is intentionally not applied before review. Approved four-step wizard; reference value uses separately protected RLS storage and is never returned in ordinary rows/events. Local review: picker cache is keyed by active workspace and the content remounts on workspace/kind change, discarding open forms and stale local entity state. Local SQL review: catalog uses canonical module/resource metadata; client requests require a commercial origin before ready; writer CREATE on public is temporary for ownership transfer and revoked by the migration. Production default ACL review: new tables explicitly revoke PUBLIC/anon/authenticated privileges before narrow grants; isolated migration test enables the same broad defaults and verifies revocation, including direct sensitive-table access. Approval extension: independent keys, canonical named approvers, revision/reference/policy binding; internal-only notification and authorized direct request link. No job gate or operational effects. Approval extension: independent keys, canonical named approvers, revision/reference/policy binding; internal-only notification and authorized direct request link. No job gate or operational effects. Approval extension: independent keys, canonical named approvers, revision/reference/policy binding; internal-only notification and authorized direct request link. No job gate or operational effects. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "controls": [
         {
           "file": "src/lib/hiring/requests/boundary.server.ts",
@@ -13402,6 +13998,50 @@
         {
           "file": "src/lib/hiring/requests/draft-code.server.ts",
           "symbol": "requestDraftCode"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/use-hr-capabilities.ts",
+          "symbol": "useHrCapabilities"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "workflowNotificationTriggerMatches"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "getWorkflowNotificationEvent"
         }
       ],
       "database": [
@@ -13428,6 +14068,166 @@
         {
           "file": "drizzle/migrations/0375_hiring_preparation_approvals.sql",
           "symbol": "hiring_preparation_approval_decide"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_href"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_offer_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_module"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.sales_worker_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_recipient"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_existing_inapp"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_employment_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_approval_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.hiring_preparation_approval_notify"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_actions_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_pending_approvers"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_run_key"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_notice_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_history_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_delivery_history_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_item"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_fallback"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_badge"
         }
       ],
       "tests": {
@@ -13550,7 +14350,7 @@
       "id": "hiring-preparation-approvals-batch1",
       "kind": "business",
       "files": {
-        "src/lib/hiring/requests/approval-panel.tsx": "ce888771d0bc36f80e0c30c3cbc41189c6c8fe4cdbc71d62c8bd04c0d94b54f0",
+        "src/lib/hiring/requests/approval-panel.tsx": "83be1462dd549cd24fd60cf9ae9da445a3522cfac4ad094d798973aa145e691f",
         "src/lib/hiring/requests/approvals.functions.ts": "5297ee2ec828848c4f8ce4f156df70ef9b323a767583722b3699fb7be478f3c0",
         "drizzle/migrations/0375_hiring_preparation_approvals.sql": "02d0a80649b23d2f5eccd2ea154b8ce216b0404da20bd6c69e1571e42ab4b492"
       },
@@ -13564,8 +14364,14 @@
         "techcontracts.supplier_requests.approval",
         "techcontracts.supplier_requests.reference"
       ],
-      "actions": ["view", "create", "approve"],
-      "scopes": ["workspace"],
+      "actions": [
+        "view",
+        "create",
+        "approve"
+      ],
+      "scopes": [
+        "workspace"
+      ],
       "permission_keys": [
         "techpeople.hiring_requests.approval_request.create.workspace",
         "techpeople.hiring_requests.approval.approve.workspace",
@@ -13576,7 +14382,7 @@
         "techpeople.hiring_requests.reference.view.workspace",
         "techcontracts.supplier_requests.reference.view.workspace"
       ],
-      "rationale": "Revisioned preparation approvals only; canonical policy principal/delegate, active membership and deny; immutable events exclude amounts, internal notifications use safe links. Reviewed SQL remains outside automatic journal, not applied. Private subject helper exposes no permission inventory. Reference-view required for decisions.",
+      "rationale": "Revisioned preparation approvals only; canonical policy principal/delegate, active membership and deny; immutable events exclude amounts, internal notifications use safe links. Reviewed SQL remains outside automatic journal, not applied. Private subject helper exposes no permission inventory. Reference-view required for decisions. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "controls": [
         {
           "file": "src/lib/hiring/requests/approval-panel.tsx",
@@ -13597,6 +14403,50 @@
         {
           "file": "src/lib/access-control/work-core.server.ts",
           "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/use-hr-capabilities.ts",
+          "symbol": "useHrCapabilities"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "workflowNotificationTriggerMatches"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "getWorkflowNotificationEvent"
         }
       ],
       "database": [
@@ -13615,6 +14465,166 @@
         {
           "file": "drizzle/migrations/0375_hiring_preparation_approvals.sql",
           "symbol": "hiring_preparation_approval_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_href"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_offer_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_module"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.sales_worker_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_recipient"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_existing_inapp"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_employment_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_approval_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.hiring_preparation_approval_notify"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_actions_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_pending_approvers"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_run_key"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_notice_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_history_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_delivery_history_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_item"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_fallback"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_badge"
         }
       ],
       "tests": {
@@ -15163,9 +16173,9 @@
     {
       "id": "notification-event-catalog",
       "kind": "presentation",
-      "rationale": "Pure static metadata and exact legacy adapters; no I/O, authorization decision, UI action, producer activation, registry writes or grants. Planned entries are explicitly inactive contracts for later packages. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
+      "rationale": "Pure static metadata and exact legacy adapters; no I/O, authorization decision, UI action, producer activation, registry writes or grants. Planned entries are explicitly inactive contracts for later packages. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "files": {
-        "src/lib/notification-catalog.ts": "b129e08607f606d03111befbf188bfc021915f7d74a43ae24a0034e65b0f4490"
+        "src/lib/notification-catalog.ts": "418ef274a4be74f97a5d3485c13c0290878b5fcafd0c8b00ae4601f3379cfcbc"
       }
     },
     {
@@ -15207,10 +16217,10 @@
         "own",
         "workspace"
       ],
-      "rationale": "Atomic service-only notification dispatcher binds current published workflow, version, run, executor and actual source workspace. Private non-BYPASSRLS subject bridges retain canonical source policies and explicit deny for all six modules. Each resolved candidate requires active membership and actual source read. Named managers/delegates and pending approvers never escalate implicitly; no followers invented. Raw variable templates become a neutral notice, not executor snapshot values. Existing workflow step authorization remains in force for all other operations; no role key or grant is added. UI edits the existing workflow draft, no direct notification writes. SQL-claims disposable tests execute the real dispatcher and canonical predicates; real JWT/PostgREST acceptance is separate. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
+      "rationale": "Atomic service-only notification dispatcher binds current published workflow, version, run, executor and actual source workspace. Private non-BYPASSRLS subject bridges retain canonical source policies and explicit deny for all six modules. Each resolved candidate requires active membership and actual source read. Named managers/delegates and pending approvers never escalate implicitly; no followers invented. Raw variable templates become a neutral notice, not executor snapshot values. Existing workflow step authorization remains in force for all other operations; no role key or grant is added. UI edits the existing workflow draft, no direct notification writes. SQL-claims disposable tests execute the real dispatcher and canonical predicates; real JWT/PostgREST acceptance is separate. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "exception": {
         "mechanism": "service_role execute grant plus role claim and null auth.uid; workflow/run/version/source proof; private bridges revoked from browser and service callers.",
-        "boundary": "Only current workflow source and active readable recipients, at most 200 per action; no external channel or arbitrary user impersonation RPC.",
+        "boundary": "Only current workflow source and active readable recipients, at most 200 per action; no external channel or arbitrary user impersonation RPC. P10 extends this existing boundary with six exact TechHire/TechPeople keys and three read-only source entities under their canonical RLS. Restricted preparation approval targets only the current named approver and reuses the original notice; no generic mutation, broad recipient fallback or collective channel is authorized.",
         "revocation": "Disable/publish another workflow version, revoke executor/source access or recipient membership/permissions; gate rechecks every dispatch.",
         "review_by": "2027-04-30"
       },
@@ -15318,6 +16328,18 @@
         {
           "file": "src/lib/workflows/notification-events.ts",
           "symbol": "getWorkflowNotificationEvent"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-hr-capabilities.ts",
+          "symbol": "useHrCapabilities"
         }
       ],
       "database": [
@@ -15420,6 +16442,166 @@
         {
           "file": "drizzle/migrations/0398_notification_projects.sql",
           "symbol": "notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_href"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_offer_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_module"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.sales_worker_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_recipient"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_existing_inapp"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_employment_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_approval_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.hiring_preparation_approval_notify"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_actions_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_pending_approvers"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_run_key"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_notice_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_history_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_delivery_history_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_item"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_fallback"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_badge"
         }
       ],
       "tests": {
@@ -15449,7 +16631,7 @@
         "src/lib/notification-dispatch.server.ts": "9c31756e679af62e9c2485f7d1cf5dd522211df55fc6a6f912f7c4b9cb86ffeb",
         "src/lib/workflows/engine-actions.server.ts": "b8b420c83dab967faa3ad38b5947d5f2c7360164be33fb903d3fb8bff36eb5bb",
         "src/lib/workflows/engine/actions-messaging.server.ts": "41be7ec71111f99f38bb5e5e6db7600255f24606550314bd508093acc234a7a3",
-        "src/components/workflows/builder/step-forms/notification-form.tsx": "0221fe4dddaaabe3960ec4d4c9f2df7c5f2234233351b0cfc8b67cbf31db11e9"
+        "src/components/workflows/builder/step-forms/notification-form.tsx": "3d1ee1fcc1c8789556e8abe6cef01e6db8cc31b7a215237b769d0e7981db751a"
       }
     },
     {
@@ -15465,10 +16647,10 @@
       "scopes": [
         "own"
       ],
-      "rationale": "Personal center and preferences bind verified session, active selected workspace, own recipient and membership. New source proof is captured only for new inserts with actual source workspace; no historical attribution/backfill. Workspace reads and raw Data API RLS revalidate source access using private non-BYPASSRLS subject bridges; old unproven history is neutral without links. IDs/cutoff bounded reads, snooze state and revision CAS never approve or conclude tasks. Direct notification update/delete and preference/context tables are private. Workspace/event preference overlay extends the service-only package 2 dispatcher without bypassing its workflow/run/source/recipient checks. Bell revalidates realtime payload through the authorized API before interruption; identity/workspace-qualified caches and silence are personal. No new grants, scheduled external delivery, channels, WhatsApp opt-in or activation of planned events. Package 5 reviewed: independent bounded live badge and protected ID lookup, batched scoped realtime, cross-session read/snooze refresh, gated search actions, context navigation and mobile detail. No new producers, priorities, deliveries or forced channels. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication.",
+      "rationale": "Personal center and preferences bind verified session, active selected workspace, own recipient and membership. New source proof is captured only for new inserts with actual source workspace; no historical attribution/backfill. Workspace reads and raw Data API RLS revalidate source access using private non-BYPASSRLS subject bridges; old unproven history is neutral without links. IDs/cutoff bounded reads, snooze state and revision CAS never approve or conclude tasks. Direct notification update/delete and preference/context tables are private. Workspace/event preference overlay extends the service-only package 2 dispatcher without bypassing its workflow/run/source/recipient checks. Bell revalidates realtime payload through the authorized API before interruption; identity/workspace-qualified caches and silence are personal. No new grants, scheduled external delivery, channels, WhatsApp opt-in or activation of planned events. Package 5 reviewed: independent bounded live badge and protected ID lookup, batched scoped realtime, cross-session read/snooze refresh, gated search actions, context navigation and mobile detail. No new producers, priorities, deliveries or forced channels. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "exception": {
         "mechanism": "Authenticated JWT plus work_access_context and explicit expected workspace; SQL actor derives auth.uid and enforces active membership. Service dispatcher retains service_role-only execution and run proof.",
-        "boundary": "Only own notification state/preferences in the selected active workspace; each proven source must remain readable. Unproven historical items return neutral personal metadata only. No other-user preference API.",
+        "boundary": "Only own notification state/preferences in the selected active workspace; each proven source must remain readable. Unproven historical items return neutral personal metadata only. No other-user preference API. P10 extends this existing boundary with six exact TechHire/TechPeople keys and three read-only source entities under their canonical RLS. Restricted preparation approval targets only the current named approver and reuses the original notice; no generic mutation, broad recipient fallback or collective channel is authorized.",
         "revocation": "Inactive membership, changed selected workspace, source permission deny/revocation, read-only session on writes, or revoked JWT prevents the corresponding operation.",
         "review_by": "2027-04-30"
       },
@@ -15560,6 +16742,26 @@
         {
           "file": "src/lib/workflows/notification-events.ts",
           "symbol": "workflowNotificationTriggerLabel"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-hr-capabilities.ts",
+          "symbol": "useHrCapabilities"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
         }
       ],
       "database": [
@@ -15638,6 +16840,166 @@
         {
           "file": "drizzle/migrations/0397_notification_sales_contracts.sql",
           "symbol": "sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_href"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_offer_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_module"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.sales_worker_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_recipient"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_existing_inapp"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_employment_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_approval_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.hiring_preparation_approval_notify"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_actions_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_pending_approvers"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_run_key"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_notice_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_history_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_delivery_history_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_item"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_fallback"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_badge"
         }
       ],
       "tests": {
@@ -15667,7 +17029,7 @@
         "src/lib/notification-center.functions.ts": "bf444974cf09fef45a9837bd18d51e86e211e9e3654bee23a1e768fe316adcc8",
         "src/routes/_authenticated/notifications.tsx": "88faf21bc3b79f7eef09f6c8b22b5da7471e21843e6f6b8d44b1785983ce25fb",
         "src/components/notifications/notification-center.tsx": "b9a68699ac6148f39626f8b41633d257763df048312bb26cda0b11a6bf385218",
-        "src/components/notifications/notification-preferences-panel.tsx": "b694157be8226438accf8839f5e2f5999ad7990b43b60c0e745d3148c9888a64",
+        "src/components/notifications/notification-preferences-panel.tsx": "2250f0437c5dfbb0e9bf1b0004698d662043f7fd2745c2674a85afb0c84203d9",
         "src/components/notifications-bell.tsx": "6fd535358ba6365ec499d989ad68d52f93527f5436a7d9c04a596990aed8273a",
         "src/components/notifications/notification-detail.tsx": "165206108f9acbb1a1ebf42936ce3a25cf9667f3d3a284c819117577e62ee446"
       }
@@ -15675,19 +17037,19 @@
     {
       "id": "notification-center-preference-policy",
       "kind": "presentation",
-      "rationale": "Pure strict schemas, context-race consistency assertion, catalogue metadata, partial preference overlay merge/diff, local-clock silence and grouping of already-loaded items. No I/O, delivery, grant or recipient lookup; authoritative session/membership/source checks and persistence belong to the personal workspace RPC boundary. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
+      "rationale": "Pure strict schemas, context-race consistency assertion, catalogue metadata, partial preference overlay merge/diff, local-clock silence and grouping of already-loaded items. No I/O, delivery, grant or recipient lookup; authoritative session/membership/source checks and persistence belong to the personal workspace RPC boundary. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "files": {
         "src/lib/notification-center-preferences.ts": "614bd1da33362a43bbeef955619ef0040e13e6007cbeb69fd9d292905c93dd11",
-        "src/lib/notification-center.ts": "ddb77bc09047ca851e3cfed711f668a20335a6459b6a46b401d8fe8dca00a0c0"
+        "src/lib/notification-center.ts": "38849d01e3b311da29b31edca8cb0fa468f4aec7ac3799f4a23a2849d9256e4d"
       }
     },
     {
       "id": "notification-center-navigation",
       "kind": "presentation",
-      "rationale": "Pure verified internal notification destination parsing and shell route classification metadata; no I/O, business reads, grants or action execution. Destination pages retain their own permission gates.",
+      "rationale": "Pure verified internal notification destination parsing and shell route classification metadata; no I/O, business reads, grants or action execution. Destination pages retain their own permission gates. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "files": {
         "src/lib/menu-config-erp.ts": "020ab63c23b207448391b0398a1412fed60149d73a5d43f5a2722c8655732888",
-        "src/lib/notification-href.ts": "08a5367c476eac5f520feac2b8a9b8c27acfdf408ca88930dfce74dc5f9adaef"
+        "src/lib/notification-href.ts": "f5543b34aebaadd993a63764a40d1dba22e0c7cce220811179ce43524a0746ef"
       }
     },
     {
@@ -15695,7 +17057,14 @@
       "kind": "service",
       "resources": [
         "system.notifications",
-        "system.automation.workflows"
+        "system.automation.workflows",
+        "techhire.candidates",
+        "techhire.jobs",
+        "techhire.interviews",
+        "techhire.offers",
+        "techpeople.people",
+        "techpeople.documents",
+        "techpeople.hiring_requests"
       ],
       "actions": [
         "create"
@@ -15704,10 +17073,10 @@
         "own",
         "workspace"
       ],
-      "rationale": "Compatibility source-binding and content-minimization only. Existing reminder worker is imported exclusively by the CRON_SECRET-guarded route; existing approval step validates the named recipient through sales_workflow_approval_recipient in the authorized workflow engine. Neither endpoint, target choice nor email delivery is broadened. In-app notices now carry explicit source workspace and real activity/workflow-source ids with neutral content, never a private activity/comment/approval snapshot authorized only against a parent deal. The new center RLS revalidates active recipient and actual source on every read; no role grants or external channel is introduced. Reminder creation keeps the existing service worker selection and preferences, with access at consumption enforced by the new SQL boundary. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
+      "rationale": "Compatibility source-binding and content-minimization only. Existing reminder worker is imported exclusively by the CRON_SECRET-guarded route; existing approval step validates the named recipient through sales_workflow_approval_recipient in the authorized workflow engine. Neither endpoint, target choice nor email delivery is broadened. In-app notices now carry explicit source workspace and real activity/workflow-source ids with neutral content, never a private activity/comment/approval snapshot authorized only against a parent deal. The new center RLS revalidates active recipient and actual source on every read; no role grants or external channel is introduced. Reminder creation keeps the existing service worker selection and preferences, with access at consumption enforced by the new SQL boundary. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "exception": {
         "mechanism": "Server-only trusted service imports: existing CRON_SECRET route invokes bounded reminder scan; authorized Workflow engine and service-only recipient RPC guard approval creation. Pure notice constructors validate UUID source/workspace and remove private snapshots.",
-        "boundary": "Existing owner-targeted reminder and currently named approval recipients; neutral in-app source references only, no new caller-selected recipient endpoint. Read access remains self/workspace/source RLS.",
+        "boundary": "Existing owner-targeted reminder and currently named approval recipients; neutral in-app source references only, no new caller-selected recipient endpoint. Read access remains self/workspace/source RLS. P10 extends this existing boundary with six exact TechHire/TechPeople keys and three read-only source entities under their canonical RLS. Restricted preparation approval targets only the current named approver and reuses the original notice; no generic mutation, broad recipient fallback or collective channel is authorized.",
         "revocation": "Cron secret/session revocation, disabled workflow or rejected approver gate stops the relevant execution; membership/source deny prevents reading delivered records.",
         "review_by": "2027-04-30"
       },
@@ -15775,6 +17144,18 @@
         {
           "file": "src/lib/access-control/work-cost-projection.ts",
           "symbol": "loadWorkCostProjection"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-hr-capabilities.ts",
+          "symbol": "useHrCapabilities"
         }
       ],
       "database": [
@@ -15837,6 +17218,166 @@
         {
           "file": "drizzle/migrations/0398_notification_projects.sql",
           "symbol": "techerp_api.notification_project_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_href"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_offer_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_module"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.sales_worker_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_recipient"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_existing_inapp"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_employment_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_approval_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.hiring_preparation_approval_notify"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_actions_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_pending_approvers"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_run_key"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_notice_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_history_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_delivery_history_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_item"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_fallback"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_badge"
         }
       ],
       "tests": {
@@ -15863,7 +17404,7 @@
       },
       "files": {
         "src/lib/activity-reminders.server.ts": "f884246bfa827ed625300b2ab4f21157ca5a4f7a6ba24979499b0d247fff07ea",
-        "src/lib/workflows/engine/actions-control.server.ts": "b05937d530fb52fea75ffb04cc555b04dbba26133bdf658a940a4ed18e652929"
+        "src/lib/workflows/engine/actions-control.server.ts": "e2cbface4e2bfde9e3641c1aae7fb95a8f8244e76fa78d9cac1c25fcb5a0d0a7"
       }
     },
     {
@@ -15886,10 +17427,10 @@
         "system.notification_settings.manage.workspace",
         "system.notification_deliveries.view.workspace"
       ],
-      "rationale": "Package 4 delegates rules to existing Workflows. Authenticated wrappers require selected active workspace; settings/new keys, personal consent/profile CAS, own/source-filtered history and record-authorized rules are distinct SQL boundaries. All UI mutations delegate to those wrappers and canonical Workflow APIs. Service-only enqueue/claim/preflight/finish prove workflow version/run, executor transport permissions, recipient source, consent, quotas and neutral content. Fenced leases prevent stale completion. Ambiguous outcomes never blind-retry/fallback. No role grants, production changes, real sends, rotation, auto-activation, or new scheduler. Existing notification producers/RPC remain compatible. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
+      "rationale": "Package 4 delegates rules to existing Workflows. Authenticated wrappers require selected active workspace; settings/new keys, personal consent/profile CAS, own/source-filtered history and record-authorized rules are distinct SQL boundaries. All UI mutations delegate to those wrappers and canonical Workflow APIs. Service-only enqueue/claim/preflight/finish prove workflow version/run, executor transport permissions, recipient source, consent, quotas and neutral content. Fenced leases prevent stale completion. Ambiguous outcomes never blind-retry/fallback. No role grants, production changes, real sends, rotation, auto-activation, or new scheduler. Existing notification producers/RPC remain compatible. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "exception": {
         "mechanism": "Verified session and selected active workspace for interactive APIs; personal operations derive auth.uid only; CRON_SECRET and service-role-only RPCs for bounded worker. UI props are delegation only, never authorization.",
-        "boundary": "Only current workspace policy with explicit keys; own consent/profile; source-readable history/rules; named active recipients proven by source resolver. Provider receives neutral content, confirmed email or consent-bound phone; pinned Cloud API sender only.",
+        "boundary": "Only current workspace policy with explicit keys; own consent/profile; source-readable history/rules; named active recipients proven by source resolver. Provider receives neutral content, confirmed email or consent-bound phone; pinned Cloud API sender only. P10 extends this existing boundary with six exact TechHire/TechPeople keys and three read-only source entities under their canonical RLS. Restricted preparation approval targets only the current named approver and reuses the original notice; no generic mutation, broad recipient fallback or collective channel is authorized.",
         "revocation": "Inactive membership, deny/source or transport revocation, disabled/version-changed workflow, consent/profile change, budget exhaustion, stale lease or read-only session stops the relevant operation; checked immediately before POST.",
         "review_by": "2027-04-30"
       },
@@ -16053,6 +17594,18 @@
         {
           "file": "src/lib/access-control/work-cost-projection.ts",
           "symbol": "loadWorkCostProjection"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-hr-capabilities.ts",
+          "symbol": "useHrCapabilities"
         }
       ],
       "database": [
@@ -16271,6 +17824,166 @@
         {
           "file": "drizzle/migrations/0398_notification_projects.sql",
           "symbol": "techerp_api.notification_project_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_href"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_offer_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_module"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.sales_worker_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_recipient"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_existing_inapp"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_employment_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_approval_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.hiring_preparation_approval_notify"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_actions_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_pending_approvers"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_run_key"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_notice_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_history_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_delivery_history_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_item"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_fallback"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_badge"
         }
       ],
       "tests": {
@@ -16303,7 +18016,7 @@
         "src/components/notifications/delivery-settings-panel.tsx": "0c2d5424e9eee4b5c2e35712e8207566e6cd9e61dc2796cd595f8e7a4f38c625",
         "src/components/notifications/notification-consent-panel.tsx": "deb87af952c155aafa9caafc00e031d74594d36b9ad519810825a0882e12fc59",
         "src/components/notifications/notification-rules-list.tsx": "84e8c83d532a136e5735f71ffbfe8a909a3fab796f428ec25af06685e79dc885",
-        "src/components/notifications/notification-rules-panel.tsx": "ff7f33aace5b6d1b3cee1ba8887829b4e79868280c3f96d9378f5ec69c0532ac",
+        "src/components/notifications/notification-rules-panel.tsx": "7ca4173b17cb77d1625a837961194811d6379cfe187f09d88fab5a9c560e685d",
         "src/components/workflows/builder/step-forms/notification-delivery-choice.tsx": "e6f196798b9070827ea336b0d9b37866403227863588dd3b70e4a8c29da2834b",
         "src/lib/notifications/delivery-access.server.ts": "6addee81f235b1a01f1dd0e276e217583e311ab7b990ea14fbbe2bdd83b5eae1",
         "src/lib/notifications/delivery-adapter-runtime.server.ts": "2569f57b5610b7d661afc0943ed5a6fbc8d62d878d2283cf5173340d0d7a0710",
@@ -16317,12 +18030,12 @@
     {
       "id": "notification-delivery-declarative-content",
       "kind": "presentation",
-      "rationale": "Pure strict delivery schemas, neutral payload/model validation, structural rule preview and React email rendering. No I/O, recipient resolution, grants, provider or action execution; interactive and service authorization is enforced at delivery orchestration boundaries. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
+      "rationale": "Pure strict delivery schemas, neutral payload/model validation, structural rule preview and React email rendering. No I/O, recipient resolution, grants, provider or action execution; interactive and service authorization is enforced at delivery orchestration boundaries. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "files": {
         "src/lib/email-templates/notification-update.tsx": "64660a91969ad0cda851ca9a6550a3fe49e86c82bc4f50564325d229fc67a0e2",
         "src/lib/notifications/delivery-api.ts": "266c629fa6415c16e2918f6c6f857c933375a4abdba3fe502d81aeca59abbab4",
         "src/lib/notifications/delivery-content.ts": "3ae605fed0a2c4a0bffd271774288a979c2e50243432ee9d685c7eac58451904",
-        "src/lib/notifications/delivery-rule-preview.ts": "c01af6e670cda2e58419979ff46d567b6d8bcab6d85c7bb5cf297a64be94a2f1",
+        "src/lib/notifications/delivery-rule-preview.ts": "2d4fddcb46239c45d6b441267e414c74433c3700f85b2cc13ed24e44b5b9e9a3",
         "src/lib/notifications/delivery-types.ts": "d39b9f662735d751a912962b165909347f9f5ac79add719d019301c48da59e6f",
         "src/lib/notification-delivery-interaction.ts": "db12a925a3b50ec7e185d4cd9845589ae35cadaea50b9775088d9b07be70e422",
         "src/lib/notification-delivery.functions.ts": "e165ad50922220f2cea29a1602f8ff2d0c67fa019b5c88e0b80f6a805f0d0125"
@@ -16897,7 +18610,16 @@
         "techcontracts.contracts",
         "techprojects.projects",
         "techprojects.tasks",
-        "techprojects.milestones"
+        "techprojects.milestones",
+        "techhire.candidates",
+        "techhire.jobs",
+        "techhire.interviews",
+        "techhire.offers",
+        "techpeople.people",
+        "techpeople.documents",
+        "techpeople.hiring_requests",
+        "techpeople.employment",
+        "techpeople.hiring_requests.reference"
       ],
       "actions": [
         "view",
@@ -16909,10 +18631,10 @@
         "own",
         "workspace"
       ],
-      "rationale": "P8 connects exactly eight named TechSales and TechContracts events to the existing Workflow queue and notification ledger. Database producers derive workspace, source and transitions from canonical records, using private immutable occurrence proofs and hashes. Named workflows alone are workspace scoped, with current executor, recipient and source authorization. Canonical eventKey comes from protected context or intent metadata; legacy types, generic workflows and existing handoffs remain compatible. Proposal-origin approvals and event/run feeds delegate to the canonical proposal view gate under invoker RLS; source deny and inactive or foreign membership remain blocking. New rules start disabled, without external channels. Deadline events use explicit bounded lead time and the existing service time tick; no automatic renewal or historical backfill. No grants, role changes, production SQL, real provider messages, push or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
+      "rationale": "P8 connects exactly eight named TechSales and TechContracts events to the existing Workflow queue and notification ledger. Database producers derive workspace, source and transitions from canonical records, using private immutable occurrence proofs and hashes. Named workflows alone are workspace scoped, with current executor, recipient and source authorization. Canonical eventKey comes from protected context or intent metadata; legacy types, generic workflows and existing handoffs remain compatible. Proposal-origin approvals and event/run feeds delegate to the canonical proposal view gate under invoker RLS; source deny and inactive or foreign membership remain blocking. New rules start disabled, without external channels. Deadline events use explicit bounded lead time and the existing service time tick; no automatic renewal or historical backfill. No grants, role changes, production SQL, real provider messages, push or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "exception": {
         "mechanism": "Named event minting is private database delegation; event checks and deadline production require service_role with null auth.uid. Interactive rules and previews retain selected active workspace plus canonical Workflow row/action gates. Public selector columns cannot establish a private proof. The internal canvas only renders validated selector metadata and edits an in-memory draft through parent callbacks; it has no persistence or publication authority. Existing parent save/publish handlers and canonical server/SQL gates authorize every effect; the label helper validates display, not user privileges.",
-        "boundary": "The eight P8 registered keys and four P9 project keys use their exact source entities. Actual proposal acceptance, client draft decision and current signature evidence are checked; imported or active contracts do not imply signature completion. Run/version/source and private occurrence provenance bind dispatch and resume. UI metadata is resolved from protected RPC fields, never titles or links.",
+        "boundary": "The eight P8 registered keys and four P9 project keys use their exact source entities. Actual proposal acceptance, client draft decision and current signature evidence are checked; imported or active contracts do not imply signature completion. Run/version/source and private occurrence provenance bind dispatch and resume. UI metadata is resolved from protected RPC fields, never titles or links. P10 extends this existing boundary with six exact TechHire/TechPeople keys and three read-only source entities under their canonical RLS. Restricted preparation approval targets only the current named approver and reuses the original notice; no generic mutation, broad recipient fallback or collective channel is authorized.",
         "revocation": "Current deny, inactive membership, source revocation, changed workflow/version, invalidated signature/minuta evidence, changed dates or expired notice window blocks new effects. Consent, transport policy, quota, fencing and provider restrictions from P4-P7 remain required.",
         "review_by": "2027-04-30"
       },
@@ -16996,6 +18718,18 @@
         {
           "file": "src/lib/access-control/work-cost-projection.ts",
           "symbol": "loadWorkCostProjection"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-hr-capabilities.ts",
+          "symbol": "useHrCapabilities"
         }
       ],
       "database": [
@@ -17090,6 +18824,166 @@
         {
           "file": "drizzle/migrations/0398_notification_projects.sql",
           "symbol": "techerp_api.notification_project_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_href"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_offer_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_module"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.sales_worker_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_recipient"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_existing_inapp"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_employment_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_approval_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.hiring_preparation_approval_notify"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_actions_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_pending_approvers"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_run_key"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_notice_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_history_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_delivery_history_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_item"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_fallback"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_badge"
         }
       ],
       "tests": {
@@ -17117,11 +19011,11 @@
       "files": {
         "drizzle/migrations/0397_notification_sales_contracts.sql": "0ef4c33ba435f7dab7904d76c2a1b2ca2653b66b1daf673c9294645db3dbab0e",
         "src/components/workflows/builder/canvas.tsx": "f6e692bafb70294428c114c5ba864e93b81c1fe2b3d5c690cefee30b187c9da3",
-        "src/components/workflows/builder/trigger-config-panel.tsx": "800597439157c54fb8f76070fc28648a1e4fe33e36e06efc84bb38fcca24acd1",
+        "src/components/workflows/builder/trigger-config-panel.tsx": "421343eb7334ce60a47e49c6176ea7894ecfb9747058fb2a63c2054beab65139",
         "src/components/workflows/workflow-builder.tsx": "71f5efe9f2acce6af91d9f85ce26cca911c8e714dee41467fa38335f01f8cd82",
-        "src/lib/workflows/engine-runtime.server.ts": "c0d8ef10ac6062f05e47f753895d8741dd65a5663af04f796ac73fd1aca1c83e",
-        "src/lib/workflows/engine-time-triggers.server.ts": "1d0b7db72edafb2517b62604fcbc7d4215fec77890124509e8d963037cae3282",
-        "src/lib/workflows/notification-events.ts": "b89ba5f393ec49f6283300a29550248c04685603414edd83cc62be80cbe66562"
+        "src/lib/workflows/engine-runtime.server.ts": "4ab6704a775ace9747439ab54fd67b8eec28909b1e13113997ee817ba2d64629",
+        "src/lib/workflows/engine-time-triggers.server.ts": "95197b701992b8e675360952853d911b6ed3e261a96d21e1262c2c8d5b2f28ba",
+        "src/lib/workflows/notification-events.ts": "331c55add43d43d93a4f8539974c30ec5ab0880b50a60c560a144e6430ec0ffa"
       }
     },
     {
@@ -17139,7 +19033,16 @@
         "techprojects.members",
         "techprojects.rates",
         "techprojects.profitability",
-        "techcontracts.contracts"
+        "techcontracts.contracts",
+        "techhire.candidates",
+        "techhire.jobs",
+        "techhire.interviews",
+        "techhire.offers",
+        "techpeople.people",
+        "techpeople.documents",
+        "techpeople.hiring_requests",
+        "techhire.offer_terms",
+        "techpeople.people_sensitive"
       ],
       "actions": [
         "view",
@@ -17151,10 +19054,10 @@
         "team",
         "workspace"
       ],
-      "rationale": "P9 adds four opt-in TechProjects occurrences to the existing Workflow queue, private occurrence proofs and delivery ledger. Start is a real planning-to-active transition. DATE deadlines follow America/Sao_Paulo; overdue crossings before publication are excluded. A persistent source/deadline cursor prevents daily, version or A-to-B-to-A repetition. Current executor and recipient source permissions, active membership, tenant, parent relation and custom task completion are revalidated. Milestone links use a current same-workspace parent and protected central context. Project costs are removed from new generic/named snapshots before private hashing, projected out of privileged trigger/association reads and forbidden in generic project actions; other module values remain. The shared user-client cost adapter delegates to the unchanged canonical work_cost_projection RPC, preserving financial access checks and error results. No automatic rule/channel, role grant, task, time, billing, real provider message or production publication.",
+      "rationale": "P9 adds four opt-in TechProjects occurrences to the existing Workflow queue, private occurrence proofs and delivery ledger. Start is a real planning-to-active transition. DATE deadlines follow America/Sao_Paulo; overdue crossings before publication are excluded. A persistent source/deadline cursor prevents daily, version or A-to-B-to-A repetition. Current executor and recipient source permissions, active membership, tenant, parent relation and custom task completion are revalidated. Milestone links use a current same-workspace parent and protected central context. Project costs are removed from new generic/named snapshots before private hashing, projected out of privileged trigger/association reads and forbidden in generic project actions; other module values remain. The shared user-client cost adapter delegates to the unchanged canonical work_cost_projection RPC, preserving financial access checks and error results. No automatic rule/channel, role grant, task, time, billing, real provider message or production publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation.",
       "exception": {
         "mechanism": "Minting and URL derivation are private SQL delegation. Scheduler and proof-check APIs require the existing service-role boundary with null auth.uid. Private emitter, cursor/proof tables, task-state helper and milestone URL helper are not executable/readable by authenticated users or service clients. Internal hydration runs after canonical executor/source/association authorization in workflowSourceAllowed; sanitizeWorkflowSnapshot restricts fields and does not grant privileges. loadWorkCostProjection delegates to the SQL financial permission boundary using the authenticated user client; it neither queries raw costs nor impersonates a service client. Interactive rule and preference APIs keep their existing actor, active workspace and canonical row gates.",
-        "boundary": "Only the four registered project keys and exact projects/project_tasks/project_milestones source entities extend the eight P8 keys. Public event columns and payloads cannot establish a proof. Parent relations are same-workspace and custom task state uses its canonical category and list binding. Overdue marker -1 is private, never a public offset. The helper formats only relative paths and does not grant access.",
+        "boundary": "Only the four registered project keys and exact projects/project_tasks/project_milestones source entities extend the eight P8 keys. Public event columns and payloads cannot establish a proof. Parent relations are same-workspace and custom task state uses its canonical category and list binding. Overdue marker -1 is private, never a public offset. The helper formats only relative paths and does not grant access. P10 extends this existing boundary with six exact TechHire/TechPeople keys and three read-only source entities under their canonical RLS. Restricted preparation approval targets only the current named approver and reuses the original notice; no generic mutation, broad recipient fallback or collective channel is authorized.",
         "revocation": "Inactive membership, explicit deny, source or parent access loss, deleted/moved source, terminal project/task/milestone, changed deadline, invalidated custom state, changed workflow/version or expired milestone window blocks new effects. P4-P7 consent, silence, transport policy, quotas, fencing and provider restrictions remain mandatory.",
         "review_by": "2027-04-30"
       },
@@ -17214,6 +19117,18 @@
         {
           "file": "src/lib/workflows/notification-events.ts",
           "symbol": "getWorkflowNotificationEvent"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-hr-capabilities.ts",
+          "symbol": "useHrCapabilities"
         }
       ],
       "database": [
@@ -17272,6 +19187,166 @@
         {
           "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
           "symbol": "work_cost_projection"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_href"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_offer_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_module"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.sales_worker_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_recipient"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_existing_inapp"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_employment_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_approval_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.hiring_preparation_approval_notify"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_actions_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_pending_approvers"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_run_key"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_notice_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_history_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_delivery_history_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_item"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_fallback"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_badge"
         }
       ],
       "tests": {
@@ -17299,7 +19374,7 @@
       "files": {
         "drizzle/migrations/0398_notification_projects.sql": "44a6f04a1e2cd6aa9d800ee5d083c73da8eee11c1e40cf0e78c08909bde016d5",
         "src/lib/access-control/work-cost-projection.ts": "069eb2e21e6a491be78c467ab4cedd8ace706873732ca8987f21bac2c79d1732",
-        "src/lib/workflows/hydrate-associations.server.ts": "53aec36ecfe8b8c10beab611ca15e875d431498e1c8f962ce5b18f24389881c0"
+        "src/lib/workflows/hydrate-associations.server.ts": "d58a6164142ff32fbc508be4afef09d6226e65be87a93d72f4b7ed8728f5f58b"
       }
     },
     {
@@ -17308,6 +19383,297 @@
       "rationale": "Pure field-order metadata for the three existing TechProjects entities. Offers persisted source field names for new filters and tokens; retains unknown/legacy fields in saved configurations. No route, handler, read, write, permission decision or integration effect.",
       "files": {
         "src/lib/workflows/entity-field-order.ts": "3413ce8ca7b66bb7f63a6648ef9b758cb0083a41878187e3df9de4e1b9c02149"
+      }
+    },
+    {
+      "id": "notification-hire-people-events",
+      "kind": "service",
+      "resources": [
+        "system.notifications",
+        "system.notification_settings",
+        "system.notification_deliveries",
+        "system.workflows",
+        "system.workflow_approvals",
+        "techhire.candidates",
+        "techhire.jobs",
+        "techhire.interviews",
+        "techhire.offers",
+        "techhire.offer_terms",
+        "techpeople.people",
+        "techpeople.people_sensitive",
+        "techpeople.employment",
+        "techpeople.documents",
+        "techpeople.hiring_requests",
+        "techpeople.hiring_requests.reference"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage",
+        "approve"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "rationale": "P10 adds six explicit TechHire/TechPeople occurrences to the existing Workflows queue and protected delivery ledger. ATS receipt uses the actual application date so historical imports do not become new applications. Interviews require a future scheduled occurrence and signed offers require the canonical signing proof, without implying hiring. Employment start means a governed admission or authorized direct start. Documents use their own read permission and a bounded civil-date window. Pending approval covers only professional preparation and the named current released approver, reusing the canonical in-app notice. New offers/documents/preparation sources are read-only Workflow entities. Named snapshots contain only source identifiers, states and dates; protected HR fields are removed prospectively while public legacy aliases remain compatible. No automatic rules/channels, role grants, hiring, approval, second task or real provider message.",
+      "exception": {
+        "mechanism": "Private trigger emitters mint immutable occurrence proofs. Existing service-only tick/check/delivery APIs validate the original workflow, version, actor and source. Source visibility and worker cross-module references execute EXISTS under the non-BYPASSRLS subject role and canonical current RLS; service possession is not permission. Interactive readers use authenticated identity, active workspace and canonical HR record gates. Snapshot minimization and source-link formatting are data/presentation fences, never authorization.",
+        "boundary": "Only the six P10 keys and exact source entities extend the twelve P8/P9 events. ats_offers, people_documents and hiring_preparation_requests are read-only; no generic source mutation or hydration of private conditions/files. Approval notices target only the current professional-preparation approver and cannot be sent to collective Slack. No retroactive attribution of legacy notices or production operation.",
+        "revocation": "Inactive membership, explicit deny, source or parent access loss, cross-workspace references, changed workflow/version, cancelled or rescheduled interview, invalid signing/admission proof, changed document expiry, changed approval revision/policy/stage or inactive substitute blocks new effects. Existing consent, quiet hours, quota, provider quality and uncertain-send fences remain mandatory.",
+        "review_by": "2027-04-30"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/hr-records.server.ts",
+          "symbol": "assertHrRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/use-hr-capabilities.ts",
+          "symbol": "useHrCapabilities"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "workflowNotificationTriggerMatches"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "getWorkflowNotificationEvent"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_snapshot_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_href"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_offer_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_ats_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_source_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_module"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.sales_worker_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_recipient"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_existing_inapp"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_employment_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_people_approval_capture"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.hiring_preparation_approval_notify"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_actions_valid"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_pending_approvers"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_business_run_key"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_workflow_slack_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_slack_context"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_notice_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_hr_history_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_delivery_history_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_visible"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_center_item"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "techerp_api.notification_fallback"
+        },
+        {
+          "file": "drizzle/migrations/0399_notification_hire_people.sql",
+          "symbol": "public.notification_center_badge"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/notification-hire-people-postgres.test.ts",
+          "name": "Hire People notifications allow authorized member"
+        },
+        "missing_permission": {
+          "file": "src/lib/notification-hire-people-postgres.test.ts",
+          "name": "Hire People notifications reject missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/notification-hire-people-postgres.test.ts",
+          "name": "Hire People notifications reject explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/notification-hire-people-postgres.test.ts",
+          "name": "Hire People notifications reject foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/notification-hire-people-postgres.test.ts",
+          "name": "Hire People notifications reject inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0399_notification_hire_people.sql": "2dc76d2336b588613140fdd86b37c8de9bb7efc72d396ec120c6c9112bad65d6",
+        "src/components/ats/jobs/job-interviews-panel.tsx": "67d92c6d9ef56ba4327e8b8dd5bf12664690736a405f3083fd9b1afaa3b3ad12",
+        "src/components/people/document-dialog.tsx": "feeec106f4f89c5ba2d466bd18b6b505007869b7cdd70b2ab9fd21d5a23ccdf4",
+        "src/lib/notifications/hr-targets.functions.ts": "1a0f6c49c654ae31caf67b436cdab3e44b0fd418a20c2cc9ca3d398cc3d41bcc",
+        "src/routes/_authenticated/(ats)/offers.tsx": "528717f7997b09dc1f8802686e52ed8f2648b5e640576b09c0a87e3de39cacf9"
+      }
+    },
+    {
+      "id": "notification-hire-people-presentation",
+      "kind": "presentation",
+      "rationale": "Pure association metadata for three read-only Workflow sources and display-only notification target framing. The target frame receives already-authorized children and a retry ReactNode from guarded callers; it executes no query, persistence, permission decision or callback. Scrolling/focus does not approve, mutate or open a file. Interactive caller routes and server readers retain their own authorization contracts.",
+      "files": {
+        "src/components/notifications/notification-target-notice.tsx": "c40bdbd49dbb0339d382590a6476703223c2cbb5c7360a0687b622d7da117c94",
+        "src/lib/workflows/associations.ts": "fe654ade28819e94d46ef15c674c4e3273dfdc981880f707cd5d6c56b1973337"
       }
     }
   ],

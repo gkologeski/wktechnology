@@ -75,4 +75,67 @@ describe("privileged workflow association projection", () => {
     expect(hydrated).toEqual(source);
     expect(db.read).not.toHaveBeenCalled();
   });
+
+  it("never hydrates HR identities into a named occurrence even when its template asks for them", async () => {
+    const db = privilegedProjectReader();
+    const source = {
+      id: "application",
+      workspace_id: "workspace",
+      job_id: "job",
+      candidate_id: "candidate",
+      status: "new",
+      full_name: "Private identity",
+      hiring_details: { amount: 9000 },
+      candidate: { full_name: "Private identity" },
+    };
+    const safe = await hydrateTriggerAssociations(
+      db.client,
+      "ats_applications",
+      source,
+      JSON.stringify({ text: "{{candidate.full_name}} {{hiring_details.amount}}" }),
+      "ats.application.received",
+    );
+    expect(db.read).not.toHaveBeenCalled();
+    expect(safe).toEqual({
+      id: "application",
+      workspace_id: "workspace",
+      job_id: "job",
+      candidate_id: "candidate",
+      status: "new",
+    });
+    expect(
+      renderWorkflowTokens("{{candidate.full_name}}|{{hiring_details.amount}}|{{status}}", safe),
+    ).toBe("||new");
+    expect(source.hiring_details.amount).toBe(9000);
+  });
+
+  it("projects read-only document snapshots even without an event key and never renders document contents", async () => {
+    const db = privilegedProjectReader();
+    const safe = await hydrateTriggerAssociations(
+      db.client,
+      "people_documents",
+      {
+        id: "document",
+        person_id: "person",
+        expires_at: "2026-12-20",
+        status: "valid",
+        doc_type: "Private document",
+        doc_number: "Sensitive number",
+        file_url: "private/path",
+        file_name: "private.pdf",
+        notes: "Private note",
+      },
+      "{}",
+    );
+    expect(safe).toEqual({
+      id: "document",
+      person_id: "person",
+      expires_at: "2026-12-20",
+      status: "valid",
+    });
+    expect(renderWorkflowTokens("{{file_url}}|{{doc_number}}|{{expires_at}}", safe)).toBe(
+      "||2026-12-20",
+    );
+    expect(db.read).not.toHaveBeenCalled();
+  });
 });

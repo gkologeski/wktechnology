@@ -198,4 +198,73 @@ describe("business deadline production through the existing time tick", () => {
     expect(await tickTimeTriggers(db.client)).toEqual({ enqueued: 0, processed: 0, workflows: [] });
     expect(state.tick).not.toHaveBeenCalled();
   });
+
+  it("keeps document deadlines in SQL and never scans a malformed legacy timer on a read-only HR source", async () => {
+    const base = {
+      workspace_id: "workspace",
+      owner_id: "owner",
+      enabled: true,
+      status: "published",
+    };
+    const db = database([
+      {
+        ...base,
+        id: "document",
+        entity: "people_documents",
+        trigger: workflowNotificationEventTrigger("people.document.expiring"),
+      },
+      ...["people_documents", "ats_offers", "hiring_preparation_requests"].map((entity) => ({
+        ...base,
+        id: entity,
+        entity,
+        trigger: {
+          event: "updated",
+          time_based: { kind: "time_since_field", amount: 1, unit: "days" },
+        },
+      })),
+    ]);
+    expect(await tickTimeTriggers(db.client)).toMatchObject({ enqueued: 0 });
+    expect(db.tables).toEqual(["workflows"]);
+    expect(db.events).toEqual([]);
+    expect(state.rpc).toHaveBeenCalledOnce();
+  });
+
+  it("projects canonical HR private fields before legacy temporal filters or queue writes", async () => {
+    const db = database(
+      [
+        {
+          id: "people-timer",
+          workspace_id: "workspace",
+          owner_id: "owner",
+          enabled: true,
+          status: "published",
+          entity: "people",
+          trigger: {
+            event: "updated",
+            time_based: { kind: "time_since_field", amount: 1, unit: "days" },
+          },
+        },
+      ],
+      [
+        {
+          id: "person",
+          workspace_id: "workspace",
+          owner_id: "owner",
+          updated_at: "2026-01-01T00:00:00Z",
+          full_name: "Public alias",
+          email: "person@example.test",
+          monthly_cost: 9000,
+          personal_doc: { number: "private" },
+        },
+      ],
+    );
+    await tickTimeTriggers(db.client);
+    expect(db.events).toHaveLength(1);
+    expect(db.events[0].after).toMatchObject({
+      full_name: "Public alias",
+      email: "person@example.test",
+    });
+    expect(db.events[0].after).not.toHaveProperty("monthly_cost");
+    expect(db.events[0].after).not.toHaveProperty("personal_doc");
+  });
 });

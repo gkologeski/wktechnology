@@ -54,6 +54,36 @@ it("milestone approval notice points to its project tab and exact milestone with
     `/projects/tasks?taskId=${ID}`,
   );
 });
+it.each([
+  ["ats_offers", undefined, `/offers?offerId=${ID}`],
+  ["hiring_preparation_requests", undefined, `/people/hiring-requests?request=${ID}`],
+  ["people_documents", A, `/people/${A}?tab=documents&documentId=${ID}`],
+  ["ats_applications", A, `/jobs/${A}?tab=pipeline&applicationId=${ID}`],
+  ["ats_interviews", A, `/jobs/${A}?tab=interviews&interviewId=${ID}`],
+] as const)("keeps the exact HR source %s in a neutral approval notice", (entity, parent, href) => {
+  const notice = workflowApprovalNotificationContent(W, entity, ID, parent);
+  expect(notice).toMatchObject({
+    workspace_id: W,
+    entity,
+    entity_id: ID,
+    link: href,
+    title: "Aprovação necessária no TechERP",
+  });
+  expect(Object.keys(notice).sort()).toEqual(
+    ["workspace_id", "entity", "entity_id", "title", "body", "link"].sort(),
+  );
+});
+it.each(["people_documents", "ats_applications", "ats_interviews"])(
+  "does not invent the parent of an HR source %s",
+  (entity) => {
+    for (const parent of [undefined, null, "", {}, `${A}?tab=private`, "https://fixture.invalid"])
+      expect(workflowApprovalNotificationContent(W, entity, ID, parent).link).toBeNull();
+  },
+);
+it.each(["constructor", "__proto__", "toString", "unknown_entity"])(
+  "does not derive a source path from unmapped entity %s",
+  (entity) => expect(workflowApprovalNotificationContent(W, entity, ID, A).link).toBeNull(),
+);
 it.each([undefined, null, "", "https://external.example/project", `${A}?tab=private`, {}])(
   "does not invent a milestone project link from invalid relation %s",
   (parent) => {
@@ -119,6 +149,23 @@ it("approval execution keeps private note in its decision record and sends a neu
   expect(milestoneNotice.link).toBe(`/projects/${A}?tab=milestones&milestoneId=${ID}`);
   expect(milestoneNotice.entity).toBe("project_milestones");
   expect(JSON.stringify(milestoneNotice)).not.toMatch(/salary fixture|Private/);
+  for (const [entity, relation, href] of [
+    ["people_documents", { person_id: A }, `/people/${A}?tab=documents&documentId=${ID}`],
+    ["ats_applications", { job_id: A }, `/jobs/${A}?tab=pipeline&applicationId=${ID}`],
+    ["ats_interviews", { job_id: A }, `/jobs/${A}?tab=interviews&interviewId=${ID}`],
+  ] as const) {
+    writes.length = 0;
+    await runControlAction(
+      db,
+      { type: "approval_step", title: "Private {{confidential}}" },
+      { ...ctx, entity, after: { ...relation, confidential: "salary fixture" } },
+      { index: 0, stepPath: "0", annotate: (s) => s, runActions: vi.fn() },
+    );
+    const hrNotice = writes.find((item) => item.table === "notifications")!.row;
+    expect(hrNotice.link).toBe(href);
+    expect(hrNotice.entity).toBe(entity);
+    expect(JSON.stringify(hrNotice)).not.toMatch(/salary fixture|Private|file_url|storage_path/);
+  }
 });
 it("approval recipient denial prevents creation and its notice", async () => {
   state.rpc.mockResolvedValue(false);

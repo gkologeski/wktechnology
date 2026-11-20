@@ -100,11 +100,11 @@ export function workflowApprovalNotificationContent(
   workspaceId: string,
   entity: string,
   id: string,
-  projectId?: unknown,
+  parentId?: unknown,
 ) {
   z.string().uuid().parse(id);
   z.string().uuid().parse(workspaceId);
-  const milestoneProject = z.string().uuid().safeParse(projectId);
+  const parent = z.string().uuid().safeParse(parentId);
   const paths: Record<string, string> = {
     deals: "/deals",
     contacts: "/contacts",
@@ -121,21 +121,24 @@ export function workflowApprovalNotificationContent(
     services: "/services",
     financial_entries: "/finance/entries",
   };
+  let link = Object.hasOwn(paths, entity) ? `${paths[entity]}/${id}` : null;
+  if (entity === "ats_offers") link = `/offers?offerId=${id}`;
+  if (entity === "hiring_preparation_requests") link = `/people/hiring-requests?request=${id}`;
+  if (entity === "people_documents" && parent.success)
+    link = `/people/${parent.data}?tab=documents&documentId=${id}`;
+  if (entity === "ats_applications" && parent.success)
+    link = `/jobs/${parent.data}?tab=pipeline&applicationId=${id}`;
+  if (entity === "ats_interviews" && parent.success)
+    link = `/jobs/${parent.data}?tab=interviews&interviewId=${id}`;
+  if (entity === "project_tasks") link = `/projects/tasks?taskId=${id}`;
+  if (entity === "project_milestones" && parent.success)
+    link = `/projects/${parent.data}?tab=milestones&milestoneId=${id}`;
   return {
     workspace_id: workspaceId,
     entity,
     entity_id: id,
     title: "Aprovação necessária no TechERP",
     body: "Uma execução de workflow aguarda sua decisão. Consulte a origem e as aprovações disponíveis para você.",
-    link:
-      entity === "project_tasks"
-        ? `/projects/tasks?taskId=${id}`
-        : entity === "project_milestones"
-          ? milestoneProject.success
-            ? `/projects/${milestoneProject.data}?tab=milestones&milestoneId=${id}`
-            : null
-          : paths[entity]
-            ? `${paths[entity]}/${id}`
-            : null,
+    link,
   };
 }
