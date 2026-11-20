@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Loader2, Settings2 } from "lucide-react";
+import { Bell, Loader2, Settings2, Workflow, FileText, History } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,13 @@ import {
   NotificationCenter,
   type CenterFilters,
 } from "@/components/notifications/notification-center";
+import { NotificationRulesPanel } from "@/components/notifications/notification-rules-panel";
+import {
+  NotificationDeliveryConfiguration,
+  NotificationDeliveryHistorySection,
+  NotificationConsentSection,
+} from "@/components/notifications/delivery-operations";
+import { getNotificationDeliveryCapabilities } from "@/lib/notification-delivery.functions";
 import { NotificationPreferencesPanel } from "@/components/notifications/notification-preferences-panel";
 import { useAuth } from "@/lib/auth";
 import { usePermissions } from "@/lib/access-control/use-permissions";
@@ -57,7 +64,9 @@ function NotificationsPage() {
 }
 
 function NotificationWorkspace({ userId, workspaceId }: { userId: string; workspaceId: string }) {
-  const [tab, setTab] = useState<"central" | "preferences">("central");
+  const [tab, setTab] = useState<"central" | "preferences" | "rules" | "models" | "deliveries">(
+    "central",
+  );
   const [filters, setFilters] = useState<CenterFilters>({
     scope: "workspace",
     status: "all",
@@ -69,6 +78,17 @@ function NotificationWorkspace({ userId, workspaceId }: { userId: string; worksp
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const qc = useQueryClient();
+  const permissions = usePermissions();
+  const deliveryCapabilitiesFn = useServerFn(getNotificationDeliveryCapabilities);
+  const deliveryCapabilities = useQuery({
+    queryKey: ["notification-delivery-capabilities", userId, workspaceId],
+    queryFn: () => deliveryCapabilitiesFn({ data: { workspaceId } }),
+    staleTime: 30_000,
+    refetchInterval: 30_000,
+  });
+  const canRules = permissions.canAny(
+    ["own", "team", "workspace"].map((scope) => `system.workflows.view.${scope}`),
+  );
   const listFn = useServerFn(getNotificationCenter);
   const markFn = useServerFn(markCenterNotifications);
   const snoozeFn = useServerFn(snoozeCenterNotification);
@@ -149,12 +169,15 @@ function NotificationWorkspace({ userId, workspaceId }: { userId: string; worksp
     },
   });
   return (
-    <main className="space-y-6 p-4 md:p-6">
+    <main className="min-w-0 space-y-6 p-4 md:p-6">
       <PageHeader
         title="Notificações"
         description={`Sua central no workspace ${workspaceName}. Avisos, leitura e preferências pessoais.`}
       />
-      <nav className="flex gap-2 border-b border-border pb-3" aria-label="Áreas de notificações">
+      <nav
+        className="flex flex-wrap gap-2 border-b border-border pb-3"
+        aria-label="Áreas de notificações"
+      >
         <Button
           variant={tab === "central" ? "default" : "ghost"}
           aria-pressed={tab === "central"}
@@ -163,6 +186,36 @@ function NotificationWorkspace({ userId, workspaceId }: { userId: string; worksp
           <Bell className="mr-2 h-4 w-4" />
           Minha central
         </Button>
+        {canRules && (
+          <Button
+            variant={tab === "rules" ? "default" : "ghost"}
+            aria-pressed={tab === "rules"}
+            onClick={() => setTab("rules")}
+          >
+            <Workflow className="mr-2 h-4 w-4" />
+            Regras
+          </Button>
+        )}
+        {deliveryCapabilities.data?.settingsView && (
+          <Button
+            variant={tab === "models" ? "default" : "ghost"}
+            aria-pressed={tab === "models"}
+            onClick={() => setTab("models")}
+          >
+            <FileText className="mr-2 h-4 w-4" />
+            Modelos e canais
+          </Button>
+        )}
+        {deliveryCapabilities.data?.deliveriesView && (
+          <Button
+            variant={tab === "deliveries" ? "default" : "ghost"}
+            aria-pressed={tab === "deliveries"}
+            onClick={() => setTab("deliveries")}
+          >
+            <History className="mr-2 h-4 w-4" />
+            Entregas
+          </Button>
+        )}
         <Button
           variant={tab === "preferences" ? "default" : "ghost"}
           aria-pressed={tab === "preferences"}
@@ -172,6 +225,14 @@ function NotificationWorkspace({ userId, workspaceId }: { userId: string; worksp
           Preferências
         </Button>
       </nav>
+      {deliveryCapabilities.isError && (
+        <div role="alert" className="text-sm text-muted-foreground">
+          Não foi possível confirmar os recursos de entrega. A central continua disponível.{" "}
+          <Button variant="link" onClick={() => void deliveryCapabilities.refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      )}
       {tab === "central" ? (
         <NotificationCenter
           items={items}
@@ -204,6 +265,38 @@ function NotificationWorkspace({ userId, workspaceId }: { userId: string; worksp
               : undefined
           }
         />
+      ) : tab === "rules" ? (
+        canRules ? (
+          <NotificationRulesPanel
+            key={`${userId}:${workspaceId}`}
+            userId={userId}
+            workspaceId={workspaceId}
+          />
+        ) : (
+          <p>Sem permissão para consultar regras de Workflow.</p>
+        )
+      ) : tab === "models" ? (
+        deliveryCapabilities.data?.settingsView ? (
+          <NotificationDeliveryConfiguration
+            key={`${userId}:${workspaceId}`}
+            userId={userId}
+            workspaceId={workspaceId}
+            capabilities={deliveryCapabilities.data}
+          />
+        ) : (
+          <p>Não foi possível confirmar sua permissão para configurar modelos e canais.</p>
+        )
+      ) : tab === "deliveries" ? (
+        deliveryCapabilities.data?.deliveriesView ? (
+          <NotificationDeliveryHistorySection
+            key={`${userId}:${workspaceId}`}
+            userId={userId}
+            workspaceId={workspaceId}
+            canWorkspace={deliveryCapabilities.data.deliveriesWorkspaceView}
+          />
+        ) : (
+          <p>Não foi possível confirmar seu acesso ao histórico de entregas.</p>
+        )
       ) : preferences.isError ? (
         <div role="alert" className="space-y-3">
           <p>Não foi possível carregar suas preferências. {preferences.error.message}</p>
@@ -212,12 +305,21 @@ function NotificationWorkspace({ userId, workspaceId }: { userId: string; worksp
           </Button>
         </div>
       ) : preferences.data ? (
-        <NotificationPreferencesPanel
-          legacyPrefs={preferences.data.legacyPrefs}
-          settings={preferences.data.settings}
-          revision={preferences.data.revision}
-          onSave={(patch, revision) => save.mutateAsync({ patch, revision }).then(() => undefined)}
-        />
+        <div className="min-w-0 space-y-8">
+          <NotificationPreferencesPanel
+            legacyPrefs={preferences.data.legacyPrefs}
+            settings={preferences.data.settings}
+            revision={preferences.data.revision}
+            onSave={(patch, revision) =>
+              save.mutateAsync({ patch, revision }).then(() => undefined)
+            }
+          />
+          <NotificationConsentSection
+            key={`${userId}:${workspaceId}`}
+            userId={userId}
+            workspaceId={workspaceId}
+          />
+        </div>
       ) : (
         <p className="flex items-center gap-2" role="status">
           <Loader2 className="h-4 w-4 animate-spin" />

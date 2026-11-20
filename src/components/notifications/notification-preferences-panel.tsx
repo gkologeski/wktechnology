@@ -32,6 +32,7 @@ type Props = {
 };
 const CHANNELS = [
   { key: "inapp", label: "No app" },
+  { key: "email", label: "E-mail" },
   { key: "sound", label: "Som" },
   { key: "shake", label: "Tremor" },
 ] as const;
@@ -185,7 +186,7 @@ export function NotificationPreferencesPanel({ legacyPrefs, settings, revision, 
       <fieldset disabled={pending} className="min-w-0 max-w-full space-y-4">
         <legend className="mb-3 font-medium">Grupos de avisos</legend>
         <div className="relative min-w-0 max-w-full overflow-x-auto">
-          <table className="w-full min-w-[570px] text-sm">
+          <table className="w-full min-w-[700px] text-sm">
             <thead>
               <tr className="border-b text-left">
                 <th className="pb-3 font-medium">Grupo</th>
@@ -235,9 +236,9 @@ export function NotificationPreferencesPanel({ legacyPrefs, settings, revision, 
           </table>
         </div>
         <p className="text-xs text-muted-foreground">
-          Desativar “No app” silencia interrupções e suprime novos avisos dos fluxos integrados à
-          central. O histórico é preservado. Produtores legados ainda podem gravar avisos
-          diretamente.
+          Desativar “No app” suprime novos avisos nesse canal e silencia as interrupções do sino.
+          E-mail possui uma escolha própria. O histórico é preservado e produtores legados ainda
+          podem possuir regras independentes.
         </p>
       </fieldset>
 
@@ -262,7 +263,7 @@ export function NotificationPreferencesPanel({ legacyPrefs, settings, revision, 
             ))}
           </SelectContent>
         </Select>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-4">
           {CHANNELS.map((channel) => (
             <div className="space-y-2" key={channel.key}>
               <Label>{channel.label}</Label>
@@ -302,8 +303,8 @@ export function NotificationPreferencesPanel({ legacyPrefs, settings, revision, 
           <Label htmlFor="center-quiet-enabled">Silenciar interrupções durante este período</Label>
         </div>
         <p className="text-sm text-muted-foreground">
-          Toast, som e tremor são silenciados. A central continua recebendo avisos e os prazos
-          continuam correndo.
+          Pop-up, som e tremor são silenciados e os novos envios externos integrados aguardam o
+          período permitido. A central continua disponível e os prazos continuam correndo.
         </p>
         <div className="grid gap-4 sm:grid-cols-3">
           <QuietTime
@@ -355,8 +356,9 @@ export function NotificationPreferencesPanel({ legacyPrefs, settings, revision, 
         </p>
       </fieldset>
       <p className="text-xs text-muted-foreground">
-        As opções gerais de e-mail continuam disponíveis na configuração pessoal existente. Esta
-        central ainda não unifica os envios externos; nenhum opt-in de WhatsApp é criado aqui.
+        E-mail usa sua preferência efetiva nos passos de notificação integrados e depende da
+        política do workspace. Outros produtores legados mantêm suas regras. WhatsApp exige a
+        autorização pessoal específica abaixo; ativar um grupo não cria nenhum opt-in de WhatsApp.
       </p>
       {error && (
         <p role="alert" className="text-sm text-destructive">

@@ -10,6 +10,14 @@ const state = vi.hoisted(() => ({
   loading: false,
   error: false,
 }));
+vi.mock("@/lib/access-control/use-permissions", () => ({
+  usePermissions: () => ({
+    workspaceId: "aaaaaaaa-1111-4111-8111-111111111111",
+    isLoading: false,
+    isError: false,
+    canAny: () => true,
+  }),
+}));
 vi.mock("@/hooks/use-workspace-members", () => ({
   useWorkspaceMembers: () => ({
     data: state.members,

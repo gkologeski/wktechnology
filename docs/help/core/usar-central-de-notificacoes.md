@@ -2,13 +2,13 @@
 module_key: core
 slug: usar-central-de-notificacoes
 title: Usar a central de notificações
-summary: Consulte seus avisos no workspace, marque a leitura, adie interrupções e organize a central.
+summary: Consulte avisos e entregas, configure regras e canais e controle suas preferências no workspace.
 article_type: howto
 route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 147
-version: 1
+version: 2
 is_published: true
 ---
 
@@ -49,7 +49,7 @@ Você acompanha seus avisos no contexto correto, distingue pendências de leitur
 - As preferências deste workspace não alteram as escolhas de outro workspace nem apagam o JSON global legado. Eventos planejados no catálogo não passam a produzir avisos ao configurar uma preferência.
 - **No app** e suas exceções por evento são aplicados aos novos avisos do passo **Enviar notificação** dos Workflows. Outros produtores legados ainda possuem suas próprias regras de gravação. O sino respeita as opções efetivas antes de interromper.
 - Silêncio não adia aprovação, pagamento ou tarefa. O horário inicial é incluído e o horário final é excluído; intervalos que atravessam a meia-noite são permitidos.
-- Este pacote não oferece entrega de resumo externo, novo opt-in de WhatsApp, reenvio ou troca automática de canal. O WhatsApp continua sujeito às condições da integração existente.
+- A organização em resumo não realiza envio externo. Entregas opcionais por e-mail/WhatsApp dependem de regra explícita, canais habilitados, preferências e consentimento; consulte as instruções abaixo.
 - Tipos desconhecidos permanecem sem interrupção. Falhas de consulta aparecem como erro e não como uma caixa vazia.
 
 ## Erros comuns
@@ -66,3 +66,40 @@ Você acompanha seus avisos no contexto correto, distingue pendências de leitur
 - [Revisar preferências globais de notificações](/ajuda/core/revisar-preferencias-de-notificacoes)
 - [Criar e publicar workflows](/ajuda/crm/criar-publicar-workflows)
 - [Permissões do Core](/ajuda/core/permissoes)
+
+## Regras, modelos e entregas
+
+Na central, as abas **Regras**, **Modelos e canais** e **Entregas** ampliam o acompanhamento. Sua disponibilidade depende das permissões atuais; ausência de acesso não significa falha de configuração.
+
+### Preparar os canais do workspace
+
+1. Um administrador autorizado abre **Modelos e canais**. E-mail e WhatsApp começam desligados; definir uma preferência pessoal não os ativa.
+2. Para e-mail, defina uma cota positiva e habilite o canal somente depois de revisar a política do workspace.
+3. Para WhatsApp, escolha um número da conexão direta Cloud API e um modelo **UTILITY**, **APPROVED**, no idioma exato, compatível com o texto neutro apresentado. Os números do conector anterior continuam com sua configuração; esta tela não os migra.
+4. Informe a cota diária, a moeda, o custo unitário estimado e o orçamento diário estimado. Consulte os valores vigentes na Meta. O controle local não é uma garantia de preço nem aumenta o limite ou a qualidade da conta.
+5. Salve e aguarde a confirmação. Alterações de WhatsApp exigem também acesso à gestão desse canal. Sem esse acesso, um administrador pode ajustar e-mail preservando a configuração de WhatsApp já salva.
+
+### Autorizar seus próprios avisos no WhatsApp
+
+1. Abra **Preferências** e localize sua autorização de WhatsApp.
+2. Confira o telefone do perfil. Se necessário, preencha o número com código do país e use **Atualizar telefone no perfil**. Essa ação altera o seu perfil; não registra consentimento automaticamente.
+3. Leia a finalidade e escolha autorizar. O consentimento vale para seus avisos desse workspace, nesse telefone. O cadastro não comprova posse do número por SMS.
+4. Para interromper, revogue a autorização. Trocar o telefone revoga as autorizações anteriores; autorize novamente apenas quando desejar. Não é possível autorizar outra pessoa por esta tela.
+
+### Criar uma regra sem duplicar o motor de automações
+
+1. Abra **Regras** e crie ou edite o Workflow autorizado. As regras exibidas são os Workflows que possuem a ação **Enviar notificação**; não há uma segunda automação paralela.
+2. Configure o gatilho, os destinatários e os canais. Uma ação antiga sem seleção explícita mantém somente **No app**.
+3. E-mail e WhatsApp são opcionais. **E-mail se o WhatsApp falhar** exige WhatsApp primário sem e-mail em paralelo. A alternativa só é permitida em falhas definitivas ou supressões elegíveis, com preferência e permissão próprias; um resultado incerto não gera outro envio.
+4. Salve o rascunho e use **Conferir configuração sem enviar**, quando disponível. A conferência é estrutural: não envia mensagens, não comprova elegibilidade dos destinatários e não ativa o rascunho.
+5. Publique somente a versão revisada da regra, com sua autorização habitual de Workflows. Criar, salvar e publicar continuam sendo ações distintas.
+
+### Conferir o histórico
+
+1. Abra **Entregas**. Por padrão, você consulta somente as próprias entregas. A visão do workspace exige permissão específica e continua filtrada pelo acesso à origem.
+2. Filtre por canal e situação; carregue as páginas anteriores quando necessário.
+3. **Na fila** ou **Nova tentativa programada** ainda não confirmam envio. **Aceita pelo provedor** não significa **Entregue** ou **Lida**. E-mail sem recibo não recebe um estado de entrega inventado.
+4. **Resultado incerto** indica que não há prova suficiente para repetir com segurança. A central não oferece reenvio automático ou manual cego. Consulte o provedor e a pessoa responsável antes de agir.
+5. **Suprimida** informa um bloqueio como preferência, consentimento, acesso, configuração ou limite. A central não expõe o destino completo nem a mensagem técnica bruta do provedor.
+
+Os canais externos recebem texto neutro com acesso à central, sem salário, valor, documento pessoal ou cópia do conteúdo da origem. A leitura no TechERP mantém suas permissões atuais. O horário de silêncio adia novas entregas externas; não altera o prazo da obrigação. A organização diária/semanal continua sendo um agrupamento visual, sem envio de digest externo. Estas regras não passam a produzir todos os eventos planejados do catálogo.

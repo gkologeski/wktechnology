@@ -8,7 +8,7 @@ route_pattern: /settings/notifications
 min_permission:
 audience: internal
 sort_order: 148
-version: 5
+version: 6
 is_published: true
 ---
 
@@ -41,7 +41,7 @@ As opções ficam salvas para seu usuário e são consultadas pelos novos avisos
 ## Regras e limites
 
 - As preferências não apagam notificações, mudam responsáveis, concedem permissão de leitura nem liberam uma etapa de aprovação.
-- O passo **Enviar notificação** dos Workflows consulta **No app** do grupo **Workflows** antes de criar um novo aviso. Se essa opção estiver desligada, o envio é suprimido; notificações anteriores não são apagadas.
+- O passo **Enviar notificação** consulta **No app** antes de criar um aviso interno. Quando houver seleção explícita de e-mail, a preferência de **E-mail** também será consultada. Desligar No app não desliga um e-mail explicitamente autorizado; o histórico anterior permanece preservado.
 - Os grupos **Workflows**, **Aprovações**, **Contratação e perfis de vaga**, **Formulários**, **Carteira** e **Plataforma e segurança** começam com **No app** ligado e as demais opções desligadas, salvo se você já tiver uma escolha salva.
 - A tela salva somente as opções que você alterou. Valores de canal gravados com formato inválido são tratados como desligados; para uma opção ausente, vale o padrão do grupo.
 - Alterar um grupo não cria uma automação, ativa um evento futuro ou habilita um canal externo. Esta tela global não oferece controles de WhatsApp, resumos ou horário de silêncio. A central possui silêncio e agrupamento diário/semanal dos itens carregados, sem entrega externa de resumo.

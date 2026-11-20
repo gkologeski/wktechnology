@@ -1,3 +1,4 @@
+import type { NotificationDeliveryConfig } from "@/lib/notifications/delivery-types";
 import type { NotificationRecipientRule } from "@/lib/notification-recipients";
 
 export type WorkflowEntity =
@@ -183,6 +184,8 @@ export type WorkflowAction =
       user_id?: string;
       /** Explicit rules take precedence over the legacy recipient/default. */
       recipients?: NotificationRecipientRule[];
+      /** Explicit multichannel delivery; absent keeps the legacy in-app-only path. */
+      delivery?: NotificationDeliveryConfig;
     }
   | { type: "webhook"; url: string; payload?: Record<string, unknown> }
   | { type: "delay"; amount: number; unit: "minutes" | "hours" | "days" }

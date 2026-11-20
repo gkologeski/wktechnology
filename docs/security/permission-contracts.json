@@ -2067,9 +2067,22 @@
     {
       "id": "whatsapp-cloud-internal-routing",
       "kind": "internal",
-      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.whatsapp",
+        "techsales.inbox.whatsapp",
+        "techsales.marketing.campaigns"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.whatsapp.manage.workspace",
         "system.whatsapp.view.workspace",
@@ -2079,7 +2092,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Server-only transport and processing called by authenticated sends, authorized workers or signature-verified webhook. Resolve exact workspace/number and active connection before decrypting; private media scope and signed status events retain verified tenant. No fallback after rejection. Company-left suggestions stay read-only proposals scoped to the verified conversation workspace; AI fallback only classifies the inbound text. Review 03/11/2026: sendCloudPayload refuses numbers with an active Meta suppression of the same verified workspace before calling Meta. Audio transcription reads the stored media from the private whatsapp-media bucket of the verified message before falling back to the Meta/gateway download; no new access path or tenant decision. Formatting-only repair required by the existing global lint gate; behavior and authorization unchanged.",
+      "rationale": "Server-only transport and processing called by authenticated sends, authorized workers or signature-verified webhook. Resolve exact workspace/number and active connection before decrypting; private media scope and signed status events retain verified tenant. No fallback after rejection. Company-left suggestions stay read-only proposals scoped to the verified conversation workspace; AI fallback only classifies the inbound text. Review 03/11/2026: sendCloudPayload refuses numbers with an active Meta suppression of the same verified workspace before calling Meta. Audio transcription reads the stored media from the private whatsapp-media bucket of the verified message before falling back to the Meta/gateway download; no new access path or tenant decision. Formatting-only repair required by the existing global lint gate; behavior and authorization unchanged. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers.",
       "controls": [
         {
           "file": "src/lib/whatsapp/cloud-runtime.server.ts",
@@ -2145,7 +2158,7 @@
         "review_by": "2027-01-26"
       },
       "files": {
-        "src/lib/whatsapp/cloud-runtime.server.ts": "c318acf83389a005893a6a9e4f461b2ecde0652d19eeaa14dd4a09c7be755a2a",
+        "src/lib/whatsapp/cloud-runtime.server.ts": "9960081a3937077f23ef0980f61bb2373d98201485d935146a865141ff8ee763",
         "src/lib/whatsapp/meta-channel.server.ts": "40c3bb7fddd839f421bb67b574f61bdd99e3197b38acf54409ac6cd94a0a801a",
         "src/lib/whatsapp/templates.server.ts": "693872ba81f6e46c295d73c4b760aaaa2505f1ae186c865420d9d30af201ea9e",
         "src/lib/whatsapp/inbound-media.server.ts": "e5e286ea1f2512c52625891d0c46c757b823d0157c626cd39fbdf88b70bd9f4f",
@@ -7199,7 +7212,7 @@
       "rationale": "Email presentation and template registry only; no data reads, writes, credentials or recipients resolved here.",
       "files": {
         "src/lib/email-templates/hiring-demand-approval.tsx": "1ec191604ab92237bfee6311fe6c5f852409bf1d6310850dabc1f8368945f3b7",
-        "src/lib/email-templates/registry.ts": "a175c7401234e39434f014e1fff71ac32535287e3032d70486d7ebe6468f63e7"
+        "src/lib/email-templates/registry.ts": "1fb988e3bb84d1cf878cd911805d45b1afcfb02c67eae0343f0d501fd71f5408"
       },
       "controls": []
     },
@@ -7229,7 +7242,11 @@
         "assign",
         "export"
       ],
-      "scopes": ["own", "team", "workspace"],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.signature_evidence.view.workspace",
         "techcontracts.signature_evidence.manage.workspace",
@@ -7239,7 +7256,7 @@
         "techsales.role_profiles.view.workspace",
         "techsales.role_profiles.manage.workspace"
       ],
-      "rationale": "Stage 3: explicit commercial contract/evidence binding; no timestamp/status inference. Signature actions require active selected workspace, effective view/manage keys plus current contract record read/update and read-only denial. Immutable private PDF objects are uploaded by the server only after authorization, hashed and bound to actor/contract revision; SQL matches immutable metadata before recording human external attestation. Native preparation reuses authenticated esign create/send/signing with two explicit parties and a sealed document; signing offer documents never qualifies. Recruitment reads require hiring demand view and HR row scope; linking requires update, CAS and same-tenant/client/deal. Before provider publishing, HR access/publish permission and a fresh SQL business preflight run; every relevant ATS write rechecks approval/signature/date/current source. Historical records are preserved and activation is per workspace. Background hiring runs after sales_worker_authorize then current application-derived business gate, and Hunting does not provision internal hiring. Existing record/field permissions and contract legal approvals remain active. | Signature operations moved to TechContracts; legacy settings URL only redirects to the same HrScreenAccess-protected destination. Contract/deal evidence stays source-bound; read-only sessions cannot prepare evidence. | ETAPA-ASSINA 14/11/2026: etapa selecionada com c\u00edrculo vazado (apresenta\u00e7\u00e3o); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body s\u00f3 service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova a\u00e7\u00e3o, chave ou grant.",
+      "rationale": "Stage 3: explicit commercial contract/evidence binding; no timestamp/status inference. Signature actions require active selected workspace, effective view/manage keys plus current contract record read/update and read-only denial. Immutable private PDF objects are uploaded by the server only after authorization, hashed and bound to actor/contract revision; SQL matches immutable metadata before recording human external attestation. Native preparation reuses authenticated esign create/send/signing with two explicit parties and a sealed document; signing offer documents never qualifies. Recruitment reads require hiring demand view and HR row scope; linking requires update, CAS and same-tenant/client/deal. Before provider publishing, HR access/publish permission and a fresh SQL business preflight run; every relevant ATS write rechecks approval/signature/date/current source. Historical records are preserved and activation is per workspace. Background hiring runs after sales_worker_authorize then current application-derived business gate, and Hunting does not provision internal hiring. Existing record/field permissions and contract legal approvals remain active. | Signature operations moved to TechContracts; legacy settings URL only redirects to the same HrScreenAccess-protected destination. Contract/deal evidence stays source-bound; read-only sessions cannot prepare evidence. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -7329,7 +7346,7 @@
       "files": {
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
-        "src/lib/workflows/engine/authorization.server.ts": "3054eefba2c2641d377debc7c0068651cf86895437a42a8078e7d2a44c6f413a",
+        "src/lib/workflows/engine/authorization.server.ts": "aab928241e3b45ab85e4026cb12a8ff700eb000193790461dae115154cc72211",
         "src/routes/_authenticated/contracts.$id.tsx": "06c1ab0f4d445f677b8c78402410b9bb103fe50512bfcc172abb44cfa938b989",
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
@@ -7543,8 +7560,8 @@
       "rationale": "Pure declarative workflow types, validation schemas and UI draft-template definitions; no IO, route or execution. Hiring templates remain unpublished drafts. Runtime actions and persisted permissions are independently guarded by stage4 business contract. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key.",
       "files": {
         "src/lib/workflows/hiring-templates.ts": "657b1ce58925d0169860c04affd0fc1033aa84ee51154ff3f01806d4419799ff",
-        "src/lib/workflows/types.ts": "ef20e0e2dc79d5d5e601c56308e9c80fec60ce0e89bf64bd5d2292987aded703",
-        "src/lib/workflows/schemas.ts": "99857da9c24a8cb538e345261b57b0d380dc4828a773c12370a4d14994df4b4e"
+        "src/lib/workflows/types.ts": "6b92c5390c28c159eab34724f580ea46bd8b60a3203197ee3b5a3f8c66705fc2",
+        "src/lib/workflows/schemas.ts": "44e684688ddf85b033aad51df20109d0339bb80293f82517951341688eaa79ab"
       }
     },
     {
@@ -11685,8 +11702,18 @@
         "techsales.tasks",
         "techcontracts.contract_draft_approvers"
       ],
-      "actions": ["view", "manage", "create", "assign", "approve"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "create",
+        "assign",
+        "approve"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techcontracts.handoffs.manage.workspace",
         "techcontracts.contract_draft_approvers.manage.workspace",
@@ -11698,7 +11725,7 @@
         "techsales.deals.view.team",
         "techsales.deals.view.workspace"
       ],
-      "rationale": "Durable source-transition handoffs with current membership/deny/workspace checks. Summary reads inherit exact readable deal/contract source, revealing no document content or financial values. Settings/retry/reconcile require explicit manage and readonly rejection. Service-only bounded queue worker validates configured active operator and participant permissions before opening canonical drafts or creating source-bound tasks/notifications. No external signatures or approvals are performed. Tasks close only from source truth; FK/workspace and activity canonical guard remain enforced. Nothing is granted to roles in this schema migration. Existing task displays disable source-controlled completion/dates/assignment/delete using a non-authoritative metadata hint, while the database resolves the true link by activity id; existing task read/write permissions and RLS remain unchanged.",
+      "rationale": "Durable source-transition handoffs with current membership/deny/workspace checks. Summary reads inherit exact readable deal/contract source, revealing no document content or financial values. Settings/retry/reconcile require explicit manage and readonly rejection. Service-only bounded queue worker validates configured active operator and participant permissions before opening canonical drafts or creating source-bound tasks/notifications. No external signatures or approvals are performed. Tasks close only from source truth; FK/workspace and activity canonical guard remain enforced. Nothing is granted to roles in this schema migration. Existing task displays disable source-controlled completion/dates/assignment/delete using a non-authoritative metadata hint, while the database resolves the true link by activity id; existing task read/write permissions and RLS remain unchanged. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -11800,7 +11827,7 @@
         "src/lib/contracts/handoffs.functions.ts": "58db32e47fb0392a097f403ad628deda3bdf101c11a2120c36426ca144669288",
         "src/components/contracts/contract-handoffs.tsx": "0d8a4034b23300f822c28ea3584908964cd7fd0fb495e3d638acecb4eb6ed90c",
         "src/components/contracts/contract-handoff-settings.tsx": "3928bbe6690b74f487fab848d5a943f8c3f85802f3ef07a18f58f67ab95883ff",
-        "src/routes/api/public/hooks/workflows-tick.ts": "85680d6514fdd8d588f3f66a0f71b7252a746da94bbd1d8c46ef1029e78f7101",
+        "src/routes/api/public/hooks/workflows-tick.ts": "03adda3c15acdedafd20d3225bd1534039bd643be8e60c9aeb1d15b26880845c",
         "src/components/activity/activity-card-controls.tsx": "82420449efa44e8421c611d908f7857b7af2b8eda8a35bcda9a0b1b2a74bd483",
         "src/routes/_authenticated/tasks.$id.tsx": "da49a3b7024c23bce2e0bbaaf72b2569abebb7369e77518aead863ddf2d7370e",
         "drizzle/migrations/0363_contract_handoff_terminal_state.sql": "91e9dd8741fae95dfcd6397d20d15bdf115035d29eb10dec1aec2ad7e2a43791"
@@ -14550,7 +14577,7 @@
         "own",
         "workspace"
       ],
-      "rationale": "Atomic service-only notification dispatcher binds current published workflow, version, run, executor and actual source workspace. Private non-BYPASSRLS subject bridges retain canonical source policies and explicit deny for all six modules. Each resolved candidate requires active membership and actual source read. Named managers/delegates and pending approvers never escalate implicitly; no followers invented. Raw variable templates become a neutral notice, not executor snapshot values. Existing workflow step authorization remains in force for all other operations; no role key or grant is added. UI edits the existing workflow draft, no direct notification writes. SQL-claims disposable tests execute the real dispatcher and canonical predicates; real JWT/PostgREST acceptance is separate.",
+      "rationale": "Atomic service-only notification dispatcher binds current published workflow, version, run, executor and actual source workspace. Private non-BYPASSRLS subject bridges retain canonical source policies and explicit deny for all six modules. Each resolved candidate requires active membership and actual source read. Named managers/delegates and pending approvers never escalate implicitly; no followers invented. Raw variable templates become a neutral notice, not executor snapshot values. Existing workflow step authorization remains in force for all other operations; no role key or grant is added. UI edits the existing workflow draft, no direct notification writes. SQL-claims disposable tests execute the real dispatcher and canonical predicates; real JWT/PostgREST acceptance is separate. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers.",
       "exception": {
         "mechanism": "service_role execute grant plus role claim and null auth.uid; workflow/run/version/source proof; private bridges revoked from browser and service callers.",
         "boundary": "Only current workflow source and active readable recipients, at most 200 per action; no external channel or arbitrary user impersonation RPC.",
@@ -14558,7 +14585,10 @@
         "review_by": "2027-04-30"
       },
       "controls": [
-        {"file": "src/hooks/use-workspace-members.ts", "symbol": "useWorkspaceMembers"},
+        {
+          "file": "src/hooks/use-workspace-members.ts",
+          "symbol": "useWorkspaceMembers"
+        },
         {
           "file": "src/lib/workflows/engine/authorization.server.ts",
           "symbol": "authorizeWorkflowStep"
@@ -14614,10 +14644,10 @@
       },
       "files": {
         "drizzle/migrations/0391_notification_recipients.sql": "12eec659a22ef6a3bf13a2fd376b3fd50e84752da281d6d19e533ff826dcd37a",
-        "src/lib/notification-dispatch.server.ts": "622dda9a72807079d42b9666e685f783f3bb042d3d4c9dd144ea97aef8f2c221",
+        "src/lib/notification-dispatch.server.ts": "9c31756e679af62e9c2485f7d1cf5dd522211df55fc6a6f912f7c4b9cb86ffeb",
         "src/lib/workflows/engine-actions.server.ts": "56501d9c8a6479b3c6f196911e422a4b5d22a20766ff5a042c4bcabd28a578f5",
         "src/lib/workflows/engine/actions-messaging.server.ts": "b82798b139a520b8a04d84868e4fa80fff0da5fecc0ace45292aa40dfa8c9a07",
-        "src/components/workflows/builder/step-forms/notification-form.tsx": "5f79f59939a943e2d21b470e7050ac69200abd5a5baf3ab17858163cdbfb841f"
+        "src/components/workflows/builder/step-forms/notification-form.tsx": "0221fe4dddaaabe3960ec4d4c9f2df7c5f2234233351b0cfc8b67cbf31db11e9"
       }
     },
     {
@@ -14745,9 +14775,9 @@
       "files": {
         "drizzle/migrations/0392_notification_center.sql": "6bd5e9bdfaa07667894731af3d8d36eea48e15fdbb065fc0b1e46af59c506a53",
         "src/lib/notification-center.functions.ts": "41b48a7902e21c4d108e01f172e015557ed84b5476ed271373e06f1e5ad84449",
-        "src/routes/_authenticated/notifications.tsx": "37dc38c222336656c16d8795a3553a7928ee1e943ee1bfa4a3cc14cbc798dd11",
+        "src/routes/_authenticated/notifications.tsx": "cc224c960e9a391b98dc1db479c01353dca873c90eae58f642b5afd16591aef8",
         "src/components/notifications/notification-center.tsx": "1dae7fb2afa379eb99017c3047d1b9394802f49f6df3dbe71eb823e6ef215509",
-        "src/components/notifications/notification-preferences-panel.tsx": "5e8c0a8a737423ad26fea9e55fba79ad3d14553c3b55c15b07c96475ca2dc9d2",
+        "src/components/notifications/notification-preferences-panel.tsx": "0e0cd5446ffe4104be1084f26e15f3dd37910a79f96612f5c38878c416f8da89",
         "src/components/notifications-bell.tsx": "d383db44bf4c619ec93ca0aa5d0a5394c04293a5cf573b6df9e28db7b528e0f2",
         "src/components/notifications/notification-detail.tsx": "b38642600a8eeb40b96b2c6520fadc0b94337344a441c936b97e5c167adb0830"
       }
@@ -14840,6 +14870,176 @@
       "files": {
         "src/lib/activity-reminders.server.ts": "f884246bfa827ed625300b2ab4f21157ca5a4f7a6ba24979499b0d247fff07ea",
         "src/lib/workflows/engine/actions-control.server.ts": "f9541e2e6f6d126f88bf97417bdbb310fc2b65abb0dba0b8c08bb776b2b5d511"
+      }
+    },
+    {
+      "id": "notification-delivery-orchestration",
+      "kind": "internal",
+      "resources": [
+        "system.notification_settings",
+        "system.notification_deliveries",
+        "system.workflows"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.notification_settings.view.workspace",
+        "system.notification_settings.manage.workspace",
+        "system.notification_deliveries.view.workspace"
+      ],
+      "rationale": "Package 4 delegates rules to existing Workflows. Authenticated wrappers require selected active workspace; settings/new keys, personal consent/profile CAS, own/source-filtered history and record-authorized rules are distinct SQL boundaries. All UI mutations delegate to those wrappers and canonical Workflow APIs. Service-only enqueue/claim/preflight/finish prove workflow version/run, executor transport permissions, recipient source, consent, quotas and neutral content. Fenced leases prevent stale completion. Ambiguous outcomes never blind-retry/fallback. No role grants, production changes, real sends, rotation, auto-activation, or new scheduler. Existing notification producers/RPC remain compatible.",
+      "exception": {
+        "mechanism": "Verified session and selected active workspace for interactive APIs; personal operations derive auth.uid only; CRON_SECRET and service-role-only RPCs for bounded worker. UI props are delegation only, never authorization.",
+        "boundary": "Only current workspace policy with explicit keys; own consent/profile; source-readable history/rules; named active recipients proven by source resolver. Provider receives neutral content, confirmed email or consent-bound phone; pinned Cloud API sender only.",
+        "revocation": "Inactive membership, deny/source or transport revocation, disabled/version-changed workflow, consent/profile change, budget exhaustion, stale lease or read-only session stops the relevant operation; checked immediately before POST.",
+        "review_by": "2027-04-30"
+      },
+      "controls": [
+        {
+          "file": "src/lib/notification-delivery-interaction.ts",
+          "symbol": "notificationDeliveryInteractionAllowed"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/notifications/delivery-adapter-runtime.server.ts",
+          "symbol": "assertNotificationRuntimeJob"
+        },
+        {
+          "file": "src/lib/notifications/delivery-adapters.server.ts",
+          "symbol": "provenSender"
+        },
+        {
+          "file": "src/lib/notifications/delivery-content.ts",
+          "symbol": "notificationTemplateIncompatibility"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/notifications/delivery-access.server.ts",
+          "symbol": "assertNotificationDeliverySettings"
+        },
+        {
+          "file": "src/lib/notifications/delivery-access.server.ts",
+          "symbol": "assertNotificationTemplateAccess"
+        },
+        {
+          "file": "src/lib/notifications/delivery-worker.server.ts",
+          "symbol": "tickNotificationDeliveries"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0393_notification_deliveries.sql",
+          "symbol": "notification_delivery_capabilities"
+        },
+        {
+          "file": "drizzle/migrations/0393_notification_deliveries.sql",
+          "symbol": "notification_delivery_settings_save"
+        },
+        {
+          "file": "drizzle/migrations/0393_notification_deliveries.sql",
+          "symbol": "notification_delivery_history"
+        },
+        {
+          "file": "drizzle/migrations/0393_notification_deliveries.sql",
+          "symbol": "save_notification_delivery_consent"
+        },
+        {
+          "file": "drizzle/migrations/0393_notification_deliveries.sql",
+          "symbol": "notification_delivery_profile_phone"
+        },
+        {
+          "file": "drizzle/migrations/0393_notification_deliveries.sql",
+          "symbol": "notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0393_notification_deliveries.sql",
+          "symbol": "notification_delivery_claim"
+        },
+        {
+          "file": "drizzle/migrations/0393_notification_deliveries.sql",
+          "symbol": "notification_delivery_preflight"
+        },
+        {
+          "file": "drizzle/migrations/0393_notification_deliveries.sql",
+          "symbol": "notification_delivery_finish"
+        },
+        {
+          "file": "drizzle/migrations/0393_notification_deliveries.sql",
+          "symbol": "notification_delivery_rules"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/notification-deliveries-postgres.test.ts",
+          "name": "notification deliveries allow authorized member"
+        },
+        "missing_permission": {
+          "file": "src/lib/notification-deliveries-postgres.test.ts",
+          "name": "notification deliveries reject missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/notification-deliveries-postgres.test.ts",
+          "name": "notification deliveries reject explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/notification-deliveries-postgres.test.ts",
+          "name": "notification deliveries reject foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/notification-deliveries-postgres.test.ts",
+          "name": "notification deliveries reject inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0393_notification_deliveries.sql": "b7406468ea37d24428b1595f16c35e3be807264ee263337ed7b421c6387422c3",
+        "src/components/notifications/delivery-history-panel.tsx": "a19930cc53f92b55755ab8001c8e20d991485366e0af1331f0985bb2dd039a96",
+        "src/components/notifications/delivery-models-panel.tsx": "081830f6ce156d625347beae8ba2ea098711f90951c21b12fb848e3539dd85fe",
+        "src/components/notifications/delivery-operations.tsx": "dcff3fc8448fc25921adf4376ab55e3c2a4fdab4d8f69ab09860cc4413da9e5e",
+        "src/components/notifications/delivery-settings-panel.tsx": "e78adf4b6a058931afcfa74fc581786eb3f98d205abacd0f21d0c7b7eeeb631a",
+        "src/components/notifications/notification-consent-panel.tsx": "deb87af952c155aafa9caafc00e031d74594d36b9ad519810825a0882e12fc59",
+        "src/components/notifications/notification-rules-list.tsx": "811b55908af8cad9f51d503a254a46962da77bc131fa5bbf3fbc0bf0284c93bf",
+        "src/components/notifications/notification-rules-panel.tsx": "4a219291501c5ee0e3fcdb618ef44b1fb8b37464703acfb840050b7477fa7a01",
+        "src/components/workflows/builder/step-forms/notification-delivery-choice.tsx": "e6f196798b9070827ea336b0d9b37866403227863588dd3b70e4a8c29da2834b",
+        "src/lib/notifications/delivery-access.server.ts": "4d5ba25ece0dbf9ccc294baa342a6f5710b71eb7da53021e9f370768528773af",
+        "src/lib/notifications/delivery-adapter-runtime.server.ts": "128134ee1591b5d2d09ecd8fb4e2f0f91f619385ae973c223ff72011bb90a71f",
+        "src/lib/notifications/delivery-adapters.server.ts": "6758cfa800bab9e211bebb4ef55d391d494fa151182c5f44445caae6d1d7c354",
+        "src/lib/notifications/delivery-admin.functions.ts": "2908ac9a5652e151f86be5f1844e52c9f8c5b755b5943eef2ca1d25baf4da0e9",
+        "src/lib/notifications/delivery-personal.functions.ts": "1f2e30255d3bbafb772d86dc200b63c23bb612c4efd60d59e82212190aa0502c",
+        "src/lib/notifications/delivery-rules.functions.ts": "4279597ae85b51995b436dbf6413be7ddb1a21f85f6f0d6cda1444a9f956fcdf",
+        "src/lib/notifications/delivery-worker.server.ts": "033a3b0ba14c0ed03b146e7b72bbd9940b49f59464552b745b94a3566f92aae4"
+      }
+    },
+    {
+      "id": "notification-delivery-declarative-content",
+      "kind": "presentation",
+      "rationale": "Pure strict delivery schemas, neutral payload/model validation, structural rule preview and React email rendering. No I/O, recipient resolution, grants, provider or action execution; interactive and service authorization is enforced at delivery orchestration boundaries.",
+      "files": {
+        "src/lib/email-templates/notification-update.tsx": "64660a91969ad0cda851ca9a6550a3fe49e86c82bc4f50564325d229fc67a0e2",
+        "src/lib/notifications/delivery-api.ts": "b2daeaf9464adaf2fb04fbe0a28178f9399a581c5003167eb8e4edfd12ee273c",
+        "src/lib/notifications/delivery-content.ts": "2f75205bad3533705718c27ebe3abc038431122ec0fc46d2167fe63d1c48796e",
+        "src/lib/notifications/delivery-rule-preview.ts": "01132817a65d610ed12d76422c2e54dcccbbbe6dc986253f26be15345fef9fc8",
+        "src/lib/notifications/delivery-types.ts": "ad4d17d136ef9e5d301a8be341447f53e429b142c7c41ea65ad07dcfff97dfab",
+        "src/lib/notification-delivery-interaction.ts": "db12a925a3b50ec7e185d4cd9845589ae35cadaea50b9775088d9b07be70e422",
+        "src/lib/notification-delivery.functions.ts": "0e64b90c0ca9a09b13b90ce6c183e6517dbe685ce3c9ac3c6d516efaaf5f7d31"
       }
     }
   ],

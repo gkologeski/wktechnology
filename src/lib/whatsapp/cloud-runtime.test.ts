@@ -127,4 +127,68 @@ describe("cloud runtime sender isolation", () => {
       "https://graph.facebook.com/v23.0/654321/messages",
     );
   });
+
+  it("fences a template POST after catalogue and quality reads when the worker lease expires", async () => {
+    const fetcher = vi
+      .fn()
+      .mockResolvedValueOnce(
+        Response.json({ data: [{ name: "hello", language: "pt_BR", status: "APPROVED" }] }),
+      )
+      .mockResolvedValueOnce(
+        Response.json({ id: "654321", status: "CONNECTED", quality_rating: "GREEN" }),
+      );
+    vi.stubGlobal("fetch", fetcher);
+    const beforeSend = vi.fn(async () => {
+      expect(fetcher).toHaveBeenCalledTimes(2);
+      throw new Error("lease expired");
+    });
+    await expect(
+      sendCloudPayload(
+        "wk",
+        "654321",
+        {
+          to: "+14155552671",
+          type: "template",
+          template: { name: "hello", language: { code: "pt_BR" } },
+        },
+        { beforeSend },
+      ),
+    ).rejects.toThrow("lease expired");
+    expect(beforeSend).toHaveBeenCalledOnce();
+    expect(fetcher.mock.calls.every((call) => call[1].method === "GET")).toBe(true);
+  });
+
+  it("calls the worker guard exactly at the final provider POST boundary", async () => {
+    let authorized = false;
+    const methods: string[] = [];
+    const fetcher = vi.fn(async (_url, options) => {
+      methods.push(options.method);
+      if (options.method === "POST") {
+        expect(authorized).toBe(true);
+        return Response.json({ messages: [{ id: "wamid.fake" }] });
+      }
+      return Response.json(
+        methods.length === 1
+          ? { data: [{ name: "hello", language: "pt_BR", status: "APPROVED" }] }
+          : { id: "654321", status: "CONNECTED", quality_rating: "GREEN" },
+      );
+    });
+    vi.stubGlobal("fetch", fetcher);
+    await sendCloudPayload(
+      "wk",
+      "654321",
+      {
+        to: "+14155552671",
+        type: "template",
+        template: { name: "hello", language: { code: "pt_BR" } },
+      },
+      {
+        beforeSend: async () => {
+          expect(methods).toEqual(["GET", "GET"]);
+          authorized = true;
+        },
+      },
+    );
+    expect(methods).toEqual(["GET", "GET", "POST"]);
+  });
 });

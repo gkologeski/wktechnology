@@ -173,3 +173,39 @@ describe("dispatch atômico de notificação", () => {
     expect(c.rpc).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("versioned external notification dispatch", () => {
+  it("uses versioned atomic SQL only for explicit external channels and permits queued with inapp disabled", async () => {
+    const c = client({ ...success, sent: 0, queued: 1, suppressed: 0 });
+    const delivery = { channels: ["whatsapp" as const], fallback: "email" as const };
+    expect(
+      (
+        await dispatchWorkflowNotification(
+          c.client,
+          { type: "send_notification", title: "Notice", delivery },
+          ctx,
+        )
+      ).queued,
+    ).toBe(1);
+    expect(c.rpc).toHaveBeenCalledWith(
+      "notification_workflow_dispatch_v2",
+      expect.objectContaining({ p_delivery: delivery, p_run: R, p_version: 2 }),
+    );
+    expect(c.from).not.toHaveBeenCalled();
+  });
+  it("does not fall back to direct writes if external resolver fails", async () => {
+    const c = client(null, { message: "channel permission denied" });
+    await expect(
+      dispatchWorkflowNotification(
+        c.client,
+        {
+          type: "send_notification",
+          title: "Notice",
+          delivery: { channels: ["email"], fallback: "none" },
+        },
+        ctx,
+      ),
+    ).rejects.toThrow("permission denied");
+    expect(c.from).not.toHaveBeenCalled();
+  });
+});

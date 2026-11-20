@@ -208,6 +208,16 @@ export async function authorizeWorkflowStep(
         area(resource(ctx.entity), "assign", target);
       }
     }
+    if (action.type === "send_notification" && action.delivery) {
+      if (action.delivery.channels.includes("email") || action.delivery.fallback === "email") {
+        area("techsales.inbox.email", "view");
+        area("techsales.inbox.email", "create");
+      }
+      if (action.delivery.channels.includes("whatsapp")) {
+        area("techsales.inbox.whatsapp", "view");
+        area("techsales.inbox.whatsapp", "create");
+      }
+    }
     if (action.type === "send_email") {
       area("techsales.inbox.email", "view");
       area("techsales.inbox.email", "create");

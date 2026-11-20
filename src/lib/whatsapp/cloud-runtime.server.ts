@@ -68,7 +68,12 @@ export async function cloudTemplates(workspaceId: string, phoneNumberId: string)
   );
 }
 
-export async function sendCloudPayload(workspaceId: string, phoneNumberId: string, body: any) {
+export async function sendCloudPayload(
+  workspaceId: string,
+  phoneNumberId: string,
+  body: any,
+  options: { beforeSend?: () => Promise<void> } = {},
+) {
   const number = await resolveCloudNumber(workspaceId, phoneNumberId);
   if (!number) throw new Error("Número não pertence a este workspace.");
   const connection = await cloudConnectionSecrets(workspaceId, number.connectionId);
@@ -130,6 +135,8 @@ export async function sendCloudPayload(workspaceId: string, phoneNumberId: strin
         "Novos envios suspensos: verifique a qualidade e a situação do número na Meta.",
       );
   }
+  // Fenced workers revalidate their lease/authorization after every potentially slow read.
+  await options.beforeSend?.();
   const result = await cloudRequest(connection.credentials, phoneNumberId, "messages", {
     method: "POST",
     body,

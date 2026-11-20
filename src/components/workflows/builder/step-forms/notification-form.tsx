@@ -13,6 +13,8 @@ import type { NotificationRecipientRule } from "@/lib/notification-recipients";
 import type { WorkflowAction, WorkflowEntity } from "@/lib/workflows/types";
 import { TokenInput, TokenTextarea } from "../../token-input";
 import { UserPicker } from "./pickers";
+import { NotificationDeliveryChoice } from "./notification-delivery-choice";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 
 type Action = Extract<WorkflowAction, { type: "send_notification" }>;
 type Kind = NotificationRecipientRule["kind"];
@@ -39,6 +41,16 @@ export function NotificationForm({
   onChange: (action: WorkflowAction) => void;
 }) {
   const { data: members = [], isLoading, isError } = useWorkspaceMembers();
+  const permissions = usePermissions();
+  const canEditDelivery =
+    !permissions.isLoading &&
+    !permissions.isError &&
+    Boolean(permissions.workspaceId) &&
+    permissions.canAny(
+      ["create", "update", "manage"].flatMap((action) =>
+        ["own", "team", "workspace"].map((scope) => `system.workflows.${action}.${scope}`),
+      ),
+    );
   // Merely opening an old workflow does not rewrite it or activate new targeting rules.
   const rules: NotificationRecipientRule[] =
     action.recipients ??
@@ -174,6 +186,7 @@ export function NotificationForm({
           De 1 a 10 regras. Uma pessoa selecionada por mais de uma regra recebe um único aviso.
         </p>
       </fieldset>
+      <NotificationDeliveryChoice action={action} onChange={onChange} canEdit={canEditDelivery} />
       <p className="text-xs text-muted-foreground">
         Somente membros ativos do mesmo workspace e com leitura do registro de origem podem receber.
         Gestor ou aprovador ausente não encaminha o aviso automaticamente ao CEO. Ler o aviso não

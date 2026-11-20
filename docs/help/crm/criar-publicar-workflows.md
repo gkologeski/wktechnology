@@ -8,7 +8,7 @@ route_pattern: /settings/workflows
 min_permission: system.workflows.manage.workspace
 audience: internal
 sort_order: 413
-version: 5
+version: 6
 is_published: true
 ---
 
@@ -60,7 +60,7 @@ Salvar não é publicar. Aprovar ou rejeitar muda o andamento da execução.
 
 - Abrir um fluxo antigo não regrava seus destinatários. O membro específico já salvo continua sendo considerado; na ausência de seleção, o padrão legado é o executor do workflow.
 - Resolver um destinatário não transfere responsabilidade, concede acesso, altera alçada ou aprova o registro. Ler o aviso também não conclui a tarefa.
-- O passo **Enviar notificação** produz um aviso no aplicativo. Ele não ativa e-mail, WhatsApp, resumos ou horário de silêncio.
+- Sem escolha explícita de canais, **Enviar notificação** mantém o aviso no aplicativo. A opção de entrega permite No app, e-mail e WhatsApp conforme a política do workspace. WhatsApp exige número Cloud API e modelo neutro aprovado, consentimento pessoal e limites. O fallback de e-mail só se aplica quando selecionado e permitido; resultado incerto não dispara alternativa. Consulte [Usar a central de notificações](/ajuda/core/usar-central-de-notificacoes).
 - Desativar **No app** no grupo **Workflows**, nas preferências pessoais, suprime novos avisos desse passo. O histórico já gravado permanece disponível.
 - Uma linha visível pode conter campos privados. O aviso não reproduz variáveis do contexto da execução. Títulos e corpos estáticos são mantidos; não escreva valores, documentos pessoais ou outros dados sensíveis diretamente nesses textos.
 - Nem toda origem possui ficha própria. Alguns avisos podem abrir a lista do módulo ou a ficha associada; pode ser necessário escolher uma aba ou localizar o item. Sem rota interna comprovada, o aviso pode permanecer sem link. Isso não concede acesso adicional nem cria uma nova tela.
