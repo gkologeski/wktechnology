@@ -5,6 +5,7 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { ENTITY_LABELS, EVENT_LABELS } from "@/lib/workflows/types";
 import type { NotificationWorkflowRuleRow } from "./notification-rules-panel";
 import { notificationDeliveryInteractionAllowed } from "@/lib/notification-delivery-interaction";
+import { workflowNotificationTriggerLabel } from "@/lib/workflows/notification-events";
 
 type Capability = { can_update: boolean; can_manage: boolean; can_delete: boolean };
 type RuleAction = "edit" | "preview" | "publish" | "toggle" | "discard" | "delete";
@@ -54,8 +55,17 @@ export function NotificationRulesList({
                 <h3 className="break-words font-medium">{row.name}</h3>
                 <p className="text-xs text-muted-foreground">
                   {ENTITY_LABELS[row.entity] ?? row.entity} ·{" "}
-                  {EVENT_LABELS[(row.draft_trigger ?? row.trigger)?.event] ?? "Gatilho do Workflow"}
+                  {workflowNotificationTriggerLabel(row.draft_trigger ?? row.trigger) ??
+                    EVENT_LABELS[(row.draft_trigger ?? row.trigger)?.event] ??
+                    "Gatilho do Workflow"}
                 </p>
+                {(row.draft_trigger ?? row.trigger)?.notification_event?.days_before && (
+                  <p className="text-xs text-muted-foreground">
+                    Antecedência:{" "}
+                    {(row.draft_trigger ?? row.trigger).notification_event!.days_before} dias ·
+                    exige prazo válido na origem.
+                  </p>
+                )}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary">

@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 150
-version: 1
+version: 2
 is_published: true
 ---
 
@@ -39,6 +39,15 @@ is_published: true
 2. Leia a finalidade e registre sua autorização. Ela vale para seus avisos desse workspace e para esse telefone. O registro não comprova posse por SMS.
 3. Para interromper os avisos, revogue a autorização. A revogação continua disponível se o telefone tiver sido removido ou alterado.
 4. Qualquer alteração do telefone do perfil revoga as autorizações anteriores em todos os workspaces, inclusive quando feita por outra tela autorizada. Voltar ao número antigo não restaura o consentimento; autorize novamente quando desejar.
+
+### Interromper somente um grupo ou evento
+
+1. Na central, abra **Preferências**. Use a coluna **WhatsApp oficial** nos grupos ou escolha um item em **Exceção por evento**.
+2. Escolha **Bloquear pela preferência** para interromper esse canal no grupo ou evento. O bloqueio específico do evento é aplicado mesmo quando sua autorização pessoal para WhatsApp continua vigente.
+3. **Herdar autorização pessoal** remove a escolha naquele nível e volta a usar o grupo, quando existir, ou a autorização pessoal deste workspace. **Permitir pela preferência** é somente uma escolha de canal: não registra nem restaura consentimento, não habilita uma política e não publica ou ativa regras.
+4. Clique em **Salvar preferências do workspace** e aguarde a confirmação. A escolha por evento prevalece sobre a do grupo. Os demais canais e eventos permanecem com suas escolhas.
+
+A autorização pessoal continua vinculada ao seu usuário, workspace, telefone, finalidade e versão. Para interromper todos os avisos por WhatsApp neste workspace, use **Revogar autorização**. Bloquear um evento não revoga a autorização dos outros, não cancela uma obrigação e não impede a consulta do histórico. O envio confere novamente a preferência e a autorização antes de transmitir; uma mensagem já transmitida não é recolhida por esta escolha.
 5. A exclusão e a recriação de um perfil também não restauram uma autorização antiga.
 
 ### Associar ao Workflow e acompanhar

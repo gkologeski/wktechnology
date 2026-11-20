@@ -1,4 +1,28 @@
 import type { NotificationDeliveryPolicy, NotificationSlackPolicy } from "./delivery-types";
+import type { WorkflowTrigger } from "@/lib/workflows/types";
+import { getWorkflowNotificationEvent } from "@/lib/workflows/notification-events";
+
+/** Describes a validated draft; it never looks up a record or schedules an occurrence. */
+export function inspectNotificationTrigger(trigger: WorkflowTrigger): string[] {
+  const selection = trigger.notification_event;
+  if (!selection) return [];
+  const event = getWorkflowNotificationEvent(selection.key);
+  if (!event) return ["O evento de notificação não está disponível nesta versão."];
+  const notes = [`Evento: ${event.label}. A ocorrência será conferida na origem pelo motor.`];
+  if (selection.key === "contracts.contract.expiring")
+    notes.push(
+      `Antecedência: ${selection.days_before} dias antes do fim da vigência. Contratos sem data válida ou já vencidos não entram na janela.`,
+    );
+  if (selection.key === "contracts.contract.renewal_due")
+    notes.push(
+      `Antecedência: ${selection.days_before} dias antes do prazo de aviso definido no contrato. Exige renovação automática configurada e prazo válido; não renova nem encerra o contrato.`,
+    );
+  notes.push(
+    "Esta regra não recria encaminhamentos, tarefas ou decisões contratuais. A publicação e a ativação da regra são ações separadas desta conferência.",
+  );
+  return notes;
+}
+
 /** Structural inspection only: no recipient lookup, persistence, provider or event execution. */
 export function inspectNotificationActions(
   actions: unknown[],

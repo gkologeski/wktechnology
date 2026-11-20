@@ -341,6 +341,52 @@ it("history keeps uncertain results separate from delivery and never renders raw
   ).toBe(false);
   expect(host.querySelector('option[value="workspace"]')).toBeNull();
 });
+it.each([
+  { eventKey: "crm.deal.won", expected: "Negócio ganho" },
+  { eventKey: "contracts.signature.completed", expected: "Assinatura concluída" },
+  { eventKey: "projects.project.started", expected: null },
+  { eventKey: "workflow", expected: null },
+  { eventKey: null, expected: null },
+])(
+  "uses only an available canonical event label in delivery history $eventKey",
+  async ({ eventKey, expected }) => {
+    await render(
+      createElement(DeliveryHistoryPanel, {
+        canRead: true,
+        items: [
+          {
+            id: state.workspace!,
+            eventKey,
+            channel: "email",
+            status: "accepted",
+            reason_code: null,
+            attempts: 1,
+            created_at: "2026-11-20T10:00:00Z",
+            updated_at: "2026-11-20T10:00:00Z",
+          },
+        ],
+        filters: { scope: "own", status: "", channel: "" },
+        canWorkspace: false,
+        loading: false,
+        hasMore: false,
+        loadingMore: false,
+        onFilters: () => {},
+        onMore: () => {},
+        onRetry: () => {},
+      }),
+    );
+    if (expected) expect(host.textContent).toContain(expected);
+    expect(host.textContent).not.toContain("Projeto iniciado");
+    expect(host.textContent).not.toContain("Aviso geral de Workflow");
+    expect(host.textContent).toContain(state.workspace!.slice(0, 8));
+    await click(button("Ver motivo"));
+    const detail = host.querySelector('[aria-label="Detalhe da entrega"]');
+    expect(detail).toBeTruthy();
+    if (expected) expect(detail?.textContent).toContain(expected);
+    expect(detail?.textContent).not.toContain("Projeto iniciado");
+  },
+);
+
 it("history query failure is shown as an error rather than an empty list", async () => {
   await render(
     createElement(DeliveryHistoryPanel, {

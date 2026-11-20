@@ -1,5 +1,6 @@
 import type { NotificationDeliveryConfig } from "@/lib/notifications/delivery-types";
 import type { NotificationRecipientRule } from "@/lib/notification-recipients";
+import type { WorkflowNotificationEventSelection } from "./notification-events";
 
 export type WorkflowEntity =
   | "leads"
@@ -116,6 +117,8 @@ export interface TimeTriggerConfig {
 
 export interface WorkflowTrigger {
   event: WorkflowEventType;
+  /** Canonical business event, proven in the database; separate from generic CRUD triggers. */
+  notification_event?: WorkflowNotificationEventSelection;
   filters?: WorkflowCondition[];
   reenroll?: {
     enabled: boolean;

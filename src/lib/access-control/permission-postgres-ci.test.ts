@@ -454,7 +454,7 @@ afterAll(async () => {
       if (db) await db.end({ timeout: 2 });
     } finally {
       try {
-        if (started) dockerRun("rm", "-f", container);
+        if (started) dockerRun("rm", "-f", "-v", container);
         if (nativeStarted)
           execFileSync(
             pgBin + "pg_ctl",

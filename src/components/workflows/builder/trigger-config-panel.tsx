@@ -23,6 +23,11 @@ import {
 } from "@/lib/workflows/types";
 import type { FieldOpt } from "./step-tree";
 import { ConditionListEditor, conditionsIncludeField } from "./conditions-editor";
+import {
+  WORKFLOW_NOTIFICATION_EVENTS,
+  getWorkflowNotificationEvent,
+  workflowNotificationEventTrigger,
+} from "@/lib/workflows/notification-events";
 
 // ============================================================================
 // Right-panel: Trigger config
@@ -43,6 +48,8 @@ export function TriggerConfigPanel({
   const setFilters = (fn: (f: WorkflowCondition[]) => WorkflowCondition[]) =>
     onChange((t) => ({ ...t, filters: fn(t.filters ?? []) }));
   const defaultField = fields[0]?.name ?? "";
+  const notificationEvent = getWorkflowNotificationEvent(trigger.notification_event?.key);
+  const eventOptions = WORKFLOW_NOTIFICATION_EVENTS.filter((event) => event.entity === entity);
 
   return (
     <div className="space-y-5">
@@ -66,146 +73,237 @@ export function TriggerConfigPanel({
       </div>
 
       <div>
-        <Label className="text-xs">Evento</Label>
-        <Select
-          value={trigger.event}
-          onValueChange={(v) => onChange((t) => ({ ...t, event: v as WorkflowEventType }))}
+        <Label className="text-xs">Evento de negócio</Label>
+        <select
+          aria-label="Evento de negócio do Workflow"
+          className="mt-1 block h-10 w-full max-w-full rounded-md border border-input bg-background px-3 text-sm"
+          value={trigger.notification_event?.key ?? ""}
+          onChange={(event) => {
+            const definition = getWorkflowNotificationEvent(event.target.value);
+            if (event.target.value && (!definition || definition.entity !== entity)) return;
+            onChange((current) => {
+              const { notification_event: _event, time_based: _time, ...generic } = current;
+              return definition
+                ? {
+                    ...generic,
+                    ...workflowNotificationEventTrigger(definition.key),
+                    filters: current.filters ?? [],
+                  }
+                : { ...current, notification_event: undefined };
+            });
+          }}
         >
-          <SelectTrigger className="mt-1">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {(Object.keys(EVENT_LABELS) as WorkflowEventType[]).map((e) => (
-              <SelectItem key={e} value={e}>
-                {EVENT_LABELS[e]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {trigger.event === "updated" &&
-          conditionsIncludeField(trigger.filters, ["stage_id", "stage"]) && (
-            <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
-              Para reagir a mudanças de etapa do pipeline, use o evento{" "}
-              <strong>Mudou de etapa</strong>. O evento <em>Atualizado</em> não dispara em
-              transições de etapa.
-            </p>
-          )}
+          <option value="">Evento genérico do objeto</option>
+          {trigger.notification_event &&
+            !eventOptions.some((event) => event.key === trigger.notification_event!.key) && (
+              <option value={trigger.notification_event.key} disabled>
+                Evento salvo incompatível com este objeto
+              </option>
+            )}
+          {[
+            { prefix: "crm.", label: "TechSales" },
+            { prefix: "contracts.", label: "TechContracts" },
+          ].map((group) => {
+            const entries = eventOptions.filter((event) => event.key.startsWith(group.prefix));
+            return entries.length ? (
+              <optgroup label={group.label} key={group.prefix}>
+                {entries.map((event) => (
+                  <option value={event.key} key={event.key}>
+                    {event.label}
+                  </option>
+                ))}
+              </optgroup>
+            ) : null;
+          })}
+        </select>
+        {notificationEvent && (
+          <div className="mt-2 space-y-2 text-xs text-muted-foreground">
+            <p>{notificationEvent.description} A seleção não publica nem ativa o Workflow.</p>
+            {notificationEvent.deadline && (
+              <>
+                <Label htmlFor="notification-event-days-before" className="text-xs">
+                  Antecedência em dias
+                </Label>
+                <Input
+                  id="notification-event-days-before"
+                  aria-label="Antecedência do aviso em dias"
+                  type="number"
+                  min={1}
+                  max={365}
+                  step={1}
+                  value={trigger.notification_event?.days_before ?? ""}
+                  onChange={(event) =>
+                    onChange((current) => ({
+                      ...current,
+                      notification_event: {
+                        key: notificationEvent.key,
+                        days_before: Number(event.target.value),
+                      },
+                    }))
+                  }
+                />
+                <p>
+                  {notificationEvent.key === "contracts.contract.renewal_due"
+                    ? "O prazo de aviso é o fim da vigência menos o aviso prévio cadastrado. Exige renovação automática e aviso prévio válido; o aviso não renova o contrato."
+                    : "O prazo é a data de término da vigência cadastrada; o aviso não encerra o contrato."}{" "}
+                  A janela começa com a antecedência escolhida e termina no prazo. Prazos já
+                  vencidos não entram.
+                </p>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="rounded-md border p-3 space-y-2">
-        <div className="flex items-center justify-between">
-          <div>
-            <Label className="text-xs">Gatilho baseado em tempo</Label>
-            <p className="text-[11px] text-muted-foreground">
-              Dispara periodicamente para registros que atendem à condição temporal.
-            </p>
-          </div>
-          <Switch
-            checked={!!trigger.time_based}
-            onCheckedChange={(v) =>
-              onChange((t) => ({
-                ...t,
-                time_based: v
-                  ? { kind: "time_since_field", field: "created_at", amount: 1, unit: "days" }
-                  : undefined,
-              }))
-            }
-          />
+      {!trigger.notification_event && (
+        <div>
+          <Label className="text-xs">Evento</Label>
+          <Select
+            value={trigger.event}
+            onValueChange={(v) => onChange((t) => ({ ...t, event: v as WorkflowEventType }))}
+          >
+            <SelectTrigger className="mt-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(EVENT_LABELS) as WorkflowEventType[]).map((e) => (
+                <SelectItem key={e} value={e}>
+                  {EVENT_LABELS[e]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {trigger.event === "updated" &&
+            conditionsIncludeField(trigger.filters, ["stage_id", "stage"]) && (
+              <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+                Para reagir a mudanças de etapa do pipeline, use o evento{" "}
+                <strong>Mudou de etapa</strong>. O evento <em>Atualizado</em> não dispara em
+                transições de etapa.
+              </p>
+            )}
         </div>
-        {trigger.time_based && (
-          <div className="grid grid-cols-2 gap-2">
-            <div className="col-span-2">
-              <Label className="text-xs">Tipo</Label>
-              <Select
-                value={trigger.time_based.kind}
-                onValueChange={(v) =>
-                  onChange((t) => ({
-                    ...t,
-                    time_based: {
-                      ...(t.time_based ?? { amount: 1, unit: "days" }),
-                      kind: v as never,
-                    },
-                  }))
-                }
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="time_since_field">Tempo desde campo (data)</SelectItem>
-                  <SelectItem value="no_activity_for">Sem atividade há…</SelectItem>
-                  <SelectItem value="stuck_in_stage_for">Parado na etapa há…</SelectItem>
-                  <SelectItem value="field_unchanged_for">Campo inalterado há…</SelectItem>
-                </SelectContent>
-              </Select>
+      )}
+
+      {!trigger.notification_event && (
+        <div className="rounded-md border p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <Label className="text-xs">Gatilho baseado em tempo</Label>
+              <p className="text-[11px] text-muted-foreground">
+                Dispara periodicamente para registros que atendem à condição temporal.
+              </p>
             </div>
-            {(trigger.time_based.kind === "time_since_field" ||
-              trigger.time_based.kind === "field_unchanged_for") && (
+            <Switch
+              checked={!!trigger.time_based}
+              onCheckedChange={(v) =>
+                onChange((t) => ({
+                  ...t,
+                  time_based: v
+                    ? { kind: "time_since_field", field: "created_at", amount: 1, unit: "days" }
+                    : undefined,
+                }))
+              }
+            />
+          </div>
+          {trigger.time_based && (
+            <div className="grid grid-cols-2 gap-2">
               <div className="col-span-2">
-                <Label className="text-xs">Campo (data)</Label>
+                <Label className="text-xs">Tipo</Label>
+                <Select
+                  value={trigger.time_based.kind}
+                  onValueChange={(v) =>
+                    onChange((t) => ({
+                      ...t,
+                      time_based: {
+                        ...(t.time_based ?? { amount: 1, unit: "days" }),
+                        kind: v as never,
+                      },
+                    }))
+                  }
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="time_since_field">Tempo desde campo (data)</SelectItem>
+                    <SelectItem value="no_activity_for">Sem atividade há…</SelectItem>
+                    <SelectItem value="stuck_in_stage_for">Parado na etapa há…</SelectItem>
+                    <SelectItem value="field_unchanged_for">Campo inalterado há…</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {(trigger.time_based.kind === "time_since_field" ||
+                trigger.time_based.kind === "field_unchanged_for") && (
+                <div className="col-span-2">
+                  <Label className="text-xs">Campo (data)</Label>
+                  <Input
+                    value={trigger.time_based.field ?? ""}
+                    onChange={(e) =>
+                      onChange((t) => ({
+                        ...t,
+                        time_based: {
+                          ...(t.time_based ?? {
+                            kind: "time_since_field",
+                            amount: 1,
+                            unit: "days",
+                          }),
+                          field: e.target.value,
+                        },
+                      }))
+                    }
+                    placeholder="created_at"
+                  />
+                </div>
+              )}
+              <div>
+                <Label className="text-xs">Quantidade</Label>
                 <Input
-                  value={trigger.time_based.field ?? ""}
+                  type="number"
+                  min={1}
+                  value={trigger.time_based.amount}
                   onChange={(e) =>
                     onChange((t) => ({
                       ...t,
                       time_based: {
-                        ...(t.time_based ?? { kind: "time_since_field", amount: 1, unit: "days" }),
-                        field: e.target.value,
+                        ...(t.time_based ?? { kind: "time_since_field", unit: "days" }),
+                        amount: Math.max(1, parseInt(e.target.value) || 1),
                       },
                     }))
                   }
-                  placeholder="created_at"
                 />
               </div>
-            )}
-            <div>
-              <Label className="text-xs">Quantidade</Label>
-              <Input
-                type="number"
-                min={1}
-                value={trigger.time_based.amount}
-                onChange={(e) =>
-                  onChange((t) => ({
-                    ...t,
-                    time_based: {
-                      ...(t.time_based ?? { kind: "time_since_field", unit: "days" }),
-                      amount: Math.max(1, parseInt(e.target.value) || 1),
-                    },
-                  }))
-                }
-              />
+              <div>
+                <Label className="text-xs">Unidade</Label>
+                <Select
+                  value={trigger.time_based.unit}
+                  onValueChange={(v) =>
+                    onChange((t) => ({
+                      ...t,
+                      time_based: {
+                        ...(t.time_based ?? { kind: "time_since_field", amount: 1 }),
+                        unit: v as "minutes" | "hours" | "days",
+                      },
+                    }))
+                  }
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="minutes">minutos</SelectItem>
+                    <SelectItem value="hours">horas</SelectItem>
+                    <SelectItem value="days">dias</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <p className="col-span-2 text-[11px] text-muted-foreground">
+                Varredura executa a cada 15 min. Cada registro dispara no máximo uma vez até o campo
+                de referência mudar.
+              </p>
             </div>
-            <div>
-              <Label className="text-xs">Unidade</Label>
-              <Select
-                value={trigger.time_based.unit}
-                onValueChange={(v) =>
-                  onChange((t) => ({
-                    ...t,
-                    time_based: {
-                      ...(t.time_based ?? { kind: "time_since_field", amount: 1 }),
-                      unit: v as "minutes" | "hours" | "days",
-                    },
-                  }))
-                }
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="minutes">minutos</SelectItem>
-                  <SelectItem value="hours">horas</SelectItem>
-                  <SelectItem value="days">dias</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <p className="col-span-2 text-[11px] text-muted-foreground">
-              Varredura executa a cada 15 min. Cada registro dispara no máximo uma vez até o campo
-              de referência mudar.
-            </p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">

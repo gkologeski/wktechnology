@@ -1,5 +1,7 @@
 import { authorizeWorkflowStep, sanitizeWorkflowSnapshot } from "./engine/authorization.server";
 import { workflowEventWorkspace } from "./engine/workspace-payload";
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { workflowNotificationTriggerMatches } from "./notification-events";
 // Ciclo de execução do motor: enfileiramento, runs, ticks de fila e de tempo.
 // Extraído de engine.server.ts sem mudança de comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -21,6 +23,8 @@ export interface EventRow {
   resume_workflow_id?: string | null;
   resume_cursor?: number | null;
   workflow_version?: number | null;
+  notification_event_key?: string | null;
+  notification_parent_event_id?: string | null;
 }
 
 interface WorkflowRow {
@@ -98,6 +102,25 @@ async function workflowSourceAllowed(
   }
 }
 
+/** Public event columns cannot prove a named transition or a resumed occurrence. */
+async function notificationEventAllowed(
+  supabase: SupabaseClient,
+  wf: WorkflowRow,
+  event: EventRow,
+) {
+  if (!workflowNotificationTriggerMatches(wf.trigger ?? ({} as WorkflowTrigger), event))
+    return false;
+  if (event.notification_event_key == null) return true;
+  if (!Number.isInteger(wf.published_version) || (wf.published_version ?? 0) < 1) return false;
+  return (
+    (await workRpc<unknown>(supabase, "notification_business_event_check", {
+      p_event: event.id,
+      p_workflow: wf.id,
+      p_version: wf.published_version,
+    })) === true
+  );
+}
+
 export async function processEvent(
   supabase: SupabaseClient,
   event: EventRow,
@@ -120,6 +143,7 @@ export async function processEvent(
       .eq("enabled", true)
       .eq("status", "published")
       .eq("id", event.resume_workflow_id)
+      .eq("entity", event.entity)
       .eq("workspace_id", sourceWorkspace)
       .maybeSingle();
     if (wf) {
@@ -142,6 +166,32 @@ export async function processEvent(
         } as never);
         if (logError && logError.code !== "23505") throw new Error(logError.message);
         await supabase.from("workflow_events").update({ processed_at: now }).eq("id", event.id);
+        return;
+      }
+      if (!(await notificationEventAllowed(supabase, wfr, event))) {
+        if (event.notification_event_key != null || wfr.trigger?.notification_event) {
+          const reason = "Ocorrência de negócio ou origem indisponível; retomada bloqueada.";
+          const now = new Date().toISOString();
+          const { error: logError } = await supabase.from("workflow_runs").insert({
+            workspace_id: sourceWorkspace,
+            owner_id: wfr.owner_id,
+            workflow_id: wfr.id,
+            event_id: event.id,
+            entity: event.entity,
+            entity_id: event.entity_id,
+            status: "error",
+            error: reason,
+            started_at: now,
+            finished_at: now,
+            log: [{ at: now, ok: false, action: "notification_event_check", error: reason }],
+          } as never);
+          if (logError && logError.code !== "23505") throw new Error(logError.message);
+          await supabase
+            .from("workflow_events")
+            .update({ processed_at: now })
+            .eq("id", event.id)
+            .eq("workspace_id", sourceWorkspace);
+        }
         return;
       }
       if (!(await workflowSourceAllowed(supabase, wfr, event))) return;
@@ -203,7 +253,8 @@ export async function processEvent(
   // Caso 2: evento normal (created/updated/stage_changed).
   // Contratação/desligamento valem para o workspace inteiro (qualquer recrutador
   // ou gestor dispara o fluxo do admin); demais entidades mantêm o escopo por dono.
-  const byWorkspace = WORKSPACE_SCOPED_ENTITIES.has(event.entity);
+  const byWorkspace =
+    WORKSPACE_SCOPED_ENTITIES.has(event.entity) || event.notification_event_key != null;
   let wfQuery = supabase
     .from("workflows")
     .select(
@@ -218,9 +269,10 @@ export async function processEvent(
   const { data: workflows } = await wfQuery;
 
   for (const wf of (workflows ?? []) as WorkflowRow[]) {
+    if (!(await notificationEventAllowed(supabase, wf, event))) continue;
     if (!(await workflowSourceAllowed(supabase, wf, event))) continue;
     const trig = wf.trigger ?? ({} as WorkflowTrigger);
-    if (trig.event && trig.event !== event.event_type) continue;
+    if (!trig.notification_event && trig.event && trig.event !== event.event_type) continue;
 
     // Hidrata associações do gatilho (empresa, contato, negócio…) antes de
     // avaliar condições e executar ações, para resolver `{{company.name}}`.
@@ -353,6 +405,12 @@ async function finishRun(
       entity: event.entity,
       entity_id: event.entity_id,
       event_type: event.event_type,
+      ...(event.notification_event_key != null
+        ? {
+            notification_event_key: event.notification_event_key,
+            notification_parent_event_id: event.id,
+          }
+        : {}),
       before: event.before,
       after: {
         ...stripResumeKeys((event.after ?? {}) as Record<string, unknown>),
@@ -395,7 +453,7 @@ export async function tickWorkflows(
   let query = supabase
     .from("workflow_events")
     .select(
-      "id, owner_id, workspace_id, entity, entity_id, event_type, before, after, resume_workflow_id, resume_cursor, workflow_version",
+      "id, owner_id, workspace_id, entity, entity_id, event_type, before, after, resume_workflow_id, resume_cursor, workflow_version, notification_event_key, notification_parent_event_id",
     )
     .is("processed_at", null)
     .lte("run_at", nowIso)

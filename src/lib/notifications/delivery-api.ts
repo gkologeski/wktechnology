@@ -23,6 +23,7 @@ export const deliveryHistoryResult = z.object({
         id: z.string().uuid(),
         channel: z.enum(["inapp", "email", "whatsapp", "slack"]),
         status: z.string().max(40),
+        eventKey: z.string().max(100).nullable().optional(),
         reason_code: z.string().max(80).nullable(),
         attempts: z.number().int().min(0),
         created_at: z.string(),

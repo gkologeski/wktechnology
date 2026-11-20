@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import { normalizeNotificationPrefs } from "./notification-preferences";
 import {
   DEFAULT_CENTER_SETTINGS,
+  AVAILABLE_NOTIFICATION_EVENTS,
+  LEGACY_NOTIFICATION_EVENTS,
   applyCenterSettingsPatch,
   centerSettingsPatchSchema,
   centerSettingsSchema,
   diffCenterSettings,
   effectiveChannels,
+  effectiveWhatsAppPreference,
   groupSummary,
   isQuietNow,
   normalizeCenterSettings,
@@ -30,6 +33,106 @@ describe("workspace notification preference overlays", () => {
     expect(effectiveChannels(base(), loaded, "mention")).toEqual(base().mention);
     expect(diffCenterSettings(loaded, structuredClone(loaded))).toEqual({});
   });
+  it("preserves the legacy event list and adds only the eight operational module choices", () => {
+    expect(LEGACY_NOTIFICATION_EVENTS).toHaveLength(22);
+    expect(LEGACY_NOTIFICATION_EVENTS.every((event) => event.eventKey.startsWith("legacy."))).toBe(
+      true,
+    );
+    expect(AVAILABLE_NOTIFICATION_EVENTS).toHaveLength(30);
+    expect(AVAILABLE_NOTIFICATION_EVENTS.map((event) => event.eventKey)).not.toContain(
+      "finance.payable.due",
+    );
+  });
+  it("keeps WhatsApp overrides optional and applies exact event precedence without changing global profile channels", () => {
+    const key = "contracts.contract.expiring";
+    expect(effectiveWhatsAppPreference(settings(), key)).toBeUndefined();
+    const stored = normalizeCenterSettings({
+      categories: { task: { whatsapp: true } },
+      eventOverrides: { [key]: { whatsapp: false } },
+    });
+    expect(effectiveWhatsAppPreference(stored, key)).toBe(false);
+    expect(effectiveWhatsAppPreference(stored, "contracts.contract.renewal_due")).toBe(true);
+    expect(Object.keys(effectiveChannels(base(), stored, key)).sort()).toEqual([
+      "email",
+      "inapp",
+      "shake",
+      "sound",
+    ]);
+    expect(Object.hasOwn(base().task, "whatsapp")).toBe(false);
+    const inherited = normalizeCenterSettings(
+      applyCenterSettingsPatch(stored, { eventOverrides: { [key]: { whatsapp: null } } }),
+    );
+    expect(effectiveWhatsAppPreference(inherited, key)).toBe(true);
+    const reset = normalizeCenterSettings(
+      applyCenterSettingsPatch(inherited, { categories: { task: { whatsapp: null } } }),
+    );
+    expect(effectiveWhatsAppPreference(reset, key)).toBeUndefined();
+  });
+  it("fails closed for malformed WhatsApp preferences and roundtrips a targeted opt-out", () => {
+    const key = "crm.deal.won";
+    const before = settings();
+    const after = normalizeCenterSettings(
+      applyCenterSettingsPatch(before, { eventOverrides: { [key]: { whatsapp: false } } }),
+    );
+    expect(diffCenterSettings(before, after)).toEqual({
+      eventOverrides: { [key]: { whatsapp: false } },
+    });
+    expect(effectiveWhatsAppPreference(after, key)).toBe(false);
+    for (const raw of [
+      false,
+      { eventOverrides: { [key]: { whatsapp: "true" } } },
+      { quiet: false },
+    ]) {
+      expect(effectiveWhatsAppPreference(normalizeCenterSettings(raw), key)).toBe(false);
+    }
+  });
+  it("keeps canonical sounds quiet until a workspace category or exact event opts in", () => {
+    const prefs = normalizeNotificationPrefs({
+      task: { inapp: true, email: true, sound: true, shake: true },
+    });
+    const key = "contracts.contract.expiring";
+    expect(effectiveChannels(prefs, settings(), key)).toEqual({
+      inapp: true,
+      email: true,
+      sound: false,
+      shake: false,
+    });
+    const custom = normalizeCenterSettings({
+      categories: { task: { sound: true, shake: true } },
+      eventOverrides: { [key]: { shake: false } },
+    });
+    expect(effectiveChannels(prefs, custom, key)).toEqual({
+      inapp: true,
+      email: true,
+      sound: true,
+      shake: false,
+    });
+    expect(effectiveChannels(prefs, settings(), "task").sound).toBe(true);
+  });
+  it("accepts and roundtrips a canonical override without enabling a channel or touching another event", () => {
+    const stored = {
+      eventOverrides: { "legacy.workflow": { inapp: false }, future: { keep: true } },
+    };
+    const next = applyCenterSettingsPatch(stored, {
+      eventOverrides: { "crm.deal.won": { sound: true, email: false } },
+    });
+    expect(next).toEqual({
+      eventOverrides: { ...stored.eventOverrides, "crm.deal.won": { sound: true, email: false } },
+    });
+    expect(normalizeCenterSettings(next).eventOverrides).toEqual({
+      "legacy.workflow": { inapp: false },
+      "crm.deal.won": { sound: true, email: false },
+    });
+    expect(effectiveChannels(base(), normalizeCenterSettings(next), "crm.deal.won").email).toBe(
+      false,
+    );
+  });
+  it.each([null, "unknown", "mention", "projects.project.started"])(
+    "does not inherit a legacy preference after invalid explicit eventKey %s",
+    (eventKey) => {
+      expect(effectiveChannels(base(), settings(), { type: "mention", eventKey })).toEqual(silent);
+    },
+  );
   it("keeps explicit false through global, category and exact event precedence", () => {
     const prefs = normalizeNotificationPrefs({ mention: { email: false, sound: false } });
     const loaded = normalizeCenterSettings({
@@ -40,7 +143,7 @@ describe("workspace notification preference overlays", () => {
     expect(effectiveChannels(prefs, loaded, { type: "mention" })).toEqual(silent);
     expect(effectiveChannels(prefs, loaded, "assignment")).toEqual(prefs.assignment);
   });
-  it.each(["unknown", "crm.deal.won", "sla.future", "constructor", "__proto__"])(
+  it.each(["unknown", "projects.project.started", "sla.future", "constructor", "__proto__"])(
     "does not enable planned or unknown event %s",
     (event) => expect(effectiveChannels(base(), settings(), event)).toEqual(silent),
   );
@@ -48,7 +151,10 @@ describe("workspace notification preference overlays", () => {
     expect(
       normalizeCenterSettings({
         categories: { mention: { sound: false, future: true }, future: { sound: true } },
-        eventOverrides: { "legacy.mention": { inapp: true }, "crm.deal.won": { sound: true } },
+        eventOverrides: {
+          "legacy.mention": { inapp: true },
+          "projects.project.started": { sound: true },
+        },
         quiet: { ...DEFAULT_CENTER_SETTINGS.quiet, future: "keep in DB" },
         future: { secret: "not returned" },
       }),
@@ -83,7 +189,7 @@ describe("workspace notification preference overlays", () => {
   it.each([
     { future: true },
     { categories: { future: { sound: true } } },
-    { eventOverrides: { "crm.deal.won": { sound: true } } },
+    { eventOverrides: { "projects.project.started": { sound: true } } },
     { eventOverrides: { "legacy.mention": { future: true } } },
     { categories: { mention: { inapp: "false" } } },
     { quiet: { enabled: true } },

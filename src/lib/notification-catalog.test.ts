@@ -4,6 +4,7 @@ import {
   NOTIFICATION_EVENT_CATALOG,
   getNotificationEvent,
   resolveLegacyNotificationEvent,
+  resolveAvailableNotificationEvent,
   withNotificationEvent,
   type NotificationEventKey,
 } from "./notification-catalog";
@@ -69,12 +70,10 @@ describe("catálogo compatível com notificações históricas", () => {
     }
   });
 
-  it("documenta eventos dos seis módulos como planejados, sem torná-los aliases ativos", () => {
+  it("keeps other modules planned without turning their keys into operational aliases", () => {
     const examples = [
-      ["crm.deal.won", "crm"],
       ["ats.application.received", "ats"],
       ["people.employment.started", "people"],
-      ["contracts.signature.completed", "contracts"],
       ["finance.payable.due", "finance"],
       ["projects.project.started", "projects"],
     ] as const;
@@ -86,22 +85,80 @@ describe("catálogo compatível com notificações históricas", () => {
         legacyTypes: [],
       });
       expect(resolveLegacyNotificationEvent(eventKey)).toBeNull();
+      expect(resolveAvailableNotificationEvent(eventKey)).toBeNull();
+      expect(withNotificationEvent({ type: eventKey }).event).toBeNull();
     }
     const plannedModules = NOTIFICATION_EVENT_CATALOG.filter(
       (event) => event.availability === "planned" && event.moduleKey !== null,
     ).map((event) => event.moduleKey);
-    expect([...new Set(plannedModules)].sort()).toEqual([
-      "ats",
-      "contracts",
-      "crm",
-      "finance",
-      "people",
-      "projects",
-    ]);
+    expect([...new Set(plannedModules)].sort()).toEqual(["ats", "finance", "people", "projects"]);
     expect(getNotificationEvent("shared.approval.pending")).toMatchObject({
       availability: "planned",
       moduleKey: null,
     });
+  });
+
+  it.each([
+    ["crm.deal.won", "deal_stage", "crm"],
+    ["crm.deal.lost", "deal_stage", "crm"],
+    ["crm.deal.stage_changed", "deal_stage", "crm"],
+    ["crm.proposal.accepted", "workflow", "crm"],
+    ["contracts.draft.accepted", "approval", "contracts"],
+    ["contracts.signature.completed", "workflow", "contracts"],
+    ["contracts.contract.expiring", "task", "contracts"],
+    ["contracts.contract.renewal_due", "task", "contracts"],
+  ] as const)(
+    "recognizes operational %s without rewriting its identity into a legacy alias",
+    (eventKey, category, moduleKey) => {
+      expect(resolveAvailableNotificationEvent(eventKey)).toMatchObject({
+        availability: "active",
+        eventKey,
+        category,
+        moduleKey,
+        legacyTypes: [],
+      });
+      expect(resolveLegacyNotificationEvent(eventKey)).toBeNull();
+      expect(
+        withNotificationEvent({
+          type: "workflow",
+          eventKey,
+          entity: "deals",
+          title: "Unrelated text",
+        }).event,
+      ).toEqual({ eventKey, category, moduleKey });
+    },
+  );
+
+  it("makes exactly eight module events operational while preserving all 22 legacy aliases", () => {
+    expect(
+      NOTIFICATION_EVENT_CATALOG.filter((event) => event.availability === "active"),
+    ).toHaveLength(8);
+    expect(
+      NOTIFICATION_EVENT_CATALOG.filter((event) => event.availability === "legacy"),
+    ).toHaveLength(22);
+    expect(
+      NOTIFICATION_EVENT_CATALOG.filter((event) => event.availability === "planned"),
+    ).toHaveLength(19);
+  });
+
+  it.each([null, "unknown", "mention", "projects.project.started"])(
+    "does not fall back to a legacy type after explicit invalid RPC provenance %s",
+    (eventKey) => {
+      expect(
+        withNotificationEvent({ type: "mention", eventKey, title: "Not a fallback" }).event,
+      ).toBeNull();
+    },
+  );
+
+  it("requires explicit RPC provenance for a new canonical record instead of guessing from its type", () => {
+    expect(withNotificationEvent({ type: "crm.deal.won" }).event).toBeNull();
+    expect(
+      withNotificationEvent({
+        type: "workflow",
+        eventKey: "contracts.draft.accepted",
+        entity: "deals",
+      }).event?.moduleKey,
+    ).toBe("contracts");
   });
 
   it.each([

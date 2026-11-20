@@ -409,7 +409,7 @@ it("patches preferences without overwriting other groups or trusted future field
 it.each([
   { recipients: [U] },
   { categories: { unknown: { inapp: true } } },
-  { eventOverrides: { "crm.deal.won": { inapp: true } } },
+  { eventOverrides: { "finance.payable.due": { inapp: true } } },
   { eventOverrides: { "legacy.workflow": { whatsapp: true } } },
   { categories: { workflow: { inapp: "true" } } },
   { summary: "hourly" },
@@ -455,7 +455,7 @@ it("applies category then event preferences without enabling another workspace's
   expect(await inapp()).toBe(false);
   await save({ categories: { workflow: null } }, 3);
   expect(await inapp()).toBe(true);
-  expect(await inapp("crm.deal.won")).toBe(false);
+  expect(await inapp("finance.payable.due")).toBe(false);
 });
 it.each([
   { categories: [] },

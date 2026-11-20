@@ -8,7 +8,7 @@ route_pattern: /settings/workflows
 min_permission: system.workflows.manage.workspace
 audience: internal
 sort_order: 413
-version: 6
+version: 7
 is_published: true
 ---
 
@@ -50,6 +50,20 @@ Somente membros ativos do mesmo workspace e com leitura atual do registro podem 
 
 Destinos avançados que já estejam salvos, como equipe, cargo ou seguidores, são preservados para revisão. Este formulário ainda não oferece sua configuração completa. Um destino preservado só recebe quando existe uma fonte válida e a autorização é confirmada; seguidores sem uma fonte disponível não recebem avisos.
 
+### Usar um evento comercial ou contratual
+
+1. Em **Central de notificações > Regras**, escolha **Evento da nova regra**. Há opções de TechSales — negócio ganho, perdido, outras mudanças de etapa e proposta aceita — e de TechContracts — minuta aceita, assinatura concluída, vencimento e prazo de renovação. Clique em **Criar regra**.
+2. O Workflow abre como rascunho desativado no construtor habitual, com um passo de notificação ao responsável pelo registro. Confira a responsabilidade; a seleção não grava, publica ou envia automaticamente.
+3. Em **Gatilho de entrada > Evento de negócio**, confira a opção. O editor oferece apenas os eventos compatíveis com o tipo de objeto. A minuta aceita usa o negócio vinculado como contexto; isso não dispensa as permissões da minuta. Alterar o tipo de objeto remove uma seleção que ficou incompatível.
+4. Nos eventos de prazo, ajuste **Antecedência em dias**, de 1 a 365. O valor inicial do rascunho é 30. Vencimento usa o término da vigência; renovação usa o término menos o aviso prévio cadastrado e exige renovação automática. A janela termina no prazo; contratos com prazo já vencido ou dados inválidos não entram.
+5. Configure as condições e os passos, salve e revise antes de publicar e ativar. O evento de negócio e o gatilho genérico baseado em tempo são escolhas distintas; o editor não combina os dois.
+
+Entrar em ganho ou perda gera a classificação específica da transição. **Etapa do negócio alterada** acompanha as demais mudanças, incluindo reabertura; não é emitida como um segundo evento implícito para a mesma entrada em ganho/perda. Várias regras publicadas continuam sendo escolhas administrativas explícitas: revise-as para não configurar avisos repetidos com o mesmo objetivo.
+
+**Proposta aceita** exige aceite comercial válido; **Assinatura concluída** exige a evidência válida da versão atual. Um status genérico, contrato Ativo ou data preenchida não substituem essas provas. O preset antigo **Contrato assinado**, quando existente, mantém seu contrato anterior e não é reescrito ao abrir o editor.
+
+Preferências pessoais por evento podem suprimir o aviso sem alterar a operação. Para os novos eventos, som e tremor começam desligados e só são habilitados por escolha explícita no grupo ou evento do workspace. Os canais externos continuam dependendo de configuração e autorização próprias.
+
 ## Resultado esperado
 
 "Rascunho salvo — publique para ativar"; "Publicado — v…"; "Aprovado — retomada enfileirada".
@@ -78,6 +92,8 @@ Salvar não é publicar. Aprovar ou rejeitar muda o andamento da execução.
 - **Nenhum membro disponível para seleção:** aguarde o carregamento ou confira os membros com quem administra o workspace. Não é necessário digitar UUID.
 - **O aviso não chegou:** confira o resultado da execução e **No app** no grupo **Workflows**. A preferência pode suprimir o novo aviso sem retirar os anteriores.
 - **O título ficou neutro:** há variáveis no título ou no corpo. Consulte os detalhes no TechERP, pelo destino disponível para a origem; essa proteção evita reproduzir dados privados para outro usuário.
+- **O evento não aparece para o objeto escolhido:** confira o tipo de objeto em Gatilho de entrada. Apenas eventos com uma origem compatível são oferecidos; os eventos de outros módulos ainda planejados não ficam disponíveis por esta configuração.
+- **O aviso de vencimento ou renovação não entrou:** confira a antecedência, a vigência, o aviso prévio e a renovação automática. Prazo vencido, ausente ou inválido não é substituído por uma data inventada.
 
 ## Relacionados
 

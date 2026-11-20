@@ -400,13 +400,13 @@ beforeAll(async () => {
 
 afterAll(async () => {
   try {
-    if (apiStarted) dockerRun("rm", "-f", apiContainer);
+    if (apiStarted) dockerRun("rm", "-f", "-v", apiContainer);
   } finally {
     try {
       if (db) await db.end({ timeout: 2 });
     } finally {
       try {
-        if (started) dockerRun("rm", "-f", container);
+        if (started) dockerRun("rm", "-f", "-v", container);
       } finally {
         try {
           if (networkStarted) dockerRun("network", "rm", network);

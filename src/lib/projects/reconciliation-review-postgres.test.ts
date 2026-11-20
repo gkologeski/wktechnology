@@ -146,7 +146,7 @@ beforeAll(async () => {
 afterAll(async () => {
   if (competitor) await competitor.end();
   if (db) await db.end();
-  if (started) dockerRun("rm", "-f", container);
+  if (started) dockerRun("rm", "-f", "-v", container);
   if (temporary) rmSync(temporary, { recursive: true, force: true });
 });
 

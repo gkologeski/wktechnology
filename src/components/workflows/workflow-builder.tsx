@@ -62,6 +62,10 @@ import {
   type WorkflowActionType,
 } from "@/lib/workflows/types";
 import { conditionsSummary } from "@/lib/workflows/conditions";
+import {
+  getWorkflowNotificationEvent,
+  workflowNotificationTriggerLabel,
+} from "@/lib/workflows/notification-events";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
 
 export type WorkflowDraft = {
@@ -103,6 +107,7 @@ export function WorkflowBuilder({
   const [state, setState] = useState<WorkflowDraft>(draft ?? EMPTY_DRAFT);
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const [selection, setSelection] = useState<StepPath | "trigger" | null>("trigger");
   const [view, setView] = useState<"canvas" | "details">("canvas");
   const [library, setLibrary] = useState<{ parentPath: StepPath } | null>(null);
@@ -119,6 +124,7 @@ export function WorkflowBuilder({
       setSelection("trigger");
       setView("canvas");
       setLibrary(null);
+      setSaveError("");
       // Abre picker quando é um workflow novo sem entidade escolhida (id vazio + nome vazio).
       setEntityPickerOpen(!draft?.id && !draft?.name);
     }
@@ -200,9 +206,16 @@ export function WorkflowBuilder({
 
   const handleSave = async () => {
     setSaving(true);
+    setSaveError("");
     try {
       await onSave(state);
       setBaseline(JSON.stringify(state));
+    } catch (cause) {
+      setSaveError(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível salvar. Seu rascunho foi preservado.",
+      );
     } finally {
       setSaving(false);
     }
@@ -211,9 +224,16 @@ export function WorkflowBuilder({
   const handleSaveAndPublish = async () => {
     if (!onSaveAndPublish) return;
     setPublishing(true);
+    setSaveError("");
     try {
       await onSaveAndPublish(state);
       setBaseline(JSON.stringify(state));
+    } catch (cause) {
+      setSaveError(
+        cause instanceof Error
+          ? cause.message
+          : "Não foi possível publicar. Seu rascunho foi preservado.",
+      );
     } finally {
       setPublishing(false);
     }
@@ -377,6 +397,11 @@ export function WorkflowBuilder({
             )}
           </header>
 
+          {saveError && (
+            <p role="alert" className="border-b px-4 py-2 text-sm text-destructive">
+              {saveError}
+            </p>
+          )}
           {!isUpToDate && (
             <div className="flex items-start gap-2 border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground shrink-0">
               <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" aria-hidden="true" />
@@ -451,7 +476,15 @@ export function WorkflowBuilder({
                 <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold">
                   Gatilho
                 </p>
-                <p className="text-sm mt-1">{EVENT_LABELS[state.trigger.event]}</p>
+                <p className="text-sm mt-1">
+                  {workflowNotificationTriggerLabel(state.trigger) ??
+                    EVENT_LABELS[state.trigger.event]}
+                </p>
+                {state.trigger.notification_event?.days_before && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Antecedência: {state.trigger.notification_event.days_before} dias
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground mt-1">
                   {conditionsSummary(state.trigger.filters)}
                 </p>
@@ -611,7 +644,16 @@ export function WorkflowBuilder({
             currentEntity={state.entity}
             onClose={() => setEntityPickerOpen(false)}
             onPick={(entity) => {
-              setState((s) => ({ ...s, entity }));
+              setState((s) => {
+                if (
+                  s.trigger.notification_event &&
+                  getWorkflowNotificationEvent(s.trigger.notification_event.key)?.entity !== entity
+                ) {
+                  const { notification_event: _event, ...trigger } = s.trigger;
+                  return { ...s, entity, trigger };
+                }
+                return { ...s, entity };
+              });
               setEntityPickerOpen(false);
             }}
           />

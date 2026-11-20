@@ -32,6 +32,10 @@ import {
   listNotificationWorkflowRules,
   previewNotificationWorkflow,
 } from "./delivery-rules.functions";
+import {
+  WORKFLOW_NOTIFICATION_EVENTS,
+  workflowNotificationEventTrigger,
+} from "@/lib/workflows/notification-events";
 const W = "11111111-1111-4111-8111-111111111111",
   U = "22222222-2222-4222-8222-222222222222";
 const from = vi.fn();
@@ -107,6 +111,33 @@ it("personal history uses own selected workspace and no other-user selector", as
     "notification_delivery_history",
     expect.objectContaining({ p_scope: "own", p_workspace: W }),
   );
+});
+it("retains the proven event identity from authorized delivery history without looking up source snapshots", async () => {
+  state.rpc.mockImplementation(async (_client, name) =>
+    name === "notification_delivery_capabilities"
+      ? caps
+      : {
+          items: [
+            {
+              id: U,
+              eventKey: "contracts.signature.completed",
+              channel: "whatsapp",
+              status: "read",
+              attempts: 1,
+              reason_code: null,
+              created_at: "2026-11-20T10:00:00Z",
+              updated_at: "2026-11-20T10:01:00Z",
+            },
+          ],
+          nextCursor: null,
+        },
+  );
+  await expect(
+    call(listNotificationDeliveryHistory, { workspaceId: W, scope: "own" }),
+  ).resolves.toMatchObject({
+    items: [{ eventKey: "contracts.signature.completed", status: "read" }],
+  });
+  expect(from).not.toHaveBeenCalled();
 });
 it("provider templates require channel access before querying sender or secrets", async () => {
   state.area.mockRejectedValue(Error("channel denied"));
@@ -307,6 +338,72 @@ it("preview requires canonical workflow read and row authorization before reads"
   expect(from).not.toHaveBeenCalled();
   expect(state.record).not.toHaveBeenCalled();
 });
+
+function previewRuleRow(entity: string, trigger: unknown) {
+  const row = {
+    id: U,
+    name: "Regra de demonstração",
+    entity,
+    enabled: false,
+    trigger,
+    actions: [{ type: "send_notification", title: "Atualização no TechERP" }],
+    draft_trigger: null,
+    draft_actions: null,
+  };
+  from.mockImplementation((table) => {
+    if (table !== "workflows") throw Error("Preview must not read source records");
+    const q = {
+      select: () => q,
+      eq: () => q,
+      maybeSingle: async () => ({ data: row, error: null }),
+    };
+    return q;
+  });
+  state.rpc.mockResolvedValue({ ...caps, settingsView: false });
+}
+
+it.each(WORKFLOW_NOTIFICATION_EVENTS)(
+  "describes the configured $key draft without producing an occurrence or reading recipients",
+  async (event) => {
+    previewRuleRow(event.entity, workflowNotificationEventTrigger(event.key, 17));
+    const result = (await call(previewNotificationWorkflow, {
+      workspaceId: W,
+      workflowId: U,
+    })) as { issues: string[]; notificationSteps: number; realMessages: number };
+    expect(result).toMatchObject({ realMessages: 0, notificationSteps: 1 });
+    expect(result.issues.some((note) => note.includes(event.label))).toBe(true);
+    if (event.deadline) expect(result.issues.some((note) => note.includes("17 dias"))).toBe(true);
+    expect(state.record).toHaveBeenCalledWith(ctx.supabase, "workflows", U, "view");
+    expect(from.mock.calls.map(([table]) => table)).toEqual(["workflows"]);
+    expect(state.rpc.mock.calls.map(([, name]) => name)).toEqual([
+      "notification_delivery_capabilities",
+    ]);
+  },
+);
+
+it.each([
+  { entity: "people", trigger: workflowNotificationEventTrigger("crm.deal.won") },
+  {
+    entity: "contracts",
+    trigger: { event: "updated", notification_event: { key: "contracts.contract.expiring" } },
+  },
+  {
+    entity: "contracts",
+    trigger: {
+      event: "updated",
+      notification_event: { key: "contracts.contract.renewal_due", days_before: -3 },
+    },
+  },
+])(
+  "refuses an invalid event draft before consulting channel configuration $entity",
+  async (row) => {
+    previewRuleRow(row.entity, row.trigger);
+    const result = await call(previewNotificationWorkflow, { workspaceId: W, workflowId: U });
+    expect(result).toMatchObject({ notificationSteps: 0, channels: [], realMessages: 0 });
+    expect(state.rpc).not.toHaveBeenCalled();
+    expect(from.mock.calls.map(([table]) => table)).toEqual(["workflows"]);
+  },
+);
 it("rules list propagates database denial instead of fabricating empty success", async () => {
   state.rpc.mockRejectedValue(Error("source denied"));
   await expect(call(listNotificationWorkflowRules, { workspaceId: W })).rejects.toThrow(

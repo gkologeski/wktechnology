@@ -4,6 +4,10 @@
 import { z } from "zod";
 import { notificationDeliveryConfigSchema } from "@/lib/notifications/delivery-types";
 import { notificationRecipientRulesSchema } from "@/lib/notification-recipients";
+import {
+  getWorkflowNotificationEvent,
+  notificationEventSelectionSchema,
+} from "./notification-events";
 
 export const EntityEnum = z.enum([
   "leads",
@@ -116,18 +120,28 @@ export const TimeTriggerConfigSchema = z.object({
   filters: ConditionListSchema.optional(),
 });
 
-export const TriggerSchema = z.object({
-  event: EventEnum,
-  filters: ConditionListSchema.default([]),
-  reenroll: z
-    .object({
-      enabled: z.boolean(),
-      events: z.array(EventEnum).max(3).optional(),
-    })
-    .optional(),
-  goal_filters: ConditionListSchema.optional(),
-  time_based: TimeTriggerConfigSchema.optional(),
-});
+export const TriggerSchema = z
+  .object({
+    event: EventEnum,
+    notification_event: notificationEventSelectionSchema.optional(),
+    filters: ConditionListSchema.default([]),
+    reenroll: z
+      .object({
+        enabled: z.boolean(),
+        events: z.array(EventEnum).max(3).optional(),
+      })
+      .optional(),
+    goal_filters: ConditionListSchema.optional(),
+    time_based: TimeTriggerConfigSchema.optional(),
+  })
+  .superRefine((trigger, ctx) => {
+    if (trigger.notification_event && trigger.time_based)
+      ctx.addIssue({
+        code: "custom",
+        path: ["time_based"],
+        message: "O evento de negócio já possui seu próprio gatilho.",
+      });
+  });
 
 type ActionInput = Record<string, unknown>;
 
@@ -567,15 +581,28 @@ export function parseActionAtDepth(raw: unknown, depth: number): ActionInput {
   return SimpleActionSchema.parse(raw) as unknown as ActionInput;
 }
 
-export const SaveSchema = z.object({
-  id: z.string().uuid().optional(),
-  name: z.string().min(1).max(120),
-  entity: EntityEnum,
-  enabled: z.boolean(),
-  trigger: TriggerSchema,
-  actions: z
-    .array(z.unknown())
-    .min(1)
-    .max(20)
-    .transform((arr) => parseActionsAtDepth(arr, 0)),
-});
+export const SaveSchema = z
+  .object({
+    id: z.string().uuid().optional(),
+    name: z.string().min(1).max(120),
+    entity: EntityEnum,
+    enabled: z.boolean(),
+    trigger: TriggerSchema,
+    actions: z
+      .array(z.unknown())
+      .min(1)
+      .max(20)
+      .transform((arr) => parseActionsAtDepth(arr, 0)),
+  })
+  .superRefine((workflow, ctx) => {
+    if (
+      workflow.trigger.notification_event &&
+      getWorkflowNotificationEvent(workflow.trigger.notification_event.key)?.entity !==
+        workflow.entity
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: ["trigger", "notification_event", "key"],
+        message: "O evento não pertence à entidade deste workflow.",
+      });
+  });

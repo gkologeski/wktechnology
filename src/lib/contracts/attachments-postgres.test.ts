@@ -213,7 +213,7 @@ beforeAll(async () => {
 }, 120000);
 afterAll(async () => {
   if (db) await db.end();
-  if (started) dockerRun("rm", "-f", container);
+  if (started) dockerRun("rm", "-f", "-v", container);
   if (nativeStarted)
     execFileSync(pgBin + "pg_ctl", ["-D", join(temporary, "data"), "-m", "fast", "-w", "stop"], {
       stdio: "pipe",

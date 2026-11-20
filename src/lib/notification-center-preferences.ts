@@ -2,10 +2,11 @@ import { z } from "zod";
 import {
   NOTIFICATION_CATEGORIES,
   NOTIFICATION_EVENT_CATALOG,
-  getNotificationEvent,
-  resolveLegacyNotificationEvent,
+  resolveAvailableNotificationEvent,
+  resolveNotificationRecordEvent,
   type NotificationCategory,
   type NotificationEventKey,
+  type AvailableNotificationEventKey,
 } from "./notification-catalog";
 import {
   normalizeNotificationPrefs,
@@ -17,13 +18,19 @@ export const LEGACY_NOTIFICATION_EVENTS = NOTIFICATION_EVENT_CATALOG.filter(
   (event) => event.availability === "legacy",
 );
 export type LegacyNotificationEventKey = Extract<NotificationEventKey, `legacy.${string}`>;
-const CHANNELS = ["inapp", "email", "sound", "shake"] as const;
+export const AVAILABLE_NOTIFICATION_EVENTS = NOTIFICATION_EVENT_CATALOG.filter(
+  (event) => event.availability !== "planned",
+);
+export type AvailableEventKey = AvailableNotificationEventKey;
+export type WorkspaceNotificationChannels = NotificationChannels & { whatsapp?: boolean };
+const CHANNELS = ["inapp", "email", "sound", "shake", "whatsapp"] as const;
 const channelSchema = z
   .object({
     inapp: z.boolean().optional(),
     email: z.boolean().optional(),
     sound: z.boolean().optional(),
     shake: z.boolean().optional(),
+    whatsapp: z.boolean().optional(),
   })
   .strict();
 const channelPatchSchema = z
@@ -32,23 +39,24 @@ const channelPatchSchema = z
     email: z.boolean().nullable().optional(),
     sound: z.boolean().nullable().optional(),
     shake: z.boolean().nullable().optional(),
+    whatsapp: z.boolean().nullable().optional(),
   })
   .strict();
 const categoryShape = Object.fromEntries(
   NOTIFICATION_CATEGORIES.map(({ key }) => [key, channelSchema.optional()]),
 ) as Record<NotificationCategory, z.ZodOptional<typeof channelSchema>>;
 const eventShape = Object.fromEntries(
-  LEGACY_NOTIFICATION_EVENTS.map(({ eventKey }) => [eventKey, channelSchema.optional()]),
-) as Record<LegacyNotificationEventKey, z.ZodOptional<typeof channelSchema>>;
+  AVAILABLE_NOTIFICATION_EVENTS.map(({ eventKey }) => [eventKey, channelSchema.optional()]),
+) as Record<AvailableEventKey, z.ZodOptional<typeof channelSchema>>;
 const categoryPatchShape = Object.fromEntries(
   NOTIFICATION_CATEGORIES.map(({ key }) => [key, channelPatchSchema.nullable().optional()]),
 ) as Record<NotificationCategory, z.ZodOptional<z.ZodNullable<typeof channelPatchSchema>>>;
 const eventPatchShape = Object.fromEntries(
-  LEGACY_NOTIFICATION_EVENTS.map(({ eventKey }) => [
+  AVAILABLE_NOTIFICATION_EVENTS.map(({ eventKey }) => [
     eventKey,
     channelPatchSchema.nullable().optional(),
   ]),
-) as Record<LegacyNotificationEventKey, z.ZodOptional<z.ZodNullable<typeof channelPatchSchema>>>;
+) as Record<AvailableEventKey, z.ZodOptional<z.ZodNullable<typeof channelPatchSchema>>>;
 
 export function validNotificationTimeZone(value: string): boolean {
   try {
@@ -97,6 +105,7 @@ export const DEFAULT_CENTER_SETTINGS: CenterSettings = {
   summary: "none",
 };
 const silent: NotificationChannels = { inapp: false, email: false, sound: false, shake: false };
+const workspaceSilent = { ...silent, whatsapp: false };
 const record = (value: unknown): Record<string, unknown> | null =>
   value !== null && typeof value === "object" && !Array.isArray(value)
     ? (value as Record<string, unknown>)
@@ -109,24 +118,24 @@ export function normalizeCenterSettings(raw: unknown): CenterSettings {
   const stored = record(raw);
   if (!stored) {
     settings.categories = Object.fromEntries(
-      NOTIFICATION_CATEGORIES.map(({ key }) => [key, { ...silent }]),
+      NOTIFICATION_CATEGORIES.map(({ key }) => [key, { ...workspaceSilent }]),
     );
     return settings;
   }
   let malformed = false;
   const overlay = (value: unknown, keys: readonly string[]) => {
-    const result: Record<string, Partial<NotificationChannels>> = {};
+    const result: Record<string, Partial<WorkspaceNotificationChannels>> = {};
     const groups = record(value);
     if (value !== undefined && !groups) {
       malformed = true;
-      return Object.fromEntries(keys.map((key) => [key, { ...silent }]));
+      return Object.fromEntries(keys.map((key) => [key, { ...workspaceSilent }]));
     }
     for (const key of keys) {
       if (!groups || !Object.hasOwn(groups, key)) continue;
       const channels = record(groups[key]);
       if (!channels) {
         malformed = true;
-        result[key] = { ...silent };
+        result[key] = { ...workspaceSilent };
         continue;
       }
       result[key] = Object.fromEntries(
@@ -144,7 +153,7 @@ export function normalizeCenterSettings(raw: unknown): CenterSettings {
   );
   settings.eventOverrides = overlay(
     stored.eventOverrides,
-    LEGACY_NOTIFICATION_EVENTS.map(({ eventKey }) => eventKey),
+    AVAILABLE_NOTIFICATION_EVENTS.map(({ eventKey }) => eventKey),
   );
   if (stored.quiet !== undefined) {
     const rawQuiet = record(stored.quiet);
@@ -165,7 +174,7 @@ export function normalizeCenterSettings(raw: unknown): CenterSettings {
     settings.summary = stored.summary as CenterSettings["summary"];
   if (malformed) {
     settings.categories = Object.fromEntries(
-      NOTIFICATION_CATEGORIES.map(({ key }) => [key, { ...silent }]),
+      NOTIFICATION_CATEGORIES.map(({ key }) => [key, { ...workspaceSilent }]),
     );
     settings.eventOverrides = {};
   }
@@ -208,8 +217,8 @@ export function diffCenterSettings(
   for (const section of ["categories", "eventOverrides"] as const) {
     const changes: Record<string, Record<string, boolean | null> | null> = {};
     for (const key of new Set([...Object.keys(before[section]), ...Object.keys(after[section])])) {
-      const old = (before[section] as Record<string, Partial<NotificationChannels>>)[key];
-      const next = (after[section] as Record<string, Partial<NotificationChannels>>)[key];
+      const old = (before[section] as Record<string, Partial<WorkspaceNotificationChannels>>)[key];
+      const next = (after[section] as Record<string, Partial<WorkspaceNotificationChannels>>)[key];
       if (!next && old) {
         changes[key] = null;
         continue;
@@ -232,16 +241,36 @@ export function effectiveChannels(
   settings: CenterSettings,
   notification: string | { type?: string | null; eventKey?: string | null },
 ): NotificationChannels {
-  const key =
-    typeof notification === "string" ? notification : (notification.eventKey ?? notification.type);
-  const event = getNotificationEvent(key) ?? resolveLegacyNotificationEvent(key);
-  if (!event || event.availability !== "legacy") return { ...silent };
+  const event =
+    typeof notification === "string"
+      ? resolveAvailableNotificationEvent(notification)
+      : resolveNotificationRecordEvent(notification);
+  if (!event) return { ...silent };
   const base = normalizeNotificationPrefs(basePrefs)[event.category];
-  return {
+  const effective = {
     ...base,
+    ...(event.availability === "active" ? { sound: false, shake: false } : {}),
     ...settings.categories[event.category],
-    ...settings.eventOverrides[event.eventKey as LegacyNotificationEventKey],
+    ...settings.eventOverrides[event.eventKey as AvailableEventKey],
   };
+  return {
+    inapp: effective.inapp,
+    email: effective.email,
+    sound: effective.sound,
+    shake: effective.shake,
+  };
+}
+
+/** Undefined inherits personal consent; true is a preference only, never proof of eligibility. */
+export function effectiveWhatsAppPreference(
+  settings: CenterSettings,
+  eventKey: AvailableEventKey,
+): boolean | undefined {
+  const event = resolveAvailableNotificationEvent(eventKey);
+  if (!event) return false;
+  return (
+    settings.eventOverrides[eventKey]?.whatsapp ?? settings.categories[event.category]?.whatsapp
+  );
 }
 
 /** Repeated DST hours are both quiet; nonexistent civil times never represent an instant. */

@@ -13,15 +13,17 @@ import {
 } from "@/components/ui/select";
 import { ACTIVITY_TIME_OPTIONS } from "@/lib/activity-date-time";
 import { NOTIFICATION_CATEGORIES, type NotificationCategory } from "@/lib/notification-catalog";
-import type { NotificationChannels, NotificationPrefs } from "@/lib/notification-preferences";
+import type { NotificationPrefs } from "@/lib/notification-preferences";
 import {
-  LEGACY_NOTIFICATION_EVENTS,
+  AVAILABLE_NOTIFICATION_EVENTS,
   centerSettingsSchema,
   diffCenterSettings,
   effectiveChannels,
+  effectiveWhatsAppPreference,
   type CenterSettings,
   type CenterSettingsPatch,
-  type LegacyNotificationEventKey,
+  type AvailableEventKey,
+  type WorkspaceNotificationChannels,
 } from "@/lib/notification-center-preferences";
 
 type Props = {
@@ -35,6 +37,7 @@ const CHANNELS = [
   { key: "email", label: "E-mail" },
   { key: "sound", label: "Som" },
   { key: "shake", label: "Tremor" },
+  { key: "whatsapp", label: "WhatsApp oficial" },
 ] as const;
 const inherited = (value: boolean | undefined) => (value === undefined ? "inherit" : String(value));
 
@@ -42,10 +45,12 @@ function PreferenceChoice({
   label,
   value,
   onChange,
+  whatsapp = false,
 }: {
   label: string;
   value: boolean | undefined;
   onChange: (value: boolean | undefined) => void;
+  whatsapp?: boolean;
 }) {
   return (
     <Select
@@ -56,9 +61,13 @@ function PreferenceChoice({
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="inherit">Herdar</SelectItem>
-        <SelectItem value="true">Ativado</SelectItem>
-        <SelectItem value="false">Desativado</SelectItem>
+        <SelectItem value="inherit">
+          {whatsapp ? "Herdar autorização pessoal" : "Herdar"}
+        </SelectItem>
+        <SelectItem value="true">{whatsapp ? "Permitir pela preferência" : "Ativado"}</SelectItem>
+        <SelectItem value="false">
+          {whatsapp ? "Bloquear pela preferência" : "Desativado"}
+        </SelectItem>
       </SelectContent>
     </Select>
   );
@@ -104,7 +113,7 @@ export function NotificationPreferencesPanel({ legacyPrefs, settings, revision, 
     draft: structuredClone(settings),
     revision,
   }));
-  const [eventKey, setEventKey] = useState<LegacyNotificationEventKey>("legacy.mention");
+  const [eventKey, setEventKey] = useState<AvailableEventKey>("legacy.mention");
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -129,10 +138,10 @@ export function NotificationPreferencesPanel({ legacyPrefs, settings, revision, 
   const setChannel = (
     section: "categories" | "eventOverrides",
     key: string,
-    channel: keyof NotificationChannels,
+    channel: keyof WorkspaceNotificationChannels,
     value: boolean | undefined,
   ) => {
-    const groups = { ...draft[section] } as Record<string, Partial<NotificationChannels>>;
+    const groups = { ...draft[section] } as Record<string, Partial<WorkspaceNotificationChannels>>;
     const channels = { ...groups[key] };
     if (value === undefined) delete channels[channel];
     else channels[channel] = value;
@@ -145,8 +154,9 @@ export function NotificationPreferencesPanel({ legacyPrefs, settings, revision, 
     delete categories[category];
     edit({ ...draft, categories });
   };
-  const selectedEvent = LEGACY_NOTIFICATION_EVENTS.find((event) => event.eventKey === eventKey)!;
+  const selectedEvent = AVAILABLE_NOTIFICATION_EVENTS.find((event) => event.eventKey === eventKey)!;
   const effective = effectiveChannels(legacyPrefs, draft, eventKey);
+  const whatsappPreference = effectiveWhatsAppPreference(draft, eventKey);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     const valid = centerSettingsSchema.safeParse(draft);
@@ -186,7 +196,7 @@ export function NotificationPreferencesPanel({ legacyPrefs, settings, revision, 
       <fieldset disabled={pending} className="min-w-0 max-w-full space-y-4">
         <legend className="mb-3 font-medium">Grupos de avisos</legend>
         <div className="relative min-w-0 max-w-full overflow-x-auto">
-          <table className="w-full min-w-[700px] text-sm">
+          <table className="w-full min-w-[820px] text-sm">
             <thead>
               <tr className="border-b text-left">
                 <th className="pb-3 font-medium">Grupo</th>
@@ -211,6 +221,7 @@ export function NotificationPreferencesPanel({ legacyPrefs, settings, revision, 
                     <td className="px-2 py-3" key={channel.key}>
                       <PreferenceChoice
                         label={`${category.label}: ${channel.label}`}
+                        whatsapp={channel.key === "whatsapp"}
                         value={draft.categories[category.key]?.[channel.key]}
                         onChange={(value) =>
                           setChannel("categories", category.key, channel.key, value)
@@ -238,7 +249,9 @@ export function NotificationPreferencesPanel({ legacyPrefs, settings, revision, 
         <p className="text-xs text-muted-foreground">
           Desativar “No app” suprime novos avisos nesse canal e silencia as interrupções do sino.
           E-mail possui uma escolha própria. O histórico é preservado e produtores legados ainda
-          podem possuir regras independentes.
+          podem possuir regras independentes. WhatsApp oficial pode ser bloqueado por grupo ou
+          evento; permitir pela preferência não substitui a sua autorização pessoal, a política ou a
+          configuração da regra.
         </p>
       </fieldset>
 
@@ -248,32 +261,41 @@ export function NotificationPreferencesPanel({ legacyPrefs, settings, revision, 
           A escolha do evento prevalece sobre o grupo neste workspace. O catálogo não ativa eventos
           novos.
         </p>
-        <Select
-          value={eventKey}
-          onValueChange={(value) => setEventKey(value as LegacyNotificationEventKey)}
-        >
+        <Select value={eventKey} onValueChange={(value) => setEventKey(value as AvailableEventKey)}>
           <SelectTrigger aria-label="Evento da preferência">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {LEGACY_NOTIFICATION_EVENTS.map((event) => (
+            {AVAILABLE_NOTIFICATION_EVENTS.map((event) => (
               <SelectItem key={event.eventKey} value={event.eventKey}>
                 {event.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <div className="grid gap-4 sm:grid-cols-4">
+        <p className="text-xs text-muted-foreground">
+          Eventos comerciais e contratuais dependem de uma regra publicada e ativa. Apenas escolher
+          uma preferência não cria avisos. Som e tremor desses eventos começam desligados; uma
+          escolha explícita no grupo ou evento deste workspace pode habilitá-los.
+        </p>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           {CHANNELS.map((channel) => (
             <div className="space-y-2" key={channel.key}>
               <Label>{channel.label}</Label>
               <PreferenceChoice
                 label={`${selectedEvent.label}: ${channel.label}`}
+                whatsapp={channel.key === "whatsapp"}
                 value={draft.eventOverrides[eventKey]?.[channel.key]}
                 onChange={(value) => setChannel("eventOverrides", eventKey, channel.key, value)}
               />
               <p className="text-xs text-muted-foreground">
-                Efetivo: {effective[channel.key] ? "ativado" : "desativado"}
+                {channel.key === "whatsapp"
+                  ? whatsappPreference === false
+                    ? "Preferência: bloquear este canal."
+                    : whatsappPreference === true
+                      ? "Preferência: permitir; autorização pessoal e demais condições ainda exigidas."
+                      : "Preferência: herdar autorização pessoal e demais condições do canal."
+                  : `Efetivo: ${effective[channel.key] ? "ativado" : "desativado"}`}
               </p>
             </div>
           ))}

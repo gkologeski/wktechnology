@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
   NOTIFICATION_CATEGORIES,
-  resolveLegacyNotificationEvent,
+  resolveNotificationRecordEvent,
   type NotificationCategory,
 } from "./notification-catalog";
 
@@ -118,14 +118,24 @@ export function notificationPrefsDiff(
 
 export type NotificationInterruption = { toast: boolean; sound: boolean; shake: boolean };
 export function notificationInterruption(
-  notification: { type?: string | null; entity?: string | null; link?: string | null },
+  notification: {
+    type?: string | null;
+    eventKey?: string | null;
+    entity?: string | null;
+    link?: string | null;
+  },
   prefs: NotificationPrefs | null,
   pathname: string,
+  effective?: NotificationChannels,
 ): NotificationInterruption {
-  const event = resolveLegacyNotificationEvent(notification.type);
+  const event = resolveNotificationRecordEvent(notification);
   // No interruption before the current user's preferences load, or for an unknown producer.
   if (!prefs || !event) return { toast: false, sound: false, shake: false };
-  const channel = prefs[event.category];
+  const channel =
+    effective ??
+    (event.availability === "active"
+      ? { ...prefs[event.category], sound: false, shake: false }
+      : prefs[event.category]);
   const inboxMessage =
     notification.type === "message" &&
     (notification.entity === "inbox_conversation" ||

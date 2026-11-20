@@ -6,7 +6,7 @@ import { assertSalesArea, assertSalesRecord } from "@/lib/access-control/sales-c
 import { assertNotificationWorkspace } from "@/lib/notification-center";
 import { SaveSchema } from "@/lib/workflows/schemas";
 import { deliveryWorkspaceInput } from "./delivery-api";
-import { inspectNotificationActions } from "./delivery-rule-preview";
+import { inspectNotificationActions, inspectNotificationTrigger } from "./delivery-rule-preview";
 import {
   notificationDeliveryPolicySchema,
   notificationSlackSettingsSchema,
@@ -107,5 +107,9 @@ export const previewNotificationWorkflow = createServerFn({ method: "POST" })
           }),
         ).policy
       : null;
-    return inspectNotificationActions(parsed.data.actions, policy, slackPolicy);
+    const preview = inspectNotificationActions(parsed.data.actions, policy, slackPolicy);
+    return {
+      ...preview,
+      issues: [...inspectNotificationTrigger(parsed.data.trigger), ...preview.issues],
+    };
   });

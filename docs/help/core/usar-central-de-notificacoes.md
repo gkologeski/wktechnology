@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 147
-version: 5
+version: 6
 is_published: true
 ---
 
@@ -88,7 +88,7 @@ Na central, as abas **Regras**, **Modelos e canais** e **Entregas** ampliam o ac
 
 ### Criar uma regra sem duplicar o motor de automações
 
-1. Abra **Regras** e crie ou edite o Workflow autorizado. As regras exibidas são os Workflows que possuem a ação **Enviar notificação** ou **Enviar mensagem no Slack**; não há uma segunda automação paralela.
+1. Abra **Regras**. Em **Evento da nova regra**, escolha uma opção de TechSales ou TechContracts, ou mantenha **Regra genérica de Workflow**, e clique em **Criar regra**. O rascunho abre no construtor existente. As regras exibidas são os Workflows que possuem a ação **Enviar notificação** ou **Enviar mensagem no Slack**; não há uma segunda automação paralela.
 2. Configure o gatilho, os destinatários e os canais. Uma ação antiga sem seleção explícita mantém somente **No app**.
 3. E-mail e WhatsApp são opcionais. **E-mail se o WhatsApp falhar** exige WhatsApp primário sem e-mail em paralelo. A alternativa só é permitida em falhas definitivas ou supressões elegíveis, com preferência e permissão próprias; um resultado incerto não gera outro envio.
 4. Salve o rascunho e use **Conferir configuração sem enviar**, quando disponível. A conferência é estrutural: não envia mensagens, não comprova elegibilidade dos destinatários e não ativa o rascunho.
@@ -143,3 +143,32 @@ A prévia de WhatsApp resolve os mesmos valores do transporte e mostra os compon
 Alterar o telefone do perfil por qualquer caminho revoga as autorizações antigas. Recibos assinados corretamente correlacionados podem atualizar **Entregue/Lido** sem depender da projeção na Inbox e após desativação do remetente. Isso não cria outro envio nem ativa conversas novas.
 
 Prazos de espera valem para a conexão, também entre avisos diferentes. Restrições de reputação ou limites sem prazo seguro podem desligar o canal; a reativação exige revisão na Meta e ação administrativa explícita. Consulte o [passo a passo de WhatsApp oficial](/ajuda/core/configurar-notificacoes-no-whatsapp).
+
+## Avisos de TechSales e TechContracts
+
+Os eventos abaixo estão disponíveis para configurar uma regra. A disponibilidade no catálogo não cria uma regra, não publica um Workflow nem habilita canais. Criar, salvar o rascunho, publicar e ativar continuam ações distintas, com as permissões de Workflows e de cada ação. As regras existentes permanecem com sua configuração.
+
+| Evento | Quando pode gerar uma ocorrência |
+|---|---|
+| Negócio ganho | O negócio entra em uma etapa de ganho do funil. |
+| Negócio perdido | O negócio entra em uma etapa de perda do funil. |
+| Etapa do negócio alterada | Outras mudanças de etapa, incluindo reabertura. Uma entrada em ganho ou perda é classificada pelo evento específico, sem gerar também este evento para a mesma transição. |
+| Proposta aceita | O cliente aceita uma proposta válida enviada. Aprovação interna não é aceite do cliente. |
+| Minuta aceita | O cliente confirma o aceite real da minuta enviada e vinculada ao negócio. A dispensa administrativa de aceite não emite esse evento. O destino conserva o contexto comercial e as permissões da origem. |
+| Assinatura concluída | Existe confirmação válida de conclusão da assinatura da versão atual do contrato. Status Ativo ou data de assinatura preenchida, isoladamente, não comprovam esse evento. |
+| Contrato próximo do vencimento | O contrato entra na janela anterior à data de término da vigência. |
+| Prazo de aviso de renovação próximo | Um contrato com renovação automática e aviso prévio válido entra na janela anterior ao prazo de aviso de renovação. |
+
+### Configurar um aviso de prazo
+
+1. Escolha o evento de contrato e crie o rascunho. No construtor, abra **Gatilho de entrada** e confira **Evento de negócio**.
+2. Em **Antecedência em dias**, informe de 1 a 365. O rascunho começa com 30 dias; revise esse valor antes de salvar.
+3. Para vencimento, o prazo é o **Fim da vigência**. Para renovação, o prazo de aviso é **Fim da vigência menos Aviso prévio (dias)**; exige **Renovação automática** e aviso prévio válido no contrato.
+4. A janela começa na antecedência escolhida e termina no próprio prazo, incluindo os limites. Prazos já vencidos ou dados ausentes/inválidos não geram o aviso. Alterar a preferência não corrige os dados do contrato.
+5. Confira condições, destinatários e canais. Salve, revise a conferência sem envio e publique/ative somente quando desejar. O aviso não renova, encerra, assina ou altera o contrato.
+
+Em **Preferências > Exceção por evento**, os oito eventos podem ter escolhas próprias de No app, e-mail, som e tremor. No app e e-mail herdam o grupo, salvo escolha explícita. **Som e tremor dos eventos comerciais e contratuais começam desligados**, mesmo quando um padrão global antigo do grupo possui som; para habilitá-los, faça uma escolha explícita no grupo ou evento deste workspace. Os grupos e eventos legados preservam seu comportamento.
+
+**WhatsApp oficial** possui uma preferência opcional por grupo ou evento. **Bloquear pela preferência** interrompe esse canal mesmo com autorização pessoal vigente. **Herdar autorização pessoal** restaura a herança; **Permitir pela preferência** não concede consentimento nem supera política, regra, acesso ou limites. Essa escolha pertence ao workspace e não altera os canais globais antigos do perfil. Consulte [Configurar avisos oficiais por WhatsApp](/ajuda/core/configurar-notificacoes-no-whatsapp) para cancelar um evento ou revogar toda a autorização pessoal.
+
+Se não houver aviso, confira se a regra está publicada e ativa, se houve uma ocorrência elegível, se o prazo está na janela e se o destinatário permanece ativo e com acesso à origem. Consulte o resultado do Workflow e o histórico de entregas. O sistema não dispara todo o histórico ao cadastrar uma preferência, não escolhe um destinatário alternativo e não recria tarefas ou decisões de aprovações existentes.

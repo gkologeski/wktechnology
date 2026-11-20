@@ -23,6 +23,12 @@ import {
 } from "@/lib/workflows/types";
 import { NotificationRulesList } from "./notification-rules-list";
 import type { WorkflowDraft } from "@/components/workflows/workflow-builder";
+import {
+  WORKFLOW_NOTIFICATION_EVENTS,
+  getWorkflowNotificationEvent,
+  workflowNotificationEventTrigger,
+  type WorkflowNotificationEventKey,
+} from "@/lib/workflows/notification-events";
 
 const Builder = lazy(() =>
   import("@/components/workflows/workflow-builder").then((module) => ({
@@ -55,11 +61,15 @@ const workflowDraft = (row: NotificationWorkflowRuleRow): WorkflowDraft => ({
   },
   actions: row.draft_actions ?? row.actions,
 });
-const newDraft = (): WorkflowDraft => ({
-  name: "Nova regra de notificação",
-  entity: "leads",
+const newDraft = (eventKey: WorkflowNotificationEventKey | ""): WorkflowDraft => ({
+  name: eventKey
+    ? `Aviso: ${getWorkflowNotificationEvent(eventKey)!.label}`
+    : "Nova regra de notificação",
+  entity: eventKey ? getWorkflowNotificationEvent(eventKey)!.entity : "leads",
   enabled: false,
-  trigger: { event: "created", filters: [], reenroll: { enabled: false, events: [] } },
+  trigger: eventKey
+    ? workflowNotificationEventTrigger(eventKey)
+    : { event: "created", filters: [], reenroll: { enabled: false, events: [] } },
   actions: [
     {
       type: "send_notification",
@@ -69,7 +79,11 @@ const newDraft = (): WorkflowDraft => ({
   ],
 });
 
-export function NotificationRulesPanel({
+export function NotificationRulesPanel(props: { workspaceId: string; userId: string }) {
+  return <NotificationRulesContext key={`${props.userId}:${props.workspaceId}`} {...props} />;
+}
+
+function NotificationRulesContext({
   workspaceId,
   userId,
 }: {
@@ -95,13 +109,20 @@ export function NotificationRulesPanel({
     queryKey: ["notification-rules", userId, workspaceId],
     queryFn: () => listFn({ data: { workspaceId } }),
     enabled: canView,
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
   });
-  const rows = (q.data?.items ?? []) as unknown as NotificationWorkflowRuleRow[];
+  const rows = (canView && !q.isError && q.isFetchedAfterMount
+    ? (q.data?.items ?? [])
+    : []) as unknown as NotificationWorkflowRuleRow[];
   const capabilities = useSalesCapabilities(
     "workflows",
     rows.map((row) => row.id),
   );
   const [draft, setDraft] = useState<WorkflowDraft | null>(null);
+  const [eventKey, setEventKey] = useState<WorkflowNotificationEventKey | "">("");
   const [pending, setPending] = useState(false),
     [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -128,6 +149,7 @@ export function NotificationRulesPanel({
     await q.refetch();
   };
   const execute = async (task: () => Promise<void>) => {
+    if (!canView || pending || q.isFetching || q.isError || !q.isFetchedAfterMount) return;
     setPending(true);
     setError("");
     setMessage("");
@@ -140,6 +162,23 @@ export function NotificationRulesPanel({
     }
   };
   const save = async (value: WorkflowDraft, publish = false) => {
+    const allowed = value.id ? manager && capabilities.for(value.id).can_update : canCreate;
+    const publishAllowed = value.id
+      ? capabilities.for(value.id).can_manage
+      : permissions.can("system.workflows.manage.workspace");
+    if (
+      !contextReady ||
+      !canView ||
+      !allowed ||
+      pending ||
+      q.isFetching ||
+      q.isError ||
+      !q.isFetchedAfterMount ||
+      (publish && !publishAllowed)
+    )
+      throw new Error(
+        "Confirme suas permissões e aguarde a atualização das regras antes de salvar.",
+      );
     setError("");
     setMessage("");
     try {
@@ -180,21 +219,57 @@ export function NotificationRulesPanel({
           </p>
         </div>
         {canCreate && (
-          <Button
-            onClick={() => {
-              setDraft(newDraft());
-              setError("");
-            }}
-            disabled={pending}
-          >
-            Criar regra
-          </Button>
+          <div className="flex min-w-0 flex-wrap items-end gap-3">
+            <label className="min-w-0 space-y-1 text-sm">
+              <span className="block">Evento da nova regra</span>
+              <select
+                aria-label="Evento da nova regra"
+                className="block h-10 w-full max-w-full rounded-md border border-input bg-background px-3"
+                value={eventKey}
+                disabled={pending || q.isFetching || q.isError || !q.isFetchedAfterMount}
+                onChange={(event) => {
+                  if (
+                    !pending &&
+                    !q.isFetching &&
+                    (!event.target.value || getWorkflowNotificationEvent(event.target.value))
+                  )
+                    setEventKey(event.target.value as WorkflowNotificationEventKey | "");
+                }}
+              >
+                <option value="">Regra genérica de Workflow</option>
+                {[
+                  { prefix: "crm.", label: "TechSales" },
+                  { prefix: "contracts.", label: "TechContracts" },
+                ].map((group) => (
+                  <optgroup key={group.prefix} label={group.label}>
+                    {WORKFLOW_NOTIFICATION_EVENTS.filter((event) =>
+                      event.key.startsWith(group.prefix),
+                    ).map((event) => (
+                      <option key={event.key} value={event.key}>
+                        {event.label}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+            <Button
+              onClick={() => {
+                setDraft(newDraft(eventKey));
+                setError("");
+                setPreview(null);
+              }}
+              disabled={pending || q.isFetching || q.isError || !q.isFetchedAfterMount}
+            >
+              Criar regra
+            </Button>
+          </div>
         )}
       </div>
       <p className="text-xs text-muted-foreground">
-        Uma regra nova começa desativada. O catálogo de eventos planejados não cria gatilhos. O
-        editor permite combinar condições, destinatários e canais sem criar outro motor de
-        automação.
+        Uma regra nova começa desativada e sem envio externo. Escolher um evento abre o rascunho no
+        construtor existente; salvar, publicar e ativar continuam ações distintas. Os demais eventos
+        planejados do catálogo não criam gatilhos.
       </p>
       {error && (
         <p role="alert" className="text-sm text-destructive">
@@ -213,7 +288,7 @@ export function NotificationRulesPanel({
             Tentar carregar regras novamente
           </Button>
         </div>
-      ) : q.isLoading ? (
+      ) : q.isLoading || !q.isFetchedAfterMount ? (
         <p role="status">Carregando regras…</p>
       ) : !rows.length ? (
         <p className="py-6 text-sm text-muted-foreground">
@@ -226,7 +301,7 @@ export function NotificationRulesPanel({
           capabilityFor={capabilities.for}
           manager={manager}
           readOnly={readOnly}
-          pending={pending}
+          pending={pending || q.isFetching}
           onAction={(kind, row, enabled) => {
             if (kind === "edit") {
               setDraft(workflowDraft(row));
@@ -277,7 +352,7 @@ export function NotificationRulesPanel({
           automações.
         </p>
       )}
-      {preview && (
+      {preview && !q.isError && q.isFetchedAfterMount && (
         <aside
           className="space-y-2 rounded-lg bg-muted/30 p-4"
           aria-label="Conferência da configuração"
@@ -307,7 +382,7 @@ export function NotificationRulesPanel({
           </Button>
         </aside>
       )}
-      {draft && (
+      {draft && !q.isError && q.isFetchedAfterMount && (
         <Suspense fallback={<p role="status">Carregando construtor de Workflow…</p>}>
           <Builder
             open

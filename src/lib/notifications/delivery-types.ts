@@ -143,6 +143,7 @@ export type NotificationDeliveryConsent = {
 };
 export type NotificationDeliveryHistoryItem = {
   id: string;
+  eventKey?: string | null;
   channel: "inapp" | "email" | "whatsapp" | "slack";
   status: string;
   reason_code: string | null;

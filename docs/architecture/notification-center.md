@@ -128,3 +128,9 @@ aviso neutro, ligado à origem real; abrir a origem não decide nem substitui a 
 Aliases canônicos de vaga, minutas e revisão SDR usam suas políticas atuais, incluindo
 permissões e nomeações próprias, sem presumir acesso ao contrato pai ou à configuração
 do Workflow. Avisos de plataforma sem origem comprovada permanecem no histórico neutro.
+
+## Evolução no pacote 8
+
+Os oito eventos canônicos comerciais e contratuais disponíveis para regras explícitas mantêm `notifications.type='workflow'`, com `eventKey` proveniente do vínculo privado comprovado. As RPCs de listagem e lookup preservam essa identidade para os metadados, preferências e interrupções. A chave canônica de minuta mantém módulo TechContracts mesmo quando usa o negócio vinculado como origem autorizada. Ausência histórica do campo preserva o alias legado; chave explícita inválida não recebe fallback ruidoso.
+
+Som e tremor desses eventos começam desligados, com habilitação somente por escolha explícita na categoria ou evento do workspace. No app/e-mail herdam o grupo. O catálogo mantém os demais eventos planejados indisponíveis; uma preferência ou um preset não publica nem ativa Workflow. A configuração continua no construtor existente, com rascunho inicialmente desativado.

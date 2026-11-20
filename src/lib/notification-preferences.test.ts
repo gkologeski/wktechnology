@@ -22,6 +22,12 @@ const LEGACY_DEFAULTS = {
 };
 
 describe("preferências de notificação compatíveis", () => {
+  it("does not add workspace-only WhatsApp choices to legacy global profile settings", () => {
+    expect(notificationPrefsPatchSchema.safeParse({ task: { whatsapp: false } }).success).toBe(
+      false,
+    );
+    expect(Object.hasOwn(normalizeNotificationPrefs(null).task, "whatsapp")).toBe(false);
+  });
   it("preserva os sete padrões legados e adiciona seis grupos silenciosos", () => {
     const prefs = normalizeNotificationPrefs(null);
     expect(prefs).toEqual({
@@ -237,6 +243,31 @@ describe("diferença de preferências para salvamento parcial", () => {
 });
 
 describe("interrupções do sino por evento e preferência", () => {
+  it("keeps a canonical record quiet by default and permits only explicit effective workspace sounds", () => {
+    const row = { type: "workflow", eventKey: "contracts.contract.expiring" };
+    const prefs = normalizeNotificationPrefs({ task: { sound: true, shake: true } });
+    expect(notificationInterruption(row, prefs, "/contracts")).toEqual({
+      toast: true,
+      sound: false,
+      shake: false,
+    });
+    expect(
+      notificationInterruption(row, prefs, "/contracts", {
+        inapp: true,
+        email: false,
+        sound: true,
+        shake: false,
+      }),
+    ).toEqual({ toast: true, sound: true, shake: false });
+    expect(
+      notificationInterruption(
+        { ...row, eventKey: "projects.project.started" },
+        prefs,
+        "/contracts",
+        { inapp: true, email: false, sound: true, shake: true },
+      ),
+    ).toEqual(SILENT);
+  });
   it.each(["sla.first_response_breach", "sla.resolution_breach", "sla.at_risk"])(
     "aplica a preferência de SLA ao alias exato %s",
     (type) => {

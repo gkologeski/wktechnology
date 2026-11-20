@@ -14,6 +14,7 @@ O catálogo fica em `src/lib/notification-catalog.ts`. As preferências e a deci
 - `moduleKey` identifica o módulo de um evento planejado. Para aliases legados permanece `null`, pois um mesmo tipo pode atender mais de um módulo.
 - `availability: legacy` significa que há um adaptador de leitura compatível. Não comprova que existe um produtor ativo de cada alias em produção.
 - `availability: planned` reserva um contrato para pacotes posteriores. Não cria produtor, regra, assinatura, agendamento ou canal habilitado.
+- Após o pacote 8, `availability: active` identifica oito eventos comerciais e contratuais com integração disponível para regras explícitas. Não significa Workflow publicado, regra ativa, preferência ligada ou canal autorizado. Os 22 aliases `legacy` permanecem iguais.
 
 O resolvedor usa aliases exatos em `Map`. Não usa prefixos genéricos como `sla.*`, propriedades herdadas, títulos, corpo, links ou IDs para inventar a semântica de um registro. Tipo desconhecido resolve para `null` e permanece no histórico.
 
@@ -50,9 +51,9 @@ Sobreposições preservadas:
 
 O tipo `hiring_approval` e sua chave de deduplicação não podem ser renomeados no adaptador: o gatilho legado que alimenta `hiring_email_outbox` depende de `type='hiring_approval'` e de `dedupe_key` iniciado por `hiring:`.
 
-## Eventos planejados
+## Eventos canônicos e disponibilidade
 
-Há 27 entradas canônicas planejadas: 23 dos seis módulos e quatro compartilhadas. São metadados para desenvolvimento posterior, sem emissão habilitada por este pacote.
+O pacote 1 reservou 27 entradas canônicas: 23 dos seis módulos e quatro compartilhadas. O pacote 8 torna disponíveis somente as oito entradas TechSales/TechContracts; as outras 19 permanecem planejadas. Nenhuma entrada cria ou ativa uma regra automaticamente.
 
 | Módulo                      | Chaves planejadas                                                                                                                    |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
@@ -65,6 +66,20 @@ Há 27 entradas canônicas planejadas: 23 dos seis módulos e quatro compartilha
 | Compartilhados              | `shared.approval.pending`, `shared.sla.breached`, `shared.message.received`, `shared.mention.created`                                |
 
 Uma futura integração deve fornecer a chave canônica a partir do produtor autorizado, em vez de deduzi-la de um aviso antigo.
+
+### Integração do pacote 8
+
+As oito chaves `crm.*` e `contracts.*` da tabela são operacionais para regras explícitas do motor Workflows. A seleção fica em `trigger.notification_event`; a UI abre somente um rascunho desativado. A ocorrência canônica é comprovada no banco, sem reinterpretar rótulos, títulos, links ou um status genérico. Ganho/perda têm prioridade sobre outras mudanças de etapa; uma transição recebe uma única classificação canônica.
+
+`notifications.type` preserva o tipo legado `workflow`. As RPCs de listagem/lookup fornecem `eventKey` pela proveniência privada da ocorrência. O parser mantém esse campo e `withNotificationEvent` lhe dá precedência. Campo explícito inválido, desconhecido ou ainda planejado produz metadados nulos e não herda interrupções de um alias legado. Quando o campo é omitido em um registro antigo, a resolução legada permanece compatível. `contracts.draft.accepted` pertence a TechContracts mesmo quando a origem autorizada é o negócio vinculado.
+
+`LEGACY_NOTIFICATION_EVENTS` continua com 22 entradas. `AVAILABLE_NOTIFICATION_EVENTS` e `AvailableEventKey` abrangem essas entradas e os oito eventos operacionais; apenas essa lista pode receber overrides do cliente. Os demais campos futuros salvos continuam preservados no banco, sem serem expostos ou editáveis.
+
+Para os oito eventos, No app/e-mail partem da preferência do grupo. Som/tremor começam desligados e só podem ser ligados por escolha explícita no grupo ou evento do workspace; isso evita herdar defaults sonoros de tipos legados como `task`. O sino resolve o mesmo `eventKey` da consulta autenticada e aplica o overlay atual depois de conferir a origem. Payload de realtime continua fornecendo somente IDs; jamais autoriza interrupção por conteúdo bruto.
+
+O overlay do workspace também admite `whatsapp?: boolean` em categoria/evento, sem acrescentar esse canal aos defaults ou à edição global de `profiles.notification_preferences`. Ausência/null restaura herança; `false` bloqueia o canal; `true` é somente preferência e não supera consentimento, política, regra ou autorização. `effectiveChannels` e a interrupção do sino continuam retornando somente os quatro canais anteriores. A apresentação de WhatsApp usa uma resolução separada, sem alegar elegibilidade ou transmissão real.
+
+Vencimento usa `ends_at`; renovação exige `auto_renew` e `notice_days` válidos, com prazo `ends_at − notice_days`. A antecedência é explícita, de 1 a 365 dias; 30 é apenas o valor inicial editável do rascunho. A janela vai de prazo menos antecedência até o prazo, inclusivamente; não inclui prazos vencidos nem renova o contrato. Assinatura concluída exige prova válida da versão atual; o preset histórico baseado em `signed_at` permanece separado.
 
 ## Preferências e gravação compatível
 

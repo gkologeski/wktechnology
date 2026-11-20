@@ -10,7 +10,7 @@ import {
   type NotificationInterruption,
   type NotificationPrefs,
 } from "./notification-preferences";
-import { resolveLegacyNotificationEvent } from "./notification-catalog";
+import { resolveNotificationRecordEvent } from "./notification-catalog";
 
 const notificationId = z.string().uuid();
 export const NOTIFICATION_BELL_MAX_PAGES = 3;
@@ -75,7 +75,10 @@ export function createNotificationRealtimeBatcher(options: Options) {
       // Refetch errors remain visible in the query that owns the badge/list.
       if (active()) void Promise.resolve(options.invalidate()).catch(() => undefined);
       if (!ids.length || !active()) return;
-      const notices: Pick<NotificationCenterItem, "id" | "type" | "entity" | "link">[] = [];
+      const notices: Pick<
+        NotificationCenterItem,
+        "id" | "type" | "eventKey" | "entity" | "link"
+      >[] = [];
       const started = performance.now();
       let reference: { at: number; received: number } | null = null;
       for (let offset = 0; offset < ids.length; offset += LOOKUP_BATCH_SIZE) {
@@ -98,6 +101,7 @@ export function createNotificationRealtimeBatcher(options: Options) {
           notices.push({
             id: notice.id,
             type: notice.type,
+            ...(Object.hasOwn(notice, "eventKey") ? { eventKey: notice.eventKey } : {}),
             entity: notice.entity,
             link: notice.link,
           });
@@ -114,17 +118,14 @@ export function createNotificationRealtimeBatcher(options: Options) {
       }
       const flags: NotificationInterruption = { toast: false, sound: false, shake: false };
       for (const notice of notices) {
-        const event = resolveLegacyNotificationEvent(notice.type);
+        const event = resolveNotificationRecordEvent(notice);
         if (!event) continue;
-        const channels = effectiveChannels(
-          preferences.legacyPrefs,
-          preferences.settings,
-          notice.type,
-        );
+        const channels = effectiveChannels(preferences.legacyPrefs, preferences.settings, notice);
         const interruption = notificationInterruption(
           notice,
           { ...preferences.legacyPrefs, [event.category]: channels },
           options.pathname(),
+          channels,
         );
         flags.toast ||= interruption.toast;
         flags.sound ||= interruption.sound;

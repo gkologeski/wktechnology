@@ -7,6 +7,7 @@ import {
 } from "@/lib/notifications/delivery-types";
 import { formatDateTime } from "@/lib/crm";
 import { notificationDeliveryInteractionAllowed } from "@/lib/notification-delivery-interaction";
+import { getNotificationEvent } from "@/lib/notification-catalog";
 
 export type DeliveryFilters = { scope: "own" | "workspace"; status: string; channel: string };
 const STATUS: Record<string, string> = {
@@ -43,6 +44,10 @@ const REASON: Record<string, string> = {
   budget_exceeded: "O orçamento estimado de WhatsApp foi atingido.",
   preferences_disabled: "As preferências pessoais não permitem este canal.",
 };
+function eventLabel(item: NotificationDeliveryHistoryItem) {
+  const event = getNotificationEvent(item.eventKey);
+  return event && event.availability !== "planned" ? event.label : null;
+}
 export function DeliveryHistoryPanel({
   items,
   filters,
@@ -179,7 +184,10 @@ export function DeliveryHistoryPanel({
             <tbody>
               {visibleItems.map((item) => (
                 <tr key={item.id} className="border-b last:border-0">
-                  <td className="p-3 font-mono text-xs">{item.id.slice(0, 8)}</td>
+                  <td className="p-3">
+                    {eventLabel(item) && <p className="text-sm font-medium">{eventLabel(item)}</p>}
+                    <p className="font-mono text-xs">{item.id.slice(0, 8)}</p>
+                  </td>
                   <td className="p-3">
                     {
                       {
@@ -211,6 +219,7 @@ export function DeliveryHistoryPanel({
       {selected && (
         <aside className="space-y-2 rounded-lg bg-muted/30 p-4" aria-label="Detalhe da entrega">
           <h3 className="font-medium">{STATUS[selected.status] ?? "Estado não reconhecido"}</h3>
+          {eventLabel(selected) && <p className="text-sm font-medium">{eventLabel(selected)}</p>}
           <p className="text-sm">
             {REASON[selected.reason_code ?? ""] ??
               (selected.status === "uncertain"

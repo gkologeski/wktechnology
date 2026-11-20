@@ -194,12 +194,51 @@ describe("personal workspace notification settings form", () => {
     await submit();
     expect(save).toHaveBeenCalledExactlyOnceWith({ eventOverrides: { "legacy.message": null } }, 7);
   });
-  it("lists only operational legacy events without promising planned producers", async () => {
+  it("lists operational legacy and module events without promising planned producers", async () => {
     await render();
     const options = [...control("Evento da preferência").options].map((item) => item.value);
     expect(options).toContain("legacy.sla.first_response_breach");
-    expect(options.every((key) => key.startsWith("legacy."))).toBe(true);
-    expect(options).not.toContain("crm.deal.won");
+    expect(options).toContain("crm.deal.won");
+    expect(options).toContain("contracts.contract.renewal_due");
+    expect(options).not.toContain("projects.project.started");
+  });
+  it("saves only an explicit canonical-event sound choice without enabling email or creating a rule", async () => {
+    await render();
+    await choose("Evento da preferência", "contracts.contract.expiring");
+    expect(control("Contrato próximo do vencimento: Som").value).toBe("inherit");
+    await choose("Contrato próximo do vencimento: Som", "true");
+    await submit();
+    expect(save).toHaveBeenCalledExactlyOnceWith(
+      { eventOverrides: { "contracts.contract.expiring": { sound: true } } },
+      7,
+    );
+    expect(host.textContent).toContain("não cria avisos");
+  });
+  it("offers an optional event WhatsApp opt-out without granting consent or changing global channels", async () => {
+    await render();
+    await choose("Evento da preferência", "contracts.contract.expiring");
+    expect(control("Contrato próximo do vencimento: WhatsApp oficial").value).toBe("inherit");
+    await choose("Contrato próximo do vencimento: WhatsApp oficial", "false");
+    expect(host.textContent).toContain("Preferência: bloquear este canal.");
+    await submit();
+    expect(save).toHaveBeenCalledExactlyOnceWith(
+      { eventOverrides: { "contracts.contract.expiring": { whatsapp: false } } },
+      7,
+    );
+    expect(host.textContent).toContain("não substitui a sua autorização pessoal");
+  });
+  it("permits restoring WhatsApp event inheritance without resending untouched channel settings", async () => {
+    current = normalizeCenterSettings({
+      eventOverrides: { "crm.deal.won": { whatsapp: false, sound: false } },
+    });
+    await render();
+    await choose("Evento da preferência", "crm.deal.won");
+    await choose("Negócio ganho: WhatsApp oficial", "inherit");
+    await submit();
+    expect(save).toHaveBeenCalledExactlyOnceWith(
+      { eventOverrides: { "crm.deal.won": { whatsapp: null } } },
+      7,
+    );
   });
   it("saves central grouping separately without queuing an external digest", async () => {
     await render();

@@ -4,9 +4,9 @@ Implementação local sobre 39e47a794. Migração aditiva 0393 depende de 0391 e
 
 ## Motor e compatibilidade
 
-Regras são os próprios Workflows com ação send_notification, incluindo ramificações aninhadas. O editor canônico mantém rascunho/publicação e alçadas. A ação pode receber delivery {channels:[inapp,email,whatsapp],fallback:none|email}. Sem delivery usa a RPC legada e continua inapp-only. A RPC v2 resolve os destinatários e cria intenções/entregas atomicamente, sem passar IDs para inserts privilegiados em TypeScript. Só legacy.workflow está conectado a esta extensão; o catálogo não ativa novos produtores.
+Regras são os próprios Workflows com ação send_notification, incluindo ramificações aninhadas. O editor canônico mantém rascunho/publicação e alçadas. A ação pode receber delivery {channels:[inapp,email,whatsapp],fallback:none|email}. Sem delivery usa a RPC legada e continua inapp-only. A RPC v2 resolve os destinatários e cria intenções/entregas atomicamente, sem passar IDs para inserts privilegiados em TypeScript. A P4 conectou somente legacy.workflow; a P8 acrescenta os oito eventos comprovados de TechSales e TechContracts descritos abaixo. A disponibilidade no catálogo não habilita regras ou canais.
 
-O drain usa o workflows-tick existente, protegido por CRON_SECRET, com limite de 20 jobs. Sem segundo scheduler. Slack continua na integração anterior e não participa dessa extensão. Os resumos diário/semanal continuam agrupamento visual da central, sem digest externo.
+O drain usa o workflows-tick existente, protegido por CRON_SECRET, com limite de 20 jobs. Sem segundo scheduler. A P6 integrou o Slack coletivo ao ledger com seu próprio subtipo protegido; ele não representa entrega pessoal nem segue consentimento individual. Os resumos diário/semanal continuam agrupamento visual da central, sem digest externo.
 
 ## Autorização
 
@@ -37,3 +37,17 @@ Novos canais começam desligados, cotas/orçamento zero. Opt-in não habilita en
 ## Verificação e limites do aceite
 
 Vitest cobre adapters com injeção de dependências, worker, schemas e APIs. PostgreSQL/PostgREST descartáveis usam migrações reais, atores sintéticos e JWT assinado localmente; nenhum banco configurado ou credencial real é usado. Navegador local usa componentes reais com fixtures e tokens White Label. Este aceite não é piloto de produção nem comprovação de recibo real. Após autorização futura de publicação, serão necessários migrações em ordem, permissões revisadas, política/remetente/modelo/consentimentos e piloto real com destinatário autorizado.
+
+## P8: ocorrências de TechSales e TechContracts
+
+A migração 0397 adiciona produtores para ganho, perda, outras mudanças de etapa, aceite comercial de proposta, aceite do cliente da minuta, assinatura comprovada, fim de vigência próximo e prazo de aviso de renovação próximo. Não reinterpreta registros históricos nem usa `signed_at`, contrato ativo ou importação como evidência suficiente de assinatura.
+
+O seletor `trigger.notification_event` usa uma das oito chaves e a entidade correspondente. Eventos de prazo exigem `days_before` explícito de 1 a 365 dias; a interface inicia o rascunho com 30. Não é permitido combinar esse seletor com `time_based`. Regras genéricas continuam com sua semântica anterior e não consomem as linhas especializadas. Regras especializadas operam no workspace e revalidam a permissão do executor para cada registro, sem depender de ele ser o proprietário comercial.
+
+As ocorrências usam `workflow_events`, com evidência privada vinculada à origem e à transição real. A coluna pública de seleção não constitui prova. Retomadas após espera ou aprovação precisam manter o vínculo com a ocorrência, a execução e a versão originais. A RPC de serviço verifica esse vínculo antes da execução; os gateways de notificação o conferem novamente. Sessões autenticadas não podem produzir uma prova válida preenchendo um tipo, título, UUID ou payload.
+
+As fronteiras derivam `eventKey` da prova privada e o transportam ao contexto privado da central e às intenções de entrega. `notifications.type` legado permanece compatível. Preferências, filtros e interrupções usam a identidade explícita, sem inferência por título ou link. Som e tremor dos eventos novos começam desligados e exigem uma escolha explícita nas preferências do workspace. O overlay de preferências do workspace aceita também WhatsApp por categoria/evento: ausência herda a autorização geral, false bloqueia o evento nesse canal e true não supera consentimento, regra ou política. O formato antigo de preferências do perfil e os quatro sinais do sino permanecem inalterados. Claim e preflight revalidam o bloqueio por evento antes de qualquer novo envio.
+
+O tick temporal existente chama o produtor de prazos, limitado e reservado ao serviço. Fim de vigência usa a data de término; renovação usa a data de término menos a antecedência de aviso do contrato, somente quando a renovação automática e o prazo estiverem configurados. A ocorrência só entra na janela entre a antecedência da regra e o prazo: não há varredura retroativa de vencidos. O dia de referência usa America/Sao_Paulo, seguindo o calendário brasileiro da implementação; o fuso de silêncio pessoal não altera as datas do contrato. A central não renova nem encerra o contrato.
+
+Criar uma regra não publica nem ativa o rascunho e não envia mensagens. As tarefas, decisões, encaminhamentos jurídicos/financeiros e assinaturas existentes permanecem sob seus gravadores e alçadas canônicos. Nenhum produtor novo cria uma segunda tarefa ou executa uma decisão em nome do destinatário.

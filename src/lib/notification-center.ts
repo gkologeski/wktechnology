@@ -24,6 +24,7 @@ export type NotificationCenterQuery = z.input<typeof notificationCenterQuerySche
 const rawItemSchema = z.object({
   id: z.string().uuid(),
   type: z.string(),
+  eventKey: z.string().max(100).nullable().optional(),
   moduleKey: z
     .enum(["crm", "ats", "people", "contracts", "finance", "projects"])
     .nullable()

@@ -52,7 +52,7 @@ type EventDefinition = {
   category: NotificationCategory;
   // null is intentional for overloaded/shared legacy types; never guess from title or link.
   moduleKey: NotificationModule | null;
-  availability: "legacy" | "planned";
+  availability: "legacy" | "active" | "planned";
   legacyTypes: readonly string[];
 };
 
@@ -83,6 +83,15 @@ function planned<const T extends string>(
   } as const;
 }
 
+function active<const T extends string>(
+  eventKey: T,
+  label: string,
+  category: NotificationCategory,
+  moduleKey: NotificationModule,
+) {
+  return { eventKey, label, category, moduleKey, availability: "active", legacyTypes: [] } as const;
+}
+
 export const NOTIFICATION_EVENT_CATALOG = [
   // Legacy types are overloaded. These keys describe compatibility, not a more specific event.
   legacy("mention", "Menção ou revisão legada", "mention"),
@@ -107,21 +116,26 @@ export const NOTIFICATION_EVENT_CATALOG = [
   legacy("sla.first_response_breach", "SLA de primeira resposta excedido", "sla"),
   legacy("sla.resolution_breach", "SLA de resolução excedido", "sla"),
   legacy("sla.at_risk", "SLA em risco", "sla"),
-  // Contract for subsequent packages; none of these entries installs a producer or a rule.
-  planned("crm.deal.won", "Negócio ganho", "deal_stage", "crm"),
-  planned("crm.deal.lost", "Negócio perdido", "deal_stage", "crm"),
-  planned("crm.deal.stage_changed", "Etapa do negócio alterada", "deal_stage", "crm"),
-  planned("crm.proposal.accepted", "Proposta aceita", "workflow", "crm"),
+  // Available for explicitly configured Workflows; catalog registration never creates a rule.
+  active("crm.deal.won", "Negócio ganho", "deal_stage", "crm"),
+  active("crm.deal.lost", "Negócio perdido", "deal_stage", "crm"),
+  active("crm.deal.stage_changed", "Etapa do negócio alterada", "deal_stage", "crm"),
+  active("crm.proposal.accepted", "Proposta aceita", "workflow", "crm"),
   planned("ats.application.received", "Inscrição em vaga recebida", "hiring", "ats"),
   planned("ats.interview.scheduled", "Entrevista marcada", "hiring", "ats"),
   planned("ats.offer.accepted", "Oferta aceita", "hiring", "ats"),
   planned("people.employment.started", "Início de vínculo", "hiring", "people"),
   planned("people.document.expiring", "Documento próximo do vencimento", "task", "people"),
   planned("people.approval.pending", "Aprovação de pessoas pendente", "approval", "people"),
-  planned("contracts.draft.accepted", "Minuta aceita", "approval", "contracts"),
-  planned("contracts.signature.completed", "Assinatura concluída", "workflow", "contracts"),
-  planned("contracts.contract.expiring", "Contrato próximo do vencimento", "task", "contracts"),
-  planned("contracts.contract.renewal_due", "Renovação de contrato próxima", "task", "contracts"),
+  active("contracts.draft.accepted", "Minuta aceita", "approval", "contracts"),
+  active("contracts.signature.completed", "Assinatura concluída", "workflow", "contracts"),
+  active("contracts.contract.expiring", "Contrato próximo do vencimento", "task", "contracts"),
+  active(
+    "contracts.contract.renewal_due",
+    "Prazo de aviso de renovação próximo",
+    "task",
+    "contracts",
+  ),
   planned("finance.payable.due", "Conta a pagar do dia", "task", "finance"),
   planned("finance.receivable.due", "Conta a receber do dia", "task", "finance"),
   planned("finance.payable.overdue", "Conta a pagar vencida", "task", "finance"),
@@ -138,6 +152,10 @@ export const NOTIFICATION_EVENT_CATALOG = [
 ] as const satisfies readonly EventDefinition[];
 
 export type NotificationEventKey = (typeof NOTIFICATION_EVENT_CATALOG)[number]["eventKey"];
+export type AvailableNotificationEventKey = Extract<
+  (typeof NOTIFICATION_EVENT_CATALOG)[number],
+  { availability: "legacy" | "active" }
+>["eventKey"];
 const eventByKey = new Map<string, EventDefinition>(
   NOTIFICATION_EVENT_CATALOG.map((event) => [event.eventKey, event]),
 );
@@ -155,8 +173,26 @@ export function resolveLegacyNotificationEvent(type: unknown): EventDefinition |
   return typeof type === "string" ? (eventByLegacyType.get(type) ?? null) : null;
 }
 
-export function withNotificationEvent<T extends { type: string | null }>(row: T) {
-  const event = resolveLegacyNotificationEvent(row.type);
+/** Exact operational keys or legacy aliases only; planned entries remain inert. */
+export function resolveAvailableNotificationEvent(value: unknown): EventDefinition | null {
+  const event = getNotificationEvent(value) ?? resolveLegacyNotificationEvent(value);
+  return event && event.availability !== "planned" ? event : null;
+}
+
+/** Explicit RPC provenance takes precedence. Invalid provenance never inherits a noisy alias. */
+export function resolveNotificationRecordEvent(row: {
+  type?: string | null;
+  eventKey?: string | null;
+}): EventDefinition | null {
+  if (!Object.hasOwn(row, "eventKey")) return resolveLegacyNotificationEvent(row.type);
+  const event = getNotificationEvent(row.eventKey);
+  return event && event.availability !== "planned" ? event : null;
+}
+
+export function withNotificationEvent<T extends { type: string | null; eventKey?: string | null }>(
+  row: T,
+) {
+  const event = resolveNotificationRecordEvent(row);
   return {
     ...row,
     event: event
