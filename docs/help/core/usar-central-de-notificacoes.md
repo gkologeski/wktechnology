@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 147
-version: 6
+version: 7
 is_published: true
 ---
 
@@ -88,7 +88,7 @@ Na central, as abas **Regras**, **Modelos e canais** e **Entregas** ampliam o ac
 
 ### Criar uma regra sem duplicar o motor de automações
 
-1. Abra **Regras**. Em **Evento da nova regra**, escolha uma opção de TechSales ou TechContracts, ou mantenha **Regra genérica de Workflow**, e clique em **Criar regra**. O rascunho abre no construtor existente. As regras exibidas são os Workflows que possuem a ação **Enviar notificação** ou **Enviar mensagem no Slack**; não há uma segunda automação paralela.
+1. Abra **Regras**. Em **Evento da nova regra**, escolha uma opção de TechSales, TechContracts ou TechProjects, ou mantenha **Regra genérica de Workflow**, e clique em **Criar regra**. O rascunho abre no construtor existente. As regras exibidas são os Workflows que possuem a ação **Enviar notificação** ou **Enviar mensagem no Slack**; não há uma segunda automação paralela.
 2. Configure o gatilho, os destinatários e os canais. Uma ação antiga sem seleção explícita mantém somente **No app**.
 3. E-mail e WhatsApp são opcionais. **E-mail se o WhatsApp falhar** exige WhatsApp primário sem e-mail em paralelo. A alternativa só é permitida em falhas definitivas ou supressões elegíveis, com preferência e permissão próprias; um resultado incerto não gera outro envio.
 4. Salve o rascunho e use **Conferir configuração sem enviar**, quando disponível. A conferência é estrutural: não envia mensagens, não comprova elegibilidade dos destinatários e não ativa o rascunho.
@@ -103,7 +103,6 @@ Na central, as abas **Regras**, **Modelos e canais** e **Entregas** ampliam o ac
 5. **Suprimida** informa um bloqueio como preferência, consentimento, acesso, configuração ou limite. A central não expõe o destino completo nem a mensagem técnica bruta do provedor.
 
 Os canais externos recebem texto neutro com acesso à central, sem salário, valor, documento pessoal ou cópia do conteúdo da origem. A leitura no TechERP mantém suas permissões atuais. O horário de silêncio adia novas entregas externas; não altera o prazo da obrigação. A organização diária/semanal continua sendo um agrupamento visual, sem envio de digest externo. Estas regras não passam a produzir todos os eventos planejados do catálogo.
-
 
 ## Sino e central em tempo real
 
@@ -124,7 +123,6 @@ Os canais externos recebem texto neutro com acesso à central, sem salário, val
 
 No histórico antigo sem workspace comprovado, a pesquisa por conteúdo fica desativada. O sistema preserva essa separação para não procurar ou revelar textos cuja origem não pôde ser confirmada. Solicitações de profissionais aparecem em TechPeople e solicitações de fornecedores em TechContracts conforme o tipo real do registro autorizado, sem deduzir o módulo pelo título.
 
-
 ## E-mail e Slack: entrega pessoal e aviso coletivo
 
 - **E-mail** mantém destinatário pessoal confirmado e preferência efetiva. O modelo é neutro e abre a central autenticada. A autorização é conferida novamente depois da renderização, imediatamente antes do envio. Recusa definitiva, supressão, limite do provedor e resultado incerto possuem estados próprios no histórico; um identificador local não comprova entrega.
@@ -135,7 +133,6 @@ No histórico antigo sem workspace comprovado, a pesquisa por conteúdo fica des
 
 Consulte [Configurar notificações no Slack](/ajuda/core/configurar-notificacoes-no-slack) para preparar a conexão, a política e o histórico.
 
-
 ## WhatsApp oficial: conferir modelo e recibos
 
 A prévia de WhatsApp resolve os mesmos valores do transporte e mostra os componentes compatíveis do modelo, com status e categoria consultados. A qualidade exibida é a sincronizada; o remetente e o modelo são novamente verificados antes do envio. Dados de outro usuário ou workspace não são reutilizados ao retornar à tela.
@@ -144,20 +141,24 @@ Alterar o telefone do perfil por qualquer caminho revoga as autorizações antig
 
 Prazos de espera valem para a conexão, também entre avisos diferentes. Restrições de reputação ou limites sem prazo seguro podem desligar o canal; a reativação exige revisão na Meta e ação administrativa explícita. Consulte o [passo a passo de WhatsApp oficial](/ajuda/core/configurar-notificacoes-no-whatsapp).
 
-## Avisos de TechSales e TechContracts
+## Avisos de TechSales, TechContracts e TechProjects
 
 Os eventos abaixo estão disponíveis para configurar uma regra. A disponibilidade no catálogo não cria uma regra, não publica um Workflow nem habilita canais. Criar, salvar o rascunho, publicar e ativar continuam ações distintas, com as permissões de Workflows e de cada ação. As regras existentes permanecem com sua configuração.
 
-| Evento | Quando pode gerar uma ocorrência |
-|---|---|
-| Negócio ganho | O negócio entra em uma etapa de ganho do funil. |
-| Negócio perdido | O negócio entra em uma etapa de perda do funil. |
-| Etapa do negócio alterada | Outras mudanças de etapa, incluindo reabertura. Uma entrada em ganho ou perda é classificada pelo evento específico, sem gerar também este evento para a mesma transição. |
-| Proposta aceita | O cliente aceita uma proposta válida enviada. Aprovação interna não é aceite do cliente. |
-| Minuta aceita | O cliente confirma o aceite real da minuta enviada e vinculada ao negócio. A dispensa administrativa de aceite não emite esse evento. O destino conserva o contexto comercial e as permissões da origem. |
-| Assinatura concluída | Existe confirmação válida de conclusão da assinatura da versão atual do contrato. Status Ativo ou data de assinatura preenchida, isoladamente, não comprovam esse evento. |
-| Contrato próximo do vencimento | O contrato entra na janela anterior à data de término da vigência. |
-| Prazo de aviso de renovação próximo | Um contrato com renovação automática e aviso prévio válido entra na janela anterior ao prazo de aviso de renovação. |
+| Evento                              | Quando pode gerar uma ocorrência                                                                                                                                                                         |
+| ----------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Negócio ganho                       | O negócio entra em uma etapa de ganho do funil.                                                                                                                                                          |
+| Negócio perdido                     | O negócio entra em uma etapa de perda do funil.                                                                                                                                                          |
+| Etapa do negócio alterada           | Outras mudanças de etapa, incluindo reabertura. Uma entrada em ganho ou perda é classificada pelo evento específico, sem gerar também este evento para a mesma transição.                                |
+| Proposta aceita                     | O cliente aceita uma proposta válida enviada. Aprovação interna não é aceite do cliente.                                                                                                                 |
+| Minuta aceita                       | O cliente confirma o aceite real da minuta enviada e vinculada ao negócio. A dispensa administrativa de aceite não emite esse evento. O destino conserva o contexto comercial e as permissões da origem. |
+| Assinatura concluída                | Existe confirmação válida de conclusão da assinatura da versão atual do contrato. Status Ativo ou data de assinatura preenchida, isoladamente, não comprovam esse evento.                                |
+| Contrato próximo do vencimento      | O contrato entra na janela anterior à data de término da vigência.                                                                                                                                       |
+| Prazo de aviso de renovação próximo | Um contrato com renovação automática e aviso prévio válido entra na janela anterior ao prazo de aviso de renovação.                                                                                      |
+| Projeto iniciado                    | O projeto muda de Planejamento para Ativo. Criar/importar um projeto já ativo, editar a data de início ou retomar Em espera não gera esse evento.                                                        |
+| Projeto atrasado                    | Um projeto em Planejamento ou Ativo ultrapassa o prazo após a publicação da regra.                                                                                                                       |
+| Tarefa de projeto atrasada          | Uma tarefa aberta ultrapassa o prazo após a publicação da regra, com projeto em Planejamento, Ativo ou Em espera.                                                                                        |
+| Marco próximo do prazo              | Um marco Pendente ou Em andamento, sem conclusão registrada, entra na janela de antecedência; exige projeto em Planejamento, Ativo ou Em espera.                                                         |
 
 ### Configurar um aviso de prazo
 
@@ -167,8 +168,21 @@ Os eventos abaixo estão disponíveis para configurar uma regra. A disponibilida
 4. A janela começa na antecedência escolhida e termina no próprio prazo, incluindo os limites. Prazos já vencidos ou dados ausentes/inválidos não geram o aviso. Alterar a preferência não corrige os dados do contrato.
 5. Confira condições, destinatários e canais. Salve, revise a conferência sem envio e publique/ative somente quando desejar. O aviso não renova, encerra, assina ou altera o contrato.
 
-Em **Preferências > Exceção por evento**, os oito eventos podem ter escolhas próprias de No app, e-mail, som e tremor. No app e e-mail herdam o grupo, salvo escolha explícita. **Som e tremor dos eventos comerciais e contratuais começam desligados**, mesmo quando um padrão global antigo do grupo possui som; para habilitá-los, faça uma escolha explícita no grupo ou evento deste workspace. Os grupos e eventos legados preservam seu comportamento.
+Em **Preferências > Exceção por evento**, os doze eventos podem ter escolhas próprias de No app, e-mail, som e tremor. No app e e-mail herdam o grupo, salvo escolha explícita. **Som e tremor dos eventos comerciais, contratuais e de projetos começam desligados**, mesmo quando um padrão global antigo do grupo possui som; para habilitá-los, faça uma escolha explícita no grupo ou evento deste workspace. Os grupos e eventos legados preservam seu comportamento.
 
 **WhatsApp oficial** possui uma preferência opcional por grupo ou evento. **Bloquear pela preferência** interrompe esse canal mesmo com autorização pessoal vigente. **Herdar autorização pessoal** restaura a herança; **Permitir pela preferência** não concede consentimento nem supera política, regra, acesso ou limites. Essa escolha pertence ao workspace e não altera os canais globais antigos do perfil. Consulte [Configurar avisos oficiais por WhatsApp](/ajuda/core/configurar-notificacoes-no-whatsapp) para cancelar um evento ou revogar toda a autorização pessoal.
 
 Se não houver aviso, confira se a regra está publicada e ativa, se houve uma ocorrência elegível, se o prazo está na janela e se o destinatário permanece ativo e com acesso à origem. Consulte o resultado do Workflow e o histórico de entregas. O sistema não dispara todo o histórico ao cadastrar uma preferência, não escolhe um destinatário alternativo e não recria tarefas ou decisões de aprovações existentes.
+
+### Configurar avisos de TechProjects
+
+1. Em **Regras**, escolha uma das quatro opções de **TechProjects**. A seleção abre somente um rascunho desativado; confira objeto, condições, destinatários e canais. **Membros do projeto** é uma opção de destinatário, sem conceder acesso à origem.
+2. **Projeto iniciado** acompanha somente a passagem de Planejamento para Ativo. A data prevista de início e os checkpoints de entrega têm outros significados.
+3. **Projeto atrasado** e **Tarefa de projeto atrasada** não têm antecedência nem atraso adicional configurável. O atraso começa no dia civil seguinte ao prazo no fuso **America/Sao_Paulo**. Não são lembretes diários: cada origem/prazo produz uma ocorrência por regra. Atrasos anteriores à publicação ficam de fora; uma verificação posterior recupera os que venceram após a publicação. Republicar ou voltar a um prazo já processado não cria outra ocorrência desse prazo.
+4. Somente **Marco próximo do prazo** oferece **Antecedência em dias**, de 1 a 365, com valor inicial 30 editável. A janela termina no prazo; marcos vencidos, concluídos ou cancelados ficam de fora. O aviso não conclui o marco, não gera cobrança nem altera o projeto.
+5. Projetos concluídos ou cancelados não geram os avisos de atraso ou proximidade; tarefas e marcos de projetos Em espera podem continuar elegíveis. Prazos ausentes não são inventados e a preferência pessoal não muda status nem datas.
+6. Ao abrir o aviso, projetos levam à ficha; tarefas abrem a ficha lateral pelo ID, mesmo fora da página filtrada. Marcos abrem a aba **Marcos** do projeto e destacam **Marco do aviso** quando o registro estiver autorizado. Sem acesso atual, o destino não revela o conteúdo antigo.
+
+Os quatro eventos usam as mesmas preferências por grupo/evento, com som e tremor inicialmente desligados. Bloquear WhatsApp nesse evento não revoga a autorização dos demais; permitir não supera consentimento, política, regra, acesso ou limites. As regras de TechProjects não substituem nem reavaliam automaticamente os alertas do Dashboard.
+
+O custo planejado continua restrito às telas financeiras autorizadas. Avisos de TechProjects e seus históricos não carregam esse campo.

@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import { setupNotificationBusinessEvents } from "./notification-business-events";
+import { setupNotificationProjectEvents } from "./notification-project-events";
 
 // Actual gateway, private RLS bridge and production permission predicates in a
 // disposable PostgreSQL. HTTP cases use cryptographically verified synthetic JWTs
@@ -418,6 +419,7 @@ beforeAll(async () => {
     readFileSync("drizzle/migrations/0396_notification_whatsapp_guardrails.sql", "utf8"),
   );
   await setupNotificationBusinessEvents(db);
+  await setupNotificationProjectEvents(db);
   const historic = await db`select count(*)::integer n from notification_workspace_context`;
   if (historic[0].n !== 0) throw Error("Historical rows were attributed to a workspace");
   const authenticatorPassword = randomBytes(32).toString("hex");
@@ -498,6 +500,7 @@ afterAll(async () => {
 });
 
 export async function reset() {
+  await db.unsafe("TRUNCATE project_task_statuses,project_lists CASCADE");
   await db.unsafe(
     "TRUNCATE notification_business_event_proofs,notification_business_due_cursors,view_as_test_records,pipelines,contract_attachments,legal_entities,quote_line_items,deal_line_items,service_catalog,contracting_presets,quote_templates,esign_signers,esign_documents,ats_offers,hiring_contract_evidence,contract_forsign_operations,storage.objects CASCADE",
   );

@@ -3,6 +3,8 @@
 // execução. Carrega sob demanda: só as associações realmente referenciadas
 // pelo JSON do workflow.
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { WORK_COST_PUBLIC_COLUMNS } from "@/lib/access-control/work-cost-projection";
+import { sanitizeWorkflowSnapshot } from "./engine/authorization.server";
 
 import { ENTITY_ASSOCIATIONS } from "./associations";
 import type { WorkflowEntity } from "./types";
@@ -15,15 +17,16 @@ export async function hydrateTriggerAssociations(
   after: AnyRow | null,
   workflowJson: string,
 ): Promise<AnyRow | null> {
-  if (!after) return after;
+  const safeAfter = sanitizeWorkflowSnapshot(after, entity);
+  if (!safeAfter) return safeAfter;
   const assocs = (ENTITY_ASSOCIATIONS[entity] ?? []).filter((a) =>
     workflowJson.includes(`{{${a.key}.`),
   );
-  if (assocs.length === 0) return after;
+  if (assocs.length === 0) return safeAfter;
 
-  const out: AnyRow = { ...after };
+  const out: AnyRow = { ...safeAfter };
   for (const a of assocs) {
-    const id = after[a.fk_column];
+    const id = safeAfter[a.fk_column];
     if (typeof id !== "string" || !id) {
       out[a.key] = null;
       continue;
@@ -31,10 +34,10 @@ export async function hydrateTriggerAssociations(
     try {
       const { data } = await supabase
         .from(a.target_table as never)
-        .select("*")
+        .select(a.target_table === "projects" ? WORK_COST_PUBLIC_COLUMNS.projects : "*")
         .eq("id", id)
         .maybeSingle();
-      out[a.key] = (data as AnyRow | null) ?? null;
+      out[a.key] = sanitizeWorkflowSnapshot((data as AnyRow | null) ?? null, a.target_table);
     } catch {
       out[a.key] = null;
     }

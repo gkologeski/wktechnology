@@ -352,6 +352,24 @@ export const deleteTask = createServerFn({ method: "POST" })
   });
 
 // Cross-project listing (Sprint C — desacoplamento /projects/tasks).
+// Leitura focada para links diretos, independente da página e dos filtros da grade.
+export const getProjectTaskById = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    if (!(await workCanRead(supabase, "techprojects.tasks"))) return null;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    const { data: row, error } = await supabase
+      .from("project_tasks")
+      .select("*, projects(id, name, status)")
+      .eq("workspace_id", workspaceId)
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw error;
+    return row;
+  });
+
 export const listAllProjectTasks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) =>

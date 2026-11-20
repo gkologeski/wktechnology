@@ -344,7 +344,11 @@ it("history keeps uncertain results separate from delivery and never renders raw
 it.each([
   { eventKey: "crm.deal.won", expected: "Negócio ganho" },
   { eventKey: "contracts.signature.completed", expected: "Assinatura concluída" },
-  { eventKey: "projects.project.started", expected: null },
+  { eventKey: "projects.project.started", expected: "Projeto iniciado" },
+  { eventKey: "projects.project.overdue", expected: "Projeto atrasado" },
+  { eventKey: "projects.task.overdue", expected: "Tarefa de projeto atrasada" },
+  { eventKey: "projects.milestone.due", expected: "Marco próximo do prazo" },
+  { eventKey: "finance.payable.due", expected: null },
   { eventKey: "workflow", expected: null },
   { eventKey: null, expected: null },
 ])(
@@ -376,14 +380,14 @@ it.each([
       }),
     );
     if (expected) expect(host.textContent).toContain(expected);
-    expect(host.textContent).not.toContain("Projeto iniciado");
+    expect(host.textContent).not.toContain("Conta a pagar do dia");
     expect(host.textContent).not.toContain("Aviso geral de Workflow");
     expect(host.textContent).toContain(state.workspace!.slice(0, 8));
     await click(button("Ver motivo"));
     const detail = host.querySelector('[aria-label="Detalhe da entrega"]');
     expect(detail).toBeTruthy();
     if (expected) expect(detail?.textContent).toContain(expected);
-    expect(detail?.textContent).not.toContain("Projeto iniciado");
+    expect(detail?.textContent).not.toContain("Conta a pagar do dia");
   },
 );
 

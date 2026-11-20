@@ -3,7 +3,7 @@ import { usePermissions } from "@/lib/access-control/use-permissions";
 import { WorkScreenAccess, WorkRecordAccess } from "@/components/work-access";
 import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { CheckCircle2, Clock, Plus, Trash2 } from "lucide-react";
@@ -62,7 +62,7 @@ import {
   removeMember,
   getProjectFinancials,
 } from "@/lib/projects.functions";
-import { formatCurrency, formatDateTime } from "@/lib/crm";
+import { formatCurrency, formatDateOnly, formatDateTime } from "@/lib/crm";
 import { getProfitability } from "@/lib/projects/billing.functions";
 import { formatMoney } from "@/lib/projects/billing.shared";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
@@ -71,7 +71,23 @@ import { ProjectOriginCard } from "@/components/projects/project-origin-card";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
 import { formatIsoDate } from "@/lib/iso-date";
+import { useAuth } from "@/lib/auth";
 export const Route = createFileRoute("/_authenticated/projects/$id")({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { tab?: "tasks" | "milestones" | "timesheet" | "members"; milestoneId?: string } => ({
+    tab:
+      search.tab === "milestones" || search.tab === "timesheet" || search.tab === "members"
+        ? search.tab
+        : "tasks",
+    milestoneId:
+      typeof search.milestoneId === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        search.milestoneId,
+      )
+        ? search.milestoneId
+        : undefined,
+  }),
   component: WorkDetailAccess,
 });
 
@@ -90,8 +106,10 @@ const TASK_COLUMNS = [
   { key: "done", label: "Concluído" },
 ] as const;
 
-function ProjectDetailPage() {
+function ProjectDetailPage({ userId, workspaceId }: { userId: string; workspaceId: string }) {
   const { id } = Route.useParams();
+  const { tab = "tasks" } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const qc = useQueryClient();
   const get = useServerFn(getProject);
   const update = useServerFn(updateProject);
@@ -99,157 +117,219 @@ function ProjectDetailPage() {
   const access = useWorkCapabilities("techprojects.projects", [id]);
   const permissions = usePermissions();
 
-  const { data: project, isLoading } = useQuery({
-    queryKey: ["project", id],
+  const projectQuery = useQuery({
+    queryKey: ["project", id, userId, workspaceId],
     queryFn: () => get({ data: { id } }),
+    staleTime: 0,
+    retry: false,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
   });
+  const [confirmedProject, setConfirmedProject] = useState<typeof projectQuery.data>();
+  const readReady =
+    projectQuery.isFetchedAfterMount && !projectQuery.isError && !projectQuery.isFetching;
+  useEffect(() => {
+    if (readReady) setConfirmedProject(projectQuery.data);
+  }, [readReady, projectQuery.data]);
+  const project = confirmedProject ?? (readReady ? projectQuery.data : null);
+  const revalidating = !readReady || !projectQuery.data;
 
   const { data: financials, isError: financialsError } = useQuery({
-    queryKey: ["project-financials", id],
+    queryKey: ["project-financials", id, userId, workspaceId],
     queryFn: () => fin({ data: { projectId: id } }),
     enabled: permissions.can("techprojects.profitability.view.workspace"),
   });
 
-  if (isLoading) return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
+  if (!project && projectQuery.isFetching)
+    return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
+  if (!project && projectQuery.isError)
+    return (
+      <div role="alert" className="p-6 text-sm text-muted-foreground">
+        Não foi possível conferir o projeto.
+      </div>
+    );
   if (!project)
     return <div className="p-6 text-sm text-muted-foreground">Projeto não encontrado.</div>;
 
   const p: any = project;
 
   return (
-    <div className="p-6 space-y-5">
-      <PageHeader
-        title={p.name}
-        description={p.description ?? undefined}
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/projects/$id/entrega" params={{ id }}>
-                Acompanhamento de entrega
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/projects/$id/horas" params={{ id }}>
-                Horas e aprovação
-              </Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/projects/$id/financeiro" params={{ id }}>
-                Medições e rentabilidade
-              </Link>
-            </Button>
-            <Select
-              disabled={!access.for(id).can_update}
-              value={p.status}
-              onValueChange={async (v) => {
-                await update({ data: { id, patch: { status: v as any } } });
-                qc.invalidateQueries({ queryKey: ["project", id] });
-                qc.invalidateQueries({ queryKey: ["projects"] });
-              }}
+    <>
+      {revalidating && (
+        <div
+          role={projectQuery.isError ? "alert" : "status"}
+          className="p-6 text-sm text-muted-foreground"
+        >
+          {projectQuery.isError
+            ? "Não foi possível conferir o projeto. Tente novamente para confirmar seu acesso."
+            : "Conferindo acesso ao projeto…"}
+          {projectQuery.isError && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-3"
+              onClick={() => void projectQuery.refetch()}
             >
-              <SelectTrigger className="w-44">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(STATUS_LABEL).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>
-                    {v}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        }
-      />
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-        <MetricTile
-          label="Horas apontadas"
-          value={
-            !permissions.can("techprojects.profitability.view.workspace")
-              ? "Sem acesso"
-              : financialsError
-                ? "Indisponível"
-                : financials
-                  ? `${financials.loggedHours.toFixed(1)}h`
-                  : "…"
+              Tentar novamente
+            </Button>
+          )}
+        </div>
+      )}
+      <div
+        className="p-6 space-y-5"
+        hidden={revalidating}
+        inert={revalidating || undefined}
+        aria-hidden={revalidating || undefined}
+      >
+        <PageHeader
+          title={p.name}
+          description={p.description ?? undefined}
+          actions={
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/projects/$id/entrega" params={{ id }}>
+                  Acompanhamento de entrega
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/projects/$id/horas" params={{ id }}>
+                  Horas e aprovação
+                </Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/projects/$id/financeiro" params={{ id }}>
+                  Medições e rentabilidade
+                </Link>
+              </Button>
+              <Select
+                disabled={!access.for(id).can_update}
+                value={p.status}
+                onValueChange={async (v) => {
+                  await update({ data: { id, patch: { status: v as any } } });
+                  qc.invalidateQueries({ queryKey: ["project", id] });
+                  qc.invalidateQueries({ queryKey: ["projects"] });
+                }}
+              >
+                <SelectTrigger className="w-44">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(STATUS_LABEL).map(([k, v]) => (
+                    <SelectItem key={k} value={k}>
+                      {v}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           }
         />
-        <ProjectProfitabilityTiles
-          projectId={id}
-          currency={p.contracts?.currency ?? p.services?.currency ?? "BRL"}
-        />
-      </div>
 
-      <div className="rounded-lg border bg-card p-4 space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Progresso informado</span>
-          <span className="tabular-nums font-medium">{p.progress ?? 0}%</span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+          <MetricTile
+            label="Horas apontadas"
+            value={
+              !permissions.can("techprojects.profitability.view.workspace")
+                ? "Sem acesso"
+                : financialsError
+                  ? "Indisponível"
+                  : financials
+                    ? `${financials.loggedHours.toFixed(1)}h`
+                    : "…"
+            }
+          />
+          <ProjectProfitabilityTiles
+            projectId={id}
+            currency={p.contracts?.currency ?? p.services?.currency ?? "BRL"}
+          />
         </div>
-        <Progress value={p.progress ?? 0} />
-        <p className="text-xs text-muted-foreground">
-          Percentual cadastrado no projeto. A conclusão das tarefas é calculada separadamente no
-          Dashboard.
-        </p>
-        <div className="flex flex-wrap gap-4 pt-2 text-xs text-muted-foreground">
-          {p.contracts && (
-            <span>
-              Contrato:{" "}
-              <Link
-                to="/contracts/$id"
-                params={{ id: p.contracts.id }}
-                className="text-foreground hover:underline"
-              >
-                {p.contracts.number ?? p.contracts.title}
-              </Link>
-            </span>
-          )}
-          {p.services && (
-            <span>
-              Serviço:{" "}
-              <Link
-                to="/services/$id"
-                params={{ id: p.services.id }}
-                className="text-foreground hover:underline"
-              >
-                {p.services.name}
-              </Link>
-            </span>
-          )}
-          {p.starts_at && <span>Início: {formatDateTime(p.starts_at).split(" ")[0]}</span>}
-          {p.due_at && <span>Prazo: {formatDateTime(p.due_at).split(" ")[0]}</span>}
+
+        <div className="rounded-lg border bg-card p-4 space-y-2">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Progresso informado</span>
+            <span className="tabular-nums font-medium">{p.progress ?? 0}%</span>
+          </div>
+          <Progress value={p.progress ?? 0} />
+          <p className="text-xs text-muted-foreground">
+            Percentual cadastrado no projeto. A conclusão das tarefas é calculada separadamente no
+            Dashboard.
+          </p>
+          <div className="flex flex-wrap gap-4 pt-2 text-xs text-muted-foreground">
+            {p.contracts && (
+              <span>
+                Contrato:{" "}
+                <Link
+                  to="/contracts/$id"
+                  params={{ id: p.contracts.id }}
+                  className="text-foreground hover:underline"
+                >
+                  {p.contracts.number ?? p.contracts.title}
+                </Link>
+              </span>
+            )}
+            {p.services && (
+              <span>
+                Serviço:{" "}
+                <Link
+                  to="/services/$id"
+                  params={{ id: p.services.id }}
+                  className="text-foreground hover:underline"
+                >
+                  {p.services.name}
+                </Link>
+              </span>
+            )}
+            {p.starts_at && <span>Início: {formatDateOnly(p.starts_at)}</span>}
+            {p.due_at && <span>Prazo: {formatDateOnly(p.due_at)}</span>}
+          </div>
         </div>
+
+        <ProjectOriginCard projectId={id} />
+
+        <Tabs
+          className="min-w-0 w-full"
+          value={tab}
+          onValueChange={(value) =>
+            void navigate({
+              to: ".",
+              search: (previous) => ({
+                ...previous,
+                tab: value as "tasks" | "milestones" | "timesheet" | "members",
+              }),
+            })
+          }
+        >
+          <TabsList className="h-auto max-w-full flex-wrap">
+            <TabsTrigger value="tasks">Tarefas</TabsTrigger>
+            <TabsTrigger value="milestones">Marcos</TabsTrigger>
+            <TabsTrigger value="timesheet">Timesheet</TabsTrigger>
+            <TabsTrigger value="members">Membros</TabsTrigger>
+          </TabsList>
+          <TabsContent value="tasks" className="mt-4">
+            <WorkScreenAccess resources={["techprojects.tasks"]}>
+              <TasksKanban
+                projectId={id}
+                revalidating={revalidating}
+                unavailable={projectQuery.isError || (readReady && !projectQuery.data)}
+              />
+            </WorkScreenAccess>
+          </TabsContent>
+          <TabsContent value="milestones" className="mt-4">
+            <WorkScreenAccess resources={["techprojects.milestones"]}>
+              <MilestonesPanel projectId={id} revalidating={revalidating} />
+            </WorkScreenAccess>
+          </TabsContent>
+          <TabsContent value="timesheet" className="mt-4">
+            <TimesheetPanel projectId={id} />
+          </TabsContent>
+          <TabsContent value="members" className="mt-4">
+            <WorkScreenAccess resources={["techprojects.members"]}>
+              <MembersPanel projectId={id} />
+            </WorkScreenAccess>
+          </TabsContent>
+        </Tabs>
       </div>
-
-      <ProjectOriginCard projectId={id} />
-
-      <Tabs defaultValue="tasks">
-        <TabsList>
-          <TabsTrigger value="tasks">Tarefas</TabsTrigger>
-          <TabsTrigger value="milestones">Marcos</TabsTrigger>
-          <TabsTrigger value="timesheet">Timesheet</TabsTrigger>
-          <TabsTrigger value="members">Membros</TabsTrigger>
-        </TabsList>
-        <TabsContent value="tasks" className="mt-4">
-          <WorkScreenAccess resources={["techprojects.tasks"]}>
-            <TasksKanban projectId={id} />
-          </WorkScreenAccess>
-        </TabsContent>
-        <TabsContent value="milestones" className="mt-4">
-          <WorkScreenAccess resources={["techprojects.milestones"]}>
-            <MilestonesPanel projectId={id} />
-          </WorkScreenAccess>
-        </TabsContent>
-        <TabsContent value="timesheet" className="mt-4">
-          <TimesheetPanel projectId={id} />
-        </TabsContent>
-        <TabsContent value="members" className="mt-4">
-          <WorkScreenAccess resources={["techprojects.members"]}>
-            <MembersPanel projectId={id} />
-          </WorkScreenAccess>
-        </TabsContent>
-      </Tabs>
-    </div>
+    </>
   );
 }
 
@@ -304,7 +384,15 @@ function useColumnTasks(projectId: string, status: TaskStatusKey) {
   return { ...q, rows };
 }
 
-function TasksKanban({ projectId }: { projectId: string }) {
+function TasksKanban({
+  projectId,
+  revalidating,
+  unavailable,
+}: {
+  projectId: string;
+  revalidating: boolean;
+  unavailable: boolean;
+}) {
   const qc = useQueryClient();
   const upd = useServerFn(updateTask);
   const del = useServerFn(deleteTask);
@@ -410,7 +498,7 @@ function TasksKanban({ projectId }: { projectId: string }) {
                   </div>
                   {t.due_at && (
                     <div className="text-[11px] text-muted-foreground mt-1">
-                      {formatDateTime(t.due_at).split(" ")[0]}
+                      {formatDateOnly(t.due_at)}
                     </div>
                   )}
                 </div>
@@ -454,10 +542,15 @@ function TasksKanban({ projectId }: { projectId: string }) {
           </div>
         ))}
       </div>
-      <NewTaskDialog projectId={projectId} open={openCreate} onOpenChange={setOpenCreate} />
+      <NewTaskDialog
+        projectId={projectId}
+        open={openCreate && !revalidating}
+        onOpenChange={setOpenCreate}
+      />
       <TaskDetailsSheet
-        task={(tasks as any[]).find((t) => t.id === selectedTaskId) ?? null}
-        open={!!selectedTaskId && tasks.some((t) => t.id === selectedTaskId)}
+        task={unavailable ? null : ((tasks as any[]).find((t) => t.id === selectedTaskId) ?? null)}
+        open={!unavailable && !!selectedTaskId && tasks.some((t) => t.id === selectedTaskId)}
+        revalidating={revalidating}
         showCoreFields
         onOpenChange={(v) => {
           if (!v) setSelectedTaskId(null);
@@ -529,23 +622,53 @@ function NewTaskDialog({
 
 // ============= MILESTONES =============
 
-function MilestonesPanel({ projectId }: { projectId: string }) {
+function MilestonesPanel({
+  projectId,
+  revalidating,
+}: {
+  projectId: string;
+  revalidating: boolean;
+}) {
+  const { milestoneId } = Route.useSearch();
+  const { user } = useAuth();
+  const permissions = usePermissions();
+  const targetRow = useRef<HTMLTableRowElement>(null);
   const qc = useQueryClient();
   const list = useServerFn(listMilestones);
   const create = useServerFn(createMilestone);
   const complete = useServerFn(completeMilestone);
   const del = useServerFn(deleteMilestone);
 
-  const { data: milestones = [] } = useQuery({
-    queryKey: ["project-milestones", projectId],
+  const milestoneQuery = useQuery({
+    queryKey: ["project-milestones", projectId, user?.id, permissions.workspaceId],
     queryFn: () => list({ data: { projectId } }),
+    enabled: !!user && !!permissions.workspaceId && !permissions.isLoading && !permissions.isError,
+    staleTime: 0,
+    retry: false,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: false,
   });
+  const milestones =
+    user &&
+    permissions.workspaceId &&
+    !permissions.isLoading &&
+    !permissions.isError &&
+    milestoneQuery.isFetchedAfterMount &&
+    !milestoneQuery.isFetching &&
+    !milestoneQuery.isError
+      ? (milestoneQuery.data ?? [])
+      : [];
+  const focusedMilestone = milestones.find((milestone) => milestone.id === milestoneId);
+  useEffect(() => {
+    if (!focusedMilestone || !targetRow.current) return;
+    targetRow.current.scrollIntoView?.({ block: "nearest" });
+    targetRow.current.focus({ preventScroll: true });
+  }, [focusedMilestone]);
 
   const milestoneRights = useWorkCapabilities(
     "techprojects.milestones",
     milestones.map((m) => m.id),
   );
-  const permissions = usePermissions();
   const canBill =
     permissions.can("techprojects.milestone_billing.create.workspace") &&
     permissions.canAny([
@@ -560,7 +683,7 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
   const [amount, setAmount] = useState("");
 
   const submit = async () => {
-    if (!name.trim()) return;
+    if (revalidating || milestoneQuery.isFetching || milestoneQuery.isError || !name.trim()) return;
     await create({
       data: {
         projectId,
@@ -582,13 +705,33 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
     <div className="space-y-3">
       <div className="flex justify-end">
         <WorkAction resource="techprojects.milestones" action="create">
-          <Button size="sm" onClick={() => setOpenCreate(true)}>
+          <Button
+            size="sm"
+            disabled={revalidating || milestoneQuery.isFetching || milestoneQuery.isError}
+            onClick={() => setOpenCreate(true)}
+          >
             <Plus className="h-4 w-4 mr-2" /> Novo marco
           </Button>
         </WorkAction>
       </div>
+      {milestoneQuery.isFetching ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          Conferindo acesso aos marcos…
+        </p>
+      ) : milestoneQuery.isError ? (
+        <div role="alert" className="space-y-2 text-sm">
+          <p>Não foi possível carregar os marcos.</p>
+          <Button size="sm" variant="outline" onClick={() => void milestoneQuery.refetch()}>
+            Tentar novamente
+          </Button>
+        </div>
+      ) : milestoneId && milestoneQuery.isFetchedAfterMount && !focusedMilestone ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          O marco do link está indisponível ou você não tem acesso a ele.
+        </p>
+      ) : null}
       <div className="rounded-lg border bg-card">
-        {milestones.length === 0 ? (
+        {milestoneQuery.isFetching || milestoneQuery.isError ? null : milestones.length === 0 ? (
           <div className="p-8 text-center text-sm text-muted-foreground">
             Nenhum marco cadastrado.
           </div>
@@ -606,10 +749,23 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
             </TableHeader>
             <TableBody>
               {(milestones as any[]).map((m) => (
-                <TableRow key={m.id}>
-                  <TableCell className="font-medium">{m.name}</TableCell>
+                <TableRow
+                  key={m.id}
+                  ref={m.id === focusedMilestone?.id ? targetRow : undefined}
+                  tabIndex={m.id === focusedMilestone?.id ? -1 : undefined}
+                  aria-current={m.id === focusedMilestone?.id ? "true" : undefined}
+                  className={m.id === focusedMilestone?.id ? "bg-accent" : undefined}
+                >
+                  <TableCell className="font-medium">
+                    {m.name}
+                    {m.id === focusedMilestone?.id && (
+                      <Badge variant="outline" className="ml-2">
+                        Marco do aviso
+                      </Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
-                    {m.due_at ? formatDateTime(m.due_at).split(" ")[0] : "—"}
+                    {formatDateOnly(m.due_at)}
                   </TableCell>
                   <TableCell>{m.billable ? "Sim" : "Não"}</TableCell>
                   <TableCell className="text-right tabular-nums">
@@ -664,7 +820,10 @@ function MilestonesPanel({ projectId }: { projectId: string }) {
         )}
       </div>
 
-      <Dialog open={openCreate} onOpenChange={setOpenCreate}>
+      <Dialog
+        open={openCreate && !revalidating && !milestoneQuery.isFetching && !milestoneQuery.isError}
+        onOpenChange={setOpenCreate}
+      >
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Novo marco</DialogTitle>
@@ -1109,10 +1268,18 @@ function ProjectProfitabilityTiles({
 
 function WorkDetailAccess() {
   const { id } = Route.useParams();
+  const { user } = useAuth();
+  const { workspaceId } = usePermissions();
   return (
     <WorkScreenAccess resources={["techprojects.projects"]}>
       <WorkRecordAccess resource="techprojects.projects" id={id}>
-        <ProjectDetailPage />
+        {user && workspaceId && (
+          <ProjectDetailPage
+            key={`${user.id}:${workspaceId}:${id}`}
+            userId={user.id}
+            workspaceId={workspaceId}
+          />
+        )}
       </WorkRecordAccess>
     </WorkScreenAccess>
   );

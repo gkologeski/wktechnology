@@ -75,7 +75,6 @@ describe("catálogo compatível com notificações históricas", () => {
       ["ats.application.received", "ats"],
       ["people.employment.started", "people"],
       ["finance.payable.due", "finance"],
-      ["projects.project.started", "projects"],
     ] as const;
     for (const [eventKey, moduleKey] of examples) {
       expect(getNotificationEvent(eventKey)).toMatchObject({
@@ -91,7 +90,7 @@ describe("catálogo compatível com notificações históricas", () => {
     const plannedModules = NOTIFICATION_EVENT_CATALOG.filter(
       (event) => event.availability === "planned" && event.moduleKey !== null,
     ).map((event) => event.moduleKey);
-    expect([...new Set(plannedModules)].sort()).toEqual(["ats", "finance", "people", "projects"]);
+    expect([...new Set(plannedModules)].sort()).toEqual(["ats", "finance", "people"]);
     expect(getNotificationEvent("shared.approval.pending")).toMatchObject({
       availability: "planned",
       moduleKey: null,
@@ -107,6 +106,10 @@ describe("catálogo compatível com notificações históricas", () => {
     ["contracts.signature.completed", "workflow", "contracts"],
     ["contracts.contract.expiring", "task", "contracts"],
     ["contracts.contract.renewal_due", "task", "contracts"],
+    ["projects.project.started", "workflow", "projects"],
+    ["projects.project.overdue", "task", "projects"],
+    ["projects.task.overdue", "task", "projects"],
+    ["projects.milestone.due", "task", "projects"],
   ] as const)(
     "recognizes operational %s without rewriting its identity into a legacy alias",
     (eventKey, category, moduleKey) => {
@@ -129,19 +132,19 @@ describe("catálogo compatível com notificações históricas", () => {
     },
   );
 
-  it("makes exactly eight module events operational while preserving all 22 legacy aliases", () => {
+  it("makes exactly twelve module events operational while preserving all 22 legacy aliases", () => {
     expect(
       NOTIFICATION_EVENT_CATALOG.filter((event) => event.availability === "active"),
-    ).toHaveLength(8);
+    ).toHaveLength(12);
     expect(
       NOTIFICATION_EVENT_CATALOG.filter((event) => event.availability === "legacy"),
     ).toHaveLength(22);
     expect(
       NOTIFICATION_EVENT_CATALOG.filter((event) => event.availability === "planned"),
-    ).toHaveLength(19);
+    ).toHaveLength(15);
   });
 
-  it.each([null, "unknown", "mention", "projects.project.started"])(
+  it.each([null, "unknown", "mention", "finance.payable.due"])(
     "does not fall back to a legacy type after explicit invalid RPC provenance %s",
     (eventKey) => {
       expect(

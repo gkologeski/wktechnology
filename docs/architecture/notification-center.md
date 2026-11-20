@@ -17,15 +17,15 @@ envio de resumo externo, opt-in WhatsApp e piloto pertencem às próximas entreg
 
 ## Recurso × ação × escopo
 
-| Superfície | Ação | Controle |
-|---|---|---|
-| Central, contador e detalhe | Ler | Sessão, workspace selecionado, membership ativo, próprio destinatário e RLS atual da origem |
-| Histórico sem contexto | Ler | Mesma identidade/membership; somente metadados pessoais e conteúdo neutro, sem destino presumido |
-| Leitura / não lida | Atualizar | Mesmos controles; lote limitado a IDs explícitos e cutoff da consulta; sessão somente leitura negada |
-| Adiar / cancelar | Atualizar estado pessoal | Mesmos controles; somente 0, 60 ou 1440 minutos; nenhuma alteração da obrigação |
-| Preferências no workspace | Ler / atualizar próprias | Ator derivado da sessão, workspace ativo e membership; CAS e bloqueio de escrita somente leitura |
-| Proveniência | Criar internamente | Trigger privado para novos avisos, tabela de origem literal e workspace real |
-| Despacho do Workflow | Criar | Fronteira de serviço do pacote 2, agora consultando o overlay do workspace/evento |
+| Superfície                  | Ação                     | Controle                                                                                             |
+| --------------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Central, contador e detalhe | Ler                      | Sessão, workspace selecionado, membership ativo, próprio destinatário e RLS atual da origem          |
+| Histórico sem contexto      | Ler                      | Mesma identidade/membership; somente metadados pessoais e conteúdo neutro, sem destino presumido     |
+| Leitura / não lida          | Atualizar                | Mesmos controles; lote limitado a IDs explícitos e cutoff da consulta; sessão somente leitura negada |
+| Adiar / cancelar            | Atualizar estado pessoal | Mesmos controles; somente 0, 60 ou 1440 minutos; nenhuma alteração da obrigação                      |
+| Preferências no workspace   | Ler / atualizar próprias | Ator derivado da sessão, workspace ativo e membership; CAS e bloqueio de escrita somente leitura     |
+| Proveniência                | Criar internamente       | Trigger privado para novos avisos, tabela de origem literal e workspace real                         |
+| Despacho do Workflow        | Criar                    | Fronteira de serviço do pacote 2, agora consultando o overlay do workspace/evento                    |
 
 São operações pessoais: não exigem uma nova chave de negócio para abrir a própria
 central. Isso não remove as permissões de origem nem autoriza ler caixas de terceiros.
@@ -131,6 +131,6 @@ do Workflow. Avisos de plataforma sem origem comprovada permanecem no histórico
 
 ## Evolução no pacote 8
 
-Os oito eventos canônicos comerciais e contratuais disponíveis para regras explícitas mantêm `notifications.type='workflow'`, com `eventKey` proveniente do vínculo privado comprovado. As RPCs de listagem e lookup preservam essa identidade para os metadados, preferências e interrupções. A chave canônica de minuta mantém módulo TechContracts mesmo quando usa o negócio vinculado como origem autorizada. Ausência histórica do campo preserva o alias legado; chave explícita inválida não recebe fallback ruidoso.
+Os doze eventos canônicos comerciais, contratuais e de projetos disponíveis para regras explícitas mantêm `notifications.type='workflow'`, com `eventKey` proveniente do vínculo privado comprovado. As RPCs de listagem e lookup preservam essa identidade para os metadados, preferências e interrupções. A chave canônica de minuta mantém módulo TechContracts mesmo quando usa o negócio vinculado como origem autorizada. Ausência histórica do campo preserva o alias legado; chave explícita inválida não recebe fallback ruidoso.
 
 Som e tremor desses eventos começam desligados, com habilitação somente por escolha explícita na categoria ou evento do workspace. No app/e-mail herdam o grupo. O catálogo mantém os demais eventos planejados indisponíveis; uma preferência ou um preset não publica nem ativa Workflow. A configuração continua no construtor existente, com rascunho inicialmente desativado.

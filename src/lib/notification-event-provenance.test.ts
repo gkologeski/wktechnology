@@ -33,7 +33,7 @@ it("preserves canonical provenance from both list and focused lookup without inf
     expect(result.items[0].entity).toBe("deals");
   }
 });
-it.each([null, "future.unknown", "mention", "projects.project.started"])(
+it.each([null, "future.unknown", "mention", "finance.payable.due"])(
   "preserves explicit unavailable provenance %s without fabricating legacy metadata",
   (eventKey) => {
     const parsed = parseNotificationCenterLookup({
@@ -52,4 +52,25 @@ it("preserves legacy records when the RPC omits canonical provenance", () => {
     category: "workflow",
     moduleKey: null,
   });
+});
+it.each([
+  ["projects.project.started", "workflow", "projects"],
+  ["projects.project.overdue", "task", "projects"],
+  ["projects.task.overdue", "task", "project_tasks"],
+  ["projects.milestone.due", "task", "project_milestones"],
+])("preserves private RPC provenance for %s in list and lookup", (eventKey, category, entity) => {
+  const notice = { ...row, eventKey, entity, moduleKey: "projects", link: null };
+  const results = [
+    parseNotificationCenterPage({
+      items: [notice],
+      unread: 1,
+      nextCursor: null,
+      cutoff: row.created_at,
+    }),
+    parseNotificationCenterLookup({ items: [notice], checkedAt: row.created_at }),
+  ];
+  for (const parsed of results) {
+    expect(parsed.items[0].event).toEqual({ eventKey, category, moduleKey: "projects" });
+    expect(parsed.items[0].entity).toBe(entity);
+  }
 });

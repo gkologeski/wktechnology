@@ -100,9 +100,11 @@ export function workflowApprovalNotificationContent(
   workspaceId: string,
   entity: string,
   id: string,
+  projectId?: unknown,
 ) {
   z.string().uuid().parse(id);
   z.string().uuid().parse(workspaceId);
+  const milestoneProject = z.string().uuid().safeParse(projectId);
   const paths: Record<string, string> = {
     deals: "/deals",
     contacts: "/contacts",
@@ -128,8 +130,12 @@ export function workflowApprovalNotificationContent(
     link:
       entity === "project_tasks"
         ? `/projects/tasks?taskId=${id}`
-        : paths[entity]
-          ? `${paths[entity]}/${id}`
-          : null,
+        : entity === "project_milestones"
+          ? milestoneProject.success
+            ? `/projects/${milestoneProject.data}?tab=milestones&milestoneId=${id}`
+            : null
+          : paths[entity]
+            ? `${paths[entity]}/${id}`
+            : null,
   };
 }

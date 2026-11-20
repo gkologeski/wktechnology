@@ -445,7 +445,12 @@ export async function runControlAction(
     owner_id: ctx.ownerId,
     user_id: approver,
     type: "workflow",
-    ...workflowApprovalNotificationContent(ctx.workspaceId, ctx.entity, ctx.entityId),
+    ...workflowApprovalNotificationContent(
+      ctx.workspaceId,
+      ctx.entity,
+      ctx.entityId,
+      ctx.after?.project_id,
+    ),
   } as never);
   logs.push({
     at: new Date().toISOString(),

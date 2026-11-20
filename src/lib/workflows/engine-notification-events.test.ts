@@ -9,9 +9,11 @@ const state = vi.hoisted(() => ({
   items: vi.fn(),
   actions: vi.fn(),
 }));
-vi.mock("./engine/authorization.server", () => ({
+vi.mock("./engine/authorization.server", async () => ({
+  ...(await vi.importActual<typeof import("./engine/authorization.server")>(
+    "./engine/authorization.server",
+  )),
   authorizeWorkflowStep: state.authorize,
-  sanitizeWorkflowSnapshot: (value: unknown) => value,
 }));
 vi.mock("@/lib/access-control/work-core.server", () => ({ workRpc: state.rpc }));
 vi.mock("./hydrate-associations.server", () => ({ hydrateTriggerAssociations: state.hydrate }));
@@ -128,6 +130,111 @@ beforeEach(() => {
 });
 
 describe("named business workflow routing on the existing queue", () => {
+  it.each([
+    { field: "planned_cost", op: "eq", value: 75000 },
+    { field: "planned_cost", op: "changed_to" },
+  ] as const)(
+    "projects cannot branch on protected source cost before action execution: $op",
+    async (filter) => {
+      const trigger = {
+        ...workflowNotificationEventTrigger("projects.project.started"),
+        filters: [filter],
+      };
+      const db = database([{ ...workflow("project", trigger), entity: "projects" }]);
+      await processEvent(db.client, {
+        ...namedEvent(),
+        entity: "projects",
+        notification_event_key: "projects.project.started",
+        after: { workspace_id: W, planned_cost: 75000 },
+        before: { workspace_id: W, planned_cost: 70000 },
+      });
+      expect(state.actions).not.toHaveBeenCalled();
+      expect(db.runs).toHaveLength(0);
+    },
+  );
+
+  it("keeps project costs out of execution and newly persisted delay snapshots without rewriting the input event", async () => {
+    state.actions.mockResolvedValue({
+      log: [],
+      hadError: false,
+      suspendedAt: { runAtIso: "2026-12-20T12:00:00Z", resumeCursor: 1 },
+    });
+    const db = database([
+      {
+        ...workflow("project", workflowNotificationEventTrigger("projects.project.started")),
+        entity: "projects",
+      },
+    ]);
+    const event: EventRow = {
+      ...namedEvent(),
+      entity: "projects",
+      notification_event_key: "projects.project.started",
+      after: {
+        workspace_id: W,
+        name: "Delivery",
+        planned_cost: 75000,
+        metadata: { planned_cost: "display label" },
+      },
+      before: { workspace_id: W, name: "Delivery", planned_cost: 70000 },
+    };
+    await processEvent(db.client, event);
+    const context = state.actions.mock.calls[0][2];
+    expect(context.after).not.toHaveProperty("planned_cost");
+    expect(context.before).not.toHaveProperty("planned_cost");
+    expect(db.resumes[0].after).toEqual({
+      workspace_id: W,
+      name: "Delivery",
+      metadata: { planned_cost: "display label" },
+    });
+    expect(db.resumes[0].before).toEqual({ workspace_id: W, name: "Delivery" });
+    expect(event.after?.planned_cost).toBe(75000);
+  });
+  it.each([
+    { key: "projects.project.started", entity: "projects" },
+    { key: "projects.project.overdue", entity: "projects" },
+    { key: "projects.task.overdue", entity: "project_tasks" },
+    { key: "projects.milestone.due", entity: "project_milestones" },
+  ] as const)(
+    "routes $key only to its proved source subscription in the same workspace",
+    async ({ key, entity }) => {
+      const trigger = workflowNotificationEventTrigger(key);
+      const db = database([
+        { ...workflow("project-named", trigger), entity },
+        { ...workflow("generic", { event: "updated", reenroll: { enabled: true } }), entity },
+        { ...workflow("foreign-workspace", trigger), entity, workspace_id: "foreign-workspace" },
+      ]);
+      await processEvent(db.client, {
+        ...namedEvent(),
+        entity,
+        entity_id: "project-source",
+        notification_event_key: key,
+      });
+      expect(state.rpc).toHaveBeenCalledExactlyOnceWith(
+        db.client,
+        "notification_business_event_check",
+        {
+          p_event: "event",
+          p_workflow: "project-named",
+          p_version: 3,
+        },
+      );
+      expect(state.actions).toHaveBeenCalledOnce();
+      expect(db.runs).toEqual([
+        expect.objectContaining({
+          workflow_id: "project-named",
+          workspace_id: W,
+          entity,
+          entity_id: "project-source",
+        }),
+      ]);
+      expect(state.authorize).toHaveBeenCalledOnce();
+      expect(db.reads.find(({ table }) => table === "workflows")?.filters).toMatchObject({
+        workspace_id: W,
+        entity,
+      });
+    },
+  );
+
   it("runs an explicitly subscribed administrator workflow across record owners after proving the actual occurrence", async () => {
     const db = database([
       workflow(),
@@ -257,6 +364,32 @@ describe("named business workflow routing on the existing queue", () => {
     ).rejects.toThrow("Proof unavailable");
     expect(db.runs).toHaveLength(0);
     expect(db.eventUpdates).toHaveLength(0);
+    expect(state.actions).not.toHaveBeenCalled();
+  });
+
+  it("finishes a milestone continuation neutrally when the database invalidates its deadline or parent project", async () => {
+    state.rpc.mockResolvedValue(false);
+    const db = database([
+      {
+        ...workflow("milestone", workflowNotificationEventTrigger("projects.milestone.due")),
+        entity: "project_milestones",
+      },
+    ]);
+    await processEvent(db.client, {
+      ...namedEvent(),
+      entity: "project_milestones",
+      entity_id: "milestone-source",
+      notification_event_key: "projects.milestone.due",
+      resume_workflow_id: "milestone",
+      resume_cursor: 1,
+      workflow_version: 3,
+    });
+    expect(state.rpc).toHaveBeenCalledOnce();
+    expect(db.runs).toEqual([
+      expect.objectContaining({ status: "error", entity: "project_milestones" }),
+    ]);
+    expect(db.eventUpdates).toEqual([{ processed_at: expect.any(String) }]);
+    expect(state.hydrate).not.toHaveBeenCalled();
     expect(state.actions).not.toHaveBeenCalled();
   });
 

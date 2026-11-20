@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ActivityDateTimePicker } from "@/components/activity/activity-date-time-picker";
+import { IsoDatePicker } from "@/components/iso-date-picker";
 import { useWorkRecordCapability } from "@/components/work-action";
 import { useWorkspaceMembers } from "@/hooks/use-workspace-members";
 import { updateTask } from "@/lib/projects.functions";
@@ -233,12 +233,10 @@ export function TaskCoreFields({ task }: { task: TaskCoreValues }) {
 
         <div className="space-y-1.5 sm:col-span-2">
           <Label htmlFor={fieldId("due")}>Prazo</Label>
-          <ActivityDateTimePicker
+          <IsoDatePicker
             id={fieldId("due")}
             ariaLabel="Prazo"
             value={task.due_at ?? null}
-            valueFormat="iso"
-            optional
             disabled={!canEdit}
             onChange={(v) => v !== (task.due_at ?? null) && save({ due_at: v })}
           />

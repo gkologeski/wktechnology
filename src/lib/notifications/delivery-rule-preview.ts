@@ -17,8 +17,25 @@ export function inspectNotificationTrigger(trigger: WorkflowTrigger): string[] {
     notes.push(
       `Antecedência: ${selection.days_before} dias antes do prazo de aviso definido no contrato. Exige renovação automática configurada e prazo válido; não renova nem encerra o contrato.`,
     );
+  if (selection.key === "projects.project.started")
+    notes.push(
+      "Início: quando o projeto passa de Planejamento para Ativo. A data prevista, a importação de um projeto ativo e a retomada de um projeto em espera não iniciam este aviso.",
+    );
+  if (selection.key === "projects.project.overdue" || selection.key === "projects.task.overdue")
+    notes.push(
+      "Atraso: a partir do dia seguinte ao prazo, no calendário America/Sao_Paulo. Uma ocorrência por prazo, sem lembrete diário. Atrasos anteriores à publicação da regra não entram; os que surgirem depois podem ser recuperados no próximo processamento.",
+      selection.key === "projects.project.overdue"
+        ? "Somente projetos em Planejamento ou Ativo, com prazo válido e ainda atrasados na execução."
+        : "Tarefas concluídas ou com situação personalizada de conclusão não entram. O projeto deve estar em Planejamento, Ativo ou Em espera; prazos e vínculos são conferidos novamente na execução.",
+    );
+  if (selection.key === "projects.milestone.due")
+    notes.push(
+      `Antecedência: ${selection.days_before} dias antes do prazo do marco, no calendário America/Sao_Paulo. Marcos concluídos, cancelados ou já vencidos não entram na janela. O projeto deve estar em Planejamento, Ativo ou Em espera.`,
+    );
   notes.push(
-    "Esta regra não recria encaminhamentos, tarefas ou decisões contratuais. A publicação e a ativação da regra são ações separadas desta conferência.",
+    event.moduleKey === "projects"
+      ? "O evento de aviso não cria tarefas, altera prazos, registra horas ou gera cobrança por si só. Revise as ações do Workflow. A publicação e a ativação são separadas desta conferência."
+      : "Esta regra não recria encaminhamentos, tarefas ou decisões contratuais. A publicação e a ativação da regra são ações separadas desta conferência.",
   );
   return notes;
 }

@@ -1,16 +1,32 @@
 import { workRpc } from "@/lib/access-control/work-core.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { WORKFLOW_WRITABLE_TABLES, type WorkflowAction } from "../types";
+import { WORKFLOW_WRITABLE_TABLES, type WorkflowAction, type WorkflowEntity } from "../types";
 import type { RunCtx } from "./run-context";
 import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 import { SALES_TABLE_RESOURCES } from "@/lib/access-control/sales-resources";
 import { SALES_PRIVATE_COLUMNS } from "@/lib/access-control/sales-private-columns";
+import {
+  publicProjectSnapshot,
+  WORK_COST_PRIVATE_COLUMNS,
+} from "@/lib/access-control/work-cost-projection";
 import { findAssociation, ENTITY_ASSOCIATIONS } from "../associations";
 import { renderWorkflowTokens as renderTokens } from "../render-tokens";
 
 type Requirement = NonNullable<Parameters<typeof assertSalesWorker>[3]>[number];
 const privateFields = new Set<string>(Object.values(SALES_PRIVATE_COLUMNS).flat());
 const immutable = new Set(["workspace_id", "owner_id", ...privateFields]);
+const creates: Record<string, string> = {
+  create_lead: "leads",
+  create_contact: "contacts",
+  create_company: "companies",
+  create_deal: "deals",
+  create_ticket: "tickets",
+  create_task: "activities",
+  create_activity: "activities",
+  create_survey_activity: "activities",
+  linkedin_task: "activities",
+  open_deal_dialog: "activities",
+};
 const contextualRecords = new Set<string>([
   ...WORKFLOW_WRITABLE_TABLES,
   "people",
@@ -24,14 +40,24 @@ const contextualRecords = new Set<string>([
 function resource(table: string) {
   return (SALES_TABLE_RESOURCES as Record<string, string>)[table];
 }
-/** Snapshots are not a credential transport, even for a workflow manager. */
-export function sanitizeWorkflowSnapshot<T>(value: T): T {
-  if (Array.isArray(value)) return value.map(sanitizeWorkflowSnapshot) as T;
+/** Snapshots are not a credential or project-cost transport, even for a workflow manager. */
+export function sanitizeWorkflowSnapshot<T>(value: T, entity?: string): T {
+  if (Array.isArray(value)) return value.map((item) => sanitizeWorkflowSnapshot(item, entity)) as T;
+  const associations =
+    entity && Object.hasOwn(ENTITY_ASSOCIATIONS, entity)
+      ? ENTITY_ASSOCIATIONS[entity as WorkflowEntity]
+      : [];
   if (value && typeof value === "object")
     return Object.fromEntries(
-      Object.entries(value)
+      Object.entries(publicProjectSnapshot(value, entity))
         .filter(([key]) => !privateFields.has(key))
-        .map(([key, item]) => [key, sanitizeWorkflowSnapshot(item)]),
+        .map(([key, item]) => [
+          key,
+          sanitizeWorkflowSnapshot(
+            item,
+            associations.find((association) => association.key === key)?.target_table,
+          ),
+        ]),
     ) as T;
   return value;
 }
@@ -68,10 +94,30 @@ export async function authorizeWorkflowStep(
 
   if (action) {
     const a = action as unknown as Record<string, unknown>;
+    const table = typeof a.table === "string" ? a.table : ctx.entity;
+    const costDestination = creates[action.type] ?? table;
+    const sourceTable =
+      action.type === "copy_field_from_association"
+        ? findAssociation(ctx.entity, String(a.association))?.target_table
+        : ctx.entity;
+    const protectedProjectField = (target: string | undefined, field: unknown) =>
+      target === "projects" && WORK_COST_PRIVATE_COLUMNS.projects.some((name) => name === field);
+    if (
+      [a.field, a.target_field].some((field) => protectedProjectField(costDestination, field)) ||
+      protectedProjectField(sourceTable, a.source_field) ||
+      [a.values, a.extra_fields].some(
+        (values) =>
+          values &&
+          typeof values === "object" &&
+          Object.keys(values).some((field) => protectedProjectField(costDestination, field)),
+      )
+    )
+      throw new Error(
+        "Campo financeiro protegido de projeto exige a operação financeira canônica.",
+      );
     for (const key of ["field", "target_field", "source_field"])
       if (typeof a[key] === "string" && immutable.has(a[key] as string))
         throw new Error("Campo protegido não pode ser lido ou alterado por ação genérica.");
-    const table = typeof a.table === "string" ? a.table : ctx.entity;
     for (const key of Object.keys((a.values ?? a.extra_fields ?? {}) as object)) {
       if (
         immutable.has(key) ||
@@ -156,18 +202,6 @@ export async function authorizeWorkflowStep(
             : String(ctx.after?.[assoc.fk_column] ?? ""),
         );
     }
-    const creates: Record<string, string> = {
-      create_lead: "leads",
-      create_contact: "contacts",
-      create_company: "companies",
-      create_deal: "deals",
-      create_ticket: "tickets",
-      create_task: "activities",
-      create_activity: "activities",
-      create_survey_activity: "activities",
-      linkedin_task: "activities",
-      open_deal_dialog: "activities",
-    };
     if (creates[action.type]) {
       const destination = creates[action.type];
       const r =

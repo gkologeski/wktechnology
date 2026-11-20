@@ -14,7 +14,7 @@ O catálogo fica em `src/lib/notification-catalog.ts`. As preferências e a deci
 - `moduleKey` identifica o módulo de um evento planejado. Para aliases legados permanece `null`, pois um mesmo tipo pode atender mais de um módulo.
 - `availability: legacy` significa que há um adaptador de leitura compatível. Não comprova que existe um produtor ativo de cada alias em produção.
 - `availability: planned` reserva um contrato para pacotes posteriores. Não cria produtor, regra, assinatura, agendamento ou canal habilitado.
-- Após o pacote 8, `availability: active` identifica oito eventos comerciais e contratuais com integração disponível para regras explícitas. Não significa Workflow publicado, regra ativa, preferência ligada ou canal autorizado. Os 22 aliases `legacy` permanecem iguais.
+- Após o pacote 9, `availability: active` identifica doze eventos comerciais, contratuais e de projetos com integração disponível para regras explícitas. Não significa Workflow publicado, regra ativa, preferência ligada ou canal autorizado. Os 22 aliases `legacy` permanecem iguais.
 
 O resolvedor usa aliases exatos em `Map`. Não usa prefixos genéricos como `sla.*`, propriedades herdadas, títulos, corpo, links ou IDs para inventar a semântica de um registro. Tipo desconhecido resolve para `null` e permanece no histórico.
 
@@ -53,9 +53,9 @@ O tipo `hiring_approval` e sua chave de deduplicação não podem ser renomeados
 
 ## Eventos canônicos e disponibilidade
 
-O pacote 1 reservou 27 entradas canônicas: 23 dos seis módulos e quatro compartilhadas. O pacote 8 torna disponíveis somente as oito entradas TechSales/TechContracts; as outras 19 permanecem planejadas. Nenhuma entrada cria ou ativa uma regra automaticamente.
+O pacote 1 reservou 27 entradas canônicas: 23 dos seis módulos e quatro compartilhadas. O pacote 9 mantém disponíveis as oito entradas TechSales/TechContracts e acrescenta as quatro de TechProjects; as outras 15 permanecem planejadas. Nenhuma entrada cria ou ativa uma regra automaticamente.
 
-| Módulo                      | Chaves planejadas                                                                                                                    |
+| Módulo                      | Chaves canônicas                                                                                                                     |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | TechSales (`crm`)           | `crm.deal.won`, `crm.deal.lost`, `crm.deal.stage_changed`, `crm.proposal.accepted`                                                   |
 | TechHire (`ats`)            | `ats.application.received`, `ats.interview.scheduled`, `ats.offer.accepted`                                                          |
@@ -73,9 +73,9 @@ As oito chaves `crm.*` e `contracts.*` da tabela são operacionais para regras e
 
 `notifications.type` preserva o tipo legado `workflow`. As RPCs de listagem/lookup fornecem `eventKey` pela proveniência privada da ocorrência. O parser mantém esse campo e `withNotificationEvent` lhe dá precedência. Campo explícito inválido, desconhecido ou ainda planejado produz metadados nulos e não herda interrupções de um alias legado. Quando o campo é omitido em um registro antigo, a resolução legada permanece compatível. `contracts.draft.accepted` pertence a TechContracts mesmo quando a origem autorizada é o negócio vinculado.
 
-`LEGACY_NOTIFICATION_EVENTS` continua com 22 entradas. `AVAILABLE_NOTIFICATION_EVENTS` e `AvailableEventKey` abrangem essas entradas e os oito eventos operacionais; apenas essa lista pode receber overrides do cliente. Os demais campos futuros salvos continuam preservados no banco, sem serem expostos ou editáveis.
+`LEGACY_NOTIFICATION_EVENTS` continua com 22 entradas. `AVAILABLE_NOTIFICATION_EVENTS` e `AvailableEventKey` abrangem essas entradas e os doze eventos operacionais; apenas essa lista pode receber overrides do cliente. Os demais campos futuros salvos continuam preservados no banco, sem serem expostos ou editáveis.
 
-Para os oito eventos, No app/e-mail partem da preferência do grupo. Som/tremor começam desligados e só podem ser ligados por escolha explícita no grupo ou evento do workspace; isso evita herdar defaults sonoros de tipos legados como `task`. O sino resolve o mesmo `eventKey` da consulta autenticada e aplica o overlay atual depois de conferir a origem. Payload de realtime continua fornecendo somente IDs; jamais autoriza interrupção por conteúdo bruto.
+Para os doze eventos, No app/e-mail partem da preferência do grupo. Som/tremor começam desligados e só podem ser ligados por escolha explícita no grupo ou evento do workspace; isso evita herdar defaults sonoros de tipos legados como `task`. O sino resolve o mesmo `eventKey` da consulta autenticada e aplica o overlay atual depois de conferir a origem. Payload de realtime continua fornecendo somente IDs; jamais autoriza interrupção por conteúdo bruto.
 
 O overlay do workspace também admite `whatsapp?: boolean` em categoria/evento, sem acrescentar esse canal aos defaults ou à edição global de `profiles.notification_preferences`. Ausência/null restaura herança; `false` bloqueia o canal; `true` é somente preferência e não supera consentimento, política, regra ou autorização. `effectiveChannels` e a interrupção do sino continuam retornando somente os quatro canais anteriores. A apresentação de WhatsApp usa uma resolução separada, sem alegar elegibilidade ou transmissão real.
 
@@ -132,3 +132,16 @@ Após este pacote, a implementação deve seguir as dependências da auditoria a
 4. Conectar produtores canônicos e regras em pacotes pequenos, testando duplicidade, falha e resultado incerto sem reenviar cegamente.
 
 Essas etapas não estão ativadas pelas entradas `planned`. A Ajuda da tela atual está em `docs/help/core/revisar-preferencias-de-notificacoes.md`; a versão editorial deve ser aplicada no app somente na entrega autorizada, pelo mecanismo existente de atualização da Ajuda oficial.
+
+### Integração do pacote 9 — TechProjects
+
+As quatro chaves `projects.*` passam a `active`, sob as mesmas preferências e proveniência canônica das oito anteriores. Selecionar cria rascunho desativado, sem publicar ou ativar. Todos pertencem a `moduleKey=projects`; projeto usa entidade `projects`, tarefa `project_tasks` e marco `project_milestones`.
+
+- `projects.project.started`: exclusivamente UPDATE Planejamento → Ativo. INSERT/importação já ativa, edição de starts_at e retomada Em espera não emitem essa ocorrência.
+- `projects.project.overdue`: projeto Planejamento/Ativo, após vencer no calendário civil America/Sao_Paulo.
+- `projects.task.overdue`: tarefa aberta, pai Planejamento/Ativo/Em espera, após vencer no mesmo calendário.
+- `projects.milestone.due`: Pendente/Em andamento, completed_at nulo, pai Planejamento/Ativo/Em espera; days_before explícito 1–365 e valor inicial editável de 30 dias no rascunho. Janela até prazo, sem vencidos.
+
+Overdue não admite days_before/days_after e não é lembrete diário. Somente vencimentos posteriores à publicação entram; uma verificação posterior recupera os elegíveis. Cursor por origem/prazo e regra não se reinicia ao republicar nem ao retornar A→B→A. Projetos encerrados, origens ausentes, outro workspace e acesso revogado suprimem conforme as fronteiras autorizadas; não são substituídos por nomes, datas ou destinatários presumidos. O produtor não altera prazos, status, cobrança nem os alertas operacionais opt-in do Dashboard.
+
+Destinos reais: `/projects/<id>`; `/projects/tasks?taskId=<id>` com leitura focada independente de paginação/filtros; `/projects/<pai>?tab=milestones&milestoneId=<id>` com aba controlada e destaque da linha autorizada. Não há nova ficha de marco nem ação de conclusão por URL. Leituras focadas usam identidade/workspace, autorização atual e atualização obrigatória antes de exibir conteúdo.

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import {
   FIELD_ALIASES,
   LEGACY_SYSTEM_FIELDS,
@@ -7,6 +8,9 @@ import {
   toLabel,
 } from "@/lib/entity-fields-meta";
 import { dedupeAliasFields, findAliasConflict } from "@/lib/grid/field-alias-guard";
+import { ENTITY_FIELDS } from "@/lib/workflows/types";
+import { sortFieldsByCanonicalOrder } from "@/lib/workflows/entity-field-order";
+import { WORK_COST_PUBLIC_COLUMNS } from "@/lib/access-control/work-cost-projection";
 
 /**
  * Colunas reais (subconjunto relevante) por entidade, conferidas no banco.
@@ -38,7 +42,7 @@ const ENTITY_COLUMNS: Record<string, string[]> = {
   companies: ["name", "cnpj", "assigned_to", "assigned_user_id", "industry", "website"],
   deals: ["name", "value", "company_id", "assigned_to", "assigned_user_id", "stage", "pipeline_id"],
   tickets: ["subject", "assignee_id", "contact_id", "company_id", "priority", "status"],
-  project_tasks: ["title", "assignee_id", "project_id", "due_date", "status"],
+  project_tasks: ["title", "assignee_id", "project_id", "due_at", "status"],
   proposals: ["title", "company_id", "contact_id", "deal_id", "assigned_to", "status"],
   quotes: ["title", "company_id", "contact_id", "deal_id", "assigned_to", "status"],
   contracts: ["title", "deal_id", "assigned_to", "total_value", "start_at", "end_at"],
@@ -99,5 +103,61 @@ describe("field alias guard", () => {
       canonical: "assigned_to",
     });
     expect(findAliasConflict(["assigned_to"], fields)).toBeNull();
+  });
+});
+
+describe("project workflow field suggestions", () => {
+  // Generated database row metadata is independent of the fallback/order lists.
+  // A misspelled suggestion must fail against the persisted source shape.
+  const source = readFileSync(
+    new URL("../../integrations/supabase/types.ts", import.meta.url),
+    "utf8",
+  );
+  const resources = [
+    { entity: "projects", title: "name", dates: ["starts_at", "due_at"] },
+    { entity: "project_tasks", title: "title", dates: ["start_at", "due_at"] },
+    { entity: "project_milestones", title: "name", dates: ["due_at"] },
+  ] as const;
+
+  it.each(resources)(
+    "offers persisted $entity fields while metadata is unavailable",
+    ({ entity, title, dates }) => {
+      const row = new RegExp(`^ {6}${entity}: \\{\\n {8}Row: \\{([\\s\\S]*?)^ {8}\\}`, "m").exec(
+        source,
+      )?.[1];
+      expect(row, "Missing canonical database metadata for " + entity).toBeDefined();
+      const columns = new Set([...row!.matchAll(/^ {10}(\w+):/gm)].map((match) => match[1]));
+      expect(columns.size).toBeGreaterThan(0);
+      expect(ENTITY_FIELDS[entity].filter((name) => !columns.has(name))).toEqual([]);
+      if (entity === "projects") {
+        const publicColumns = new Set(WORK_COST_PUBLIC_COLUMNS.projects.split(","));
+        expect(ENTITY_FIELDS.projects.filter((name) => !publicColumns.has(name))).toEqual([]);
+      }
+      expect(ENTITY_FIELDS[entity]).toContain(title);
+      expect(ENTITY_FIELDS[entity]).toContain("status");
+      expect(ENTITY_FIELDS[entity]).toContain("due_at");
+      const supplied = [
+        { name: "future_extension" },
+        ...dates.map((name) => ({ name })),
+        { name: "status" },
+        { name: title },
+        { name: "due_date" },
+      ];
+      const original = structuredClone(supplied);
+      expect(sortFieldsByCanonicalOrder(entity, supplied).map(({ name }) => name)).toEqual([
+        title,
+        "status",
+        ...dates,
+        "future_extension",
+        "due_date",
+      ]);
+      // Existing unknown/legacy keys remain present; only suggestion/order changes.
+      expect(supplied).toEqual(original);
+    },
+  );
+
+  it("describes the persisted task title as a task title rather than a contact job title", () => {
+    expect(toLabel("title", "project_tasks")).toBe("Título da tarefa");
+    expect(toLabel("title", "project_tasks")).not.toBe(toLabel("title", "contacts"));
   });
 });

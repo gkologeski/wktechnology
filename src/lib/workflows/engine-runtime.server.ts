@@ -1,5 +1,6 @@
 import { authorizeWorkflowStep, sanitizeWorkflowSnapshot } from "./engine/authorization.server";
 import { workflowEventWorkspace } from "./engine/workspace-payload";
+import { publicProjectSnapshot } from "@/lib/access-control/work-cost-projection";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import { workflowNotificationTriggerMatches } from "./notification-events";
 // Ciclo de execução do motor: enfileiramento, runs, ticks de fila e de tempo.
@@ -74,8 +75,8 @@ async function workflowSourceAllowed(
         entityId: event.entity_id,
         ownerId: wf.execution_user_id ?? wf.owner_id,
         workspaceId: wf.workspace_id,
-        after: event.after,
-        before: event.before,
+        after: sanitizeWorkflowSnapshot(event.after, event.entity),
+        before: sanitizeWorkflowSnapshot(event.before, event.entity),
         workflowId: wf.id,
         workflowVersion: wf.published_version,
       },
@@ -196,11 +197,13 @@ export async function processEvent(
       }
       if (!(await workflowSourceAllowed(supabase, wfr, event))) return;
       const wfJson = JSON.stringify({ t: wfr.trigger, a: wfr.actions });
+      const safeBefore = sanitizeWorkflowSnapshot(event.before, event.entity);
       const hydratedAfter = await hydrateDealLineItems(
         supabase,
         event.entity,
         sanitizeWorkflowSnapshot(
           await hydrateTriggerAssociations(supabase, event.entity, event.after, wfJson),
+          event.entity,
         ),
         wfJson,
       );
@@ -230,7 +233,7 @@ export async function processEvent(
             ownerId: wfr.execution_user_id ?? wfr.owner_id,
             workspaceId: wfr.workspace_id,
             after: cleanAfter,
-            before: event.before,
+            before: safeBefore,
             workflowId: wfr.id,
             workflowVersion: wfr.published_version,
             runId: run.id as string,
@@ -277,23 +280,25 @@ export async function processEvent(
     // Hidrata associações do gatilho (empresa, contato, negócio…) antes de
     // avaliar condições e executar ações, para resolver `{{company.name}}`.
     const wfJson = JSON.stringify({ t: trig, a: wf.actions, g: wf.goal_filters });
+    const safeBefore = sanitizeWorkflowSnapshot(event.before, event.entity);
     const hydratedAfter = await hydrateDealLineItems(
       supabase,
       event.entity,
       sanitizeWorkflowSnapshot(
         await hydrateTriggerAssociations(supabase, event.entity, event.after, wfJson),
+        event.entity,
       ),
       wfJson,
     );
 
     const filters = trig.filters ?? [];
-    const passes = evalConditions(filters, hydratedAfter, event.before);
+    const passes = evalConditions(filters, hydratedAfter, safeBefore);
     if (!passes) continue;
 
     // Fase 3 — critérios de meta: se todos passam, o registro já atingiu o objetivo
     // e é removido do workflow (sem novas execuções).
     const goalFilters = trig.goal_filters ?? wf.goal_filters ?? [];
-    if (goalFilters.length > 0 && evalConditions(goalFilters, hydratedAfter, event.before)) {
+    if (goalFilters.length > 0 && evalConditions(goalFilters, hydratedAfter, safeBefore)) {
       continue;
     }
 
@@ -341,7 +346,7 @@ export async function processEvent(
       ownerId: wf.execution_user_id ?? wf.owner_id,
       workspaceId: wf.workspace_id,
       after: hydratedAfter,
-      before: event.before,
+      before: safeBefore,
       workflowId: wf.id,
       workflowVersion: wf.published_version,
       runId: run.id as string,
@@ -411,9 +416,11 @@ async function finishRun(
             notification_parent_event_id: event.id,
           }
         : {}),
-      before: event.before,
+      before: publicProjectSnapshot(event.before, event.entity),
       after: {
-        ...stripResumeKeys((event.after ?? {}) as Record<string, unknown>),
+        ...stripResumeKeys(
+          publicProjectSnapshot((event.after ?? {}) as Record<string, unknown>, event.entity),
+        ),
         ...(res.suspendedAt.waitState ? { __wf_wait: res.suspendedAt.waitState } : {}),
         ...(res.suspendedAt.state ? { __wf_state: res.suspendedAt.state } : {}),
         ...(res.suspendedAt.resumePath?.length ? { __wf_path: res.suspendedAt.resumePath } : {}),

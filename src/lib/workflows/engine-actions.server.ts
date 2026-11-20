@@ -46,8 +46,8 @@ export async function runActions(
   startIndex = 0,
   pathPrefix = "",
 ): Promise<RunResult> {
-  ctx.after = sanitizeWorkflowSnapshot(ctx.after);
-  ctx.before = sanitizeWorkflowSnapshot(ctx.before);
+  ctx.after = sanitizeWorkflowSnapshot(ctx.after, ctx.entity);
+  ctx.before = sanitizeWorkflowSnapshot(ctx.before, ctx.entity);
   if (ctx.vars) ctx.vars = sanitizeWorkflowSnapshot(ctx.vars);
   const rawLog: LogStep[] = [];
   let currentStep = -1;

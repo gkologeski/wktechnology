@@ -8,9 +8,10 @@ route_pattern: /projects/tasks
 min_permission: techprojects.tasks.view.own
 audience: internal
 sort_order: 180
-version: 2
+version: 3
 is_published: true
 ---
+
 # Consultar tarefas de projetos
 
 **Para que serve:** As tarefas localizadas podem ser consultadas e alteradas conforme suas capacidades efetivas.
@@ -22,25 +23,38 @@ is_published: true
 **Antes de começar:** Confirme o workspace e o período, confira o registro de destino e disponha da permissão para a ação. Para importações, revise a prévia antes da gravação.
 
 ## Passo a passo
+
 1. Abra Projetos > Tarefas.
 2. Busque por título e filtre o responsável. Revise a grade e abra a tarefa desejada.
 3. Na ficha lateral, confira campos principais, tags, checklist, dependências e campos personalizados da lista, quando existentes.
 4. Faça a alteração permitida e aguarde a confirmação antes de fechar.
 
 ## Resultado esperado
+
 As tarefas localizadas podem ser consultadas e alteradas conforme suas capacidades efetivas.
 
 ## Regras e limites
+
 Busca e seleção respeitam o escopo disponível. Ter acesso à listagem não garante acesso a toda tarefa nem às ações em massa.
 
 ## Erros comuns
+
 - Registro indisponível ou sem permissão: confira o workspace, o escopo e a capacidade específica; não tente contornar por URL.
 - Resultado diferente do esperado: confira filtros, período e confirmação da operação; uma consulta não confirma uma gravação.
 - Falha ao salvar: leia a mensagem retornada, corrija os campos ou bloqueios indicados e confirme o estado antes de repetir.
 
 ## Relacionados
+
 - [Campos e status](/ajuda/projects/campos-e-status)
 - [Permissões](/ajuda/projects/permissoes)
 - [Erros comuns](/ajuda/projects/erros-comuns)
 
 ![Tela: Consultar tarefas de projetos](/help-media/projects/operar-tasks.webp)
+
+## Abrir uma tarefa por aviso
+
+Um link `/projects/tasks?taskId=…` consulta a tarefa exata com sua sessão e workspace atual, mesmo fora da página carregada ou dos filtros da grade. A ficha só aparece após confirmar acesso. Registro excluído, outro workspace ou acesso revogado mostra indisponibilidade; falha de consulta permite tentar novamente e não mantém uma ficha antiga. Abrir o link não conclui, altera ou seleciona em massa a tarefa.
+
+O evento **Tarefa de projeto atrasada**, configurado em Central de notificações > Regras > TechProjects, considera tarefa aberta com prazo vencido no dia civil seguinte em São Paulo, com projeto em Planejamento, Ativo ou Em espera. Somente vencimentos após a publicação da regra entram; não é lembrete diário. [Veja os controles da central](/ajuda/core/usar-central-de-notificacoes).
+
+O prazo da tarefa é um dia de calendário, sem campo de hora. A seleção no calendário preserva o dia informado, inclusive no fuso de São Paulo.

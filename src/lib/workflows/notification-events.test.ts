@@ -18,19 +18,37 @@ const workflow = {
 };
 
 describe("explicit business notification selectors", () => {
-  it("keeps the exact eight-event catalogue with no quotation or future-module producer", () => {
+  it("preserves the eight commercial events and adds only the four project events", () => {
     expect(WORKFLOW_NOTIFICATION_EVENTS.map(({ key }) => key)).toEqual([
       ...WORKFLOW_NOTIFICATION_EVENT_KEYS,
     ]);
-    expect(WORKFLOW_NOTIFICATION_EVENTS).toHaveLength(8);
+    expect(WORKFLOW_NOTIFICATION_EVENTS).toHaveLength(12);
+    expect(WORKFLOW_NOTIFICATION_EVENT_KEYS.slice(0, 8)).toEqual([
+      "crm.deal.won",
+      "crm.deal.lost",
+      "crm.deal.stage_changed",
+      "crm.proposal.accepted",
+      "contracts.draft.accepted",
+      "contracts.signature.completed",
+      "contracts.contract.expiring",
+      "contracts.contract.renewal_due",
+    ]);
+    expect(WORKFLOW_NOTIFICATION_EVENT_KEYS.slice(8)).toEqual([
+      "projects.project.started",
+      "projects.project.overdue",
+      "projects.task.overdue",
+      "projects.milestone.due",
+    ]);
     expect(getWorkflowNotificationEvent("crm.quote.accepted")).toBeNull();
     expect(getWorkflowNotificationEvent("constructor")).toBeNull();
+    expect(getWorkflowNotificationEvent("finance.payable.due")).toBeNull();
   });
 
-  it("keeps the active commercial catalogue and workflow registry aligned on keys, labels, modules and source entities", () => {
+  it("keeps the active catalogue and workflow registry aligned on keys, labels, modules and source entities", () => {
     const active = NOTIFICATION_EVENT_CATALOG.filter(
       (event) =>
-        event.availability === "active" && ["crm", "contracts"].includes(event.moduleKey ?? ""),
+        event.availability === "active" &&
+        ["crm", "contracts", "projects"].includes(event.moduleKey ?? ""),
     );
     expect(active.map(({ eventKey }) => eventKey).sort()).toEqual(
       [...WORKFLOW_NOTIFICATION_EVENT_KEYS].sort(),
@@ -44,6 +62,10 @@ describe("explicit business notification selectors", () => {
       "contracts.signature.completed": "contracts",
       "contracts.contract.expiring": "contracts",
       "contracts.contract.renewal_due": "contracts",
+      "projects.project.started": "projects",
+      "projects.project.overdue": "projects",
+      "projects.task.overdue": "project_tasks",
+      "projects.milestone.due": "project_milestones",
     };
     for (const definition of WORKFLOW_NOTIFICATION_EVENTS) {
       expect(active.find(({ eventKey }) => eventKey === definition.key)).toMatchObject({
@@ -52,7 +74,8 @@ describe("explicit business notification selectors", () => {
         moduleKey: definition.moduleKey,
       });
       expect(definition.entity).toBe(expectedSources[definition.key]);
-      expect(definition.moduleKey).toBe(definition.key.startsWith("crm.") ? "crm" : "contracts");
+      expect(definition.moduleKey).toBe(definition.key.split(".")[0]);
+      expect(definition.deadline).toBe(definition.scheduling === "before_due");
     }
   });
 
@@ -86,15 +109,41 @@ describe("explicit business notification selectors", () => {
     ).toBe(false);
   });
 
-  it.each(["contracts.contract.expiring", "contracts.contract.renewal_due"] as const)(
-    "requires an explicit bounded notice window for %s",
+  it.each([
+    "contracts.contract.expiring",
+    "contracts.contract.renewal_due",
+    "projects.milestone.due",
+  ] as const)("requires an explicit bounded notice window for %s", (key) => {
+    for (const days_before of [undefined, 0, -1, 366, 1.5, "30", null])
+      expect(notificationEventSelectionSchema.safeParse({ key, days_before }).success).toBe(false);
+    expect(workflowNotificationEventTrigger(key, 1).notification_event?.days_before).toBe(1);
+    expect(workflowNotificationEventTrigger(key, 365).notification_event?.days_before).toBe(365);
+  });
+
+  it.each([
+    "projects.project.started",
+    "projects.project.overdue",
+    "projects.task.overdue",
+  ] as const)(
+    "rejects invented timer parameters on %s while retaining the canonical scheduling mode",
     (key) => {
-      for (const days_before of [undefined, 0, -1, 366, 1.5, "30", null])
-        expect(notificationEventSelectionSchema.safeParse({ key, days_before }).success).toBe(
-          false,
-        );
-      expect(workflowNotificationEventTrigger(key, 1).notification_event?.days_before).toBe(1);
-      expect(workflowNotificationEventTrigger(key, 365).notification_event?.days_before).toBe(365);
+      expect(notificationEventSelectionSchema.safeParse({ key }).success).toBe(true);
+      for (const extra of [
+        { days_before: 1 },
+        { days_after: 1 },
+        { recurrence: "daily" },
+        { timezone: "UTC" },
+      ])
+        expect(notificationEventSelectionSchema.safeParse({ key, ...extra }).success).toBe(false);
+      expect(
+        TriggerSchema.safeParse({
+          ...workflowNotificationEventTrigger(key),
+          time_based: { kind: "time_since_field", amount: 1, unit: "days" },
+        }).success,
+      ).toBe(false);
+      expect(getWorkflowNotificationEvent(key)?.scheduling).toBe(
+        key.endsWith("started") ? "transition" : "overdue",
+      );
     },
   );
 

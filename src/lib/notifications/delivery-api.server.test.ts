@@ -383,6 +383,18 @@ it.each(WORKFLOW_NOTIFICATION_EVENTS)(
 
 it.each([
   { entity: "people", trigger: workflowNotificationEventTrigger("crm.deal.won") },
+  { entity: "projects", trigger: workflowNotificationEventTrigger("projects.task.overdue") },
+  {
+    entity: "project_milestones",
+    trigger: { event: "updated", notification_event: { key: "projects.milestone.due" } },
+  },
+  {
+    entity: "projects",
+    trigger: {
+      event: "updated",
+      notification_event: { key: "projects.project.overdue", days_before: 1 },
+    },
+  },
   {
     entity: "contracts",
     trigger: { event: "updated", notification_event: { key: "contracts.contract.expiring" } },
@@ -402,6 +414,30 @@ it.each([
     expect(result).toMatchObject({ notificationSteps: 0, channels: [], realMessages: 0 });
     expect(state.rpc).not.toHaveBeenCalled();
     expect(from.mock.calls.map(([table]) => table)).toEqual(["workflows"]);
+  },
+);
+it.each([
+  { key: "projects.project.started", note: "Planejamento para Ativo" },
+  { key: "projects.project.overdue", note: "Atrasos anteriores à publicação" },
+  { key: "projects.task.overdue", note: "situação personalizada de conclusão" },
+  { key: "projects.milestone.due", note: "17 dias antes do prazo do marco" },
+] as const)(
+  "explains the Projects scheduling boundary for $key without reading the source",
+  async ({ key, note }) => {
+    const definition = WORKFLOW_NOTIFICATION_EVENTS.find((event) => event.key === key)!;
+    previewRuleRow(definition.entity, workflowNotificationEventTrigger(key, 17));
+    const result = (await call(previewNotificationWorkflow, { workspaceId: W, workflowId: U })) as {
+      issues: string[];
+      realMessages: number;
+    };
+    expect(result.realMessages).toBe(0);
+    expect(result.issues.some((issue) => issue.includes(note))).toBe(true);
+    expect(result.issues.some((issue) => issue.includes("por si só"))).toBe(true);
+    expect(from.mock.calls.map(([table]) => table)).toEqual(["workflows"]);
+    expect(state.record).toHaveBeenCalledWith(ctx.supabase, "workflows", U, "view");
+    expect(state.rpc.mock.calls.map(([, name]) => name)).toEqual([
+      "notification_delivery_capabilities",
+    ]);
   },
 );
 it("rules list propagates database denial instead of fabricating empty success", async () => {

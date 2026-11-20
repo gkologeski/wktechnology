@@ -10,6 +10,10 @@ export const WORKFLOW_NOTIFICATION_EVENT_KEYS = [
   "contracts.signature.completed",
   "contracts.contract.expiring",
   "contracts.contract.renewal_due",
+  "projects.project.started",
+  "projects.project.overdue",
+  "projects.task.overdue",
+  "projects.milestone.due",
 ] as const;
 export type WorkflowNotificationEventKey = (typeof WORKFLOW_NOTIFICATION_EVENT_KEYS)[number];
 export type WorkflowNotificationEventSelection = {
@@ -24,6 +28,7 @@ export const WORKFLOW_NOTIFICATION_EVENTS = [
     description: "O negócio entra em uma etapa de ganho do funil.",
     entity: "deals",
     moduleKey: "crm",
+    scheduling: "transition",
     deadline: false,
   },
   {
@@ -32,6 +37,7 @@ export const WORKFLOW_NOTIFICATION_EVENTS = [
     description: "O negócio entra em uma etapa de perda do funil.",
     entity: "deals",
     moduleKey: "crm",
+    scheduling: "transition",
     deadline: false,
   },
   {
@@ -41,6 +47,7 @@ export const WORKFLOW_NOTIFICATION_EVENTS = [
       "Outras mudanças de etapa, incluindo reabertura; ganho e perda usam eventos próprios.",
     entity: "deals",
     moduleKey: "crm",
+    scheduling: "transition",
     deadline: false,
   },
   {
@@ -49,6 +56,7 @@ export const WORKFLOW_NOTIFICATION_EVENTS = [
     description: "O cliente aceita uma proposta válida enviada.",
     entity: "proposals",
     moduleKey: "crm",
+    scheduling: "transition",
     deadline: false,
   },
   {
@@ -57,6 +65,7 @@ export const WORKFLOW_NOTIFICATION_EVENTS = [
     description: "O cliente aceita a minuta vinculada ao negócio.",
     entity: "deals",
     moduleKey: "contracts",
+    scheduling: "transition",
     deadline: false,
   },
   {
@@ -65,6 +74,7 @@ export const WORKFLOW_NOTIFICATION_EVENTS = [
     description: "O contrato recebe a confirmação de assinatura concluída.",
     entity: "contracts",
     moduleKey: "contracts",
+    scheduling: "transition",
     deadline: false,
   },
   {
@@ -73,6 +83,7 @@ export const WORKFLOW_NOTIFICATION_EVENTS = [
     description: "O contrato entra no período de aviso anterior à data de término.",
     entity: "contracts",
     moduleKey: "contracts",
+    scheduling: "before_due",
     deadline: true,
   },
   {
@@ -81,6 +92,47 @@ export const WORKFLOW_NOTIFICATION_EVENTS = [
     description: "O contrato com renovação automática se aproxima do prazo de aviso de renovação.",
     entity: "contracts",
     moduleKey: "contracts",
+    scheduling: "before_due",
+    deadline: true,
+  },
+  {
+    key: "projects.project.started",
+    label: "Projeto iniciado",
+    description:
+      "O projeto muda de planejamento para ativo; retomadas não iniciam esta ocorrência.",
+    entity: "projects",
+    moduleKey: "projects",
+    scheduling: "transition",
+    deadline: false,
+  },
+  {
+    key: "projects.project.overdue",
+    label: "Projeto atrasado",
+    description:
+      "O projeto em planejamento ou ativo ultrapassa o prazo após a publicação da regra, uma vez por prazo.",
+    entity: "projects",
+    moduleKey: "projects",
+    scheduling: "overdue",
+    deadline: false,
+  },
+  {
+    key: "projects.task.overdue",
+    label: "Tarefa de projeto atrasada",
+    description:
+      "Uma tarefa aberta ultrapassa o prazo após a publicação da regra; exige projeto em planejamento, ativo ou em espera.",
+    entity: "project_tasks",
+    moduleKey: "projects",
+    scheduling: "overdue",
+    deadline: false,
+  },
+  {
+    key: "projects.milestone.due",
+    label: "Marco próximo do prazo",
+    description:
+      "Um marco pendente ou em andamento entra na antecedência configurada; exige projeto em planejamento, ativo ou em espera.",
+    entity: "project_milestones",
+    moduleKey: "projects",
+    scheduling: "before_due",
     deadline: true,
   },
 ] as const satisfies readonly {
@@ -88,7 +140,8 @@ export const WORKFLOW_NOTIFICATION_EVENTS = [
   label: string;
   description: string;
   entity: WorkflowEntity;
-  moduleKey: "crm" | "contracts";
+  moduleKey: "crm" | "contracts" | "projects";
+  scheduling: "transition" | "overdue" | "before_due";
   deadline: boolean;
 }[];
 

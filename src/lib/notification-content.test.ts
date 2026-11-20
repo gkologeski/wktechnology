@@ -41,6 +41,27 @@ it("approval notice does not contain the workflow snapshot and uses a verified r
   });
   expect(workflowApprovalNotificationContent(W, "ats_interviews", ID).link).toBeNull();
 });
+it("milestone approval notice points to its project tab and exact milestone without a snapshot", () => {
+  const notice = workflowApprovalNotificationContent(W, "project_milestones", ID, A);
+  expect(notice).toMatchObject({
+    workspace_id: W,
+    entity: "project_milestones",
+    entity_id: ID,
+    link: `/projects/${A}?tab=milestones&milestoneId=${ID}`,
+  });
+  expect(Object.keys(notice)).not.toContain("project_id");
+  expect(workflowApprovalNotificationContent(W, "project_tasks", ID).link).toBe(
+    `/projects/tasks?taskId=${ID}`,
+  );
+});
+it.each([undefined, null, "", "https://external.example/project", `${A}?tab=private`, {}])(
+  "does not invent a milestone project link from invalid relation %s",
+  (parent) => {
+    expect(
+      workflowApprovalNotificationContent(W, "project_milestones", ID, parent).link,
+    ).toBeNull();
+  },
+);
 it("approval execution keeps private note in its decision record and sends a neutral source notice", async () => {
   const writes: { table: string; row: Record<string, unknown> }[] = [];
   const db = {
@@ -82,6 +103,22 @@ it("approval execution keeps private note in its decision record and sends a neu
     link: `/deals/${ID}`,
   });
   expect(JSON.stringify(notice)).not.toMatch(/salary fixture|Confidential note|Private/);
+  writes.length = 0;
+  const milestoneResult = await runControlAction(
+    db,
+    { type: "approval_step", title: "Private {{confidential}}" },
+    {
+      ...ctx,
+      entity: "project_milestones",
+      after: { project_id: A, confidential: "salary fixture" },
+    },
+    { index: 0, stepPath: "0", annotate: (s) => s, runActions: vi.fn() },
+  );
+  expect(milestoneResult.done?.waitingApproval?.approvalId).toBe(ID);
+  const milestoneNotice = writes.find((item) => item.table === "notifications")!.row;
+  expect(milestoneNotice.link).toBe(`/projects/${A}?tab=milestones&milestoneId=${ID}`);
+  expect(milestoneNotice.entity).toBe("project_milestones");
+  expect(JSON.stringify(milestoneNotice)).not.toMatch(/salary fixture|Private/);
 });
 it("approval recipient denial prevents creation and its notice", async () => {
   state.rpc.mockResolvedValue(false);

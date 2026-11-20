@@ -240,6 +240,7 @@ function NotificationRulesContext({
                 {[
                   { prefix: "crm.", label: "TechSales" },
                   { prefix: "contracts.", label: "TechContracts" },
+                  { prefix: "projects.", label: "TechProjects" },
                 ].map((group) => (
                   <optgroup key={group.prefix} label={group.label}>
                     {WORKFLOW_NOTIFICATION_EVENTS.filter((event) =>

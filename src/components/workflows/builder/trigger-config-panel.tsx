@@ -103,6 +103,7 @@ export function TriggerConfigPanel({
           {[
             { prefix: "crm.", label: "TechSales" },
             { prefix: "contracts.", label: "TechContracts" },
+            { prefix: "projects.", label: "TechProjects" },
           ].map((group) => {
             const entries = eventOptions.filter((event) => event.key.startsWith(group.prefix));
             return entries.length ? (
@@ -119,6 +120,20 @@ export function TriggerConfigPanel({
         {notificationEvent && (
           <div className="mt-2 space-y-2 text-xs text-muted-foreground">
             <p>{notificationEvent.description} A seleção não publica nem ativa o Workflow.</p>
+            {notificationEvent.key === "projects.project.started" && (
+              <p>
+                Somente a mudança de Planejamento para Ativo. Criar ou importar um projeto já ativo,
+                alterar a data de início ou retomar um projeto Em espera não dispara este evento.
+              </p>
+            )}
+            {notificationEvent.scheduling === "overdue" && (
+              <p>
+                O atraso é detectado no dia seguinte ao prazo, pelo calendário de São Paulo. Não há
+                antecedência nem lembrete diário: cada prazo gera uma única ocorrência por regra.
+                Prazos vencidos antes da publicação não entram; uma verificação posterior pode
+                recuperar os que venceram após a publicação.
+              </p>
+            )}
             {notificationEvent.deadline && (
               <>
                 <Label htmlFor="notification-event-days-before" className="text-xs">
@@ -143,9 +158,11 @@ export function TriggerConfigPanel({
                   }
                 />
                 <p>
-                  {notificationEvent.key === "contracts.contract.renewal_due"
-                    ? "O prazo de aviso é o fim da vigência menos o aviso prévio cadastrado. Exige renovação automática e aviso prévio válido; o aviso não renova o contrato."
-                    : "O prazo é a data de término da vigência cadastrada; o aviso não encerra o contrato."}{" "}
+                  {notificationEvent.key === "projects.milestone.due"
+                    ? "O prazo é a data do marco pendente ou em andamento, ainda não concluído, de um projeto em Planejamento, Ativo ou Em espera. O aviso não conclui o marco nem gera cobrança."
+                    : notificationEvent.key === "contracts.contract.renewal_due"
+                      ? "O prazo de aviso é o fim da vigência menos o aviso prévio cadastrado. Exige renovação automática e aviso prévio válido; o aviso não renova o contrato."
+                      : "O prazo é a data de término da vigência cadastrada; o aviso não encerra o contrato."}{" "}
                   A janela começa com a antecedência escolhida e termina no prazo. Prazos já
                   vencidos não entram.
                 </p>

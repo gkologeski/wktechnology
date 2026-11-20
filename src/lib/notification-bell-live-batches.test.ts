@@ -284,7 +284,7 @@ it("uses a fresh exact-event workspace sound choice for a canonical notice", asy
   expect(f.interrupt).toHaveBeenCalledExactlyOnceWith({ toast: true, sound: true, shake: true });
 });
 
-it.each([null, "unknown", "mention", "projects.project.started"])(
+it.each([null, "unknown", "mention", "finance.payable.due"])(
   "never falls back to a noisy alias after invalid RPC eventKey %s",
   async (eventKey) => {
     const f = fixture();

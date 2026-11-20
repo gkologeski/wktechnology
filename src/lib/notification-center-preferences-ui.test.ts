@@ -200,8 +200,31 @@ describe("personal workspace notification settings form", () => {
     expect(options).toContain("legacy.sla.first_response_breach");
     expect(options).toContain("crm.deal.won");
     expect(options).toContain("contracts.contract.renewal_due");
-    expect(options).not.toContain("projects.project.started");
+    expect(options).toContain("projects.project.started");
+    expect(options).toContain("projects.project.overdue");
+    expect(options).toContain("projects.task.overdue");
+    expect(options).toContain("projects.milestone.due");
+    expect(options).not.toContain("finance.payable.due");
   });
+  it.each([
+    ["projects.project.started", "Projeto iniciado"],
+    ["projects.project.overdue", "Projeto atrasado"],
+    ["projects.task.overdue", "Tarefa de projeto atrasada"],
+    ["projects.milestone.due", "Marco próximo do prazo"],
+  ])(
+    "saves a targeted WhatsApp block for %s without opting into other channels",
+    async (key, label) => {
+      await render();
+      await choose("Evento da preferência", key);
+      expect(control(`${label}: WhatsApp oficial`).value).toBe("inherit");
+      await choose(`${label}: WhatsApp oficial`, "false");
+      await submit();
+      expect(save).toHaveBeenCalledExactlyOnceWith(
+        { eventOverrides: { [key]: { whatsapp: false } } },
+        7,
+      );
+    },
+  );
   it("saves only an explicit canonical-event sound choice without enabling email or creating a rule", async () => {
     await render();
     await choose("Evento da preferência", "contracts.contract.expiring");

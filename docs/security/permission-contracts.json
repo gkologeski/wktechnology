@@ -4186,9 +4186,18 @@
     {
       "id": "projects-task-details-panel",
       "kind": "business",
-      "resources": ["techprojects.tasks"],
-      "actions": ["view", "update"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "techprojects.tasks"
+      ],
+      "actions": [
+        "view",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techprojects.tasks.view.own",
         "techprojects.tasks.view.team",
@@ -4197,7 +4206,7 @@
         "techprojects.tasks.update.team",
         "techprojects.tasks.update.workspace"
       ],
-      "rationale": "Task rows and kanban cards open the task details panel (also via ?taskId=). The panel only shows tasks already returned by the RLS-filtered lists and edits title/status/assignee/due/hours/description through the existing updateTask server function, which re-checks the role keys and the record via assertWorkRecord -> work_record_access. The UI disables fields from per-record capabilities (useWorkCapabilities/useWorkRecordCapability). Other areas of the project page (milestones, members, hours, billing) are unchanged and keep their own server checks. The task list and the project board load in pages (per-status board columns with 'Carregar mais'); every row still comes from the RLS-filtered server functions of the projects-core-functions contract.",
+      "rationale": "Task rows and kanban cards open the task details panel (also via ?taskId=). The panel only shows tasks already returned by the RLS-filtered lists and edits title/status/assignee/due/hours/description through the existing updateTask server function, which re-checks the role keys and the record via assertWorkRecord -> work_record_access. The UI disables fields from per-record capabilities (useWorkCapabilities/useWorkRecordCapability). Other areas of the project page (milestones, members, hours, billing) are unchanged and keep their own server checks. The task list and the project board load in pages (per-status board columns with 'Carregar mais'); every row still comes from the RLS-filtered server functions of the projects-core-functions contract. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
       "controls": [
         {
           "file": "src/lib/access-control/use-work-capabilities.ts",
@@ -4210,12 +4219,112 @@
         {
           "file": "src/lib/access-control/work-core.server.ts",
           "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workCanRead"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkScreenAccess"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkRecordAccess"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "workflowNotificationTriggerMatches"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "getWorkflowNotificationEvent"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
+        },
+        {
+          "file": "src/lib/access-control/work-cost-projection.ts",
+          "symbol": "loadWorkCostProjection"
         }
       ],
       "database": [
         {
           "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
           "symbol": "work_record_access"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_task_open"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_started_capture"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_milestone_href"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_snapshot"
         }
       ],
       "tests": {
@@ -4241,10 +4350,10 @@
         }
       },
       "files": {
-        "src/components/projects/task-core-fields.tsx": "2a74fe35cf612bd5368ccd7474083f8a18ea26ad9ab35bec20f972a2101d8069",
-        "src/components/projects/task-details-sheet.tsx": "a621343a6749d977f6733bf53531821e64e428a6ed5a684afc2e35b0579c9494",
-        "src/routes/_authenticated/projects.tasks.tsx": "8573bdf7bc21c0a5074829d0e2e93f7c4b18aaf0214125aa8991f0332457dcc3",
-        "src/routes/_authenticated/projects.$id.tsx": "6b252435829ee9af83645291c400361af03e7f670609ef1fd8724356b6951806"
+        "src/components/projects/task-core-fields.tsx": "33e75d42e8ac20d6c8c744aecf9646677c3e744e56982c00cfd30a9496fc9f3f",
+        "src/components/projects/task-details-sheet.tsx": "2f29838c1c26eb579afa4bbd4ebaf6ae8087fafb6677cfcb1b816c66d22ad45e",
+        "src/routes/_authenticated/projects.tasks.tsx": "08f83a1d631a9e1b17fb8c791e2a2b1e9d379f4098addc9ca6a2b083a709e98f",
+        "src/routes/_authenticated/projects.$id.tsx": "2cf3904328e520a729a564dec2c813125f313c235027f4a18fab0117833bb688"
       }
     },
     {
@@ -4283,8 +4392,18 @@
         "techprojects.time_entries",
         "techprojects.profitability"
       ],
-      "actions": ["view", "create", "update", "delete", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "techprojects.projects.view.own",
         "techprojects.projects.view.team",
@@ -4320,7 +4439,7 @@
         "techprojects.time_entries.delete.workspace",
         "techprojects.profitability.view.workspace"
       ],
-      "rationale": "Existing TechProjects server functions. Reads of projects/tasks first pass workCanRead (work_area_authorize view: active member of the active workspace, effective key, deny wins) and return empty when denied; RLS work_view/work_context_access still filters every row by workspace and scope. Time-entry reads/writes check work_time_context grants (workTimeCan/assertWorkTimeCan) before work_time_* RLS; deletes use deleteByIdGuarded so an RLS-denied delete fails; capabilities come from project_time_capabilities via workRpc. Writes re-check role keys (assertAnyPermission) and records (assertWorkRecord -> work_record_access); milestones, members and profitability use requireWorkPermission. This delivery adds the read gate, optional offset/limit/status paging to listTasks/listAllProjectTasks (same client, same RLS) and read indexes on project_tasks (0270-0272: no policy, grant or data change).",
+      "rationale": "Existing TechProjects server functions. Reads of projects/tasks first pass workCanRead (work_area_authorize view: active member of the active workspace, effective key, deny wins) and return empty when denied; RLS work_view/work_context_access still filters every row by workspace and scope. Time-entry reads/writes check work_time_context grants (workTimeCan/assertWorkTimeCan) before work_time_* RLS; deletes use deleteByIdGuarded so an RLS-denied delete fails; capabilities come from project_time_capabilities via workRpc. Writes re-check role keys (assertAnyPermission) and records (assertWorkRecord -> work_record_access); milestones, members and profitability use requireWorkPermission. This delivery adds the read gate, optional offset/limit/status paging to listTasks/listAllProjectTasks (same client, same RLS) and read indexes on project_tasks (0270-0272: no policy, grant or data change). P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
       "controls": [
         {
           "file": "src/lib/access-control/work-read-gate.server.ts",
@@ -4353,6 +4472,50 @@
         {
           "file": "src/lib/db/delete-guarded.ts",
           "symbol": "deleteByIdGuarded"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkScreenAccess"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkRecordAccess"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "workflowNotificationTriggerMatches"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "getWorkflowNotificationEvent"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
+        },
+        {
+          "file": "src/lib/access-control/work-cost-projection.ts",
+          "symbol": "loadWorkCostProjection"
         }
       ],
       "database": [
@@ -4375,6 +4538,58 @@
         {
           "file": "drizzle/migrations/0272_project_tasks_status_partial_idx.sql",
           "symbol": "project_tasks"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_task_open"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_started_capture"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_milestone_href"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_snapshot"
         }
       ],
       "tests": {
@@ -4400,7 +4615,7 @@
         }
       },
       "files": {
-        "src/lib/projects.functions.ts": "1c21f31612d95a4ba4062f2f2861e7bfafc53ba96ca3c81be03a3f555082989a",
+        "src/lib/projects.functions.ts": "5602d4cdd1acb38f9de4ebfa27dc1c7fd72b40323fc303d82ad3add11de4d2d8",
         "drizzle/migrations/0270_project_tasks_list_order_idx.sql": "07d21d3555ea051bcffed01768b5f553d1f232f48707c8e6a99508d4de2c7dba",
         "drizzle/migrations/0271_project_tasks_project_status_sort_idx.sql": "d322f1f7ccbff70366e149140c915a18e1a16a36476157f127913a38c63edbae",
         "drizzle/migrations/0272_project_tasks_status_partial_idx.sql": "a92803906adba67c20581284aea6d40e5f32de147660f119635ea0a00f1fa24f",
@@ -7583,7 +7798,7 @@
         "techsales.role_profiles.view.workspace",
         "techsales.role_profiles.manage.workspace"
       ],
-      "rationale": "Stage 3: explicit commercial contract/evidence binding; no timestamp/status inference. Signature actions require active selected workspace, effective view/manage keys plus current contract record read/update and read-only denial. Immutable private PDF objects are uploaded by the server only after authorization, hashed and bound to actor/contract revision; SQL matches immutable metadata before recording human external attestation. Native preparation reuses authenticated esign create/send/signing with two explicit parties and a sealed document; signing offer documents never qualifies. Recruitment reads require hiring demand view and HR row scope; linking requires update, CAS and same-tenant/client/deal. Before provider publishing, HR access/publish permission and a fresh SQL business preflight run; every relevant ATS write rechecks approval/signature/date/current source. Historical records are preserved and activation is per workspace. Background hiring runs after sales_worker_authorize then current application-derived business gate, and Hunting does not provision internal hiring. Existing record/field permissions and contract legal approvals remain active. | Signature operations moved to TechContracts; legacy settings URL only redirects to the same HrScreenAccess-protected destination. Contract/deal evidence stays source-bound; read-only sessions cannot prepare evidence. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers.",
+      "rationale": "Stage 3: explicit commercial contract/evidence binding; no timestamp/status inference. Signature actions require active selected workspace, effective view/manage keys plus current contract record read/update and read-only denial. Immutable private PDF objects are uploaded by the server only after authorization, hashed and bound to actor/contract revision; SQL matches immutable metadata before recording human external attestation. Native preparation reuses authenticated esign create/send/signing with two explicit parties and a sealed document; signing offer documents never qualifies. Recruitment reads require hiring demand view and HR row scope; linking requires update, CAS and same-tenant/client/deal. Before provider publishing, HR access/publish permission and a fresh SQL business preflight run; every relevant ATS write rechecks approval/signature/date/current source. Historical records are preserved and activation is per workspace. Background hiring runs after sales_worker_authorize then current application-derived business gate, and Hunting does not provision internal hiring. Existing record/field permissions and contract legal approvals remain active. | Signature operations moved to TechContracts; legacy settings URL only redirects to the same HrScreenAccess-protected destination. Contract/deal evidence stays source-bound; read-only sessions cannot prepare evidence. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -7632,6 +7847,42 @@
         {
           "file": "src/lib/contracts/signature-package.server.ts",
           "symbol": "signerSignaturePackage"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workCanRead"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
+        },
+        {
+          "file": "src/lib/access-control/work-cost-projection.ts",
+          "symbol": "loadWorkCostProjection"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "workflowNotificationTriggerMatches"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "getWorkflowNotificationEvent"
         }
       ],
       "database": [
@@ -7646,6 +7897,58 @@
         {
           "file": "drizzle/migrations/0358_esign_formatted_contract_body.sql",
           "symbol": "hiring_contract_native_prepare"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_task_open"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_started_capture"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_milestone_href"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_lookup"
         }
       ],
       "tests": {
@@ -7673,7 +7976,7 @@
       "files": {
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
-        "src/lib/workflows/engine/authorization.server.ts": "aab928241e3b45ab85e4026cb12a8ff700eb000193790461dae115154cc72211",
+        "src/lib/workflows/engine/authorization.server.ts": "e455fe34ada983b4e2852820ca5099135fc1457477b75cd46d40a88423a6f946",
         "src/routes/_authenticated/contracts.$id.tsx": "06c1ab0f4d445f677b8c78402410b9bb103fe50512bfcc172abb44cfa938b989",
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
@@ -7884,10 +8187,10 @@
     {
       "id": "hiring-stage4-declarative",
       "kind": "presentation",
-      "rationale": "Pure declarative workflow types, validation schemas and UI draft-template definitions; no IO, route or execution. Hiring templates remain unpublished drafts. Runtime actions and persisted permissions are independently guarded by stage4 business contract. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication.",
+      "rationale": "Pure declarative workflow types, validation schemas and UI draft-template definitions; no IO, route or execution. Hiring templates remain unpublished drafts. Runtime actions and persisted permissions are independently guarded by stage4 business contract. | DESLIGA-AGENDA 07/11/2026: declares/exposes the two new offboarding actions (disconnect_integrations, transfer_portfolio); no new key. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
       "files": {
         "src/lib/workflows/hiring-templates.ts": "657b1ce58925d0169860c04affd0fc1033aa84ee51154ff3f01806d4419799ff",
-        "src/lib/workflows/types.ts": "e5d4f24911c457a5164625a91463a5300a368020eb96188a91c38b73d8f62a17",
+        "src/lib/workflows/types.ts": "b7df7438db508a3d3b83e80b74394dcfcd3da70df0b46e3ae65597b40faf8023",
         "src/lib/workflows/schemas.ts": "cc4c864041016e01d1e52e2d62d93f9aa1be20860e6bacd948b7eaaa1cf3dd99"
       }
     },
@@ -14860,9 +15163,9 @@
     {
       "id": "notification-event-catalog",
       "kind": "presentation",
-      "rationale": "Pure static metadata and exact legacy adapters; no I/O, authorization decision, UI action, producer activation, registry writes or grants. Planned entries are explicitly inactive contracts for later packages. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication.",
+      "rationale": "Pure static metadata and exact legacy adapters; no I/O, authorization decision, UI action, producer activation, registry writes or grants. Planned entries are explicitly inactive contracts for later packages. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
       "files": {
-        "src/lib/notification-catalog.ts": "1aa2c67977a601a1d16aa678cd55c5f3ac039e727b73279c14dbb0385e8918d2"
+        "src/lib/notification-catalog.ts": "b129e08607f606d03111befbf188bfc021915f7d74a43ae24a0034e65b0f4490"
       }
     },
     {
@@ -14904,7 +15207,7 @@
         "own",
         "workspace"
       ],
-      "rationale": "Atomic service-only notification dispatcher binds current published workflow, version, run, executor and actual source workspace. Private non-BYPASSRLS subject bridges retain canonical source policies and explicit deny for all six modules. Each resolved candidate requires active membership and actual source read. Named managers/delegates and pending approvers never escalate implicitly; no followers invented. Raw variable templates become a neutral notice, not executor snapshot values. Existing workflow step authorization remains in force for all other operations; no role key or grant is added. UI edits the existing workflow draft, no direct notification writes. SQL-claims disposable tests execute the real dispatcher and canonical predicates; real JWT/PostgREST acceptance is separate. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved.",
+      "rationale": "Atomic service-only notification dispatcher binds current published workflow, version, run, executor and actual source workspace. Private non-BYPASSRLS subject bridges retain canonical source policies and explicit deny for all six modules. Each resolved candidate requires active membership and actual source read. Named managers/delegates and pending approvers never escalate implicitly; no followers invented. Raw variable templates become a neutral notice, not executor snapshot values. Existing workflow step authorization remains in force for all other operations; no role key or grant is added. UI edits the existing workflow draft, no direct notification writes. SQL-claims disposable tests execute the real dispatcher and canonical predicates; real JWT/PostgREST acceptance is separate. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
       "exception": {
         "mechanism": "service_role execute grant plus role claim and null auth.uid; workflow/run/version/source proof; private bridges revoked from browser and service callers.",
         "boundary": "Only current workflow source and active readable recipients, at most 200 per action; no external channel or arbitrary user impersonation RPC.",
@@ -14979,6 +15282,42 @@
         {
           "file": "src/lib/integration-notifier.server.ts",
           "symbol": "dispatchZapier"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workCanRead"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkScreenAccess"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkRecordAccess"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
+        },
+        {
+          "file": "src/lib/access-control/work-cost-projection.ts",
+          "symbol": "loadWorkCostProjection"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "workflowNotificationTriggerMatches"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "getWorkflowNotificationEvent"
         }
       ],
       "database": [
@@ -15029,6 +15368,58 @@
         {
           "file": "drizzle/migrations/0395_notification_slack.sql",
           "symbol": "techerp_api.notification_slack_integration_access"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_task_open"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_started_capture"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_milestone_href"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_lookup"
         }
       ],
       "tests": {
@@ -15056,7 +15447,7 @@
       "files": {
         "drizzle/migrations/0391_notification_recipients.sql": "12eec659a22ef6a3bf13a2fd376b3fd50e84752da281d6d19e533ff826dcd37a",
         "src/lib/notification-dispatch.server.ts": "9c31756e679af62e9c2485f7d1cf5dd522211df55fc6a6f912f7c4b9cb86ffeb",
-        "src/lib/workflows/engine-actions.server.ts": "c610681bf396cd4e7e10f2610f5430a523f1fa5b87845f8cf676f8572b5d2c4c",
+        "src/lib/workflows/engine-actions.server.ts": "b8b420c83dab967faa3ad38b5947d5f2c7360164be33fb903d3fb8bff36eb5bb",
         "src/lib/workflows/engine/actions-messaging.server.ts": "41be7ec71111f99f38bb5e5e6db7600255f24606550314bd508093acc234a7a3",
         "src/components/workflows/builder/step-forms/notification-form.tsx": "0221fe4dddaaabe3960ec4d4c9f2df7c5f2234233351b0cfc8b67cbf31db11e9"
       }
@@ -15284,10 +15675,10 @@
     {
       "id": "notification-center-preference-policy",
       "kind": "presentation",
-      "rationale": "Pure strict schemas, context-race consistency assertion, catalogue metadata, partial preference overlay merge/diff, local-clock silence and grouping of already-loaded items. No I/O, delivery, grant or recipient lookup; authoritative session/membership/source checks and persistence belong to the personal workspace RPC boundary. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication.",
+      "rationale": "Pure strict schemas, context-race consistency assertion, catalogue metadata, partial preference overlay merge/diff, local-clock silence and grouping of already-loaded items. No I/O, delivery, grant or recipient lookup; authoritative session/membership/source checks and persistence belong to the personal workspace RPC boundary. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
       "files": {
         "src/lib/notification-center-preferences.ts": "614bd1da33362a43bbeef955619ef0040e13e6007cbeb69fd9d292905c93dd11",
-        "src/lib/notification-center.ts": "bc6f3ba48d8438a91937ee5aed5ecb40caec5424756ccfe96f23935faa8224e5"
+        "src/lib/notification-center.ts": "ddb77bc09047ca851e3cfed711f668a20335a6459b6a46b401d8fe8dca00a0c0"
       }
     },
     {
@@ -15313,7 +15704,7 @@
         "own",
         "workspace"
       ],
-      "rationale": "Compatibility source-binding and content-minimization only. Existing reminder worker is imported exclusively by the CRON_SECRET-guarded route; existing approval step validates the named recipient through sales_workflow_approval_recipient in the authorized workflow engine. Neither endpoint, target choice nor email delivery is broadened. In-app notices now carry explicit source workspace and real activity/workflow-source ids with neutral content, never a private activity/comment/approval snapshot authorized only against a parent deal. The new center RLS revalidates active recipient and actual source on every read; no role grants or external channel is introduced. Reminder creation keeps the existing service worker selection and preferences, with access at consumption enforced by the new SQL boundary.",
+      "rationale": "Compatibility source-binding and content-minimization only. Existing reminder worker is imported exclusively by the CRON_SECRET-guarded route; existing approval step validates the named recipient through sales_workflow_approval_recipient in the authorized workflow engine. Neither endpoint, target choice nor email delivery is broadened. In-app notices now carry explicit source workspace and real activity/workflow-source ids with neutral content, never a private activity/comment/approval snapshot authorized only against a parent deal. The new center RLS revalidates active recipient and actual source on every read; no role grants or external channel is introduced. Reminder creation keeps the existing service worker selection and preferences, with access at consumption enforced by the new SQL boundary. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
       "exception": {
         "mechanism": "Server-only trusted service imports: existing CRON_SECRET route invokes bounded reminder scan; authorized Workflow engine and service-only recipient RPC guard approval creation. Pure notice constructors validate UUID source/workspace and remove private snapshots.",
         "boundary": "Existing owner-targeted reminder and currently named approval recipients; neutral in-app source references only, no new caller-selected recipient endpoint. Read access remains self/workspace/source RLS.",
@@ -15332,6 +15723,58 @@
         {
           "file": "src/lib/access-control/work-core.server.ts",
           "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workCanRead"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkScreenAccess"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkRecordAccess"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "workflowNotificationTriggerMatches"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "getWorkflowNotificationEvent"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
+        },
+        {
+          "file": "src/lib/access-control/work-cost-projection.ts",
+          "symbol": "loadWorkCostProjection"
         }
       ],
       "database": [
@@ -15342,6 +15785,58 @@
         {
           "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
           "symbol": "sales_workflow_approval_recipient"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_task_open"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_started_capture"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_milestone_href"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_snapshot"
         }
       ],
       "tests": {
@@ -15368,7 +15863,7 @@
       },
       "files": {
         "src/lib/activity-reminders.server.ts": "f884246bfa827ed625300b2ab4f21157ca5a4f7a6ba24979499b0d247fff07ea",
-        "src/lib/workflows/engine/actions-control.server.ts": "f9541e2e6f6d126f88bf97417bdbb310fc2b65abb0dba0b8c08bb776b2b5d511"
+        "src/lib/workflows/engine/actions-control.server.ts": "b05937d530fb52fea75ffb04cc555b04dbba26133bdf658a940a4ed18e652929"
       }
     },
     {
@@ -15391,7 +15886,7 @@
         "system.notification_settings.manage.workspace",
         "system.notification_deliveries.view.workspace"
       ],
-      "rationale": "Package 4 delegates rules to existing Workflows. Authenticated wrappers require selected active workspace; settings/new keys, personal consent/profile CAS, own/source-filtered history and record-authorized rules are distinct SQL boundaries. All UI mutations delegate to those wrappers and canonical Workflow APIs. Service-only enqueue/claim/preflight/finish prove workflow version/run, executor transport permissions, recipient source, consent, quotas and neutral content. Fenced leases prevent stale completion. Ambiguous outcomes never blind-retry/fallback. No role grants, production changes, real sends, rotation, auto-activation, or new scheduler. Existing notification producers/RPC remain compatible. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication.",
+      "rationale": "Package 4 delegates rules to existing Workflows. Authenticated wrappers require selected active workspace; settings/new keys, personal consent/profile CAS, own/source-filtered history and record-authorized rules are distinct SQL boundaries. All UI mutations delegate to those wrappers and canonical Workflow APIs. Service-only enqueue/claim/preflight/finish prove workflow version/run, executor transport permissions, recipient source, consent, quotas and neutral content. Fenced leases prevent stale completion. Ambiguous outcomes never blind-retry/fallback. No role grants, production changes, real sends, rotation, auto-activation, or new scheduler. Existing notification producers/RPC remain compatible. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
       "exception": {
         "mechanism": "Verified session and selected active workspace for interactive APIs; personal operations derive auth.uid only; CRON_SECRET and service-role-only RPCs for bounded worker. UI props are delegation only, never authorization.",
         "boundary": "Only current workspace policy with explicit keys; own consent/profile; source-readable history/rules; named active recipients proven by source resolver. Provider receives neutral content, confirmed email or consent-bound phone; pinned Cloud API sender only.",
@@ -15530,6 +16025,34 @@
         {
           "file": "src/lib/workflows/notification-events.ts",
           "symbol": "workflowNotificationTriggerLabel"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workCanRead"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkScreenAccess"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkRecordAccess"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
+        },
+        {
+          "file": "src/lib/access-control/work-cost-projection.ts",
+          "symbol": "loadWorkCostProjection"
         }
       ],
       "database": [
@@ -15696,6 +16219,58 @@
         {
           "file": "drizzle/migrations/0397_notification_sales_contracts.sql",
           "symbol": "sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_task_open"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_started_capture"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_milestone_href"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_snapshot"
         }
       ],
       "tests": {
@@ -15728,7 +16303,7 @@
         "src/components/notifications/delivery-settings-panel.tsx": "0c2d5424e9eee4b5c2e35712e8207566e6cd9e61dc2796cd595f8e7a4f38c625",
         "src/components/notifications/notification-consent-panel.tsx": "deb87af952c155aafa9caafc00e031d74594d36b9ad519810825a0882e12fc59",
         "src/components/notifications/notification-rules-list.tsx": "84e8c83d532a136e5735f71ffbfe8a909a3fab796f428ec25af06685e79dc885",
-        "src/components/notifications/notification-rules-panel.tsx": "ec6922f78667684791871974df0ade14c74e462db38fc5819885c56a503236d2",
+        "src/components/notifications/notification-rules-panel.tsx": "ff7f33aace5b6d1b3cee1ba8887829b4e79868280c3f96d9378f5ec69c0532ac",
         "src/components/workflows/builder/step-forms/notification-delivery-choice.tsx": "e6f196798b9070827ea336b0d9b37866403227863588dd3b70e4a8c29da2834b",
         "src/lib/notifications/delivery-access.server.ts": "6addee81f235b1a01f1dd0e276e217583e311ab7b990ea14fbbe2bdd83b5eae1",
         "src/lib/notifications/delivery-adapter-runtime.server.ts": "2569f57b5610b7d661afc0943ed5a6fbc8d62d878d2283cf5173340d0d7a0710",
@@ -15742,12 +16317,12 @@
     {
       "id": "notification-delivery-declarative-content",
       "kind": "presentation",
-      "rationale": "Pure strict delivery schemas, neutral payload/model validation, structural rule preview and React email rendering. No I/O, recipient resolution, grants, provider or action execution; interactive and service authorization is enforced at delivery orchestration boundaries. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication.",
+      "rationale": "Pure strict delivery schemas, neutral payload/model validation, structural rule preview and React email rendering. No I/O, recipient resolution, grants, provider or action execution; interactive and service authorization is enforced at delivery orchestration boundaries. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
       "files": {
         "src/lib/email-templates/notification-update.tsx": "64660a91969ad0cda851ca9a6550a3fe49e86c82bc4f50564325d229fc67a0e2",
         "src/lib/notifications/delivery-api.ts": "266c629fa6415c16e2918f6c6f857c933375a4abdba3fe502d81aeca59abbab4",
         "src/lib/notifications/delivery-content.ts": "3ae605fed0a2c4a0bffd271774288a979c2e50243432ee9d685c7eac58451904",
-        "src/lib/notifications/delivery-rule-preview.ts": "3946938953b1cc7a56ee57d1d7dcf0170b61a2f48918b058ac5b5a27bbb060ad",
+        "src/lib/notifications/delivery-rule-preview.ts": "c01af6e670cda2e58419979ff46d567b6d8bcab6d85c7bb5cf297a64be94a2f1",
         "src/lib/notifications/delivery-types.ts": "d39b9f662735d751a912962b165909347f9f5ac79add719d019301c48da59e6f",
         "src/lib/notification-delivery-interaction.ts": "db12a925a3b50ec7e185d4cd9845589ae35cadaea50b9775088d9b07be70e422",
         "src/lib/notification-delivery.functions.ts": "e165ad50922220f2cea29a1602f8ff2d0c67fa019b5c88e0b80f6a805f0d0125"
@@ -16319,7 +16894,10 @@
         "system.workflow_approvals",
         "techsales.deals",
         "techsales.proposals",
-        "techcontracts.contracts"
+        "techcontracts.contracts",
+        "techprojects.projects",
+        "techprojects.tasks",
+        "techprojects.milestones"
       ],
       "actions": [
         "view",
@@ -16331,10 +16909,10 @@
         "own",
         "workspace"
       ],
-      "rationale": "P8 connects exactly eight named TechSales and TechContracts events to the existing Workflow queue and notification ledger. Database producers derive workspace, source and transitions from canonical records, using private immutable occurrence proofs and hashes. Named workflows alone are workspace scoped, with current executor, recipient and source authorization. Canonical eventKey comes from protected context or intent metadata; legacy types, generic workflows and existing handoffs remain compatible. Proposal-origin approvals and event/run feeds delegate to the canonical proposal view gate under invoker RLS; source deny and inactive or foreign membership remain blocking. New rules start disabled, without external channels. Deadline events use explicit bounded lead time and the existing service time tick; no automatic renewal or historical backfill. No grants, role changes, production SQL, real provider messages, push or publication.",
+      "rationale": "P8 connects exactly eight named TechSales and TechContracts events to the existing Workflow queue and notification ledger. Database producers derive workspace, source and transitions from canonical records, using private immutable occurrence proofs and hashes. Named workflows alone are workspace scoped, with current executor, recipient and source authorization. Canonical eventKey comes from protected context or intent metadata; legacy types, generic workflows and existing handoffs remain compatible. Proposal-origin approvals and event/run feeds delegate to the canonical proposal view gate under invoker RLS; source deny and inactive or foreign membership remain blocking. New rules start disabled, without external channels. Deadline events use explicit bounded lead time and the existing service time tick; no automatic renewal or historical backfill. No grants, role changes, production SQL, real provider messages, push or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication.",
       "exception": {
         "mechanism": "Named event minting is private database delegation; event checks and deadline production require service_role with null auth.uid. Interactive rules and previews retain selected active workspace plus canonical Workflow row/action gates. Public selector columns cannot establish a private proof. The internal canvas only renders validated selector metadata and edits an in-memory draft through parent callbacks; it has no persistence or publication authority. Existing parent save/publish handlers and canonical server/SQL gates authorize every effect; the label helper validates display, not user privileges.",
-        "boundary": "Only the eight registered keys and their exact source entities are accepted. Actual proposal acceptance, client draft decision and current signature evidence are checked; imported or active contracts do not imply signature completion. Run/version/source and private occurrence provenance bind dispatch and resume. UI metadata is resolved from protected RPC fields, never titles or links.",
+        "boundary": "The eight P8 registered keys and four P9 project keys use their exact source entities. Actual proposal acceptance, client draft decision and current signature evidence are checked; imported or active contracts do not imply signature completion. Run/version/source and private occurrence provenance bind dispatch and resume. UI metadata is resolved from protected RPC fields, never titles or links.",
         "revocation": "Current deny, inactive membership, source revocation, changed workflow/version, invalidated signature/minuta evidence, changed dates or expired notice window blocks new effects. Consent, transport policy, quota, fencing and provider restrictions from P4-P7 remain required.",
         "review_by": "2027-04-30"
       },
@@ -16390,6 +16968,34 @@
         {
           "file": "src/lib/notification-center-preferences.ts",
           "symbol": "effectiveChannels"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workCanRead"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkScreenAccess"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkRecordAccess"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
+        },
+        {
+          "file": "src/lib/access-control/work-cost-projection.ts",
+          "symbol": "loadWorkCostProjection"
         }
       ],
       "database": [
@@ -16432,6 +17038,58 @@
         {
           "file": "drizzle/migrations/0397_notification_sales_contracts.sql",
           "symbol": "sales_event_reference_access"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_task_open"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_started_capture"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_milestone_href"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_snapshot"
         }
       ],
       "tests": {
@@ -16459,11 +17117,197 @@
       "files": {
         "drizzle/migrations/0397_notification_sales_contracts.sql": "0ef4c33ba435f7dab7904d76c2a1b2ca2653b66b1daf673c9294645db3dbab0e",
         "src/components/workflows/builder/canvas.tsx": "f6e692bafb70294428c114c5ba864e93b81c1fe2b3d5c690cefee30b187c9da3",
-        "src/components/workflows/builder/trigger-config-panel.tsx": "0125d9fd6620f95a8916cda010615aae760938bda2a9f6cc2f4e268674ab569b",
+        "src/components/workflows/builder/trigger-config-panel.tsx": "800597439157c54fb8f76070fc28648a1e4fe33e36e06efc84bb38fcca24acd1",
         "src/components/workflows/workflow-builder.tsx": "71f5efe9f2acce6af91d9f85ce26cca911c8e714dee41467fa38335f01f8cd82",
-        "src/lib/workflows/engine-runtime.server.ts": "d6bcde21d304fa9c44610b9a32c15c20ebce49279b2e7d9c85a194ea9696a9b0",
+        "src/lib/workflows/engine-runtime.server.ts": "c0d8ef10ac6062f05e47f753895d8741dd65a5663af04f796ac73fd1aca1c83e",
         "src/lib/workflows/engine-time-triggers.server.ts": "1d0b7db72edafb2517b62604fcbc7d4215fec77890124509e8d963037cae3282",
-        "src/lib/workflows/notification-events.ts": "116b7de2dcbfa951074aa521a8512c7e56dee200de1f27952c245b80254806c3"
+        "src/lib/workflows/notification-events.ts": "b89ba5f393ec49f6283300a29550248c04685603414edd83cc62be80cbe66562"
+      }
+    },
+    {
+      "id": "notification-project-events",
+      "kind": "service",
+      "resources": [
+        "system.notifications",
+        "system.notification_settings",
+        "system.notification_deliveries",
+        "system.workflows",
+        "system.workflow_approvals",
+        "techprojects.projects",
+        "techprojects.tasks",
+        "techprojects.milestones",
+        "techprojects.members",
+        "techprojects.rates",
+        "techprojects.profitability",
+        "techcontracts.contracts"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "rationale": "P9 adds four opt-in TechProjects occurrences to the existing Workflow queue, private occurrence proofs and delivery ledger. Start is a real planning-to-active transition. DATE deadlines follow America/Sao_Paulo; overdue crossings before publication are excluded. A persistent source/deadline cursor prevents daily, version or A-to-B-to-A repetition. Current executor and recipient source permissions, active membership, tenant, parent relation and custom task completion are revalidated. Milestone links use a current same-workspace parent and protected central context. Project costs are removed from new generic/named snapshots before private hashing, projected out of privileged trigger/association reads and forbidden in generic project actions; other module values remain. The shared user-client cost adapter delegates to the unchanged canonical work_cost_projection RPC, preserving financial access checks and error results. No automatic rule/channel, role grant, task, time, billing, real provider message or production publication.",
+      "exception": {
+        "mechanism": "Minting and URL derivation are private SQL delegation. Scheduler and proof-check APIs require the existing service-role boundary with null auth.uid. Private emitter, cursor/proof tables, task-state helper and milestone URL helper are not executable/readable by authenticated users or service clients. Internal hydration runs after canonical executor/source/association authorization in workflowSourceAllowed; sanitizeWorkflowSnapshot restricts fields and does not grant privileges. loadWorkCostProjection delegates to the SQL financial permission boundary using the authenticated user client; it neither queries raw costs nor impersonates a service client. Interactive rule and preference APIs keep their existing actor, active workspace and canonical row gates.",
+        "boundary": "Only the four registered project keys and exact projects/project_tasks/project_milestones source entities extend the eight P8 keys. Public event columns and payloads cannot establish a proof. Parent relations are same-workspace and custom task state uses its canonical category and list binding. Overdue marker -1 is private, never a public offset. The helper formats only relative paths and does not grant access.",
+        "revocation": "Inactive membership, explicit deny, source or parent access loss, deleted/moved source, terminal project/task/milestone, changed deadline, invalidated custom state, changed workflow/version or expired milestone window blocks new effects. P4-P7 consent, silence, transport policy, quotas, fencing and provider restrictions remain mandatory.",
+        "review_by": "2027-04-30"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/work-read-gate.server.ts",
+          "symbol": "workCanRead"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkScreenAccess"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkRecordAccess"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "authorizeWorkflowStep"
+        },
+        {
+          "file": "src/lib/workflows/engine/authorization.server.ts",
+          "symbol": "sanitizeWorkflowSnapshot"
+        },
+        {
+          "file": "src/lib/access-control/work-cost-projection.ts",
+          "symbol": "loadWorkCostProjection"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "workflowNotificationTriggerMatches"
+        },
+        {
+          "file": "src/lib/workflows/notification-events.ts",
+          "symbol": "getWorkflowNotificationEvent"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_category"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_snapshot"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_emit"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_task_open"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_started_capture"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_business_proof_current"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_event_check"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_business_due_tick"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "techerp_api.notification_project_milestone_href"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_workflow_dispatch_v2"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_list"
+        },
+        {
+          "file": "drizzle/migrations/0398_notification_projects.sql",
+          "symbol": "notification_center_lookup"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "work_cost_projection"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/notification-project-events-postgres.test.ts",
+          "name": "Projects notifications allow authorized member"
+        },
+        "missing_permission": {
+          "file": "src/lib/notification-project-events-postgres.test.ts",
+          "name": "Projects notifications reject missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/notification-project-events-postgres.test.ts",
+          "name": "Projects notifications reject explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/notification-project-events-postgres.test.ts",
+          "name": "Projects notifications reject foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/notification-project-events-postgres.test.ts",
+          "name": "Projects notifications reject inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0398_notification_projects.sql": "44a6f04a1e2cd6aa9d800ee5d083c73da8eee11c1e40cf0e78c08909bde016d5",
+        "src/lib/access-control/work-cost-projection.ts": "069eb2e21e6a491be78c467ab4cedd8ace706873732ca8987f21bac2c79d1732",
+        "src/lib/workflows/hydrate-associations.server.ts": "53aec36ecfe8b8c10beab611ca15e875d431498e1c8f962ce5b18f24389881c0"
+      }
+    },
+    {
+      "id": "notification-project-field-order",
+      "kind": "presentation",
+      "rationale": "Pure field-order metadata for the three existing TechProjects entities. Offers persisted source field names for new filters and tokens; retains unknown/legacy fields in saved configurations. No route, handler, read, write, permission decision or integration effect.",
+      "files": {
+        "src/lib/workflows/entity-field-order.ts": "3413ce8ca7b66bb7f63a6648ef9b758cb0083a41878187e3df9de4e1b9c02149"
       }
     }
   ],

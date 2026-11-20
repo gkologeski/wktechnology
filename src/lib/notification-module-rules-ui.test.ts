@@ -75,7 +75,7 @@ import {
   WORKFLOW_NOTIFICATION_EVENTS,
   workflowNotificationEventTrigger,
 } from "./workflows/notification-events";
-import type { WorkflowTrigger } from "./workflows/types";
+import type { WorkflowEntity, WorkflowTrigger } from "./workflows/types";
 
 let host: HTMLDivElement, root: Root, client: QueryClient;
 beforeEach(() => {
@@ -165,6 +165,7 @@ it("groups only supported events and preserves generic workflow creation", async
   expect([...select.querySelectorAll("optgroup")].map((group) => group.label)).toEqual([
     "TechSales",
     "TechContracts",
+    "TechProjects",
   ]);
   expect([...select.options].map((option) => option.value)).not.toContain("finance.payable.due");
   await click("Criar regra");
@@ -246,7 +247,7 @@ function TriggerEditor({
   entity = "contracts",
 }: {
   initial: WorkflowTrigger;
-  entity?: "contracts" | "deals" | "proposals";
+  entity?: WorkflowEntity;
 }) {
   const [value, setValue] = useState(initial);
   current = value;
@@ -295,6 +296,48 @@ it("offers only entity-compatible canonical events and removes named selection w
   expect(current.notification_event).toBeUndefined();
   expect(host.textContent).toContain("Gatilho baseado em tempo");
 });
+it.each(WORKFLOW_NOTIFICATION_EVENTS.filter((definition) => definition.moduleKey === "projects"))(
+  "shows the precise $key schedule without offering generic or incompatible controls",
+  async (definition) => {
+    await render(
+      createElement(TriggerEditor, {
+        entity: definition.entity,
+        initial: workflowNotificationEventTrigger(definition.key),
+      }),
+    );
+    const options = [
+      ...host.querySelector<HTMLSelectElement>('[aria-label="Evento de negócio do Workflow"]')!
+        .options,
+    ].map((option) => option.value);
+    expect(options).toEqual([
+      "",
+      ...WORKFLOW_NOTIFICATION_EVENTS.filter((event) => event.entity === definition.entity).map(
+        (event) => event.key,
+      ),
+    ]);
+    expect(host.textContent).not.toContain("Gatilho baseado em tempo");
+    expect(Boolean(host.querySelector('[aria-label="Antecedência do aviso em dias"]'))).toBe(
+      definition.key === "projects.milestone.due",
+    );
+    if (definition.scheduling === "overdue") {
+      expect(host.textContent).toContain("dia seguinte ao prazo");
+      expect(host.textContent).toContain("Não há antecedência nem lembrete diário");
+      expect(host.textContent).toContain("antes da publicação não entram");
+    }
+    if (definition.key === "projects.project.started") {
+      expect(host.textContent).toContain("Planejamento para Ativo");
+      expect(host.textContent).toContain("importar um projeto já ativo");
+    }
+    if (definition.key === "projects.milestone.due") {
+      expect(
+        host.querySelector<HTMLInputElement>('[aria-label="Antecedência do aviso em dias"]')!.value,
+      ).toBe("30");
+      expect(host.textContent).toContain("prazo é a data do marco");
+      expect(host.textContent).toContain("não conclui o marco nem gera cobrança");
+      expect(host.textContent).not.toContain("término da vigência");
+    }
+  },
+);
 it("replaces an elapsed-time trigger with a named event while preserving explicit conditions", async () => {
   await render(
     createElement(TriggerEditor, {

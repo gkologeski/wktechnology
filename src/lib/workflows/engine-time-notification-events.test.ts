@@ -75,7 +75,7 @@ describe("business deadline production through the existing time tick", () => {
     expect(db.cursors).toHaveLength(0);
   });
 
-  it("keeps legacy timers owner/workspace scoped and never scans named contract rows in TypeScript", async () => {
+  it("keeps legacy timers owner/workspace scoped and never scans named contract or project rows in TypeScript", async () => {
     const timer = { kind: "time_since_field", amount: 1, unit: "days" };
     const base = {
       workspace_id: "workspace",
@@ -106,6 +106,27 @@ describe("business deadline production through the existing time tick", () => {
             time_based: timer,
           },
         },
+        ...(
+          [
+            { key: "projects.project.overdue", entity: "projects" },
+            { key: "projects.task.overdue", entity: "project_tasks" },
+            { key: "projects.milestone.due", entity: "project_milestones" },
+          ] as const
+        ).map(({ key, entity }) => ({
+          ...base,
+          id: key,
+          entity,
+          trigger: workflowNotificationEventTrigger(key),
+        })),
+        {
+          ...base,
+          id: "invalid-mixed-milestone",
+          entity: "project_milestones",
+          trigger: {
+            ...workflowNotificationEventTrigger("projects.milestone.due"),
+            time_based: timer,
+          },
+        },
       ],
       [
         {
@@ -127,6 +148,9 @@ describe("business deadline production through the existing time tick", () => {
       p_limit: 200,
     });
     expect(db.tables).not.toContain("contracts");
+    expect(db.tables).not.toContain("projects");
+    expect(db.tables).not.toContain("project_tasks");
+    expect(db.tables).not.toContain("project_milestones");
     expect(db.reads.find(({ table }) => table === "deals")).toMatchObject({
       filters: { owner_id: "owner", workspace_id: "workspace" },
       limit: 250,

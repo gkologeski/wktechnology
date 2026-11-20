@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { authorizeWorkflowStep, sanitizeWorkflowSnapshot } from "./authorization.server";
 import { runActions } from "../engine-actions.server";
 import type { RunCtx } from "./run-context";
+import type { WorkflowAction } from "../types";
 
 const ctx = (): RunCtx => ({
   entity: "leads",
@@ -53,6 +54,144 @@ describe("workflow authorization boundary", () => {
       custom_fields: { ordinary: "keep" },
     });
     expect(input.public_token).toBe("secret");
+  });
+  it("redacts project costs only at the typed source and association boundaries", () => {
+    const task = {
+      title: "Synthetic task",
+      project_id: "project-1",
+      project: {
+        id: "project-1",
+        name: "Delivery",
+        planned_cost: 75000,
+        planned_hours: 20,
+        metadata: { planned_cost: "customer-provided label" },
+      },
+    };
+    expect(sanitizeWorkflowSnapshot(task, "project_tasks")).toEqual({
+      title: "Synthetic task",
+      project_id: "project-1",
+      project: {
+        id: "project-1",
+        name: "Delivery",
+        planned_hours: 20,
+        metadata: { planned_cost: "customer-provided label" },
+      },
+    });
+    expect(sanitizeWorkflowSnapshot({ planned_cost: 12, amount: 13 }, "financial_entries")).toEqual(
+      { planned_cost: 12, amount: 13 },
+    );
+    expect(task.project.planned_cost).toBe(75000);
+  });
+  it("sanitizes both source snapshots before a real control branch can expose project cost", async () => {
+    const c = client(true),
+      source = ctx();
+    source.entity = "projects";
+    source.after = { name: "Delivery", planned_cost: 75000, planned_hours: 20 };
+    source.before = { name: "Delivery", planned_cost: 70000, planned_hours: 20 };
+    const result = await runActions(
+      c.db,
+      [
+        {
+          type: "branch_if",
+          filters: [{ field: "planned_cost", op: "eq", value: 75000 }],
+          then: [{ type: "set_field", field: "description", value: "Confidential branch" }],
+          else: [],
+        },
+      ],
+      source,
+    );
+    expect(result.hadError).toBe(false);
+    expect(c.writes).toEqual([]);
+    expect(source.after).toEqual({ name: "Delivery", planned_hours: 20 });
+    expect(source.before).toEqual({ name: "Delivery", planned_hours: 20 });
+  });
+  it("blocks a privileged direct association copy of project cost before its source query", async () => {
+    const c = client(true),
+      source = ctx();
+    source.entity = "project_tasks";
+    source.after = { project_id: "project-1", title: "Task" };
+    const result = await runActions(
+      c.db,
+      [
+        {
+          type: "copy_field_from_association",
+          association: "project",
+          source_field: "planned_cost",
+          target_field: "description",
+        },
+      ],
+      source,
+    );
+    expect(result.hadError).toBe(true);
+    expect(result.log[0].error).toMatch(/operação financeira canônica/);
+    expect(c.from).not.toHaveBeenCalled();
+    expect(c.rpc).not.toHaveBeenCalled();
+  });
+  it.each([
+    { type: "increment_field", field: "planned_cost", amount: 1 },
+    { type: "set_field", field: "planned_cost", value: 1 },
+    { type: "format_data", source_field: "planned_cost", op: "number_round", target_var: "cost" },
+    {
+      type: "copy_field_from_association",
+      association: "company",
+      source_field: "name",
+      target_field: "planned_cost",
+    },
+    {
+      type: "update_record",
+      table: "projects",
+      target_id: "project-1",
+      values: { planned_cost: 1 },
+    },
+    { type: "create_record", table: "projects", values: { name: "Project", planned_cost: 1 } },
+    {
+      type: "create_record",
+      table: "projects",
+      values: { name: "Project" },
+      extra_fields: { planned_cost: 1 },
+    },
+  ])("blocks projected-away project cost before generic action effects: $type", async (action) => {
+    const c = client(true),
+      source = ctx();
+    source.entity = "projects";
+    source.after = { name: "Project", planned_cost: 75000 };
+    const result = await runActions(c.db, [action as WorkflowAction], source);
+    expect(result.hadError).toBe(true);
+    expect(result.log[0].error).toMatch(/operação financeira canônica/);
+    expect(c.from).not.toHaveBeenCalled();
+    expect(c.rpc).not.toHaveBeenCalled();
+    expect(c.writes).toEqual([]);
+  });
+  it("checks an explicit project update destination even when the workflow source is a different module", async () => {
+    const c = client(true);
+    const result = await runActions(
+      c.db,
+      [
+        {
+          type: "update_record",
+          table: "projects",
+          target_id: "project-1",
+          values: { planned_cost: 1 },
+        },
+      ],
+      ctx(),
+    );
+    expect(result.hadError).toBe(true);
+    expect(c.rpc).not.toHaveBeenCalled();
+    expect(c.writes).toEqual([]);
+  });
+  it("does not classify a same-named financial-entry value as protected project cost", async () => {
+    const c = client(true),
+      source = ctx();
+    source.entity = "financial_entries";
+    source.after = { planned_cost: 12 };
+    const result = await runActions(
+      c.db,
+      [{ type: "increment_field", field: "planned_cost", amount: 1 }],
+      source,
+    );
+    expect(result.hadError).toBe(false);
+    expect(c.writes).toEqual([{ planned_cost: 13 }]);
   });
   it("stops before a write when the worker's current permission is denied", async () => {
     const c = client(false);
