@@ -27,7 +27,23 @@ import { DeliveryHistoryPanel, type DeliveryFilters } from "./delivery-history-p
 import { NotificationConsentPanel } from "./notification-consent-panel";
 import { NotificationSlackPolicyPanel } from "./slack-policy-panel";
 
-export function NotificationDeliveryConfiguration({
+type DeliveryContext = { workspaceId: string; userId: string };
+const freshDeliveryQuery = {
+  retry: false,
+  staleTime: 0,
+  refetchOnMount: "always" as const,
+  refetchOnWindowFocus: "always" as const,
+};
+
+export function NotificationDeliveryConfiguration(
+  props: DeliveryContext & {
+    capabilities: NotificationDeliveryCapabilities;
+  },
+) {
+  return <DeliveryConfigurationContext key={`${props.userId}:${props.workspaceId}`} {...props} />;
+}
+
+function DeliveryConfigurationContext({
   workspaceId,
   userId,
   capabilities,
@@ -44,7 +60,7 @@ export function NotificationDeliveryConfiguration({
     saveSlackFn = useServerFn(saveNotificationSlackSettings);
   const sendersFn = useServerFn(listNotificationWhatsAppSenders),
     templatesFn = useServerFn(listNotificationWhatsAppTemplates);
-  const [senderId, setSenderId] = useState<string | null>(null);
+  const [senderDraft, setSenderDraft] = useState<{ id: string | null } | null>(null);
   const contextReady =
     !permissions.isLoading && !permissions.isError && permissions.workspaceId === workspaceId;
   const canReadWhatsApp =
@@ -58,10 +74,7 @@ export function NotificationDeliveryConfiguration({
     queryKey: slackKey,
     queryFn: () => getSlackFn({ data: { workspaceId } }),
     enabled: contextReady && capabilities.settingsView && capabilities.slackView === true,
-    retry: false,
-    staleTime: 0,
-    refetchOnMount: "always",
-    refetchOnWindowFocus: "always",
+    ...freshDeliveryQuery,
   });
   const saveSlack = useMutation({
     mutationFn: (input: {
@@ -92,29 +105,45 @@ export function NotificationDeliveryConfiguration({
     queryKey: policyKey,
     queryFn: () => getFn({ data: { workspaceId } }),
     enabled: contextReady && capabilities.settingsView,
+    ...freshDeliveryQuery,
   });
+  const senderId = senderDraft ? senderDraft.id : (policy.data?.policy.wa_sender_id ?? null);
   useEffect(() => {
-    if (policy.data) setSenderId(policy.data.policy.wa_sender_id);
-  }, [policy.data?.revision]);
+    if (!contextReady) setSenderDraft(null);
+  }, [contextReady]);
   const senders = useQuery({
     queryKey: ["notification-delivery-senders", userId, workspaceId],
     queryFn: () => sendersFn({ data: { workspaceId } }),
     enabled: contextReady && capabilities.settingsView && canReadWhatsApp,
+    ...freshDeliveryQuery,
   });
   const templates = useQuery({
     queryKey: ["notification-delivery-templates", userId, workspaceId, senderId],
     queryFn: () => templatesFn({ data: { workspaceId, senderPhoneNumberId: senderId! } }),
     enabled: contextReady && capabilities.settingsView && canReadWhatsApp && Boolean(senderId),
-    retry: false,
+    ...freshDeliveryQuery,
   });
   const save = useMutation({
-    mutationFn: (input: { policy: NotificationDeliveryPolicy; revision: number }) => {
-      if (!contextReady || !capabilities.settingsManage)
+    mutationFn: (
+      input: DeliveryContext & { policy: NotificationDeliveryPolicy; revision: number },
+    ) => {
+      if (
+        !contextReady ||
+        input.userId !== userId ||
+        input.workspaceId !== workspaceId ||
+        policy.isFetching ||
+        !policy.isFetchedAfterMount ||
+        policy.isError ||
+        !capabilities.settingsManage
+      )
         throw new Error("Sem permissão para salvar esta política.");
-      return saveFn({ data: { workspaceId, ...input } });
+      return saveFn({
+        data: { workspaceId: input.workspaceId, policy: input.policy, revision: input.revision },
+      });
     },
-    onSuccess: (data) => {
-      qc.setQueryData(policyKey, data);
+    onSuccess: (data, input) => {
+      qc.setQueryData(["notification-delivery-settings", input.userId, input.workspaceId], data);
+      setSenderDraft(null);
     },
   });
   if (!contextReady) return <p role="status">Aguardando confirmação do workspace…</p>;
@@ -127,11 +156,19 @@ export function NotificationDeliveryConfiguration({
   return (
     <div className="min-w-0 space-y-8">
       <DeliveryModelsPanel
+        key={`${userId}:${workspaceId}:${senderId ?? "none"}`}
         canRead={contextReady && capabilities.settingsView}
         canRetryWhatsApp={
           contextReady && capabilities.settingsView && canReadWhatsApp && Boolean(senderId)
         }
-        templates={templates.data?.items ?? []}
+        templates={
+          canReadWhatsApp &&
+          !templates.isError &&
+          !templates.isFetching &&
+          templates.isFetchedAfterMount
+            ? (templates.data?.items ?? [])
+            : []
+        }
         loading={templates.isFetching}
         error={
           !canReadWhatsApp
@@ -151,7 +188,7 @@ export function NotificationDeliveryConfiguration({
             Tentar carregar política novamente
           </Button>
         </div>
-      ) : policy.data ? (
+      ) : policy.data && policy.isFetchedAfterMount ? (
         <>
           {senders.isError && (
             <p role="alert" className="text-sm text-destructive">
@@ -159,16 +196,39 @@ export function NotificationDeliveryConfiguration({
             </p>
           )}
           <DeliverySettingsPanel
+            key={`${userId}:${workspaceId}`}
             policy={policy.data.policy}
             revision={policy.data.revision}
-            canEdit={capabilities.settingsManage}
-            canConfigureWhatsApp={capabilities.whatsappConfigure === true}
-            senders={senders.data?.items ?? []}
-            templates={templates.data?.items ?? []}
+            canEdit={capabilities.settingsManage && !policy.isFetching}
+            canConfigureWhatsApp={
+              canReadWhatsApp &&
+              capabilities.whatsappConfigure === true &&
+              !senders.isFetching &&
+              !senders.isError &&
+              senders.isFetchedAfterMount
+            }
+            senders={
+              canReadWhatsApp &&
+              !senders.isError &&
+              !senders.isFetching &&
+              senders.isFetchedAfterMount
+                ? (senders.data?.items ?? [])
+                : []
+            }
+            templates={
+              canReadWhatsApp &&
+              !templates.isError &&
+              !templates.isFetching &&
+              templates.isFetchedAfterMount
+                ? (templates.data?.items ?? [])
+                : []
+            }
             templatesLoading={templates.isFetching}
             templatesError={templates.isError ? templates.error.message : null}
-            onSenderChange={setSenderId}
-            onSave={(next, revision) => save.mutateAsync({ policy: next, revision })}
+            onSenderChange={(id) => setSenderDraft({ id })}
+            onSave={(next, revision) =>
+              save.mutateAsync({ policy: next, revision, userId, workspaceId })
+            }
           />
         </>
       ) : (
@@ -206,7 +266,13 @@ export function NotificationDeliveryConfiguration({
   );
 }
 
-export function NotificationDeliveryHistorySection({
+export function NotificationDeliveryHistorySection(
+  props: DeliveryContext & { canWorkspace: boolean },
+) {
+  return <DeliveryHistoryContext key={`${props.userId}:${props.workspaceId}`} {...props} />;
+}
+
+function DeliveryHistoryContext({
   workspaceId,
   userId,
   canWorkspace,
@@ -265,15 +331,20 @@ export function NotificationDeliveryHistorySection({
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     enabled: allowed,
     refetchInterval: 60_000,
+    ...freshDeliveryQuery,
   });
   if (!contextReady) return <p role="status">Aguardando confirmação do workspace…</p>;
   return (
     <DeliveryHistoryPanel
       canRead={contextReady && allowed}
-      items={allowed ? (q.data?.pages.flatMap((page) => page.items) ?? []) : []}
+      items={
+        allowed && !q.isError && q.isFetchedAfterMount
+          ? (q.data?.pages.flatMap((page) => page.items) ?? [])
+          : []
+      }
       filters={filters}
       canWorkspace={canWorkspace}
-      loading={q.isLoading || !allowed}
+      loading={q.isLoading || q.isRefetching || !q.isFetchedAfterMount || !allowed}
       error={q.isError ? q.error.message : null}
       hasMore={q.hasNextPage}
       loadingMore={q.isFetchingNextPage}
@@ -284,13 +355,11 @@ export function NotificationDeliveryHistorySection({
   );
 }
 
-export function NotificationConsentSection({
-  workspaceId,
-  userId,
-}: {
-  workspaceId: string;
-  userId: string;
-}) {
+export function NotificationConsentSection(props: DeliveryContext) {
+  return <DeliveryConsentContext key={`${props.userId}:${props.workspaceId}`} {...props} />;
+}
+
+function DeliveryConsentContext({ workspaceId, userId }: { workspaceId: string; userId: string }) {
   const permissions = usePermissions();
   const contextReady =
     !permissions.isLoading && !permissions.isError && permissions.workspaceId === workspaceId;
@@ -303,23 +372,55 @@ export function NotificationConsentSection({
     queryKey: key,
     queryFn: () => getFn({ data: { workspaceId } }),
     enabled: contextReady,
+    ...freshDeliveryQuery,
   });
   const save = useMutation({
-    mutationFn: (input: { granted: boolean; phone: string; revision: number }) => {
-      if (!contextReady) throw new Error("Confirme o workspace antes de salvar sua autorização.");
-      return saveFn({ data: { workspaceId, ...input } });
+    mutationFn: (
+      input: DeliveryContext & { granted: boolean; phone: string; revision: number },
+    ) => {
+      if (
+        !contextReady ||
+        input.userId !== userId ||
+        input.workspaceId !== workspaceId ||
+        q.isFetching ||
+        q.isError ||
+        !q.isFetchedAfterMount
+      )
+        throw new Error("Confirme o workspace antes de salvar sua autorização.");
+      return saveFn({
+        data: {
+          workspaceId: input.workspaceId,
+          granted: input.granted,
+          phone: input.phone,
+          revision: input.revision,
+        },
+      });
     },
-    onSuccess: (data) => {
-      qc.setQueryData(key, data);
+    onSuccess: (data, input) => {
+      qc.setQueryData(["notification-delivery-consent", input.userId, input.workspaceId], data);
     },
   });
   const phone = useMutation({
-    mutationFn: (input: { phone: string; expectedPhone: string | null }) => {
-      if (!contextReady) throw new Error("Confirme o workspace antes de atualizar seu telefone.");
-      return phoneFn({ data: { workspaceId, ...input } });
+    mutationFn: (input: DeliveryContext & { phone: string; expectedPhone: string | null }) => {
+      if (
+        !contextReady ||
+        input.userId !== userId ||
+        input.workspaceId !== workspaceId ||
+        q.isFetching ||
+        q.isError ||
+        !q.isFetchedAfterMount
+      )
+        throw new Error("Confirme o workspace antes de atualizar seu telefone.");
+      return phoneFn({
+        data: {
+          workspaceId: input.workspaceId,
+          phone: input.phone,
+          expectedPhone: input.expectedPhone,
+        },
+      });
     },
-    onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ["notification-delivery-consent", userId] });
+    onSuccess: async (_, input) => {
+      await qc.invalidateQueries({ queryKey: ["notification-delivery-consent", input.userId] });
     },
   });
   if (!contextReady) return <p role="status">Aguardando confirmação do workspace…</p>;
@@ -332,13 +433,15 @@ export function NotificationConsentSection({
         </Button>
       </div>
     );
-  if (!q.data) return <p role="status">Carregando sua autorização de WhatsApp…</p>;
+  if (!q.data || !q.isFetchedAfterMount)
+    return <p role="status">Carregando sua autorização de WhatsApp…</p>;
   return (
     <NotificationConsentPanel
-      canEdit={contextReady}
+      key={`${userId}:${workspaceId}`}
+      canEdit={contextReady && !q.isFetching && !save.isPending && !phone.isPending}
       data={q.data}
-      onSave={(input) => save.mutateAsync(input)}
-      onUpdatePhone={(input) => phone.mutateAsync(input)}
+      onSave={(input) => save.mutateAsync({ ...input, userId, workspaceId })}
+      onUpdatePhone={(input) => phone.mutateAsync({ ...input, userId, workspaceId })}
     />
   );
 }

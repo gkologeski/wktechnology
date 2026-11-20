@@ -11,6 +11,7 @@ import {
   notificationCentralUrl,
   notificationTemplateIncompatibility,
   notificationTemplatePayload,
+  notificationTemplatePreview,
 } from "./delivery-content";
 
 const expected = {
@@ -129,4 +130,40 @@ describe("neutral notification email component", () => {
     expect(html).not.toContain("record=private");
     expect(html).not.toContain("user:password");
   });
+});
+
+it("WhatsApp preview resolves the same protected parameters as the transport", () => {
+  const t = template(NEUTRAL_NOTIFICATION_TEMPLATE_BODIES[2]);
+  const payload = notificationTemplatePayload(t, expected)!;
+  const preview = notificationTemplatePreview(t, expected)!;
+  expect(preview.body).toBe(
+    `${payload.components[0].parameters[0].text} Acesse sua central: ${payload.components[0].parameters[1].text}.`,
+  );
+  expect(preview.body).not.toContain("{{");
+  expect(preview).toMatchObject({ header: null, footer: null, button: null });
+});
+it("WhatsApp preview includes approved fixed header footer and canonical URL button", () => {
+  const t = {
+    ...template(),
+    components: [
+      ...template().components,
+      { type: "HEADER", format: "TEXT", text: "TechERP" },
+      { type: "FOOTER", text: "Gerencie seus avisos na central do TechERP." },
+      {
+        type: "BUTTONS",
+        buttons: [{ type: "URL", text: "Abrir central", url: expected.centralUrl }],
+      },
+    ],
+  };
+  expect(notificationTemplatePreview(t, expected)).toMatchObject({
+    header: "TechERP",
+    footer: "Gerencie seus avisos na central do TechERP.",
+    button: { text: "Abrir central", url: expected.centralUrl },
+  });
+});
+it("WhatsApp preview never simulates an unapproved or reclassified model as sendable", () => {
+  expect(
+    notificationTemplatePreview({ ...template(), category: "MARKETING" }, expected),
+  ).toBeNull();
+  expect(notificationTemplatePreview({ ...template(), status: "PAUSED" }, expected)).toBeNull();
 });

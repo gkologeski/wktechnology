@@ -12,7 +12,8 @@ export function assertNotificationRuntimeJob(input: NotificationDeliveryJob) {
     normalized.status !== "valid" ||
     normalized.extension ||
     normalized.e164 !== job.phone ||
-    !/^\d{5,30}$/.test(job.senderPhoneNumberId ?? "")
+    !/^\d{5,30}$/.test(job.senderPhoneNumberId ?? "") ||
+    !job.connectionId
   )
     throw new Error("Entrega WhatsApp inválida.");
   return job;
@@ -74,14 +75,16 @@ export const notificationAdapterDependencies: NotificationAdapterDependencies = 
       optedOut.data?.length || activeSuppressions((suppressed.data ?? []) as never).get(key),
     );
   },
-  sendCloud: async (workspaceId, senderId, body, authorizeBeforePost) => {
+  sendCloud: async (workspaceId, senderId, body, authorizeBeforePost, validateTemplate) => {
     if (typeof authorizeBeforePost !== "function")
       throw new Error("Autorização de envio indisponível.");
+    if (typeof validateTemplate !== "function")
+      throw new Error("Validação do modelo indisponível.");
     return (await import("@/lib/whatsapp/cloud-runtime.server")).sendCloudPayload(
       workspaceId,
       senderId,
       body,
-      { beforeSend: authorizeBeforePost },
+      { beforeSend: authorizeBeforePost, validateTemplate },
     );
   },
   recordWhatsAppRefusal: async (input, code) => {
@@ -102,6 +105,7 @@ export const notificationAdapterDependencies: NotificationAdapterDependencies = 
       sender.provider !== "cloud" ||
       sender.workspaceId !== job.workspaceId ||
       sender.phoneNumberId !== job.senderPhoneNumberId ||
+      sender.connectionId !== job.connectionId ||
       !providerId.trim()
     )
       throw new Error("Aceitação WhatsApp inválida.");
@@ -163,6 +167,7 @@ export const notificationAdapterDependencies: NotificationAdapterDependencies = 
           notification_delivery_id: job.id,
           idempotency_key: job.idempotencyKey,
           attempt_token: job.token,
+          connection_id: job.connectionId,
         },
       },
     });

@@ -27,6 +27,7 @@ const personalDeliveryJobSchema = z.object({
   workflowId: z.string().uuid(),
   runId: z.string().uuid(),
   recipientId: z.string().uuid(),
+  connectionId: z.string().uuid().nullable().optional(),
   email: z.string().nullable().optional(),
   phone: z.string().nullable().optional(),
   senderPhoneNumberId: z.string().nullable().optional(),

@@ -233,8 +233,9 @@ it("requires own current E164 phone consent and supports revocation after profil
   });
   await expect(consent()).rejects.toMatchObject({ code: "PT409" });
   await db`update profiles set phone=null where id=${U}`;
-  expect((await consent(false, "", 1)).consent.revision).toBe(2);
-  expect((await consent(false, "", 2)).consent.revokedAt).not.toBeNull();
+  await expect(consent(false, "", 1)).rejects.toMatchObject({ code: "PT409" });
+  expect((await consent(false, "", 2)).consent.revision).toBe(3);
+  expect((await consent(false, "", 3)).consent.revokedAt).not.toBeNull();
 });
 it("updates only the signed-in profile phone with CAS and revokes their consent across workspaces", async () => {
   await consent();
@@ -504,7 +505,10 @@ it("invalidates a changed profile number and reconsented policy snapshot rather 
 it("blocks unavailable low-quality senders and honors workspace WhatsApp suppressions", async () => {
   const d = await readyWA();
   await db`update wa_cloud_numbers set quality_rating='RED' where phone_number_id='123456789'`;
-  expect(await claim(d.id)).toMatchObject({ result: "suppressed", reason: "sender_unavailable" });
+  expect(await claim(d.id)).toMatchObject({
+    result: "suppressed",
+    reason: "provider_rate_limited",
+  });
   await db`update wa_cloud_numbers set quality_rating='GREEN' where phone_number_id='123456789'`;
   await enqueue({ channels: ["whatsapp"], fallback: "none" }, U, "1");
   const next = required((await listJobs()).find((x) => x.id !== d.id));
@@ -915,6 +919,7 @@ it("binds late WhatsApp receipts to the exact attempt token while preserving unc
   const old = c;
   await finish(d.id, c.token, "retry_scheduled", "meta_cloud", null, "provider_rate_limited");
   await db`update workflow_deliveries set next_attempt_at=now() where id=${d.id}`;
+  await db`update notification_whatsapp_health set paused_until=now()-interval '1 second' where connection_id=${X}`;
   c = await claim(d.id);
   expect(c.token).not.toBe(old.token);
   await receipt(old, "read");

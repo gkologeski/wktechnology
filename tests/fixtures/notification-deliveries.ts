@@ -382,6 +382,39 @@ beforeAll(async () => {
     CREATE POLICY source_read ON public.slack_integrations FOR SELECT TO authenticated USING(public.sales_context_access((SELECT public.sales_access_context()),workspace_id,'system.integrations','view',ARRAY[owner_id]));
     CREATE POLICY extra_restriction ON public.slack_integrations AS RESTRICTIVE FOR SELECT TO authenticated USING(public.notification_fixture_restriction(id));`);
   await db.unsafe(readFileSync("drizzle/migrations/0395_notification_slack.sql", "utf8"));
+  // Physical provider envelope only: P7 receipt and webhook processing execute
+  // the production functions against real PostgreSQL/PostgREST below.
+  await db.unsafe(`ALTER TABLE public.wa_cloud_connections
+    ADD COLUMN credentials_ciphertext text DEFAULT 'synthetic-fixture-config',
+    ADD COLUMN waba_id text DEFAULT '12345678901',
+    ADD COLUMN api_version text DEFAULT 'v23.0',
+    ADD COLUMN webhook_received_at timestamptz;
+    ALTER TABLE public.whatsapp_messages ADD COLUMN delivered_at timestamptz,
+    ADD COLUMN read_at timestamptz,ADD COLUMN error_code text,ADD COLUMN error_message text;
+    CREATE TABLE public.whatsapp_webhook_events(
+      id uuid PRIMARY KEY DEFAULT gen_random_uuid(),delivery_id text UNIQUE NOT NULL,
+      event text NOT NULL,payload jsonb NOT NULL,workspace_id uuid,
+      attempts integer NOT NULL DEFAULT 0,processed_at timestamptz,processing_error text,
+      next_attempt_at timestamptz NOT NULL DEFAULT now());
+    ALTER TABLE public.whatsapp_number_suppressions
+      ADD COLUMN reason text NOT NULL DEFAULT 'no_whatsapp',
+      ADD COLUMN error_count integer NOT NULL DEFAULT 1,
+      ADD COLUMN last_error_code text,ADD COLUMN last_error_at timestamptz NOT NULL DEFAULT now(),
+      ADD COLUMN released_by uuid,ADD COLUMN created_at timestamptz NOT NULL DEFAULT now(),
+      ADD COLUMN updated_at timestamptz NOT NULL DEFAULT now(),
+      ADD CONSTRAINT notification_fixture_suppression_reason UNIQUE(workspace_id,phone_key,reason);
+    GRANT ALL ON public.whatsapp_webhook_events TO service_role;`);
+  await load("drizzle/migrations/0301_whatsapp_number_suppressions.sql", [
+    "wa_record_suppression",
+    "wa_messages_suppression_trg",
+  ]);
+  await db.unsafe(`REVOKE ALL ON FUNCTION public.wa_record_suppression(uuid,text,text,timestamptz) FROM PUBLIC,anon,authenticated;
+    GRANT EXECUTE ON FUNCTION public.wa_record_suppression(uuid,text,text,timestamptz) TO service_role`);
+  await db.unsafe(`CREATE TRIGGER trg_wa_messages_suppression AFTER INSERT OR UPDATE OF error_code ON public.whatsapp_messages
+    FOR EACH ROW EXECUTE FUNCTION public.wa_messages_suppression_trg()`);
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0396_notification_whatsapp_guardrails.sql", "utf8"),
+  );
   const historic = await db`select count(*)::integer n from notification_workspace_context`;
   if (historic[0].n !== 0) throw Error("Historical rows were attributed to a workspace");
   const authenticatorPassword = randomBytes(32).toString("hex");
@@ -463,7 +496,7 @@ afterAll(async () => {
 
 export async function reset() {
   await db.unsafe(
-    "TRUNCATE workflow_deliveries,notification_delivery_intents,notification_delivery_policies,notification_delivery_consents,notification_slack_intents,notification_slack_policies,notification_slack_endpoint_state,slack_integrations,workflow_send_policies,wa_cloud_numbers,wa_cloud_connections,whatsapp_number_suppressions,whatsapp_messages,auth.users CASCADE",
+    "TRUNCATE workflow_deliveries,notification_delivery_intents,notification_delivery_policies,notification_delivery_consents,notification_whatsapp_health,notification_whatsapp_suppression_receipts,notification_slack_intents,notification_slack_policies,notification_slack_endpoint_state,slack_integrations,workflow_send_policies,wa_cloud_numbers,wa_cloud_connections,whatsapp_number_suppressions,whatsapp_messages,whatsapp_webhook_events,auth.users CASCADE",
   );
   await db.unsafe(
     "TRUNCATE service_agent_sessions,sdr_enrollments,sdr_playbooks,contract_drafts,contract_draft_approvers,notification_workspace_context,notification_user_preferences,notifications,workflow_approvals,contract_approvals,project_members,hiring_demand_steps,hiring_demand_requests,hiring_area_policies,workflow_runs,workflow_events,workflows,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_groups,user_group_members,view_as_sessions CASCADE",
@@ -551,6 +584,13 @@ export function fixtureJwt(
       exp: Math.floor(Date.now() / 1000) + 60,
     });
   return message + "." + createHmac("sha256", signingSecret).update(message).digest("base64url");
+}
+
+/** Owned loopback PostgREST only; no configured database URL or real JWT. */
+export function fixtureHttpBase() {
+  if (!/^http:\/\/127\.0\.0\.1:\d+$/.test(httpBase))
+    throw new Error("Disposable PostgREST is not ready");
+  return httpBase;
 }
 
 export async function request(

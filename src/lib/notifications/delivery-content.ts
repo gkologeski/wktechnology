@@ -93,3 +93,39 @@ export function notificationTemplatePayload(
       : [],
   };
 }
+
+export type NotificationTemplatePreview = {
+  body: string;
+  header: string | null;
+  footer: string | null;
+  button: { text: string; url: string } | null;
+};
+
+/** Resolve the exact transport parameters; incompatible models never get a sending preview. */
+export function notificationTemplatePreview(
+  template: Record<string, unknown>,
+  expected: ExpectedTemplate,
+): NotificationTemplatePreview | null {
+  const payload = notificationTemplatePayload(template, expected);
+  if (!payload) return null;
+  const components = template.components as Component[];
+  const body = components.find((component) => component.type === "BODY")!.text as string;
+  const parameters = payload.components[0]?.parameters ?? [];
+  const text = body.replace(
+    /\{\{(\d+)\}\}/g,
+    (_match, index: string) => parameters[Number(index) - 1]?.text ?? "",
+  );
+  const buttons = components.find((component) => component.type === "BUTTONS")?.buttons as
+    | { text: string; url: string }[]
+    | undefined;
+  return {
+    body: text,
+    header:
+      (components.find((component) => component.type === "HEADER")?.text as string | undefined) ??
+      null,
+    footer:
+      (components.find((component) => component.type === "FOOTER")?.text as string | undefined) ??
+      null,
+    button: buttons?.[0] ? { text: buttons[0].text, url: buttons[0].url } : null,
+  };
+}

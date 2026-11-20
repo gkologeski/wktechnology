@@ -22,6 +22,7 @@ const job: NotificationPersonalDeliveryJob = {
   idempotencyKey: "notification:fake-delivery:whatsapp",
   phone: "+14155552671",
   senderPhoneNumberId: "12345678901",
+  connectionId: "77777777-7777-4777-8777-777777777777",
   templateName: "notification_update",
   templateLanguage: "pt_BR",
 };
@@ -107,6 +108,8 @@ describe("notification runtime writes are qualified by the fenced job", () => {
     { phone: "14155552671" },
     { phone: "+14155552671 ext 4" },
     { senderPhoneNumberId: null },
+    { connectionId: null },
+    { connectionId: "not-a-connection" },
     { idempotencyKey: "" },
   ])("rejects malformed runtime job before history or suppression writes: %j", async (patch) => {
     await expect(
@@ -119,6 +122,7 @@ describe("notification runtime writes are qualified by the fenced job", () => {
   it.each([
     { ...sender, workspaceId: "another-workspace" },
     { ...sender, phoneNumberId: "9876543210" },
+    { ...sender, connectionId: "88888888-8888-4888-8888-888888888888" },
   ])("rejects cross-workspace or wrong-sender acceptance metadata", async (value) => {
     await expect(runtime.recordWhatsAppAcceptance(job, value, "wamid.fake")).rejects.toThrow(
       "Aceitação WhatsApp inválida",
@@ -153,6 +157,7 @@ describe("notification runtime writes are qualified by the fenced job", () => {
             notification_delivery_id: job.id,
             idempotency_key: job.idempotencyKey,
             attempt_token: job.token,
+            connection_id: job.connectionId,
           },
         },
       }),
@@ -219,25 +224,34 @@ describe("notification runtime writes are qualified by the fenced job", () => {
 
   it("does not load the Cloud transport when the required worker callback is missing", async () => {
     await expect(
-      runtime.sendCloud(job.workspaceId, job.senderPhoneNumberId!, {}, undefined as never),
+      runtime.sendCloud(job.workspaceId, job.senderPhoneNumberId!, {}, undefined as never, vi.fn()),
     ).rejects.toThrow("Autorização de envio indisponível");
     expect(mocks.cloud).not.toHaveBeenCalled();
   });
 
   it("passes the callback unchanged to the final canonical provider boundary", async () => {
     const beforeSend = vi.fn().mockResolvedValue(undefined);
+    const validateTemplate = vi.fn();
     mocks.cloud.mockResolvedValue({ messages: [{ id: "wamid.fake" }] });
     await runtime.sendCloud(
       job.workspaceId,
       job.senderPhoneNumberId!,
       { type: "template" },
       beforeSend,
+      validateTemplate,
     );
     expect(mocks.cloud).toHaveBeenCalledWith(
       job.workspaceId,
       job.senderPhoneNumberId,
       { type: "template" },
-      { beforeSend },
+      { beforeSend, validateTemplate },
     );
+  });
+
+  it("rejects a missing live policy guard before loading the transport", async () => {
+    await expect(
+      runtime.sendCloud(job.workspaceId, job.senderPhoneNumberId!, {}, vi.fn(), undefined as never),
+    ).rejects.toThrow("Validação do modelo indisponível");
+    expect(mocks.cloud).not.toHaveBeenCalled();
   });
 });

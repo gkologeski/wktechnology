@@ -16,6 +16,16 @@ export type NotificationSenderOption = {
   phone: string;
   available: boolean;
   quality: string | null;
+  eligible?: boolean;
+  reason?: string | null;
+  status?: string | null;
+  syncedAt?: string | null;
+};
+const SENDER_REASON: Record<string, string> = {
+  sender_unavailable: "O remetente está indisponível.",
+  quality_not_high: "A qualidade sincronizada não é alta. O remetente não está elegível.",
+  connection_unavailable: "A conexão oficial está indisponível.",
+  webhook_unverified: "A conexão oficial ainda não possui webhook verificado.",
 };
 export function DeliverySettingsPanel({
   policy,
@@ -47,6 +57,7 @@ export function DeliverySettingsPanel({
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const dirty = JSON.stringify(draft) !== JSON.stringify(baseline);
+  const selectedSender = senders.find((sender) => sender.id === draft.wa_sender_id);
   useEffect(() => {
     if (revision !== editRevision && !dirty) {
       setDraft(policy);
@@ -71,6 +82,32 @@ export function DeliverySettingsPanel({
     const result = notificationDeliveryPolicySchema.safeParse(draft);
     if (!result.success) {
       setError(result.error.issues[0]?.message ?? "Revise a política.");
+      return;
+    }
+    const whatsappChanged = Object.keys(draft).some(
+      (key) =>
+        (key.startsWith("wa_") || key.startsWith("whatsapp_") || key === "currency") &&
+        draft[key as keyof NotificationDeliveryPolicy] !==
+          baseline[key as keyof NotificationDeliveryPolicy],
+    );
+    if (
+      whatsappChanged &&
+      draft.whatsapp_enabled &&
+      (!selectedSender?.available ||
+        selectedSender.eligible === false ||
+        templatesLoading ||
+        templatesError ||
+        !templates.some(
+          (entry) =>
+            entry.name === draft.wa_template_name &&
+            entry.language === draft.wa_template_language &&
+            entry.compatible &&
+            entry.preview,
+        ))
+    ) {
+      setError(
+        "Confirme um remetente elegível e um modelo aprovado compatível antes de habilitar WhatsApp.",
+      );
       return;
     }
     setPending(true);
@@ -170,6 +207,13 @@ export function DeliverySettingsPanel({
               if (!notificationDeliveryInteractionAllowed(canEdit && canConfigureWhatsApp, pending))
                 return;
               const id = event.target.value || null;
+              if (
+                id &&
+                !senders.some(
+                  (sender) => sender.id === id && sender.available && sender.eligible !== false,
+                )
+              )
+                return;
               edit({ wa_sender_id: id, wa_template_name: null, wa_template_language: null });
               onSenderChange(id);
             }}
@@ -181,13 +225,40 @@ export function DeliverySettingsPanel({
               </option>
             )}
             {senders.map((sender) => (
-              <option key={sender.id} value={sender.id} disabled={!sender.available}>
+              <option
+                key={sender.id}
+                value={sender.id}
+                disabled={!sender.available || sender.eligible === false}
+              >
                 {sender.label} · {sender.phone}
-                {sender.available ? "" : " · indisponível"}
+                {sender.available && sender.eligible !== false ? "" : " · não elegível"}
               </option>
             ))}
           </select>
         </label>
+        {selectedSender && (
+          <div
+            className="space-y-1 text-xs text-muted-foreground"
+            aria-label="Condições sincronizadas do remetente"
+          >
+            <p>
+              Qualidade sincronizada: {selectedSender.quality ?? "Não confirmada"} · Estado:{" "}
+              {selectedSender.status ?? "Não confirmado"}.
+            </p>
+            <p>
+              {selectedSender.syncedAt
+                ? `Última sincronização: ${selectedSender.syncedAt}.`
+                : "Horário da sincronização não informado."}{" "}
+              As condições atuais são conferidas novamente antes do envio.
+            </p>
+            {selectedSender.eligible === false && (
+              <p>
+                {SENDER_REASON[selectedSender.reason ?? ""] ??
+                  "O remetente não atende às condições do WhatsApp oficial."}
+              </p>
+            )}
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">
           Um único remetente por política. Não há rodízio automático para contornar bloqueios,
           qualidade ou falta de autorização.
@@ -202,11 +273,12 @@ export function DeliverySettingsPanel({
                 ? `${draft.wa_template_name}:${draft.wa_template_language}`
                 : ""
             }
-            disabled={!draft.wa_sender_id || templatesLoading}
+            disabled={!draft.wa_sender_id || templatesLoading || Boolean(templatesError)}
             onChange={(event) => {
               const option = templates.find(
                 (entry) => `${entry.name}:${entry.language}` === event.target.value,
               );
+              if (option && (!option.compatible || !option.preview)) return;
               edit({
                 wa_template_name: option?.name ?? null,
                 wa_template_language: option?.language ?? null,
@@ -230,7 +302,7 @@ export function DeliverySettingsPanel({
               <option
                 key={`${entry.name}:${entry.language}`}
                 value={`${entry.name}:${entry.language}`}
-                disabled={!entry.compatible}
+                disabled={!entry.compatible || !entry.preview}
               >
                 {entry.name} · {entry.language}
                 {entry.compatible ? "" : " · não elegível"}

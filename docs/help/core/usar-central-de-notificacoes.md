@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 147
-version: 4
+version: 5
 is_published: true
 ---
 
@@ -134,3 +134,12 @@ No histórico antigo sem workspace comprovado, a pesquisa por conteúdo fica des
 - A conexão não inicia novos produtores de eventos nem resumos externos. A confirmação **Aceito pelo provedor** não equivale a entregue ou lido. Falhas ambíguas ficam sem repetição automática.
 
 Consulte [Configurar notificações no Slack](/ajuda/core/configurar-notificacoes-no-slack) para preparar a conexão, a política e o histórico.
+
+
+## WhatsApp oficial: conferir modelo e recibos
+
+A prévia de WhatsApp resolve os mesmos valores do transporte e mostra os componentes compatíveis do modelo, com status e categoria consultados. A qualidade exibida é a sincronizada; o remetente e o modelo são novamente verificados antes do envio. Dados de outro usuário ou workspace não são reutilizados ao retornar à tela.
+
+Alterar o telefone do perfil por qualquer caminho revoga as autorizações antigas. Recibos assinados corretamente correlacionados podem atualizar **Entregue/Lido** sem depender da projeção na Inbox e após desativação do remetente. Isso não cria outro envio nem ativa conversas novas.
+
+Prazos de espera valem para a conexão, também entre avisos diferentes. Restrições de reputação ou limites sem prazo seguro podem desligar o canal; a reativação exige revisão na Meta e ação administrativa explícita. Consulte o [passo a passo de WhatsApp oficial](/ajuda/core/configurar-notificacoes-no-whatsapp).

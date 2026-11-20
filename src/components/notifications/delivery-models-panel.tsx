@@ -6,6 +6,7 @@ import {
   NOTIFICATION_UPDATE_SUBJECT,
   NOTIFICATION_UPDATE_TEXT,
   NEUTRAL_NOTIFICATION_TEMPLATE_BODIES,
+  type NotificationTemplatePreview,
 } from "@/lib/notifications/delivery-content";
 
 export type NotificationTemplateOption = {
@@ -14,6 +15,19 @@ export type NotificationTemplateOption = {
   body: string;
   compatible: boolean;
   reason?: string | null;
+  status?: string | null;
+  category?: string | null;
+  preview?: NotificationTemplatePreview | null;
+};
+const TEMPLATE_REASON: Record<string, string> = {
+  template_identity_mismatch: "O nome ou o idioma do modelo difere da configuração.",
+  template_not_approved: "O modelo ainda não está aprovado pelo provedor.",
+  template_not_utility: "O modelo não pertence à categoria UTILITY exigida pela central.",
+  template_components_invalid: "Os componentes do modelo não atendem ao formato da central.",
+  template_body_not_neutral: "O texto não atende ao formato neutro de notificações.",
+  template_header_unsupported: "O cabeçalho não atende ao formato neutro da central.",
+  template_footer_unsupported: "O rodapé não atende ao formato neutro da central.",
+  template_buttons_unsupported: "O botão não aponta para o destino autorizado da central.",
 };
 export function DeliveryModelsPanel({
   templates,
@@ -111,8 +125,12 @@ export function DeliveryModelsPanel({
                     <span className="block break-all font-medium">{entry.name}</span>
                     <span className="mr-2 text-xs text-muted-foreground">{entry.language}</span>
                     <Badge variant="secondary">
-                      {entry.compatible ? "Compatível" : "Não elegível"}
+                      {entry.compatible && entry.preview ? "Compatível" : "Não elegível"}
                     </Badge>
+                    <span className="mt-2 block text-xs text-muted-foreground">
+                      Status Meta: {entry.status ?? "Não confirmado"} · Categoria:{" "}
+                      {entry.category ?? "Não confirmada"}
+                    </span>
                   </button>
                 ))}
               </div>
@@ -123,11 +141,37 @@ export function DeliveryModelsPanel({
                 {template ? (
                   <>
                     <h3 className="break-all font-semibold">{template.name}</h3>
-                    <p className="whitespace-pre-wrap break-words text-sm">{template.body}</p>
+                    {template.compatible && template.preview ? (
+                      <div className="space-y-3" aria-label="Conteúdo previsto do WhatsApp">
+                        {template.preview.header && (
+                          <p className="font-semibold">{template.preview.header}</p>
+                        )}
+                        <p className="whitespace-pre-wrap break-words text-sm">
+                          {template.preview.body}
+                        </p>
+                        {template.preview.footer && (
+                          <p className="text-xs text-muted-foreground">{template.preview.footer}</p>
+                        )}
+                        {template.preview.button && (
+                          <div className="space-y-1">
+                            <span className="inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+                              {template.preview.button.text}
+                            </span>
+                            <p className="break-all text-xs text-muted-foreground">
+                              {template.preview.button.url}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Este modelo não possui prévia de envio elegível.
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
-                      {template.compatible
+                      {template.compatible && template.preview
                         ? "Compatível com o formato neutro de notificações. A elegibilidade será conferida novamente no envio."
-                        : (template.reason ??
+                        : (TEMPLATE_REASON[template.reason ?? ""] ??
                           "O modelo não atende ao formato de avisos desta central.")}
                     </p>
                   </>

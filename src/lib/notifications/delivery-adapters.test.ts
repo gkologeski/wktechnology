@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { MetaCloudError } from "@/lib/whatsapp/cloud-api.server";
+import { MetaCloudError, MetaCloudPreflightError } from "@/lib/whatsapp/cloud-api.server";
+import type { CloudTemplatePreflight } from "@/lib/whatsapp/cloud-runtime.server";
 import {
   loadNotificationWhatsAppTemplates,
   sendNotificationDelivery,
@@ -22,6 +23,7 @@ const job: NotificationDeliveryJob = {
   phone: "+14155552671",
   email: "User@example.com",
   senderPhoneNumberId: "12345678901",
+  connectionId: "77777777-7777-4777-8777-777777777777",
   templateName: "notification_update",
   templateLanguage: "pt_BR",
 };
@@ -41,6 +43,11 @@ const approved = () => ({
   category: "UTILITY",
   components: [{ type: "BODY", text: NEUTRAL_NOTIFICATION_TEMPLATE_BODIES[2] }],
 });
+const finalSnapshot = (): CloudTemplatePreflight => ({
+  template: approved(),
+  phone: { id: sender.phoneNumberId, status: "CONNECTED", quality_rating: "GREEN" },
+  connectionId: sender.connectionId,
+});
 function fakeDependencies(overrides: Partial<NotificationAdapterDependencies> = {}) {
   const httpPost = vi
     .fn()
@@ -52,7 +59,8 @@ function fakeDependencies(overrides: Partial<NotificationAdapterDependencies> = 
     readCloudSender: vi.fn().mockResolvedValue(sender),
     readCloudTemplates: vi.fn().mockResolvedValue([null, approved()]),
     isWhatsAppSuppressed: vi.fn().mockResolvedValue(false),
-    sendCloud: vi.fn(async (_workspace, _sender, _body, beforeSend) => {
+    sendCloud: vi.fn(async (_workspace, _sender, _body, beforeSend, validateTemplate) => {
+      validateTemplate(finalSnapshot());
       await beforeSend();
       return httpPost();
     }),
@@ -136,6 +144,7 @@ describe("notification delivery provider boundaries", () => {
         },
       },
       expect.any(Function),
+      expect.any(Function),
     );
     expect(deps.recordWhatsAppAcceptance).toHaveBeenCalledWith(job, sender, r.providerId);
     expect(JSON.stringify(vi.mocked(deps.sendCloud).mock.calls)).not.toContain("Salary");
@@ -157,9 +166,7 @@ describe("notification delivery provider boundaries", () => {
     null,
     { ...sender, workspaceId: "another-workspace" },
     { ...sender, phoneNumberId: "9876543210" },
-    { ...sender, qualityRating: "RED" },
-    { ...sender, qualityRating: "YELLOW" },
-    { ...sender, qualityRating: null },
+    { ...sender, connectionId: "88888888-8888-4888-8888-888888888888" },
     { ...sender, status: "DISCONNECTED" },
     { ...sender, provider: "lovable" },
   ])(
@@ -172,6 +179,95 @@ describe("notification delivery provider boundaries", () => {
       });
       expect(deps.sendCloud).not.toHaveBeenCalled();
       expect(deps.sendEmail).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["RED", "YELLOW", null])(
+    "holds an initially degraded sender %s without enabling generic provider fallback",
+    async (qualityRating) => {
+      const deps = fakeDependencies({
+        readCloudSender: vi.fn().mockResolvedValue({ ...sender, qualityRating }),
+      });
+      expect(await deliver(job, deps)).toMatchObject({
+        status: "failed",
+        reasonCode: "provider_rate_limited",
+      });
+      expect(deps.sendCloud).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([null, undefined])(
+    "requires a pinned connection %s before provider reads",
+    async (connectionId) => {
+      const deps = fakeDependencies();
+      expect(await deliver({ ...job, connectionId }, deps)).toMatchObject({
+        status: "failed",
+        reasonCode: "sender_unavailable",
+      });
+      expect(deps.readCloudSender).not.toHaveBeenCalled();
+      expect(deps.sendCloud).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    [() => ({ ...finalSnapshot(), connectionId: "another-connection" }), "sender_unavailable"],
+    [
+      () => ({ ...finalSnapshot(), phone: { ...finalSnapshot().phone, id: "9876543210" } }),
+      "sender_unavailable",
+    ],
+    [
+      () => ({ ...finalSnapshot(), phone: { ...finalSnapshot().phone, status: "DISCONNECTED" } }),
+      "sender_unavailable",
+    ],
+    [
+      () => ({ ...finalSnapshot(), phone: { ...finalSnapshot().phone, quality_rating: "YELLOW" } }),
+      "provider_rate_limited",
+    ],
+    [
+      () => ({ ...finalSnapshot(), phone: { ...finalSnapshot().phone, quality_rating: null } }),
+      "provider_rate_limited",
+    ],
+    [
+      () => ({ ...finalSnapshot(), template: { ...approved(), category: "MARKETING" } }),
+      "invalid_template",
+    ],
+    [
+      () => ({ ...finalSnapshot(), template: { ...approved(), status: "PAUSED" } }),
+      "invalid_template",
+    ],
+    [
+      () => ({
+        ...finalSnapshot(),
+        template: { ...approved(), components: [{ type: "BODY", text: "Promotion {{1}} {{2}}" }] },
+      }),
+      "invalid_template",
+    ],
+    [
+      () => ({
+        ...finalSnapshot(),
+        template: {
+          ...approved(),
+          components: [{ type: "BODY", text: NEUTRAL_NOTIFICATION_TEMPLATE_BODIES[0] }],
+        },
+      }),
+      "invalid_template",
+    ],
+  ] as const)(
+    "revalidates the last live snapshot before authorization and POST: %s",
+    async (snapshot, reasonCode) => {
+      const post = vi.fn();
+      const authorize = vi.fn();
+      const deps = fakeDependencies({
+        sendCloud: vi.fn(async (_workspace, _sender, _body, beforeSend, validateTemplate) => {
+          validateTemplate(snapshot());
+          await beforeSend();
+          return post();
+        }),
+      });
+      expect(await deliver(job, deps, authorize)).toMatchObject({ status: "failed", reasonCode });
+      expect(authorize).not.toHaveBeenCalled();
+      expect(post).not.toHaveBeenCalled();
+      expect(deps.recordWhatsAppAcceptance).not.toHaveBeenCalled();
     },
   );
 
@@ -244,6 +340,82 @@ describe("notification delivery provider boundaries", () => {
     expect(await deliver(job, deps)).toMatchObject({
       status: "failed",
       reasonCode: "provider_rejected",
+    });
+  });
+
+  it.each([4, 80007, 130429, 131056])(
+    "respects a Meta rate refusal %s returned with HTTP 400 and its full cooldown",
+    async (code) => {
+      const deps = fakeDependencies({
+        sendCloud: vi.fn().mockRejectedValue(new MetaCloudError(400, code, undefined, 7200)),
+      });
+      expect(await deliver(job, deps)).toMatchObject({
+        status: "retry_scheduled",
+        reasonCode: "provider_rate_limited",
+        retryAfterSeconds: 7200,
+      });
+      expect(deps.sendCloud).toHaveBeenCalledOnce();
+      expect(deps.sendEmail).not.toHaveBeenCalled();
+    },
+  );
+
+  it("retains a provider cooldown during the initial catalogue read without a POST", async () => {
+    const deps = fakeDependencies({
+      readCloudTemplates: vi
+        .fn()
+        .mockRejectedValue(new MetaCloudError(429, 80007, undefined, 7200)),
+    });
+    expect(await deliver(job, deps)).toMatchObject({
+      status: "retry_scheduled",
+      reasonCode: "provider_preflight_unavailable",
+      retryAfterSeconds: 7200,
+    });
+    expect(deps.sendCloud).not.toHaveBeenCalled();
+  });
+
+  it("does not infer a retry from a rate code on an ambiguous HTTP 503 response", async () => {
+    const deps = fakeDependencies({
+      sendCloud: vi.fn().mockRejectedValue(new MetaCloudError(503, 130429)),
+    });
+    expect(await deliver(job, deps)).toMatchObject({
+      status: "uncertain",
+      reasonCode: "transport_unknown",
+    });
+    expect(deps.sendCloud).toHaveBeenCalledOnce();
+  });
+
+  it.each([131048, 131064])(
+    "holds quality/classification restriction %s without retry or generic fallback reason",
+    async (code) => {
+      const deps = fakeDependencies({
+        sendCloud: vi.fn().mockRejectedValue(new MetaCloudError(400, code)),
+      });
+      expect(await deliver(job, deps)).toEqual({
+        status: "failed",
+        provider: "meta_cloud",
+        reasonCode: "provider_rate_limited",
+      });
+      expect(deps.sendEmail).not.toHaveBeenCalled();
+    },
+  );
+
+  it("retries a proven runtime read failure but holds a proven recipient opt-out", async () => {
+    const deps = fakeDependencies({
+      sendCloud: vi
+        .fn()
+        .mockRejectedValue(new MetaCloudPreflightError("provider_preflight_unavailable", 7200)),
+    });
+    expect(await deliver(job, deps)).toMatchObject({
+      status: "retry_scheduled",
+      reasonCode: "provider_preflight_unavailable",
+      retryAfterSeconds: 7200,
+    });
+    vi.mocked(deps.sendCloud).mockRejectedValue(
+      new MetaCloudPreflightError("recipient_suppressed"),
+    );
+    expect(await deliver(job, deps)).toMatchObject({
+      status: "suppressed",
+      reasonCode: "recipient_suppressed",
     });
   });
 
@@ -407,9 +579,30 @@ describe("live notification WhatsApp template catalogue", () => {
       deps,
     );
     expect(list).toHaveLength(3);
-    expect(list[0]).toMatchObject({ compatible: true, name: job.templateName });
-    expect(list[1]).toMatchObject({ compatible: false, reason: "template_not_utility" });
-    expect(list[2]).toMatchObject({ compatible: false, reason: "template_not_approved" });
+    expect(list[0]).toMatchObject({
+      compatible: true,
+      name: job.templateName,
+      status: "APPROVED",
+      category: "UTILITY",
+      preview: {
+        body: "Há uma atualização solicitada no TechERP. Acesse sua central: https://erp.example.com/notifications.",
+        header: null,
+        footer: null,
+        button: null,
+      },
+    });
+    expect(list[1]).toMatchObject({
+      compatible: false,
+      category: "MARKETING",
+      preview: null,
+      reason: "template_not_utility",
+    });
+    expect(list[2]).toMatchObject({
+      compatible: false,
+      status: "PAUSED",
+      preview: null,
+      reason: "template_not_approved",
+    });
   });
   it("does not list templates for a number owned by another workspace", async () => {
     const deps = fakeDependencies({

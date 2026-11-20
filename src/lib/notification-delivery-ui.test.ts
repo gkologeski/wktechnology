@@ -302,7 +302,7 @@ it("does not label an incompatible WhatsApp model as compatible or send from its
     ),
   );
   expect(host.textContent).toContain("Não elegível");
-  expect(host.textContent).toContain("Formato não compatível");
+  expect(host.textContent).toContain("O modelo não atende ao formato de avisos desta central.");
   expect(host.textContent).toContain("Nenhuma mensagem é enviada");
 });
 it("history keeps uncertain results separate from delivery and never renders raw provider details", async () => {

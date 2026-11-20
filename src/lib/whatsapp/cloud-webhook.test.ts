@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const state = vi.hoisted(() => ({
   enabled: true,
   processed: false,
+  available: true,
   calls: [] as any[],
   storage: [] as any[],
 }));
@@ -45,7 +46,7 @@ vi.mock("@/integrations/supabase/client.server", () => ({
                     credentials_ciphertext: "cipher",
                   }
                 : table === "wa_cloud_numbers"
-                  ? [{ phone_number_id: "654321" }]
+                  ? [{ phone_number_id: "654321", available: state.available }]
                   : { id: "event", processed_at: state.processed ? "2026-01-01" : null },
           }),
       };
@@ -95,6 +96,7 @@ async function signed(payload: unknown) {
 }
 beforeEach(() => {
   state.enabled = true;
+  state.available = true;
   state.processed = false;
   state.calls = [];
   state.storage = [];
@@ -162,4 +164,23 @@ describe("cloud webhook boundary", () => {
     expect(response.status).toBe(200);
     expect(await response.text()).toBe("123");
   });
+});
+
+it("cloud webhook reconciles signed historical statuses after a sender becomes unavailable", async () => {
+  state.available = false;
+  state.enabled = false;
+  const p = structuredClone(base) as any;
+  p.entry[0].changes[0].value.messages = [];
+  p.entry[0].changes[0].value.statuses = [
+    { id: "wamid.history", recipient_id: "5548999990001", status: "read" },
+  ];
+  expect((await handleCloudWebhook(await signed(p), id)).status).toBe(200);
+  expect(processEvent).toHaveBeenCalledOnce();
+  expect(state.storage[0].payload.entry[0].changes[0].value._verified_connection_id).toBe(id);
+});
+it("cloud webhook keeps inbound unavailable senders blocked", async () => {
+  state.available = false;
+  expect((await handleCloudWebhook(await signed(base), id)).status).toBe(403);
+  expect(processEvent).not.toHaveBeenCalled();
+  expect(state.storage).toHaveLength(0);
 });

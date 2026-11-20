@@ -1,11 +1,14 @@
 import { validateEmailAddress } from "@/lib/email-address";
 import { normalizePhone } from "@/lib/phone/e164";
-import { MetaCloudError } from "@/lib/whatsapp/cloud-api.server";
+import { MetaCloudError, MetaCloudPreflightError } from "@/lib/whatsapp/cloud-api.server";
+import type { CloudTemplatePreflight } from "@/lib/whatsapp/cloud-runtime.server";
 import type { ServerEmailResult } from "@/lib/email-send.server";
 import {
   notificationCentralUrl,
   notificationTemplateIncompatibility,
   notificationTemplatePayload,
+  notificationTemplatePreview,
+  type NotificationTemplatePreview,
 } from "./delivery-content";
 import {
   notificationDeliveryJobSchema,
@@ -46,6 +49,7 @@ export type NotificationAdapterDependencies = {
     senderId: string,
     body: Record<string, unknown>,
     authorizeBeforePost: () => Promise<void>,
+    validateTemplate: (snapshot: CloudTemplatePreflight) => void,
   ) => Promise<unknown>;
   recordWhatsAppAcceptance: (
     job: NotificationDeliveryJob,
@@ -68,7 +72,7 @@ async function dependencies(injected?: NotificationAdapterDependencies) {
   );
 }
 
-function provenSender(
+function boundSender(
   sender: NotificationCloudSender | null,
   workspaceId: string,
   senderId: string,
@@ -78,16 +82,54 @@ function provenSender(
     sender.workspaceId === workspaceId &&
     sender.phoneNumberId === senderId &&
     sender.status === "CONNECTED" &&
-    ["GREEN", "HIGH"].includes(sender.qualityRating ?? "") &&
     /^\+[1-9]\d{4,14}$/.test(sender.displayPhoneNumber)
+  );
+}
+
+function provenSender(
+  sender: NotificationCloudSender | null,
+  workspaceId: string,
+  senderId: string,
+) {
+  return (
+    boundSender(sender, workspaceId, senderId) &&
+    ["GREEN", "HIGH"].includes(sender!.qualityRating ?? "")
   );
 }
 
 /** Only a typed HTTP refusal proves non-acceptance; opaque errors never enable fallback. */
 function transportFailure(provider: Provider, error: unknown): NotificationTransportResult {
+  if (error instanceof MetaCloudPreflightError) {
+    if (error.reason === "provider_preflight_unavailable") {
+      const delay = Math.max(60, Math.ceil(error.retryAfterSeconds ?? 60));
+      if (delay > 86400) return result(provider, "failed", "provider_rate_limited");
+      return {
+        ...result(provider, "retry_scheduled", error.reason),
+        retryAfterSeconds: delay,
+      };
+    }
+    return result(
+      provider,
+      error.reason === "recipient_suppressed" ? "suppressed" : "failed",
+      error.reason,
+    );
+  }
   const typed = error as { status?: unknown; retryAfterSeconds?: unknown } | null;
   const status = typeof typed?.status === "number" ? typed.status : null;
-  if (status === 429) {
+  const definiteMetaRefusal =
+    provider === "meta_cloud" &&
+    error instanceof MetaCloudError &&
+    status !== null &&
+    status >= 400 &&
+    status < 500 &&
+    status !== 408;
+  // Quality or classification restrictions must not be worked around through fallback.
+  if (definiteMetaRefusal && [131048, 131064].includes(error.code ?? 0))
+    return result(provider, "failed", "provider_rate_limited");
+  if (
+    status === 429 ||
+    (definiteMetaRefusal && [4, 80007, 130429, 131056].includes(error.code ?? 0))
+  ) {
     const delay =
       typeof typed?.retryAfterSeconds === "number" && Number.isFinite(typed.retryAfterSeconds)
         ? Math.max(1, Math.ceil(typed.retryAfterSeconds))
@@ -145,13 +187,19 @@ async function sendWhatsApp(
     return result("meta_cloud", "failed", "invalid_recipient");
   if (!/^\d{5,30}$/.test(job.senderPhoneNumberId ?? ""))
     return result("meta_cloud", "failed", "sender_unavailable");
+  if (!job.connectionId) return result("meta_cloud", "failed", "sender_unavailable");
   const senderId = job.senderPhoneNumberId!;
   let sender: NotificationCloudSender | null;
   let templatePayload: ReturnType<typeof notificationTemplatePayload>;
   try {
     sender = await deps.readCloudSender(job.workspaceId, senderId);
-    if (!provenSender(sender, job.workspaceId, senderId))
+    if (
+      !boundSender(sender, job.workspaceId, senderId) ||
+      sender!.connectionId !== job.connectionId
+    )
       return result("meta_cloud", "failed", "sender_unavailable");
+    if (!["GREEN", "HIGH"].includes(sender!.qualityRating ?? ""))
+      return result("meta_cloud", "failed", "provider_rate_limited");
     if (await deps.isWhatsAppSuppressed(job.workspaceId, normalized.e164))
       return result("meta_cloud", "suppressed", "recipient_suppressed");
     if (!job.templateName || !job.templateLanguage)
@@ -170,12 +218,15 @@ async function sendWhatsApp(
         })
       : null;
     if (!templatePayload) return result("meta_cloud", "failed", "invalid_template");
-  } catch {
+  } catch (error) {
     // This stage performed reads only. Retrying does not risk a duplicate POST.
-    return {
-      ...result("meta_cloud", "retry_scheduled", "provider_preflight_unavailable"),
-      retryAfterSeconds: 60,
-    };
+    return transportFailure(
+      "meta_cloud",
+      new MetaCloudPreflightError(
+        "provider_preflight_unavailable",
+        error instanceof MetaCloudError ? error.retryAfterSeconds : undefined,
+      ),
+    );
   }
   let response: unknown;
   try {
@@ -189,6 +240,23 @@ async function sendWhatsApp(
         template: templatePayload,
       },
       authorizeBeforePost,
+      (snapshot) => {
+        if (
+          snapshot.connectionId !== job.connectionId ||
+          snapshot.phone.id !== senderId ||
+          snapshot.phone.status !== "CONNECTED"
+        )
+          throw new MetaCloudPreflightError("sender_unavailable");
+        if (!["GREEN", "HIGH"].includes(String(snapshot.phone.quality_rating ?? "")))
+          throw new MetaCloudPreflightError("provider_rate_limited");
+        const currentPayload = notificationTemplatePayload(snapshot.template, {
+          name: job.templateName!,
+          language: job.templateLanguage!,
+          centralUrl,
+        });
+        if (!currentPayload || JSON.stringify(currentPayload) !== JSON.stringify(templatePayload))
+          throw new MetaCloudPreflightError("invalid_template");
+      },
     );
   } catch (error) {
     const failure = transportFailure("meta_cloud", error);
@@ -255,6 +323,9 @@ export type NotificationWhatsAppTemplate = {
   name: string;
   language: string;
   body: string;
+  status: string | null;
+  category: string | null;
+  preview: NotificationTemplatePreview | null;
   compatible: boolean;
   reason?: string;
 };
@@ -288,6 +359,15 @@ export async function loadNotificationWhatsAppTemplates(
         name: t.name,
         language: t.language,
         body: typeof body === "string" ? body : "",
+        status: typeof t.status === "string" ? t.status : null,
+        category: typeof t.category === "string" ? t.category : null,
+        preview: reason
+          ? null
+          : notificationTemplatePreview(t, {
+              name: t.name,
+              language: t.language,
+              centralUrl,
+            }),
         compatible: !reason,
         ...(reason ? { reason } : {}),
       },

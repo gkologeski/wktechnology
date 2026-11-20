@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -34,6 +34,14 @@ const REASON: Record<string, string> = {
   transport_unknown:
     "A resposta não confirma o resultado. Aguarde a conciliação; não reenvie às cegas.",
   recipient_suppressed: "Entrega suprimida pelas condições do destinatário.",
+  consent_missing:
+    "O destinatário ainda não autorizou os próprios avisos por WhatsApp neste workspace.",
+  consent_revoked: "O destinatário revogou sua autorização de WhatsApp.",
+  endpoint_changed:
+    "O telefone atual difere do número autorizado. Uma nova autorização pessoal é necessária.",
+  quota_exceeded: "A cota configurada para o canal foi atingida.",
+  budget_exceeded: "O orçamento estimado de WhatsApp foi atingido.",
+  preferences_disabled: "As preferências pessoais não permitem este canal.",
 };
 export function DeliveryHistoryPanel({
   items,
@@ -63,7 +71,11 @@ export function DeliveryHistoryPanel({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const visibleItems =
     filters.scope === "workspace" ? items : items.filter((item) => item.channel !== "slack");
-  const selected = visibleItems.find((item) => item.id === selectedId);
+  const selected =
+    !loading && !error ? visibleItems.find((item) => item.id === selectedId) : undefined;
+  useEffect(() => {
+    setSelectedId(null);
+  }, [loading, error, filters.scope, filters.channel, filters.status]);
   const change = (patch: Partial<DeliveryFilters>) => {
     if (!notificationDeliveryInteractionAllowed(canRead, loading)) return;
     if (patch.scope === "workspace" && !canWorkspace) return;

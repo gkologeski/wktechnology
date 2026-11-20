@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { cloudList, cloudRequest, verifyMetaSignature } from "./cloud-api.server";
+import { cloudList, cloudRequest, verifyMetaSignature, MetaCloudError } from "./cloud-api.server";
 
 const credentials = { accessToken: "secret-test-token", apiVersion: "v23.0" };
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 describe("Meta official transport", () => {
   it("uses only the selected Meta object and bearer header", async () => {
     const fetcher = vi.fn().mockResolvedValue(Response.json({ messages: [{ id: "m1" }] }));
@@ -54,6 +57,75 @@ describe("Meta official transport", () => {
     ).rejects.toThrow("131049");
     expect(fetcher).toHaveBeenCalledTimes(1);
   });
+  it.each(["7200", "86400", "99999", "3600.5"])(
+    "preserves the complete Retry-After %s on a structured provider refusal",
+    async (retryAfter) => {
+      const fetcher = vi
+        .fn()
+        .mockResolvedValue(
+          Response.json(
+            { error: { code: 130429, message: "secret-test-token" } },
+            { status: 400, headers: { "Retry-After": retryAfter } },
+          ),
+        );
+      vi.stubGlobal("fetch", fetcher);
+      const error = await cloudRequest(credentials, "123456", "messages", {
+        method: "POST",
+      }).catch((error: unknown) => error);
+      expect(error).toBeInstanceOf(MetaCloudError);
+      expect(error).toMatchObject({
+        status: 400,
+        code: 130429,
+        retryAfterSeconds: Math.ceil(Number(retryAfter)),
+      });
+      expect(String(error)).not.toContain("secret-test-token");
+      expect(fetcher).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("supports the HTTP-date Retry-After without capping the provider cooldown", async () => {
+    const now = Date.parse("2026-11-20T12:00:00Z");
+    vi.spyOn(Date, "now").mockReturnValue(now);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        new Response("not json", {
+          status: 429,
+          headers: { "Retry-After": new Date(now + 7200_000).toUTCString() },
+        }),
+      ),
+    );
+    await expect(
+      cloudRequest(credentials, "123456", "messages", { method: "POST" }),
+    ).rejects.toMatchObject({
+      status: 429,
+      retryAfterSeconds: 7200,
+    });
+  });
+
+  it.each(["", "invalid", "-1", "Infinity", "Thu, 01 Jan 1970 00:00:00 GMT"])(
+    "ignores an unusable Retry-After %s without exposing its contents",
+    async (retryAfter) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          Response.json(
+            { error: { code: 130429 } },
+            {
+              status: 429,
+              headers: { "Retry-After": retryAfter },
+            },
+          ),
+        ),
+      );
+      await expect(
+        cloudRequest(credentials, "123456", "messages", { method: "POST" }),
+      ).rejects.toMatchObject({
+        status: 429,
+        retryAfterSeconds: undefined,
+      });
+    },
+  );
   it("paginates with cursors without fetching a foreign URL", async () => {
     const fetcher = vi
       .fn()

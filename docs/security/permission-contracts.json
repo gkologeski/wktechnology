@@ -1824,15 +1824,85 @@
     {
       "id": "whatsapp-cloud-transport-internal",
       "kind": "internal",
-      "resources": ["system.whatsapp"],
-      "actions": ["view", "manage"],
-      "scopes": ["workspace"],
-      "permission_keys": ["system.whatsapp.view.workspace", "system.whatsapp.manage.workspace"],
-      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants.",
+      "resources": [
+        "system.whatsapp"
+      ],
+      "actions": [
+        "view",
+        "manage"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.whatsapp.view.workspace",
+        "system.whatsapp.manage.workspace"
+      ],
+      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added.",
       "controls": [
         {
           "file": "src/lib/whatsapp/cloud-api.server.ts",
           "symbol": "metaObjectId"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/notifications/delivery-access.server.ts",
+          "symbol": "assertNotificationTemplateAccess"
+        },
+        {
+          "file": "src/lib/notifications/delivery-access.server.ts",
+          "symbol": "assertNotificationDeliverySettings"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/notification-delivery-interaction.ts",
+          "symbol": "notificationDeliveryInteractionAllowed"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-api.server.ts",
+          "symbol": "verifyMetaSignature"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-api.server.ts",
+          "symbol": "cloudRequest"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-runtime.server.ts",
+          "symbol": "resolveCloudNumber"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-runtime.server.ts",
+          "symbol": "cloudConnectionSecrets"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "verifiedCloudReceipt"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "assertCloudReceiptProjection"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "assertCloudInboundEnabled"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "recordNotificationCloudReceipt"
         }
       ],
       "database": [
@@ -1843,6 +1913,50 @@
         {
           "file": "drizzle/migrations/0254_whatsapp_cloud_connections.sql",
           "symbol": "wa_cloud_sync_numbers"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_profile_phone"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_profile_phone_revoke"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_claim_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_preflight_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_finish_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_whatsapp_receipt"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_cooldown"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_reactivate"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_suppress_once"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "wa_messages_suppression_trg"
         }
       ],
       "tests": {
@@ -1874,7 +1988,7 @@
         "review_by": "2027-01-26"
       },
       "files": {
-        "src/lib/whatsapp/cloud-api.server.ts": "cffbdc2ab5775e9b80f8eb98e9fb84038a527f72eeaf34cc2c98a8f2f16800bc"
+        "src/lib/whatsapp/cloud-api.server.ts": "bd8ff42bc1a169d30c7c1edb31684105be73d3d34e7fcb489c78038691f1d1c6"
       }
     },
     {
@@ -2092,7 +2206,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "Server-only transport and processing called by authenticated sends, authorized workers or signature-verified webhook. Resolve exact workspace/number and active connection before decrypting; private media scope and signed status events retain verified tenant. No fallback after rejection. Company-left suggestions stay read-only proposals scoped to the verified conversation workspace; AI fallback only classifies the inbound text. Review 03/11/2026: sendCloudPayload refuses numbers with an active Meta suppression of the same verified workspace before calling Meta. Audio transcription reads the stored media from the private whatsapp-media bucket of the verified message before falling back to the Meta/gateway download; no new access path or tenant decision. Formatting-only repair required by the existing global lint gate; behavior and authorization unchanged. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers.",
+      "rationale": "Server-only transport and processing called by authenticated sends, authorized workers or signature-verified webhook. Resolve exact workspace/number and active connection before decrypting; private media scope and signed status events retain verified tenant. No fallback after rejection. Company-left suggestions stay read-only proposals scoped to the verified conversation workspace; AI fallback only classifies the inbound text. Review 03/11/2026: sendCloudPayload refuses numbers with an active Meta suppression of the same verified workspace before calling Meta. Audio transcription reads the stored media from the private whatsapp-media bucket of the verified message before falling back to the Meta/gateway download; no new access path or tenant decision. Formatting-only repair required by the existing global lint gate; behavior and authorization unchanged. Package 4 review: optional neutral external notification delivery uses service-only versioned recipient RPC and fenced delivery worker. Existing legacy paths preserved; final pre-POST permission/lease guard is delegated by Cloud helper without changing other callers. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added.",
       "controls": [
         {
           "file": "src/lib/whatsapp/cloud-runtime.server.ts",
@@ -2117,6 +2231,62 @@
         {
           "file": "src/lib/inbox/ai-suggestions.server.ts",
           "symbol": "matchCompanies"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/notifications/delivery-access.server.ts",
+          "symbol": "assertNotificationTemplateAccess"
+        },
+        {
+          "file": "src/lib/notifications/delivery-access.server.ts",
+          "symbol": "assertNotificationDeliverySettings"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/notification-delivery-interaction.ts",
+          "symbol": "notificationDeliveryInteractionAllowed"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-api.server.ts",
+          "symbol": "verifyMetaSignature"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-api.server.ts",
+          "symbol": "cloudRequest"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-runtime.server.ts",
+          "symbol": "cloudConnectionSecrets"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "verifiedCloudReceipt"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "assertCloudReceiptProjection"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "assertCloudInboundEnabled"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "recordNotificationCloudReceipt"
         }
       ],
       "database": [
@@ -2127,6 +2297,50 @@
         {
           "file": "drizzle/migrations/0255_whatsapp_cloud_routing.sql",
           "symbol": "wa_cloud_campaign_sender_guard"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_profile_phone"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_profile_phone_revoke"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_claim_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_preflight_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_finish_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_whatsapp_receipt"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_cooldown"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_reactivate"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_suppress_once"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "wa_messages_suppression_trg"
         }
       ],
       "tests": {
@@ -2158,20 +2372,33 @@
         "review_by": "2027-01-26"
       },
       "files": {
-        "src/lib/whatsapp/cloud-runtime.server.ts": "9960081a3937077f23ef0980f61bb2373d98201485d935146a865141ff8ee763",
+        "src/lib/whatsapp/cloud-runtime.server.ts": "42afe582fe7a5d498008e328563c1d79c753df119cf4ed3ca2fbe5463edbb84e",
         "src/lib/whatsapp/meta-channel.server.ts": "40c3bb7fddd839f421bb67b574f61bdd99e3197b38acf54409ac6cd94a0a801a",
         "src/lib/whatsapp/templates.server.ts": "693872ba81f6e46c295d73c4b760aaaa2505f1ae186c865420d9d30af201ea9e",
         "src/lib/whatsapp/inbound-media.server.ts": "e5e286ea1f2512c52625891d0c46c757b823d0157c626cd39fbdf88b70bd9f4f",
-        "src/lib/whatsapp/webhook-processor.server.ts": "d67cfd824e1115c8d80703b61fec104ec3fec24fdd25e55c266b60818f8a7665",
+        "src/lib/whatsapp/webhook-processor.server.ts": "457bd2737b4d15104569573841443ea449658e1a17b89e90c0f2194b14cd3ac6",
         "src/lib/inbox/ai-suggestions.server.ts": "876b710d4680b8db4d9f36fae8c274ecd9bfbd5c2f890c232d00cd73ba48c089"
       }
     },
     {
       "id": "whatsapp-cloud-public-webhook",
       "kind": "public",
-      "resources": ["system.whatsapp", "techsales.inbox.whatsapp", "techsales.marketing.campaigns"],
-      "actions": ["view", "create", "update", "manage"],
-      "scopes": ["own", "team", "workspace"],
+      "resources": [
+        "system.whatsapp",
+        "techsales.inbox.whatsapp",
+        "techsales.marketing.campaigns"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "manage"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.whatsapp.manage.workspace",
         "system.whatsapp.view.workspace",
@@ -2181,7 +2408,7 @@
         "techsales.marketing.campaigns.create.workspace",
         "techsales.marketing.campaigns.update.workspace"
       ],
-      "rationale": "GET requires connection-specific secret verification token; POST verifies HMAC raw bytes and exact WABA/registered phone; trusted tenant injected by server, durable deduplicated delivery. Disabled connection stores but does not process.",
+      "rationale": "GET requires connection-specific secret verification token; POST verifies HMAC raw bytes and exact WABA/registered phone; trusted tenant injected by server, durable deduplicated delivery. Disabled connection stores but does not process. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added.",
       "controls": [
         {
           "file": "src/lib/whatsapp/cloud-api.server.ts",
@@ -2190,6 +2417,62 @@
         {
           "file": "src/lib/whatsapp/cloud-webhook.server.ts",
           "symbol": "handleCloudWebhook"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/notifications/delivery-access.server.ts",
+          "symbol": "assertNotificationTemplateAccess"
+        },
+        {
+          "file": "src/lib/notifications/delivery-access.server.ts",
+          "symbol": "assertNotificationDeliverySettings"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/notification-delivery-interaction.ts",
+          "symbol": "notificationDeliveryInteractionAllowed"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-api.server.ts",
+          "symbol": "cloudRequest"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-runtime.server.ts",
+          "symbol": "resolveCloudNumber"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-runtime.server.ts",
+          "symbol": "cloudConnectionSecrets"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "verifiedCloudReceipt"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "assertCloudReceiptProjection"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "assertCloudInboundEnabled"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "recordNotificationCloudReceipt"
         }
       ],
       "database": [
@@ -2200,6 +2483,50 @@
         {
           "file": "drizzle/migrations/0255_whatsapp_cloud_routing.sql",
           "symbol": "wa_cloud_campaign_sender_guard"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_profile_phone"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_profile_phone_revoke"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_claim_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_preflight_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_finish_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_whatsapp_receipt"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_cooldown"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_reactivate"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_suppress_once"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "wa_messages_suppression_trg"
         }
       ],
       "tests": {
@@ -2231,7 +2558,7 @@
         "review_by": "2027-01-26"
       },
       "files": {
-        "src/lib/whatsapp/cloud-webhook.server.ts": "a1041e0c973a4bca4627f8645a10d8a6ab69a9193cbe2676779745a4ecc493fc",
+        "src/lib/whatsapp/cloud-webhook.server.ts": "fd57161383526c162e95cd8d2b890733a0d9d0b89131f21404a84ebae0cbfefa",
         "src/routes/api/public/whatsapp/cloud/$connectionId.ts": "8bc36097f621d366e8fb622eee61e6ae5b95b620bc16c0603498208d5f9a627d"
       }
     },
@@ -14988,7 +15315,7 @@
         "system.notification_settings.manage.workspace",
         "system.notification_deliveries.view.workspace"
       ],
-      "rationale": "Package 4 delegates rules to existing Workflows. Authenticated wrappers require selected active workspace; settings/new keys, personal consent/profile CAS, own/source-filtered history and record-authorized rules are distinct SQL boundaries. All UI mutations delegate to those wrappers and canonical Workflow APIs. Service-only enqueue/claim/preflight/finish prove workflow version/run, executor transport permissions, recipient source, consent, quotas and neutral content. Fenced leases prevent stale completion. Ambiguous outcomes never blind-retry/fallback. No role grants, production changes, real sends, rotation, auto-activation, or new scheduler. Existing notification producers/RPC remain compatible. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved.",
+      "rationale": "Package 4 delegates rules to existing Workflows. Authenticated wrappers require selected active workspace; settings/new keys, personal consent/profile CAS, own/source-filtered history and record-authorized rules are distinct SQL boundaries. All UI mutations delegate to those wrappers and canonical Workflow APIs. Service-only enqueue/claim/preflight/finish prove workflow version/run, executor transport permissions, recipient source, consent, quotas and neutral content. Fenced leases prevent stale completion. Ambiguous outcomes never blind-retry/fallback. No role grants, production changes, real sends, rotation, auto-activation, or new scheduler. Existing notification producers/RPC remain compatible. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added.",
       "exception": {
         "mechanism": "Verified session and selected active workspace for interactive APIs; personal operations derive auth.uid only; CRON_SECRET and service-role-only RPCs for bounded worker. UI props are delegation only, never authorization.",
         "boundary": "Only current workspace policy with explicit keys; own consent/profile; source-readable history/rules; named active recipients proven by source resolver. Provider receives neutral content, confirmed email or consent-bound phone; pinned Cloud API sender only.",
@@ -15071,6 +15398,38 @@
         {
           "file": "src/lib/integration-notifier.server.ts",
           "symbol": "dispatchZapier"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-api.server.ts",
+          "symbol": "verifyMetaSignature"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-api.server.ts",
+          "symbol": "cloudRequest"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-runtime.server.ts",
+          "symbol": "resolveCloudNumber"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-runtime.server.ts",
+          "symbol": "cloudConnectionSecrets"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "verifiedCloudReceipt"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "assertCloudReceiptProjection"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "assertCloudInboundEnabled"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "recordNotificationCloudReceipt"
         }
       ],
       "database": [
@@ -15153,6 +15512,50 @@
         {
           "file": "drizzle/migrations/0395_notification_slack.sql",
           "symbol": "techerp_api.notification_slack_integration_access"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_profile_phone"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_profile_phone_revoke"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_claim_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_preflight_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_finish_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_whatsapp_receipt"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_cooldown"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_reactivate"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_suppress_once"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "wa_messages_suppression_trg"
         }
       ],
       "tests": {
@@ -15179,18 +15582,18 @@
       },
       "files": {
         "drizzle/migrations/0393_notification_deliveries.sql": "b7406468ea37d24428b1595f16c35e3be807264ee263337ed7b421c6387422c3",
-        "src/components/notifications/delivery-history-panel.tsx": "4ebc0163bdddbf883a33fa6194c3ee44b7699983e0654d5d85354d3f3335f960",
-        "src/components/notifications/delivery-models-panel.tsx": "081830f6ce156d625347beae8ba2ea098711f90951c21b12fb848e3539dd85fe",
-        "src/components/notifications/delivery-operations.tsx": "6ef46f63227d6dea57d95976fe007cec73c6093ac6f7e0c78f272bb09c7eaa9e",
-        "src/components/notifications/delivery-settings-panel.tsx": "e78adf4b6a058931afcfa74fc581786eb3f98d205abacd0f21d0c7b7eeeb631a",
+        "src/components/notifications/delivery-history-panel.tsx": "c0760aad901c38e1f39659eed9447160f9fe1b1ef55640592992b735960c436f",
+        "src/components/notifications/delivery-models-panel.tsx": "c24ac0fa6f549e16417f774e6ccf528650ebe5c30e33c51656eea18c214ed449",
+        "src/components/notifications/delivery-operations.tsx": "a06a39abc9f6083f9adeabd8c0c675dfd9a08926c3abacbb8b5473104bd2cd8c",
+        "src/components/notifications/delivery-settings-panel.tsx": "0c2d5424e9eee4b5c2e35712e8207566e6cd9e61dc2796cd595f8e7a4f38c625",
         "src/components/notifications/notification-consent-panel.tsx": "deb87af952c155aafa9caafc00e031d74594d36b9ad519810825a0882e12fc59",
         "src/components/notifications/notification-rules-list.tsx": "811b55908af8cad9f51d503a254a46962da77bc131fa5bbf3fbc0bf0284c93bf",
         "src/components/notifications/notification-rules-panel.tsx": "4a219291501c5ee0e3fcdb618ef44b1fb8b37464703acfb840050b7477fa7a01",
         "src/components/workflows/builder/step-forms/notification-delivery-choice.tsx": "e6f196798b9070827ea336b0d9b37866403227863588dd3b70e4a8c29da2834b",
         "src/lib/notifications/delivery-access.server.ts": "6addee81f235b1a01f1dd0e276e217583e311ab7b990ea14fbbe2bdd83b5eae1",
-        "src/lib/notifications/delivery-adapter-runtime.server.ts": "0b7acba74f5338f26b0d297d992813f0f37c54dde4890b80188b9a8c47706b60",
-        "src/lib/notifications/delivery-adapters.server.ts": "901f9bea289277d9b23f56374182f58ea8f7a4f0a7e4549037d90c483b757089",
-        "src/lib/notifications/delivery-admin.functions.ts": "d69bc7819e8300d872e5f6e8bce0e75c457a8845b95b6bd144a01816d68d303e",
+        "src/lib/notifications/delivery-adapter-runtime.server.ts": "2569f57b5610b7d661afc0943ed5a6fbc8d62d878d2283cf5173340d0d7a0710",
+        "src/lib/notifications/delivery-adapters.server.ts": "5158a713e444332601d056968c6e6ed35a850daaafc928131c38e7d35d5cfcc3",
+        "src/lib/notifications/delivery-admin.functions.ts": "7889e00bdba16443b5c0caa6f3fdddc2845985d2d52be284c4aae92c1abe65bc",
         "src/lib/notifications/delivery-personal.functions.ts": "1f2e30255d3bbafb772d86dc200b63c23bb612c4efd60d59e82212190aa0502c",
         "src/lib/notifications/delivery-rules.functions.ts": "fb1f04dbfec01bd7e28fa1dfde74547410d2b0ce597dd64d3c1b57b0714944b6",
         "src/lib/notifications/delivery-worker.server.ts": "279f2ba3df4a8d47c18244852cfc3461d32ee313de9a6af61eea3704a66c98a2"
@@ -15199,13 +15602,13 @@
     {
       "id": "notification-delivery-declarative-content",
       "kind": "presentation",
-      "rationale": "Pure strict delivery schemas, neutral payload/model validation, structural rule preview and React email rendering. No I/O, recipient resolution, grants, provider or action execution; interactive and service authorization is enforced at delivery orchestration boundaries.",
+      "rationale": "Pure strict delivery schemas, neutral payload/model validation, structural rule preview and React email rendering. No I/O, recipient resolution, grants, provider or action execution; interactive and service authorization is enforced at delivery orchestration boundaries. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added.",
       "files": {
         "src/lib/email-templates/notification-update.tsx": "64660a91969ad0cda851ca9a6550a3fe49e86c82bc4f50564325d229fc67a0e2",
         "src/lib/notifications/delivery-api.ts": "5ccf7dde0eb6671ebf7080eea1d3835a4706bb4c35a0720413463a5121c5762e",
-        "src/lib/notifications/delivery-content.ts": "2f75205bad3533705718c27ebe3abc038431122ec0fc46d2167fe63d1c48796e",
+        "src/lib/notifications/delivery-content.ts": "3ae605fed0a2c4a0bffd271774288a979c2e50243432ee9d685c7eac58451904",
         "src/lib/notifications/delivery-rule-preview.ts": "e040703dc259a9ad7867966f035f48ab554f237cd37bd18d84ce66fd56dec5fc",
-        "src/lib/notifications/delivery-types.ts": "9d0ca1b06201cd9de32c1f8451f2cae2092af984b85462324bc63e3f37c0461c",
+        "src/lib/notifications/delivery-types.ts": "3896e3c2333749c56f08a15897ccbeb7f5d4662c75df11f159b05ddab4774acf",
         "src/lib/notification-delivery-interaction.ts": "db12a925a3b50ec7e185d4cd9845589ae35cadaea50b9775088d9b07be70e422",
         "src/lib/notification-delivery.functions.ts": "e165ad50922220f2cea29a1602f8ff2d0c67fa019b5c88e0b80f6a805f0d0125"
       }
@@ -15510,6 +15913,167 @@
         "src/lib/notifications/slack-transport.server.ts": "679110c0586e87e3199a1ac01be32f6529111075e8adbde7c826ff8dcefb296f",
         "src/lib/slack.functions.ts": "0f9a5eb9f63f930fbe7e2c572a9ea5c9ab9d12fc862a22c34f599b7ab5dc1caa",
         "src/routes/_authenticated/settings.notifications.slack.tsx": "fd081a699ec2f6d6f9b08133c10e1ee079c1143892bdac4df5f737d447a6cd24"
+      }
+    },
+    {
+      "id": "notification-whatsapp-official-guardrails",
+      "kind": "service",
+      "resources": [
+        "system.notifications",
+        "system.notification_settings",
+        "system.notification_deliveries",
+        "system.whatsapp"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "workspace"
+      ],
+      "rationale": "P7 completes the previously anticipated official Cloud API notification channel, without new business producers. Every profile phone mutation revokes prior own consents. First claim pins connection; final live sender and template guard precedes lease revalidation and POST. Private receipt RPC correlates workspace+connection+sender+destination hash+wamid+attempt, independently of Inbox projection; canonical HMAC-bound events supply original metadata. Historical receipts remain eligible after disablement, without activating inbound or outbound. Existing durable webhook queue handles receipt-before-acceptance; no parallel queue or scheduler. Reputation/rate outcomes never enqueue email fallback, including exhausted retries. Shared connection cooldowns preserve the longest finite provider deadline through indefinite stops and explicit authorized reactivation. Indefinite reputation refusals disable only the notification WhatsApp policy, without email fallback. Exact workspace/wamid/error-code suppression receipts correlate canonical projection and ledger callbacks, including late failure details, without duplicate suppression counts. Existing connectors and source permissions remain; no automatic grants, activation, production SQL, provider messages or publication.",
+      "exception": {
+        "mechanism": "Private worker RPCs require service_role with null auth.uid; interactive wrappers use selected active workspace and canonical record/channel/settings checks. Cloud public capability is connection-specific HMAC plus WABA/phone binding; markers overwritten only after signature verification. Queue and projection helpers are internal service delegation, never browser entry points.",
+        "boundary": "Own active workspace preferences/consent and record-authorized configuration; private ledger writes only for proven provider acceptance and exact pins. Missing old connection pin is uncertain, never guessed. Historical acknowledgement does not authorize a new send or disclose source content. Legacy Lovable processing remains behind its established ingress boundary; no implicit gateway fallback.",
+        "revocation": "Current deny, inactive membership, source/transport revocation, profile phone change, connection/template/policy revision, low/unknown quality, quiet hours, quota or stale lease stops new delivery. Receipt reconciliation only records historical facts and never retries a send or creates fallback.",
+        "review_by": "2027-04-30"
+      },
+      "controls": [
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/notifications/delivery-access.server.ts",
+          "symbol": "assertNotificationTemplateAccess"
+        },
+        {
+          "file": "src/lib/notifications/delivery-access.server.ts",
+          "symbol": "assertNotificationDeliverySettings"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/notification-delivery-interaction.ts",
+          "symbol": "notificationDeliveryInteractionAllowed"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-api.server.ts",
+          "symbol": "verifyMetaSignature"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-api.server.ts",
+          "symbol": "cloudRequest"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-runtime.server.ts",
+          "symbol": "resolveCloudNumber"
+        },
+        {
+          "file": "src/lib/whatsapp/cloud-runtime.server.ts",
+          "symbol": "cloudConnectionSecrets"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "verifiedCloudReceipt"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "assertCloudReceiptProjection"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "assertCloudInboundEnabled"
+        },
+        {
+          "file": "src/lib/whatsapp/notification-receipt.server.ts",
+          "symbol": "recordNotificationCloudReceipt"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_profile_phone"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_profile_phone_revoke"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_intent_context"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_claim_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_preflight_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_delivery_finish_personal_v1"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "notification_whatsapp_receipt"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_cooldown"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_reactivate"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "techerp_api.notification_whatsapp_suppress_once"
+        },
+        {
+          "file": "drizzle/migrations/0396_notification_whatsapp_guardrails.sql",
+          "symbol": "wa_messages_suppression_trg"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/notification-whatsapp-postgres.test.ts",
+          "name": "WhatsApp guardrails allow authorized member"
+        },
+        "missing_permission": {
+          "file": "src/lib/notification-whatsapp-postgres.test.ts",
+          "name": "WhatsApp guardrails reject missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/notification-whatsapp-postgres.test.ts",
+          "name": "WhatsApp guardrails reject explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/notification-whatsapp-postgres.test.ts",
+          "name": "WhatsApp guardrails reject foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/notification-whatsapp-postgres.test.ts",
+          "name": "WhatsApp guardrails reject inactive member"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0396_notification_whatsapp_guardrails.sql": "cf57bd963764d25496e7d2eceb79a5831edd342a6f2435ae5bb014bfcd37c4aa",
+        "src/lib/whatsapp/notification-receipt.server.ts": "27ee5e5c2ec43529d1d19394e072c09995267f85bcc5b935efe1b5feba778178"
       }
     }
   ],

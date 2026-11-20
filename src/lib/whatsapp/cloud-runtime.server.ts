@@ -1,4 +1,15 @@
-import { cloudRequest, cloudList } from "./cloud-api.server";
+import {
+  cloudRequest,
+  cloudList,
+  MetaCloudError,
+  MetaCloudPreflightError,
+} from "./cloud-api.server";
+
+export type CloudTemplatePreflight = {
+  template: Record<string, unknown>;
+  phone: { id?: unknown; quality_rating?: unknown; status?: unknown };
+  connectionId: string;
+};
 
 /** Called only with the workspace resolved by the authenticated/job boundary. */
 export async function resolveCloudNumber(workspaceId: string, phoneNumberId: string) {
@@ -72,71 +83,101 @@ export async function sendCloudPayload(
   workspaceId: string,
   phoneNumberId: string,
   body: any,
-  options: { beforeSend?: () => Promise<void> } = {},
+  options: {
+    beforeSend?: () => Promise<void>;
+    validateTemplate?: (snapshot: CloudTemplatePreflight) => void;
+  } = {},
 ) {
-  const number = await resolveCloudNumber(workspaceId, phoneNumberId);
-  if (!number) throw new Error("Número não pertence a este workspace.");
-  const connection = await cloudConnectionSecrets(workspaceId, number.connectionId);
-  if (body.to && body.type === "template") {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { brPhoneVariants } = await import("./phone-variants");
-    const optedOut = await supabaseAdmin
-      .from("sdr_enrollments")
-      .select("id")
-      .eq("workspace_id", workspaceId)
-      .in("contact_phone", brPhoneVariants(`+${String(body.to).replace(/\D/g, "")}`))
-      .not("opted_out_at", "is", null)
-      .limit(1);
-    if (optedOut.error || optedOut.data?.length)
-      throw new Error("Envio não permitido: descadastramento ou falha na verificação.");
-    const { suppressionKey, activeSuppressions, SUPPRESSION_LABEL } =
-      await import("./whatsapp-suppression");
-    const key = suppressionKey(String(body.to));
-    const sup = await supabaseAdmin
-      .from("whatsapp_number_suppressions")
-      .select("phone_key, reason, expires_at, released_at")
-      .eq("workspace_id", workspaceId)
-      .eq("phone_key", key);
-    if (sup.error) throw new Error("Envio não permitido: falha ao verificar números recusados.");
-    const reason = activeSuppressions((sup.data ?? []) as never).get(key);
-    if (reason) throw new Error(`Envio não permitido: ${SUPPRESSION_LABEL[reason]}.`);
-  }
-  if (body.type === "template") {
-    const templates = await cloudList(
-      connection.credentials,
-      connection.waba_id,
-      "message_templates",
-      "name,language,status,components",
-    );
-    if (
-      !templates.some(
+  let connection: Awaited<ReturnType<typeof cloudConnectionSecrets>>;
+  try {
+    const number = await resolveCloudNumber(workspaceId, phoneNumberId);
+    if (!number) {
+      if (options.validateTemplate) throw new MetaCloudPreflightError("sender_unavailable");
+      throw new Error("Número não pertence a este workspace.");
+    }
+    connection = await cloudConnectionSecrets(workspaceId, number.connectionId);
+    if (body.to && body.type === "template") {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { brPhoneVariants } = await import("./phone-variants");
+      const optedOut = await supabaseAdmin
+        .from("sdr_enrollments")
+        .select("id")
+        .eq("workspace_id", workspaceId)
+        .in("contact_phone", brPhoneVariants(`+${String(body.to).replace(/\D/g, "")}`))
+        .not("opted_out_at", "is", null)
+        .limit(1);
+      if (optedOut.error) throw new Error("Falha ao verificar descadastramento.");
+      if (optedOut.data?.length) {
+        if (options.validateTemplate) throw new MetaCloudPreflightError("recipient_suppressed");
+        throw new Error("Envio não permitido: descadastramento ou falha na verificação.");
+      }
+      const { suppressionKey, activeSuppressions, SUPPRESSION_LABEL } =
+        await import("./whatsapp-suppression");
+      const key = suppressionKey(String(body.to));
+      const sup = await supabaseAdmin
+        .from("whatsapp_number_suppressions")
+        .select("phone_key, reason, expires_at, released_at")
+        .eq("workspace_id", workspaceId)
+        .eq("phone_key", key);
+      if (sup.error) throw new Error("Envio não permitido: falha ao verificar números recusados.");
+      const reason = activeSuppressions((sup.data ?? []) as never).get(key);
+      if (reason) {
+        if (options.validateTemplate) throw new MetaCloudPreflightError("recipient_suppressed");
+        throw new Error(`Envio não permitido: ${SUPPRESSION_LABEL[reason]}.`);
+      }
+    }
+    if (body.type === "template") {
+      const templates = await cloudList(
+        connection.credentials,
+        connection.waba_id,
+        "message_templates",
+        "id,name,language,status,category,components",
+      );
+      const template = templates.find(
         (template) =>
-          template.name === body.template?.name &&
+          template?.name === body.template?.name &&
           template.language === body.template?.language?.code &&
           template.status === "APPROVED",
-      )
-    )
-      throw new Error("Modelo não aprovado para a conta do número selecionado.");
-    const phone = await cloudRequest(connection.credentials, phoneNumberId, "", {
-      query: { fields: "id,quality_rating,status" },
-    });
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await (supabaseAdmin as any)
-      .from("wa_cloud_numbers")
-      .update({
-        quality_rating: phone.quality_rating ?? null,
-        status: phone.status ?? null,
-        synced_at: new Date().toISOString(),
-      })
-      .eq("workspace_id", workspaceId)
-      .eq("phone_number_id", phoneNumberId);
-    if (phone.quality_rating === "RED" || phone.status !== "CONNECTED")
-      throw new Error(
-        "Novos envios suspensos: verifique a qualidade e a situação do número na Meta.",
       );
+      if (!template) {
+        if (options.validateTemplate) throw new MetaCloudPreflightError("invalid_template");
+        throw new Error("Modelo não aprovado para a conta do número selecionado.");
+      }
+      const phone = await cloudRequest(connection.credentials, phoneNumberId, "", {
+        query: { fields: "id,quality_rating,status" },
+      });
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      try {
+        await (supabaseAdmin as any)
+          .from("wa_cloud_numbers")
+          .update({
+            quality_rating: phone.quality_rating ?? null,
+            status: phone.status ?? null,
+            synced_at: new Date().toISOString(),
+          })
+          .eq("workspace_id", workspaceId)
+          .eq("phone_number_id", phoneNumberId);
+      } finally {
+        // A cache failure must not conceal a refusal in the exact live snapshot.
+        options.validateTemplate?.({ template, phone, connectionId: number.connectionId });
+      }
+      if (phone.quality_rating === "RED" || phone.status !== "CONNECTED")
+        throw new Error(
+          "Novos envios suspensos: verifique a qualidade e a situação do número na Meta.",
+        );
+    }
+    if (options.validateTemplate && body.type !== "template")
+      throw new MetaCloudPreflightError("invalid_template");
+    // Fenced workers revalidate their lease/authorization after every potentially slow read.
+    await options.beforeSend?.();
+  } catch (error) {
+    if (!options.validateTemplate || error instanceof MetaCloudPreflightError) throw error;
+    // Everything above precedes the provider POST. A read failure cannot mean acceptance.
+    throw new MetaCloudPreflightError(
+      "provider_preflight_unavailable",
+      error instanceof MetaCloudError ? error.retryAfterSeconds : undefined,
+    );
   }
-  // Fenced workers revalidate their lease/authorization after every potentially slow read.
-  await options.beforeSend?.();
   const result = await cloudRequest(connection.credentials, phoneNumberId, "messages", {
     method: "POST",
     body,

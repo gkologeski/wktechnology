@@ -1,5 +1,11 @@
 // Processa eventos guardados em whatsapp_webhook_events (conexão Lovable).
 // Idempotente: mensagens deduplicadas por wa_message_id; status nunca regride.
+import {
+  verifiedCloudReceipt,
+  assertCloudReceiptProjection,
+  recordNotificationCloudReceipt,
+  assertCloudInboundEnabled,
+} from "./notification-receipt.server";
 import { shouldApplyStatus } from "@/lib/whatsapp/status-rank";
 
 const STATUS_ORDER = ["accepted", "sent", "delivered", "read", "failed"];
@@ -81,6 +87,7 @@ async function suggestCompanyLeftSafe(
 }
 
 async function handleMessages(admin: Admin, value: any): Promise<string | null> {
+  await assertCloudInboundEnabled(admin, value);
   const ourPhone = normalizePhone(value?.metadata?.display_phone_number ?? "");
   let workspaceId: string | null = null;
   for (const m of value?.messages ?? []) {
@@ -247,16 +254,27 @@ async function sdrIngest(admin: Admin, p: Parameters<typeof ingestInboundForSdr>
 async function handleStatuses(admin: Admin, value: any): Promise<string | null> {
   let workspaceId: string | null = null;
   for (const s of value?.statuses ?? []) {
+    const receipt = verifiedCloudReceipt(value, s);
     let statusQuery = admin
       .from("whatsapp_messages")
-      .select("id, status, workspace_id, delivered_at, read_at")
+      .select("id,status,workspace_id,delivered_at,read_at,conversation_id,direction,to_number,raw")
       .eq("wa_message_id", s.id);
     if (value._verified_workspace_id)
       statusQuery = statusQuery.eq("workspace_id", value._verified_workspace_id);
     const { data: msg, error } = await statusQuery.maybeSingle();
     if (error) throw new Retry(error.message);
-    // Status chegou antes do registro do envio: fica pendente para nova tentativa.
-    if (!msg) throw new Retry("Mensagem enviada ainda não registrada");
+    if (msg && receipt) await assertCloudReceiptProjection(admin, receipt, msg);
+    const reconciled = receipt
+      ? await recordNotificationCloudReceipt(admin, receipt)
+      : { matched: false };
+    // The existing durable queue retries an early receipt until the wamid is pinned.
+    if (!msg) {
+      if (reconciled.matched && receipt) {
+        workspaceId = receipt.workspaceId;
+        continue;
+      }
+      throw new Retry("Mensagem enviada ainda não registrada");
+    }
     workspaceId = msg.workspace_id as string;
     const at = s.timestamp ? new Date(Number(s.timestamp) * 1000).toISOString() : null;
     const patch: Record<string, unknown> = {};

@@ -47,6 +47,7 @@ const caps = {
 };
 beforeEach(() => {
   vi.clearAllMocks();
+  from.mockReset();
   state.area.mockResolvedValue(undefined);
   state.record.mockResolvedValue(undefined);
   state.manage.mockResolvedValue(undefined);
@@ -114,6 +115,159 @@ it("provider templates require channel access before querying sender or secrets"
   ).rejects.toThrow("channel denied");
   expect(from).not.toHaveBeenCalled();
 });
+
+type SenderCatalogueRow = Record<string, unknown>;
+function senderCatalogue(
+  numbers: SenderCatalogueRow[] = [],
+  connections: SenderCatalogueRow[] = [],
+  failedTable?: "wa_cloud_numbers" | "wa_cloud_connections",
+) {
+  const reads: {
+    table: string;
+    columns: string;
+    filters: Record<string, unknown>;
+    limit: number | null;
+  }[] = [];
+  from.mockImplementation((table: string) => {
+    const read = {
+      table,
+      columns: "",
+      filters: {} as Record<string, unknown>,
+      limit: null as number | null,
+    };
+    reads.push(read);
+    const query = {
+      select: (columns: string) => {
+        read.columns = columns;
+        return query;
+      },
+      eq: (key: string, value: unknown) => {
+        read.filters[key] = value;
+        return query;
+      },
+      order: () => query,
+      limit: async (limit: number) => {
+        read.limit = limit;
+        const rows = table === "wa_cloud_numbers" ? numbers : connections;
+        return {
+          data:
+            failedTable === table
+              ? null
+              : rows.filter((row) =>
+                  Object.entries(read.filters).every(([key, value]) => row[key] === value),
+                ),
+          error: failedTable === table ? { message: "Synthetic unavailable catalogue" } : null,
+        };
+      },
+    };
+    return query;
+  });
+  return reads;
+}
+
+it("distinguishes available senders from eligible connected verified high-quality senders without selecting secrets", async () => {
+  const connection = {
+    id: U,
+    workspace_id: W,
+    enabled: true,
+    webhook_verified_at: "2026-11-20T12:00:00Z",
+  };
+  const number = {
+    workspace_id: W,
+    phone_number_id: "654321",
+    connection_id: U,
+    display_phone_number: "+14155552672",
+    verified_name: "Synthetic sender",
+    quality_rating: "GREEN",
+    status: "CONNECTED",
+    available: true,
+    synced_at: "2026-11-20T12:00:00Z",
+  };
+  const variants = [
+    [{}, true, null],
+    [{ quality_rating: "HIGH" }, true, null],
+    [{ available: false }, false, "sender_unavailable"],
+    [{ status: "DISCONNECTED" }, false, "sender_unavailable"],
+    [{ connection_id: "disabled" }, true, "connection_unavailable"],
+    [{ connection_id: "missing" }, true, "connection_unavailable"],
+    [{ connection_id: "unverified" }, true, "webhook_unverified"],
+    [{ quality_rating: "YELLOW" }, true, "quality_not_high"],
+    [{ quality_rating: "RED" }, true, "quality_not_high"],
+    [{ quality_rating: null }, true, "quality_not_high"],
+  ] as const;
+  const reads = senderCatalogue(
+    [
+      ...variants.map(([patch], index) => ({
+        ...number,
+        ...patch,
+        phone_number_id: String(654321 + index),
+      })),
+      { ...number, workspace_id: U, phone_number_id: "999999" },
+    ],
+    [
+      connection,
+      { ...connection, id: "disabled", enabled: false },
+      { ...connection, id: "unverified", webhook_verified_at: null },
+      { ...connection, id: "foreign", workspace_id: U },
+    ],
+  );
+  const result = (await call(listNotificationWhatsAppSenders, { workspaceId: W })) as {
+    items: { id: string; available: boolean; eligible: boolean; reason: string | null }[];
+  };
+  expect(
+    result.items.map(({ id, available, eligible, reason }) => ({
+      id,
+      available,
+      eligible,
+      reason,
+    })),
+  ).toEqual(
+    variants.map(([, available, reason], index) => ({
+      id: String(654321 + index),
+      available,
+      eligible: reason === null,
+      reason,
+    })),
+  );
+  expect(state.area.mock.calls).toEqual([
+    [ctx.supabase, "system.channels", "view"],
+    [ctx.supabase, "system.whatsapp", "view"],
+  ]);
+  expect(reads).toEqual([
+    {
+      table: "wa_cloud_numbers",
+      columns:
+        "phone_number_id,connection_id,display_phone_number,verified_name,quality_rating,status,available,synced_at",
+      filters: { workspace_id: W },
+      limit: 100,
+    },
+    {
+      table: "wa_cloud_connections",
+      columns: "id,enabled,webhook_verified_at",
+      filters: { workspace_id: W },
+      limit: 100,
+    },
+  ]);
+  expect(reads.every((read) => !/credentials|ciphertext|token|secret/i.test(read.columns))).toBe(
+    true,
+  );
+});
+
+it.each(["wa_cloud_numbers", "wa_cloud_connections"] as const)(
+  "propagates an unavailable %s catalogue instead of returning an empty sender list",
+  async (failedTable) => {
+    const reads = senderCatalogue([], [], failedTable);
+    await expect(call(listNotificationWhatsAppSenders, { workspaceId: W })).rejects.toThrow(
+      "Não foi possível consultar os remetentes do WhatsApp",
+    );
+    expect(reads).toHaveLength(2);
+    expect(reads.every((read) => read.filters.workspace_id === W)).toBe(true);
+    expect(state.rpc).toHaveBeenCalledWith(ctx.supabase, "notification_delivery_capabilities", {
+      p_workspace: W,
+    });
+  },
+);
+
 it("personal consent revocation does not require the old phone to still match profile", async () => {
   const result = { phone: null, consent: null };
   state.rpc.mockResolvedValue(result);

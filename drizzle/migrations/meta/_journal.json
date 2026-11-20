@@ -2773,6 +2773,13 @@
       "when": 1795185000000,
       "tag": "0395_notification_slack",
       "breakpoints": true
+    },
+    {
+      "idx": 396,
+      "version": "7",
+      "when": 1795206000000,
+      "tag": "0396_notification_whatsapp_guardrails",
+      "breakpoints": true
     }
   ]
 }
