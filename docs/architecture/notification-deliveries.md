@@ -6,7 +6,7 @@ Implementação local sobre 39e47a794. Migração aditiva 0393 depende de 0391 e
 
 Regras são os próprios Workflows com ação send_notification, incluindo ramificações aninhadas. O editor canônico mantém rascunho/publicação e alçadas. A ação pode receber delivery {channels:[inapp,email,whatsapp],fallback:none|email}. Sem delivery usa a RPC legada e continua inapp-only. A RPC v2 resolve os destinatários e cria intenções/entregas atomicamente, sem passar IDs para inserts privilegiados em TypeScript. A P4 conectou somente legacy.workflow; a P8 acrescenta os oito eventos comprovados de TechSales e TechContracts descritos abaixo. A disponibilidade no catálogo não habilita regras ou canais.
 
-O drain usa o workflows-tick existente, protegido por CRON_SECRET, com limite de 20 jobs. Sem segundo scheduler. A P6 integrou o Slack coletivo ao ledger com seu próprio subtipo protegido; ele não representa entrega pessoal nem segue consentimento individual. Os resumos diário/semanal continuam agrupamento visual da central, sem digest externo.
+O drain usa o workflows-tick existente, protegido por CRON_SECRET, com limite de 20 jobs. Sem segundo scheduler. A P6 integrou o Slack coletivo ao ledger com seu próprio subtipo protegido; ele não representa entrega pessoal nem segue consentimento individual. Na entrega P4 e na integração P6, os resumos diário/semanal eram somente agrupamento visual da central. A P12 acrescentou adesão pessoal separada ao digest externo, sem converter o agrupamento visual em opt-in.
 
 ## Autorização
 
@@ -104,3 +104,10 @@ As evidências do navegador são sintéticas, locais e usam biblioteca real com 
 O agrupamento `CenterSettings.summary` permanece visual e não é migrado para adesão de envio. Resumo pessoal usa configuração privada própria por usuário/workspace, revisão CAS e defaults desativados/sem canais; diário às 08:30, segunda-feira 1 e America/Sao_Paulo são valores iniciais editáveis. Somente comunicações externas iniciais de prioridade `low` explícita e evento canônico comprovado são elegíveis; `people.approval.pending` fica excluído. Central imediata, texto neutro/link central, sem contagens ou snapshots externos e sem fallback automático no resumo.
 
 Acompanhamento opcional está no `delivery.followup` do passo: lembrete de 1–168 horas × 1–3 ocorrências, horizonte máximo de 168 horas, ou uma escalada de 1–168 horas com seletor explícito. Exige inapp original existente/não lido e pendência canônica ainda válida, herda canais/fallback e nunca executa novamente outras ações. São elegíveis somente as 12 chaves fechadas de pendência; aprovação profissional não escala e a NF precisa permanecer registrada aguardando conferência. Política `digest_enabled`/`followups_enabled` começa false e `followup_daily_limit` zero; as mesmas alçadas administrativas e de Workflow continuam obrigatórias. Histórico distingue `occurrence_kind`, `parent_intent_id` e `batch_id`, sem inventar workflow/run para envelope multiorigem.
+
+
+## P13: preparo e implantação gradual manual
+
+A conferência publicada usa dados salvos e controles canônicos de leitura, sem novo SQL, privilégio de serviço, provedor ou envio. O catálogo de modelos WhatsApp deixa de fazer GET automático na montagem/foco e passa a exigir solicitação explícita para o remetente/contexto atuais. Status sincronizado ou configuração salva não são classificados como elegibilidade ao vivo.
+
+O roteiro exige inventário de outras regras/backlog antes de habilitar políticas compartilhadas, revisão das outras ações do Workflow e plano de pausa. Desligar WhatsApp não elimina um fallback de e-mail explícito; políticas da central não são kill-switch global. Trabalho in-flight/accepted não é recolhido, e uncertain não pode ser repetido como rollback. Aceite local, publicação e piloto com sessões/provedor reais continuam etapas distintas.

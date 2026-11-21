@@ -257,6 +257,7 @@ beforeAll(async () => {
     "sales_context_access",
     "sales_record_context_access",
     "sales_record_access",
+    "sales_area_authorize",
     "sales_event_reference_access",
     "sales_approval_access",
     "techerp_api.sales_worker_check",

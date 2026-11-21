@@ -19055,7 +19055,7 @@
         "system.notification_settings.manage.workspace",
         "system.notification_deliveries.view.workspace"
       ],
-      "rationale": "Package 4 delegates rules to existing Workflows. Authenticated wrappers require selected active workspace; settings/new keys, personal consent/profile CAS, own/source-filtered history and record-authorized rules are distinct SQL boundaries. All UI mutations delegate to those wrappers and canonical Workflow APIs. Service-only enqueue/claim/preflight/finish prove workflow version/run, executor transport permissions, recipient source, consent, quotas and neutral content. Fenced leases prevent stale completion. Ambiguous outcomes never blind-retry/fallback. No role grants, production changes, real sends, rotation, auto-activation, or new scheduler. Existing notification producers/RPC remain compatible. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation. P11 reviewed: five exact Finance notification keys, current payment-derived balance, same-day/post-publication deadline semantics, private canonical fiscal receipt with no raw SELECT grant, minimal event fields and read-only mutation fences. Fresh authorized destinations preserve permissions and saved state; no production application or automatic activation. P12 reviewed: explicit default-off digest consent separate from visual grouping, civil IANA slots, private batch/occurrence ledger, bounded original-step reminders and explicit escalation. Current identity/source/proof/version/permission/consent and delivery fences remain mandatory; approvals reuse their canonical notice and cannot escalate. No source mutation, inferred CEO, real message or production activation.",
+      "rationale": "Package 4 delegates rules to existing Workflows. Authenticated wrappers require selected active workspace; settings/new keys, personal consent/profile CAS, own/source-filtered history and record-authorized rules are distinct SQL boundaries. All UI mutations delegate to those wrappers and canonical Workflow APIs. Service-only enqueue/claim/preflight/finish prove workflow version/run, executor transport permissions, recipient source, consent, quotas and neutral content. Fenced leases prevent stale completion. Ambiguous outcomes never blind-retry/fallback. No role grants, production changes, real sends, rotation, auto-activation, or new scheduler. Existing notification producers/RPC remain compatible. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation. P11 reviewed: five exact Finance notification keys, current payment-derived balance, same-day/post-publication deadline semantics, private canonical fiscal receipt with no raw SELECT grant, minimal event fields and read-only mutation fences. Fresh authorized destinations preserve permissions and saved state; no production application or automatic activation. P12 reviewed: explicit default-off digest consent separate from visual grouping, civil IANA slots, private batch/occurrence ledger, bounded original-step reminders and explicit escalation. Current identity/source/proof/version/permission/consent and delivery fences remain mandatory; approvals reuse their canonical notice and cannot escalate. No source mutation, inferred CEO, real message or production activation. P13 reviewed: preparation reads only one selected published Workflow and existing policy boundaries, with no global send-readiness claim, source/destination disclosure or draft fallback. Live WhatsApp catalogue queries become explicit user actions, scoped to current identity/workspace/sender; no automatic provider query occurs on page mount. Existing configuration writers, capabilities, RLS, opt-in, quotas, uncertain-send and delivery gates remain unchanged; the operator runbook does not activate or pause anything.",
       "exception": {
         "mechanism": "Verified session and selected active workspace for interactive APIs; personal operations derive auth.uid only; CRON_SECRET and service-role-only RPCs for bounded worker. UI props are delegation only, never authorization.",
         "boundary": "Only current workspace policy with explicit keys; own consent/profile; source-readable history/rules; named active recipients proven by source resolver. Provider receives neutral content, confirmed email or consent-bound phone; pinned Cloud API sender only. P10 extends this existing boundary with six exact TechHire/TechPeople keys and three read-only source entities under their canonical RLS. Restricted preparation approval targets only the current named approver and reuses the original notice; no generic mutation, broad recipient fallback or collective channel is authorized. P11 extends this boundary with five exact Finance keys and the read-only hiring_fiscal_documents source under canonical fiscal and parent access. Current payment balance and fiscal proof are rechecked; named financial mutations and unprojected field references fail before effects. No raw fiscal SELECT, inferred recipient, automatic collection, payment or issuance is authorized. P12 reviewed: explicit default-off digest consent separate from visual grouping, civil IANA slots, private batch/occurrence ledger, bounded original-step reminders and explicit escalation. Current identity/source/proof/version/permission/consent and delivery fences remain mandatory; approvals reuse their canonical notice and cannot escalate. No source mutation, inferred CEO, real message or production activation.",
@@ -19266,6 +19266,14 @@
         {
           "file": "src/lib/notifications/scheduling-types.ts",
           "symbol": "notificationSchedulingActionProblem"
+        },
+        {
+          "file": "src/lib/notifications/readiness.server.ts",
+          "symbol": "loadNotificationReadiness"
+        },
+        {
+          "file": "src/lib/notifications/readiness.server.ts",
+          "symbol": "loadNotificationReadinessWorkflows"
         }
       ],
       "database": [
@@ -19924,6 +19932,30 @@
         {
           "file": "drizzle/migrations/0401_notification_scheduling.sql",
           "symbol": "public.notification_whatsapp_receipt"
+        },
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "public.sales_area_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "public.sales_record_access"
+        },
+        {
+          "file": "drizzle/migrations/0393_notification_deliveries.sql",
+          "symbol": "public.notification_delivery_settings"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "public.notification_delivery_capabilities"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "public.notification_slack_settings"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "public.notification_delivery_rules"
         }
       ],
       "tests": {
@@ -19951,9 +19983,9 @@
       "files": {
         "drizzle/migrations/0393_notification_deliveries.sql": "b7406468ea37d24428b1595f16c35e3be807264ee263337ed7b421c6387422c3",
         "src/components/notifications/delivery-history-panel.tsx": "c355b46fa2f90a30f956522e221f30a0f8546912c5b01810a18e06cf433a93e6",
-        "src/components/notifications/delivery-models-panel.tsx": "c24ac0fa6f549e16417f774e6ccf528650ebe5c30e33c51656eea18c214ed449",
-        "src/components/notifications/delivery-operations.tsx": "a3aba5b5185c235c446e88d923654fb76122bd15d5e2bbbcdfeffb216ea7db28",
-        "src/components/notifications/delivery-settings-panel.tsx": "ebcfdc984a73b5a6db8c537354e3aa5091dd70bc1dd06c36fb741393742d49c2",
+        "src/components/notifications/delivery-models-panel.tsx": "abf82b799858a24d20d7b0e48df31871fb6e2c9a01be334b9e10eef6de15f253",
+        "src/components/notifications/delivery-operations.tsx": "6fe9dcf18a0701f78ab8e6077812041fa728cbe35d69801e482a08e0159d1163",
+        "src/components/notifications/delivery-settings-panel.tsx": "20aa6bbe4ce8706fa6cec11466e795608c9730f31b69a6aa935c5e28f52a2427",
         "src/components/notifications/notification-consent-panel.tsx": "deb87af952c155aafa9caafc00e031d74594d36b9ad519810825a0882e12fc59",
         "src/components/notifications/notification-rules-list.tsx": "537137f5366582bad06325d1dbe1de9b87d95bebe2b96ad7ba4b91287664e01f",
         "src/components/notifications/notification-rules-panel.tsx": "ac140cabb4acc611551c2ab4a663cf2b59ac59d0541af1d11c0d4214ac164b33",
@@ -19970,7 +20002,7 @@
     {
       "id": "notification-delivery-declarative-content",
       "kind": "presentation",
-      "rationale": "Pure strict delivery schemas, neutral payload/model validation, structural rule preview and React email rendering. No I/O, recipient resolution, grants, provider or action execution; interactive and service authorization is enforced at delivery orchestration boundaries. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation. P11 reviewed: five exact Finance notification keys, current payment-derived balance, same-day/post-publication deadline semantics, private canonical fiscal receipt with no raw SELECT grant, minimal event fields and read-only mutation fences. Fresh authorized destinations preserve permissions and saved state; no production application or automatic activation. P12 reviewed: explicit default-off digest consent separate from visual grouping, civil IANA slots, private batch/occurrence ledger, bounded original-step reminders and explicit escalation. Current identity/source/proof/version/permission/consent and delivery fences remain mandatory; approvals reuse their canonical notice and cannot escalate. No source mutation, inferred CEO, real message or production activation.",
+      "rationale": "Pure strict delivery schemas, neutral payload/model validation, structural rule preview and React email rendering. No I/O, recipient resolution, grants, provider or action execution; interactive and service authorization is enforced at delivery orchestration boundaries. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation. P11 reviewed: five exact Finance notification keys, current payment-derived balance, same-day/post-publication deadline semantics, private canonical fiscal receipt with no raw SELECT grant, minimal event fields and read-only mutation fences. Fresh authorized destinations preserve permissions and saved state; no production application or automatic activation. P12 reviewed: explicit default-off digest consent separate from visual grouping, civil IANA slots, private batch/occurrence ledger, bounded original-step reminders and explicit escalation. Current identity/source/proof/version/permission/consent and delivery fences remain mandatory; approvals reuse their canonical notice and cannot escalate. No source mutation, inferred CEO, real message or production activation. P13 reviewed: preparation reads only one selected published Workflow and existing policy boundaries, with no global send-readiness claim, source/destination disclosure or draft fallback. Live WhatsApp catalogue queries become explicit user actions, scoped to current identity/workspace/sender; no automatic provider query occurs on page mount. Existing configuration writers, capabilities, RLS, opt-in, quotas, uncertain-send and delivery gates remain unchanged; the operator runbook does not activate or pause anything.",
       "files": {
         "src/lib/email-templates/notification-update.tsx": "64660a91969ad0cda851ca9a6550a3fe49e86c82bc4f50564325d229fc67a0e2",
         "src/lib/notifications/delivery-api.ts": "7d51f742c6e35eff6b0e0b13ae08405c11eba4649e15cfd2451de300433a3bbb",
@@ -19978,7 +20010,7 @@
         "src/lib/notifications/delivery-rule-preview.ts": "4b4cc5be43f2ac79a76133b35650c8497a99e7a9a7e4243053253cd2e422cd6f",
         "src/lib/notifications/delivery-types.ts": "9e7a6a57246328fe2427605be22986b8798a90dac22245650dae698afdc9929d",
         "src/lib/notification-delivery-interaction.ts": "db12a925a3b50ec7e185d4cd9845589ae35cadaea50b9775088d9b07be70e422",
-        "src/lib/notification-delivery.functions.ts": "27a93c242f7a3690376d9745b596bf3d20d6967472a10c8d8ec942e569f8861c"
+        "src/lib/notification-delivery.functions.ts": "fd2fae372a735cee7c45b4f2fe3c1b0dfaa564e91ea0958189ec7272b95be3b7"
       }
     },
     {
@@ -22436,6 +22468,143 @@
         "drizzle/migrations/0401_notification_scheduling.sql": "bedfcb37f4abb31604504c5aea7450d7a5a13db77d1fbb1eed5a84890c951230",
         "src/components/notifications/notification-digest-panel.tsx": "c1251c1db129766da91c47b979af816c464bb4c7bbfba28980c372feb2d4ca55",
         "src/lib/notifications/scheduling-types.ts": "d6c67859f7a8ed67398fb5e6e35afe0e8cca1533b7482d26b651a878204424c7"
+      }
+    },
+    {
+      "id": "notification-readiness-acceptance",
+      "kind": "business",
+      "resources": [
+        "system.notification_settings",
+        "system.workflows",
+        "system.channels",
+        "system.whatsapp",
+        "system.integrations"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.notification_settings.view.workspace",
+        "system.workflows.view.own",
+        "system.workflows.view.team",
+        "system.workflows.view.workspace",
+        "system.channels.view.workspace",
+        "system.whatsapp.view.own",
+        "system.whatsapp.view.team",
+        "system.whatsapp.view.workspace",
+        "system.integrations.view.own",
+        "system.integrations.view.team",
+        "system.integrations.view.workspace"
+      ],
+      "rationale": "P13 adds a read-only preparation report for one explicitly selected published Workflow inside existing Models and channels. The authenticated server derives active actor/workspace, cumulatively requires notification settings view, Workflow area view and current record access, then uses only the user/RLS client and existing canonical policy RPCs. The report discards actions, names, addresses, source snapshots and credentials, and emits bounded closed status/reason enums. It never certifies send readiness or substitutes a draft for the published configuration. Optional WhatsApp/Slack observations require their channel gates; unavailable or failed dependencies do not become a positive result. The UI additionally matches current identity/workspace, uses fresh scoped reads and hides stale results. Live WhatsApp template reads require an explicit authorized click. No write, provider call, service client, producer, cron, grant, runtime eligibility change, rollout activation or persisted fictional acceptance is introduced by the report. Canonical RLS readers may open/close technical subject context; business/configuration/queue/provider state remains unchanged. Production login, recipients, source eligibility, consent, live provider, other rules/queues and real pilot remain explicitly pending.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/notification-center.ts",
+          "symbol": "assertNotificationWorkspace"
+        },
+        {
+          "file": "src/lib/notifications/delivery-access.server.ts",
+          "symbol": "assertNotificationDeliverySettings"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesArea"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/notifications/readiness.server.ts",
+          "symbol": "loadNotificationReadiness"
+        },
+        {
+          "file": "src/lib/notifications/readiness.server.ts",
+          "symbol": "loadNotificationReadinessWorkflows"
+        },
+        {
+          "file": "src/lib/auth.tsx",
+          "symbol": "useAuth"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/notification-delivery-interaction.ts",
+          "symbol": "notificationDeliveryInteractionAllowed"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "public.sales_area_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "public.sales_record_access"
+        },
+        {
+          "file": "drizzle/migrations/0393_notification_deliveries.sql",
+          "symbol": "public.notification_delivery_settings"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "public.notification_delivery_capabilities"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "public.notification_slack_settings"
+        },
+        {
+          "file": "drizzle/migrations/0395_notification_slack.sql",
+          "symbol": "public.notification_delivery_rules"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/notification-readiness-postgres.test.ts",
+          "name": "Notification readiness allow authorized member"
+        },
+        "missing_permission": {
+          "file": "src/lib/notification-readiness-postgres.test.ts",
+          "name": "Notification readiness reject missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/notification-readiness-postgres.test.ts",
+          "name": "Notification readiness reject explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/notification-readiness-postgres.test.ts",
+          "name": "Notification readiness reject foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/notification-readiness-postgres.test.ts",
+          "name": "Notification readiness reject inactive member"
+        }
+      },
+      "files": {
+        "src/components/notifications/notification-readiness-panel.tsx": "c41059a626cba5fa2d351719508da312ecdb61041b27c5c480f2755bef5f6e4b",
+        "src/lib/notifications/readiness.functions.ts": "9ad17c7b0b55d29bc2c817d998c72eb316ec974f5ef52912f0b372650e5e203a",
+        "src/lib/notifications/readiness.server.ts": "880a01c7d3c58acd554e7827eb3af800fd2061297d0887e64ee94bd636bea73b"
+      }
+    },
+    {
+      "id": "notification-readiness-projection",
+      "kind": "presentation",
+      "rationale": "Pure bounded DTO schemas and configuration-to-display projection for P13. They do not query data, accept a session, grant permission, persist state, send, execute a Workflow or decide runtime eligibility. Observed/dependency/manual/unavailable codes describe already-authorized published configuration; there is no ready-to-send decision. The authenticated loader and UI remain under their separate business authorization contract. No action/source/destination snapshots or raw error values are returned.",
+      "files": {
+        "src/lib/notifications/readiness-model.ts": "cd72bfb352466eabcf71dd262e94fa4aea1a506b94582cf3e23522a6d9ed704d",
+        "src/lib/notifications/readiness-types.ts": "c5e36a2bfb7a76e0cce0020b8a75660038af9794be469203b358835dc2ab802d"
       }
     }
   ],

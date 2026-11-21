@@ -12,8 +12,10 @@ O pacote entrega `/notifications` como área pessoal no shell ERP e integra o si
 não há cores, fontes ou logotipos de um workspace fixados no código. A configuração
 global anterior em `/settings/notifications` permanece como base de compatibilidade.
 
-Não cria outro motor de eventos ou scheduler. Regras, modelos, ledger multicanal,
-envio de resumo externo, opt-in WhatsApp e piloto pertencem às próximas entregas.
+O pacote 3 não criou outro motor de eventos ou scheduler. Naquele escopo, regras,
+modelos, ledger multicanal, envio de resumo externo, opt-in WhatsApp e piloto pertenciam
+às entregas seguintes. As evoluções posteriores estão registradas nas seções P4–P13;
+o agrupamento visual original permanece separado da adesão de envio acrescentada na P12.
 
 ## Recurso × ação × escopo
 
@@ -167,3 +169,8 @@ As evidências do navegador são sintéticas, locais e usam biblioteca real com 
 O agrupamento `CenterSettings.summary` permanece visual e não é migrado para adesão de envio. Resumo pessoal usa configuração privada própria por usuário/workspace, revisão CAS e defaults desativados/sem canais; diário às 08:30, segunda-feira 1 e America/Sao_Paulo são valores iniciais editáveis. Somente comunicações externas iniciais de prioridade `low` explícita e evento canônico comprovado são elegíveis; `people.approval.pending` fica excluído. Central imediata, texto neutro/link central, sem contagens ou snapshots externos e sem fallback automático no resumo.
 
 Acompanhamento opcional está no `delivery.followup` do passo: lembrete de 1–168 horas × 1–3 ocorrências, horizonte máximo de 168 horas, ou uma escalada de 1–168 horas com seletor explícito. Exige inapp original existente/não lido e pendência canônica ainda válida, herda canais/fallback e nunca executa novamente outras ações. São elegíveis somente as 12 chaves fechadas de pendência; aprovação profissional não escala e a NF precisa permanecer registrada aguardando conferência. Política `digest_enabled`/`followups_enabled` começa false e `followup_daily_limit` zero; as mesmas alçadas administrativas e de Workflow continuam obrigatórias. Histórico distingue `occurrence_kind`, `parent_intent_id` e `batch_id`, sem inventar workflow/run para envelope multiorigem.
+
+
+## P13: conferência de preparo publicado
+
+A aba Modelos e canais inclui leitura autorizada da configuração publicada de um Workflow, sem fallback para rascunhos, consulta ao provedor ou execução. Os estados observed/dependency_blocked/manual_pending/unavailable descrevem o alcance de cada dado, sem readiness global de envio. Modelos WhatsApp são consultados somente por ação explícita, com contexto e remetente atuais. O roteiro de piloto e pausa é manual, não registra aceite e não cria percentual, allowlist ou gate de implantação. Ver notification-readiness.md.

@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 150
-version: 3
+version: 4
 is_published: true
 ---
 
@@ -27,7 +27,7 @@ is_published: true
 ### Preparar o remetente e o modelo
 
 1. Abra **Modelos e canais**. Confira o remetente, seu status e a qualidade sincronizada. Um número com qualidade reduzida, desconhecida ou conexão indisponível não é elegível para esses avisos.
-2. Selecione o remetente na política. Aguarde a consulta dos modelos desse número. Falha de consulta aparece como erro; não significa catálogo vazio.
+2. Selecione o remetente na política e use **Consultar modelos para esta política**, ou abra a prévia WhatsApp e use **Consultar modelos no provedor**. A consulta só acontece por essa ação explícita; abrir a aba não acessa a Meta. Aguarde a resposta desse número. Falha de consulta aparece como erro; não significa catálogo vazio.
 3. Na prévia **WhatsApp**, escolha um modelo. Confira nome, idioma, status Meta e categoria. A central aceita somente **APPROVED**, **UTILITY** e conteúdo compatível com seu formato neutro.
 4. Confira a prévia resolvida. Ela mostra o texto com os valores previstos, o cabeçalho, o rodapé e o botão quando presentes. Modelos pendentes, pausados, de marketing ou incompatíveis não apresentam uma prévia enviável.
 5. Defina cota diária, moeda, custo unitário estimado e orçamento estimado. Esses controles reservam um limite local; não são faturamento e não aumentam os limites da Meta. Consulte os valores vigentes no provedor.
@@ -103,3 +103,10 @@ Em **Preferências → Receber resumo de notificações**, a adesão começa des
 O resumo usa o mesmo modelo neutro aprovado compatível, sem contagem, título ou dados das origens. Não há fallback automático para e-mail: escolha esse canal separadamente se desejar. Revogar o consentimento ou bloquear o canal impede novos envios elegíveis; habilitar a política ou a preferência não sobrepõe essa decisão.
 
 Lembretes e escaladas exigem configuração explícita publicada e cota de acompanhamento positiva. Herdam os canais e fallback do passo original, revalidam acesso, pendência, consentimento e silêncio e só seguem enquanto o aviso original não foi lido. Eles não executam novamente as outras ações nem alteram a decisão da origem. Um resultado incerto permanece protegido contra repetição e troca de chave.
+
+
+## Conferir preparo e planejar a pausa
+
+A conferência de preparo em **Modelos e canais** observa a configuração publicada e não consulta o provedor. Nome e idioma salvos não comprovam aprovação atual; os resultados ao vivo exigem a consulta explícita e são revalidados antes de enviar. A conferência não comprova consentimento de outro usuário, leitura da origem, login ou recebimento real.
+
+Antes de um piloto posteriormente autorizado, inventarie outras regras e o backlog: a política do workspace não isola um único destinatário ou uma regra. Desligar WhatsApp ainda pode permitir o fallback de e-mail explicitamente configurado. Mensagens em processamento ou já aceitas não são recolhidas; um resultado incerto não deve ser reenviado como reversão. Consulte [Conferir preparo e planejar um piloto](/ajuda/core/conferir-preparo-de-notificacoes).

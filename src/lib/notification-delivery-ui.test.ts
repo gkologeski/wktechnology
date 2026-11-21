@@ -531,3 +531,55 @@ it("does not expose delivery details or call history APIs without explicit read 
   expect(button("Atualizar entregas")).toBeUndefined();
   expect(retry).not.toHaveBeenCalled();
 });
+
+it("shows an unrequested model consultation without inventing an empty catalogue or reading the provider", async () => {
+  const request = vi.fn();
+  await render(
+    createElement(DeliveryModelsPanel, {
+      templates: [],
+      loading: false,
+      requested: false,
+      canRead: true,
+      canRetryWhatsApp: true,
+      onRetry: request,
+    }),
+  );
+  await click(button("WhatsApp"));
+  expect(host.textContent).toContain("Consulta atual ao provedor ainda não solicitada");
+  expect(host.textContent).not.toContain("Nenhum modelo disponível");
+  expect(request).not.toHaveBeenCalled();
+  await click(button("Consultar modelos no provedor"));
+  expect(request).toHaveBeenCalledTimes(1);
+});
+it("keeps a saved policy model visible but unconfirmed until an explicit provider consultation", async () => {
+  const request = vi.fn();
+  await render(
+    createElement(DeliverySettingsPanel, {
+      policy: {
+        ...DEFAULT_NOTIFICATION_DELIVERY_POLICY,
+        wa_sender_id: "12345",
+        wa_template_name: "modelo_salvo",
+        wa_template_language: "pt_BR",
+      },
+      revision: 3,
+      canEdit: true,
+      canConfigureWhatsApp: true,
+      senders: [],
+      templates: [],
+      templatesLoading: false,
+      templatesRequested: false,
+      onRequestTemplates: request,
+      canRequestTemplates: true,
+      onSenderChange: vi.fn(),
+      onSave: vi.fn(),
+    }),
+  );
+  expect(host.textContent).toContain("Modelo salvo ainda não confirmado");
+  expect(
+    host.querySelector<HTMLSelectElement>('[aria-label="Modelo aprovado para notificações"]')
+      ?.disabled,
+  ).toBe(true);
+  expect(request).not.toHaveBeenCalled();
+  await click(button("Consultar modelos para esta política"));
+  expect(request).toHaveBeenCalledTimes(1);
+});

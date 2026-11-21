@@ -8,7 +8,7 @@ route_pattern: /settings/workflows
 min_permission: system.workflows.manage.workspace
 audience: internal
 sort_order: 413
-version: 11
+version: 12
 is_published: true
 ---
 
@@ -135,3 +135,10 @@ Informe intervalo de 1 a 168 horas e máximo de 1 a 3 lembretes, com horizonte t
 Cada acompanhamento exige que o aviso original exista e permaneça não lido, e que a pendência, o usuário, a origem, os canais e as permissões continuem válidos. A leitura para esses acompanhamentos, sem aprovar ou resolver a origem. Somente o passo de comunicação é derivado em novas ocorrências; tarefas, pagamentos e outras ações não são repetidos. Canais e fallback seguem o passo original, com silêncio, consentimento, cotas e proteção de resultado incerto preservados. Publicar e ativar continuam sendo ações separadas, e a política do workspace precisa disponibilizar a modalidade com cota positiva.
 
 A conferência da regra explica a configuração sem procurar destinatários nem executar mensagens. O histórico protegido diferencia **Aviso inicial**, **Resumo pessoal**, **Lembrete** e **Escalonamento**, quando essa prova estiver disponível.
+
+
+## Conferir a configuração publicada para um piloto
+
+Na central, **Modelos e canais → Conferir preparo publicado** usa somente a versão publicada. **Rascunhos fora da conferência; compare no editor.** Ela é diferente de **Conferir configuração sem enviar**, que pode examinar o rascunho. Nenhuma das duas executa o Workflow, comprova destinatários ou registra aceite de produção.
+
+Inventarie todas as regras e entregas pendentes antes de habilitar uma política compartilhada; a tela não cria isolamento ou allowlist de piloto. Revise os outros passos do Workflow e planeje a pausa com suas alçadas. Desligar WhatsApp pode manter um fallback de e-mail explícito, e as políticas da central não pausam todas as outras ações. Efeitos já executados e mensagens aceitas não são recolhidos. O roteiro está em [Conferir preparo e planejar um piloto](/ajuda/core/conferir-preparo-de-notificacoes).

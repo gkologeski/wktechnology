@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { readViewAs } from "@/lib/view-as-client";
@@ -25,8 +25,9 @@ import type {
 } from "@/lib/notifications/delivery-types";
 import type { NotificationCursor } from "@/lib/notification-cursor";
 import { DeliverySettingsPanel } from "./delivery-settings-panel";
-import { DeliveryModelsPanel } from "./delivery-models-panel";
+import { DeliveryModelsPanel, type NotificationTemplateOption } from "./delivery-models-panel";
 import { DeliveryHistoryPanel, type DeliveryFilters } from "./delivery-history-panel";
+import { NotificationReadinessPanel } from "./notification-readiness-panel";
 import { NotificationDigestPanel } from "./notification-digest-panel";
 import type { NotificationDigestSettings } from "@/lib/notifications/scheduling-types";
 import { NotificationConsentPanel } from "./notification-consent-panel";
@@ -122,12 +123,56 @@ function DeliveryConfigurationContext({
     enabled: contextReady && capabilities.settingsView && canReadWhatsApp,
     ...freshDeliveryQuery,
   });
+  const templateRequest = useRef(0);
+  const [templateInspection, setTemplateInspection] = useState<{
+    senderId: string;
+    loading: boolean;
+    items: NotificationTemplateOption[];
+    error: string | null;
+  } | null>(null);
+  useEffect(() => {
+    templateRequest.current++;
+    setTemplateInspection(null);
+  }, [senderId, contextReady, canReadWhatsApp, capabilities.settingsView]);
   const templates = useQuery({
     queryKey: ["notification-delivery-templates", userId, workspaceId, senderId],
     queryFn: () => templatesFn({ data: { workspaceId, senderPhoneNumberId: senderId! } }),
-    enabled: contextReady && capabilities.settingsView && canReadWhatsApp && Boolean(senderId),
-    ...freshDeliveryQuery,
+    enabled: false,
+    retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
+  const policyReady = !policy.isFetching && !policy.isError && policy.isFetchedAfterMount;
+  const inspectedTemplates =
+    policyReady && templateInspection?.senderId === senderId ? templateInspection : null;
+  useEffect(() => {
+    if (policy.isError) {
+      templateRequest.current++;
+      setTemplateInspection(null);
+    }
+  }, [policy.isError]);
+  const inspectTemplates = async () => {
+    if (
+      !contextReady ||
+      !policyReady ||
+      !capabilities.settingsView ||
+      !canReadWhatsApp ||
+      !senderId ||
+      inspectedTemplates?.loading
+    )
+      return;
+    const request = ++templateRequest.current;
+    const selectedSender = senderId;
+    setTemplateInspection({ senderId: selectedSender, loading: true, items: [], error: null });
+    const result = await templates.refetch();
+    if (request !== templateRequest.current) return;
+    setTemplateInspection({
+      senderId: selectedSender,
+      loading: false,
+      items: result.isError ? [] : (result.data?.items ?? []),
+      error: result.isError ? result.error.message : null,
+    });
+  };
   const save = useMutation({
     mutationFn: (
       input: DeliveryContext & { policy: NotificationDeliveryPolicy; revision: number },
@@ -160,31 +205,33 @@ function DeliveryConfigurationContext({
     );
   return (
     <div className="min-w-0 space-y-8">
+      <NotificationReadinessPanel userId={userId} workspaceId={workspaceId} />
       <DeliveryModelsPanel
         key={`${userId}:${workspaceId}:${senderId ?? "none"}`}
         canRead={contextReady && capabilities.settingsView}
         canRetryWhatsApp={
-          contextReady && capabilities.settingsView && canReadWhatsApp && Boolean(senderId)
+          contextReady &&
+          policyReady &&
+          capabilities.settingsView &&
+          canReadWhatsApp &&
+          Boolean(senderId)
         }
         templates={
           canReadWhatsApp &&
-          !templates.isError &&
-          !templates.isFetching &&
-          templates.isFetchedAfterMount
-            ? (templates.data?.items ?? [])
+          inspectedTemplates &&
+          !inspectedTemplates.loading &&
+          !inspectedTemplates.error
+            ? inspectedTemplates.items
             : []
         }
-        loading={templates.isFetching}
+        loading={inspectedTemplates?.loading ?? false}
+        requested={Boolean(inspectedTemplates)}
         error={
           !canReadWhatsApp
             ? "A consulta de modelos do WhatsApp exige permissão sobre o canal."
-            : templates.isError
-              ? templates.error.message
-              : null
+            : (inspectedTemplates?.error ?? null)
         }
-        onRetry={() => {
-          if (canReadWhatsApp && senderId) void templates.refetch();
-        }}
+        onRetry={() => void inspectTemplates()}
       />
       {policy.isError ? (
         <div role="alert">
@@ -222,15 +269,28 @@ function DeliveryConfigurationContext({
             }
             templates={
               canReadWhatsApp &&
-              !templates.isError &&
-              !templates.isFetching &&
-              templates.isFetchedAfterMount
-                ? (templates.data?.items ?? [])
+              inspectedTemplates &&
+              !inspectedTemplates.loading &&
+              !inspectedTemplates.error
+                ? inspectedTemplates.items
                 : []
             }
-            templatesLoading={templates.isFetching}
-            templatesError={templates.isError ? templates.error.message : null}
-            onSenderChange={(id) => setSenderDraft({ id })}
+            templatesLoading={inspectedTemplates?.loading ?? false}
+            templatesRequested={Boolean(inspectedTemplates)}
+            templatesError={inspectedTemplates?.error ?? null}
+            onRequestTemplates={() => void inspectTemplates()}
+            canRequestTemplates={
+              contextReady &&
+              policyReady &&
+              capabilities.settingsView &&
+              canReadWhatsApp &&
+              Boolean(senderId)
+            }
+            onSenderChange={(id) => {
+              templateRequest.current++;
+              setTemplateInspection(null);
+              setSenderDraft({ id });
+            }}
             onSave={(next, revision) =>
               save.mutateAsync({ policy: next, revision, userId, workspaceId })
             }

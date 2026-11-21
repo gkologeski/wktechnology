@@ -54,11 +54,13 @@ vi.mock("@/components/notifications/delivery-settings-panel", () => ({
     senders,
     templates,
     onSave,
+    onSenderChange,
   }: {
     canEdit: boolean;
     senders: { label: string }[];
     templates: { name: string }[];
     onSave: (policy: unknown, revision: number) => Promise<unknown>;
+    onSenderChange: (id: string) => void;
   }) =>
     createElement(
       "div",
@@ -66,6 +68,7 @@ vi.mock("@/components/notifications/delivery-settings-panel", () => ({
       createElement("p", null, canEdit ? "Policy editable" : "Policy readonly"),
       createElement("span", null, senders.map((x) => x.label).join(",")),
       createElement("span", null, templates.map((x) => x.name).join(",")),
+      createElement("button", { onClick: () => onSenderChange("67890") }, "Choose another sender"),
       createElement(
         "button",
         {
@@ -78,8 +81,36 @@ vi.mock("@/components/notifications/delivery-settings-panel", () => ({
       ),
     ),
 }));
+vi.mock("@/components/notifications/notification-readiness-panel", () => ({
+  NotificationReadinessPanel: () => createElement("p", null, "Readiness panel"),
+}));
 vi.mock("@/components/notifications/delivery-models-panel", () => ({
-  DeliveryModelsPanel: () => createElement("p", null, "Model preview"),
+  DeliveryModelsPanel: ({
+    canRetryWhatsApp,
+    loading,
+    requested,
+    onRetry,
+  }: {
+    canRetryWhatsApp: boolean;
+    loading: boolean;
+    requested: boolean;
+    onRetry: () => void;
+  }) =>
+    createElement(
+      "div",
+      null,
+      createElement("p", null, "Model preview"),
+      createElement(
+        "p",
+        null,
+        requested ? "Provider consultation requested" : "Provider consultation not requested",
+      ),
+      createElement(
+        "button",
+        { disabled: !canRetryWhatsApp || loading, onClick: onRetry },
+        "Request provider models",
+      ),
+    ),
 }));
 vi.mock("@/components/notifications/delivery-history-panel", () => ({
   DeliveryHistoryPanel: ({
@@ -532,6 +563,12 @@ it("removes cached WhatsApp sender and model metadata as soon as channel access 
   });
   const props = { workspaceId: WS, userId: "user", capabilities: caps };
   await render(createElement(NotificationDeliveryConfiguration, props));
+  await act(async () => {
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Request provider models")!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
   await vi.waitFor(() => expect(host.textContent).toContain("PRIVATE_MODEL"));
   expect(host.textContent).toContain("PRIVATE_SENDER");
   state.channelView = false;
@@ -558,6 +595,13 @@ it("loads the correct sender when the user changes and both policies have the sa
       capabilities: caps,
     }),
   );
+  expect(state.calls.listNotificationWhatsAppTemplates).not.toHaveBeenCalled();
+  await act(async () => {
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Request provider models")!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
   await vi.waitFor(() =>
     expect(state.calls.listNotificationWhatsAppTemplates).toHaveBeenCalledWith({
       data: { workspaceId: WS, senderPhoneNumberId: "12345" },
@@ -571,6 +615,13 @@ it("loads the correct sender when the user changes and both policies have the sa
       capabilities: caps,
     }),
   );
+  expect(state.calls.listNotificationWhatsAppTemplates).not.toHaveBeenCalled();
+  await act(async () => {
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Request provider models")!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
   await vi.waitFor(() =>
     expect(state.calls.listNotificationWhatsAppTemplates).toHaveBeenCalledWith({
       data: { workspaceId: WS, senderPhoneNumberId: "67890" },
@@ -721,16 +772,23 @@ it("hides stale sender and template metadata after their revalidation fails", as
       capabilities: caps,
     }),
   );
+  await act(async () => {
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Request provider models")!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
   await vi.waitFor(() => expect(host.textContent).toContain("PRIVATE_MODEL"));
   state.calls.listNotificationWhatsAppSenders.mockRejectedValue(new Error("Consulta indisponível"));
   state.calls.listNotificationWhatsAppTemplates.mockRejectedValue(
     new Error("Consulta indisponível"),
   );
   await act(async () => {
-    await Promise.all([
-      client.invalidateQueries({ queryKey: ["notification-delivery-senders", "user", WS] }),
-      client.invalidateQueries({ queryKey: ["notification-delivery-templates", "user", WS] }),
-    ]);
+    await client.invalidateQueries({ queryKey: ["notification-delivery-senders", "user", WS] });
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Request provider models")!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
   });
   await vi.waitFor(() => expect(host.textContent).not.toContain("PRIVATE_SENDER"));
   expect(host.textContent).not.toContain("PRIVATE_MODEL");
@@ -904,4 +962,151 @@ it("keeps the digest save confirmation after adopting the server's new settings 
     settings: { ...DEFAULT_NOTIFICATION_DIGEST_SETTINGS, frequency: "weekly" },
     revision: 1,
   });
+});
+
+it("does not query the provider on mount, policy revalidation or template-cache invalidation", async () => {
+  state.channelView = true;
+  state.calls.getNotificationDeliverySettings.mockResolvedValue({
+    policy: { ...DEFAULT_NOTIFICATION_DELIVERY_POLICY, wa_sender_id: "12345" },
+    revision: 0,
+  });
+  client.setQueryData(["notification-delivery-templates", "user", WS, "12345"], {
+    items: [{ name: "PRIVATE_CACHED_MODEL" }],
+  });
+  await render(
+    createElement(NotificationDeliveryConfiguration, {
+      workspaceId: WS,
+      userId: "user",
+      capabilities: caps,
+    }),
+  );
+  expect(state.calls.listNotificationWhatsAppTemplates).not.toHaveBeenCalled();
+  expect(host.textContent).not.toContain("PRIVATE_CACHED_MODEL");
+  await act(async () => {
+    await client.invalidateQueries({ queryKey: ["notification-delivery-settings", "user", WS] });
+    await client.invalidateQueries({
+      queryKey: ["notification-delivery-templates", "user", WS, "12345"],
+    });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  expect(state.calls.listNotificationWhatsAppTemplates).not.toHaveBeenCalled();
+  await act(async () => {
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Request provider models")!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  expect(state.calls.listNotificationWhatsAppTemplates).toHaveBeenCalledExactlyOnceWith({
+    data: { workspaceId: WS, senderPhoneNumberId: "12345" },
+  });
+});
+it("resets explicit template consultation on sender change instead of automatically reading the new sender", async () => {
+  state.channelView = true;
+  state.calls.getNotificationDeliverySettings.mockResolvedValue({
+    policy: { ...DEFAULT_NOTIFICATION_DELIVERY_POLICY, wa_sender_id: "12345" },
+    revision: 0,
+  });
+  state.calls.listNotificationWhatsAppTemplates.mockResolvedValue({
+    items: [{ name: "FIRST_SENDER_MODEL" }],
+  });
+  await render(
+    createElement(NotificationDeliveryConfiguration, {
+      workspaceId: WS,
+      userId: "user",
+      capabilities: caps,
+    }),
+  );
+  await act(async () => {
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Request provider models")!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  expect(host.textContent).toContain("FIRST_SENDER_MODEL");
+  await act(async () => {
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Choose another sender")!
+      .click();
+  });
+  expect(host.textContent).not.toContain("FIRST_SENDER_MODEL");
+  expect(state.calls.listNotificationWhatsAppTemplates).toHaveBeenCalledTimes(1);
+  await act(async () => {
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Request provider models")!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  expect(state.calls.listNotificationWhatsAppTemplates).toHaveBeenLastCalledWith({
+    data: { workspaceId: WS, senderPhoneNumberId: "67890" },
+  });
+});
+it("ignores a late template response after changing the selected sender", async () => {
+  state.channelView = true;
+  let finish!: (value: unknown) => void;
+  state.calls.getNotificationDeliverySettings.mockResolvedValue({
+    policy: { ...DEFAULT_NOTIFICATION_DELIVERY_POLICY, wa_sender_id: "12345" },
+    revision: 0,
+  });
+  state.calls.listNotificationWhatsAppTemplates.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  await render(
+    createElement(NotificationDeliveryConfiguration, {
+      workspaceId: WS,
+      userId: "user",
+      capabilities: caps,
+    }),
+  );
+  await act(async () => {
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Request provider models")!
+      .click();
+  });
+  await act(async () => {
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Choose another sender")!
+      .click();
+  });
+  await act(async () => {
+    finish({ items: [{ name: "PRIVATE_OLD_SENDER_MODEL" }] });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  expect(host.textContent).not.toContain("PRIVATE_OLD_SENDER_MODEL");
+  expect(host.textContent).toContain("Provider consultation not requested");
+  expect(state.calls.listNotificationWhatsAppTemplates).toHaveBeenCalledTimes(1);
+});
+
+it("discards explicit provider inspection when configuration access is revoked and later restored on the same instance", async () => {
+  state.channelView = true;
+  state.calls.getNotificationDeliverySettings.mockResolvedValue({
+    policy: { ...DEFAULT_NOTIFICATION_DELIVERY_POLICY, wa_sender_id: "12345" },
+    revision: 0,
+  });
+  state.calls.listNotificationWhatsAppTemplates.mockResolvedValue({
+    items: [{ name: "PRIVATE_OLD_INSPECTION" }],
+  });
+  const input = { workspaceId: WS, userId: "user", capabilities: caps };
+  await render(createElement(NotificationDeliveryConfiguration, input));
+  await act(async () => {
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Request provider models")!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  expect(host.textContent).toContain("PRIVATE_OLD_INSPECTION");
+  expect(state.calls.listNotificationWhatsAppTemplates).toHaveBeenCalledTimes(1);
+  await render(
+    createElement(NotificationDeliveryConfiguration, {
+      ...input,
+      capabilities: { ...caps, settingsView: false },
+    }),
+  );
+  expect(host.textContent).not.toContain("PRIVATE_OLD_INSPECTION");
+  await render(createElement(NotificationDeliveryConfiguration, input));
+  expect(host.textContent).not.toContain("PRIVATE_OLD_INSPECTION");
+  expect(host.textContent).toContain("Provider consultation not requested");
+  expect(state.calls.listNotificationWhatsAppTemplates).toHaveBeenCalledTimes(1);
 });

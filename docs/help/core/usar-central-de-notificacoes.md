@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 147
-version: 10
+version: 11
 is_published: true
 ---
 
@@ -232,3 +232,10 @@ Na aba **Regras**, configure o passo **Enviar notificação** no editor existent
 Acompanhamento exige aviso original existente e não lido, além de pendência e acesso atuais. Ler encerra esses acompanhamentos, mas não resolve, aprova, paga ou prorroga a origem. Só a comunicação deste passo é repetida; outras ações do Workflow não são executadas novamente. Acompanhamentos herdam os canais e fallback do passo. Para aprovação profissional, só há lembrete ao aprovador vigente, sem escalada. Para NF de contratação, conferência ou rejeição encerra o acompanhamento: a nota precisa continuar registrada e aguardando conferência.
 
 Na aba **Modelos**, pessoas com a alçada de configuração podem disponibilizar **Resumos e acompanhamentos** na política do workspace. Ambos começam desligados e a cota diária de acompanhamentos começa em zero. Disponibilizar não ativa regras nem supera acesso, preferências ou consentimento. Em **Entregas**, a modalidade comprovada distingue aviso inicial, resumo, lembrete e escalonamento; lote e aviso de origem aparecem quando disponíveis. Aceitação pelo provedor não prova leitura ou decisão e um resultado incerto não autoriza repetir com outra chave.
+
+
+## Conferir preparo e planejar um piloto
+
+Em **Modelos e canais**, **Conferir preparo publicado** lê somente a configuração publicada da regra escolhida. Rascunhos ficam fora dessa conferência. Os resultados distinguem configuração consultada, dependência bloqueada, verificação manual pendente e indisponibilidade; não representam autorização global de envio. Origem, destinatários, provedor ao vivo, login e recebimento real continuam dependendo de verificações próprias.
+
+A consulta de modelos WhatsApp agora exige ação explícita. Abrir a aba ou conferir preparo não consulta o provedor. Antes de um piloto posteriormente autorizado, inventarie outras regras e entregas pendentes: habilitar uma política compartilhada pode liberar esse trabalho. A pausa também exige considerar fallback, outros canais e ações já executadas. Consulte o [roteiro de preparo, piloto e pausa](/ajuda/core/conferir-preparo-de-notificacoes).

@@ -36,6 +36,9 @@ export function DeliverySettingsPanel({
   templates,
   templatesLoading,
   templatesError,
+  templatesRequested = true,
+  onRequestTemplates,
+  canRequestTemplates = false,
   onSenderChange,
   onSave,
 }: {
@@ -47,6 +50,9 @@ export function DeliverySettingsPanel({
   templates: NotificationTemplateOption[];
   templatesLoading: boolean;
   templatesError?: string | null;
+  templatesRequested?: boolean;
+  onRequestTemplates?: () => void;
+  canRequestTemplates?: boolean;
   onSenderChange: (id: string | null) => void;
   onSave: (policy: NotificationDeliveryPolicy, revision: number) => Promise<unknown>;
 }) {
@@ -95,6 +101,7 @@ export function DeliverySettingsPanel({
       draft.whatsapp_enabled &&
       (!selectedSender?.available ||
         selectedSender.eligible === false ||
+        !templatesRequested ||
         templatesLoading ||
         templatesError ||
         !templates.some(
@@ -273,7 +280,12 @@ export function DeliverySettingsPanel({
                 ? `${draft.wa_template_name}:${draft.wa_template_language}`
                 : ""
             }
-            disabled={!draft.wa_sender_id || templatesLoading || Boolean(templatesError)}
+            disabled={
+              !draft.wa_sender_id ||
+              !templatesRequested ||
+              templatesLoading ||
+              Boolean(templatesError)
+            }
             onChange={(event) => {
               const option = templates.find(
                 (entry) => `${entry.name}:${entry.language}` === event.target.value,
@@ -310,6 +322,25 @@ export function DeliverySettingsPanel({
             ))}
           </select>
         </label>
+        {!templatesRequested && (
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              O modelo salvo é configuração, não prova de aprovação atual. Solicite a consulta antes
+              de escolher ou alterar o modelo; abrir esta tela não acessa o provedor.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!canRequestTemplates}
+              onClick={() => {
+                if (notificationDeliveryInteractionAllowed(canRequestTemplates, pending))
+                  onRequestTemplates?.();
+              }}
+            >
+              Consultar modelos para esta política
+            </Button>
+          </div>
+        )}
         {templatesError && (
           <p role="alert" className="text-sm text-destructive">
             Não foi possível confirmar os modelos. {templatesError}

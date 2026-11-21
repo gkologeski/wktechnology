@@ -36,6 +36,7 @@ export function DeliveryModelsPanel({
   onRetry,
   canRead = false,
   canRetryWhatsApp = false,
+  requested = true,
 }: {
   templates: NotificationTemplateOption[];
   loading: boolean;
@@ -43,6 +44,7 @@ export function DeliveryModelsPanel({
   onRetry: () => void;
   canRead?: boolean;
   canRetryWhatsApp?: boolean;
+  requested?: boolean;
 }) {
   const [channel, setChannel] = useState<"email" | "whatsapp">("email");
   const [selected, setSelected] = useState("");
@@ -94,8 +96,9 @@ export function DeliveryModelsPanel({
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            A lista consulta os modelos do remetente selecionado na política abaixo. Uma prévia não
-            cria nem aprova modelo na Meta.
+            A consulta ao provedor acontece somente quando solicitada para o remetente selecionado
+            na política abaixo. Abrir esta aba não consulta a Meta. Uma prévia não cria nem aprova
+            modelo.
           </p>
           {error ? (
             <div role="alert">
@@ -108,6 +111,23 @@ export function DeliveryModelsPanel({
                 }}
               >
                 Tentar consultar modelos novamente
+              </Button>
+            </div>
+          ) : !requested ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                Consulta atual ao provedor ainda não solicitada. O modelo salvo ainda não foi
+                confirmado aqui.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={!canRetryWhatsApp}
+                onClick={() => {
+                  if (notificationDeliveryInteractionAllowed(canRetryWhatsApp, loading)) onRetry();
+                }}
+              >
+                Consultar modelos no provedor
               </Button>
             </div>
           ) : loading ? (
@@ -186,6 +206,18 @@ export function DeliveryModelsPanel({
             <p className="text-sm text-muted-foreground">
               Nenhum modelo disponível. Selecione um remetente autorizado e consulte seus modelos.
             </p>
+          )}
+          {requested && !loading && !error && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!canRetryWhatsApp}
+              onClick={() => {
+                if (notificationDeliveryInteractionAllowed(canRetryWhatsApp, loading)) onRetry();
+              }}
+            >
+              Atualizar modelos no provedor
+            </Button>
           )}
           <details className="rounded-lg bg-muted/20 p-4">
             <summary className="cursor-pointer text-sm font-medium">
