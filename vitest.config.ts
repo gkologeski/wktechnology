@@ -1,10 +1,12 @@
 import { defineConfig } from "vitest/config";
 import tsconfigPaths from "vite-tsconfig-paths";
+import DatabaseFirstSequencer from "./scripts/testing/database-first-sequencer";
 
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     environment: "node",
+    sequence: { sequencer: DatabaseFirstSequencer },
     projects: [
       {
         extends: true,
