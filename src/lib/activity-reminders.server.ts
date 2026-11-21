@@ -4,6 +4,7 @@
 // `due_date`). Quando o horário do lembrete chega, notificamos o responsável
 // (owner_id e/ou assigned_user_id) respeitando as preferências de notificação
 // da categoria "task". `reminder_sent_at` garante idempotência.
+import { activityNotificationContent } from "@/lib/notification-center";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,10 +169,7 @@ export async function tickActivityReminders(limit = 200): Promise<{
         user_id: userId,
         type: "task",
         title: `Lembrete de ${label}`,
-        body: `${a.subject || "(sem assunto)"} — ${a.due_date ? formatWhen(a.due_date) : ""}`.trim(),
-        link: link.link,
-        entity: link.entity,
-        entity_id: link.entity_id,
+        ...activityNotificationContent(a.id, a.workspace_id),
       });
     }
     if (wantsEmail) {

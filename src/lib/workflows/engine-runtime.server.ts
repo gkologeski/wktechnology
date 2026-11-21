@@ -1,9 +1,26 @@
-import { authorizeWorkflowStep, sanitizeWorkflowSnapshot } from "./engine/authorization.server";
+import { notificationSchedulingActionProblem } from "@/lib/notifications/scheduling-types";
+import {
+  authorizeWorkflowStep,
+  sanitizeWorkflowSnapshot,
+  projectWorkflowSnapshot,
+} from "./engine/authorization.server";
 import { workflowEventWorkspace } from "./engine/workspace-payload";
+import { workRpc } from "@/lib/access-control/work-core.server";
+import {
+  workflowNotificationTriggerMatches,
+  notificationEventActionProblem,
+  notificationEventConfigurationProblem,
+} from "./notification-events";
 // Ciclo de execução do motor: enfileiramento, runs, ticks de fila e de tempo.
 // Extraído de engine.server.ts sem mudança de comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { WorkflowAction, WorkflowCondition, WorkflowEntity, WorkflowTrigger } from "./types";
+import {
+  WORKFLOW_READONLY_SOURCE_TABLES,
+  type WorkflowAction,
+  type WorkflowCondition,
+  type WorkflowEntity,
+  type WorkflowTrigger,
+} from "./types";
 import { hydrateTriggerAssociations } from "./hydrate-associations.server";
 import { hydrateDealLineItems } from "./line-items.server";
 import { type AnyRow, evalConditions } from "./engine-shared.server";
@@ -21,6 +38,8 @@ export interface EventRow {
   resume_workflow_id?: string | null;
   resume_cursor?: number | null;
   workflow_version?: number | null;
+  notification_event_key?: string | null;
+  notification_parent_event_id?: string | null;
 }
 
 interface WorkflowRow {
@@ -36,7 +55,11 @@ interface WorkflowRow {
 }
 
 /** Entidades cujos workflows valem para todo o workspace (ciclo de contratação). */
-const WORKSPACE_SCOPED_ENTITIES = new Set<WorkflowEntity>(["ats_applications", "people"]);
+const WORKSPACE_SCOPED_ENTITIES = new Set<WorkflowEntity>([
+  "ats_applications",
+  "people",
+  ...WORKFLOW_READONLY_SOURCE_TABLES,
+]);
 
 async function alreadyEnrolled(
   supabase: SupabaseClient,
@@ -63,6 +86,16 @@ async function workflowSourceAllowed(
   event: EventRow,
 ): Promise<boolean> {
   try {
+    const schedulingProblem = notificationSchedulingActionProblem(
+      event.notification_event_key,
+      wf.actions ?? [],
+    );
+    if (schedulingProblem) throw new Error(schedulingProblem);
+    const configurationProblem = notificationEventConfigurationProblem(
+      event.notification_event_key,
+      { trigger: wf.trigger, actions: wf.actions, goal_filters: wf.goal_filters },
+    );
+    if (configurationProblem) throw new Error(configurationProblem);
     await authorizeWorkflowStep(
       supabase,
       {
@@ -70,10 +103,11 @@ async function workflowSourceAllowed(
         entityId: event.entity_id,
         ownerId: wf.execution_user_id ?? wf.owner_id,
         workspaceId: wf.workspace_id,
-        after: event.after,
-        before: event.before,
+        after: sanitizeWorkflowSnapshot(event.after, event.entity, event.notification_event_key),
+        before: sanitizeWorkflowSnapshot(event.before, event.entity, event.notification_event_key),
         workflowId: wf.id,
         workflowVersion: wf.published_version,
+        notificationEventKey: event.notification_event_key,
       },
       undefined,
       JSON.stringify({ t: wf.trigger, a: wf.actions, g: wf.goal_filters }),
@@ -98,6 +132,30 @@ async function workflowSourceAllowed(
   }
 }
 
+/** Public event columns cannot prove a named transition or a resumed occurrence. */
+async function notificationEventAllowed(
+  supabase: SupabaseClient,
+  wf: WorkflowRow,
+  event: EventRow,
+) {
+  if (!workflowNotificationTriggerMatches(wf.trigger ?? ({} as WorkflowTrigger), event))
+    return false;
+  if (
+    wf.trigger?.notification_event?.key === "people.approval.pending" &&
+    notificationEventActionProblem(wf.trigger.notification_event.key, wf.actions ?? [])
+  )
+    return false;
+  if (event.notification_event_key == null) return true;
+  if (!Number.isInteger(wf.published_version) || (wf.published_version ?? 0) < 1) return false;
+  return (
+    (await workRpc<unknown>(supabase, "notification_business_event_check", {
+      p_event: event.id,
+      p_workflow: wf.id,
+      p_version: wf.published_version,
+    })) === true
+  );
+}
+
 export async function processEvent(
   supabase: SupabaseClient,
   event: EventRow,
@@ -120,6 +178,7 @@ export async function processEvent(
       .eq("enabled", true)
       .eq("status", "published")
       .eq("id", event.resume_workflow_id)
+      .eq("entity", event.entity)
       .eq("workspace_id", sourceWorkspace)
       .maybeSingle();
     if (wf) {
@@ -144,13 +203,52 @@ export async function processEvent(
         await supabase.from("workflow_events").update({ processed_at: now }).eq("id", event.id);
         return;
       }
+      if (!(await notificationEventAllowed(supabase, wfr, event))) {
+        if (event.notification_event_key != null || wfr.trigger?.notification_event) {
+          const reason = "Ocorrência de negócio ou origem indisponível; retomada bloqueada.";
+          const now = new Date().toISOString();
+          const { error: logError } = await supabase.from("workflow_runs").insert({
+            workspace_id: sourceWorkspace,
+            owner_id: wfr.owner_id,
+            workflow_id: wfr.id,
+            event_id: event.id,
+            entity: event.entity,
+            entity_id: event.entity_id,
+            status: "error",
+            error: reason,
+            started_at: now,
+            finished_at: now,
+            log: [{ at: now, ok: false, action: "notification_event_check", error: reason }],
+          } as never);
+          if (logError && logError.code !== "23505") throw new Error(logError.message);
+          await supabase
+            .from("workflow_events")
+            .update({ processed_at: now })
+            .eq("id", event.id)
+            .eq("workspace_id", sourceWorkspace);
+        }
+        return;
+      }
       if (!(await workflowSourceAllowed(supabase, wfr, event))) return;
       const wfJson = JSON.stringify({ t: wfr.trigger, a: wfr.actions });
+      const safeBefore = sanitizeWorkflowSnapshot(
+        event.before,
+        event.entity,
+        event.notification_event_key,
+      );
       const hydratedAfter = await hydrateDealLineItems(
         supabase,
         event.entity,
         sanitizeWorkflowSnapshot(
-          await hydrateTriggerAssociations(supabase, event.entity, event.after, wfJson),
+          await hydrateTriggerAssociations(
+            supabase,
+            event.entity,
+            event.after,
+            wfJson,
+            event.notification_event_key,
+          ),
+          event.entity,
+          event.notification_event_key,
         ),
         wfJson,
       );
@@ -180,9 +278,10 @@ export async function processEvent(
             ownerId: wfr.execution_user_id ?? wfr.owner_id,
             workspaceId: wfr.workspace_id,
             after: cleanAfter,
-            before: event.before,
+            before: safeBefore,
             workflowId: wfr.id,
             workflowVersion: wfr.published_version,
+            notificationEventKey: event.notification_event_key,
             runId: run.id as string,
             state,
             resumeFrames: frames,
@@ -203,7 +302,8 @@ export async function processEvent(
   // Caso 2: evento normal (created/updated/stage_changed).
   // Contratação/desligamento valem para o workspace inteiro (qualquer recrutador
   // ou gestor dispara o fluxo do admin); demais entidades mantêm o escopo por dono.
-  const byWorkspace = WORKSPACE_SCOPED_ENTITIES.has(event.entity);
+  const byWorkspace =
+    WORKSPACE_SCOPED_ENTITIES.has(event.entity) || event.notification_event_key != null;
   let wfQuery = supabase
     .from("workflows")
     .select(
@@ -218,30 +318,44 @@ export async function processEvent(
   const { data: workflows } = await wfQuery;
 
   for (const wf of (workflows ?? []) as WorkflowRow[]) {
+    if (!(await notificationEventAllowed(supabase, wf, event))) continue;
     if (!(await workflowSourceAllowed(supabase, wf, event))) continue;
     const trig = wf.trigger ?? ({} as WorkflowTrigger);
-    if (trig.event && trig.event !== event.event_type) continue;
+    if (!trig.notification_event && trig.event && trig.event !== event.event_type) continue;
 
     // Hidrata associações do gatilho (empresa, contato, negócio…) antes de
     // avaliar condições e executar ações, para resolver `{{company.name}}`.
     const wfJson = JSON.stringify({ t: trig, a: wf.actions, g: wf.goal_filters });
+    const safeBefore = sanitizeWorkflowSnapshot(
+      event.before,
+      event.entity,
+      event.notification_event_key,
+    );
     const hydratedAfter = await hydrateDealLineItems(
       supabase,
       event.entity,
       sanitizeWorkflowSnapshot(
-        await hydrateTriggerAssociations(supabase, event.entity, event.after, wfJson),
+        await hydrateTriggerAssociations(
+          supabase,
+          event.entity,
+          event.after,
+          wfJson,
+          event.notification_event_key,
+        ),
+        event.entity,
+        event.notification_event_key,
       ),
       wfJson,
     );
 
     const filters = trig.filters ?? [];
-    const passes = evalConditions(filters, hydratedAfter, event.before);
+    const passes = evalConditions(filters, hydratedAfter, safeBefore);
     if (!passes) continue;
 
     // Fase 3 — critérios de meta: se todos passam, o registro já atingiu o objetivo
     // e é removido do workflow (sem novas execuções).
     const goalFilters = trig.goal_filters ?? wf.goal_filters ?? [];
-    if (goalFilters.length > 0 && evalConditions(goalFilters, hydratedAfter, event.before)) {
+    if (goalFilters.length > 0 && evalConditions(goalFilters, hydratedAfter, safeBefore)) {
       continue;
     }
 
@@ -289,9 +403,10 @@ export async function processEvent(
       ownerId: wf.execution_user_id ?? wf.owner_id,
       workspaceId: wf.workspace_id,
       after: hydratedAfter,
-      before: event.before,
+      before: safeBefore,
       workflowId: wf.id,
       workflowVersion: wf.published_version,
+      notificationEventKey: event.notification_event_key,
       runId: run.id as string,
     });
     await finishRun(supabase, run.id, res, event, wf.id, wf.published_version);
@@ -353,9 +468,21 @@ async function finishRun(
       entity: event.entity,
       entity_id: event.entity_id,
       event_type: event.event_type,
-      before: event.before,
+      ...(event.notification_event_key != null
+        ? {
+            notification_event_key: event.notification_event_key,
+            notification_parent_event_id: event.id,
+          }
+        : {}),
+      before: projectWorkflowSnapshot(event.before, event.entity, event.notification_event_key),
       after: {
-        ...stripResumeKeys((event.after ?? {}) as Record<string, unknown>),
+        ...stripResumeKeys(
+          projectWorkflowSnapshot(
+            (event.after ?? {}) as Record<string, unknown>,
+            event.entity,
+            event.notification_event_key,
+          ),
+        ),
         ...(res.suspendedAt.waitState ? { __wf_wait: res.suspendedAt.waitState } : {}),
         ...(res.suspendedAt.state ? { __wf_state: res.suspendedAt.state } : {}),
         ...(res.suspendedAt.resumePath?.length ? { __wf_path: res.suspendedAt.resumePath } : {}),
@@ -395,7 +522,7 @@ export async function tickWorkflows(
   let query = supabase
     .from("workflow_events")
     .select(
-      "id, owner_id, workspace_id, entity, entity_id, event_type, before, after, resume_workflow_id, resume_cursor, workflow_version",
+      "id, owner_id, workspace_id, entity, entity_id, event_type, before, after, resume_workflow_id, resume_cursor, workflow_version, notification_event_key, notification_parent_event_id",
     )
     .is("processed_at", null)
     .lte("run_at", nowIso)

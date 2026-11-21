@@ -2858,7 +2858,10 @@
     "techservice.tickets.view.workspace",
     "techcontracts.legacy_contracts.view.workspace",
     "techcontracts.legacy_contracts.create.workspace",
-    "techcontracts.legacy_contracts.approve.workspace"
+    "techcontracts.legacy_contracts.approve.workspace",
+    "system.notification_settings.view.workspace",
+    "system.notification_settings.manage.workspace",
+    "system.notification_deliveries.view.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -3214,6 +3217,15 @@
     },
     "techcontracts.legacy_contracts.approve.workspace": {
       "migration": "drizzle/migrations/0385_contract_legacy_regularization.sql"
+    },
+    "system.notification_settings.view.workspace": {
+      "migration": "drizzle/migrations/0393_notification_deliveries.sql"
+    },
+    "system.notification_settings.manage.workspace": {
+      "migration": "drizzle/migrations/0393_notification_deliveries.sql"
+    },
+    "system.notification_deliveries.view.workspace": {
+      "migration": "drizzle/migrations/0393_notification_deliveries.sql"
     }
   }
 }

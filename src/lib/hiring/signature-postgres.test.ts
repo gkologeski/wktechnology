@@ -140,7 +140,7 @@ beforeAll(async () => {
 }, 120000);
 afterAll(async () => {
   if (db) await db.end();
-  if (started) dockerRun("rm", "-f", container);
+  if (started) dockerRun("rm", "-f", "-v", container);
   if (temporary) rmSync(temporary, { recursive: true, force: true });
 });
 const C = "60000000-0000-4000-8000-000000000001",

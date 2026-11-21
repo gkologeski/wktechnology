@@ -14,6 +14,8 @@ export interface RunCtx {
   /** Fase 5b — usados para vincular workflow_approvals ao run/workflow atuais. */
   workflowId?: string;
   workflowVersion?: number;
+  /** Verified named occurrence; scopes minimal snapshot fields and financial action guards. */
+  notificationEventKey?: string | null;
   runId?: string;
   /**
    * Retomada dentro de caminhos: um quadro por nível (de fora para dentro),
@@ -24,6 +26,8 @@ export interface RunCtx {
   state?: Record<string, unknown>;
   /** Chave de envio reservada pelo guarda (usada pelo handler do canal). */
   deliveryKey?: string;
+  /** Stable position for atomic, source-authorized in-app notification deduplication. */
+  notificationStepKey?: string;
   /** Política de envio do workspace (cache do run; null = sem política). */
   sendPolicy?: import("./delivery-policy").SendPolicy | null;
 }

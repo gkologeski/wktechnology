@@ -10,6 +10,7 @@ import {
   type WorkflowActionType,
   type WorkflowWritableTable,
 } from "@/lib/workflows/types";
+import { notificationEventConfigurationProblem } from "@/lib/workflows/notification-events";
 import { ACTION_ICONS } from "./step-tree";
 
 // ============================================================================
@@ -18,14 +19,29 @@ import { ACTION_ICONS } from "./step-tree";
 export function ActionLibraryPanel({
   onClose,
   onPick,
+  notificationEventKey,
 }: {
   onClose: () => void;
+  notificationEventKey?: string;
   onPick: (t: WorkflowActionType, overrides?: Record<string, unknown>) => void;
 }) {
   const [expandedModule, setExpandedModule] = useState<string | null>(null);
   const [expandedEntity, setExpandedEntity] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const query = search.trim().toLocaleLowerCase("pt-BR");
+  const allowed = (type: string, table?: string) =>
+    !notificationEventConfigurationProblem(notificationEventKey, {
+      type,
+      ...(table ? { table } : {}),
+    });
+  const categories = ACTION_CATEGORIES.map((category) => ({
+    ...category,
+    actions: category.actions.filter((type) => allowed(type)),
+  })).filter((category) => category.actions.length);
+  const recordModules = RECORD_ACTION_MODULES.map((module) => ({
+    ...module,
+    entities: module.entities.filter((entity) => allowed("update_record", entity.table)),
+  })).filter((module) => module.entities.length);
 
   return (
     <div className="space-y-4">
@@ -48,45 +64,47 @@ export function ActionLibraryPanel({
           className="pl-9"
         />
       </div>
-      {ACTION_CATEGORIES.filter(
-        (cat) =>
-          !query ||
-          cat.label.toLocaleLowerCase("pt-BR").includes(query) ||
-          cat.actions.some((t) => ACTION_LABELS[t].toLocaleLowerCase("pt-BR").includes(query)),
-      ).map((cat) => (
-        <div key={cat.label}>
-          <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-2">
-            {cat.label}
-          </p>
-          <div className="space-y-1">
-            {cat.actions
-              .filter(
-                (t) =>
-                  !query ||
-                  cat.label.toLocaleLowerCase("pt-BR").includes(query) ||
-                  ACTION_LABELS[t].toLocaleLowerCase("pt-BR").includes(query),
-              )
-              .map((t) => {
-                const Icon = ACTION_ICONS[t] ?? Sparkles;
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => onPick(t)}
-                    className="w-full text-left rounded-md border bg-card px-3 py-2 hover:border-primary hover:bg-accent/30 transition flex items-center gap-3"
-                  >
-                    <Icon className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm">{ACTION_LABELS[t]}</span>
-                  </button>
-                );
-              })}
+      {categories
+        .filter(
+          (cat) =>
+            !query ||
+            cat.label.toLocaleLowerCase("pt-BR").includes(query) ||
+            cat.actions.some((t) => ACTION_LABELS[t].toLocaleLowerCase("pt-BR").includes(query)),
+        )
+        .map((cat) => (
+          <div key={cat.label}>
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground font-semibold mb-2">
+              {cat.label}
+            </p>
+            <div className="space-y-1">
+              {cat.actions
+                .filter(
+                  (t) =>
+                    !query ||
+                    cat.label.toLocaleLowerCase("pt-BR").includes(query) ||
+                    ACTION_LABELS[t].toLocaleLowerCase("pt-BR").includes(query),
+                )
+                .map((t) => {
+                  const Icon = ACTION_ICONS[t] ?? Sparkles;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => onPick(t)}
+                      className="w-full text-left rounded-md border bg-card px-3 py-2 hover:border-primary hover:bg-accent/30 transition flex items-center gap-3"
+                    >
+                      <Icon className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm">{ACTION_LABELS[t]}</span>
+                    </button>
+                  );
+                })}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
 
       {/* Registros por módulo → entidade → operação */}
       {(!query ||
-        RECORD_ACTION_MODULES.some(
+        recordModules.some(
           (mod) =>
             mod.label.toLocaleLowerCase("pt-BR").includes(query) ||
             mod.entities.some((ent) => ent.singular.toLocaleLowerCase("pt-BR").includes(query)),
@@ -96,98 +114,104 @@ export function ActionLibraryPanel({
             Registros
           </p>
           <div className="space-y-1">
-            {RECORD_ACTION_MODULES.filter(
-              (mod) =>
-                !query ||
-                mod.label.toLocaleLowerCase("pt-BR").includes(query) ||
-                mod.entities.some((ent) => ent.singular.toLocaleLowerCase("pt-BR").includes(query)),
-            ).map((mod) => {
-              const modOpen = expandedModule === mod.key || !!query;
-              return (
-                <div key={mod.key} className="rounded-md border bg-card">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setExpandedModule(modOpen ? null : mod.key);
-                      setExpandedEntity(null);
-                    }}
-                    className="w-full text-left px-3 py-2 hover:bg-accent/30 transition flex items-center gap-3"
-                  >
-                    <Sparkles className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm flex-1">{mod.label}</span>
-                    <span className="text-[10px] text-muted-foreground">{modOpen ? "−" : "+"}</span>
-                  </button>
-                  {modOpen && (
-                    <div className="border-t bg-muted/20 px-2 py-1.5 space-y-1">
-                      {mod.entities
-                        .filter(
-                          (ent) =>
-                            !query ||
-                            mod.label.toLocaleLowerCase("pt-BR").includes(query) ||
-                            ent.singular.toLocaleLowerCase("pt-BR").includes(query),
-                        )
-                        .map((ent) => {
-                          const entKey = `${mod.key}:${ent.table}`;
-                          const entOpen = expandedEntity === entKey || !!query;
-                          return (
-                            <div
-                              key={ent.table}
-                              className="rounded border border-border/60 bg-background"
-                            >
-                              <button
-                                type="button"
-                                onClick={() => setExpandedEntity(entOpen ? null : entKey)}
-                                className="w-full text-left px-2.5 py-1.5 hover:bg-accent/30 transition flex items-center gap-2"
+            {recordModules
+              .filter(
+                (mod) =>
+                  !query ||
+                  mod.label.toLocaleLowerCase("pt-BR").includes(query) ||
+                  mod.entities.some((ent) =>
+                    ent.singular.toLocaleLowerCase("pt-BR").includes(query),
+                  ),
+              )
+              .map((mod) => {
+                const modOpen = expandedModule === mod.key || !!query;
+                return (
+                  <div key={mod.key} className="rounded-md border bg-card">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setExpandedModule(modOpen ? null : mod.key);
+                        setExpandedEntity(null);
+                      }}
+                      className="w-full text-left px-3 py-2 hover:bg-accent/30 transition flex items-center gap-3"
+                    >
+                      <Sparkles className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm flex-1">{mod.label}</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {modOpen ? "−" : "+"}
+                      </span>
+                    </button>
+                    {modOpen && (
+                      <div className="border-t bg-muted/20 px-2 py-1.5 space-y-1">
+                        {mod.entities
+                          .filter(
+                            (ent) =>
+                              !query ||
+                              mod.label.toLocaleLowerCase("pt-BR").includes(query) ||
+                              ent.singular.toLocaleLowerCase("pt-BR").includes(query),
+                          )
+                          .map((ent) => {
+                            const entKey = `${mod.key}:${ent.table}`;
+                            const entOpen = expandedEntity === entKey || !!query;
+                            return (
+                              <div
+                                key={ent.table}
+                                className="rounded border border-border/60 bg-background"
                               >
-                                <span className="text-sm flex-1">{ent.singular}</span>
-                                <span className="text-[10px] text-muted-foreground">
-                                  {entOpen ? "−" : "+"}
-                                </span>
-                              </button>
-                              {entOpen && (
-                                <div className="border-t border-border/60 px-2 py-2 space-y-1">
-                                  {ent.hint && (
-                                    <p className="text-[10px] text-muted-foreground px-1 pb-1">
-                                      {ent.hint}
-                                    </p>
-                                  )}
-                                  {[
-                                    {
-                                      op: "create_record" as const,
-                                      label: `Criar ${ent.singular}`,
-                                    },
-                                    {
-                                      op: "update_record" as const,
-                                      label: `Editar ${ent.singular}`,
-                                    },
-                                    {
-                                      op: "delete_record" as const,
-                                      label: `Excluir ${ent.singular}`,
-                                    },
-                                  ].map(({ op, label }) => (
-                                    <button
-                                      key={op}
-                                      type="button"
-                                      onClick={() =>
-                                        onPick(op, {
-                                          table: ent.table as WorkflowWritableTable,
-                                        })
-                                      }
-                                      className="w-full text-left rounded-sm border bg-card px-2.5 py-1.5 text-xs hover:border-primary hover:bg-accent/30 transition"
-                                    >
-                                      {label}
-                                    </button>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedEntity(entOpen ? null : entKey)}
+                                  className="w-full text-left px-2.5 py-1.5 hover:bg-accent/30 transition flex items-center gap-2"
+                                >
+                                  <span className="text-sm flex-1">{ent.singular}</span>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {entOpen ? "−" : "+"}
+                                  </span>
+                                </button>
+                                {entOpen && (
+                                  <div className="border-t border-border/60 px-2 py-2 space-y-1">
+                                    {ent.hint && (
+                                      <p className="text-[10px] text-muted-foreground px-1 pb-1">
+                                        {ent.hint}
+                                      </p>
+                                    )}
+                                    {[
+                                      {
+                                        op: "create_record" as const,
+                                        label: `Criar ${ent.singular}`,
+                                      },
+                                      {
+                                        op: "update_record" as const,
+                                        label: `Editar ${ent.singular}`,
+                                      },
+                                      {
+                                        op: "delete_record" as const,
+                                        label: `Excluir ${ent.singular}`,
+                                      },
+                                    ].map(({ op, label }) => (
+                                      <button
+                                        key={op}
+                                        type="button"
+                                        onClick={() =>
+                                          onPick(op, {
+                                            table: ent.table as WorkflowWritableTable,
+                                          })
+                                        }
+                                        className="w-full text-left rounded-sm border bg-card px-2.5 py-1.5 text-xs hover:border-primary hover:bg-accent/30 transition"
+                                      >
+                                        {label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
           </div>
         </div>
       )}

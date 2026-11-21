@@ -1,31 +1,24 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
-import { Loader2, Plus, Save, Send, Trash2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Save, ShieldCheck, Trash2 } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { toast } from "sonner";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { useAuth } from "@/lib/auth";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useSalesCapabilities } from "@/lib/access-control/use-sales-capabilities";
+import { readViewAs } from "@/lib/view-as-client";
 import {
   getSlackIntegration,
   saveSlackIntegration,
   deleteSlackIntegration,
   sendSlackTest,
-  upsertSlackRoute,
-  deleteSlackRoute,
-  SLACK_EVENT_TYPES,
 } from "@/lib/slack.functions";
 
 export const Route = createFileRoute("/_authenticated/settings/notifications/slack")({
@@ -33,37 +26,104 @@ export const Route = createFileRoute("/_authenticated/settings/notifications/sla
 });
 
 function SlackSettingsPage() {
+  const { user, loading: authLoading } = useAuth();
+  const permissions = usePermissions();
+  const qc = useQueryClient();
   const getFn = useServerFn(getSlackIntegration);
   const saveFn = useServerFn(saveSlackIntegration);
   const delFn = useServerFn(deleteSlackIntegration);
-  const testFn = useServerFn(sendSlackTest);
-  const upsertRoute = useServerFn(upsertSlackRoute);
-  const delRoute = useServerFn(deleteSlackRoute);
-
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ["slack-integration"],
-    queryFn: getFn,
+  const checkFn = useServerFn(sendSlackTest);
+  const contextReady = Boolean(
+    user?.id &&
+    permissions.workspaceId &&
+    !authLoading &&
+    !permissions.isLoading &&
+    !permissions.isError,
+  );
+  const contextKey = `${user?.id ?? ""}:${permissions.workspaceId ?? ""}`;
+  const latestContext = useRef(contextKey);
+  latestContext.current = contextKey;
+  const canView =
+    contextReady &&
+    permissions.canAny(
+      ["own", "team", "workspace"].map((scope) => `system.integrations.view.${scope}`),
+    );
+  const query = useQuery({
+    queryKey: ["slack-integration", user?.id, permissions.workspaceId],
+    queryFn: () => getFn(),
+    enabled: canView,
+    staleTime: 0,
+    retry: false,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
   });
+  const integration =
+    canView && !query.isError && query.isFetchedAfterMount ? query.data?.integration : null;
+  const capabilities = useSalesCapabilities(
+    "slack_integrations",
+    integration ? [integration.id] : [],
+  );
+  const record = integration ? capabilities.for(integration.id) : null;
+  const view = readViewAs();
+  const readOnly = view?.readOnly === true || view?.mode === "role";
+  const mutable =
+    canView &&
+    !query.isError &&
+    query.isFetchedAfterMount &&
+    !query.isFetching &&
+    Boolean(query.data) &&
+    !readOnly;
+  const canConnect =
+    mutable &&
+    !integration &&
+    permissions.canAny(
+      ["own", "team", "workspace"].flatMap((scope) => [
+        `system.integrations.create.${scope}`,
+        `system.integrations.update.${scope}`,
+      ]),
+    );
+  const canDelete = mutable && record?.can_delete === true;
+  const canCheck = mutable && record?.can_manage === true;
+  const [draftContext, setDraftContext] = useState(contextKey);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [teamName, setTeamName] = useState("");
   const [defaultChannel, setDefaultChannel] = useState("");
-  const [newEvent, setNewEvent] = useState<string>("lead.created");
-  const [newChannel, setNewChannel] = useState("");
   const [busy, setBusy] = useState(false);
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center p-10">
-        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-  const integ = data?.integration;
-  const routes = data?.routes ?? [];
-
-  async function doSave() {
+  const pending = useRef(false);
+  const draftCurrent = draftContext === contextKey;
+  useEffect(() => {
+    setWebhookUrl("");
+    setTeamName("");
+    setDefaultChannel("");
+    setDraftContext(contextKey);
+  }, [contextKey, canView, canConnect]);
+  const refresh = async () => {
+    await Promise.all([
+      query.refetch(),
+      qc.invalidateQueries({
+        queryKey: ["notification-slack-settings", user?.id, permissions.workspaceId],
+      }),
+    ]);
+  };
+  const execute = async (allowed: boolean, task: () => Promise<void>) => {
+    if (!allowed || pending.current) return;
+    pending.current = true;
     setBusy(true);
+    const origin = contextKey;
     try {
+      await task();
+    } catch (cause) {
+      if (latestContext.current === origin)
+        toast.error(
+          cause instanceof Error ? cause.message : "Não foi possível concluir a operação.",
+        );
+    } finally {
+      pending.current = false;
+      setBusy(false);
+    }
+  };
+  const save = () =>
+    execute(canConnect && draftCurrent && Boolean(webhookUrl), async () => {
       await saveFn({
         data: {
           webhook_url: webhookUrl,
@@ -71,106 +131,91 @@ function SlackSettingsPage() {
           default_channel_name: defaultChannel || undefined,
         },
       });
-      toast.success("Salvo");
+      if (latestContext.current !== contextKey) return;
       setWebhookUrl("");
       setTeamName("");
       setDefaultChannel("");
-      await refetch();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha");
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function doDelete() {
-    if (!(await confirmDialog("Remover integração com Slack?"))) return;
-    setBusy(true);
-    try {
-      await delFn();
-      toast.success("Removido");
-      await refetch();
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function doTest() {
-    setBusy(true);
-    try {
-      await testFn();
-      toast.success("Mensagem enviada");
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha");
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function addRoute() {
-    if (!newChannel.trim()) return;
-    setBusy(true);
-    try {
-      await upsertRoute({
-        data: {
-          event_type: newEvent as (typeof SLACK_EVENT_TYPES)[number],
-          channel_id: newChannel.trim(),
-          enabled: true,
-        },
-      });
-      setNewChannel("");
-      await refetch();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Falha");
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function removeRoute(id: string) {
-    setBusy(true);
-    try {
-      await delRoute({ data: { id } });
-      await refetch();
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function toggleRoute(id: string, event_type: string, channel_id: string, enabled: boolean) {
-    await upsertRoute({
-      data: {
-        id,
-        event_type: event_type as (typeof SLACK_EVENT_TYPES)[number],
-        channel_id,
-        enabled,
-      },
+      toast.success(
+        "Conexão salva. A política de avisos coletivos permanece configurada separadamente.",
+      );
+      await refresh();
     });
-    await refetch();
-  }
-
+  const disconnect = () =>
+    execute(canDelete, async () => {
+      if (!(await confirmDialog("Remover a integração com Slack deste workspace?"))) return;
+      if (latestContext.current !== contextKey) return;
+      await delFn();
+      if (latestContext.current !== contextKey) return;
+      toast.success("Integração removida.");
+      await refresh();
+    });
+  const check = () =>
+    execute(canCheck, async () => {
+      await checkFn();
+      if (latestContext.current === contextKey)
+        toast.success("Configuração conferida; nenhum aviso enviado.");
+    });
+  if (!contextReady)
+    return (
+      <p role="status" className="p-6">
+        Aguardando confirmação do usuário e do workspace…
+      </p>
+    );
+  if (!canView)
+    return <p className="p-6">Sem permissão para consultar a integração Slack deste workspace.</p>;
+  if (query.isError)
+    return (
+      <div role="alert" className="space-y-3 p-6">
+        <p>Não foi possível carregar a integração Slack. A configuração não foi alterada.</p>
+        <Button variant="outline" onClick={() => void query.refetch()}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
+  if (query.isLoading || !query.data || !query.isFetchedAfterMount)
+    return (
+      <div role="status" className="flex items-center gap-2 p-6">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Carregando configuração Slack…
+      </div>
+    );
+  const routes = query.data.routes;
   return (
-    <div className="space-y-4 p-6 max-w-3xl">
+    <div className="max-w-3xl space-y-5 p-6">
       <PageHeader
-        title="Notificações no Slack"
-        description="Receba alertas de leads, deals e tickets em canais do Slack via Incoming Webhook."
+        title="Conexão Slack"
+        description="Configure a conexão do workspace. Os avisos coletivos são definidos na central de notificações e no motor de Workflows."
       />
-
       <Card>
         <CardHeader>
-          <CardTitle>Conexão</CardTitle>
+          <CardTitle>Conexão do workspace</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          {integ ? (
+        <CardContent className="space-y-4">
+          {integration ? (
             <>
-              <div className="text-sm">
-                Conectado a <strong>{integ.team_name || "Slack"}</strong>
-                {integ.default_channel_name
-                  ? ` · canal default: #${integ.default_channel_name}`
-                  : ""}
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={doTest} disabled={busy}>
-                  <Send className="h-4 w-4 mr-2" />
-                  Enviar teste
+              <p className="text-sm">
+                Configuração salva para <strong>{integration.team_name || "Slack"}</strong>
+                {integration.default_channel_name
+                  ? ` · #${integration.default_channel_name}`
+                  : " · destino definido no webhook"}
+                .
+              </p>
+              <p className="text-sm text-muted-foreground">
+                O nome exibido é cadastral. O Incoming Webhook usa o canal vinculado no Slack e não
+                permite sobrescrevê-lo por evento. Uma configuração salva não comprova entrega ou
+                leitura.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={() => void check()} disabled={!canCheck || busy}>
+                  <ShieldCheck className="mr-2 h-4 w-4" />
+                  Conferir configuração
                 </Button>
-                <Button variant="destructive" onClick={doDelete} disabled={busy}>
-                  <Trash2 className="h-4 w-4 mr-2" />
+                <Button
+                  variant="destructive"
+                  onClick={() => void disconnect()}
+                  disabled={!canDelete || busy}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
                   Desconectar
                 </Button>
               </div>
@@ -178,100 +223,98 @@ function SlackSettingsPage() {
           ) : (
             <>
               <p className="text-sm text-muted-foreground">
-                Crie um Incoming Webhook em <code>api.slack.com/messaging/webhooks</code> e cole a
-                URL abaixo.
+                Crie um Incoming Webhook no Slack para o canal adequado. A URL é uma credencial:
+                informe-a somente neste campo protegido. A conexão não habilita avisos
+                automaticamente.
               </p>
-              <div className="space-y-1.5">
-                <Label htmlFor="hook">Webhook URL</Label>
-                <Input
-                  id="hook"
-                  placeholder="https://hooks.slack.com/services/..."
-                  value={webhookUrl}
-                  onChange={(e) => setWebhookUrl(e.target.value)}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
+              <fieldset disabled={!canConnect || busy} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="team">Workspace Slack</Label>
-                  <Input id="team" value={teamName} onChange={(e) => setTeamName(e.target.value)} />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="ch">Canal default</Label>
+                  <Label htmlFor="hook">URL do Incoming Webhook</Label>
                   <Input
-                    id="ch"
-                    placeholder="alerts-crm"
-                    value={defaultChannel}
-                    onChange={(e) => setDefaultChannel(e.target.value)}
+                    id="hook"
+                    type="password"
+                    autoComplete="new-password"
+                    placeholder="https://hooks.slack.com/services/…"
+                    value={draftCurrent ? webhookUrl : ""}
+                    onChange={(event) => {
+                      if (canConnect && !pending.current) setWebhookUrl(event.target.value);
+                    }}
                   />
                 </div>
-              </div>
-              <Button onClick={doSave} disabled={busy || !webhookUrl}>
-                {busy ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                Conectar
-              </Button>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="team">Nome do workspace Slack</Label>
+                    <Input
+                      id="team"
+                      value={draftCurrent ? teamName : ""}
+                      onChange={(event) => {
+                        if (canConnect && !pending.current) setTeamName(event.target.value);
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="ch">Nome do canal vinculado no Slack</Label>
+                    <Input
+                      id="ch"
+                      value={draftCurrent ? defaultChannel : ""}
+                      onChange={(event) => {
+                        if (canConnect && !pending.current) setDefaultChannel(event.target.value);
+                      }}
+                    />
+                  </div>
+                </div>
+                <Button
+                  onClick={() => void save()}
+                  disabled={!canConnect || busy || !draftCurrent || !webhookUrl}
+                >
+                  {busy ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Salvar conexão
+                </Button>
+              </fieldset>
+              {!canConnect && (
+                <p className="text-sm text-muted-foreground">
+                  Consulta apenas. Sem permissão para cadastrar esta conexão.
+                </p>
+              )}
             </>
           )}
         </CardContent>
       </Card>
-
-      {integ && (
+      {integration && (
         <Card>
           <CardHeader>
-            <CardTitle>Eventos → Canal</CardTitle>
+            <CardTitle>Regras de canal anteriores</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <p className="text-xs text-muted-foreground">
-              Sem regras, todos os eventos vão para o webhook default. Adicione regras para
-              sobrescrever o canal por tipo de evento.
+            <p className="text-sm text-muted-foreground">
+              Os registros anteriores foram preservados para consulta. Eles não escolhem o destino
+              dos avisos coletivos da central e não sobrescrevem o canal de um Incoming Webhook.
+              Configure a ação Slack no Workflow e a política coletiva na central.
             </p>
-            <div className="space-y-2">
-              {routes.map((r) => (
-                <div key={r.id} className="flex items-center gap-2 rounded-md border p-2">
-                  <div className="flex-1 text-sm">
-                    <span className="font-medium">{r.event_type}</span>
-                    <span className="text-muted-foreground"> → #{r.channel_id}</span>
-                  </div>
-                  <Switch
-                    checked={r.enabled}
-                    onCheckedChange={(v) => toggleRoute(r.id, r.event_type, r.channel_id, v)}
-                  />
-                  <Button size="icon" variant="ghost" onClick={() => removeRoute(r.id)}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-              {routes.length === 0 && (
-                <div className="text-sm text-muted-foreground">Nenhuma regra ainda.</div>
-              )}
-            </div>
-            <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t">
-              <Select value={newEvent} onValueChange={setNewEvent}>
-                <SelectTrigger className="sm:w-60">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SLACK_EVENT_TYPES.map((e) => (
-                    <SelectItem key={e} value={e}>
-                      {e}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Input
-                placeholder="canal-alvo"
-                value={newChannel}
-                onChange={(e) => setNewChannel(e.target.value)}
-                className="flex-1"
-              />
-              <Button onClick={addRoute} disabled={busy || !newChannel}>
-                <Plus className="h-4 w-4 mr-1" />
-                Adicionar
-              </Button>
-            </div>
+            {routes.length ? (
+              <ul className="space-y-2">
+                {routes.map((route) => (
+                  <li
+                    key={route.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-muted/30 p-3 text-sm"
+                  >
+                    <span className="break-all">
+                      {route.event_type} · {route.channel_id}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {route.enabled ? "Registro habilitado" : "Registro desabilitado"} · somente
+                      leitura
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-sm text-muted-foreground">Nenhum registro anterior.</p>
+            )}
           </CardContent>
         </Card>
       )}

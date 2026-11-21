@@ -9,7 +9,7 @@ import { useGridFilters } from "@/hooks/use-grid-filters";
 import type { GridFilterField } from "@/lib/grid-filters";
 import { SortableTableHead } from "@/components/grid/sortable-table-head";
 import { useClientSort } from "@/lib/grid-client-sort";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ListTodo, Search } from "lucide-react";
@@ -34,12 +34,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatDateTime } from "@/lib/crm";
-import { formatCompactDateTime } from "@/lib/format/compact-date";
-import { listAllProjectTaskIds, listAllProjectTasks } from "@/lib/projects.functions";
+import { formatDateOnly } from "@/lib/crm";
+import { formatCompactDate } from "@/lib/format/compact-date";
+import {
+  getProjectTaskById,
+  listAllProjectTaskIds,
+  listAllProjectTasks,
+} from "@/lib/projects.functions";
 import { useGridSelection } from "@/components/grid/use-grid-selection";
 import { GridBulkBar } from "@/components/grid/grid-bulk-bar";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useAuth } from "@/lib/auth";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
 import { TaskDetailsSheet } from "@/components/projects/task-details-sheet";
 import { TASK_STATUS_LABEL } from "@/components/projects/task-core-fields";
@@ -50,7 +55,13 @@ export const Route = createFileRoute("/_authenticated/projects/tasks")({
     search: Record<string, unknown>,
   ): { view?: "table" | "kanban"; taskId?: string } => ({
     view: search.view === "kanban" ? "kanban" : "table",
-    taskId: typeof search.taskId === "string" && search.taskId ? search.taskId : undefined,
+    taskId:
+      typeof search.taskId === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        search.taskId,
+      )
+        ? search.taskId
+        : undefined,
   }),
   head: () => ({
     meta: [
@@ -62,12 +73,24 @@ export const Route = createFileRoute("/_authenticated/projects/tasks")({
       },
     ],
   }),
-  component: () => (
-    <WorkScreenAccess resources={["techprojects.tasks"]}>
-      <ProjectTasksPage />
-    </WorkScreenAccess>
-  ),
+  component: ProjectTasksAccess,
 });
+
+function ProjectTasksAccess() {
+  const { user } = useAuth();
+  const { workspaceId } = usePermissions();
+  return (
+    <WorkScreenAccess resources={["techprojects.tasks"]}>
+      {user && workspaceId && (
+        <ProjectTasksPage
+          key={`${user.id}:${workspaceId}`}
+          userId={user.id}
+          workspaceId={workspaceId}
+        />
+      )}
+    </WorkScreenAccess>
+  );
+}
 
 const STATUS_LABEL = TASK_STATUS_LABEL;
 
@@ -90,10 +113,11 @@ type StatusFilter = "all" | "todo" | "doing" | "review" | "done";
 type OwnerFilter = "all" | "mine";
 const PAGE_SIZE = 100;
 
-function ProjectTasksPage() {
+function ProjectTasksPage({ userId, workspaceId }: { userId: string; workspaceId: string }) {
   const qc = useQueryClient();
   const listTasksFn = useServerFn(listAllProjectTasks);
   const listTaskIdsFn = useServerFn(listAllProjectTaskIds);
+  const getTaskFn = useServerFn(getProjectTaskById);
   const [search, setSearch] = useState("");
   // Status e projeto agora são filtrados pelo painel lateral.
   const status: StatusFilter = "all";
@@ -101,7 +125,13 @@ function ProjectTasksPage() {
   const [owner, setOwner] = useState<OwnerFilter>("all");
   const [page, setPage] = useState(0);
 
-  const tasksKey = ["project_tasks", "all", { status, projectId, owner, search, page }] as const;
+  const tasksKey = [
+    "project_tasks",
+    userId,
+    workspaceId,
+    "all",
+    { status, projectId, owner, search, page },
+  ] as const;
   const {
     data: pageRows = [],
     isLoading,
@@ -199,8 +229,35 @@ function ProjectTasksPage() {
     void navigate({ to: ".", search: (prev) => ({ ...prev, taskId: id }) });
   const closeTask = () =>
     void navigate({ to: ".", search: (prev) => ({ ...prev, taskId: undefined }), replace: true });
-  const selectedTask = taskId ? (rows.find((t) => t.id === taskId) ?? null) : null;
-  const taskMissing = !!taskId && !isLoading && !isError && !selectedTask;
+  const focusedTask = useQuery({
+    queryKey: ["project_tasks", userId, workspaceId, "detail", taskId],
+    queryFn: () => getTaskFn({ data: { id: taskId! } }),
+    enabled: !!taskId,
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+  });
+  const [confirmedTask, setConfirmedTask] = useState<typeof focusedTask.data>();
+  useEffect(() => {
+    if (focusedTask.isFetchedAfterMount && !focusedTask.isFetching && !focusedTask.isError)
+      setConfirmedTask(focusedTask.data);
+  }, [
+    focusedTask.isFetchedAfterMount,
+    focusedTask.isFetching,
+    focusedTask.isError,
+    focusedTask.data,
+  ]);
+  const selectedTask =
+    taskId && focusedTask.isFetchedAfterMount && !focusedTask.isError
+      ? focusedTask.isFetching
+        ? confirmedTask?.id === taskId
+          ? confirmedTask
+          : null
+        : (focusedTask.data ?? null)
+      : null;
+  const taskMissing =
+    !!taskId && focusedTask.isFetchedAfterMount && !focusedTask.isFetching && !selectedTask;
   // Falha de carga (ex.: tempo esgotado no banco) não pode parecer lista vazia.
   const errorState = (
     <div role="alert" className="p-12 text-center">
@@ -369,7 +426,7 @@ function ProjectTasksPage() {
                   </Link>
                 )}
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{t.due_at ? formatCompactDateTime(t.due_at) : "sem prazo"}</span>
+                  <span>{t.due_at ? formatCompactDate(t.due_at) : "sem prazo"}</span>
                   <span className="tabular-nums">
                     {t.estimated_hours ? `${t.estimated_hours}h` : ""}
                   </span>
@@ -500,7 +557,7 @@ function ProjectTasksPage() {
                           {t.estimated_hours ?? "—"}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {t.due_at ? formatDateTime(t.due_at).split(" ")[0] : "—"}
+                          {formatDateOnly(t.due_at)}
                         </TableCell>
                       </TableRow>
                     );
@@ -541,14 +598,26 @@ function ProjectTasksPage() {
         </nav>
       )}
 
+      {taskId && focusedTask.isFetching && (
+        <p role="status" className="text-sm text-muted-foreground">
+          Conferindo acesso à tarefa do link…
+        </p>
+      )}
       {taskMissing && (
         <div
           role="alert"
           className="flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm"
         >
           <span className="text-muted-foreground">
-            A tarefa do link não está entre as tarefas carregadas ou você não tem acesso a ela.
+            {focusedTask.isError
+              ? "Não foi possível conferir a tarefa do link. Tente novamente."
+              : "A tarefa do link está indisponível ou você não tem acesso a ela."}
           </span>
+          {focusedTask.isError && (
+            <Button size="sm" variant="outline" onClick={() => void focusedTask.refetch()}>
+              Tentar novamente
+            </Button>
+          )}
           <Button size="sm" variant="ghost" onClick={closeTask}>
             Fechar aviso
           </Button>
@@ -556,6 +625,8 @@ function ProjectTasksPage() {
       )}
 
       <TaskDetailsSheet
+        key={`${userId}:${workspaceId}:${taskId ?? "none"}`}
+        revalidating={focusedTask.isFetching}
         task={
           selectedTask
             ? {

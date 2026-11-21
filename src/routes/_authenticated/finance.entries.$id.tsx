@@ -4,7 +4,8 @@ import { useFinanceCapabilities } from "@/lib/access-control/use-finance-capabil
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useAuth } from "@/lib/auth";
 import { ArrowLeft, Ban, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCanDelete, DELETE_NOT_ALLOWED_TITLE } from "@/lib/access-control/use-can-delete";
@@ -50,7 +51,33 @@ const STATUS_LABEL: Record<string, string> = {
 
 function EntryDetailsPage() {
   const { id } = Route.useParams();
-  const { workspaceId } = usePermissions();
+  const { user } = useAuth();
+  const p = usePermissions();
+  if (!user || !p.workspaceId || p.isLoading || p.isError)
+    return (
+      <p role="alert" className="p-6">
+        Não foi possível conferir o contexto do lançamento.
+      </p>
+    );
+  return (
+    <EntryDetailsContent
+      key={`${user.id}:${p.workspaceId}:${id}`}
+      userId={user.id}
+      workspaceId={p.workspaceId}
+      id={id}
+    />
+  );
+}
+
+function EntryDetailsContent({
+  userId,
+  workspaceId,
+  id,
+}: {
+  userId: string;
+  workspaceId: string;
+  id: string;
+}) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const get = useServerFn(getFinancialEntry);
@@ -62,15 +89,40 @@ function EntryDetailsPage() {
   const access = useFinanceCapabilities([id]);
   const permitted = access.for(id);
   const [payOpen, setPayOpen] = useState(false);
+  const [paymentEntry, setPaymentEntry] = useState<Awaited<
+    ReturnType<typeof getFinancialEntry>
+  > | null>(null);
 
-  const {
-    data: entry,
-    isLoading,
-    refetch,
-  } = useQuery({
-    queryKey: ["finance-entry", workspaceId, id],
-    queryFn: () => get({ data: { id } }),
+  const query = useQuery({
+    queryKey: ["finance-entry", userId, workspaceId, id],
+    queryFn: async () => {
+      const value = await get({ data: { id } });
+      if (value && value.workspace_id !== workspaceId)
+        throw new Error("Lançamento indisponível neste workspace.");
+      return value;
+    },
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
   });
+  const { refetch } = query;
+  const confirmed = useRef<typeof query.data>(undefined);
+  if (query.isError) confirmed.current = undefined;
+  if (query.isFetchedAfterMount && !query.isError && !query.isFetching)
+    confirmed.current = query.data;
+  const entry = confirmed.current;
+  const revalidating =
+    query.isFetching ||
+    !query.isFetchedAfterMount ||
+    access.isFetching ||
+    !access.isFetchedAfterMount;
+  useEffect(() => {
+    if (query.isError || (query.isFetchedAfterMount && !query.isFetching && !query.data)) {
+      setPayOpen(false);
+      setPaymentEntry(null);
+    }
+  }, [query.isError, query.isFetchedAfterMount, query.isFetching, query.data]);
 
   const isInstallment = !!(
     entry &&
@@ -78,11 +130,20 @@ function EntryDetailsPage() {
   );
   const parentId = entry?.parent_entry_id ?? entry?.id ?? null;
 
-  const { data: siblings } = useQuery({
-    queryKey: ["finance-entry-siblings", workspaceId, id],
+  const siblingsQuery = useQuery({
+    queryKey: ["finance-entry-siblings", userId, workspaceId, id],
     queryFn: () => listSiblings({ data: { entry_id: id } }),
-    enabled: isInstallment,
+    enabled: isInstallment && !revalidating,
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
   });
+
+  const siblings =
+    siblingsQuery.isFetchedAfterMount && !siblingsQuery.isFetching && !siblingsQuery.isError
+      ? siblingsQuery.data
+      : undefined;
 
   const { canDeleteRecord, isLoading: deletePermLoading } = useCanDelete("techfinance.entries");
   const canDelete =
@@ -98,10 +159,10 @@ function EntryDetailsPage() {
     qc.invalidateQueries({ queryKey: ["finance", "dashboard"] });
   };
 
-  if (isLoading) {
+  if (!entry && !query.isError && (query.isLoading || query.isFetching)) {
     return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
   }
-  if (!entry) {
+  if (!entry || query.isError) {
     return (
       <div className="p-6 space-y-3">
         <Button variant="ghost" size="sm" asChild>
@@ -109,275 +170,314 @@ function EntryDetailsPage() {
             <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
           </Link>
         </Button>
-        <p className="text-sm text-muted-foreground">Lançamento não encontrado.</p>
+        <p role="alert" className="text-sm text-muted-foreground">
+          Lançamento indisponível ou não foi possível conferir seu acesso.
+        </p>
+        <Button variant="outline" onClick={() => void refetch()}>
+          Tentar novamente
+        </Button>
       </div>
     );
   }
 
   const outstanding = Number(entry.amount) - Number(entry.paid_amount ?? 0);
-  const canPay = permitted.can_pay && entry.status !== "paid" && entry.status !== "cancelled";
+  const canPay =
+    !revalidating &&
+    !access.isError &&
+    permitted.can_pay &&
+    entry.status !== "paid" &&
+    entry.status !== "cancelled";
+  const paymentChanged =
+    !!paymentEntry &&
+    (!permitted.can_pay ||
+      paymentEntry.status !== entry.status ||
+      paymentEntry.amount !== entry.amount ||
+      paymentEntry.paid_amount !== entry.paid_amount ||
+      paymentEntry.currency !== entry.currency ||
+      paymentEntry.direction !== entry.direction);
 
   return (
-    <div className="p-6 space-y-5">
-      <Button variant="ghost" size="sm" asChild>
-        <Link to={entry.direction === "receivable" ? "/finance/receivable" : "/finance/payable"}>
-          <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
-        </Link>
-      </Button>
+    <div className="min-w-0 p-4 sm:p-6 space-y-5">
+      {revalidating && <p role="status">Conferindo acesso ao lançamento…</p>}
+      <fieldset
+        className="contents"
+        disabled={revalidating}
+        hidden={revalidating}
+        inert={revalidating || undefined}
+        style={revalidating ? { display: "none" } : undefined}
+      >
+        <Button variant="ghost" size="sm" asChild>
+          <Link to={entry.direction === "receivable" ? "/finance/receivable" : "/finance/payable"}>
+            <ArrowLeft className="h-4 w-4 mr-1" /> Voltar
+          </Link>
+        </Button>
 
-      <PageHeader
-        title={entry.description}
-        description={entry.direction === "receivable" ? "Conta a receber" : "Conta a pagar"}
-        actions={
-          <div className="flex gap-2">
-            {canPay && (
-              <Button onClick={() => setPayOpen(true)}>
-                {entry.direction === "receivable" ? "Registrar recebimento" : "Registrar pagamento"}
-              </Button>
-            )}
-            {entry.status !== "cancelled" && entry.status !== "paid" && permitted.can_cancel && (
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  await cancelFn({ data: { id: entry.id } });
-                  toast.success("Lançamento cancelado");
-                  invalidate();
-                }}
-              >
-                <Ban className="h-4 w-4 mr-1" /> Cancelar
-              </Button>
-            )}
-          </div>
-        }
-      />
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Valor total</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold tabular-nums">
-              {formatCurrency(Number(entry.amount), entry.currency)}
+        <PageHeader
+          title={entry.description}
+          description={entry.direction === "receivable" ? "Conta a receber" : "Conta a pagar"}
+          actions={
+            <div className="flex gap-2">
+              {canPay && (
+                <Button
+                  onClick={() => {
+                    if (canPay) {
+                      setPaymentEntry(entry);
+                      setPayOpen(true);
+                    }
+                  }}
+                >
+                  {entry.direction === "receivable"
+                    ? "Registrar recebimento"
+                    : "Registrar pagamento"}
+                </Button>
+              )}
+              {entry.status !== "cancelled" && entry.status !== "paid" && permitted.can_cancel && (
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    await cancelFn({ data: { id: entry.id } });
+                    toast.success("Lançamento cancelado");
+                    invalidate();
+                  }}
+                >
+                  <Ban className="h-4 w-4 mr-1" /> Cancelar
+                </Button>
+              )}
             </div>
+          }
+        />
+
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">Valor total</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-semibold tabular-nums">
+                {formatCurrency(Number(entry.amount), entry.currency)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">Em aberto</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-semibold tabular-nums">
+                {formatCurrency(outstanding, entry.currency)}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm text-muted-foreground">Status</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Badge variant="outline" className="text-sm">
+                {STATUS_LABEL[entry.status] ?? entry.status}
+              </Badge>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Dados</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3 sm:grid-cols-2 text-sm">
+            <Row label="Contraparte" value={entry.companies?.name ?? "—"} />
+            <Row label="Categoria" value={entry.financial_categories?.name ?? "—"} />
+            <Row label="Competência" value={formatDateOnly(entry.competence_date)} />
+            <Row label="Vencimento" value={formatDateOnly(entry.due_date)} />
+            <Row
+              label="Origem"
+              value={ORIGIN_LABEL[entry.origin_type as string] ?? entry.origin_type}
+            />
+            {entry.origin_type === "project_measurement" && entry.contract_id && (
+              <div className="sm:col-span-2 text-xs">
+                <Link
+                  to="/contracts/$id/medicoes"
+                  params={{ id: entry.contract_id }}
+                  className="underline-offset-2 hover:underline"
+                >
+                  Abrir as medições do contrato
+                </Link>
+                <span className="text-muted-foreground">
+                  {" "}
+                  · título interno: não é nota fiscal nem cobrança enviada.
+                </span>
+              </div>
+            )}
+            <Row
+              label="Contrato / Serviço"
+              value={
+                entry.contracts
+                  ? `Contrato ${entry.contracts.number ?? entry.contracts.title}`
+                  : entry.services
+                    ? `Serviço ${entry.services.name}`
+                    : "—"
+              }
+            />
+            {entry.notes && (
+              <div className="sm:col-span-2">
+                <div className="text-muted-foreground text-xs">Notas</div>
+                <div className="mt-1 whitespace-pre-wrap">{entry.notes}</div>
+              </div>
+            )}
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Em aberto</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-semibold tabular-nums">
-              {formatCurrency(outstanding, entry.currency)}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Badge variant="outline" className="text-sm">
-              {STATUS_LABEL[entry.status] ?? entry.status}
-            </Badge>
-          </CardContent>
-        </Card>
-      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Dados</CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-3 sm:grid-cols-2 text-sm">
-          <Row label="Contraparte" value={entry.companies?.name ?? "—"} />
-          <Row label="Categoria" value={entry.financial_categories?.name ?? "—"} />
-          <Row label="Competência" value={formatDateOnly(entry.competence_date)} />
-          <Row label="Vencimento" value={formatDateOnly(entry.due_date)} />
-          <Row
-            label="Origem"
-            value={ORIGIN_LABEL[entry.origin_type as string] ?? entry.origin_type}
-          />
-          {entry.origin_type === "project_measurement" && entry.contract_id && (
-            <div className="sm:col-span-2 text-xs">
-              <Link
-                to="/contracts/$id/medicoes"
-                params={{ id: entry.contract_id }}
-                className="underline-offset-2 hover:underline"
-              >
-                Abrir as medições do contrato
-              </Link>
-              <span className="text-muted-foreground">
-                {" "}
-                · título interno: não é nota fiscal nem cobrança enviada.
-              </span>
-            </div>
-          )}
-          <Row
-            label="Contrato / Serviço"
-            value={
-              entry.contracts
-                ? `Contrato ${entry.contracts.number ?? entry.contracts.title}`
-                : entry.services
-                  ? `Serviço ${entry.services.name}`
-                  : "—"
-            }
-          />
-          {entry.notes && (
-            <div className="sm:col-span-2">
-              <div className="text-muted-foreground text-xs">Notas</div>
-              <div className="mt-1 whitespace-pre-wrap">{entry.notes}</div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {isInstallment && siblings && siblings.length > 0 && (
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Parcelamento</CardTitle>
-            {parentId && siblings.some((s) => s.status === "open" || s.status === "overdue") && (
-              <Button
-                variant="outline"
-                size="sm"
-                disabled={!canDelete}
-                aria-disabled={!canDelete}
-                title={canDelete ? "Excluir parcelas em aberto" : DELETE_NOT_ALLOWED_TITLE}
-                onClick={async () => {
-                  if (!canDelete) {
-                    toast.error(DELETE_NOT_ALLOWED_TITLE);
-                    return;
-                  }
-                  if (!(await confirmDialog("Excluir todas as parcelas em aberto deste grupo?")))
-                    return;
-                  const r = await delGroup({
-                    data: { parent_entry_id: parentId, only_open: true },
-                  });
-                  toast.success(`${r.deleted} parcela(s) excluída(s); ${r.kept} mantida(s).`);
-                  invalidate();
-                  navigate({
-                    to:
-                      entry.direction === "receivable" ? "/finance/receivable" : "/finance/payable",
-                  });
-                }}
-              >
-                <Trash2 className="h-4 w-4 mr-1" /> Excluir parcelas em aberto
-              </Button>
-            )}
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>#</TableHead>
-                  <TableHead>Vencimento</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {siblings.map((s) => (
-                  <TableRow
-                    key={s.id}
-                    className={s.id === entry.id ? "bg-muted/50" : "cursor-pointer"}
-                    onClick={() => {
-                      if (s.id !== entry.id)
-                        navigate({ to: "/finance/entries/$id", params: { id: s.id } });
-                    }}
-                  >
-                    <TableCell className="text-sm tabular-nums">
-                      {s.installment_number}/{s.installment_total}
-                    </TableCell>
-                    <TableCell className="text-sm">{formatDateOnly(s.due_date)}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {STATUS_LABEL[s.status] ?? s.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums text-sm">
-                      {formatCurrency(Number(s.amount), entry.currency)}
-                    </TableCell>
+        {isInstallment && siblings && siblings.length > 0 && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Parcelamento</CardTitle>
+              {parentId && siblings.some((s) => s.status === "open" || s.status === "overdue") && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!canDelete}
+                  aria-disabled={!canDelete}
+                  title={canDelete ? "Excluir parcelas em aberto" : DELETE_NOT_ALLOWED_TITLE}
+                  onClick={async () => {
+                    if (!canDelete) {
+                      toast.error(DELETE_NOT_ALLOWED_TITLE);
+                      return;
+                    }
+                    if (!(await confirmDialog("Excluir todas as parcelas em aberto deste grupo?")))
+                      return;
+                    const r = await delGroup({
+                      data: { parent_entry_id: parentId, only_open: true },
+                    });
+                    toast.success(`${r.deleted} parcela(s) excluída(s); ${r.kept} mantida(s).`);
+                    invalidate();
+                    navigate({
+                      to:
+                        entry.direction === "receivable"
+                          ? "/finance/receivable"
+                          : "/finance/payable",
+                    });
+                  }}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" /> Excluir parcelas em aberto
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>#</TableHead>
+                    <TableHead>Vencimento</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {siblings.map((s) => (
+                    <TableRow
+                      key={s.id}
+                      className={s.id === entry.id ? "bg-muted/50" : "cursor-pointer"}
+                      onClick={() => {
+                        if (s.id !== entry.id)
+                          navigate({ to: "/finance/entries/$id", params: { id: s.id } });
+                      }}
+                    >
+                      <TableCell className="text-sm tabular-nums">
+                        {s.installment_number}/{s.installment_total}
+                      </TableCell>
+                      <TableCell className="text-sm">{formatDateOnly(s.due_date)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {STATUS_LABEL[s.status] ?? s.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-sm">
+                        {formatCurrency(Number(s.amount), entry.currency)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Pagamentos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!entry.payments_visible ? (
+              <p className="text-sm text-muted-foreground">
+                Você não tem permissão para consultar o histórico de baixas.
+              </p>
+            ) : entry.payments.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhum pagamento registrado.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Método</TableHead>
+                    <TableHead>Conta</TableHead>
+                    <TableHead className="text-right">Valor</TableHead>
+                    <TableHead />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {entry.payments.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="text-sm">{formatDateOnly(p.paid_at)}</TableCell>
+                      <TableCell className="text-sm">{p.method ?? "—"}</TableCell>
+                      <TableCell className="text-sm">
+                        {p.financial_bank_accounts?.name ?? "—"}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {formatCurrency(Number(p.amount), entry.currency)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          disabled={!permitted.can_reverse}
+                          aria-label="Reverter baixa"
+                          onClick={async () => {
+                            if (
+                              !(await confirmDialog(
+                                "Reverter esta baixa? Isso ajusta o saldo do lançamento e não realiza estorno bancário.",
+                              ))
+                            )
+                              return;
+                            try {
+                              await delPayment({ data: { id: p.id } });
+                              toast.success(
+                                "Baixa revertida. Nenhum estorno bancário foi executado.",
+                              );
+                              invalidate();
+                            } catch (error) {
+                              toast.error(
+                                error instanceof Error
+                                  ? error.message
+                                  : "Não foi possível reverter a baixa.",
+                              );
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
-      )}
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Pagamentos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!entry.payments_visible ? (
-            <p className="text-sm text-muted-foreground">
-              Você não tem permissão para consultar o histórico de baixas.
-            </p>
-          ) : entry.payments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Nenhum pagamento registrado.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Método</TableHead>
-                  <TableHead>Conta</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {entry.payments.map((p) => (
-                  <TableRow key={p.id}>
-                    <TableCell className="text-sm">{formatDateOnly(p.paid_at)}</TableCell>
-                    <TableCell className="text-sm">{p.method ?? "—"}</TableCell>
-                    <TableCell className="text-sm">
-                      {p.financial_bank_accounts?.name ?? "—"}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {formatCurrency(Number(p.amount), entry.currency)}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        disabled={!permitted.can_reverse}
-                        aria-label="Reverter baixa"
-                        onClick={async () => {
-                          if (
-                            !(await confirmDialog(
-                              "Reverter esta baixa? Isso ajusta o saldo do lançamento e não realiza estorno bancário.",
-                            ))
-                          )
-                            return;
-                          try {
-                            await delPayment({ data: { id: p.id } });
-                            toast.success(
-                              "Baixa revertida. Nenhum estorno bancário foi executado.",
-                            );
-                            invalidate();
-                          } catch (error) {
-                            toast.error(
-                              error instanceof Error
-                                ? error.message
-                                : "Não foi possível reverter a baixa.",
-                            );
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
+      </fieldset>
       <RegisterPaymentDialog
-        entry={payOpen ? entry : null}
+        entry={payOpen ? paymentEntry : null}
+        revalidating={revalidating}
+        blocked={paymentChanged || access.isError}
         onOpenChange={(o) => setPayOpen(o)}
         onDone={invalidate}
       />

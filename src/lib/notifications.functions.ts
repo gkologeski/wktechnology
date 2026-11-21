@@ -5,6 +5,23 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { scopeNotifications } from "@/lib/notification-cursor";
+import {
+  activityNotificationContent,
+  parseNotificationCenterPage,
+} from "@/lib/notification-center";
+import type { NotificationCategory } from "@/lib/notification-catalog";
+import {
+  DEFAULT_NOTIFICATION_PREFS as DEFAULT_PREFS,
+  normalizeNotificationPrefs as mergeWithDefaults,
+  notificationPrefsPatchSchema,
+  applyNotificationPrefsPatch,
+  type NotificationPrefs,
+} from "@/lib/notification-preferences";
+import type { Json } from "@/integrations/supabase/types";
+
+// Keep the existing import surface for callers compiled against the legacy module.
+export type { NotificationCategory } from "@/lib/notification-catalog";
+export type { NotificationPrefs } from "@/lib/notification-preferences";
 
 export const listMyNotifications = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -14,128 +31,94 @@ export const listMyNotifications = createServerFn({ method: "GET" })
         cursor: z
           .object({ createdAt: z.string().datetime({ offset: true }), id: z.string().uuid() })
           .nullish(),
+        cutoff: z.string().datetime({ offset: true }).nullish(),
       })
       .optional()
       .parse(i),
   )
   .handler(async ({ data: input, context }) => {
     const { supabase, userId } = context;
-    const { NOTIFICATION_PAGE_SIZE, cursorFilter, nextCursorOf } =
-      await import("@/lib/notification-cursor");
-    let q = scopeNotifications(
-      supabase
-        .from("notifications")
-        .select("id, type, title, body, link, entity, entity_id, read_at, created_at"),
-      userId,
-    )
-      .order("created_at", { ascending: false })
-      .order("id", { ascending: false })
-      .limit(NOTIFICATION_PAGE_SIZE);
-    if (input?.cursor) q = q.or(cursorFilter(input.cursor));
-    const [list, count] = await Promise.all([
-      q,
-      input?.cursor
-        ? Promise.resolve({ count: null, error: null })
-        : scopeNotifications(
-            supabase.from("notifications").select("id", { count: "exact", head: true }),
-            userId,
-          ).is("read_at", null),
-    ]);
-    if (list.error) throw new Error(list.error.message);
-    if (count.error) throw new Error(count.error.message);
-    const items = list.data ?? [];
-    return { items, unread: count.count ?? 0, nextCursor: nextCursorOf(items) };
+    const workspace = await notificationWorkspace(supabase, userId);
+    return parseNotificationCenterPage(
+      await workRpc(supabase, "notification_center_list", {
+        p_workspace: workspace,
+        p_cursor: input?.cursor ?? null,
+        p_cutoff: input?.cutoff ?? input?.cursor?.createdAt ?? null,
+      }),
+    );
   });
+
+async function notificationWorkspace(
+  supabase: Parameters<typeof workRpc>[0],
+  userId: string,
+  write = false,
+) {
+  if (!z.string().uuid().safeParse(userId).success) throw new Error("Sessão inválida.");
+  const c = await workRpc<{ actor?: string; workspace?: string; read_only?: boolean }>(
+    supabase,
+    "work_access_context",
+    {},
+  );
+  if (!c.workspace || c.actor !== userId)
+    throw new Error("Membro ativo e workspace selecionado são obrigatórios.");
+  if (write && c.read_only === true) throw new Error("Esta sessão permite somente leitura.");
+  return c.workspace;
+}
 
 export const markNotificationRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ id: z.string().uuid() }).parse(i))
+  .inputValidator((i) => z.object({ id: z.string().uuid() }).strict().parse(i))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-    await scopeNotifications(
-      supabase
-        .from("notifications")
-        .update({ read_at: new Date().toISOString() })
-        .eq("id", data.id),
-      userId,
+    const workspace = await notificationWorkspace(context.supabase, context.userId);
+    const result = await workRpc<{ updated: number }>(
+      context.supabase,
+      "notification_center_mark",
+      {
+        p_workspace: workspace,
+        p_ids: [data.id],
+        p_cutoff: new Date().toISOString(),
+        p_read: true,
+      },
     );
-    return { ok: true };
+    return { ok: true, updated: result.updated };
   });
 
 export const markAllNotificationsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabase, userId } = context;
-    await scopeNotifications(
-      supabase.from("notifications").update({ read_at: new Date().toISOString() }),
-      userId,
-    ).is("read_at", null);
-    return { ok: true };
+  .inputValidator((i) =>
+    z
+      .object({
+        ids: z.array(z.string().uuid()).min(1).max(100),
+        cutoff: z.string().datetime({ offset: true }),
+      })
+      .strict()
+      .optional()
+      .parse(i),
+  )
+  .handler(async ({ data, context }) => {
+    const workspace = await notificationWorkspace(context.supabase, context.userId);
+    if (!data)
+      throw new Error("Abra a central para marcar apenas as notificações visíveis como lidas.");
+    const result = await workRpc<{ updated: number }>(
+      context.supabase,
+      "notification_center_mark",
+      {
+        p_workspace: workspace,
+        p_ids: data.ids,
+        p_cutoff: data.cutoff,
+        p_read: true,
+      },
+    );
+    return { ok: true, updated: result.updated };
   });
 
 // ============ Notification Preferences ============
-
-const CATEGORIES = [
-  "mention",
-  "assignment",
-  "deal_stage",
-  "ticket",
-  "task",
-  "sla",
-  "message",
-] as const;
-
-const channelSchema = z.object({
-  inapp: z.boolean(),
-  email: z.boolean(),
-  sound: z.boolean(),
-  shake: z.boolean(),
-});
-
-const prefsSchema = z.object(
-  Object.fromEntries(CATEGORIES.map((c) => [c, channelSchema])) as Record<
-    (typeof CATEGORIES)[number],
-    typeof channelSchema
-  >,
-);
-
-export type NotificationCategory = (typeof CATEGORIES)[number];
-export type NotificationPrefs = z.infer<typeof prefsSchema>;
-
-const DEFAULT_PREFS: NotificationPrefs = {
-  mention: { inapp: true, email: true, sound: true, shake: true },
-  assignment: { inapp: true, email: true, sound: true, shake: true },
-  deal_stage: { inapp: true, email: false, sound: false, shake: false },
-  ticket: { inapp: true, email: true, sound: true, shake: true },
-  task: { inapp: true, email: false, sound: true, shake: false },
-  sla: { inapp: true, email: true, sound: true, shake: true },
-  message: { inapp: true, email: false, sound: true, shake: true },
-};
-
-function mergeWithDefaults(raw: unknown): NotificationPrefs {
-  const obj = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
-  const out = {} as NotificationPrefs;
-  for (const c of CATEGORIES) {
-    const v = (obj[c] && typeof obj[c] === "object" ? obj[c] : {}) as Record<string, unknown>;
-    out[c] = {
-      inapp: v.inapp !== false,
-      email: v.email !== false ? Boolean(v.email ?? DEFAULT_PREFS[c].email) : false,
-      sound: v.sound !== false ? Boolean(v.sound ?? DEFAULT_PREFS[c].sound) : false,
-      shake: v.shake !== false ? Boolean(v.shake ?? DEFAULT_PREFS[c].shake) : false,
-    };
-    // Apply defaults strictly if undefined
-    if (v.inapp === undefined) out[c].inapp = DEFAULT_PREFS[c].inapp;
-    if (v.email === undefined) out[c].email = DEFAULT_PREFS[c].email;
-    if (v.sound === undefined) out[c].sound = DEFAULT_PREFS[c].sound;
-    if (v.shake === undefined) out[c].shake = DEFAULT_PREFS[c].shake;
-  }
-  return out;
-}
 
 export const getMyNotificationPrefs = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { userId } = context;
+    await notificationWorkspace(context.supabase, userId);
     // notification_preferences is not exposed to authenticated clients via the
     // Data API (column-level GRANT restricted). Read with the service-role
     // client, scoped to the current user only.
@@ -151,17 +134,38 @@ export const getMyNotificationPrefs = createServerFn({ method: "GET" })
 
 export const updateMyNotificationPrefs = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((i) => z.object({ prefs: prefsSchema }).parse(i))
+  .inputValidator((i) => z.object({ prefs: notificationPrefsPatchSchema }).strict().parse(i))
   .handler(async ({ data, context }) => {
     const { userId } = context;
+    await notificationWorkspace(context.supabase, userId, true);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await scopeNotifications(
-      supabaseAdmin.from("profiles").update({ notification_preferences: data.prefs }),
-      userId,
-      "id",
+    // Older clients send only seven categories. Merge over the current server value,
+    // retaining future JSON fields. Compare-and-swap prevents concurrent saves losing them.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const current = await scopeNotifications(
+        supabaseAdmin.from("profiles").select("notification_preferences"),
+        userId,
+        "id",
+      ).maybeSingle();
+      if (current.error) throw new Error(current.error.message);
+      if (!current.data) throw new Error("Perfil não encontrado para salvar preferências.");
+      const stored = current.data.notification_preferences;
+      let update = scopeNotifications(
+        supabaseAdmin.from("profiles").update({
+          notification_preferences: applyNotificationPrefsPatch(stored, data.prefs) as Json,
+        }),
+        userId,
+        "id",
+      );
+      // Column is jsonb NOT NULL; JavaScript null represents JSON null, not SQL NULL.
+      update = update.eq("notification_preferences", JSON.stringify(stored));
+      const saved = await update.select("id").maybeSingle();
+      if (saved.error) throw new Error(saved.error.message);
+      if (saved.data) return { ok: true };
+    }
+    throw new Error(
+      "As preferências foram alteradas em outra sessão. Recarregue e tente novamente.",
     );
-    if (error) throw new Error(error.message);
-    return { ok: true };
   });
 
 // ============ Activity event → notifications + email ============
@@ -336,10 +340,7 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
           user_id: t.userId,
           type: t.category,
           title,
-          body: snippet || null,
-          link: link.link,
-          entity: link.entity,
-          entity_id: link.entity_id,
+          ...activityNotificationContent(a.id, a.workspace_id),
         });
       }
       if (channel.email) {
@@ -453,10 +454,6 @@ export const notifyActivityCommentEvent = createServerFn({ method: "POST" })
       .maybeSingle();
     const authorName = authorProf?.full_name ?? "Alguém";
 
-    const link = resolveLink(a);
-    const snippet = snippetFromHtml(savedComment.body ?? "");
-    const activityLabel = snippetFromHtml(a.subject ?? a.body ?? "", 80);
-
     // Diff mentions vs previous (edits only notify new mentions)
     const prev = new Set(data.previousMentionIds ?? []);
     const newMentions = (savedComment.mentions ?? []).filter(
@@ -538,16 +535,13 @@ export const notifyActivityCommentEvent = createServerFn({ method: "POST" })
       const title =
         t.category === "mention"
           ? `${authorName} mencionou você em um comentário`
-          : `${authorName} comentou em ${activityLabel || "uma atividade"}`;
+          : `${authorName} comentou em uma atividade`;
       inappRows.push({
         owner_id: a.workspace_id,
         user_id: t.userId,
         type: t.category,
         title,
-        body: snippet || null,
-        link: link.link,
-        entity: link.entity,
-        entity_id: link.entity_id,
+        ...activityNotificationContent(a.id, a.workspace_id, true),
       });
     }
 

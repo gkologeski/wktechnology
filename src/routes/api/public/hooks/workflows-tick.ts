@@ -1,3 +1,4 @@
+import { tickNotificationDeliveries } from "@/lib/notifications/delivery-worker.server";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
@@ -19,20 +20,26 @@ export const Route = createFileRoute("/api/public/hooks/workflows-tick")({
               "[view-as] Contas de teste desativadas aguardando revisão:",
               cleanup.blocked,
             );
-          const [workflows, handoffs] = await Promise.allSettled([
+          const [workflows, handoffs, notifications] = await Promise.allSettled([
             tickWorkflows(supabaseAdmin, 50),
             workRpc<Record<string, number>>(supabaseAdmin, "contract_handoff_tick", {
               p_limit: 30,
             }),
+            tickNotificationDeliveries(supabaseAdmin, 20),
           ]);
-          if (workflows.status === "rejected" || handoffs.status === "rejected")
+          if (
+            workflows.status === "rejected" ||
+            handoffs.status === "rejected" ||
+            notifications.status === "rejected"
+          )
             throw new Error(
               "Falha em um dos processamentos de workflow/encaminhamento. As filas permanecem para nova tentativa.",
             );
-          return { ...workflows.value, contract_handoffs: handoffs.value } as unknown as Record<
-            string,
-            unknown
-          >;
+          return {
+            ...workflows.value,
+            contract_handoffs: handoffs.value,
+            notifications: notifications.value,
+          } as unknown as Record<string, unknown>;
         });
         if (run.status === "error") {
           return Response.json({ ok: false, error: run.error }, { status: 500 });

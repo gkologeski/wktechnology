@@ -8,7 +8,7 @@ route_pattern: /people/$id
 min_permission: techpeople.documents.view.own
 audience: internal
 sort_order: 127
-version: 1
+version: 2
 is_published: true
 ---
 # Adicionar e consultar documentos na ficha
@@ -43,3 +43,9 @@ A tela informa "Documento adicionado" ou "Documento atualizado" e recarrega a li
 ## Relacionados
 - [Usar a ficha da pessoa](/ajuda/people/usar-ficha-pessoa)
 - [Permissões do TechPeople](/ajuda/people/permissoes)
+
+## Documento próximo do vencimento
+
+No Workflow, este evento admite antecedência de 1 a 365 dias, inicialmente 30 no rascunho. A validade é uma data civil em São Paulo; a janela inclui o dia do prazo e exclui documentos sem validade, vencidos ou de pessoa arquivada. Um status antigo não substitui a data atual.
+
+O link do aviso abre a ficha na aba **Documentos**, confere acesso atual e destaca o documento exato. A abertura não visualiza nem baixa o arquivo, não altera a validade e não renova o documento. Ler, editar, excluir e abrir arquivo continuam exigindo suas permissões próprias. Durante revalidação, um formulário já aberto preserva os campos na mesma identidade com a superfície oculta e bloqueada; em erro ou revogação, o conteúdo anterior deixa de ser exibido. Avisos e históricos não carregam número do documento, notas privadas, arquivo ou URL de download.

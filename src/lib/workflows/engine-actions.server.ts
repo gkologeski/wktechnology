@@ -1,3 +1,5 @@
+import { notificationSchedulingActionProblem } from "@/lib/notifications/scheduling-types";
+import { notificationEventConfigurationProblem } from "./notification-events";
 import { authorizeWorkflowStep, sanitizeWorkflowSnapshot } from "./engine/authorization.server";
 // Execução das ações de workflow (runActions).
 // O controle de fluxo vive em engine/actions-control.server.ts e cada grupo de
@@ -46,9 +48,24 @@ export async function runActions(
   startIndex = 0,
   pathPrefix = "",
 ): Promise<RunResult> {
-  ctx.after = sanitizeWorkflowSnapshot(ctx.after);
-  ctx.before = sanitizeWorkflowSnapshot(ctx.before);
+  ctx.after = sanitizeWorkflowSnapshot(ctx.after, ctx.entity, ctx.notificationEventKey);
+  ctx.before = sanitizeWorkflowSnapshot(ctx.before, ctx.entity, ctx.notificationEventKey);
   if (ctx.vars) ctx.vars = sanitizeWorkflowSnapshot(ctx.vars);
+  const configurationProblem =
+    notificationSchedulingActionProblem(ctx.notificationEventKey, actions) ??
+    notificationEventConfigurationProblem(ctx.notificationEventKey, actions);
+  if (configurationProblem)
+    return {
+      log: [
+        {
+          at: new Date().toISOString(),
+          ok: false,
+          action: "notification_event_check",
+          error: configurationProblem,
+        },
+      ],
+      hadError: true,
+    };
   const rawLog: LogStep[] = [];
   let currentStep = -1;
   // Registra a saída de cada passo em `ctx.vars.steps.N`, permitindo que
@@ -123,7 +140,13 @@ export async function runActions(
       ? await guardedDelivery(supabase, action, ctx, stepPath, () =>
           runAction(supabase, action, ctx, true),
         )
-      : await runAction(supabase, action, ctx);
+      : await runAction(
+          supabase,
+          action,
+          ["send_notification", "send_slack"].includes(action.type)
+            ? { ...ctx, notificationStepKey: stepPath }
+            : ctx,
+        );
     const step = annotate(raw);
     if (step.suspend_until) {
       // Repete este mesmo passo depois (horário, cota ou nova tentativa).

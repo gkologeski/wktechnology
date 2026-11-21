@@ -299,7 +299,7 @@ afterAll(async () => {
   if (db) await db.end();
   if (started && useNative)
     native("pg_ctl", ["-D", join(root, "data"), "-m", "fast", "-w", "stop"]);
-  if (started && !useNative) dockerRun("rm", "-f", container);
+  if (started && !useNative) dockerRun("rm", "-f", "-v", container);
   if (root) rmSync(root, { recursive: true, force: true });
 });
 

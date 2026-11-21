@@ -8,7 +8,7 @@ route_pattern: /contracts/drafts/$id
 min_permission: techcontracts.contract_drafts.view.workspace
 audience: internal
 sort_order: 40
-version: 3
+version: 4
 is_published: true
 ---
 # Revisar e aprovar a minuta de contrato
@@ -50,3 +50,11 @@ Depois da aprovação jurídica, quem tem a permissão **"Dispensar aceite do cl
 2. Escreva o motivo (mínimo de 10 caracteres) e confirme.
 
 A minuta passa a contar como aceita, o negócio vai para "Contrato em elaboração" e o histórico registra quem dispensou, quando e por quê. A aprovação jurídica não pode ser dispensada. A permissão não é dada automaticamente a nenhum cargo: o administrador libera em Configurações › Permissões.
+
+## Acompanhar pela central de notificações
+
+Em **Central de notificações > Regras**, um membro com permissão de Workflows pode configurar **Minuta aceita**, usando o negócio vinculado como origem do Workflow. Esse evento exige a resposta real do cliente à minuta enviada; a dispensa administrativa de aceite não o emite. A seleção abre um rascunho desativado; não publica a regra, não envia avisos nem substitui o fluxo jurídico. Revise os destinatários e as regras existentes para evitar configurar avisos adicionais com o mesmo objetivo.
+
+Os avisos e encaminhamentos que já pertencem à revisão jurídica permanecem com suas regras. Um aviso da central não aprova a minuta, não dispensa aceite, não cria outro contrato e não conclui a tarefa vinculada. O destinatário precisa continuar ativo no workspace e ter acesso atual à origem; abrir a minuta conserva suas permissões próprias.
+
+Consulte [Usar a central de notificações](/ajuda/core/usar-central-de-notificacoes) para preferências por evento, canais e histórico de entregas.

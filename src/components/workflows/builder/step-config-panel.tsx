@@ -74,17 +74,20 @@ import {
 } from "./step-forms/data-forms";
 import { SendSlackForm, SendTeamsForm } from "./step-forms/messaging-forms";
 import { ApprovalStepForm } from "./step-forms/approval-form";
+import { NotificationForm } from "./step-forms/notification-form";
 export function StepConfigPanel({
   action,
   entity,
   entityFields,
   priorFields = [],
+  notificationEventKey,
   onChange,
 }: {
   action: WorkflowAction;
   entity: WorkflowEntity;
   entityFields: FieldOpt[];
   priorFields?: FieldOpt[];
+  notificationEventKey?: string;
   onChange: (a: WorkflowAction) => void;
 }) {
   return (
@@ -99,6 +102,7 @@ export function StepConfigPanel({
         entity={entity}
         entityFields={entityFields}
         priorFields={priorFields}
+        notificationEventKey={notificationEventKey}
         onChange={onChange}
       />
     </div>
@@ -110,12 +114,14 @@ function StepConfigForm({
   entity,
   entityFields,
   priorFields = [],
+  notificationEventKey,
   onChange,
 }: {
   action: WorkflowAction;
   entity: WorkflowEntity;
   entityFields: FieldOpt[];
   priorFields?: FieldOpt[];
+  notificationEventKey?: string;
   onChange: (a: WorkflowAction) => void;
 }) {
   switch (action.type) {
@@ -218,26 +224,12 @@ function StepConfigForm({
       );
     case "send_notification":
       return (
-        <div className="space-y-2">
-          <TokenInput
-            value={action.title}
-            onValueChange={(v) => onChange({ ...action, title: v })}
-            placeholder="Título"
-          />
-          <TokenTextarea
-            value={action.body ?? ""}
-            onValueChange={(v) => onChange({ ...action, body: v })}
-            placeholder="Corpo (opcional)"
-            rows={2}
-          />
-          <div>
-            <Label className="text-xs">Notificar (opcional — padrão: você)</Label>
-            <UserPicker
-              value={action.user_id ?? ""}
-              onChange={(v) => onChange({ ...action, user_id: v })}
-            />
-          </div>
-        </div>
+        <NotificationForm
+          action={action}
+          entity={entity}
+          notificationEventKey={notificationEventKey}
+          onChange={onChange}
+        />
       );
     case "webhook":
       return (

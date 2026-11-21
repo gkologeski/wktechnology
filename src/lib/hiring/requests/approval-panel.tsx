@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { FormSection, ListPageSkeleton } from "@/components/techhire/ui";
 import { usePermissions } from "@/lib/access-control/use-permissions";
+import { useAuth } from "@/lib/auth";
 import { useSharedAction } from "@/lib/access-control/use-shared-action";
 import {
   getPreparationApproval,
@@ -31,6 +32,7 @@ export function ApprovalPanel({
 }) {
   const p = usePermissions(),
     qc = useQueryClient();
+  const { user } = useAuth();
   const canView = useSharedAction(resourceFor(kind), "view");
   const canRequest =
     canView &&
@@ -45,15 +47,25 @@ export function ApprovalPanel({
     [note, setNote] = useState("");
   const pending = useRef<{ fingerprint: string; operation: string } | null>(null);
   const query = useQuery({
-    queryKey: ["preparation-approval", p.workspaceId, kind, row.id, row.revision, offset],
-    enabled: canView,
+    queryKey: ["preparation-approval", user?.id, p.workspaceId, kind, row.id, row.revision, offset],
+    enabled: canView && !!user,
     queryFn: () => get({ data: { kind, id: row.id, offset } }),
     retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
   });
   const mutation = useMutation({
     mutationFn: async (decision: "approved" | "rejected" | "request") => {
       const current = query.data;
-      if (!current || dirty || busy)
+      if (
+        !current ||
+        dirty ||
+        busy ||
+        query.isFetching ||
+        query.isError ||
+        !query.isFetchedAfterMount
+      )
         throw new Error("Salve ou descarte as alterações antes de decidir.");
       const input = { kind, id: row.id, revision: row.revision };
       if (decision === "request") return request({ data: input });
@@ -81,7 +93,8 @@ export function ApprovalPanel({
     },
   });
   if (!canView) return null;
-  if (query.isLoading) return <ListPageSkeleton />;
+  if (query.isLoading || query.isFetching || !query.isFetchedAfterMount)
+    return <ListPageSkeleton />;
   if (query.isError)
     return (
       <div role="alert" className="space-y-2 text-sm">

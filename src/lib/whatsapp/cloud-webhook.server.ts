@@ -83,18 +83,20 @@ export async function handleCloudWebhook(
     return new Response("invalid object", { status: 400 });
   const numbers = await admin
     .from("wa_cloud_numbers")
-    .select("phone_number_id")
+    .select("phone_number_id,available")
     .eq("connection_id", connectionId)
-    .eq("workspace_id", connection.workspace_id)
-    .eq("available", true);
+    .eq("workspace_id", connection.workspace_id);
   if (numbers.error) return new Response("storage error", { status: 500 });
-  const allowed = new Set(numbers.data.map((number: any) => number.phone_number_id));
+  const allowed = new Map<string, boolean>(
+    numbers.data.map((number: any) => [number.phone_number_id, number.available === true]),
+  );
   const changes: any[] = [];
   for (const entry of payload.entry) {
     if (entry.id !== connection.waba_id) return new Response("account mismatch", { status: 403 });
     for (const change of entry.changes ?? []) {
       if (change.field !== "messages") continue;
-      if (!allowed.has(change.value?.metadata?.phone_number_id))
+      const numberId = change.value?.metadata?.phone_number_id;
+      if (!allowed.has(numberId) || (change.value?.messages?.length && !allowed.get(numberId)))
         return new Response("unknown number", { status: 403 });
       changes.push({ entry, change });
     }
@@ -111,6 +113,7 @@ export async function handleCloudWebhook(
       const value = {
         ...change.value,
         _verified_workspace_id: connection.workspace_id,
+        _verified_connection_id: connectionId,
         messages: kind === "messages" ? change.value.messages : [],
         statuses: kind === "statuses" ? change.value.statuses : [],
       };
@@ -139,7 +142,8 @@ export async function handleCloudWebhook(
         .eq("delivery_id", deliveryId)
         .single();
       if (row.error) return new Response("storage error", { status: 500 });
-      if (connection.enabled && !row.data.processed_at) await processEvent(admin, row.data);
+      if ((connection.enabled || kind === "statuses") && !row.data.processed_at)
+        await processEvent(admin, row.data);
     }
   }
   return new Response("ok");

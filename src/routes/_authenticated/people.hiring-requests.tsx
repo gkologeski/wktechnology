@@ -2,7 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PreparationScreen } from "@/lib/hiring/requests/preparation-screen";
 import { z } from "zod";
 export const Route = createFileRoute("/_authenticated/people/hiring-requests")({
-  validateSearch: z.object({ request: z.string().uuid().optional().catch(undefined) }),
+  validateSearch: z.object({
+    request: z.string().uuid().optional().catch(undefined),
+    fiscalDocumentId: z.string().uuid().optional().catch(undefined),
+  }),
   head: () => ({
     meta: [
       { title: "Solicitações de contratação · TechPeople" },
@@ -22,6 +25,12 @@ export const Route = createFileRoute("/_authenticated/people/hiring-requests")({
   component: ProfessionalRequests,
 });
 function ProfessionalRequests() {
-  const { request } = Route.useSearch();
-  return <PreparationScreen kind="professional" requestId={request} />;
+  const { request, fiscalDocumentId } = Route.useSearch();
+  return (
+    <PreparationScreen
+      kind="professional"
+      requestId={request}
+      fiscalDocumentId={fiscalDocumentId}
+    />
+  );
 }

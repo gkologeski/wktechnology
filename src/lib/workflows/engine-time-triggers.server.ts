@@ -4,11 +4,25 @@
 // para não redisparar. Extraído de engine-runtime.server.ts sem mudança de
 // comportamento.
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { WorkflowEntity, WorkflowTrigger } from "./types";
+import { z } from "zod";
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { isWorkflowReadonlySource, type WorkflowEntity, type WorkflowTrigger } from "./types";
+import { sanitizeWorkflowSnapshot } from "./engine/authorization.server";
 import { evalConditions } from "./engine-shared.server";
 import { tickWorkflows } from "./engine-runtime.server";
 
 export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 100) {
+  const businessLimit = Math.min(200, z.number().int().min(1).parse(limitPerWf));
+  const schedules = z
+    .object({
+      digests_queued: z.number().int().min(0),
+      followups_queued: z.number().int().min(0),
+      suppressed: z.number().int().min(0),
+    })
+    .parse(await workRpc(supabase, "notification_schedule_tick", { p_limit: businessLimit }));
+  const business = z
+    .object({ enqueued: z.number().int().min(0) })
+    .parse(await workRpc(supabase, "notification_business_due_tick", { p_limit: businessLimit }));
   const { data: workflows, error } = await supabase
     .from("workflows")
     .select("id, workspace_id, owner_id, entity, trigger")
@@ -16,7 +30,7 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
     .eq("status", "published");
   if (error) throw new Error(error.message);
 
-  let enqueued = 0;
+  let enqueued = business.enqueued;
   const wfResults: Array<{ workflow_id: string; matched: number; enqueued: number }> = [];
   for (const wf of (workflows ?? []) as Array<{
     id: string;
@@ -27,6 +41,8 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
   }>) {
     if (!wf.workspace_id) throw new Error("Workflow sem workspace de origem.");
     const trig = wf.trigger ?? ({} as WorkflowTrigger);
+    // Named deadline events are minted and deduplicated by the private SQL producer.
+    if (trig.notification_event || isWorkflowReadonlySource(wf.entity)) continue;
     const tb = trig.time_based;
     if (!tb) continue;
     const mult = tb.unit === "minutes" ? 60_000 : tb.unit === "hours" ? 3_600_000 : 86_400_000;
@@ -55,7 +71,10 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
     }
 
     let localEnqueued = 0;
-    const rows = (records ?? []) as Array<Record<string, unknown>>;
+    const rows = sanitizeWorkflowSnapshot(
+      (records ?? []) as Array<Record<string, unknown>>,
+      wf.entity,
+    );
     for (const rec of rows) {
       // Aplica filtros do trigger + do time_based
       const filters = [...(trig.filters ?? []), ...(tb.filters ?? [])];
@@ -102,5 +121,5 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
   // Processa imediatamente os eventos gerados
   const tickRes =
     enqueued > 0 ? await tickWorkflows(supabase, Math.min(enqueued, 200)) : { processed: 0 };
-  return { enqueued, processed: tickRes.processed, workflows: wfResults };
+  return { enqueued, processed: tickRes.processed, workflows: wfResults, schedules };
 }

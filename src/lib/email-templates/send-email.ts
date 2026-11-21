@@ -24,6 +24,10 @@ export interface SendTemplateEmailOptions {
   /** Dedupes retries of the same logical send; defaults to a random UUID (no dedupe). */
   idempotencyKey?: string;
   replyTo?: string;
+  /** Invoked after both renders and subject resolution, immediately before the provider call. */
+  beforeSend?: () => Promise<void>;
+  /** Workers require an explicit acceptance body; legacy callers preserve their existing contract. */
+  requireProviderAcceptance?: boolean;
 }
 
 /**
@@ -65,7 +69,8 @@ export async function sendTemplateEmail(
     typeof template.subject === "function" ? template.subject(templateData) : template.subject;
 
   try {
-    await sendLovableEmail(
+    await authorizeTemplateEmailPost(options.beforeSend);
+    const response = await sendLovableEmail(
       {
         to: recipient,
         from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
@@ -80,6 +85,8 @@ export async function sendTemplateEmail(
       },
       { apiKey, sendUrl: process.env["LOVABLE_SEND_URL"] },
     );
+    if (options.requireProviderAcceptance && response?.success !== true)
+      throw new Error("Não foi possível confirmar a aceitação pelo provedor de e-mail.");
   } catch (error) {
     if (error instanceof EmailAPIError && error.code === "recipient_suppressed") {
       return { sent: false, reason: "recipient_suppressed" };
@@ -88,4 +95,9 @@ export async function sendTemplateEmail(
   }
 
   return { sent: true };
+}
+
+/** Optional caller-owned authorization, deliberately after rendering and before provider I/O. */
+async function authorizeTemplateEmailPost(beforeSend?: () => Promise<void>) {
+  if (beforeSend) await beforeSend();
 }

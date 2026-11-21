@@ -2,11 +2,10 @@ import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 // Release 16 — Slack integration server functions.
 // Modelo simplificado: usuário cola a Webhook URL (Incoming Webhook do Slack).
-// O canal alvo é definido na própria URL. Para roteamento por evento, criamos
-// `slack_event_routes` que sobrescrevem o canal default por tipo de evento.
+// O canal é fixo na URL. Rotas antigas são preservadas para consulta; envios
+// coletivos usam exclusivamente o ledger e o modelo protegido da NOTIFICA-CENTRAL.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 
 export const SLACK_EVENT_TYPES = [
@@ -26,7 +25,7 @@ export const getSlackIntegration = createServerFn({ method: "GET" })
   .middleware([requireSalesPermission("system.integrations", "view")])
   .handler(async ({ context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const [{ data: integ }, { data: routes }] = await Promise.all([
+    const [integrationResult, routesResult] = await Promise.all([
       context.supabase
         .from("slack_integrations")
         .select(
@@ -40,7 +39,9 @@ export const getSlackIntegration = createServerFn({ method: "GET" })
         .eq("workspace_id", workspaceId)
         .order("event_type"),
     ]);
-    return { integration: integ ?? null, routes: routes ?? [] };
+    if (integrationResult.error || routesResult.error)
+      throw new Error("Não foi possível consultar a integração Slack.");
+    return { integration: integrationResult.data ?? null, routes: routesResult.data ?? [] };
   });
 
 export const saveSlackIntegration = createServerFn({ method: "POST" })
@@ -48,7 +49,13 @@ export const saveSlackIntegration = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z
       .object({
-        webhook_url: z.string().url(),
+        webhook_url: z
+          .string()
+          .max(500)
+          .regex(
+            /^https:\/\/hooks\.slack\.com\/services\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+$/,
+            "Use uma URL oficial de Incoming Webhook do Slack, sem parâmetros.",
+          ),
         team_name: z.string().max(120).optional(),
         default_channel_name: z.string().max(120).optional(),
       })
@@ -68,7 +75,11 @@ export const deleteSlackIntegration = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("system.integrations", "delete")])
   .handler(async ({ context }) => {
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    await context.supabase.from("slack_event_routes").delete().eq("workspace_id", workspaceId);
+    const routes = await context.supabase
+      .from("slack_event_routes")
+      .delete()
+      .eq("workspace_id", workspaceId);
+    if (routes.error) throw new Error("Não foi possível remover as rotas antigas do Slack.");
     const { error } = await context.supabase
       .from("slack_integrations")
       .delete()
@@ -139,29 +150,15 @@ export const deleteSlackRoute = createServerFn({ method: "POST" })
 export const sendSlackTest = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("system.integrations", "manage")])
   .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);
-    const { data: visible, error: visibleError } = await context.supabase
+    const { data: visible, error } = await context.supabase
       .from("slack_integrations")
       .select("id")
       .eq("workspace_id", workspaceId)
       .maybeSingle();
-    if (visibleError || !visible) throw new Error("Integração indisponível.");
+    if (error || !visible) throw new Error("Integração indisponível.");
     await assertSalesRecord(context.supabase, "slack_integrations", visible.id, "manage");
-    const { data: si } = await supabaseAdmin
-      .from("slack_integrations")
-      .select("access_token")
-      .eq("id", visible.id)
-      .eq("workspace_id", workspaceId)
-      .maybeSingle();
-    if (!si?.access_token) throw new Error("Webhook URL não configurado");
-    const r = await fetch(si.access_token, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        text: "✅ *Teste do CRM*: integração Slack ativa.",
-      }),
-    });
-    if (!r.ok) throw new Error(`Slack respondeu ${r.status}`);
-    return { ok: true };
+    // Configuration-only: no credentials are read and no untracked POST is allowed.
+    // A real acceptance is recorded only by the guarded workflow worker.
+    return { ok: true, configurationOnly: true };
   });

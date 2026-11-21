@@ -2738,6 +2738,83 @@
       "when": 1795047517000,
       "tag": "0390_hiring_origin_context",
       "breakpoints": true
+    },
+    {
+      "idx": 391,
+      "version": "7",
+      "when": 1795132800000,
+      "tag": "0391_notification_recipients",
+      "breakpoints": true
+    },
+    {
+      "idx": 392,
+      "version": "7",
+      "when": 1795140000000,
+      "tag": "0392_notification_center",
+      "breakpoints": true
+    },
+    {
+      "idx": 393,
+      "version": "7",
+      "when": 1795150000000,
+      "tag": "0393_notification_deliveries",
+      "breakpoints": true
+    },
+    {
+      "idx": 394,
+      "version": "7",
+      "when": 1795160000000,
+      "tag": "0394_notification_center_live",
+      "breakpoints": true
+    },
+    {
+      "idx": 395,
+      "version": "7",
+      "when": 1795185000000,
+      "tag": "0395_notification_slack",
+      "breakpoints": true
+    },
+    {
+      "idx": 396,
+      "version": "7",
+      "when": 1795206000000,
+      "tag": "0396_notification_whatsapp_guardrails",
+      "breakpoints": true
+    },
+    {
+      "idx": 397,
+      "version": "7",
+      "when": 1795212000000,
+      "tag": "0397_notification_sales_contracts",
+      "breakpoints": true
+    },
+    {
+      "idx": 398,
+      "version": "7",
+      "when": 1795212001000,
+      "tag": "0398_notification_projects",
+      "breakpoints": true
+    },
+    {
+      "idx": 399,
+      "version": "7",
+      "when": 1795212002000,
+      "tag": "0399_notification_hire_people",
+      "breakpoints": true
+    },
+    {
+      "idx": 400,
+      "version": "7",
+      "when": 1795212003000,
+      "tag": "0400_notification_finance",
+      "breakpoints": true
+    },
+    {
+      "idx": 401,
+      "version": "7",
+      "when": 1795212004000,
+      "tag": "0401_notification_scheduling",
+      "breakpoints": true
     }
   ]
 }

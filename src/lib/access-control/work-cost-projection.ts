@@ -13,6 +13,32 @@ const privateFields = {
   projects: ["planned_cost"],
   project_members: ["cost_rate_hour", "bill_rate_hour"],
 } as const;
+// Privileged workflow readers use the same project boundary, without hydrating
+// confidential values or granting financial access to their recipients.
+export const WORK_COST_PUBLIC_COLUMNS = safe;
+export const WORK_COST_PRIVATE_COLUMNS = privateFields;
+/** A privileged project snapshot must not bypass the separate financial projection. */
+export function publicProjectSnapshot<T>(value: T, table?: string): T {
+  if (table !== "projects" || !value || typeof value !== "object" || Array.isArray(value))
+    return value;
+  return Object.fromEntries(
+    Object.entries(value).filter(([key]) => !privateFields.projects.some((field) => field === key)),
+  ) as T;
+}
+/** Delegate financial field access to the canonical RPC using the user's client.
+ * The RPC rechecks active workspace, row scope and financial permissions. */
+async function loadWorkCostProjection(
+  db: SupabaseClient<Database>,
+  resource: string,
+  ids: string[],
+) {
+  return (
+    db.rpc as unknown as (
+      name: string,
+      args: Record<string, unknown>,
+    ) => Promise<{ data: Array<Record<string, unknown>> | null; error: unknown }>
+  ).call(db, "work_cost_projection", { r: resource, ids });
+}
 /** User-client query adapter. Raw cost columns are revoked in Postgres. Hydration
  * uses a batched RPC that independently checks active tenant, row scope and cost
  * permission. It never applies to privileged background/service clients. */
@@ -59,20 +85,15 @@ export function workCostTable<T extends keyof typeof safe>(db: SupabaseClient<Da
                   .map((r: Record<string, unknown>) => r.id)
                   .filter((id: unknown): id is string => typeof id === "string");
                 if (!ids.length) return result;
-                const { data, error } = await (
-                  db.rpc as unknown as (
-                    name: string,
-                    args: Record<string, unknown>,
-                  ) => Promise<{ data: Array<Record<string, unknown>> | null; error: unknown }>
-                )("work_cost_projection", {
-                  r:
-                    table === "projects"
-                      ? "techprojects.projects"
-                      : table === "contracts"
-                        ? "techcontracts.contracts"
-                        : "techprojects.members",
+                const { data, error } = await loadWorkCostProjection(
+                  db,
+                  table === "projects"
+                    ? "techprojects.projects"
+                    : table === "contracts"
+                      ? "techcontracts.contracts"
+                      : "techprojects.members",
                   ids,
-                });
+                );
                 if (error) return { ...result, data: null, error };
                 const byId = new Map((data ?? []).map((r) => [r.id, r]));
                 const rows = list.map((row: Record<string, unknown>) => {

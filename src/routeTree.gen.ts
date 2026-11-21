@@ -45,6 +45,7 @@ import { Route as AuthenticatedMatchScoresRouteImport } from './routes/_authenti
 import { Route as AuthenticatedMeetingsRouteImport } from './routes/_authenticated/meetings'
 import { Route as AuthenticatedMyBugReportsRouteImport } from './routes/_authenticated/my-bug-reports'
 import { Route as AuthenticatedNotesRouteImport } from './routes/_authenticated/notes'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedProposalsRouteImport } from './routes/_authenticated/proposals'
 import { Route as AuthenticatedProspectingRouteImport } from './routes/_authenticated/prospecting'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
@@ -635,6 +636,12 @@ const AuthenticatedNotesRoute = AuthenticatedNotesRouteImport.update({
   path: '/notes',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedProposalsRoute = AuthenticatedProposalsRouteImport.update({
   id: '/proposals',
   path: '/proposals',
@@ -2993,6 +3000,7 @@ export interface FileRoutesByFullPath {
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/proposals': typeof AuthenticatedProposalsRouteWithChildren
   '/prospecting': typeof AuthenticatedProspectingRouteWithChildren
   '/reports': typeof AuthenticatedReportsRoute
@@ -3430,6 +3438,7 @@ export interface FileRoutesByTo {
   '/meetings': typeof AuthenticatedMeetingsRoute
   '/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/notes': typeof AuthenticatedNotesRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/surveys': typeof AuthenticatedSurveysRoute
   '/tasks': typeof AuthenticatedTasksRouteWithChildren
@@ -3867,6 +3876,7 @@ export interface FileRoutesById {
   '/_authenticated/meetings': typeof AuthenticatedMeetingsRoute
   '/_authenticated/my-bug-reports': typeof AuthenticatedMyBugReportsRoute
   '/_authenticated/notes': typeof AuthenticatedNotesRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/proposals': typeof AuthenticatedProposalsRouteWithChildren
   '/_authenticated/prospecting': typeof AuthenticatedProspectingRouteWithChildren
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
@@ -4308,6 +4318,7 @@ export interface FileRouteTypes {
     | '/meetings'
     | '/my-bug-reports'
     | '/notes'
+    | '/notifications'
     | '/proposals'
     | '/prospecting'
     | '/reports'
@@ -4745,6 +4756,7 @@ export interface FileRouteTypes {
     | '/meetings'
     | '/my-bug-reports'
     | '/notes'
+    | '/notifications'
     | '/reports'
     | '/surveys'
     | '/tasks'
@@ -5181,6 +5193,7 @@ export interface FileRouteTypes {
     | '/_authenticated/meetings'
     | '/_authenticated/my-bug-reports'
     | '/_authenticated/notes'
+    | '/_authenticated/notifications'
     | '/_authenticated/proposals'
     | '/_authenticated/prospecting'
     | '/_authenticated/reports'
@@ -5980,6 +5993,13 @@ declare module '@tanstack/react-router' {
       path: '/notes'
       fullPath: '/notes'
       preLoaderRoute: typeof AuthenticatedNotesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/proposals': {
@@ -9304,6 +9324,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedMeetingsRoute: typeof AuthenticatedMeetingsRoute
   AuthenticatedMyBugReportsRoute: typeof AuthenticatedMyBugReportsRoute
   AuthenticatedNotesRoute: typeof AuthenticatedNotesRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedProposalsRoute: typeof AuthenticatedProposalsRouteWithChildren
   AuthenticatedProspectingRoute: typeof AuthenticatedProspectingRouteWithChildren
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
@@ -9473,6 +9494,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedMeetingsRoute: AuthenticatedMeetingsRoute,
   AuthenticatedMyBugReportsRoute: AuthenticatedMyBugReportsRoute,
   AuthenticatedNotesRoute: AuthenticatedNotesRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedProposalsRoute: AuthenticatedProposalsRouteWithChildren,
   AuthenticatedProspectingRoute: AuthenticatedProspectingRouteWithChildren,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,

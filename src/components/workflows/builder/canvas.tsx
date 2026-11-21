@@ -46,6 +46,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { confirmDialog } from "@/components/ui/confirm-dialog";
+import { workflowNotificationTriggerLabel } from "@/lib/workflows/notification-events";
 
 // ============================================================================
 // Canvas primitives
@@ -81,8 +82,14 @@ export function TriggerCard({
             Gatilho de entrada
           </p>
           <p className="text-sm font-medium truncate">
-            {ENTITY_LABELS[entity]} · {EVENT_LABELS[trigger.event]}
+            {ENTITY_LABELS[entity]} ·{" "}
+            {workflowNotificationTriggerLabel(trigger) ?? EVENT_LABELS[trigger.event]}
           </p>
+          {trigger.notification_event?.days_before && (
+            <p className="text-xs text-muted-foreground">
+              Antecedência: {trigger.notification_event.days_before} dias
+            </p>
+          )}
         </div>
       </div>
       {(trigger.filters ?? []).length > 0 && (

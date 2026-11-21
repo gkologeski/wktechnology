@@ -11,10 +11,12 @@ export function JobInterviewsPanel({
   apps,
   interviews,
   onSchedule,
+  focusedInterviewId,
 }: {
   apps: App[];
   interviews: JobInterview[];
   onSchedule: (app: App) => void;
+  focusedInterviewId?: string;
 }) {
   const p = usePermissions();
   const canView =
@@ -113,7 +115,11 @@ export function JobInterviewsPanel({
       ) : (
         <div className="rounded-lg border border-border-subtle bg-surface-1 divide-y divide-border-subtle">
           {interviews.map((iv) => (
-            <div key={iv.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
+            <div
+              key={iv.id}
+              aria-current={iv.id === focusedInterviewId ? "true" : undefined}
+              className={`flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm ${iv.id === focusedInterviewId ? "bg-accent" : ""}`}
+            >
               <div className="min-w-0 flex-1">
                 <div className="font-medium text-text-primary truncate">
                   {iv.candidate_name ?? "Candidato"}

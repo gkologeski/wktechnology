@@ -1,3 +1,7 @@
+import type { NotificationDeliveryConfig } from "@/lib/notifications/delivery-types";
+import type { NotificationRecipientRule } from "@/lib/notification-recipients";
+import type { WorkflowNotificationEventSelection } from "./notification-events";
+
 export type WorkflowEntity =
   | "leads"
   | "contacts"
@@ -8,6 +12,7 @@ export type WorkflowEntity =
   | "ats_candidates"
   | "ats_applications"
   | "ats_interviews"
+  | "ats_offers"
   // Cross-módulo (Fase workflows-erp)
   | "projects"
   | "project_tasks"
@@ -22,7 +27,22 @@ export type WorkflowEntity =
   | "subscription_invoices"
   | "customer_invoices"
   // Contratação e desligamento (Fase 4)
-  | "people";
+  | "people"
+  | "people_documents"
+  | "hiring_preparation_requests"
+  | "hiring_fiscal_documents";
+
+/** Named occurrences can read these sources; generic actions cannot mutate them. */
+export const WORKFLOW_READONLY_SOURCE_TABLES = [
+  "ats_offers",
+  "people_documents",
+  "hiring_preparation_requests",
+  "hiring_fiscal_documents",
+] as const;
+
+export function isWorkflowReadonlySource(table: string): boolean {
+  return (WORKFLOW_READONLY_SOURCE_TABLES as readonly string[]).includes(table);
+}
 
 /**
  * Tabelas permitidas em ações genéricas create_record / update_record / delete_record.
@@ -113,6 +133,8 @@ export interface TimeTriggerConfig {
 
 export interface WorkflowTrigger {
   event: WorkflowEventType;
+  /** Canonical business event, proven in the database; separate from generic CRUD triggers. */
+  notification_event?: WorkflowNotificationEventSelection;
   filters?: WorkflowCondition[];
   reenroll?: {
     enabled: boolean;
@@ -173,7 +195,17 @@ export type WorkflowAction =
   | { type: "assign_to"; user_id: string }
   | { type: "rotate_assign"; rule_id: string }
   | { type: "add_to_sequence"; sequence_id: string }
-  | { type: "send_notification"; title: string; body?: string; user_id?: string }
+  | {
+      type: "send_notification";
+      title: string;
+      body?: string;
+      /** Legacy explicit recipient; preserved for saved workflows. */
+      user_id?: string;
+      /** Explicit rules take precedence over the legacy recipient/default. */
+      recipients?: NotificationRecipientRule[];
+      /** Explicit multichannel delivery; absent keeps the legacy in-app-only path. */
+      delivery?: NotificationDeliveryConfig;
+    }
   | { type: "webhook"; url: string; payload?: Record<string, unknown> }
   | { type: "delay"; amount: number; unit: "minutes" | "hours" | "days" }
   | {
@@ -375,9 +407,9 @@ export type WorkflowAction =
     }
   | {
       type: "send_slack";
-      /** ID do canal Slack (C0…). Se vazio, usa default_channel_id da integração. */
+      /** Canal legado preservado; overrides bloqueiam o envio por Incoming Webhook. */
       channel?: string;
-      /** Texto (aceita tokens {{field}} / {{vars.X}}). */
+      /** Texto legado preservado para revisão; transporte usa modelo neutro protegido. */
       text: string;
     }
   | {
@@ -527,6 +559,7 @@ export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
   ats_candidates: "Candidatos (ATS)",
   ats_applications: "Aplicações (ATS)",
   ats_interviews: "Entrevistas (ATS)",
+  ats_offers: "Ofertas (ATS)",
   projects: "Projetos",
   project_tasks: "Tarefas de projeto",
   project_milestones: "Marcos de projeto",
@@ -540,6 +573,9 @@ export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
   subscription_invoices: "Faturas de assinatura",
   customer_invoices: "Faturas de clientes",
   people: "Pessoas (TechPeople)",
+  people_documents: "Documentos de pessoas",
+  hiring_preparation_requests: "Solicitações profissionais de preparação",
+  hiring_fiscal_documents: "Documentos fiscais de contratação",
 };
 
 // Grupos por módulo (para dropdown do builder).
@@ -548,15 +584,16 @@ export const ENTITY_GROUPS: Array<{ label: string; entities: WorkflowEntity[] }>
   { label: "Atendimento", entities: ["tickets"] },
   {
     label: "Recrutamento",
-    entities: ["ats_jobs", "ats_candidates", "ats_applications", "ats_interviews"],
+    entities: ["ats_jobs", "ats_candidates", "ats_applications", "ats_interviews", "ats_offers"],
   },
-  { label: "Pessoas", entities: ["people"] },
+  { label: "Pessoas", entities: ["people", "people_documents", "hiring_preparation_requests"] },
   { label: "Projetos", entities: ["projects", "project_tasks", "project_milestones"] },
   { label: "Contratos e catálogo", entities: ["contracts", "services"] },
   {
     label: "Financeiro",
     entities: [
       "financial_entries",
+      "hiring_fiscal_documents",
       "bank_payments",
       "customer_invoices",
       "subscription_invoices",
@@ -813,6 +850,19 @@ export const RECORD_ACTION_MODULES: RecordActionModule[] = [
 
 // Common fields by entity, used in filter dropdowns and set_field actions
 export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
+  ats_offers: [
+    "status",
+    "revision",
+    "approved_revision",
+    "sent_at",
+    "signed_at",
+    "start_date",
+    "application_id",
+    "candidate_id",
+    "job_id",
+  ],
+  people_documents: ["status", "expires_at", "person_id"],
+  hiring_preparation_requests: ["status", "revision", "kind"],
   leads: [
     "first_name",
     "last_name",
@@ -918,19 +968,9 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
     "duration_min",
     "stage_value",
   ],
-  projects: [
-    "name",
-    "status",
-    "priority",
-    "company_id",
-    "deal_id",
-    "start_date",
-    "end_date",
-    "budget",
-    "owner_id",
-  ],
-  project_tasks: ["name", "status_id", "priority", "assignee_id", "project_id", "due_date"],
-  project_milestones: ["name", "status", "due_date", "project_id"],
+  projects: ["name", "status", "company_id", "deal_id", "starts_at", "due_at", "owner_id"],
+  project_tasks: ["title", "status", "priority", "assignee_id", "project_id", "due_at"],
+  project_milestones: ["name", "status", "due_at", "project_id"],
   contracts: [
     "title",
     "status",
@@ -941,6 +981,16 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
     "company_id",
     "deal_id",
     "owner_id",
+  ],
+  hiring_fiscal_documents: [
+    "id",
+    "request_id",
+    "start_id",
+    "kind",
+    "doc_type",
+    "status",
+    "registered_at",
+    "issued_on",
   ],
   financial_entries: [
     "description",

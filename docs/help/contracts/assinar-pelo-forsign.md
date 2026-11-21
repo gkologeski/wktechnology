@@ -8,7 +8,7 @@ route_pattern: /settings/integrations/forsign
 min_permission: techcontracts.forsign_settings.manage.workspace
 audience: internal
 sort_order: 97
-version: 7
+version: 8
 is_published: true
 ---
 # Enviar contratos para assinatura pelo ForSign
@@ -80,3 +80,11 @@ Inclua as cotações, propostas e arquivos em **Contrato > Documento > Anexos do
 
 ## Conferir anexos antes de preparar ou enviar
 Nos formulários **Preparar assinatura no TechERP** e **Enviar pelo ForSign**, o quadro **Documentos incluídos na assinatura** lista os anexos e identifica as cópias congeladas. Use **Baixar prévia do contrato e anexos** para conferir o PDF completo antes de continuar. Abrir o formulário não gera o pacote nem envia convites. A prévia exige as mesmas permissões da ficha do contrato e não consome créditos do ForSign. Se a consulta falhar, use **Tentar novamente**; uma falha não é apresentada como ausência de anexos.
+
+## Avisar a equipe após a conclusão
+
+O evento **Assinatura concluída** está disponível em **Central de notificações > Regras** para um Workflow autorizado de contratos. Ele exige a confirmação válida de conclusão da assinatura da versão atual; data preenchida ou contrato Ativo não bastam. Assinatura parcial e evidência cancelada, revogada ou de outra versão não comprovam a conclusão atual.
+
+Escolher o evento abre um rascunho desativado no construtor existente. Confira destinatários, condições e canais, salve e revise antes de publicar e ativar. A notificação não envia outro convite, não repete a assinatura e não ativa serviço ou cobrança. O preset legado de assinatura e os Workflows existentes são preservados.
+
+Os destinatários precisam estar ativos no mesmo workspace e ter leitura atual da origem. O conteúdo externo é neutro; a evidência e o documento permanecem na ficha autorizada. Consulte [Usar a central de notificações](/ajuda/core/usar-central-de-notificacoes).

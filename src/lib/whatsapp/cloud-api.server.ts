@@ -7,9 +7,33 @@ export class MetaCloudError extends Error {
     public status: number,
     public code?: number,
     public subcode?: number,
+    public retryAfterSeconds?: number,
   ) {
     super(`Meta Cloud API: falha ${status}${code ? ` (código ${code})` : ""}.`);
   }
+}
+
+/** A runtime read or policy refusal that is proven to precede the messages POST. */
+export class MetaCloudPreflightError extends Error {
+  constructor(
+    public reason:
+      | "invalid_template"
+      | "sender_unavailable"
+      | "recipient_suppressed"
+      | "provider_preflight_unavailable"
+      | "provider_rate_limited",
+    public retryAfterSeconds?: number,
+  ) {
+    super(`Meta Cloud API: envio não iniciado (${reason}).`);
+  }
+}
+
+function retryAfterSeconds(value: string | null): number | undefined {
+  if (!value?.trim()) return undefined;
+  const seconds = /^\d+(?:\.\d+)?$/.test(value.trim())
+    ? Number(value)
+    : (Date.parse(value) - Date.now()) / 1000;
+  return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : undefined;
 }
 
 export function metaObjectId(value: string): string {
@@ -40,18 +64,24 @@ export async function cloudRequest(
     redirect: "manual",
     signal: AbortSignal.timeout(20_000),
   });
+  const retryAfter = retryAfterSeconds(response.headers.get("Retry-After"));
   // Workers supports manual redirects; never forward the bearer token elsewhere.
   if (response.status >= 300 && response.status < 400) {
-    throw new MetaCloudError(response.status);
+    throw new MetaCloudError(response.status, undefined, undefined, retryAfter);
   }
   let result: any;
   try {
     result = await response.json();
   } catch {
-    throw new MetaCloudError(response.status);
+    throw new MetaCloudError(response.status, undefined, undefined, retryAfter);
   }
   if (!response.ok || result?.error) {
-    throw new MetaCloudError(response.status, result?.error?.code, result?.error?.error_subcode);
+    throw new MetaCloudError(
+      response.status,
+      result?.error?.code,
+      result?.error?.error_subcode,
+      retryAfter,
+    );
   }
   return result;
 }

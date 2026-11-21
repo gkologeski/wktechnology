@@ -1,3 +1,4 @@
+import { workflowApprovalNotificationContent } from "@/lib/notification-center";
 import { workRpc } from "@/lib/access-control/work-core.server";
 // Controle de fluxo dos workflows: espera, ramificações, escolha por valor,
 // espera até data e aprovação. Extraído de runActions sem mudança de
@@ -414,6 +415,7 @@ export async function runControlAction(
     .from("workflow_approvals")
     .insert({
       owner_id: ctx.ownerId,
+      workspace_id: ctx.workspaceId,
       workflow_id: ctx.workflowId ?? null,
       run_id: ctx.runId ?? null,
       entity: ctx.entity,
@@ -443,10 +445,19 @@ export async function runControlAction(
     owner_id: ctx.ownerId,
     user_id: approver,
     type: "workflow",
-    title: `Aprovação necessária: ${title}`,
-    body: note ?? "Uma execução de workflow aguarda sua decisão.",
-    entity: "workflows",
-    entity_id: ctx.workflowId ?? null,
+    ...workflowApprovalNotificationContent(
+      ctx.workspaceId,
+      ctx.entity,
+      ctx.entityId,
+      ctx.entity === "hiring_fiscal_documents"
+        ? ctx.after?.request_id
+        : ctx.entity === "people_documents"
+          ? ctx.after?.person_id
+          : ctx.entity === "ats_applications" || ctx.entity === "ats_interviews"
+            ? ctx.after?.job_id
+            : ctx.after?.project_id,
+      ctx.entity === "hiring_fiscal_documents" ? ctx.after?.kind : undefined,
+    ),
   } as never);
   logs.push({
     at: new Date().toISOString(),

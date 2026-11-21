@@ -231,7 +231,7 @@ afterAll(async () => {
       stdio: "pipe",
       timeout: 15000,
     });
-  if (started && !useNative) dockerRun("rm", "-f", container);
+  if (started && !useNative) dockerRun("rm", "-f", "-v", container);
   if (root) rmSync(root, { recursive: true, force: true });
 });
 async function reset() {

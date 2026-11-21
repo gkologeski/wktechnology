@@ -52,22 +52,36 @@ export function TaskDetailsSheet({
   open,
   onOpenChange,
   showCoreFields = false,
+  revalidating = false,
 }: {
   task: TaskLite | null;
   open: boolean;
   onOpenChange: (v: boolean) => void;
   /** Status/responsável/prazo/horas/descrição — telas sem status customizado. */
   showCoreFields?: boolean;
+  revalidating?: boolean;
 }) {
   const capability = useWorkRecordCapability("techprojects.tasks", task?.id ?? "");
   if (!task) return null;
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-lg overflow-y-auto"
+        aria-busy={revalidating}
+      >
         <SheetHeader>
-          <SheetTitle className="text-base">{task.title}</SheetTitle>
+          <SheetTitle className="text-base">
+            {revalidating ? "Conferindo acesso à tarefa…" : task.title}
+          </SheetTitle>
         </SheetHeader>
-        <fieldset className="contents" disabled={!capability.can_update}>
+        <fieldset
+          className="contents"
+          disabled={revalidating || !capability.can_update}
+          hidden={revalidating}
+          inert={revalidating || undefined}
+          style={revalidating ? { display: "none" } : undefined}
+        >
           <div className="mt-4 space-y-6">
             {showCoreFields && (
               <>
