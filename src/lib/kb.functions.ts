@@ -1,3 +1,7 @@
+import {
+  assertPublishedKbArticle,
+  publishedCategoryIds,
+} from "@/lib/security/public-capability-guards";
 // Server functions for Knowledge Base.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -356,19 +360,23 @@ export const seedStarterKb = createServerFn({ method: "POST" })
 export const listKbPublic = createServerFn({ method: "GET" }).handler(async () => {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-  // Lista todos os artigos publicados de todos workspaces (KB pública multi-tenant simples)
-  const [cats, arts] = await Promise.all([
-    supabaseAdmin
-      .from("kb_categories")
-      .select("id, name, slug, description, owner_id")
-      .order("position"),
-    supabaseAdmin
-      .from("kb_articles")
-      .select("id, title, slug, excerpt, category_id, published_at, views, owner_id")
-      .eq("published", true)
-      .order("published_at", { ascending: false })
-      .limit(500),
-  ]);
+  // Só artigos publicados; categorias aparecem apenas quando contêm um artigo publicado.
+  const arts = await supabaseAdmin
+    .from("kb_articles")
+    .select("id, title, slug, excerpt, category_id, published_at, views, owner_id")
+    .eq("published", true)
+    .order("published_at", { ascending: false })
+    .limit(500);
+  if (arts.error) throw new Error("Não foi possível carregar a base de conhecimento.");
+  const categoryIds = publishedCategoryIds(arts.data ?? []);
+  const cats = categoryIds.length
+    ? await supabaseAdmin
+        .from("kb_categories")
+        .select("id, name, slug, description, owner_id")
+        .in("id", categoryIds)
+        .order("position")
+    : { data: [], error: null };
+  if (cats.error) throw new Error("Não foi possível carregar a base de conhecimento.");
   return { categories: cats.data ?? [], articles: arts.data ?? [] };
 });
 
@@ -378,17 +386,17 @@ export const getKbArticlePublic = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row, error } = await supabaseAdmin
       .from("kb_articles")
-      .select("id, title, slug, excerpt, body, category_id, published_at, views")
+      .select("id, title, slug, excerpt, body, category_id, published_at, views, published")
       .eq("published", true)
       .eq("slug", data.slug)
       .limit(1)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (!row) throw new Error("Artigo não encontrado.");
+    const article = assertPublishedKbArticle(row);
     // Increment views (best-effort)
     await supabaseAdmin
       .from("kb_articles")
-      .update({ views: (row.views ?? 0) + 1 })
-      .eq("id", row.id);
-    return row;
+      .update({ views: (article.views ?? 0) + 1 })
+      .eq("id", article.id);
+    return article;
   });

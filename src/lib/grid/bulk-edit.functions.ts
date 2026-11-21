@@ -60,7 +60,10 @@ export const bulkUpdateEntity = createServerFn({ method: "POST" })
 
     let payload: Record<string, unknown>;
     try {
-      payload = mirrorAliasColumns(buildBulkPayload(data.values, columnTypes), columnTypes);
+      payload = mirrorAliasColumns(
+        buildBulkPayload(data.values, columnTypes, data.entity),
+        columnTypes,
+      );
     } catch (e) {
       if (e instanceof BulkEditValidationError) {
         return { ok: false as const, message: e.message, requested: data.ids.length, updated: 0 };

@@ -1,5 +1,7 @@
+import { assertAssignableRows } from "@/lib/security/public-capability-guards";
+import { resolveInviteOrigin } from "@/lib/security/invite-origin";
+import { escapeLikePattern } from "@/lib/postgrest-or";
 import { emailSchema } from "@/lib/email-schema";
-import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Server functions para Teams (gerenciar membros do workspace).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -13,29 +15,12 @@ export type TeamRole = z.infer<typeof TeamRole>;
 type ActiveWorkspace = { id: string; created_by: string | null };
 
 /** URL canônica de produção do CRM — usada para links de convite por email. */
-const CANONICAL_APP_URL = CANONICAL_APP_ORIGIN;
 
 /**
  * Resolve o origin para o link do convite. Se vier de um host do Lovable
  * (preview/sandbox/dev), substitui pela URL canônica de produção para que
  * o convidado caia no CRM e não no editor do Lovable.
  */
-function resolveInviteOrigin(origin: string | undefined): string {
-  if (!origin) return CANONICAL_APP_URL;
-  try {
-    const host = new URL(origin).hostname.toLowerCase();
-    if (
-      host.endsWith("lovable.app") ||
-      host.endsWith("lovable.dev") ||
-      host.endsWith("lovableproject.com")
-    ) {
-      return CANONICAL_APP_URL;
-    }
-    return origin.replace(/\/+$/, "");
-  } catch {
-    return CANONICAL_APP_URL;
-  }
-}
 
 export const TEAM_ROLE_LABELS: Record<TeamRole, string> = {
   admin: "Admin",
@@ -122,6 +107,33 @@ async function assertCanManageWorkspace(workspaceId: string, userId: string) {
   if (error) throw new Error(error.message);
   if (!data || data.role !== "admin")
     throw new Error("Apenas admins do workspace podem gerenciar usuários.");
+}
+
+/** Convites só são consumidos para o e-mail da própria conta autenticada. */
+async function ownAuthEmail(userId: string): Promise<string> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
+  return (u?.user?.email ?? "").toLowerCase();
+}
+
+async function assertAssignableIds(
+  table: "job_roles" | "permission_sets",
+  workspaceId: string,
+  ids: string[],
+) {
+  const unique = [...new Set(ids)];
+  if (unique.length === 0) return;
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data, error } = await supabaseAdmin
+    .from(table)
+    .select("id, workspace_id, is_system")
+    .in("id", unique);
+  if (error) throw new Error("Não foi possível validar os cargos selecionados.");
+  assertAssignableRows(
+    (data ?? []) as Array<{ id: string; workspace_id: string | null; is_system: boolean | null }>,
+    workspaceId,
+    unique,
+  );
 }
 
 async function assertTargetMember(workspaceId: string, userId: string) {
@@ -513,18 +525,21 @@ export const completeInviteProfile = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     // 2) Recupera email do auth para casar com convites pendentes
-    const { data: u } = await supabaseAdmin.auth.admin.getUserById(userId);
-    const email = (u?.user?.email ?? "").toLowerCase();
+    const email = await ownAuthEmail(userId);
 
     // 3) Consome convites pendentes em workspace_invites pelo email
     if (email) {
       const { data: invites } = await supabaseAdmin
         .from("workspace_invites")
-        .select("id, workspace_id, role, expires_at, accepted_at")
-        .ilike("email", email)
+        .select("id, workspace_id, role, expires_at, accepted_at, email")
+        .ilike("email", escapeLikePattern(email))
         .is("accepted_at", null);
       const now = Date.now();
-      for (const inv of invites ?? []) {
+      // Curingas são escapados e o e-mail precisa coincidir exatamente (sem padrões).
+      const exact = (invites ?? []).filter(
+        (inv) => String((inv as { email?: string }).email ?? "").toLowerCase() === email,
+      );
+      for (const inv of exact) {
         if (inv.expires_at && new Date(inv.expires_at as string).getTime() < now) continue;
         const { error: mErr } = await supabaseAdmin.from("workspace_members").insert({
           workspace_id: inv.workspace_id,
@@ -829,6 +844,14 @@ export const setMemberJobRoles = createServerFn({ method: "POST" })
     await assertTargetMember(workspace.id, data.member_user_id);
 
     const workspaceOwnerId = workspace.created_by ?? userId;
+
+    // Só cargos/pacotes deste workspace ou de sistema podem ser atribuídos.
+    await assertAssignableIds(
+      "job_roles",
+      workspace.id,
+      [data.primary_role_id, ...data.extra_role_ids].filter((id): id is string => !!id),
+    );
+    await assertAssignableIds("permission_sets", workspace.id, data.extra_set_ids);
 
     // Reconstrói user_job_roles
     const { error: delErr } = await supabaseAdmin

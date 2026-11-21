@@ -99,6 +99,22 @@ export const sendWhatsAppMessage = createServerFn({ method: "POST" })
       data.conversationId ?? null,
     );
 
+    // Destino precisa ser conversa existente ou Contato/Lead visível ao usuário neste workspace.
+    if (!existing) {
+      const { resolveInboxIdentity } = await import("@/lib/inbox/identity-resolution.server");
+      const identity = await resolveInboxIdentity({ supabase, workspaceId, phone: toBare });
+      if (identity.status === "not_found") {
+        return {
+          ok: false as const,
+          code: "RECIPIENT_UNKNOWN" as const,
+          error:
+            "Este número não pertence a nenhum Contato ou Lead que você possa acessar. Cadastre-o antes de enviar.",
+          sid: "",
+          conversationId: "",
+        };
+      }
+    }
+
     if (!isWithinServiceWindow(existing?.lastInboundAt) && !data.templateName) {
       return {
         ok: false as const,

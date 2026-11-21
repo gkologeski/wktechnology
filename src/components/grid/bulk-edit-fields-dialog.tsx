@@ -473,9 +473,9 @@ export function BulkEditFieldsDialog({
   const allFields = useMemo(
     () =>
       dedupeAliasFields(
-        (catalog.data?.fields ?? []).filter((f) => !isBulkEditDeniedColumn(f.name)),
+        (catalog.data?.fields ?? []).filter((f) => !isBulkEditDeniedColumn(f.name, entity)),
       ),
-    [catalog.data],
+    [catalog.data, entity],
   );
 
   const groups = useMemo(() => {

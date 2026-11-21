@@ -3,7 +3,8 @@ import { emailSchema } from "@/lib/email-schema";
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
-import { identityColumns, resolveInboxIdentity } from "@/lib/inbox/identity-resolution.server";
+import { identityColumns } from "@/lib/inbox/identity-resolution.server";
+import { unverifiedVisitorIdentity } from "@/lib/security/public-capability-guards";
 
 const schema = z.object({
   workspace_id: z.string().uuid(),
@@ -23,10 +24,13 @@ const CORS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+/** Pré-voo CORS: sem dados nem efeitos. */
+const widgetSessionPreflight = async () => new Response(null, { status: 204, headers: CORS });
+
 export const Route = createFileRoute("/api/public/widget/session")({
   server: {
     handlers: {
-      OPTIONS: async () => new Response(null, { status: 204, headers: CORS }),
+      OPTIONS: widgetSessionPreflight,
       POST: async ({ request }) => {
         try {
           const raw = await request.json();
@@ -42,7 +46,7 @@ export const Route = createFileRoute("/api/public/widget/session")({
           // Reuse open session for this visitor
           const { data: existing } = await supabaseAdmin
             .from("live_chat_sessions")
-            .select("id, contact_id, lead_id, identity_status")
+            .select("id")
             .eq("owner_id", data.workspace_id)
             .eq("visitor_id", data.visitor_id)
             .eq("status", "open")
@@ -50,28 +54,11 @@ export const Route = createFileRoute("/api/public/widget/session")({
             .limit(1)
             .maybeSingle();
           if (existing) {
-            if (
-              !existing.contact_id &&
-              !existing.lead_id &&
-              existing.identity_status !== "manual"
-            ) {
-              const identity = await resolveInboxIdentity({
-                supabase: supabaseAdmin,
-                workspaceId: data.workspace_id,
-                email: data.visitor_email,
-              });
-              await supabaseAdmin
-                .from("live_chat_sessions")
-                .update(identityColumns(identity))
-                .eq("id", existing.id);
-            }
             return Response.json({ session_id: existing.id }, { headers: CORS });
           }
-          const identity = await resolveInboxIdentity({
-            supabase: supabaseAdmin,
-            workspaceId: data.workspace_id,
-            email: data.visitor_email,
-          });
+          // E-mail informado pelo visitante não é comprovado: nunca vincula a Contato/Lead
+          // automaticamente; a equipe associa manualmente na Inbox.
+          const identity = unverifiedVisitorIdentity();
           const { data: row, error } = await supabaseAdmin
             .from("live_chat_sessions")
             .insert({

@@ -8,6 +8,20 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
 import { PhoneInput, validatePhoneValue } from "@/components/ui/phone-input";
+/** Identificador anônimo do navegador, usado só para contar visitas/conversões uma vez. */
+function lpVisitorId(): string {
+  const key = "lp_visitor_id";
+  try {
+    const stored = window.localStorage.getItem(key);
+    if (stored && /^[A-Za-z0-9_-]{16,100}$/.test(stored)) return stored;
+    const fresh = crypto.randomUUID().replace(/-/g, "");
+    window.localStorage.setItem(key, fresh);
+    return fresh;
+  } catch {
+    return crypto.randomUUID().replace(/-/g, "");
+  }
+}
+
 export const Route = createFileRoute("/lp/$slug")({
   loader: async ({ params }) => getPublishedBySlug({ data: { slug: params.slug } }),
   component: PublicLandingPage,
@@ -62,7 +76,9 @@ function PublicLandingPage() {
 
   useEffect(() => {
     if (!page) return;
-    trackLpEvent({ data: { landing_page_id: page.id, event_type: "view" } }).catch(() => null);
+    trackLpEvent({
+      data: { landing_page_id: page.id, event_type: "view", visitor_id: lpVisitorId() },
+    }).catch(() => null);
   }, [page]);
 
   if (!page) {
@@ -96,7 +112,9 @@ function PublicLandingPage() {
       }
       setPhoneError(null);
     }
-    await trackLpEvent({ data: { landing_page_id: page.id, event_type: "conversion" } });
+    await trackLpEvent({
+      data: { landing_page_id: page.id, event_type: "conversion", visitor_id: lpVisitorId() },
+    }).catch(() => null);
     setSubmitted(true);
   }
 

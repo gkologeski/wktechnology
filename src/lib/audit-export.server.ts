@@ -1,3 +1,4 @@
+import { isAwsPresignedUrl } from "@/lib/security/audit-export-destination";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import { assertSafeWebhookUrl, dohResolver } from "@/lib/webhooks/url-guard";
 // Execução real de uma exportação de audit log. Pode ser chamado pelo cron
@@ -101,6 +102,7 @@ export async function runAuditExport(exportId: string, workspaceId: string) {
     if (rows.length && ex.destination === "webhook") {
       const url = ex.config.url;
       if (!url) throw new Error("webhook url missing");
+      if (!ex.hmac_secret) throw new Error("webhook sem segredo de assinatura");
       const headers: Record<string, string> = { "Content-Type": contentType };
       if (ex.hmac_secret) headers["X-Signature"] = await hmacSha256Hex(ex.hmac_secret, body);
       await assertSafeWebhookUrl(url, dohResolver);
@@ -117,6 +119,7 @@ export async function runAuditExport(exportId: string, workspaceId: string) {
       // S3 upload via signed URL — config: { presigned_url }
       const url = ex.config.presigned_url;
       if (!url) throw new Error("s3 presigned_url missing");
+      if (!isAwsPresignedUrl(url)) throw new Error("s3 presigned_url fora da AWS");
       await assertSafeWebhookUrl(url, dohResolver);
       const res = await fetch(url, {
         redirect: "error",

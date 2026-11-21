@@ -39,6 +39,14 @@ export const upsertAuditExport = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const ws = context.auditExportWorkspaceId;
     await workRpc(supabase, "shared_audit_export_authorize", { a: data.id ? "update" : "create" });
+    const { assertAuditExportDestination } =
+      await import("@/lib/security/audit-export-destination");
+    assertAuditExportDestination(
+      data.destination,
+      data.config,
+      Boolean(data.hmac_secret?.trim()),
+      Boolean(data.id),
+    );
     if (data.destination === "email") {
       const email = normalizeEmailAddress(data.config.email);
       if (!email) throw new Error("E-mail de destino obrigatório.");

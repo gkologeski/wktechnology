@@ -1,3 +1,4 @@
+import { isClosedInterviewStatus } from "@/lib/security/public-capability-guards";
 // Endpoint público para o candidato confirmar horário e/ou enviar
 // respostas em vídeo assíncrono. Usa o token enviado por e-mail.
 import { createFileRoute } from "@tanstack/react-router";
@@ -33,6 +34,8 @@ export const Route = createFileRoute("/api/public/interview/$token")({
         if (row.self_schedule_expires_at && new Date(row.self_schedule_expires_at) < new Date()) {
           return Response.json({ ok: false, error: "expired" }, { status: 410 });
         }
+        if (isClosedInterviewStatus(row.status))
+          return Response.json({ ok: false, error: "closed" }, { status: 410 });
         const [{ data: job }, { data: cand }] = await Promise.all([
           admin.from("ats_jobs").select("title").eq("id", row.job_id).maybeSingle(),
           admin.from("ats_candidates").select("full_name").eq("id", row.candidate_id).maybeSingle(),
@@ -83,13 +86,15 @@ export const Route = createFileRoute("/api/public/interview/$token")({
           const { data: row } = await admin
             .from("ats_interviews")
             .select(
-              "id, owner_id, kind, self_schedule_expires_at, async_questions_snapshot, interview_kit_id",
+              "id, owner_id, kind, status, self_schedule_expires_at, async_questions_snapshot, interview_kit_id",
             )
             .eq("self_schedule_token", token)
             .maybeSingle();
           if (!row) return new Response("not found", { status: 404 });
           if (row.kind !== "async")
             return Response.json({ ok: false, error: "not_async" }, { status: 400 });
+          if (isClosedInterviewStatus(row.status))
+            return Response.json({ ok: false, error: "closed" }, { status: 410 });
           if (row.self_schedule_expires_at && new Date(row.self_schedule_expires_at) < new Date())
             return Response.json({ ok: false, error: "expired" }, { status: 410 });
 

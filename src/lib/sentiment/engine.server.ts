@@ -81,18 +81,18 @@ async function classify(
   }
 }
 
-async function pickPending(limit: number): Promise<Pending[]> {
+async function pickPending(limit: number, workspaceId?: string): Promise<Pending[]> {
   const out: Pending[] = [];
   // WhatsApp inbound recentes
-  const { data: wa } = await supabaseAdmin
+  let waQuery = supabaseAdmin
     .from("whatsapp_messages")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     .select("id, workspace_id, owner_id, body, direction, from_number, created_at" as any)
     .eq("direction", "inbound")
     .not("body", "is", null)
-    .gt("created_at", new Date(Date.now() - 30 * 86400_000).toISOString())
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    .gt("created_at", new Date(Date.now() - 30 * 86400_000).toISOString());
+  if (workspaceId) waQuery = waQuery.eq("workspace_id", workspaceId);
+  const { data: wa } = await waQuery.order("created_at", { ascending: false }).limit(limit);
   const waRows = (wa ?? []) as unknown as Array<{
     id: string;
     owner_id: string;
@@ -138,8 +138,12 @@ async function pickPending(limit: number): Promise<Pending[]> {
   return out.slice(0, limit);
 }
 
-export async function tickSentiment(batch = 20): Promise<{ processed: number; errors: number }> {
-  const pending = await pickPending(batch);
+/** Sem `workspaceId` somente para o cron autenticado; chamadas de usuário sempre restringem ao workspace ativo. */
+export async function tickSentiment(
+  batch = 20,
+  workspaceId?: string,
+): Promise<{ processed: number; errors: number }> {
+  const pending = await pickPending(batch, workspaceId);
   let processed = 0,
     errors = 0;
   for (const p of pending) {

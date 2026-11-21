@@ -1,3 +1,4 @@
+import { sanitizeHtml } from "@/components/rich-html-editor";
 import { WorkAction } from "@/components/work-action";
 import { HrScreenAccess as Order3ScreenAccess } from "@/components/hr-access";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -137,7 +138,10 @@ function ContractTemplateEditorPage() {
     [id, name, description, role, serviceType, body, serviceIds, update, qc],
   );
 
-  const previewHtml = useMemo(() => mergeTemplateBody(body, {}, { keepUnknown: false }), [body]);
+  const previewHtml = useMemo(
+    () => sanitizeHtml(mergeTemplateBody(body, {}, { keepUnknown: false })),
+    [body],
+  );
 
   if (isLoading) {
     return <div className="p-6 text-sm text-muted-foreground">Carregando modelo…</div>;
@@ -402,7 +406,7 @@ function ContractTemplateEditorPage() {
           </DialogHeader>
           <article
             className="prose prose-sm max-w-none dark:prose-invert"
-            // Conteúdo próprio do workspace, produzido no editor do sistema.
+            // HTML do modelo sempre sanitizado antes da prévia.
             dangerouslySetInnerHTML={{ __html: previewHtml }}
           />
         </DialogContent>

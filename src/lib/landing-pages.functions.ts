@@ -1,3 +1,4 @@
+import { publishedLandingStatus, decideLpCount } from "@/lib/security/public-capability-guards";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { recordUpdatePayload } from "@/lib/access-control/record-update-payload";
 import { assertSalesArea, assertSalesRecord } from "@/lib/access-control/sales-core.server";
@@ -111,7 +112,7 @@ export const getPublishedBySlug = createServerFn({ method: "GET" })
     const { data: row } = await (supabaseAdmin.from("landing_pages") as any)
       .select("id,title,description,blocks,theme,seo,slug")
       .eq("slug", data.slug)
-      .eq("status", "published")
+      .eq("status", publishedLandingStatus())
       .maybeSingle();
     return { page: row };
   });
@@ -129,7 +130,11 @@ export const trackLpEvent = createServerFn({ method: "POST" })
       .object({
         landing_page_id: z.string().uuid(),
         event_type: z.enum(["view", "conversion", "click"]),
-        visitor_id: z.string().max(100).optional(),
+        visitor_id: z
+          .string()
+          .min(16)
+          .max(100)
+          .regex(/^[A-Za-z0-9_-]+$/),
         variant_id: z.string().uuid().optional(),
         utm: LpUtmSchema.optional(),
         metadata: LpMetadataSchema.optional(),
@@ -141,16 +146,27 @@ export const trackLpEvent = createServerFn({ method: "POST" })
     const { data: lp } = await (supabaseAdmin.from("landing_pages") as any)
       .select("owner_id,workspace_id")
       .eq("id", data.landing_page_id)
-      .eq("status", "published")
+      .eq("status", publishedLandingStatus())
       .maybeSingle();
     if (!lp) return { ok: false };
+    // Contadores públicos: cada visitante conta uma vez por tipo, e conversão exige visita anterior.
+    const { data: prior } = await (supabaseAdmin.from("landing_page_events") as any)
+      .select("event_type")
+      .eq("landing_page_id", data.landing_page_id)
+      .eq("visitor_id", data.visitor_id)
+      .in("event_type", ["view", data.event_type])
+      .limit(10);
+    const seen = new Set(((prior ?? []) as Array<{ event_type: string }>).map((r) => r.event_type));
+    const decision = decideLpCount(seen, data.event_type);
+    if (decision === "reject") return { ok: false };
+    if (decision === "skip") return { ok: true };
     await (supabaseAdmin.from("landing_page_events") as any).insert({
       owner_id: lp.owner_id,
       workspace_id: lp.workspace_id,
       landing_page_id: data.landing_page_id,
       variant_id: data.variant_id ?? null,
       event_type: data.event_type,
-      visitor_id: data.visitor_id ?? null,
+      visitor_id: data.visitor_id,
       utm: data.utm ?? null,
       metadata: data.metadata ?? {},
     });

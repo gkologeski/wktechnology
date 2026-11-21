@@ -1,3 +1,4 @@
+import { requireWorkspaceContext } from "@/lib/access-control/active-workspace.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -76,8 +77,8 @@ export const sentimentOverview = createServerFn({ method: "POST" })
   });
 
 export const runSentimentTick = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .middleware([requireWorkspaceContext()])
+  .handler(async ({ context }) => {
     const { tickSentiment } = await import("@/lib/sentiment/engine.server");
-    return tickSentiment(20);
+    return tickSentiment(20, context.activeWorkspaceId);
   });

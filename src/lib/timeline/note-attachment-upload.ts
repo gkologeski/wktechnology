@@ -42,6 +42,37 @@ export async function requestNoteUploadPath(
   return path;
 }
 
+/** Tipos exibíveis aceitos; qualquer outro é gravado como binário genérico (só download). */
+const NOTE_ATTACHMENT_TYPES: ReadonlySet<string> = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "application/pdf",
+  "text/plain",
+  "text/csv",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/zip",
+  "audio/mpeg",
+  "audio/ogg",
+  "audio/webm",
+  "video/mp4",
+  "video/webm",
+]);
+
+export function safeNoteAttachmentType(type: string | null | undefined): string {
+  const base = String(type ?? "")
+    .split(";")[0]
+    .trim()
+    .toLowerCase();
+  return NOTE_ATTACHMENT_TYPES.has(base) ? base : "application/octet-stream";
+}
+
 export async function uploadAuthorizedNoteAttachment(
   rpc: UploadPathRpc,
   storage: AttachmentStorage,
@@ -51,7 +82,7 @@ export async function uploadAuthorizedNoteAttachment(
   const path = await requestNoteUploadPath(rpc, userId, input.name);
   const bytes = decodeBase64(input.base64);
   const { error: upErr } = await storage.upload(path, bytes, {
-    contentType: input.type || "application/octet-stream",
+    contentType: safeNoteAttachmentType(input.type),
   });
   if (upErr) {
     throw new Error(`Não foi possível enviar o anexo ${input.name}. Tente novamente.`);

@@ -156,7 +156,13 @@ export const suggestInterviewQuestions = createServerFn({ method: "POST" })
       }
     }
 
-    const focus = data.focus ?? "mixed";
+    const FOCUS_LABEL = {
+      technical: "técnico",
+      behavioral: "comportamental",
+      culture: "cultural",
+      mixed: "misto",
+    } as const;
+    const focus = FOCUS_LABEL[data.focus ?? "mixed"] ?? FOCUS_LABEL.mixed;
     const sys = `Você é um recrutador sênior. Gere 8 perguntas para entrevista (foco: ${focus}) em PT-BR. Devolva JSON: {"questions":[{"category":"...","question":"...","what_to_look_for":"..."}]}. Use APENAS o contexto fornecido. Nunca invente fatos do candidato.`;
     const out = await callAi(
       [

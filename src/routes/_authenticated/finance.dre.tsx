@@ -1,3 +1,4 @@
+import { neutralizeCsvFormula } from "@/lib/export/csv-formula";
 import { authorizeFinanceBusinessExport } from "@/lib/access-control/finance-business.functions";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import { HrScreenAccess } from "@/components/hr-access";
@@ -116,7 +117,7 @@ function DrePage() {
     ]);
     rows.push(["Resultado", "", ...data.totals.result.map(String), String(data.totals.netResult)]);
     const csv = [header, ...rows]
-      .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .map((row) => row.map((c) => `"${neutralizeCsvFormula(c).replace(/"/g, '""')}"`).join(","))
       .join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);

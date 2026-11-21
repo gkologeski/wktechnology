@@ -25,6 +25,7 @@ async function resolveWorkspaceOwner(userId: string): Promise<string> {
     .from("workspace_members")
     .select("workspace_id")
     .eq("user_id", userId)
+    .eq("status", "active")
     .limit(1)
     .maybeSingle();
   if (mem?.workspace_id) {
@@ -36,6 +37,16 @@ async function resolveWorkspaceOwner(userId: string): Promise<string> {
     if (ws?.created_by) return ws.created_by as string;
   }
   return userId; // fallback: o próprio user é o "workspace"
+}
+
+async function assertPlanAdmin(userId: string): Promise<void> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: admin } = await supabaseAdmin
+    .from("platform_admins")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (!admin) throw new Error("Apenas super-admins podem alterar planos.");
 }
 
 function periodMonth(): string {
@@ -183,7 +194,8 @@ export const getMyPlan = createServerFn({ method: "GET" })
 /** Compara todos os planos lado a lado (para a tabela comparativa). */
 export const listPlansWithEntitlements = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await resolveWorkspaceOwner(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: plans } = await supabaseAdmin
       .from("plans")
@@ -223,12 +235,7 @@ export const setWorkspacePlan = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: admin } = await supabaseAdmin
-      .from("platform_admins")
-      .select("user_id")
-      .eq("user_id", context.userId)
-      .maybeSingle();
-    if (!admin) throw new Error("Apenas super-admins podem alterar planos.");
+    await assertPlanAdmin(context.userId);
 
     const { error } = await supabaseAdmin.from("workspace_subscriptions").upsert(
       {
@@ -247,7 +254,8 @@ export const setWorkspacePlan = createServerFn({ method: "POST" })
 export const requestSelfUpgrade = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => z.object({ plan_code: PlanCodeZ }).parse(i))
-  .handler(async () => {
+  .handler(async ({ context }) => {
+    await resolveWorkspaceOwner(context.userId);
     throw new Error(
       "A alteração online de plano ainda não está disponível. Entre em contato com o atendimento.",
     );

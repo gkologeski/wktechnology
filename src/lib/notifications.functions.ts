@@ -170,21 +170,6 @@ export const updateMyNotificationPrefs = createServerFn({ method: "POST" })
 
 // ============ Activity event → notifications + email ============
 
-function snippetFromHtml(html: string | null | undefined, maxLen = 180): string {
-  if (!html) return "";
-  const text = html
-    .replace(/<style[\s\S]*?<\/style>/gi, "")
-    .replace(/<script[\s\S]*?<\/script>/gi, "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/\s+/g, " ")
-    .trim();
-  return text.length > maxLen ? text.slice(0, maxLen) + "…" : text;
-}
-
 function resolveLink(a: {
   related_deal_id?: string | null;
   related_contact_id?: string | null;
@@ -258,7 +243,6 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
     const authorName = authorProf?.full_name ?? "Alguém";
 
     const link = resolveLink(a);
-    const snippet = snippetFromHtml(a.subject ?? a.body ?? "");
 
     type Target = { userId: string; category: NotificationCategory };
     const targets: Target[] = [];
@@ -378,7 +362,7 @@ export const notifyActivityEvent = createServerFn({ method: "POST" })
                 recipientName: job.recipientName,
                 mentionerName: authorName,
                 category: job.category,
-                snippet,
+                // O texto da atividade não sai por e-mail; o destinatário abre o link autenticado.
                 link: fullLink,
               },
             });

@@ -181,7 +181,7 @@ export const retryWebhookDelivery = createServerFn({ method: "POST" })
       .eq("workspace_id", workspaceId);
     if (error) throw new Error(error.message);
     try {
-      await runWebhookDispatch();
+      await runWebhookDispatch(workspaceId);
     } catch {
       /* ignore */
     }
@@ -210,7 +210,9 @@ export const getWebhookSecret = createServerFn({ method: "GET" })
 
 export const runWebhookTick = createServerFn({ method: "POST" })
   .middleware([requireSalesPermission("system.webhooks", "manage")])
-  .handler(async () => {
-    const r = await runWebhookDispatch();
-    return r;
+  .handler(async ({ context }) => {
+    const { userId } = context;
+    const workspaceId = await resolveActiveWorkspace(userId);
+    await assertPermission(context.supabase, userId, workspaceId, WEBHOOK_MANAGE);
+    return runWebhookDispatch(workspaceId);
   });

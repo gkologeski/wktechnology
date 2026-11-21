@@ -1,5 +1,5 @@
+import { resolveInviteOrigin } from "@/lib/security/invite-origin";
 import { emailSchema } from "@/lib/email-schema";
-import { CANONICAL_APP_ORIGIN } from "@/lib/platform-domains";
 // Server functions para o Super-Admin da plataforma (gerencia workspaces e seus admins).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -19,24 +19,6 @@ async function getSupabaseAdmin(): Promise<SupabaseClient<Database>> {
 
 const WsRole = z.enum(["admin", "member"]);
 
-const CANONICAL_APP_URL = CANONICAL_APP_ORIGIN;
-function resolveInviteOrigin(origin: string | undefined): string {
-  if (!origin) return CANONICAL_APP_URL;
-  try {
-    const host = new URL(origin).hostname.toLowerCase();
-    if (
-      host.endsWith("lovable.app") ||
-      host.endsWith("lovable.dev") ||
-      host.endsWith("lovableproject.com")
-    ) {
-      return CANONICAL_APP_URL;
-    }
-    return origin.replace(/\/+$/, "");
-  } catch {
-    return CANONICAL_APP_URL;
-  }
-}
-
 async function assertPlatformAdmin(userId: string) {
   const supabaseAdmin = await getSupabaseAdmin();
   const { data, error } = await supabaseAdmin
@@ -52,13 +34,12 @@ async function assertPlatformAdmin(userId: string) {
 export const amIPlatformAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const supabaseAdmin = await getSupabaseAdmin();
-    const { data } = await supabaseAdmin
-      .from("platform_admins")
-      .select("user_id")
-      .eq("user_id", context.userId)
-      .maybeSingle();
-    return { is_admin: !!data };
+    try {
+      await assertPlatformAdmin(context.userId);
+      return { is_admin: true };
+    } catch {
+      return { is_admin: false };
+    }
   });
 
 /** Lista todos os workspaces da plataforma (somente super-admin). */

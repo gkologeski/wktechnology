@@ -61,9 +61,35 @@ export const BULK_EDIT_DENIED_COLUMNS = new Set<string>([
   "search_vector",
 ]);
 
+/**
+ * Colunas de segurança, integração, assinatura, aprovação e cálculo nunca entram
+ * em edição em massa, mesmo que existam no catálogo da tabela.
+ */
+const BULK_EDIT_SENSITIVE_PATTERN =
+  /(^|_)(token|secret|hash|password|signature|signed|signer|esign|forsign|approval|approved|approver|paid|payment_id|provider|external|sync|synced|import|imported|legacy|merged|raw|payload|embedding|score|scored|ai|enrich|enriched|archived|locked|version|revision|seq|sequence_no)(_|$)/;
+
+/** Entidades governadas: status/estado muda só pelos fluxos próprios, nunca em massa. */
+const GOVERNED_STATUS_ENTITIES: ReadonlySet<string> = new Set([
+  "contracts",
+  "financial_entries",
+  "bank_payments",
+  "ats_offers",
+  "quotes",
+  "proposals",
+  "services",
+  "recurring_plans",
+  "subscription_invoices",
+  "customer_invoices",
+]);
+
 /** Bloqueia também qualquer resquício de sincronização (`hs_*` / `hubspot_*`). */
-export function isBulkEditDeniedColumn(col: string): boolean {
-  return isDerivedCrmField(col) || BULK_EDIT_DENIED_COLUMNS.has(col) || /^(hs_|hubspot_)/.test(col);
+export function isBulkEditDeniedColumn(col: string, entity?: string): boolean {
+  if (isDerivedCrmField(col) || BULK_EDIT_DENIED_COLUMNS.has(col) || /^(hs_|hubspot_)/.test(col))
+    return true;
+  if (col.endsWith("_by") || BULK_EDIT_SENSITIVE_PATTERN.test(col)) return true;
+  if (entity && GOVERNED_STATUS_ENTITIES.has(entity) && /(^|_)(status|state|stage)$/.test(col))
+    return true;
+  return false;
 }
 
 export class BulkEditValidationError extends Error {}
@@ -174,10 +200,12 @@ export function coerceBulkValue(column: string, dataType: string, raw: unknown):
 export function buildBulkPayload(
   values: Record<string, unknown>,
   columnTypes: Map<string, string>,
+  entity?: string,
 ): Record<string, unknown> {
   const payload: Record<string, unknown> = {};
   for (const [column, raw] of Object.entries(values)) {
-    if (isBulkEditDeniedColumn(column)) fail(`${column}: campo não pode ser alterado em massa.`);
+    if (isBulkEditDeniedColumn(column, entity))
+      fail(`${column}: campo não pode ser alterado em massa.`);
     const dataType = columnTypes.get(column);
     if (!dataType) fail(`${column}: campo inexistente nesta entidade.`);
     payload[column] = coerceBulkValue(column, dataType, raw);

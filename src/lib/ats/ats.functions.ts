@@ -457,7 +457,8 @@ export const searchDeals = createServerFn({ method: "POST" })
       .parse(d ?? {}),
   )
   .handler(async ({ context, data }) => {
-    const { supabase } = context;
+    const { supabase, userId } = context;
+    await getActiveWorkspaceId(supabase, userId);
     let q = supabase
       .from("deals")
       .select("id, name, value, currency, company_id")
@@ -598,7 +599,11 @@ export const saveAtsCandidate = createServerFn({ method: "POST" })
     const { supabase, userId } = context;
     const workspaceId = await getActiveWorkspaceId(supabase, userId);
     if (data.id) await assertHrRecordAccess(supabase, "candidates", "update", data.id);
-    else await assertHrCreate(supabase, userId, "techhire.candidates");
+    else {
+      await assertHrCreate(supabase, userId, "techhire.candidates");
+      const { assertWorkspaceEntitlement } = await import("@/lib/billing/entitlement-guard.server");
+      await assertWorkspaceEntitlement(supabase, workspaceId, "feature.ats");
+    }
     const phone = await humanPhoneForRow(
       supabase,
       { table: "ats_candidates", id: data.id, column: "phone" },
@@ -1094,6 +1099,7 @@ export const listJobEvents = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    await assertHrRecordAccess(supabase, "jobs", "view", data.jobId);
     const { data: rows, error } = await supabase
       .from("ats_application_events")
       .select(
@@ -1282,6 +1288,7 @@ export const setCandidateArchived = createServerFn({ method: "POST" })
   )
   .handler(async ({ context, data }) => {
     const { supabase } = context;
+    await assertHrRecordAccess(supabase, "candidates", "update", data.id);
     const { data: upd, error } = await supabase
       .from("ats_candidates")
       .update({ archived: data.archived } as never)

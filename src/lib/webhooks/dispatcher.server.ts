@@ -131,15 +131,16 @@ export async function sendWebhook(
   }
 }
 
-export async function runWebhookDispatch() {
+/** Sem `workspaceId` somente para o cron; ações de usuário restringem ao workspace autorizado. */
+export async function runWebhookDispatch(workspaceId?: string) {
   const now = new Date().toISOString();
-  const { data: pending } = await supabaseAdmin
+  let pendingQuery = supabaseAdmin
     .from("webhook_deliveries")
     .select("id, workspace_id, webhook_id, event_type, payload, attempt, event_id")
     .in("status", ["pending", "failed"])
-    .lte("next_retry_at", now)
-    .order("created_at", { ascending: true })
-    .limit(50);
+    .lte("next_retry_at", now);
+  if (workspaceId) pendingQuery = pendingQuery.eq("workspace_id", workspaceId);
+  const { data: pending } = await pendingQuery.order("created_at", { ascending: true }).limit(50);
   if (!pending || pending.length === 0) return { processed: 0 };
 
   let processed = 0;

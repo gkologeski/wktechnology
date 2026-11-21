@@ -1,3 +1,4 @@
+import { neutralizeCsvFormula } from "@/lib/export/csv-formula";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -180,7 +181,7 @@ function ReportsPage() {
     const csv =
       "key,value,count\n" +
       result.rows
-        .map((r) => `"${String(r.key).replace(/"/g, '""')}",${r.value},${r.count}`)
+        .map((r) => `"${neutralizeCsvFormula(r.key).replace(/"/g, '""')}",${r.value},${r.count}`)
         .join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
