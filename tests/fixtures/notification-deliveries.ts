@@ -538,6 +538,39 @@ beforeAll(async () => {
     await new Promise((done) => setTimeout(done, 100));
   }
   if (!apiReady) throw Error("Disposable PostgREST did not become ready");
+  // postgres.js opens pool connections lazily and discovers array types on
+  // each connection. Prepare every backend before timed concurrency cases;
+  // keep all reservations until all probes settle so one backend cannot serve
+  // several probes. The business RPCs still run concurrently in their tests.
+  const poolPreparationStarted = performance.now();
+  const reservations: postgres.ReservedSql[] = [];
+  try {
+    const probes = await Promise.allSettled(
+      Array.from({ length: 4 }, async () => {
+        const connection = await db.reserve();
+        reservations.push(connection);
+        const rows = await connection`select pg_backend_pid() as pid`;
+        if (!Number.isInteger(rows[0]?.pid)) throw Error("Invalid fixture backend identity");
+        return rows[0].pid as number;
+      }),
+    );
+    const failed = probes.find((probe) => probe.status === "rejected");
+    if (failed?.status === "rejected") throw failed.reason;
+    const backendIds = new Set(
+      probes.flatMap((probe) => (probe.status === "fulfilled" ? [probe.value] : [])),
+    );
+    if (reservations.length !== 4 || backendIds.size !== 4)
+      throw Error("Notification fixture requires four distinct prepared backends");
+    console.info(
+      "[notification-fixture-pool]",
+      JSON.stringify({
+        backend_count: backendIds.size,
+        preparation_ms: performance.now() - poolPreparationStarted,
+      }),
+    );
+  } finally {
+    for (const connection of reservations) connection.release();
+  }
 }, 180000);
 
 afterAll(async () => {
