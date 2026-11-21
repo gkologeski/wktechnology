@@ -507,74 +507,78 @@ afterAll(async () => {
 });
 
 export async function reset() {
-  // Direct starts bind contracts to preparation requests. Reset that synthetic
-  // graph together, including immutable audit children, before reseeding it.
-  await db.unsafe(
-    "TRUNCATE financial_payments,financial_entry_allocations,financial_categories,financial_bank_accounts,financial_cost_centers,hiring_fiscal_document_events,hiring_fiscal_document_reviews,hiring_fiscal_documents,hiring_execution_delivery_decisions,hiring_execution_delivery_submissions,hiring_execution_delivery_versions,hiring_execution_deliveries,notification_business_occurrence_receipts,hiring_formalization_events,hiring_formalizations,contract_handoff_settings,contract_signature_participants,hiring_preparation_approval_events,hiring_preparation_approvals,hiring_preparation_reference_values,hiring_execution_starts,hiring_employment_events,hiring_engagements,hiring_access_model_versions,hiring_access_models,hiring_workspace_settings,contracts,hiring_preparation_requests,people_documents,ats_offer_approvals,esign_audit,techerp_offers.sessions CASCADE",
-  );
-  await db.unsafe("TRUNCATE project_task_statuses,project_lists CASCADE");
-  await db.unsafe(
-    "TRUNCATE notification_business_event_proofs,notification_business_due_cursors,view_as_test_records,pipelines,contract_attachments,legal_entities,quote_line_items,deal_line_items,service_catalog,contracting_presets,quote_templates,esign_signers,esign_documents,ats_offers,hiring_contract_evidence,contract_forsign_operations,storage.objects CASCADE",
-  );
-  await db.unsafe(
-    "TRUNCATE notification_followup_occurrences,notification_followup_schedules,notification_digest_candidates,notification_digest_batches,notification_digest_settings,workflow_deliveries,notification_delivery_intents,notification_delivery_policies,notification_delivery_consents,notification_whatsapp_health,notification_whatsapp_suppression_receipts,notification_slack_intents,notification_slack_policies,notification_slack_endpoint_state,slack_integrations,workflow_send_policies,wa_cloud_numbers,wa_cloud_connections,whatsapp_number_suppressions,whatsapp_messages,whatsapp_webhook_events,auth.users CASCADE",
-  );
-  await db.unsafe(
-    "TRUNCATE service_agent_sessions,sdr_enrollments,sdr_playbooks,contract_drafts,contract_draft_approvers,notification_workspace_context,notification_user_preferences,notifications,workflow_approvals,contract_approvals,project_members,hiring_demand_steps,hiring_demand_requests,hiring_area_policies,workflow_runs,workflow_events,workflows,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_groups,user_group_members,view_as_sessions CASCADE",
-  );
-  for (const t of [
-    "email_threads",
-    "live_chat_sessions",
-    "linkedin_conversations",
-    "whatsapp_conversations",
-  ])
-    await db.unsafe(`DELETE FROM ${t}`);
-  await db`insert into workspaces(id,created_by) values(${W},${A}),(${B},${A})`;
-  for (const id of [A, U, C, D, N, F, CEO]) {
-    await db`insert into profiles(id,active_workspace_id,phone,notification_preferences) values(${id},${id === F ? B : W},'+5548999990001','{"workflow":{"email":true}}')`;
-    await db`insert into auth.users(id,email,email_confirmed_at) values(${id},${id.slice(0, 8) + "@fixture.invalid"},now())`;
-  }
-  for (const id of [A, U, C, D, N, CEO])
-    await db`insert into workspace_members(workspace_id,user_id) values(${W},${id})`;
-  await db`insert into workspace_members(workspace_id,user_id) values(${B},${F})`;
-  await db`insert into job_roles(id,workspace_id) values(${ROLE},${W})`;
-  for (const id of [U, C, D, CEO])
-    await db`insert into user_job_roles(role_id,user_id,workspace_id,owner_id) values(${ROLE},${id},${W},${W})`;
-  for (const key of [
-    ...readKeys,
-    "system.workflows.view.workspace",
-    "system.workflows.manage.workspace",
-    "system.notification_settings.view.workspace",
-    "system.notification_settings.manage.workspace",
-    "system.notification_deliveries.view.workspace",
-    "system.channels.view.workspace",
-    "system.integrations.view.workspace",
-    "system.integrations.manage.workspace",
-    "system.whatsapp.manage.workspace",
-    "techsales.inbox.email.view.workspace",
-    "techsales.inbox.email.create.workspace",
-    "techsales.inbox.whatsapp.view.workspace",
-    "techsales.inbox.whatsapp.create.workspace",
-  ])
-    await db`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${ROLE},${key},'grant')`;
-  await db`insert into user_groups(id,workspace_id,name) values(${GROUP},${W},'Synthetic group')`;
-  for (const id of [U, C, N, F])
-    await db`insert into user_group_members(group_id,user_id,is_leader) values(${GROUP},${id},${id === D})`;
-  for (const table of sourceTables) {
-    await db.unsafe(`DELETE FROM public.${table}`);
-    await db.unsafe(
-      `INSERT INTO public.${table}(id,workspace_id,owner_id,assigned_to,created_by,profile_id,assignee_id,project_id) VALUES($1,$2,$3,$4,$5,$4,$4,$1)`,
-      [X, W, A, U, C],
+  // Keep the same ordered statements and row triggers, but reuse one owned
+  // transaction instead of committing each synthetic setup row separately.
+  await db.begin(async (tx) => {
+    // Direct starts bind contracts to preparation requests. Reset that synthetic
+    // graph together, including immutable audit children, before reseeding it.
+    await tx.unsafe(
+      "TRUNCATE financial_payments,financial_entry_allocations,financial_categories,financial_bank_accounts,financial_cost_centers,hiring_fiscal_document_events,hiring_fiscal_document_reviews,hiring_fiscal_documents,hiring_execution_delivery_decisions,hiring_execution_delivery_submissions,hiring_execution_delivery_versions,hiring_execution_deliveries,notification_business_occurrence_receipts,hiring_formalization_events,hiring_formalizations,contract_handoff_settings,contract_signature_participants,hiring_preparation_approval_events,hiring_preparation_approvals,hiring_preparation_reference_values,hiring_execution_starts,hiring_employment_events,hiring_engagements,hiring_access_model_versions,hiring_access_models,hiring_workspace_settings,contracts,hiring_preparation_requests,people_documents,ats_offer_approvals,esign_audit,techerp_offers.sessions CASCADE",
     );
-  }
-  await db`insert into people(id,workspace_id,owner_id,profile_id,assigned_to) values(${MANAGER_PERSON},${W},${A},${D},${D})`;
-  await db`update contracts set status='in_review' where id=${X}`;
-  await db`insert into workflows(id,workspace_id,owner_id,execution_user_id,entity) values(${WF},${W},${A},${A},'deals')`;
-  await db`insert into workflow_events(id,workspace_id,owner_id,entity,entity_id,workflow_version) values(${EVENT},${W},${A},'deals',${X},1)`;
-  await db`insert into workflow_runs(id,workspace_id,owner_id,workflow_id,event_id,entity,entity_id) values(${RUN},${W},${A},${WF},${EVENT},'deals',${X})`;
-  await db`insert into slack_integrations(id,workspace_id,owner_id,access_token,team_name,default_channel_name) values(${X},${W},${A},'https://hooks.slack.com/services/T_FIXTURE/B_FIXTURE/synthetic-not-a-secret','Synthetic team','Synthetic channel')`;
-  await db`insert into wa_cloud_connections(id,workspace_id,enabled,webhook_verified_at) values(${X},${W},true,now())`;
-  await db`insert into wa_cloud_numbers(phone_number_id,connection_id,workspace_id,display_phone_number,quality_rating,status,available) values('123456789',${X},${W},'+554861360001','GREEN','CONNECTED',true)`;
+    await tx.unsafe("TRUNCATE project_task_statuses,project_lists CASCADE");
+    await tx.unsafe(
+      "TRUNCATE notification_business_event_proofs,notification_business_due_cursors,view_as_test_records,pipelines,contract_attachments,legal_entities,quote_line_items,deal_line_items,service_catalog,contracting_presets,quote_templates,esign_signers,esign_documents,ats_offers,hiring_contract_evidence,contract_forsign_operations,storage.objects CASCADE",
+    );
+    await tx.unsafe(
+      "TRUNCATE notification_followup_occurrences,notification_followup_schedules,notification_digest_candidates,notification_digest_batches,notification_digest_settings,workflow_deliveries,notification_delivery_intents,notification_delivery_policies,notification_delivery_consents,notification_whatsapp_health,notification_whatsapp_suppression_receipts,notification_slack_intents,notification_slack_policies,notification_slack_endpoint_state,slack_integrations,workflow_send_policies,wa_cloud_numbers,wa_cloud_connections,whatsapp_number_suppressions,whatsapp_messages,whatsapp_webhook_events,auth.users CASCADE",
+    );
+    await tx.unsafe(
+      "TRUNCATE service_agent_sessions,sdr_enrollments,sdr_playbooks,contract_drafts,contract_draft_approvers,notification_workspace_context,notification_user_preferences,notifications,workflow_approvals,contract_approvals,project_members,hiring_demand_steps,hiring_demand_requests,hiring_area_policies,workflow_runs,workflow_events,workflows,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_groups,user_group_members,view_as_sessions CASCADE",
+    );
+    for (const t of [
+      "email_threads",
+      "live_chat_sessions",
+      "linkedin_conversations",
+      "whatsapp_conversations",
+    ])
+      await tx.unsafe(`DELETE FROM ${t}`);
+    await tx`insert into workspaces(id,created_by) values(${W},${A}),(${B},${A})`;
+    for (const id of [A, U, C, D, N, F, CEO]) {
+      await tx`insert into profiles(id,active_workspace_id,phone,notification_preferences) values(${id},${id === F ? B : W},'+5548999990001','{"workflow":{"email":true}}')`;
+      await tx`insert into auth.users(id,email,email_confirmed_at) values(${id},${id.slice(0, 8) + "@fixture.invalid"},now())`;
+    }
+    for (const id of [A, U, C, D, N, CEO])
+      await tx`insert into workspace_members(workspace_id,user_id) values(${W},${id})`;
+    await tx`insert into workspace_members(workspace_id,user_id) values(${B},${F})`;
+    await tx`insert into job_roles(id,workspace_id) values(${ROLE},${W})`;
+    for (const id of [U, C, D, CEO])
+      await tx`insert into user_job_roles(role_id,user_id,workspace_id,owner_id) values(${ROLE},${id},${W},${W})`;
+    for (const key of [
+      ...readKeys,
+      "system.workflows.view.workspace",
+      "system.workflows.manage.workspace",
+      "system.notification_settings.view.workspace",
+      "system.notification_settings.manage.workspace",
+      "system.notification_deliveries.view.workspace",
+      "system.channels.view.workspace",
+      "system.integrations.view.workspace",
+      "system.integrations.manage.workspace",
+      "system.whatsapp.manage.workspace",
+      "techsales.inbox.email.view.workspace",
+      "techsales.inbox.email.create.workspace",
+      "techsales.inbox.whatsapp.view.workspace",
+      "techsales.inbox.whatsapp.create.workspace",
+    ])
+      await tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${ROLE},${key},'grant')`;
+    await tx`insert into user_groups(id,workspace_id,name) values(${GROUP},${W},'Synthetic group')`;
+    for (const id of [U, C, N, F])
+      await tx`insert into user_group_members(group_id,user_id,is_leader) values(${GROUP},${id},${id === D})`;
+    for (const table of sourceTables) {
+      await tx.unsafe(`DELETE FROM public.${table}`);
+      await tx.unsafe(
+        `INSERT INTO public.${table}(id,workspace_id,owner_id,assigned_to,created_by,profile_id,assignee_id,project_id) VALUES($1,$2,$3,$4,$5,$4,$4,$1)`,
+        [X, W, A, U, C],
+      );
+    }
+    await tx`insert into people(id,workspace_id,owner_id,profile_id,assigned_to) values(${MANAGER_PERSON},${W},${A},${D},${D})`;
+    await tx`update contracts set status='in_review' where id=${X}`;
+    await tx`insert into workflows(id,workspace_id,owner_id,execution_user_id,entity) values(${WF},${W},${A},${A},'deals')`;
+    await tx`insert into workflow_events(id,workspace_id,owner_id,entity,entity_id,workflow_version) values(${EVENT},${W},${A},'deals',${X},1)`;
+    await tx`insert into workflow_runs(id,workspace_id,owner_id,workflow_id,event_id,entity,entity_id) values(${RUN},${W},${A},${WF},${EVENT},'deals',${X})`;
+    await tx`insert into slack_integrations(id,workspace_id,owner_id,access_token,team_name,default_channel_name) values(${X},${W},${A},'https://hooks.slack.com/services/T_FIXTURE/B_FIXTURE/synthetic-not-a-secret','Synthetic team','Synthetic channel')`;
+    await tx`insert into wa_cloud_connections(id,workspace_id,enabled,webhook_verified_at) values(${X},${W},true,now())`;
+    await tx`insert into wa_cloud_numbers(phone_number_id,connection_id,workspace_id,display_phone_number,quality_rating,status,available) values('123456789',${X},${W},'+554861360001','GREEN','CONNECTED',true)`;
+  });
 }
 export async function withRole<T>(
   role: "service_role" | "authenticated" | "anon",

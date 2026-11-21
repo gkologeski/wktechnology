@@ -485,51 +485,60 @@ it("limits a bulk-prepared current envelope to 100 members and moves overflow to
   const [wf] = await db`select actions from workflows where id=${WF}`;
   const action = wf.actions[0];
   // Six actual published Workflow/run pairs, never more than the editor's 20 steps.
-  for (let group = 0; group < 6; group++) {
-    const workflow = group === 0 ? WF : randomUUID(),
-      run = group === 0 ? runId : randomUUID();
-    const steps = group === 5 ? 1 : 20;
-    if (group > 0) {
-      await db`insert into workflows select (jsonb_populate_record(null::workflows,to_jsonb(w)||jsonb_build_object('id',${workflow}::text))).* from workflows w where id=${WF}`;
-      await request(
-        "/rpc/notification_business_due_tick",
-        { p_limit: 100 },
-        U,
-        fixtureJwt("service_role"),
-      );
-      const [proof] =
-        await db`select event_id from notification_business_event_proofs where workflow_id=${workflow} and source_id=${X}`;
-      await db`insert into workflow_runs(id,workspace_id,owner_id,workflow_id,event_id,entity,entity_id) values(${run},${W},${A},${workflow},${proof.event_id},'financial_entries',${X})`;
-    }
-    await db`update workflows set actions=${db.json(Array.from({ length: steps }, () => action))} where id=${workflow}`;
-    // This case measures bounded closing, not 101 repeated captures. Other cases
-    // exercise dispatch/capture end to end. Bulk fixture rows copy one actual
-    // normalized dispatch; each target still has its real published step/run/proof.
-    const members = Array.from({ length: steps }, (_, index) => ({
+  const groups = Array.from({ length: 6 }, (_, index) => ({
+    workflow: index === 0 ? WF : randomUUID(),
+    run: index === 0 ? runId : randomUUID(),
+    steps: index === 5 ? 1 : 20,
+  }));
+  await db`update workflows set actions=${db.json(Array.from({ length: 20 }, () => action))} where id=${WF}`;
+  await db`insert into workflows
+    select (jsonb_populate_record(null::workflows,to_jsonb(w)||jsonb_build_object('id',m->>'workflow'))).*
+    from workflows w cross join jsonb_array_elements(${db.json(groups.slice(1))}) m where w.id=${WF}`;
+  // One real producer scan proves every newly published Workflow. The source,
+  // current version and real run/proof links remain mandatory for every member.
+  await request(
+    "/rpc/notification_business_due_tick",
+    { p_limit: 100 },
+    U,
+    fixtureJwt("service_role"),
+  );
+  await db`update workflows set actions=${db.json([action])} where id=${groups[5].workflow}`;
+  const members = groups.flatMap((group, index) =>
+    Array.from({ length: group.steps }, (_, step) => ({
+      workflow: group.workflow,
+      run: group.run,
       intent: randomUUID(),
       delivery: randomUUID(),
       candidate: randomUUID(),
-      path: String(index + 1),
-    })).filter((member) => group > 0 || member.path !== "1");
-    await db.begin(async (tx) => {
-      await tx`insert into notification_delivery_intents
-        select (jsonb_populate_record(null::notification_delivery_intents,to_jsonb(i)||jsonb_build_object(
-          'id',m->>'intent','workflow_id',${workflow}::text,'run_id',${run}::text,'step_path',m->>'path'))).*
-        from notification_delivery_intents i cross join jsonb_array_elements(${tx.json(members)}) m where i.id=${intent.id}`;
-      await tx`insert into workflow_deliveries
-        select (jsonb_populate_record(null::workflow_deliveries,to_jsonb(d)||jsonb_build_object(
-          'id',m->>'delivery','workflow_id',${workflow}::text,'notification_intent_id',m->>'intent',
-          'step_path',m->>'path','idempotency_key','nfd:'||(m->>'intent')||':email'))).*
-        from workflow_deliveries d cross join jsonb_array_elements(${tx.json(members)}) m
-        where d.notification_intent_id=${intent.id} and d.channel='email'`;
-      await tx`insert into notification_digest_candidates
-        select (jsonb_populate_record(null::notification_digest_candidates,to_jsonb(c)||jsonb_build_object(
-          'id',m->>'candidate','source_intent_id',m->>'intent','workflow_id',${workflow}::text,
-          'run_id',${run}::text,'step_path',m->>'path'))).*
-        from notification_digest_candidates c cross join jsonb_array_elements(${tx.json(members)}) m
-        where c.source_intent_id=${intent.id}`;
-    });
-  }
+      path: String(step + 1),
+    })).filter((member) => index > 0 || member.path !== "1"),
+  );
+  // This case measures bounded closing, not 101 repeated captures. Other cases
+  // exercise dispatch/capture end to end. Bulk fixture rows copy one actual
+  // normalized dispatch; each target still has its real published step/run/proof.
+  await db.begin(async (tx) => {
+    await tx`insert into workflow_runs(id,workspace_id,owner_id,workflow_id,event_id,entity,entity_id)
+      select (m->>'run')::uuid,${W},${A},(m->>'workflow')::uuid,p.event_id,'financial_entries',${X}
+      from jsonb_array_elements(${tx.json(groups.slice(1))}) m
+      join notification_business_event_proofs p on p.workflow_id=(m->>'workflow')::uuid
+        and p.workspace_id=${W} and p.source_id=${X}`;
+    await tx`insert into notification_delivery_intents
+      select (jsonb_populate_record(null::notification_delivery_intents,to_jsonb(i)||jsonb_build_object(
+        'id',m->>'intent','workflow_id',m->>'workflow','run_id',m->>'run','step_path',m->>'path'))).*
+      from notification_delivery_intents i cross join jsonb_array_elements(${tx.json(members)}) m where i.id=${intent.id}`;
+    await tx`insert into workflow_deliveries
+      select (jsonb_populate_record(null::workflow_deliveries,to_jsonb(d)||jsonb_build_object(
+        'id',m->>'delivery','workflow_id',m->>'workflow','notification_intent_id',m->>'intent',
+        'step_path',m->>'path','idempotency_key','nfd:'||(m->>'intent')||':email'))).*
+      from workflow_deliveries d cross join jsonb_array_elements(${tx.json(members)}) m
+      where d.notification_intent_id=${intent.id} and d.channel='email'`;
+    await tx`insert into notification_digest_candidates
+      select (jsonb_populate_record(null::notification_digest_candidates,to_jsonb(c)||jsonb_build_object(
+        'id',m->>'candidate','source_intent_id',m->>'intent','workflow_id',m->>'workflow',
+        'run_id',m->>'run','step_path',m->>'path'))).*
+      from notification_digest_candidates c cross join jsonb_array_elements(${tx.json(members)}) m
+      where c.source_intent_id=${intent.id}`;
+  });
   expect((await db`select count(*)::int n from notification_digest_candidates`)[0].n).toBe(101);
   expect(
     (await db`select count(distinct workflow_id)::int n from notification_digest_candidates`)[0].n,
