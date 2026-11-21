@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { pixelResponse, recordTrackingEvent } from "@/lib/email-tracking.server";
+import { pixelResponse, recordTrackingEvent, verifyOpenPixel } from "@/lib/email-tracking.server";
 
 export const Route = createFileRoute("/api/public/email/pixel/$messageId")({
   server: {
@@ -7,7 +7,9 @@ export const Route = createFileRoute("/api/public/email/pixel/$messageId")({
       GET: async ({ request, params }) => {
         const raw = params.messageId ?? "";
         const id = raw.replace(/\.gif$/i, "");
-        if (/^[0-9a-f-]{36}$/i.test(id)) {
+        const sig = new URL(request.url).searchParams.get("s") ?? "";
+        // Só conta abertura de pixel assinado no envio; IDs adivinhados não alteram contadores.
+        if (/^[0-9a-f-]{36}$/i.test(id) && verifyOpenPixel(id, sig)) {
           try {
             await recordTrackingEvent({
               messageId: id,

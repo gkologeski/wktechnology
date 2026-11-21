@@ -11,11 +11,9 @@ export function trackingBaseUrl(): string {
 }
 
 function trackingSecret(): string {
-  return (
-    process.env.EMAIL_TRACKING_SECRET ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "lovable-email-tracking-fallback"
-  );
+  const secret = process.env["EMAIL_TRACKING_SECRET"] || process.env["SUPABASE_SERVICE_ROLE_KEY"];
+  if (!secret) throw new Error("Rastreamento de e-mail não configurado");
+  return secret;
 }
 
 export function signTrackedUrl(messageId: string, url: string): string {
@@ -26,13 +24,20 @@ export function signTrackedUrl(messageId: string, url: string): string {
 }
 
 export function verifyTrackedUrl(messageId: string, url: string, sig: string): boolean {
-  const expected = signTrackedUrl(messageId, url);
-  if (sig.length !== expected.length) return false;
   try {
+    const expected = signTrackedUrl(messageId, url);
+    if (sig.length !== expected.length) return false;
     return timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
   } catch {
     return false;
   }
+}
+
+/** Escopo assinado do pixel de abertura (não é uma URL real). */
+export const OPEN_PIXEL_SCOPE = "open-pixel";
+
+export function verifyOpenPixel(messageId: string, sig: string): boolean {
+  return !!sig && verifyTrackedUrl(messageId, OPEN_PIXEL_SCOPE, sig);
 }
 
 const TRANSPARENT_GIF = Buffer.from(
@@ -61,6 +66,10 @@ export function injectTracking(opts: { messageId: string; bodyHtml?: string; bod
   const text = opts.bodyText ?? (opts.bodyHtml ? opts.bodyHtml.replace(/<[^>]+>/g, " ") : "");
   const sourceHtml = opts.bodyHtml ?? `<p>${escapeHtml(text).replace(/\n/g, "<br>")}</p>`;
 
+  // Missing configuration disables tracking, never the delivery of the message.
+  if (!process.env["EMAIL_TRACKING_SECRET"] && !process.env["SUPABASE_SERVICE_ROLE_KEY"])
+    return { html: sourceHtml, text };
+
   // Rewrite <a href="..."> to go through the click tracker.
   const rewritten = sourceHtml.replace(
     /(<a\b[^>]*\bhref\s*=\s*)(["'])(.*?)\2/gi,
@@ -81,7 +90,8 @@ export function injectTracking(opts: { messageId: string; bodyHtml?: string; bod
     },
   );
 
-  const pixel = `<img src="${base}/api/public/email/pixel/${opts.messageId}.gif" width="1" height="1" alt="" style="display:none;border:0;outline:none;text-decoration:none" />`;
+  const pixelSig = signTrackedUrl(opts.messageId, OPEN_PIXEL_SCOPE);
+  const pixel = `<img src="${base}/api/public/email/pixel/${opts.messageId}.gif?s=${pixelSig}" width="1" height="1" alt="" style="display:none;border:0;outline:none;text-decoration:none" />`;
   const html = rewritten.includes("</body>")
     ? rewritten.replace("</body>", `${pixel}</body>`)
     : rewritten + pixel;

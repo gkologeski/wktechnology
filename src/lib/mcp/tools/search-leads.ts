@@ -1,3 +1,4 @@
+import { orIlikeContains } from "@/lib/postgrest-or";
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
 import { supabaseForUser, unauthenticated, resolveWorkspaceId } from "../supabase";
@@ -42,8 +43,9 @@ export default defineTool({
       .order("created_at", { ascending: false })
       .limit(limit);
     if (query) {
+      const like = orIlikeContains(query);
       q = q.or(
-        `first_name.ilike.%${query}%,last_name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${query}%,company_name.ilike.%${query}%`,
+        `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},phone.ilike.${like},company_name.ilike.${like}`,
       );
     }
     if (status) q = q.eq("status", status as never);

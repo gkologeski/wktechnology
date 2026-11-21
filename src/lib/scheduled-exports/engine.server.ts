@@ -1,3 +1,4 @@
+import { neutralizeCsvFormula } from "@/lib/export/csv-formula";
 import { hubspotSourceClient } from "@/lib/access-control/hubspot-source-client.server";
 import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 import { workRpc } from "@/lib/access-control/work-core.server";
@@ -138,9 +139,13 @@ function toCsv(
   const cfg = report.config;
   const metricLabel =
     cfg.metric === "count" ? "Quantidade" : cfg.metric === "sum" ? "Soma" : "Média";
-  const lines = [`"${cfg.groupBy}","${metricLabel}","Quantidade"`];
+  const lines = [
+    `"${neutralizeCsvFormula(cfg.groupBy).replace(/"/g, '""')}","${metricLabel}","Quantidade"`,
+  ];
   for (const r of rows) {
-    lines.push(`"${String(r.key).replace(/"/g, '""')}",${r.value},${r.count}`);
+    lines.push(
+      `"${neutralizeCsvFormula(String(r.key)).replace(/"/g, '""')}",${r.value},${r.count}`,
+    );
   }
   return lines.join("\r\n") + "\r\n";
 }

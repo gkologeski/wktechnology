@@ -11,6 +11,7 @@
  * Componente de apresentação + leitura via cliente Supabase (RLS aplicada).
  * A criação de fila é delegada ao `CreateQueueFromBaseDialog`.
  */
+import { neutralizeCsvFormula } from "@/lib/export/csv-formula";
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -391,7 +392,7 @@ export function BaseTab() {
       "Valor total",
       "Última data",
     ];
-    const esc = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const esc = (v: string) => `"${neutralizeCsvFormula(v).replace(/"/g, '""')}"`;
     const body = rows.map((r) =>
       [
         r.name,

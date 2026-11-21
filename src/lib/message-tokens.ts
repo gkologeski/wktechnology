@@ -5,6 +5,7 @@
 // Suporta chaves simples (`{{first_name}}`) e com ponto (`{{agent.name}}`),
 // resolvidas tanto em objetos aninhados quanto em chaves planas
 // (`{ "job.title": "Dev" }`). Tokens sem valor resolvem para string vazia.
+import { escapeHtml } from "@/lib/security/escape";
 
 /** Regex canônica de token. Use sempre com `new RegExp` ou recrie por chamada. */
 export const TOKEN_PATTERN = /\{\{\s*([\w.]+)\s*\}\}/g;
@@ -50,6 +51,15 @@ export function renderTokens(input: string, ctx: TokenContext): string {
     const direct = (ctx as Record<string, unknown>)[lower];
     const value = direct !== undefined ? direct : getPath(ctx, lower);
     return value == null ? "" : String(value);
+  });
+}
+
+/** Keep the trusted template markup; escape each resolved value, including nested tokens. */
+export function renderHtmlTokens(input: string, ctx: TokenContext): string {
+  return renderTokensWith(input, (key) => {
+    const lower = key.toLowerCase();
+    const direct = ctx[lower];
+    return escapeHtml(direct !== undefined ? direct : getPath(ctx, lower));
   });
 }
 

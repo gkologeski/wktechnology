@@ -1,6 +1,7 @@
 // Painel de Timesheet — TechPeople.
 // KPIs, filtros, presets, subtotais por dia, aprovação em massa, lançamento
 // de horas, exportação CSV e visão de alocações no período.
+import { neutralizeCsvFormula } from "@/lib/export/csv-formula";
 import { TIME_ENTRY_STATUS_LABEL, type TimeEntryStatus } from "@/lib/projects/time-entry.shared";
 import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -135,8 +136,8 @@ function toCsv(rows: TimesheetEntry[]): string {
     "Status",
   ];
   const esc = (v: unknown) => {
-    const s = v == null ? "" : String(v);
-    return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    const s = neutralizeCsvFormula(v);
+    return /[",;\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const lines = rows.map((e) => {
     const h = e.hours ?? 0;

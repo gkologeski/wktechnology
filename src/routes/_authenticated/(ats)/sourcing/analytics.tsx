@@ -1,6 +1,7 @@
 // Sourcing Analytics — Onda 5 / Slice 2 / Fase 5.
 // Métricas de cadências: volume, response rate, time-to-reply, ranking por
 // sequência, performance por canal e funil por step.
+import { neutralizeCsvFormula } from "@/lib/export/csv-formula";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -31,6 +32,22 @@ import {
 import { getSourcingAnalytics } from "@/lib/ats/sourcing-analytics.functions";
 
 export const Route = createFileRoute("/_authenticated/(ats)/sourcing/analytics")({
+  head: () => ({
+    meta: [
+      { title: "Analytics de Sourcing | TechHire" },
+      {
+        name: "description",
+        content: "Indicadores e exportações de cadências de recrutamento do TechHire.",
+      },
+      { property: "og:title", content: "Analytics de Sourcing | TechHire" },
+      {
+        property: "og:description",
+        content: "Indicadores e exportações de cadências de recrutamento do TechHire.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: SourcingAnalyticsPage,
 });
 
@@ -65,8 +82,8 @@ function fmtDay(d: string) {
 
 function downloadCsv(filename: string, rows: (string | number | null)[][]) {
   const esc = (v: string | number | null) => {
-    const s = v == null ? "" : String(v);
-    return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    const s = neutralizeCsvFormula(v);
+    return /[",\n\r;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
   };
   const csv = rows.map((r) => r.map(esc).join(",")).join("\n");
   const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });

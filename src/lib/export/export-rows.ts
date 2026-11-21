@@ -1,3 +1,4 @@
+import { neutralizeCsvFormula } from "@/lib/export/csv-formula";
 // Exportação de registros em CSV, JSON e XLSX (Excel).
 // Usado pela barra flutuante de ações em massa e pelas toolbars de lista.
 // O XLSX é carregado sob demanda para não pesar o bundle inicial.
@@ -57,7 +58,7 @@ function toMatrix<T>(rows: T[], columns: ExportColumn<T>[]) {
 
 function csvEscape(v: string | number | boolean | null) {
   if (v === null) return "";
-  const s = String(v);
+  const s = neutralizeCsvFormula(v);
   return /[";\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 

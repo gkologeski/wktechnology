@@ -1,5 +1,5 @@
 import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
-import { renderTokens as renderTemplate } from "@/lib/message-tokens";
+import { renderTokens as renderTemplate, renderHtmlTokens } from "@/lib/message-tokens";
 // Engine de envio de campanhas de email (broadcast).
 // - resolveRecipients: materializa destinatários a partir de segment (lead|contact) ou lista manual,
 //   aplicando supressão por email_unsubscribes.
@@ -363,7 +363,7 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
         company: base["company"] ?? base["company_name"] ?? "",
       };
       const subject = renderTemplate(b.subject ?? "", vars);
-      const htmlRaw = renderTemplate(b.body_html ?? "", vars);
+      const htmlRaw = renderHtmlTokens(b.body_html ?? "", vars);
       const textRaw = renderTemplate(b.body_text ?? "", vars);
       const token = await ensureUnsubToken(b.workspace_id, b.owner_id, r.email);
       const unsubUrl = buildUnsubscribeLink(token, baseUrl);

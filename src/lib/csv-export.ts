@@ -1,5 +1,6 @@
 // Utilitário de exportação CSV client-side.
 // Compatível com Excel (BOM UTF-8, separador ";" para PT-BR).
+import { neutralizeCsvFormula } from "@/lib/export/csv-formula";
 
 export type CsvColumn<T> = {
   header: string;
@@ -9,7 +10,7 @@ export type CsvColumn<T> = {
 export function toCsv<T>(rows: T[], columns: CsvColumn<T>[]): string {
   const escape = (v: unknown) => {
     if (v === null || v === undefined) return "";
-    const s = String(v);
+    const s = neutralizeCsvFormula(v);
     if (/[";\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
     return s;
   };

@@ -1,5 +1,6 @@
-// src/lib/export/csv-formula.ts (preparado, não aplicado)
 import { neutralizeCsvFormula as neutralizeText } from "@/lib/security/escape";
+
+/** Preserve typed numeric cells; neutralize text before CSV quoting. */
 export function neutralizeCsvFormula(value: unknown): string {
   if (value === null || value === undefined) return "";
   if (typeof value === "number" || typeof value === "bigint" || typeof value === "boolean")

@@ -1,3 +1,9 @@
+# SEGURANCA-PENDENCIAS (G, previsão 4–6 h)
+
+- [x] Aplicar as 16 proteções pendentes selecionadas e e-mail em massa, sem publicação nem alterações no banco.
+- [x] Contratos atuais, 74 testes direcionados e lint sem erros; compilação automática OK. Relatório: docs/security/security-pending-2026-11-21.md.
+- [ ] Aceite completo em navegador/CI: prévia localhost sem resposta; perf sem .verification/build.json; Docker indisponível. Não executar envios reais para simular evidências.
+
 # INTEGRIDADE-FORMALIZA — correções de 7d65e33ab (G, previsão 4–6 h)
 
 - [x] Trilha privada persistida/restrita, motivo externo SQL após OTP; Jurídico preparador pode revisar, sem autoaprovar demanda.

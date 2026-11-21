@@ -1,3 +1,4 @@
+import { orIlikeContains } from "@/lib/postgrest-or";
 import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 // Server functions para o construtor de Workflows resolverem referências
 // (empresas, pipelines, usuários) respeitando as policies RLS do usuário atual.
@@ -11,7 +12,7 @@ import { salesPipelineReferences } from "@/lib/access-control/sales-references";
 // vazar diretório completo).
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireWorkspaceContext } from "@/lib/access-control/active-workspace.middleware";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -33,7 +34,7 @@ function escapeLike(s: string) {
 }
 
 export const searchCompanies = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .inputValidator((i) => RefInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -54,7 +55,7 @@ export const searchCompanies = createServerFn({ method: "POST" })
   });
 
 export const searchPipelines = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .inputValidator((i) => RefInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -74,7 +75,7 @@ export const searchPipelines = createServerFn({ method: "POST" })
   });
 
 export const searchContacts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .inputValidator((i) => RefInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -103,7 +104,7 @@ export const searchContacts = createServerFn({ method: "POST" })
       .order("first_name", { ascending: true, nullsFirst: false })
       .limit(LIMIT);
     if (q) {
-      const like = `%${escapeLike(q)}%`;
+      const like = orIlikeContains(q);
       query = query.or(`first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like}`);
     }
     const { data: rows, error } = await query;
@@ -119,7 +120,7 @@ export const searchContacts = createServerFn({ method: "POST" })
  * - Hidratação por `ids`: somente membros ativos do workspace selecionado.
  */
 export const searchUsers = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .inputValidator((i) => RefInput.parse(i))
   .handler(async ({ data, context }) => {
     const { getActiveWorkspaceId } = await import("@/lib/access-control/enforce.server");
@@ -188,12 +189,13 @@ function fmtDate(iso: string | null | undefined): string {
 }
 
 export const searchEntityRecords = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .inputValidator((i) => EntitySearchInput.parse(i))
   .handler(async ({ data, context }): Promise<EntityRecord[]> => {
     const { supabase } = context;
     const q = data.q?.trim();
     const like = q ? `%${escapeLike(q)}%` : null;
+    const orLike = q ? orIlikeContains(q) : null;
     const ids = data.ids && data.ids.length > 0 ? data.ids : null;
 
     switch (data.entity) {
@@ -206,7 +208,7 @@ export const searchEntityRecords = createServerFn({ method: "POST" })
         if (ids) query = query.in("id", ids);
         else if (like)
           query = query.or(
-            `first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like},company_name.ilike.${like}`,
+            `first_name.ilike.${orLike},last_name.ilike.${orLike},email.ilike.${orLike},company_name.ilike.${orLike}`,
           );
         const { data: rows, error } = await query;
         if (error) throw new Error(error.message);
@@ -228,7 +230,9 @@ export const searchEntityRecords = createServerFn({ method: "POST" })
           .limit(LIMIT);
         if (ids) query = query.in("id", ids);
         else if (like)
-          query = query.or(`first_name.ilike.${like},last_name.ilike.${like},email.ilike.${like}`);
+          query = query.or(
+            `first_name.ilike.${orLike},last_name.ilike.${orLike},email.ilike.${orLike}`,
+          );
         const { data: rows, error } = await query;
         if (error) throw new Error(error.message);
         return (rows ?? []).map((r) => {
@@ -306,7 +310,7 @@ export const searchEntityRecords = createServerFn({ method: "POST" })
           .order("updated_at", { ascending: false })
           .limit(LIMIT);
         if (ids) query = query.in("id", ids);
-        else if (like) query = query.or(`full_name.ilike.${like},email.ilike.${like}`);
+        else if (like) query = query.or(`full_name.ilike.${orLike},email.ilike.${orLike}`);
         const { data: rows, error } = await query;
         if (error) throw new Error(error.message);
         return (rows ?? []).map((r) => ({
@@ -377,7 +381,7 @@ export const searchEntityRecords = createServerFn({ method: "POST" })
 
 /** Empresas do grupo (legal_entities) — usado em `contracting_legal_entity_id`. */
 export const searchLegalEntities = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .inputValidator((i) => RefInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -411,7 +415,7 @@ export const searchLegalEntities = createServerFn({ method: "POST" })
       .limit(LIMIT);
 
     if (q) {
-      const like = `%${escapeLike(q)}%`;
+      const like = orIlikeContains(q);
       query = query.or(`name.ilike.${like},trade_name.ilike.${like},cnpj.ilike.${like}`);
     }
     const { data: rows, error } = await query;
@@ -447,7 +451,7 @@ const CONTRACT_SELECT =
   "id, number, title, status, starts_at, ends_at, monthly_value, total_value, currency";
 
 export const searchContracts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .inputValidator((i) => ContractRefInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -477,7 +481,7 @@ export const searchContracts = createServerFn({ method: "POST" })
       .limit(LIMIT);
     if (data.company_id) query = query.eq("counterparty_company_id", data.company_id);
     if (q) {
-      const like = `%${escapeLike(q)}%`;
+      const like = orIlikeContains(q);
       query = query.or(`title.ilike.${like},number.ilike.${like}`);
     }
     const { data: rows, error } = await query;
@@ -502,7 +506,7 @@ type DealRow = {
 const DEAL_SELECT = "id, name, stage, value, currency, expected_close_date";
 
 export const searchDeals = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .inputValidator((i) => ContractRefInput.parse(i))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -568,13 +572,14 @@ const SimpleRefInput = RefInput.extend({
 });
 
 export const searchSimpleRefs = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .inputValidator((i) => SimpleRefInput.parse(i))
   .handler(async ({ data, context }): Promise<Array<{ id: string; name: string }>> => {
     const { supabase } = context;
     const ids = data.ids && data.ids.length > 0 ? data.ids : null;
     const q = data.q?.trim();
     const like = q ? `%${escapeLike(q)}%` : null;
+    const orLike = q ? orIlikeContains(q) : null;
 
     if (data.kind === "substatus") {
       // Substatus é dependente da etapa: sem etapa escolhida não há lista.
@@ -614,7 +619,7 @@ export const searchSimpleRefs = createServerFn({ method: "POST" })
         .order("full_name")
         .limit(LIMIT);
       if (ids) query = query.in("id", ids);
-      else if (like) query = query.or(`full_name.ilike.${like},email.ilike.${like}`);
+      else if (like) query = query.or(`full_name.ilike.${orLike},email.ilike.${orLike}`);
       const { data: rows, error } = await query;
       if (error) throw new Error(error.message);
       return (
@@ -679,7 +684,7 @@ export const searchSimpleRefs = createServerFn({ method: "POST" })
 
 /** Agentes SDR do workspace ativo, com indicação de versão publicada (para o construtor). */
 export const listSdrAgentsForWorkflow = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .handler(async ({ context }) => {
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);
@@ -708,7 +713,7 @@ export const listSdrAgentsForWorkflow = createServerFn({ method: "GET" })
 
 /** Páginas de agendamento do workspace ativo (bloco "Link de agendamento"). */
 export const listBookingPagesForWorkflow = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .handler(async ({ context }) => {
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);
@@ -728,7 +733,7 @@ export const listBookingPagesForWorkflow = createServerFn({ method: "GET" })
 
 /** Materiais do workspace ativo (bloco "Material de apoio"); só aprovados são usáveis. */
 export const listSdrMaterialsForWorkflow = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkspaceContext()])
   .handler(async ({ context }) => {
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
     const workspaceId = await resolveActiveWorkspace(context.userId);

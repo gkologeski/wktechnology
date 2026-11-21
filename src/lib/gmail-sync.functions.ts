@@ -108,7 +108,7 @@ export async function runAllAccountsSync(): Promise<{
     } catch (e) {
       errors++;
       const msg = e instanceof Error ? e.message : String(e);
-      console.error(`[gmail-sync] account ${acc.email} failed:`, msg);
+      console.error(`[gmail-sync] account ${acc.id} failed`);
       await supabaseAdmin
         .from("email_accounts")
         .update({ status: "error", last_error: msg })

@@ -1,7 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import { authenticateApiKey, requireScope, unauthorized } from "@/lib/api-keys/auth.server";
 import { badRequest, flagDisabled, isAtsPublicApiEnabled } from "@/lib/ats/public-api.server";
 import { recordAtsEvent } from "@/lib/ats/audit.server";
@@ -36,6 +34,7 @@ export const Route = createFileRoute("/api/public/v1/ats/jobs")({
         if (!(await isAtsPublicApiEnabled(auth.ownerId))) return flagDisabled();
         const denied = requireScope(auth, "read");
         if (denied) return denied;
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const url = new URL(request.url);
         const limit = Math.min(Number(url.searchParams.get("limit") ?? 50), 200);
         const status = url.searchParams.get("status");
@@ -59,7 +58,20 @@ export const Route = createFileRoute("/api/public/v1/ats/jobs")({
         const body = await request.json().catch(() => null);
         const parsed = CreateJob.safeParse(body);
         if (!parsed.success) return badRequest(parsed.error.flatten());
-        const workspaceId = await getActiveWorkspaceId(supabaseAdmin, auth.ownerId);
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const workspaceId = auth.workspaceId;
+        // Pipeline informado precisa pertencer ao mesmo workspace da chave.
+        const pipelineId = parsed.data.pipeline_id;
+        if (pipelineId) {
+          const { data: pipe } = await supabaseAdmin
+            .from("ats_pipelines")
+            .select("id")
+            .eq("id", pipelineId)
+            .eq("workspace_id", workspaceId)
+            .maybeSingle();
+          if (!pipe)
+            return badRequest({ pipeline_id: ["Pipeline não encontrado neste workspace."] });
+        }
         const insertPayload = {
           owner_id: auth.ownerId,
           workspace_id: workspaceId,

@@ -9,6 +9,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
+import { validatedCvUrl } from "@/lib/security/cv-url";
 
 import { sourcePhone } from "@/lib/phone/phone-boundary";
 const MODEL = "google/gemini-2.5-flash";
@@ -43,25 +44,8 @@ export const parseCvFromPdf = createServerFn({ method: "POST" })
     const apiKey = process.env.LOVABLE_API_KEY;
     if (!apiKey) throw new Error("LOVABLE_API_KEY não configurada");
 
-    // 1) Baixa o PDF (URL assinada vinda do bucket ats-cvs ou qualquer URL pública)
-    const target = new URL(data.cv_url);
-    const host = target.hostname.toLowerCase().replace(/^\[|\]$/g, "");
-    const privateHost =
-      host === "localhost" ||
-      host.endsWith(".localhost") ||
-      host.endsWith(".internal") ||
-      host.endsWith(".local") ||
-      /^(0|10|127)\./.test(host) ||
-      /^169\.254\./.test(host) ||
-      /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
-      /^192\.168\./.test(host) ||
-      /^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(host) ||
-      host === "::1" ||
-      /^(fc|fd|fe80)/.test(host) ||
-      /^\d+$/.test(host);
-    if (target.protocol !== "https:" || privateHost || (target.port && target.port !== "443")) {
-      throw new Error("URL do currículo não permitida (use um link https público).");
-    }
+    // Download is limited to a signed capability on the configured private CV bucket.
+    const target = validatedCvUrl(data.cv_url, process.env["SUPABASE_URL"] ?? "");
     const fileRes = await fetch(target.toString(), { redirect: "manual" });
     if (!fileRes.ok) throw new Error(`Falha ao baixar PDF (${fileRes.status})`);
     const mime = fileRes.headers.get("content-type") ?? "application/pdf";

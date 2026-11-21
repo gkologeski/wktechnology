@@ -22941,6 +22941,556 @@
         "src/lib/whatsapp/meta-template-types.ts": "25acfdea09ac7b695261871e93c1c8430a57fa0b97dd356b3d8e635fe3bc5929",
         "src/components/whatsapp/meta-template-preview.tsx": "76051e9660d848edf58e4fbfdc4c35d85d176b0e3109e7b715871583599ac13b"
       }
+    },
+    {
+      "id": "security-pure-output-and-query-values",
+      "kind": "presentation",
+      "rationale": "Pure text serialization, HTML-token escaping and URL validation only. No data access, endpoint, credential reads, grants or authority; callers retain their existing authorization. The CV URL is a storage capability, not proof of candidate access.",
+      "files": {
+        "src/lib/export/csv-formula.ts": "c1da94494adbdb18ba2857b134a51547fb215e79858d62dffc07d0eba28e7d0e",
+        "src/lib/postgrest-or.ts": "0cf114d11b222b0af5972fc9ed1fadbf07fffa807c894e2d109e1bbbbc93f1a4",
+        "src/lib/security/cv-url.ts": "731524161ba09408da82020f9ce5e13b6ef12d3cf06d075b737687e3768c54c6",
+        "src/lib/message-tokens.ts": "6aed6f5af7214a4d4cb040319a395b8419dc5bba08595feccd911515bd2b080d"
+      }
+    },
+    {
+      "id": "security-csv-output-maintenance",
+      "kind": "internal",
+      "rationale": "Output-only maintenance: CSV neutralization over rows already supplied by existing user/RLS readers; no new read/write/export entitlement, query, button, server function or permission decision. Existing prospecting queue checks, timesheet server functions and sourcing analytics read remain unchanged. Five inherited user/RLS adapter scenarios are denial-propagation evidence only, NOT certification of the whole legacy export IAM; concrete malicious-output tests separately exercise the serializers.",
+      "files": {
+        "src/lib/csv-export.ts": "fa7e7112a570feff84c25998f302f1744f25051d35054e4948e2ca22aa098301",
+        "src/lib/export/export-rows.ts": "5658aa02e04229746badc5ac84a49ca4d38d5de0ceed3624fc931063f3c2713a",
+        "src/components/prospecting/base-tab.tsx": "adcb6d761248dc9237ec99376f7b14ab5432b295fc5c82b461d543f4416ee459",
+        "src/components/people/timesheet-panel.tsx": "dbfbea3ff8b69e12127e8c09d3e07f133470c92cc497b61d8d005f0aa67a7d80",
+        "src/routes/_authenticated/(ats)/sourcing/analytics.tsx": "76c86a0c288c23a3838f3027fbca890ce2867fc926a2845051816a0d5e8b578b"
+      },
+      "resources": [
+        "techsales.leads",
+        "techsales.contacts",
+        "techprojects.time_entries",
+        "techhire.sourcing"
+      ],
+      "actions": [
+        "view",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [],
+      "controls": [
+        {
+          "file": "src/lib/export/csv-formula.ts",
+          "symbol": "neutralizeCsvFormula"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_record_access"
+        },
+        {
+          "file": "drizzle/migrations/0216_work_core_prepare.sql",
+          "symbol": "work_record_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/security/search-hardening.test.ts",
+          "name": "search allows rows supplied by the authorized user RLS client"
+        },
+        "missing_permission": {
+          "file": "src/lib/security/search-hardening.test.ts",
+          "name": "search fails closed when RLS reports missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/security/search-hardening.test.ts",
+          "name": "search fails closed on explicit database deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/security/search-hardening.test.ts",
+          "name": "search does not fabricate rows hidden by foreign workspace RLS"
+        },
+        "inactive_member": {
+          "file": "src/lib/security/search-hardening.test.ts",
+          "name": "search fails closed when RLS reports inactive membership"
+        }
+      },
+      "exception": {
+        "mechanism": "Existing authenticated user/RLS source reads; serializers carry no authority.",
+        "boundary": "Only local serialization/download of already-visible rows; no expanded projection or new database operation.",
+        "revocation": "Existing membership/deny/RLS controls revoke source reads; no capability minted by serializers.",
+        "review_by": "2027-02-21"
+      }
+    },
+    {
+      "id": "security-workflow-and-mcp-search-values",
+      "kind": "internal",
+      "rationale": "Bounded existing read-only reference/MCP searches preserve their user-token RLS clients. Only raw OR values are quoted; direct ilike keeps its original wildcard semantics. User hydration retains active-workspace checks. No privileged directory reads, new keys or grants. All reference handlers additionally use the existing requireWorkspaceContext factory: active actor and selected workspace are checked before user/RLS reads; this does not confer a business permission.",
+      "files": {
+        "src/lib/workflow-refs.functions.ts": "9fa8ac53b4d46656144ff707efc3442685dc2ce825f6509530447304c1df0632",
+        "src/lib/mcp/tools/search-leads.ts": "ca6556219bfa409c7c483da7b33a3ff074b520703a4e6ad690d293b124f48981"
+      },
+      "resources": [
+        "techsales.leads",
+        "techsales.contacts",
+        "techhire.candidates",
+        "system.legal_entities"
+      ],
+      "actions": [
+        "view"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [],
+      "controls": [
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/mcp/supabase.ts",
+          "symbol": "supabaseForUser"
+        },
+        {
+          "file": "src/lib/postgrest-or.ts",
+          "symbol": "orIlikeContains"
+        },
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_record_access"
+        },
+        {
+          "file": "drizzle/migrations/0195_people_resource_actions.sql",
+          "symbol": "hr_child_record_access"
+        },
+        {
+          "file": "drizzle/migrations/0216_work_core_prepare.sql",
+          "symbol": "work_access_context"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/active-workspace-boundary-ci.test.ts",
+          "name": "workspace context allows current active subject without business grants"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/active-workspace-boundary-ci.test.ts",
+          "name": "workspace context rejects missing selected workspace"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/active-workspace-boundary-ci.test.ts",
+          "name": "workspace context rejects explicit database denial"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/active-workspace-boundary-ci.test.ts",
+          "name": "workspace context rejects foreign actor"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/active-workspace-boundary-ci.test.ts",
+          "name": "workspace context rejects inactive or unavailable actor"
+        }
+      },
+      "exception": {
+        "mechanism": "Verified session/token forwarded to the existing user/RLS client; all server functions retain requireSupabaseAuth.",
+        "boundary": "Existing narrow labels/projections, finite tables and original RLS visibility; no authority derived from search input.",
+        "revocation": "Auth expiration and current underlying RLS/membership/deny; search terms never confer access.",
+        "review_by": "2027-02-21"
+      }
+    },
+    {
+      "id": "security-cv-signed-storage-download",
+      "kind": "internal",
+      "rationale": "Existing authenticated CV parser and optional user/RLS candidate mutation are unchanged except that the outbound PDF request accepts only a signed capability on the configured private CV bucket. Arbitrary destinations, credentials, fragments and alternate buckets are rejected before fetching. Storage still validates the token remotely; helper tests do not assert a real token signature.",
+      "files": {
+        "src/lib/ats/cv-parse-pdf.functions.ts": "741f1e7eaa2ea7fed23ba37af91f7766ff0340e2884794aaf1403ad7e8db5c7d"
+      },
+      "resources": [
+        "techhire.candidates"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [],
+      "controls": [
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/security/cv-url.ts",
+          "symbol": "validatedCvUrl"
+        }
+      ],
+      "database": [
+        {
+          "file": "supabase/migrations/20260624133019_5c0006fb-53c0-4c9a-816c-2f215a6405bf.sql",
+          "symbol": "ats_candidates"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/security/output-hardening.test.ts",
+          "name": "CV permits the configured signed bucket"
+        },
+        "missing_permission": {
+          "file": "src/lib/security/output-hardening.test.ts",
+          "name": "CV refuses missing capability"
+        },
+        "explicit_deny": {
+          "file": "src/lib/security/output-hardening.test.ts",
+          "name": "CV refuses invalid capability path"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/security/output-hardening.test.ts",
+          "name": "CV refuses foreign storage origin"
+        },
+        "inactive_member": {
+          "file": "src/lib/security/output-hardening.test.ts",
+          "name": "CV refuses credentials and unsafe protocol"
+        }
+      },
+      "exception": {
+        "mechanism": "Authenticated parser plus a previously issued signed private-storage capability.",
+        "boundary": "Outbound request only to configured ats-cvs signed object path; optional writes remain user/RLS.",
+        "revocation": "Signed token expiration/storage rejection; candidate access retains current RLS/membership/deny.",
+        "review_by": "2027-02-21"
+      }
+    },
+    {
+      "id": "security-ats-email-output",
+      "kind": "service",
+      "rationale": "Only candidate-derived HTML token values are escaped, preserving template markup and plain subjects. Queue creation and authenticated cron entry remain unchanged. No new recipient lookup or sending entitlement. Tests exercise the actual sending engine with a mocked provider and the real inherited cron guard.",
+      "files": {
+        "src/lib/ats/email-engine.server.ts": "d43b79e407c00734a031c3eb711edc146f0e7831aa9c677f3c19027a9c54a794"
+      },
+      "resources": [
+        "techhire.candidates",
+        "techhire.stage_emails"
+      ],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [],
+      "controls": [
+        {
+          "file": "src/lib/message-tokens.ts",
+          "symbol": "renderHtmlTokens"
+        },
+        {
+          "file": "src/lib/security/escape.ts",
+          "symbol": "escapeHtml"
+        }
+      ],
+      "database": [
+        {
+          "file": "supabase/migrations/20260624174553_65ae0122-fc6f-46c5-9b0d-c865622d45e7.sql",
+          "symbol": "ats_stage_email_log"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/security/cron-capability-hardening.test.ts",
+          "name": "cron capability permits its configured service credential"
+        },
+        "missing_permission": {
+          "file": "src/lib/security/cron-capability-hardening.test.ts",
+          "name": "cron capability rejects missing service credential"
+        },
+        "explicit_deny": {
+          "file": "src/lib/security/cron-capability-hardening.test.ts",
+          "name": "cron capability rejects invalid service credential"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/security/cron-capability-hardening.test.ts",
+          "name": "cron capability rejects credentials from another service"
+        },
+        "inactive_member": {
+          "file": "src/lib/security/cron-capability-hardening.test.ts",
+          "name": "cron capability rejects revoked service credential"
+        }
+      },
+      "exception": {
+        "mechanism": "Existing requireCronAuth at ats-emails-tick and trusted queued recipients; public confirmation uses its existing application path.",
+        "boundary": "This change only escapes token output; does not authorize or invoke any real delivery.",
+        "revocation": "Existing queue status and service credential rotation; no credential or recipient policy changed.",
+        "review_by": "2027-02-21"
+      }
+    },
+    {
+      "id": "security-report-and-broadcast-output",
+      "kind": "service",
+      "rationale": "CSV group values and recipient-derived HTML tokens are escaped without changing report/broadcast queries, scheduling, recipients or side-effect rules. Existing source snapshots, current sales_worker_authorize before effects and source export authorization remain required. Tests exercise the real worker boundary and mocked delivery.",
+      "files": {
+        "src/lib/scheduled-exports/engine.server.ts": "52e675869ab7c7fca59b07bcd9d64e150696bee1f8dfd486b910796db4e09bf0",
+        "src/lib/email-broadcast/engine.server.ts": "9f28632ac66083c38d7b232a8cce48417bc6924ee1913240bc0c48209bcf730f"
+      },
+      "resources": [
+        "techsales.custom_reports",
+        "techsales.email_broadcasts",
+        "techsales.email_accounts"
+      ],
+      "actions": [
+        "view",
+        "export",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [],
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-worker.server.ts",
+          "symbol": "assertSalesWorker"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0258_service_agent_queue.sql",
+          "symbol": "sales_worker_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/security/worker-hardening.test.ts",
+          "name": "worker permits the current authorized source and recipient"
+        },
+        "missing_permission": {
+          "file": "src/lib/security/worker-hardening.test.ts",
+          "name": "worker blocks missing permission before any effect"
+        },
+        "explicit_deny": {
+          "file": "src/lib/security/worker-hardening.test.ts",
+          "name": "worker blocks explicit database deny before any effect"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/security/worker-hardening.test.ts",
+          "name": "worker blocks foreign workspace source before any effect"
+        },
+        "inactive_member": {
+          "file": "src/lib/security/worker-hardening.test.ts",
+          "name": "worker blocks inactive execution actor before any effect"
+        }
+      },
+      "exception": {
+        "mechanism": "Existing authenticated manual callers or cron-authenticated workers; current source and recipient permission RPC.",
+        "boundary": "Same source workspace, recipient scope and canonical sources; no new external destination or autonomous action.",
+        "revocation": "Current source/recipient deny or inactive actor blocks assertSalesWorker before external effects.",
+        "review_by": "2027-02-21"
+      }
+    },
+    {
+      "id": "security-tracking-message-capability",
+      "kind": "public",
+      "rationale": "Open pixels now require a message-bound, scope-separated keyed signature before privileged updates. No predictable fallback key; absent signing configuration leaves deliveries intact but tracking disabled. Click verification remains unchanged except failing closed without a key. Unsigned old pixels return the image without recording an open.",
+      "files": {
+        "src/lib/email-tracking.server.ts": "82ee0b7482cbd27634a46299deb530ec56affd17ba5fcf55880695a69dbdf7b2",
+        "src/routes/api/public/email/pixel.$messageId.ts": "d0262d2d09f80d8e3c6fde4032b0a6e68834bfaa1e92a25f0490b476de8e6874"
+      },
+      "resources": [
+        "techsales.email_messages"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [],
+      "controls": [
+        {
+          "file": "src/lib/email-tracking.server.ts",
+          "symbol": "verifyOpenPixel"
+        },
+        {
+          "file": "src/lib/email-tracking.server.ts",
+          "symbol": "verifyTrackedUrl"
+        }
+      ],
+      "database": [
+        {
+          "file": "supabase/migrations/20260518190349_68b026db-3b26-4e5e-8a6b-7390bfe33afa.sql",
+          "symbol": "email_messages"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/security/tracking-hardening.test.ts",
+          "name": "tracking permits a correctly signed message capability"
+        },
+        "missing_permission": {
+          "file": "src/lib/security/tracking-hardening.test.ts",
+          "name": "tracking rejects a missing capability without changing records"
+        },
+        "explicit_deny": {
+          "file": "src/lib/security/tracking-hardening.test.ts",
+          "name": "tracking rejects an invalid signature without changing records"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/security/tracking-hardening.test.ts",
+          "name": "tracking rejects a foreign message capability"
+        },
+        "inactive_member": {
+          "file": "src/lib/security/tracking-hardening.test.ts",
+          "name": "tracking rejects capabilities after the secret is revoked"
+        }
+      },
+      "exception": {
+        "mechanism": "Unforgeable signed message capability issued during existing authorized sends; open and click signatures have distinct scopes.",
+        "boundary": "Only the matching message tracking metadata; pixel is not authentication or civil identity proof and may be replayed by its recipient.",
+        "revocation": "Secret rotation revokes signatures; absent key refuses tracking; message deletion removes the target.",
+        "review_by": "2027-02-21"
+      }
+    },
+    {
+      "id": "security-gmail-diagnostic-redaction",
+      "kind": "business",
+      "rationale": "Manual synchronization retains requireSalesPermission and user/RLS account visibility before privileged access. Existing cron caller remains service-authenticated. Only the failure diagnostic is reduced to account ID, excluding both email and arbitrary provider error content; protected account last_error and manual response behavior remain unchanged.",
+      "files": {
+        "src/lib/gmail-sync.functions.ts": "528bb040672a2c657fafe84a1100360aa7f207b0be2c5c304047f3c431b94eef"
+      },
+      "resources": [
+        "techsales.email_accounts"
+      ],
+      "actions": [
+        "update"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [
+        "techsales.email_accounts.update.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "sales_area_authorize"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area permits the authorized action before work"
+        },
+        "missing_permission": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an effective deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses a foreign selected workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/access-control/sales-area-ci.test.ts",
+          "name": "sales area refuses an inactive execution actor"
+        }
+      }
+    },
+    {
+      "id": "security-public-api-job-pipeline-scope",
+      "kind": "public",
+      "rationale": "Existing key scope and active membership authentication remain required. New-job pipeline references are checked against the immutable key workspace, not an unrelated currently selected workspace, before insertion; a failed/missing lookup prevents writing. No new API key entitlement, grant, salary policy or legacy GET behavior introduced. Pipeline-handler regressions and real key-validator tests use synthetic database responses.",
+      "files": {
+        "src/routes/api/public/v1/ats/jobs.ts": "4097fe82df31372046278a453a692d061d637e189d76de8892400e7a78e6fb0c"
+      },
+      "resources": [
+        "techhire.jobs"
+      ],
+      "actions": [
+        "view",
+        "create"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
+      "permission_keys": [],
+      "controls": [
+        {
+          "file": "src/lib/api-keys/auth.server.ts",
+          "symbol": "authenticateApiKey"
+        },
+        {
+          "file": "src/lib/api-keys/auth.server.ts",
+          "symbol": "requireScope"
+        }
+      ],
+      "database": [
+        {
+          "file": "supabase/migrations/20260624133019_5c0006fb-53c0-4c9a-816c-2f215a6405bf.sql",
+          "symbol": "ats_pipelines"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/security/api-capability-hardening.test.ts",
+          "name": "API capability permits a live key and active membership"
+        },
+        "missing_permission": {
+          "file": "src/lib/security/api-capability-hardening.test.ts",
+          "name": "API capability rejects missing key"
+        },
+        "explicit_deny": {
+          "file": "src/lib/security/api-capability-hardening.test.ts",
+          "name": "API capability rejects revoked permission and denied scopes"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/security/api-capability-hardening.test.ts",
+          "name": "API capability rejects absent membership in the key workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/security/api-capability-hardening.test.ts",
+          "name": "API capability rejects inactive membership"
+        }
+      },
+      "exception": {
+        "mechanism": "Existing live API key, read/write capability scope, enabled API flag and active membership of key.workspaceId.",
+        "boundary": "POST job and optional pipeline are confined to the same verified key workspace; this is not a new public unauthenticated exception.",
+        "revocation": "Key expiry/revocation or inactive membership disables authentication; missing pipeline prevents insertion.",
+        "review_by": "2027-02-21"
+      }
     }
   ],
   "retired": {

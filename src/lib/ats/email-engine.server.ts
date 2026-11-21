@@ -1,6 +1,6 @@
 import { escapeHtml } from "@/lib/security/escape";
 import { EMAIL_SENDER_DOMAIN } from "@/lib/platform-domains";
-import { renderTokens as renderTemplate } from "@/lib/message-tokens";
+import { renderTokens as renderTemplate, renderHtmlTokens } from "@/lib/message-tokens";
 // Engine de envio de e-mails do ATS (Fase 1).
 // Processa duas filas:
 //   1. ats_candidate_email_queue — e-mails para o CANDIDATO (confirmação de candidatura)
@@ -237,7 +237,7 @@ export async function tickAtsStageEmails(limit = 20): Promise<{
       "company.name": branding.productName,
     };
     const subject = renderTemplate(r.subject, vars);
-    const bodyHtml = renderTemplate(r.body, vars);
+    const bodyHtml = renderHtmlTokens(r.body, vars);
 
     const res = await sendOne({
       to: r.to_email,
