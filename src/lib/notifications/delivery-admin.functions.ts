@@ -13,6 +13,7 @@ import {
   deliveryPolicyResult,
   deliveryHistoryInput,
   deliveryHistoryResult,
+  notificationSendersResult,
 } from "./delivery-api";
 import {
   notificationDeliveryCapabilities,
@@ -82,50 +83,11 @@ export const listNotificationWhatsAppSenders = createServerFn({ method: "POST" }
   .handler(async ({ context, data }) => {
     assertNotificationWorkspace(context, data.workspaceId);
     await assertNotificationTemplateAccess(context.supabase, data.workspaceId);
-    const [numbers, connections] = await Promise.all([
-      context.supabase
-        .from("wa_cloud_numbers")
-        .select(
-          "phone_number_id,connection_id,display_phone_number,verified_name,quality_rating,status,available,synced_at",
-        )
-        .eq("workspace_id", data.workspaceId)
-        .order("display_phone_number")
-        .limit(100),
-      context.supabase
-        .from("wa_cloud_connections")
-        .select("id,enabled,webhook_verified_at")
-        .eq("workspace_id", data.workspaceId)
-        .limit(100),
-    ]);
-    if (numbers.error || connections.error)
-      throw Error("Não foi possível consultar os remetentes do WhatsApp.");
-    const connectionsById = new Map((connections.data ?? []).map((row) => [row.id, row]));
-    return {
-      items: (numbers.data ?? []).map((row) => {
-        const connection = connectionsById.get(row.connection_id);
-        const available = row.available === true && row.status === "CONNECTED";
-        const reason = !available
-          ? "sender_unavailable"
-          : !connection?.enabled
-            ? "connection_unavailable"
-            : !connection.webhook_verified_at
-              ? "webhook_unverified"
-              : !["GREEN", "HIGH"].includes(row.quality_rating ?? "")
-                ? "quality_not_high"
-                : null;
-        return {
-          id: row.phone_number_id,
-          phone: row.display_phone_number ?? "",
-          label: row.verified_name || row.display_phone_number || "Número conectado",
-          available,
-          quality: row.quality_rating,
-          status: row.status,
-          syncedAt: row.synced_at,
-          eligible: reason === null,
-          reason,
-        };
+    return notificationSendersResult.parse(
+      await workRpc(context.supabase, "notification_whatsapp_senders", {
+        p_workspace: data.workspaceId,
       }),
-    };
+    );
   });
 export const listNotificationWhatsAppTemplates = createServerFn({ method: "POST" })
   .middleware([requireWorkspaceContext()])

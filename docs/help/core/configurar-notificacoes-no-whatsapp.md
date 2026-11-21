@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 150
-version: 4
+version: 5
 is_published: true
 ---
 
@@ -17,6 +17,8 @@ is_published: true
 **Para que serve:** Receber avisos pessoais dos Workflows pela conexão oficial Cloud API. O aviso usa um modelo neutro aprovado, com acesso à central autenticada. Os detalhes do registro continuam no TechERP.
 
 **Quem pode fazer:** A configuração exige membro ativo, acesso às configurações de notificações e às permissões do canal WhatsApp. Cada usuário autoriza somente o próprio telefone. A leitura e a execução de tarefas continuam sujeitas ao acesso ao registro de origem.
+
+Para carregar remetentes e consultar modelos, a conta precisa de **Visualizar configurações de notificações**, **Ver canais de atendimento** e **Visualizar WhatsApp**, no workspace atual. Para alterar a política, também são necessários os acessos de gerenciamento de notificações e WhatsApp. A lista apresenta somente os dados de identificação e elegibilidade dos números; tokens e segredos das conexões não são exibidos. Perfis sem essas permissões continuam bloqueados, inclusive por URL direta.
 
 **Onde fica:** **Central de notificações > Modelos e canais**, **Preferências** e **Entregas**. A conexão dos números é preparada na área de canais de atendimento.
 

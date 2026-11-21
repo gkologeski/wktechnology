@@ -32,6 +32,22 @@ const baseRow = {
   draft_actions: [{ type: "send_email", to: "PRIVATE@example.test" }],
   draft_trigger: { event: "invalid" },
 };
+const whatsappViewKeys = [
+  "system.notification_settings.view.workspace",
+  "system.channels.view.workspace",
+  "system.whatsapp.view.workspace",
+] as const;
+const whatsappContext = () => ({
+  actor: WF,
+  workspace: W,
+  keys: Object.fromEntries(whatsappViewKeys.map((key) => [key, true])),
+});
+const whatsappRow = {
+  ...baseRow,
+  actions: [
+    { type: "send_notification", title: "PRIVATE", delivery: { channels: ["inapp", "whatsapp"] } },
+  ],
+};
 const caps = {
   settingsView: true,
   settingsManage: false,
@@ -45,6 +61,8 @@ function fixture(
   options: {
     caps?: Partial<typeof caps>;
     denyArea?: string;
+    accessContext?: unknown;
+    contextFailure?: boolean;
     record?: boolean;
     policyFailure?: boolean;
     slackFailure?: boolean;
@@ -61,6 +79,11 @@ function fixture(
       return {
         data: null,
         error: args.r === options.denyArea ? { message: "PRIVATE authorization failure" } : null,
+      };
+    if (name === "work_access_context")
+      return {
+        data: options.accessContext === undefined ? whatsappContext() : options.accessContext,
+        error: options.contextFailure ? { message: "PRIVATE canonical context detail" } : null,
       };
     if (name === "sales_record_access") return { data: options.record ?? true, error: null };
     if (name === "notification_delivery_settings")
@@ -289,30 +312,68 @@ it("reports a real dependency RPC failure as unavailable without exposing its er
   expect(JSON.stringify(report)).not.toMatch(/PRIVATE|SQL|endpoint/);
 });
 
-it("keeps WhatsApp policy observations unavailable when the caller cannot validate both channel view gates", async () => {
-  const f = fixture({
-    denyArea: "system.channels",
-    row: {
-      ...baseRow,
-      actions: [
-        {
-          type: "send_notification",
-          title: "PRIVATE",
-          delivery: { channels: ["inapp", "whatsapp"] },
-        },
-      ],
-    },
-  });
+it("uses canonical WhatsApp keys even when legacy sales-area authorization does not recognize shared channels", async () => {
+  const f = fixture({ denyArea: "system.channels", row: whatsappRow });
   const report = await loadNotificationReadiness(f.client, W, WF);
   expect(report.checks).toContainEqual({
     code: "whatsapp_policy",
     scope: "whatsapp",
-    status: "unavailable",
-    reason: "channel_access_unavailable",
+    status: "dependency_blocked",
+    reason: "whatsapp_disabled",
   });
+  expect(f.rpc).toHaveBeenCalledWith("work_access_context", {});
+  expect(f.rpc.mock.calls.filter(([name]) => name === "sales_area_authorize")).toEqual([
+    ["sales_area_authorize", { r: "system.workflows", a: "view", t: null, i: null }],
+  ]);
   expect(f.from.mock.calls).toEqual([["workflows"]]);
+  expect(JSON.stringify(report)).not.toMatch(/PRIVATE|actor|keys|token|ciphertext/);
   expect(network).not.toHaveBeenCalled();
 });
+
+it.each(whatsappViewKeys)(
+  "keeps WhatsApp observations unavailable when effective canonical view key %s is missing or false",
+  async (key) => {
+    for (const effective of [undefined, false]) {
+      const access = whatsappContext();
+      if (effective === undefined) delete access.keys[key];
+      else access.keys[key] = effective;
+      const f = fixture({ accessContext: access, row: whatsappRow });
+      const report = await loadNotificationReadiness(f.client, W, WF);
+      expect(report.checks).toContainEqual({
+        code: "whatsapp_policy",
+        scope: "whatsapp",
+        status: "unavailable",
+        reason: "channel_access_unavailable",
+      });
+      expect(f.rpc).toHaveBeenCalledWith("work_access_context", {});
+      expect(f.from.mock.calls).toEqual([["workflows"]]);
+      expect(f.mutations).not.toHaveBeenCalled();
+      expect(network).not.toHaveBeenCalled();
+    }
+  },
+);
+
+it.each([
+  { label: "foreign context", accessContext: { ...whatsappContext(), workspace: I } },
+  { label: "missing actor", accessContext: { workspace: W, keys: whatsappContext().keys } },
+  { label: "unavailable context", contextFailure: true },
+])(
+  "keeps a $label unavailable rather than treating it as an authorized WhatsApp observation",
+  async (options) => {
+    const f = fixture({ ...options, row: whatsappRow });
+    const report = await loadNotificationReadiness(f.client, W, WF);
+    expect(report.checks).toContainEqual({
+      code: "whatsapp_policy",
+      scope: "whatsapp",
+      status: "unavailable",
+      reason: "channel_access_unavailable",
+    });
+    expect(f.from.mock.calls).toEqual([["workflows"]]);
+    expect(JSON.stringify(report)).not.toMatch(/PRIVATE|actor|keys|token|ciphertext/);
+    expect(f.mutations).not.toHaveBeenCalled();
+    expect(network).not.toHaveBeenCalled();
+  },
+);
 
 it.each([false, true])(
   "gates the existing Slack RPC and keeps bindings private (slackView=%s)",

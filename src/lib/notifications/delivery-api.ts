@@ -4,6 +4,34 @@ import { normalizePhone } from "@/lib/phone/e164";
 import { notificationDeliveryPolicySchema, NOTIFICATION_DELIVERY_STATUSES } from "./delivery-types";
 
 export const deliveryWorkspaceInput = z.object({ workspaceId: z.string().uuid() }).strict();
+export const notificationSendersResult = z
+  .object({
+    items: z
+      .array(
+        z
+          .object({
+            id: z.string().regex(/^\d{5,30}$/),
+            phone: z.string(),
+            label: z.string(),
+            available: z.boolean(),
+            quality: z.string().nullable(),
+            status: z.string().nullable(),
+            syncedAt: z.string().nullable(),
+            eligible: z.boolean(),
+            reason: z
+              .enum([
+                "sender_unavailable",
+                "connection_unavailable",
+                "webhook_unverified",
+                "quality_not_high",
+              ])
+              .nullable(),
+          })
+          .strict(),
+      )
+      .max(100),
+  })
+  .strict();
 export const deliveryPolicyResult = z.object({
   policy: notificationDeliveryPolicySchema,
   revision: z.number().int().min(0),

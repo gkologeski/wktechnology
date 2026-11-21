@@ -21,12 +21,13 @@ vi.mock("@/lib/inbox-auto-assignment.server", () => ({ autoAssignInboxConversati
 vi.mock("./whatsapp/inbound-media.server", () => ({ storeInboundMedia: vi.fn() }));
 import { handleCloudWebhook } from "./whatsapp/cloud-webhook.server";
 import { processEvent } from "./whatsapp/webhook-processor.server";
-import { beforeEach, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { randomUUID } from "node:crypto";
 import {
   db,
   W,
   B,
+  A,
   U,
   C,
   F,
@@ -845,4 +846,228 @@ it("checks the signed sender and destination against an existing Inbox projectio
   expect((await db`select status from whatsapp_messages where id=${message}`)[0].status).toBe(
     "read",
   );
+});
+
+describe("notification WhatsApp sender catalogue", () => {
+  const requiredKeys = [
+    "system.notification_settings.view.workspace",
+    "system.channels.view.workspace",
+    "system.whatsapp.view.workspace",
+  ] as const;
+  const catalogue = (workspace = W, actor = U, token?: string) =>
+    request("/rpc/notification_whatsapp_senders", { p_workspace: workspace }, actor, token);
+
+  beforeEach(async () => {
+    await db`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect)
+    values(${W},${ROLE},'system.whatsapp.view.workspace','grant')`;
+  });
+
+  it("returns the authorized sender DTO and eligibility without exposing or granting Cloud credentials", async () => {
+    // Read access must not require manage. All provider state is synthetic and
+    // local; the RPC does not consult Meta, create policies, or queue deliveries.
+    await db`update job_role_permission_overrides set effect='deny' where workspace_id=${W} and role_id=${ROLE}
+    and permission_key in('system.whatsapp.manage.workspace','system.notification_settings.manage.workspace')`;
+    const disabled = randomUUID(),
+      unverified = randomUUID(),
+      foreign = randomUUID(),
+      missing = randomUUID();
+    await db`insert into wa_cloud_connections(id,workspace_id,enabled,webhook_verified_at) values
+    (${disabled},${W},false,now()),(${unverified},${W},true,null),(${foreign},${B},true,now())`;
+    const variants = [
+      {
+        id: "200000001",
+        connection: X,
+        available: true,
+        status: "CONNECTED",
+        quality: "GREEN",
+        reason: null,
+      },
+      {
+        id: "200000002",
+        connection: X,
+        available: false,
+        status: "CONNECTED",
+        quality: "GREEN",
+        reason: "sender_unavailable",
+      },
+      {
+        id: "200000003",
+        connection: X,
+        available: true,
+        status: "DISCONNECTED",
+        quality: "GREEN",
+        reason: "sender_unavailable",
+      },
+      {
+        id: "200000004",
+        connection: disabled,
+        available: true,
+        status: "CONNECTED",
+        quality: "RED",
+        reason: "connection_unavailable",
+      },
+      {
+        id: "200000005",
+        connection: unverified,
+        available: true,
+        status: "CONNECTED",
+        quality: "RED",
+        reason: "webhook_unverified",
+      },
+      {
+        id: "200000006",
+        connection: X,
+        available: true,
+        status: "CONNECTED",
+        quality: "YELLOW",
+        reason: "quality_not_high",
+      },
+      {
+        id: "200000007",
+        connection: X,
+        available: true,
+        status: "CONNECTED",
+        quality: null,
+        reason: "quality_not_high",
+      },
+      {
+        id: "200000008",
+        connection: X,
+        available: true,
+        status: "CONNECTED",
+        quality: "HIGH",
+        reason: null,
+      },
+      {
+        id: "200000009",
+        connection: missing,
+        available: true,
+        status: "CONNECTED",
+        quality: "GREEN",
+        reason: "connection_unavailable",
+      },
+      {
+        id: "200000010",
+        connection: foreign,
+        available: true,
+        status: "CONNECTED",
+        quality: "GREEN",
+        reason: "connection_unavailable",
+      },
+      {
+        id: "200000011",
+        connection: X,
+        available: true,
+        status: null,
+        quality: null,
+        reason: "sender_unavailable",
+      },
+    ];
+    for (const variant of variants)
+      await db`insert into wa_cloud_numbers(phone_number_id,connection_id,workspace_id,display_phone_number,verified_name,quality_rating,status,available,synced_at)
+      values(${variant.id},${variant.connection},${W},${"+55" + variant.id},'',${variant.quality},${variant.status},${variant.available},null)`;
+    await db`insert into wa_cloud_numbers(phone_number_id,connection_id,workspace_id,display_phone_number,quality_rating,status,available)
+    values('999999999',${foreign},${B},'+559999999999','GREEN','CONNECTED',true)`;
+    const response = await catalogue();
+    expect(response.status).toBe(200);
+    const items = response.payload.items as Record<string, unknown>[];
+    expect(items).toHaveLength(variants.length + 1);
+    for (const variant of variants) {
+      const row = items.find((item) => item.id === variant.id)!;
+      expect(Object.keys(row).sort()).toEqual([
+        "available",
+        "eligible",
+        "id",
+        "label",
+        "phone",
+        "quality",
+        "reason",
+        "status",
+        "syncedAt",
+      ]);
+      expect(row).toMatchObject({
+        phone: "+55" + variant.id,
+        label: "+55" + variant.id,
+        available: variant.available && variant.status === "CONNECTED",
+        quality: variant.quality,
+        status: variant.status,
+        syncedAt: null,
+        eligible: variant.reason === null,
+        reason: variant.reason,
+      });
+    }
+    expect(items.some((item) => item.id === "999999999")).toBe(false);
+    expect(
+      (await request("/wa_cloud_connections?select=id,enabled,webhook_verified_at")).status,
+    ).toBe(403);
+    expect((await request("/wa_cloud_connections?select=credentials_ciphertext")).status).toBe(403);
+    expect(
+      await withRole(
+        "authenticated",
+        U,
+        async (tx) =>
+          (
+            await tx`select has_table_privilege(current_user,'public.wa_cloud_connections','SELECT') allowed`
+          )[0].allowed,
+      ),
+    ).toBe(false);
+    await db`update wa_cloud_numbers set display_phone_number='',verified_name=null where phone_number_id in('200000001','200000002')`;
+    const emptyLabels = await catalogue();
+    expect(
+      emptyLabels.payload.items
+        .slice(0, 2)
+        .map((item: { id: string; label: string }) => ({ id: item.id, label: item.label })),
+    ).toEqual([
+      { id: "200000001", label: "Número conectado" },
+      { id: "200000002", label: "Número conectado" },
+    ]);
+    await db`insert into wa_cloud_numbers(phone_number_id,connection_id,workspace_id,display_phone_number,quality_rating,status,available)
+    select (300000000+n)::text,${X},${W},'+55'||(300000000+n)::text,'GREEN','CONNECTED',true from generate_series(1,105) n`;
+    expect((await catalogue()).payload.items).toHaveLength(100);
+    expect((await db`select count(*)::integer n from notification_delivery_policies`)[0].n).toBe(0);
+    expect((await db`select count(*)::integer n from notification_delivery_intents`)[0].n).toBe(0);
+  });
+
+  it("rejects each missing required workspace view key, anonymous calls and service calls", async () => {
+    for (const key of requiredKeys) {
+      await db`delete from job_role_permission_overrides where workspace_id=${W} and role_id=${ROLE} and permission_key=${key}`;
+      expect((await catalogue()).status).toBe(403);
+      await db`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${ROLE},${key},'grant')`;
+    }
+    await db`delete from job_role_permission_overrides where workspace_id=${W} and role_id=${ROLE} and permission_key='system.whatsapp.view.workspace'`;
+    for (const scope of ["own", "team"])
+      await db`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${ROLE},${"system.whatsapp.view." + scope},'grant')`;
+    expect((await catalogue()).status).toBe(403);
+    expect([401, 403]).toContain((await catalogue(W, U, fixtureJwt("anon"))).status);
+    expect([401, 403]).toContain((await catalogue(W, U, fixtureJwt("service_role"))).status);
+    expect((await catalogue(W, U, fixtureJwt("authenticated"))).status).toBe(403);
+  });
+
+  it("honors explicit deny over grants and over the active workspace owner", async () => {
+    await db`insert into user_job_roles(role_id,user_id,workspace_id,owner_id) values(${ROLE},${A},${W},${W})`;
+    expect((await catalogue(W, A)).status).toBe(200);
+    for (const key of requiredKeys) {
+      await db`update job_role_permission_overrides set effect='deny' where workspace_id=${W} and role_id=${ROLE} and permission_key=${key}`;
+      expect((await catalogue()).status).toBe(403);
+      expect((await catalogue(W, A)).status).toBe(403);
+      await db`update job_role_permission_overrides set effect='grant' where workspace_id=${W} and role_id=${ROLE} and permission_key=${key}`;
+    }
+  });
+
+  it("rejects another workspace or foreign actor and cannot project foreign connection metadata", async () => {
+    expect(
+      (await request("/rpc/notification_whatsapp_senders", { p_workspace: null })).status,
+    ).toBe(403);
+    expect((await catalogue(B)).status).toBe(403);
+    expect((await catalogue(W, F)).status).toBe(403);
+    await db`update profiles set active_workspace_id=${B} where id=${U}`;
+    expect((await catalogue(W)).status).toBe(403);
+    expect((await catalogue(B)).status).toBe(403);
+  });
+
+  it("rejects inactive membership despite retained grants and workspace ownership", async () => {
+    await db`update workspace_members set status='inactive' where workspace_id=${W} and user_id in(${U},${A})`;
+    expect((await catalogue()).status).toBe(403);
+    expect((await catalogue(W, A)).status).toBe(403);
+  });
 });

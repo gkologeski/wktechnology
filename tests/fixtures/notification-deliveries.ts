@@ -365,6 +365,27 @@ beforeAll(async () => {
     readFileSync("drizzle/migrations/0131_workflow_delivery_ledger_and_send_policy.sql", "utf8"),
   );
   await db.unsafe(readFileSync("tests/fixtures/notification-deliveries.sql", "utf8"));
+  // Use the canonical Cloud table ACLs/RLS verbatim. A narrowed SELECT list
+  // still cannot read the private connection table through an authenticated API.
+  const cloudSchema = readFileSync(
+    "drizzle/migrations/0254_whatsapp_cloud_connections.sql",
+    "utf8",
+  );
+  for (const [startMarker, endMarker] of [
+    [
+      "ALTER TABLE public.wa_cloud_connections ENABLE ROW LEVEL SECURITY;",
+      "-- Ciphertext and app secret",
+    ],
+    [
+      "ALTER TABLE public.wa_cloud_numbers ENABLE ROW LEVEL SECURITY;",
+      "CREATE INDEX wa_cloud_numbers_workspace",
+    ],
+  ]) {
+    const start = cloudSchema.indexOf(startMarker);
+    const end = cloudSchema.indexOf(endMarker, start);
+    if (start < 0 || end <= start) throw Error("Missing canonical Cloud table access boundary");
+    await db.unsafe(cloudSchema.slice(start, end));
+  }
   await load("drizzle/migrations/0301_whatsapp_number_suppressions.sql", ["wa_phone_key"]);
   try {
     await db.unsafe(readFileSync("drizzle/migrations/0393_notification_deliveries.sql", "utf8"));
@@ -429,6 +450,9 @@ beforeAll(async () => {
   await setupNotificationHirePeople(db);
   await setupNotificationFinance(db);
   await setupNotificationScheduling(db);
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0402_notification_whatsapp_senders.sql", "utf8"),
+  );
   const historic = await db`select count(*)::integer n from notification_workspace_context`;
   if (historic[0].n !== 0) throw Error("Historical rows were attributed to a workspace");
   const authenticatorPassword = randomBytes(32).toString("hex");

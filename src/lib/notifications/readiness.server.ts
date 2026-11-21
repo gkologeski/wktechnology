@@ -2,7 +2,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { assertSalesArea, assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { workRpc } from "@/lib/access-control/work-core.server";
-import { assertNotificationDeliverySettings } from "./delivery-access.server";
+import {
+  assertNotificationDeliverySettings,
+  assertNotificationTemplateAccess,
+} from "./delivery-access.server";
 import { deliveryPolicyResult } from "./delivery-api";
 import {
   notificationSlackSettingsSchema,
@@ -145,8 +148,7 @@ export async function loadNotificationReadiness(
   const whatsappAccess = async () => {
     if (!whatsappRequested) return false;
     try {
-      await assertSalesArea(client, "system.channels", "view");
-      await assertSalesArea(client, "system.whatsapp", "view");
+      await assertNotificationTemplateAccess(client, workspaceId);
       return true;
     } catch {
       return false;
