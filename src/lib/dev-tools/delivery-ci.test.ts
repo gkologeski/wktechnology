@@ -13,16 +13,23 @@ const { load } = createRequire(import.meta.url)("js-yaml");
 const workflow = () => load(readFileSync(".github/workflows/ci.yml", "utf8"));
 
 describe("CI acceleration keeps the release gate", () => {
-  it("prepares only the locked PostgreSQL dependency before full verification", () => {
+  it("prepares only locked database dependencies before full verification", () => {
     const steps = workflow().jobs.unit.steps;
     const image = readFileSync("src/lib/contracts/legacy-postgres.test.ts", "utf8").match(
       /const image = "([^"]+)"/,
     )?.[1];
     expect(image).toMatch(/^postgres@sha256:[a-f0-9]{64}$/);
+    const gatewayImage = readFileSync("tests/fixtures/notification-deliveries.ts", "utf8").match(
+      /const postgrestImage\s*=\s*"([^"]+)"/,
+    )?.[1];
+    expect(gatewayImage).toMatch(/^postgrest\/postgrest@sha256:[a-f0-9]{64}$/);
     const prepare = steps.find(
-      (s: { name?: string }) => s.name === "Prepare pinned PostgreSQL test image",
+      (s: { name?: string }) => s.name === "Prepare pinned database test images",
     );
-    expect(prepare.run).toBe(`docker pull ${image}`);
+    expect(prepare.run.trim().split("\n")).toEqual([
+      `docker pull ${image}`,
+      `docker pull ${gatewayImage}`,
+    ]);
     expect(prepare.if).toBeUndefined();
     expect(prepare["continue-on-error"]).toBeUndefined();
     expect(steps.indexOf(prepare)).toBeLessThan(
