@@ -1,3 +1,7 @@
+import {
+  notificationDigestSettingsSchema,
+  notificationDigestSettingsResultSchema,
+} from "./scheduling-types";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireWorkspaceContext } from "@/lib/access-control/active-workspace.middleware";
@@ -55,6 +59,36 @@ export const updateNotificationProfilePhone = createServerFn({ method: "POST" })
         p_workspace: data.workspaceId,
         p_phone: data.phone,
         p_expected_phone: data.expectedPhone,
+      }),
+    );
+  });
+
+export const getNotificationDigestSettings = createServerFn({ method: "POST" })
+  .middleware([requireWorkspaceContext()])
+  .inputValidator((input) => deliveryWorkspaceInput.parse(input))
+  .handler(async ({ context, data }) => {
+    assertNotificationWorkspace(context, data.workspaceId);
+    return notificationDigestSettingsResultSchema.parse(
+      await workRpc(context.supabase, "get_notification_digest_settings", {
+        p_workspace: data.workspaceId,
+      }),
+    );
+  });
+export const saveNotificationDigestSettings = createServerFn({ method: "POST" })
+  .middleware([requireWorkspaceContext()])
+  .inputValidator((input) =>
+    deliveryWorkspaceInput
+      .extend({ settings: notificationDigestSettingsSchema, revision: z.number().int().min(0) })
+      .strict()
+      .parse(input),
+  )
+  .handler(async ({ context, data }) => {
+    assertNotificationWorkspace(context, data.workspaceId);
+    return notificationDigestSettingsResultSchema.parse(
+      await workRpc(context.supabase, "save_notification_digest_settings", {
+        p_workspace: data.workspaceId,
+        p_settings: data.settings,
+        p_revision: data.revision,
       }),
     );
   });

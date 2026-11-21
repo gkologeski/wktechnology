@@ -13,6 +13,13 @@ import { tickWorkflows } from "./engine-runtime.server";
 
 export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 100) {
   const businessLimit = Math.min(200, z.number().int().min(1).parse(limitPerWf));
+  const schedules = z
+    .object({
+      digests_queued: z.number().int().min(0),
+      followups_queued: z.number().int().min(0),
+      suppressed: z.number().int().min(0),
+    })
+    .parse(await workRpc(supabase, "notification_schedule_tick", { p_limit: businessLimit }));
   const business = z
     .object({ enqueued: z.number().int().min(0) })
     .parse(await workRpc(supabase, "notification_business_due_tick", { p_limit: businessLimit }));
@@ -114,5 +121,5 @@ export async function tickTimeTriggers(supabase: SupabaseClient, limitPerWf = 10
   // Processa imediatamente os eventos gerados
   const tickRes =
     enqueued > 0 ? await tickWorkflows(supabase, Math.min(enqueued, 200)) : { processed: 0 };
-  return { enqueued, processed: tickRes.processed, workflows: wfResults };
+  return { enqueued, processed: tickRes.processed, workflows: wfResults, schedules };
 }

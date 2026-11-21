@@ -69,6 +69,7 @@ vi.mock("@/components/notifications/delivery-operations", () => ({
   NotificationDeliveryConfiguration: () => createElement("p", null, "Models panel"),
   NotificationDeliveryHistorySection: () => createElement("p", null, "History panel"),
   NotificationConsentSection: () => createElement("p", null, "Consent panel"),
+  NotificationDigestSection: () => createElement("p", null, "Digest panel"),
 }));
 vi.mock("@/components/notifications/notification-preferences-panel", () => ({
   NotificationPreferencesPanel: ({

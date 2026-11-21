@@ -599,7 +599,18 @@ export const SaveSchema = z
       .array(z.unknown())
       .min(1)
       .max(20)
-      .transform((arr) => parseActionsAtDepth(arr, 0)),
+      .transform((arr, ctx) => {
+        try {
+          return parseActionsAtDepth(arr, 0);
+        } catch (error) {
+          ctx.addIssue({
+            code: "custom",
+            fatal: true,
+            message: error instanceof Error ? error.message : "Ação inválida.",
+          });
+          return z.NEVER;
+        }
+      }),
   })
   .superRefine((workflow, ctx) => {
     const actionProblem =

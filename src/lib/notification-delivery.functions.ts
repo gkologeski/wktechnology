@@ -11,6 +11,8 @@ export {
 export {
   getNotificationDeliveryConsent,
   saveNotificationDeliveryConsent,
+  getNotificationDigestSettings,
+  saveNotificationDigestSettings,
   updateNotificationProfilePhone,
 } from "./notifications/delivery-personal.functions";
 export {

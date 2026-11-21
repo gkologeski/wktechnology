@@ -171,3 +171,10 @@ Títulos usam /finance/entries/ID com leitura fresca autenticada e capacidades c
 Para NF, Executor do workflow é um default editável e continua exigindo acesso fiscal. source_responsible é somente finance_user canônico da formalização vigente, ativo e autorizado; source_creator é uploaded_by somente quando escolhido explicitamente. Não há CFO/CEO/substituto presumido. Preferências por evento mantêm som/tremor desligados por padrão e WhatsApp herdado sem conceder consentimento/política/acesso.
 
 As evidências do navegador são sintéticas, locais e usam biblioteca real com SVGs de bandeira empacotados pelo harness. Elas não provam login/RLS/produção ou envio real; esses limites ficam separados das suítes PostgreSQL de origem.
+
+
+## Classificação explícita de cadência P12
+
+O agrupamento `CenterSettings.summary` permanece visual e não é migrado para adesão de envio. Resumo pessoal usa configuração privada própria por usuário/workspace, revisão CAS e defaults desativados/sem canais; diário às 08:30, segunda-feira 1 e America/Sao_Paulo são valores iniciais editáveis. Somente comunicações externas iniciais de prioridade `low` explícita e evento canônico comprovado são elegíveis; `people.approval.pending` fica excluído. Central imediata, texto neutro/link central, sem contagens ou snapshots externos e sem fallback automático no resumo.
+
+Acompanhamento opcional está no `delivery.followup` do passo: lembrete de 1–168 horas × 1–3 ocorrências, horizonte máximo de 168 horas, ou uma escalada de 1–168 horas com seletor explícito. Exige inapp original existente/não lido e pendência canônica ainda válida, herda canais/fallback e nunca executa novamente outras ações. São elegíveis somente as 12 chaves fechadas de pendência; aprovação profissional não escala e a NF precisa permanecer registrada aguardando conferência. Política `digest_enabled`/`followups_enabled` começa false e `followup_daily_limit` zero; as mesmas alçadas administrativas e de Workflow continuam obrigatórias. Histórico distingue `occurrence_kind`, `parent_intent_id` e `batch_id`, sem inventar workflow/run para envelope multiorigem.

@@ -557,3 +557,62 @@ it.each([
     expect(generic.rpc).toHaveBeenCalled();
   },
 );
+
+it("rejects unsupported nested follow-up scheduling before any earlier Workflow effect", async () => {
+  const c = client(true);
+  const result = await runActions(
+    c.db,
+    [
+      { type: "webhook", url: "https://example.invalid" },
+      {
+        type: "branch_if",
+        filters: [],
+        then: [
+          {
+            type: "send_notification",
+            title: "Pending",
+            delivery: {
+              channels: ["inapp"],
+              fallback: "none",
+              followup: { reminder: { interval_hours: 24, max_occurrences: 2 } },
+            },
+          },
+        ],
+        else: [],
+      },
+    ],
+    { ...ctx(), entity: "deals", notificationEventKey: "crm.deal.won" },
+  );
+  expect(result.hadError).toBe(true);
+  expect(result.log[0].error).toMatch(/não permite/);
+  expect(c.rpc).not.toHaveBeenCalled();
+  expect(c.from).not.toHaveBeenCalled();
+  expect(c.writes).toEqual([]);
+});
+it("never permits a delayed pending-approval escalation to a different recipient", async () => {
+  const c = client(true);
+  const result = await runActions(
+    c.db,
+    [
+      {
+        type: "send_notification",
+        title: "Pending",
+        recipients: [{ kind: "pending_approvers" }],
+        delivery: {
+          channels: ["inapp"],
+          fallback: "none",
+          followup: { escalation: { after_hours: 24, recipient: { kind: "workflow_owner" } } },
+        },
+      },
+    ],
+    {
+      ...ctx(),
+      entity: "hiring_preparation_requests",
+      notificationEventKey: "people.approval.pending",
+    },
+  );
+  expect(result.hadError).toBe(true);
+  expect(result.log[0].error).toMatch(/sem escalonamento/);
+  expect(c.rpc).not.toHaveBeenCalled();
+  expect(c.from).not.toHaveBeenCalled();
+});

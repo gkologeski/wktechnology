@@ -1,3 +1,4 @@
+import { notificationSchedulingActionProblem } from "@/lib/notifications/scheduling-types";
 import { notificationEventConfigurationProblem } from "./notification-events";
 import { authorizeWorkflowStep, sanitizeWorkflowSnapshot } from "./engine/authorization.server";
 // Execução das ações de workflow (runActions).
@@ -50,10 +51,9 @@ export async function runActions(
   ctx.after = sanitizeWorkflowSnapshot(ctx.after, ctx.entity, ctx.notificationEventKey);
   ctx.before = sanitizeWorkflowSnapshot(ctx.before, ctx.entity, ctx.notificationEventKey);
   if (ctx.vars) ctx.vars = sanitizeWorkflowSnapshot(ctx.vars);
-  const configurationProblem = notificationEventConfigurationProblem(
-    ctx.notificationEventKey,
-    actions,
-  );
+  const configurationProblem =
+    notificationSchedulingActionProblem(ctx.notificationEventKey, actions) ??
+    notificationEventConfigurationProblem(ctx.notificationEventKey, actions);
   if (configurationProblem)
     return {
       log: [

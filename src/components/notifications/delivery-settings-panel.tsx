@@ -371,6 +371,47 @@ export function DeliverySettingsPanel({
           qualidade, opt-in e restrições aplicáveis.
         </p>
       </fieldset>
+      <fieldset
+        disabled={!canEdit || pending}
+        className="min-w-0 space-y-4 border-t border-border pt-4"
+      >
+        <legend className="mb-3 font-medium">Resumos e acompanhamentos</legend>
+        <div className="flex items-center gap-3">
+          <Switch
+            id="notification-policy-digest"
+            checked={draft.digest_enabled ?? false}
+            onCheckedChange={(digest_enabled) => edit({ digest_enabled })}
+          />
+          <Label htmlFor="notification-policy-digest">Disponibilizar resumos pessoais</Label>
+        </div>
+        <div className="flex items-center gap-3">
+          <Switch
+            id="notification-policy-followups"
+            checked={draft.followups_enabled ?? false}
+            onCheckedChange={(followups_enabled) => edit({ followups_enabled })}
+          />
+          <Label htmlFor="notification-policy-followups">
+            Disponibilizar lembretes e escalonamento
+          </Label>
+        </div>
+        <label className="block space-y-1 text-sm">
+          Cota diária de acompanhamentos
+          <Input
+            aria-label="Cota diária de acompanhamentos"
+            type="number"
+            min={0}
+            max={10000}
+            value={draft.followup_daily_limit ?? 0}
+            onChange={(event) => edit({ followup_daily_limit: Number(event.target.value) })}
+          />
+        </label>
+        <p className="text-xs text-muted-foreground">
+          As modalidades começam desligadas, com cota de acompanhamento zero. Disponibilizar não
+          cria adesão pessoal, altera a prioridade de passos existentes ou ativa regras. O
+          acompanhamento exige cota positiva e configuração publicada; os limites de cada canal
+          continuam valendo.
+        </p>
+      </fieldset>
       {error && (
         <p role="alert" className="text-sm text-destructive">
           {error}

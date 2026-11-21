@@ -1,8 +1,25 @@
 import { beforeEach, it, expect, vi } from "vitest";
-const state = vi.hoisted(() => ({ rpc: vi.fn(), area: vi.fn(), manage: vi.fn(), record: vi.fn() }));
+const state = vi.hoisted(() => ({
+  rpc: vi.fn(),
+  area: vi.fn(),
+  manage: vi.fn(),
+  record: vi.fn(),
+  validators: new Map<unknown, (input: unknown) => unknown>(),
+}));
 vi.mock("@tanstack/react-start", () => ({
   createServerFn: () => {
-    const b = { middleware: () => b, inputValidator: () => b, handler: (f: unknown) => f };
+    let validator = (input: unknown) => input;
+    const b = {
+      middleware: () => b,
+      inputValidator: (parse: typeof validator) => {
+        validator = parse;
+        return b;
+      },
+      handler: (f: unknown) => {
+        state.validators.set(f, validator);
+        return f;
+      },
+    };
     return b;
   },
 }));
@@ -27,6 +44,8 @@ import {
   getNotificationDeliveryConsent,
   saveNotificationDeliveryConsent,
   updateNotificationProfilePhone,
+  getNotificationDigestSettings,
+  saveNotificationDigestSettings,
 } from "./delivery-personal.functions";
 import {
   listNotificationWorkflowRules,
@@ -68,6 +87,8 @@ it.each([
   listNotificationWhatsAppTemplates,
   getNotificationDeliveryConsent,
   saveNotificationDeliveryConsent,
+  getNotificationDigestSettings,
+  saveNotificationDigestSettings,
   updateNotificationProfilePhone,
   listNotificationWorkflowRules,
   previewNotificationWorkflow,
@@ -95,6 +116,40 @@ it("admin settings require manage and retain the revision CAS", async () => {
     call(saveNotificationDeliverySettings, { workspaceId: W, revision: 0, policy: {} }),
   ).rejects.toThrow("Sem permissão");
   expect(state.rpc).toHaveBeenCalledTimes(1);
+});
+it("preserves absent scheduling switches through the real legacy save validator and RPC payload", async () => {
+  const parse = state.validators.get(saveNotificationDeliverySettings)!;
+  const data = parse({
+    workspaceId: W,
+    revision: 7,
+    policy: { email_enabled: true, email_daily_limit: 10 },
+  });
+  state.rpc.mockImplementation(async (_client, name) =>
+    name === "notification_delivery_capabilities"
+      ? caps
+      : {
+          revision: 8,
+          policy: {
+            email_enabled: true,
+            email_daily_limit: 10,
+            digest_enabled: true,
+            followups_enabled: true,
+            followup_daily_limit: 5,
+          },
+        },
+  );
+  expect(await call(saveNotificationDeliverySettings, data)).toMatchObject({
+    revision: 8,
+    policy: { digest_enabled: true, followups_enabled: true, followup_daily_limit: 5 },
+  });
+  const payload = state.rpc.mock.calls.at(-1)?.[2];
+  expect(payload).toMatchObject({
+    p_workspace: W,
+    p_revision: 7,
+    p_policy: { email_enabled: true, email_daily_limit: 10 },
+  });
+  for (const key of ["digest_enabled", "followups_enabled", "followup_daily_limit"])
+    expect(payload.p_policy).not.toHaveProperty(key);
 });
 it("workspace delivery history requires its own permission", async () => {
   await expect(
@@ -563,4 +618,62 @@ it("Slack settings save preserves CAS revision and the protected template", asyn
     p_policy: policy,
     p_revision: 2,
   });
+});
+
+it("loads only the authenticated actor's selected-workspace digest settings without a user selector", async () => {
+  const settings = {
+    enabled: false,
+    frequency: "daily",
+    at: "08:30",
+    timezone: "America/Sao_Paulo",
+    weekday: 1,
+    channels: [],
+  };
+  state.rpc.mockResolvedValue({ settings, revision: 0 });
+  expect(await call(getNotificationDigestSettings, { workspaceId: W })).toEqual({
+    settings,
+    revision: 0,
+  });
+  expect(state.rpc).toHaveBeenCalledExactlyOnceWith(
+    ctx.supabase,
+    "get_notification_digest_settings",
+    { p_workspace: W },
+  );
+  expect(from).not.toHaveBeenCalled();
+});
+it("saves the personal digest revision unchanged and never promotes it to another user's consent", async () => {
+  const settings = {
+    enabled: true,
+    frequency: "weekly",
+    at: "08:30",
+    timezone: "America/Sao_Paulo",
+    weekday: 1,
+    channels: ["email"],
+  };
+  state.rpc.mockResolvedValue({ settings, revision: 4 });
+  expect(
+    await call(saveNotificationDigestSettings, {
+      workspaceId: W,
+      settings,
+      revision: 3,
+      userId: W,
+    }),
+  ).toEqual({ settings, revision: 4 });
+  expect(state.rpc).toHaveBeenCalledExactlyOnceWith(
+    ctx.supabase,
+    "save_notification_digest_settings",
+    { p_workspace: W, p_settings: settings, p_revision: 3 },
+  );
+  expect(from).not.toHaveBeenCalled();
+});
+it("preserves a digest CAS failure without fabricating saved settings", async () => {
+  state.rpc.mockRejectedValue(Error("Revision conflict"));
+  await expect(
+    call(saveNotificationDigestSettings, {
+      workspaceId: W,
+      settings: { enabled: false },
+      revision: 3,
+    }),
+  ).rejects.toThrow("Revision conflict");
+  expect(from).not.toHaveBeenCalled();
 });

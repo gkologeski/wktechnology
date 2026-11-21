@@ -9,6 +9,7 @@ import { setupNotificationBusinessEvents } from "./notification-business-events"
 import { setupNotificationProjectEvents } from "./notification-project-events";
 import { setupNotificationHirePeople } from "./notification-hire-people";
 import { setupNotificationFinance } from "./notification-finance";
+import { setupNotificationScheduling } from "./notification-scheduling";
 
 // Actual gateway, private RLS bridge and production permission predicates in a
 // disposable PostgreSQL. HTTP cases use cryptographically verified synthetic JWTs
@@ -424,6 +425,7 @@ beforeAll(async () => {
   await setupNotificationProjectEvents(db);
   await setupNotificationHirePeople(db);
   await setupNotificationFinance(db);
+  await setupNotificationScheduling(db);
   const historic = await db`select count(*)::integer n from notification_workspace_context`;
   if (historic[0].n !== 0) throw Error("Historical rows were attributed to a workspace");
   const authenticatorPassword = randomBytes(32).toString("hex");
@@ -514,7 +516,7 @@ export async function reset() {
     "TRUNCATE notification_business_event_proofs,notification_business_due_cursors,view_as_test_records,pipelines,contract_attachments,legal_entities,quote_line_items,deal_line_items,service_catalog,contracting_presets,quote_templates,esign_signers,esign_documents,ats_offers,hiring_contract_evidence,contract_forsign_operations,storage.objects CASCADE",
   );
   await db.unsafe(
-    "TRUNCATE workflow_deliveries,notification_delivery_intents,notification_delivery_policies,notification_delivery_consents,notification_whatsapp_health,notification_whatsapp_suppression_receipts,notification_slack_intents,notification_slack_policies,notification_slack_endpoint_state,slack_integrations,workflow_send_policies,wa_cloud_numbers,wa_cloud_connections,whatsapp_number_suppressions,whatsapp_messages,whatsapp_webhook_events,auth.users CASCADE",
+    "TRUNCATE notification_followup_occurrences,notification_followup_schedules,notification_digest_candidates,notification_digest_batches,notification_digest_settings,workflow_deliveries,notification_delivery_intents,notification_delivery_policies,notification_delivery_consents,notification_whatsapp_health,notification_whatsapp_suppression_receipts,notification_slack_intents,notification_slack_policies,notification_slack_endpoint_state,slack_integrations,workflow_send_policies,wa_cloud_numbers,wa_cloud_connections,whatsapp_number_suppressions,whatsapp_messages,whatsapp_webhook_events,auth.users CASCADE",
   );
   await db.unsafe(
     "TRUNCATE service_agent_sessions,sdr_enrollments,sdr_playbooks,contract_drafts,contract_draft_approvers,notification_workspace_context,notification_user_preferences,notifications,workflow_approvals,contract_approvals,project_members,hiring_demand_steps,hiring_demand_requests,hiring_area_policies,workflow_runs,workflow_events,workflows,workspaces,profiles,workspace_members,user_job_roles,job_roles,job_role_permission_overrides,user_groups,user_group_members,view_as_sessions CASCADE",

@@ -666,6 +666,7 @@ export function WorkflowBuilder({
                       }
                     >
                       <StepConfigPanel
+                        notificationEventKey={state.trigger.notification_event?.key}
                         action={selectedAction}
                         entity={state.entity}
                         entityFields={fieldOptions}

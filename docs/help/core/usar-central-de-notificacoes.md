@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 147
-version: 9
+version: 10
 is_published: true
 ---
 
@@ -59,7 +59,7 @@ Você acompanha seus avisos no contexto correto, distingue pendências de leitur
 - **Notificação indisponível:** o acesso à origem pode ter sido revogado, o registro pode ter sido excluído ou o contexto pode não estar comprovado. Consulte o responsável pela origem.
 - **Preferências alteradas em outra sessão:** recarregue, revise o estado atual e salve suas escolhas novamente.
 - **Um aviso continuou no histórico:** preferências e silêncio não apagam registros. A leitura de uma mensagem tampouco conclui sua tarefa.
-- **Não há resumo no e-mail:** o resumo desta tela organiza a central; ainda não realiza envios externos.
+- **Não há resumo no e-mail:** o agrupamento visual não agenda envios. Confira a adesão separada em **Receber resumo de notificações**, o canal escolhido e a política do workspace. Só ocorrências iniciais elegíveis e de baixa prioridade explícita entram; pode não haver composição válida no horário.
 
 ## Relacionados
 
@@ -102,7 +102,7 @@ Na central, as abas **Regras**, **Modelos e canais** e **Entregas** ampliam o ac
 4. **Resultado incerto** indica que não há prova suficiente para repetir com segurança. A central não oferece reenvio automático ou manual cego. Consulte o provedor e a pessoa responsável antes de agir.
 5. **Suprimida** informa um bloqueio como preferência, consentimento, acesso, configuração ou limite. A central não expõe o destino completo nem a mensagem técnica bruta do provedor.
 
-Os canais externos recebem texto neutro com acesso à central, sem salário, valor, documento pessoal ou cópia do conteúdo da origem. A leitura no TechERP mantém suas permissões atuais. O horário de silêncio adia novas entregas externas; não altera o prazo da obrigação. A organização diária/semanal continua sendo um agrupamento visual, sem envio de digest externo. Estas regras não passam a produzir todos os eventos planejados do catálogo.
+Os canais externos recebem texto neutro com acesso à central, sem salário, valor, documento pessoal ou cópia do conteúdo da origem. A leitura no TechERP mantém suas permissões atuais. O horário de silêncio adia novas entregas externas; não altera o prazo da obrigação. A organização diária/semanal continua sendo um agrupamento visual, sem envio externo por essa escolha. O recebimento de resumo possui adesão própria, descrita abaixo. Estas regras não passam a produzir todos os eventos planejados do catálogo.
 
 ## Sino e central em tempo real
 
@@ -129,7 +129,7 @@ No histórico antigo sem workspace comprovado, a pesquisa por conteúdo fica des
 - **Slack** usa uma política independente em **Modelos e canais**, inicialmente desligada. Um administrador autorizado escolhe a conexão, a cota e confirma o público compartilhado. O modelo é fixo e neutro. O aviso não representa entrega individual; por isso aparece apenas em **Entregas > Workspace**, com os acessos necessários à origem e à integração.
 - A ação Slack do Workflow gera uma ocorrência coletiva. Ela não é uma opção de canal pessoal da ação **Enviar notificação**. Para avisar uma pessoa no app ou por e-mail e também um canal compartilhado, configure as ações correspondentes no mesmo Workflow.
 - As configurações antigas do Slack são preservadas, mas o canal fixo do webhook não pode ser substituído por evento. Ações antigas com canal preenchido precisam ser revisadas no editor antes de enviar.
-- A conexão não inicia novos produtores de eventos nem resumos externos. A confirmação **Aceito pelo provedor** não equivale a entregue ou lido. Falhas ambíguas ficam sem repetição automática.
+- A conexão não inicia novos produtores nem ativa a adesão pessoal a resumos. A confirmação **Aceito pelo provedor** não equivale a entregue ou lido. Falhas ambíguas ficam sem repetição automática.
 
 Consulte [Configurar notificações no Slack](/ajuda/core/configurar-notificacoes-no-slack) para preparar a conexão, a política e o histórico.
 
@@ -217,3 +217,18 @@ Os novos rascunhos de títulos usam o responsável atual do registro. A NF come�
 Avisos, variáveis e condições desses cinco eventos usam somente identificadores, estados e datas permitidos. Não oferecem valores, saldo, notas privadas, CNPJ, dados bancários, arquivos ou associações financeiras. Mutações genéricas do título/documento não são oferecidas; operações financeiras continuam em seus controles canônicos. Um rascunho antigo incompatível fica preservado para revisão, sem gravação silenciosa.
 
 Som e tremor começam desligados. E-mail e WhatsApp mantêm suas próprias políticas; a preferência de WhatsApp herda o consentimento geral quando não há override, bloquear afeta o evento e permitir não concede autorização. Durante revalidação, campos em edição na mesma identidade ficam preservados, ocultos e bloqueados. Falha, perda de acesso ou troca de usuário/workspace retira o conteúdo antigo.
+
+
+## Resumos pessoais, lembretes e escalonamento
+
+Na aba **Preferências**, **Organização da central** continua apenas agrupando os itens carregados. O bloco separado **Receber resumo de notificações** começa desligado e sem canais escolhidos. Para aderir neste workspace, escolha **Diário** ou **Semanal**, horário, fuso IANA e, na frequência semanal, o dia. Os valores iniciais são 08:30, segunda-feira e America/Sao_Paulo; revise antes de salvar. Escolha cada canal, ative **Quero receber o resumo** e salve as opções. Essa ação não envia uma mensagem.
+
+O resumo reúne somente comunicações externas iniciais de eventos canônicos elegíveis, com prioridade **Baixa** explicitamente publicada no passo. A central permanece imediata. A aprovação de solicitação profissional fica fora do resumo; seu aviso obrigatório é preservado. Lembretes e escaladas também não entram. O resumo usa um sinal neutro com acesso à central, sem contagens, títulos, valores ou arquivos. Não é exportação do histórico: cada integrante é revalidado, e um conjunto vazio não gera mensagem. Há no máximo 100 integrantes por envelope; excedentes aguardam um horário futuro, sem uma sequência de envios antigos. Alterar a agenda cancela o trabalho pendente anterior.
+
+**E-mail** e **WhatsApp oficial** exigem escolha explícita no resumo e continuam sujeitos às preferências, política, silêncio e acesso atuais. WhatsApp também exige consentimento pessoal válido e modelo neutro aprovado compatível. O resumo não tem fallback automático de WhatsApp para e-mail. A política do workspace disponibiliza a modalidade, mas não faz adesão por você.
+
+Na aba **Regras**, configure o passo **Enviar notificação** no editor existente. A prioridade ausente permanece **Normal**. Os controles **Lembretes e escalonamento** aparecem somente nos eventos de pendência elegíveis e começam desligados. O canal **No app** é obrigatório. Informe um intervalo inteiro de 1 a 168 horas e de 1 a 3 lembretes; intervalo × quantidade não pode passar de 168 horas. A escalada permite uma única ocorrência após 1 a 168 horas para um destinatário escolhido explicitamente. Não há gestor, CEO ou substituto presumido. Salvar rascunho, publicar e ativar continuam separados.
+
+Acompanhamento exige aviso original existente e não lido, além de pendência e acesso atuais. Ler encerra esses acompanhamentos, mas não resolve, aprova, paga ou prorroga a origem. Só a comunicação deste passo é repetida; outras ações do Workflow não são executadas novamente. Acompanhamentos herdam os canais e fallback do passo. Para aprovação profissional, só há lembrete ao aprovador vigente, sem escalada. Para NF de contratação, conferência ou rejeição encerra o acompanhamento: a nota precisa continuar registrada e aguardando conferência.
+
+Na aba **Modelos**, pessoas com a alçada de configuração podem disponibilizar **Resumos e acompanhamentos** na política do workspace. Ambos começam desligados e a cota diária de acompanhamentos começa em zero. Disponibilizar não ativa regras nem supera acesso, preferências ou consentimento. Em **Entregas**, a modalidade comprovada distingue aviso inicial, resumo, lembrete e escalonamento; lote e aviso de origem aparecem quando disponíveis. Aceitação pelo provedor não prova leitura ou decisão e um resultado incerto não autoriza repetir com outra chave.

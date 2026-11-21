@@ -1,3 +1,4 @@
+import { notificationSchedulingActionProblem } from "@/lib/notifications/scheduling-types";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -236,6 +237,10 @@ export async function authorizeWorkflowStep(
       row(assoc.target_table, String(ctx.after[assoc.fk_column]));
 
   if (action) {
+    const schedulingProblem = notificationSchedulingActionProblem(ctx.notificationEventKey, [
+      action,
+    ]);
+    if (schedulingProblem) throw new Error(schedulingProblem);
     const financeProblem = notificationEventConfigurationProblem(ctx.notificationEventKey, action);
     if (financeProblem) throw new Error(financeProblem);
     const approvalProblem =

@@ -7,6 +7,44 @@ import type { NotificationWorkflowRuleRow } from "./notification-rules-panel";
 import { notificationDeliveryInteractionAllowed } from "@/lib/notification-delivery-interaction";
 import { workflowNotificationTriggerLabel } from "@/lib/workflows/notification-events";
 
+function schedulingLabels(actions: readonly unknown[]): string[] {
+  const labels = new Set<string>();
+  const walk = (steps: readonly unknown[], depth = 0) => {
+    if (depth > 8) return;
+    for (const value of steps) {
+      if (!value || typeof value !== "object") continue;
+      const step = value as Record<string, unknown>;
+      const delivery = step.delivery as
+        | {
+            priority?: string;
+            followup?: {
+              reminder?: { interval_hours: number; max_occurrences: number };
+              escalation?: { after_hours: number };
+            };
+          }
+        | undefined;
+      if (step.type === "send_notification" && delivery) {
+        if (delivery.priority === "low")
+          labels.add("Prioridade baixa explícita · resumo depende da elegibilidade pessoal");
+        if (delivery.followup?.reminder)
+          labels.add(
+            `Lembrete a cada ${delivery.followup.reminder.interval_hours} h · máximo ${delivery.followup.reminder.max_occurrences}`,
+          );
+        if (delivery.followup?.escalation)
+          labels.add(`Escalonamento após ${delivery.followup.escalation.after_hours} h · uma vez`);
+      }
+      for (const key of ["then", "else", "actions", "default"])
+        if (Array.isArray(step[key])) walk(step[key] as unknown[], depth + 1);
+      for (const key of ["branches", "cases"])
+        if (Array.isArray(step[key]))
+          for (const child of step[key] as { actions?: unknown[] }[])
+            if (Array.isArray(child?.actions)) walk(child.actions, depth + 1);
+    }
+  };
+  walk(actions);
+  return [...labels];
+}
+
 type Capability = { can_update: boolean; can_manage: boolean; can_delete: boolean };
 type RuleAction = "edit" | "preview" | "publish" | "toggle" | "discard" | "delete";
 export function NotificationRulesList({
@@ -66,6 +104,11 @@ export function NotificationRulesList({
                     exige prazo válido na origem.
                   </p>
                 )}
+                {schedulingLabels(row.draft_actions ?? row.actions).map((label) => (
+                  <p key={label} className="text-xs text-muted-foreground">
+                    {label}
+                  </p>
+                ))}
               </div>
               <div className="flex flex-wrap gap-2">
                 <Badge variant="secondary">

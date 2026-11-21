@@ -8,7 +8,7 @@ route_pattern: /settings/notifications
 min_permission:
 audience: internal
 sort_order: 148
-version: 6
+version: 7
 is_published: true
 ---
 
@@ -44,7 +44,7 @@ As opções ficam salvas para seu usuário e são consultadas pelos novos avisos
 - O passo **Enviar notificação** consulta **No app** antes de criar um aviso interno. Quando houver seleção explícita de e-mail, a preferência de **E-mail** também será consultada. Desligar No app não desliga um e-mail explicitamente autorizado; o histórico anterior permanece preservado.
 - Os grupos **Workflows**, **Aprovações**, **Contratação e perfis de vaga**, **Formulários**, **Carteira** e **Plataforma e segurança** começam com **No app** ligado e as demais opções desligadas, salvo se você já tiver uma escolha salva.
 - A tela salva somente as opções que você alterou. Valores de canal gravados com formato inválido são tratados como desligados; para uma opção ausente, vale o padrão do grupo.
-- Alterar um grupo não cria uma automação, ativa um evento futuro ou habilita um canal externo. Esta tela global não oferece controles de WhatsApp, resumos ou horário de silêncio. A central possui silêncio e agrupamento diário/semanal dos itens carregados, sem entrega externa de resumo.
+- Alterar um grupo não cria uma automação, ativa um evento futuro ou habilita um canal externo. Esta tela global não oferece controles de WhatsApp, resumos ou horário de silêncio. Na central, silêncio e agrupamento visual continuam separados da adesão pessoal a **Receber resumo de notificações**, disponível somente no workspace atual e desligada por padrão. O resumo exige canal escolhido, prioridade baixa explícita da regra e política habilitada; não altera esta preferência global.
 - A preferência global serve de base. Uma escolha explícita na central de um workspace prevalece naquele contexto; escolher **Herdar** na central volta a usar a configuração global. Alterar o global não apaga escolhas explícitas de um workspace.
 - Algumas notificações antigas compartilham um tipo genérico. Por exemplo, **Mensagens e comentários** abrange conversas e comentários de atividades; **Aprovações** reúne diferentes fluxos. O grupo não comprova a origem exata do evento.
 - Enquanto você estiver na Inbox, uma mensagem identificada como pertencente à Inbox não gera uma nova interrupção pelo sino. Um comentário de atividade não é tratado automaticamente como mensagem da Inbox.

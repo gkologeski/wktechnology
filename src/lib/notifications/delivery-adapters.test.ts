@@ -641,3 +641,51 @@ it.each([
     expect(JSON.stringify(result)).not.toContain("PRIVATE");
   },
 );
+
+const digest: NotificationDeliveryJob = {
+  id: job.id,
+  token: job.token,
+  channel: "whatsapp",
+  workspaceId,
+  recipientId: job.recipientId,
+  kind: "digest",
+  batchId: "88888888-8888-4888-8888-888888888888",
+  idempotencyKey: "notification:digest:synthetic-slot:whatsapp",
+  phone: job.phone,
+  email: job.email,
+  senderPhoneNumberId: job.senderPhoneNumberId,
+  connectionId: job.connectionId,
+  templateName: job.templateName,
+  templateLanguage: job.templateLanguage,
+};
+it("sends a digest with the same exact approved neutral WhatsApp template and central link, without member data or counts", async () => {
+  const deps = fakeDependencies();
+  const outcome = await deliver(digest, deps);
+  expect(outcome).toMatchObject({
+    status: "accepted",
+    provider: "meta_cloud",
+    providerId: "wamid.fake-provider-acceptance",
+  });
+  const payload = vi.mocked(deps.sendCloud).mock.calls[0][2];
+  expect(payload).toMatchObject({ type: "template", to: digest.phone });
+  const serialized = JSON.stringify(payload);
+  expect(serialized).toContain("https://erp.example.com/notifications");
+  expect(serialized).not.toContain(digest.batchId);
+  expect(serialized).not.toMatch(/workflowId|runId|members|count|amount|snapshot/);
+  expect(deps.recordWhatsAppAcceptance).toHaveBeenCalledWith(
+    digest,
+    sender,
+    "wamid.fake-provider-acceptance",
+  );
+});
+it("uses only the existing central-link managed email template for a digest", async () => {
+  const deps = fakeDependencies();
+  expect((await deliver({ ...digest, channel: "email" }, deps)).status).toBe("accepted");
+  expect(deps.sendEmail).toHaveBeenCalledWith({
+    recipientEmail: "User@example.com",
+    templateName: "notification-update",
+    templateData: { centralUrl: "https://erp.example.com/notifications" },
+    idempotencyKey: digest.idempotencyKey,
+    beforeSend: expect.any(Function),
+  });
+});

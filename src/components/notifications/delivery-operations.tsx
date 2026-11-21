@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { readViewAs } from "@/lib/view-as-client";
 import { Button } from "@/components/ui/button";
 import { usePermissions } from "@/lib/access-control/use-permissions";
 import {
@@ -10,6 +11,8 @@ import {
   listNotificationWhatsAppTemplates,
   listNotificationDeliveryHistory,
   getNotificationDeliveryConsent,
+  getNotificationDigestSettings,
+  saveNotificationDigestSettings,
   saveNotificationDeliveryConsent,
   updateNotificationProfilePhone,
   getNotificationSlackSettings,
@@ -24,6 +27,8 @@ import type { NotificationCursor } from "@/lib/notification-cursor";
 import { DeliverySettingsPanel } from "./delivery-settings-panel";
 import { DeliveryModelsPanel } from "./delivery-models-panel";
 import { DeliveryHistoryPanel, type DeliveryFilters } from "./delivery-history-panel";
+import { NotificationDigestPanel } from "./notification-digest-panel";
+import type { NotificationDigestSettings } from "@/lib/notifications/scheduling-types";
 import { NotificationConsentPanel } from "./notification-consent-panel";
 import { NotificationSlackPolicyPanel } from "./slack-policy-panel";
 
@@ -443,5 +448,79 @@ function DeliveryConsentContext({ workspaceId, userId }: { workspaceId: string; 
       onSave={(input) => save.mutateAsync({ ...input, userId, workspaceId })}
       onUpdatePhone={(input) => phone.mutateAsync({ ...input, userId, workspaceId })}
     />
+  );
+}
+
+export function NotificationDigestSection(props: DeliveryContext) {
+  return <DigestContext key={`${props.userId}:${props.workspaceId}`} {...props} />;
+}
+function DigestContext({ userId, workspaceId }: DeliveryContext) {
+  const readOnly = Boolean(readViewAs());
+  const permissions = usePermissions();
+  const contextReady =
+    !permissions.isLoading && !permissions.isError && permissions.workspaceId === workspaceId;
+  const qc = useQueryClient();
+  const getFn = useServerFn(getNotificationDigestSettings);
+  const saveFn = useServerFn(saveNotificationDigestSettings);
+  const q = useQuery({
+    queryKey: ["notification-digest-settings", userId, workspaceId],
+    queryFn: () => getFn({ data: { workspaceId } }),
+    enabled: contextReady,
+    ...freshDeliveryQuery,
+  });
+  const save = useMutation({
+    mutationFn: (
+      input: DeliveryContext & { settings: NotificationDigestSettings; revision: number },
+    ) => {
+      if (
+        readOnly ||
+        !contextReady ||
+        input.userId !== userId ||
+        input.workspaceId !== workspaceId ||
+        q.isFetching ||
+        q.isError ||
+        !q.isFetchedAfterMount
+      )
+        throw new Error("Confirme o workspace e recarregue o resumo antes de salvar.");
+      return saveFn({
+        data: {
+          workspaceId: input.workspaceId,
+          settings: input.settings,
+          revision: input.revision,
+        },
+      });
+    },
+    onSuccess: (data, input) => {
+      qc.setQueryData(["notification-digest-settings", input.userId, input.workspaceId], data);
+    },
+  });
+  if (!contextReady) return <p role="status">Aguardando confirmação do workspace para o resumo…</p>;
+  if (q.isError)
+    return (
+      <div role="alert" className="space-y-2 border-t border-border pt-6">
+        <p>Não foi possível carregar suas opções do resumo. {q.error.message}</p>
+        <Button variant="outline" onClick={() => void q.refetch()}>
+          Tentar carregar resumo novamente
+        </Button>
+      </div>
+    );
+  if (!q.data || !q.isFetchedAfterMount)
+    return <p role="status">Carregando suas opções do resumo…</p>;
+  return (
+    <section className="min-w-0 space-y-3">
+      {q.isFetching && <p role="status">Conferindo suas opções do resumo…</p>}
+      <div hidden={q.isFetching}>
+        <NotificationDigestPanel
+          userId={userId}
+          workspaceId={workspaceId}
+          settings={q.data.settings}
+          revision={q.data.revision}
+          canEdit={!readOnly && !q.isFetching && !save.isPending}
+          onSave={(settings, revision) =>
+            save.mutateAsync({ settings, revision, userId, workspaceId })
+          }
+        />
+      </div>
+    </section>
   );
 }

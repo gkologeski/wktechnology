@@ -80,12 +80,14 @@ export function StepConfigPanel({
   entity,
   entityFields,
   priorFields = [],
+  notificationEventKey,
   onChange,
 }: {
   action: WorkflowAction;
   entity: WorkflowEntity;
   entityFields: FieldOpt[];
   priorFields?: FieldOpt[];
+  notificationEventKey?: string;
   onChange: (a: WorkflowAction) => void;
 }) {
   return (
@@ -100,6 +102,7 @@ export function StepConfigPanel({
         entity={entity}
         entityFields={entityFields}
         priorFields={priorFields}
+        notificationEventKey={notificationEventKey}
         onChange={onChange}
       />
     </div>
@@ -111,12 +114,14 @@ function StepConfigForm({
   entity,
   entityFields,
   priorFields = [],
+  notificationEventKey,
   onChange,
 }: {
   action: WorkflowAction;
   entity: WorkflowEntity;
   entityFields: FieldOpt[];
   priorFields?: FieldOpt[];
+  notificationEventKey?: string;
   onChange: (a: WorkflowAction) => void;
 }) {
   switch (action.type) {
@@ -218,7 +223,14 @@ function StepConfigForm({
         />
       );
     case "send_notification":
-      return <NotificationForm action={action} entity={entity} onChange={onChange} />;
+      return (
+        <NotificationForm
+          action={action}
+          entity={entity}
+          notificationEventKey={notificationEventKey}
+          onChange={onChange}
+        />
+      );
     case "webhook":
       return (
         <div className="space-y-2">

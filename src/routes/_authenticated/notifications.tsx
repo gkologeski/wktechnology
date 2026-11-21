@@ -16,6 +16,7 @@ import {
   NotificationDeliveryConfiguration,
   NotificationDeliveryHistorySection,
   NotificationConsentSection,
+  NotificationDigestSection,
 } from "@/components/notifications/delivery-operations";
 import { getNotificationDeliveryCapabilities } from "@/lib/notification-delivery.functions";
 import { NotificationPreferencesPanel } from "@/components/notifications/notification-preferences-panel";
@@ -432,6 +433,11 @@ function NotificationWorkspace({ userId, workspaceId }: { userId: string; worksp
             onSave={(patch, revision) =>
               save.mutateAsync({ patch, revision }).then(() => undefined)
             }
+          />
+          <NotificationDigestSection
+            key={`digest:${userId}:${workspaceId}`}
+            userId={userId}
+            workspaceId={workspaceId}
           />
           <NotificationConsentSection
             key={`${userId}:${workspaceId}`}

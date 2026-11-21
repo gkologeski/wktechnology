@@ -8,7 +8,7 @@ route_pattern: /settings/workflows
 min_permission: system.workflows.manage.workspace
 audience: internal
 sort_order: 413
-version: 10
+version: 11
 is_published: true
 ---
 
@@ -122,3 +122,16 @@ O seletor **Evento da nova regra** também agrupa as cinco opções de **TechFin
 **NF de contratação recebida** trata somente de NF-e/NFS-e registrada canonicamente na contratação profissional/fornecedor, não de emissão, fatura de cliente, RPA ou folha. Registro não é conferência, aceite nem pagamento. A origem fiscal é somente leitura. O rascunho começa com **Executor do workflow**, editável; o executor também precisa de acesso fiscal atual. O responsável Financeiro é resolvido da formalização vigente, sem CEO/fallback, e o remetente da nota só recebe por seleção explícita.
 
 As condições e variáveis dos cinco eventos oferecem somente identificadores, estados e datas públicos dessa ocorrência. Valores, saldo, notas, CNPJ, dados bancários, arquivos e associações privadas não são oferecidos. A biblioteca omite as mutações genéricas de origem/tabelas financeiras; um rascunho incompatível é preservado e exige revisão antes de salvar. Workflows genéricos antigos mantêm suas opções anteriores. Nada é publicado ou ativado pela seleção e nenhuma baixa, emissão ou conciliação decorre da leitura do aviso.
+
+
+## Resumo e acompanhamento de um passo de notificação
+
+Em **Enviar notificação → Canais de aviso**, a **Prioridade da comunicação** sem escolha explícita continua **Normal**; abrir o editor não reescreve passos antigos. **Baixa** permite que somente o envio externo inicial de um evento canônico elegível entre no resumo, quando o próprio destinatário tiver aderido ao canal neste workspace e a política permitir. A central continua imediata. A aprovação de solicitação profissional não é agrupada. O resumo não tem fallback automático e não exporta contagens ou conteúdo das origens.
+
+**Lembretes e escalonamento** começa desligado e exige **No app**. Está disponível para proximidade de fim/aviso de renovação de contrato; atraso de projeto/tarefa e prazo de marco; validade de documento e aprovação profissional; contas a pagar/receber do dia ou vencidas; e NF de contratação recebida. Outros eventos e gatilhos genéricos não ganham recorrência por essa opção.
+
+Informe intervalo de 1 a 168 horas e máximo de 1 a 3 lembretes, com horizonte total de até 168 horas. Para escalonamento, escolha explicitamente um destinatário e um prazo de 1 a 168 horas; há somente uma ocorrência. A relação e a permissão são conferidas no momento do aviso, sem gestor, CEO ou substituto automático e sem transferir a alçada da origem. Aprovação profissional só permite lembrete ao mesmo aprovador vigente, sem escalada. A NF deve continuar registrada e aguardando conferência; conferência ou rejeição encerra o acompanhamento.
+
+Cada acompanhamento exige que o aviso original exista e permaneça não lido, e que a pendência, o usuário, a origem, os canais e as permissões continuem válidos. A leitura para esses acompanhamentos, sem aprovar ou resolver a origem. Somente o passo de comunicação é derivado em novas ocorrências; tarefas, pagamentos e outras ações não são repetidos. Canais e fallback seguem o passo original, com silêncio, consentimento, cotas e proteção de resultado incerto preservados. Publicar e ativar continuam sendo ações separadas, e a política do workspace precisa disponibilizar a modalidade com cota positiva.
+
+A conferência da regra explica a configuração sem procurar destinatários nem executar mensagens. O histórico protegido diferencia **Aviso inicial**, **Resumo pessoal**, **Lembrete** e **Escalonamento**, quando essa prova estiver disponível.

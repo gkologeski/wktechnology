@@ -56,18 +56,30 @@ function database(workflows: Row[] = [], records: Row[] = [], catalogueError = f
   return { client: { from } as never, events, cursors, reads, tables };
 }
 
+const emptySchedules = { digests_queued: 0, followups_queued: 0, suppressed: 0 };
+function businessResult(value: unknown) {
+  state.rpc.mockImplementation(async (_db, name) =>
+    name === "notification_schedule_tick" ? emptySchedules : value,
+  );
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
-  state.rpc.mockResolvedValue({ enqueued: 0 });
+  businessResult({ enqueued: 0 });
   state.tick.mockImplementation(async (_db, limit) => ({ processed: limit }));
 });
 
 describe("business deadline production through the existing time tick", () => {
   it("calls the service producer once and consumes the same queue without a second scheduler", async () => {
-    state.rpc.mockResolvedValue({ enqueued: 2 });
+    businessResult({ enqueued: 2 });
     const db = database();
-    expect(await tickTimeTriggers(db.client)).toEqual({ enqueued: 2, processed: 2, workflows: [] });
-    expect(state.rpc).toHaveBeenCalledExactlyOnceWith(db.client, "notification_business_due_tick", {
+    expect(await tickTimeTriggers(db.client)).toEqual({
+      enqueued: 2,
+      processed: 2,
+      workflows: [],
+      schedules: emptySchedules,
+    });
+    expect(state.rpc).toHaveBeenCalledWith(db.client, "notification_business_due_tick", {
       p_limit: 100,
     });
     expect(state.tick).toHaveBeenCalledExactlyOnceWith(db.client, 2);
@@ -144,7 +156,7 @@ describe("business deadline production through the existing time tick", () => {
       ],
     );
     expect(await tickTimeTriggers(db.client, 250)).toMatchObject({ enqueued: 1 });
-    expect(state.rpc).toHaveBeenCalledExactlyOnceWith(db.client, "notification_business_due_tick", {
+    expect(state.rpc).toHaveBeenCalledWith(db.client, "notification_business_due_tick", {
       p_limit: 200,
     });
     expect(db.tables).not.toContain("contracts");
@@ -177,7 +189,7 @@ describe("business deadline production through the existing time tick", () => {
   it.each([{}, { enqueued: -1 }, { enqueued: "2" }])(
     "rejects malformed producer accounting: %j",
     async (result) => {
-      state.rpc.mockResolvedValue(result);
+      businessResult(result);
       const db = database();
       await expect(tickTimeTriggers(db.client)).rejects.toThrow();
       expect(db.tables).toEqual([]);
@@ -186,7 +198,7 @@ describe("business deadline production through the existing time tick", () => {
   );
 
   it("keeps the already-enqueued business occurrences durable when the legacy catalogue fails", async () => {
-    state.rpc.mockResolvedValue({ enqueued: 2 });
+    businessResult({ enqueued: 2 });
     const db = database([], [], true);
     await expect(tickTimeTriggers(db.client)).rejects.toThrow("Workflow catalogue unavailable");
     expect(state.tick).not.toHaveBeenCalled();
@@ -195,7 +207,12 @@ describe("business deadline production through the existing time tick", () => {
 
   it("does not run queue processing when neither producer enqueues an occurrence", async () => {
     const db = database();
-    expect(await tickTimeTriggers(db.client)).toEqual({ enqueued: 0, processed: 0, workflows: [] });
+    expect(await tickTimeTriggers(db.client)).toEqual({
+      enqueued: 0,
+      processed: 0,
+      workflows: [],
+      schedules: emptySchedules,
+    });
     expect(state.tick).not.toHaveBeenCalled();
   });
 
@@ -231,7 +248,7 @@ describe("business deadline production through the existing time tick", () => {
     expect(await tickTimeTriggers(db.client)).toMatchObject({ enqueued: 0 });
     expect(db.tables).toEqual(["workflows"]);
     expect(db.events).toEqual([]);
-    expect(state.rpc).toHaveBeenCalledOnce();
+    expect(state.rpc).toHaveBeenCalledTimes(2);
   });
 
   it("projects canonical HR private fields before legacy temporal filters or queue writes", async () => {
@@ -272,4 +289,34 @@ describe("business deadline production through the existing time tick", () => {
     expect(db.events[0].after).not.toHaveProperty("monthly_cost");
     expect(db.events[0].after).not.toHaveProperty("personal_doc");
   });
+});
+
+it("uses the same service time tick once for notification schedules without converting their queued jobs into business events", async () => {
+  state.rpc.mockImplementation(async (_db, name) =>
+    name === "notification_schedule_tick"
+      ? { digests_queued: 2, followups_queued: 3, suppressed: 1 }
+      : { enqueued: 0 },
+  );
+  const db = database();
+  expect(await tickTimeTriggers(db.client)).toMatchObject({
+    enqueued: 0,
+    processed: 0,
+    schedules: { digests_queued: 2, followups_queued: 3, suppressed: 1 },
+  });
+  expect(state.rpc.mock.calls.filter(([, name]) => name === "notification_schedule_tick")).toEqual([
+    [db.client, "notification_schedule_tick", { p_limit: 100 }],
+  ]);
+  expect(state.tick).not.toHaveBeenCalled();
+  expect(db.events).toEqual([]);
+});
+it.each([
+  {},
+  { digests_queued: -1, followups_queued: 0, suppressed: 0 },
+  { digests_queued: 0, followups_queued: "2", suppressed: 0 },
+])("fails closed on an invalid service schedule result %j", async (value) => {
+  state.rpc.mockResolvedValue(value);
+  const db = database();
+  await expect(tickTimeTriggers(db.client)).rejects.toThrow();
+  expect(db.tables).toEqual([]);
+  expect(state.tick).not.toHaveBeenCalled();
 });

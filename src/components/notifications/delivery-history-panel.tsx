@@ -10,6 +10,12 @@ import { notificationDeliveryInteractionAllowed } from "@/lib/notification-deliv
 import { getNotificationEvent } from "@/lib/notification-catalog";
 
 export type DeliveryFilters = { scope: "own" | "workspace"; status: string; channel: string };
+const OCCURRENCE_KIND: Record<string, string> = {
+  initial: "Aviso inicial",
+  digest: "Resumo pessoal",
+  reminder: "Lembrete",
+  escalation: "Escalonamento",
+};
 const STATUS: Record<string, string> = {
   queued: "Na fila",
   in_flight: "Em processamento",
@@ -185,6 +191,11 @@ export function DeliveryHistoryPanel({
               {visibleItems.map((item) => (
                 <tr key={item.id} className="border-b last:border-0">
                   <td className="p-3">
+                    {item.occurrence_kind && (
+                      <p className="text-xs text-muted-foreground">
+                        {OCCURRENCE_KIND[item.occurrence_kind] ?? "Modalidade não reconhecida"}
+                      </p>
+                    )}
                     {eventLabel(item) && <p className="text-sm font-medium">{eventLabel(item)}</p>}
                     <p className="font-mono text-xs">{item.id.slice(0, 8)}</p>
                   </td>
@@ -219,7 +230,26 @@ export function DeliveryHistoryPanel({
       {selected && (
         <aside className="space-y-2 rounded-lg bg-muted/30 p-4" aria-label="Detalhe da entrega">
           <h3 className="font-medium">{STATUS[selected.status] ?? "Estado não reconhecido"}</h3>
+          {selected.occurrence_kind && (
+            <p className="text-sm font-medium">
+              {OCCURRENCE_KIND[selected.occurrence_kind] ?? "Modalidade não reconhecida"}
+            </p>
+          )}
           {eventLabel(selected) && <p className="text-sm font-medium">{eventLabel(selected)}</p>}
+          {selected.occurrence_kind === "digest" && (
+            <p className="text-sm">
+              Sinal de resumo com composição atual revalidada. Não é um relatório histórico; não
+              expõe contagens ou detalhes das origens.
+            </p>
+          )}
+          {selected.parent_intent_id && (
+            <p className="text-xs text-muted-foreground">
+              Aviso de origem: {selected.parent_intent_id}.
+            </p>
+          )}
+          {selected.batch_id && (
+            <p className="text-xs text-muted-foreground">Lote do resumo: {selected.batch_id}.</p>
+          )}
           <p className="text-sm">
             {REASON[selected.reason_code ?? ""] ??
               (selected.status === "uncertain"

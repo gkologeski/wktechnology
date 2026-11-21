@@ -1,3 +1,10 @@
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  notificationFollowupEventAllowed,
+  notificationFollowupProblem,
+} from "@/lib/notifications/scheduling-types";
+import type { NotificationDeliveryConfig } from "@/lib/notifications/delivery-types";
 import { Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -34,10 +41,12 @@ const LABELS: Record<Kind, string> = {
 export function NotificationForm({
   action,
   entity,
+  notificationEventKey,
   onChange,
 }: {
   action: Action;
   entity: WorkflowEntity;
+  notificationEventKey?: string;
   onChange: (action: WorkflowAction) => void;
 }) {
   const { data: members = [], isLoading, isError } = useWorkspaceMembers();
@@ -88,6 +97,25 @@ export function NotificationForm({
     if (!options.includes(kind)) return;
     replace(index, kind === "user" ? { kind, id: "" } : ({ kind } as NotificationRecipientRule));
   };
+
+  const delivery: NotificationDeliveryConfig = action.delivery ?? {
+    channels: ["inapp"],
+    fallback: "none",
+  };
+  const followup = delivery.followup;
+  const followupAllowed = notificationFollowupEventAllowed(notificationEventKey);
+  const canConfigureFollowup =
+    canEditDelivery && followupAllowed && delivery.channels.includes("inapp");
+  const setFollowup = (next: NotificationDeliveryConfig["followup"]) => {
+    if (!canEditDelivery) return;
+    const nextDelivery = { ...delivery };
+    if (!next || (!next.reminder && !next.escalation)) delete nextDelivery.followup;
+    else nextDelivery.followup = next;
+    onChange({ ...action, delivery: nextDelivery });
+  };
+  const followupIssue = followup
+    ? notificationFollowupProblem(notificationEventKey, delivery)
+    : null;
 
   return (
     <div className="space-y-4">
@@ -219,7 +247,219 @@ export function NotificationForm({
           De 1 a 10 regras. Uma pessoa selecionada por mais de uma regra recebe um único aviso.
         </p>
       </fieldset>
-      <NotificationDeliveryChoice action={action} onChange={onChange} canEdit={canEditDelivery} />
+      <NotificationDeliveryChoice
+        action={action}
+        onChange={onChange}
+        canEdit={canEditDelivery}
+        notificationEventKey={notificationEventKey}
+      />
+      {(followupAllowed || followup) && (
+        <section
+          className="space-y-3 border-t border-border pt-4"
+          aria-label="Acompanhamento do aviso"
+        >
+          <h3 className="text-sm font-medium">Lembretes e escalonamento</h3>
+          <p className="text-xs text-muted-foreground">
+            Começam desligados. Só acompanham este aviso enquanto ele existe, continua não lido e a
+            pendência atual permanece válida. Ler interrompe estes acompanhamentos; não resolve,
+            aprova ou paga o registro. Outros passos do Workflow não são repetidos.
+          </p>
+          {!delivery.channels.includes("inapp") && (
+            <p className="text-sm text-muted-foreground">
+              Inclua o canal No app para configurar acompanhamento.
+            </p>
+          )}
+          <fieldset className="space-y-3" disabled={!canEditDelivery}>
+            <legend className="sr-only">Configurar lembretes e escalonamento</legend>
+            <div className="flex items-center gap-3">
+              <Checkbox
+                id="notification-reminder"
+                checked={Boolean(followup?.reminder)}
+                disabled={!canConfigureFollowup && !followup?.reminder}
+                onCheckedChange={(checked) =>
+                  setFollowup({
+                    ...followup,
+                    reminder:
+                      checked === true ? { interval_hours: 0, max_occurrences: 1 } : undefined,
+                  })
+                }
+              />
+              <Label htmlFor="notification-reminder">Lembrar o destinatário original</Label>
+            </div>
+            {followup?.reminder && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <label className="space-y-1 text-sm">
+                  Intervalo em horas
+                  <Input
+                    aria-label="Intervalo do lembrete em horas"
+                    type="number"
+                    min={1}
+                    max={168}
+                    required
+                    value={followup.reminder.interval_hours || ""}
+                    onChange={(event) =>
+                      setFollowup({
+                        ...followup,
+                        reminder: {
+                          ...followup.reminder!,
+                          interval_hours: Number(event.target.value),
+                        },
+                      })
+                    }
+                  />
+                </label>
+                <label className="space-y-1 text-sm">
+                  Quantidade máxima de lembretes
+                  <select
+                    aria-label="Quantidade máxima de lembretes"
+                    className="block h-10 w-full rounded-md border border-input bg-background px-3"
+                    value={followup.reminder.max_occurrences}
+                    onChange={(event) =>
+                      setFollowup({
+                        ...followup,
+                        reminder: {
+                          ...followup.reminder!,
+                          max_occurrences: Number(event.target.value),
+                        },
+                      })
+                    }
+                  >
+                    {[1, 2, 3].map((count) => (
+                      <option key={count} value={count}>
+                        {count}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
+            {preparationApproval ? (
+              <p className="text-xs text-muted-foreground">
+                Esta aprovação não é agrupada em resumo. O lembrete mantém somente o aprovador
+                vigente; escalonamento não é permitido.
+              </p>
+            ) : (
+              <>
+                <div className="flex items-center gap-3">
+                  <Checkbox
+                    id="notification-escalation"
+                    checked={Boolean(followup?.escalation)}
+                    disabled={!canConfigureFollowup && !followup?.escalation}
+                    onCheckedChange={(checked) =>
+                      setFollowup({
+                        ...followup,
+                        escalation:
+                          checked === true
+                            ? { after_hours: 0, recipient: { kind: "user", id: "" } }
+                            : undefined,
+                      })
+                    }
+                  />
+                  <Label htmlFor="notification-escalation">
+                    Avisar um destinatário de escalonamento
+                  </Label>
+                </div>
+                {followup?.escalation && (
+                  <div className="space-y-3">
+                    <label className="block space-y-1 text-sm">
+                      Escalonar após quantas horas
+                      <Input
+                        aria-label="Prazo do escalonamento em horas"
+                        type="number"
+                        min={1}
+                        max={168}
+                        required
+                        value={followup.escalation.after_hours || ""}
+                        onChange={(event) =>
+                          setFollowup({
+                            ...followup,
+                            escalation: {
+                              ...followup.escalation!,
+                              after_hours: Number(event.target.value),
+                            },
+                          })
+                        }
+                      />
+                    </label>
+                    <label className="block space-y-1 text-sm">
+                      Destinatário explícito do escalonamento
+                      <select
+                        aria-label="Destinatário do escalonamento"
+                        className="block h-10 w-full rounded-md border border-input bg-background px-3"
+                        value={followup.escalation.recipient.kind}
+                        onChange={(event) => {
+                          const kind = event.target.value as Kind;
+                          if (options.includes(kind))
+                            setFollowup({
+                              ...followup,
+                              escalation: {
+                                ...followup.escalation!,
+                                recipient:
+                                  kind === "user"
+                                    ? { kind, id: "" }
+                                    : ({ kind } as NotificationRecipientRule),
+                              },
+                            });
+                        }}
+                      >
+                        {!options.includes(followup.escalation.recipient.kind) && (
+                          <option value={followup.escalation.recipient.kind} disabled>
+                            Destino salvo · requer revisão
+                          </option>
+                        )}
+                        {options.map((kind) => (
+                          <option key={kind} value={kind}>
+                            {labelFor(kind)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    {followup.escalation.recipient.kind === "user" && (
+                      <UserPicker
+                        value={followup.escalation.recipient.id}
+                        onChange={(id) =>
+                          setFollowup({
+                            ...followup,
+                            escalation: {
+                              ...followup.escalation!,
+                              recipient: { kind: "user", id },
+                            },
+                          })
+                        }
+                      />
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Uma única escalada. Revalida vínculo, acesso e canais atuais; não troca o
+                      aprovador da origem nem presume gestor, CEO ou substituto.
+                    </p>
+                  </div>
+                )}
+              </>
+            )}
+            {followup && (
+              <Button type="button" variant="ghost" onClick={() => setFollowup(undefined)}>
+                Desativar acompanhamento deste passo
+              </Button>
+            )}
+          </fieldset>
+          <p className="text-xs text-muted-foreground">
+            Intervalo de 1 a 168 horas, até 3 lembretes; intervalo × quantidade e prazo de
+            escalonamento não podem ultrapassar 168 horas. Canais e fallback seguem este passo;
+            lembretes não entram no resumo. Exige política e cota de acompanhamento do workspace.
+          </p>
+          {entity === "hiring_fiscal_documents" && (
+            <p className="text-xs text-muted-foreground">
+              A NF precisa continuar registrada e aguardando conferência. Conferência ou rejeição
+              encerra o acompanhamento.
+            </p>
+          )}
+          {followupIssue && (
+            <p role="alert" className="text-sm text-destructive">
+              {followupIssue}
+            </p>
+          )}
+        </section>
+      )}
       <p className="text-xs text-muted-foreground">
         Somente membros ativos do mesmo workspace e com leitura do registro de origem podem receber.
         Gestor ou aprovador ausente não encaminha o aviso automaticamente ao CEO. Ler o aviso não

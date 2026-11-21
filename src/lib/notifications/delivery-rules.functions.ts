@@ -107,7 +107,12 @@ export const previewNotificationWorkflow = createServerFn({ method: "POST" })
           }),
         ).policy
       : null;
-    const preview = inspectNotificationActions(parsed.data.actions, policy, slackPolicy);
+    const preview = inspectNotificationActions(
+      parsed.data.actions,
+      policy,
+      slackPolicy,
+      parsed.data.trigger.notification_event?.key,
+    );
     return {
       ...preview,
       issues: [...inspectNotificationTrigger(parsed.data.trigger), ...preview.issues],

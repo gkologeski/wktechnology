@@ -11,10 +11,12 @@ export function NotificationDeliveryChoice({
   action,
   onChange,
   canEdit = false,
+  notificationEventKey,
 }: {
   action: Action;
   onChange: (action: WorkflowAction) => void;
   canEdit?: boolean;
+  notificationEventKey?: string;
 }) {
   const [open, setOpen] = useState(Boolean(action.delivery));
   const config: NotificationDeliveryConfig = action.delivery ?? {
@@ -32,7 +34,7 @@ export function NotificationDeliveryChoice({
     if (!channels.length) return;
     const fallback =
       channels.includes("whatsapp") && !channels.includes("email") ? config.fallback : "none";
-    onChange({ ...action, delivery: { channels, fallback } });
+    onChange({ ...action, delivery: { ...config, channels, fallback } });
   };
   return (
     <section className="space-y-3 border-t border-border pt-4" aria-label="Canais da notificação">
@@ -68,12 +70,46 @@ export function NotificationDeliveryChoice({
               <Checkbox
                 id={`notification-delivery-${channel}`}
                 checked={config.channels.includes(channel)}
-                disabled={config.channels.length === 1 && config.channels.includes(channel)}
+                disabled={
+                  (config.channels.length === 1 && config.channels.includes(channel)) ||
+                  (channel === "inapp" && Boolean(config.followup))
+                }
                 onCheckedChange={(checked) => updateChannel(channel, checked === true)}
               />
               <Label htmlFor={`notification-delivery-${channel}`}>{label}</Label>
             </div>
           ))}
+          <label className="block space-y-1 text-sm">
+            Prioridade da comunicação
+            <select
+              aria-label="Prioridade da comunicação"
+              className="block h-10 w-full rounded-md border border-input bg-background px-3"
+              value={config.priority ?? "normal"}
+              onChange={(event) =>
+                notificationDeliveryInteractionAllowed(canEdit) &&
+                onChange({
+                  ...action,
+                  delivery: {
+                    ...config,
+                    priority: event.target.value as "low" | "normal" | "high",
+                  },
+                })
+              }
+            >
+              <option value="normal">Normal</option>
+              <option value="low">Baixa · pode entrar no resumo</option>
+              <option value="high">Alta</option>
+            </select>
+          </label>
+          <p className="text-xs text-muted-foreground">
+            Sem escolha explícita, a prioridade permanece normal. Só o envio inicial de baixa
+            prioridade de um evento canônico pode entrar no resumo pessoal, se o destinatário aderir
+            e a política permitir. A central continua imediata; prioridade não supera acesso,
+            preferências ou consentimento.
+            {notificationEventKey === "people.approval.pending"
+              ? " Esta aprovação não é agrupada em resumo."
+              : !notificationEventKey && " Este gatilho genérico não participa do resumo."}
+          </p>
           <label className="block space-y-1 text-sm">
             Alternativa após falha definitiva
             <select

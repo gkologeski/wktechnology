@@ -4,7 +4,7 @@ import { requireWorkspaceContext } from "@/lib/access-control/active-workspace.m
 import { workRpc } from "@/lib/access-control/work-core.server";
 import { assertNotificationWorkspace } from "@/lib/notification-center";
 import {
-  notificationDeliveryPolicySchema,
+  notificationDeliveryPolicyInputSchema,
   notificationSlackPolicySchema,
   notificationSlackSettingsSchema,
 } from "./delivery-types";
@@ -43,7 +43,7 @@ export const saveNotificationDeliverySettings = createServerFn({ method: "POST" 
   .middleware([requireWorkspaceContext()])
   .inputValidator((input) =>
     deliveryWorkspaceInput
-      .extend({ policy: notificationDeliveryPolicySchema, revision: z.number().int().min(0) })
+      .extend({ policy: notificationDeliveryPolicyInputSchema, revision: z.number().int().min(0) })
       .strict()
       .parse(input),
   )

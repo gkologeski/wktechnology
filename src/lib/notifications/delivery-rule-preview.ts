@@ -1,6 +1,10 @@
 import type { NotificationDeliveryPolicy, NotificationSlackPolicy } from "./delivery-types";
 import { WORKFLOW_READONLY_SOURCE_TABLES, type WorkflowTrigger } from "@/lib/workflows/types";
-import { getWorkflowNotificationEvent } from "@/lib/workflows/notification-events";
+import { notificationFollowupEventAllowed, notificationFollowupProblem } from "./scheduling-types";
+import {
+  getWorkflowNotificationEvent,
+  digestEventAllowed,
+} from "@/lib/workflows/notification-events";
 
 /** Describes a validated draft; it never looks up a record or schedules an occurrence. */
 export function inspectNotificationTrigger(trigger: WorkflowTrigger): string[] {
@@ -9,6 +13,14 @@ export function inspectNotificationTrigger(trigger: WorkflowTrigger): string[] {
   const event = getWorkflowNotificationEvent(selection.key);
   if (!event) return ["O evento de notificação não está disponível nesta versão."];
   const notes = [`Evento: ${event.label}. A ocorrência será conferida na origem pelo motor.`];
+  if (notificationFollowupEventAllowed(selection.key))
+    notes.push(
+      "Acompanhamento opcional: exige configuração explícita neste passo e política habilitada. Só repete a comunicação enquanto o aviso original existe, permanece não lido e a pendência atual continua válida; nunca repete outros passos do Workflow.",
+    );
+  if (selection.key === "people.approval.pending")
+    notes.push(
+      "Esta aprovação não é agrupada em resumo. Só permite lembrete ao mesmo aprovador vigente, sem escalonamento.",
+    );
   if (selection.key === "contracts.contract.expiring")
     notes.push(
       `Antecedência: ${selection.days_before} dias antes do fim da vigência. Contratos sem data válida ou já vencidos não entram na janela.`,
@@ -89,6 +101,7 @@ export function inspectNotificationActions(
   actions: unknown[],
   policy: NotificationDeliveryPolicy | null,
   slackPolicy: NotificationSlackPolicy | null = null,
+  eventKey?: string,
 ) {
   const channels = new Set<string>(),
     issues = new Set<string>();
@@ -100,7 +113,53 @@ export function inspectNotificationActions(
       const s = step as Record<string, unknown>;
       if (s.type === "send_notification") {
         notificationSteps++;
-        const delivery = s.delivery as { channels: string[]; fallback: string } | undefined;
+        const delivery = s.delivery as
+          | {
+              channels: string[];
+              fallback: string;
+              priority?: string;
+              followup?: {
+                reminder?: { interval_hours: number; max_occurrences: number };
+                escalation?: { after_hours: number; recipient: unknown };
+              };
+            }
+          | undefined;
+        if (delivery?.priority === "low") {
+          issues.add(
+            digestEventAllowed(eventKey)
+              ? "Prioridade baixa explícita: o envio externo inicial pode entrar no resumo pessoal se houver adesão ao canal e política habilitada. A central permanece imediata; o resumo não tem fallback automático."
+              : "Este evento não participa do resumo, mesmo com prioridade baixa; a comunicação segue sua elegibilidade original.",
+          );
+          if (digestEventAllowed(eventKey) && policy && !policy.digest_enabled)
+            issues.add("Os resumos estão desabilitados na política do workspace.");
+        }
+        if (delivery?.followup) {
+          const problem = notificationFollowupProblem(eventKey, delivery);
+          if (problem) issues.add(problem);
+          if (delivery.followup.reminder)
+            issues.add(
+              `Lembretes: intervalo de ${delivery.followup.reminder.interval_hours} horas, até ${delivery.followup.reminder.max_occurrences} ocorrências; somente enquanto o aviso original não for lido e a pendência continuar válida.`,
+            );
+          if (delivery.followup.escalation)
+            issues.add(
+              `Escalonamento: uma ocorrência após ${delivery.followup.escalation.after_hours} horas, com destinatário explícito revalidado; não altera a alçada ou presume substituto.`,
+            );
+          if (policy && (!policy.followups_enabled || !policy.followup_daily_limit))
+            issues.add(
+              "O acompanhamento exige política habilitada e cota diária positiva no workspace.",
+            );
+          issues.add(
+            "Acompanhamentos herdam os canais e fallback deste passo, ficam fora do resumo e não repetem as outras ações do Workflow. Leitura encerra estes acompanhamentos, sem resolver a origem.",
+          );
+          if (eventKey === "finance.payable.due" || eventKey === "finance.receivable.due")
+            issues.add(
+              "O acompanhamento vale somente enquanto a conta é do dia. Na virada da data civil em São Paulo, encerra e não se converte em conta vencida.",
+            );
+          if (eventKey === "finance.invoice.received")
+            issues.add(
+              "Acompanhamento da NF somente enquanto registrada e aguardando conferência; conferência ou rejeição encerra os novos avisos.",
+            );
+        }
         for (const ch of delivery?.channels ?? ["inapp"]) channels.add(ch);
         if (delivery?.fallback === "email") channels.add("email");
         if (delivery?.channels.includes("whatsapp") && policy && !policy.whatsapp_enabled)

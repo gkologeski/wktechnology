@@ -1,3 +1,4 @@
+import { DEFAULT_NOTIFICATION_DELIVERY_POLICY } from "./delivery-types";
 import { expect, it } from "vitest";
 import { inspectNotificationActions, inspectNotificationTrigger } from "./delivery-rule-preview";
 import {
@@ -82,5 +83,138 @@ it.each(WORKFLOW_NOTIFICATION_EVENTS.filter((event) => event.moduleKey === "fina
       expect(notes).toContain("Registro não equivale a conferência");
       expect(notes).toContain("somente leitura");
     }
+  },
+);
+
+it("describes explicitly low initial digest without promising send or fallback", () => {
+  const result = inspectNotificationActions(
+    [
+      {
+        type: "send_notification",
+        delivery: { channels: ["inapp", "whatsapp"], fallback: "email", priority: "low" },
+      },
+    ],
+    { ...DEFAULT_NOTIFICATION_DELIVERY_POLICY, digest_enabled: true },
+    null,
+    "projects.task.overdue",
+  );
+  expect(result.issues.join(" ")).toContain("envio externo inicial pode entrar no resumo pessoal");
+  expect(result.issues.join(" ")).toContain("A central permanece imediata");
+  expect(result.issues.join(" ")).toContain("resumo não tem fallback automático");
+  expect(result.realMessages).toBe(0);
+});
+it.each([undefined, "legacy.workflow", "people.approval.pending"])(
+  "does not promise digest composition for %s",
+  (eventKey) => {
+    const result = inspectNotificationActions(
+      [
+        {
+          type: "send_notification",
+          delivery: { channels: ["inapp", "email"], fallback: "none", priority: "low" },
+        },
+      ],
+      DEFAULT_NOTIFICATION_DELIVERY_POLICY,
+      null,
+      eventKey,
+    );
+    expect(result.issues.join(" ")).toContain("não participa do resumo");
+    expect(result.issues.join(" ")).not.toContain("pode entrar no resumo pessoal");
+  },
+);
+it("inspects bounded reminder and escalation without repeating the workflow or resolving recipients", () => {
+  const result = inspectNotificationActions(
+    [
+      {
+        type: "send_notification",
+        delivery: {
+          channels: ["inapp", "email"],
+          fallback: "none",
+          followup: {
+            reminder: { interval_hours: 24, max_occurrences: 3 },
+            escalation: {
+              after_hours: 72,
+              recipient: { kind: "user", id: "aaaaaaaa-1111-4111-8111-111111111111" },
+            },
+          },
+        },
+      },
+    ],
+    DEFAULT_NOTIFICATION_DELIVERY_POLICY,
+    null,
+    "projects.task.overdue",
+  );
+  expect(result.issues.join(" ")).toContain("intervalo de 24 horas, até 3 ocorrências");
+  expect(result.issues.join(" ")).toContain("uma ocorrência após 72 horas");
+  expect(result.issues.join(" ")).toContain("não repetem as outras ações");
+  expect(result.issues.join(" ")).toContain("cota diária positiva");
+  expect(result.realMessages).toBe(0);
+});
+it("makes current fiscal pending state explicit for NF followups", () => {
+  const result = inspectNotificationActions(
+    [
+      {
+        type: "send_notification",
+        delivery: {
+          channels: ["inapp"],
+          fallback: "none",
+          followup: { reminder: { interval_hours: 8, max_occurrences: 1 } },
+        },
+      },
+    ],
+    DEFAULT_NOTIFICATION_DELIVERY_POLICY,
+    null,
+    "finance.invoice.received",
+  );
+  expect(result.issues.join(" ")).toContain(
+    "NF somente enquanto registrada e aguardando conferência",
+  );
+  expect(result.issues.join(" ")).toContain("rejeição encerra");
+});
+it("preserves immediate canonical preparation notice and forbids escalation in the preview", () => {
+  const notes = inspectNotificationTrigger(
+    workflowNotificationEventTrigger("people.approval.pending"),
+  ).join(" ");
+  expect(notes).toContain("não é agrupada em resumo");
+  expect(notes).toContain("mesmo aprovador vigente, sem escalonamento");
+  const result = inspectNotificationActions(
+    [
+      {
+        type: "send_notification",
+        delivery: {
+          channels: ["inapp"],
+          fallback: "none",
+          followup: { escalation: { after_hours: 24, recipient: { kind: "workflow_owner" } } },
+        },
+      },
+    ],
+    DEFAULT_NOTIFICATION_DELIVERY_POLICY,
+    null,
+    "people.approval.pending",
+  );
+  expect(result.issues.join(" ")).toContain("sem escalonamento");
+});
+
+it.each(["finance.payable.due", "finance.receivable.due"])(
+  "explains that %s followups stop at the civil date change instead of becoming overdue",
+  (eventKey) => {
+    const result = inspectNotificationActions(
+      [
+        {
+          type: "send_notification",
+          delivery: {
+            channels: ["inapp"],
+            fallback: "none",
+            followup: { reminder: { interval_hours: 1, max_occurrences: 1 } },
+          },
+        },
+      ],
+      DEFAULT_NOTIFICATION_DELIVERY_POLICY,
+      null,
+      eventKey,
+    );
+    expect(result.issues.join(" ")).toContain("somente enquanto a conta é do dia");
+    expect(result.issues.join(" ")).toContain("Na virada da data civil em São Paulo, encerra");
+    expect(result.issues.join(" ")).toContain("não se converte em conta vencida");
+    expect(result.realMessages).toBe(0);
   },
 );

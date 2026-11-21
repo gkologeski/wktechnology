@@ -164,6 +164,39 @@ describe("notification runtime writes are qualified by the fenced job", () => {
     );
   });
 
+  it("projects a digest acceptance through the same fenced attempt without fabricating a workflow or source snapshot", async () => {
+    const digest: NotificationPersonalDeliveryJob = {
+      id: job.id,
+      token: job.token,
+      channel: "whatsapp",
+      workspaceId: job.workspaceId,
+      recipientId: job.recipientId,
+      kind: "digest",
+      batchId: "88888888-8888-4888-8888-888888888888",
+      idempotencyKey: "notification:digest:synthetic-slot:whatsapp",
+      phone: job.phone,
+      senderPhoneNumberId: job.senderPhoneNumberId,
+      connectionId: job.connectionId,
+      templateName: job.templateName,
+      templateLanguage: job.templateLanguage,
+    };
+    const { insert } = historyDatabase();
+    await runtime.recordWhatsAppAcceptance(digest, sender, "wamid.fake-digest");
+    const projection = insert.mock.calls[0][0];
+    expect(projection.raw).toEqual({
+      source: {
+        origin: "notification_center",
+        notification_delivery_id: digest.id,
+        idempotency_key: digest.idempotencyKey,
+        attempt_token: digest.token,
+        connection_id: digest.connectionId,
+      },
+    });
+    expect(projection.body).toBe("Há uma atualização solicitada no TechERP.");
+    expect(JSON.stringify(projection)).not.toMatch(/workflowId|runId|members|count|snapshot/);
+    expect(JSON.stringify(projection)).not.toContain(digest.batchId);
+  });
+
   it("preserves existing owner, assignee, entity links and provider without an upsert", async () => {
     const initial = existingConversation();
     const db = historyDatabase([initial]);

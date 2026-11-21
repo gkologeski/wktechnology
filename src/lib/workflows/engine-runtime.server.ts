@@ -1,3 +1,4 @@
+import { notificationSchedulingActionProblem } from "@/lib/notifications/scheduling-types";
 import {
   authorizeWorkflowStep,
   sanitizeWorkflowSnapshot,
@@ -85,6 +86,11 @@ async function workflowSourceAllowed(
   event: EventRow,
 ): Promise<boolean> {
   try {
+    const schedulingProblem = notificationSchedulingActionProblem(
+      event.notification_event_key,
+      wf.actions ?? [],
+    );
+    if (schedulingProblem) throw new Error(schedulingProblem);
     const configurationProblem = notificationEventConfigurationProblem(
       event.notification_event_key,
       { trigger: wf.trigger, actions: wf.actions, goal_filters: wf.goal_filters },

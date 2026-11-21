@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 150
-version: 2
+version: 3
 is_published: true
 ---
 
@@ -74,7 +74,7 @@ O aviso é enviado somente pelo remetente e pela conexão fixados para a tentati
 - Recibos de destinatário, remetente, conexão ou workspace divergentes não alteram a entrega. Recibos repetidos não geram outro envio nem regressão do estado.
 - Recusas da Meta por número sem WhatsApp ou limitação de engajamento usam o bloqueio canônico de destinatários. O mesmo recibo não deve duplicar esse registro.
 - Tentativas antigas sem vínculo de conexão comprovado permanecem incertas; o sistema não inventa esse vínculo nem repete o envio.
-- A conexão anterior pelo Lovable mantém seu fluxo existente. Esta entrega não migra contas automaticamente, não cria produtores de todos os eventos planejados e não envia resumos externos.
+- A conexão anterior pelo Lovable mantém seu fluxo existente. Esta entrega não migra contas automaticamente, não cria produtores de todos os eventos planejados e não ativa resumos pessoais.
 
 ## Erros comuns
 
@@ -94,3 +94,12 @@ O aviso é enviado somente pelo remetente e pela conexão fixados para a tentati
 - [Política de mensagens do WhatsApp](https://whatsappbusiness.com/policy/)
 - [Categorias de modelos](https://developers.facebook.com/documentation/business-messaging/whatsapp/templates/template-categorization)
 - [Preços da plataforma](https://whatsappbusiness.com/products/platform-pricing/)
+
+
+## WhatsApp em resumos e acompanhamentos
+
+Em **Preferências → Receber resumo de notificações**, a adesão começa desligada e nenhum canal vem escolhido. Selecionar **WhatsApp oficial** não cria consentimento: é necessário manter a autorização pessoal válida e a política de resumos habilitada, além das condições do canal. Só comunicações externas iniciais elegíveis e explicitamente de baixa prioridade podem compor o resumo; a central permanece imediata. A aprovação de solicitação profissional, os lembretes e as escaladas não são agrupados.
+
+O resumo usa o mesmo modelo neutro aprovado compatível, sem contagem, título ou dados das origens. Não há fallback automático para e-mail: escolha esse canal separadamente se desejar. Revogar o consentimento ou bloquear o canal impede novos envios elegíveis; habilitar a política ou a preferência não sobrepõe essa decisão.
+
+Lembretes e escaladas exigem configuração explícita publicada e cota de acompanhamento positiva. Herdam os canais e fallback do passo original, revalidam acesso, pendência, consentimento e silêncio e só seguem enquanto o aviso original não foi lido. Eles não executam novamente as outras ações nem alteram a decisão da origem. Um resultado incerto permanece protegido contra repetição e troca de chave.

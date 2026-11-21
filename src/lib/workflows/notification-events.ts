@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { notificationSchedulingActionProblem } from "@/lib/notifications/scheduling-types";
 import type { WorkflowEntity, WorkflowTrigger } from "./types";
 import { isWorkflowReadonlySource } from "./types";
 import { resolveWorkflowTokenPath } from "./token-aliases";
@@ -403,6 +404,11 @@ export function notificationEventConfigurationProblem(
   return visit(configuration);
 }
 
+/** Only proved catalogue occurrences can join personal digests; canonical approvals remain immediate. */
+export function digestEventAllowed(key: unknown): boolean {
+  return key !== "people.approval.pending" && getWorkflowNotificationEvent(key) !== null;
+}
+
 export const APPROVAL_DIRECT_TRANSPORT_ACTIONS = [
   "send_email",
   "send_whatsapp",
@@ -423,6 +429,8 @@ export function notificationEventActionProblem(
   key: unknown,
   actions: readonly unknown[],
 ): string | null {
+  const schedulingProblem = notificationSchedulingActionProblem(key, actions);
+  if (schedulingProblem) return schedulingProblem;
   const financeProblem = notificationEventConfigurationProblem(key, actions);
   if (financeProblem) return financeProblem;
   if (key !== "people.approval.pending") return null;

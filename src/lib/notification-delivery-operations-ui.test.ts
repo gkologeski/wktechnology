@@ -9,11 +9,13 @@ const state = vi.hoisted(() => ({
   loading: false,
   error: false,
   channelView: false,
+  userId: "user",
   calls: {} as Record<
     string,
     ReturnType<typeof vi.fn<(input: { data: Record<string, unknown> }) => Promise<unknown>>>
   >,
 }));
+vi.mock("@/lib/auth", () => ({ useAuth: () => ({ user: { id: state.userId } }) }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/access-control/use-permissions", () => ({
   usePermissions: () => ({
@@ -32,6 +34,8 @@ vi.mock("@/lib/notification-delivery.functions", () => {
     "listNotificationWhatsAppTemplates",
     "listNotificationDeliveryHistory",
     "getNotificationDeliveryConsent",
+    "getNotificationDigestSettings",
+    "saveNotificationDigestSettings",
     "saveNotificationDeliveryConsent",
     "updateNotificationProfilePhone",
     "getNotificationSlackSettings",
@@ -131,10 +135,12 @@ vi.mock("@/components/notifications/notification-consent-panel", () => ({
 }));
 import {
   NotificationConsentSection,
+  NotificationDigestSection,
   NotificationDeliveryConfiguration,
   NotificationDeliveryHistorySection,
 } from "@/components/notifications/delivery-operations";
 import { DEFAULT_NOTIFICATION_DELIVERY_POLICY } from "./notifications/delivery-types";
+import { DEFAULT_NOTIFICATION_DIGEST_SETTINGS } from "./notifications/scheduling-types";
 
 let root: Root, host: HTMLDivElement, client: QueryClient;
 beforeEach(() => {
@@ -157,6 +163,7 @@ beforeEach(() => {
     listNotificationWhatsAppTemplates: { items: [], senderId: "12345" },
     listNotificationDeliveryHistory: { items: [], nextCursor: null },
     getNotificationDeliveryConsent: { phone: null, consent: null },
+    getNotificationDigestSettings: { settings: DEFAULT_NOTIFICATION_DIGEST_SETTINGS, revision: 0 },
     getNotificationSlackSettings: {
       policy: {
         enabled: false,
@@ -176,6 +183,8 @@ beforeEach(() => {
     "listNotificationWhatsAppTemplates",
     "listNotificationDeliveryHistory",
     "getNotificationDeliveryConsent",
+    "getNotificationDigestSettings",
+    "saveNotificationDigestSettings",
     "saveNotificationDeliveryConsent",
     "updateNotificationProfilePhone",
     "getNotificationSlackSettings",
@@ -198,6 +207,7 @@ afterEach(async () => {
   vi.clearAllMocks();
 });
 async function render(node: ReactNode) {
+  state.userId = (node as { props?: { userId?: string } }).props?.userId ?? "user";
   await act(async () => {
     root.render(createElement(QueryClientProvider, { client }, node));
   });
@@ -725,4 +735,173 @@ it("hides stale sender and template metadata after their revalidation fails", as
   await vi.waitFor(() => expect(host.textContent).not.toContain("PRIVATE_SENDER"));
   expect(host.textContent).not.toContain("PRIVATE_MODEL");
   expect(host.textContent).toContain("Não foi possível carregar os remetentes");
+});
+
+it("loads digest settings only for a confirmed own active workspace context", async () => {
+  state.workspace = null;
+  await render(createElement(NotificationDigestSection, { workspaceId: WS, userId: "user" }));
+  expect(state.calls.getNotificationDigestSettings).not.toHaveBeenCalled();
+  expect(host.textContent).toContain("Aguardando confirmação do workspace");
+  state.workspace = WS;
+  await render(createElement(NotificationDigestSection, { workspaceId: WS, userId: "user" }));
+  await vi.waitFor(() => expect(host.textContent).toContain("Receber resumo de notificações"));
+  expect(state.calls.getNotificationDigestSettings).toHaveBeenCalledExactlyOnceWith({
+    data: { workspaceId: WS },
+  });
+  expect(state.calls.saveNotificationDigestSettings).not.toHaveBeenCalled();
+});
+it("never shows cached digest settings on first mount until a fresh own read completes", async () => {
+  client.setQueryData(["notification-digest-settings", "user", WS], {
+    settings: { ...DEFAULT_NOTIFICATION_DIGEST_SETTINGS, timezone: "PRIVATE_CACHED_ZONE" },
+    revision: 0,
+  });
+  let finish!: (value: unknown) => void;
+  state.calls.getNotificationDigestSettings.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  await render(createElement(NotificationDigestSection, { workspaceId: WS, userId: "user" }));
+  expect(host.textContent).not.toContain("Receber resumo de notificações");
+  expect(host.innerHTML).not.toContain("PRIVATE_CACHED_ZONE");
+  await act(async () => finish({ settings: DEFAULT_NOTIFICATION_DIGEST_SETTINGS, revision: 0 }));
+  await vi.waitFor(() => expect(host.textContent).toContain("Receber resumo de notificações"));
+});
+it("keeps a digest draft mounted but hidden and disabled during background revalidation", async () => {
+  await render(createElement(NotificationDigestSection, { workspaceId: WS, userId: "user" }));
+  const field = host.querySelector<HTMLInputElement>('[aria-label="Fuso horário do resumo"]')!;
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(
+      field,
+      "Europe/Lisbon",
+    );
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  let finish!: (value: unknown) => void;
+  state.calls.getNotificationDigestSettings.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  await act(async () => {
+    void client.invalidateQueries({ queryKey: ["notification-digest-settings", "user", WS] });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  await vi.waitFor(() => expect(host.textContent).toContain("Conferindo suas opções do resumo"));
+  expect(field.closest("[hidden]")).toBeTruthy();
+  expect(field.matches(":disabled")).toBe(true);
+  expect(state.calls.saveNotificationDigestSettings).not.toHaveBeenCalled();
+  await act(async () => {
+    finish({ settings: DEFAULT_NOTIFICATION_DIGEST_SETTINGS, revision: 0 });
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  await vi.waitFor(() => expect(field.closest("[hidden]")).toBeNull());
+  expect(field.value).toBe("Europe/Lisbon");
+});
+it("removes old digest data after failed revalidation or workspace identity loss", async () => {
+  await render(createElement(NotificationDigestSection, { workspaceId: WS, userId: "user" }));
+  state.calls.getNotificationDigestSettings.mockRejectedValue(new Error("Consulta indisponível"));
+  await act(async () => {
+    await client.invalidateQueries({ queryKey: ["notification-digest-settings", "user", WS] });
+  });
+  await vi.waitFor(() =>
+    expect(host.textContent).toContain("Não foi possível carregar suas opções"),
+  );
+  expect(host.querySelector('[aria-label="Resumo pessoal deste workspace"]')).toBeNull();
+  state.workspace = "other";
+  await render(createElement(NotificationDigestSection, { workspaceId: WS, userId: "user" }));
+  expect(host.textContent).not.toContain("Consulta indisponível");
+  expect(host.querySelector('[aria-label="Resumo pessoal deste workspace"]')).toBeNull();
+});
+it("does not reuse another user's digest data on identity change", async () => {
+  await render(createElement(NotificationDigestSection, { workspaceId: WS, userId: "first" }));
+  const field = host.querySelector<HTMLInputElement>('[aria-label="Fuso horário do resumo"]')!;
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(
+      field,
+      "Europe/Lisbon",
+    );
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await render(createElement(NotificationDigestSection, { workspaceId: WS, userId: "second" }));
+  expect(host.querySelector<HTMLInputElement>('[aria-label="Fuso horário do resumo"]')!.value).toBe(
+    "America/Sao_Paulo",
+  );
+  expect(client.getQueryData(["notification-digest-settings", "first", WS])).toEqual({
+    settings: DEFAULT_NOTIFICATION_DIGEST_SETTINGS,
+    revision: 0,
+  });
+});
+
+it("applies a late digest save only to its captured actor and workspace cache", async () => {
+  let finish!: (value: unknown) => void;
+  state.calls.saveNotificationDigestSettings.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  await render(createElement(NotificationDigestSection, { workspaceId: WS, userId: "first" }));
+  const frequency = host.querySelector<HTMLSelectElement>('[aria-label="Frequência do resumo"]')!;
+  await act(async () => {
+    frequency.value = "weekly";
+    frequency.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await act(async () => {
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Salvar opções do resumo")!
+      .click();
+  });
+  expect(state.calls.saveNotificationDigestSettings).toHaveBeenCalledExactlyOnceWith({
+    data: {
+      workspaceId: WS,
+      settings: { ...DEFAULT_NOTIFICATION_DIGEST_SETTINGS, frequency: "weekly" },
+      revision: 0,
+    },
+  });
+  await render(createElement(NotificationDigestSection, { workspaceId: WS, userId: "second" }));
+  const saved = {
+    settings: { ...DEFAULT_NOTIFICATION_DIGEST_SETTINGS, frequency: "weekly" },
+    revision: 1,
+  };
+  await act(async () => finish(saved));
+  expect(client.getQueryData(["notification-digest-settings", "first", WS])).toEqual(saved);
+  expect(client.getQueryData(["notification-digest-settings", "second", WS])).toEqual({
+    settings: DEFAULT_NOTIFICATION_DIGEST_SETTINGS,
+    revision: 0,
+  });
+  expect(host.querySelector<HTMLSelectElement>('[aria-label="Frequência do resumo"]')!.value).toBe(
+    "daily",
+  );
+});
+
+it("keeps the digest save confirmation after adopting the server's new settings revision", async () => {
+  state.calls.saveNotificationDigestSettings.mockImplementation(async ({ data }) => ({
+    settings: data.settings,
+    revision: 1,
+  }));
+  await render(createElement(NotificationDigestSection, { workspaceId: WS, userId: "user" }));
+  const frequency = host.querySelector<HTMLSelectElement>('[aria-label="Frequência do resumo"]')!;
+  await act(async () => {
+    frequency.value = "weekly";
+    frequency.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  await act(async () => {
+    [...host.querySelectorAll("button")]
+      .find((button) => button.textContent === "Salvar opções do resumo")!
+      .click();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+  });
+  await vi.waitFor(() =>
+    expect(host.textContent).toContain(
+      "Opções do resumo deste workspace salvas. Nenhuma mensagem foi enviada por esta ação.",
+    ),
+  );
+  expect(host.querySelector<HTMLButtonElement>('button[type="submit"]')!.disabled).toBe(true);
+  expect(client.getQueryData(["notification-digest-settings", "user", WS])).toEqual({
+    settings: { ...DEFAULT_NOTIFICATION_DIGEST_SETTINGS, frequency: "weekly" },
+    revision: 1,
+  });
 });

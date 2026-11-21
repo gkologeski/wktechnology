@@ -130,6 +130,43 @@ beforeEach(() => {
 });
 
 describe("named business workflow routing on the existing queue", () => {
+  it.each([false, true])(
+    "rejects an unsupported saved nested follow-up before hydration, filters or effects (resume=%s)",
+    async (resume) => {
+      const db = database([
+        {
+          ...workflow(),
+          actions: [
+            { type: "webhook", url: "https://example.invalid" },
+            {
+              type: "legacy_container",
+              actions: [
+                {
+                  type: "send_notification",
+                  title: "Atualização",
+                  delivery: {
+                    channels: ["inapp"],
+                    followup: { reminder: { interval_hours: 1, max_occurrences: 1 } },
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      ]);
+      await processEvent(db.client, {
+        ...namedEvent(),
+        ...(resume ? { resume_workflow_id: "named", resume_cursor: 1, workflow_version: 3 } : {}),
+      });
+      expect(state.hydrate).not.toHaveBeenCalled();
+      expect(state.items).not.toHaveBeenCalled();
+      expect(state.actions).not.toHaveBeenCalled();
+      expect(db.runs).toEqual([
+        expect.objectContaining({ status: "error", error: expect.stringMatching(/não permite/) }),
+      ]);
+      expect(db.resumes).toEqual([]);
+    },
+  );
   it.each([
     { field: "planned_cost", op: "eq", value: 75000 },
     { field: "planned_cost", op: "changed_to" },

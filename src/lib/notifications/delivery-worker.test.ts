@@ -27,19 +27,21 @@ const job = {
 function fixture(
   options: {
     claim?: Record<string, unknown>;
+    snapshot?: Record<string, unknown>;
     preflight?: (n: number) => Record<string, unknown>;
     finish?: boolean;
     ids?: string[];
   } = {},
 ) {
   let n = 0;
+  const snapshot = options.snapshot ?? job;
   const rpc = vi.fn(async (name: string) => {
     if (name === "notification_worker_list")
       return { data: (options.ids ?? [I]).map((id) => ({ id })), error: null };
     if (name === "notification_delivery_claim")
-      return { data: { result: "claimed", ...job, ...options.claim }, error: null };
+      return { data: { result: "claimed", ...snapshot, ...options.claim }, error: null };
     if (name === "notification_delivery_preflight")
-      return { data: options.preflight?.(++n) ?? { allowed: true, ...job }, error: null };
+      return { data: options.preflight?.(++n) ?? { allowed: true, ...snapshot }, error: null };
     if (name === "notification_delivery_finish")
       return { data: { updated: options.finish ?? true }, error: null };
     throw Error("unexpected rpc");
@@ -331,4 +333,76 @@ it("preview recognizes Slack-only rules without claiming personal recipients or 
   expect(result.issues.join(" ")).toContain("desabilitado");
   expect(JSON.stringify(result)).not.toContain("PRIVATE");
   expect(JSON.stringify(result)).not.toContain("#secret");
+});
+
+const digestJob = {
+  id: I,
+  token: U,
+  channel: "email" as const,
+  workspaceId: U,
+  recipientId: U,
+  kind: "digest" as const,
+  batchId: U,
+  idempotencyKey: "nfd:digest:slot:email",
+  email: "digest@example.test",
+};
+it("drains a real digest envelope through the existing guarded transport and finish RPC without workflow/run fiction", async () => {
+  const f = fixture({ snapshot: digestJob });
+  const send = vi.fn(async (current, authorize) => {
+    expect(current).toEqual(digestJob);
+    expect(current).not.toHaveProperty("workflowId");
+    expect(current).not.toHaveProperty("runId");
+    await authorize();
+    return { status: "accepted" as const, provider: "managed_email" as const };
+  });
+  expect((await tickNotificationDeliveries(f.client, 20, { send })).accepted).toBe(1);
+  expect(f.rpc).toHaveBeenLastCalledWith(
+    "notification_delivery_finish",
+    expect.objectContaining({ p_id: I, p_token: U, p_status: "accepted" }),
+  );
+});
+it.each(["batchId", "recipientId", "workspaceId"] as const)(
+  "refuses a digest whose pinned %s changes before POST",
+  async (field) => {
+    const f = fixture({
+      snapshot: digestJob,
+      preflight: () => ({ allowed: true, ...digestJob, [field]: I }),
+    });
+    const send = vi.fn();
+    await expect(tickNotificationDeliveries(f.client, 20, { send })).rejects.toThrow("persistir");
+    expect(send).not.toHaveBeenCalled();
+  },
+);
+it("suppresses an empty or revoked digest composition before transport and preserves uncertainty as terminal local evidence", async () => {
+  const empty = fixture({
+    snapshot: digestJob,
+    preflight: () => ({ allowed: false, result: "suppressed" }),
+  });
+  const send = vi.fn();
+  expect((await tickNotificationDeliveries(empty.client, 20, { send })).suppressed).toBe(1);
+  expect(send).not.toHaveBeenCalled();
+  const ambiguous = fixture({ snapshot: digestJob });
+  expect(
+    (
+      await tickNotificationDeliveries(ambiguous.client, 20, {
+        send: async () => {
+          throw Error("opaque response");
+        },
+      })
+    ).uncertain,
+  ).toBe(1);
+  expect(ambiguous.rpc).toHaveBeenLastCalledWith(
+    "notification_delivery_finish",
+    expect.objectContaining({ p_status: "uncertain", p_reason: "transport_unknown" }),
+  );
+});
+it("pins a follow-up's original parent identity through the same pre-POST comparison", async () => {
+  const followup = { ...job, kind: "reminder", parentIntentId: U };
+  const f = fixture({
+    snapshot: followup,
+    preflight: () => ({ allowed: true, ...followup, parentIntentId: I }),
+  });
+  const send = vi.fn();
+  await expect(tickNotificationDeliveries(f.client, 20, { send })).rejects.toThrow("persistir");
+  expect(send).not.toHaveBeenCalled();
 });
