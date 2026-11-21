@@ -76,7 +76,12 @@ const newDraft = (eventKey: WorkflowNotificationEventKey | ""): WorkflowDraft =>
       title: "Atualização no TechERP",
       recipients: [
         {
-          kind: eventKey === "people.approval.pending" ? "pending_approvers" : "source_responsible",
+          kind:
+            eventKey === "people.approval.pending"
+              ? "pending_approvers"
+              : eventKey === "finance.invoice.received"
+                ? "workflow_owner"
+                : "source_responsible",
         },
       ],
     },
@@ -247,6 +252,7 @@ function NotificationRulesContext({
                   { prefix: "projects.", label: "TechProjects" },
                   { prefix: "ats.", label: "TechHire" },
                   { prefix: "people.", label: "TechPeople" },
+                  { prefix: "finance.", label: "TechFinance" },
                 ].map((group) => (
                   <optgroup key={group.prefix} label={group.label}>
                     {WORKFLOW_NOTIFICATION_EVENTS.filter((event) =>

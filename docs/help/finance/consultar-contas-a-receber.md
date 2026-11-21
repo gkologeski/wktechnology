@@ -8,7 +8,7 @@ route_pattern: /finance/receivable
 min_permission: techfinance.entries.view.own
 audience: internal
 sort_order: 40
-version: 2
+version: 3
 is_published: true
 ---
 # Consultar contas a receber
@@ -50,3 +50,9 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 
 ![Tela: Consultar contas a receber](/help-media/finance/consultar-contas-a-receber.webp)
 <!-- evidência: src/components/finance/entries-list-page.tsx; src/lib/finance.functions.ts -->
+
+## Avisos de vencimento e atraso
+
+A central distingue contas **do dia** (vencimento igual a hoje em São Paulo) e **vencidas** (a partir do dia seguinte), sempre com saldo real em aberto. Situação Parcial não significa quitação; a elegibilidade considera saldo e data atuais. Não há antecedência configurável ou lembrete diário nesses eventos. A regra começa desativada; publicação e ativação são separadas.
+
+O aviso abre a ficha do lançamento exato, sem depender desta lista e sem registrar baixa, cobrança, cancelamento ou conciliação. Permissões de leitura e de cada ação continuam próprias. Atrasos anteriores à publicação não entram; processamentos posteriores podem recuperar somente os que começaram depois. Valores e dados privados permanecem nas telas autorizadas, sem cópia para o aviso.

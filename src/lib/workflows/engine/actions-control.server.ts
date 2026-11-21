@@ -449,11 +449,14 @@ export async function runControlAction(
       ctx.workspaceId,
       ctx.entity,
       ctx.entityId,
-      ctx.entity === "people_documents"
-        ? ctx.after?.person_id
-        : ctx.entity === "ats_applications" || ctx.entity === "ats_interviews"
-          ? ctx.after?.job_id
-          : ctx.after?.project_id,
+      ctx.entity === "hiring_fiscal_documents"
+        ? ctx.after?.request_id
+        : ctx.entity === "people_documents"
+          ? ctx.after?.person_id
+          : ctx.entity === "ats_applications" || ctx.entity === "ats_interviews"
+            ? ctx.after?.job_id
+            : ctx.after?.project_id,
+      ctx.entity === "hiring_fiscal_documents" ? ctx.after?.kind : undefined,
     ),
   } as never);
   logs.push({

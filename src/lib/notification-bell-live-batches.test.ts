@@ -267,6 +267,44 @@ it("uses trusted canonical provenance from lookup and keeps new deadline sounds 
   expect(f.interrupt).toHaveBeenCalledExactlyOnceWith({ toast: true, sound: false, shake: false });
 });
 
+it.each([
+  "finance.payable.due",
+  "finance.receivable.due",
+  "finance.payable.overdue",
+  "finance.receivable.overdue",
+  "finance.invoice.received",
+] as const)(
+  "keeps Finance event %s quiet until its current workspace explicitly enables sound",
+  async (eventKey) => {
+    const f = fixture();
+    f.lookup.mockResolvedValue({
+      items: [notice(1, { type: "mention", eventKey })],
+      checkedAt: NOW,
+    });
+    f.batcher.inserted(id(1));
+    await vi.advanceTimersByTimeAsync(100);
+    expect(f.interrupt).toHaveBeenCalledExactlyOnceWith({
+      toast: true,
+      sound: false,
+      shake: false,
+    });
+
+    const settings = structuredClone(DEFAULT_CENTER_SETTINGS);
+    settings.eventOverrides[eventKey] = { sound: true, shake: true };
+    f.preferences.mockResolvedValue({
+      settings,
+      legacyPrefs: structuredClone(DEFAULT_NOTIFICATION_PREFS),
+    });
+    f.lookup.mockResolvedValue({
+      items: [notice(2, { type: "mention", eventKey })],
+      checkedAt: NOW,
+    });
+    f.batcher.inserted(id(2));
+    await vi.advanceTimersByTimeAsync(100);
+    expect(f.interrupt).toHaveBeenLastCalledWith({ toast: true, sound: true, shake: true });
+  },
+);
+
 it("uses a fresh exact-event workspace sound choice for a canonical notice", async () => {
   const f = fixture();
   f.lookup.mockResolvedValue({
@@ -284,7 +322,7 @@ it("uses a fresh exact-event workspace sound choice for a canonical notice", asy
   expect(f.interrupt).toHaveBeenCalledExactlyOnceWith({ toast: true, sound: true, shake: true });
 });
 
-it.each([null, "unknown", "mention", "finance.payable.due"])(
+it.each([null, "unknown", "mention", "shared.approval.pending"])(
   "never falls back to a noisy alias after invalid RPC eventKey %s",
   async (eventKey) => {
     const f = fixture();

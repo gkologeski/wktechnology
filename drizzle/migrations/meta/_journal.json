@@ -2801,6 +2801,13 @@
       "when": 1795212002000,
       "tag": "0399_notification_hire_people",
       "breakpoints": true
+    },
+    {
+      "idx": 400,
+      "version": "7",
+      "when": 1795212003000,
+      "tag": "0400_notification_finance",
+      "breakpoints": true
     }
   ]
 }

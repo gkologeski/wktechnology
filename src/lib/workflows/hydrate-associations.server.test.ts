@@ -139,3 +139,79 @@ describe("privileged workflow association projection", () => {
     expect(db.read).not.toHaveBeenCalled();
   });
 });
+
+describe("minimal financial occurrence hydration", () => {
+  it("never hydrates privileged bank/legal entity data for a financial notice and keeps generic amounts compatible", async () => {
+    const db = privilegedProjectReader();
+    const source = {
+      id: "entry",
+      workspace_id: "workspace",
+      owner_id: "owner",
+      direction: "payable",
+      status: "partial",
+      due_date: "2026-11-20",
+      amount: 1234,
+      paid_amount: 500,
+      description: "private invoice",
+      notes: "private note",
+      metadata: { pix_key: "private" },
+      attachments: ["private/path"],
+      legal_entity_id: "entity",
+      bank_account_id: "bank",
+    };
+    const safe = await hydrateTriggerAssociations(
+      db.client,
+      "financial_entries",
+      source,
+      JSON.stringify({ title: "{{bank_account.name}} {{legal_entity.payments_settings}}" }),
+      "finance.payable.due",
+    );
+    expect(safe).toEqual({
+      id: "entry",
+      workspace_id: "workspace",
+      owner_id: "owner",
+      direction: "payable",
+      status: "partial",
+      due_date: "2026-11-20",
+    });
+    expect(db.read).not.toHaveBeenCalled();
+    const generic = await hydrateTriggerAssociations(db.client, "financial_entries", source, "{}");
+    expect(generic?.amount).toBe(1234);
+    expect(source.amount).toBe(1234);
+  });
+
+  it("always minimizes the readonly fiscal source without requesting private rows or resolving file tokens", async () => {
+    const db = privilegedProjectReader();
+    const safe = await hydrateTriggerAssociations(
+      db.client,
+      "hiring_fiscal_documents",
+      {
+        id: "fiscal",
+        request_id: "request",
+        doc_type: "nfse",
+        status: "registered",
+        registered_at: "2026-11-20T14:00:00Z",
+        issued_on: "2026-11-01",
+        amount: 9999,
+        file_name: "invoice.pdf",
+        storage_path: "private/path",
+        sha256: "privatehash",
+        issuer_tax_id: "privateid",
+        document_number: "private-number",
+      },
+      "{}",
+    );
+    expect(safe).toEqual({
+      id: "fiscal",
+      request_id: "request",
+      doc_type: "nfse",
+      status: "registered",
+      registered_at: "2026-11-20T14:00:00Z",
+      issued_on: "2026-11-01",
+    });
+    expect(
+      renderWorkflowTokens("{{storage_path}}|{{document_number}}|{{registered_at}}", safe),
+    ).toBe("||2026-11-20T14:00:00Z");
+    expect(db.read).not.toHaveBeenCalled();
+  });
+});

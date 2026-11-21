@@ -114,6 +114,9 @@ describe("central de notificações — apresentação e ações pessoais", () =
     "/offers?offerId=00000000-0000-4000-8000-000000000011",
     "/people/00000000-0000-4000-8000-000000000010?tab=documents&documentId=00000000-0000-4000-8000-000000000011",
     "/people/hiring-requests?request=00000000-0000-4000-8000-000000000011",
+    "/finance/entries/00000000-0000-4000-8000-000000000010",
+    "/people/hiring-requests?request=00000000-0000-4000-8000-000000000010&fiscalDocumentId=00000000-0000-4000-8000-000000000011",
+    "/contracts/supplier-requests?request=00000000-0000-4000-8000-000000000010&fiscalDocumentId=00000000-0000-4000-8000-000000000011",
   ])(
     "clicks the real detail link with its complete target %s and no implicit decision",
     async (link) => {
@@ -128,7 +131,7 @@ describe("central de notificações — apresentação e ações pessoais", () =
       const url = new URL(link, "https://local.invalid");
       expect(navigation.open).toHaveBeenCalledExactlyOnceWith(
         url.pathname,
-        Object.fromEntries(url.searchParams),
+        url.search ? Object.fromEntries(url.searchParams) : undefined,
       );
       expect(callbacks.onRead).not.toHaveBeenCalled();
       expect(callbacks.onSnooze).not.toHaveBeenCalled();

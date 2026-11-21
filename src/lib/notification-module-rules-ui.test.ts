@@ -156,7 +156,9 @@ it.each(WORKFLOW_NOTIFICATION_EVENTS)(
             kind:
               definition.key === "people.approval.pending"
                 ? "pending_approvers"
-                : "source_responsible",
+                : definition.key === "finance.invoice.received"
+                  ? "workflow_owner"
+                  : "source_responsible",
           },
         ],
       },
@@ -175,8 +177,11 @@ it("groups only supported events and preserves generic workflow creation", async
     "TechProjects",
     "TechHire",
     "TechPeople",
+    "TechFinance",
   ]);
-  expect([...select.options].map((option) => option.value)).not.toContain("finance.payable.due");
+  expect([...select.options].map((option) => option.value)).not.toContain(
+    "shared.approval.pending",
+  );
   await click("Criar regra");
   expect(draft().trigger.notification_event).toBeUndefined();
   expect(draft().entity).toBe("leads");

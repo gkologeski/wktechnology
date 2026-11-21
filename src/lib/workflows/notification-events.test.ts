@@ -10,6 +10,9 @@ import {
   workflowNotificationTriggerLabel,
   workflowNotificationTriggerMatches,
   notificationEventActionProblem,
+  notificationEventConfigurationProblem,
+  workflowNotificationEventFields,
+  workflowNotificationEventFieldAllowed,
 } from "./notification-events";
 
 const workflow = {
@@ -25,11 +28,11 @@ const workflow = {
 };
 
 describe("explicit business notification selectors", () => {
-  it("preserves the twelve existing events and adds the six hiring and people events", () => {
+  it("preserves the eighteen existing events and adds the five financial events", () => {
     expect(WORKFLOW_NOTIFICATION_EVENTS.map(({ key }) => key)).toEqual([
       ...WORKFLOW_NOTIFICATION_EVENT_KEYS,
     ]);
-    expect(WORKFLOW_NOTIFICATION_EVENTS).toHaveLength(18);
+    expect(WORKFLOW_NOTIFICATION_EVENTS).toHaveLength(23);
     expect(WORKFLOW_NOTIFICATION_EVENT_KEYS.slice(0, 8)).toEqual([
       "crm.deal.won",
       "crm.deal.lost",
@@ -46,7 +49,7 @@ describe("explicit business notification selectors", () => {
       "projects.task.overdue",
       "projects.milestone.due",
     ]);
-    expect(WORKFLOW_NOTIFICATION_EVENT_KEYS.slice(12)).toEqual([
+    expect(WORKFLOW_NOTIFICATION_EVENT_KEYS.slice(12, 18)).toEqual([
       "ats.application.received",
       "ats.interview.scheduled",
       "ats.offer.accepted",
@@ -56,14 +59,16 @@ describe("explicit business notification selectors", () => {
     ]);
     expect(getWorkflowNotificationEvent("crm.quote.accepted")).toBeNull();
     expect(getWorkflowNotificationEvent("constructor")).toBeNull();
-    expect(getWorkflowNotificationEvent("finance.payable.due")).toBeNull();
+    expect(getWorkflowNotificationEvent("shared.approval.pending")).toBeNull();
   });
 
   it("keeps the active catalogue and workflow registry aligned on keys, labels, modules and source entities", () => {
     const active = NOTIFICATION_EVENT_CATALOG.filter(
       (event) =>
         event.availability === "active" &&
-        ["crm", "contracts", "projects", "ats", "people"].includes(event.moduleKey ?? ""),
+        ["crm", "contracts", "projects", "ats", "people", "finance"].includes(
+          event.moduleKey ?? "",
+        ),
     );
     expect(active.map(({ eventKey }) => eventKey).sort()).toEqual(
       [...WORKFLOW_NOTIFICATION_EVENT_KEYS].sort(),
@@ -87,6 +92,11 @@ describe("explicit business notification selectors", () => {
       "people.employment.started": "people",
       "people.document.expiring": "people_documents",
       "people.approval.pending": "hiring_preparation_requests",
+      "finance.payable.due": "financial_entries",
+      "finance.receivable.due": "financial_entries",
+      "finance.payable.overdue": "financial_entries",
+      "finance.receivable.overdue": "financial_entries",
+      "finance.invoice.received": "hiring_fiscal_documents",
     };
     for (const definition of WORKFLOW_NOTIFICATION_EVENTS) {
       expect(active.find(({ eventKey }) => eventKey === definition.key)).toMatchObject({
@@ -219,7 +229,12 @@ describe("explicit business notification selectors", () => {
     expect(saved.trigger).not.toHaveProperty("notification_event");
   });
 
-  it.each(["ats_offers", "people_documents", "hiring_preparation_requests"] as const)(
+  it.each([
+    "ats_offers",
+    "people_documents",
+    "hiring_preparation_requests",
+    "hiring_fiscal_documents",
+  ] as const)(
     "rejects a forged generic or timed selector on the new read-only source %s",
     (entity) => {
       expect(
@@ -327,4 +342,206 @@ describe("explicit business notification selectors", () => {
       );
     },
   );
+});
+
+describe("minimal financial notification configuration", () => {
+  const key = "finance.payable.due";
+  const notice = {
+    type: "send_notification",
+    title: "Consulte {{due_date}}",
+    recipients: [{ kind: "source_responsible" }],
+  };
+  const save = (patch: Record<string, unknown> = {}) =>
+    SaveSchema.safeParse({
+      ...workflow,
+      entity: "financial_entries",
+      trigger: workflowNotificationEventTrigger(key),
+      actions: [notice],
+      ...patch,
+    });
+
+  it("offers only fields the financial projection actually supplies and preserves generic catalogues", () => {
+    const fields = workflowNotificationEventFields(key)!;
+    expect(fields).toContain("direction");
+    expect(fields).toContain("due_date");
+    for (const field of [
+      "amount",
+      "paid_amount",
+      "description",
+      "notes",
+      "metadata",
+      "bank_account_id",
+      "company.name",
+      "paid_at",
+    ])
+      expect(workflowNotificationEventFieldAllowed(key, field)).toBe(false);
+    expect(workflowNotificationEventFields(undefined)).toBeNull();
+    expect(workflowNotificationEventFieldAllowed(undefined, "amount")).toBe(true);
+    expect(workflowNotificationEventFields("finance.invoice.received")).toContain("registered_at");
+    expect(workflowNotificationEventFields("finance.invoice.received")).not.toContain(
+      "document_number",
+    );
+    expect(save().success).toBe(true);
+    expect(
+      save({ trigger: { event: "updated", filters: [{ field: "amount", op: "gt", value: 10 }] } })
+        .success,
+    ).toBe(true);
+  });
+
+  it.each([
+    "finance.payable.due",
+    "finance.receivable.due",
+    "finance.payable.overdue",
+    "finance.receivable.overdue",
+    "finance.invoice.received",
+  ] as const)("uses the canonical %s without user invented timer offsets", (eventKey) => {
+    expect(workflowNotificationEventTrigger(eventKey).notification_event).toEqual({
+      key: eventKey,
+    });
+    expect(
+      notificationEventSelectionSchema.safeParse({ key: eventKey, days_before: 1 }).success,
+    ).toBe(false);
+    expect(
+      TriggerSchema.safeParse({
+        ...workflowNotificationEventTrigger(eventKey),
+        time_based: { kind: "time_since_field", amount: 1, unit: "days" },
+      }).success,
+    ).toBe(false);
+  });
+
+  it.each(["eq", "neq", "is_empty", "is_not_empty", "changed_to"])(
+    "rejects a missing financial field before evaluating nested %s conditions",
+    (op) => {
+      const trigger = {
+        ...workflowNotificationEventTrigger(key),
+        filters: [{ logic: "or", conditions: [{ field: "amount", op, value: 0 }] }],
+      };
+      expect(save({ trigger }).success).toBe(false);
+      expect(
+        save({
+          trigger: {
+            ...workflowNotificationEventTrigger(key),
+            goal_filters: [{ field: "bank_account.name", op: "is_empty" }],
+          },
+        }).success,
+      ).toBe(false);
+      expect(
+        save({
+          actions: [
+            {
+              type: "branch_if",
+              filters: [{ field: "notes", op: "is_empty" }],
+              then: [notice],
+              else: [],
+            },
+          ],
+        }).success,
+      ).toBe(false);
+      expect(
+        save({
+          actions: [
+            {
+              type: "branch_multi",
+              branches: [
+                { filters: [{ field: "metadata.amount", op: "is_empty" }], actions: [notice] },
+              ],
+              else: [],
+            },
+          ],
+        }).success,
+      ).toBe(false);
+    },
+  );
+
+  it("accepts public technical and Portuguese date tokens but rejects private aliases and nested reads", () => {
+    expect(
+      save({
+        actions: [
+          { ...notice, title: "{{due_date}} {{vence_em}} {{status}} {{variaveis.message}}" },
+        ],
+      }).success,
+    ).toBe(true);
+    for (const path of [
+      "amount",
+      "valor",
+      "notes",
+      "metadados_tecnicos.counterparty_name",
+      "company.name",
+      "bank_account.name",
+    ])
+      expect(save({ actions: [{ ...notice, title: `Unavailable {{${path}}}` }] }).success).toBe(
+        false,
+      );
+    expect(
+      save({
+        actions: [{ type: "switch_by_value", field: "amount", cases: [], default: [notice] }],
+      }).success,
+    ).toBe(false);
+    expect(
+      save({
+        actions: [
+          {
+            type: "format_data",
+            op: "number_round",
+            source_field: "paid_amount",
+            target_var: "paid",
+          },
+        ],
+      }).success,
+    ).toBe(false);
+    expect(
+      notificationEventConfigurationProblem(key, {
+        goal_filters: [{ field: "amount", op: "is_empty" }],
+      }),
+    ).toMatch(/Campo indisponível/);
+  });
+
+  it.each([
+    { type: "increment_field", field: "amount", amount: 1 },
+    { type: "set_field", field: "notes", value: "changed" },
+    { type: "assign_to", user_id: "user" },
+    { type: "associate_records", association: "company", target_id: "id" },
+    { type: "update_record", table: "financial_entries", target_id: "id", values: { amount: 1 } },
+    { type: "create_record", table: "bank_payments", values: { amount: 1 } },
+    { type: "delete_record", table: "financial_entries", target_id: "id" },
+  ])("rejects named financial mutations, including hidden legacy containers: $type", (action) => {
+    expect(
+      notificationEventActionProblem(key, [
+        { type: "legacy", actions: [{ type: "parallel", branches: [{ actions: [action] }] }] },
+      ]),
+    ).toMatch(/operação financeira canônica/);
+    expect(notificationEventActionProblem(undefined, [action])).toBeNull();
+  });
+});
+
+it.each([
+  { type: "create_payable_schedule", amount: "10" },
+  { type: "create_receivable_invoice", amount: "10" },
+  { type: "cancel_payable_schedules" },
+])("rejects the legacy financial effect alias $type only in named Finance", (action) => {
+  const base = {
+    name: "Configured financial effect",
+    enabled: false,
+    entity: "financial_entries",
+    actions: [action],
+  };
+  expect(
+    SaveSchema.safeParse({
+      ...base,
+      trigger: workflowNotificationEventTrigger("finance.payable.due"),
+    }).success,
+  ).toBe(false);
+  expect(SaveSchema.safeParse({ ...base, trigger: { event: "updated" } }).success).toBe(true);
+  expect(
+    SaveSchema.safeParse({
+      ...base,
+      trigger: workflowNotificationEventTrigger("finance.payable.due"),
+      actions: [{ type: "branch_if", filters: [], then: [action], else: [] }],
+    }).success,
+  ).toBe(false);
+  expect(
+    notificationEventActionProblem("finance.invoice.received", [
+      { type: "legacy", actions: [action] },
+    ]),
+  ).toMatch(/operação financeira canônica/);
 });

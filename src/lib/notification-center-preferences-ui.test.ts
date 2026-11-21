@@ -210,7 +210,15 @@ describe("personal workspace notification settings form", () => {
     expect(options).toContain("people.employment.started");
     expect(options).toContain("people.document.expiring");
     expect(options).toContain("people.approval.pending");
-    expect(options).not.toContain("finance.payable.due");
+    for (const key of [
+      "finance.payable.due",
+      "finance.receivable.due",
+      "finance.payable.overdue",
+      "finance.receivable.overdue",
+      "finance.invoice.received",
+    ])
+      expect(options).toContain(key);
+    expect(options).not.toContain("shared.approval.pending");
   });
   it.each([
     ["projects.project.started", "Projeto iniciado"],
@@ -223,6 +231,11 @@ describe("personal workspace notification settings form", () => {
     ["people.employment.started", "Início de vínculo autorizado"],
     ["people.document.expiring", "Documento próximo do vencimento"],
     ["people.approval.pending", "Aprovação de solicitação profissional pendente"],
+    ["finance.payable.due", "Conta a pagar do dia"],
+    ["finance.receivable.due", "Conta a receber do dia"],
+    ["finance.payable.overdue", "Conta a pagar vencida"],
+    ["finance.receivable.overdue", "Conta a receber vencida"],
+    ["finance.invoice.received", "NF de contratação recebida"],
   ])(
     "saves a targeted WhatsApp block for %s without opting into other channels",
     async (key, label) => {

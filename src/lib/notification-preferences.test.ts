@@ -260,12 +260,17 @@ describe("interrupções do sino por evento e preferência", () => {
       }),
     ).toEqual({ toast: true, sound: true, shake: false });
     expect(
-      notificationInterruption({ ...row, eventKey: "finance.payable.due" }, prefs, "/contracts", {
-        inapp: true,
-        email: false,
-        sound: true,
-        shake: true,
-      }),
+      notificationInterruption(
+        { ...row, eventKey: "shared.approval.pending" },
+        prefs,
+        "/contracts",
+        {
+          inapp: true,
+          email: false,
+          sound: true,
+          shake: true,
+        },
+      ),
     ).toEqual(SILENT);
   });
   it.each(["sla.first_response_breach", "sla.resolution_breach", "sla.at_risk"])(

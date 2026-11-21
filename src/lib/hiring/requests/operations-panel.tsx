@@ -1,5 +1,6 @@
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { useAuth } from "@/lib/auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "@/components/ui/button";
@@ -44,13 +45,28 @@ export function useOperations(kind: RequestKind, row: PreparationRow) {
   const p = usePermissions(),
     view = useSharedAction(resourceFor(kind), "view"),
     get = useServerFn(getOperations);
-  const q = useQuery({
-    queryKey: ["hiring-operations", p.workspaceId, row.id, row.revision],
-    enabled: view,
+  const { user } = useAuth();
+  const scope = `${user?.id}:${p.workspaceId}:${kind}:${row.id}:${row.revision}`;
+  const retained = useRef<{ scope: string; data: OpsContext | undefined }>({
+    scope,
+    data: undefined,
+  });
+  if (retained.current.scope !== scope) retained.current = { scope, data: undefined };
+  const query = useQuery({
+    queryKey: ["hiring-operations", user?.id, p.workspaceId, kind, row.id, row.revision],
+    enabled: view && !!user,
     queryFn: () => get({ data: { kind, id: row.id } }) as Promise<OpsContext>,
     retry: false,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
   });
-  return { view, q };
+  const revalidating = view && (query.isFetching || !query.isFetchedAfterMount);
+  if (!view || !user || query.isError) retained.current = { scope, data: undefined };
+  if (view && user && !query.isError && query.isFetchedAfterMount && !query.isFetching)
+    retained.current = { scope, data: query.data };
+  const data = view && user && !query.isError ? retained.current.data : undefined;
+  return { view: view && !!user, revalidating, q: { ...query, data } };
 }
 const invalidate = (qc: ReturnType<typeof useQueryClient>) =>
   void qc.invalidateQueries({ queryKey: ["hiring-operations"] });
@@ -67,9 +83,10 @@ export function OperationsPanel({
   dirty: boolean;
   busy: boolean;
 }) {
-  const { view, q } = useOperations(kind, row);
+  const { view, q, revalidating } = useOperations(kind, row);
   if (!view) return null;
-  if (q.isLoading) return <p role="status">Carregando entregas…</p>;
+  if (!q.data && (q.isLoading || revalidating))
+    return <p role="status">Conferindo acesso às entregas e documentos fiscais…</p>;
   if (q.isError)
     return (
       <div role="alert" className="space-y-2 text-sm">
@@ -84,26 +101,42 @@ export function OperationsPanel({
   const locked = dirty || busy || q.isFetching;
   return (
     <section className="space-y-4 text-sm" aria-label="Entregas e documentos fiscais">
-      <h3 className="font-semibold">Entregas e documentos fiscais</h3>
-      {d.proof_problem && <p role="status">{d.proof_problem}</p>}
-      <p className="text-xs text-muted-foreground">
-        Aceites e conferências não geram títulos nem pagamentos e não autenticam documentos junto a
-        órgãos fiscais.
-      </p>
-      {!d.proof_problem && d.can_manage_deliveries && (
-        <DeliveryForm kind={kind} row={row} ctx={d} locked={locked} />
-      )}
-      {!d.proof_problem &&
-        d.deliveries.map((x) => (
-          <DeliveryActions key={x.id} kind={kind} row={row} ctx={d} delivery={x} locked={locked} />
-        ))}
-      {!d.proof_problem && d.can_register_fiscal && (
-        <FiscalUpload kind={kind} row={row} ctx={d} locked={locked} />
-      )}
-      {!d.proof_problem &&
-        (d.fiscal ?? [])
-          .filter((f) => f.can_review)
-          .map((f) => <FiscalReview key={f.id} kind={kind} row={row} doc={f} locked={locked} />)}
+      {revalidating && <p role="status">Conferindo acesso às entregas e documentos fiscais…</p>}
+      <fieldset
+        className="contents"
+        disabled={revalidating}
+        hidden={revalidating}
+        inert={revalidating || undefined}
+        style={revalidating ? { display: "none" } : undefined}
+      >
+        <h3 className="font-semibold">Entregas e documentos fiscais</h3>
+        {d.proof_problem && <p role="status">{d.proof_problem}</p>}
+        <p className="text-xs text-muted-foreground">
+          Aceites e conferências não geram títulos nem pagamentos e não autenticam documentos junto
+          a órgãos fiscais.
+        </p>
+        {!d.proof_problem && d.can_manage_deliveries && (
+          <DeliveryForm kind={kind} row={row} ctx={d} locked={locked} />
+        )}
+        {!d.proof_problem &&
+          d.deliveries.map((x) => (
+            <DeliveryActions
+              key={x.id}
+              kind={kind}
+              row={row}
+              ctx={d}
+              delivery={x}
+              locked={locked}
+            />
+          ))}
+        {!d.proof_problem && d.can_register_fiscal && (
+          <FiscalUpload kind={kind} row={row} ctx={d} locked={locked} />
+        )}
+        {!d.proof_problem &&
+          (d.fiscal ?? [])
+            .filter((f) => f.can_review)
+            .map((f) => <FiscalReview key={f.id} kind={kind} row={row} doc={f} locked={locked} />)}
+      </fieldset>
     </section>
   );
 }
@@ -121,6 +154,8 @@ function DeliveryForm({
   locked: boolean;
   edit?: OpsDelivery;
 }) {
+  const { user } = useAuth();
+  const { workspaceId } = usePermissions();
   const qc = useQueryClient(),
     act = useServerFn(saveDelivery),
     list = useServerFn(listDeliveryProjects);
@@ -141,6 +176,8 @@ function DeliveryForm({
   const refs = useQuery({
     queryKey: [
       "hiring-delivery-projects",
+      user?.id,
+      workspaceId,
       row.id,
       project || null,
       milestone || null,

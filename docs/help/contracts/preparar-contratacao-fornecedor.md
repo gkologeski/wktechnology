@@ -8,7 +8,7 @@ route_pattern: /contracts/supplier-requests
 min_permission: techcontracts.supplier_requests.view.workspace
 audience: internal
 sort_order: 36
-version: 15
+version: 16
 is_published: true
 ---
 
@@ -185,3 +185,11 @@ Exige finalidade **Cliente** com projeto, negócio ou contrato comercial vincula
 - O CNPJ escolhido deve coincidir com a entidade do negócio e do contrato comercial vinculados. Uma entidade antiga/inativa ou sem CNPJ na origem deve ser conferida no cadastro de origem; não troque a finalidade para contornar a divergência.
 - Alterar a finalidade remove os vínculos comerciais do rascunho e, fora de atendimento a cliente, a condição de aceite do cliente final. Não altera registros já salvos.
 - Projetos e contratos continuam sujeitos às permissões de consulta. A correção do gravador técnico não concede acesso a outros usuários ou workspaces.
+
+## Localizar uma NF recebida pelo aviso
+
+**NF de contratação recebida** cobre somente NF-e/NFS-e registrada no fluxo privado após upload e conferências canônicas de integridade. Não é emissão NFS-e, fatura de cliente, RPA, recibo ou evidência de folha. Recebida não significa conferida pelo Financeiro, aceita para pagamento ou paga. Validar uma nota já registrada não é novo recebimento; rejeição impede ocorrências ainda pendentes.
+
+O link abre a solicitação correta em **Revisão** e destaca a linha exata em **Entregas e documentos fiscais**. Exige leitura atual da solicitação e a chave específica de documentos fiscais; consultar lançamentos ou a solicitação, isoladamente, não libera valores, CNPJ ou arquivo. A abertura não baixa arquivo, confere, aceita ou paga a nota.
+
+Durante revalidação, formulários da mesma identidade permanecem montados, ocultos e bloqueados; falha ou acesso revogado retira dados antigos. Trocar usuário/workspace/solicitação descarta o estado anterior. O responsável Financeiro vem da formalização vigente, sem CEO ou substituto presumido; quem enviou a nota só é destinatário se escolhido explicitamente e não se torna aprovador por enviá-la. A regra inicial pode usar o executor, também sujeito ao acesso fiscal.

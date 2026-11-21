@@ -60,3 +60,27 @@ it("structural action inspection records zero real messages and does not resolve
   expect(result.channels).toEqual(["inapp"]);
   expect(result.issues.join(" ")).toContain("Nenhuma mensagem foi enviada");
 });
+
+it.each(WORKFLOW_NOTIFICATION_EVENTS.filter((event) => event.moduleKey === "finance"))(
+  "describes $key precisely without promising a financial effect",
+  (event) => {
+    const notes = inspectNotificationTrigger(workflowNotificationEventTrigger(event.key)).join(" ");
+    expect(notes).toContain(event.label);
+    expect(notes).toContain("sem execução ou mensagem real");
+    expect(notes).toContain("não são copiados para o aviso");
+    if (event.key.endsWith(".due")) {
+      expect(notes).toContain("data civil atual");
+      expect(notes).toContain("Não há antecedência");
+    }
+    if (event.key.endsWith(".overdue")) {
+      expect(notes).toContain("dia civil seguinte");
+      expect(notes).toContain("não tem antecedência");
+      expect(notes).toContain("não faz pagamento");
+    }
+    if (event.key === "finance.invoice.received") {
+      expect(notes).toContain("somente NF-e/NFS-e");
+      expect(notes).toContain("Registro não equivale a conferência");
+      expect(notes).toContain("somente leitura");
+    }
+  },
+);

@@ -123,7 +123,12 @@ describe("workflow authorization boundary", () => {
     ).toEqual({ monthly_cost: 20, notes: "Ordinary finance note" });
   });
 
-  it.each(["people_documents", "ats_offers", "hiring_preparation_requests"] as const)(
+  it.each([
+    "people_documents",
+    "ats_offers",
+    "hiring_preparation_requests",
+    "hiring_fiscal_documents",
+  ] as const)(
     "binds read-only source %s to an explicit worker view requirement",
     async (entity) => {
       const c = client(true),
@@ -456,3 +461,99 @@ describe("current recruitment authorization in hiring workers", () => {
     expect(c.writes).toEqual([]);
   });
 });
+
+describe("named financial notices before real action handlers", () => {
+  it("denies incrementing a minimized amount before a worker call or write, while generic financial workflows retain their value", async () => {
+    const c = client(true);
+    const source: RunCtx = {
+      ...ctx(),
+      entity: "financial_entries",
+      notificationEventKey: "finance.payable.due",
+      after: {
+        id: "entry",
+        amount: 4000,
+        paid_amount: 0,
+        direction: "payable",
+        due_date: "2026-11-20",
+      },
+    };
+    const result = await runActions(
+      c.db,
+      [{ type: "increment_field", field: "amount", amount: 10 }],
+      source,
+    );
+    expect(result.hadError).toBe(true);
+    expect(result.log[0].error).toMatch(/operação financeira canônica/);
+    expect(source.after).not.toHaveProperty("amount");
+    expect(c.rpc).not.toHaveBeenCalled();
+    expect(c.writes).toEqual([]);
+    const generic = client(true);
+    const ordinary = await runActions(
+      generic.db,
+      [{ type: "increment_field", field: "amount", amount: 10 }],
+      { ...ctx(), entity: "financial_entries", after: { amount: 4000 } },
+    );
+    expect(ordinary.hadError).toBe(false);
+    expect(generic.writes).toEqual([{ amount: 4010 }]);
+  });
+
+  it("validates all nested finance configuration before an earlier effect or a missing is_empty branch", async () => {
+    const c = client(true);
+    const result = await runActions(
+      c.db,
+      [
+        { type: "webhook", url: "https://example.invalid" },
+        { type: "branch_if", filters: [{ field: "amount", op: "is_empty" }], then: [], else: [] },
+      ],
+      {
+        ...ctx(),
+        entity: "financial_entries",
+        notificationEventKey: "finance.receivable.overdue",
+        after: { direction: "receivable", due_date: "2026-11-19" },
+      },
+    );
+    expect(result.hadError).toBe(true);
+    expect(result.log[0].error).toMatch(/Campo indisponível/);
+    expect(c.rpc).not.toHaveBeenCalled();
+    expect(c.from).not.toHaveBeenCalled();
+    expect(c.writes).toEqual([]);
+  });
+});
+
+it.each([
+  { type: "create_payable_schedule", amount: "10" },
+  { type: "create_receivable_invoice", amount: "10" },
+  { type: "cancel_payable_schedules" },
+])(
+  "blocks $type through the real dispatcher before any financial handler or earlier effect",
+  async (action) => {
+    const c = client(true);
+    const result = await runActions(
+      c.db,
+      [
+        { type: "webhook", url: "https://example.invalid" },
+        { type: "branch_if", filters: [], then: [action as WorkflowAction], else: [] },
+      ],
+      {
+        ...ctx(),
+        entity: "financial_entries",
+        notificationEventKey: "finance.receivable.due",
+        after: { id: "entry", direction: "receivable", due_date: "2026-11-20" },
+      },
+    );
+    expect(result.hadError).toBe(true);
+    expect(result.log[0].error).toMatch(/operação financeira canônica/);
+    expect(c.rpc).not.toHaveBeenCalled();
+    expect(c.from).not.toHaveBeenCalled();
+    expect(c.writes).toEqual([]);
+    const generic = client(true);
+    await expect(
+      authorizeWorkflowStep(
+        generic.db,
+        { ...ctx(), entity: "financial_entries" },
+        action as WorkflowAction,
+      ),
+    ).resolves.toBeUndefined();
+    expect(generic.rpc).toHaveBeenCalled();
+  },
+);

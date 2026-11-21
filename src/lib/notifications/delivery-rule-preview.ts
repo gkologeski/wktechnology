@@ -56,16 +56,30 @@ export function inspectNotificationTrigger(trigger: WorkflowTrigger): string[] {
     notes.push(
       "Somente solicitações profissionais da preparação, na etapa atual liberada ao aprovador nomeado. Não inclui vagas, fornecedores nem todas as alçadas de RH. O aviso canônico no aplicativo já existe independentemente da regra e é reaproveitado sem duplicar; desligar a regra ou esta preferência não remove esse aviso de processo. Canais adicionais explícitos não permitem destinatários arbitrários nem aprovam a solicitação.",
     );
+  if (selection.key === "finance.payable.due" || selection.key === "finance.receivable.due")
+    notes.push(
+      "Conta do dia: vencimento na data civil atual em America/Sao_Paulo e saldo real em aberto. Não há antecedência configurável. Situação parcial também depende do saldo e da data; o aviso não registra baixa ou cobrança.",
+    );
+  if (selection.key === "finance.payable.overdue" || selection.key === "finance.receivable.overdue")
+    notes.push(
+      "Conta vencida: a partir do dia civil seguinte ao vencimento em America/Sao_Paulo, com saldo real em aberto. Não depende apenas do rótulo de status, não tem antecedência ou lembrete diário e não faz pagamento, recebimento ou conciliação. Vencimentos anteriores à publicação não entram; os posteriores podem ser recuperados pelo processamento.",
+    );
+  if (selection.key === "finance.invoice.received")
+    notes.push(
+      "NF de contratação recebida: somente NF-e/NFS-e registrada no fluxo canônico privado de contratação. Registro não equivale a conferência, emissão ou pagamento. Não inclui faturas de clientes, RPA, recibos nem evidência de folha. O destino confere o acesso fiscal atual e localiza o documento, sem baixar arquivo ou registrar decisão.",
+    );
   if (WORKFLOW_READONLY_SOURCE_TABLES.some((source) => source === event.entity))
     notes.push(
       "A origem deste evento é somente leitura no Workflow. Ela não pode ser criada, alterada ou excluída por ações genéricas do editor.",
     );
   notes.push(
-    event.moduleKey === "ats" || event.moduleKey === "people"
-      ? "O aviso não cria contratação, altera salário, aprova uma decisão ou concede acesso por si só. A conferência é estrutural, sem execução ou mensagem real; revise as ações e canais antes de publicar e ativar."
-      : event.moduleKey === "projects"
-        ? "O evento de aviso não cria tarefas, altera prazos, registra horas ou gera cobrança por si só. Revise as ações do Workflow. A publicação e a ativação são separadas desta conferência."
-        : "Esta regra não recria encaminhamentos, tarefas ou decisões contratuais. A publicação e a ativação da regra são ações separadas desta conferência.",
+    event.moduleKey === "finance"
+      ? "A conferência é estrutural, sem execução ou mensagem real. Valores, saldos, CNPJs, dados bancários, notas e arquivos não são copiados para o aviso. Publicar e ativar continuam sendo ações separadas."
+      : event.moduleKey === "ats" || event.moduleKey === "people"
+        ? "O aviso não cria contratação, altera salário, aprova uma decisão ou concede acesso por si só. A conferência é estrutural, sem execução ou mensagem real; revise as ações e canais antes de publicar e ativar."
+        : event.moduleKey === "projects"
+          ? "O evento de aviso não cria tarefas, altera prazos, registra horas ou gera cobrança por si só. Revise as ações do Workflow. A publicação e a ativação são separadas desta conferência."
+          : "Esta regra não recria encaminhamentos, tarefas ou decisões contratuais. A publicação e a ativação da regra são ações separadas desta conferência.",
   );
   return notes;
 }

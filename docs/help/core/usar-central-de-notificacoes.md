@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 147
-version: 8
+version: 9
 is_published: true
 ---
 
@@ -201,3 +201,19 @@ Em **Regras**, TechHire oferece **Inscrição em vaga recebida**, **Entrevista m
 Os seis eventos mantêm as preferências por grupo/evento: som e tremor inicialmente desligados; e-mail depende da escolha e da política. **WhatsApp > Herdar** preserva o consentimento geral; **Bloquear** bloqueia esse evento nesse canal, e **Permitir** não concede consentimento, acesso ou elegibilidade. Conteúdo e históricos não reproduzem salário, condições privadas, número de documento, currículo, arquivo ou token público.
 
 Ao abrir qualquer destino, aguarde a conferência do usuário, workspace e acesso atuais. A indicação neutra de carregamento substitui o conteúdo antigo durante a conferência; falha ou acesso revogado retira o conteúdo. Trocar usuário ou workspace descarta a seleção e seus rascunhos. O link não executa decisões nem substitui as permissões de cada aba.
+
+## Avisos de TechFinance
+
+Em **Regras**, TechFinance oferece **Conta a pagar do dia**, **Conta a receber do dia**, **Conta a pagar vencida**, **Conta a receber vencida** e **NF de contratação recebida**. Escolher prepara somente um rascunho desativado no Workflow existente; não publica, envia, paga, recebe, emite, cancela nem concilia.
+
+- **Do dia:** vencimento igual ao dia civil atual em São Paulo, com saldo real em aberto. A situação Parcial também depende do saldo. Não há campo de antecedência. Publicar durante a tarde ainda pode avisar uma vez sobre o vencimento daquele dia.
+- **Vencida:** dia seguinte ao vencimento no mesmo calendário e saldo real em aberto. Não há antecedência, campo de dias após o prazo ou lembrete diário. Só cruzamentos posteriores à publicação entram; o processamento pode recuperar esses cruzamentos, sem varrer atrasos anteriores.
+- **NF de contratação recebida:** somente NF-e ou NFS-e efetivamente registrada no fluxo privado de contratação profissional/fornecedor. O registro não equivale à conferência do Financeiro, emissão fiscal, aceite de entrega ou pagamento. Não inclui fatura de cliente, RPA, recibo ou evidência de folha. Conferir uma nota já registrada não cria outro recebimento; rejeitar bloqueia uma ocorrência ainda pendente.
+
+Os quatro avisos de títulos abrem a ficha do lançamento exato, independentemente de filtro ou página da lista. A NF abre a solicitação profissional ou de fornecedor em **Revisão**, localizando e destacando o documento fiscal autorizado. Não baixa arquivo ou registra conferência pela URL. A permissão de lançamentos não substitui as permissões da solicitação e de seus documentos fiscais.
+
+Os novos rascunhos de títulos usam o responsável atual do registro. A NF começa com **Executor do workflow**, editável e sujeito ao acesso fiscal. **Responsável Financeiro da formalização** resolve somente a pessoa canônica vigente; não inventa CEO ou substituto. **Quem enviou a nota** recebe apenas por escolha explícita e não se torna aprovador por tê-la enviado.
+
+Avisos, variáveis e condições desses cinco eventos usam somente identificadores, estados e datas permitidos. Não oferecem valores, saldo, notas privadas, CNPJ, dados bancários, arquivos ou associações financeiras. Mutações genéricas do título/documento não são oferecidas; operações financeiras continuam em seus controles canônicos. Um rascunho antigo incompatível fica preservado para revisão, sem gravação silenciosa.
+
+Som e tremor começam desligados. E-mail e WhatsApp mantêm suas próprias políticas; a preferência de WhatsApp herda o consentimento geral quando não há override, bloquear afeta o evento e permitir não concede autorização. Durante revalidação, campos em edição na mesma identidade ficam preservados, ocultos e bloqueados. Falha, perda de acesso ou troca de usuário/workspace retira o conteúdo antigo.

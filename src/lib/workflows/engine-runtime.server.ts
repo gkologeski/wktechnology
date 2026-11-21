@@ -8,6 +8,7 @@ import { workRpc } from "@/lib/access-control/work-core.server";
 import {
   workflowNotificationTriggerMatches,
   notificationEventActionProblem,
+  notificationEventConfigurationProblem,
 } from "./notification-events";
 // Ciclo de execução do motor: enfileiramento, runs, ticks de fila e de tempo.
 // Extraído de engine.server.ts sem mudança de comportamento.
@@ -84,6 +85,11 @@ async function workflowSourceAllowed(
   event: EventRow,
 ): Promise<boolean> {
   try {
+    const configurationProblem = notificationEventConfigurationProblem(
+      event.notification_event_key,
+      { trigger: wf.trigger, actions: wf.actions, goal_filters: wf.goal_filters },
+    );
+    if (configurationProblem) throw new Error(configurationProblem);
     await authorizeWorkflowStep(
       supabase,
       {
@@ -95,6 +101,7 @@ async function workflowSourceAllowed(
         before: sanitizeWorkflowSnapshot(event.before, event.entity, event.notification_event_key),
         workflowId: wf.id,
         workflowVersion: wf.published_version,
+        notificationEventKey: event.notification_event_key,
       },
       undefined,
       JSON.stringify({ t: wf.trigger, a: wf.actions, g: wf.goal_filters }),
@@ -127,7 +134,10 @@ async function notificationEventAllowed(
 ) {
   if (!workflowNotificationTriggerMatches(wf.trigger ?? ({} as WorkflowTrigger), event))
     return false;
-  if (notificationEventActionProblem(wf.trigger?.notification_event?.key, wf.actions ?? []))
+  if (
+    wf.trigger?.notification_event?.key === "people.approval.pending" &&
+    notificationEventActionProblem(wf.trigger.notification_event.key, wf.actions ?? [])
+  )
     return false;
   if (event.notification_event_key == null) return true;
   if (!Number.isInteger(wf.published_version) || (wf.published_version ?? 0) < 1) return false;
@@ -265,6 +275,7 @@ export async function processEvent(
             before: safeBefore,
             workflowId: wfr.id,
             workflowVersion: wfr.published_version,
+            notificationEventKey: event.notification_event_key,
             runId: run.id as string,
             state,
             resumeFrames: frames,
@@ -389,6 +400,7 @@ export async function processEvent(
       before: safeBefore,
       workflowId: wf.id,
       workflowVersion: wf.published_version,
+      notificationEventKey: event.notification_event_key,
       runId: run.id as string,
     });
     await finishRun(supabase, run.id, res, event, wf.id, wf.published_version);

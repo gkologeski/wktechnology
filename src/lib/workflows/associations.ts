@@ -57,6 +57,7 @@ export const ENTITY_ASSOCIATIONS: Record<WorkflowEntity, AssociationDef[]> = {
   ats_offers: [],
   people_documents: [],
   hiring_preparation_requests: [],
+  hiring_fiscal_documents: [],
   ats_applications: [
     { key: "job", label: "Vaga", fk_column: "job_id", target_table: "ats_jobs" },
     {

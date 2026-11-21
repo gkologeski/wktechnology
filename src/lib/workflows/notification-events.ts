@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { WorkflowEntity, WorkflowTrigger } from "./types";
 import { isWorkflowReadonlySource } from "./types";
+import { resolveWorkflowTokenPath } from "./token-aliases";
 
 export const WORKFLOW_NOTIFICATION_EVENT_KEYS = [
   "crm.deal.won",
@@ -21,6 +22,11 @@ export const WORKFLOW_NOTIFICATION_EVENT_KEYS = [
   "people.employment.started",
   "people.document.expiring",
   "people.approval.pending",
+  "finance.payable.due",
+  "finance.receivable.due",
+  "finance.payable.overdue",
+  "finance.receivable.overdue",
+  "finance.invoice.received",
 ] as const;
 export type WorkflowNotificationEventKey = (typeof WORKFLOW_NOTIFICATION_EVENT_KEYS)[number];
 export type WorkflowNotificationEventSelection = {
@@ -202,13 +208,63 @@ export const WORKFLOW_NOTIFICATION_EVENTS = [
     scheduling: "transition",
     deadline: false,
   },
+  {
+    key: "finance.payable.due",
+    label: "Conta a pagar do dia",
+    description:
+      "Lançamento a pagar com saldo em aberto e vencimento hoje, pelo calendário de São Paulo.",
+    entity: "financial_entries",
+    moduleKey: "finance",
+    scheduling: "on_due",
+    deadline: false,
+  },
+  {
+    key: "finance.receivable.due",
+    label: "Conta a receber do dia",
+    description:
+      "Lançamento a receber com saldo em aberto e vencimento hoje, pelo calendário de São Paulo.",
+    entity: "financial_entries",
+    moduleKey: "finance",
+    scheduling: "on_due",
+    deadline: false,
+  },
+  {
+    key: "finance.payable.overdue",
+    label: "Conta a pagar vencida",
+    description:
+      "Saldo a pagar após o vencimento. Somente atrasos iniciados depois da publicação; não cria cobrança ou baixa.",
+    entity: "financial_entries",
+    moduleKey: "finance",
+    scheduling: "overdue",
+    deadline: false,
+  },
+  {
+    key: "finance.receivable.overdue",
+    label: "Conta a receber vencida",
+    description:
+      "Saldo a receber após o vencimento. Somente atrasos iniciados depois da publicação; não cria cobrança ou baixa.",
+    entity: "financial_entries",
+    moduleKey: "finance",
+    scheduling: "overdue",
+    deadline: false,
+  },
+  {
+    key: "finance.invoice.received",
+    label: "NF de contratação recebida",
+    description:
+      "NF-e ou NFS-e de contratação registrada após confirmação do arquivo. Não cobre emissão a clientes, notas avulsas, RPA ou folha.",
+    entity: "hiring_fiscal_documents",
+    moduleKey: "finance",
+    scheduling: "transition",
+    deadline: false,
+  },
 ] as const satisfies readonly {
   key: WorkflowNotificationEventKey;
   label: string;
   description: string;
   entity: WorkflowEntity;
-  moduleKey: "crm" | "contracts" | "projects" | "ats" | "people";
-  scheduling: "transition" | "overdue" | "before_due";
+  moduleKey: "crm" | "contracts" | "projects" | "ats" | "people" | "finance";
+  scheduling: "transition" | "overdue" | "before_due" | "on_due";
   deadline: boolean;
 }[];
 
@@ -216,10 +272,135 @@ export function getWorkflowNotificationEvent(key: unknown) {
   return WORKFLOW_NOTIFICATION_EVENTS.find((event) => event.key === key) ?? null;
 }
 
-/** HR occurrences expose only identifiers, state and dates to the shared queue. */
+/** Sensitive business occurrences expose only identifiers, state and dates to the shared queue. */
 export function isMinimalNotificationEvent(key: unknown): boolean {
   const moduleKey = getWorkflowNotificationEvent(key)?.moduleKey;
-  return moduleKey === "ats" || moduleKey === "people";
+  return moduleKey === "ats" || moduleKey === "people" || moduleKey === "finance";
+}
+
+/** Public queue fields; values, fiscal identifiers and files stay at their canonical read boundary. */
+export const FINANCE_NOTIFICATION_ENTRY_FIELDS = [
+  "id",
+  "workspace_id",
+  "owner_id",
+  "assigned_to",
+  "direction",
+  "status",
+  "due_date",
+  "created_at",
+  "updated_at",
+] as const;
+export const FINANCE_NOTIFICATION_FISCAL_FIELDS = [
+  "id",
+  "workspace_id",
+  "request_id",
+  "start_id",
+  "kind",
+  "doc_type",
+  "status",
+  "registered_at",
+  "issued_on",
+] as const;
+
+/** null preserves the existing public field catalogue for the other events and generic workflows. */
+export function workflowNotificationEventFields(key: unknown): readonly string[] | null {
+  const definition = getWorkflowNotificationEvent(key);
+  if (definition?.moduleKey !== "finance") return null;
+  return definition.entity === "hiring_fiscal_documents"
+    ? FINANCE_NOTIFICATION_FISCAL_FIELDS
+    : FINANCE_NOTIFICATION_ENTRY_FIELDS;
+}
+
+export function workflowNotificationEventFieldAllowed(key: unknown, field: string): boolean {
+  const fields = workflowNotificationEventFields(key);
+  return fields === null || fields.includes(field);
+}
+
+const FINANCE_SOURCE_MUTATIONS = [
+  "create_payable_schedule",
+  "create_receivable_invoice",
+  "cancel_payable_schedules",
+  "set_field",
+  "set_substatus",
+  "clear_field",
+  "increment_field",
+  "copy_field_from_association",
+  "associate_records",
+  "disassociate_records",
+  "assign_to",
+  "rotate_assign",
+];
+const FINANCE_WRITE_TABLES = [
+  "financial_entries",
+  "bank_payments",
+  "customer_invoices",
+  "subscription_invoices",
+  "recurring_plans",
+  "financial_payments",
+  "financial_recurrences",
+  "hiring_fiscal_documents",
+];
+
+/** A minimal notice snapshot must never supply a missing financial value as zero or empty. */
+export function notificationEventConfigurationProblem(
+  key: unknown,
+  configuration: unknown,
+): string | null {
+  const fields = workflowNotificationEventFields(key);
+  if (fields === null) return null;
+  const available = Object.fromEntries(fields.map((field) => [field, true]));
+  const fieldProblem = (field: unknown) =>
+    typeof field === "string" && fields.includes(field)
+      ? null
+      : "Campo indisponível neste aviso financeiro; use somente os identificadores, estados e datas oferecidos.";
+  const visit = (value: unknown): string | null => {
+    if (typeof value === "string") {
+      for (const match of value.matchAll(/{{\s*([^{}]+?)\s*}}/g)) {
+        const path = match[1].trim();
+        if (/^(vars|variaveis|steps|passos)\./.test(path)) continue;
+        const problem = fieldProblem(resolveWorkflowTokenPath(available, path));
+        if (problem) return problem;
+      }
+      return null;
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        const problem = visit(item);
+        if (problem) return problem;
+      }
+      return null;
+    }
+    if (!value || typeof value !== "object") return null;
+    const object = value as Record<string, unknown>;
+    if (
+      FINANCE_SOURCE_MUTATIONS.includes(String(object.type)) ||
+      (["create_record", "update_record", "delete_record"].includes(String(object.type)) &&
+        FINANCE_WRITE_TABLES.includes(String(object.table)))
+    )
+      return "Este aviso financeiro não altera lançamentos ou documentos; use a operação financeira canônica.";
+    if (typeof object.op === "string" && Object.hasOwn(object, "field")) {
+      const problem = fieldProblem(object.field);
+      if (problem) return problem;
+    }
+    if (["switch_by_value", "delay_until_date"].includes(String(object.type))) {
+      const problem = fieldProblem(object.field);
+      if (problem) return problem;
+    }
+    if (
+      object.type === "format_data" &&
+      object.op !== "template_string" &&
+      object.source_field !== undefined
+    ) {
+      const problem = fieldProblem(object.source_field);
+      if (problem) return problem;
+    }
+    for (const item of Object.values(object)) {
+      const problem = visit(item);
+      if (problem) return problem;
+    }
+    return null;
+  };
+  return visit(configuration);
 }
 
 export const APPROVAL_DIRECT_TRANSPORT_ACTIONS = [
@@ -242,6 +423,8 @@ export function notificationEventActionProblem(
   key: unknown,
   actions: readonly unknown[],
 ): string | null {
+  const financeProblem = notificationEventConfigurationProblem(key, actions);
+  if (financeProblem) return financeProblem;
   if (key !== "people.approval.pending") return null;
   for (const value of actions) {
     if (!value || typeof value !== "object") continue;

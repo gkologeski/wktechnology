@@ -33,14 +33,14 @@ describe("workspace notification preference overlays", () => {
     expect(effectiveChannels(base(), loaded, "mention")).toEqual(base().mention);
     expect(diffCenterSettings(loaded, structuredClone(loaded))).toEqual({});
   });
-  it("preserves the legacy event list and adds only the eighteen operational module choices", () => {
+  it("preserves the legacy event list and adds only the twenty-three operational module choices", () => {
     expect(LEGACY_NOTIFICATION_EVENTS).toHaveLength(22);
     expect(LEGACY_NOTIFICATION_EVENTS.every((event) => event.eventKey.startsWith("legacy."))).toBe(
       true,
     );
-    expect(AVAILABLE_NOTIFICATION_EVENTS).toHaveLength(40);
+    expect(AVAILABLE_NOTIFICATION_EVENTS).toHaveLength(45);
     expect(AVAILABLE_NOTIFICATION_EVENTS.map((event) => event.eventKey)).not.toContain(
-      "finance.payable.due",
+      "shared.approval.pending",
     );
   });
   it("keeps WhatsApp overrides optional and applies exact event precedence without changing global profile channels", () => {
@@ -120,6 +120,11 @@ describe("workspace notification preference overlays", () => {
     "people.employment.started",
     "people.document.expiring",
     "people.approval.pending",
+    "finance.payable.due",
+    "finance.receivable.due",
+    "finance.payable.overdue",
+    "finance.receivable.overdue",
+    "finance.invoice.received",
   ] as const)(
     "exposes %s conservatively and preserves exact WhatsApp opt-out without changing other events",
     (key) => {
@@ -161,7 +166,7 @@ describe("workspace notification preference overlays", () => {
       false,
     );
   });
-  it.each([null, "unknown", "mention", "finance.payable.due"])(
+  it.each([null, "unknown", "mention", "shared.approval.pending"])(
     "does not inherit a legacy preference after invalid explicit eventKey %s",
     (eventKey) => {
       expect(effectiveChannels(base(), settings(), { type: "mention", eventKey })).toEqual(silent);
@@ -177,7 +182,7 @@ describe("workspace notification preference overlays", () => {
     expect(effectiveChannels(prefs, loaded, { type: "mention" })).toEqual(silent);
     expect(effectiveChannels(prefs, loaded, "assignment")).toEqual(prefs.assignment);
   });
-  it.each(["unknown", "finance.payable.due", "sla.future", "constructor", "__proto__"])(
+  it.each(["unknown", "shared.approval.pending", "sla.future", "constructor", "__proto__"])(
     "does not enable planned or unknown event %s",
     (event) => expect(effectiveChannels(base(), settings(), event)).toEqual(silent),
   );
@@ -187,7 +192,7 @@ describe("workspace notification preference overlays", () => {
         categories: { mention: { sound: false, future: true }, future: { sound: true } },
         eventOverrides: {
           "legacy.mention": { inapp: true },
-          "finance.payable.due": { sound: true },
+          "shared.approval.pending": { sound: true },
         },
         quiet: { ...DEFAULT_CENTER_SETTINGS.quiet, future: "keep in DB" },
         future: { secret: "not returned" },
@@ -223,7 +228,7 @@ describe("workspace notification preference overlays", () => {
   it.each([
     { future: true },
     { categories: { future: { sound: true } } },
-    { eventOverrides: { "finance.payable.due": { sound: true } } },
+    { eventOverrides: { "shared.approval.pending": { sound: true } } },
     { eventOverrides: { "legacy.mention": { future: true } } },
     { categories: { mention: { inapp: "false" } } },
     { quiet: { enabled: true } },

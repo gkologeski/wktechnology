@@ -8,7 +8,7 @@ route_pattern: /finance/entries/$id
 min_permission: techfinance.entries.view.own
 audience: internal
 sort_order: 80
-version: 2
+version: 3
 is_published: true
 ---
 # Consultar lançamento e suas parcelas
@@ -49,3 +49,11 @@ Se a tela ou ação estiver indisponível, confira permissões e acesso ao regis
 
 ![Tela: Consultar lançamento e suas parcelas](/help-media/finance/consultar-lancamento.webp)
 <!-- evidência: src/routes/_authenticated/finance.entries.$id.tsx -->
+
+## Abrir um lançamento pelo aviso
+
+Os avisos **Conta a pagar/receber do dia** e **Conta a pagar/receber vencida** abrem esta ficha pelo ID exato, independentemente da página ou filtro da lista. Acesso continua sujeito a membership ativo, workspace atual, leitura do registro e escopo own/team/workspace aplicável. Baixas e histórico de pagamentos têm autorização própria; leitura do título não concede permissão para pagar, receber, reverter, cancelar ou excluir parcelas.
+
+Aguarde a leitura fresca. Durante revalidação, a ficha e uma baixa em edição ficam ocultas e bloqueadas, preservando os campos apenas na mesma identidade. Se saldo, situação ou capacidade mudar, feche a baixa e confira o lançamento atualizado antes de abrir outra. Erro, revogação ou troca de usuário/workspace retira o conteúdo antigo. O link não abre a baixa automaticamente e nunca movimenta dinheiro, registra recebimento ou envia cobrança.
+
+Vencimento, competência e data de baixa são datas civis; não há hora implícita nesses campos. Avisos e seus históricos usam texto neutro, sem transportar valores, saldo, notas privadas ou dados bancários.

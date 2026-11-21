@@ -1,3 +1,4 @@
+import { notificationEventConfigurationProblem } from "./notification-events";
 import { authorizeWorkflowStep, sanitizeWorkflowSnapshot } from "./engine/authorization.server";
 // Execução das ações de workflow (runActions).
 // O controle de fluxo vive em engine/actions-control.server.ts e cada grupo de
@@ -46,9 +47,25 @@ export async function runActions(
   startIndex = 0,
   pathPrefix = "",
 ): Promise<RunResult> {
-  ctx.after = sanitizeWorkflowSnapshot(ctx.after, ctx.entity);
-  ctx.before = sanitizeWorkflowSnapshot(ctx.before, ctx.entity);
+  ctx.after = sanitizeWorkflowSnapshot(ctx.after, ctx.entity, ctx.notificationEventKey);
+  ctx.before = sanitizeWorkflowSnapshot(ctx.before, ctx.entity, ctx.notificationEventKey);
   if (ctx.vars) ctx.vars = sanitizeWorkflowSnapshot(ctx.vars);
+  const configurationProblem = notificationEventConfigurationProblem(
+    ctx.notificationEventKey,
+    actions,
+  );
+  if (configurationProblem)
+    return {
+      log: [
+        {
+          at: new Date().toISOString(),
+          ok: false,
+          action: "notification_event_check",
+          error: configurationProblem,
+        },
+      ],
+      hadError: true,
+    };
   const rawLog: LogStep[] = [];
   let currentStep = -1;
   // Registra a saída de cada passo em `ctx.vars.steps.N`, permitindo que

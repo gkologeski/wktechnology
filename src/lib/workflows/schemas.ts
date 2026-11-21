@@ -9,6 +9,7 @@ import {
   getWorkflowNotificationEvent,
   notificationEventSelectionSchema,
   notificationEventActionProblem,
+  notificationEventConfigurationProblem,
 } from "./notification-events";
 
 export const EntityEnum = z.enum([
@@ -37,6 +38,7 @@ export const EntityEnum = z.enum([
   "people",
   "people_documents",
   "hiring_preparation_requests",
+  "hiring_fiscal_documents",
 ]);
 
 const WritableTableEnum = z.enum([
@@ -600,10 +602,9 @@ export const SaveSchema = z
       .transform((arr) => parseActionsAtDepth(arr, 0)),
   })
   .superRefine((workflow, ctx) => {
-    const actionProblem = notificationEventActionProblem(
-      workflow.trigger.notification_event?.key,
-      workflow.actions,
-    );
+    const actionProblem =
+      notificationEventActionProblem(workflow.trigger.notification_event?.key, workflow.actions) ??
+      notificationEventConfigurationProblem(workflow.trigger.notification_event?.key, workflow);
     if (actionProblem) ctx.addIssue({ code: "custom", path: ["actions"], message: actionProblem });
     if (isWorkflowReadonlySource(workflow.entity) && !workflow.trigger.notification_event)
       ctx.addIssue({

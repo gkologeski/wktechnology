@@ -49,6 +49,7 @@ const queryKeys = new Set([
   "interviewId",
   "offerId",
   "documentId",
+  "fiscalDocumentId",
   "request",
   "tab",
   "view",

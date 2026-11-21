@@ -64,6 +64,10 @@ export function NotificationForm({
   if (["projects", "project_tasks", "project_milestones"].includes(entity))
     options.push("project_members");
   const labelFor = (kind: Kind) => {
+    if (entity === "hiring_fiscal_documents" && kind === "source_responsible")
+      return "Responsável Financeiro da formalização";
+    if (entity === "hiring_fiscal_documents" && kind === "source_creator")
+      return "Quem enviou a nota (escolha explícita)";
     if (preparationApproval && kind === "pending_approvers")
       return "Aprovador nomeado da etapa vigente";
     if (kind !== "area_manager") return LABELS[kind];
@@ -116,6 +120,14 @@ export function NotificationForm({
             />
           </div>
         </>
+      )}
+      {entity === "hiring_fiscal_documents" && (
+        <p className="text-sm text-muted-foreground">
+          Executor do workflow usa o executor da regra, ainda sujeito ao acesso fiscal. Responsável
+          pelo registro é somente o responsável Financeiro da formalização vigente, resolvido na
+          origem, sem CEO ou substituto presumido. Quem enviou a nota recebe apenas quando escolhido
+          explicitamente; envio não o torna aprovador.
+        </p>
       )}
       <fieldset className="space-y-3">
         <legend className="text-sm font-medium">Quem recebe o aviso</legend>

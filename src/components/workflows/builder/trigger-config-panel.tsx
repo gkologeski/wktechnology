@@ -1,3 +1,4 @@
+import { workflowNotificationEventFieldAllowed } from "@/lib/workflows/notification-events";
 // Painel lateral de configuração do gatilho do workflow (evento, tempo,
 // condições, reinscrição e critérios de meta).
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +49,9 @@ export function TriggerConfigPanel({
 }) {
   const setFilters = (fn: (f: WorkflowCondition[]) => WorkflowCondition[]) =>
     onChange((t) => ({ ...t, filters: fn(t.filters ?? []) }));
+  fields = fields.filter((field) =>
+    workflowNotificationEventFieldAllowed(trigger.notification_event?.key, field.name),
+  );
   const defaultField = fields[0]?.name ?? "";
   const notificationEvent = getWorkflowNotificationEvent(trigger.notification_event?.key);
   const readOnlySource = WORKFLOW_READONLY_SOURCE_TABLES.some((source) => source === entity);
@@ -111,6 +115,7 @@ export function TriggerConfigPanel({
             { prefix: "projects.", label: "TechProjects" },
             { prefix: "ats.", label: "TechHire" },
             { prefix: "people.", label: "TechPeople" },
+            { prefix: "finance.", label: "TechFinance" },
           ].map((group) => {
             const entries = eventOptions.filter((event) => event.key.startsWith(group.prefix));
             return entries.length ? (
@@ -159,6 +164,27 @@ export function TriggerConfigPanel({
                 aprovador nomeado. Não inclui vagas, fornecedores ou todas as alçadas de RH. O aviso
                 existente no aplicativo é reaproveitado, sem outra cópia implícita. Ler o aviso não
                 aprova, contrata ou inicia a execução.
+              </p>
+            )}
+            {notificationEvent.moduleKey === "finance" && (
+              <p>
+                O aviso não paga, recebe, cancela, concilia ou emite documentos. Valores, saldo,
+                notas, CNPJ, dados bancários e arquivos permanecem nas telas autorizadas, sem cópia
+                para o aviso.
+              </p>
+            )}
+            {(notificationEvent.key === "finance.payable.due" ||
+              notificationEvent.key === "finance.receivable.due") && (
+              <p>
+                Conta do dia: vencimento na data atual do calendário de São Paulo, com saldo em
+                aberto. Não há antecedência configurável nem cobrança automática.
+              </p>
+            )}
+            {notificationEvent.key === "finance.invoice.received" && (
+              <p>
+                Somente NF-e ou NFS-e de contratação registrada no fluxo canônico privado. Recebida
+                não significa conferida pelo Financeiro. Não inclui emissão, fatura de cliente, RPA,
+                recibo ou evidência de folha; o link não baixa o arquivo nem registra conferência.
               </p>
             )}
             {notificationEvent.scheduling === "overdue" && (

@@ -8,6 +8,7 @@ import { createHmac, randomBytes, randomUUID } from "node:crypto";
 import { setupNotificationBusinessEvents } from "./notification-business-events";
 import { setupNotificationProjectEvents } from "./notification-project-events";
 import { setupNotificationHirePeople } from "./notification-hire-people";
+import { setupNotificationFinance } from "./notification-finance";
 
 // Actual gateway, private RLS bridge and production permission predicates in a
 // disposable PostgreSQL. HTTP cases use cryptographically verified synthetic JWTs
@@ -422,6 +423,7 @@ beforeAll(async () => {
   await setupNotificationBusinessEvents(db);
   await setupNotificationProjectEvents(db);
   await setupNotificationHirePeople(db);
+  await setupNotificationFinance(db);
   const historic = await db`select count(*)::integer n from notification_workspace_context`;
   if (historic[0].n !== 0) throw Error("Historical rows were attributed to a workspace");
   const authenticatorPassword = randomBytes(32).toString("hex");
@@ -505,7 +507,7 @@ export async function reset() {
   // Direct starts bind contracts to preparation requests. Reset that synthetic
   // graph together, including immutable audit children, before reseeding it.
   await db.unsafe(
-    "TRUNCATE notification_business_occurrence_receipts,hiring_formalization_events,hiring_formalizations,contract_handoff_settings,contract_signature_participants,hiring_preparation_approval_events,hiring_preparation_approvals,hiring_preparation_reference_values,hiring_execution_starts,hiring_employment_events,hiring_engagements,hiring_access_model_versions,hiring_access_models,hiring_workspace_settings,contracts,hiring_preparation_requests,people_documents,ats_offer_approvals,esign_audit,techerp_offers.sessions CASCADE",
+    "TRUNCATE financial_payments,financial_entry_allocations,financial_categories,financial_bank_accounts,financial_cost_centers,hiring_fiscal_document_events,hiring_fiscal_document_reviews,hiring_fiscal_documents,hiring_execution_delivery_decisions,hiring_execution_delivery_submissions,hiring_execution_delivery_versions,hiring_execution_deliveries,notification_business_occurrence_receipts,hiring_formalization_events,hiring_formalizations,contract_handoff_settings,contract_signature_participants,hiring_preparation_approval_events,hiring_preparation_approvals,hiring_preparation_reference_values,hiring_execution_starts,hiring_employment_events,hiring_engagements,hiring_access_model_versions,hiring_access_models,hiring_workspace_settings,contracts,hiring_preparation_requests,people_documents,ats_offer_approvals,esign_audit,techerp_offers.sessions CASCADE",
   );
   await db.unsafe("TRUNCATE project_task_statuses,project_lists CASCADE");
   await db.unsafe(

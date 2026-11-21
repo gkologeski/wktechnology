@@ -200,6 +200,11 @@ describe("named business workflow routing on the existing queue", () => {
     { key: "people.employment.started", entity: "people" },
     { key: "people.document.expiring", entity: "people_documents" },
     { key: "people.approval.pending", entity: "hiring_preparation_requests" },
+    { key: "finance.payable.due", entity: "financial_entries" },
+    { key: "finance.receivable.due", entity: "financial_entries" },
+    { key: "finance.payable.overdue", entity: "financial_entries" },
+    { key: "finance.receivable.overdue", entity: "financial_entries" },
+    { key: "finance.invoice.received", entity: "hiring_fiscal_documents" },
   ] as const)(
     "routes $key only to its proved source subscription in the same workspace",
     async ({ key, entity }) => {
@@ -548,5 +553,106 @@ describe("named business workflow routing on the existing queue", () => {
     expect(
       state.rpc.mock.calls.every(([, name]) => name === "notification_business_event_check"),
     ).toBe(true);
+  });
+});
+
+describe("financial notification configuration at the actual queue boundary", () => {
+  it.each([
+    {
+      trigger: {
+        filters: [
+          { logic: "or" as const, conditions: [{ field: "amount", op: "is_empty" as const }] },
+        ],
+      },
+    },
+    { goal_filters: [{ field: "paid_amount", op: "is_empty" }] },
+    {
+      actions: [
+        {
+          type: "branch_if",
+          filters: [{ field: "notes", op: "is_empty" }],
+          then: [{ type: "webhook", url: "https://example.invalid" }],
+          else: [],
+        },
+      ],
+    },
+    { actions: [{ type: "send_notification", title: "{{valor}}" }] },
+    { actions: [{ type: "increment_field", field: "amount", amount: 10 }] },
+  ])(
+    "records an explicit error before missing finance data can pass conditions or cause effects: %j",
+    async (invalid) => {
+      const trigger: WorkflowTrigger = {
+        ...workflowNotificationEventTrigger("finance.payable.due"),
+        ...("trigger" in invalid ? invalid.trigger : {}),
+      };
+      const wf = {
+        ...workflow("finance", trigger),
+        entity: "financial_entries",
+        ...invalid,
+        trigger,
+      };
+      const db = database([wf]);
+      await processEvent(db.client, {
+        ...namedEvent(),
+        entity: "financial_entries",
+        notification_event_key: "finance.payable.due",
+        after: { workspace_id: W, direction: "payable", due_date: "2026-11-20", amount: 9000 },
+      });
+      expect(state.actions).not.toHaveBeenCalled();
+      expect(state.authorize).not.toHaveBeenCalled();
+      expect(state.hydrate).not.toHaveBeenCalled();
+      expect(db.runs).toEqual([
+        expect.objectContaining({
+          status: "error",
+          error: expect.stringMatching(/Campo indisponível|operação financeira canônica/),
+        }),
+      ]);
+    },
+  );
+
+  it("keeps a delayed financial notice minimal and carries the verified event key into action execution", async () => {
+    state.actions.mockResolvedValue({
+      log: [],
+      hadError: false,
+      suspendedAt: { runAtIso: "2026-11-20T18:00:00Z", resumeCursor: 1 },
+    });
+    const db = database([
+      {
+        ...workflow("finance", workflowNotificationEventTrigger("finance.receivable.overdue")),
+        entity: "financial_entries",
+      },
+    ]);
+    const event: EventRow = {
+      ...namedEvent(),
+      entity: "financial_entries",
+      notification_event_key: "finance.receivable.overdue",
+      after: {
+        id: "entry",
+        workspace_id: W,
+        direction: "receivable",
+        due_date: "2026-11-19",
+        status: "partial",
+        amount: 9000,
+        paid_amount: 1000,
+        metadata: { bank: "private" },
+        notes: "private",
+        attachments: ["private.pdf"],
+      },
+      before: { workspace_id: W, amount: 10000, due_date: "2026-11-19" },
+    };
+    await processEvent(db.client, event);
+    const context = state.actions.mock.calls[0][2];
+    expect(context.notificationEventKey).toBe("finance.receivable.overdue");
+    expect(context.after).toEqual({
+      id: "entry",
+      workspace_id: W,
+      direction: "receivable",
+      due_date: "2026-11-19",
+      status: "partial",
+    });
+    expect(context.before).toEqual({ workspace_id: W, due_date: "2026-11-19" });
+    expect(db.resumes[0].after).toEqual(context.after);
+    expect(db.resumes[0].notification_event_key).toBe("finance.receivable.overdue");
+    expect(event.after?.amount).toBe(9000);
   });
 });

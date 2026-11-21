@@ -101,6 +101,7 @@ export function workflowApprovalNotificationContent(
   entity: string,
   id: string,
   parentId?: unknown,
+  parentKind?: unknown,
 ) {
   z.string().uuid().parse(id);
   z.string().uuid().parse(workspaceId);
@@ -124,6 +125,12 @@ export function workflowApprovalNotificationContent(
   let link = Object.hasOwn(paths, entity) ? `${paths[entity]}/${id}` : null;
   if (entity === "ats_offers") link = `/offers?offerId=${id}`;
   if (entity === "hiring_preparation_requests") link = `/people/hiring-requests?request=${id}`;
+  if (
+    entity === "hiring_fiscal_documents" &&
+    parent.success &&
+    (parentKind === "professional" || parentKind === "supplier")
+  )
+    link = `${parentKind === "professional" ? "/people/hiring-requests" : "/contracts/supplier-requests"}?request=${parent.data}&fiscalDocumentId=${id}`;
   if (entity === "people_documents" && parent.success)
     link = `/people/${parent.data}?tab=documents&documentId=${id}`;
   if (entity === "ats_applications" && parent.success)

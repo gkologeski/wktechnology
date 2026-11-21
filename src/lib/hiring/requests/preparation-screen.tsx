@@ -88,7 +88,15 @@ function useDebounced(value: string) {
   }, [value]);
   return v;
 }
-export function PreparationScreen({ kind, requestId }: { kind: RequestKind; requestId?: string }) {
+export function PreparationScreen({
+  kind,
+  requestId,
+  fiscalDocumentId,
+}: {
+  kind: RequestKind;
+  requestId?: string;
+  fiscalDocumentId?: string;
+}) {
   const p = usePermissions();
   const { user } = useAuth();
   if (p.isLoading) return <ListPageSkeleton />;
@@ -101,10 +109,11 @@ export function PreparationScreen({ kind, requestId }: { kind: RequestKind; requ
     );
   return user ? (
     <PreparationContent
-      key={`${user.id}:${p.workspaceId}:${kind}:${requestId ?? "list"}`}
+      key={`${user.id}:${p.workspaceId}:${kind}:${requestId ?? "list"}:${fiscalDocumentId ?? "none"}`}
       userId={user.id}
       kind={kind}
       requestId={requestId}
+      fiscalDocumentId={fiscalDocumentId}
     />
   ) : null;
 }
@@ -112,10 +121,12 @@ function PreparationContent({
   kind,
   requestId,
   userId,
+  fiscalDocumentId,
 }: {
   kind: RequestKind;
   requestId?: string;
   userId: string;
+  fiscalDocumentId?: string;
 }) {
   const resource = resourceFor(kind),
     p = usePermissions();
@@ -583,7 +594,13 @@ function PreparationContent({
                   </FormSection>
                 )}
                 {row && <ExecutionHistory kind={kind} row={row} />}
-                {row && <OperationsHistory kind={kind} row={row} />}
+                {row && (
+                  <OperationsHistory
+                    kind={kind}
+                    row={row}
+                    fiscalDocumentId={row.id === requestId ? fiscalDocumentId : undefined}
+                  />
+                )}
                 {row && <EconomicsHistory kind={kind} row={row} />}
                 {row && <PayablesHistory kind={kind} row={row} />}
                 {row && (

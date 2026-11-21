@@ -8,7 +8,7 @@ route_pattern: /settings/workflows
 min_permission: system.workflows.manage.workspace
 audience: internal
 sort_order: 413
-version: 9
+version: 10
 is_published: true
 ---
 
@@ -114,3 +114,11 @@ O seletor também agrupa os três eventos de **TechHire** e os três de **TechPe
 Para **Aprovação de solicitação profissional pendente**, **Quem recebe o aviso** permite somente **Aprovador nomeado da etapa vigente**. O texto canônico do processo é preservado e não há destinatário arbitrário. Trata somente da preparação profissional, sem vagas ou fornecedores. O aviso obrigatório no aplicativo já existe independentemente da regra; a regra reaproveita esse aviso e pode acrescentar canais explícitos para o mesmo aprovador vigente, sem duplicar ou aprovar. Desligar a regra ou a preferência nova não remove o aviso obrigatório do processo.
 
 Os avisos usam texto neutro. Não escreva salário, condições privadas, número de documento, currículo ou link público nos textos. O destino abre o registro e a aba exatos após conferir acesso atual, sem ações pela URL.
+
+### Usar eventos financeiros
+
+O seletor **Evento da nova regra** também agrupa as cinco opções de **TechFinance**. Os avisos de contas do dia usam vencimento igual a hoje em São Paulo e saldo real em aberto; os vencidos começam no dia seguinte, sem antecedência configurável ou lembrete diário. Publicar durante o dia pode avisar o vencimento daquele dia uma vez. Atrasos anteriores à publicação não entram; os posteriores podem ser recuperados pelo processamento.
+
+**NF de contratação recebida** trata somente de NF-e/NFS-e registrada canonicamente na contratação profissional/fornecedor, não de emissão, fatura de cliente, RPA ou folha. Registro não é conferência, aceite nem pagamento. A origem fiscal é somente leitura. O rascunho começa com **Executor do workflow**, editável; o executor também precisa de acesso fiscal atual. O responsável Financeiro é resolvido da formalização vigente, sem CEO/fallback, e o remetente da nota só recebe por seleção explícita.
+
+As condições e variáveis dos cinco eventos oferecem somente identificadores, estados e datas públicos dessa ocorrência. Valores, saldo, notas, CNPJ, dados bancários, arquivos e associações privadas não são oferecidos. A biblioteca omite as mutações genéricas de origem/tabelas financeiras; um rascunho incompatível é preservado e exige revisão antes de salvar. Workflows genéricos antigos mantêm suas opções anteriores. Nada é publicado ou ativado pela seleção e nenhuma baixa, emissão ou conciliação decorre da leitura do aviso.

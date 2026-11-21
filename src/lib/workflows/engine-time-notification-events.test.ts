@@ -213,7 +213,12 @@ describe("business deadline production through the existing time tick", () => {
         entity: "people_documents",
         trigger: workflowNotificationEventTrigger("people.document.expiring"),
       },
-      ...["people_documents", "ats_offers", "hiring_preparation_requests"].map((entity) => ({
+      ...[
+        "people_documents",
+        "ats_offers",
+        "hiring_preparation_requests",
+        "hiring_fiscal_documents",
+      ].map((entity) => ({
         ...base,
         id: entity,
         entity,

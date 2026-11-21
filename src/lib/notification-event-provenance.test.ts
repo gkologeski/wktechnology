@@ -33,7 +33,7 @@ it("preserves canonical provenance from both list and focused lookup without inf
     expect(result.items[0].entity).toBe("deals");
   }
 });
-it.each([null, "future.unknown", "mention", "finance.payable.due"])(
+it.each([null, "future.unknown", "mention", "shared.approval.pending"])(
   "preserves explicit unavailable provenance %s without fabricating legacy metadata",
   (eventKey) => {
     const parsed = parseNotificationCenterLookup({
@@ -42,6 +42,30 @@ it.each([null, "future.unknown", "mention", "finance.payable.due"])(
     });
     expect(parsed.items[0].eventKey).toBe(eventKey);
     expect(parsed.items[0].event).toBeNull();
+  },
+);
+it.each([
+  ["finance.payable.due", "task", "financial_entries"],
+  ["finance.receivable.due", "task", "financial_entries"],
+  ["finance.payable.overdue", "task", "financial_entries"],
+  ["finance.receivable.overdue", "task", "financial_entries"],
+  ["finance.invoice.received", "workflow", "hiring_fiscal_documents"],
+])(
+  "preserves Finance provenance for %s without inferring the module from the record",
+  (eventKey, category, entity) => {
+    const notice = { ...row, eventKey, entity, moduleKey: "finance", link: null };
+    for (const parsed of [
+      parseNotificationCenterPage({
+        items: [notice],
+        unread: 1,
+        nextCursor: null,
+        cutoff: row.created_at,
+      }),
+      parseNotificationCenterLookup({ items: [notice], checkedAt: row.created_at }),
+    ]) {
+      expect(parsed.items[0].event).toEqual({ eventKey, category, moduleKey: "finance" });
+      expect(parsed.items[0].entity).toBe(entity);
+    }
   },
 );
 it("preserves legacy records when the RPC omits canonical provenance", () => {

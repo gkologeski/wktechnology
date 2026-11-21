@@ -80,6 +80,41 @@ it.each(["people_documents", "ats_applications", "ats_interviews"])(
       expect(workflowApprovalNotificationContent(W, entity, ID, parent).link).toBeNull();
   },
 );
+it.each([
+  ["professional", "/people/hiring-requests"],
+  ["supplier", "/contracts/supplier-requests"],
+] as const)(
+  "uses the canonical %s request for a fiscal source without exposing fiscal data",
+  (kind, path) => {
+    const notice = workflowApprovalNotificationContent(W, "hiring_fiscal_documents", ID, A, kind);
+    expect(notice).toMatchObject({
+      workspace_id: W,
+      entity: "hiring_fiscal_documents",
+      entity_id: ID,
+      link: `${path}?request=${A}&fiscalDocumentId=${ID}`,
+    });
+    expect(JSON.stringify(notice)).not.toMatch(/amount|issuer_tax_id|storage_path|file_name/);
+  },
+);
+it("does not infer a fiscal request kind or parent from an arbitrary value", () => {
+  for (const kind of [
+    undefined,
+    null,
+    "client",
+    "__proto__",
+    "constructor",
+    "supplier?request=other",
+    {},
+  ])
+    expect(
+      workflowApprovalNotificationContent(W, "hiring_fiscal_documents", ID, A, kind).link,
+    ).toBeNull();
+  for (const parent of [undefined, null, "", {}, `${A}?tab=private`, "https://fixture.invalid"])
+    expect(
+      workflowApprovalNotificationContent(W, "hiring_fiscal_documents", ID, parent, "supplier")
+        .link,
+    ).toBeNull();
+});
 it.each(["constructor", "__proto__", "toString", "unknown_entity"])(
   "does not derive a source path from unmapped entity %s",
   (entity) => expect(workflowApprovalNotificationContent(W, entity, ID, A).link).toBeNull(),
@@ -153,6 +188,16 @@ it("approval execution keeps private note in its decision record and sends a neu
     ["people_documents", { person_id: A }, `/people/${A}?tab=documents&documentId=${ID}`],
     ["ats_applications", { job_id: A }, `/jobs/${A}?tab=pipeline&applicationId=${ID}`],
     ["ats_interviews", { job_id: A }, `/jobs/${A}?tab=interviews&interviewId=${ID}`],
+    [
+      "hiring_fiscal_documents",
+      { request_id: A, kind: "professional" },
+      `/people/hiring-requests?request=${A}&fiscalDocumentId=${ID}`,
+    ],
+    [
+      "hiring_fiscal_documents",
+      { request_id: A, kind: "supplier" },
+      `/contracts/supplier-requests?request=${A}&fiscalDocumentId=${ID}`,
+    ],
   ] as const) {
     writes.length = 0;
     await runControlAction(

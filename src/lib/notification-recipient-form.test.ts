@@ -322,3 +322,19 @@ describe("destinatários de notificações no construtor", () => {
     expect(current.recipients).toEqual([{ kind: "user", id: USER }]);
   });
 });
+
+it("explains exact canonical fiscal responsibility without treating the uploader as an approver", async () => {
+  await render(
+    { type: "send_notification", title: "Aviso", recipients: [{ kind: "workflow_owner" }] },
+    "hiring_fiscal_documents",
+  );
+  const options = [...host.querySelector<HTMLSelectElement>("select")!.options].map(
+    (option) => option.textContent,
+  );
+  expect(options).toContain("Responsável Financeiro da formalização");
+  expect(options).toContain("Quem enviou a nota (escolha explícita)");
+  expect(host.textContent).toContain("sem CEO ou substituto presumido");
+  expect(host.textContent).toContain("envio não o torna aprovador");
+  expect(current.recipients).toEqual([{ kind: "workflow_owner" }]);
+  expect(change).not.toHaveBeenCalled();
+});

@@ -7,6 +7,7 @@ export function NotificationTargetNotice({
   loading,
   failed,
   available,
+  focusOnUnavailable = false,
   retry,
   children,
 }: {
@@ -15,17 +16,19 @@ export function NotificationTargetNotice({
   loading: boolean;
   failed: boolean;
   available: boolean;
+  focusOnUnavailable?: boolean;
   retry: ReactNode;
   children: ReactNode;
 }) {
   const node = useRef<HTMLElement>(null),
     focused = useRef<string | null>(null);
   useEffect(() => {
-    if (!available || loading || failed || focused.current === targetId) return;
+    if (loading || ((!available || failed) && !focusOnUnavailable) || focused.current === targetId)
+      return;
     focused.current = targetId;
     node.current?.scrollIntoView?.({ block: "nearest" });
     node.current?.focus({ preventScroll: true });
-  }, [available, loading, failed, targetId]);
+  }, [available, loading, failed, targetId, focusOnUnavailable]);
   return (
     <section
       ref={node}

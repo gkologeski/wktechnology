@@ -7,7 +7,13 @@ import {
   type WorkflowAction,
   type WorkflowEntity,
 } from "../types";
-import { isMinimalNotificationEvent, notificationEventActionProblem } from "../notification-events";
+import {
+  isMinimalNotificationEvent,
+  notificationEventActionProblem,
+  notificationEventConfigurationProblem,
+  FINANCE_NOTIFICATION_ENTRY_FIELDS,
+  FINANCE_NOTIFICATION_FISCAL_FIELDS,
+} from "../notification-events";
 import type { RunCtx } from "./run-context";
 import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
 import { SALES_TABLE_RESOURCES } from "@/lib/access-control/sales-resources";
@@ -67,6 +73,8 @@ export const WORKFLOW_PRIVATE_SOURCE_FIELDS: Readonly<Record<string, readonly st
 };
 
 const minimalSourceFields: Readonly<Record<string, readonly string[]>> = {
+  financial_entries: FINANCE_NOTIFICATION_ENTRY_FIELDS,
+  hiring_fiscal_documents: FINANCE_NOTIFICATION_FISCAL_FIELDS,
   ats_applications: [
     "id",
     "workspace_id",
@@ -228,6 +236,8 @@ export async function authorizeWorkflowStep(
       row(assoc.target_table, String(ctx.after[assoc.fk_column]));
 
   if (action) {
+    const financeProblem = notificationEventConfigurationProblem(ctx.notificationEventKey, action);
+    if (financeProblem) throw new Error(financeProblem);
     const approvalProblem =
       ctx.entity === "hiring_preparation_requests"
         ? notificationEventActionProblem("people.approval.pending", [action])

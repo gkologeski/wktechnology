@@ -27,6 +27,16 @@ describe("notificationHref", () => {
       { tab: "documents", documentId: id },
     ],
     [`/people/hiring-requests?request=${id}`, "/people/hiring-requests", { request: id }],
+    [
+      `/people/hiring-requests?request=${id}&fiscalDocumentId=${id}`,
+      "/people/hiring-requests",
+      { request: id, fiscalDocumentId: id },
+    ],
+    [
+      `/contracts/supplier-requests?request=${id}&fiscalDocumentId=${id}`,
+      "/contracts/supplier-requests",
+      { request: id, fiscalDocumentId: id },
+    ],
   ])(
     "preserves the exact canonical target %s without dropping its item selector",
     (link, to, search) => {
@@ -98,4 +108,11 @@ it("does not derive a conversation from malformed identifiers", () => {
       entity_id: "other&redirect=external",
     }),
   ).toEqual({ to: "/inbox/email" });
+});
+
+it("preserves the canonical entry path without manufacturing a payment action", () => {
+  expect(notificationHref({ link: `/finance/entries/${id}` })).toEqual({
+    to: `/finance/entries/${id}`,
+  });
+  expect(notificationHref({ link: `/finance/entries/${id}?action=pay` })).toBeNull();
 });

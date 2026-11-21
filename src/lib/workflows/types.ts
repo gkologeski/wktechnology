@@ -29,13 +29,15 @@ export type WorkflowEntity =
   // Contratação e desligamento (Fase 4)
   | "people"
   | "people_documents"
-  | "hiring_preparation_requests";
+  | "hiring_preparation_requests"
+  | "hiring_fiscal_documents";
 
 /** Named occurrences can read these sources; generic actions cannot mutate them. */
 export const WORKFLOW_READONLY_SOURCE_TABLES = [
   "ats_offers",
   "people_documents",
   "hiring_preparation_requests",
+  "hiring_fiscal_documents",
 ] as const;
 
 export function isWorkflowReadonlySource(table: string): boolean {
@@ -573,6 +575,7 @@ export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
   people: "Pessoas (TechPeople)",
   people_documents: "Documentos de pessoas",
   hiring_preparation_requests: "Solicitações profissionais de preparação",
+  hiring_fiscal_documents: "Documentos fiscais de contratação",
 };
 
 // Grupos por módulo (para dropdown do builder).
@@ -590,6 +593,7 @@ export const ENTITY_GROUPS: Array<{ label: string; entities: WorkflowEntity[] }>
     label: "Financeiro",
     entities: [
       "financial_entries",
+      "hiring_fiscal_documents",
       "bank_payments",
       "customer_invoices",
       "subscription_invoices",
@@ -977,6 +981,16 @@ export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
     "company_id",
     "deal_id",
     "owner_id",
+  ],
+  hiring_fiscal_documents: [
+    "id",
+    "request_id",
+    "start_id",
+    "kind",
+    "doc_type",
+    "status",
+    "registered_at",
+    "issued_on",
   ],
   financial_entries: [
     "description",

@@ -38,6 +38,10 @@ import {
   collectFlowVarNames,
   type StepPath,
 } from "./builder/step-tree";
+import {
+  workflowNotificationEventFields,
+  notificationEventConfigurationProblem,
+} from "@/lib/workflows/notification-events";
 import { useEntityFieldOptions } from "./builder/use-entity-field-options";
 
 import { EntityPickerDialog } from "./builder/entity-picker-dialog";
@@ -115,7 +119,38 @@ export function WorkflowBuilder({
   const [dragging, setDragging] = useState<StepPath | null>(null);
   // Snapshot do rascunho como estava ao abrir/salvar, para detectar alterações não salvas.
   const [baseline, setBaseline] = useState<string>(() => JSON.stringify(draft ?? EMPTY_DRAFT));
-  const fieldOptions = useEntityFieldOptions(state.entity);
+  const catalogueFields = useEntityFieldOptions(state.entity);
+  const minimalFields = workflowNotificationEventFields(state.trigger.notification_event?.key);
+  const fieldLabels: Record<string, string> = {
+    id: "Identificador",
+    workspace_id: "Workspace",
+    owner_id: "Criador",
+    assigned_to: "Responsável",
+    direction: "Direção",
+    status: "Situação",
+    due_date: "Vencimento",
+    created_at: "Criado em",
+    updated_at: "Atualizado em",
+    request_id: "Solicitação",
+    start_id: "Início autorizado",
+    kind: "Tipo de contratação",
+    doc_type: "Tipo de nota",
+    registered_at: "Registrada em",
+    issued_on: "Emissão informada",
+  };
+  const fieldOptions = minimalFields
+    ? minimalFields.map(
+        (name) =>
+          catalogueFields.find((field) => field.name === name) ?? {
+            name,
+            label: fieldLabels[name] ?? name,
+          },
+      )
+    : catalogueFields;
+  const configurationProblem = notificationEventConfigurationProblem(
+    state.trigger.notification_event?.key,
+    { trigger: state.trigger, actions: state.actions },
+  );
 
   useEffect(() => {
     if (open) {
@@ -162,20 +197,20 @@ export function WorkflowBuilder({
     const refs: Record<string, { token: string; label: string; group: string }[]> = {};
     for (const kind of refKinds) {
       refs[kind] = [
-        ...triggerRefOptions(state.entity, kind),
+        ...(minimalFields ? [] : triggerRefOptions(state.entity, kind)),
         ...priorStepRefOptions(priorSteps, kind),
       ];
     }
     return {
       text: [
         ...buildTextTokens(fieldOptions, priorStepFields, state.entity),
-        ...buildAssociationTextTokens(state.entity),
+        ...(minimalFields ? [] : buildAssociationTextTokens(state.entity)),
         ...buildVarTokens(flowVarNames),
       ],
       id: buildIdTokens(fieldOptions, priorStepFields),
       refs,
     };
-  }, [fieldOptions, priorStepFields, flowVarNames, state.entity, priorSteps]);
+  }, [fieldOptions, priorStepFields, flowVarNames, state.entity, priorSteps, minimalFields]);
 
   if (!open) return null;
 
@@ -241,7 +276,7 @@ export function WorkflowBuilder({
 
   const isUpToDate = publishedVersion > 0 && !hasDraftChanges;
   const busy = saving || publishing;
-  const canSubmit = !busy && !!state.name && state.actions.length > 0;
+  const canSubmit = !busy && !!state.name && state.actions.length > 0 && !configurationProblem;
 
   const selectedAction =
     selection && selection !== "trigger" ? getStep(state.actions, selection) : null;
@@ -397,17 +432,28 @@ export function WorkflowBuilder({
             )}
           </header>
 
-          {saveError && (
+          {(saveError || configurationProblem) && (
             <p role="alert" className="border-b px-4 py-2 text-sm text-destructive">
-              {saveError}
+              {saveError || configurationProblem}
             </p>
           )}
           {!isUpToDate && (
             <div className="flex items-start gap-2 border-b bg-muted/40 px-4 py-2 text-xs text-muted-foreground shrink-0">
               <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" aria-hidden="true" />
               <p>
-                Este workflow está em rascunho. As alterações só passam a valer para novos registros
-                depois de <span className="font-medium text-foreground">publicar</span>.
+                {minimalFields ? (
+                  <>
+                    Este workflow está em rascunho. As alterações só passam a valer para novas
+                    ocorrências após <span className="font-medium text-foreground">publicar</span>;
+                    contas do dia podem ser já existentes.
+                  </>
+                ) : (
+                  <>
+                    Este workflow está em rascunho. As alterações só passam a valer para novos
+                    registros depois de{" "}
+                    <span className="font-medium text-foreground">publicar</span>.
+                  </>
+                )}
               </p>
             </div>
           )}
@@ -596,6 +642,7 @@ export function WorkflowBuilder({
                   </Button>
                   {library ? (
                     <ActionLibraryPanel
+                      notificationEventKey={state.trigger.notification_event?.key}
                       onClose={() => setLibrary(null)}
                       onPick={(t, overrides) => addAction(t, library.parentPath, overrides)}
                     />

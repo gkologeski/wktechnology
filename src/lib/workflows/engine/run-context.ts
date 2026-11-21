@@ -14,6 +14,8 @@ export interface RunCtx {
   /** Fase 5b — usados para vincular workflow_approvals ao run/workflow atuais. */
   workflowId?: string;
   workflowVersion?: number;
+  /** Verified named occurrence; scopes minimal snapshot fields and financial action guards. */
+  notificationEventKey?: string | null;
   runId?: string;
   /**
    * Retomada dentro de caminhos: um quadro por nível (de fora para dentro),
