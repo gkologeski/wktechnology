@@ -9,6 +9,7 @@ const state = vi.hoisted(() => ({
   loading: false,
   error: false,
   channelView: false,
+  keys: new Set<string>(),
   userId: "user",
   calls: {} as Record<
     string,
@@ -18,13 +19,22 @@ const state = vi.hoisted(() => ({
 vi.mock("@/lib/auth", () => ({ useAuth: () => ({ user: { id: state.userId } }) }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
 vi.mock("@/lib/access-control/use-permissions", () => ({
-  usePermissions: () => ({
-    workspaceId: state.workspace,
-    isLoading: state.loading,
-    isError: state.error,
-    can: () => state.channelView,
-    canAny: () => state.channelView,
-  }),
+  usePermissions: () => {
+    const keys = new Set(state.keys);
+    if (state.channelView) {
+      keys.add("system.channels.view.workspace");
+      keys.add("system.whatsapp.view.workspace");
+    }
+    const can = (key: string) => keys.has(key);
+    return {
+      workspaceId: state.workspace,
+      isLoading: state.loading,
+      isError: state.error,
+      can,
+      canAny: (requested: string[]) => requested.some(can),
+      canAll: (requested: string[]) => requested.every(can),
+    };
+  },
 }));
 vi.mock("@/lib/notification-delivery.functions", () => {
   const names = [
@@ -86,11 +96,13 @@ vi.mock("@/components/notifications/notification-readiness-panel", () => ({
 }));
 vi.mock("@/components/notifications/delivery-models-panel", () => ({
   DeliveryModelsPanel: ({
+    canManageMetaTemplates,
     canRetryWhatsApp,
     loading,
     requested,
     onRetry,
   }: {
+    canManageMetaTemplates?: boolean;
     canRetryWhatsApp: boolean;
     loading: boolean;
     requested: boolean;
@@ -100,6 +112,8 @@ vi.mock("@/components/notifications/delivery-models-panel", () => ({
       "div",
       null,
       createElement("p", null, "Model preview"),
+      canManageMetaTemplates &&
+        createElement("a", { href: "/settings/whatsapp-templates" }, "Open Meta template editor"),
       createElement(
         "p",
         null,
@@ -188,6 +202,7 @@ beforeEach(() => {
   state.loading = false;
   state.error = false;
   state.channelView = false;
+  state.keys = new Set();
   const values: Record<string, unknown> = {
     getNotificationDeliverySettings: { policy: DEFAULT_NOTIFICATION_DELIVERY_POLICY, revision: 0 },
     listNotificationWhatsAppSenders: { items: [] },
@@ -253,6 +268,31 @@ const caps = {
   deliveriesWorkspaceView: false,
   whatsappConfigure: false,
 };
+
+it("requires the separate template view key and both workspace channel views for editor navigation", async () => {
+  const content = () =>
+    createElement(NotificationDeliveryConfiguration, {
+      workspaceId: WS,
+      userId: "user",
+      capabilities: caps,
+    });
+  state.keys = new Set([
+    "system.whatsapp_templates.view.workspace",
+    "system.channels.view.workspace",
+  ]);
+  await render(content());
+  expect(host.querySelector('a[href="/settings/whatsapp-templates"]')).toBeNull();
+  state.keys.add("system.whatsapp.view.workspace");
+  await render(content());
+  expect(host.querySelector('a[href="/settings/whatsapp-templates"]')).not.toBeNull();
+  state.keys.delete("system.whatsapp_templates.view.workspace");
+  await render(content());
+  expect(host.querySelector('a[href="/settings/whatsapp-templates"]')).toBeNull();
+  state.keys.add("system.whatsapp_templates.view.workspace");
+  state.keys.delete("system.channels.view.workspace");
+  await render(content());
+  expect(host.querySelector('a[href="/settings/whatsapp-templates"]')).toBeNull();
+});
 it("does not query configuration before the active workspace is confirmed", async () => {
   state.workspace = null;
   await render(

@@ -44,8 +44,12 @@ export function metaObjectId(value: string): string {
 export async function cloudRequest(
   credentials: MetaCredentials,
   objectId: string,
-  edge: "" | "phone_numbers" | "message_templates" | "messages" | "subscribed_apps",
-  options: { method?: "GET" | "POST"; query?: Record<string, string>; body?: unknown } = {},
+  edge: "" | "phone_numbers" | "message_templates" | "messages" | "subscribed_apps" | "uploads",
+  options: {
+    method?: "GET" | "POST" | "DELETE";
+    query?: Record<string, string>;
+    body?: unknown;
+  } = {},
 ): Promise<any> {
   metaObjectId(objectId);
   if (!/^v\d{2}\.0$/.test(credentials.apiVersion)) throw new Error("Versão da API inválida.");

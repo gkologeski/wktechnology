@@ -2822,6 +2822,13 @@
       "when": 1795252703949,
       "tag": "0402_notification_whatsapp_senders",
       "breakpoints": true
+    },
+    {
+      "idx": 403,
+      "version": "7",
+      "when": 1795258200000,
+      "tag": "0403_whatsapp_template_center",
+      "breakpoints": true
     }
   ]
 }

@@ -478,6 +478,9 @@
     "system.modules.view.own",
     "system.modules.view.team",
     "system.modules.view.workspace",
+    "system.notification_deliveries.view.workspace",
+    "system.notification_settings.manage.workspace",
+    "system.notification_settings.view.workspace",
     "system.onboarding_templates.create.own",
     "system.onboarding_templates.create.workspace",
     "system.onboarding_templates.delete.own",
@@ -624,6 +627,10 @@
     "system.whatsapp.view.team",
     "system.whatsapp.view.workspace",
     "system.whatsapp_suppressions.manage.workspace",
+    "system.whatsapp_templates.create.workspace",
+    "system.whatsapp_templates.delete.workspace",
+    "system.whatsapp_templates.update.workspace",
+    "system.whatsapp_templates.view.workspace",
     "system.widget.create.own",
     "system.widget.create.workspace",
     "system.widget.delete.own",
@@ -728,6 +735,9 @@
     "techcontracts.handoffs.manage.workspace",
     "techcontracts.imports.manage.workspace",
     "techcontracts.imports.view.workspace",
+    "techcontracts.legacy_contracts.approve.workspace",
+    "techcontracts.legacy_contracts.create.workspace",
+    "techcontracts.legacy_contracts.view.workspace",
     "techcontracts.links.manage.workspace",
     "techcontracts.links.view.workspace",
     "techcontracts.signature_evidence.manage.workspace",
@@ -2855,13 +2865,7 @@
     "techservice.tickets.update.own",
     "techservice.tickets.update.workspace",
     "techservice.tickets.view.own",
-    "techservice.tickets.view.workspace",
-    "techcontracts.legacy_contracts.view.workspace",
-    "techcontracts.legacy_contracts.create.workspace",
-    "techcontracts.legacy_contracts.approve.workspace",
-    "system.notification_settings.view.workspace",
-    "system.notification_settings.manage.workspace",
-    "system.notification_deliveries.view.workspace"
+    "techservice.tickets.view.workspace"
   ],
   "additions": {
     "system.communication.subscription_types.view.workspace": {
@@ -3226,6 +3230,18 @@
     },
     "system.notification_deliveries.view.workspace": {
       "migration": "drizzle/migrations/0393_notification_deliveries.sql"
+    },
+    "system.whatsapp_templates.view.workspace": {
+      "migration": "drizzle/migrations/0403_whatsapp_template_center.sql"
+    },
+    "system.whatsapp_templates.create.workspace": {
+      "migration": "drizzle/migrations/0403_whatsapp_template_center.sql"
+    },
+    "system.whatsapp_templates.update.workspace": {
+      "migration": "drizzle/migrations/0403_whatsapp_template_center.sql"
+    },
+    "system.whatsapp_templates.delete.workspace": {
+      "migration": "drizzle/migrations/0403_whatsapp_template_center.sql"
     }
   }
 }

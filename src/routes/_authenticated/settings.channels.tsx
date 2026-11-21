@@ -80,6 +80,16 @@ function ServiceChannelsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold">{TYPES[channel].label}</h2>
         <div className="flex gap-2">
+          {channel === "whatsapp" &&
+            permissions.canAll([
+              "system.whatsapp_templates.view.workspace",
+              "system.channels.view.workspace",
+              "system.whatsapp.view.workspace",
+            ]) && (
+              <Button variant="outline" asChild>
+                <a href="/settings/whatsapp-templates">Modelos de mensagens Meta</a>
+              </Button>
+            )}
           <Button
             variant="outline"
             onClick={() => setConfigurationOpen((open) => !open)}
