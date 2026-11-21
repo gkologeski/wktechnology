@@ -17,14 +17,19 @@ export async function captureDisposableHiringSnapshot(db: postgres.Sql) {
     select schemaname as schema,tablename as table from pg_tables
     where (schemaname='public' and tablename not in ('permissions','shared_field_catalog'))
       or (schemaname='storage' and tablename='objects') order by schemaname,tablename`;
-  const snapshot: DisposableHiringSnapshot = [];
-  for (const table of tables) {
-    const rows = await db.unsafe(
-      `select coalesce(jsonb_agg(to_jsonb(r)),'[]'::jsonb) data from ${identifier(table.schema)}.${identifier(table.table)} r`,
-    );
-    snapshot.push({ ...table, rows: rows[0].data });
-  }
-  return snapshot;
+  if (!tables.length) return [];
+  // Keep the exact per-table aggregate, including empty tables and all UTF-8
+  // keys/values, but send the independent reads in one round trip. An explicit
+  // ordinal preserves the catalogue order even if PostgreSQL reorders UNIONs.
+  const rows = await db.unsafe<{ snapshot_order: number; data: unknown[] }[]>(
+    tables
+      .map(
+        (table, index) =>
+          `select ${index}::integer snapshot_order,coalesce(jsonb_agg(to_jsonb(r)),'[]'::jsonb) data from ${identifier(table.schema)}.${identifier(table.table)} r`,
+      )
+      .join(" UNION ALL ") + " ORDER BY snapshot_order",
+  );
+  return tables.map((table, index) => ({ ...table, rows: rows[index].data }));
 }
 
 export async function restoreDisposableHiringSnapshot(

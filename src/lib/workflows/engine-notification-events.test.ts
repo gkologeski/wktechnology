@@ -692,4 +692,107 @@ describe("financial notification configuration at the actual queue boundary", ()
     expect(db.resumes[0].notification_event_key).toBe("finance.receivable.overdue");
     expect(event.after?.amount).toBe(9000);
   });
+
+  it("routes a proved WhatsApp occurrence only to the selected account and number without private message hydration", async () => {
+    const trigger: WorkflowTrigger = {
+      ...workflowNotificationEventTrigger("shared.message.received"),
+      notification_event: {
+        key: "shared.message.received",
+        source_keys: ["cloud:aaaaaaaa-1111-4111-8111-111111111111"],
+        phone_number_ids: ["1234567890"],
+      },
+    };
+    state.actions.mockResolvedValue({
+      log: [],
+      hadError: false,
+      suspendedAt: { runAtIso: "2026-12-20T12:00:00Z", resumeCursor: 1 },
+    });
+    const db = database([{ ...workflow("inbox", trigger), entity: "whatsapp_messages" }]);
+    const event: EventRow = {
+      ...namedEvent(),
+      entity: "whatsapp_messages",
+      entity_id: "message",
+      notification_event_key: "shared.message.received",
+      before: null,
+      after: {
+        id: "message",
+        workspace_id: W,
+        conversation_id: "conversation",
+        direction: "inbound",
+        source_key: "cloud:aaaaaaaa-1111-4111-8111-111111111111",
+        phone_number_id: "1234567890",
+        provider: "cloud",
+        message_type: "text",
+        occurred_at: "2026-12-20T11:00:00Z",
+        body: "private message",
+        raw: { token: "private" },
+        from_number: "+5548999999999",
+        media_url: "private-file",
+      },
+    };
+    await processEvent(db.client, event);
+    expect(state.rpc).toHaveBeenCalledWith(db.client, "notification_business_event_check", {
+      p_event: "event",
+      p_workflow: "inbox",
+      p_version: 3,
+    });
+    expect(state.actions).toHaveBeenCalledOnce();
+    const context = state.actions.mock.calls[0][2];
+    expect(context.notificationEventKey).toBe("shared.message.received");
+    expect(context.after).toEqual({
+      id: "message",
+      workspace_id: W,
+      conversation_id: "conversation",
+      direction: "inbound",
+      source_key: "cloud:aaaaaaaa-1111-4111-8111-111111111111",
+      phone_number_id: "1234567890",
+      provider: "cloud",
+      message_type: "text",
+      occurred_at: "2026-12-20T11:00:00Z",
+    });
+    expect(db.resumes[0].after).toEqual(context.after);
+    expect(db.resumes[0].notification_event_key).toBe("shared.message.received");
+    expect(event.after?.body).toBe("private message");
+  });
+
+  it.each([
+    {
+      source_key: "lovable:bbbbbbbb-1111-4111-8111-111111111111",
+      phone_number_id: "1234567890",
+      direction: "inbound",
+    },
+    {
+      source_key: "cloud:aaaaaaaa-1111-4111-8111-111111111111",
+      phone_number_id: "9999999999",
+      direction: "inbound",
+    },
+    {
+      source_key: "cloud:aaaaaaaa-1111-4111-8111-111111111111",
+      phone_number_id: "1234567890",
+      direction: "outbound",
+    },
+  ])(
+    "refuses mismatched or outbound WhatsApp occurrences before proof lookup and effects: %j",
+    async (after) => {
+      const trigger: WorkflowTrigger = {
+        ...workflowNotificationEventTrigger("shared.message.received"),
+        notification_event: {
+          key: "shared.message.received",
+          source_keys: ["cloud:aaaaaaaa-1111-4111-8111-111111111111"],
+          phone_number_ids: ["1234567890"],
+        },
+      };
+      const db = database([{ ...workflow("inbox", trigger), entity: "whatsapp_messages" }]);
+      await processEvent(db.client, {
+        ...namedEvent(),
+        entity: "whatsapp_messages",
+        notification_event_key: "shared.message.received",
+        after: { ...after, workspace_id: W },
+      });
+      expect(state.rpc).not.toHaveBeenCalled();
+      expect(state.authorize).not.toHaveBeenCalled();
+      expect(state.actions).not.toHaveBeenCalled();
+      expect(db.runs).toHaveLength(0);
+    },
+  );
 });

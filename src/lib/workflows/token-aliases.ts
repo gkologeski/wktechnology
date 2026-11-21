@@ -33,6 +33,12 @@ const EXPLICIT_FIELD_ALIASES: Record<string, string> = {
   user_id: "id_usuario",
   signature_document_id: "id_documento_assinatura",
   metadata: "metadados_tecnicos",
+  conversation_id: "id_conversa",
+  source_key: "conta_de_origem",
+  phone_number_id: "id_numero_comercial",
+  provider: "integracao_de_origem",
+  occurred_at: "recebida_em",
+  message_type: "tipo_mensagem",
 };
 
 /** Converte um rótulo humano em uma chave estável aceita pelo parser de tokens. */

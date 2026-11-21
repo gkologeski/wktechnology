@@ -117,6 +117,7 @@ describe("catálogo compatível com notificações históricas", () => {
     ["finance.payable.overdue", "task", "finance"],
     ["finance.receivable.overdue", "task", "finance"],
     ["finance.invoice.received", "workflow", "finance"],
+    ["shared.message.received", "message", "crm"],
   ] as const)(
     "recognizes operational %s without rewriting its identity into a legacy alias",
     (eventKey, category, moduleKey) => {
@@ -139,16 +140,16 @@ describe("catálogo compatível com notificações históricas", () => {
     },
   );
 
-  it("makes exactly twenty-three module events operational while preserving all 22 legacy aliases", () => {
+  it("makes exactly twenty-four module events operational while preserving all 22 legacy aliases", () => {
     expect(
       NOTIFICATION_EVENT_CATALOG.filter((event) => event.availability === "active"),
-    ).toHaveLength(23);
+    ).toHaveLength(24);
     expect(
       NOTIFICATION_EVENT_CATALOG.filter((event) => event.availability === "legacy"),
     ).toHaveLength(22);
     expect(
       NOTIFICATION_EVENT_CATALOG.filter((event) => event.availability === "planned"),
-    ).toHaveLength(4);
+    ).toHaveLength(3);
   });
 
   it.each([null, "unknown", "mention", "shared.approval.pending"])(

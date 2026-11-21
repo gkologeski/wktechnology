@@ -343,13 +343,34 @@ async function reset() {
       DO $cleanup$ DECLARE t record; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename NOT IN('permissions','shared_field_catalog') LOOP EXECUTE format('DELETE FROM public.%I',t.tablename);END LOOP;END $cleanup$;
       DELETE FROM storage.objects; SET LOCAL session_replication_role=origin;`);
     await db`insert into workspaces(id) values(${W}),(${B})`;
-    for (const u of [U, M, CEO, D]) {
-      await db`insert into profiles values(${u},${W})`;
-      await db`insert into workspace_members(workspace_id,user_id) values(${W},${u})`;
-      await db`insert into job_roles values(${u},${W})`;
-      await db`insert into user_job_roles values(${u},${u},${W},null)`;
-      await db`insert into job_role_permission_overrides select ${W},${u},key,'grant' from permissions`;
-    }
+    // Same four real actors and grants, seeded by dependency layer rather than
+    // twenty round trips. Domain operations below still run as their own actors.
+    const actors = [U, M, CEO, D];
+    await db`insert into profiles ${db(
+      actors.map((id) => ({ id, active_workspace_id: W })),
+      "id",
+      "active_workspace_id",
+    )}`;
+    await db`insert into workspace_members ${db(
+      actors.map((user_id) => ({ workspace_id: W, user_id })),
+      "workspace_id",
+      "user_id",
+    )}`;
+    await db`insert into job_roles ${db(
+      actors.map((id) => ({ id, workspace_id: W })),
+      "id",
+      "workspace_id",
+    )}`;
+    await db`insert into user_job_roles ${db(
+      actors.map((id) => ({ role_id: id, user_id: id, workspace_id: W, owner_id: null })),
+      "role_id",
+      "user_id",
+      "workspace_id",
+      "owner_id",
+    )}`;
+    await db`insert into job_role_permission_overrides
+      select ${W},r.id,p.key,'grant' from job_roles r cross join permissions p
+      where r.workspace_id=${W} and r.id in (${U},${M},${CEO},${D})`;
     await db`insert into user_groups values(${A},${W},'Área de fixture')`;
     await db`insert into legal_entities(id,workspace_id,name) values(${L},${W},'WK fixture')`;
     await db`insert into people(id,workspace_id,full_name,email) values(${D},${W},'Pessoa real fixture','pessoa@example.test')`;
@@ -468,8 +489,22 @@ async function signingDraft() {
 }
 async function nativeParticipants(k: string) {
   const ids = [randomUUID(), randomUUID(), randomUUID()];
-  for (let j = 0; j < 3; j++)
-    await db`insert into contacts(id,workspace_id,company_id,first_name,last_name,email) values(${ids[j]},${W},${C},'Signatário',${String(j)},${`signer${j}@example.test`})`;
+  await db`insert into contacts ${db(
+    ids.map((id, j) => ({
+      id,
+      workspace_id: W,
+      company_id: C,
+      first_name: "Signatário",
+      last_name: String(j),
+      email: `signer${j}@example.test`,
+    })),
+    "id",
+    "workspace_id",
+    "company_id",
+    "first_name",
+    "last_name",
+    "email",
+  )}`;
   return user(D, (tx) =>
     tx`select hiring_contract_signers_prepare(${W},${k},hiring_contract_fingerprint(${k}),${tx.json(ids.map((id, j) => ({ contactId: id, role: ["CONTRATANTE", "CONTRATADO", "TESTEMUNHA"][j] })))}) v`.then(
       (x) => x[0].v as string,

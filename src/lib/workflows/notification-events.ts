@@ -28,11 +28,15 @@ export const WORKFLOW_NOTIFICATION_EVENT_KEYS = [
   "finance.payable.overdue",
   "finance.receivable.overdue",
   "finance.invoice.received",
+  "shared.message.received",
 ] as const;
 export type WorkflowNotificationEventKey = (typeof WORKFLOW_NOTIFICATION_EVENT_KEYS)[number];
 export type WorkflowNotificationEventSelection = {
   key: WorkflowNotificationEventKey;
   days_before?: number;
+  /** Empty/absent lists retain any currently authorized WhatsApp origin. */
+  source_keys?: string[];
+  phone_number_ids?: string[];
 };
 
 export const WORKFLOW_NOTIFICATION_EVENTS = [
@@ -259,6 +263,16 @@ export const WORKFLOW_NOTIFICATION_EVENTS = [
     scheduling: "transition",
     deadline: false,
   },
+  {
+    key: "shared.message.received",
+    label: "Mensagem de WhatsApp recebida",
+    description:
+      "Uma nova mensagem recebida na Inbox por uma conexão WhatsApp Cloud API ou Lovable verificada. Não inclui mensagens enviadas, recibos, ligações ou histórico importado.",
+    entity: "whatsapp_messages",
+    moduleKey: "crm",
+    scheduling: "transition",
+    deadline: false,
+  },
 ] as const satisfies readonly {
   key: WorkflowNotificationEventKey;
   label: string;
@@ -276,7 +290,12 @@ export function getWorkflowNotificationEvent(key: unknown) {
 /** Sensitive business occurrences expose only identifiers, state and dates to the shared queue. */
 export function isMinimalNotificationEvent(key: unknown): boolean {
   const moduleKey = getWorkflowNotificationEvent(key)?.moduleKey;
-  return moduleKey === "ats" || moduleKey === "people" || moduleKey === "finance";
+  return (
+    key === "shared.message.received" ||
+    moduleKey === "ats" ||
+    moduleKey === "people" ||
+    moduleKey === "finance"
+  );
 }
 
 /** Public queue fields; values, fiscal identifiers and files stay at their canonical read boundary. */
@@ -303,8 +322,24 @@ export const FINANCE_NOTIFICATION_FISCAL_FIELDS = [
   "issued_on",
 ] as const;
 
+/** Only source metadata is offered: never the customer number, text, raw callback or media URL. */
+export const WHATSAPP_NOTIFICATION_MESSAGE_FIELDS = [
+  "id",
+  "workspace_id",
+  "owner_id",
+  "conversation_id",
+  "direction",
+  "source_key",
+  "phone_number_id",
+  "provider",
+  "occurred_at",
+  "message_type",
+  "assigned_to",
+] as const;
+
 /** null preserves the existing public field catalogue for the other events and generic workflows. */
 export function workflowNotificationEventFields(key: unknown): readonly string[] | null {
+  if (key === "shared.message.received") return WHATSAPP_NOTIFICATION_MESSAGE_FIELDS;
   const definition = getWorkflowNotificationEvent(key);
   if (definition?.moduleKey !== "finance") return null;
   return definition.entity === "hiring_fiscal_documents"
@@ -342,7 +377,26 @@ const FINANCE_WRITE_TABLES = [
   "hiring_fiscal_documents",
 ];
 
-/** A minimal notice snapshot must never supply a missing financial value as zero or empty. */
+const WHATSAPP_SOURCE_DEPENDENT_ACTIONS = [
+  "set_field",
+  "set_substatus",
+  "clear_field",
+  "increment_field",
+  "copy_field_from_association",
+  "associate_records",
+  "disassociate_records",
+  "assign_to",
+  "rotate_assign",
+  "send_whatsapp",
+  "send_email",
+  "handoff",
+  "sdr_agent",
+  "add_to_sequence",
+  "share_material",
+  "share_booking_link",
+];
+
+/** A minimal snapshot must never supply missing private values as zero or empty. */
 export function notificationEventConfigurationProblem(
   key: unknown,
   configuration: unknown,
@@ -350,10 +404,13 @@ export function notificationEventConfigurationProblem(
   const fields = workflowNotificationEventFields(key);
   if (fields === null) return null;
   const available = Object.fromEntries(fields.map((field) => [field, true]));
+  const whatsapp = key === "shared.message.received";
   const fieldProblem = (field: unknown) =>
     typeof field === "string" && fields.includes(field)
       ? null
-      : "Campo indisponível neste aviso financeiro; use somente os identificadores, estados e datas oferecidos.";
+      : whatsapp
+        ? "Campo indisponível neste evento de mensagem; use somente os metadados oferecidos, sem corpo, dados do cliente ou conteúdo bruto."
+        : "Campo indisponível neste aviso financeiro; use somente os identificadores, estados e datas oferecidos.";
   const visit = (value: unknown): string | null => {
     if (typeof value === "string") {
       for (const match of value.matchAll(/{{\s*([^{}]+?)\s*}}/g)) {
@@ -374,9 +431,17 @@ export function notificationEventConfigurationProblem(
     if (!value || typeof value !== "object") return null;
     const object = value as Record<string, unknown>;
     if (
-      FINANCE_SOURCE_MUTATIONS.includes(String(object.type)) ||
-      (["create_record", "update_record", "delete_record"].includes(String(object.type)) &&
-        FINANCE_WRITE_TABLES.includes(String(object.table)))
+      whatsapp &&
+      (WHATSAPP_SOURCE_DEPENDENT_ACTIONS.includes(String(object.type)) ||
+        (["create_record", "update_record", "delete_record"].includes(String(object.type)) &&
+          object.table === "whatsapp_messages"))
+    )
+      return "Este evento não altera mensagens nem responde ao cliente; use ações independentes autorizadas ou a notificação protegida.";
+    if (
+      !whatsapp &&
+      (FINANCE_SOURCE_MUTATIONS.includes(String(object.type)) ||
+        (["create_record", "update_record", "delete_record"].includes(String(object.type)) &&
+          FINANCE_WRITE_TABLES.includes(String(object.table))))
     )
       return "Este aviso financeiro não altera lançamentos ou documentos; use a operação financeira canônica.";
     if (typeof object.op === "string" && Object.hasOwn(object, "field")) {
@@ -476,10 +541,37 @@ export const notificationEventSelectionSchema = z
   .object({
     key: z.enum(WORKFLOW_NOTIFICATION_EVENT_KEYS),
     days_before: z.number().int().min(1).max(365).optional(),
+    source_keys: z
+      .array(
+        z
+          .string()
+          .regex(/^(cloud|lovable):[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/),
+      )
+      .max(100)
+      .optional(),
+    phone_number_ids: z
+      .array(z.string().regex(/^[0-9]{5,30}$/))
+      .max(100)
+      .optional(),
   })
   .strict()
   .superRefine((selection, ctx) => {
     const definition = getWorkflowNotificationEvent(selection.key)!;
+    for (const field of ["source_keys", "phone_number_ids"] as const) {
+      const values = selection[field];
+      if (values !== undefined && selection.key !== "shared.message.received")
+        ctx.addIssue({
+          code: "custom",
+          path: [field],
+          message: "Este evento não utiliza filtro de conta ou número WhatsApp.",
+        });
+      if (values && new Set(values).size !== values.length)
+        ctx.addIssue({
+          code: "custom",
+          path: [field],
+          message: "Selecione cada conta ou número somente uma vez.",
+        });
+    }
     if (definition.deadline !== (selection.days_before !== undefined))
       ctx.addIssue({
         code: "custom",
@@ -493,14 +585,42 @@ export const notificationEventSelectionSchema = z
 /** Named rows and ordinary CRUD rows are separate selectors on the same durable queue. */
 export function workflowNotificationTriggerMatches(
   trigger: Pick<WorkflowTrigger, "notification_event" | "time_based">,
-  event: { entity: WorkflowEntity; notification_event_key?: unknown },
+  event: { entity: WorkflowEntity; notification_event_key?: unknown; after?: unknown },
 ) {
   if (trigger.notification_event && trigger.time_based) return false;
   if (event.notification_event_key == null)
     return !isWorkflowReadonlySource(event.entity) && trigger.notification_event === undefined;
   const selection = notificationEventSelectionSchema.safeParse(trigger.notification_event);
   if (!selection.success || selection.data.key !== event.notification_event_key) return false;
-  return getWorkflowNotificationEvent(selection.data.key)?.entity === event.entity;
+  if (getWorkflowNotificationEvent(selection.data.key)?.entity !== event.entity) return false;
+  if (selection.data.key === "shared.message.received") {
+    const after =
+      event.after && typeof event.after === "object" && !Array.isArray(event.after)
+        ? (event.after as Record<string, unknown>)
+        : null;
+    if (
+      !after ||
+      after.direction !== "inbound" ||
+      typeof after.source_key !== "string" ||
+      !/^(cloud|lovable):[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
+        after.source_key,
+      ) ||
+      typeof after.phone_number_id !== "string" ||
+      !/^[0-9]{5,30}$/.test(after.phone_number_id)
+    )
+      return false;
+    if (
+      selection.data.source_keys?.length &&
+      !selection.data.source_keys.includes(after.source_key)
+    )
+      return false;
+    if (
+      selection.data.phone_number_ids?.length &&
+      !selection.data.phone_number_ids.includes(after.phone_number_id)
+    )
+      return false;
+  }
+  return true;
 }
 
 export function workflowNotificationTriggerLabel(

@@ -30,7 +30,8 @@ export type WorkflowEntity =
   | "people"
   | "people_documents"
   | "hiring_preparation_requests"
-  | "hiring_fiscal_documents";
+  | "hiring_fiscal_documents"
+  | "whatsapp_messages";
 
 /** Named occurrences can read these sources; generic actions cannot mutate them. */
 export const WORKFLOW_READONLY_SOURCE_TABLES = [
@@ -38,6 +39,7 @@ export const WORKFLOW_READONLY_SOURCE_TABLES = [
   "people_documents",
   "hiring_preparation_requests",
   "hiring_fiscal_documents",
+  "whatsapp_messages",
 ] as const;
 
 export function isWorkflowReadonlySource(table: string): boolean {
@@ -576,12 +578,13 @@ export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
   people_documents: "Documentos de pessoas",
   hiring_preparation_requests: "Solicitações profissionais de preparação",
   hiring_fiscal_documents: "Documentos fiscais de contratação",
+  whatsapp_messages: "Mensagens de WhatsApp (Inbox)",
 };
 
 // Grupos por módulo (para dropdown do builder).
 export const ENTITY_GROUPS: Array<{ label: string; entities: WorkflowEntity[] }> = [
   { label: "Vendas", entities: ["leads", "contacts", "companies", "deals", "quotes", "proposals"] },
-  { label: "Atendimento", entities: ["tickets"] },
+  { label: "Atendimento", entities: ["tickets", "whatsapp_messages"] },
   {
     label: "Recrutamento",
     entities: ["ats_jobs", "ats_candidates", "ats_applications", "ats_interviews", "ats_offers"],
@@ -850,6 +853,19 @@ export const RECORD_ACTION_MODULES: RecordActionModule[] = [
 
 // Common fields by entity, used in filter dropdowns and set_field actions
 export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
+  whatsapp_messages: [
+    "id",
+    "workspace_id",
+    "owner_id",
+    "conversation_id",
+    "direction",
+    "source_key",
+    "phone_number_id",
+    "provider",
+    "occurred_at",
+    "message_type",
+    "assigned_to",
+  ],
   ats_offers: [
     "status",
     "revision",

@@ -631,23 +631,33 @@ export async function reset() {
     ])
       statements.push(tx.unsafe(`DELETE FROM ${t}`));
     statements.push(tx`insert into workspaces(id,created_by) values(${W},${A}),(${B},${A})`);
-    for (const id of [A, U, C, D, N, F, CEO]) {
-      statements.push(
-        tx`insert into profiles(id,active_workspace_id,phone,notification_preferences) values(${id},${id === F ? B : W},'+5548999990001','{"workflow":{"email":true}}')`,
-      );
-      statements.push(
-        tx`insert into auth.users(id,email,email_confirmed_at) values(${id},${id.slice(0, 8) + "@fixture.invalid"},now())`,
-      );
-    }
-    for (const id of [A, U, C, D, N, CEO])
-      statements.push(tx`insert into workspace_members(workspace_id,user_id) values(${W},${id})`);
-    statements.push(tx`insert into workspace_members(workspace_id,user_id) values(${B},${F})`);
+    // Keep the identical real authorization graph but seed each relation in one
+    // statement. Per-row statements add parse/execute work to every SQL case,
+    // even when postgres.js pipelines the transaction's network messages.
+    const users = [A, U, C, D, N, F, CEO];
+    statements.push(
+      tx`insert into profiles(id,active_workspace_id,phone,notification_preferences)
+        select value::uuid,case when value::uuid=${F} then ${B}::uuid else ${W}::uuid end,
+          '+5548999990001','{"workflow":{"email":true}}'::jsonb
+        from jsonb_array_elements_text(${tx.json(users)})`,
+    );
+    statements.push(
+      tx`insert into auth.users(id,email,email_confirmed_at)
+        select value::uuid,left(value,8)||'@fixture.invalid',now()
+        from jsonb_array_elements_text(${tx.json(users)})`,
+    );
+    statements.push(
+      tx`insert into workspace_members(workspace_id,user_id)
+        select case when value::uuid=${F} then ${B}::uuid else ${W}::uuid end,value::uuid
+        from jsonb_array_elements_text(${tx.json(users)})`,
+    );
     statements.push(tx`insert into job_roles(id,workspace_id) values(${ROLE},${W})`);
-    for (const id of [U, C, D, CEO])
-      statements.push(
-        tx`insert into user_job_roles(role_id,user_id,workspace_id,owner_id) values(${ROLE},${id},${W},${W})`,
-      );
-    for (const key of [
+    statements.push(
+      tx`insert into user_job_roles(role_id,user_id,workspace_id,owner_id)
+        select ${ROLE}::uuid,value::uuid,${W}::uuid,${W}::uuid
+        from jsonb_array_elements_text(${tx.json([U, C, D, CEO])})`,
+    );
+    const keys = [
       ...readKeys,
       "system.workflows.view.workspace",
       "system.workflows.manage.workspace",
@@ -662,17 +672,20 @@ export async function reset() {
       "techsales.inbox.email.create.workspace",
       "techsales.inbox.whatsapp.view.workspace",
       "techsales.inbox.whatsapp.create.workspace",
-    ])
-      statements.push(
-        tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${ROLE},${key},'grant')`,
-      );
+    ];
+    statements.push(
+      tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect)
+        select ${W}::uuid,${ROLE}::uuid,value,'grant'
+        from jsonb_array_elements_text(${tx.json(keys)})`,
+    );
     statements.push(
       tx`insert into user_groups(id,workspace_id,name) values(${GROUP},${W},'Synthetic group')`,
     );
-    for (const id of [U, C, N, F])
-      statements.push(
-        tx`insert into user_group_members(group_id,user_id,is_leader) values(${GROUP},${id},${id === D})`,
-      );
+    statements.push(
+      tx`insert into user_group_members(group_id,user_id,is_leader)
+        select ${GROUP}::uuid,value::uuid,value::uuid=${D}
+        from jsonb_array_elements_text(${tx.json([U, C, N, F])})`,
+    );
     for (const table of sourceTables) {
       statements.push(tx.unsafe(`DELETE FROM public.${table}`));
       statements.push(

@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 147
-version: 11
+version: 12
 is_published: true
 ---
 
@@ -65,6 +65,7 @@ Você acompanha seus avisos no contexto correto, distingue pendências de leitur
 
 - [Revisar preferências globais de notificações](/ajuda/core/revisar-preferencias-de-notificacoes)
 - [Criar e publicar workflows](/ajuda/crm/criar-publicar-workflows)
+- [Automatizar mensagens recebidas no WhatsApp](/ajuda/crm/automatizar-mensagens-recebidas-whatsapp)
 - [Permissões do Core](/ajuda/core/permissoes)
 
 ## Regras, modelos e entregas
@@ -88,7 +89,7 @@ Na central, as abas **Regras**, **Modelos e canais** e **Entregas** ampliam o ac
 
 ### Criar uma regra sem duplicar o motor de automações
 
-1. Abra **Regras**. Em **Evento da nova regra**, escolha uma opção de TechSales, TechContracts, TechProjects, TechHire ou TechPeople, ou mantenha **Regra genérica de Workflow**, e clique em **Criar regra**. O rascunho abre no construtor existente. As regras exibidas são os Workflows que possuem a ação **Enviar notificação** ou **Enviar mensagem no Slack**; não há uma segunda automação paralela.
+1. Abra **Regras**. Em **Evento da nova regra**, escolha uma opção de Atendimento, TechSales, TechContracts, TechProjects, TechHire, TechPeople ou TechFinance, ou mantenha **Regra genérica de Workflow**, e clique em **Criar regra**. O rascunho abre no construtor existente. As regras exibidas são os Workflows que possuem a ação **Enviar notificação** ou **Enviar mensagem no Slack**; não há uma segunda automação paralela.
 2. Configure o gatilho, os destinatários e os canais. Uma ação antiga sem seleção explícita mantém somente **No app**.
 3. E-mail e WhatsApp são opcionais. **E-mail se o WhatsApp falhar** exige WhatsApp primário sem e-mail em paralelo. A alternativa só é permitida em falhas definitivas ou supressões elegíveis, com preferência e permissão próprias; um resultado incerto não gera outro envio.
 4. Salve o rascunho e use **Conferir configuração sem enviar**, quando disponível. A conferência é estrutural: não envia mensagens, não comprova elegibilidade dos destinatários e não ativa o rascunho.
@@ -140,6 +141,18 @@ A prévia de WhatsApp resolve os mesmos valores do transporte e mostra os compon
 Alterar o telefone do perfil por qualquer caminho revoga as autorizações antigas. Recibos assinados corretamente correlacionados podem atualizar **Entregue/Lido** sem depender da projeção na Inbox e após desativação do remetente. Isso não cria outro envio nem ativa conversas novas.
 
 Prazos de espera valem para a conexão, também entre avisos diferentes. Restrições de reputação ou limites sem prazo seguro podem desligar o canal; a reativação exige revisão na Meta e ação administrativa explícita. Consulte o [passo a passo de WhatsApp oficial](/ajuda/core/configurar-notificacoes-no-whatsapp).
+
+## Avisos de mensagens recebidas no WhatsApp
+
+Em **Regras > Evento da nova regra > Atendimento**, escolha **Mensagem de WhatsApp recebida** e clique em **Criar regra**. O construtor usa o objeto **Mensagens de WhatsApp (Inbox)**: o objeto define a origem, e o evento define o acontecimento. Essa origem é somente leitura; uma mensagem nova de Cloud API ou Lovable verificada pode iniciar a regra, sem responder ao cliente ou alterar a conversa.
+
+Em **Gatilho de entrada**, use **Contas de recebimento** e **Números comerciais de recebimento** para restringir a origem. Sem seleção, qualquer origem atualmente autorizada pode corresponder. Com conta e número marcados, ambos precisam corresponder à mesma origem; o sistema recusa uma combinação incompatível. São os números que recebem a mensagem na operação, não o telefone do cliente nem o remetente usado para notificar alguém.
+
+Confira **Quem recebe o aviso**, revise os canais, publique e ative de forma explícita. A regra não ativa conexões ou canais, não concede acesso e não altera consentimentos ou limites. Sem responsável elegível, não há substituto automático. E-mail e WhatsApp de notificação continuam sujeitos às políticas, preferências e autorizações de cada destinatário.
+
+O aviso direto da Inbox continua funcionando. Se a regra notifica o mesmo responsável e já existe um aviso legado não lido daquela conversa, ele é reaproveitado para evitar uma segunda cópia implícita. Outros destinatários e canais escolhidos explicitamente mantêm as próprias autorizações; a ocorrência da mensagem continua registrada. Reentregas do mesmo evento não criam uma segunda ocorrência.
+
+Mensagens enviadas, recibos, ligações e histórico importado não entram nesse gatilho. Republicar ou reativar estabelece um novo ponto de entrada; mensagens anteriores não são recuperadas como novas. A regra oferece somente metadados: corpo, anexos, telefone do cliente e credenciais não são variáveis. O aviso externo é neutro e abrir a conversa exige acesso atual. Consulte [Automatizar mensagens recebidas no WhatsApp](/ajuda/crm/automatizar-mensagens-recebidas-whatsapp).
 
 ## Avisos de TechSales, TechContracts e TechProjects
 

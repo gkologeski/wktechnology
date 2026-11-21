@@ -32,7 +32,11 @@ export function renderWorkflowTokens(input: unknown, after: AnyRow | null, vars?
  * Usado no corpo de e-mails: dados vindos de formulários públicos nunca viram
  * marcação; o HTML do modelo escrito pela equipe permanece intacto.
  */
-export function renderWorkflowTokensHtml(input: string, after: AnyRow | null, vars?: AnyRow): string {
+export function renderWorkflowTokensHtml(
+  input: string,
+  after: AnyRow | null,
+  vars?: AnyRow,
+): string {
   return renderTokensWith(input, (path) => {
     let value: unknown;
     if (path.startsWith("vars.")) value = getPath(vars ?? null, path.slice(5));
