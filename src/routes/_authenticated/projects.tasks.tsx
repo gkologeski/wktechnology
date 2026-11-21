@@ -256,6 +256,10 @@ function ProjectTasksPage({ userId, workspaceId }: { userId: string; workspaceId
           : null
         : (focusedTask.data ?? null)
       : null;
+  // Só a primeira conferência da tarefa do link oculta o painel; recargas em
+  // segundo plano (após salvar um campo ou voltar à janela) mantêm o formulário
+  // e o foco do usuário, e uma perda de acesso ainda fecha o painel ao concluir.
+  const initialTaskCheck = !!taskId && focusedTask.isFetching && confirmedTask?.id !== taskId;
   const taskMissing =
     !!taskId && focusedTask.isFetchedAfterMount && !focusedTask.isFetching && !selectedTask;
   // Falha de carga (ex.: tempo esgotado no banco) não pode parecer lista vazia.
@@ -598,7 +602,7 @@ function ProjectTasksPage({ userId, workspaceId }: { userId: string; workspaceId
         </nav>
       )}
 
-      {taskId && focusedTask.isFetching && (
+      {initialTaskCheck && (
         <p role="status" className="text-sm text-muted-foreground">
           Conferindo acesso à tarefa do link…
         </p>
@@ -626,7 +630,7 @@ function ProjectTasksPage({ userId, workspaceId }: { userId: string; workspaceId
 
       <TaskDetailsSheet
         key={`${userId}:${workspaceId}:${taskId ?? "none"}`}
-        revalidating={focusedTask.isFetching}
+        revalidating={initialTaskCheck}
         task={
           selectedTask
             ? {

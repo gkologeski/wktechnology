@@ -4551,7 +4551,7 @@
       "files": {
         "src/components/projects/task-core-fields.tsx": "33e75d42e8ac20d6c8c744aecf9646677c3e744e56982c00cfd30a9496fc9f3f",
         "src/components/projects/task-details-sheet.tsx": "2f29838c1c26eb579afa4bbd4ebaf6ae8087fafb6677cfcb1b816c66d22ad45e",
-        "src/routes/_authenticated/projects.tasks.tsx": "08f83a1d631a9e1b17fb8c791e2a2b1e9d379f4098addc9ca6a2b083a709e98f",
+        "src/routes/_authenticated/projects.tasks.tsx": "81624045dd83eea21a99095eb5a456e79d5d064b0f6d7a971ba7f28737093020",
         "src/routes/_authenticated/projects.$id.tsx": "2cf3904328e520a729a564dec2c813125f313c235027f4a18fab0117833bb688"
       }
     },
