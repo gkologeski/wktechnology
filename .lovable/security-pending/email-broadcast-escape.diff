@@ -1,0 +1,23 @@
+diff --git a/src/lib/email-broadcast/engine.server.ts b/src/lib/email-broadcast/engine.server.ts
+index 2a740ab75..400888778 100644
+--- a/src/lib/email-broadcast/engine.server.ts
++++ b/src/lib/email-broadcast/engine.server.ts
+@@ -1,5 +1,6 @@
+ import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
+ import { renderTokens as renderTemplate } from "@/lib/message-tokens";
++import { escapeHtml } from "@/lib/security/escape";
+ // Engine de envio de campanhas de email (broadcast).
+ // - resolveRecipients: materializa destinatários a partir de segment (lead|contact) ou lista manual,
+ //   aplicando supressão por email_unsubscribes.
+@@ -363,7 +364,10 @@ async function processBroadcast(broadcastId: string): Promise<{ sent: number; fa
+         company: base["company"] ?? base["company_name"] ?? "",
+       };
+       const subject = renderTemplate(b.subject ?? "", vars);
+-      const htmlRaw = renderTemplate(b.body_html ?? "", vars);
++      const htmlVars = Object.fromEntries(
++        Object.entries(vars).map(([k, v]) => [k, escapeHtml(String(v ?? ""))]),
++      );
++      const htmlRaw = renderTemplate(b.body_html ?? "", htmlVars);
+       const textRaw = renderTemplate(b.body_text ?? "", vars);
+       const token = await ensureUnsubToken(b.workspace_id, b.owner_id, r.email);
+       const unsubUrl = buildUnsubscribeLink(token, baseUrl);
