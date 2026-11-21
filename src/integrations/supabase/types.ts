@@ -18894,6 +18894,952 @@ export type Database = {
           },
         ]
       }
+      notification_business_due_cursors: {
+        Row: {
+          contract_id: string
+          created_at: string
+          days_before: number
+          due_date: string
+          event_id: string
+          event_key: string
+          workflow_id: string
+        }
+        Insert: {
+          contract_id: string
+          created_at?: string
+          days_before: number
+          due_date: string
+          event_id: string
+          event_key: string
+          workflow_id: string
+        }
+        Update: {
+          contract_id?: string
+          created_at?: string
+          days_before?: number
+          due_date?: string
+          event_id?: string
+          event_key?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_business_due_cursors_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_business_event_proofs: {
+        Row: {
+          created_at: string
+          days_before: number | null
+          due_date: string | null
+          event_id: string
+          event_key: string
+          occurred_at: string | null
+          occurrence_key: string
+          parent_event_id: string | null
+          payload_hash: string
+          producer_id: string
+          producer_table: string
+          reference_id: string | null
+          resume_cursor: number | null
+          root_event_id: string
+          source_id: string
+          source_revision: string | null
+          source_table: string
+          workflow_id: string | null
+          workflow_version: number | null
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          days_before?: number | null
+          due_date?: string | null
+          event_id: string
+          event_key: string
+          occurred_at?: string | null
+          occurrence_key: string
+          parent_event_id?: string | null
+          payload_hash: string
+          producer_id: string
+          producer_table: string
+          reference_id?: string | null
+          resume_cursor?: number | null
+          root_event_id: string
+          source_id: string
+          source_revision?: string | null
+          source_table: string
+          workflow_id?: string | null
+          workflow_version?: number | null
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          days_before?: number | null
+          due_date?: string | null
+          event_id?: string
+          event_key?: string
+          occurred_at?: string | null
+          occurrence_key?: string
+          parent_event_id?: string | null
+          payload_hash?: string
+          producer_id?: string
+          producer_table?: string
+          reference_id?: string | null
+          resume_cursor?: number | null
+          root_event_id?: string
+          source_id?: string
+          source_revision?: string | null
+          source_table?: string
+          workflow_id?: string | null
+          workflow_version?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_business_event_proofs_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: true
+            referencedRelation: "workflow_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_business_event_proofs_root_event_id_fkey"
+            columns: ["root_event_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_business_occurrence_receipts: {
+        Row: {
+          created_at: string
+          event_id: string
+          event_key: string
+          occurrence_key: string
+          producer_id: string
+          producer_table: string
+          reference_id: string | null
+          source_id: string
+          source_revision: string | null
+          source_table: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          event_key: string
+          occurrence_key: string
+          producer_id: string
+          producer_table: string
+          reference_id?: string | null
+          source_id: string
+          source_revision?: string | null
+          source_table: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          event_key?: string
+          occurrence_key?: string
+          producer_id?: string
+          producer_table?: string
+          reference_id?: string | null
+          source_id?: string
+          source_revision?: string | null
+          source_table?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_business_occurrence_receipts_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_delivery_consents: {
+        Row: {
+          granted_at: string | null
+          phone: string
+          revision: number
+          revoked_at: string | null
+          updated_at: string
+          user_id: string
+          version: string
+          workspace_id: string
+        }
+        Insert: {
+          granted_at?: string | null
+          phone: string
+          revision: number
+          revoked_at?: string | null
+          updated_at?: string
+          user_id: string
+          version?: string
+          workspace_id: string
+        }
+        Update: {
+          granted_at?: string | null
+          phone?: string
+          revision?: number
+          revoked_at?: string | null
+          updated_at?: string
+          user_id?: string
+          version?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_delivery_consents_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_delivery_consents_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_delivery_intents: {
+        Row: {
+          created_at: string
+          delivery_config: Json
+          event_key: string
+          id: string
+          notification_id: string | null
+          occurrence_kind: string
+          parent_intent_id: string | null
+          payload_content_neutral: Json
+          recipient_user_id: string
+          run_id: string
+          source_id: string
+          source_table: string
+          step_path: string
+          workflow_id: string
+          workflow_version: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivery_config: Json
+          event_key?: string
+          id?: string
+          notification_id?: string | null
+          occurrence_kind?: string
+          parent_intent_id?: string | null
+          payload_content_neutral: Json
+          recipient_user_id: string
+          run_id: string
+          source_id: string
+          source_table: string
+          step_path: string
+          workflow_id: string
+          workflow_version: number
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          delivery_config?: Json
+          event_key?: string
+          id?: string
+          notification_id?: string | null
+          occurrence_kind?: string
+          parent_intent_id?: string | null
+          payload_content_neutral?: Json
+          recipient_user_id?: string
+          run_id?: string
+          source_id?: string
+          source_table?: string
+          step_path?: string
+          workflow_id?: string
+          workflow_version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_delivery_intents_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_delivery_intents_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_delivery_intents_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_delivery_intents_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_delivery_intents_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_delivery_policies: {
+        Row: {
+          currency: string
+          digest_enabled: boolean
+          email_daily_limit: number
+          email_enabled: boolean
+          followup_daily_limit: number
+          followups_enabled: boolean
+          revision: number
+          updated_at: string
+          updated_by: string
+          wa_daily_budget_micros: number
+          wa_estimated_unit_micros: number
+          wa_sender_id: string | null
+          wa_template_language: string | null
+          wa_template_name: string | null
+          whatsapp_daily_limit: number
+          whatsapp_enabled: boolean
+          workspace_id: string
+        }
+        Insert: {
+          currency?: string
+          digest_enabled?: boolean
+          email_daily_limit?: number
+          email_enabled?: boolean
+          followup_daily_limit?: number
+          followups_enabled?: boolean
+          revision: number
+          updated_at?: string
+          updated_by: string
+          wa_daily_budget_micros?: number
+          wa_estimated_unit_micros?: number
+          wa_sender_id?: string | null
+          wa_template_language?: string | null
+          wa_template_name?: string | null
+          whatsapp_daily_limit?: number
+          whatsapp_enabled?: boolean
+          workspace_id: string
+        }
+        Update: {
+          currency?: string
+          digest_enabled?: boolean
+          email_daily_limit?: number
+          email_enabled?: boolean
+          followup_daily_limit?: number
+          followups_enabled?: boolean
+          revision?: number
+          updated_at?: string
+          updated_by?: string
+          wa_daily_budget_micros?: number
+          wa_estimated_unit_micros?: number
+          wa_sender_id?: string | null
+          wa_template_language?: string | null
+          wa_template_name?: string | null
+          whatsapp_daily_limit?: number
+          whatsapp_enabled?: boolean
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_delivery_policies_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_delivery_policies_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_digest_batches: {
+        Row: {
+          channel: string
+          created_at: string
+          id: string
+          recipient_user_id: string
+          settings_revision: number
+          slot_at: string
+          slot_key: string
+          workspace_id: string
+        }
+        Insert: {
+          channel: string
+          created_at?: string
+          id?: string
+          recipient_user_id: string
+          settings_revision: number
+          slot_at: string
+          slot_key: string
+          workspace_id: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          id?: string
+          recipient_user_id?: string
+          settings_revision?: number
+          slot_at?: string
+          slot_key?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_digest_batches_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_digest_batches_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_digest_candidates: {
+        Row: {
+          batch_id: string | null
+          channel: string
+          created_at: string
+          id: string
+          next_at: string
+          recipient_user_id: string
+          run_id: string
+          settings_revision: number
+          source_id: string
+          source_intent_id: string
+          source_table: string
+          state: string
+          step_config: Json
+          step_path: string
+          workflow_id: string
+          workflow_version: number
+          workspace_id: string
+        }
+        Insert: {
+          batch_id?: string | null
+          channel: string
+          created_at?: string
+          id?: string
+          next_at: string
+          recipient_user_id: string
+          run_id: string
+          settings_revision: number
+          source_id: string
+          source_intent_id: string
+          source_table: string
+          state?: string
+          step_config: Json
+          step_path: string
+          workflow_id: string
+          workflow_version: number
+          workspace_id: string
+        }
+        Update: {
+          batch_id?: string | null
+          channel?: string
+          created_at?: string
+          id?: string
+          next_at?: string
+          recipient_user_id?: string
+          run_id?: string
+          settings_revision?: number
+          source_id?: string
+          source_intent_id?: string
+          source_table?: string
+          state?: string
+          step_config?: Json
+          step_path?: string
+          workflow_id?: string
+          workflow_version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_digest_candidate_batch_id_workspace_id_recipi_fkey"
+            columns: [
+              "batch_id",
+              "workspace_id",
+              "recipient_user_id",
+              "channel",
+            ]
+            isOneToOne: false
+            referencedRelation: "notification_digest_batches"
+            referencedColumns: [
+              "id",
+              "workspace_id",
+              "recipient_user_id",
+              "channel",
+            ]
+          },
+          {
+            foreignKeyName: "notification_digest_candidates_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_digest_candidates_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_digest_settings: {
+        Row: {
+          revision: number
+          settings: Json
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          revision: number
+          settings: Json
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          revision?: number
+          settings?: Json
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_digest_settings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_digest_settings_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_followup_occurrences: {
+        Row: {
+          child_intent_id: string | null
+          created_at: string
+          kind: string
+          ordinal: number
+          recipient_count: number
+          schedule_id: string
+          workspace_id: string
+        }
+        Insert: {
+          child_intent_id?: string | null
+          created_at?: string
+          kind: string
+          ordinal: number
+          recipient_count?: number
+          schedule_id: string
+          workspace_id: string
+        }
+        Update: {
+          child_intent_id?: string | null
+          created_at?: string
+          kind?: string
+          ordinal?: number
+          recipient_count?: number
+          schedule_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_followup_occurrences_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "notification_followup_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_followup_occurrences_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_followup_schedules: {
+        Row: {
+          base_at: string
+          created_at: string
+          event_key: string
+          id: string
+          next_check_at: string
+          next_escalation_at: string | null
+          next_reminder: number
+          next_reminder_at: string | null
+          notification_id: string
+          parent_intent_id: string
+          recipient_user_id: string
+          run_id: string
+          source_id: string
+          source_table: string
+          step_config: Json
+          step_path: string
+          stopped_at: string | null
+          workflow_id: string
+          workflow_version: number
+          workspace_id: string
+        }
+        Insert: {
+          base_at: string
+          created_at?: string
+          event_key: string
+          id?: string
+          next_check_at?: string
+          next_escalation_at?: string | null
+          next_reminder?: number
+          next_reminder_at?: string | null
+          notification_id: string
+          parent_intent_id: string
+          recipient_user_id: string
+          run_id: string
+          source_id: string
+          source_table: string
+          step_config: Json
+          step_path: string
+          stopped_at?: string | null
+          workflow_id: string
+          workflow_version: number
+          workspace_id: string
+        }
+        Update: {
+          base_at?: string
+          created_at?: string
+          event_key?: string
+          id?: string
+          next_check_at?: string
+          next_escalation_at?: string | null
+          next_reminder?: number
+          next_reminder_at?: string | null
+          notification_id?: string
+          parent_intent_id?: string
+          recipient_user_id?: string
+          run_id?: string
+          source_id?: string
+          source_table?: string
+          step_config?: Json
+          step_path?: string
+          stopped_at?: string | null
+          workflow_id?: string
+          workflow_version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_followup_schedules_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_followup_schedules_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_slack_endpoint_state: {
+        Row: {
+          busy_delivery_id: string | null
+          busy_until: string | null
+          endpoint_hash: string
+          next_allowed_at: string
+        }
+        Insert: {
+          busy_delivery_id?: string | null
+          busy_until?: string | null
+          endpoint_hash: string
+          next_allowed_at?: string
+        }
+        Update: {
+          busy_delivery_id?: string | null
+          busy_until?: string | null
+          endpoint_hash?: string
+          next_allowed_at?: string
+        }
+        Relationships: []
+      }
+      notification_slack_intents: {
+        Row: {
+          created_at: string
+          endpoint_hash: string
+          endpoint_revision: number
+          event_key: string
+          id: string
+          integration_id: string
+          policy_revision: number
+          run_id: string
+          source_id: string
+          source_table: string
+          step_path: string
+          workflow_id: string
+          workflow_version: number
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint_hash: string
+          endpoint_revision: number
+          event_key?: string
+          id?: string
+          integration_id: string
+          policy_revision: number
+          run_id: string
+          source_id: string
+          source_table: string
+          step_path: string
+          workflow_id: string
+          workflow_version: number
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint_hash?: string
+          endpoint_revision?: number
+          event_key?: string
+          id?: string
+          integration_id?: string
+          policy_revision?: number
+          run_id?: string
+          source_id?: string
+          source_table?: string
+          step_path?: string
+          workflow_id?: string
+          workflow_version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_slack_intents_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_slack_policies: {
+        Row: {
+          daily_limit: number
+          enabled: boolean
+          integration_id: string | null
+          revision: number
+          template_version: string
+          updated_at: string
+          updated_by: string | null
+          workspace_id: string
+        }
+        Insert: {
+          daily_limit?: number
+          enabled?: boolean
+          integration_id?: string | null
+          revision: number
+          template_version?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id: string
+        }
+        Update: {
+          daily_limit?: number
+          enabled?: boolean
+          integration_id?: string | null
+          revision?: number
+          template_version?: string
+          updated_at?: string
+          updated_by?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_slack_policies_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: true
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_user_preferences: {
+        Row: {
+          revision: number
+          settings: Json
+          updated_at: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          revision: number
+          settings?: Json
+          updated_at?: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          revision?: number
+          settings?: Json
+          updated_at?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_user_preferences_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_whatsapp_health: {
+        Row: {
+          connection_id: string
+          cooldown_until: string
+          paused_until: string
+          reason_code: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          connection_id: string
+          cooldown_until?: string
+          paused_until: string
+          reason_code: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          connection_id?: string
+          cooldown_until?: string
+          paused_until?: string
+          reason_code?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      notification_whatsapp_suppression_receipts: {
+        Row: {
+          created_at: string
+          error_code: string
+          wamid: string
+          workspace_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_code: string
+          wamid: string
+          workspace_id: string
+        }
+        Update: {
+          created_at?: string
+          error_code?: string
+          wamid?: string
+          workspace_id?: string
+        }
+        Relationships: []
+      }
+      notification_workspace_context: {
+        Row: {
+          captured_at: string
+          event_key: string | null
+          notification_id: string
+          source_id: string
+          source_table: string
+          workspace_id: string
+        }
+        Insert: {
+          captured_at?: string
+          event_key?: string | null
+          notification_id: string
+          source_id: string
+          source_table: string
+          workspace_id: string
+        }
+        Update: {
+          captured_at?: string
+          event_key?: string | null
+          notification_id?: string
+          source_id?: string
+          source_table?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_workspace_context_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: true
+            referencedRelation: "notifications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_workspace_context_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
@@ -18905,6 +19851,7 @@ export type Database = {
           link: string | null
           owner_id: string
           read_at: string | null
+          snoozed_until: string | null
           title: string
           type: string
           user_id: string
@@ -18920,6 +19867,7 @@ export type Database = {
           link?: string | null
           owner_id: string
           read_at?: string | null
+          snoozed_until?: string | null
           title: string
           type: string
           user_id: string
@@ -18935,6 +19883,7 @@ export type Database = {
           link?: string | null
           owner_id?: string
           read_at?: string | null
+          snoozed_until?: string | null
           title?: string
           type?: string
           user_id?: string
@@ -30177,6 +31126,7 @@ export type Database = {
           default_channel_name: string | null
           id: string
           installed_by: string | null
+          notification_endpoint_revision: number
           owner_id: string
           scope: string | null
           team_id: string | null
@@ -30192,6 +31142,7 @@ export type Database = {
           default_channel_name?: string | null
           id?: string
           installed_by?: string | null
+          notification_endpoint_revision?: number
           owner_id: string
           scope?: string | null
           team_id?: string | null
@@ -30207,6 +31158,7 @@ export type Database = {
           default_channel_name?: string | null
           id?: string
           installed_by?: string | null
+          notification_endpoint_revision?: number
           owner_id?: string
           scope?: string | null
           team_id?: string | null
@@ -33881,14 +34833,31 @@ export type Database = {
         Row: {
           attempts: number
           channel: string
+          consent_revision: number | null
           created_at: string
+          endpoint_hash: string | null
           id: string
           idempotency_key: string
           last_error: string | null
+          lease_token: string | null
           lease_until: string | null
           next_attempt_at: string | null
+          notification_attempt_token: string | null
+          notification_connection_id: string | null
+          notification_cost_micros: number | null
+          notification_currency: string | null
+          notification_digest_id: string | null
+          notification_endpoint_revision: number | null
+          notification_intent_id: string | null
+          notification_reserved_at: string | null
+          notification_sender_id: string | null
+          notification_slack_intent_id: string | null
+          notification_template_language: string | null
+          notification_template_name: string | null
+          policy_revision: number | null
           provider: string | null
           provider_id: string | null
+          reason_code: string | null
           recipient: string | null
           status: string
           step_path: string | null
@@ -33899,14 +34868,31 @@ export type Database = {
         Insert: {
           attempts?: number
           channel: string
+          consent_revision?: number | null
           created_at?: string
+          endpoint_hash?: string | null
           id?: string
           idempotency_key: string
           last_error?: string | null
+          lease_token?: string | null
           lease_until?: string | null
           next_attempt_at?: string | null
+          notification_attempt_token?: string | null
+          notification_connection_id?: string | null
+          notification_cost_micros?: number | null
+          notification_currency?: string | null
+          notification_digest_id?: string | null
+          notification_endpoint_revision?: number | null
+          notification_intent_id?: string | null
+          notification_reserved_at?: string | null
+          notification_sender_id?: string | null
+          notification_slack_intent_id?: string | null
+          notification_template_language?: string | null
+          notification_template_name?: string | null
+          policy_revision?: number | null
           provider?: string | null
           provider_id?: string | null
+          reason_code?: string | null
           recipient?: string | null
           status: string
           step_path?: string | null
@@ -33917,14 +34903,31 @@ export type Database = {
         Update: {
           attempts?: number
           channel?: string
+          consent_revision?: number | null
           created_at?: string
+          endpoint_hash?: string | null
           id?: string
           idempotency_key?: string
           last_error?: string | null
+          lease_token?: string | null
           lease_until?: string | null
           next_attempt_at?: string | null
+          notification_attempt_token?: string | null
+          notification_connection_id?: string | null
+          notification_cost_micros?: number | null
+          notification_currency?: string | null
+          notification_digest_id?: string | null
+          notification_endpoint_revision?: number | null
+          notification_intent_id?: string | null
+          notification_reserved_at?: string | null
+          notification_sender_id?: string | null
+          notification_slack_intent_id?: string | null
+          notification_template_language?: string | null
+          notification_template_name?: string | null
+          policy_revision?: number | null
           provider?: string | null
           provider_id?: string | null
+          reason_code?: string | null
           recipient?: string | null
           status?: string
           step_path?: string | null
@@ -33933,6 +34936,27 @@ export type Database = {
           workspace_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "workflow_deliveries_notification_digest_id_fkey"
+            columns: ["notification_digest_id"]
+            isOneToOne: false
+            referencedRelation: "notification_digest_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_deliveries_notification_intent_id_fkey"
+            columns: ["notification_intent_id"]
+            isOneToOne: false
+            referencedRelation: "notification_delivery_intents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_deliveries_notification_slack_intent_id_fkey"
+            columns: ["notification_slack_intent_id"]
+            isOneToOne: false
+            referencedRelation: "notification_slack_intents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "workflow_deliveries_workspace_id_fkey"
             columns: ["workspace_id"]
@@ -33951,6 +34975,8 @@ export type Database = {
           entity_id: string
           event_type: string
           id: string
+          notification_event_key: string | null
+          notification_parent_event_id: string | null
           owner_id: string
           processed_at: string | null
           resume_cursor: number | null
@@ -33967,6 +34993,8 @@ export type Database = {
           entity_id: string
           event_type: string
           id?: string
+          notification_event_key?: string | null
+          notification_parent_event_id?: string | null
           owner_id: string
           processed_at?: string | null
           resume_cursor?: number | null
@@ -33983,6 +35011,8 @@ export type Database = {
           entity_id?: string
           event_type?: string
           id?: string
+          notification_event_key?: string | null
+          notification_parent_event_id?: string | null
           owner_id?: string
           processed_at?: string | null
           resume_cursor?: number | null
@@ -36778,6 +37808,14 @@ export type Database = {
         Returns: Json
       }
       get_my_phone: { Args: never; Returns: string }
+      get_notification_delivery_consent: {
+        Args: { p_workspace: string }
+        Returns: Json
+      }
+      get_notification_digest_settings: {
+        Args: { p_workspace: string }
+        Returns: Json
+      }
       get_sales_dashboard_deal_aggregates: {
         Args: {
           p_lost_stage_ids: string[]
@@ -38232,6 +39270,257 @@ export type Database = {
           user_id: string
           workspace_id: string
         }[]
+      }
+      notification_business_due_tick: {
+        Args: { p_limit?: number }
+        Returns: Json
+      }
+      notification_business_event_check: {
+        Args: { p_event: string; p_version: number; p_workflow: string }
+        Returns: boolean
+      }
+      notification_center_badge: {
+        Args: { p_workspace: string }
+        Returns: Json
+      }
+      notification_center_list: {
+        Args: {
+          p_category?: string
+          p_cursor?: Json
+          p_cutoff?: string
+          p_module?: string
+          p_q?: string
+          p_scope?: string
+          p_status?: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      notification_center_lookup: {
+        Args: { p_ids: string[]; p_workspace: string }
+        Returns: Json
+      }
+      notification_center_mark: {
+        Args: {
+          p_cutoff: string
+          p_ids: string[]
+          p_read?: boolean
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      notification_center_preferences: {
+        Args: { p_workspace: string }
+        Returns: Json
+      }
+      notification_center_preferences_save: {
+        Args: { p_patch: Json; p_revision: number; p_workspace: string }
+        Returns: Json
+      }
+      notification_center_snooze: {
+        Args: { p_id: string; p_minutes: number; p_workspace: string }
+        Returns: Json
+      }
+      notification_center_visible: { Args: { p_id: string }; Returns: boolean }
+      notification_delivery_capabilities: {
+        Args: { p_workspace: string }
+        Returns: Json
+      }
+      notification_delivery_claim: { Args: { p_id: string }; Returns: Json }
+      notification_delivery_claim_personal_p4: {
+        Args: { p_id: string }
+        Returns: Json
+      }
+      notification_delivery_claim_personal_v1: {
+        Args: { p_id: string }
+        Returns: Json
+      }
+      notification_delivery_finish: {
+        Args: {
+          p_id: string
+          p_provider: string
+          p_provider_id?: string
+          p_reason?: string
+          p_retry_after_seconds?: number
+          p_status: string
+          p_token: string
+        }
+        Returns: Json
+      }
+      notification_delivery_finish_personal_p4: {
+        Args: {
+          p_id: string
+          p_provider: string
+          p_provider_id?: string
+          p_reason?: string
+          p_retry_after_seconds?: number
+          p_status: string
+          p_token: string
+        }
+        Returns: Json
+      }
+      notification_delivery_finish_personal_v1: {
+        Args: {
+          p_id: string
+          p_provider: string
+          p_provider_id?: string
+          p_reason?: string
+          p_retry_after_seconds?: number
+          p_status: string
+          p_token: string
+        }
+        Returns: Json
+      }
+      notification_delivery_history: {
+        Args: {
+          p_channel?: string
+          p_cursor?: Json
+          p_scope?: string
+          p_status?: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      notification_delivery_history_before_scheduling: {
+        Args: {
+          p_channel?: string
+          p_cursor?: Json
+          p_scope?: string
+          p_status?: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      notification_delivery_history_personal_v1: {
+        Args: {
+          p_channel?: string
+          p_cursor?: Json
+          p_scope?: string
+          p_status?: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      notification_delivery_preflight: {
+        Args: { p_id: string; p_token: string }
+        Returns: Json
+      }
+      notification_delivery_preflight_personal_p4: {
+        Args: { p_id: string; p_token: string }
+        Returns: Json
+      }
+      notification_delivery_preflight_personal_v1: {
+        Args: { p_id: string; p_token: string }
+        Returns: Json
+      }
+      notification_delivery_profile_phone: {
+        Args: {
+          p_expected_phone?: string
+          p_phone: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      notification_delivery_rules: {
+        Args: { p_workspace: string }
+        Returns: Json
+      }
+      notification_delivery_settings: {
+        Args: { p_workspace: string }
+        Returns: Json
+      }
+      notification_delivery_settings_save: {
+        Args: { p_policy: Json; p_revision: number; p_workspace: string }
+        Returns: Json
+      }
+      notification_delivery_settings_save_before_scheduling: {
+        Args: { p_policy: Json; p_revision: number; p_workspace: string }
+        Returns: Json
+      }
+      notification_delivery_visible: {
+        Args: { p_id: string }
+        Returns: boolean
+      }
+      notification_delivery_visible_personal_v1: {
+        Args: { p_id: string }
+        Returns: boolean
+      }
+      notification_event_inapp: {
+        Args: { p_event: string; p_user: string; p_workspace: string }
+        Returns: boolean
+      }
+      notification_fiscal_reference_access: {
+        Args: { p_document: string }
+        Returns: boolean
+      }
+      notification_schedule_tick: { Args: { p_limit?: number }; Returns: Json }
+      notification_slack_endpoint: {
+        Args: { p_id: string; p_token: string }
+        Returns: Json
+      }
+      notification_slack_settings: {
+        Args: { p_workspace: string }
+        Returns: Json
+      }
+      notification_slack_settings_save: {
+        Args: { p_policy: Json; p_revision: number; p_workspace: string }
+        Returns: Json
+      }
+      notification_whatsapp_receipt: {
+        Args: {
+          p_connection: string
+          p_error_code?: string
+          p_recipient: string
+          p_sender: string
+          p_status: string
+          p_wamid: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      notification_worker_list: { Args: { p_limit?: number }; Returns: Json }
+      notification_worker_list_personal_v1: {
+        Args: { p_limit?: number }
+        Returns: Json
+      }
+      notification_workflow_dispatch: {
+        Args: {
+          p_body: string
+          p_entity: string
+          p_record: string
+          p_rules: Json
+          p_run: string
+          p_step: string
+          p_title: string
+          p_version: number
+          p_workflow: string
+        }
+        Returns: Json
+      }
+      notification_workflow_dispatch_v2: {
+        Args: {
+          p_body: string
+          p_delivery: Json
+          p_entity: string
+          p_record: string
+          p_rules: Json
+          p_run: string
+          p_step: string
+          p_title: string
+          p_version: number
+          p_workflow: string
+        }
+        Returns: Json
+      }
+      notification_workflow_slack_dispatch: {
+        Args: {
+          p_run: string
+          p_step_path: string
+          p_version: number
+          p_workflow: string
+          p_workspace: string
+        }
+        Returns: Json
       }
       people_allocation_capacity: {
         Args: {
@@ -40371,6 +41660,19 @@ export type Database = {
         }
         Returns: Json
       }
+      save_notification_delivery_consent: {
+        Args: {
+          p_granted: boolean
+          p_phone: string
+          p_revision: number
+          p_workspace: string
+        }
+        Returns: Json
+      }
+      save_notification_digest_settings: {
+        Args: { p_revision: number; p_settings: Json; p_workspace: string }
+        Returns: Json
+      }
       save_workspace_sensitive_settings: {
         Args: { _section: string; _value: Json; _workspace: string }
         Returns: boolean
@@ -41155,7 +42457,31 @@ export type Database = {
         }
         Returns: Json
       }
+      workflow_delivery_claim_before_slack: {
+        Args: {
+          p_channel: string
+          p_key: string
+          p_lease_seconds?: number
+          p_max_attempts?: number
+          p_recipient: string
+          p_step_path: string
+          p_workflow: string
+          p_workspace: string
+        }
+        Returns: Json
+      }
       workflow_delivery_finish: {
+        Args: {
+          p_error: string
+          p_key: string
+          p_next_attempt: string
+          p_provider: string
+          p_provider_id: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      workflow_delivery_finish_before_slack: {
         Args: {
           p_error: string
           p_key: string
