@@ -199,8 +199,34 @@ it("validates fixed templates policy limits CAS and read-only mode without chang
   ).toEqual({ access_token: webhook, notification_endpoint_revision: 1 });
 });
 it("queues one collective endpoint notice and deduplicates concurrent occurrences without personal fanout", async () => {
+  const profileStart = performance.now();
+  console.info("[slack-ci-profile] case started");
   await prepare();
-  const results = await Promise.all([enqueue(), enqueue(), enqueue()]);
+  console.info(
+    "[slack-ci-profile]",
+    JSON.stringify({ stage: "prepared", elapsed_ms: performance.now() - profileStart }),
+  );
+  const measuredEnqueue = async (index: number) => {
+    const started = performance.now();
+    try {
+      return await enqueue();
+    } finally {
+      console.info(
+        "[slack-ci-profile]",
+        JSON.stringify({
+          stage: "enqueue",
+          index,
+          elapsed_ms: performance.now() - started,
+          case_elapsed_ms: performance.now() - profileStart,
+        }),
+      );
+    }
+  };
+  const results = await Promise.all([measuredEnqueue(0), measuredEnqueue(1), measuredEnqueue(2)]);
+  console.info(
+    "[slack-ci-profile]",
+    JSON.stringify({ stage: "enqueued", elapsed_ms: performance.now() - profileStart }),
+  );
   expect(results.filter((v) => v.result === "queued")).toHaveLength(1);
   expect(results.filter((v) => v.result === "duplicate")).toHaveLength(2);
   const rows = await db`select * from workflow_deliveries where channel='slack'`;

@@ -5,6 +5,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { disposablePostgresStorageArgs } from "./disposable-postgres-storage";
 import { setupNotificationBusinessEvents } from "./notification-business-events";
 import { setupNotificationProjectEvents } from "./notification-project-events";
 import { setupNotificationHirePeople } from "./notification-hire-people";
@@ -165,6 +166,7 @@ beforeAll(async () => {
     envFile,
     "-p",
     "127.0.0.1::5432",
+    ...disposablePostgresStorageArgs,
     image,
     "-c",
     "fsync=off",

@@ -5,6 +5,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHmac, randomBytes, randomUUID } from "node:crypto";
+import { disposablePostgresStorageArgs } from "./disposable-postgres-storage";
 
 // Actual gateway, private RLS bridge and production permission predicates in a
 // disposable PostgreSQL. HTTP cases use cryptographically verified synthetic JWTs
@@ -152,6 +153,7 @@ beforeAll(async () => {
     envFile,
     "-p",
     "127.0.0.1::5432",
+    ...disposablePostgresStorageArgs,
     image,
     "-c",
     "fsync=off",
