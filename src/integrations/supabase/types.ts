@@ -19750,6 +19750,70 @@ export type Database = {
           },
         ]
       }
+      notification_whatsapp_activations: {
+        Row: {
+          activated_at: string
+          workflow_id: string
+          workflow_version: number
+          workspace_id: string
+        }
+        Insert: {
+          activated_at: string
+          workflow_id: string
+          workflow_version: number
+          workspace_id: string
+        }
+        Update: {
+          activated_at?: string
+          workflow_id?: string
+          workflow_version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_whatsapp_activations_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: true
+            referencedRelation: "workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_whatsapp_gateway_binding: {
+        Row: {
+          account_id: string
+          display_phone_number: string
+          observed_at: string
+          phone_number_id: string
+          singleton: boolean
+          workspace_id: string
+        }
+        Insert: {
+          account_id: string
+          display_phone_number: string
+          observed_at: string
+          phone_number_id: string
+          singleton?: boolean
+          workspace_id: string
+        }
+        Update: {
+          account_id?: string
+          display_phone_number?: string
+          observed_at?: string
+          phone_number_id?: string
+          singleton?: boolean
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_whatsapp_gateway_bind_account_id_workspace_id_fkey"
+            columns: ["account_id", "workspace_id"]
+            isOneToOne: false
+            referencedRelation: "service_channel_accounts"
+            referencedColumns: ["id", "workspace_id"]
+          },
+        ]
+      }
       notification_whatsapp_health: {
         Row: {
           connection_id: string
@@ -39279,6 +39343,10 @@ export type Database = {
         Args: { p_event: string; p_version: number; p_workflow: string }
         Returns: boolean
       }
+      notification_business_event_check_before_whatsapp: {
+        Args: { p_event: string; p_version: number; p_workflow: string }
+        Returns: boolean
+      }
       notification_center_badge: {
         Args: { p_workspace: string }
         Returns: Json
@@ -39466,6 +39534,10 @@ export type Database = {
         Args: { p_policy: Json; p_revision: number; p_workspace: string }
         Returns: Json
       }
+      notification_whatsapp_gateway_observe: {
+        Args: { p_display: string; p_phone: string }
+        Returns: boolean
+      }
       notification_whatsapp_receipt: {
         Args: {
           p_connection: string
@@ -39478,7 +39550,15 @@ export type Database = {
         }
         Returns: Json
       }
+      notification_whatsapp_received: {
+        Args: { p_message: string; p_webhook: string }
+        Returns: string
+      }
       notification_whatsapp_senders: {
+        Args: { p_workspace: string }
+        Returns: Json
+      }
+      notification_whatsapp_sources: {
         Args: { p_workspace: string }
         Returns: Json
       }
