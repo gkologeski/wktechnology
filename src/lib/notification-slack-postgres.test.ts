@@ -16,8 +16,10 @@ import {
   withRole,
   request,
   fixtureJwt,
+  enableNotificationConcurrencyPreparation,
 } from "../../tests/fixtures/notification-deliveries";
 
+enableNotificationConcurrencyPreparation();
 beforeEach(reset);
 const webhook = "https://hooks.slack.com/services/T_FIXTURE/B_FIXTURE/synthetic-not-a-secret";
 const policy = {

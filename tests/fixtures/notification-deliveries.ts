@@ -34,6 +34,12 @@ let endpoint = "",
   httpBase = "",
   jwtSecret = "";
 let db: ReturnType<typeof postgres>;
+let concurrencyPreparationRequested = false;
+
+/** Opt in during collection; setup keeps its existing fixture deadline. */
+export function enableNotificationConcurrencyPreparation() {
+  concurrencyPreparationRequested = true;
+}
 const W = "a1000000-0000-4000-8000-000000000001";
 const B = "a1000000-0000-4000-8000-000000000002";
 const A = "b1000000-0000-4000-8000-000000000001";
@@ -538,15 +544,20 @@ beforeAll(async () => {
     await new Promise((done) => setTimeout(done, 100));
   }
   if (!apiReady) throw Error("Disposable PostgREST did not become ready");
+  if (concurrencyPreparationRequested) await prepareNotificationConcurrencyBackends();
+}, 180000);
+
+/** Opt-in preparation for a suite that races three independent transactions. */
+async function prepareNotificationConcurrencyBackends() {
   // postgres.js opens pool connections lazily and discovers array types on
-  // each connection. Prepare every backend before timed concurrency cases;
+  // each connection. Prepare the three needed backends before timed cases;
   // keep all reservations until all probes settle so one backend cannot serve
-  // several probes. The business RPCs still run concurrently in their tests.
+  // several probes. Other suites do not pay for unused pool connections.
   const poolPreparationStarted = performance.now();
   const reservations: postgres.ReservedSql[] = [];
   try {
     const probes = await Promise.allSettled(
-      Array.from({ length: 4 }, async () => {
+      Array.from({ length: 3 }, async () => {
         const connection = await db.reserve();
         reservations.push(connection);
         const rows = await connection`select pg_backend_pid() as pid`;
@@ -559,8 +570,8 @@ beforeAll(async () => {
     const backendIds = new Set(
       probes.flatMap((probe) => (probe.status === "fulfilled" ? [probe.value] : [])),
     );
-    if (reservations.length !== 4 || backendIds.size !== 4)
-      throw Error("Notification fixture requires four distinct prepared backends");
+    if (reservations.length !== 3 || backendIds.size !== 3)
+      throw Error("Notification concurrency suite requires three distinct prepared backends");
     console.info(
       "[notification-fixture-pool]",
       JSON.stringify({
@@ -571,7 +582,7 @@ beforeAll(async () => {
   } finally {
     for (const connection of reservations) connection.release();
   }
-}, 180000);
+}
 
 afterAll(async () => {
   try {
