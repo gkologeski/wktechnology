@@ -1,7 +1,10 @@
 import { beforeEach, expect, it, vi } from "vitest";
-const state = vi.hoisted(() => ({ rpc: vi.fn(), area: vi.fn() }));
+const state = vi.hoisted(() => ({ rpc: vi.fn(), area: vi.fn(), gateway: vi.fn() }));
 vi.mock("@/lib/access-control/work-core.server", () => ({ workRpc: state.rpc }));
 vi.mock("@/lib/access-control/sales-core.server", () => ({ assertSalesArea: state.area }));
+vi.mock("./whatsapp-inbound-gateway.server", () => ({
+  refreshWorkflowWhatsAppGateway: state.gateway,
+}));
 import {
   loadWorkflowWhatsAppSources,
   recordWorkflowWhatsAppReceived,
@@ -25,11 +28,15 @@ const metadata = () => ({
 beforeEach(() => {
   state.rpc.mockReset();
   state.area.mockReset();
+  state.gateway.mockReset().mockResolvedValue(null);
 });
 
 it("WhatsApp source metadata requires both real area gates and binds the active workspace", async () => {
   state.rpc.mockResolvedValue(metadata());
-  await expect(loadWorkflowWhatsAppSources(client, W)).resolves.toEqual(metadata());
+  await expect(loadWorkflowWhatsAppSources(client, W)).resolves.toEqual({
+    ...metadata(),
+    issues: [],
+  });
   expect(state.area.mock.calls).toEqual([
     [client, "system.workflows", "view"],
     [client, "techsales.inbox.whatsapp", "view"],
@@ -42,10 +49,27 @@ it("WhatsApp source metadata refuses missing workflow permission before privileg
   state.area.mockRejectedValueOnce(new Error("Sem chave"));
   await expect(loadWorkflowWhatsAppSources(client, W)).rejects.toThrow("Sem chave");
   expect(state.rpc).not.toHaveBeenCalled();
+  expect(state.gateway).not.toHaveBeenCalled();
 });
 it("WhatsApp source metadata propagates explicit channel denial without returning an empty list", async () => {
   state.area.mockResolvedValueOnce(undefined).mockRejectedValueOnce(new Error("Deny WhatsApp"));
   await expect(loadWorkflowWhatsAppSources(client, W)).rejects.toThrow("Deny WhatsApp");
+  expect(state.rpc).not.toHaveBeenCalled();
+  expect(state.gateway).not.toHaveBeenCalled();
+});
+it("keeps confirmed Cloud metadata and reports an unavailable or unbound Lovable source without broadening it", async () => {
+  state.rpc.mockResolvedValue(metadata());
+  for (const issue of ["lovable_unavailable", "lovable_unmapped"]) {
+    state.gateway.mockResolvedValue(issue);
+    await expect(loadWorkflowWhatsAppSources(client, W)).resolves.toEqual({
+      ...metadata(),
+      issues: [issue],
+    });
+  }
+});
+it("does not claim usable sources when the private gateway binding cannot be refreshed safely", async () => {
+  state.gateway.mockRejectedValue(new Error("Binding storage failed"));
+  await expect(loadWorkflowWhatsAppSources(client, W)).rejects.toThrow("Binding storage failed");
   expect(state.rpc).not.toHaveBeenCalled();
 });
 it("WhatsApp source metadata refuses a foreign workspace even from a successful RPC", async () => {

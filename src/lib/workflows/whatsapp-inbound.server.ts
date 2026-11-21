@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import { assertSalesArea } from "@/lib/access-control/sales-core.server";
+import { refreshWorkflowWhatsAppGateway } from "./whatsapp-inbound-gateway.server";
 
 const numberId = z.string().regex(/^[0-9]{5,30}$/);
 const sourceSchema = z
@@ -26,6 +27,7 @@ export async function loadWorkflowWhatsAppSources(client: SupabaseClient, worksp
   z.string().uuid().parse(workspaceId);
   await assertSalesArea(client, "system.workflows", "view");
   await assertSalesArea(client, "techsales.inbox.whatsapp", "view");
+  const gatewayIssue = await refreshWorkflowWhatsAppGateway();
   const result = sourceContextSchema.parse(
     await workRpc(client, "notification_whatsapp_sources", { p_workspace: workspaceId }),
   );
@@ -36,7 +38,7 @@ export async function loadWorkflowWhatsAppSources(client: SupabaseClient, worksp
   for (const source of result.sources)
     if (new Set(source.numbers.map((number) => number.id)).size !== source.numbers.length)
       throw new Error("O catálogo de números de WhatsApp exige uma nova consulta.");
-  return result;
+  return { ...result, issues: gatewayIssue ? [gatewayIssue] : [] };
 }
 
 /** Service-only producer: retrying a persisted webhook must reconcile, never mint another occurrence. */

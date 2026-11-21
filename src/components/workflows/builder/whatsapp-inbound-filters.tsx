@@ -71,6 +71,9 @@ export function WhatsAppInboundFilters({
     );
 
   const sources = query.data.sources;
+  const issues = query.data.issues ?? [];
+  const lovableUnavailable = issues.includes("lovable_unavailable");
+  const lovableUnmapped = issues.includes("lovable_unmapped");
   const selectedSources = selection.source_keys ?? [];
   const selectedPhones = selection.phone_number_ids ?? [];
   const visibleSources = selectedSources.length
@@ -103,6 +106,31 @@ export function WhatsAppInboundFilters({
         Sem marcações, o gatilho considera qualquer conta e número autorizado no momento da
         execução. Ao marcar, somente a interseção das contas e números escolhidos será considerada.
       </p>
+      {(lovableUnavailable || lovableUnmapped) && (
+        <div role="alert" className="space-y-2">
+          {lovableUnavailable && (
+            <p>
+              Não foi possível confirmar a conexão Lovable. As conexões Cloud API confirmadas
+              continuam disponíveis.
+            </p>
+          )}
+          {lovableUnmapped && (
+            <p>
+              Não foi possível confirmar um vínculo único da conexão Lovable com um canal de
+              atendimento. Revise o canal antes de usá-lo nesta regra.
+            </p>
+          )}
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={query.isFetching}
+            onClick={() => void query.refetch()}
+          >
+            Tentar confirmar conexão Lovable
+          </Button>
+        </div>
+      )}
       {sources.length === 0 && <p>Nenhuma conta WhatsApp disponível para este acesso.</p>}
       <fieldset className="space-y-2">
         <legend className="mb-2 font-medium text-foreground">Contas de recebimento</legend>

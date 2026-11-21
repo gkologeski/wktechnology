@@ -36,6 +36,63 @@ END $$;
 
 -- This is routing metadata, not a credential catalogue. It is private because
 -- recipients must never be able to impersonate a different actor/workspace.
+-- The project has one Lovable gateway. Its official current phone is observed
+-- by the trusted server, never inferred from optional Meta mirror tables or
+-- historical conversations. SDK refresh runs outside SQL while configuring filters.
+CREATE TABLE public.notification_whatsapp_gateway_binding(
+ singleton boolean PRIMARY KEY DEFAULT true CHECK(singleton),
+ account_id uuid NOT NULL,workspace_id uuid NOT NULL,
+ phone_number_id text NOT NULL CHECK(phone_number_id ~ '^[0-9]{5,30}$'),
+ display_phone_number text NOT NULL CHECK(display_phone_number ~ '^\+[1-9][0-9]{6,14}$'),
+ observed_at timestamptz NOT NULL,
+ FOREIGN KEY(account_id,workspace_id) REFERENCES public.service_channel_accounts(id,workspace_id) ON DELETE CASCADE
+);
+ALTER TABLE public.notification_whatsapp_gateway_binding ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.notification_whatsapp_gateway_binding FROM PUBLIC,anon,authenticated,service_role;
+CREATE FUNCTION techerp_api.notification_whatsapp_gateway_current()
+RETURNS TABLE(account_id uuid,workspace_id uuid,phone_number_id text,display_phone_number text)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
+ SELECT b.account_id,b.workspace_id,b.phone_number_id,b.display_phone_number
+ FROM public.notification_whatsapp_gateway_binding b JOIN public.service_channel_accounts a
+ ON a.id=b.account_id AND a.workspace_id=b.workspace_id AND a.channel='whatsapp'
+  AND a.source_key=b.phone_number_id AND a.archived_at IS NULL
+ WHERE b.singleton
+  AND (SELECT count(*) FROM public.service_channel_accounts x WHERE x.channel='whatsapp' AND x.archived_at IS NULL AND x.source_key=b.phone_number_id)=1
+  AND NOT EXISTS(SELECT 1 FROM public.wa_cloud_numbers n WHERE n.phone_number_id=b.phone_number_id)
+  AND NOT EXISTS(SELECT 1 FROM public.wa_phone_numbers n LEFT JOIN public.wa_business_accounts w ON w.id=n.waba_id
+   WHERE n.phone_number_id=b.phone_number_id AND (n.workspace_id IS DISTINCT FROM b.workspace_id
+    OR (nullif(regexp_replace(coalesce(n.display_phone_number,''),'[^0-9]','','g'),'') IS NOT NULL
+     AND regexp_replace(n.display_phone_number,'[^0-9]','','g')<>regexp_replace(b.display_phone_number,'[^0-9]','','g'))
+    OR (w.id IS NOT NULL AND w.workspace_id IS DISTINCT FROM b.workspace_id)))
+$$;
+REVOKE ALL ON FUNCTION techerp_api.notification_whatsapp_gateway_current() FROM PUBLIC,anon,authenticated,service_role;
+CREATE FUNCTION public.notification_whatsapp_gateway_observe(p_phone text,p_display text) RETURNS boolean
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=public,pg_temp AS $$
+DECLARE a public.service_channel_accounts;digits text;BEGIN
+ PERFORM techerp_api.notification_service();
+ IF p_phone IS NULL AND p_display IS NULL THEN
+  PERFORM pg_advisory_xact_lock(hashtextextended('notification-whatsapp-gateway',0));
+  DELETE FROM public.notification_whatsapp_gateway_binding;RETURN false;
+ END IF;
+ digits:=regexp_replace(coalesce(p_display,''),'[^0-9]','','g');
+ IF p_phone IS NULL OR p_phone !~ '^[0-9]{5,30}$' OR p_display IS NULL
+  OR length(p_display)>50 OR p_display !~ '^[+0-9() .-]+$' OR digits !~ '^[1-9][0-9]{6,14}$' THEN
+  RAISE EXCEPTION 'Identificadores do gateway WhatsApp inválidos.' USING ERRCODE='22023';
+ END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended('notification-whatsapp-gateway',0));
+ IF (SELECT count(*) FROM public.service_channel_accounts WHERE channel='whatsapp' AND archived_at IS NULL AND source_key=p_phone)<>1
+  OR EXISTS(SELECT 1 FROM public.wa_cloud_numbers WHERE phone_number_id=p_phone) THEN
+  DELETE FROM public.notification_whatsapp_gateway_binding;RETURN false;
+ END IF;
+ SELECT * INTO a FROM public.service_channel_accounts WHERE channel='whatsapp' AND archived_at IS NULL AND source_key=p_phone;
+ INSERT INTO public.notification_whatsapp_gateway_binding(singleton,account_id,workspace_id,phone_number_id,display_phone_number,observed_at)
+ VALUES(true,a.id,a.workspace_id,p_phone,'+'||digits,clock_timestamp())
+ ON CONFLICT(singleton) DO UPDATE SET account_id=excluded.account_id,workspace_id=excluded.workspace_id,
+  phone_number_id=excluded.phone_number_id,display_phone_number=excluded.display_phone_number,observed_at=excluded.observed_at;
+ RETURN true;
+END $$;
+REVOKE ALL ON FUNCTION public.notification_whatsapp_gateway_observe(text,text) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.notification_whatsapp_gateway_observe(text,text) TO service_role;
 CREATE FUNCTION techerp_api.notification_whatsapp_accounts(p_workspace uuid) RETURNS jsonb
 LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
  SELECT coalesce(jsonb_agg(to_jsonb(a) ORDER BY a.label,a.id),'[]'::jsonb) FROM (
@@ -45,11 +102,10 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public,pg_temp AS $$
   FROM public.wa_cloud_connections c WHERE c.workspace_id=p_workspace AND c.enabled AND c.webhook_verified_at IS NOT NULL
    AND EXISTS(SELECT 1 FROM public.wa_cloud_numbers n WHERE n.connection_id=c.id AND n.workspace_id=p_workspace AND n.available AND n.status='CONNECTED')
   UNION ALL
-  SELECT 'lovable:'||a.id::text,a.label,jsonb_build_array(jsonb_build_object('id',a.source_key,'label',coalesce(nullif(a.display_name,''),a.label),'phone',n.display_phone_number))
-  FROM public.service_channel_accounts a JOIN public.wa_phone_numbers n ON n.workspace_id=a.workspace_id AND n.phone_number_id=a.source_key
-   JOIN public.wa_business_accounts b ON b.id=n.waba_id AND b.workspace_id=n.workspace_id AND b.status='connected'
-  WHERE a.workspace_id=p_workspace AND a.channel='whatsapp' AND a.archived_at IS NULL AND a.source_key ~ '^[0-9]{5,30}$'
-   AND NOT EXISTS(SELECT 1 FROM public.wa_cloud_numbers c WHERE c.workspace_id=p_workspace AND c.phone_number_id=a.source_key)
+  SELECT 'lovable:'||a.id::text,a.label,jsonb_build_array(jsonb_build_object('id',a.source_key,'label',coalesce(nullif(a.display_name,''),a.label),'phone',b.display_phone_number))
+  FROM techerp_api.notification_whatsapp_gateway_current() b JOIN public.service_channel_accounts a
+   ON a.id=b.account_id AND a.workspace_id=b.workspace_id AND a.source_key=b.phone_number_id
+  WHERE a.workspace_id=p_workspace
  )a
 $$;
 REVOKE ALL ON FUNCTION techerp_api.notification_whatsapp_accounts(uuid) FROM PUBLIC,anon,authenticated,service_role;
@@ -277,11 +333,14 @@ DECLARE m public.whatsapp_messages;c public.whatsapp_conversations;h public.what
      AND a.waba_id=h.payload#>>'{entry,0,id}' AND n.phone_number_id=phone AND n.available AND n.status='CONNECTED') THEN RETURN NULL;END IF;
   source:='cloud:'||(value->>'_verified_connection_id');transport:='cloud';
  ELSE
-  SELECT a.id::text INTO source FROM public.service_channel_accounts a JOIN public.wa_phone_numbers n ON n.workspace_id=a.workspace_id AND n.phone_number_id=a.source_key
-   JOIN public.wa_business_accounts b ON b.id=n.waba_id AND b.workspace_id=n.workspace_id
-   WHERE a.workspace_id=m.workspace_id AND a.channel='whatsapp' AND a.archived_at IS NULL AND a.source_key=phone
-    AND b.status='connected' AND b.waba_id=h.payload#>>'{entry,0,id}'
-    AND NOT EXISTS(SELECT 1 FROM public.wa_cloud_numbers x WHERE x.workspace_id=m.workspace_id AND x.phone_number_id=phone);
+  SELECT a.account_id::text INTO source FROM techerp_api.notification_whatsapp_gateway_current() a
+   WHERE a.workspace_id=m.workspace_id AND a.phone_number_id=phone
+    AND regexp_replace(a.display_phone_number,'[^0-9]','','g')=regexp_replace(value#>>'{metadata,display_phone_number}','[^0-9]','','g');
+  -- WABA and phone are part of the persisted, HMAC-verified provider envelope.
+  -- A WABA mirror is optional and never establishes the gateway's identity.
+  IF coalesce(h.payload#>>'{entry,0,id}','') !~ '^[0-9]{5,30}$' THEN RETURN NULL;END IF;
+  IF EXISTS(SELECT 1 FROM public.wa_phone_numbers n JOIN public.wa_business_accounts b ON b.id=n.waba_id
+   WHERE n.phone_number_id=phone AND nullif(b.waba_id,'') IS NOT NULL AND b.waba_id IS DISTINCT FROM h.payload#>>'{entry,0,id}') THEN RETURN NULL;END IF;
   IF source IS NULL OR h.workspace_id IS NOT NULL AND h.workspace_id IS DISTINCT FROM m.workspace_id THEN RETURN NULL;END IF;
   source:='lovable:'||source;transport:='lovable';
  END IF;

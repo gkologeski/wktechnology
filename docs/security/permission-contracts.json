@@ -23531,14 +23531,26 @@
         "techsales.inbox.whatsapp.view.team",
         "techsales.inbox.whatsapp.view.workspace"
       ],
-      "rationale": "Dedicated authenticated metadata lookup and verified-ingress Workflow event boundary. The lookup requires selected active workspace, Workflow view/editor rights and Inbox WhatsApp read; returns bounded account/receiving-number metadata without credentials or customer data. The service-only producer reconciles durable signed receipt/message identities and writes one sanitized event/proof, never runs effects inline. Private provenance, publication/activation cutoff, account-number intersection, current row/subject/worker access and read-only action/field validation bind later execution. Legacy notices and all external transport/consent limits are preserved. Existing interactive surfaces retain their prior contracts; no historical migration, role grant, automatic activation or source mutation.",
+      "rationale": "Dedicated authenticated metadata lookup and verified-ingress Workflow event boundary. The lookup requires selected active workspace plus Workflow and Inbox WhatsApp read rights; editable filter controls additionally require the appropriate create/update/manage right. It returns bounded account/receiving-number metadata without credentials or customer data. The service-only producer reconciles durable signed receipt/message identities and writes one sanitized event/proof, never runs effects inline. Private provenance, publication/activation cutoff, account-number intersection, current row/subject/worker access and read-only action/field validation bind later execution. Legacy notices and all external transport/consent limits are preserved. Existing interactive surfaces retain their prior contracts; no historical migration, role grant, automatic activation or source mutation. Lovable live-account binding reviewed: after both authenticated Workflow and Inbox area gates, the server refreshes only the official configured SDK business number when opening/retrying the source filters. A service-only observation RPC privately derives one unique registry account/workspace; neither client input nor historical messages can choose the tenant. Missing or failed SDK confirmation invalidates the prior binding and returns only a neutral issue while confirmed Cloud sources remain available. No optional WABA mirror, browser tracking, fabricated registry row, enabled/SDR flag mutation, provider call in receipt ingress or credential disclosure is introduced. Real PostgreSQL/JWT cases exercise observed ingress without mirrors, service-only observation/private-table denial, invalidation, duplicate cross-tenant registry, tenant derivation, Cloud collision, contradictory mirrors and replacement; caller-gate and SDK tests cover denial before refresh and unavailable/malformed/unmapped results.",
       "exception": {
-        "mechanism": "Interactive wrapper uses requireWorkspaceContext and the caller/RLS Supabase client plus canonical Workflow and Inbox permission gates. Only service_role with null auth.uid may call the occurrence producer; SQL validates the signed persisted webhook and exact mapped message/connection. UI metadata controls delegate to these boundaries and do not authorize persistence.",
+        "mechanism": "Interactive wrapper uses requireWorkspaceContext and the caller/RLS Supabase client plus canonical Workflow and Inbox permission gates. Only service_role with null auth.uid may call the occurrence producer; SQL validates the signed persisted webhook and exact mapped message/connection. UI metadata controls delegate to these boundaries and do not authorize persistence. The fixed gateway SDK refresh is reachable only after both interactive area gates; its private service-only observation has no workspace/account parameter and derives the single registered owner. Optional mirror data can reject a contradiction but never establish the binding.",
         "boundary": "Only current selected workspace accounts and receiving numbers for an active authorized actor; private event proofs cannot be forged through workflow_events columns. New inbound must be proved after the current version activation; outbound, status, call mirrors and historical imports are excluded. Read-only metadata, assignee-only source responsibility without fallback and fresh recipient/source permissions constrain effects.",
-        "revocation": "Explicit deny, inactive membership, changed workspace, disabled connection/Workflow, version or activation change, revoked source/recipient access or invalidated provenance blocks the corresponding lookup, event or delivery. External sends still require their own policy, consent, quotas and provider gates.",
+        "revocation": "Explicit deny, inactive membership, changed workspace, disabled connection/Workflow, version or activation change, revoked source/recipient access or invalidated provenance blocks the corresponding lookup, event or delivery. External sends still require their own policy, consent, quotas and provider gates. Unavailable, malformed or unconfigured SDK results clear the prior private binding. A duplicated/archived registry, changed connected number, foreign tenant, conflicting Cloud source or contradictory optional metadata blocks matching and existing private proofs without enabling anything.",
         "review_by": "2027-04-30"
       },
       "controls": [
+        {
+          "file": "src/lib/whatsapp/gateway-channel.server.ts",
+          "symbol": "gatewayConfigured"
+        },
+        {
+          "file": "src/lib/whatsapp/gateway-channel.server.ts",
+          "symbol": "getConnectedPhone"
+        },
+        {
+          "file": "src/lib/workflows/whatsapp-inbound-gateway.server.ts",
+          "symbol": "refreshWorkflowWhatsAppGateway"
+        },
         {
           "file": "src/lib/access-control/active-workspace.middleware.ts",
           "symbol": "requireWorkspaceContext"
@@ -23565,6 +23577,18 @@
         }
       ],
       "database": [
+        {
+          "file": "drizzle/migrations/0405_workflow_whatsapp_received.sql",
+          "symbol": "public.notification_whatsapp_gateway_binding"
+        },
+        {
+          "file": "drizzle/migrations/0405_workflow_whatsapp_received.sql",
+          "symbol": "public.notification_whatsapp_gateway_observe"
+        },
+        {
+          "file": "drizzle/migrations/0405_workflow_whatsapp_received.sql",
+          "symbol": "techerp_api.notification_whatsapp_gateway_current"
+        },
         {
           "file": "drizzle/migrations/0405_workflow_whatsapp_received.sql",
           "symbol": "public.notification_whatsapp_sources"
@@ -23625,10 +23649,11 @@
         }
       },
       "files": {
+        "src/lib/workflows/whatsapp-inbound-gateway.server.ts": "a94909d0c562abd115dd525dcb665c8b4d7ea259cb45e2b349f31c91d187f191",
         "src/lib/workflows/whatsapp-inbound.functions.ts": "0a669b37ec3768b084a505995cc7be4980b11ed5f2ecb8ac59ce6adc47149d82",
-        "src/lib/workflows/whatsapp-inbound.server.ts": "2074092f9b41a8040cdf63fd685c4d659fff32ef5b2608fe742496c45aecd826",
-        "src/components/workflows/builder/whatsapp-inbound-filters.tsx": "44bd10ae4159e4082147c699a04345c43123fb0e49f0964d17baef43c94bd98f",
-        "drizzle/migrations/0405_workflow_whatsapp_received.sql": "5e0937d5e15f0b94299ee0a4476261b7805d85bc0b4d7dabdde31afedfcb85fb"
+        "src/lib/workflows/whatsapp-inbound.server.ts": "c22a97cf9722fcb240a39381b5a494cbc7a05443f9e54a7f69789c85535592f8",
+        "src/components/workflows/builder/whatsapp-inbound-filters.tsx": "048d065b04001856ab5b01d55a060d4c1bd5ab5502da35d462617f46997ff998",
+        "drizzle/migrations/0405_workflow_whatsapp_received.sql": "1f8c63a9648d4a07cdcb94e300ce2cf4205a07db22d12b80c90afff9f2b2f20a"
       }
     },
     {

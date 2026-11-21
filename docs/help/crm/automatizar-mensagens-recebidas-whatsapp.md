@@ -22,6 +22,8 @@ is_published: true
 
 **Antes de começar:** Confira o workspace no topo e a conexão ativa. O recebimento precisa estar configurado e verificado na Cloud API ou no conector Lovable. Defina quais números comerciais podem iniciar a regra e quem deve receber o aviso. Não é necessário copiar token, segredo ou identificador técnico para esses campos.
 
+No conector Lovable, o número atualmente conectado precisa corresponder a um único canal de atendimento do workspace. Ao abrir os filtros, o TechERP confirma a conexão e esse vínculo antes de oferecer a conta. A configuração do agente SDR não substitui a confirmação do canal.
+
 ## Passo a passo
 
 1. Em **Central de notificações > Regras**, escolha **Mensagem de WhatsApp recebida** em **Evento da nova regra** e clique em **Criar regra**. O sistema prepara um rascunho desativado; essa seleção não salva, publica ou envia mensagens.
@@ -62,6 +64,8 @@ Uma nova mensagem recebida e comprovada pode iniciar a versão publicada e ativa
 - **O evento não aparece:** escolha o grupo **Atendimento** e o objeto **Mensagens de WhatsApp (Inbox)**. O seletor inicial escolhe o objeto, não apresenta todos os eventos do ERP.
 - **Sem permissão para consultar as contas WhatsApp:** confira suas permissões de Workflows e Inbox WhatsApp no workspace ativo. Acesso ao editor não substitui acesso ao canal.
 - **Não foi possível consultar as contas WhatsApp:** use **Tentar consultar contas novamente**. Os filtros salvos são preservados; falha de consulta não significa catálogo vazio.
+- **Não foi possível confirmar a conexão Lovable:** confira a conexão em **Canais de atendimento** com quem administra o canal. As conexões Cloud API confirmadas continuam disponíveis; a conta Lovable sem confirmação não é oferecida. Após regularizar, clique em **Tentar confirmar conexão Lovable**. As seleções salvas permanecem para revisão e não são ampliadas automaticamente.
+- **Não foi possível confirmar um vínculo único da conexão Lovable com um canal de atendimento:** peça ao administrador para revisar a associação do número atualmente conectado ao canal e ao workspace correto, incluindo possíveis cadastros duplicados. Depois use **Tentar confirmar conexão Lovable**. A lista só oferece a conta após a confirmação; uma seleção antiga continua visível para revisão, sem ser substituída por outra origem.
 - **Conta salva indisponível ou número fora das contas marcadas:** confirme a conexão e a combinação escolhida. O salvamento recusa seleções sem origem autorizada correspondente; não digite um identificador de outra conta para contornar a restrição.
 - **A regra não disparou para uma conversa antiga:** o gatilho não importa histórico nem repete automaticamente mensagens recebidas antes da ativação aplicável.
 - **A mensagem chegou, mas o aviso não:** confira se a regra está publicada e ativa, se a conta e o número correspondem, se houve uma nova ocorrência elegível e se o executor e o destinatário continuam autorizados. Consulte execução e entrega antes de reenviar.

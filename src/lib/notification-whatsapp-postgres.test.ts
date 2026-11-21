@@ -1419,8 +1419,6 @@ describe("WhatsApp received Workflow occurrence", () => {
       const [existing] =
         await db`select id from service_channel_accounts where workspace_id=${W} and channel='whatsapp' and source_key=${phone}`;
       if (!existing) {
-        await db`insert into wa_business_accounts(id,workspace_id,waba_id,status) values(${webhook},${W},'98765432101','connected')`;
-        await db`insert into wa_phone_numbers(id,workspace_id,waba_id,phone_number_id,display_phone_number) values(${message},${W},${webhook},${phone},${display})`;
         await db`insert into service_channel_accounts(id,workspace_id,channel,source_key,label,display_name,enabled) values(${conversation},${W},'whatsapp',${phone},'Lovable account','Lia',false)`;
       }
       source = "lovable:" + (existing?.id ?? conversation);
@@ -1484,6 +1482,14 @@ describe("WhatsApp received Workflow occurrence", () => {
   }
   const sources = (actor = U, workspace = W) =>
     request("/rpc/notification_whatsapp_sources", { p_workspace: workspace }, actor);
+  const observe = (phone: string | null = "987654321", display: string | null = "+554861369999") =>
+    withRole(
+      "service_role",
+      null,
+      async (tx) =>
+        (await tx`select notification_whatsapp_gateway_observe(${phone},${display}) bound`)[0]
+          .bound as boolean,
+    );
 
   it("allows an authorized active Workflow WhatsApp member", async () => {
     const r = await sources();
@@ -1578,6 +1584,13 @@ describe("WhatsApp received Workflow occurrence", () => {
   it("accepts signed Lovable ingress independently of the SDR enabled switch", async () => {
     await configure();
     const m = await envelope({ lovable: true });
+    expect(await db`select id from wa_phone_numbers`).toHaveLength(0);
+    expect(await db`select id from wa_business_accounts`).toHaveLength(0);
+    expect((await sources()).payload.sources.map((s: { id: string }) => s.id)).not.toContain(
+      m.source,
+    );
+    expect(await mint(m)).toBeNull();
+    expect(await observe()).toBe(true);
     const listed = await sources();
     expect(listed.payload.sources).toEqual(
       expect.arrayContaining([expect.objectContaining({ id: m.source })]),
@@ -1741,8 +1754,9 @@ describe("WhatsApp received Workflow occurrence", () => {
     expect(await eventCheck(first)).toBe(false);
     await expect(dispatch(first)).rejects.toMatchObject({ code: "42501" });
     await db`update wa_cloud_connections set enabled=true where id=${X}`;
-    const lovable = await envelope({ lovable: true }),
-      second = (await mint(lovable))!;
+    const lovable = await envelope({ lovable: true });
+    expect(await observe()).toBe(true);
+    const second = (await mint(lovable))!;
     expect(await eventCheck(second)).toBe(true);
     await db`update service_channel_accounts set archived_at=clock_timestamp() where id=${lovable.source.slice(8)}`;
     expect(await eventCheck(second)).toBe(false);
@@ -1751,6 +1765,7 @@ describe("WhatsApp received Workflow occurrence", () => {
   });
   it("intersects two real account and number filters and invalidates an older published version", async () => {
     const registry = await envelope({ lovable: true });
+    expect(await observe()).toBe(true);
     await expect(
       configure({ source_keys: [cloudSource], phone_number_ids: ["987654321"] }),
     ).rejects.toMatchObject({ code: "42501" });
@@ -1967,5 +1982,204 @@ describe("WhatsApp received Workflow occurrence", () => {
     expect(
       await db`select id from workflow_events where notification_event_key=${sharedKey}`,
     ).toHaveLength(0);
+  });
+  it("reserves gateway observations to the service without exposing its private binding", async () => {
+    await envelope({ lovable: true });
+    const args = { p_phone: "987654321", p_display: "+55 (48) 6136-9999" };
+    expect((await request("/rpc/notification_whatsapp_gateway_observe", args)).status).toBe(403);
+    expect(
+      (await request("/rpc/notification_whatsapp_gateway_observe", args, U, fixtureJwt("anon")))
+        .status,
+    ).toBe(401);
+    expect(
+      (
+        await request(
+          "/rpc/notification_whatsapp_gateway_observe",
+          args,
+          U,
+          fixtureJwt("service_role", U),
+        )
+      ).status,
+    ).toBe(403);
+    const authorized = await request(
+      "/rpc/notification_whatsapp_gateway_observe",
+      args,
+      U,
+      fixtureJwt("service_role"),
+    );
+    expect(authorized).toEqual({ status: 200, payload: true });
+    const [binding] =
+      await db`select workspace_id,phone_number_id,display_phone_number from notification_whatsapp_gateway_binding`;
+    expect(binding).toEqual({
+      workspace_id: W,
+      phone_number_id: "987654321",
+      display_phone_number: "+554861369999",
+    });
+    for (const role of ["authenticated", "anon", "service_role"] as const)
+      expect(
+        (
+          await request(
+            "/notification_whatsapp_gateway_binding?select=*",
+            undefined,
+            U,
+            fixtureJwt(role, role === "authenticated" ? U : undefined),
+          )
+        ).status,
+      ).toBe(role === "anon" ? 401 : 403);
+    for (const [phone, display] of [
+      [null, "+554861369999"],
+      ["987654321", null],
+      ["not-an-id", "+554861369999"],
+      ["987654321", "not a phone"],
+    ])
+      await expect(observe(phone, display)).rejects.toMatchObject({ code: "22023" });
+  });
+  it("uses the observed Lovable account and number filters without any optional WABA mirrors", async () => {
+    const registry = await envelope({ lovable: true });
+    expect(await observe()).toBe(true);
+    await configure({ source_keys: [registry.source], phone_number_ids: ["987654321"] });
+    expect(await mint(await envelope())).toBeNull();
+    const inbound = await envelope({ lovable: true }),
+      event = (await mint(inbound))!;
+    expect(event).not.toBeNull();
+    expect(await eventCheck(event)).toBe(true);
+    const [row] = await db`select after from workflow_events where id=${event}`;
+    expect(row.after).toMatchObject({
+      source_key: registry.source,
+      phone_number_id: "987654321",
+      provider: "lovable",
+    });
+    expect(Object.keys(row.after).sort()).toEqual(
+      [
+        "id",
+        "workspace_id",
+        "owner_id",
+        "conversation_id",
+        "direction",
+        "source_key",
+        "phone_number_id",
+        "provider",
+        "occurred_at",
+        "message_type",
+        "assigned_to",
+      ].sort(),
+    );
+    expect(JSON.stringify(row.after)).not.toContain("Private customer");
+    expect(await db`select id from wa_phone_numbers`).toHaveLength(0);
+    expect(await db`select id from wa_business_accounts`).toHaveLength(0);
+  });
+  it("invalidates existing Lovable proofs when the SDK connection is unavailable or unmapped", async () => {
+    await configure();
+    const m = await envelope({ lovable: true });
+    expect(await observe()).toBe(true);
+    const event = (await mint(m))!;
+    expect(await eventCheck(event)).toBe(true);
+    expect(await observe(null, null)).toBe(false);
+    expect(await eventCheck(event)).toBe(false);
+    expect(await db`select singleton from notification_whatsapp_gateway_binding`).toHaveLength(0);
+    expect(await observe()).toBe(true);
+    expect(await eventCheck(event)).toBe(true);
+    expect(await observe("246813579", "+554830121055")).toBe(false);
+    expect(await eventCheck(event)).toBe(false);
+    expect((await sources()).payload.sources.map((s: { id: string }) => s.id)).not.toContain(
+      m.source,
+    );
+    expect(await db`select id from wa_phone_numbers`).toHaveLength(0);
+  });
+  it("fails closed on the same Lovable source key registered in another tenant", async () => {
+    await configure();
+    const m = await envelope({ lovable: true });
+    expect(await observe()).toBe(true);
+    const event = (await mint(m))!,
+      other = randomUUID();
+    expect(await eventCheck(event)).toBe(true);
+    await db`insert into service_channel_accounts(id,workspace_id,channel,source_key,label) values(${other},${B},'whatsapp','987654321','Other tenant account')`;
+    expect(await eventCheck(event)).toBe(false);
+    expect((await sources()).payload.sources.map((s: { id: string }) => s.id)).not.toContain(
+      m.source,
+    );
+    expect(await observe()).toBe(false);
+    expect(await db`select singleton from notification_whatsapp_gateway_binding`).toHaveLength(0);
+    await db`update service_channel_accounts set archived_at=clock_timestamp() where id=${other}`;
+    expect(await observe()).toBe(true);
+    expect(await eventCheck(event)).toBe(true);
+  });
+  it("derives the gateway workspace only from the unique registry and never from a persisted message", async () => {
+    await configure();
+    const m = await envelope({ lovable: true });
+    expect(await observe()).toBe(true);
+    const event = (await mint(m))!;
+    await db`update service_channel_accounts set archived_at=clock_timestamp() where id=${m.source.slice(8)}`;
+    const foreign = randomUUID();
+    await db`insert into service_channel_accounts(id,workspace_id,channel,source_key,label) values(${foreign},${B},'whatsapp','987654321','Foreign registry owner')`;
+    expect(await observe()).toBe(true);
+    expect(
+      (await db`select account_id,workspace_id from notification_whatsapp_gateway_binding`)[0],
+    ).toEqual({ account_id: foreign, workspace_id: B });
+    expect(await eventCheck(event)).toBe(false);
+    expect(await mint(m)).toBeNull();
+    expect(
+      (await sources()).payload.sources.every((s: { id: string }) => !s.id.startsWith("lovable:")),
+    ).toBe(true);
+  });
+  it("rejects a gateway phone already owned by a Cloud account in any workspace", async () => {
+    await configure();
+    const m = await envelope({ lovable: true });
+    expect(await observe()).toBe(true);
+    const event = (await mint(m))!,
+      connection = randomUUID();
+    expect(await eventCheck(event)).toBe(true);
+    await db`insert into wa_cloud_connections(id,workspace_id,enabled,webhook_verified_at) values(${connection},${B},true,now())`;
+    await db`insert into wa_cloud_numbers(phone_number_id,connection_id,workspace_id,display_phone_number,status,available) values('987654321',${connection},${B},'+554861369999','CONNECTED',true)`;
+    expect(await eventCheck(event)).toBe(false);
+    expect(await observe()).toBe(false);
+    expect((await sources()).payload.sources.map((s: { id: string }) => s.id)).not.toContain(
+      m.source,
+    );
+  });
+  it("uses optional mirrors only to reject contradictory tenant display or signed WABA identities", async () => {
+    await configure();
+    const m = await envelope({ lovable: true });
+    expect(await observe()).toBe(true);
+    const event = (await mint(m))!,
+      business = randomUUID(),
+      number = randomUUID();
+    expect(await eventCheck(event)).toBe(true);
+    await db`insert into wa_business_accounts(id,workspace_id,waba_id,status) values(${business},${W},'98765432101','disconnected')`;
+    await db`insert into wa_phone_numbers(id,workspace_id,waba_id,phone_number_id,display_phone_number) values(${number},${W},${business},'987654321','+554861369999')`;
+    // SDK status remains authoritative: a stale mirror status does not block it.
+    expect(await eventCheck(event)).toBe(true);
+    await db`update wa_business_accounts set waba_id='11111111111' where id=${business}`;
+    expect(await eventCheck(event)).toBe(false);
+    await db`update wa_business_accounts set waba_id='98765432101' where id=${business}`;
+    await db`update wa_phone_numbers set display_phone_number='+554861369998' where id=${number}`;
+    expect(await eventCheck(event)).toBe(false);
+    await db`update wa_phone_numbers set display_phone_number='+554861369999',workspace_id=${B} where id=${number}`;
+    expect(await eventCheck(event)).toBe(false);
+    await db`delete from wa_phone_numbers where id=${number}`;
+    await db`delete from wa_business_accounts where id=${business}`;
+    expect(await eventCheck(event)).toBe(true);
+  });
+  it("replaces a previously observed gateway phone and blocks its old occurrence", async () => {
+    await configure();
+    const m = await envelope({ lovable: true });
+    expect(await observe()).toBe(true);
+    const event = (await mint(m))!,
+      replacement = randomUUID();
+    expect(await eventCheck(event)).toBe(true);
+    await db`insert into service_channel_accounts(id,workspace_id,channel,source_key,label) values(${replacement},${W},'whatsapp','246813579','Replacement gateway')`;
+    expect(await observe("246813579", "+554830121055")).toBe(true);
+    expect(await eventCheck(event)).toBe(false);
+    const listed = (await sources()).payload.sources;
+    expect(listed.map((s: { id: string }) => s.id)).not.toContain(m.source);
+    expect(listed).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "lovable:" + replacement,
+          numbers: [{ id: "246813579", label: "Replacement gateway", phone: "+554830121055" }],
+        }),
+      ]),
+    );
+    expect(await db`select singleton from notification_whatsapp_gateway_binding`).toHaveLength(1);
   });
 });
