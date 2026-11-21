@@ -223,10 +223,8 @@ function PersonDetailPageContent({ userId, workspaceId }: { userId: string; work
         <div className="text-sm text-muted-foreground">Carregando…</div>
       ) : data ? (
         <>
-          <p role="status" hidden={!isFetching} className="text-sm text-muted-foreground">
-            Conferindo acesso à pessoa…
-          </p>
-          <div hidden={isFetching} inert={isFetching || undefined}>
+          {/* Recarga em segundo plano (após salvar) não esconde o formulário nem tira o foco. */}
+          <div>
             <PersonForm
               key={`${userId}:${workspaceId}:${id}`}
               person={data}

@@ -117,6 +117,13 @@ function EntryDetailsContent({
     !query.isFetchedAfterMount ||
     access.isFetching ||
     !access.isFetchedAfterMount;
+  // A página só some na primeira conferência; recargas em segundo plano (salvar,
+  // voltar à janela) mantêm a tela e o foco. O registro de pagamento segue o gate estrito.
+  const pageChecking =
+    !entry ||
+    entry.id !== id ||
+    !query.isFetchedAfterMount ||
+    !access.isFetchedAfterMount;
   useEffect(() => {
     if (query.isError || (query.isFetchedAfterMount && !query.isFetching && !query.data)) {
       setPayOpen(false);
@@ -198,13 +205,13 @@ function EntryDetailsContent({
 
   return (
     <div className="min-w-0 p-4 sm:p-6 space-y-5">
-      {revalidating && <p role="status">Conferindo acesso ao lançamento…</p>}
+      {pageChecking && <p role="status">Conferindo acesso ao lançamento…</p>}
       <fieldset
         className="contents"
-        disabled={revalidating}
-        hidden={revalidating}
-        inert={revalidating || undefined}
-        style={revalidating ? { display: "none" } : undefined}
+        disabled={pageChecking}
+        hidden={pageChecking}
+        inert={pageChecking || undefined}
+        style={pageChecking ? { display: "none" } : undefined}
       >
         <Button variant="ghost" size="sm" asChild>
           <Link to={entry.direction === "receivable" ? "/finance/receivable" : "/finance/payable"}>

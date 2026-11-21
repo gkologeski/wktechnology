@@ -1841,7 +1841,7 @@
         }
       },
       "files": {
-        "src/routes/_authenticated/finance.entries.$id.tsx": "accc07112bfe34ea08d43aacff4ba80a1689c167d63e8b688c658222ca23ab53",
+        "src/routes/_authenticated/finance.entries.$id.tsx": "3dacf4711bd9bbbe0b331759b8c39e919e647c75275f1aaf336d21692ed1fb0f",
         "src/components/finance/entries-list-page.tsx": "a5e9627394e0c82a734693dd006e234003753f74ee106c9b582ad60eaf1eddd1"
       }
     },
@@ -9268,7 +9268,7 @@
         "src/lib/people/allocations.functions.ts": "462fc4923d9722430e112cd51965545af07896ee2bed5f14632051cf221c5053",
         "src/lib/workflows/engine/actions-hiring.server.ts": "ea623a453c25411c96888d09eae78cbe9da9d0e8f07ad4ec40ab32649c44f0a8",
         "src/lib/workspace-invites.functions.ts": "52e030eabd06550afc8394401ecfa4df89e91ac8f3ffbe73ebc78fbc0e37f888",
-        "src/routes/_authenticated/people.$id.tsx": "052a05cde016bb098e15b5b5b32eea0e0cab030ad12f71594eeb3bc8c5317759",
+        "src/routes/_authenticated/people.$id.tsx": "4be6bedc763f65b6efed2a397eb143b3b21a7ac8f0d4d97d77dce7ae86e99552",
         "src/routes/_authenticated/settings.permissions.tsx": "a0950fe8296a5573020ae903b29b3db04c115de817a5635b71e154a024fd3b68",
         "src/routes/accept-invite.$token.tsx": "b9b9124eae7d92cd6463124ccfe75437e79df757c2e5de72be6fca6da10d31af",
         "drizzle/migrations/0311_hiring_employment_and_access_models.sql": "d32fedece1e49576737df425c0d42a3af7a827bc0599d914a8620a9686b33783",
