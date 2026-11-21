@@ -465,13 +465,34 @@ async function reset() {
       DO $cleanup$ DECLARE t record; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='public' AND tablename NOT IN('permissions','shared_field_catalog') LOOP EXECUTE format('DELETE FROM public.%I',t.tablename);END LOOP;END $cleanup$;
       DELETE FROM storage.objects; SET LOCAL session_replication_role=origin;`);
     await db`insert into workspaces(id) values(${W}),(${B})`;
-    for (const u of [U, M, CEO, D]) {
-      await db`insert into profiles values(${u},${W})`;
-      await db`insert into workspace_members(workspace_id,user_id) values(${W},${u})`;
-      await db`insert into job_roles values(${u},${W})`;
-      await db`insert into user_job_roles values(${u},${u},${W},null)`;
-      await db`insert into job_role_permission_overrides select ${W},${u},key,'grant' from permissions`;
-    }
+    // Seed the same actors/grants by dependency layer rather than twenty round
+    // trips. All scenario RPCs below still run with their original real claims.
+    const actors = [U, M, CEO, D];
+    await db`insert into profiles ${db(
+      actors.map((id) => ({ id, active_workspace_id: W })),
+      "id",
+      "active_workspace_id",
+    )}`;
+    await db`insert into workspace_members ${db(
+      actors.map((user_id) => ({ workspace_id: W, user_id })),
+      "workspace_id",
+      "user_id",
+    )}`;
+    await db`insert into job_roles ${db(
+      actors.map((id) => ({ id, workspace_id: W })),
+      "id",
+      "workspace_id",
+    )}`;
+    await db`insert into user_job_roles ${db(
+      actors.map((id) => ({ role_id: id, user_id: id, workspace_id: W, owner_id: null })),
+      "role_id",
+      "user_id",
+      "workspace_id",
+      "owner_id",
+    )}`;
+    await db`insert into job_role_permission_overrides
+      select ${W},r.id,p.key,'grant' from job_roles r cross join permissions p
+      where r.workspace_id=${W} and r.id in (${U},${M},${CEO},${D})`;
     await db`insert into user_groups values(${A},${W},'Área de fixture')`;
     await db`insert into legal_entities(id,workspace_id,name,cnpj) values(${L},${W},'WK fixture','11.222.333/0001-81')`;
     await db`insert into people(id,workspace_id,full_name,email,cnpj) values(${D},${W},'Pessoa real fixture','pessoa@example.test','22333444000190')`;
@@ -598,8 +619,22 @@ async function signingDraft(regime = "pj") {
 }
 async function nativeParticipants(k: string) {
   const ids = [randomUUID(), randomUUID(), randomUUID()];
-  for (let j = 0; j < 3; j++)
-    await db`insert into contacts(id,workspace_id,company_id,first_name,last_name,email) values(${ids[j]},${W},${C},'Signatário',${String(j)},${`signer${j}@example.test`})`;
+  await db`insert into contacts ${db(
+    ids.map((id, j) => ({
+      id,
+      workspace_id: W,
+      company_id: C,
+      first_name: "Signatário",
+      last_name: String(j),
+      email: `signer${j}@example.test`,
+    })),
+    "id",
+    "workspace_id",
+    "company_id",
+    "first_name",
+    "last_name",
+    "email",
+  )}`;
   return user(D, (tx) =>
     tx`select hiring_contract_signers_prepare(${W},${k},hiring_contract_fingerprint(${k}),${tx.json(ids.map((id, j) => ({ contactId: id, role: ["CONTRATANTE", "CONTRATADO", "TESTEMUNHA"][j] })))}) v`.then(
       (x) => x[0].v as string,
@@ -1019,6 +1054,71 @@ const contractOf = async (r: R) =>
     .contract_id as string;
 const count = async (table: string) =>
   (await db.unsafe(`select count(*)::int n from ${table}`))[0].n as number;
+
+it("snapshot capture preserves ordered inventory, UTF-8 rows, empty tables and restore exclusions", async () => {
+  await reset();
+  const name = 'fixture_snapshot_ação"雪';
+  const qualified = 'public."fixture_snapshot_ação""雪"';
+  const marker = "snapshot-fixture-" + randomUUID();
+  const content = {
+    "chave 🔑": ["ação", null, "O'Brien"],
+    'aspas" e ç': { 雪: false },
+  };
+  try {
+    await db.unsafe(
+      `CREATE TABLE ${qualified}(id integer PRIMARY KEY,"campo ç" text,conteudo jsonb);
+       CREATE TABLE public.fixture_snapshot_empty(id integer PRIMARY KEY)`,
+    );
+    await db.unsafe(`INSERT INTO ${qualified} VALUES($1,$2,$3::jsonb),($4,$5,$6::jsonb)`, [
+      2,
+      "Texto com acentuação, emoji 🧪 e quebra\nde linha",
+      content,
+      1,
+      null,
+      null,
+    ]);
+    // Compatibility oracle: retain the original per-table capture algorithm.
+    const inventory = await db<{ schema: string; table: string }[]>`
+      select schemaname as schema,tablename as table from pg_tables
+      where (schemaname='public' and tablename not in ('permissions','shared_field_catalog'))
+        or (schemaname='storage' and tablename='objects') order by schemaname,tablename`;
+    const legacy: DisposableHiringSnapshot = [];
+    const quote = (value: string) => '"' + value.replaceAll('"', '""') + '"';
+    for (const table of inventory) {
+      const rows = await db.unsafe(
+        `select coalesce(jsonb_agg(to_jsonb(r)),'[]'::jsonb) data from ${quote(table.schema)}.${quote(table.table)} r`,
+      );
+      legacy.push({ ...table, rows: rows[0].data });
+    }
+    const snapshot = await captureDisposableHiringSnapshot(db);
+    expect(snapshot).toEqual(legacy);
+    expect(snapshot.map(({ schema, table }) => ({ schema, table }))).toEqual(inventory);
+    expect(snapshot.find((table) => table.table === name)?.rows).toEqual([
+      { id: 2, "campo ç": "Texto com acentuação, emoji 🧪 e quebra\nde linha", conteudo: content },
+      { id: 1, "campo ç": null, conteudo: null },
+    ]);
+    expect(snapshot.find((table) => table.table === "fixture_snapshot_empty")?.rows).toEqual([]);
+    expect(
+      snapshot.some((table) => ["permissions", "shared_field_catalog"].includes(table.table)),
+    ).toBe(false);
+
+    await db.unsafe(
+      `DELETE FROM ${qualified}; INSERT INTO public.fixture_snapshot_empty VALUES(7)`,
+    );
+    await db`insert into permissions(key,label_pt) values(${marker},'Preservar fora do snapshot')`;
+    await db`insert into shared_field_catalog(resource,table_name,field) values(${marker},${marker},${marker})`;
+    await restoreDisposableHiringSnapshot(db, snapshot);
+    expect(await captureDisposableHiringSnapshot(db)).toEqual(snapshot);
+    expect(await db`select key from permissions where key=${marker}`).toEqual([{ key: marker }]);
+    expect(await db`select resource from shared_field_catalog where resource=${marker}`).toEqual([
+      { resource: marker },
+    ]);
+  } finally {
+    await db.unsafe(`DROP TABLE IF EXISTS ${qualified},public.fixture_snapshot_empty`);
+    await db`delete from permissions where key=${marker}`;
+    await db`delete from shared_field_catalog where resource=${marker}`;
+  }
+});
 
 it("payables generate canonical open payable titles with exact installments and no payment", async () => {
   const x = await approvedPlan();
