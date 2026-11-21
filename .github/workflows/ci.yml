@@ -16,7 +16,8 @@ permissions:
 jobs:
   unit:
     name: Full verification and performance
-    runs-on: ubuntu-latest
+    # Native Linux ARM64 matches the pinned database images validated locally.
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
