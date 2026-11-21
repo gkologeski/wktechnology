@@ -39478,6 +39478,10 @@ export type Database = {
         }
         Returns: Json
       }
+      notification_whatsapp_senders: {
+        Args: { p_workspace: string }
+        Returns: Json
+      }
       notification_worker_list: { Args: { p_limit?: number }; Returns: Json }
       notification_worker_list_personal_v1: {
         Args: { p_limit?: number }

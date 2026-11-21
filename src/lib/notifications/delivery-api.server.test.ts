@@ -1,4 +1,5 @@
 import { beforeEach, it, expect, vi } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
 const state = vi.hoisted(() => ({
   rpc: vi.fn(),
   area: vi.fn(),
@@ -32,6 +33,7 @@ vi.mock("@/lib/access-control/sales-core.server", () => ({
   assertSalesRecord: state.record,
 }));
 vi.mock("@/lib/access-control/admin-gates.server", () => ({ assertWorkflowsManage: state.manage }));
+import { assertNotificationTemplateAccess } from "./delivery-access.server";
 import {
   getNotificationDeliveryCapabilities,
   getNotificationDeliverySettings,
@@ -68,15 +70,47 @@ const caps = {
   deliveriesWorkspaceView: false,
   whatsappConfigure: false,
 };
+const whatsappViewKeys = [
+  "system.notification_settings.view.workspace",
+  "system.channels.view.workspace",
+  "system.whatsapp.view.workspace",
+] as const;
+const whatsappContext = () => ({
+  actor: U,
+  workspace: W,
+  keys: Object.fromEntries(whatsappViewKeys.map((key) => [key, true])),
+});
+const senderItem = {
+  id: "654321",
+  phone: "+14155552672",
+  label: "Synthetic sender",
+  available: true,
+  quality: "GREEN",
+  status: "CONNECTED",
+  syncedAt: "2026-11-20T12:00:00Z",
+  eligible: true,
+  reason: null,
+};
+function senderRpc(result: unknown = { items: [senderItem] }, access: unknown = whatsappContext()) {
+  state.rpc.mockImplementation(async (_client, name) => {
+    if (name === "notification_delivery_capabilities") return caps;
+    if (name === "work_access_context") return access;
+    if (name === "notification_whatsapp_senders") return result;
+    throw Error("Unexpected RPC: " + name);
+  });
+}
 beforeEach(() => {
   vi.clearAllMocks();
   from.mockReset();
+  state.rpc.mockReset();
   state.area.mockResolvedValue(undefined);
   state.record.mockResolvedValue(undefined);
   state.manage.mockResolvedValue(undefined);
-  state.rpc.mockImplementation(async (_client, name) =>
-    name === "notification_delivery_capabilities" ? caps : { items: [], nextCursor: null },
-  );
+  state.rpc.mockImplementation(async (_client, name) => {
+    if (name === "notification_delivery_capabilities") return caps;
+    if (name === "work_access_context") return whatsappContext();
+    return { items: [], nextCursor: null };
+  });
 });
 it.each([
   getNotificationDeliveryCapabilities,
@@ -194,165 +228,169 @@ it("retains the proven event identity from authorized delivery history without l
   });
   expect(from).not.toHaveBeenCalled();
 });
-it("provider templates require channel access before querying sender or secrets", async () => {
-  state.area.mockRejectedValue(Error("channel denied"));
+it("accepts canonical cumulative view keys even when the obsolete sales-area whitelist rejects channels", async () => {
+  senderRpc();
+  state.area.mockRejectedValue(Error("Legacy channel whitelist unavailable"));
   await expect(
-    call(listNotificationWhatsAppTemplates, { workspaceId: W, senderPhoneNumberId: "123456" }),
-  ).rejects.toThrow("channel denied");
+    assertNotificationTemplateAccess(ctx.supabase as unknown as SupabaseClient, W),
+  ).resolves.toBeUndefined();
+  expect(state.rpc.mock.calls.map(([, name]) => name)).toEqual([
+    "notification_delivery_capabilities",
+    "work_access_context",
+  ]);
+  expect(state.area).not.toHaveBeenCalled();
   expect(from).not.toHaveBeenCalled();
 });
 
-type SenderCatalogueRow = Record<string, unknown>;
-function senderCatalogue(
-  numbers: SenderCatalogueRow[] = [],
-  connections: SenderCatalogueRow[] = [],
-  failedTable?: "wa_cloud_numbers" | "wa_cloud_connections",
-) {
-  const reads: {
-    table: string;
-    columns: string;
-    filters: Record<string, unknown>;
-    limit: number | null;
-  }[] = [];
-  from.mockImplementation((table: string) => {
-    const read = {
-      table,
-      columns: "",
-      filters: {} as Record<string, unknown>,
-      limit: null as number | null,
-    };
-    reads.push(read);
-    const query = {
-      select: (columns: string) => {
-        read.columns = columns;
-        return query;
-      },
-      eq: (key: string, value: unknown) => {
-        read.filters[key] = value;
-        return query;
-      },
-      order: () => query,
-      limit: async (limit: number) => {
-        read.limit = limit;
-        const rows = table === "wa_cloud_numbers" ? numbers : connections;
-        return {
-          data:
-            failedTable === table
-              ? null
-              : rows.filter((row) =>
-                  Object.entries(read.filters).every(([key, value]) => row[key] === value),
-                ),
-          error: failedTable === table ? { message: "Synthetic unavailable catalogue" } : null,
-        };
-      },
-    };
-    return query;
+it("delegates the selected-workspace sender catalogue to its authenticated RPC and returns only its validated DTO", async () => {
+  senderRpc();
+  state.area.mockRejectedValue(Error("Legacy channel whitelist unavailable"));
+  await expect(call(listNotificationWhatsAppSenders, { workspaceId: W })).resolves.toEqual({
+    items: [senderItem],
   });
-  return reads;
-}
-
-it("distinguishes available senders from eligible connected verified high-quality senders without selecting secrets", async () => {
-  const connection = {
-    id: U,
-    workspace_id: W,
-    enabled: true,
-    webhook_verified_at: "2026-11-20T12:00:00Z",
-  };
-  const number = {
-    workspace_id: W,
-    phone_number_id: "654321",
-    connection_id: U,
-    display_phone_number: "+14155552672",
-    verified_name: "Synthetic sender",
-    quality_rating: "GREEN",
-    status: "CONNECTED",
-    available: true,
-    synced_at: "2026-11-20T12:00:00Z",
-  };
-  const variants = [
-    [{}, true, null],
-    [{ quality_rating: "HIGH" }, true, null],
-    [{ available: false }, false, "sender_unavailable"],
-    [{ status: "DISCONNECTED" }, false, "sender_unavailable"],
-    [{ connection_id: "disabled" }, true, "connection_unavailable"],
-    [{ connection_id: "missing" }, true, "connection_unavailable"],
-    [{ connection_id: "unverified" }, true, "webhook_unverified"],
-    [{ quality_rating: "YELLOW" }, true, "quality_not_high"],
-    [{ quality_rating: "RED" }, true, "quality_not_high"],
-    [{ quality_rating: null }, true, "quality_not_high"],
-  ] as const;
-  const reads = senderCatalogue(
-    [
-      ...variants.map(([patch], index) => ({
-        ...number,
-        ...patch,
-        phone_number_id: String(654321 + index),
-      })),
-      { ...number, workspace_id: U, phone_number_id: "999999" },
-    ],
-    [
-      connection,
-      { ...connection, id: "disabled", enabled: false },
-      { ...connection, id: "unverified", webhook_verified_at: null },
-      { ...connection, id: "foreign", workspace_id: U },
-    ],
-  );
-  const result = (await call(listNotificationWhatsAppSenders, { workspaceId: W })) as {
-    items: { id: string; available: boolean; eligible: boolean; reason: string | null }[];
-  };
-  expect(
-    result.items.map(({ id, available, eligible, reason }) => ({
-      id,
-      available,
-      eligible,
-      reason,
-    })),
-  ).toEqual(
-    variants.map(([, available, reason], index) => ({
-      id: String(654321 + index),
-      available,
-      eligible: reason === null,
-      reason,
-    })),
-  );
-  expect(state.area.mock.calls).toEqual([
-    [ctx.supabase, "system.channels", "view"],
-    [ctx.supabase, "system.whatsapp", "view"],
+  expect(state.rpc.mock.calls).toEqual([
+    [ctx.supabase, "notification_delivery_capabilities", { p_workspace: W }],
+    [ctx.supabase, "work_access_context", {}],
+    [ctx.supabase, "notification_whatsapp_senders", { p_workspace: W }],
   ]);
-  expect(reads).toEqual([
-    {
-      table: "wa_cloud_numbers",
-      columns:
-        "phone_number_id,connection_id,display_phone_number,verified_name,quality_rating,status,available,synced_at",
-      filters: { workspace_id: W },
-      limit: 100,
-    },
-    {
-      table: "wa_cloud_connections",
-      columns: "id,enabled,webhook_verified_at",
-      filters: { workspace_id: W },
-      limit: 100,
-    },
-  ]);
-  expect(reads.every((read) => !/credentials|ciphertext|token|secret/i.test(read.columns))).toBe(
-    true,
-  );
+  expect(state.area).not.toHaveBeenCalled();
+  expect(from).not.toHaveBeenCalled();
 });
 
-it.each(["wa_cloud_numbers", "wa_cloud_connections"] as const)(
-  "propagates an unavailable %s catalogue instead of returning an empty sender list",
-  async (failedTable) => {
-    const reads = senderCatalogue([], [], failedTable);
-    await expect(call(listNotificationWhatsAppSenders, { workspaceId: W })).rejects.toThrow(
-      "Não foi possível consultar os remetentes do WhatsApp",
-    );
-    expect(reads).toHaveLength(2);
-    expect(reads.every((read) => read.filters.workspace_id === W)).toBe(true);
-    expect(state.rpc).toHaveBeenCalledWith(ctx.supabase, "notification_delivery_capabilities", {
-      p_workspace: W,
-    });
+it.each(whatsappViewKeys)(
+  "refuses sender and provider-template reads when effective canonical key %s is missing or denied",
+  async (key) => {
+    for (const effective of [undefined, false]) {
+      const access = whatsappContext();
+      if (effective === undefined) delete access.keys[key];
+      else access.keys[key] = effective;
+      for (const fn of [listNotificationWhatsAppSenders, listNotificationWhatsAppTemplates]) {
+        senderRpc({ items: [senderItem] }, access);
+        state.rpc.mockClear();
+        await expect(call(fn, { workspaceId: W, senderPhoneNumberId: "654321" })).rejects.toThrow(
+          "Sem permissão",
+        );
+        expect(state.rpc.mock.calls.map(([, name]) => name)).toEqual([
+          "notification_delivery_capabilities",
+          "work_access_context",
+        ]);
+        expect(from).not.toHaveBeenCalled();
+      }
+    }
   },
 );
+
+it.each([
+  { label: "foreign workspace", access: { ...whatsappContext(), workspace: U } },
+  { label: "missing actor", access: { workspace: W, keys: whatsappContext().keys } },
+  { label: "invalid actor", access: { ...whatsappContext(), actor: "" } },
+  {
+    label: "invalid key value",
+    access: {
+      ...whatsappContext(),
+      keys: { ...whatsappContext().keys, [whatsappViewKeys[0]]: "true" },
+    },
+  },
+  { label: "missing context", access: null },
+])("rejects an untrusted canonical $label before sender or provider reads", async ({ access }) => {
+  senderRpc({ items: [senderItem] }, access);
+  await expect(call(listNotificationWhatsAppSenders, { workspaceId: W })).rejects.toThrow(
+    "Sem permissão",
+  );
+  expect(state.rpc.mock.calls.map(([, name]) => name)).toEqual([
+    "notification_delivery_capabilities",
+    "work_access_context",
+  ]);
+  expect(from).not.toHaveBeenCalled();
+});
+
+it("does not replace a canonical-context read failure with legacy authorization or a raw query", async () => {
+  state.rpc
+    .mockResolvedValueOnce(caps)
+    .mockRejectedValueOnce(Error("Canonical context unavailable"));
+  await expect(
+    call(listNotificationWhatsAppTemplates, { workspaceId: W, senderPhoneNumberId: "654321" }),
+  ).rejects.toThrow("Canonical context unavailable");
+  expect(state.rpc).toHaveBeenCalledTimes(2);
+  expect(state.area).not.toHaveBeenCalled();
+  expect(from).not.toHaveBeenCalled();
+});
+
+it("requires notification-settings view before reading the canonical channel context", async () => {
+  state.rpc.mockResolvedValue({ ...caps, settingsView: false });
+  await expect(call(listNotificationWhatsAppSenders, { workspaceId: W })).rejects.toThrow(
+    "Sem permissão",
+  );
+  expect(state.rpc).toHaveBeenCalledExactlyOnceWith(
+    ctx.supabase,
+    "notification_delivery_capabilities",
+    { p_workspace: W },
+  );
+  expect(from).not.toHaveBeenCalled();
+});
+
+it.each([listNotificationWhatsAppSenders, listNotificationWhatsAppTemplates])(
+  "rejects a missing authenticated actor before any WhatsApp IO: %s",
+  async (fn) => {
+    await expect(
+      call(fn, { workspaceId: W, senderPhoneNumberId: "654321" }, { ...ctx, userId: "" }),
+    ).rejects.toThrow();
+    expect(state.rpc).not.toHaveBeenCalled();
+    expect(from).not.toHaveBeenCalled();
+  },
+);
+
+it("propagates catalogue RPC denial instead of reading private connections or returning an empty success", async () => {
+  senderRpc();
+  state.rpc
+    .mockResolvedValueOnce(caps)
+    .mockResolvedValueOnce(whatsappContext())
+    .mockRejectedValueOnce(Error("Sender catalogue denied"));
+  await expect(call(listNotificationWhatsAppSenders, { workspaceId: W })).rejects.toThrow(
+    "Sender catalogue denied",
+  );
+  expect(state.rpc).toHaveBeenLastCalledWith(ctx.supabase, "notification_whatsapp_senders", {
+    p_workspace: W,
+  });
+  expect(from).not.toHaveBeenCalled();
+});
+
+it("accepts the bounded one-hundred-item public sender DTO without widening its scope", async () => {
+  const items = Array.from({ length: 100 }, (_, index) => ({
+    ...senderItem,
+    id: String(654321 + index),
+  }));
+  senderRpc({ items });
+  await expect(call(listNotificationWhatsAppSenders, { workspaceId: W })).resolves.toEqual({
+    items,
+  });
+  expect(from).not.toHaveBeenCalled();
+});
+
+it.each([
+  {
+    label: "top-level secret",
+    result: { items: [senderItem], token: "synthetic-secret-sentinel" },
+  },
+  {
+    label: "sender secret",
+    result: { items: [{ ...senderItem, credentials_ciphertext: "synthetic-secret-sentinel" }] },
+  },
+  { label: "raw connection binding", result: { items: [{ ...senderItem, connection_id: U }] } },
+  { label: "invalid sender id", result: { items: [{ ...senderItem, id: "not-a-phone-id" }] } },
+  { label: "invalid eligibility", result: { items: [{ ...senderItem, eligible: "true" }] } },
+  { label: "unexpected reason", result: { items: [{ ...senderItem, reason: "provider-secret" }] } },
+  { label: "missing items", result: {} },
+  { label: "null items", result: { items: null } },
+  { label: "too many items", result: { items: Array.from({ length: 101 }, () => senderItem) } },
+])("fails closed on a malformed sender RPC response: $label", async ({ result }) => {
+  senderRpc(result);
+  await expect(call(listNotificationWhatsAppSenders, { workspaceId: W })).rejects.toThrow();
+  expect(state.rpc).toHaveBeenLastCalledWith(ctx.supabase, "notification_whatsapp_senders", {
+    p_workspace: W,
+  });
+  expect(from).not.toHaveBeenCalled();
+});
 
 it("personal consent revocation does not require the old phone to still match profile", async () => {
   const result = { phone: null, consent: null };
