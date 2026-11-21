@@ -29,6 +29,10 @@ vi.mock("@/lib/access-control/use-sales-capabilities", () => ({
   }),
 }));
 vi.mock("@/lib/view-as-client", () => ({ readViewAs: () => null }));
+vi.mock("@/lib/auth", () => ({ useAuth: () => ({ user: { id: "user" }, loading: false }) }));
+vi.mock("@/lib/workflows/whatsapp-inbound.functions", () => ({
+  listWorkflowWhatsAppSources: async () => ({ workspace_id: WS, sources: [] }),
+}));
 vi.mock("@/components/ui/confirm-dialog", () => ({
   confirmDialog: vi.fn().mockResolvedValue(true),
 }));
@@ -172,6 +176,7 @@ it("groups only supported events and preserves generic workflow creation", async
   await render(panel());
   const select = host.querySelector<HTMLSelectElement>('[aria-label="Evento da nova regra"]')!;
   expect([...select.querySelectorAll("optgroup")].map((group) => group.label)).toEqual([
+    "Atendimento",
     "TechSales",
     "TechContracts",
     "TechProjects",

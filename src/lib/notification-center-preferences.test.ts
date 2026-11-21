@@ -33,15 +33,69 @@ describe("workspace notification preference overlays", () => {
     expect(effectiveChannels(base(), loaded, "mention")).toEqual(base().mention);
     expect(diffCenterSettings(loaded, structuredClone(loaded))).toEqual({});
   });
-  it("preserves the legacy event list and adds only the twenty-three operational module choices", () => {
-    expect(LEGACY_NOTIFICATION_EVENTS).toHaveLength(22);
-    expect(LEGACY_NOTIFICATION_EVENTS.every((event) => event.eventKey.startsWith("legacy."))).toBe(
-      true,
-    );
-    expect(AVAILABLE_NOTIFICATION_EVENTS).toHaveLength(45);
-    expect(AVAILABLE_NOTIFICATION_EVENTS.map((event) => event.eventKey)).not.toContain(
-      "shared.approval.pending",
-    );
+  it("preserves the legacy aliases and order and exposes twenty-four operational choices including WhatsApp", () => {
+    const legacyKeys = [
+      "legacy.mention",
+      "legacy.assignment",
+      "legacy.deal_stage",
+      "legacy.ticket",
+      "legacy.task",
+      "legacy.sla",
+      "legacy.message",
+      "legacy.workflow",
+      "legacy.approval",
+      "legacy.role_profile",
+      "legacy.role_profile_approval",
+      "legacy.hiring_approval",
+      "legacy.hiring_preparation_approval",
+      "legacy.hiring_formalization",
+      "legacy.form_submission",
+      "legacy.portfolio_conflict",
+      "legacy.sequence_handoff",
+      "legacy.security_scan",
+      "legacy.platform_alert",
+      "legacy.sla.first_response_breach",
+      "legacy.sla.resolution_breach",
+      "legacy.sla.at_risk",
+    ];
+    const operationalKeys = [
+      "crm.deal.won",
+      "crm.deal.lost",
+      "crm.deal.stage_changed",
+      "crm.proposal.accepted",
+      "ats.application.received",
+      "ats.interview.scheduled",
+      "ats.offer.accepted",
+      "people.employment.started",
+      "people.document.expiring",
+      "people.approval.pending",
+      "contracts.draft.accepted",
+      "contracts.signature.completed",
+      "contracts.contract.expiring",
+      "contracts.contract.renewal_due",
+      "finance.payable.due",
+      "finance.receivable.due",
+      "finance.payable.overdue",
+      "finance.receivable.overdue",
+      "finance.invoice.received",
+      "projects.project.started",
+      "projects.project.overdue",
+      "projects.task.overdue",
+      "projects.milestone.due",
+      "shared.message.received",
+    ];
+    expect(LEGACY_NOTIFICATION_EVENTS.map((event) => event.eventKey)).toEqual(legacyKeys);
+    const availableKeys = AVAILABLE_NOTIFICATION_EVENTS.map((event) => event.eventKey);
+    expect(availableKeys).toEqual([...legacyKeys, ...operationalKeys]);
+    expect(availableKeys).toHaveLength(46);
+    expect(
+      AVAILABLE_NOTIFICATION_EVENTS.find((event) => event.eventKey === "shared.message.received"),
+    ).toMatchObject({
+      availability: "active",
+      category: "message",
+      moduleKey: "crm",
+    });
+    expect(availableKeys).not.toContain("shared.approval.pending");
   });
   it("keeps WhatsApp overrides optional and applies exact event precedence without changing global profile channels", () => {
     const key = "contracts.contract.expiring";
@@ -125,6 +179,7 @@ describe("workspace notification preference overlays", () => {
     "finance.payable.overdue",
     "finance.receivable.overdue",
     "finance.invoice.received",
+    "shared.message.received",
   ] as const)(
     "exposes %s conservatively and preserves exact WhatsApp opt-out without changing other events",
     (key) => {

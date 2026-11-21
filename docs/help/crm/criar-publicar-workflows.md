@@ -8,7 +8,7 @@ route_pattern: /settings/workflows
 min_permission: system.workflows.manage.workspace
 audience: internal
 sort_order: 413
-version: 12
+version: 13
 is_published: true
 ---
 
@@ -68,6 +68,18 @@ Entrar em ganho ou perda gera a classificação específica da transição. **Et
 
 Preferências pessoais por evento podem suprimir o aviso sem alterar a operação. Para os novos eventos, som e tremor começam desligados e só são habilitados por escolha explícita no grupo ou evento do workspace. Os canais externos continuam dependendo de configuração e autorização próprias.
 
+### Automatizar uma mensagem recebida na Inbox WhatsApp
+
+Em **Atendimento**, o tipo **Mensagens de WhatsApp (Inbox)** identifica a origem somente leitura. Dentro dele, **Mensagem de WhatsApp recebida** identifica o acontecimento: uma mensagem nova recebida por conexão Cloud API ou Lovable verificada. O seletor inicial de objeto não é o catálogo completo de eventos.
+
+Em **Gatilho de entrada**, confira esse evento e ajuste **Contas de recebimento** e **Números comerciais de recebimento**. São as contas e os números da operação que recebem a mensagem; não são o telefone do cliente nem o remetente do aviso externo. Sem marcações, vale qualquer origem atualmente autorizada. Quando ambos os filtros têm marcações, a conta e o número precisam corresponder à mesma origem. A lista de números acompanha as contas escolhidas; seleções salvas indisponíveis são preservadas para revisão, e combinações sem origem autorizada são recusadas ao salvar.
+
+O rascunho começa desativado. Revise destinatários, canais e permissões, publique a versão e ative somente quando desejar iniciar. Mensagens enviadas, recibos, ligações e histórico importado não disparam esse evento. Republicar ou reativar define um novo ponto de entrada e não recupera mensagens antigas como novas.
+
+As condições e variáveis usam apenas os metadados oferecidos. Corpo da mensagem, anexos, telefone do cliente e credenciais não são tokens. Esse objeto não oferece alteração da mensagem, resposta ao cliente, troca de responsável ou controle do SDR. O aviso externo permanece neutro e não concede acesso à conversa.
+
+O aviso direto já existente da Inbox é preservado. Para o mesmo responsável, um aviso legado não lido da conversa é reaproveitado, sem uma segunda cópia implícita; outros destinatários e canais explicitamente configurados mantêm suas próprias autorizações. Consulte o [passo a passo com filtros de recebimento](/ajuda/crm/automatizar-mensagens-recebidas-whatsapp).
+
 ## Resultado esperado
 
 "Rascunho salvo — publique para ativar"; "Publicado — v…"; "Aprovado — retomada enfileirada".
@@ -101,6 +113,7 @@ Salvar não é publicar. Aprovar ou rejeitar muda o andamento da execução.
 
 ## Relacionados
 
+- [Automatizar mensagens recebidas no WhatsApp](/ajuda/crm/automatizar-mensagens-recebidas-whatsapp)
 - [Criar regras de distribuição](/ajuda/crm/criar-regras-de-distribuicao)
 - [Erros comuns](/ajuda/crm/erros-comuns)
 - [Revisar preferências de notificações](/ajuda/core/revisar-preferencias-de-notificacoes)

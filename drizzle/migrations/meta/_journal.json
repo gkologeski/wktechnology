@@ -2829,6 +2829,20 @@
       "when": 1795258200000,
       "tag": "0403_whatsapp_template_center",
       "breakpoints": true
+    },
+    {
+      "idx": 404,
+      "version": "7",
+      "when": 1795258201000,
+      "tag": "0404_workflow_event_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 405,
+      "version": "7",
+      "when": 1795258202000,
+      "tag": "0405_workflow_whatsapp_received",
+      "breakpoints": true
     }
   ]
 }

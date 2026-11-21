@@ -21,8 +21,9 @@ vi.mock("@/lib/inbox-auto-assignment.server", () => ({ autoAssignInboxConversati
 vi.mock("./whatsapp/inbound-media.server", () => ({ storeInboundMedia: vi.fn() }));
 import { handleCloudWebhook } from "./whatsapp/cloud-webhook.server";
 import { processEvent } from "./whatsapp/webhook-processor.server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { randomUUID } from "node:crypto";
+import type postgres from "postgres";
 import {
   db,
   W,
@@ -31,6 +32,7 @@ import {
   U,
   C,
   F,
+  N,
   ROLE,
   X,
   WF,
@@ -41,7 +43,9 @@ import {
   fixtureJwt,
   fixtureHttpBase,
 } from "../../tests/fixtures/notification-deliveries";
+import { setupNotificationWhatsAppReceived } from "../../tests/fixtures/notification-whatsapp-received";
 
+beforeAll(async () => setupNotificationWhatsAppReceived(db), 30000);
 beforeEach(reset);
 const sender = "123456789";
 const recipient = "+5548999990001";
@@ -1368,5 +1372,600 @@ describe("Meta template administration account boundary", () => {
     ]);
     const last = (await db`select id from service_channel_accounts where label='Legacy 105'`)[0].id;
     expect((await context("view", `lovable:${last}`)).payload.targets).toHaveLength(1);
+  });
+});
+
+// The complete production SQL executes over signed synthetic JWTs and canonical
+// source RLS. No authorization function is replaced by a permissive fixture.
+describe("WhatsApp received Workflow occurrence", () => {
+  const sharedKey = "shared.message.received";
+  const wf = "e2000000-0000-4000-8000-000000000001";
+  const cloudSource = "cloud:" + X;
+  const noticeTitle = "Nova mensagem de WhatsApp recebida";
+  async function configure(
+    selection: Record<string, postgres.JSONValue | undefined> = {},
+    actions: postgres.JSONValue[] = [],
+  ) {
+    await db`insert into workflows(id,workspace_id,owner_id,execution_user_id,entity,enabled,status,published_version,trigger,actions,last_published_at)
+      values(${wf},${W},${A},${U},'whatsapp_messages',true,'published',1,${db.json({ event: "updated", notification_event: { key: sharedKey, ...selection } })},${db.json(actions)},clock_timestamp())`;
+  }
+  async function envelope(
+    options: {
+      lovable?: boolean;
+      old?: boolean;
+      outbound?: boolean;
+      noMarkers?: boolean;
+      call?: boolean;
+      status?: boolean;
+    } = {},
+  ) {
+    const message = randomUUID(),
+      conversation = randomUUID(),
+      webhook = randomUUID();
+    const phone = options.lovable ? "987654321" : sender;
+    const display = options.lovable ? "+554861369999" : "+554861360001";
+    const wamid = "wamid.synthetic." + message;
+    const [time] =
+      await db`select floor(extract(epoch from clock_timestamp()))::bigint::text stamp`;
+    const raw = {
+      id: wamid,
+      from: "5548999990000",
+      timestamp: options.old ? "1600000000" : time.stamp,
+      type: options.call ? "call" : "text",
+      text: { body: "Private customer text MUST NOT enter Workflow" },
+    };
+    let source = cloudSource;
+    if (options.lovable) {
+      const [existing] =
+        await db`select id from service_channel_accounts where workspace_id=${W} and channel='whatsapp' and source_key=${phone}`;
+      if (!existing) {
+        await db`insert into wa_business_accounts(id,workspace_id,waba_id,status) values(${webhook},${W},'98765432101','connected')`;
+        await db`insert into wa_phone_numbers(id,workspace_id,waba_id,phone_number_id,display_phone_number) values(${message},${W},${webhook},${phone},${display})`;
+        await db`insert into service_channel_accounts(id,workspace_id,channel,source_key,label,display_name,enabled) values(${conversation},${W},'whatsapp',${phone},'Lovable account','Lia',false)`;
+      }
+      source = "lovable:" + (existing?.id ?? conversation);
+    }
+    const value = {
+      metadata: { phone_number_id: phone, display_phone_number: display },
+      ...(options.status
+        ? { statuses: [{ id: wamid, status: "delivered" }] }
+        : { messages: [raw] }),
+      ...(!options.lovable && !options.noMarkers
+        ? { _verified_connection_id: X, _verified_workspace_id: W }
+        : {}),
+    };
+    const payload = {
+      object: "whatsapp_business_account",
+      entry: [
+        {
+          id: options.lovable ? "98765432101" : "12345678901",
+          changes: [{ field: "messages", value }],
+        },
+      ],
+    };
+    await db`insert into whatsapp_conversations(id,workspace_id,owner_id,assigned_to,wa_phone_number_id,twilio_number,contact_phone) values(${conversation},${W},${W},${U},${phone},${display},'+5548999990000')`;
+    await db`insert into whatsapp_webhook_events(id,delivery_id,event,payload,workspace_id)
+      values(${webhook},${options.lovable ? "lovable:" + webhook : "cloud:" + X + ":" + webhook},'whatsapp.message',${db.json(payload)},${W})`;
+    await db`insert into whatsapp_messages(id,workspace_id,owner_id,conversation_id,direction,provider,from_number,to_number,wa_message_id,status,raw)
+      values(${message},${W},${W},${conversation},${options.outbound ? "outbound" : "inbound"},'meta','+5548999990000',${display},${wamid},'received',${db.json({ ...raw, _cloud_phone_number_id: phone })})`;
+    return { message, conversation, webhook, source };
+  }
+  const mint = (m: { message: string; webhook: string }) =>
+    withRole(
+      "service_role",
+      null,
+      async (tx) =>
+        (await tx`select notification_whatsapp_received(${m.message},${m.webhook}) id`)[0].id as
+          | string
+          | null,
+    );
+  const eventCheck = (event: string) =>
+    withRole(
+      "service_role",
+      null,
+      async (tx) => (await tx`select notification_business_event_check(${event},${wf},1) ok`)[0].ok,
+    );
+  async function dispatch(
+    event: string,
+    rules: postgres.JSONValue[] = [{ kind: "source_responsible" }],
+    delivery: Record<string, postgres.JSONValue> = { channels: ["inapp"], fallback: "none" },
+  ) {
+    const [e] = await db`select * from workflow_events where id=${event}`;
+    const run = randomUUID();
+    await db`insert into workflow_runs(id,workspace_id,owner_id,workflow_id,event_id,entity,entity_id) values(${run},${W},${A},${wf},${event},'whatsapp_messages',${e.entity_id})`;
+    return withRole(
+      "service_role",
+      null,
+      async (tx) =>
+        (
+          await tx`select notification_workflow_dispatch_v2(${wf},${run},1,'whatsapp_messages',${e.entity_id},${tx.json(rules)},${noticeTitle},null,'0',${tx.json(delivery)}) r`
+        )[0].r,
+    );
+  }
+  const sources = (actor = U, workspace = W) =>
+    request("/rpc/notification_whatsapp_sources", { p_workspace: workspace }, actor);
+
+  it("allows an authorized active Workflow WhatsApp member", async () => {
+    const r = await sources();
+    expect(r.status).toBe(200);
+    expect(r.payload).toMatchObject({
+      workspace_id: W,
+      sources: [{ id: cloudSource, numbers: [{ id: sender, phone: "+554861360001" }] }],
+    });
+    await configure();
+    const m = await envelope();
+    const event = await mint(m);
+    expect(event).toEqual(expect.any(String));
+    expect(await eventCheck(event!)).toBe(true);
+    expect(
+      await withRole(
+        "authenticated",
+        U,
+        async (tx) => (await tx`select id from whatsapp_messages where id=${m.message}`).length,
+      ),
+    ).toBe(1);
+  });
+  it("denies Workflow WhatsApp sources without the permission key", async () => {
+    expect((await sources(N)).status).toBe(403);
+    await db`delete from job_role_permission_overrides where permission_key='techsales.inbox.whatsapp.view.workspace' and role_id=${ROLE}`;
+    expect((await sources()).status).toBe(403);
+  });
+  it("preserves an explicit Workflow WhatsApp deny", async () => {
+    await db`update job_role_permission_overrides set effect='deny' where permission_key='techsales.inbox.whatsapp.view.workspace' and role_id=${ROLE}`;
+    expect((await sources()).status).toBe(403);
+    await configure();
+    const event = await mint(await envelope());
+    expect(await eventCheck(event!)).toBe(false);
+  });
+  it("denies Workflow WhatsApp references from a foreign workspace", async () => {
+    expect((await sources(F)).status).toBe(403);
+    expect((await sources(U, B)).status).toBe(403);
+    await configure();
+    const m = await envelope();
+    expect(
+      await withRole(
+        "authenticated",
+        F,
+        async (tx) => (await tx`select id from whatsapp_messages where id=${m.message}`).length,
+      ),
+    ).toBe(0);
+  });
+  it("denies an inactive Workflow WhatsApp member", async () => {
+    await db`update workspace_members set status='inactive' where workspace_id=${W} and user_id=${U}`;
+    expect((await sources()).status).toBe(403);
+    await configure();
+    const event = await mint(await envelope());
+    expect(await eventCheck(event!)).toBe(false);
+  });
+  it("mints one sanitized Cloud occurrence and reuses it on concurrent retry", async () => {
+    await configure({ source_keys: [cloudSource], phone_number_ids: [sender] });
+    const m = await envelope();
+    const [a, b] = await Promise.all([mint(m), mint(m)]);
+    expect(a).toEqual(b);
+    expect(a).not.toBeNull();
+    const [e] = await db`select * from workflow_events where id=${a}`;
+    expect(Object.keys(e.after).sort()).toEqual(
+      [
+        "id",
+        "workspace_id",
+        "owner_id",
+        "conversation_id",
+        "direction",
+        "source_key",
+        "phone_number_id",
+        "provider",
+        "occurred_at",
+        "message_type",
+        "assigned_to",
+      ].sort(),
+    );
+    expect(e.after).toMatchObject({
+      id: m.message,
+      conversation_id: m.conversation,
+      provider: "cloud",
+      source_key: cloudSource,
+      direction: "inbound",
+      assigned_to: U,
+    });
+    expect(JSON.stringify(e.after)).not.toContain("Private customer");
+    expect(
+      await db`select id from workflow_events where notification_event_key=${sharedKey}`,
+    ).toHaveLength(1);
+    expect(
+      await db`select * from notification_business_event_proofs where event_key=${sharedKey}`,
+    ).toHaveLength(1);
+  });
+  it("accepts signed Lovable ingress independently of the SDR enabled switch", async () => {
+    await configure();
+    const m = await envelope({ lovable: true });
+    const listed = await sources();
+    expect(listed.payload.sources).toEqual(
+      expect.arrayContaining([expect.objectContaining({ id: m.source })]),
+    );
+    const event = await mint(m);
+    expect(event).not.toBeNull();
+    expect((await db`select after from workflow_events where id=${event}`)[0].after.provider).toBe(
+      "lovable",
+    );
+    expect(await eventCheck(event!)).toBe(true);
+  });
+  it("rejects historic, outbound, status and unverified incoming envelopes", async () => {
+    await configure();
+    for (const options of [
+      { old: true },
+      { outbound: true },
+      { status: true },
+      { noMarkers: true },
+      { call: true },
+    ])
+      expect(await mint(await envelope(options))).toBeNull();
+    expect(
+      await db`select id from workflow_events where notification_event_key=${sharedKey}`,
+    ).toHaveLength(0);
+  });
+  it("keeps preactivation and pre-reenable messages out of the queue", async () => {
+    const old = await envelope();
+    await configure();
+    expect(await mint(old)).toBeNull();
+    const m = await envelope();
+    await db`update workflows set enabled=false where id=${wf}`;
+    await db`update workflows set enabled=true where id=${wf}`;
+    expect(await mint(m)).toBeNull();
+    expect(await mint(await envelope())).not.toBeNull();
+  });
+  it("rejects account-number mismatches and readonly source mutations", async () => {
+    for (const selection of [
+      { source_keys: ["cloud:" + randomUUID()] },
+      { phone_number_ids: ["999999999"] },
+    ])
+      await expect(configure(selection)).rejects.toMatchObject({ code: "42501" });
+    for (const type of [
+      "set_field",
+      "assign_to",
+      "send_whatsapp",
+      "send_email",
+      "sdr_agent",
+      "associate_records",
+    ])
+      await expect(configure({}, [{ type }])).rejects.toMatchObject({ code: "42501" });
+    await configure();
+    const m = await envelope();
+    expect(
+      await withRole(
+        "service_role",
+        null,
+        async (tx) =>
+          (
+            await tx`select sales_worker_authorize('workflows',${wf},${tx.json([{ workflow_version: 1 }, { record_table: "whatsapp_messages", id: m.message, action: "update" }])}) ok`
+          )[0].ok,
+      ),
+    ).toBe(false);
+  });
+  it("forbids clients from minting or forging canonical WhatsApp events", async () => {
+    await configure();
+    const m = await envelope();
+    expect(
+      (
+        await request("/rpc/notification_whatsapp_received", {
+          p_message: m.message,
+          p_webhook: m.webhook,
+        })
+      ).status,
+    ).toBe(403);
+    await expect(
+      withRole(
+        "service_role",
+        null,
+        async (tx) =>
+          tx`insert into workflow_events(workspace_id,owner_id,entity,entity_id,notification_event_key,event_type,after) values(${W},${A},'whatsapp_messages',${m.message},${sharedKey},'updated',${tx.json({ body: "forged", id: m.message })})`,
+      ),
+    ).rejects.toMatchObject({ code: "42501" });
+  });
+  it("delivers to the conversation assignee without a creator or CEO fallback", async () => {
+    const rules = [{ kind: "source_responsible" }];
+    await configure({}, [
+      {
+        type: "send_notification",
+        title: noticeTitle,
+        recipients: rules,
+        delivery: { channels: ["inapp"], fallback: "none" },
+      },
+    ]);
+    const m = await envelope(),
+      event = await mint(m);
+    expect(await eventCheck(event!)).toBe(true);
+    await dispatch(event!, rules);
+    expect(await db`select user_id,link from notifications where title=${noticeTitle}`).toEqual([
+      { user_id: U, link: "/inbox/whatsapp?conversation=" + m.conversation },
+    ]);
+    await db`update whatsapp_conversations set assigned_to=null where id=${m.conversation}`;
+    const next = await envelope();
+    await db`update whatsapp_conversations set assigned_to=null where id=${next.conversation}`;
+    await dispatch((await mint(next))!, rules);
+    expect(await db`select id from notifications where title=${noticeTitle}`).toHaveLength(1);
+  });
+  it("reuses the existing unread Inbox notice in both dispatchers and the delivery ledger", async () => {
+    const rules = [{ kind: "source_responsible" }],
+      delivery = { channels: ["inapp"], fallback: "none" };
+    await configure({}, [
+      { type: "send_notification", title: noticeTitle, recipients: rules, delivery },
+    ]);
+    const m = await envelope(),
+      event = (await mint(m))!,
+      legacy = randomUUID();
+    await db`insert into notifications(id,workspace_id,owner_id,user_id,type,title,body,link,entity,entity_id)
+      values(${legacy},${W},${W},${U},'message','Nova mensagem na Inbox','Aviso existente','/inbox/whatsapp','inbox_conversation',${m.conversation})`;
+    expect(await dispatch(event, rules)).toMatchObject({ sent: 0, duplicate: 1 });
+    expect(
+      await db`select notification_id,event_key from notification_delivery_intents where workflow_id=${wf}`,
+    ).toEqual([{ notification_id: legacy, event_key: sharedKey }]);
+    expect(await db`select id from notifications where user_id=${U}`).toEqual([{ id: legacy }]);
+    const [run] =
+      await db`select id from workflow_runs where workflow_id=${wf} and event_id=${event}`;
+    expect(
+      await withRole(
+        "service_role",
+        null,
+        async (tx) =>
+          (
+            await tx`select notification_workflow_dispatch(${wf},${run.id},1,'whatsapp_messages',${m.message},${tx.json(rules)},${noticeTitle},null,'0') r`
+          )[0].r,
+      ),
+    ).toMatchObject({ sent: 0, duplicate: 1 });
+    expect(
+      (
+        await db`select event_key from notification_workspace_context where notification_id=${legacy}`
+      )[0].event_key,
+    ).toBe(sharedKey);
+    const listed = await request("/rpc/notification_center_list", {
+      p_workspace: W,
+      p_category: "message",
+    });
+    expect(listed.status).toBe(200);
+    expect(listed.payload.items.map((x: { id: string }) => x.id)).toContain(legacy);
+  });
+  it("revalidates a disconnected Cloud account and an archived Lovable account before dispatch", async () => {
+    const rules = [{ kind: "source_responsible" }];
+    await configure({}, [
+      {
+        type: "send_notification",
+        title: noticeTitle,
+        recipients: rules,
+        delivery: { channels: ["inapp"], fallback: "none" },
+      },
+    ]);
+    const cloud = await envelope(),
+      first = (await mint(cloud))!;
+    expect(await eventCheck(first)).toBe(true);
+    await db`update wa_cloud_connections set enabled=false where id=${X}`;
+    expect(await eventCheck(first)).toBe(false);
+    await expect(dispatch(first)).rejects.toMatchObject({ code: "42501" });
+    await db`update wa_cloud_connections set enabled=true where id=${X}`;
+    const lovable = await envelope({ lovable: true }),
+      second = (await mint(lovable))!;
+    expect(await eventCheck(second)).toBe(true);
+    await db`update service_channel_accounts set archived_at=clock_timestamp() where id=${lovable.source.slice(8)}`;
+    expect(await eventCheck(second)).toBe(false);
+    await expect(dispatch(second)).rejects.toMatchObject({ code: "42501" });
+    expect(await db`select id from notifications`).toHaveLength(0);
+  });
+  it("intersects two real account and number filters and invalidates an older published version", async () => {
+    const registry = await envelope({ lovable: true });
+    await expect(
+      configure({ source_keys: [cloudSource], phone_number_ids: ["987654321"] }),
+    ).rejects.toMatchObject({ code: "42501" });
+    await configure({ source_keys: [cloudSource, registry.source], phone_number_ids: [sender] });
+    expect(await mint(await envelope({ lovable: true }))).toBeNull();
+    const allowed = await envelope(),
+      event = (await mint(allowed))!;
+    expect(await eventCheck(event)).toBe(true);
+    await db`update workflows set published_version=2,last_published_at=clock_timestamp() where id=${wf}`;
+    expect(await eventCheck(event)).toBe(false);
+    const fresh = (await mint(await envelope()))!;
+    expect(
+      await withRole(
+        "service_role",
+        null,
+        async (tx) =>
+          (await tx`select notification_business_event_check(${fresh},${wf},2) ok`)[0].ok,
+      ),
+    ).toBe(true);
+    expect(
+      await withRole(
+        "service_role",
+        null,
+        async (tx) =>
+          (await tx`select notification_business_event_check(${event},${wf},2) ok`)[0].ok,
+      ),
+    ).toBe(false);
+  });
+  it("preserves a canonical resume proof and rejects altered payloads or hashes", async () => {
+    await configure();
+    const m = await envelope(),
+      parent = (await mint(m))!,
+      run = randomUUID(),
+      child = randomUUID();
+    await db`insert into workflow_runs(id,workspace_id,owner_id,workflow_id,event_id,entity,entity_id) values(${run},${W},${A},${wf},${parent},'whatsapp_messages',${m.message})`;
+    await withRole(
+      "service_role",
+      null,
+      (
+        tx,
+      ) => tx`insert into workflow_events(id,workspace_id,owner_id,entity,entity_id,event_type,before,after,notification_event_key,notification_parent_event_id,resume_workflow_id,workflow_version,resume_cursor)
+      select ${child},workspace_id,owner_id,entity,entity_id,event_type,before,after,notification_event_key,id,${wf},1,1 from workflow_events where id=${parent}`,
+    );
+    expect(await eventCheck(child)).toBe(true);
+    await expect(
+      withRole(
+        "service_role",
+        null,
+        (
+          tx,
+        ) => tx`insert into workflow_events(id,workspace_id,owner_id,entity,entity_id,event_type,before,after,notification_event_key,notification_parent_event_id,resume_workflow_id,workflow_version,resume_cursor)
+      select gen_random_uuid(),workspace_id,owner_id,entity,entity_id,event_type,before,after||'{"source_key":"cloud:forged"}'::jsonb,notification_event_key,id,${wf},1,2 from workflow_events where id=${parent}`,
+      ),
+    ).rejects.toMatchObject({ code: "42501" });
+    await db`update notification_business_event_proofs set payload_hash='forged-private-hash' where event_id=${parent}`;
+    expect(await eventCheck(parent)).toBe(false);
+    expect(await eventCheck(child)).toBe(false);
+  });
+  it("keeps the new notice in the message category and hides it when source access is revoked", async () => {
+    const rules = [{ kind: "source_responsible" }];
+    await configure({}, [
+      {
+        type: "send_notification",
+        title: noticeTitle,
+        recipients: rules,
+        delivery: { channels: ["inapp"], fallback: "none" },
+      },
+    ]);
+    const event = (await mint(await envelope()))!;
+    await dispatch(event, rules);
+    const listed = await request("/rpc/notification_center_list", {
+      p_workspace: W,
+      p_category: "message",
+      p_module: "crm",
+    });
+    expect(listed.status).toBe(200);
+    expect(listed.payload.items).toHaveLength(1);
+    expect(listed.payload.items[0]).toMatchObject({
+      title: noticeTitle,
+      moduleKey: "crm",
+      entity: "whatsapp_messages",
+    });
+    await db`update job_role_permission_overrides set effect='deny' where role_id=${ROLE} and permission_key='techsales.inbox.whatsapp.view.workspace'`;
+    const denied = await request("/rpc/notification_center_list", {
+      p_workspace: W,
+      p_category: "message",
+    });
+    expect(denied.status).toBe(200);
+    expect(denied.payload.items).toHaveLength(0);
+  });
+  it("queues a neutral consented external delivery and fails closed if the receiving account disconnects", async () => {
+    const rules = [{ kind: "source_responsible" }],
+      delivery = { channels: ["email"], fallback: "none" };
+    await save();
+    await db`update profiles set notification_preferences='{"message":{"email":true}}' where id=${U}`;
+    await configure({}, [
+      { type: "send_notification", title: noticeTitle, recipients: rules, delivery },
+    ]);
+    const event = (await mint(await envelope()))!;
+    expect(await dispatch(event, rules, delivery)).toMatchObject({ queued: 1 });
+    const [intent] =
+      await db`select id,payload_content_neutral from notification_delivery_intents where workflow_id=${wf}`;
+    expect(intent.payload_content_neutral).toMatchObject({
+      title: "Atualização no TechERP",
+      body: "Consulte a central de notificações do TechERP.",
+    });
+    expect(JSON.stringify(intent.payload_content_neutral)).not.toContain("Private customer");
+    const [job] =
+      await db`select id from workflow_deliveries where notification_intent_id=${intent.id}`;
+    const claimed = await claim(job.id);
+    expect(claimed).toMatchObject({ result: "claimed" });
+    expect(await preflight(job.id, claimed.token)).toMatchObject({ allowed: true });
+    await db`update wa_cloud_connections set enabled=false where id=${X}`;
+    expect(await preflight(job.id, claimed.token)).toMatchObject({ allowed: false });
+  });
+  it("rejects a persisted message that does not match the signed sender", async () => {
+    await configure();
+    const m = await envelope();
+    await db`update whatsapp_messages set from_number='+5548999990002' where id=${m.message}`;
+    expect(await mint(m)).toBeNull();
+    await db`update whatsapp_messages set from_number='+5548999990000' where id=${m.message}`;
+    await db`update whatsapp_conversations set contact_phone='+5548999990003' where id=${m.conversation}`;
+    expect(await mint(m)).toBeNull();
+  });
+
+  it("preserves policy-bound OIDs and shows only authorized WhatsApp events and runs through HTTP", async () => {
+    const rules = [{ kind: "source_responsible" }];
+    await configure({}, [
+      {
+        type: "send_notification",
+        title: noticeTitle,
+        recipients: rules,
+        delivery: { channels: ["inapp"], fallback: "none" },
+      },
+    ]);
+    const m = await envelope(),
+      event = (await mint(m))!;
+    await dispatch(event);
+    const [bound] =
+      await db`select count(*)::integer n from pg_depend d join pg_policy p on d.classid='pg_policy'::regclass and p.oid=d.objid where d.refclassid='pg_proc'::regclass and d.refobjid='public.sales_event_reference_access(text,uuid)'::regprocedure and p.polrelid in('workflow_events'::regclass,'workflow_runs'::regclass)`;
+    expect(bound.n).toBeGreaterThanOrEqual(2);
+    expect(await request("/workflow_events?id=eq." + event + "&select=id,after")).toMatchObject({
+      status: 200,
+      payload: [{ id: event, after: { source_key: cloudSource } }],
+    });
+    expect(
+      (await request("/workflow_runs?workflow_id=eq." + wf + "&select=id")).payload,
+    ).toHaveLength(1);
+    expect(
+      (await request("/workflow_events?id=eq." + event + "&select=id", undefined, F)).payload,
+    ).toEqual([]);
+    await db`update job_role_permission_overrides set effect='deny' where role_id=${ROLE} and permission_key='techsales.inbox.whatsapp.view.workspace'`;
+    expect((await request("/workflow_events?id=eq." + event + "&select=id")).payload).toEqual([]);
+    expect((await request("/workflow_runs?workflow_id=eq." + wf + "&select=id")).payload).toEqual(
+      [],
+    );
+  });
+  it("matches canonical Brazilian mobile variants in both directions without turning a fixed line into a mobile", async () => {
+    await configure();
+    for (const [raw, persisted] of [
+      ["554899990000", "+5548999990000"],
+      ["5548999990000", "+554899990000"],
+      ["554830121055", "+554830121055"],
+    ]) {
+      const m = await envelope();
+      await db`update whatsapp_webhook_events set payload=jsonb_set(payload,'{entry,0,changes,0,value,messages,0,from}',${db.json(raw)}) where id=${m.webhook}`;
+      await db`update whatsapp_messages set from_number=${persisted},raw=jsonb_set(raw,'{from}',${db.json(raw)}) where id=${m.message}`;
+      await db`update whatsapp_conversations set contact_phone=${persisted} where id=${m.conversation}`;
+      expect(await mint(m)).not.toBeNull();
+    }
+    const fixed = await envelope();
+    await db`update whatsapp_webhook_events set payload=jsonb_set(payload,'{entry,0,changes,0,value,messages,0,from}','"554830121055"') where id=${fixed.webhook}`;
+    await db`update whatsapp_messages set from_number='+5548930121055' where id=${fixed.message}`;
+    await db`update whatsapp_conversations set contact_phone='+5548930121055' where id=${fixed.conversation}`;
+    expect(await mint(fixed)).toBeNull();
+  });
+  it("keeps the proof valid after authorized reassignment and resolves only the current conversation assignee", async () => {
+    const rules = [{ kind: "source_responsible" }];
+    await configure({}, [
+      {
+        type: "send_notification",
+        title: noticeTitle,
+        recipients: rules,
+        delivery: { channels: ["inapp"], fallback: "none" },
+      },
+    ]);
+    const m = await envelope(),
+      event = (await mint(m))!;
+    await db`update whatsapp_conversations set assigned_to=${C} where id=${m.conversation}`;
+    expect(await eventCheck(event)).toBe(true);
+    await dispatch(event);
+    expect(await db`select user_id from notifications where title=${noticeTitle}`).toEqual([
+      { user_id: C },
+    ]);
+    expect(
+      (await db`select after from workflow_events where id=${event}`)[0].after.assigned_to,
+    ).toBe(U);
+  });
+  it("rejects minting in a readonly role session and never exposes private proof tables", async () => {
+    await configure();
+    const m = await envelope(),
+      session = randomUUID();
+    await db`insert into view_as_sessions(session_id,mode) values(${session},'role')`;
+    await expect(
+      withRole(
+        "service_role",
+        null,
+        (tx) => tx`select notification_whatsapp_received(${m.message},${m.webhook})`,
+        { session_id: session },
+      ),
+    ).rejects.toMatchObject({ code: "42501" });
+    expect((await request("/notification_whatsapp_activations?select=*")).status).toBe(403);
+    expect((await request("/notification_business_event_proofs?select=*")).status).toBe(403);
+    expect(
+      await db`select id from workflow_events where notification_event_key=${sharedKey}`,
+    ).toHaveLength(0);
   });
 });

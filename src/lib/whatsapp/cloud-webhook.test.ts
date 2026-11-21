@@ -108,6 +108,25 @@ describe("cloud webhook boundary", () => {
     expect(processEvent).toHaveBeenCalledTimes(1);
     expect(state.storage[0].payload.entry[0].changes[0].value._verified_workspace_id).toBe("wk");
   });
+  it("overrides supplied workspace and connection markers with the signed route capability", async () => {
+    const payload = structuredClone(base);
+    Object.assign(payload.entry[0].changes[0].value, {
+      _verified_workspace_id: "foreign-workspace",
+      _verified_connection_id: "foreign-connection",
+    });
+    expect((await handleCloudWebhook(await signed(payload), id)).status).toBe(200);
+    expect(state.storage[0].payload.entry[0].changes[0].value).toMatchObject({
+      _verified_workspace_id: "wk",
+      _verified_connection_id: id,
+    });
+    expect(state.storage[0].delivery_id).toMatch(new RegExp(`^cloud:${id}:`));
+    expect(state.calls).toContainEqual(["wa_cloud_numbers", "workspace_id", "wk"]);
+    expect(state.calls).toContainEqual(["wa_cloud_numbers", "connection_id", id]);
+    expect(processEvent).toHaveBeenCalledExactlyOnceWith(
+      expect.anything(),
+      expect.objectContaining({ id: "event" }),
+    );
+  });
   it("cloud webhook rejects missing signature", async () => {
     expect(
       (

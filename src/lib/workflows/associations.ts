@@ -58,6 +58,8 @@ export const ENTITY_ASSOCIATIONS: Record<WorkflowEntity, AssociationDef[]> = {
   people_documents: [],
   hiring_preparation_requests: [],
   hiring_fiscal_documents: [],
+  // Inbound messages expose only their proved metadata, never customer records or body hydration.
+  whatsapp_messages: [],
   ats_applications: [
     { key: "job", label: "Vaga", fk_column: "job_id", target_table: "ats_jobs" },
     {

@@ -14,6 +14,7 @@ import {
   notificationEventConfigurationProblem,
   FINANCE_NOTIFICATION_ENTRY_FIELDS,
   FINANCE_NOTIFICATION_FISCAL_FIELDS,
+  WHATSAPP_NOTIFICATION_MESSAGE_FIELDS,
 } from "../notification-events";
 import type { RunCtx } from "./run-context";
 import { assertSalesWorker } from "@/lib/access-control/sales-worker.server";
@@ -74,6 +75,7 @@ export const WORKFLOW_PRIVATE_SOURCE_FIELDS: Readonly<Record<string, readonly st
 };
 
 const minimalSourceFields: Readonly<Record<string, readonly string[]>> = {
+  whatsapp_messages: WHATSAPP_NOTIFICATION_MESSAGE_FIELDS,
   financial_entries: FINANCE_NOTIFICATION_ENTRY_FIELDS,
   hiring_fiscal_documents: FINANCE_NOTIFICATION_FISCAL_FIELDS,
   ats_applications: [

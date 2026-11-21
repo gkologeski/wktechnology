@@ -2,9 +2,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const suggestCompanyLeft = vi.fn(async () => "created" as const);
 const ingestInboundForSdr = vi.fn(async () => ({}));
+const recordWorkflowWhatsAppReceived = vi.fn(async () => null);
 
 vi.mock("@/lib/inbox/ai-suggestions.server", () => ({ suggestCompanyLeft }));
 vi.mock("@/lib/prospecting/sdr/ingest.server", () => ({ ingestInboundForSdr }));
+vi.mock("@/lib/workflows/whatsapp-inbound.server", () => ({ recordWorkflowWhatsAppReceived }));
 vi.mock("@/lib/inbox/identity-resolution.server", () => ({
   identityColumns: () => ({}),
   resolveInboxIdentity: async () => null,
@@ -70,6 +72,7 @@ describe("WhatsApp inbound → sugestão 'saiu da empresa'", () => {
   beforeEach(() => {
     suggestCompanyLeft.mockClear();
     ingestInboundForSdr.mockClear();
+    recordWorkflowWhatsAppReceived.mockClear();
   });
 
   it("mensagem nova gera a sugestão com os ids da mensagem gravada", async () => {
@@ -97,6 +100,7 @@ describe("WhatsApp inbound → sugestão 'saiu da empresa'", () => {
       attempts: 0,
     });
     expect(ok).toBe(true);
+    expect(recordWorkflowWhatsAppReceived).toHaveBeenCalledExactlyOnceWith(admin, "msg1", "ev1");
     expect(suggestCompanyLeft).toHaveBeenCalledTimes(1);
     expect(suggestCompanyLeft).toHaveBeenCalledWith(admin, {
       workspaceId: "ws1",
@@ -118,6 +122,7 @@ describe("WhatsApp inbound → sugestão 'saiu da empresa'", () => {
       attempts: 0,
     });
     expect(ok).toBe(true);
+    expect(recordWorkflowWhatsAppReceived).toHaveBeenCalledExactlyOnceWith(admin, "old", "ev2");
     expect(suggestCompanyLeft).not.toHaveBeenCalled();
     expect(ingestInboundForSdr).not.toHaveBeenCalled();
   });

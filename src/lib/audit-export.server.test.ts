@@ -1,4 +1,5 @@
 import { beforeEach, afterEach, it, expect, vi } from "vitest";
+import { createHmac } from "node:crypto";
 afterEach(() => vi.unstubAllGlobals());
 const state = vi.hoisted(() => ({
   rpc: vi.fn(),
@@ -66,6 +67,7 @@ beforeEach(() => {
   state.updates = [];
   state.tables = [];
   state.cfg.destination = "webhook";
+  state.cfg.hmac_secret = "test-audit-export-hmac";
   state.rpc.mockReset();
   state.guard.mockReset();
   state.guard.mockResolvedValue(new URL("https://example.com/export"));
@@ -102,11 +104,30 @@ it("audit worker exports only projected rows and advances successful cursor", as
   expect(state.guard).toHaveBeenCalled();
   expect(fetch).toHaveBeenCalledWith(
     "https://example.com/export",
-    expect.objectContaining({ body: '[{"id":"authorized-audit"}]', redirect: "error" }),
+    expect.objectContaining({
+      body: '[{"id":"authorized-audit"}]',
+      redirect: "error",
+      headers: expect.objectContaining({
+        "X-Signature": createHmac("sha256", "test-audit-export-hmac")
+          .update('[{"id":"authorized-audit"}]')
+          .digest("hex"),
+      }),
+    }),
   );
   expect(state.updates.find((x) => x.payload.last_status === "success")?.payload).toMatchObject({
     cursor_at: "2026-01-02T00:00:00Z",
     cursor_id: "audit-cursor",
+  });
+});
+it("audit worker refuses an unsigned webhook without delivery or cursor advancement", async () => {
+  state.cfg.hmac_secret = null;
+  expect(await runAuditExport("export", "workspace")).toMatchObject({
+    ok: false,
+    error: "webhook sem segredo de assinatura",
+  });
+  expect(fetch).not.toHaveBeenCalled();
+  expect(state.updates.find((x) => x.payload.last_status === "failed")?.payload).toEqual({
+    last_status: "failed",
   });
 });
 it("audit worker failed delivery never advances the export cursor", async () => {

@@ -247,6 +247,7 @@ function NotificationRulesContext({
               >
                 <option value="">Regra genérica de Workflow</option>
                 {[
+                  { prefix: "shared.", label: "Atendimento" },
                   { prefix: "crm.", label: "TechSales" },
                   { prefix: "contracts.", label: "TechContracts" },
                   { prefix: "projects.", label: "TechProjects" },

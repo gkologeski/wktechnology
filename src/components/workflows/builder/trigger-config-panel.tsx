@@ -25,6 +25,7 @@ import {
 } from "@/lib/workflows/types";
 import type { FieldOpt } from "./step-tree";
 import { ConditionListEditor, conditionsIncludeField } from "./conditions-editor";
+import { WhatsAppInboundFilters } from "./whatsapp-inbound-filters";
 import {
   WORKFLOW_NOTIFICATION_EVENTS,
   getWorkflowNotificationEvent,
@@ -110,6 +111,7 @@ export function TriggerConfigPanel({
               </option>
             )}
           {[
+            { prefix: "shared.", label: "Atendimento" },
             { prefix: "crm.", label: "TechSales" },
             { prefix: "contracts.", label: "TechContracts" },
             { prefix: "projects.", label: "TechProjects" },
@@ -138,6 +140,22 @@ export function TriggerConfigPanel({
         {notificationEvent && (
           <div className="mt-2 space-y-2 text-xs text-muted-foreground">
             <p>{notificationEvent.description} A seleção não publica nem ativa o Workflow.</p>
+            {notificationEvent.key === "shared.message.received" && (
+              <>
+                <p>
+                  Cada nova mensagem recebida por Cloud API ou Lovable gera uma ocorrência própria.
+                  A mesma entrega do provedor não deve repetir o gatilho. Histórico importado,
+                  mensagens enviadas, ligações e recibos de entrega não entram. O aviso direto da
+                  Inbox é preservado; destinatários e canais desta regra continuam explícitos.
+                </p>
+                <WhatsAppInboundFilters
+                  selection={trigger.notification_event!}
+                  onChange={(selection) =>
+                    onChange((current) => ({ ...current, notification_event: selection }))
+                  }
+                />
+              </>
+            )}
             {notificationEvent.key === "projects.project.started" && (
               <p>
                 Somente a mudança de Planejamento para Ativo. Criar ou importar um projeto já ativo,

@@ -15,6 +15,7 @@ import { autoAssignInboxConversation } from "@/lib/inbox-auto-assignment.server"
 import { ingestInboundForSdr } from "@/lib/prospecting/sdr/ingest.server";
 import { inboundBody } from "./inbound-media";
 import { storeInboundMedia } from "./inbound-media.server";
+import { recordWorkflowWhatsAppReceived } from "@/lib/workflows/whatsapp-inbound.server";
 
 // Tabela whatsapp_webhook_events só entra nos tipos após aceitar o rascunho.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,7 +87,7 @@ async function suggestCompanyLeftSafe(
     .catch((e) => console.error("[inbox-ai-suggestion]", (e as Error).message));
 }
 
-async function handleMessages(admin: Admin, value: any): Promise<string | null> {
+async function handleMessages(admin: Admin, value: any, webhookId: string): Promise<string | null> {
   await assertCloudInboundEnabled(admin, value);
   const ourPhone = normalizePhone(value?.metadata?.display_phone_number ?? "");
   let workspaceId: string | null = null;
@@ -99,6 +100,9 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
       duplicateQuery = duplicateQuery.eq("workspace_id", value._verified_workspace_id);
     const { data: dup } = await duplicateQuery.maybeSingle();
     if (dup) {
+      // A prior attempt may have persisted the message before the event producer
+      // completed. Its private occurrence ledger reconciles this same receipt.
+      await recordWorkflowWhatsAppReceived(admin, dup.id, webhookId);
       // Reentrega: reenfileira de forma idempotente caso a tentativa anterior tenha parado no meio.
       if (dup.workspace_id && dup.conversation_id) {
         await suggestCompanyLeftSafe(admin, {
@@ -213,6 +217,9 @@ async function handleMessages(admin: Admin, value: any): Promise<string | null> 
       .select("id")
       .single();
     if (mErr) throw new Retry(mErr.message);
+    // Persist the business occurrence before acknowledging this webhook. Never
+    // run workflow actions inline: retries reconcile the same durable IDs.
+    await recordWorkflowWhatsAppReceived(admin, inserted.id, webhookId);
     // Arquivo baixado na hora; falha fica para a recuperação (media_url nulo).
     if (media?.id)
       await storeInboundMedia(admin, {
@@ -307,7 +314,7 @@ export async function processEvent(admin: Admin, row: EventRow): Promise<boolean
   try {
     const value = valueOf(row.payload);
     let ws: string | null = null;
-    if (row.event === "whatsapp.message") ws = await handleMessages(admin, value);
+    if (row.event === "whatsapp.message") ws = await handleMessages(admin, value, row.id);
     else if (row.event === "whatsapp.status") ws = await handleStatuses(admin, value);
     // Demais eventos ficam guardados e são reconhecidos sem processamento.
     await admin

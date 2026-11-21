@@ -6,6 +6,7 @@ Capturas feitas em 06/11/2026 com os dados fictícios do workspace WK (328 artig
 
 Telas públicas que exigem link/token válido, ou artigos sem tela própria:
 
+- `crm/automatizar-mensagens-recebidas-whatsapp` — capturar o construtor em `/settings/workflows` com o objeto Mensagens de WhatsApp (Inbox), o evento Mensagem de WhatsApp recebida e os filtros Contas de recebimento/Números comerciais de recebimento; usar dados fictícios, sem conversas ou credenciais reais
 - `projects/copiar-semana` — sem rota própria
 - `projects/editar-detalhes-tarefa` — sem rota própria
 - `projects/enviar-periodo` — sem rota própria

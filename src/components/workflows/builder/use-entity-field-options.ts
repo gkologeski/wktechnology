@@ -10,7 +10,35 @@ export function useEntityFieldOptions(entity: WorkflowEntity): FieldOpt[] {
     queryKey: ["wf-entity-fields", entity],
     queryFn: () => fetchCatalog({ data: { entity } }),
     staleTime: 5 * 60_000,
+    enabled: entity !== "whatsapp_messages",
   });
+  if (entity === "whatsapp_messages")
+    return [
+      { name: "id", label: "ID da mensagem", system: true },
+      { name: "workspace_id", label: "Workspace", system: true },
+      { name: "owner_id", label: "Criador", system: true },
+      { name: "conversation_id", label: "Conversa" },
+      {
+        name: "direction",
+        label: "Direção",
+        type: "select",
+        options: [{ value: "inbound", label: "Recebida" }],
+      },
+      { name: "source_key", label: "Conta de origem" },
+      { name: "phone_number_id", label: "Número comercial (ID)" },
+      {
+        name: "provider",
+        label: "Integração de origem",
+        type: "select",
+        options: [
+          { value: "cloud", label: "Cloud API" },
+          { value: "lovable", label: "Lovable" },
+        ],
+      },
+      { name: "occurred_at", label: "Recebida em", type: "date" },
+      { name: "message_type", label: "Tipo de mensagem" },
+      { name: "assigned_to", label: "Responsável", ref: "user" },
+    ];
   if (data?.fields?.length) {
     return data.fields.map((f) => ({
       name: f.name,

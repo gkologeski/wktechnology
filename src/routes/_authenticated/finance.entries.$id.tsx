@@ -120,10 +120,7 @@ function EntryDetailsContent({
   // A página só some na primeira conferência; recargas em segundo plano (salvar,
   // voltar à janela) mantêm a tela e o foco. O registro de pagamento segue o gate estrito.
   const pageChecking =
-    !entry ||
-    entry.id !== id ||
-    !query.isFetchedAfterMount ||
-    !access.isFetchedAfterMount;
+    !entry || entry.id !== id || !query.isFetchedAfterMount || !access.isFetchedAfterMount;
   useEffect(() => {
     if (query.isError || (query.isFetchedAfterMount && !query.isFetching && !query.data)) {
       setPayOpen(false);

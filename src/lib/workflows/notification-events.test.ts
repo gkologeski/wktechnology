@@ -28,11 +28,11 @@ const workflow = {
 };
 
 describe("explicit business notification selectors", () => {
-  it("preserves the eighteen existing events and adds the five financial events", () => {
+  it("preserves the twenty-three existing events and adds the WhatsApp reception event", () => {
     expect(WORKFLOW_NOTIFICATION_EVENTS.map(({ key }) => key)).toEqual([
       ...WORKFLOW_NOTIFICATION_EVENT_KEYS,
     ]);
-    expect(WORKFLOW_NOTIFICATION_EVENTS).toHaveLength(23);
+    expect(WORKFLOW_NOTIFICATION_EVENTS).toHaveLength(24);
     expect(WORKFLOW_NOTIFICATION_EVENT_KEYS.slice(0, 8)).toEqual([
       "crm.deal.won",
       "crm.deal.lost",
@@ -97,6 +97,7 @@ describe("explicit business notification selectors", () => {
       "finance.payable.overdue": "financial_entries",
       "finance.receivable.overdue": "financial_entries",
       "finance.invoice.received": "hiring_fiscal_documents",
+      "shared.message.received": "whatsapp_messages",
     };
     for (const definition of WORKFLOW_NOTIFICATION_EVENTS) {
       expect(active.find(({ eventKey }) => eventKey === definition.key)).toMatchObject({
@@ -105,7 +106,9 @@ describe("explicit business notification selectors", () => {
         moduleKey: definition.moduleKey,
       });
       expect(definition.entity).toBe(expectedSources[definition.key]);
-      expect(definition.moduleKey).toBe(definition.key.split(".")[0]);
+      expect(definition.moduleKey).toBe(
+        definition.key === "shared.message.received" ? "crm" : definition.key.split(".")[0],
+      );
       expect(definition.deadline).toBe(definition.scheduling === "before_due");
     }
   });
@@ -125,6 +128,15 @@ describe("explicit business notification selectors", () => {
         workflowNotificationTriggerMatches(trigger, {
           entity: event.entity,
           notification_event_key: event.key,
+          ...(event.key === "shared.message.received"
+            ? {
+                after: {
+                  direction: "inbound",
+                  source_key: "cloud:aaaaaaaa-1111-4111-8111-111111111111",
+                  phone_number_id: "123456",
+                },
+              }
+            : {}),
         }),
       ).toBe(true);
     },
@@ -234,6 +246,7 @@ describe("explicit business notification selectors", () => {
     "people_documents",
     "hiring_preparation_requests",
     "hiring_fiscal_documents",
+    "whatsapp_messages",
   ] as const)(
     "rejects a forged generic or timed selector on the new read-only source %s",
     (entity) => {

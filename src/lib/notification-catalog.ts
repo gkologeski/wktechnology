@@ -152,7 +152,7 @@ export const NOTIFICATION_EVENT_CATALOG = [
   active("projects.milestone.due", "Marco próximo do prazo", "task", "projects"),
   planned("shared.approval.pending", "Aprovação pendente", "approval", null),
   planned("shared.sla.breached", "SLA excedido", "sla", null),
-  planned("shared.message.received", "Mensagem recebida", "message", null),
+  active("shared.message.received", "Mensagem de WhatsApp recebida", "message", "crm"),
   planned("shared.mention.created", "Menção recebida", "mention", null),
 ] as const satisfies readonly EventDefinition[];
 
