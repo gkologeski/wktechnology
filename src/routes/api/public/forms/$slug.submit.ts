@@ -198,19 +198,10 @@ export const Route = createFileRoute("/api/public/forms/$slug/submit")({
               .eq("id", leadId)
               .maybeSingle();
             if (existing) {
-              const patch: {
-                last_name?: string;
-                email?: string;
-                phone?: string;
-                company_name?: string;
-                job_title?: string;
-                last_form_submission_at?: string;
-              } = { last_form_submission_at: new Date().toISOString() };
-              if (!existing.last_name && lastName) patch.last_name = lastName;
-              if (!existing.email && email) patch.email = email;
-              if (!existing.phone && phone) patch.phone = phone;
-              if (!existing.company_name && company) patch.company_name = company;
-              if (jobTitle) patch.job_title = jobTitle;
+              // Envio anônimo não prova que o visitante é o dono do lead: o cadastro
+              // existente não é alterado. Os dados enviados ficam no próprio envio
+              // do formulário para a equipe conferir e aplicar manualmente.
+              const patch = { last_form_submission_at: new Date().toISOString() };
               const { error: uerr } = await supabaseAdmin
                 .from("leads")
                 .update(patch)

@@ -2,6 +2,14 @@
   "schema_version": 1,
   "contracts": [
     {
+      "id": "workflow-token-rendering-pure",
+      "kind": "presentation",
+      "rationale": "Pure token substitution helpers for workflow messages, including the HTML-escaping variant used in email bodies. No queries, endpoints, credentials or authority; callers own their authorization boundary.",
+      "files": {
+        "src/lib/workflows/render-tokens.ts": "941a2f025ddcbf3dfaf84ccd5b12c6149dd04041de5581aee90f7b97d2f56994"
+      }
+    },
+    {
       "id": "home-dashboard-authorization",
       "kind": "business",
       "resources": [
@@ -7793,7 +7801,7 @@
         "review_by": "2027-05-04"
       },
       "files": {
-        "src/routes/api/public/forms/$slug.submit.ts": "440fd4a5674d161f15c36803f42ed15a411c6e3abf1e2b6994bc89fee9df1940"
+        "src/routes/api/public/forms/$slug.submit.ts": "8e9f3f55b77ac5a94a8f75957e9596331013d5445179c55acb820118e25bea1d"
       }
     },
     {
@@ -9267,7 +9275,7 @@
         "src/components/workflows/builder/step-forms/hiring-forms.tsx": "3609246e0df6303db1051562d2609514236297d41b8a4c52b48e80764f0f9783",
         "src/lib/people/allocations.functions.ts": "462fc4923d9722430e112cd51965545af07896ee2bed5f14632051cf221c5053",
         "src/lib/workflows/engine/actions-hiring.server.ts": "ea623a453c25411c96888d09eae78cbe9da9d0e8f07ad4ec40ab32649c44f0a8",
-        "src/lib/workspace-invites.functions.ts": "52e030eabd06550afc8394401ecfa4df89e91ac8f3ffbe73ebc78fbc0e37f888",
+        "src/lib/workspace-invites.functions.ts": "f8432694fbb9bca4170b6250dfb5e2d458c7f43086eda07c0a52823a9112d7ee",
         "src/routes/_authenticated/people.$id.tsx": "4be6bedc763f65b6efed2a397eb143b3b21a7ac8f0d4d97d77dce7ae86e99552",
         "src/routes/_authenticated/settings.permissions.tsx": "a0950fe8296a5573020ae903b29b3db04c115de817a5635b71e154a024fd3b68",
         "src/routes/accept-invite.$token.tsx": "b9b9124eae7d92cd6463124ccfe75437e79df757c2e5de72be6fca6da10d31af",
@@ -17981,7 +17989,7 @@
         "drizzle/migrations/0391_notification_recipients.sql": "12eec659a22ef6a3bf13a2fd376b3fd50e84752da281d6d19e533ff826dcd37a",
         "src/lib/notification-dispatch.server.ts": "9c31756e679af62e9c2485f7d1cf5dd522211df55fc6a6f912f7c4b9cb86ffeb",
         "src/lib/workflows/engine-actions.server.ts": "e3fd84d431f5a46b31b2981a26a71bbc88dd64c6e7137b2d2f74e1ec5441bc25",
-        "src/lib/workflows/engine/actions-messaging.server.ts": "41be7ec71111f99f38bb5e5e6db7600255f24606550314bd508093acc234a7a3",
+        "src/lib/workflows/engine/actions-messaging.server.ts": "6a2674eb1befce5b454e0453a107891ef6a0ca7fe8180665c0984f1fe464d4cb",
         "src/components/workflows/builder/step-forms/notification-form.tsx": "ba445b897795d70258bcee0984d7e71c8a8a16e2bf0bd7e7d5f64284e4ca82d4"
       }
     },

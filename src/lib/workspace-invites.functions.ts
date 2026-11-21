@@ -698,6 +698,7 @@ export const consumeInvite = createServerFn({ method: "POST" })
 
     // Encontra ou cria o usuário no Auth
     let userId: string | null = null;
+    let existingNeverSignedIn = false;
     let page = 1;
     while (page <= 20) {
       const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({
@@ -708,6 +709,7 @@ export const consumeInvite = createServerFn({ method: "POST" })
       const u = list.users.find((u) => (u.email ?? "").toLowerCase() === email);
       if (u) {
         userId = u.id;
+        existingNeverSignedIn = !u.last_sign_in_at;
         break;
       }
       if (list.users.length < 200) break;
@@ -729,9 +731,42 @@ export const consumeInvite = createServerFn({ method: "POST" })
       if (cErr || !created.user) throw new Error(cErr?.message ?? "Falha ao criar usuário.");
       userId = created.user.id;
     } else {
-      // Atualiza senha + metadata e remove bloqueio (ex.: usuário inativo vindo do HubSpot)
+      // O token do convite fica com quem convidou, então ele NÃO prova o controle
+      // da conta. Conta já usada: a pessoa precisa provar a senha atual (que nunca
+      // é trocada aqui). Só uma conta-placeholder nunca acessada e sem vínculo com
+      // outro workspace (ex.: responsável importado do HubSpot) recebe a senha nova.
+      if (!existingNeverSignedIn) {
+        const { createClient } = await import("@supabase/supabase-js");
+        const probe = createClient(
+          process.env["SUPABASE_URL"] ?? "",
+          process.env["SUPABASE_PUBLISHABLE_KEY"] ?? "",
+          { auth: { persistSession: false, autoRefreshToken: false } },
+        );
+        const { error: pErr } = await probe.auth.signInWithPassword({
+          email,
+          password: data.password,
+        });
+        if (pErr)
+          throw new Error(
+            "Esta conta já existe. Informe a senha atual da conta (ou use “Esqueci minha senha” no login) para aceitar o convite.",
+          );
+        await probe.auth.signOut().catch(() => undefined);
+      } else {
+        const { data: otherMemberships, error: omErr } = await supabaseAdmin
+          .from("workspace_members")
+          .select("workspace_id")
+          .eq("user_id", userId)
+          .neq("workspace_id", inv.workspace_id as string)
+          .limit(1);
+        if (omErr) throw new Error("Não foi possível conferir a conta convidada.");
+        if ((otherMemberships ?? []).length > 0)
+          throw new Error(
+            "Esta conta já pertence a outro workspace. Use “Esqueci minha senha” no login para definir a senha e depois abra o convite novamente.",
+          );
+      }
+      // Remove bloqueio e atualiza metadata; a senha só é definida no placeholder nunca acessado.
       const { error: uErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-        password: data.password,
+        ...(existingNeverSignedIn ? { password: data.password } : {}),
         email_confirm: true,
         ban_duration: "none",
         user_metadata: { full_name: data.full_name, phone: data.phone },

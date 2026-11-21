@@ -5,6 +5,7 @@ import { withWorkflowWorkspace } from "./workspace-payload";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toStr } from "../render-tokens";
 import { type LogStep, renderTokens } from "../engine-shared.server";
+import { renderWorkflowTokensHtml } from "../render-tokens";
 import type { RunCtx, RunnableAction } from "./run-context";
 import { buildDeliveryMeta } from "../delivery-meta";
 import { dispatchWorkflowNotification } from "@/lib/notification-dispatch.server";
@@ -76,7 +77,7 @@ export async function handleMessagingAction(
         }
       }
       subject = renderTokens(subject, ctx.after, ctx.vars) as string;
-      body = renderTokens(body, ctx.after, ctx.vars) as string;
+      body = renderWorkflowTokensHtml(body, ctx.after, ctx.vars);
       const { sendWorkflowEmail } = await import("./workflow-email.server");
       const r = await sendWorkflowEmail(supabase, {
         workspaceId: ctx.workspaceId,
