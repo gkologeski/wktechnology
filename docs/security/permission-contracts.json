@@ -204,10 +204,22 @@
       "resources": [
         "system.automation.macros",
         "system.communication.subscription_types",
-        "system.linkedin"
+        "system.linkedin",
+        "system.whatsapp_templates"
       ],
-      "actions": ["view", "create", "update", "delete", "manage", "export"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete",
+        "manage",
+        "export"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.automation.macros.create.own",
         "system.automation.macros.create.workspace",
@@ -226,9 +238,10 @@
         "system.communication.subscription_types.update.workspace",
         "system.communication.subscription_types.view.workspace",
         "system.linkedin.view.own",
-        "system.linkedin.view.workspace"
+        "system.linkedin.view.workspace",
+        "system.whatsapp_templates.view.workspace"
       ],
-      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS. Review 01/11/2026: meeting WhatsApp reminders \u2014 settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 05/11/2026: header gains the Help '?' button (HelpButton), which only reads help articles through help.functions (help-center contract); no access change to existing routes. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. Personal LinkedIn has a specific route mapping; integration-administrator grants cannot replace its own view permission.",
+      "rationale": "Configuration permission repair: action-scoped active-workspace context, legacy macro aliases with cross-alias deny precedence and database RLS. No roles or grants are changed. The authenticated layout waits for the role check only on admin/manager-only routes and fails closed (blocked with retry) when the role query errors; useMyRole still derives the role only from workspace ownership and user_roles rows read under RLS. Review 01/11/2026: meeting WhatsApp reminders — settings menu link and route map entry (techsales.meeting_settings) / future-meeting reminder status in timeline (MeetingReminderStatus, server-checked); no access change to existing operations. Review 05/11/2026: header gains the Help '?' button (HelpButton), which only reads help articles through help.functions (help-center contract); no access change to existing routes. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. Personal LinkedIn has a specific route mapping; integration-administrator grants cannot replace its own view permission. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos.",
       "database": [
         {
           "file": "drizzle/migrations/0239_shared_configuration_permissions.sql",
@@ -276,8 +289,8 @@
         "review_by": "2027-01-25"
       },
       "files": {
-        "src/lib/access-control/sales-route-map.ts": "1a0b7aaf3d644832266a45e09bb4c1d7cf4477c6714a891298cf2d9787ab8892",
-        "src/routes/_authenticated/settings.tsx": "6654b09ffe560590a6b1b83c28b27035fff5acaed3c2af30e6e284a255413359",
+        "src/lib/access-control/sales-route-map.ts": "a10ccb622293c293b8ff2665cd944961b11ce061f845246672770d1c653a5195",
+        "src/routes/_authenticated/settings.tsx": "82a3ba0d7861c302eea307bce37ad4f62ef4adbe0b0924ce183772fa344324fc",
         "src/routes/_authenticated.tsx": "7c8525f0f33c6501b29c6ee3fe6316fcf608551f8c3f2f50a80d044bf2d6e708",
         "src/lib/use-my-role.ts": "374ad3e021567528dff3679f7220987bb0e278f166313343ade5c7e7f94cab54"
       }
@@ -1998,7 +2011,7 @@
         "system.whatsapp.view.workspace",
         "system.whatsapp.manage.workspace"
       ],
-      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added.",
+      "rationale": "Opt-in connection registry: active membership and effective workspace permission before privileged encrypted credential access. Credentials never returned; service-only transactional number sync; existing gateway unchanged. UI requires same effective permissions. No new grants. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos.",
       "controls": [
         {
           "file": "src/lib/whatsapp/cloud-api.server.ts",
@@ -2148,7 +2161,7 @@
         "review_by": "2027-01-26"
       },
       "files": {
-        "src/lib/whatsapp/cloud-api.server.ts": "bd8ff42bc1a169d30c7c1edb31684105be73d3d34e7fcb489c78038691f1d1c6"
+        "src/lib/whatsapp/cloud-api.server.ts": "87bea495fa0d0ac00eeb969ac305ca02f21288e911ae3a90571e77f67fc8e28e"
       }
     },
     {
@@ -2945,11 +2958,25 @@
     {
       "id": "service-channel-account-center",
       "kind": "business",
-      "resources": ["system.channels", "techsales.marketing.sdr_agent"],
-      "actions": ["view", "manage", "update"],
-      "scopes": ["workspace"],
-      "permission_keys": ["system.channels.view.workspace", "system.channels.manage.workspace"],
-      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back. The agent config panel may now receive the agent chosen in the Est\u00fadio bar instead of its own selector; channel controls and server checks are unchanged. Email accounts now expose the existing campaigns flag (same RPC, same checks) and the editor pre-validates the agent activation rule mirrored from service_channel_save; the server check is unchanged. Disconnected WhatsApp numbers are archived (archived_at) during the same manage-gated discovery; archived accounts are listed read-only and blocked in the channel runtime and sequence releases. No new keys or grants.",
+      "resources": [
+        "system.channels",
+        "techsales.marketing.sdr_agent",
+        "system.whatsapp_templates"
+      ],
+      "actions": [
+        "view",
+        "manage",
+        "update"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.channels.view.workspace",
+        "system.channels.manage.workspace",
+        "system.whatsapp_templates.view.workspace"
+      ],
+      "rationale": "Central account metadata only; no credentials. Current active workspace and effective view/manage checked before privileged discovery. Source mail accounts and WhatsApp conversations use user RLS. SQL save rechecks current permissions, read-only state, both old/new agent access and same-workspace references; writes denied directly. Defaults disabled; no role grants or automatic enrollment. Isolated SQL acceptance exercises real contexts and rolls back. The agent config panel may now receive the agent chosen in the Estúdio bar instead of its own selector; channel controls and server checks are unchanged. Email accounts now expose the existing campaigns flag (same RPC, same checks) and the editor pre-validates the agent activation rule mirrored from service_channel_save; the server check is unchanged. Disconnected WhatsApp numbers are archived (archived_at) during the same manage-gated discovery; archived accounts are listed read-only and blocked in the channel runtime and sequence releases. No new keys or grants. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos.",
       "controls": [
         {
           "file": "src/lib/prospecting/sdr/channel-access.server.ts",
@@ -3015,7 +3042,7 @@
       "files": {
         "src/lib/prospecting/sdr/channel-accounts.functions.ts": "1c84516161de7af4ec39e266f44b96bfd4e8eab41ec2e825b885e144770f32ee",
         "src/lib/prospecting/sdr/channel-access.server.ts": "a23a8c47439c6f10cf0a30dae2253b53af3a894e3238c7099381a0465594a95a",
-        "src/routes/_authenticated/settings.channels.tsx": "8d3488a913ba928ebc9d4566bdda496eca06466b4ae6f719b89894450eed47ad",
+        "src/routes/_authenticated/settings.channels.tsx": "60df86fe1051f4b0770474dbb047308b6d35371d9c65c1fcc13e04ba676d7cc1",
         "drizzle/migrations/0256_service_channel_registry.sql": "bcab4dddc4d04edb67b8bc8f7c70c2fa328daaca5b1b96eaa36bdc36dbf3c41c",
         "src/components/service-channels/account-editor.tsx": "764f57a1a88016fea296bfea6f06e41daef53a7a319b0e8ad45bd3024721e97d",
         "src/components/service-channels/agent-channels.tsx": "8d215220c3106b917eece339c7f5f7c249be7a48cb97405eef8b8c9a99262c23",
@@ -3078,10 +3105,10 @@
     {
       "id": "service-channel-navigation-labels",
       "kind": "presentation",
-      "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. LinkedIn navigation accepts personal view as well as workspace view; server and RLS remain independently enforced.",
+      "rationale": "Static navigation entry and resource metadata for the new channel screen. Same system.channels resource as direct URL/server/RLS controls; no data queries, writes or grants in these files. Includes static multichannel sequence draft navigation; exact route and mutation boundaries are declared separately. | REMOVE-IMPRIMIR 10/11/2026: dashboard print screen and its PDF menu option/menu entry removed; no new data access, keys or grants. | CAMPANHA-LIGACOES 12/11/2026: voice campaign list/detail moved unchanged to /campaigns/calls (and call scripts to /campaigns/calls/scripts) under Captar menu; same techsales.marketing.campaigns / techsales.prospecting_scripts keys, server functions and RLS unchanged; old URLs only redirect. LinkedIn navigation accepts personal view as well as workspace view; server and RLS remain independently enforced. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos.",
       "files": {
-        "src/lib/menu-config.ts": "e03dddb47cc89cdd64c127eb4aabd9c7b90cced0ef117b0303846d7df2cebef1",
-        "src/lib/menu-resources.ts": "dc05b3e08af7f0261f9f5899b84035364438f975e0671a427ee8259db692b7eb",
+        "src/lib/menu-config.ts": "51cae40df12dccad0f1a4cec9d182a1296668df4174d09055c11142704cc2b9c",
+        "src/lib/menu-resources.ts": "41893e5890fe8b8609729e5820a152a2a3abdb7b5f6547b5e2c4fa30531dd8b1",
         "src/lib/access-control/sales-resources.ts": "b52f747ccc294edc4f31c933224958a42ce7193b480c0e3e6f8145d3fb0d2b31"
       }
     },
@@ -3684,10 +3711,21 @@
         "system.whatsapp",
         "system.widget",
         "techsales.email_accounts",
-        "techsales.inbox.email"
+        "techsales.inbox.email",
+        "system.whatsapp_templates"
       ],
-      "actions": ["view", "manage", "create", "update", "delete"],
-      "scopes": ["own", "team", "workspace"],
+      "actions": [
+        "view",
+        "manage",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "own",
+        "team",
+        "workspace"
+      ],
       "permission_keys": [
         "system.channels.view.workspace",
         "system.whatsapp.view.workspace",
@@ -3696,9 +3734,10 @@
         "techsales.email_accounts.view.own",
         "techsales.email_accounts.create.own",
         "techsales.email_accounts.update.own",
-        "techsales.email_accounts.delete.own"
+        "techsales.email_accounts.delete.own",
+        "system.whatsapp_templates.view.workspace"
       ],
-      "rationale": "Existing WhatsApp, Gmail and widget configuration forms are shared by original routes and the new central screen, not duplicated or embedded via iframe. TransportCapabilities gates view and each mutation independently using current effective permissions and active workspace. Existing server handlers and RLS remain unchanged; no channel-management permission grants access to transport credentials. Health reads existing finite metadata endpoints only; it never reads tokens or app secrets and distinguishes unavailable/error states. Legacy WhatsApp live inspection occurs only after an authorized cloud metadata read identifies no matching Meta number. Widgets describe installation readiness, not unverified external connectivity. Gmail OAuth uses the same signed state/callback and trusted origin listener; only its local return path changes.",
+      "rationale": "Existing WhatsApp, Gmail and widget configuration forms are shared by original routes and the new central screen, not duplicated or embedded via iframe. TransportCapabilities gates view and each mutation independently using current effective permissions and active workspace. Existing server handlers and RLS remain unchanged; no channel-management permission grants access to transport credentials. Health reads existing finite metadata endpoints only; it never reads tokens or app secrets and distinguishes unavailable/error states. Legacy WhatsApp live inspection occurs only after an authorized cloud metadata read identifies no matching Meta number. Widgets describe installation readiness, not unverified external connectivity. Gmail OAuth uses the same signed state/callback and trusted origin listener; only its local return path changes. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos.",
       "controls": [
         {
           "file": "src/lib/access-control/use-permissions.tsx",
@@ -3755,7 +3794,7 @@
       },
       "files": {
         "src/components/service-channels/connection-configuration.tsx": "d6f9c79e99812ed2f16be8f343b472ee3419718460df2f870889686ce36e16a7",
-        "src/components/service-channels/whatsapp-configuration.tsx": "d53d37365e1a1c803673dbf251decb7e3b1eff8e696e81d1f8c8219a26e205d8",
+        "src/components/service-channels/whatsapp-configuration.tsx": "5e22986df0536ca45e8e7c4ac4ad45512bccf0fe30aeae9ed7d7640e945eac9b",
         "src/components/service-channels/email-configuration.tsx": "e6b66f3eae964ca0188509161496f3d503de89de2bdac89b399c8999be614c14",
         "src/components/service-channels/widget-configuration.tsx": "91c4e76deaab8216b997f81200667ab809b657641fb3cdce57c122346581b297",
         "src/components/service-channels/channel-health.tsx": "ac72b26098079215810f52acb866e4836e3fd1b50571495742a9ebf83a9ca57e",
@@ -10830,9 +10869,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation.",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos.",
       "files": {
-        "src/integrations/supabase/types.ts": "219fd9ec6a9d7cef17bb0448a068775dcbc36b623202c02d1b528c749f23e995",
+        "src/integrations/supabase/types.ts": "b34aeb79fa2b5192df1f1c9cd9ccb7785a9a48f0e5dc801f67ec8718167269c6",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -19043,7 +19082,8 @@
         "system.notification_deliveries",
         "system.workflows",
         "system.channels",
-        "system.whatsapp"
+        "system.whatsapp",
+        "system.whatsapp_templates"
       ],
       "actions": [
         "view",
@@ -19058,9 +19098,10 @@
         "system.notification_deliveries.view.workspace",
         "system.channels.view.workspace",
         "system.whatsapp.view.workspace",
-        "system.whatsapp.manage.workspace"
+        "system.whatsapp.manage.workspace",
+        "system.whatsapp_templates.view.workspace"
       ],
-      "rationale": "Package 4 delegates rules to existing Workflows. Authenticated wrappers require selected active workspace; settings/new keys, personal consent/profile CAS, own/source-filtered history and record-authorized rules are distinct SQL boundaries. All UI mutations delegate to those wrappers and canonical Workflow APIs. Service-only enqueue/claim/preflight/finish prove workflow version/run, executor transport permissions, recipient source, consent, quotas and neutral content. Fenced leases prevent stale completion. Ambiguous outcomes never blind-retry/fallback. No role grants, production changes, real sends, rotation, auto-activation, or new scheduler. Existing notification producers/RPC remain compatible. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation. P11 reviewed: five exact Finance notification keys, current payment-derived balance, same-day/post-publication deadline semantics, private canonical fiscal receipt with no raw SELECT grant, minimal event fields and read-only mutation fences. Fresh authorized destinations preserve permissions and saved state; no production application or automatic activation. P12 reviewed: explicit default-off digest consent separate from visual grouping, civil IANA slots, private batch/occurrence ledger, bounded original-step reminders and explicit escalation. Current identity/source/proof/version/permission/consent and delivery fences remain mandatory; approvals reuse their canonical notice and cannot escalate. No source mutation, inferred CEO, real message or production activation. P13 reviewed: preparation reads only one selected published Workflow and existing policy boundaries, with no global send-readiness claim, source/destination disclosure or draft fallback. Live WhatsApp catalogue queries become explicit user actions, scoped to current identity/workspace/sender; no automatic provider query occurs on page mount. Existing configuration writers, capabilities, RLS, opt-in, quotas, uncertain-send and delivery gates remain unchanged; the operator runbook does not activate or pause anything. Hotfix reviewed: authorized WhatsApp sender/template/readiness reads use canonical active-workspace keys rather than the obsolete shared-channel sales whitelist. Sender data comes from the authenticated minimal SQL projection; no raw Cloud connection grants, account permission changes, channel activation or sends.",
+      "rationale": "Package 4 delegates rules to existing Workflows. Authenticated wrappers require selected active workspace; settings/new keys, personal consent/profile CAS, own/source-filtered history and record-authorized rules are distinct SQL boundaries. All UI mutations delegate to those wrappers and canonical Workflow APIs. Service-only enqueue/claim/preflight/finish prove workflow version/run, executor transport permissions, recipient source, consent, quotas and neutral content. Fenced leases prevent stale completion. Ambiguous outcomes never blind-retry/fallback. No role grants, production changes, real sends, rotation, auto-activation, or new scheduler. Existing notification producers/RPC remain compatible. P6 reviewed: guarded collective Slack delivery has a separate occurrence/endpoint subtype, source/workflow/record revalidation, workspace-only history, default-off policy and neutral model; personal email/WhatsApp compatibility preserved. P7 reviewed: exact final live Cloud sender/connection/model proof, structured pre-POST errors, code-based Meta cooldowns, canonical phone consent revocation, correlated signed receipts independent of projection and current-context UI previews. No producer, implicit gateway, role grant or activation added. P8 reviewed: eight proven commercial/contract events, protected event identity, explicit deadline settings and source-checked workspace rules. Generic selectors and legacy notifications remain; no automatic activation, role grant or publication. P9 reviewed: four proven project events, actual DATE/status metadata, canonical task/milestone destinations, and fresh user/workspace/RLS reads. Existing business actions, legacy notifications, eight P8 events and provider restrictions are preserved; no automatic activation or publication. P10 reviewed: six canonical TechHire/TechPeople selectors, source-scoped read-only access, minimal HR event snapshots, current approval-stage eligibility, exact fresh authorized navigation and preserved legacy notifications. No production application or automatic activation. P11 reviewed: five exact Finance notification keys, current payment-derived balance, same-day/post-publication deadline semantics, private canonical fiscal receipt with no raw SELECT grant, minimal event fields and read-only mutation fences. Fresh authorized destinations preserve permissions and saved state; no production application or automatic activation. P12 reviewed: explicit default-off digest consent separate from visual grouping, civil IANA slots, private batch/occurrence ledger, bounded original-step reminders and explicit escalation. Current identity/source/proof/version/permission/consent and delivery fences remain mandatory; approvals reuse their canonical notice and cannot escalate. No source mutation, inferred CEO, real message or production activation. P13 reviewed: preparation reads only one selected published Workflow and existing policy boundaries, with no global send-readiness claim, source/destination disclosure or draft fallback. Live WhatsApp catalogue queries become explicit user actions, scoped to current identity/workspace/sender; no automatic provider query occurs on page mount. Existing configuration writers, capabilities, RLS, opt-in, quotas, uncertain-send and delivery gates remain unchanged; the operator runbook does not activate or pause anything. Hotfix reviewed: authorized WhatsApp sender/template/readiness reads use canonical active-workspace keys rather than the obsolete shared-channel sales whitelist. Sender data comes from the authenticated minimal SQL projection; no raw Cloud connection grants, account permission changes, channel activation or sends. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos.",
       "exception": {
         "mechanism": "Verified session and selected active workspace for interactive APIs; personal operations derive auth.uid only; CRON_SECRET and service-role-only RPCs for bounded worker. UI props are delegation only, never authorization.",
         "boundary": "Only current workspace policy with explicit keys; own consent/profile; source-readable history/rules; named active recipients proven by source resolver. Provider receives neutral content, confirmed email or consent-bound phone; pinned Cloud API sender only. P10 extends this existing boundary with six exact TechHire/TechPeople keys and three read-only source entities under their canonical RLS. Restricted preparation approval targets only the current named approver and reuses the original notice; no generic mutation, broad recipient fallback or collective channel is authorized. P11 extends this boundary with five exact Finance keys and the read-only hiring_fiscal_documents source under canonical fiscal and parent access. Current payment balance and fiscal proof are rechecked; named financial mutations and unprojected field references fail before effects. No raw fiscal SELECT, inferred recipient, automatic collection, payment or issuance is authorized. P12 reviewed: explicit default-off digest consent separate from visual grouping, civil IANA slots, private batch/occurrence ledger, bounded original-step reminders and explicit escalation. Current identity/source/proof/version/permission/consent and delivery fences remain mandatory; approvals reuse their canonical notice and cannot escalate. No source mutation, inferred CEO, real message or production activation.",
@@ -19992,8 +20033,8 @@
       "files": {
         "drizzle/migrations/0393_notification_deliveries.sql": "b7406468ea37d24428b1595f16c35e3be807264ee263337ed7b421c6387422c3",
         "src/components/notifications/delivery-history-panel.tsx": "c355b46fa2f90a30f956522e221f30a0f8546912c5b01810a18e06cf433a93e6",
-        "src/components/notifications/delivery-models-panel.tsx": "abf82b799858a24d20d7b0e48df31871fb6e2c9a01be334b9e10eef6de15f253",
-        "src/components/notifications/delivery-operations.tsx": "6fe9dcf18a0701f78ab8e6077812041fa728cbe35d69801e482a08e0159d1163",
+        "src/components/notifications/delivery-models-panel.tsx": "88e82a7ab08e2f04f6e5cfc3117236190a97878340b047a1927c899ea95a4d3f",
+        "src/components/notifications/delivery-operations.tsx": "22e1a500ce4576c1303f839c52d61140708e84cb5afa92428723f5e70809a0f4",
         "src/components/notifications/delivery-settings-panel.tsx": "20aa6bbe4ce8706fa6cec11466e795608c9730f31b69a6aa935c5e28f52a2427",
         "src/components/notifications/notification-consent-panel.tsx": "deb87af952c155aafa9caafc00e031d74594d36b9ad519810825a0882e12fc59",
         "src/components/notifications/notification-rules-list.tsx": "537137f5366582bad06325d1dbe1de9b87d95bebe2b96ad7ba4b91287664e01f",
@@ -22706,6 +22747,191 @@
       },
       "files": {
         "drizzle/migrations/0402_notification_whatsapp_senders.sql": "0db31fa68b6e7c56fbfe3353caecde6db8e298c50f5789d8ee0c87af3e0adbc8"
+      }
+    },
+    {
+      "id": "meta-whatsapp-template-center",
+      "kind": "business",
+      "resources": [
+        "system.whatsapp_templates",
+        "system.whatsapp",
+        "system.channels"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.whatsapp_templates.view.workspace",
+        "system.whatsapp_templates.create.workspace",
+        "system.whatsapp_templates.update.workspace",
+        "system.whatsapp_templates.delete.workspace",
+        "system.whatsapp.view.workspace",
+        "system.channels.view.workspace"
+      ],
+      "rationale": "Central administrativa de modelos da Meta por conta WABA, sem envio ou ativação. Canonical work_access_context e RPC autenticada exigem ator/membro ativo, workspace, três leituras e ação específica, respeitando deny e read_only. Número/conta são resolvidos no servidor, nunca por WABA arbitrária. Catálogo público mínimo, segredos privados. Cada mutação reautoriza após consultas remotas e confere fingerprint/IDs; Cloud exclui variante ID+nome e Lovable exige confirmação de todos os idiomas por nome. Amostras são bytes escolhidos pelo usuário, com MIME/limite/host fixo e ticket cifrado de uma hora vinculado ao ator/workspace/conta/formato. Sem grants de papéis ou publicação/consentimento automáticos. Parser conservador bloqueia edição destrutiva de formatos avançados.",
+      "controls": [
+        {
+          "file": "src/lib/access-control/active-workspace.middleware.ts",
+          "symbol": "requireWorkspaceContext"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/whatsapp/meta-template-center.functions.ts",
+          "symbol": "service"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/whatsapp/meta-template-definition.ts",
+          "symbol": "buildMetaTemplateComponents"
+        },
+        {
+          "file": "src/lib/whatsapp/meta-template-definition.ts",
+          "symbol": "collectTemplateVariables"
+        },
+        {
+          "file": "src/components/whatsapp/meta-template-center.tsx",
+          "symbol": "MetaTemplatesPage"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0403_whatsapp_template_center.sql",
+          "symbol": "public.wa_template_admin_context"
+        },
+        {
+          "file": "drizzle/migrations/0216_work_core_prepare.sql",
+          "symbol": "public.work_access_context"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/whatsapp/meta-template-center.server.test.ts",
+          "name": "allows authorized Meta template operations"
+        },
+        "missing_permission": {
+          "file": "src/lib/whatsapp/meta-template-center.server.test.ts",
+          "name": "rejects Meta template operations without permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/whatsapp/meta-template-center.server.test.ts",
+          "name": "honors explicit deny before provider preparation"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/whatsapp/meta-template-center.server.test.ts",
+          "name": "rejects foreign workspace or actor before provider preparation"
+        },
+        "inactive_member": {
+          "file": "src/lib/whatsapp/meta-template-center.server.test.ts",
+          "name": "rejects inactive member before provider preparation"
+        }
+      },
+      "files": {
+        "drizzle/migrations/0403_whatsapp_template_center.sql": "d2015e8c3ed41e68fce50434e39df67a36a079fd78dc56593f288b0b9b305f56",
+        "src/components/whatsapp/meta-template-center.tsx": "49bf8653d25f84f2b5760e610b4da12d0ea60acfdea9688d79303ad5df3375d0",
+        "src/components/whatsapp/meta-template-editor.tsx": "2dff76cb34223dcc3d1f84ee890e17814d847a19fbc3fe3313b48c5fca228c7d",
+        "src/lib/whatsapp/meta-template-center.functions.ts": "813794b0164528403097c0e190110c8e4480286270373d6266d75943e1a8fcfa",
+        "src/lib/whatsapp/meta-template-center.server.ts": "e77374dd1e210c3fdf7bf5854bc8913b2337ad785ac3db90f163ad16dbd35ee3",
+        "src/lib/whatsapp/meta-template-definition.ts": "953d2ed927502681a5d27c8cc79213dc3c05ddef54e36aa1111e94a1a963fe02",
+        "src/routes/_authenticated/settings.whatsapp-templates.tsx": "5ada48a07d9995671915f19ebbde002980976f78e12ae1e8e49058138ef8130e"
+      }
+    },
+    {
+      "id": "meta-whatsapp-template-provider-transport",
+      "kind": "internal",
+      "resources": [
+        "system.whatsapp_templates",
+        "system.whatsapp",
+        "system.channels"
+      ],
+      "actions": [
+        "view",
+        "create",
+        "update",
+        "delete"
+      ],
+      "scopes": [
+        "workspace"
+      ],
+      "permission_keys": [
+        "system.whatsapp_templates.view.workspace",
+        "system.whatsapp_templates.create.workspace",
+        "system.whatsapp_templates.update.workspace",
+        "system.whatsapp_templates.delete.workspace",
+        "system.whatsapp.view.workspace",
+        "system.channels.view.workspace"
+      ],
+      "rationale": "Transporte interno sem endpoint próprio, usado somente depois da autorização da conta administrativa. WABA derivada no servidor. URLs Meta/gateway fixas, bearer somente em header, redirects recusados, cursor opaco sem seguir URL fornecida, erro sanitizado e nenhuma repetição automática. Lovable confirma telefone do registro do workspace e mantém exclusão por nome explicitamente ampla; Cloud usa ID+nome. Upload da amostra não recebe URL do cliente e revalida acesso antes de criar sessão e antes dos bytes.",
+      "controls": [
+        {
+          "file": "src/lib/whatsapp/cloud-api.server.ts",
+          "symbol": "cloudRequest"
+        },
+        {
+          "file": "src/lib/whatsapp/meta-template-provider.server.ts",
+          "symbol": "templateProvider"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0403_whatsapp_template_center.sql",
+          "symbol": "public.wa_template_admin_context"
+        },
+        {
+          "file": "drizzle/migrations/0216_work_core_prepare.sql",
+          "symbol": "public.work_access_context"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/whatsapp/meta-template-center.server.test.ts",
+          "name": "allows authorized Meta template operations"
+        },
+        "missing_permission": {
+          "file": "src/lib/whatsapp/meta-template-center.server.test.ts",
+          "name": "rejects Meta template operations without permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/whatsapp/meta-template-center.server.test.ts",
+          "name": "honors explicit deny before provider preparation"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/whatsapp/meta-template-center.server.test.ts",
+          "name": "rejects foreign workspace or actor before provider preparation"
+        },
+        "inactive_member": {
+          "file": "src/lib/whatsapp/meta-template-center.server.test.ts",
+          "name": "rejects inactive member before provider preparation"
+        }
+      },
+      "exception": {
+        "mechanism": "Server-only transport reached through MetaTemplateService.authorize and authenticated workspace middleware, with exact action/target authorization before private secret resolution.",
+        "boundary": "No public route, user-supplied WABA, arbitrary destination URL, implicit send, recipient, consent change or fallback. Media session remains server-side and ticket is scoped and expires.",
+        "revocation": "Canonical deny/inactive/read_only/foreign account and current connection metadata stop preparation or writes; Meta token revocation also stops requests. Unknown provider results require reconciliation without automatic retry.",
+        "review_by": "2027-04-30"
+      },
+      "files": {
+        "src/lib/whatsapp/meta-template-provider.server.ts": "45de3b6b0c8c05f372472724674ecaf4fd30fef567a7073d9b9337cbe07553d9"
+      }
+    },
+    {
+      "id": "meta-whatsapp-template-presentational-shapes",
+      "kind": "presentation",
+      "rationale": "Pure DTO/default draft shapes and read-only React message preview. No queries, endpoints, provider credentials, links to arbitrary data, mutation controls or independent authority; parent administrative boundary supplies authorized content.",
+      "files": {
+        "src/lib/whatsapp/meta-template-types.ts": "25acfdea09ac7b695261871e93c1c8430a57fa0b97dd356b3d8e635fe3bc5929",
+        "src/components/whatsapp/meta-template-preview.tsx": "76051e9660d848edf58e4fbfdc4c35d85d176b0e3109e7b715871583599ac13b"
       }
     }
   ],

@@ -37,6 +37,7 @@ export function DeliveryModelsPanel({
   canRead = false,
   canRetryWhatsApp = false,
   requested = true,
+  canManageMetaTemplates = false,
 }: {
   templates: NotificationTemplateOption[];
   loading: boolean;
@@ -45,6 +46,7 @@ export function DeliveryModelsPanel({
   canRead?: boolean;
   canRetryWhatsApp?: boolean;
   requested?: boolean;
+  canManageMetaTemplates?: boolean;
 }) {
   const [channel, setChannel] = useState<"email" | "whatsapp">("email");
   const [selected, setSelected] = useState("");
@@ -59,6 +61,14 @@ export function DeliveryModelsPanel({
           O aviso externo é neutro. Documentos, nomes, valores e detalhes permanecem no registro
           autorizado.
         </p>
+        {canManageMetaTemplates && (
+          <a
+            href="/settings/whatsapp-templates"
+            className="mt-2 inline-block text-sm font-medium text-primary underline"
+          >
+            Abrir central de modelos de mensagens Meta
+          </a>
+        )}
       </div>
       <div className="flex flex-wrap gap-2" aria-label="Canal da prévia">
         <Button

@@ -94,6 +94,7 @@ export const MENU_RESOURCES_BY_URL: Record<string, readonly string[]> = {
   "/settings/integrations": ["system.integrations"],
   "/settings/channels": ["system.channels"],
   "/settings/whatsapp": ["system.whatsapp"],
+  "/settings/whatsapp-templates": ["system.whatsapp_templates"],
   "/settings/integrations/linkedin": ["system.linkedin"],
   "/settings/hubspot-sync": ["system.hubspot_sync"],
   "/settings/integrations/hubspot": ["system.hubspot_sync"],

@@ -1071,3 +1071,302 @@ describe("notification WhatsApp sender catalogue", () => {
     expect((await catalogue(W, A)).status).toBe(403);
   });
 });
+
+describe("Meta template administration account boundary", () => {
+  const actions = ["view", "create", "update", "delete"] as const;
+  const target = `cloud:${X}`;
+  const viewKeys = [
+    "system.whatsapp_templates.view.workspace",
+    "system.channels.view.workspace",
+    "system.whatsapp.view.workspace",
+  ];
+  const permission = (action: string) => `system.whatsapp_templates.${action}.workspace`;
+  const context = (
+    action = "view",
+    account: string | null = target,
+    workspace: string | null = W,
+    actor = U,
+    token?: string,
+  ) =>
+    request(
+      "/rpc/wa_template_admin_context",
+      {
+        p_workspace: workspace,
+        p_action: action,
+        p_target: account,
+      },
+      actor,
+      token,
+    );
+
+  beforeEach(async () => {
+    await db.begin(async (tx) => {
+      for (const key of [...viewKeys, ...actions.map(permission)])
+        await tx`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect)
+          values(${W},${ROLE},${key},'grant') on conflict(workspace_id,role_id,permission_key) do update set effect='grant'`;
+      await tx`update wa_cloud_connections set label='Fixture WABA',waba_id='111111111111',credentials_ciphertext='synthetic-private-template-secret' where id=${X}`;
+    });
+  });
+
+  it("permits authorized Meta template actions with a minimal account projection", async () => {
+    for (const action of actions) {
+      const result = await context(action);
+      expect(result.status).toBe(200);
+      expect(result.payload).toEqual({
+        actor: U,
+        workspace: W,
+        readOnly: false,
+        capabilities: { view: true, create: true, update: true, delete: true },
+        targets: [
+          {
+            id: target,
+            provider: "cloud",
+            label: "Fixture WABA",
+            wabaId: "111111111111",
+            enabled: true,
+            numbers: [{ id: sender, phone: "+554861360001", label: "+554861360001" }],
+          },
+        ],
+      });
+      expect(JSON.stringify(result.payload)).not.toMatch(
+        /credentials_ciphertext|synthetic-private-template-secret|api_version|connection_id|webhook/,
+      );
+    }
+    expect((await request("/wa_cloud_connections?select=id,enabled,waba_id")).status).toBe(403);
+    expect((await request("/wa_cloud_connections?select=credentials_ciphertext")).status).toBe(403);
+  });
+
+  it("rejects Meta template actions without their exact workspace key", async () => {
+    for (const action of actions) {
+      await db`delete from job_role_permission_overrides where workspace_id=${W} and role_id=${ROLE} and permission_key=${permission(action)}`;
+      for (const scope of ["own", "team"])
+        await db`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect)
+          values(${W},${ROLE},${`system.whatsapp_templates.${action}.${scope}`},'grant')`;
+      expect((await context(action)).status).toBe(403);
+      await db`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect)
+        values(${W},${ROLE},${permission(action)},'grant')`;
+    }
+  });
+
+  it("honors explicit deny for Meta template actions including the workspace owner", async () => {
+    await db`insert into user_job_roles(role_id,user_id,workspace_id,owner_id) values(${ROLE},${A},${W},${W})`;
+    for (const action of actions) {
+      expect((await context(action, target, W, A)).status).toBe(200);
+      await db`update job_role_permission_overrides set effect='deny' where workspace_id=${W} and role_id=${ROLE} and permission_key=${permission(action)}`;
+      expect((await context(action)).status).toBe(403);
+      expect((await context(action, target, W, A)).status).toBe(403);
+      await db`update job_role_permission_overrides set effect='grant' where workspace_id=${W} and role_id=${ROLE} and permission_key=${permission(action)}`;
+    }
+  });
+
+  it("rejects foreign workspace and actor for Meta template actions", async () => {
+    const foreign = randomUUID();
+    await db`insert into wa_cloud_connections(id,workspace_id,label,waba_id,enabled) values(${foreign},${B},'Foreign private account','999999999999',true)`;
+    await db`insert into wa_cloud_numbers(phone_number_id,connection_id,workspace_id,display_phone_number) values('999999999',${foreign},${B},'+559999999999')`;
+    for (const action of actions) {
+      expect((await context(action, `cloud:${foreign}`)).status).toBe(403);
+      expect((await context(action, target, B)).status).toBe(403);
+      expect((await context(action, target, W, F)).status).toBe(403);
+    }
+    await db`update profiles set active_workspace_id=${B} where id=${U}`;
+    for (const action of actions) expect((await context(action)).status).toBe(403);
+  });
+
+  it("rejects inactive membership for Meta template actions including the owner", async () => {
+    await db`update workspace_members set status='inactive' where workspace_id=${W} and user_id in(${U},${A})`;
+    for (const action of actions) {
+      expect((await context(action)).status).toBe(403);
+      expect((await context(action, target, W, A)).status).toBe(403);
+    }
+  });
+
+  it("blocks external template mutations in a read-only role session", async () => {
+    const session = randomUUID();
+    await db`insert into view_as_sessions(session_id,mode) values(${session},'role')`;
+    for (const action of ["create", "update", "delete"]) {
+      await expect(
+        withRole(
+          "authenticated",
+          U,
+          async (tx) => tx`select wa_template_admin_context(${W},${action},${target})`,
+          { session_id: session },
+        ),
+      ).rejects.toMatchObject({ code: "42501" });
+    }
+    const read = await withRole(
+      "authenticated",
+      U,
+      async (tx) => (await tx`select wa_template_admin_context(${W},'view',${target}) c`)[0].c,
+      { session_id: session },
+    );
+    expect(read).toMatchObject({
+      readOnly: true,
+      capabilities: { view: true, create: false, update: false, delete: false },
+    });
+  });
+
+  it("requires every base view key for all Meta template actions", async () => {
+    for (const key of viewKeys) {
+      await db`delete from job_role_permission_overrides where workspace_id=${W} and role_id=${ROLE} and permission_key=${key}`;
+      for (const action of actions) expect((await context(action)).status).toBe(403);
+      await db`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect) values(${W},${ROLE},${key},'grant')`;
+    }
+  });
+
+  it("keeps template view-only permission separate from provider mutations", async () => {
+    for (const action of ["create", "update", "delete"])
+      await db`delete from job_role_permission_overrides where workspace_id=${W} and role_id=${ROLE} and permission_key=${permission(action)}`;
+    expect(await context()).toMatchObject({
+      status: 200,
+      payload: { capabilities: { view: true, create: false, update: false, delete: false } },
+    });
+    for (const action of ["create", "update", "delete"])
+      expect((await context(action)).status).toBe(403);
+  });
+
+  it("rejects null actors, anon, service and malformed template targets before private lookup", async () => {
+    const boundary = (
+      await db`select p.prosecdef,p.provolatile,p.proowner::regrole::text owner,p.proconfig,
+      has_function_privilege('authenticated',p.oid,'EXECUTE') authenticated,
+      has_function_privilege('anon',p.oid,'EXECUTE') anonymous,
+      has_function_privilege('service_role',p.oid,'EXECUTE') service
+      from pg_proc p where p.oid='public.wa_template_admin_context(uuid,text,text)'::regprocedure`
+    )[0];
+    expect(boundary).toEqual({
+      prosecdef: true,
+      provolatile: "s",
+      owner: "postgres",
+      proconfig: ["search_path=public, pg_temp"],
+      authenticated: true,
+      anonymous: false,
+      service: false,
+    });
+    for (const action of actions) {
+      expect((await context(action, target, null)).status).toBe(403);
+      expect((await context(action, target, W, U, fixtureJwt("authenticated"))).status).toBe(403);
+      for (const role of ["anon", "service_role"] as const)
+        expect([401, 403]).toContain(
+          (await context(action, target, W, U, fixtureJwt(role))).status,
+        );
+    }
+    for (const account of [
+      "cloud:../secrets",
+      `cloud:${randomUUID()}`,
+      `lovable:${randomUUID()}`,
+      "x".repeat(1000),
+    ])
+      expect((await context("view", account)).status).toBe(403);
+    expect((await context("manage")).status).toBe(403);
+    expect(
+      (
+        await request("/rpc/wa_template_admin_context", {
+          p_workspace: W,
+          p_action: null,
+          p_target: target,
+        })
+      ).status,
+    ).toBe(403);
+    for (const action of ["create", "update", "delete"])
+      expect((await context(action, null)).status).toBe(403);
+    await expect(
+      withRole(
+        "authenticated",
+        U,
+        (tx) => tx`select wa_template_admin_context(${W},'view',${target})`,
+        { role: "service_role" },
+      ),
+    ).rejects.toMatchObject({ code: "42501" });
+  });
+
+  it("groups numbers by WABA connection and limits legacy accounts to the workspace registry", async () => {
+    const legacy = randomUUID(),
+      archived = randomUUID(),
+      foreign = randomUUID(),
+      foreignConnection = randomUUID();
+    await db`insert into wa_cloud_numbers(phone_number_id,connection_id,workspace_id,display_phone_number,verified_name) values('123456790',${X},${W},'+554861360002','Second number')`;
+    await db`insert into wa_cloud_connections(id,workspace_id,label,waba_id,enabled) values(${foreignConnection},${B},'Foreign Meta account','999999999999',true)`;
+    await db`insert into wa_cloud_numbers(phone_number_id,connection_id,workspace_id,display_phone_number) values('999999999',${foreignConnection},${B},'+559999999999'),('999999998',${foreignConnection},${W},'+559999999998')`;
+    await db`insert into service_channel_accounts(id,workspace_id,channel,source_key,label,display_name,enabled,archived_at) values
+      (${legacy},${W},'whatsapp','223456789','+5548999990001','Legacy account',false,null),
+      (${archived},${W},'whatsapp','223456790','Archived legacy','',true,now()),
+      (${foreign},${B},'whatsapp','223456791','Foreign legacy','',true,null),
+      (${randomUUID()},${W},'whatsapp',${sender},'Same direct number','',true,null),
+      (${randomUUID()},${W},'email','223456792','Other channel','',true,null),
+      (${randomUUID()},${W},'whatsapp','not-a-number','Invalid source','',true,null)`;
+    const result = await context("view", null);
+    expect(result.status).toBe(200);
+    expect(result.payload.targets).toHaveLength(2);
+    expect(result.payload.targets[0]).toMatchObject({
+      id: target,
+      provider: "cloud",
+      wabaId: "111111111111",
+    });
+    expect(result.payload.targets[0].numbers.map((n: { id: string }) => n.id)).toEqual([
+      sender,
+      "123456790",
+    ]);
+    expect(result.payload.targets[1]).toEqual({
+      id: `lovable:${legacy}`,
+      provider: "lovable",
+      label: "+5548999990001",
+      wabaId: null,
+      enabled: true,
+      numbers: [{ id: "223456789", phone: "+5548999990001", label: "Legacy account" }],
+    });
+    expect(JSON.stringify(result.payload)).not.toMatch(
+      /999999999999|999999999|999999998|Foreign|Archived/,
+    );
+    expect((await context("update", `lovable:${legacy}`)).status).toBe(200);
+    expect((await context("view", `lovable:${archived}`)).status).toBe(403);
+    expect((await context("view", `lovable:${foreign}`)).status).toBe(403);
+    // A second genuinely authorized tenant gets only its own accounts, not
+    // merely an empty catalogue caused by lacking the new permission keys.
+    const foreignRole = randomUUID();
+    await db`insert into job_roles(id,workspace_id) values(${foreignRole},${B})`;
+    await db`insert into user_job_roles(role_id,user_id,workspace_id,owner_id) values(${foreignRole},${F},${B},${B})`;
+    for (const key of [...viewKeys, ...actions.map(permission)])
+      await db`insert into job_role_permission_overrides(workspace_id,role_id,permission_key,effect)
+        values(${B},${foreignRole},${key},'grant') on conflict(workspace_id,role_id,permission_key) do update set effect='grant'`;
+    const otherTenant = await context("view", null, B, F);
+    expect(otherTenant.status).toBe(200);
+    expect(otherTenant.payload.targets.map((item: { id: string }) => item.id)).toEqual([
+      `cloud:${foreignConnection}`,
+      `lovable:${foreign}`,
+    ]);
+    expect(JSON.stringify(otherTenant.payload)).not.toContain("111111111111");
+    expect(otherTenant.payload.targets[0].numbers).toEqual([
+      { id: "999999999", phone: "+559999999999", label: "+559999999999" },
+    ]);
+  });
+
+  it("allows management reads before webhook activation but blocks disabled account mutations", async () => {
+    await db`update wa_cloud_connections set webhook_verified_at=null where id=${X}`;
+    await db`update wa_cloud_numbers set quality_rating='RED',status='DISCONNECTED',available=false where phone_number_id=${sender}`;
+    expect((await context("create")).status).toBe(200);
+    await db`update wa_cloud_connections set enabled=false where id=${X}`;
+    expect(await context()).toMatchObject({
+      status: 200,
+      payload: { targets: [{ enabled: false }] },
+    });
+    for (const action of ["create", "update", "delete"])
+      expect((await context(action)).status).toBe(403);
+    expect((await db`select count(*)::integer n from notification_delivery_intents`)[0].n).toBe(0);
+  });
+
+  it("bounds and orders the template account and number catalogues without exposing credentials", async () => {
+    await db`insert into wa_cloud_numbers(phone_number_id,connection_id,workspace_id,display_phone_number)
+      select (300000000+n)::text,${X},${W},'+55'||(300000000+n)::text from generate_series(1,105)n`;
+    await db`insert into service_channel_accounts(id,workspace_id,channel,source_key,label,enabled)
+      select md5('template-fixture-'||n)::uuid,${W},'whatsapp',(400000000+n)::text,'Legacy '||lpad(n::text,3,'0'),true from generate_series(1,105)n`;
+    const result = await context("view", null);
+    expect(result.status).toBe(200);
+    expect(result.payload.targets).toHaveLength(100);
+    expect(result.payload.targets[0].numbers).toHaveLength(100);
+    expect(result.payload.targets.map((item: { label: string }) => item.label)).toEqual([
+      "Fixture WABA",
+      ...Array.from({ length: 99 }, (_, i) => `Legacy ${String(i + 1).padStart(3, "0")}`),
+    ]);
+    const last = (await db`select id from service_channel_accounts where label='Legacy 105'`)[0].id;
+    expect((await context("view", `lovable:${last}`)).payload.targets).toHaveLength(1);
+  });
+});

@@ -209,6 +209,14 @@ function DeliveryConfigurationContext({
       <DeliveryModelsPanel
         key={`${userId}:${workspaceId}:${senderId ?? "none"}`}
         canRead={contextReady && capabilities.settingsView}
+        canManageMetaTemplates={
+          contextReady &&
+          permissions.canAll([
+            "system.whatsapp_templates.view.workspace",
+            "system.channels.view.workspace",
+            "system.whatsapp.view.workspace",
+          ])
+        }
         canRetryWhatsApp={
           contextReady &&
           policyReady &&

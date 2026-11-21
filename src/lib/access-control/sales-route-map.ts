@@ -69,6 +69,7 @@ const routes: Record<string, readonly string[]> = {
   "/settings/email-templates": ["system.automation.email_templates"],
   "/settings/channels": ["system.channels"],
   "/settings/whatsapp": ["system.whatsapp"],
+  "/settings/whatsapp-templates": ["system.whatsapp_templates"],
   "/settings/voice-agent": ["techsales.prospecting_voice"],
   "/settings/meeting-reminders": ["techsales.meeting_settings"],
   "/settings/prospecting": ["techsales.prospecting_search"],
@@ -108,6 +109,7 @@ const routes: Record<string, readonly string[]> = {
   "/settings/enrichment": ["techsales.prospecting_enrichment"],
 };
 const SHARED_CONFIG_RESOURCES = new Set([
+  "system.whatsapp_templates",
   "system.communication.subscription_types",
   "system.roles",
   "system.members",

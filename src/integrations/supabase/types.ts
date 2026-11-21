@@ -42304,6 +42304,10 @@ export type Database = {
         Args: { p_limit: number; p_recipient: string }
         Returns: Json
       }
+      wa_template_admin_context: {
+        Args: { p_action?: string; p_target?: string; p_workspace: string }
+        Returns: Json
+      }
       wa_timeline_rebuild_day: {
         Args: { p_contact: string; p_day: string; p_workspace: string }
         Returns: undefined

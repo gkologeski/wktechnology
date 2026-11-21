@@ -263,6 +263,7 @@ import { Route as AuthenticatedSettingsVideoRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsVoiceAgentRouteImport } from './routes/_authenticated/settings.voice-agent'
 import { Route as AuthenticatedSettingsWebhooksRouteImport } from './routes/_authenticated/settings.webhooks'
 import { Route as AuthenticatedSettingsWhatsappRouteImport } from './routes/_authenticated/settings.whatsapp'
+import { Route as AuthenticatedSettingsWhatsappTemplatesRouteImport } from './routes/_authenticated/settings.whatsapp-templates'
 import { Route as AuthenticatedSettingsWidgetRouteImport } from './routes/_authenticated/settings.widget'
 import { Route as AuthenticatedSettingsWorkflowSubscriptionsRouteImport } from './routes/_authenticated/settings.workflow-subscriptions'
 import { Route as AuthenticatedSettingsWorkflowsRouteImport } from './routes/_authenticated/settings.workflows'
@@ -1894,6 +1895,12 @@ const AuthenticatedSettingsWhatsappRoute =
     path: '/whatsapp',
     getParentRoute: () => AuthenticatedSettingsRoute,
   } as any)
+const AuthenticatedSettingsWhatsappTemplatesRoute =
+  AuthenticatedSettingsWhatsappTemplatesRouteImport.update({
+    id: '/whatsapp-templates',
+    path: '/whatsapp-templates',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedSettingsWidgetRoute =
   AuthenticatedSettingsWidgetRouteImport.update({
     id: '/widget',
@@ -3202,6 +3209,7 @@ export interface FileRoutesByFullPath {
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
+  '/settings/whatsapp-templates': typeof AuthenticatedSettingsWhatsappTemplatesRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflow-subscriptions': typeof AuthenticatedSettingsWorkflowSubscriptionsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
@@ -3636,6 +3644,7 @@ export interface FileRoutesByTo {
   '/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
+  '/settings/whatsapp-templates': typeof AuthenticatedSettingsWhatsappTemplatesRoute
   '/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/settings/workflow-subscriptions': typeof AuthenticatedSettingsWorkflowSubscriptionsRoute
   '/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
@@ -4078,6 +4087,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/voice-agent': typeof AuthenticatedSettingsVoiceAgentRoute
   '/_authenticated/settings/webhooks': typeof AuthenticatedSettingsWebhooksRoute
   '/_authenticated/settings/whatsapp': typeof AuthenticatedSettingsWhatsappRoute
+  '/_authenticated/settings/whatsapp-templates': typeof AuthenticatedSettingsWhatsappTemplatesRoute
   '/_authenticated/settings/widget': typeof AuthenticatedSettingsWidgetRoute
   '/_authenticated/settings/workflow-subscriptions': typeof AuthenticatedSettingsWorkflowSubscriptionsRoute
   '/_authenticated/settings/workflows': typeof AuthenticatedSettingsWorkflowsRoute
@@ -4520,6 +4530,7 @@ export interface FileRouteTypes {
     | '/settings/voice-agent'
     | '/settings/webhooks'
     | '/settings/whatsapp'
+    | '/settings/whatsapp-templates'
     | '/settings/widget'
     | '/settings/workflow-subscriptions'
     | '/settings/workflows'
@@ -4954,6 +4965,7 @@ export interface FileRouteTypes {
     | '/settings/voice-agent'
     | '/settings/webhooks'
     | '/settings/whatsapp'
+    | '/settings/whatsapp-templates'
     | '/settings/widget'
     | '/settings/workflow-subscriptions'
     | '/settings/workflows'
@@ -5395,6 +5407,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/voice-agent'
     | '/_authenticated/settings/webhooks'
     | '/_authenticated/settings/whatsapp'
+    | '/_authenticated/settings/whatsapp-templates'
     | '/_authenticated/settings/widget'
     | '/_authenticated/settings/workflow-subscriptions'
     | '/_authenticated/settings/workflows'
@@ -7521,6 +7534,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsWhatsappRouteImport
       parentRoute: typeof AuthenticatedSettingsRoute
     }
+    '/_authenticated/settings/whatsapp-templates': {
+      id: '/_authenticated/settings/whatsapp-templates'
+      path: '/whatsapp-templates'
+      fullPath: '/settings/whatsapp-templates'
+      preLoaderRoute: typeof AuthenticatedSettingsWhatsappTemplatesRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
     '/_authenticated/settings/widget': {
       id: '/_authenticated/settings/widget'
       path: '/widget'
@@ -9061,6 +9081,7 @@ interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsVoiceAgentRoute: typeof AuthenticatedSettingsVoiceAgentRoute
   AuthenticatedSettingsWebhooksRoute: typeof AuthenticatedSettingsWebhooksRoute
   AuthenticatedSettingsWhatsappRoute: typeof AuthenticatedSettingsWhatsappRoute
+  AuthenticatedSettingsWhatsappTemplatesRoute: typeof AuthenticatedSettingsWhatsappTemplatesRoute
   AuthenticatedSettingsWidgetRoute: typeof AuthenticatedSettingsWidgetRoute
   AuthenticatedSettingsWorkflowSubscriptionsRoute: typeof AuthenticatedSettingsWorkflowSubscriptionsRoute
   AuthenticatedSettingsWorkflowsRoute: typeof AuthenticatedSettingsWorkflowsRoute
@@ -9183,6 +9204,8 @@ const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsVoiceAgentRoute: AuthenticatedSettingsVoiceAgentRoute,
   AuthenticatedSettingsWebhooksRoute: AuthenticatedSettingsWebhooksRoute,
   AuthenticatedSettingsWhatsappRoute: AuthenticatedSettingsWhatsappRoute,
+  AuthenticatedSettingsWhatsappTemplatesRoute:
+    AuthenticatedSettingsWhatsappTemplatesRoute,
   AuthenticatedSettingsWidgetRoute: AuthenticatedSettingsWidgetRoute,
   AuthenticatedSettingsWorkflowSubscriptionsRoute:
     AuthenticatedSettingsWorkflowSubscriptionsRoute,

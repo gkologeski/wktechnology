@@ -71,6 +71,17 @@ export function WhatsAppConfiguration() {
   if (!canView) return <p>Sem permissão para visualizar a conexão do WhatsApp.</p>;
   return (
     <div className="container mx-auto max-w-4xl space-y-6 py-8">
+      {permissions.canAll([
+        "system.whatsapp_templates.view.workspace",
+        "system.channels.view.workspace",
+        "system.whatsapp.view.workspace",
+      ]) && (
+        <div className="flex justify-end">
+          <Button variant="outline" asChild>
+            <a href="/settings/whatsapp-templates">Modelos de mensagens Meta</a>
+          </Button>
+        </div>
+      )}
       <CloudConnectionsPanel />
       <PageHeader
         eyebrow="Configurações"

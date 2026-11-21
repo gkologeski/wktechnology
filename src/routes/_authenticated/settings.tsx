@@ -289,6 +289,12 @@ const sections: Section[] = [
       { to: "/settings/ads-sync", label: "Sync de anúncios", icon: Megaphone, need: "admin" },
       { to: "/settings/whatsapp", label: "WhatsApp", icon: MessageSquare, need: "admin" },
       {
+        to: "/settings/whatsapp-templates",
+        label: "Modelos de mensagens Meta",
+        icon: LayoutTemplate,
+        need: "admin",
+      },
+      {
         to: "/settings/channels",
         label: "Canais de atendimento",
         icon: MessageSquare,

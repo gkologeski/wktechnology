@@ -718,6 +718,13 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         permissionAny: adminAny("system.whatsapp"),
       },
       {
+        to: "/settings/whatsapp-templates",
+        label: "Modelos de mensagens Meta",
+        icon: LayoutTemplate,
+        need: "admin",
+        permissionAny: ["system.whatsapp_templates.view.workspace"],
+      },
+      {
         to: "/settings/integrations/linkedin",
         label: "LinkedIn (Unipile)",
         icon: Linkedin,
