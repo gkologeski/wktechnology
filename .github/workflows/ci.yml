@@ -14,11 +14,15 @@ permissions:
   contents: read
 
 jobs:
-  unit:
-    name: Full verification and performance
+  verification_shards:
+    name: Verification shard ${{ matrix.shard }}/2
     # Native Linux ARM64 matches the pinned database images validated locally.
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2]
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,8 +53,6 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-node-${{ steps.node-runtime.outputs.node-version }}-eslint-${{ hashFiles('bun.lock', 'eslint*.config.*', 'eslint-rules/**', '.prettierrc*', '.prettierignore') }}-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-node-${{ steps.node-runtime.outputs.node-version }}-eslint-${{ hashFiles('bun.lock', 'eslint*.config.*', 'eslint-rules/**', '.prettierrc*', '.prettierignore') }}-
-      - name: Permission contracts and denial evidence
-        run: bun run permissions:check
       - name: Official help coverage
         run: bun run help:coverage
       # Download the locked database dependency before timed verification.
@@ -61,19 +63,76 @@ jobs:
           docker pull postgrest/postgrest@sha256:e9490aa503a5fb07d8e8c80da46e5c0c193894e583b59ed9077e74c4101ffae2
       - name: Report verification resources
         run: node -e 'const os=require("node:os"); console.log(JSON.stringify({cpus:os.availableParallelism(),arch:os.arch(),memoryMiB:Math.round(os.totalmem()/1048576)}))'
+      - name: Inventory the complete configured test set (no test execution)
+        run: bunx vitest list --filesOnly --json .verification/test-inventory.json
       - run: bun run verify
         id: verify
         # Bound both runtimes while native types and disposable SQL suites overlap.
         env:
-          GOMAXPROCS: "1"
+          GOMAXPROCS: "2"
           VITEST_MAX_WORKERS: "4"
+          VERIFY_SHARD: ${{ matrix.shard }}/2
       # Verified lint data remains useful when a later build/performance check fails.
       # Never cache release evidence, test outcomes or build outputs.
       - name: Save verified content-based lint results
+        if: ${{ success() && matrix.shard == 1 }}
         uses: actions/cache/save@v4
         with:
           path: .eslintcache
           key: ${{ steps.lint-cache.outputs.cache-primary-key }}
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          include-hidden-files: true
+          name: verification-shard-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}
+          path: .verification/
+          retention-days: 14
+
+  unit:
+    name: Full verification and performance
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 20
+    needs: verification_shards
+    if: ${{ always() }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Use a consistent Node runtime
+        id: node-runtime
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24.22.2"
+          package-manager-cache: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - name: Cache downloaded packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-${{ runner.arch }}-bun-1.3.14-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ runner.arch }}-bun-1.3.14-
+      - run: bun install --frozen-lockfile
+      - name: Permission contracts and denial evidence
+        run: bun run permissions:check
+      - name: Download both current-run shard proofs
+        uses: actions/download-artifact@v4
+        with:
+          pattern: verification-shard-${{ github.run_id }}-${{ github.run_attempt }}-*
+          path: .verification-parts
+          merge-multiple: false
+      - name: Independently inventory the complete configured test set
+        run: bunx vitest list --filesOnly --json .verification/test-inventory.json
+      - name: Aggregate complete verification within the unchanged global budget
+        if: ${{ always() }}
+        run: bun run verify
+        env:
+          VERIFY_AGGREGATE: "1"
+          VERIFY_PREVIOUS_STEPS_OK: ${{ success() }}
+          SHARD_JOB_RESULT: ${{ needs.verification_shards.result }}
       - run: bun run build
       - run: bun run perf:check
       - if: always()
@@ -81,7 +140,9 @@ jobs:
         with:
           include-hidden-files: true
           name: performance-verification
-          path: .verification/
+          path: |
+            .verification/
+            .verification-parts/
           retention-days: 14
 
   e2e:

@@ -36,6 +36,8 @@ Aplicar a sequência na ordem, com transações, somente após CI da revisão ap
 
 `bun run permissions:check` precede os demais gates. Fechamento exige `bun run verify`, `bun run build`, `bun run perf:check` e CI da revisão exata; nenhum limite, timeout ou baseline de permissão é relaxado.
 
+Na CI, os testes são distribuídos em dois executores, mantendo o banco descartável e o isolamento de cada suíte. Cada executor roda permissões antes de tipos, lint e sua parcela dos testes. Um resultado parcial nunca certifica a entrega: o job obrigatório agrega somente os dois resultados válidos, vinculados ao SHA do evento, fingerprint, execução e tentativa, com inventário completo e sem arquivos duplicados. O tempo global inclui desde a primeira verificação de permissões até a conclusão real da agregação; build e desempenho continuam obrigatórios no job final.
+
 As suítes obrigatórias incluem `inbox-execution-postgres`, `inbox-resume-postgres`, `inbox-dispatch-caller-postgres` e `gmail-recovery-postgres`: produtores reais das 13 chaves, worker/provas atuais, três dispatches, cinco perfis, revogação/cutoff, concorrência, reuso de aviso legado, retomada válida/forjada, mesma thread Gmail e recuperação sem resend. Elas usam bancos próprios, PostgREST real e JWTs sintéticos verificados. Provedores de teste são callbacks locais; não representam envios externos reais. A revisão do draft também possui evidências GoTrue separadas, sem substituir a CI portátil.
 
 Não carregar QA no seed oficial, ativar notificações externas ou enviar mensagens reais para produzir evidência de teste. Metadados e telas são validados novamente após publicar; perfis restritos conservam os controles testados.

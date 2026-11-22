@@ -623,7 +623,10 @@ export function assertCiWiring(root: string): Finding[] {
   const { load } = createRequire(import.meta.url)("js-yaml") as { load: (s: string) => unknown };
   const ci = load(readSource(root, ".github/workflows/ci.yml")) as {
     on?: Record<string, unknown>;
-    jobs?: Record<string, { if?: unknown; steps?: Array<Record<string, unknown>> }>;
+    jobs?: Record<
+      string,
+      Record<string, unknown> & { if?: unknown; steps?: Array<Record<string, unknown>> }
+    >;
   };
   const unit = ci.jobs?.unit,
     steps = unit?.steps ?? [];
@@ -632,12 +635,105 @@ export function assertCiWiring(root: string): Finding[] {
   const gate = steps.findIndex((s) => s.run === "bun run permissions:check");
   const verifyStep = steps.findIndex((s) => s.run === "bun run verify");
   const build = steps.findIndex((s) => s.run === "bun run build");
+  const performance = steps.findIndex((s) => s.run === "bun run perf:check");
   const checkout = steps.find((s) => s.uses === "actions/checkout@v4");
+  const shardJob = ci.jobs?.verification_shards;
+  const sharded = shardJob !== undefined;
+  const aggregateEnv = steps[verifyStep]?.env as Record<string, unknown> | undefined;
+  if (sharded) {
+    const strategy = shardJob.strategy as
+      | { "fail-fast"?: unknown; matrix?: Record<string, unknown> }
+      | undefined;
+    const shardSteps = shardJob.steps ?? [];
+    const shardVerify = shardSteps.findIndex((step) => step.run === "bun run verify");
+    const shardEnv = shardSteps[shardVerify]?.env as Record<string, unknown> | undefined;
+    const shardCheckout = shardSteps.find((step) => step.uses === "actions/checkout@v4");
+    const shardUpload = shardSteps.find((step) => step.uses === "actions/upload-artifact@v4");
+    const download = steps.find((step) => step.uses === "actions/download-artifact@v4");
+    const shardUploadWith = shardUpload?.with as Record<string, unknown> | undefined;
+    const downloadWith = download?.with as Record<string, unknown> | undefined;
+    const shardCheckoutWith = shardCheckout?.with as Record<string, unknown> | undefined;
+    const checkoutWith = checkout?.with as Record<string, unknown> | undefined;
+    if (
+      unit?.name !== "Full verification and performance" ||
+      Object.entries(ci.jobs ?? {}).some(
+        ([id, job]) => id !== "unit" && job.name === "Full verification and performance",
+      ) ||
+      unit?.needs !== "verification_shards" ||
+      unit.if !== "${{ always() }}" ||
+      unit["continue-on-error"] ||
+      shardJob.if !== undefined ||
+      shardJob["continue-on-error"] ||
+      strategy?.["fail-fast"] !== false ||
+      JSON.stringify(strategy.matrix) !== JSON.stringify({ shard: [1, 2] }) ||
+      shardVerify < 0 ||
+      shardSteps.filter((step) => step.run === "bun run verify").length !== 1 ||
+      shardEnv?.VERIFY_SHARD !== "${{ matrix.shard }}/2" ||
+      shardEnv.VERIFY_AGGREGATE !== undefined ||
+      shardEnv.GOMAXPROCS !== "2" ||
+      shardEnv.VITEST_MAX_WORKERS !== "4" ||
+      !shardCheckout ||
+      shardCheckoutWith?.["fetch-depth"] !== 0 ||
+      [shardCheckoutWith, checkoutWith].some(
+        (options) =>
+          !options ||
+          options.ref !== undefined ||
+          options.repository !== undefined ||
+          options.path !== undefined,
+      ) ||
+      !shardSteps
+        .slice(0, shardVerify)
+        .some(
+          (step) =>
+            step.run === "bunx vitest list --filesOnly --json .verification/test-inventory.json",
+        ) ||
+      shardSteps
+        .slice(0, shardVerify + 1)
+        .some(
+          (step) =>
+            step.if !== undefined ||
+            step["continue-on-error"] ||
+            (typeof step.run === "string" && /\|\|\s*true|set\s+\+e/.test(step.run)),
+        ) ||
+      // The first real permission check belongs to verify's timed STEPS[0].
+      shardSteps
+        .slice(0, shardVerify)
+        .some(
+          (step) =>
+            typeof step.run === "string" && /permissions:check|check-permissions/.test(step.run),
+        ) ||
+      shardUpload?.if !== "always()" ||
+      shardUploadWith?.["include-hidden-files"] !== true ||
+      shardUploadWith.name !==
+        "verification-shard-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.shard }}" ||
+      shardUploadWith.path !== ".verification/" ||
+      downloadWith?.pattern !==
+        "verification-shard-${{ github.run_id }}-${{ github.run_attempt }}-*" ||
+      downloadWith.path !== ".verification-parts" ||
+      downloadWith["merge-multiple"] !== false ||
+      steps[verifyStep]?.if !== "${{ always() }}" ||
+      aggregateEnv?.VERIFY_AGGREGATE !== "1" ||
+      aggregateEnv.VERIFY_SHARD !== undefined ||
+      aggregateEnv.VERIFY_PREVIOUS_STEPS_OK !== "${{ success() }}" ||
+      aggregateEnv.SHARD_JOB_RESULT !== "${{ needs.verification_shards.result }}" ||
+      steps.filter((step) => step.run === "bun run verify").length !== 1 ||
+      performance <= build ||
+      !steps
+        .slice(0, verifyStep)
+        .some(
+          (step) =>
+            step.run === "bunx vitest list --filesOnly --json .verification/test-inventory.json",
+        )
+    )
+      add(
+        "Two-shard verification must preserve all gates, current-run evidence and an unconditional fail-closed aggregate",
+      );
+  }
   if (
     !ci.on ||
     !("pull_request" in ci.on) ||
     !("push" in ci.on) ||
-    unit?.if ||
+    (!sharded && unit?.if !== undefined) ||
     gate < 0 ||
     verifyStep <= gate ||
     build <= verifyStep ||
@@ -647,10 +743,11 @@ export function assertCiWiring(root: string): Finding[] {
     add("Unconditional permission gate must precede verify/build with full comparison history");
   if (
     steps
-      .slice(0, build + 1)
+      .slice(0, (sharded ? performance : build) + 1)
       .some(
         (s) =>
-          s.if ||
+          (s.if !== undefined &&
+            !(sharded && s === steps[verifyStep] && s.if === "${{ always() }}")) ||
           s["continue-on-error"] ||
           (typeof s.run === "string" && /\|\|\s*true|set\s+\+e/.test(s.run)),
       )

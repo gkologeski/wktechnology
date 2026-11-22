@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { mkdtempSync, mkdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import {
@@ -389,6 +389,63 @@ describe("mandatory permission impact gate", () => {
     );
     f.write("vitest.config.ts", 'const config={test:{include:["src/**/*.test.ts"]}};');
     expect(assertCiWiring(f.root)).toEqual([]);
+    // Reviewed two-shard exception keeps the required final job unconditional
+    // and fails closed; it must not legalize arbitrary skipped/optional gates.
+    const sharded = readFileSync(".github/workflows/ci.yml", "utf8");
+    f.write(".github/workflows/ci.yml", sharded);
+    expect(assertCiWiring(f.root)).toEqual([]);
+    const mutations = [
+      (source: string) =>
+        source.replace("name: Full verification and performance", "name: Optional verification"),
+      (source: string) =>
+        source.replace(
+          "\n  e2e:\n",
+          "\n  alternate:\n    name: Full verification and performance\n    runs-on: ubuntu-latest\n    steps: []\n\n  e2e:\n",
+        ),
+      (source: string) => source.replace("shard: [1, 2]", "shard: [1]"),
+      (source: string) => source.replace("fail-fast: false", "fail-fast: true"),
+      (source: string) => source.replace("if: ${{ always() }}", "if: ${{ success() }}"),
+      (source: string) => source.replace('VERIFY_AGGREGATE: "1"', 'VERIFY_AGGREGATE: "0"'),
+      (source: string) =>
+        source.replace(
+          "VERIFY_PREVIOUS_STEPS_OK: ${{ success() }}",
+          "VERIFY_PREVIOUS_STEPS_OK: true",
+        ),
+      (source: string) =>
+        source.replace(
+          "SHARD_JOB_RESULT: ${{ needs.verification_shards.result }}",
+          "SHARD_JOB_RESULT: success",
+        ),
+      (source: string) =>
+        source.replace("VERIFY_SHARD: ${{ matrix.shard }}/2", "VERIFY_SHARD: 1/2"),
+      (source: string) =>
+        source.replace("fetch-depth: 0", "fetch-depth: 0\n          ref: refs/heads/other"),
+      (source: string) =>
+        source.replace(
+          "verification_shards:\n",
+          "verification_shards:\n    if: ${{ success() }}\n",
+        ),
+      (source: string) =>
+        source.replace(
+          "name: Official help coverage",
+          "run: bun run permissions:check\n      - name: Official help coverage",
+        ),
+      (source: string) =>
+        source.replace("run: bun run perf:check", "run: echo optional performance"),
+      (source: string) =>
+        source.replace("run: bun run perf:check", "run: bun run perf:check\n        if: false"),
+      (source: string) =>
+        source.replace(
+          "run: bun run perf:check",
+          "run: bun run perf:check\n        continue-on-error: true",
+        ),
+    ];
+    for (const [index, mutate] of mutations.entries()) {
+      const invalid = mutate(sharded);
+      expect(invalid).not.toBe(sharded);
+      f.write(".github/workflows/ci.yml", invalid);
+      expect(assertCiWiring(f.root).length, `sharded CI mutation ${index}`).toBeGreaterThan(0);
+    }
   });
   it("rejects an invalid exception review date instead of treating NaN as future", () => {
     const f = fixture();
