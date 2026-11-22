@@ -1,6 +1,8 @@
 // Barra de ações em lote da grid de contratos.
 // As gravações reutilizam as server functions de contrato, que continuam
 // validando permissão, escopo e workspace no backend.
+import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
+import { usePermissions } from "@/lib/access-control/use-permissions";
 import { withClientSession } from "@/lib/session-guard";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -65,24 +67,57 @@ export function ContractsBulkBar({
   const remove = useServerFn(deleteContract);
   const standardizeTitles = useServerFn(standardizeContractTitles);
   const listTeam = useServerFn(listWorkspaceTeam);
+  const access = useWorkCapabilities(
+    "techcontracts.contracts",
+    selected.map((r) => r.id),
+  );
+  const permissions = usePermissions();
+  const canUpdateAll =
+    selected.length > 0 &&
+    selected.every((r) => !r.legacy_discarded && access.for(r.id).can_update);
+  const canAssignAll = canUpdateAll && selected.every((r) => access.for(r.id).can_assign);
+  const canExport =
+    selected.length > 0 &&
+    selected.every((r) => access.for(r.id).can_view) &&
+    permissions.canAny([
+      "techcontracts.contracts.export.own",
+      "techcontracts.contracts.export.team",
+      "techcontracts.contracts.export.workspace",
+    ]);
   const teamQuery = useQuery({
     queryKey: ["workspace-team", "contracts-bulk"],
     queryFn: () => withClientSession(() => listTeam()),
     staleTime: 60_000,
+    enabled: canAssignAll,
   });
   const [busy, setBusy] = useState(false);
   const [bulkEditOpen, setBulkEditOpen] = useState(false);
 
   const count = selected.length;
-  const blocked = selected.filter((r) => !canDelete(r));
+  const blocked = selected.filter(
+    (r) => r.legacy_discarded || !canDelete(r) || !access.for(r.id).can_delete,
+  );
   const deleteAllowed = !canDeleteLoading && blocked.length === 0 && count > 0;
 
-  async function runAll(label: string, fn: (row: ContractRow) => Promise<unknown>) {
+  async function runAll(
+    label: string,
+    fn: (row: ContractRow) => Promise<unknown>,
+    action: "update" | "assign" | "delete" = "update",
+  ) {
     setBusy(true);
     let ok = 0;
     const failures: string[] = [];
     for (const row of selected) {
       try {
+        if (row.legacy_discarded)
+          throw new Error("Legado descartado: disponível somente para consulta.");
+        const capability = access.for(row.id);
+        if (
+          action === "delete"
+            ? !capability.can_delete
+            : !capability.can_update || (action === "assign" && !capability.can_assign)
+        )
+          throw new Error("Você não tem permissão para esta ação.");
         await fn(row);
         ok += 1;
       } catch (e) {
@@ -110,7 +145,7 @@ export function ContractsBulkBar({
         isSelectingAll={isSelectingAll}
       >
         <Select
-          disabled={busy}
+          disabled={busy || !canUpdateAll}
           onValueChange={(next) =>
             void runAll("Status atualizado", (row) =>
               update({ data: { id: row.id, patch: { status: next } as never } }),
@@ -130,11 +165,13 @@ export function ContractsBulkBar({
         </Select>
 
         <Select
-          disabled={busy || teamQuery.isLoading}
+          disabled={busy || !canAssignAll || teamQuery.isLoading}
           onValueChange={(value) => {
             const userId = value === "__none__" ? null : value;
-            void runAll("Responsável atualizado", (row) =>
-              update({ data: { id: row.id, patch: { assigned_to: userId } as never } }),
+            void runAll(
+              "Responsável atualizado",
+              (row) => update({ data: { id: row.id, patch: { assigned_to: userId } as never } }),
+              "assign",
             );
           }}
         >
@@ -154,8 +191,9 @@ export function ContractsBulkBar({
         <Button
           variant="outline"
           size="sm"
-          disabled={busy}
+          disabled={busy || !canUpdateAll}
           onClick={async () => {
+            if (!canUpdateAll) return;
             setBusy(true);
             try {
               const ids = selected.map((r) => r.id);
@@ -186,32 +224,39 @@ export function ContractsBulkBar({
         </Button>
 
         <ExportMenuButton
-          disabled={busy}
-          onExport={(format) =>
-            exportRows(selected, {
-              filename: "contratos",
-              format,
-              columns: [
-                { header: "Número", value: (r) => r.number ?? "" },
-                { header: "Título", value: (r) => r.title },
-                {
-                  header: "Tipo",
-                  value: (r) =>
-                    r.role === "provider" ? "Prestação" : r.role === "client" ? "Compra" : r.role,
-                },
-                {
-                  header: "Status",
-                  value: (r) => STATUS_OPTIONS.find((o) => o.value === r.status)?.label ?? r.status,
-                },
-                {
-                  header: "Valor",
-                  value: (r) => formatCurrency(Number(r.total_value ?? 0), r.currency),
-                },
-                { header: "Início", value: (r) => r.starts_at?.slice(0, 10) ?? "" },
-                { header: "Término", value: (r) => r.ends_at?.slice(0, 10) ?? "" },
-                { header: "Criado em", value: (r) => r.created_at?.slice(0, 10) ?? "" },
-              ],
-            })
+          disabled={busy || !canExport}
+          onExport={async (format) =>
+            canExport
+              ? exportRows(selected, {
+                  filename: "contratos",
+                  format,
+                  columns: [
+                    { header: "Número", value: (r) => r.number ?? "" },
+                    { header: "Título", value: (r) => r.title },
+                    {
+                      header: "Tipo",
+                      value: (r) =>
+                        r.role === "provider"
+                          ? "Prestação"
+                          : r.role === "client"
+                            ? "Compra"
+                            : r.role,
+                    },
+                    {
+                      header: "Status",
+                      value: (r) =>
+                        STATUS_OPTIONS.find((o) => o.value === r.status)?.label ?? r.status,
+                    },
+                    {
+                      header: "Valor",
+                      value: (r) => formatCurrency(Number(r.total_value ?? 0), r.currency),
+                    },
+                    { header: "Início", value: (r) => r.starts_at?.slice(0, 10) ?? "" },
+                    { header: "Término", value: (r) => r.ends_at?.slice(0, 10) ?? "" },
+                    { header: "Criado em", value: (r) => r.created_at?.slice(0, 10) ?? "" },
+                  ],
+                })
+              : undefined
           }
         />
 
@@ -228,7 +273,8 @@ export function ContractsBulkBar({
                   ))
                 )
                   return;
-                await runAll("Excluídos", (row) => remove({ data: { id: row.id } }));
+                if (!deleteAllowed) return;
+                await runAll("Excluídos", (row) => remove({ data: { id: row.id } }), "delete");
               }}
             >
               {busy ? (
@@ -245,15 +291,17 @@ export function ContractsBulkBar({
         <Button
           variant="outline"
           size="sm"
-          disabled={busy || count === 0}
-          onClick={() => setBulkEditOpen(true)}
+          disabled={busy || !canUpdateAll}
+          onClick={() => {
+            if (canUpdateAll) setBulkEditOpen(true);
+          }}
         >
           <Pencil className="mr-1 h-4 w-4" aria-hidden="true" /> Editar em massa
         </Button>
       </BulkActionBar>
 
       <BulkEditFieldsDialog
-        open={bulkEditOpen}
+        open={bulkEditOpen && canUpdateAll}
         setOpen={setBulkEditOpen}
         entity="contracts"
         ids={selected.map((r) => r.id)}

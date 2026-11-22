@@ -1,8 +1,7 @@
-import { assertSalesRecord } from "@/lib/access-control/sales-core.server";
+import { assertSalesArea, assertSalesRecord } from "@/lib/access-control/sales-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Modelos de proposta do workspace. Gravação limitada a administradores pela
 // política de acesso do banco (is_workspace_admin).
@@ -12,7 +11,10 @@ export const listProposalTemplates = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const sb = context.supabase;
     const [t, s] = await Promise.all([
-      sb.from("proposal_templates").select("id, name, description, html, is_default").order("name"),
+      sb
+        .from("proposal_templates")
+        .select("id, name, description, html, is_default, contract_template_id")
+        .order("name"),
       sb.from("proposal_template_services").select("template_id, service_catalog_id"),
     ]);
     if (t.error) throw new Error(t.error.message);
@@ -34,6 +36,7 @@ export const saveProposalTemplate = createServerFn({ method: "POST" })
         description: z.string().max(500).nullable(),
         html: z.string().max(500_000),
         services: z.array(z.string().uuid()).max(200),
+        contract_template_id: z.string().uuid().nullable().default(null),
       })
       .parse(d),
   )
@@ -41,10 +44,23 @@ export const saveProposalTemplate = createServerFn({ method: "POST" })
     const { resolveActiveWorkspace } = await import("@/lib/active-workspace.server");
     const sb = context.supabase;
     const workspaceId = await resolveActiveWorkspace(context.userId);
+    await assertSalesArea(sb, "techsales.proposal_templates", data.id ? "update" : "create");
+    if (data.contract_template_id) {
+      const { data: model, error } = await sb
+        .from("contract_templates")
+        .select("id")
+        .eq("workspace_id", workspaceId)
+        .eq("id", data.contract_template_id)
+        .eq("status", "published")
+        .maybeSingle();
+      if (error || !model)
+        throw new Error("Modelo de contrato publicado indisponível neste workspace.");
+    }
     const payload = {
       name: data.name,
       description: data.description,
       html: data.html,
+      contract_template_id: data.contract_template_id,
       updated_at: new Date().toISOString(),
     };
     let id = data.id;
@@ -53,6 +69,7 @@ export const saveProposalTemplate = createServerFn({ method: "POST" })
         .from("proposal_templates")
         .update(payload)
         .eq("id", id)
+        .eq("workspace_id", workspaceId)
         .select("id");
       if (error) throw new Error(error.message);
       if (!rows?.length) throw new Error("Você não tem permissão para alterar modelos.");

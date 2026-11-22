@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 29
-version: 2
+version: 3
 is_published: true
 ---
 # Revisar e padronizar títulos de contratos
@@ -39,3 +39,7 @@ Contratos não atualizados devem ser revisados no resumo; não considere a padro
 ## Relacionados
 - [Consultar contratos](/ajuda/contracts/consultar-contratos)
 - [Permissões](/ajuda/contracts/permissoes)
+
+## Disponibilidade das ações
+
+A ação em lote exige atualização autorizada em todos os registros selecionados e não se aplica a legados descartados. O servidor verifica novamente a autorização antes de apresentar a prévia ou aplicar os títulos.

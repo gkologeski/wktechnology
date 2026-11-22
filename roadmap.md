@@ -1,3 +1,12 @@
+# DESCARTA-LEGADO (M, previsão 1–2 h)
+
+- [x] Auditar estados e vínculos; preservar contratos e evidências, com descarte append-only.
+- [x] Preparar descarte auditável somente de legados pendentes em rascunho, com confirmação, motivo, revisão e idempotência; migrations 0454/0455 aplicadas, nenhum contrato real descartado.
+- [x] Interface e Ajuda preparadas; 121 testes passaram (91 PostgreSQL), lint sem erros/6 avisos, Ajuda 256/256, compilação automática OK.
+- [ ] Fechar contrato de permissões de listagem e ações em lote: permissions:check ainda falha em contratos agrupados/barra em lote/contracts.functions.ts; não certificado para publicação.
+- [ ] Validar fluxo na prévia autenticada: localhost não respondeu mesmo após reinício supervisionado; nenhum descarte real executado. perf:check bloqueado por artefato de build ausente.
+- [x] Registrar aplicação, validações e pendências; não publicar sem autorização. Ajuda oficial no banco ainda não atualizada.
+
 # Pacote 2 — consolidação dos gatilhos multicanal
 
 Catálogo de 13 eventos Gmail/chat/LinkedIn, seleção por conta/canal, produtores/provas, continuidade, recuperação Gmail, UI e Ajuda estão consolidados na revisão local. Nenhuma regra externa é ativada automaticamente. Permissões, perfis restritos e WhatsApp legado permanecem exigências de liberação. Gates, CI e SHA público são comprovados no fluxo de entrega, sem usar checkpoints intermediários como certificação.

@@ -55,6 +55,13 @@ describe("contractNextStep", () => {
 });
 
 describe("contract next step — legacy (LEGADO-REGULARIZA)", () => {
+  it("discarded legacy never offers activation, signature or regularization", () => {
+    const step = contractNextStep({ ...base, legacy: "discarded" });
+    expect(step.primary).toBeNull();
+    expect(step.secondary.map((action) => action.target)).toEqual([
+      { kind: "tab", tab: "overview" },
+    ]);
+  });
   const base = {
     status: "draft",
     startsAt: null,

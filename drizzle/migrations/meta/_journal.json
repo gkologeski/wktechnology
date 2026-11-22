@@ -3176,8 +3176,36 @@
     {
       "idx": 453,
       "version": "7",
-      "when": 1795352224791,
-      "tag": "0453_inbox_occurrence_default_privileges",
+      "when": 1795356214215,
+      "tag": "0453_contract_reads_column_safe",
+      "breakpoints": true
+    },
+    {
+      "idx": 454,
+      "version": "7",
+      "when": 1795358275785,
+      "tag": "0454_contract_legacy_discard_pending",
+      "breakpoints": true
+    },
+    {
+      "idx": 455,
+      "version": "7",
+      "when": 1795358493100,
+      "tag": "0455_contract_legacy_discard_list_batch",
+      "breakpoints": true
+    },
+    {
+      "idx": 456,
+      "version": "7",
+      "when": 1795373242882,
+      "tag": "0456_proposal_template_contract_model",
+      "breakpoints": true
+    },
+    {
+      "idx": 457,
+      "version": "7",
+      "when": 1795387239326,
+      "tag": "0457_inbox_occurrence_default_privileges",
       "breakpoints": true
     }
   ]

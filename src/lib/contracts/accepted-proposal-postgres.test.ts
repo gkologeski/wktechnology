@@ -110,7 +110,8 @@ beforeAll(async () => {
     ["drizzle/migrations/0120_activities_team_scope_active_membership.sql", "my_team_member_pairs"],
     ["drizzle/migrations/0046_view_as_role_only_readonly.sql", "is_read_only_view"],
     ["drizzle/migrations/0216_work_core_prepare.sql", "work_access_context"],
-    ["drizzle/migrations/0216_work_core_prepare.sql", "work_context_access"],
+    ["drizzle/migrations/0218_order3_completion_prepare.sql", "work_action_prefix"],
+    ["drizzle/migrations/0218_order3_completion_prepare.sql", "work_context_access"],
     ["drizzle/migrations/0210_finance_core_actions.sql", "finance_access_context"],
     ["drizzle/migrations/0214_finance_business_prepare.sql", "finance_business_access"],
     ["drizzle/migrations/0214_finance_business_prepare.sql", "finance_business_authorize"],
@@ -146,7 +147,23 @@ beforeAll(async () => {
   );
   await db.unsafe(`ALTER TABLE contracts ADD COLUMN contracting_legal_entity_id uuid;
     CREATE TRIGGER cnpj_active_contracting_legal_entity_id BEFORE INSERT OR UPDATE OF contracting_legal_entity_id,workspace_id ON contracts FOR EACH ROW EXECUTE FUNCTION record_legal_entity_guard('contracting_legal_entity_id')`);
+  await db.unsafe(`CREATE TABLE contract_templates(id uuid PRIMARY KEY,workspace_id uuid REFERENCES workspaces(id) ON DELETE CASCADE,status text,role text,owner_id uuid);
+    CREATE TABLE proposal_templates(id uuid PRIMARY KEY,workspace_id uuid REFERENCES workspaces(id) ON DELETE CASCADE,name text);
+    ALTER TABLE contract_templates ENABLE ROW LEVEL SECURITY;
+    ALTER TABLE proposal_templates ENABLE ROW LEVEL SECURITY;
+    GRANT SELECT ON contract_templates TO authenticated;
+    GRANT SELECT,INSERT,UPDATE,DELETE ON proposal_templates TO authenticated;
+    CREATE POLICY model_view ON contract_templates FOR SELECT TO authenticated USING(work_context_access((SELECT work_access_context()),workspace_id,'techcontracts.contract_templates','view',ARRAY[owner_id]));`);
+  const modelPolicies = readFileSync("drizzle/migrations/0223_order4_sales_activate.sql", "utf8")
+    .split("\n")
+    .filter((line) => /^CREATE POLICY sales_\w+ ON public\."proposal_templates" /.test(line));
+  if (modelPolicies.length !== 4) throw new Error("Production proposal model policies missing");
+  for (const policy of modelPolicies) await db.unsafe(policy);
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0456_proposal_template_contract_model.sql", "utf8"),
+  );
   await db`insert into workspaces(id) values(${W}),(${B})`;
+  await db`insert into contract_templates(id,workspace_id,status,role,owner_id) values(${IDs[0]},${W},'published','client',${U}),(${IDs[1]},${B},'published','client',${U}),(${IDs[2]},${W},'draft','client',${U})`;
   await db`insert into legal_entities(id,workspace_id,created_by) values(${IDs[1]},${W},${U})`;
   await db`insert into financial_entries(id,legal_entity_id) values(${IDs[2]},${IDs[1]})`;
   await db`insert into profiles(id,active_workspace_id) values(${U},${W})`;
@@ -175,6 +192,9 @@ async function subject(
       if (options.inactive)
         await tx`update workspace_members set status='inactive' where user_id=${U}`;
       for (const key of [
+        "techsales.proposal_templates.view.workspace",
+        "techsales.proposal_templates.create.workspace",
+        "techcontracts.contract_templates.view.workspace",
         "techsales.proposals.view.workspace",
         "techcontracts.contracts.create.workspace",
         "techcontracts.contracts.view.workspace",
@@ -414,4 +434,68 @@ it("accepted proposal contract rejects an inactive CNPJ after integration", asyn
   } finally {
     await db`update legal_entities set active=true where id=${IDs[1]}`;
   }
+});
+
+async function bindModel(tx: postgres.TransactionSql, contractId = IDs[0]) {
+  return tx`insert into proposal_templates(id,workspace_id,name,contract_template_id) values(${IDs[0]},${W},'Modelo de compra',${contractId}) returning contract_template_id`;
+}
+it("proposal model SQL permits authorized model linkage without business records", async () => {
+  await subject(async (tx) => {
+    const before = await tx`select count(*)::int as n from proposals`;
+    expect((await bindModel(tx))[0].contract_template_id).toBe(IDs[0]);
+    expect((await tx`select count(*)::int as n from proposals`)[0].n).toBe(before[0].n);
+  });
+});
+it("proposal model SQL rejects missing permission", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await bindModel(tx);
+      },
+      { keys: false },
+    ),
+  ).rejects.toThrow();
+});
+it("proposal model SQL rejects explicit deny", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await bindModel(tx);
+      },
+      { deny: true },
+    ),
+  ).rejects.toThrow();
+});
+it("proposal model SQL rejects foreign workspace linkage", async () => {
+  await expect(
+    subject(async (tx) => {
+      await bindModel(tx, IDs[1]);
+    }),
+  ).rejects.toThrow("indisponível");
+});
+it("proposal model SQL rejects inactive membership", async () => {
+  await expect(
+    subject(
+      async (tx) => {
+        await bindModel(tx);
+      },
+      { inactive: true },
+    ),
+  ).rejects.toThrow();
+});
+it("proposal model SQL rejects an unpublished contract model", async () => {
+  await expect(
+    subject(async (tx) => {
+      await bindModel(tx, IDs[2]);
+    }),
+  ).rejects.toThrow("indisponível");
+});
+it("proposal model SQL requires contract model visibility", async () => {
+  await subject(async (tx) => {
+    // Revoke only contract-model visibility while proposal-model creation remains granted.
+    await tx.unsafe("RESET ROLE");
+    await tx`delete from job_role_permission_overrides where workspace_id=${W} and role_id=${R} and permission_key='techcontracts.contract_templates.view.workspace'`;
+    await tx.unsafe("SET LOCAL ROLE authenticated");
+    await expect(bindModel(tx)).rejects.toThrow("indisponível");
+  });
 });

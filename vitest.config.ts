@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     environment: "node",
+    // Bound disposable database concurrency on developer machines without changing CI coverage.
+    maxWorkers: process.env.CI ? undefined : 4,
     sequence: { sequencer: DatabaseFirstSequencer },
     projects: [
       {

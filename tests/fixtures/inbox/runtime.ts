@@ -350,10 +350,10 @@ export async function setupInboxExecutionCopy(
     );
   else await db.unsafe("DROP TRIGGER inbox_runtime_release_guard ON public.workflows");
   assert.deepEqual(await authorizationSnapshot(db), before);
-  // The regression fixture first measures the real pre-0453 exposure. Every
+  // The regression fixture first measures the real pre-0457 exposure. Every
   // normal runtime fixture uses the final reviewed ACL before its tests run.
   if (!options.supabaseTableDefaults)
     await db.unsafe(
-      readFileSync("drizzle/migrations/0453_inbox_occurrence_default_privileges.sql", "utf8"),
+      readFileSync("drizzle/migrations/0457_inbox_occurrence_default_privileges.sql", "utf8"),
     );
 }

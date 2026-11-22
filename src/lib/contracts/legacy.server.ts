@@ -92,6 +92,46 @@ export function legacyContractState(db: SupabaseClient, workspaceId: string, con
   });
 }
 
+/** Discard is append-only; the user RPC checks view/update/delete and preserves the original. */
+export function discardPendingLegacyContract(
+  db: SupabaseClient,
+  input: {
+    workspaceId: string;
+    contractId: string;
+    expectedRevision: number;
+    reason: string;
+    confirmed: true;
+    operationId: string;
+  },
+) {
+  return workRpc<{ id: string; discarded_at: string; replayed: boolean }>(
+    db,
+    "contract_legacy_discard_pending",
+    {
+      w: input.workspaceId,
+      p_contract: input.contractId,
+      p_expected_revision: input.expectedRevision,
+      p_reason: input.reason,
+      p_confirmed: input.confirmed,
+      p_operation: input.operationId,
+    },
+  );
+}
+
+export async function decorateDiscardedContracts<T extends { id: string }>(
+  db: SupabaseClient,
+  workspaceId: string,
+  rows: T[],
+) {
+  if (!rows.length) return [];
+  const ids = await workRpc<string[]>(db, "contract_legacy_discarded_ids", {
+    w: workspaceId,
+    p_contracts: rows.map((row) => row.id),
+  });
+  const discarded = new Set(ids);
+  return rows.map((row) => ({ ...row, legacy_discarded: discarded.has(row.id) }));
+}
+
 const DENIED = /Sem permissão|somente leitura|Sessão obrigatória/;
 function decodePdf(base64: string): Uint8Array {
   const bin = atob(base64);
@@ -100,11 +140,10 @@ function decodePdf(base64: string): Uint8Array {
 
 /** Leitura: só "denied" quando a própria RPC negou; demais falhas propagam para a tela mostrar erro. */
 export async function loadLegacyState(db: SupabaseClient, workspaceId: string, contractId: string) {
-  const classification = await workRpc<{ status: "pending" | "regularized" | null }>(
-    db,
-    "contract_legacy_indicator",
-    { w: workspaceId, p_contract: contractId },
-  );
+  const classification = await workRpc<{
+    status: "pending" | "regularized" | null;
+    discarded?: boolean;
+  }>(db, "contract_legacy_indicator", { w: workspaceId, p_contract: contractId });
   try {
     const raw = (await legacyContractState(db, workspaceId, contractId)) as unknown as Omit<
       LegacyState,
@@ -131,7 +170,10 @@ export async function loadLegacyState(db: SupabaseClient, workspaceId: string, c
     return { access: "granted" as const, state };
   } catch (e) {
     if (DENIED.test((e as Error).message))
-      return { access: "denied" as const, classification: classification.status };
+      return {
+        access: "denied" as const,
+        classification: classification.discarded ? ("discarded" as const) : classification.status,
+      };
     throw e;
   }
 }

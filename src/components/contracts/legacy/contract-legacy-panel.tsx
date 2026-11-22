@@ -25,10 +25,12 @@ import {
 import { formatDateTime } from "@/lib/crm";
 import { LegacyRegularizeForm } from "./legacy-regularize-form";
 import { LegacyPartiesEditor } from "./legacy-parties-editor";
+import { LegacyDiscardDialog } from "./legacy-discard-dialog";
 
 const KEY = "techcontracts.legacy_contracts";
 type ContractLike = {
   id: string;
+  status?: string;
   counterparty_company_id?: string | null;
   contracting_legal_entity_id?: string | null;
   body_html?: string | null;
@@ -41,11 +43,13 @@ export function ContractLegacyPanel({
   mode,
   query,
   canUpdateContract,
+  canDeleteContract,
 }: {
   contract: ContractLike;
   mode: LegacyMode;
   query: UseQueryResult<LegacyLoad>;
   canUpdateContract: boolean;
+  canDeleteContract: boolean;
 }) {
   if (mode === "ineligible" || mode === "denied") return null;
   const state = query.data?.access === "granted" ? query.data.state : null;
@@ -56,7 +60,11 @@ export function ContractLegacyPanel({
           <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Contrato legado
           {state?.record ? (
             <Badge variant="outline">
-              {state.record.status === "regularized" ? "Regularizado" : "Pendente de regularização"}
+              {state.discard
+                ? "Descartado"
+                : state.record.status === "regularized"
+                  ? "Regularizado"
+                  : "Pendente de regularização"}
             </Badge>
           ) : null}
         </CardTitle>
@@ -80,6 +88,11 @@ export function ContractLegacyPanel({
               </Button>
             </div>
           </div>
+        ) : mode === "restricted_discarded" ? (
+          <p className="text-sm text-muted-foreground">
+            Legado descartado. Original e histórico preservados somente para consulta. Detalhes do
+            descarte exigem permissão de consulta de legados.
+          </p>
         ) : mode === "restricted_pending" || mode === "restricted_regularized" ? (
           <p className="text-sm text-muted-foreground">
             Este é um contrato legado{" "}
@@ -105,6 +118,13 @@ export function ContractLegacyPanel({
                 contract={contract}
                 canUpdateContract={canUpdateContract}
               />
+              {mode === "pending" && contract.status === "draft" && state.record && (
+                <LegacyDiscardDialog
+                  contractId={contract.id}
+                  revision={state.record.revision}
+                  allowed={canUpdateContract && canDeleteContract}
+                />
+              )}
             </aside>
           </div>
         ) : null}
@@ -133,6 +153,15 @@ function LegacyTimeline({ state, contractId }: { state: LegacyState; contractId:
       <h3 className="text-sm font-medium flex items-center gap-2">
         <History className="h-4 w-4" aria-hidden="true" /> Trilha
       </h3>
+      {state.discard && (
+        <div role="status" className="space-y-1 text-sm border-l border-border pl-4">
+          <p className="font-medium">Legado descartado</p>
+          <p className="text-xs text-muted-foreground">
+            {formatDateTime(state.discard.discarded_at)} · revisão {state.discard.revision}
+          </p>
+          <p className="text-muted-foreground">{state.discard.reason}</p>
+        </div>
+      )}
       {state.events.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Ainda não reconhecido como legado. A origem importada sozinha não comprova assinatura.
@@ -197,6 +226,13 @@ function LegacyActions({
   const { can } = usePermissions();
   const canCreate = can(`${KEY}.create.workspace`) && canUpdateContract;
   const canApprove = can(`${KEY}.approve.workspace`) && canUpdateContract;
+  if (mode === "discarded")
+    return (
+      <p className="text-sm text-muted-foreground">
+        O documento e a trilha estão preservados. Este legado não pode ser regularizado ou
+        reativado.
+      </p>
+    );
   if (mode === "regularized" && state.record)
     return (
       <div className="space-y-2 text-sm">

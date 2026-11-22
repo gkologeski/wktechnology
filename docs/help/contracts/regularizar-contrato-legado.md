@@ -8,7 +8,7 @@ route_pattern: /contracts/$id
 min_permission: techcontracts.legacy_contracts.view.workspace
 audience: internal
 sort_order: 220
-version: 2
+version: 3
 is_published: true
 ---
 # Reconhecer e regularizar um contrato legado
@@ -26,6 +26,14 @@ is_published: true
 
 ## Resultado esperado
 O mesmo contrato fica regularizado, com situação, evidência privada, trilha e prévia do PDF. Alterações posteriores só por aditivo.
+
+## Descartar uma importação pendente
+1. Abra a ficha do contrato, em Visão geral > Contrato legado.
+2. Para um legado pendente em rascunho, clique em **Descartar legado pendente**.
+3. Informe o motivo (5 a 2000 caracteres), marque a confirmação e clique em **Confirmar descarte**. Cancelar não grava nada.
+4. Confira **Legado descartado**, a data e o motivo na trilha. O registro permanece na lista para consulta; o status jurídico anterior é preservado.
+
+O descarte exige consulta de legados e acesso de consulta, alteração e exclusão do contrato, no workspace atual com membership ativo e sem deny. Não concede permissões a nenhum cargo. Só é aceito para legado pendente em rascunho, na revisão conferida, sem origem comercial/assinatura governada ou operação vinculada. Não descarta legados regularizados, não rescinde contratos e não altera serviços, projetos, alocações, cobranças ou pagamentos. O original, evidências e a autoria ficam preservados; não há exclusão física, reativação nem desfazer. A exclusão genérica de um legado é bloqueada: utilize esta ação na ficha. Se o documento mudou, atualize a ficha e registre a revisão antes de descartar.
 
 ## Regras e limites
 - Contratos ativos, encerrados ou rescindidos importados podem ser reconhecidos sem voltar para rascunho; o status atual é mantido até a regularização.

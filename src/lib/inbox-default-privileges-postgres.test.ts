@@ -56,7 +56,7 @@ async function controls() {
   ) controls`;
 }
 
-it("0453 closes real Supabase default table grants while preserving the 13-column RLS boundary, service transport and five legacy profiles", async () => {
+it("0457 closes real Supabase default table grants while preserving the 13-column RLS boundary, service transport and five legacy profiles", async () => {
   fixtureHttpBase();
   const legacyBefore = await legacyAccessVector(db);
   const controlsBefore = await controls();
@@ -73,7 +73,7 @@ it("0453 closes real Supabase default table grants while preserving the 13-colum
   expect(exposed).toEqual({ anon_truncate: true, auth_write: true, auth_private: true, rls: true });
 
   await db.unsafe(
-    readFileSync("drizzle/migrations/0453_inbox_occurrence_default_privileges.sql", "utf8"),
+    readFileSync("drizzle/migrations/0457_inbox_occurrence_default_privileges.sql", "utf8"),
   );
   expect(await controls()).toEqual(controlsBefore);
   assertLegacyAccessUnchanged(legacyBefore, await legacyAccessVector(db));

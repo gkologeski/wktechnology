@@ -1,4 +1,6 @@
 import { workCostTable } from "@/lib/access-control/work-cost-projection";
+import { decorateDiscardedContracts } from "@/lib/contracts/legacy.server";
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import type { Database } from "@/integrations/supabase/types";
 import { assertWorkRecord } from "@/lib/access-control/work-core.server";
 // Server functions for Contracts (Sprint 2 MVP).
@@ -6,7 +8,7 @@ import { assertWorkRecord } from "@/lib/access-control/work-core.server";
 import { createServerFn } from "@tanstack/react-start";
 import { orSafeLike } from "@/lib/postgrest-search";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireWorkPermission } from "@/lib/access-control/work-permission.middleware";
 import { resolveActiveWorkspace } from "@/lib/active-workspace.server";
 import { assertAnyPermission } from "@/lib/access-control/enforce.server";
 
@@ -25,7 +27,7 @@ const statusEnum = z.enum([
 // ============= LIST =============
 
 export const listContracts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -63,7 +65,7 @@ export const listContracts = createServerFn({ method: "POST" })
 // dos demais chamadores (detalhe, pickers, fila de vínculo, negócios).
 
 export const listContractsPaged = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -145,11 +147,15 @@ export const listContractsPaged = createServerFn({ method: "POST" })
 
     const { data: rows, error, count } = await q;
     if (error) throw error;
-    return { rows: rows ?? [], total: count ?? 0 };
+    const workspaceId = await getActiveWorkspaceId(supabase, context.userId);
+    return {
+      rows: await decorateDiscardedContracts(supabase, workspaceId, rows ?? []),
+      total: count ?? 0,
+    };
   });
 
 export const getContract = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "view")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase } = context;
@@ -230,7 +236,7 @@ export const getContract = createServerFn({ method: "POST" })
 // ============= LINKABLE (para o seletor de vínculo) =============
 
 export const listLinkableContracts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -276,7 +282,7 @@ export const listLinkableContracts = createServerFn({ method: "POST" })
 // workspace — são os contratos em que compramos mão de obra de prestadores.
 
 export const listOwnContractingPurchaseContracts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -353,7 +359,7 @@ const aiOriginSchema = z.object({
 });
 
 export const linkContractParent = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -482,7 +488,7 @@ type LinkEventPayload = {
 /** Histórico de aninhamento/desaninhamento (compras e aditivos) de um contrato. */
 
 export const listContractLinkEvents = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -544,7 +550,7 @@ export const listContractLinkEvents = createServerFn({ method: "POST" })
 // para o pareamento Prestação ↔ Compra (outsourcing).
 
 export const searchMainContracts = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "view")])
   .inputValidator((input) =>
     z
       .object({
@@ -574,7 +580,7 @@ export const searchMainContracts = createServerFn({ method: "POST" })
   });
 
 export const linkContractAmendment = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -684,7 +690,7 @@ export const linkContractAmendment = createServerFn({ method: "POST" })
 
 /** Aplica o padrão `PREFIXO CONTRATANTE X CONTRATADA` aos contratos informados. */
 export const standardizeContractTitles = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -728,7 +734,7 @@ const titleStatusEnum = z.enum([
  * Sem `ids`: seleciona os contratos do workspace nos status informados.
  */
 export const standardizeContractTitlesByStatus = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "update")])
   .inputValidator((input) =>
     z
       .object({
@@ -792,7 +798,7 @@ const createInput = z.object({
 });
 
 export const createContract = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "create")])
   .inputValidator((input) => createInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -820,7 +826,7 @@ export const createContract = createServerFn({ method: "POST" })
 // snapshot do negócio e itens de linha convertidos em serviços.
 
 export const createContractFromDeal = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "create")])
   .inputValidator((input) =>
     z
       .object({
@@ -904,7 +910,7 @@ const patchInput = z.object({
 });
 
 export const updateContract = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "update")])
   .inputValidator((input) => patchInput.parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -960,7 +966,7 @@ export const updateContract = createServerFn({ method: "POST" })
 // ============= DELETE =============
 
 export const deleteContract = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "delete")])
   .inputValidator((input) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
@@ -987,7 +993,7 @@ export const deleteContract = createServerFn({ method: "POST" })
 // Nomes de empresa vêm de `companies`; o serviço do catálogo é resolvido
 // a partir de `services.metadata->>service_catalog_id`.
 export const listContractGroupings = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireWorkPermission("techcontracts.contracts", "view")])
   .inputValidator((input) =>
     z.object({ contractIds: z.array(z.string().uuid()).max(500).optional() }).parse(input ?? {}),
   )
