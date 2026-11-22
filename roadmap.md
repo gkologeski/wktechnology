@@ -1,3 +1,10 @@
+# RECONCILIA-INBOX (G, previsão inicial 1–3 h)
+
+- [x] Restaurar pelo CLI o teste exclusivo do draft; preservar a consolidação posterior do Codex nos arquivos compartilhados, sem reverter UI/Ajuda/contratos/harness.
+- [x] Conferir journal: todas as entradas do draft já incorporadas, sem renumeração ou SQL aplicado; lock do draft O e zero workflows Inbox ativos/publicados.
+- [x] Regressões dirigidas: 198 testes passaram; 17 casos opt-in não executados. Diff sem erros.
+- [ ] Gate global de permissões: dois findings herdados em tipos gerados; contratos permanecem reservados ao Codex. Nenhum aceite/publicação/ativação autorizado nesta entrega.
+
 # VINCULA-NEGOCIOS (M, 2–3 h)
 
 - [x] Banco: negócios adicionais na solicitação, validação e gravação (draft)
