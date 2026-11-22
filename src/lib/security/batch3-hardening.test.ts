@@ -176,3 +176,16 @@ describe("public capability boundaries", () => {
     });
   });
 });
+
+import { issueLpViewTicket, verifyLpViewTicket } from "./lp-view-ticket";
+describe("landing conversion ticket", () => {
+  const pid = "11111111-1111-1111-1111-111111111111";
+  it("accepts a server-issued ticket after dwell and rejects forgery/reuse elsewhere", () => {
+    const t = issueLpViewTicket("s", pid, "visitor-abcdefghij", 1_000_000_000_000);
+    expect(verifyLpViewTicket("s", t, pid, "visitor-abcdefghij", 1_000_000_010_000)).toBe(true);
+    expect(verifyLpViewTicket("s", t, pid, "visitor-abcdefghij", 1_000_000_001_000)).toBe(false);
+    expect(verifyLpViewTicket("other", t, pid, "visitor-abcdefghij", 1_000_000_010_000)).toBe(false);
+    expect(verifyLpViewTicket("s", t, pid, "visitor-zzzzzzzzzz", 1_000_000_010_000)).toBe(false);
+    expect(verifyLpViewTicket("s", "1000000000000.forgedforgedforgedforged", pid, "visitor-abcdefghij", 1_000_000_010_000)).toBe(false);
+  });
+});

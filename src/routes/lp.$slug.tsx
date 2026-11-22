@@ -73,12 +73,15 @@ function PublicLandingPage() {
   };
   const [submitted, setSubmitted] = useState(false);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [viewTicket, setViewTicket] = useState<string | null>(null);
 
   useEffect(() => {
     if (!page) return;
     trackLpEvent({
       data: { landing_page_id: page.id, event_type: "view", visitor_id: lpVisitorId() },
-    }).catch(() => null);
+    })
+      .then((r) => setViewTicket((r as { view_ticket?: string } | null)?.view_ticket ?? null))
+      .catch(() => null);
   }, [page]);
 
   if (!page) {
@@ -113,7 +116,12 @@ function PublicLandingPage() {
       setPhoneError(null);
     }
     await trackLpEvent({
-      data: { landing_page_id: page.id, event_type: "conversion", visitor_id: lpVisitorId() },
+      data: {
+        landing_page_id: page.id,
+        event_type: "conversion",
+        visitor_id: lpVisitorId(),
+        ...(viewTicket ? { view_ticket: viewTicket } : {}),
+      },
     }).catch(() => null);
     setSubmitted(true);
   }
