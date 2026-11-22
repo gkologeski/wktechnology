@@ -61,6 +61,7 @@ export type ContractRow = {
   ends_at: string | null;
   created_at: string;
   imported_from?: string | null;
+  legacy_discarded?: boolean;
   counterparty_company_id?: string | null;
   assigned_to?: string | null;
   document_kind?: string | null;
@@ -360,11 +361,13 @@ function ContractTableRow({
   const qc = useQueryClient();
   const update = useServerFn(updateContract);
   const [saving, setSaving] = useState(false);
+  const canEdit = editable && !c.legacy_discarded;
 
   const isAmendment = c.document_kind === "amendment" || Boolean(c.amendment_of_id);
   const selected = selection?.selectedIds.has(c.id) ?? false;
 
   async function patch(patchData: Record<string, unknown>, label: string) {
+    if (c.legacy_discarded) return;
     setSaving(true);
     try {
       await update({ data: { id: c.id, patch: patchData as never } });
@@ -432,7 +435,7 @@ function ContractTableRow({
     role: <TableCell className="text-sm">{ROLE_LABEL[c.role] ?? c.role}</TableCell>,
     status: (
       <TableCell>
-        {editable ? (
+        {canEdit ? (
           <Select
             value={c.status}
             disabled={saving}
@@ -451,14 +454,14 @@ function ContractTableRow({
           </Select>
         ) : (
           <Badge variant="outline" className={STATUS_TONE[c.status] ?? ""}>
-            {STATUS_LABEL[c.status] ?? c.status}
+            {c.legacy_discarded ? "Legado descartado" : (STATUS_LABEL[c.status] ?? c.status)}
           </Badge>
         )}
       </TableCell>
     ),
     total_value: (
       <TableCell className="text-right tabular-nums">
-        {editable ? (
+        {canEdit ? (
           <Input
             type="number"
             min={0}
@@ -481,7 +484,7 @@ function ContractTableRow({
     ),
     validity: (
       <TableCell className="text-xs text-muted-foreground">
-        {editable ? (
+        {canEdit ? (
           <div className="flex items-center gap-1">
             <IsoDatePicker
               value={dateOnly(c.starts_at)}
@@ -517,7 +520,7 @@ function ContractTableRow({
     ),
     assigned_to: (
       <TableCell>
-        {editable ? (
+        {canEdit ? (
           <AssigneeField
             table="contracts"
             rowId={c.id}

@@ -3179,6 +3179,20 @@
       "when": 1795356214215,
       "tag": "0453_contract_reads_column_safe",
       "breakpoints": true
+    },
+    {
+      "idx": 454,
+      "version": "7",
+      "when": 1795358275785,
+      "tag": "0454_contract_legacy_discard_pending",
+      "breakpoints": true
+    },
+    {
+      "idx": 455,
+      "version": "7",
+      "when": 1795358493100,
+      "tag": "0455_contract_legacy_discard_list_batch",
+      "breakpoints": true
     }
   ]
 }

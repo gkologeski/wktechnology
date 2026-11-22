@@ -1,4 +1,6 @@
 import { workCostTable } from "@/lib/access-control/work-cost-projection";
+import { decorateDiscardedContracts } from "@/lib/contracts/legacy.server";
+import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import type { Database } from "@/integrations/supabase/types";
 import { assertWorkRecord } from "@/lib/access-control/work-core.server";
 // Server functions for Contracts (Sprint 2 MVP).
@@ -145,7 +147,11 @@ export const listContractsPaged = createServerFn({ method: "POST" })
 
     const { data: rows, error, count } = await q;
     if (error) throw error;
-    return { rows: rows ?? [], total: count ?? 0 };
+    const workspaceId = await getActiveWorkspaceId(supabase, context.userId);
+    return {
+      rows: await decorateDiscardedContracts(supabase, workspaceId, rows ?? []),
+      total: count ?? 0,
+    };
   });
 
 export const getContract = createServerFn({ method: "POST" })

@@ -83,6 +83,8 @@ export function ContractsBulkBar({
     const failures: string[] = [];
     for (const row of selected) {
       try {
+        if (row.legacy_discarded)
+          throw new Error("Legado descartado: disponível somente para consulta.");
         await fn(row);
         ok += 1;
       } catch (e) {

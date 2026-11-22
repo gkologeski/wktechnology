@@ -8921,7 +8921,6 @@
         "src/components/deals/role-profiles/role-profile-detail.tsx": "57b2a2dc47bf767ed04812e20bb022bc663d33e97935751ca646c863077f043b",
         "src/lib/ats/job-postings.functions.ts": "4292f04bf86a1a47087016f80bb432d4768706718857e66e658146b6a7e6f36b",
         "src/lib/workflows/engine/authorization.server.ts": "36a882abe3bd078291c9882988d3c62accac0c2d24b6cbea24ed2115a6e968ed",
-        "src/routes/_authenticated/contracts.$id.tsx": "06c1ab0f4d445f677b8c78402410b9bb103fe50512bfcc172abb44cfa938b989",
         "src/routes/_authenticated/settings.esign.tsx": "7a285fee5c59ada113d69aeaa9c174c56c40ccf97009d3e32815ef46868d5c5f",
         "drizzle/migrations/0309_hiring_signature_evidence.sql": "c6b987b07b48893eb357f691847550659eb9c3bbc50268084713719e31c1f852",
         "drizzle/migrations/0310_hiring_recruitment_authorization.sql": "ebe0575b8b21f78d49302a69ecce109ca49f43d106d678411b2aec89d8cc4fac",
@@ -10908,7 +10907,7 @@
       "kind": "presentation",
       "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved.",
       "files": {
-        "src/integrations/supabase/types.ts": "c2c9ae3be45be0f8a2b8270d0fb0244fa3c2b453012be86e9c7511202d8d2097",
+        "src/integrations/supabase/types.ts": "7001f54b44f45f11dd6da9744bb1cfa843cc9c716a9b4df1a90d56ff420fb5bf",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -11625,7 +11624,7 @@
       "kind": "presentation",
       "rationale": "PROXIMO-PASSO-CONTRATO: pure next-step rule and presentational stepper/card. No I/O; actions only switch tabs or navigate to existing gated screens whose permissions stay in their own contracts.",
       "files": {
-        "src/lib/contracts/contract-next-step.ts": "f1774f3a00efb5808330aad6ad7e5a7b360f58d162edb81e54c901b06fda10a7"
+        "src/lib/contracts/contract-next-step.ts": "c90c0729e83efb75054f9dde2c25c505849914aa4d4cfe58ad116d7d2f0c892d"
       }
     },
     {
@@ -16505,9 +16504,6 @@
         }
       },
       "files": {
-        "src/lib/contracts/legacy.server.ts": "fadae21680e6830c4bdd40476112264e30baf01aaf318a4efcb9b2adafbb2f38",
-        "src/lib/contracts/legacy.functions.ts": "dde409c1a48d5104ca232ac8e7098276d1047aab47559bcb042e0b73f530370d",
-        "src/components/contracts/legacy/contract-legacy-panel.tsx": "53845c45f4b52e2610fa0091527d1eaf0e0fee1e8fdae5d005cee3e6c17c53e4",
         "src/components/contracts/legacy/legacy-regularize-form.tsx": "8912a34671bc27b75b4256fc41b37939160fada69f47169ddae3008a6226cda9",
         "src/components/contracts/legacy/use-contract-legacy.ts": "c411457ba322bf6fa2c5a888b880bdf8af701c194d6369d290acbaba1117603f",
         "drizzle/migrations/0385_contract_legacy_regularization.sql": "8e3bffb5a075b30eef95342090dc0d2226c7cc46327a66f6e00667e5553d3fb8"
@@ -16570,7 +16566,7 @@
       "kind": "presentation",
       "files": {
         "src/lib/contracts/legacy-types.ts": "3a3721ee84bc3aafabb7b6832971501d92bf44993deafff69e42eebec585b5bb",
-        "src/lib/contracts/legacy-view.ts": "46d8cdd96a88a4289c32cdb42632e7f2ec3a146bcd480ce12783b48190d5b046",
+        "src/lib/contracts/legacy-view.ts": "d8878f769519f85d9516ed574c7703f17a0293d48f6ca983d5ed3051a9735c0d",
         "src/lib/contracts/import-mode.ts": "fcc7295ec673e5242aaeaa811eaba71835fbd4fe9ee191047a1388c52853c28f"
       },
       "rationale": "Static DTOs, labels, PDF magic-byte check, SHA-256 helper, import-mode rules and the presentational import-mode chooser only; no data access or actions (server/RLS revalidate)."
@@ -24573,6 +24569,144 @@
           "file": "src/lib/gmail-recovery-postgres.test.ts",
           "name": "Gmail recovery rejects an inactive member"
         }
+      }
+    },
+    {
+      "id": "contract-legacy-pending-discard",
+      "kind": "business",
+      "resources": ["techcontracts.contracts", "techcontracts.legacy_contracts"],
+      "actions": ["view", "update", "delete", "create", "approve", "manage"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techcontracts.legacy_contracts.view.workspace",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.update.workspace",
+        "techcontracts.contracts.delete.workspace",
+        "techcontracts.contracts.delete.own"
+      ],
+      "rationale": "DESCARTA-LEGADO: administrative soft-discard is equivalent to removing a pending contract from use, so canonical contract delete is reused (not a new broader permission), additionally requiring contract view/update and private legacy-view. All previous actions in the touched legacy/contract files retain their user/RLS gates. No role grants, physical deletion, legal status change, billing release or source/evidence deletion. An immutable private receipt binds actor, workspace, confirmed reason, revision, fingerprint and stable operation id. Only pending draft legacies with no governed origin or operational FK are eligible. Current FK child writes serialize on the parent and reject discarded records. Canonical mutations/regularization are blocked afterwards. List returns only authorized discarded ids, never reasons or private paths. Current generated types only describe this additive schema. New dialog requires explicit confirmation and has no side effect on cancel.",
+      "controls": [
+        {
+          "file": "src/integrations/supabase/auth-middleware.ts",
+          "symbol": "requireSupabaseAuth"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "workRpc"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "getActiveWorkspaceId"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/contracts/legacy.server.ts",
+          "symbol": "discardPendingLegacyContract"
+        },
+        {
+          "file": "src/lib/contracts/legacy.server.ts",
+          "symbol": "decorateDiscardedContracts"
+        },
+        {
+          "file": "src/lib/contracts/legacy.functions.ts",
+          "symbol": "discardContractLegacy"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkScreenAccess"
+        },
+        {
+          "file": "src/components/work-access.tsx",
+          "symbol": "WorkRecordAccess"
+        },
+        {
+          "file": "src/lib/access-control/work-cost-projection.ts",
+          "symbol": "workCostTable"
+        },
+        {
+          "file": "src/lib/contracts.functions.ts",
+          "symbol": "updateContract"
+        },
+        {
+          "file": "src/lib/contracts.functions.ts",
+          "symbol": "deleteContract"
+        },
+        {
+          "file": "src/lib/contracts.functions.ts",
+          "symbol": "standardizeContractTitles"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0454_contract_legacy_discard_pending.sql",
+          "symbol": "contract_legacy_discards"
+        },
+        {
+          "file": "drizzle/migrations/0454_contract_legacy_discard_pending.sql",
+          "symbol": "contract_legacy_discard_pending"
+        },
+        {
+          "file": "drizzle/migrations/0454_contract_legacy_discard_pending.sql",
+          "symbol": "contract_legacy_discard_guard"
+        },
+        {
+          "file": "drizzle/migrations/0454_contract_legacy_discard_pending.sql",
+          "symbol": "contract_legacy_discard_link_guard"
+        },
+        {
+          "file": "drizzle/migrations/0454_contract_legacy_discard_pending.sql",
+          "symbol": "contract_legacy_state"
+        },
+        {
+          "file": "drizzle/migrations/0454_contract_legacy_discard_pending.sql",
+          "symbol": "contract_legacy_indicator"
+        },
+        {
+          "file": "drizzle/migrations/0455_contract_legacy_discard_list_batch.sql",
+          "symbol": "contract_legacy_discarded_ids"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy discard allowed"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy discard missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy discard explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy discard foreign workspace"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/legacy-postgres.test.ts",
+          "name": "legacy discard inactive member"
+        }
+      },
+      "files": {
+        "src/components/contracts/legacy/legacy-discard-dialog.tsx": "60fd24a058ddf3abac600eee8cfa3bfce89242bc5036e7b3f5572e766b3cc1e0",
+        "src/components/contracts/legacy/contract-legacy-panel.tsx": "c434e08ea45d5f0f37678bb05e87e9053df7e09f2ea23b9b516b119e1f666b0a",
+        "src/lib/contracts/legacy.functions.ts": "29e306393c0daf2590d88a720bfd89bbe5683e9400af3efc0ebd85f04c3736a6",
+        "src/lib/contracts/legacy.server.ts": "fdb7b015d3ccd7f3a081bb38900b362ab097d65a118d20420a4ea1a274dc5f47",
+        "src/routes/_authenticated/contracts.$id.tsx": "5f7821d306049541bf41a978d6a961b0b3c75f9aec4f94bc57509c3760304831",
+        "drizzle/migrations/0454_contract_legacy_discard_pending.sql": "7ee86112069b893634b01b4babc64a3339947bf9b02524cbc8152a35ad8fbe72",
+        "drizzle/migrations/0455_contract_legacy_discard_list_batch.sql": "255ab07053c066122545fc1c0a1f856a52241d543f95e055b3c90213a17621ab"
       }
     }
   ],

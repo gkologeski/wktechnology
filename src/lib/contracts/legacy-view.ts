@@ -20,6 +20,12 @@ export type LegacyEvidence = {
 export type LegacyState = {
   contract_id: string;
   eligible_problem: string | null;
+  discard?: null | {
+    discarded_at: string;
+    actor_id: string;
+    reason: string;
+    revision: number;
+  };
   record: null | {
     id: string;
     status: "pending" | "regularized";
@@ -34,7 +40,7 @@ export type LegacyState = {
 };
 /** Resultado do servidor: `denied` só quando a RPC negou a chave/acesso; falhas viram erro, nunca "não legado". */
 export type LegacyLoad =
-  | { access: "denied"; classification: "pending" | "regularized" | null }
+  | { access: "denied"; classification: "pending" | "regularized" | "discarded" | null }
   | { access: "granted"; state: LegacyState };
 
 export type LegacyMode =
@@ -43,6 +49,8 @@ export type LegacyMode =
   | "denied"
   | "restricted_pending"
   | "restricted_regularized"
+  | "restricted_discarded"
+  | "discarded"
   | "ineligible"
   | "eligible"
   | "pending"
@@ -57,11 +65,14 @@ export function legacyMode(q: {
   if (q.isLoading) return "loading";
   if (q.isError || !q.data) return "error";
   if (q.data.access === "denied")
-    return q.data.classification === "pending"
-      ? "restricted_pending"
-      : q.data.classification === "regularized"
-        ? "restricted_regularized"
-        : "denied";
+    return q.data.classification === "discarded"
+      ? "restricted_discarded"
+      : q.data.classification === "pending"
+        ? "restricted_pending"
+        : q.data.classification === "regularized"
+          ? "restricted_regularized"
+          : "denied";
+  if (q.data.state.discard) return "discarded";
   const { record, eligible_problem } = q.data.state;
   if (!record) return eligible_problem ? "ineligible" : "eligible";
   if (record.status === "regularized") return "regularized";
@@ -69,8 +80,9 @@ export function legacyMode(q: {
 }
 
 /** Fluxos comerciais/assinatura novos ficam ocultos enquanto a situação não é conhecidamente "não legado". */
-export type LegacyGate = "none" | "pending" | "regularized" | "unknown";
+export type LegacyGate = "none" | "pending" | "regularized" | "discarded" | "unknown";
 export function legacyGate(mode: LegacyMode): LegacyGate {
+  if (mode === "discarded" || mode === "restricted_discarded") return "discarded";
   if (mode === "pending" || mode === "stale" || mode === "restricted_pending") return "pending";
   if (mode === "regularized" || mode === "restricted_regularized") return "regularized";
   if (mode === "loading" || mode === "error") return "unknown";
@@ -149,6 +161,8 @@ export const LEGACY_EVENT_LABEL: Record<LegacyEvent["kind"], string> = {
 
 /** Texto do cartão de assinatura quando o contrato é (ou pode ser) legado. */
 export function legacyNotice(gate: Exclude<LegacyGate, "none">): string {
+  if (gate === "discarded")
+    return "Contrato legado descartado. Original e histórico preservados para consulta; não há regularização, nova assinatura ou liberação de cobrança.";
   if (gate === "regularized")
     return "Contrato legado regularizado com o original assinado. Não há nova assinatura; alterações somente por aditivo.";
   if (gate === "pending")

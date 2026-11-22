@@ -7427,6 +7427,63 @@ export type Database = {
         }
         Relationships: []
       }
+      contract_legacy_discards: {
+        Row: {
+          actor_id: string
+          contract_fingerprint: string
+          contract_id: string
+          discarded_at: string
+          id: string
+          legacy_id: string
+          operation_id: string
+          reason: string
+          request_hash: string
+          revision: number
+          workspace_id: string
+        }
+        Insert: {
+          actor_id: string
+          contract_fingerprint: string
+          contract_id: string
+          discarded_at?: string
+          id?: string
+          legacy_id: string
+          operation_id: string
+          reason: string
+          request_hash: string
+          revision: number
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string
+          contract_fingerprint?: string
+          contract_id?: string
+          discarded_at?: string
+          id?: string
+          legacy_id?: string
+          operation_id?: string
+          reason?: string
+          request_hash?: string
+          revision?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_legacy_discards_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: true
+            referencedRelation: "contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_legacy_discards_workspace_id_legacy_id_fkey"
+            columns: ["workspace_id", "legacy_id"]
+            isOneToOne: false
+            referencedRelation: "contract_legacy_records"
+            referencedColumns: ["workspace_id", "id"]
+          },
+        ]
+      }
       contract_legacy_events: {
         Row: {
           actor_id: string
@@ -37700,6 +37757,21 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      contract_legacy_discard_pending: {
+        Args: {
+          p_confirmed: boolean
+          p_contract: string
+          p_expected_revision: number
+          p_operation: string
+          p_reason: string
+          w: string
+        }
+        Returns: Json
+      }
+      contract_legacy_discarded_ids: {
+        Args: { p_contracts: string[]; w: string }
+        Returns: Json
       }
       contract_legacy_evidence_attest: {
         Args: {

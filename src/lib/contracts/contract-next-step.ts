@@ -22,7 +22,7 @@ export type NextStepInput = {
   canActivate: boolean;
   today: Date;
   /** LEGADO-REGULARIZA: situação conhecida do contrato legado importado; ausente = contrato comum. */
-  legacy?: "none" | "pending" | "regularized" | "unknown";
+  legacy?: "none" | "pending" | "regularized" | "discarded" | "unknown";
   legacyEligible?: boolean;
 };
 
@@ -83,6 +83,16 @@ export function contractNextStep(input: NextStepInput): NextStep {
 }
 
 function legacyNextStep(input: NextStepInput): NextStep | null {
+  if (input.legacy === "discarded")
+    return {
+      stageIndex: 0,
+      headline: "Contrato legado descartado",
+      explanation:
+        "O original e a trilha continuam disponíveis para consulta. O descarte não rescinde contratos nem altera cobranças.",
+      primary: null,
+      secondary: [{ label: "Consultar trilha", target: tab("overview") }],
+      checklist: [],
+    };
   if (input.legacy === "pending")
     return {
       stageIndex: 0,

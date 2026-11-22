@@ -26,6 +26,33 @@ const rec = (status: "pending" | "regularized", stale = false) => ({
 });
 
 describe("legacy view mode", () => {
+  it("discarded legacy stays read-only even when the preserved record is pending", () => {
+    const s = {
+      ...state(rec("pending")),
+      discard: {
+        discarded_at: "2026-11-22T14:30:00Z",
+        actor_id: "u",
+        reason: "Importação indevida",
+        revision: 1,
+      },
+    };
+    const mode = legacyMode({
+      isLoading: false,
+      isError: false,
+      data: { access: "granted", state: s },
+    });
+    expect(mode).toBe("discarded");
+    expect(legacyGate(mode)).toBe("discarded");
+    expect(
+      legacyGate(
+        legacyMode({
+          isLoading: false,
+          isError: false,
+          data: { access: "denied", classification: "discarded" },
+        }),
+      ),
+    ).toBe("discarded");
+  });
   it("load failure is an error, never a false non-legacy", () => {
     const m = legacyMode({ isLoading: false, isError: true });
     expect(m).toBe("error");

@@ -78,6 +78,7 @@ const allKeys = [
   "techcontracts.legacy_contracts.approve.workspace",
   "techcontracts.contracts.view.workspace",
   "techcontracts.contracts.update.workspace",
+  "techcontracts.contracts.delete.workspace",
 ];
 beforeAll(async () => {
   root = mkdtempSync(join(tmpdir(), "contract-legacy-pg-"));
@@ -287,6 +288,18 @@ beforeAll(async () => {
     CREATE TRIGGER zzzz_contract_process_guard BEFORE INSERT OR UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contract_process_guard();
     CREATE TRIGGER zz_contracts_release_service_billing AFTER UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION contracts_release_service_billing_trg();
     GRANT SELECT ON contracts TO service_role;`);
+  await db.unsafe(`INSERT INTO permissions(key) VALUES('techcontracts.contracts.delete.workspace');
+    ALTER TABLE services ADD CONSTRAINT fixture_service_contract_fk FOREIGN KEY(contract_id) REFERENCES contracts(id);
+    ALTER TABLE financial_entries ADD CONSTRAINT fixture_finance_contract_fk FOREIGN KEY(contract_id) REFERENCES contracts(id);
+    ALTER TABLE projects ADD CONSTRAINT fixture_project_contract_fk FOREIGN KEY(contract_id) REFERENCES contracts(id);
+    ALTER TABLE contracts ADD CONSTRAINT fixture_parent_fk FOREIGN KEY(parent_contract_id) REFERENCES contracts(id), ADD CONSTRAINT fixture_amendment_fk FOREIGN KEY(amendment_of_id) REFERENCES contracts(id);
+  `);
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0454_contract_legacy_discard_pending.sql", "utf8"),
+  );
+  await db.unsafe(
+    readFileSync("drizzle/migrations/0455_contract_legacy_discard_list_batch.sql", "utf8"),
+  );
   // Open both sessions before deadlines; concurrency cases still run real overlapping RPCs.
   const connections = await Promise.all([db.reserve(), db.reserve()]);
   try {
@@ -1269,4 +1282,161 @@ it("legacy canonical parties cannot change after regularization", async () => {
     await db`select counterparty_company_id,source_file_path from contracts where id=${K}`;
   expect(c.counterparty_company_id).toBe(C);
   expect(c.source_file_path).toBe("imports/legado.docx");
+});
+
+const discard = (
+  u = U,
+  w = W,
+  rev = 1,
+  reason = "Importação indevida, preservar acervo",
+  confirmed = true,
+  op = randomUUID(),
+) =>
+  as(u, (tx) =>
+    tx`select contract_legacy_discard_pending(${w},${K},${rev},${reason},${confirmed},${op}) r`.then(
+      (rows) => rows[0].r,
+    ),
+  );
+async function discardCase(mode: Mode) {
+  await reset();
+  await recognize();
+  await prepare(mode, "techcontracts.contracts.delete.workspace");
+  const result = await err(discard(U, mode === "foreign" ? B : W));
+  expect((await db`select count(*)::int n from contract_legacy_discards`)[0].n).toBe(
+    mode === "allowed" ? 1 : 0,
+  );
+  expect((await db`select status::text s from contracts where id=${K}`)[0].s).toBe("draft");
+  return result;
+}
+it("legacy discard allowed", async () => {
+  expect(await discardCase("allowed")).toBe("ok");
+});
+it("legacy discard missing permission", async () => {
+  expect(await discardCase("missing")).toMatch(DENIED);
+});
+it("legacy discard explicit deny", async () => {
+  expect(await discardCase("deny")).toMatch(DENIED);
+});
+it("legacy discard foreign workspace", async () => {
+  expect(await discardCase("foreign")).toMatch(DENIED);
+});
+it("legacy discard inactive member", async () => {
+  expect(await discardCase("inactive")).toMatch(DENIED);
+});
+it("legacy discard preserves original, evidence, author and exact idempotent receipt", async () => {
+  await reset();
+  await recognize();
+  const ev = await attachEvidence();
+  const before = (await db`select * from contracts where id=${K}`)[0];
+  const op = randomUUID();
+  const a = await discard(U, W, 1, "Importação indevida", true, op);
+  const b = await discard(U, W, 1, "Importação indevida", true, op);
+  expect(a.replayed).toBe(false);
+  expect(b).toEqual({ ...a, replayed: true });
+  expect((await db`select * from contracts where id=${K}`)[0]).toEqual(before);
+  expect((await db`select status from contract_legacy_evidence where id=${ev}`)[0].status).toBe(
+    "attested",
+  );
+  expect((await db`select actor_id,reason,revision from contract_legacy_discards`)[0]).toEqual({
+    actor_id: U,
+    reason: "Importação indevida",
+    revision: 1,
+  });
+  await expect(discard(U, W, 1, "Outro motivo", true, op)).rejects.toThrow(/CONFLICT/);
+  expect((await db`select count(*)::int n from financial_entries`)[0].n).toBe(0);
+});
+it("legacy discard requires human confirmation, current revision and reason", async () => {
+  await reset();
+  await recognize();
+  await expect(discard(U, W, 1, "Motivo válido", false)).rejects.toThrow(/Confirme/);
+  await expect(discard(U, W, 1, "abc")).rejects.toThrow(/motivo/);
+  await expect(discard(U, W, 2)).rejects.toThrow(/STALE/);
+  await as(U, (tx) => tx`update contracts set body_html='alterado' where id=${K}`);
+  await expect(discard()).rejects.toThrow(/STALE/);
+  expect((await db`select count(*)::int n from contract_legacy_discards`)[0].n).toBe(0);
+});
+it("legacy discard rejects regularized, active and operationally linked contracts", async () => {
+  await reset();
+  await recognize();
+  await regularize(await attachEvidence());
+  await expect(discard()).rejects.toThrow(/Somente/);
+  await reset({ status: "active" });
+  await recognize();
+  await expect(discard()).rejects.toThrow(/Somente/);
+  for (const table of ["services", "projects", "financial_entries"]) {
+    await reset();
+    await recognize();
+    await db.unsafe(`insert into ${table}(id,contract_id) values('${randomUUID()}','${K}')`);
+    await expect(discard()).rejects.toThrow(/operação vinculada/);
+    expect((await db`select count(*)::int n from contract_legacy_discards`)[0].n).toBe(0);
+  }
+});
+it("legacy discard denies regularization, edits, new links and physical deletion afterwards", async () => {
+  await reset();
+  await recognize();
+  const ev = await attachEvidence();
+  await discard();
+  await expect(regularize(ev)).rejects.toThrow(/descartado/);
+  await expect(as(U, (tx) => tx`update contracts set title='Outro' where id=${K}`)).rejects.toThrow(
+    /descartado/,
+  );
+  await expect(db`insert into services values(${randomUUID()},${W},${K},null)`).rejects.toThrow(
+    /descartado/,
+  );
+  await expect(db`delete from contracts where id=${K}`).rejects.toThrow(/não pode ser excluído/);
+  await expect(db`delete from contract_legacy_discards where contract_id=${K}`).rejects.toThrow(
+    /imutável/,
+  );
+  const state = await as(U, (tx) => tx`select contract_legacy_state(${W},${K}) r`).then(
+    (rows) => rows[0].r,
+  );
+  expect(state.discard.actor_id).toBe(U);
+  expect(state.record.status).toBe("pending");
+  expect(JSON.stringify(state)).not.toContain("legacy-contracts/");
+});
+it("legacy discard revalidates legacy view, contract update and read-only session", async () => {
+  for (const key of [
+    "techcontracts.legacy_contracts.view.workspace",
+    "techcontracts.contracts.update.workspace",
+  ]) {
+    await reset();
+    await recognize();
+    await prepare("missing", key);
+    await expect(discard()).rejects.toThrow(DENIED);
+  }
+  await reset();
+  await recognize();
+  const session = randomUUID();
+  await db`insert into view_as_sessions values(${session},'role',null)`;
+  await expect(
+    as(
+      U,
+      (tx) =>
+        tx`select contract_legacy_discard_pending(${W},${K},1,'Motivo válido',true,${randomUUID()})`,
+      { session_id: session },
+    ),
+  ).rejects.toThrow(/somente leitura/);
+});
+it("legacy discard concurrent requests yield one receipt and no duplicate effects", async () => {
+  await reset();
+  await recognize();
+  const results = await Promise.all([err(discard()), err(discard())]);
+  expect(results.filter((result) => result === "ok")).toHaveLength(1);
+  expect((await db`select count(*)::int n from contract_legacy_discards`)[0].n).toBe(1);
+});
+it("legacy discard classification list never reveals reason or foreign contracts", async () => {
+  await reset();
+  await recognize();
+  await discard();
+  const ids = await as(
+    U,
+    (tx) => tx`select contract_legacy_discarded_ids(${W},ARRAY[${K}]::uuid[]) r`,
+  ).then((rows) => rows[0].r);
+  expect(ids).toEqual([K]);
+  await expect(
+    as(U, (tx) => tx`select contract_legacy_discarded_ids(${B},ARRAY[${K}]::uuid[])`),
+  ).rejects.toThrow(/indisponível/);
+  await expect(as(U, (tx) => tx`select * from contract_legacy_discards`)).rejects.toThrow(
+    /permission denied/,
+  );
 });

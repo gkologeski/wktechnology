@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getActiveWorkspaceId } from "@/lib/access-control/enforce.server";
 import {
+  discardPendingLegacyContract,
   loadLegacyState,
   openLegacyEvidence,
   recognizeLegacyContract,
@@ -13,6 +14,24 @@ import {
 // LEGADO-REGULARIZA: wrappers finos. Toda decisão é da RPC com o cliente do usuário (context.supabase).
 const id = z.string().uuid();
 const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+
+export const discardContractLegacy = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    z.object({
+      contractId: id,
+      expectedRevision: z.number().int().positive(),
+      reason: z.string().trim().min(5).max(2000),
+      confirmed: z.literal(true),
+      operationId: id,
+    }),
+  )
+  .handler(async ({ context, data }) =>
+    discardPendingLegacyContract(context.supabase, {
+      workspaceId: await getActiveWorkspaceId(context.supabase, context.userId),
+      ...data,
+    }),
+  );
 
 export const getContractLegacyState = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

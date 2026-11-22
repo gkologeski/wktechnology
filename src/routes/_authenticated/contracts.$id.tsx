@@ -81,7 +81,23 @@ import { LinkedProjectsCard } from "@/components/projects/linked-projects-card";
 
 import { IsoDatePicker } from "@/components/iso-date-picker";
 export const Route = createFileRoute("/_authenticated/contracts/$id")({
-  head: () => ({ meta: [{ title: "Contrato" }] }),
+  head: () => ({
+    meta: [
+      { title: "Ficha do contrato — TechContracts" },
+      {
+        name: "description",
+        content:
+          "Documento, partes, vínculos e trilha de regularização ou descarte de contratos no TechContracts.",
+      },
+      { property: "og:title", content: "Ficha do contrato — TechContracts" },
+      {
+        property: "og:description",
+        content: "Consulta e gestão autorizada de contratos, originais e histórico no TechERP.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: WorkDetailAccess,
 });
 
@@ -222,7 +238,7 @@ function ContractDetail() {
 
   const legacy = useContractLegacy(id);
   const access = useWorkCapabilities("techcontracts.contracts", [id]);
-  const canUpdateContract = access.for(id).can_update;
+  const canUpdateContract = access.for(id).can_update && legacy.gate !== "discarded";
   const { can } = usePermissions();
   const canTransition = can("techcontracts.contract_transition.manage.workspace");
   const canDelete = access.for(id).can_delete;
@@ -319,6 +335,12 @@ function ContractDetail() {
   }
 
   async function remove() {
+    if (legacy.gate !== "none") {
+      toast.error(
+        "Contratos legados preservam o original e a trilha. Use Descartar legado pendente no painel da ficha.",
+      );
+      return;
+    }
     if (!canDelete) {
       toast.error(DELETE_NOT_ALLOWED_TITLE);
       return;
@@ -390,7 +412,9 @@ function ContractDetail() {
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="text-2xl font-bold text-foreground truncate">{contract.title}</h1>
                 <Badge variant="outline" className={STATUS_TONE[status] ?? ""}>
-                  {STATUS_LABEL[status] ?? status}
+                  {legacy.gate === "discarded"
+                    ? "Legado descartado"
+                    : (STATUS_LABEL[status] ?? status)}
                 </Badge>
               </div>
               <p className="text-sm text-muted-foreground mt-0.5 font-mono">
@@ -427,8 +451,14 @@ function ContractDetail() {
                 ) : null}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  disabled={!canDelete}
-                  title={canDelete ? undefined : DELETE_NOT_ALLOWED_TITLE}
+                  disabled={!canDelete || legacy.gate !== "none"}
+                  title={
+                    legacy.gate !== "none"
+                      ? "Legados preservam a trilha; use o descarte na ficha."
+                      : canDelete
+                        ? undefined
+                        : DELETE_NOT_ALLOWED_TITLE
+                  }
                   onSelect={() => void remove()}
                   className="text-destructive"
                 >
@@ -468,6 +498,7 @@ function ContractDetail() {
             mode={legacy.mode}
             query={legacy.query}
             canUpdateContract={canUpdateContract}
+            canDeleteContract={canDelete}
           />
           <div className="grid gap-5 md:grid-cols-2">
             <Card>
@@ -477,12 +508,20 @@ function ContractDetail() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label>Título</Label>
-                  <Input value={title} onChange={(e) => setTitle(e.target.value)} />
+                  <Input
+                    disabled={legacy.gate === "discarded"}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label>Tipo</Label>
-                    <Select value={role} onValueChange={(v) => setRole(v as "provider" | "client")}>
+                    <Select
+                      disabled={legacy.gate === "discarded"}
+                      value={role}
+                      onValueChange={(v) => setRole(v as "provider" | "client")}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -530,6 +569,7 @@ function ContractDetail() {
                   <Label htmlFor="document-kind">Tipo de documento</Label>
                   <Select
                     value={documentKind}
+                    disabled={legacy.gate === "discarded"}
                     onValueChange={(v) => void changeDocumentKind(v as "main" | "amendment")}
                   >
                     <SelectTrigger id="document-kind">
@@ -550,6 +590,7 @@ function ContractDetail() {
                       Contrato principal <span className="text-destructive">*</span>
                     </Label>
                     <MainContractPicker
+                      disabled={legacy.gate === "discarded"}
                       value={mainContract}
                       onChange={setMainContract}
                       excludeId={id}
@@ -565,6 +606,7 @@ function ContractDetail() {
                 <div className="space-y-2">
                   <Label>Valor total</Label>
                   <CurrencyCommitInput
+                    disabled={legacy.gate === "discarded"}
                     value={totalValue}
                     onCommit={(v) => setTotalValue(typeof v === "number" ? v : 0)}
                     currency={contract.currency ?? "BRL"}
@@ -583,6 +625,7 @@ function ContractDetail() {
                     <Label>Início</Label>
                     <IsoDatePicker
                       ariaLabel="Início"
+                      disabled={legacy.gate === "discarded"}
                       value={startsAt}
                       onChange={(v) => setStartsAt(v ?? "")}
                     />
@@ -591,6 +634,7 @@ function ContractDetail() {
                     <Label>Fim</Label>
                     <IsoDatePicker
                       ariaLabel="Fim"
+                      disabled={legacy.gate === "discarded"}
                       value={endsAt}
                       onChange={(v) => setEndsAt(v ?? "")}
                     />
@@ -601,6 +645,7 @@ function ContractDetail() {
                     <Label>Renovação automática</Label>
                     <Select
                       value={autoRenew ? "yes" : "no"}
+                      disabled={legacy.gate === "discarded"}
                       onValueChange={(v) => setAutoRenew(v === "yes")}
                     >
                       <SelectTrigger>
@@ -616,6 +661,7 @@ function ContractDetail() {
                     <Label>Aviso prévio (dias)</Label>
                     <Input
                       type="number"
+                      disabled={legacy.gate === "discarded"}
                       min={0}
                       value={noticeDays}
                       onChange={(e) => setNoticeDays(Number(e.target.value) || 0)}
@@ -640,7 +686,7 @@ function ContractDetail() {
               <ContractServices
                 contractId={contract.id}
                 currency={contract.currency ?? "BRL"}
-                canLink={role === "provider"}
+                canLink={role === "provider" && legacy.gate !== "discarded"}
                 parentContract={
                   (contract as { parent?: { id: string; title: string } | null }).parent ?? null
                 }
