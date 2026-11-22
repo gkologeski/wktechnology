@@ -8,7 +8,7 @@ route_pattern: /notifications
 min_permission:
 audience: internal
 sort_order: 147
-version: 12
+version: 13
 is_published: true
 ---
 
@@ -231,7 +231,6 @@ Avisos, variáveis e condições desses cinco eventos usam somente identificador
 
 Som e tremor começam desligados. E-mail e WhatsApp mantêm suas próprias políticas; a preferência de WhatsApp herda o consentimento geral quando não há override, bloquear afeta o evento e permitir não concede autorização. Durante revalidação, campos em edição na mesma identidade ficam preservados, ocultos e bloqueados. Falha, perda de acesso ou troca de usuário/workspace retira o conteúdo antigo.
 
-
 ## Resumos pessoais, lembretes e escalonamento
 
 Na aba **Preferências**, **Organização da central** continua apenas agrupando os itens carregados. O bloco separado **Receber resumo de notificações** começa desligado e sem canais escolhidos. Para aderir neste workspace, escolha **Diário** ou **Semanal**, horário, fuso IANA e, na frequência semanal, o dia. Os valores iniciais são 08:30, segunda-feira e America/Sao_Paulo; revise antes de salvar. Escolha cada canal, ative **Quero receber o resumo** e salve as opções. Essa ação não envia uma mensagem.
@@ -246,9 +245,14 @@ Acompanhamento exige aviso original existente e não lido, além de pendência e
 
 Na aba **Modelos**, pessoas com a alçada de configuração podem disponibilizar **Resumos e acompanhamentos** na política do workspace. Ambos começam desligados e a cota diária de acompanhamentos começa em zero. Disponibilizar não ativa regras nem supera acesso, preferências ou consentimento. Em **Entregas**, a modalidade comprovada distingue aviso inicial, resumo, lembrete e escalonamento; lote e aviso de origem aparecem quando disponíveis. Aceitação pelo provedor não prova leitura ou decisão e um resultado incerto não autoriza repetir com outra chave.
 
-
 ## Conferir preparo e planejar um piloto
 
 Em **Modelos e canais**, **Conferir preparo publicado** lê somente a configuração publicada da regra escolhida. Rascunhos ficam fora dessa conferência. Os resultados distinguem configuração consultada, dependência bloqueada, verificação manual pendente e indisponibilidade; não representam autorização global de envio. Origem, destinatários, provedor ao vivo, login e recebimento real continuam dependendo de verificações próprias.
 
 A consulta de modelos WhatsApp agora exige ação explícita. Abrir a aba ou conferir preparo não consulta o provedor. Antes de um piloto posteriormente autorizado, inventarie outras regras e entregas pendentes: habilitar uma política compartilhada pode liberar esse trabalho. A pausa também exige considerar fallback, outros canais e ações já executadas. Consulte o [roteiro de preparo, piloto e pausa](/ajuda/core/conferir-preparo-de-notificacoes).
+
+## Regras para atendimentos da Inbox
+
+Na aba **Regras**, o grupo **Atendimento** também oferece mensagens e acontecimentos de e-mail Gmail, chat do site e LinkedIn. O canal aparece no nome do evento. O construtor permite selecionar as contas de recebimento sem alterar regras WhatsApp existentes ou consentimentos de envio.
+
+Os destinatários continuam sujeitos ao acesso atual à conversa. Sem responsável ativo e autorizado, o aviso não passa automaticamente ao gestor ou CEO. O link abre a conversa na Inbox com suas permissões normais. Consulte [Automatizar atendimentos por e-mail, chat e LinkedIn](/ajuda/crm/automatizar-atendimentos-inbox).

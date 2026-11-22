@@ -40,6 +40,10 @@ export interface NormalizedUnipileEvent {
     isSelfSent: boolean;
     /** true quando o payload não trouxe sender/texto (v2 reduzido). */
     needsHydration: boolean;
+    /** Message timestamp acknowledged by the provider, never envelope created_at or local time. */
+    occurredAt: string | null;
+    /** Backfill/history envelopes may be persisted, but never produce a live occurrence. */
+    live: boolean;
   } | null;
 }
 
@@ -54,6 +58,19 @@ function firstString(...values: unknown[]): string | null {
     if (s) return s;
   }
   return null;
+}
+
+function providerTimestamp(value: unknown): string | null {
+  if (typeof value !== "string" && typeof value !== "number") return null;
+  const numeric = typeof value === "number" || /^\d{10,13}$/.test(value);
+  const time = numeric
+    ? Number(value) * (String(value).length === 10 ? 1000 : 1)
+    : Date.parse(String(value));
+  return Number.isFinite(time) && time > 0 ? new Date(time).toISOString() : null;
+}
+
+function historyFlag(value: unknown): boolean {
+  return value === true || value === 1 || value === "1" || value === "true";
 }
 
 function classify(eventType: string): UnipileWebhookKind {
@@ -93,18 +110,24 @@ function classify(eventType: string): UnipileWebhookKind {
   return "unknown";
 }
 
-function isSelfSent(payload: any): boolean {
+function messageDirection(payload: any): boolean | null {
   const direction = str(payload?.direction ?? payload?.message?.direction).toLowerCase();
   const isSender = payload?.is_sender ?? payload?.message?.is_sender;
-  return (
-    isSender === true ||
-    isSender === 1 ||
-    isSender === "1" ||
-    direction === "out" ||
-    direction === "outgoing" ||
-    direction === "outbound" ||
+  if (
+    historyFlag(isSender) ||
+    ["out", "outgoing", "outbound"].includes(direction) ||
     payload?.sender?.is_self === true
-  );
+  )
+    return true;
+  if (
+    [false, 0, "0", "false"].includes(isSender) ||
+    ["in", "incoming", "inbound"].includes(direction)
+  )
+    return false;
+  const accountUser = firstString(payload?.account_info?.user_id);
+  const sender = firstString(payload?.sender?.attendee_provider_id, payload?.sender?.provider_id);
+  if (accountUser && sender) return accountUser === sender;
+  return null;
 }
 
 /**
@@ -144,7 +167,11 @@ export function parseUnipileWebhook(payload: any): NormalizedUnipileEvent {
 
   let message: NormalizedUnipileEvent["message"] = null;
   if (kind === "message_received") {
-    const node = payload?.payload ?? payload?.message ?? payload?.data ?? payload;
+    const node =
+      payload?.payload ??
+      (typeof payload?.message === "object" ? payload.message : undefined) ??
+      payload?.data ??
+      payload;
     const senderProviderId = firstString(
       payload?.sender?.provider_id,
       payload?.sender_id,
@@ -154,6 +181,7 @@ export function parseUnipileWebhook(payload: any): NormalizedUnipileEvent {
       node?.sender?.provider_id,
       node?.sender_id,
       node?.sender_attendee_id,
+      node?.sender?.attendee_provider_id,
     );
     const text = firstString(
       typeof payload?.text === "string" ? payload.text : undefined,
@@ -165,13 +193,29 @@ export function parseUnipileWebhook(payload: any): NormalizedUnipileEvent {
     const messageId = firstString(payload?.message_id, node?.id, payload?.data?.message_id);
     const chatId = firstString(payload?.chat_id, node?.chat_id, payload?.data?.chat_id);
 
+    const directions = [messageDirection(payload), messageDirection(node)];
+    const directionKnown = directions.some((value) => value !== null);
+    const occurredAt = providerTimestamp(node?.timestamp);
     message = {
       messageId,
       chatId,
       senderProviderId,
       text,
-      isSelfSent: isSelfSent(payload) || isSelfSent(node),
-      needsHydration: (!senderProviderId || text === null || !chatId) && !!messageId,
+      isSelfSent: directions.includes(true),
+      needsHydration:
+        (!senderProviderId || text === null || !chatId || !directionKnown || !occurredAt) &&
+        !!messageId,
+      occurredAt,
+      live:
+        ![payload, node].some((part) =>
+          [
+            part?.is_history,
+            part?.is_sync,
+            part?.is_initial_sync,
+            part?.backfill,
+            part?.historical,
+          ].some(historyFlag),
+        ) && !/history|initial_sync|backfill/i.test(eventType),
     };
   }
 
@@ -192,6 +236,7 @@ export async function hydrateV2Message(
   text: string | null;
   chatId: string | null;
   isSelfSent: boolean;
+  occurredAt: string | null;
 } | null> {
   if (!chatId) return null; // Never guess a global message endpoint or another conversation.
   try {
@@ -210,6 +255,8 @@ export async function hydrateV2Message(
     const data = raw?.data ?? raw;
     if (!data || (data.id && data.id !== messageId) || (data.chat_id && data.chat_id !== chatId))
       return null;
+    const direction = messageDirection(data);
+    if (direction === null) return null;
     return {
       senderProviderId: firstString(
         data.sender_id,
@@ -218,7 +265,8 @@ export async function hydrateV2Message(
       ),
       text: firstString(data.text, data.body),
       chatId: firstString(data.chat_id, chatId),
-      isSelfSent: isSelfSent(data),
+      isSelfSent: direction,
+      occurredAt: providerTimestamp(data.timestamp),
     };
   } catch {
     return null;

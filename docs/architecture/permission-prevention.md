@@ -43,6 +43,13 @@ não converte observações históricas em conclusões de segurança.
 4. Declare a fronteira de banco: RLS/RPC/view/policy existente ou nova. SQL novo
    identifica sua própria superfície. Uma declaração simulada em comentário,
    literal de texto ou corpo dollar-quoted não satisfaz a referência.
+   Para migrations que alteram somente ACL de uma função ou esquema existente,
+   a referência de banco pode declarar `sql_surface: function_acl` ou
+   `sql_surface: schema_acl`. O alvo precisa existir em comando de primeiro nível
+   GRANT/REVOKE/ALTER FUNCTION no próprio arquivo. Valores, comentários e SQL
+   dinâmico não contam. Esse subtipo não vale como definição de controle em
+   `controls`; o contrato continua exigindo controle executável, justificativa,
+   hash revisado e os cinco cenários. Não concede nem modifica permissões.
 5. Referencie cinco testes Vitest distintos, descobertos obrigatoriamente por
    `src/**/*.test.ts`: permitido, sem chave, deny explícito, outro workspace e
    membro inativo. O nome literal precisa existir em `it`/`test`, com callback e
@@ -114,3 +121,7 @@ O relatório operacional registra o ID e a leitura efetiva do ruleset após salv
 ## PostgreSQL descartável obrigatório na CI
 
 `permission-postgres-ci.test.ts` executa as funções reais de autorização e as políticas das migrações 0239, 0240, 0242, 0243, 0244, 0245, 0246, 0247, 0248, 0249 a agregação do painel de vendas da 0250 e o histórico relacionado da 0251 em PostgreSQL oficial fixado por digest, com registros sintéticos. Os sessenta e um cenários cobrem autorização, ausência de chave, deny, workspace estrangeiro, membro inativo, escopo próprio/equipe, colunas de credenciais e modo somente leitura. Faz parte do job obrigatório existente; Docker local precisa estar em execução. Ausência do Docker falha o teste, nunca gera skip verde. Nenhuma URL de banco configurada é usada. As claims são fixtures SQL, sem autenticação GoTrue; os aceites com JWT real e navegador continuam separados. `.verification/sql-rls.json` só fica completo após todos os cenários e a limpeza do contêiner. O fingerprint inclui `tests/fixtures`.
+
+### Retirada explícita de gatilho
+
+Uma migração que retira um gatilho pode identificar sua superfície com `sql_surface: trigger_drop` e `symbol: schema.tabela.gatilho`. O gate exige o comando `DROP TRIGGER ... ON schema.tabela` real, no primeiro nível; texto em comentários, valores e corpos dinâmicos não conta. Essa referência é apenas inventário de DDL: não é controle de autorização, não aprova a retirada e não dispensa hash revisado, fronteira em execução nem os cinco cenários obrigatórios. A liberação da disponibilidade da Inbox também compara todos os demais controles antes/depois no banco descartável.

@@ -10,6 +10,7 @@ export type AssociationDef = {
 };
 
 export const ENTITY_ASSOCIATIONS: Record<WorkflowEntity, AssociationDef[]> = {
+  inbox_channel_occurrences: [],
   leads: [
     {
       key: "converted_contact",

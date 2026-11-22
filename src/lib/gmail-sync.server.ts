@@ -5,6 +5,16 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ensureAccessToken, type EmailAccountRow } from "@/lib/gmail.server";
 import { identityColumns, resolveInboxIdentity } from "@/lib/inbox/identity-resolution.server";
 import { autoAssignInboxConversation } from "@/lib/inbox-auto-assignment.server";
+import { workRpc } from "@/lib/access-control/work-core.server";
+import { gmailProviderTime } from "./gmail-provider-time";
+import { recoverGmailAcceptances } from "./gmail-recovery.server";
+import {
+  collectGmailHistory,
+  discoverGmailBatch,
+  drainGmailQueue,
+  type GmailHistoryPage,
+  type GmailQueueItem,
+} from "./gmail-sync-queue";
 
 const GMAIL_API = "https://gmail.googleapis.com/gmail/v1/users/me";
 
@@ -122,46 +132,16 @@ async function listRecentMessageIds(token: string): Promise<string[]> {
   return (j.messages ?? []).map((m) => m.id);
 }
 
-async function listHistoryMessageIds(
-  token: string,
-  startHistoryId: string,
-): Promise<{ messageIds: string[]; newHistoryId: string | null; expired: boolean }> {
-  type Page = {
-    history?: Array<{ messagesAdded?: Array<{ message: { id: string; threadId: string } }> }>;
-    historyId?: string;
-    nextPageToken?: string;
-  };
-  const messageIds = new Set<string>();
-  let pageToken: string | undefined;
-  let lastHistoryId: string | null = null;
-  for (let i = 0; i < 10; i++) {
+async function listHistoryMessageIds(token: string, startHistoryId: string) {
+  return collectGmailHistory(async (pageToken) => {
     const qs = new URLSearchParams({
       startHistoryId,
       historyTypes: "messageAdded",
       maxResults: "100",
     });
     if (pageToken) qs.set("pageToken", pageToken);
-    try {
-      const j = await gmailFetch<Page>(token, `/history?${qs.toString()}`);
-      for (const h of j.history ?? []) {
-        for (const ma of h.messagesAdded ?? []) messageIds.add(ma.message.id);
-      }
-      if (j.historyId) lastHistoryId = j.historyId;
-      if (!j.nextPageToken) break;
-      pageToken = j.nextPageToken;
-    } catch (e) {
-      const status = (e as { status?: number }).status;
-      const msg = (e as Error).message || "";
-      // 404/410 = histórico apagado; 400 com failedPrecondition = startHistoryId
-      // fora da janela de retenção (~7 dias) ou inválido. Em ambos os casos
-      // o caller faz fallback para um seed fresco via /profile + /messages.
-      if (status === 404 || status === 410 || (status === 400 && /failedPrecondition/i.test(msg))) {
-        return { messageIds: [], newHistoryId: null, expired: true };
-      }
-      throw e;
-    }
-  }
-  return { messageIds: [...messageIds], newHistoryId: lastHistoryId, expired: false };
+    return gmailFetch<GmailHistoryPage>(token, `/history?${qs.toString()}`);
+  });
 }
 
 async function getFullMessage(token: string, id: string): Promise<GmailMessage> {
@@ -180,80 +160,101 @@ export type SyncResult = {
 export async function syncAccount(account: EmailAccountRow): Promise<SyncResult> {
   if (!account.workspace_id) throw new Error("Conta Gmail sem workspace de origem.");
   await assertSalesAccountJob(supabaseAdmin, "email_accounts", account.id);
-  const token = await ensureAccessToken(account);
-
-  // Decide which IDs to pull this tick.
-  let candidateIds: string[] = [];
-  let nextHistoryId: string | null = null;
-
-  if (!account.history_id) {
-    candidateIds = await listRecentMessageIds(token);
-    nextHistoryId = await getProfileHistoryId(token);
-  } else {
-    const r = await listHistoryMessageIds(token, account.history_id);
-    if (r.expired) {
-      // Fall back to a fresh seed but keep candidates bounded.
-      candidateIds = await listRecentMessageIds(token);
-      nextHistoryId = await getProfileHistoryId(token);
-    } else {
-      candidateIds = r.messageIds;
-      nextHistoryId = r.newHistoryId ?? account.history_id;
-    }
-  }
-
-  // Cap per-tick volume to stay friendly to quota (≈ 5 quota units per get).
-  candidateIds = candidateIds.slice(0, 25);
-
-  let inserted = 0;
-  let skipped = 0;
-
-  if (candidateIds.length > 0) {
-    // Pre-filter against existing provider_message_id rows.
-    const { data: existing } = await supabaseAdmin
-      .from("email_messages")
-      .select("provider_message_id")
-      .eq("account_id", account.id)
-      .in("provider_message_id", candidateIds);
-    const have = new Set((existing ?? []).map((e) => e.provider_message_id));
-
-    for (const id of candidateIds) {
-      if (have.has(id)) {
-        skipped++;
-        continue;
-      }
-      try {
-        const msg = await getFullMessage(token, id);
-        const persisted = await persistInboundMessage(account, msg);
-        if (persisted) inserted++;
-        else skipped++;
-      } catch (e) {
-        console.error(`[gmail-sync] failed to persist message ${id}:`, e);
-      }
-    }
-  }
-
-  await supabaseAdmin
+  // Read the canonical status/cursor, never a stale composition or manual copy.
+  const { data: current, error: currentError } = await supabaseAdmin
     .from("email_accounts")
-    .update({
-      history_id: nextHistoryId ?? account.history_id,
-      last_sync_at: new Date().toISOString(),
-      last_error: null,
-      status: "connected",
-    })
-    .eq("id", account.id);
-
+    .select("history_id,status")
+    .eq("workspace_id", account.workspace_id)
+    .eq("id", account.id)
+    .single();
+  if (currentError) throw new Error(currentError.message);
+  // Connected accounts recover before provider discovery. Manual error-account
+  // retries first prove provider access; enqueue then restores connected status.
+  let recovery = { claimed: 0, completed: 0, failed: 0 };
+  if (current.status === "connected")
+    recovery = await recoverGmailAcceptances(supabaseAdmin, account.workspace_id, account.id);
+  const token = await ensureAccessToken(account);
+  const discovered = await discoverGmailBatch(current.history_id, {
+    profile: () => getProfileHistoryId(token),
+    recent: () => listRecentMessageIds(token),
+    history: (cursor) => listHistoryMessageIds(token, cursor),
+  });
+  const scope = { p_workspace: account.workspace_id, p_account: account.id };
+  // One transaction: every discovered ID is durable BEFORE history_id advances. A stale CAS fails closed.
+  await workRpc<number>(supabaseAdmin, "gmail_sync_enqueue", {
+    ...scope,
+    p_expected_history: current.history_id,
+    p_next_history: discovered.nextHistory,
+    p_provenance: discovered.provenance,
+    p_ids: discovered.ids,
+  });
+  if (current.status !== "connected")
+    recovery = await recoverGmailAcceptances(supabaseAdmin, account.workspace_id, account.id);
+  const leaseToken = crypto.randomUUID();
+  const items = await workRpc<GmailQueueItem[]>(supabaseAdmin, "gmail_sync_claim", {
+    ...scope,
+    p_token: leaseToken,
+  });
+  const result = await drainGmailQueue(items, {
+    persist: async (item) => {
+      await assertSalesAccountJob(supabaseAdmin, "email_accounts", account.id);
+      // Accepted human sends are projected only from the private receipt. Do
+      // not let a History API mirror race that projection with another row ID.
+      if (
+        await workRpc<boolean>(supabaseAdmin, "inbox_gmail_recovery_known", {
+          ...scope,
+          p_provider: item.provider_message_id,
+        })
+      )
+        return "skipped";
+      const { data: existing, error } = await supabaseAdmin
+        .from("email_messages")
+        .select("id")
+        .eq("workspace_id", account.workspace_id)
+        .eq("account_id", account.id)
+        .eq("provider_message_id", item.provider_message_id)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      if (existing) return "existing";
+      let msg: GmailMessage;
+      try {
+        msg = await getFullMessage(token, item.provider_message_id);
+      } catch (error) {
+        if ((error as { status?: number }).status === 404) return "gone";
+        throw error;
+      }
+      return (await persistInboundMessage(account, msg, item)) ? "inserted" : "skipped";
+    },
+    finish: (item, outcome) =>
+      workRpc<boolean>(supabaseAdmin, "gmail_sync_finish", {
+        ...scope,
+        p_id: item.id,
+        p_token: leaseToken,
+        p_outcome: outcome,
+      }),
+    retry: (item) =>
+      workRpc<boolean>(supabaseAdmin, "gmail_sync_retry", {
+        ...scope,
+        p_id: item.id,
+        p_token: leaseToken,
+      }),
+  });
   return {
     accountId: account.id,
     email: account.email,
-    fetched: candidateIds.length,
-    inserted,
-    skipped,
+    fetched: result.fetched,
+    inserted: result.inserted,
+    skipped: result.skipped,
+    ...(result.failed || recovery.failed
+      ? { error: `${result.failed + recovery.failed} mensagem(ns) pendente(s) de nova tentativa.` }
+      : {}),
   };
 }
 
 async function persistInboundMessage(
   account: EmailAccountRow,
   msg: GmailMessage,
+  receipt: GmailQueueItem,
 ): Promise<boolean> {
   const headers = msg.payload?.headers;
   const fromRaw = findHeader(headers, "From");
@@ -265,7 +266,7 @@ async function persistInboundMessage(
   const { email: fromEmail, name: fromName } = parseSingleAddress(fromRaw);
   const toEmails = parseAddressList(toRaw);
   const ccEmails = parseAddressList(ccRaw);
-  const dateMs = msg.internalDate ? Number(msg.internalDate) : Date.now();
+  const occurredIso = gmailProviderTime(msg.internalDate);
   const isOutbound = !!fromEmail && fromEmail.toLowerCase() === account.email.toLowerCase();
   const direction = isOutbound ? "outbound" : "inbound";
 
@@ -296,7 +297,6 @@ async function persistInboundMessage(
 
   const parsed = parsePayload(msg.payload);
   const snippet = (msg.snippet || parsed.text || "").slice(0, 200);
-  const occurredIso = new Date(dateMs).toISOString();
 
   // Upsert thread by provider_thread_id.
   const { data: existingThread } = await supabaseAdmin
@@ -339,6 +339,10 @@ async function persistInboundMessage(
         owner_id: account.owner_id,
         account_id: account.id,
         provider_thread_id: msg.threadId,
+        inbox_creation_receipt:
+          !isOutbound && receipt.provenance === "incremental" && !receipt.preexisting
+            ? receipt.id
+            : null,
         subject,
         snippet,
         last_message_at: occurredIso,
@@ -388,9 +392,9 @@ async function persistInboundMessage(
     received_at: isOutbound ? null : occurredIso,
   });
   if (mErr) {
-    // Unique constraint races etc. — log and bail without throwing the whole batch.
-    console.error("[gmail-sync] insert email_messages failed", mErr);
-    return false;
+    // A write failure must stay pending, not be acknowledged as a successfully skipped message.
+    // A uniqueness race is read back as "existing" on retry without changing first provenance.
+    throw new Error(mErr.message);
   }
 
   // Bump message_count.

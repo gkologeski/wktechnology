@@ -9,6 +9,7 @@ import {
 } from "@/lib/gmail.server";
 import type { ChannelIdentity } from "./channel-identity";
 import type { ConversationMessage } from "./policy";
+import { storeServiceGmailAcceptance } from "@/lib/inbox-transport.server";
 
 export type ServiceSession = {
   id: string;
@@ -307,6 +308,16 @@ export async function deliverServiceJob(
   }
   // An error after this call is uncertain; never retry a provider send blindly.
   const sent = await gmailSendRaw(token, raw, thread.provider_thread_id);
+  await storeServiceGmailAcceptance(admin, {
+    workspace: session.workspace_id,
+    account: account.id,
+    conversation: thread.id,
+    job: job.id,
+    message: job.outbound_message_id,
+    provider: sent.id,
+    thread: sent.threadId,
+    body: job.draft_text,
+  });
   must(
     await admin
       .from("service_agent_jobs")

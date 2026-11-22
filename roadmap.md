@@ -1,3 +1,48 @@
+# Pacote 2 — consolidação dos gatilhos multicanal
+
+Catálogo de 13 eventos Gmail/chat/LinkedIn, seleção por conta/canal, produtores/provas, continuidade, recuperação Gmail, UI e Ajuda estão consolidados na revisão local. Nenhuma regra externa é ativada automaticamente. Permissões, perfis restritos e WhatsApp legado permanecem exigências de liberação. Gates, CI e SHA público são comprovados no fluxo de entrega, sem usar checkpoints intermediários como certificação.
+
+Referência atual: [Gatilhos multicanal — contrato de entrega](docs/architecture/workflow-inbox-channels-release.md).
+
+## Histórico dos checkpoints do pacote 2
+
+Os registros abaixo descrevem cada etapa no momento em que foi produzida; as pendências e bloqueios antigos não são o estado consolidado da revisão.
+
+# INBOX-EXECUCAO — pacote 2 (G, previsão 6–10 h)
+
+- [x] GMAIL-RECUPERA (G, previsão 2–3 h): 0449–0451 só draft; fila privada/backfill integral, claims ≤25, auditoria/SQLSTATE/backoff, projeção atômica e recuperação pelo sync antes da descoberta; History não promove aceite. 138 testes dirigidos (28 reais), 0 erros lint/2 avisos; build automático OK. Sem segundo envio/UI/Ajuda/harness/contratos locais/grants de usuário/publicação/aceite/ativação; lock O. Relatório docs/architecture/gmail-automatic-recovery-2026-11-22.md. Contratos/perf/CI anterior permanecem com Codex conforme tarefas abaixo.
+
+- [x] INBOX-FECHAMENTO backend (G, previsão 2–3 h): 0447/0448 somente draft, occurred_at privado e chave determinística de retomada com OID/ACL/dependências preservados; Gmail conversation_id com thread/RLS/view+create/conta própria e headers canônicos/retry estável; chat_scope_insert exatamente 0122 (team-only negado). 124 testes dirigidos (17 GoTrue/RLS) + 123 Gmail locais; UI/Ajuda/harness/contratos locais intocados; sem aceitar/publicar/ativar. Relatório docs/architecture/inbox-functional-closing-2026-11-22.md.
+- [ ] INBOX-FECHAMENTO certificação: seis testes novos de root→child/worker, parent/payload 42501 atômico, revogação/versão/cutoff preparados para CI local; tentativa aqui bloqueada por Docker ENOENT. Parent forjado e 17 regressões backend/RLS passaram no draft sem ativar workflows. Gate de permissões segue falhando; matriz 13+worker informada pelo Codex não reexecutada aqui e não certifica a nova retomada.
+
+- [x] INBOX-ACEITE (G, previsão 3–5 h), correções de transporte: aceite Gmail antes de leitura e conciliação append-only (0445/0446 só draft), fingerprint integral Gmail/Unipile, retry legado conservador e recuperação SDR LinkedIn sem reenvio. 123 Gmail + 56 LinkedIn locais; 195 checks de leitura/referência/privacidade em 13 chaves × 5 JWT; 73 Vitest; lint 0 erros/28 avisos; build automático OK. UI/Ajuda/contratos locais intocados; sem grants/ativação/aceite/publicação; lock O. Relatório docs/architecture/inbox-acceptance-review-2026-11-22.md.
+- [ ] Certificação INBOX-ACEITE: executar `checkThirteenCurrentProofs` na união CI autorizada com workflows e ocorrências reais; provas positivas de negócio/worker/dispatch e orquestração integral SDR/sequências não certificadas aqui. Gate de permissões falha; compositores com request_id ficam com Codex, legado sem ID continua conservador.
+
+- [x] INBOX-RESPOSTA (M/G, 2–4 h): INSERT real/RLS do chat, recibo AFTER INSERT imutável, comparação só de respostas elegíveis e barreira histórica negativa durável; 0442–0444 somente draft. Revisão INBOX-FECHAMENTO: expansão team em 0442 foi indevida e será revertida aditivamente para 0122; resultado team anterior não certifica preservação do escopo publicado. Demais evidências anteriores: 87 Gmail + 60 guard + 69 Vitest; Playwright enviou pela tela e confirmou 1 ocorrência. Sem novos grants/UI/Ajuda/ativação/aceite/publicação/produção; lock O. Relatório docs/architecture/inbox-response-review-2026-11-22.md.
+- [ ] Certificação INBOX-RESPOSTA na união CI/Codex: contratos das migrations/adaptador/handler não fechados (gate falha); perf sem build.json; preservar cenários positivos/negações no worker para 13 chaves antes de liberação.
+
+- [ ] INBOX-PRODUTORES (G, 4–6 h): 0439–0441 aplicadas somente no draft; transportes Gmail humano/SDR e Unipile central integrados, criação Gmail incremental e provas atuais acrescentadas. 62 unitários + 60 guard + 9 chat passaram. Falha Gmail corrigida na fixture autorizada em INBOX-RESPOSTA: cadeia positiva e 87 verificações passaram. Faltam provar Unipile/SDR/sequências e todas as 13 chaves/cinco perfis no worker/CI. Gate falha; contratos não fechados. Evidências Codex recebidas (21 execução, 5 isolamento, 28×5 origens) não foram reexecutadas aqui. Lock/gates/quotas/consentimento/UI/Ajuda/baseline intactos; sem novos grants/ativação/aceite/publicação/produção. Relatório: docs/architecture/inbox-producers-2026-11-22.md.
+
+- [ ] INBOX-GUARD (G, 6–10 h): corrigir gate Workflows+canal com filtro ausente/vazio e rascunho inicial real; provar ciclo criar/editar/publicar/ativar/pausar/reativar, entidade/descarte/atomicidade, cinco JWT. Completar produtores das 13 chaves com recibo privado canônico de envio; Docker do sandbox não bloqueia implementação, CI portátil roda no ambiente do Codex. Sem grants novos, UI/Ajuda/baseline intocados, lock do draft mantido.
+- [ ] Revisão 22/11: teste de ativação bloqueada e comparação do catálogo antes/depois de retirar só disponibilidade preparados; 12 casos da suíte não executaram por Docker ENOENT. ESLint passou, consulta EXPLAIN válida e lock do draft O. Primeira resposta exige recibo privado canônico confirmado e retry reconciliado, nunca direction/status do cliente; implementação ainda pendente.
+- [ ] Provar três dispatches reais, agendamento, retomadas, concorrência/reuso legado e cinco perfis no próprio dispatch. 0432–0434 aplicadas só no draft; 22 checks reais repetidos 3 vezes após corrigir deadlock (15 recusas RPC nos cinco JWT + legado concorrente), 45 unitários; 16 testes portáveis preparados, não executados por Docker ENOENT. Autorização em 22/11: fixtures publicadas somente na cópia descartável da CI, sem lock nessa cópia; lock do draft intacto. Aceite positivo pendente; relatório docs/architecture/inbox-execution-runtime-review.md.
+- [ ] Comprovar equivalência antiga/WhatsApp e OIDs/dependências, sem alterar baseline.
+- [ ] Implementar produtores reais das 13 chaves (atribuição/status/primeira resposta confirmada), idempotência e testes portáveis PostgreSQL/PostgREST para CI.
+- [ ] Contratos somente após controles e cinco cenários executados; gate segue falhando, baseline intacto. Lock mantido; UI/Ajuda intocadas; sem aceitar/publicar/SQL em produção. CI portátil será executada pelo Codex; Docker ausente neste sandbox não é bloqueador da implementação. Provas completas dos novos produtores/worker e contratos ainda impedem certificação; falha Gmail da fixture foi corrigida.
+
+# CANAIS-ATENDIMENTO — pacote 2 no rascunho (G, previsão 6–8 h)
+
+- [ ] INBOX-CENTRAL (G, 4–6 h): 0422–0431 aplicadas só no draft; Gmail existing-on-retry e atendente Inbox-own sem configuração/central comprovados em 11 checks GoTrue/PostgREST; 16 unitários + 29 Gmail + 9 widget + 6 Unipile. Falta aceite positivo dos três dispatches/retomadas/cutoff, resolvedor agendado, concorrência legada, equivalência antiga e contratos (gate: 46 findings). Relatório: docs/architecture/inbox-central-runtime-review.md. SQL/runtime somente; lock mantido; sem aceite/publicação/produção; UI/Ajuda/transições depois.
+- [ ] INBOX-REVISAO (M, 2–3 h): correções preparadas/aplicadas apenas no draft (0415–0421); 66 unitários + 29 Gmail + 9 widget + 6 Unipile passaram, Ajuda v14 preparada/256 telas (aplicação editorial pendente); falta aceite JWT/dispatch/cutoff/Playwright e 33 contratos antes dos gates. Fixtures fora do seed oficial, fail-closed explícito e filtros conscientes. Relatório: docs/architecture/inbox-additional-review.md. Sem aceite/publicação/produção; lock mantido.
+- [x] GMAIL-FILA (M): fila antes do cursor, 13 testes unitários e 29 verificações PostgREST/SQL locais; 0410 aplicada só no draft. Gate global mantém 22 lacunas anteriores; Ajuda v3 preparada. Relatório: docs/architecture/gmail-durable-queue-review.md. Sem aceite/publicação.
+- [ ] CANAIS-ATENDIMENTO integral (G, 6–8 h): produtores widget/Unipile/atendimento → provas e autorização/dispatch → UI/Central/Ajuda/contratos → JWT/PostgreSQL/regressões. Lock permanece até todos os gates reais; não aceitar/publicar.
+- [x] Reparar os OIDs 0405 das duas funções de visibilidade em complemento aditivo 0411, com asserção transacional de OIDs/dependências. Equivalência RLS de todas as fontes antigas ainda pendente.
+- [x] Produtores widget/Unipile: RPCs transacionais e integração das rotas, recibos/proveniência privados e imutáveis (0412–0414 somente draft); 37 testes unitários e 9 verificações locais do widget. Playwright não completou a abertura da sessão. Gate ainda falha com 26 achados; pacote integral não concluído.
+- [ ] Núcleo de ocorrências explícitas Gmail/chat/LinkedIn com provas privadas e compatibilidade WhatsApp.
+- [ ] Produtores duráveis, transições reais e primeira resposta comprovada.
+- [ ] Filtros autorizados no editor/central e Ajuda oficial.
+- [ ] Contratos, testes locais, gates e relatório verificável; não aceitar/publicar nem tocar produção.
+
 # SEGURANCA-PENDENCIAS (G, previsão 4–6 h)
 
 - [x] Aplicar as 16 proteções pendentes selecionadas e e-mail em massa, sem publicação nem alterações no banco.
@@ -188,6 +233,7 @@ Arquitetura e limites: `docs/architecture/hiring-integration-stage6.md`. A publi
 - [ ] Publicação (aguarda aceite do usuário)
 
 Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 403 em 5 categorias, Jibble não reconciliado); C2 (ganho real e UI não admin não validados; não publicado).
+
 # Roadmap — Cargo e porte derivados (prioridade atual)
 
 - [x] Auditar fontes, gravadores, gatilhos e candidatos agregados
@@ -369,6 +415,7 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [x] Referência do nome da organização Jibble "WK" registrada (só destaca; seleção continua por ID + papel Owner/Admin)
 
 # Clockify — catálogos
+
 - [x] 82 tags, 6 grupos e 99 clientes concluídos (0163–0165)
 - [ ] Revisar manualmente 5 membros de grupos sem pessoa mapeada (aguarda decisão do usuário)
 
@@ -421,16 +468,19 @@ Pendências preservadas: C1 (68 sugestões, divergência Clockify 12 pessoas, 40
 - [ ] Publicação (aguarda aceite do usuário)
 
 ## PROPOSTA-EMAIL
+
 - [x] Envio da proposta por e-mail + botão copiar link para aprovar (preview)
 - [ ] Publicar; atualizar artigo Ajuda v3 no app
 
 ## ACEITE-MINUTA
+
 - [x] Entrega 1: substatus "Enviar minuta de contrato"/"Minuta enviada" + workflow rascunho "Proposta aceita → Contratação"
 - [ ] Entrega 2: aprovadores jurídicos em Fluxos de aprovação, tela Revisar minuta, permissão nova
 - [ ] Entrega 3: envio automático pela conta do responsável, link público Aceitar/Pedir ajustes, gate do Gerar contrato
 - [ ] Decidir: workflow "Criar contrato" dispara ao entrar em Contratação (conflita com minuta)
 
 ## CONDICOES-PAGAMENTO (plano aprovado 10/11/2026)
+
 - Decisões: contas a receber na ativação do serviço; antigas migram das parcelas atuais.
 - [x] Fase 1a: regra pura do cronograma (`src/lib/sales/payment-terms.ts`)
 - [x] Fase 1b: colunas (0325) + grants por coluna (0326) + preenchimento das antigas

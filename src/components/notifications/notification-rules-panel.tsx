@@ -29,6 +29,10 @@ import {
   workflowNotificationEventTrigger,
   type WorkflowNotificationEventKey,
 } from "@/lib/workflows/notification-events";
+import {
+  INBOX_CHANNEL_RUNTIME_READY,
+  inboxEventChannel,
+} from "@/lib/workflows/inbox-channel-events";
 
 const Builder = lazy(() =>
   import("@/components/workflows/workflow-builder").then((module) => ({
@@ -79,7 +83,8 @@ const newDraft = (eventKey: WorkflowNotificationEventKey | ""): WorkflowDraft =>
           kind:
             eventKey === "people.approval.pending"
               ? "pending_approvers"
-              : eventKey === "finance.invoice.received"
+              : eventKey === "finance.invoice.received" ||
+                  (eventKey !== "" && inboxEventChannel(eventKey) === "linkedin")
                 ? "workflow_owner"
                 : "source_responsible",
         },
@@ -256,8 +261,10 @@ function NotificationRulesContext({
                   { prefix: "finance.", label: "TechFinance" },
                 ].map((group) => (
                   <optgroup key={group.prefix} label={group.label}>
-                    {WORKFLOW_NOTIFICATION_EVENTS.filter((event) =>
-                      event.key.startsWith(group.prefix),
+                    {WORKFLOW_NOTIFICATION_EVENTS.filter(
+                      (event) =>
+                        event.key.startsWith(group.prefix) &&
+                        (INBOX_CHANNEL_RUNTIME_READY || inboxEventChannel(event.key) === null),
                     ).map((event) => (
                       <option key={event.key} value={event.key}>
                         {event.label}

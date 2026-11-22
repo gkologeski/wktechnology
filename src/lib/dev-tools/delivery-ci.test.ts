@@ -14,7 +14,10 @@ const workflow = () => load(readFileSync(".github/workflows/ci.yml", "utf8"));
 
 describe("CI acceleration keeps the release gate", () => {
   it("prepares only locked database dependencies before full verification", () => {
-    const steps = workflow().jobs.unit.steps;
+    const job = workflow().jobs.verification_shards;
+    expect(job.strategy.matrix.shard).toEqual([1, 2]);
+    expect(job.strategy["fail-fast"]).toBe(false);
+    const steps = job.steps;
     const image = readFileSync("src/lib/contracts/legacy-postgres.test.ts", "utf8").match(
       /const image = "([^"]+)"/,
     )?.[1];
@@ -44,7 +47,8 @@ describe("CI acceleration keeps the release gate", () => {
     });
   });
   it("only caches downloads and content-based lint, never release evidence or build outputs", () => {
-    const caches = workflow().jobs.unit.steps.filter((s: { uses?: string }) =>
+    const jobs = workflow().jobs;
+    const caches = jobs.verification_shards.steps.filter((s: { uses?: string }) =>
       s.uses?.startsWith("actions/cache"),
     );
     expect(caches.map((s: { with: { path: string } }) => s.with.path).sort()).toEqual([
@@ -54,27 +58,48 @@ describe("CI acceleration keeps the release gate", () => {
     ]);
     expect(caches[0].with.key).toContain("hashFiles('bun.lock')");
     expect(caches[1].with["restore-keys"]).toContain("eslint-rules/**");
+    const finalCaches = jobs.unit.steps.filter((s: { uses?: string }) =>
+      s.uses?.startsWith("actions/cache"),
+    );
+    expect(finalCaches.map((s: { with: { path: string } }) => s.with.path)).toEqual([
+      "~/.bun/install/cache",
+    ]);
+    // Every job, including future ones, may cache only these two non-evidence paths.
+    for (const job of Object.values(jobs) as Array<{
+      steps: Array<{ uses?: string; with?: { path?: string } }>;
+    }>)
+      for (const step of job.steps)
+        if (step.uses?.startsWith("actions/cache"))
+          expect(["~/.bun/install/cache", ".eslintcache"]).toContain(step.with?.path);
   });
   it("saves only verified lint cache before later gates without caching their evidence", () => {
-    const steps = workflow().jobs.unit.steps;
+    const jobs = workflow().jobs;
+    const steps = jobs.verification_shards.steps;
     const restore = steps.find((s: { id?: string }) => s.id === "lint-cache");
     const verify = steps.find((s: { id?: string }) => s.id === "verify");
     const save = steps.find((s: { uses?: string }) => s.uses === "actions/cache/save@v4");
-    const build = steps.find((s: { run?: string }) => s.run === "bun run build");
+    const upload = steps.find((s: { uses?: string }) => s.uses === "actions/upload-artifact@v4");
     expect(restore.uses).toBe("actions/cache/restore@v4");
     expect(verify.run).toBe("bun run verify");
-    // Default success() runs this only after the unconditional verify has passed.
-    expect(save.if).toBeUndefined();
+    // Only the successful first shard saves content-based lint; no test outcome is cached.
+    expect(save.if).toBe("${{ success() && matrix.shard == 1 }}");
     expect(verify["continue-on-error"]).toBeUndefined();
+    expect(save["continue-on-error"]).toBeUndefined();
     expect(save.with).toEqual({
       path: ".eslintcache",
       key: "${{ steps.lint-cache.outputs.cache-primary-key }}",
     });
     expect(steps.indexOf(verify)).toBeLessThan(steps.indexOf(save));
-    expect(steps.indexOf(save)).toBeLessThan(steps.indexOf(build));
+    expect(steps.indexOf(save)).toBeLessThan(steps.indexOf(upload));
+    expect(jobs.unit.needs).toBe("verification_shards");
+    const finalSteps = jobs.unit.steps;
+    expect(finalSteps.findIndex((s: { run?: string }) => s.run === "bun run verify")).toBeLessThan(
+      finalSteps.findIndex((s: { run?: string }) => s.run === "bun run build"),
+    );
   });
   it("keeps full verification, build and budgets unconditional even on cache hits", () => {
-    const steps = workflow().jobs.unit.steps;
+    const jobs = workflow().jobs;
+    const steps = jobs.unit.steps;
     for (const command of [
       "bun install --frozen-lockfile",
       "bun run permissions:check",
@@ -84,11 +109,25 @@ describe("CI acceleration keeps the release gate", () => {
     ]) {
       const step = steps.find((s: { run?: string }) => s.run === command);
       expect(step).toBeDefined();
+      expect(step.if).toBe(command === "bun run verify" ? "${{ always() }}" : undefined);
+      expect(step["continue-on-error"]).toBeUndefined();
+    }
+    const aggregate = steps.find((s: { run?: string }) => s.run === "bun run verify");
+    expect(jobs.unit.if).toBe("${{ always() }}");
+    expect(aggregate.env).toEqual({
+      VERIFY_AGGREGATE: "1",
+      VERIFY_PREVIOUS_STEPS_OK: "${{ job.status == 'success' }}",
+      SHARD_JOB_RESULT: "${{ needs.verification_shards.result }}",
+    });
+    for (const command of ["bun install --frozen-lockfile", "bun run verify"]) {
+      const step = jobs.verification_shards.steps.find((s: { run?: string }) => s.run === command);
+      expect(step).toBeDefined();
       expect(step.if).toBeUndefined();
       expect(step["continue-on-error"]).toBeUndefined();
     }
     expect(workflow().permissions).toEqual({ contents: "read" });
     expect(steps[0].with["persist-credentials"]).toBe(false);
+    expect(jobs.verification_shards.steps[0].with["persist-credentials"]).toBe(false);
   });
 });
 

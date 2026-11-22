@@ -1,3 +1,4 @@
+import { INBOX_OCCURRENCE_FIELDS } from "../inbox-channel-events";
 import { notificationSchedulingActionProblem } from "@/lib/notifications/scheduling-types";
 import { workRpc } from "@/lib/access-control/work-core.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -75,6 +76,7 @@ export const WORKFLOW_PRIVATE_SOURCE_FIELDS: Readonly<Record<string, readonly st
 };
 
 const minimalSourceFields: Readonly<Record<string, readonly string[]>> = {
+  inbox_channel_occurrences: INBOX_OCCURRENCE_FIELDS,
   whatsapp_messages: WHATSAPP_NOTIFICATION_MESSAGE_FIELDS,
   financial_entries: FINANCE_NOTIFICATION_ENTRY_FIELDS,
   hiring_fiscal_documents: FINANCE_NOTIFICATION_FISCAL_FIELDS,

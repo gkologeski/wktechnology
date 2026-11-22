@@ -1,3 +1,4 @@
+import { useEmailSendAttempt } from "@/hooks/use-message-send-attempt";
 // ACEITE-MINUTA Entrega 3: envio da minuta aprovada ao cliente (e-mail ou link).
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -43,6 +44,7 @@ export function ContractDraftSendPanel(props: {
   const mark = useServerFn(markContractDraftSent);
   const listAccounts = useServerFn(listEmailAccounts);
   const sendMail = useServerFn(sendGmailEmail);
+  const emailAttempt = useEmailSendAttempt();
   const userId = useCurrentUserId();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -106,15 +108,16 @@ export function ContractDraftSendPanel(props: {
         .map((p) => `<p>${esc(p).replace(/\n/g, "<br>")}</p>`)
         .join("");
       await sendMail({
-        data: {
+        data: emailAttempt.prepare({
           account_id: accountId || undefined,
           to: list,
           subject,
           body_html: `${paragraphs}<p><a href="${esc(link)}">Abrir a minuta do contrato</a></p>`,
           body_text: `${message}\n\nAbrir a minuta: ${link}`,
           deal_id: props.dealId ?? undefined,
-        },
+        }),
       });
+      emailAttempt.complete();
       try {
         await mark({ data: { id: props.draftId, to: list.join(", "), channel: "email" } });
       } catch (e) {
@@ -208,7 +211,10 @@ export function ContractDraftSendPanel(props: {
             <Button variant="outline" onClick={() => setOpen(false)} disabled={busy}>
               Cancelar
             </Button>
-            <Button onClick={submit} disabled={busy || noAccount || !subject.trim()}>
+            <Button
+              onClick={submit}
+              disabled={!emailAttempt.canSend || busy || noAccount || !subject.trim()}
+            >
               {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Enviar
             </Button>

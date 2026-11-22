@@ -3,18 +3,19 @@ import { workRpc } from "@/lib/access-control/work-core.server";
 import { requireSalesPermission } from "@/lib/access-control/sales-permission.middleware";
 import { parseEmailList } from "@/lib/email-address";
 import { emailSchema } from "@/lib/email-schema";
-import { randomUUID } from "crypto";
+import { inboxAttemptId, sendGmailWithInboxReceipt } from "./inbox-transport.server";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import {
   buildRawMime,
   ensureAccessToken,
-  gmailGetMessageIdHeader,
   gmailSendRaw,
   type EmailAccountRow,
 } from "@/lib/gmail.server";
 import { injectTracking } from "@/lib/email-tracking.server";
+import { createHash } from "node:crypto";
+import { resolveGmailReply, gmailReplyHeadersForAttempt } from "./gmail-reply.server";
 
 const emailListSchema = z
   .union([z.string(), z.array(z.string())])
@@ -40,7 +41,9 @@ const attachmentSchema = z.object({
 });
 
 const inputSchema = z.object({
+  request_id: z.string().uuid().optional(),
   account_id: z.string().uuid().optional(),
+  conversation_id: z.string().uuid().optional(),
   to: emailListSchema,
   cc: emailListSchema.optional(),
   bcc: emailListSchema.optional(),
@@ -71,6 +74,14 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       deals: data.deal_id,
       companies: data.company_id,
     });
+    const reply = data.conversation_id
+      ? await resolveGmailReply(context.supabase, {
+          conversationId: data.conversation_id,
+          workspace: scope.workspace,
+          actor: context.userId,
+          ...(data.account_id ? { accountId: data.account_id } : {}),
+        })
+      : null;
     // Resolve account (use specified or first connected for this user)
     let q = supabaseAdmin
       .from("email_accounts")
@@ -79,8 +90,10 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       )
       .eq("workspace_id", scope.workspace)
       .eq("owner_id", context.userId)
-      .eq("provider", "gmail");
-    if (data.account_id) q = q.eq("id", data.account_id);
+      .eq("provider", "gmail")
+      .eq("status", "connected");
+    const selectedAccount = reply?.accountId ?? data.account_id;
+    if (selectedAccount) q = q.eq("id", selectedAccount);
     const { data: rows, error: accErr } = await q
       .order("created_at", { ascending: false })
       .limit(1);
@@ -92,7 +105,18 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
     await assertSalesRecord(context.supabase, "email_accounts", account.id, "view");
     const accessToken = await ensureAccessToken(account);
 
-    const messageDbId = randomUUID();
+    const requestId =
+      data.request_id ?? inboxAttemptId(["gmail-human", context.userId, account.id, data]);
+    const replyHeaders = reply
+      ? await gmailReplyHeadersForAttempt(supabaseAdmin, {
+          reply,
+          workspace: scope.workspace,
+          actor: context.userId,
+          request: requestId,
+          accessToken,
+        })
+      : null;
+    const messageDbId = inboxAttemptId(["gmail-message", requestId]);
     const tracked = injectTracking({
       messageId: messageDbId,
       bodyHtml: data.body_html,
@@ -102,8 +126,13 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
     // Download attachments from storage (each path must live under the user's folder)
     const attachmentInputs = data.attachments ?? [];
     const mimeAttachments: { filename: string; contentType: string; data: Buffer }[] = [];
-    const attachmentMeta: { filename: string; content_type: string; size: number; path: string }[] =
-      [];
+    const attachmentMeta: {
+      filename: string;
+      content_type: string;
+      size: number;
+      path: string;
+      content_sha256: string;
+    }[] = [];
     let totalBytes = 0;
     for (const a of attachmentInputs) {
       if (!a.path.startsWith(`${context.userId}/`)) {
@@ -133,6 +162,7 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
         content_type: a.content_type,
         size: buf.length,
         path: a.path,
+        content_sha256: createHash("sha256").update(buf).digest("hex"),
       });
     }
 
@@ -145,45 +175,27 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       bodyHtml: tracked.html,
       bodyText: tracked.text,
       attachments: mimeAttachments.length ? mimeAttachments : undefined,
+      ...(replyHeaders ?? {}),
     });
-
-    const sent = await gmailSendRaw(accessToken, raw);
-    const messageIdHeader = await gmailGetMessageIdHeader(accessToken, sent.id);
-
-    // Upsert thread
-    const { data: existingThread } = await supabaseAdmin
-      .from("email_threads")
-      .select("id")
-      .eq("owner_id", context.userId)
-      .eq("account_id", account.id)
-      .eq("provider_thread_id", sent.threadId)
-      .maybeSingle();
 
     const nowIso = new Date().toISOString();
     const snippet = (
       data.body_text ?? (data.body_html ? data.body_html.replace(/<[^>]+>/g, " ") : "")
     ).slice(0, 200);
-
-    let threadDbId: string;
-    if (existingThread) {
-      threadDbId = existingThread.id;
-      const { data: agg } = await supabaseAdmin
-        .from("email_messages")
-        .select("id", { count: "exact", head: true })
-        .eq("thread_id", threadDbId);
-      void agg;
-      await supabaseAdmin
-        .from("email_threads")
-        .update({ last_message_at: nowIso, snippet, subject: data.subject })
-        .eq("id", threadDbId);
-    } else {
-      const { data: ins, error: tErr } = await supabaseAdmin
-        .from("email_threads")
-        .insert({
-          workspace_id: account.workspace_id,
+    const sent = await sendGmailWithInboxReceipt(
+      supabaseAdmin,
+      {
+        workspace: account.workspace_id,
+        account: account.id,
+        actor: context.userId,
+        request: requestId,
+        message: messageDbId,
+        body: tracked.text ?? tracked.html ?? "",
+        threadFields: {
+          ...(reply
+            ? { id: reply.conversationId, provider_thread_id: reply.providerThreadId }
+            : {}),
           owner_id: context.userId,
-          account_id: account.id,
-          provider_thread_id: sent.threadId,
           subject: data.subject,
           snippet,
           last_message_at: nowIso,
@@ -191,35 +203,43 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
           lead_id: data.lead_id ?? null,
           deal_id: data.deal_id ?? null,
           company_id: data.company_id ?? null,
-        })
-        .select("id")
-        .single();
-      if (tErr) throw new Error(tErr.message);
-      threadDbId = ins.id;
-    }
-
-    const { error: mErr } = await supabaseAdmin.from("email_messages").insert({
-      id: messageDbId,
-      workspace_id: account.workspace_id,
-      owner_id: context.userId,
-      account_id: account.id,
-      thread_id: threadDbId,
-      provider_message_id: sent.id,
-      message_id_header: messageIdHeader,
-      direction: "outbound",
-      from_email: account.email,
-      to_emails: data.to,
-      cc_emails: data.cc ?? [],
-      bcc_emails: data.bcc ?? [],
-      subject: data.subject,
-      body_html: tracked.html,
-      body_text: tracked.text,
-      snippet,
-      sent_at: nowIso,
-      has_attachments: attachmentMeta.length > 0,
-      attachments: attachmentMeta.length ? attachmentMeta : [],
-    });
-    if (mErr) throw new Error(mErr.message);
+        },
+        messageFields: {
+          ...(replyHeaders
+            ? {
+                in_reply_to: replyHeaders.inReplyTo,
+                headers: {
+                  "In-Reply-To": replyHeaders.inReplyTo,
+                  References: replyHeaders.references,
+                },
+              }
+            : {}),
+          owner_id: context.userId,
+          from_email: account.email,
+          to_emails: data.to,
+          cc_emails: data.cc ?? [],
+          bcc_emails: data.bcc ?? [],
+          subject: data.subject,
+          body_html: tracked.html,
+          body_text: tracked.text,
+          snippet,
+          sent_at: nowIso,
+          has_attachments: attachmentMeta.length > 0,
+          attachments: attachmentMeta.length ? attachmentMeta : [],
+        },
+      },
+      () => gmailSendRaw(accessToken, raw, reply?.providerThreadId),
+    );
+    const threadDbId = sent.conversationId;
+    if (sent.projectionPending)
+      return {
+        ok: true,
+        thread_id: threadDbId,
+        message_id: sent.messageId,
+        gmail_message_id: sent.id,
+        request_id: requestId,
+        projection_pending: true,
+      };
 
     // Anexos permanecem no bucket privado `email-attachments` para que a timeline
     // possa gerar signed URLs de download depois do envio (RLS restringe leitura ao owner).
@@ -239,28 +259,38 @@ export const sendGmailEmail = createServerFn({ method: "POST" })
       const fallbackPlain = (
         data.body_text ?? (data.body_html ? data.body_html.replace(/<[^>]+>/g, " ") : "")
       ).slice(0, 4000);
-      const { error: actErr } = await supabaseAdmin.from("activities").insert({
-        workspace_id: account.workspace_id,
-        owner_id: context.userId,
-        created_by: context.userId,
-        type: "email",
-        subject: data.subject,
-        body: tracked.html || fallbackPlain,
-        email_direction: "outbound",
-        email_status: "sent",
-        related_contact_id: data.contact_id ?? null,
-        related_lead_id: data.lead_id ?? null,
-        related_deal_id: data.deal_id ?? null,
-        related_company_id: data.company_id ?? null,
-        external_ids: {
-          email_message_id: messageDbId,
-          email_thread_id: threadDbId,
-          gmail_message_id: sent.id,
-          gmail_thread_id: sent.threadId,
-        },
-      } as never);
+      const { error: actErr } = await supabaseAdmin.from("activities").upsert(
+        {
+          id: inboxAttemptId(["gmail-activity", requestId]),
+          workspace_id: account.workspace_id,
+          owner_id: context.userId,
+          created_by: context.userId,
+          type: "email",
+          subject: data.subject,
+          body: tracked.html || fallbackPlain,
+          email_direction: "outbound",
+          email_status: "sent",
+          related_contact_id: data.contact_id ?? null,
+          related_lead_id: data.lead_id ?? null,
+          related_deal_id: data.deal_id ?? null,
+          related_company_id: data.company_id ?? null,
+          external_ids: {
+            email_message_id: messageDbId,
+            email_thread_id: threadDbId,
+            gmail_message_id: sent.id,
+            gmail_thread_id: sent.threadId,
+          },
+        } as never,
+        { onConflict: "id", ignoreDuplicates: true },
+      );
       if (actErr) console.error("[sendGmailEmail] activity insert failed", actErr.message);
     }
 
-    return { ok: true, thread_id: threadDbId, message_id: messageDbId, gmail_message_id: sent.id };
+    return {
+      ok: true,
+      thread_id: threadDbId,
+      message_id: messageDbId,
+      gmail_message_id: sent.id,
+      request_id: requestId,
+    };
   });

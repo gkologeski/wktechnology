@@ -1,3 +1,4 @@
+import { useEmailSendAttempt } from "@/hooks/use-message-send-attempt";
 import { parseEmailList } from "@/lib/email-address";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -204,6 +205,7 @@ export function SendEmailDialog({
   const listTemplates = useServerFn(listEmailTemplates);
   const listSnippets = useServerFn(listEmailSnippets);
   const sendFn = useServerFn(sendGmailEmail);
+  const emailAttempt = useEmailSendAttempt();
 
   const accountsQ = useQuery({
     queryKey: ["email_accounts"],
@@ -281,7 +283,7 @@ export function SendEmailDialog({
   const sendMut = useMutation({
     mutationFn: () =>
       sendFn({
-        data: {
+        data: emailAttempt.prepare({
           to,
           cc: cc.trim() ? cc : undefined,
           subject: finalSubject,
@@ -292,9 +294,10 @@ export function SendEmailDialog({
           deal_id: dealId,
           company_id: companyId,
           attachments: attachments.length ? attachments : undefined,
-        },
+        }),
       }),
     onSuccess: (res) => {
+      emailAttempt.complete();
       draft.clearAfterSend();
       setOpen(false);
       setSubject("");
@@ -562,6 +565,7 @@ export function SendEmailDialog({
               sendMut.mutate();
             }}
             disabled={
+              !emailAttempt.canSend ||
               !account ||
               !to ||
               !finalSubject.trim() ||

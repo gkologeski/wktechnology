@@ -21,6 +21,7 @@ const event = () => ({
     sender_id: "person",
     text: "Podemos conversar?",
     is_sender: false,
+    timestamp: "2026-11-21T23:30:00.000Z",
   },
 });
 beforeEach(() => {
@@ -97,12 +98,16 @@ it("marks removal as disconnection and never treats it as enrollment", () =>
   ));
 it("persists a signed v2 inbound through the private deduplicating journal", async () => {
   expect((await receive(event())).status).toBe(200);
-  expect(mock.rpc).toHaveBeenCalledWith("unipile_receive_message", {
+  expect(mock.rpc).toHaveBeenCalledWith("unipile_signed_inbound_commit", {
     p_account: "local-account",
     p_message: "message",
     p_chat: "chat",
     p_sender: "person",
     p_body: "Podemos conversar?",
+    p_envelope_hash: expect.stringMatching(/^[a-f0-9]{64}$/),
+    p_occurred: "2026-11-21T23:30:00.000Z",
+    p_live: true,
+    p_self: false,
   });
   expect(mock.get).not.toHaveBeenCalled();
 });
@@ -152,4 +157,118 @@ it("pauses a locked provider account without mistaking history sync failure for 
   expect(
     parseUnipileWebhook({ type: "account.initial_sync.failed", account_id: "acc_owner" }).kind,
   ).toBe("unknown");
+});
+
+it("persists signed history without promoting it to a live occurrence", async () => {
+  await receive({ ...event(), is_history: true });
+  expect(mock.rpc).toHaveBeenCalledWith(
+    "unipile_signed_inbound_commit",
+    expect.objectContaining({ p_live: false }),
+  );
+  expect(parseUnipileWebhook({ ...event(), is_history: "true" }).message?.live).toBe(false);
+});
+
+it("uses the confirmed message timestamp from exact provider hydration, not local time", async () => {
+  const e = event();
+  delete (e.payload as Partial<typeof e.payload>).timestamp;
+  delete (e.payload as Partial<typeof e.payload>).sender_id;
+  await receive(e);
+  expect(mock.get).toHaveBeenCalled();
+  expect(mock.rpc).toHaveBeenCalledWith(
+    "unipile_signed_inbound_commit",
+    expect.objectContaining({ p_live: true, p_occurred: "2026-11-21T23:30:00.000Z" }),
+  );
+});
+
+it("normalizes a signed seconds timestamp without guessing a local time", () => {
+  const payload = { ...event(), payload: { ...event().payload, timestamp: 1795303800 } };
+  expect(parseUnipileWebhook(payload).message?.occurredAt).toBe(
+    new Date(1795303800000).toISOString(),
+  );
+});
+
+it("does not promote a malformed provider timestamp", () => {
+  expect(
+    parseUnipileWebhook({ ...event(), payload: { ...event().payload, timestamp: "not-a-date" } })
+      .message?.occurredAt,
+  ).toBeNull();
+});
+
+it("never uses the v2 envelope creation date or timestamp as the message date", async () => {
+  const payload = {
+    type: "message.new",
+    account_id: "acc_owner",
+    created_at: "2026-11-22T00:28:00Z",
+    timestamp: "2026-11-22T00:28:00Z",
+    payload: { ...event().payload, timestamp: undefined, created_at: "2026-11-22T00:28:00Z" },
+  };
+  expect(parseUnipileWebhook(payload).message?.occurredAt).toBeNull();
+  mock.get.mockResolvedValue({ ...event().payload, timestamp: undefined });
+  await receive(payload);
+  expect(mock.rpc).toHaveBeenCalledWith(
+    "unipile_signed_inbound_commit",
+    expect.objectContaining({ p_occurred: null, p_live: false }),
+  );
+});
+it("recognizes v1 sent messages by documented account_info and attendee_provider_id", async () => {
+  const payload = {
+    event: "message_received",
+    account_id: "acc_owner",
+    account_info: { user_id: "person" },
+    sender: { attendee_provider_id: "person" },
+    message_id: "message",
+    chat_id: "chat",
+    message: "Sent from another device",
+    timestamp: "2026-11-21T23:30:00Z",
+  };
+  expect(parseUnipileWebhook(payload).message).toMatchObject({
+    isSelfSent: true,
+    senderProviderId: "person",
+    occurredAt: "2026-11-21T23:30:00.000Z",
+  });
+  expect((await receive(payload)).status).toBe(200);
+  expect(mock.rpc).not.toHaveBeenCalled();
+  expect(mock.get).not.toHaveBeenCalled();
+});
+it("requires provider hydration when message.new omits direction, even with a body", async () => {
+  const payload = { ...event(), payload: { ...event().payload, is_sender: undefined } };
+  mock.get.mockResolvedValue({ ...event().payload, is_sender: true });
+  expect((await receive(payload)).status).toBe(200);
+  expect(mock.get).toHaveBeenCalled();
+  expect(mock.rpc).not.toHaveBeenCalled();
+});
+it("fails closed when hydration cannot establish sent or received direction", async () => {
+  const payload = { ...event(), payload: { ...event().payload, is_sender: undefined } };
+  mock.get.mockResolvedValue({ ...event().payload, is_sender: undefined });
+  expect((await receive(payload)).status).toBe(503);
+  expect(mock.rpc).not.toHaveBeenCalled();
+});
+it.each(["2026-11-21T22:00:00.000Z", "2026-11-22T00:00:00.000Z"])(
+  "retains original provider time across a reconnection envelope and replay: %s",
+  async (timestamp) => {
+    const payload = {
+      ...event(),
+      created_at: "2026-11-22T00:28:00Z",
+      payload: { ...event().payload, timestamp },
+    };
+    await receive(payload);
+    await receive({ ...payload, created_at: "2026-11-22T00:29:00Z" });
+    expect(mock.rpc).toHaveBeenCalledTimes(2);
+    for (const [name, args] of mock.rpc.mock.calls) {
+      expect(name).toBe("unipile_signed_inbound_commit");
+      expect(args).toMatchObject({ p_occurred: timestamp, p_self: false });
+    }
+  },
+);
+it("does not promote history during hydration even when the provider returns a recent message", async () => {
+  await receive({
+    ...event(),
+    is_history: true,
+    payload: { ...event().payload, sender_id: undefined, timestamp: undefined },
+  });
+  expect(mock.get).toHaveBeenCalled();
+  expect(mock.rpc).toHaveBeenCalledWith(
+    "unipile_signed_inbound_commit",
+    expect.objectContaining({ p_live: false, p_occurred: "2026-11-21T23:30:00.000Z" }),
+  );
 });

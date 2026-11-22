@@ -10,7 +10,7 @@
 // src/lib/unipile/webhook-events.server.ts).
 
 import { createFileRoute } from "@tanstack/react-router";
-import { createHmac, timingSafeEqual } from "crypto";
+import { createHash, createHmac, timingSafeEqual } from "crypto";
 import { verifyUnipileSignature } from "@/lib/unipile/webhook-signature.server";
 
 const SIGNATURE_HEADERS = ["x-unipile-signature", "x-webhook-signature", "x-signature"];
@@ -43,7 +43,7 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = process.env.UNIPILE_WEBHOOK_SECRET;
+        const secret = process.env["UNIPILE_WEBHOOK_SECRET"];
         if (!secret) return new Response("Webhook secret not configured", { status: 500 });
 
         if (Number(request.headers.get("content-length")) > 1048576)
@@ -89,7 +89,9 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
           if (known.error) return json({ error: "Account lookup failed" }, 503);
           if (!known.data || known.data.status !== "connected")
             return json({ ok: true, event: "unmapped_or_inactive" });
-          let msg = event.message!;
+          let msg = event.message;
+          if (!msg) return json({ error: "Incomplete message envelope" }, 422);
+          if (msg.isSelfSent) return json({ ok: true, event: "self_echo_ignored" });
           if (msg.needsHydration && msg.messageId) {
             const full = await hydrateV2Message(unipileAccountId, msg.messageId, msg.chatId);
             if (!full) return json({ error: "Message hydration unavailable" }, 503);
@@ -99,19 +101,24 @@ export const Route = createFileRoute("/api/public/unipile/webhook")({
               text: msg.text ?? full.text,
               chatId: msg.chatId ?? full.chatId,
               isSelfSent: msg.isSelfSent || full.isSelfSent,
+              occurredAt: msg.occurredAt ?? full.occurredAt,
             };
           }
           if (msg.isSelfSent) return json({ ok: true, event: "self_echo_ignored" });
           if (!msg.messageId || !msg.chatId || !msg.senderProviderId)
             return json({ error: "Incomplete message identifiers" }, 422);
           const received = await supabaseAdmin.rpc(
-            "unipile_receive_message" as never,
+            "unipile_signed_inbound_commit" as never,
             {
               p_account: known.data.id,
               p_message: msg.messageId,
               p_chat: msg.chatId,
               p_sender: msg.senderProviderId,
               p_body: msg.text,
+              p_envelope_hash: createHash("sha256").update(body).digest("hex"),
+              p_occurred: msg.occurredAt,
+              p_live: msg.live && msg.occurredAt !== null,
+              p_self: msg.isSelfSent,
             } as never,
           );
           if (received.error) return json({ error: "Message persistence unavailable" }, 503);

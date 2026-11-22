@@ -1,3 +1,4 @@
+import { INBOX_CHANNEL_RUNTIME_READY, INBOX_OCCURRENCE_FIELDS } from "./inbox-channel-events";
 import type { NotificationDeliveryConfig } from "@/lib/notifications/delivery-types";
 import type { NotificationRecipientRule } from "@/lib/notification-recipients";
 import type { WorkflowNotificationEventSelection } from "./notification-events";
@@ -31,7 +32,8 @@ export type WorkflowEntity =
   | "people_documents"
   | "hiring_preparation_requests"
   | "hiring_fiscal_documents"
-  | "whatsapp_messages";
+  | "whatsapp_messages"
+  | "inbox_channel_occurrences";
 
 /** Named occurrences can read these sources; generic actions cannot mutate them. */
 export const WORKFLOW_READONLY_SOURCE_TABLES = [
@@ -40,6 +42,7 @@ export const WORKFLOW_READONLY_SOURCE_TABLES = [
   "hiring_preparation_requests",
   "hiring_fiscal_documents",
   "whatsapp_messages",
+  "inbox_channel_occurrences",
 ] as const;
 
 export function isWorkflowReadonlySource(table: string): boolean {
@@ -579,12 +582,20 @@ export const ENTITY_LABELS: Record<WorkflowEntity, string> = {
   hiring_preparation_requests: "Solicitações profissionais de preparação",
   hiring_fiscal_documents: "Documentos fiscais de contratação",
   whatsapp_messages: "Mensagens de WhatsApp (Inbox)",
+  inbox_channel_occurrences: "Atendimento multicanal (Inbox)",
 };
 
 // Grupos por módulo (para dropdown do builder).
 export const ENTITY_GROUPS: Array<{ label: string; entities: WorkflowEntity[] }> = [
   { label: "Vendas", entities: ["leads", "contacts", "companies", "deals", "quotes", "proposals"] },
-  { label: "Atendimento", entities: ["tickets", "whatsapp_messages"] },
+  {
+    label: "Atendimento",
+    entities: [
+      "tickets",
+      "whatsapp_messages",
+      ...(INBOX_CHANNEL_RUNTIME_READY ? ["inbox_channel_occurrences" as const] : []),
+    ],
+  },
   {
     label: "Recrutamento",
     entities: ["ats_jobs", "ats_candidates", "ats_applications", "ats_interviews", "ats_offers"],
@@ -853,6 +864,7 @@ export const RECORD_ACTION_MODULES: RecordActionModule[] = [
 
 // Common fields by entity, used in filter dropdowns and set_field actions
 export const ENTITY_FIELDS: Record<WorkflowEntity, string[]> = {
+  inbox_channel_occurrences: [...INBOX_OCCURRENCE_FIELDS],
   whatsapp_messages: [
     "id",
     "workspace_id",

@@ -1,4 +1,10 @@
 import { z } from "zod";
+import {
+  INBOX_CHANNEL_EVENT_KEYS,
+  INBOX_CHANNEL_EVENT_DEFINITIONS,
+  INBOX_OCCURRENCE_FIELDS,
+  inboxEventChannel,
+} from "./inbox-channel-events";
 import { notificationSchedulingActionProblem } from "@/lib/notifications/scheduling-types";
 import type { WorkflowEntity, WorkflowTrigger } from "./types";
 import { isWorkflowReadonlySource } from "./types";
@@ -29,6 +35,7 @@ export const WORKFLOW_NOTIFICATION_EVENT_KEYS = [
   "finance.receivable.overdue",
   "finance.invoice.received",
   "shared.message.received",
+  ...INBOX_CHANNEL_EVENT_KEYS,
 ] as const;
 export type WorkflowNotificationEventKey = (typeof WORKFLOW_NOTIFICATION_EVENT_KEYS)[number];
 export type WorkflowNotificationEventSelection = {
@@ -37,6 +44,8 @@ export type WorkflowNotificationEventSelection = {
   /** Empty/absent lists retain any currently authorized WhatsApp origin. */
   source_keys?: string[];
   phone_number_ids?: string[];
+  channel?: "email" | "chat" | "linkedin";
+  account_ids?: string[];
 };
 
 export const WORKFLOW_NOTIFICATION_EVENTS = [
@@ -273,6 +282,7 @@ export const WORKFLOW_NOTIFICATION_EVENTS = [
     scheduling: "transition",
     deadline: false,
   },
+  ...INBOX_CHANNEL_EVENT_DEFINITIONS,
 ] as const satisfies readonly {
   key: WorkflowNotificationEventKey;
   label: string;
@@ -292,6 +302,7 @@ export function isMinimalNotificationEvent(key: unknown): boolean {
   const moduleKey = getWorkflowNotificationEvent(key)?.moduleKey;
   return (
     key === "shared.message.received" ||
+    inboxEventChannel(key) !== null ||
     moduleKey === "ats" ||
     moduleKey === "people" ||
     moduleKey === "finance"
@@ -339,6 +350,7 @@ export const WHATSAPP_NOTIFICATION_MESSAGE_FIELDS = [
 
 /** null preserves the existing public field catalogue for the other events and generic workflows. */
 export function workflowNotificationEventFields(key: unknown): readonly string[] | null {
+  if (inboxEventChannel(key)) return INBOX_OCCURRENCE_FIELDS;
   if (key === "shared.message.received") return WHATSAPP_NOTIFICATION_MESSAGE_FIELDS;
   const definition = getWorkflowNotificationEvent(key);
   if (definition?.moduleKey !== "finance") return null;
@@ -404,7 +416,7 @@ export function notificationEventConfigurationProblem(
   const fields = workflowNotificationEventFields(key);
   if (fields === null) return null;
   const available = Object.fromEntries(fields.map((field) => [field, true]));
-  const whatsapp = key === "shared.message.received";
+  const whatsapp = key === "shared.message.received" || inboxEventChannel(key) !== null;
   const fieldProblem = (field: unknown) =>
     typeof field === "string" && fields.includes(field)
       ? null
@@ -434,7 +446,7 @@ export function notificationEventConfigurationProblem(
       whatsapp &&
       (WHATSAPP_SOURCE_DEPENDENT_ACTIONS.includes(String(object.type)) ||
         (["create_record", "update_record", "delete_record"].includes(String(object.type)) &&
-          object.table === "whatsapp_messages"))
+          ["whatsapp_messages", "inbox_channel_occurrences"].includes(String(object.table))))
     )
       return "Este evento não altera mensagens nem responde ao cliente; use ações independentes autorizadas ou a notificação protegida.";
     if (
@@ -540,6 +552,8 @@ export function notificationEventActionProblem(
 export const notificationEventSelectionSchema = z
   .object({
     key: z.enum(WORKFLOW_NOTIFICATION_EVENT_KEYS),
+    channel: z.enum(["email", "chat", "linkedin"]).optional(),
+    account_ids: z.array(z.string().uuid()).max(100).optional(),
     days_before: z.number().int().min(1).max(365).optional(),
     source_keys: z
       .array(
@@ -556,7 +570,19 @@ export const notificationEventSelectionSchema = z
   })
   .strict()
   .superRefine((selection, ctx) => {
-    const definition = getWorkflowNotificationEvent(selection.key)!;
+    const definition = getWorkflowNotificationEvent(selection.key);
+    if (!definition) {
+      ctx.addIssue({ code: "custom", message: "Evento indisponível." });
+      return;
+    }
+    const channel = inboxEventChannel(selection.key);
+    if (
+      (selection.channel !== undefined && selection.channel !== channel) ||
+      (selection.account_ids !== undefined && !channel) ||
+      (selection.account_ids &&
+        new Set(selection.account_ids).size !== selection.account_ids.length)
+    )
+      ctx.addIssue({ code: "custom", message: "Canal ou contas incompatíveis com o evento." });
     for (const field of ["source_keys", "phone_number_ids"] as const) {
       const values = selection[field];
       if (values !== undefined && selection.key !== "shared.message.received")
@@ -593,6 +619,25 @@ export function workflowNotificationTriggerMatches(
   const selection = notificationEventSelectionSchema.safeParse(trigger.notification_event);
   if (!selection.success || selection.data.key !== event.notification_event_key) return false;
   if (getWorkflowNotificationEvent(selection.data.key)?.entity !== event.entity) return false;
+  const channel = inboxEventChannel(selection.data.key);
+  if (channel) {
+    const after =
+      event.after && typeof event.after === "object" && !Array.isArray(event.after)
+        ? (event.after as Record<string, unknown>)
+        : null;
+    if (
+      !after ||
+      after.channel !== channel ||
+      after.event_key !== selection.data.key ||
+      typeof after.account_id !== "string"
+    )
+      return false;
+    if (
+      selection.data.account_ids?.length &&
+      !selection.data.account_ids.includes(after.account_id)
+    )
+      return false;
+  }
   if (selection.data.key === "shared.message.received") {
     const after =
       event.after && typeof event.after === "object" && !Array.isArray(event.after)

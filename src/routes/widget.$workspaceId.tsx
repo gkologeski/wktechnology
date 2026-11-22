@@ -2,8 +2,22 @@ import { EmailNativeInput } from "@/components/ui/email-native-input";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Send } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/widget/$workspaceId")({
+  head: () => ({
+    meta: [
+      { title: "Chat ao vivo | TechERP" },
+      { name: "description", content: "Conversa com a equipe pelo chat ao vivo do TechERP." },
+      { property: "og:title", content: "Chat ao vivo | TechERP" },
+      {
+        property: "og:description",
+        content: "Conversa com a equipe pelo chat ao vivo do TechERP.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: WidgetPage,
 });
 
@@ -35,6 +49,9 @@ function WidgetPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [started, setStarted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const attemptRef = useRef<{ id: string; body: string } | null>(null);
   const sinceRef = useRef<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -73,7 +90,7 @@ function WidgetPage() {
           const newMsgs: Msg[] = j.messages ?? [];
           if (newMsgs.length) {
             setMessages((prev) => [...prev, ...newMsgs]);
-            sinceRef.current = newMsgs[newMsgs.length - 1].created_at;
+            sinceRef.current = newMsgs.at(-1)?.created_at ?? sinceRef.current;
             setTimeout(() => endRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
           }
         } catch {
@@ -90,14 +107,30 @@ function WidgetPage() {
 
   async function send() {
     const visitorId = visitorIdLocal();
-    if (!sessionId || !draft.trim()) return;
+    if (!sessionId || !draft.trim() || sending) return;
     const body = draft.trim();
-    setDraft("");
-    await fetch("/api/public/widget/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: sessionId, visitor_id: visitorId, body }),
-    });
+    if (attemptRef.current?.body !== body) attemptRef.current = { id: crypto.randomUUID(), body };
+    setSending(true);
+    setSendError(null);
+    try {
+      const response = await fetch("/api/public/widget/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          visitor_id: visitorId,
+          body,
+          request_id: attemptRef.current.id,
+        }),
+      });
+      if (!response.ok) throw new Error("Mensagem não confirmada. Tente novamente.");
+      setDraft("");
+      attemptRef.current = null;
+    } catch {
+      setSendError("Mensagem não confirmada. Tente novamente.");
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -122,12 +155,12 @@ function WidgetPage() {
             placeholder="Email (opcional)"
             className="border rounded-md px-3 py-2 w-full"
           />
-          <button
+          <Button
             onClick={startSession}
             className="bg-primary text-primary-foreground rounded-md py-2 mt-2"
           >
             Iniciar conversa
-          </button>
+          </Button>
         </div>
       ) : (
         <>
@@ -168,6 +201,8 @@ function WidgetPage() {
           <div className="border-t p-2 flex items-end gap-2">
             <textarea
               value={draft}
+              disabled={sending}
+              aria-label="Mensagem"
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
@@ -179,13 +214,20 @@ function WidgetPage() {
               placeholder="Digite sua mensagem…"
               className="flex-1 border rounded-md px-3 py-2 resize-none max-h-32"
             />
-            <button
+            <Button
               onClick={send}
+              disabled={sending || !draft.trim()}
+              aria-label="Enviar mensagem"
               className="bg-primary text-primary-foreground rounded-md px-3 py-2"
             >
               <Send className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
+          {sendError && (
+            <p role="alert" className="px-3 py-2 text-destructive">
+              {sendError}
+            </p>
+          )}
         </>
       )}
     </div>

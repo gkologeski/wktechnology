@@ -10,8 +10,10 @@ export function useEntityFieldOptions(entity: WorkflowEntity): FieldOpt[] {
     queryKey: ["wf-entity-fields", entity],
     queryFn: () => fetchCatalog({ data: { entity } }),
     staleTime: 5 * 60_000,
-    enabled: entity !== "whatsapp_messages",
+    enabled: entity !== "whatsapp_messages" && entity !== "inbox_channel_occurrences",
   });
+  if (entity === "inbox_channel_occurrences")
+    return ENTITY_FIELDS[entity].map((name) => ({ name, label: name, system: true }));
   if (entity === "whatsapp_messages")
     return [
       { name: "id", label: "ID da mensagem", system: true },

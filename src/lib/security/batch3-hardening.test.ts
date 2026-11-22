@@ -184,8 +184,18 @@ describe("landing conversion ticket", () => {
     const t = issueLpViewTicket("s", pid, "visitor-abcdefghij", 1_000_000_000_000);
     expect(verifyLpViewTicket("s", t, pid, "visitor-abcdefghij", 1_000_000_010_000)).toBe(true);
     expect(verifyLpViewTicket("s", t, pid, "visitor-abcdefghij", 1_000_000_001_000)).toBe(false);
-    expect(verifyLpViewTicket("other", t, pid, "visitor-abcdefghij", 1_000_000_010_000)).toBe(false);
+    expect(verifyLpViewTicket("other", t, pid, "visitor-abcdefghij", 1_000_000_010_000)).toBe(
+      false,
+    );
     expect(verifyLpViewTicket("s", t, pid, "visitor-zzzzzzzzzz", 1_000_000_010_000)).toBe(false);
-    expect(verifyLpViewTicket("s", "1000000000000.forgedforgedforgedforged", pid, "visitor-abcdefghij", 1_000_000_010_000)).toBe(false);
+    expect(
+      verifyLpViewTicket(
+        "s",
+        "1000000000000.forgedforgedforgedforged",
+        pid,
+        "visitor-abcdefghij",
+        1_000_000_010_000,
+      ),
+    ).toBe(false);
   });
 });

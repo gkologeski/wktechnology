@@ -10,9 +10,20 @@ const state = vi.hoisted(() => ({
   error: false,
   view: true,
   manage: true,
+  inboxReady: true,
   calls: {} as Record<string, ReturnType<typeof vi.fn<(input: unknown) => Promise<unknown>>>>,
 }));
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
+// Exercise the release-ready controls without removing the application's lock.
+// A separate case below verifies that a locked build hides these options.
+vi.mock("@/lib/workflows/inbox-channel-events", async () => ({
+  ...(await vi.importActual<typeof import("./workflows/inbox-channel-events")>(
+    "@/lib/workflows/inbox-channel-events",
+  )),
+  get INBOX_CHANNEL_RUNTIME_READY() {
+    return state.inboxReady;
+  },
+}));
 vi.mock("@/lib/access-control/use-permissions", () => ({
   usePermissions: () => ({
     workspaceId: state.workspace,
@@ -32,6 +43,13 @@ vi.mock("@/lib/view-as-client", () => ({ readViewAs: () => null }));
 vi.mock("@/lib/auth", () => ({ useAuth: () => ({ user: { id: "user" }, loading: false }) }));
 vi.mock("@/lib/workflows/whatsapp-inbound.functions", () => ({
   listWorkflowWhatsAppSources: async () => ({ workspace_id: WS, sources: [] }),
+}));
+vi.mock("@/lib/workflows/inbox-channels.functions", () => ({
+  listWorkflowInboxSources: async ({ data }: { data: { channel: string } }) => ({
+    workspace_id: WS,
+    channel: data.channel,
+    sources: [],
+  }),
 }));
 vi.mock("@/components/ui/confirm-dialog", () => ({
   confirmDialog: vi.fn().mockResolvedValue(true),
@@ -93,6 +111,7 @@ beforeEach(() => {
     },
   );
   state.workspace = WS;
+  state.inboxReady = true;
   state.loading = false;
   state.error = false;
   state.view = true;
@@ -160,7 +179,8 @@ it.each(WORKFLOW_NOTIFICATION_EVENTS)(
             kind:
               definition.key === "people.approval.pending"
                 ? "pending_approvers"
-                : definition.key === "finance.invoice.received"
+                : definition.key === "finance.invoice.received" ||
+                    definition.key.startsWith("shared.linkedin.")
                   ? "workflow_owner"
                   : "source_responsible",
           },
@@ -172,6 +192,19 @@ it.each(WORKFLOW_NOTIFICATION_EVENTS)(
     expect(state.calls.preview).not.toHaveBeenCalled();
   },
 );
+it("keeps unfinished channel events out of a locked build without hiding existing WhatsApp", async () => {
+  state.inboxReady = false;
+  await render(panel());
+  const options = [
+    ...host.querySelector<HTMLSelectElement>('[aria-label="Evento da nova regra"]')!.options,
+  ].map((option) => option.value);
+  expect(options).toContain("shared.message.received");
+  expect(options).not.toContain("shared.email.message_received");
+  expect(options).not.toContain("shared.chat.message_received");
+  expect(options).not.toContain("shared.linkedin.message_received");
+  expect(state.calls.save).not.toHaveBeenCalled();
+  expect(state.calls.publish).not.toHaveBeenCalled();
+});
 it("groups only supported events and preserves generic workflow creation", async () => {
   await render(panel());
   const select = host.querySelector<HTMLSelectElement>('[aria-label="Evento da nova regra"]')!;

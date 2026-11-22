@@ -26,6 +26,11 @@ import {
 import type { FieldOpt } from "./step-tree";
 import { ConditionListEditor, conditionsIncludeField } from "./conditions-editor";
 import { WhatsAppInboundFilters } from "./whatsapp-inbound-filters";
+import { InboxChannelFilters } from "./inbox-channel-filters";
+import {
+  inboxEventChannel,
+  INBOX_CHANNEL_RUNTIME_READY,
+} from "@/lib/workflows/inbox-channel-events";
 import {
   WORKFLOW_NOTIFICATION_EVENTS,
   getWorkflowNotificationEvent,
@@ -56,7 +61,11 @@ export function TriggerConfigPanel({
   const defaultField = fields[0]?.name ?? "";
   const notificationEvent = getWorkflowNotificationEvent(trigger.notification_event?.key);
   const readOnlySource = WORKFLOW_READONLY_SOURCE_TABLES.some((source) => source === entity);
-  const eventOptions = WORKFLOW_NOTIFICATION_EVENTS.filter((event) => event.entity === entity);
+  const eventOptions = WORKFLOW_NOTIFICATION_EVENTS.filter(
+    (event) =>
+      event.entity === entity &&
+      (INBOX_CHANNEL_RUNTIME_READY || event.entity !== "inbox_channel_occurrences"),
+  );
 
   return (
     <div className="space-y-5">
@@ -140,6 +149,15 @@ export function TriggerConfigPanel({
         {notificationEvent && (
           <div className="mt-2 space-y-2 text-xs text-muted-foreground">
             <p>{notificationEvent.description} A seleção não publica nem ativa o Workflow.</p>
+            {inboxEventChannel(notificationEvent.key) && trigger.notification_event && (
+              <InboxChannelFilters
+                key={notificationEvent.key}
+                selection={trigger.notification_event}
+                onChange={(selection) =>
+                  onChange((current) => ({ ...current, notification_event: selection }))
+                }
+              />
+            )}
             {notificationEvent.key === "shared.message.received" && (
               <>
                 <p>

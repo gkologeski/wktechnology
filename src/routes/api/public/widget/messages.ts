@@ -11,6 +11,7 @@ const sendSchema = z.object({
     .max(64)
     .regex(/^[a-zA-Z0-9_-]+$/),
   body: z.string().min(1).max(2000),
+  request_id: z.string().uuid().optional(),
 });
 
 const CORS = {
@@ -117,26 +118,32 @@ export const Route = createFileRoute("/api/public/widget/messages")({
           const s = await loadSession(data.session_id, data.visitor_id);
           if (!s)
             return Response.json({ error: "invalid session" }, { status: 403, headers: CORS });
-          if (s.status === "closed")
-            return Response.json({ error: "closed" }, { status: 400, headers: CORS });
-          const now = new Date().toISOString();
-          const { error } = await supabaseAdmin.from("live_chat_messages").insert({
-            session_id: data.session_id,
-            owner_id: s.owner_id,
-            workspace_id: s.owner_id,
-            direction: "inbound",
-            body: data.body,
+          // Already-open widgets from before this release omit the attempt ID.
+          // Keep their session-bound sends working; updated widgets supply and
+          // retain their own ID so deliberate retries reconcile atomically.
+          const requestId = data.request_id ?? crypto.randomUUID();
+          const { data: messageId, error } = await supabaseAdmin.rpc("widget_inbound_commit", {
+            p_session: data.session_id,
+            p_visitor: data.visitor_id,
+            p_request: requestId,
+            p_body: data.body,
           });
-          if (error) throw error;
-          await supabaseAdmin
-            .from("live_chat_sessions")
-            .update({ last_message_at: now })
-            .eq("id", data.session_id);
-          return Response.json({ ok: true }, { headers: CORS });
+          const confirmed = z.string().uuid().safeParse(messageId);
+          if (error || !confirmed.success)
+            return Response.json(
+              { error: "Não foi possível confirmar a mensagem." },
+              { status: 503, headers: CORS },
+            );
+          return Response.json({ ok: true, message_id: confirmed.data }, { headers: CORS });
         } catch (e) {
+          const invalid = e instanceof z.ZodError || e instanceof SyntaxError;
           return Response.json(
-            { error: e instanceof Error ? e.message : "erro" },
-            { status: 400, headers: CORS },
+            {
+              error: invalid
+                ? "Dados da mensagem inválidos."
+                : "Não foi possível confirmar a mensagem.",
+            },
+            { status: invalid ? 400 : 503, headers: CORS },
           );
         }
       },

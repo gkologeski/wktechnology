@@ -57,6 +57,7 @@ export const sendChatMessage = createServerFn({ method: "POST" })
       .object({
         session_id: z.string().uuid(),
         body: z.string().min(1).max(2000),
+        request_id: z.string().uuid().optional(),
       })
       .parse(i),
   )
@@ -69,22 +70,22 @@ export const sendChatMessage = createServerFn({ method: "POST" })
       "techsales.inbox.chat.create.own",
       "techsales.inbox.chat.create.workspace",
     ]);
-    const { error } = await supabase.from("live_chat_messages").insert({
-      session_id: data.session_id,
-      owner_id: ws,
-      workspace_id: ws,
-      direction: "outbound",
-      author_user_id: context.userId,
+    const requestId = data.request_id ?? crypto.randomUUID();
+    const { sendAuthenticatedChat } = await import("@/lib/inbox/chat-send.server");
+    await sendAuthenticatedChat(supabase, {
+      workspace: ws,
+      actor: context.userId,
+      session: data.session_id,
+      request: requestId,
       body: data.body,
     });
-    if (error) throw new Error(error.message);
     const { error: updateError } = await supabase
       .from("live_chat_sessions")
       .update({ last_message_at: new Date().toISOString(), assignee_id: context.userId })
       .eq("id", data.session_id)
       .eq("owner_id", ws);
     if (updateError) throw new Error(updateError.message);
-    return { ok: true };
+    return { ok: true, request_id: requestId };
   });
 
 export const closeChatSession = createServerFn({ method: "POST" })
