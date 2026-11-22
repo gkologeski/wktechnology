@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 20
-version: 3
+version: 4
 is_published: true
 ---
 # Consultar, filtrar e agrupar contratos
@@ -44,3 +44,7 @@ Sem registros: confira filtros e acesso. Não considere uma lista vazia como ine
 
 ## Contratos legados
 Contratos importados como legado aparecem na lista com o status que tinham. A situação de legado (pendente ou regularizado) é vista na ficha, no painel "Contrato legado".
+
+## Disponibilidade das ações
+
+A consulta exige leitura autorizada no workspace ativo. A edição de cada linha depende da capacidade de atualização daquele contrato; a troca de responsável exige também capacidade de atribuição. Durante o carregamento ou em falha da verificação, os campos permanecem sem edição. Contratos legados descartados ficam somente para consulta.

@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 26
-version: 2
+version: 3
 is_published: true
 ---
 # Alterar status, responsável e campos em massa
@@ -39,3 +39,7 @@ Resumo pode mostrar até três contratos com erro. Revise as falhas antes de rep
 ## Relacionados
 - [Consultar contratos](/ajuda/contracts/consultar-contratos)
 - [Permissões](/ajuda/contracts/permissoes)
+
+## Disponibilidade das ações
+
+Os controles de alteração ficam disponíveis somente quando todos os contratos selecionados permitem atualização e nenhum está classificado como legado descartado. A troca de responsável exige também atribuição em todos os registros. As permissões continuam sendo verificadas pelo servidor e pelo banco em cada operação.

@@ -8,7 +8,7 @@ route_pattern: /contracts
 min_permission:
 audience: internal
 sort_order: 27
-version: 2
+version: 3
 is_published: true
 ---
 # Exportar contratos selecionados
@@ -37,3 +37,7 @@ Se não houver registros no arquivo, confira a seleção e seu acesso.
 ## Relacionados
 - [Consultar contratos](/ajuda/contracts/consultar-contratos)
 - [Permissões](/ajuda/contracts/permissoes)
+
+## Disponibilidade das ações
+
+A exportação da seleção exige a permissão efetiva de exportar contratos e leitura autorizada de todos os registros selecionados. Enquanto as capacidades não forem confirmadas, a ação permanece indisponível.

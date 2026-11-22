@@ -3,6 +3,7 @@
 // A tabela suporta seleção múltipla e edição inline dos campos operacionais
 // (status, responsável, vigência e valor). A gravação usa as server functions
 // existentes, que continuam validando permissão e workspace.
+import { useWorkCapabilities } from "@/lib/access-control/use-work-capabilities";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
@@ -259,6 +260,10 @@ export function ContractsTable({
     return keys.length ? keys : CONTRACT_COLUMNS.map((c) => c.key);
   }, [columnKeys]);
   const arranged = useMemo(() => arrangeContractLinks(rows, nestLinks), [rows, nestLinks]);
+  const access = useWorkCapabilities(
+    "techcontracts.contracts",
+    rows.map((r) => r.id),
+  );
 
   const ids = useMemo(() => rows.map((r) => r.id), [rows]);
   const allSelected = selection
@@ -329,7 +334,8 @@ export function ContractsTable({
             linkKind={linkKind}
             path={path}
             selection={selection}
-            editable={editable}
+            editable={editable && access.for(c.id).can_update}
+            canAssign={access.for(c.id).can_assign}
             onChanged={onChanged}
             visible={orderedKeys}
           />
@@ -346,6 +352,7 @@ function ContractTableRow({
   path,
   selection,
   editable,
+  canAssign,
   onChanged,
   visible,
 }: {
@@ -356,6 +363,7 @@ function ContractTableRow({
   path?: string;
   selection?: ContractsSelection;
   editable: boolean;
+  canAssign: boolean;
   onChanged?: () => void;
 }) {
   const qc = useQueryClient();
@@ -367,7 +375,7 @@ function ContractTableRow({
   const selected = selection?.selectedIds.has(c.id) ?? false;
 
   async function patch(patchData: Record<string, unknown>, label: string) {
-    if (c.legacy_discarded) return;
+    if (!canEdit) return;
     setSaving(true);
     try {
       await update({ data: { id: c.id, patch: patchData as never } });
@@ -520,7 +528,7 @@ function ContractTableRow({
     ),
     assigned_to: (
       <TableCell>
-        {canEdit ? (
+        {canEdit && canAssign ? (
           <AssigneeField
             table="contracts"
             rowId={c.id}

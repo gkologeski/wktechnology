@@ -20,6 +20,15 @@ import {
 } from "@/lib/proposals/proposal-templates.functions";
 import { cn } from "@/lib/utils";
 import { normalizeProposalTemplateHtml } from "@/lib/proposals/proposal-template-html";
+import { listContractTemplates } from "@/lib/contracts/templates.functions";
+import { usePermissions } from "@/lib/access-control/use-permissions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export const Route = createFileRoute("/_authenticated/settings/proposal-templates")({
   head: () => ({
@@ -41,8 +50,16 @@ type Draft = {
   description: string;
   html: string;
   services: string[];
+  contract_template_id: string | null;
 };
-const EMPTY: Draft = { id: null, name: "", description: "", html: "", services: [] };
+const EMPTY: Draft = {
+  id: null,
+  name: "",
+  description: "",
+  html: "",
+  services: [],
+  contract_template_id: null,
+};
 
 const VARIABLES = [
   "{{company.name}}",
@@ -51,6 +68,10 @@ const VARIABLES = [
   "{{total}}",
   "{{valid_until}}",
   "{{{items_table}}}",
+  "{{company_legal_name}}",
+  "{{company_cnpj}}",
+  "{{contracting.name}}",
+  "{{contracting.cnpj}}",
 ];
 
 function ProposalTemplatesPage() {
@@ -58,7 +79,19 @@ function ProposalTemplatesPage() {
   const list = useServerFn(listProposalTemplates);
   const save = useServerFn(saveProposalTemplate);
   const del = useServerFn(deleteProposalTemplate);
+  const listContracts = useServerFn(listContractTemplates);
+  const { can } = usePermissions();
+  const allowed = (resource: string, action: string) =>
+    ["own", "team", "workspace"].some((s) => can(`${resource}.${action}.${s}`));
   const [draft, setDraft] = useState<Draft | null>(null);
+  const canSave = allowed("techsales.proposal_templates", draft?.id ? "update" : "create");
+  const canReadContracts = allowed("techcontracts.contract_templates", "view");
+
+  const contractsQ = useQuery({
+    queryKey: ["proposal-contract-models"],
+    queryFn: () => listContracts({ data: { status: "published" } }),
+    enabled: canReadContracts,
+  });
 
   const templatesQ = useQuery({ queryKey: ["proposal-templates-admin"], queryFn: () => list() });
   const servicesQ = useQuery({
@@ -128,7 +161,10 @@ function ProposalTemplatesPage() {
             ligado aos serviços dos itens de linha.
           </p>
         </div>
-        <Button onClick={() => setDraft({ ...EMPTY })}>
+        <Button
+          disabled={!allowed("techsales.proposal_templates", "create")}
+          onClick={() => setDraft({ ...EMPTY })}
+        >
           <Plus className="mr-1 h-4 w-4" /> Novo modelo
         </Button>
       </div>
@@ -198,6 +234,44 @@ function ProposalTemplatesPage() {
                     />
                   </div>
                 </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="pt-contract">Modelo de contrato vinculado</Label>
+                  <Select
+                    value={draft.contract_template_id ?? "__none__"}
+                    disabled={!canSave || !canReadContracts || contractsQ.isError}
+                    onValueChange={(value) =>
+                      setDraft({
+                        ...draft,
+                        contract_template_id: value === "__none__" ? null : value,
+                      })
+                    }
+                  >
+                    <SelectTrigger id="pt-contract">
+                      <SelectValue placeholder="Sem vínculo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">Sem vínculo</SelectItem>
+                      {(contractsQ.data ?? []).map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.name} — WK{" "}
+                          {t.role === "client" ? "contratante (compra)" : "contratada (venda)"}
+                        </SelectItem>
+                      ))}
+                      {draft.contract_template_id &&
+                        !(contractsQ.data ?? []).some(
+                          (t) => t.id === draft.contract_template_id,
+                        ) && (
+                          <SelectItem value={draft.contract_template_id}>
+                            Modelo vinculado indisponível
+                          </SelectItem>
+                        )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Vínculo entre modelos reutilizáveis. Salvar este cadastro não cria uma proposta
+                    nem um contrato.
+                  </p>
+                </div>
                 <fieldset className="space-y-2">
                   <legend className="text-sm font-medium">Serviços do catálogo</legend>
                   <div className="grid gap-2 sm:grid-cols-2">
@@ -244,7 +318,11 @@ function ProposalTemplatesPage() {
                 </div>
                 <div className="flex justify-between gap-2">
                   {draft.id ? (
-                    <Button variant="ghost" onClick={() => void remove(draft.id!)}>
+                    <Button
+                      variant="ghost"
+                      disabled={!allowed("techsales.proposal_templates", "delete")}
+                      onClick={() => void remove(draft.id!)}
+                    >
                       <Trash2 className="mr-1 h-4 w-4" /> Excluir
                     </Button>
                   ) : (
@@ -252,7 +330,7 @@ function ProposalTemplatesPage() {
                   )}
                   <Button
                     onClick={() => saveM.mutate(draft)}
-                    disabled={saveM.isPending || !draft.name.trim()}
+                    disabled={!canSave || saveM.isPending || !draft.name.trim()}
                   >
                     <Save className="mr-1 h-4 w-4" /> Salvar
                   </Button>

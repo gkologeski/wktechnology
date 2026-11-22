@@ -10905,9 +10905,9 @@
     {
       "id": "whatsapp-cloud-database-types",
       "kind": "presentation",
-      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved.",
+      "rationale": "Generated database type declarations (regenerated after schema migrations, incl. contract drafts). Types only; no runtime I/O, routes or actions. Generated types regenerated after additive proposal columns; previewAuthStorage is generated client storage, no authorization logic. | 14/11/2026: regenerated types reviewed for migration 0356 (draft revisions, prepared terms and four authorized RPC signatures); types only, no runtime grants. | ETAPA-ASSINA 14/11/2026: etapa selecionada com círculo vazado (apresentação); documento de assinatura guarda o HTML do contrato (0358 recria hiring_contract_native_prepare com os mesmos gates; helper hiring_contract_esign_body só service_role/definer) e telas renderizam via sanitizeTemplateHtml. Sem nova ação, chave ou grant. VOZ-AUDIO-FILA 16/11/2026: presentation-only update (recent calls exclude queue; recording plays through the RLS-checked signed-link function); no access change. INBOX-SO-WHATSAPP 16/11/2026: 0370 adds last_wa_message_at/preview (trigger definer, revoked from PUBLIC/anon/authenticated) and the WhatsApp tab list/history exclude call rows; same RLS (RPC stays invoker), no new key or grant. | PACOTE-4 audit 19/11/2026: reviewed 588 generated declaration lines for applied 0375–0380 (six hiring tables, contract/draft origins, restricted RPC signatures). Types only, no runtime or grants. | PACOTE-4 release 19/11/2026: native generation for applied 0381–0384 independently reviewed: 17 additive tables, 60 additive functions, no removed tables/views/functions; hiring_engagements adds request origin and nullable ATS job/model columns as reviewed. Typecheck passed; declarations only, no runtime or grants. | LEGADO/PACOTE-5 19/11/2026: native types from applied 0385–0387 reviewed: four additive legacy tables and fourteen additive function declarations, no removed declarations; private helpers appearing in types do not grant EXECUTE. No runtime behavior or grants. | 21/11/2026: reviewed Lovable-generated NOTIFICA-CENTRAL tables/RPC declarations after 0391–0401 and the exact Json-returning 0402 sender RPC signature. Compile-time schema compatibility only; no runtime I/O, permission grant, private table access or channel activation. Revisão 21/11/2026: central Meta de modelos no workspace; navegação e ações exigem as novas permissões específicas, preservando gates anteriores e consumidores de envio aprovados. Credenciais privadas e perfis restritos permanecem protegidos. Inbox package2 generated schema reviewed through0444: new private occurrence/receipt/queue fields and RPC signatures are type declarations only, not grants or public serializer fields. Current main PostgREST14.5 metadata is preserved across the isolated generator version; trailing blank line normalized. No credential values, user records or hand-edited business permissions. Native451 adds only service recovery RPC type declarations; existing PostgREST14.5 metadata is preserved. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion.",
       "files": {
-        "src/integrations/supabase/types.ts": "7001f54b44f45f11dd6da9744bb1cfa843cc9c716a9b4df1a90d56ff420fb5bf",
+        "src/integrations/supabase/types.ts": "3c6cca8d0bfdce54093dd5825d6eb6d09c148f2e2aa5fa66d0a612f5d107cba4",
         "src/integrations/supabase/previewAuthStorage.ts": "03dd0ffe0501fa1f0b055d8644e079c573e7197a36e2e08fd494e70831484d18"
       }
     },
@@ -11280,7 +11280,7 @@
         "techcontracts.contract_templates.view.workspace",
         "techsales.proposals.view.workspace"
       ],
-      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access. Reviewed concurrent ENDERECO-ATUAL change: cep added to the same workspace-filtered user/RLS company projection, pure party merge retains commercial snapshot values. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. TERMOS-MODELO 16/11/2026: template contracts copy payment_terms from the accepted proposal already read with the user client (RLS) under the existing create check; no access change.",
+      "rationale": "Map the reviewed hunting template to the explicitly selected customer-accepted proposal. User-client RLS gates all origin reads; sent specifications are preserved without fabricating legacy history. Insert/update triggers validate tenant, company and source and seal the accepted version in contract metadata. No new grants, public tokens or business status bypasses. DADOS-CONTRATO: additive proposal columns (installments, due day, validity_days default 90) with CHECK limits and no grant/RLS change; the wizard writes them through the existing user-RLS proposals update. Merge reads proposal terms and the single legal signer contact under user RLS filtered by workspace (ambiguous signers are not chosen), applies penalty 2%/Florianópolis-SC defaults, and fills an empty legal-entity address from public BrasilAPI CNPJ data via a user-RLS update guarded by empty address_json; counterparty address fallback is document-only. No new action or permission key. Proposal terms are written by the wizard only when usePermissions grants techsales.proposals.update (inputs disabled otherwise) and through the user client, so proposals RLS still decides; the edit draft now asserts sales update access before reading terms. EXCLUI-PROPOSTA: proposal document versions cascade on proposal delete; proposal delete remains gated by existing proposals RLS, no grant change. TEXTO-PROPOSTA: additive proposals.payment_method/payment_notes with CHECK limits, no grant/RLS change; written by the wizard only when techsales.proposals.update is granted and through the user client (proposals RLS decides); merge copies payment_method under user RLS. The terms block helper is pure presentation; proposal template variable hints add no action. TEXTO-CONSULTORIA: proposal draft reads the company's single legal signer contact under user RLS (no new action) for template variables counterparty/signer. Reviewed current main: existing permission/record boundaries retained; newly added contract data/signatory form does not change suppressions or proposal access. Reviewed concurrent ENDERECO-ATUAL change: cep added to the same workspace-filtered user/RLS company projection, pure party merge retains commercial snapshot values. | Jornada aprovada 14/11/2026: preservação da minuta aceita; nova revisão revoga aceite/link, requer aprovador jurídico listado e CAS; preenchimento usa fontes do mesmo workspace sob RLS, histórico limitado e corpo carregado por revisão. UI de serviços aplica capacidade real de update e sessão gravável. TERMOS-MODELO 16/11/2026: template contracts copy payment_terms from the accepted proposal already read with the user client (RLS) under the existing create check; no access change. | Model-only supplier factory configuration reviewed22Nov: explicit proposal-to-contract model reference, selected WK entity name/CNPJ variables; no business records or finance activation. Linked models require explicit selection, never service-only automatic suggestion.",
       "controls": [
         {
           "file": "src/lib/access-control/enforce.server.ts",
@@ -11386,7 +11386,7 @@
         "drizzle/migrations/0334_contract_accepted_proposal.sql": "5273c83d4268d4c082c01df9943ec20a214f71549c693f6410211e720273229b",
         "src/components/contracts/contract-wizard.tsx": "acb9e2e990a5f17064c2756374f46aa20af8dfcac0473af85261ec2182625ca7",
         "src/lib/sales-flow.functions.ts": "3a15a8618f54e8003b75db6384fc3630f233ff6c696ec9de85a4a5406a3b1e6e",
-        "src/components/proposals/proposal-wizard.tsx": "075ed2e1d4a4ede62cd5c7df62ab087279cd88626db76f2c57881ff3545c8506",
+        "src/components/proposals/proposal-wizard.tsx": "13999579ea12caab43b9a522c8e4d70f91c283d767820f1aa850c4ef128cff63",
         "src/lib/proposals/proposal-draft.server.ts": "73ed9f29defffbcb7e1646542a49fe6220a2d851264515b3b9c93254a7688a68",
         "drizzle/migrations/0320_proposal_contract_terms.sql": "6f14a18005010f97bac4e63c19af5cc7776c317e8583e40ca66179e289a9efa6",
         "drizzle/migrations/0321_proposal_versions_cascade.sql": "d74b28603f0279e6cb749f1af8ae34658c561ed0f659964fea8d6f4a2b257bcf",
@@ -24707,6 +24707,173 @@
         "src/routes/_authenticated/contracts.$id.tsx": "5f7821d306049541bf41a978d6a961b0b3c75f9aec4f94bc57509c3760304831",
         "drizzle/migrations/0454_contract_legacy_discard_pending.sql": "7ee86112069b893634b01b4babc64a3339947bf9b02524cbc8152a35ad8fbe72",
         "drizzle/migrations/0455_contract_legacy_discard_list_batch.sql": "255ab07053c066122545fc1c0a1f856a52241d543f95e055b3c90213a17621ab"
+      }
+    },
+    {
+      "id": "proposal-template-contract-model-catalogue",
+      "kind": "business",
+      "rationale": "Reusable model configuration only. Existing TechSales create/update/delete/view permissions and user/RLS client remain mandatory; save explicitly gates the exact create or update action. The published contract model is read through caller RLS in the same active workspace; invoker trigger rechecks visibility on direct writes and composite FK prevents tenant mismatch and deletion while referenced. UI actions use effective permissions. No proposal, contract, acceptance, notification, service or finance record is created. Role remains a property of the linked legal model; this association is not an executed contract or signature. Five executable SQL cases use production RBAC functions, proposal-model RLS and the actual migration; they do not certify a purchase conversion workflow.",
+      "files": {
+        "src/lib/proposals/proposal-templates.functions.ts": "0bcdf140609744e3e6c4e8718ae8a5d9b288a2df304adfd3e203d4e66e857138",
+        "src/routes/_authenticated/settings.proposal-templates.tsx": "66b03a511606d91abcfcb35da4f63b5154f01397ce25d0bdfabe493a493a20f2",
+        "drizzle/migrations/0456_proposal_template_contract_model.sql": "65e79b97e4585fef45390294a63311c9fa401138285fa90a825965c719c7bffb"
+      },
+      "resources": ["techsales.proposal_templates", "techcontracts.contract_templates"],
+      "actions": ["view", "create", "update", "delete"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techsales.proposal_templates.view.own",
+        "techsales.proposal_templates.view.team",
+        "techsales.proposal_templates.view.workspace",
+        "techsales.proposal_templates.create.own",
+        "techsales.proposal_templates.create.team",
+        "techsales.proposal_templates.create.workspace",
+        "techsales.proposal_templates.update.own",
+        "techsales.proposal_templates.update.team",
+        "techsales.proposal_templates.update.workspace",
+        "techsales.proposal_templates.delete.own",
+        "techsales.proposal_templates.delete.team",
+        "techsales.proposal_templates.delete.workspace",
+        "techcontracts.contract_templates.view.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/access-control/sales-permission.middleware.ts",
+          "symbol": "requireSalesPermission"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesArea"
+        },
+        {
+          "file": "src/lib/access-control/sales-core.server.ts",
+          "symbol": "assertSalesRecord"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        },
+        {
+          "file": "src/lib/contracts/templates.functions.ts",
+          "symbol": "listContractTemplates"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0456_proposal_template_contract_model.sql",
+          "symbol": "public.proposal_template_contract_model_guard"
+        },
+        {
+          "file": "drizzle/migrations/0222_order4_sales_prepare.sql",
+          "symbol": "public.sales_context_access"
+        },
+        {
+          "file": "drizzle/migrations/0216_work_core_prepare.sql",
+          "symbol": "public.work_context_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "proposal model SQL permits authorized model linkage without business records"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "proposal model SQL rejects missing permission"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "proposal model SQL rejects explicit deny"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "proposal model SQL rejects foreign workspace linkage"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/accepted-proposal-postgres.test.ts",
+          "name": "proposal model SQL rejects inactive membership"
+        }
+      }
+    },
+    {
+      "id": "contract-list-and-bulk-permission-completion",
+      "kind": "business",
+      "rationale": "Completes three previously unreviewed current-main sources before releasing reusable model configuration. All sixteen server handlers now use the canonical exact-action work permission middleware before any query; existing per-record, field, transition, linking and RLS gates remain intact. The middleware delegates to work_area_authorize, whose context validates active membership, active workspace and effective keys with deny precedence. Bulk and inline UI default to denied until useWorkCapabilities confirms each selected row; assign additionally requires can_assign, export additionally requires the export key, and discarded legacy rows cannot mutate. No grants, members, roles or business records are changed. Unit tests execute the real middleware and server handler against allowed/denied RPC responses and assert no data access on denial; existing PostgreSQL RBAC/RLS suites remain mandatory in full verify.",
+      "files": {
+        "src/lib/contracts.functions.ts": "8f6ee809fec7488d3bc3fb15be106fc2815e027aceec6d7f47e80074051ac181",
+        "src/components/contracts/contracts-bulk-bar.tsx": "f733ab87754b4a9432a06450da1f5cd8d57a495c9eebebda9f31b1bb7c56fe20",
+        "src/components/contracts/contracts-grouped-list.tsx": "32e88c99298ff76506805e4dc7f6791c7938f6f3792df9de7925ed8aff034ec6"
+      },
+      "resources": ["techcontracts.contracts", "techcontracts.links"],
+      "actions": ["view", "create", "update", "delete", "export", "assign"],
+      "scopes": ["own", "team", "workspace"],
+      "permission_keys": [
+        "techcontracts.contracts.view.own",
+        "techcontracts.contracts.view.team",
+        "techcontracts.contracts.view.workspace",
+        "techcontracts.contracts.create.own",
+        "techcontracts.contracts.create.workspace",
+        "techcontracts.contracts.update.own",
+        "techcontracts.contracts.update.team",
+        "techcontracts.contracts.update.workspace",
+        "techcontracts.contracts.delete.own",
+        "techcontracts.contracts.delete.workspace",
+        "techcontracts.contracts.export.workspace",
+        "techcontracts.contracts.assign.workspace"
+      ],
+      "controls": [
+        {
+          "file": "src/lib/access-control/work-permission.middleware.ts",
+          "symbol": "requireWorkPermission"
+        },
+        {
+          "file": "src/lib/access-control/enforce.server.ts",
+          "symbol": "assertAnyPermission"
+        },
+        {
+          "file": "src/lib/access-control/work-core.server.ts",
+          "symbol": "assertWorkRecord"
+        },
+        {
+          "file": "src/lib/access-control/use-work-capabilities.ts",
+          "symbol": "useWorkCapabilities"
+        },
+        {
+          "file": "src/lib/access-control/use-permissions.tsx",
+          "symbol": "usePermissions"
+        }
+      ],
+      "database": [
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "public.work_area_authorize"
+        },
+        {
+          "file": "drizzle/migrations/0218_order3_completion_prepare.sql",
+          "symbol": "public.work_record_access"
+        }
+      ],
+      "tests": {
+        "allowed": {
+          "file": "src/lib/contracts/contract-list-authorization.test.ts",
+          "name": "contract list allows authorized active member through the real middleware"
+        },
+        "missing_permission": {
+          "file": "src/lib/contracts/contract-list-authorization.test.ts",
+          "name": "contract list rejects missing permission before data access"
+        },
+        "explicit_deny": {
+          "file": "src/lib/contracts/contract-list-authorization.test.ts",
+          "name": "contract list rejects explicit deny before data access"
+        },
+        "foreign_workspace": {
+          "file": "src/lib/contracts/contract-list-authorization.test.ts",
+          "name": "contract list rejects foreign workspace before data access"
+        },
+        "inactive_member": {
+          "file": "src/lib/contracts/contract-list-authorization.test.ts",
+          "name": "contract list rejects inactive membership before data access"
+        }
       }
     }
   ],
