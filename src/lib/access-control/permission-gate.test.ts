@@ -408,7 +408,7 @@ describe("mandatory permission impact gate", () => {
       (source: string) => source.replace('VERIFY_AGGREGATE: "1"', 'VERIFY_AGGREGATE: "0"'),
       (source: string) =>
         source.replace(
-          "VERIFY_PREVIOUS_STEPS_OK: ${{ success() }}",
+          "VERIFY_PREVIOUS_STEPS_OK: ${{ job.status == 'success' }}",
           "VERIFY_PREVIOUS_STEPS_OK: true",
         ),
       (source: string) =>

@@ -714,7 +714,7 @@ export function assertCiWiring(root: string): Finding[] {
       steps[verifyStep]?.if !== "${{ always() }}" ||
       aggregateEnv?.VERIFY_AGGREGATE !== "1" ||
       aggregateEnv.VERIFY_SHARD !== undefined ||
-      aggregateEnv.VERIFY_PREVIOUS_STEPS_OK !== "${{ success() }}" ||
+      aggregateEnv.VERIFY_PREVIOUS_STEPS_OK !== "${{ job.status == 'success' }}" ||
       aggregateEnv.SHARD_JOB_RESULT !== "${{ needs.verification_shards.result }}" ||
       steps.filter((step) => step.run === "bun run verify").length !== 1 ||
       performance <= build ||

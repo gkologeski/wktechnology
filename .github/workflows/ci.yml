@@ -131,7 +131,7 @@ jobs:
         run: bun run verify
         env:
           VERIFY_AGGREGATE: "1"
-          VERIFY_PREVIOUS_STEPS_OK: ${{ success() }}
+          VERIFY_PREVIOUS_STEPS_OK: ${{ job.status == 'success' }}
           SHARD_JOB_RESULT: ${{ needs.verification_shards.result }}
       - run: bun run build
       - run: bun run perf:check
