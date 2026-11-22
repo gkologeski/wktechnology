@@ -199,10 +199,19 @@ export function PreparationForm({
                     ))}
                     {value.additional_deal_ids.length < 20 && (
                       <div key={`new-${value.additional_deal_ids.length}`}>
-                        {picker("deal", "Adicionar outro negócio atendido (opcional)", null, (id) => {
-                          if (id && id !== value.deal_id && !value.additional_deal_ids.includes(id))
-                            set("additional_deal_ids", [...value.additional_deal_ids, id]);
-                        })}
+                        {picker(
+                          "deal",
+                          "Adicionar outro negócio atendido (opcional)",
+                          null,
+                          (id) => {
+                            if (
+                              id &&
+                              id !== value.deal_id &&
+                              !value.additional_deal_ids.includes(id)
+                            )
+                              set("additional_deal_ids", [...value.additional_deal_ids, id]);
+                          },
+                        )}
                       </div>
                     )}
                     <p className="text-xs text-muted-foreground">

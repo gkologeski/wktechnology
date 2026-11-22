@@ -14,7 +14,10 @@ export const preparationData = z
     company_id: optionalId,
     contact_id: optionalId,
     deal_id: optionalId,
-    additional_deal_ids: z.array(z.string().uuid()).max(20, "Até 20 negócios adicionais.").default([]),
+    additional_deal_ids: z
+      .array(z.string().uuid())
+      .max(20, "Até 20 negócios adicionais.")
+      .default([]),
     project_id: optionalId,
     commercial_contract_id: optionalId,
     status: z.enum(["draft", "ready", "cancelled"]),
